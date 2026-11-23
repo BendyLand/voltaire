@@ -419,7 +419,6 @@ public:
 #include "scene/2d/node_2d.h"
 #include "scene/main/node.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
-#include "servers/navigation_2d/navigation_server_2d.h"
 
 class NavigationMeshSourceGeometryData2D;
 
@@ -943,7 +942,7 @@ private:
 #include "scene/main/canvas_item.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/packed_scene.h"
-#include "scene/resources/physics_material.h"
+#include "scene/resources/material.h"
 
 #ifndef PHYSICS_2D_DISABLED
 #include "scene/2d/node_2d.h"

@@ -38,7 +38,6 @@ TEST_FORCE_LINK(test_texture_rect)
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/image_texture.h"
 
 namespace TestTextureRect {
 

@@ -104,14 +104,7 @@ SHADERS = [
 ]
 
 
+BUNDLE_TARGET = "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--all":
-        for s in SHADERS:
-            glsl_builders.build_rd_header(f"{s}.gen.h", s)
-    else:
-        run = utils.get_run_arg()
-        if 0 <= run < len(SHADERS):
-            s = SHADERS[run]
-            build_rd_headers([f"{s}.gen.h"], [s])
-        else:
-            print("No commands left to run.")
+    glsl_builders.build_rd_headers_bundle(BUNDLE_TARGET, SHADERS)

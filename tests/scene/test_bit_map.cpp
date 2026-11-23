@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_bit_map)
 
-#include "scene/resources/bit_map.h"
+#include "scene/resources/image_texture.h"
 
 namespace TestBitMap {
 

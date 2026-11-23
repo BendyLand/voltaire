@@ -186,7 +186,11 @@ public:
 };
 
 // --- End core/io/remote_filesystem_client.h ---
-#include "core/os/process_id.h"
+// --- Folded from core/os/process_id.h ---
+#include <cstdint>
+
+typedef int64_t ProcessID;
+// --- End core/os/process_id.h ---
 // --- Folded from core/os/time_enums.h ---
 #include <cstdint>
 

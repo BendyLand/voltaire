@@ -29,11 +29,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
-#include "platform/windows/display_server_windows.h"
 #include "os_windows.h"
-#include "platform/windows/display_server_windows.h"
 #include "platform/windows/os_windows.h"
 
 #include "core/config/engine.h"
@@ -42,11 +40,11 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/marshalls.h"
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/version.h"
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 #include "main/main.h"
 #include "scene/resources/texture.h"
 #include "servers/display/accessibility_server.h"
@@ -54,11 +52,11 @@
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 #ifdef SDL_ENABLED
-#include "drivers/sdl/joypad_sdl.h"
+#include "core/input/input.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 #endif
 #if defined(D3D12_ENABLED)
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
@@ -8405,7 +8403,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 
 
 // --- Merged from platform/windows/key_mapping_windows.cpp ---
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/templates/hash_map.h"
 
@@ -8827,9 +8825,8 @@ KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended
 
 
 // --- Merged from platform/windows/native_menu_windows.cpp ---
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
-#include "platform/windows/display_server_windows.h"
 
 #include "scene/resources/image_texture.h"
 
@@ -10036,7 +10033,7 @@ NativeMenuWindows::~NativeMenuWindows() {}
 
 
 // --- Merged from platform/windows/gl_manager_windows_native.cpp ---
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -10584,9 +10581,8 @@ GLManagerNative_Windows::~GLManagerNative_Windows() {
 // --- Merged from platform/windows/wgl_detect_version.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "platform/windows/display_server_windows.h"
-
 #include "platform/windows/os_windows.h"
+
 
 #include "core/os/os.h"
 #include "core/string/print_string.h"
@@ -10751,7 +10747,7 @@ Dictionary detect_wgl() {
 // --- Merged from platform/windows/rendering_context_driver_vulkan_windows.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(VULKAN_ENABLED)
 
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/os/os.h"
 
@@ -10793,7 +10789,7 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 
 
 // --- Merged from platform/windows/drop_target_windows.cpp ---
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #include "core/io/dir_access.h"
 #include "core/math/random_pcg.h"
@@ -11143,7 +11139,7 @@ HRESULT STDMETHODCALLTYPE DropTargetWindows::Drop(IDataObject *pDataObj, DWORD g
 
 // --- Merged from platform/windows/gl_manager_windows_angle.cpp ---
 #if defined(ANGLE_ENABLED)
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 

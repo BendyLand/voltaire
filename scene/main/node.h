@@ -1159,4 +1159,51 @@ template <typename... VarArgs> Error Node::rpc(const String& p_method, VarArgs..
 	warnings.push_back(RTR("This node is marked as experimental and may be subject to removal or " \
 						   "major changes in future versions."));
 
+// --- Folded from scene/property_utils.h ---
 
+#include "scene/resources/packed_scene.h"
+
+class PropertyUtils
+{
+public:
+	// Gets the instance/inheritance states of this node, in order of precedence,
+	// that is, from the topmost (the most able to override values) to the lowermost
+	// (Note that in nested instantiation, the one with the greatest precedence is the furthest
+	// in the tree, since every owner found while traversing towards the root gets a chance
+	// to override property values.)
+	static Vector<SceneState::PackState> get_node_states_stack(
+		const Node* p_node, const Node* p_owner = nullptr, bool* r_instantiated_by_owner = nullptr);
+};
+// --- End scene/property_utils.h ---
+
+// --- Folded from scene/property_list_helper.h ---
+#include "core/types.h"
+
+class PropertyListHelper
+{
+	static HashMap<String, Vector<PropertyListHelper*>> base_helpers;
+
+	String prefix;
+
+	bool allow_oob_assign = false;
+
+	int _call_array_length_getter() const;
+
+public:
+	static void clear_base_helpers();
+	static void register_base_helper(const String& p_class_name, PropertyListHelper* p_helper);
+
+	static Vector<PropertyListHelper*> get_helpers_for_class(const String& p_class_name);
+
+	void set_prefix(const String& p_prefix);
+
+	bool is_initialized() const;
+	bool is_property_valid(const String& p_property, int* r_index = nullptr) const;
+
+	bool property_can_revert(const String& p_property) const;
+
+	void enable_out_of_bounds_assign() { allow_oob_assign = true; }
+
+	void clear();
+};
+// --- End scene/property_list_helper.h ---

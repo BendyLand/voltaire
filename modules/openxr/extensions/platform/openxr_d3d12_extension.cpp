@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_d3d12_extension.h"
+#include "modules/openxr/openxr_platform_inc.h"
 
 #ifdef D3D12_ENABLED
 

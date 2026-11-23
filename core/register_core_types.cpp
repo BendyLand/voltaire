@@ -32,7 +32,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/crypto/crypto.h"
-#include "core/crypto/crypto.h"
 #include "core/input/input.h"
 #include "core/input/input_map.h"
 #include "core/input/input_event.h"
@@ -40,27 +39,21 @@
 #include "core/io/dir_access.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/stream_peer.h"
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
-#include "core/io/json.h"
 #include "core/io/config_file.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
-#include "core/io/packet_peer.h"
+#include "core/io/stream_peer.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/packet_peer_udp.h"
 #include "core/io/compression.h"
 #include "core/io/resource_loader.h"
-#include "core/io/resource_importer.h"
-#include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/io/resource_uid.h"
-#include "core/io/stream_peer_socket.h"
-#include "core/io/stream_peer.h"
 #include "core/io/stream_peer.h"
 #include "core/io/config_file.h"
 #include "core/io/packet_peer_udp.h"
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 #include "core/math/geometry_3d.h"
 #include "core/math/expression.h"
 #include "core/math/random_pcg.h"
@@ -68,8 +61,6 @@
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
-#include "core/string/translation_server.h"
-#include "core/string/translation_server.h"
 #include "core/string/translation_server.h"
 #include "main/main.h"
 #ifndef DISABLE_DEPRECATED
@@ -1499,9 +1490,8 @@ Error ProjectSettings::load_custom(const String& p_path)
 // Merged from core/config/engine.cpp
 // ============================================================================
 
-#include "core/authors.gen.h"
+#include "core/license.gen.h"
 #include "core/config/project_settings.h"
-#include "core/donors.gen.h"
 #include "core/license.gen.h"
 #include "core/version.h"
 #include "core/config/engine.h"
@@ -1699,7 +1689,6 @@ bool Engine::is_embedded_in_editor() { return embedded_in_editor; }
 #include "core/error/error_macros.h"
 
 #include "core/core_globals.h"
-#include "core/os/os.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 
@@ -2102,7 +2091,7 @@ template class AHashMap<String, String>;
 // Merged from core/templates/interpolated_property.cpp
 // ============================================================================
 
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #include "core/math/vector2.h"
 
@@ -5839,7 +5828,6 @@ bool Shortcut::is_event_array_equal(
 
 #include "core/input/input.h"
 
-#include "core/input/input.h"
 #include "core/io/marshalls.h"
 
 enum class BoolShift : uint8_t
@@ -7154,7 +7142,7 @@ String InputEvent::to_string() const { return as_text(); }
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/json.h"
+#include "core/io/config_file.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
 #include "core/version_generated.gen.h"
@@ -10118,3 +10106,9 @@ void ResourceFormatSaverCrypto::get_recognized_extensions(
 	const Ref<Resource>& p_resource, List<String>* p_extensions) const
 {
 }
+
+#include "core/version_hash.gen.cpp"
+
+#include "core/script_encryption_key.gen.cpp"
+
+#include "core/input/default_controller_mappings.gen.cpp"

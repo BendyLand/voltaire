@@ -61,69 +61,60 @@ def generate_wayland_protocols(sowrap=True):
     scanner = shutil.which("wayland-scanner")
     proto_dir = "platform/linuxbsd/wayland/protocol"
     os.makedirs(proto_dir, exist_ok=True)
-    if scanner:
-        for name, xml_path in WAYLAND_PROTOCOLS:
-            out_h = os.path.join(proto_dir, f"{name}.gen.h")
-            out_c = os.path.join(proto_dir, f"{name}.gen.c")
-            with open(xml_path, "rb") as xml_in:
-                h_res = subprocess.run([scanner, "-c", "client-header"], stdin=xml_in, capture_output=True, check=True)
-            h_txt = h_res.stdout.decode("utf-8")
-            if sowrap:
-                h_txt = h_txt.replace("wayland-client-core.h", "../dynwrappers/wayland-client-core-so_wrap.h")
-            with open(out_h, "w", encoding="utf-8", newline="\n") as f:
-                f.write(h_txt)
+    if not scanner:
+        return
 
-            with open(xml_path, "rb") as xml_in:
-                c_res = subprocess.run([scanner, "-c", "private-code"], stdin=xml_in, capture_output=True, check=True)
-            c_txt = c_res.stdout.decode("utf-8")
-            if sowrap:
-                c_txt = c_txt.replace("wayland-util.h", "../dynwrappers/wayland-client-core-so_wrap.h")
-            with open(out_c, "w", encoding="utf-8", newline="\n") as f:
-                f.write(c_txt)
+    h_chunks = ["#pragma once\n"]
+    c_chunks = ["/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n"]
+    wrap_inc = "wayland/dynwrappers/wayland-client-core-so_wrap.h"
 
-    bundle_path = os.path.join(proto_dir, "wayland_protocols.gen.c")
-    if scanner or not os.path.exists(bundle_path):
-        with open(bundle_path, "w", encoding="utf-8", newline="\n") as f:
-            for name, _ in WAYLAND_PROTOCOLS:
-                f.write(f'#include "{name}.gen.c"\n')
+    for name, xml_path in WAYLAND_PROTOCOLS:
+        with open(xml_path, "rb") as xml_in:
+            h_res = subprocess.run([scanner, "-c", "client-header"], stdin=xml_in, capture_output=True, check=True)
+        h_txt = h_res.stdout.decode("utf-8")
+        if sowrap:
+            h_txt = h_txt.replace("wayland-client-core.h", wrap_inc)
+        h_chunks.append(f"\n/* --- {name} --- */\n" + h_txt)
+
+        with open(xml_path, "rb") as xml_in:
+            c_res = subprocess.run([scanner, "-c", "private-code"], stdin=xml_in, capture_output=True, check=True)
+        c_txt = c_res.stdout.decode("utf-8")
+        if sowrap:
+            c_txt = c_txt.replace("wayland-util.h", wrap_inc)
+        c_chunks.append(f"\n/* --- {name} --- */\n" + c_txt)
+
+    with open(os.path.join(proto_dir, "wayland_protocols.gen.h"), "w", encoding="utf-8", newline="\n") as f:
+        f.write("".join(h_chunks))
+    with open(os.path.join(proto_dir, "wayland_protocols.gen.c"), "w", encoding="utf-8", newline="\n") as f:
+        f.write("".join(c_chunks))
 
 
 def generate_all():
     single_scripts = [
         "version_info_builder.py",
         "version_hash_builder.py",
-        "disabled_class_builder.py",
         "encryption_key_builder.py",
         "make_certs_header.py",
-        "make_authors_header.py",
-        "make_donors_header.py",
         "make_license_header.py",
         "make_default_controller_mappings.py",
         "make_splash.py",
-        "make_app_icon.py",
         "make_default_theme_icons_action.py",
         "areatex_builder.py",
-        "searchtex_builder.py",
         "modules_enabled_builder.py",
         "register_module_types_builder.py",
         "register_platform_apis_builder.py",
         "doc_data_class_path_builder.py",
         "register_exporters_builder.py",
-        "make_doc_header.py",
-        "make_editor_icons_action.py",
+        "export_icon_builder.py",
         "make_icu_data.py",
-        "profiler_gen_builder.py",
     ]
     for s in single_scripts:
         if os.path.exists(os.path.join("scripts", s)):
             run_script(s)
 
-    for idx in range(14):
-        run_script("export_icon_builder.py", idx)
     for idx in range(4):
         run_script("make_translations.py", idx)
-    for idx in range(2):
-        run_script("make_fonts_header.py", idx)
+    run_script("make_fonts_header.py", 0)
     run_script("run.py", 0)
 
     run_script("build_raw_headers.py", "--all")

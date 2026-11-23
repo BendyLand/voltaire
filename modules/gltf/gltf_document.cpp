@@ -8,24 +8,22 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/file_access_wrappers.h"
-#include "core/io/json.h"
+#include "core/io/config_file.h"
 #include "core/io/resource_loader.h"
 #include "core/io/stream_peer.h"
 #include "core/version.h"
 #include "gltf_document.h"
 #include "modules/gltf/gltf_document.h"
-#include "modules/gltf/gltf_document.h"
-#include "scene/3d/skeleton_3d.h"
-#include "scene/3d/camera_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/animation/animation_mixer.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/image_texture.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/mesh.h"
 // --- Inlined from core/math/disjoint_set.h ---
 #include "core/templates/hash_map.h"
 #include "core/templates/vector.h"
@@ -147,7 +145,7 @@ void DisjointSet<T, H, C, AL>::get_members(Vector<T> &r_out_members, T p_represe
 #include "modules/register_module_types.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #endif
 
 #include "modules/modules_enabled.gen.h" // For csg, gridmap.
@@ -156,7 +154,7 @@ void DisjointSet<T, H, C, AL>::get_members(Vector<T> &r_out_members, T p_represe
 #include "modules/csg/csg_shape.h"
 #endif
 #ifdef MODULE_GRIDMAP_ENABLED
-#include "modules/gridmap/grid_map.h"
+#include "modules/csg/csg_shape.h"
 #endif
 
 #include <cstdio>
@@ -2612,7 +2610,7 @@ String SkinTool::_sanitize_bone_name(const String& p_name)
 }
 
 #ifdef TOOLS_ENABLED
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 void EditorSceneFormatImporterGLTF::get_extensions(List<String>* r_extensions) const
 {
@@ -2647,7 +2645,6 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 
 #include "modules/gltf/gltf_document.h"
 
-#include "modules/gltf/gltf_document.h"
 #include "scene/3d/visual_instance_3d.h"
 
 #include <cfloat>
@@ -2655,7 +2652,7 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 #ifndef PHYSICS_3D_DISABLED
 #include "core/math/geometry_3d.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/resources/3d/shape_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
@@ -3287,7 +3284,7 @@ GLTFMeshIndex _get_or_insert_mesh_in_state(
 
 #include "core/types.h"
 #include "modules/gltf/gltf_document.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 // ============================================================================
 // GLTFTexture
@@ -5038,7 +5035,6 @@ void GLTFObjectModelProperty::set_json_pointers(const Vector<PackedStringArray>&
 #include <ufbx.h>
 #include "core/io/resource.h"
 #include "modules/gltf/gltf_document.h"
-#include "modules/gltf/gltf_document.h"
 
 class FBXState final : public Resource
 {
@@ -5067,7 +5063,6 @@ public:
 
 	FBXState();
 };
-#include "modules/gltf/gltf_document.h"
 #include "modules/gltf/gltf_document.h"
 
 class FBXDocument final : public Resource
@@ -5176,19 +5171,16 @@ public:
 
 // --- End modules/fbx/fbx_document.h ---
 #include "modules/gltf/gltf_document.h"
-#include "modules/gltf/gltf_document.h"
-#include "modules/gltf/gltf_document.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/mesh.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #endif
 
 #include <ufbx.h>
@@ -5724,7 +5716,7 @@ void FBXState::set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_node
 }
 
 #ifdef TOOLS_ENABLED
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 void EditorSceneFormatImporterFBX::get_extensions(List<String>* r_extensions) const
 {
@@ -5764,3 +5756,2575 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 #endif // TOOLS_ENABLED
 }
 #endif // defined(MODULE_FBX_ENABLED)
+
+// === Merged from modules/csg/csg_shape.cpp ===
+#include "modules/modules_enabled.gen.h"
+
+#if defined(MODULE_CSG_ENABLED)
+#include "core/config/engine.h"
+#include "modules/register_module_types.h"
+#include "core/math/geometry_2d.h"
+#include "modules/csg/csg_shape.h"
+#include "scene/main/scene_tree.h"
+#include "servers/navigation_3d/navigation_server_3d.h"
+#include "scene/resources/navigation_mesh.h"
+#include "scene/resources/mesh.h"
+
+#ifndef PHYSICS_3D_DISABLED
+#include "servers/rendering/renderer.h" // Only used for debug collision shapes.
+#endif											// PHYSICS_3D_DISABLED
+
+#ifdef DEV_ENABLED
+#include "core/io/config_file.h"
+#endif // DEV_ENABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+#include "servers/navigation_3d/navigation_server_3d.h"
+#endif // NAVIGATION_3D_DISABLED
+
+#include <cfloat> // FLT_EPSILON
+#include <manifold/manifold.h>
+
+#ifndef NAVIGATION_3D_DISABLED
+RID CSGShape3D::_navmesh_source_geometry_parser;
+
+#endif // NAVIGATION_3D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+
+bool CSGShape3D::is_using_collision() const { return use_collision; }
+
+void CSGShape3D::set_collision_layer(uint32_t p_layer)
+{
+	collision_layer = p_layer;
+	if (root_collision_body.is_valid()) {
+		PhysicsServer3D::body_set_collision_layer(root_collision_body, p_layer);
+	}
+}
+
+uint32_t CSGShape3D::get_collision_layer() const { return collision_layer; }
+
+void CSGShape3D::set_collision_mask(uint32_t p_mask)
+{
+	collision_mask = p_mask;
+	if (root_collision_body.is_valid()) {
+		PhysicsServer3D::body_set_collision_mask(root_collision_body, p_mask);
+	}
+}
+
+uint32_t CSGShape3D::get_collision_mask() const { return collision_mask; }
+
+void CSGShape3D::set_collision_layer_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t layer = get_collision_layer();
+	if (p_value) {
+		layer |= 1 << (p_layer_number - 1);
+	}
+	else {
+		layer &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_layer(layer);
+}
+
+bool CSGShape3D::get_collision_layer_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_layer() & (1 << (p_layer_number - 1));
+}
+
+void CSGShape3D::set_collision_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = get_collision_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+bool CSGShape3D::get_collision_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_mask() & (1 << (p_layer_number - 1));
+}
+
+RID CSGShape3D::_get_root_collision_instance() const
+{
+	if (root_collision_body.is_valid()) {
+		return root_collision_body;
+	}
+	else if (parent_shape) {
+		return parent_shape->_get_root_collision_instance();
+	}
+
+	return RID();
+}
+
+void CSGShape3D::set_collision_priority(real_t p_priority)
+{
+	collision_priority = p_priority;
+	if (root_collision_body.is_valid()) {
+		PhysicsServer3D::body_set_collision_priority(
+			root_collision_body, p_priority);
+	}
+}
+
+real_t CSGShape3D::get_collision_priority() const { return collision_priority; }
+#endif // PHYSICS_3D_DISABLED
+
+bool CSGShape3D::is_autosmooth() const { return autosmooth; }
+
+void CSGShape3D::set_smoothing_angle(const float p_angle)
+{
+	smoothing_angle = p_angle;
+	_make_dirty();
+}
+
+float CSGShape3D::get_smoothing_angle() const { return smoothing_angle; }
+
+bool CSGShape3D::is_root_shape() const { return !parent_shape; }
+
+#ifndef DISABLE_DEPRECATED
+void CSGShape3D::set_snap(float p_snap)
+{
+	if (snap == p_snap) {
+		return;
+	}
+
+	snap = p_snap;
+	_make_dirty();
+}
+
+float CSGShape3D::get_snap() const { return snap; }
+#endif // DISABLE_DEPRECATED
+
+enum ManifoldProperty
+{
+	MANIFOLD_PROPERTY_POSITION_X = 0,
+	MANIFOLD_PROPERTY_POSITION_Y,
+	MANIFOLD_PROPERTY_POSITION_Z,
+	MANIFOLD_PROPERTY_INVERT,
+	MANIFOLD_PROPERTY_SMOOTH_GROUP,
+	MANIFOLD_PROPERTY_UV_X_0,
+	MANIFOLD_PROPERTY_UV_Y_0,
+	MANIFOLD_PROPERTY_MAX
+};
+
+static void _unpack_manifold(const manifold::Manifold& p_manifold,
+	const HashMap<int32_t, Ref<Material>>& p_mesh_materials, CSGBrush* r_mesh_merge)
+{
+	manifold::MeshGL64 mesh = p_manifold.GetMeshGL64();
+
+	constexpr int32_t order[3] = {0, 2, 1};
+
+	for (size_t run_i = 0; run_i < mesh.runIndex.size() - 1; run_i++) {
+		uint32_t original_id = -1;
+		if (run_i < mesh.runOriginalID.size()) {
+			original_id = mesh.runOriginalID[run_i];
+		}
+
+		Ref<Material> material;
+		if (p_mesh_materials.has(original_id)) {
+			material = p_mesh_materials[original_id];
+		}
+		// Find or reserve a material ID in the brush.
+		int32_t material_id = r_mesh_merge->materials.find(material);
+		if (material_id == -1) {
+			material_id = r_mesh_merge->materials.size();
+			r_mesh_merge->materials.push_back(material);
+		}
+
+		size_t begin = mesh.runIndex[run_i];
+		size_t end = mesh.runIndex[run_i + 1];
+		for (size_t vert_i = begin; vert_i < end; vert_i += 3) {
+			CSGBrush::Face face;
+			face.material = material_id;
+			int32_t first_property_index = mesh.triVerts[vert_i + order[0]];
+			face.smooth = mesh.vertProperties[first_property_index * mesh.numProp +
+											  MANIFOLD_PROPERTY_SMOOTH_GROUP] > 0.5f;
+			face.invert = mesh.vertProperties[first_property_index * mesh.numProp +
+											  MANIFOLD_PROPERTY_INVERT] > 0.5f;
+
+			for (int32_t tri_order_i = 0; tri_order_i < 3; tri_order_i++) {
+				int32_t property_i = mesh.triVerts[vert_i + order[tri_order_i]];
+				ERR_FAIL_COND_MSG(property_i * mesh.numProp >= mesh.vertProperties.size(),
+					"Invalid index into vertex properties");
+				face.vertices[tri_order_i] = Vector3(
+					mesh.vertProperties[property_i * mesh.numProp + MANIFOLD_PROPERTY_POSITION_X],
+					mesh.vertProperties[property_i * mesh.numProp + MANIFOLD_PROPERTY_POSITION_Y],
+					mesh.vertProperties[property_i * mesh.numProp + MANIFOLD_PROPERTY_POSITION_Z]);
+				face.uvs[tri_order_i] = Vector2(
+					mesh.vertProperties[property_i * mesh.numProp + MANIFOLD_PROPERTY_UV_X_0],
+					mesh.vertProperties[property_i * mesh.numProp + MANIFOLD_PROPERTY_UV_Y_0]);
+			}
+			r_mesh_merge->faces.push_back(face);
+		}
+	}
+
+	r_mesh_merge->_regen_face_aabbs();
+}
+
+#ifdef DEV_ENABLED
+static String _export_meshgl_as_json(const manifold::MeshGL64& p_mesh)
+{
+	Dictionary mesh_dict;
+	mesh_dict["numProp"] = p_mesh.numProp;
+
+	Array vert_properties;
+	for (const double& val : p_mesh.vertProperties) {
+		vert_properties.append(val);
+	}
+	mesh_dict["vertProperties"] = vert_properties;
+
+	Array tri_verts;
+	for (const uint64_t& val : p_mesh.triVerts) {
+		tri_verts.append(val);
+	}
+	mesh_dict["triVerts"] = tri_verts;
+
+	Array merge_from_vert;
+	for (const uint64_t& val : p_mesh.mergeFromVert) {
+		merge_from_vert.append(val);
+	}
+	mesh_dict["mergeFromVert"] = merge_from_vert;
+
+	Array merge_to_vert;
+	for (const uint64_t& val : p_mesh.mergeToVert) {
+		merge_to_vert.append(val);
+	}
+	mesh_dict["mergeToVert"] = merge_to_vert;
+
+	Array run_index;
+	for (const uint64_t& val : p_mesh.runIndex) {
+		run_index.append(val);
+	}
+	mesh_dict["runIndex"] = run_index;
+
+	Array run_original_id;
+	for (const uint32_t& val : p_mesh.runOriginalID) {
+		run_original_id.append(val);
+	}
+	mesh_dict["runOriginalID"] = run_original_id;
+
+	Array run_transform;
+	for (const double& val : p_mesh.runTransform) {
+		run_transform.append(val);
+	}
+	mesh_dict["runTransform"] = run_transform;
+
+	Array face_id;
+	for (const uint64_t& val : p_mesh.faceID) {
+		face_id.append(val);
+	}
+	mesh_dict["faceID"] = face_id;
+
+	Array halfedge_tangent;
+	for (const double& val : p_mesh.halfedgeTangent) {
+		halfedge_tangent.append(val);
+	}
+	mesh_dict["halfedgeTangent"] = halfedge_tangent;
+
+	mesh_dict["tolerance"] = p_mesh.tolerance;
+
+	String json_string = JSON::stringify(mesh_dict);
+	return json_string;
+}
+#endif // DEV_ENABLED
+
+static void _pack_manifold(const CSGBrush* const p_mesh_merge, manifold::Manifold& r_manifold,
+	HashMap<int32_t, Ref<Material>>& p_mesh_materials, CSGShape3D* p_csg_shape)
+{
+	ERR_FAIL_NULL_MSG(p_mesh_merge, "p_mesh_merge is null");
+	ERR_FAIL_NULL_MSG(p_csg_shape, "p_shape is null");
+	HashMap<uint32_t, Vector<CSGBrush::Face>> faces_by_material;
+	for (int face_i = 0; face_i < p_mesh_merge->faces.size(); face_i++) {
+		const CSGBrush::Face& face = p_mesh_merge->faces[face_i];
+		faces_by_material[face.material].push_back(face);
+	}
+
+	manifold::MeshGL64 mesh;
+	mesh.numProp = MANIFOLD_PROPERTY_MAX;
+	mesh.runOriginalID.reserve(faces_by_material.size());
+	mesh.runIndex.reserve(faces_by_material.size() + 1);
+	mesh.vertProperties.reserve(p_mesh_merge->faces.size() * 3 * MANIFOLD_PROPERTY_MAX);
+
+	// Make a run of triangles for each material.
+	for (const KeyValue<uint32_t, Vector<CSGBrush::Face>>& E : faces_by_material) {
+		const uint32_t material_id = E.key;
+		const Vector<CSGBrush::Face>& faces = E.value;
+		mesh.runIndex.push_back(mesh.triVerts.size());
+
+		// Associate the material with an ID.
+		uint32_t reserved_id = r_manifold.ReserveIDs(1);
+		mesh.runOriginalID.push_back(reserved_id);
+		Ref<Material> material;
+		if (material_id < p_mesh_merge->materials.size()) {
+			material = p_mesh_merge->materials[material_id];
+		}
+
+		p_mesh_materials.insert(reserved_id, material);
+		for (const CSGBrush::Face& face : faces) {
+			for (int32_t tri_order_i = 0; tri_order_i < 3; tri_order_i++) {
+				constexpr int32_t order[3] = {0, 2, 1};
+				int i = order[tri_order_i];
+
+				mesh.triVerts.push_back(mesh.vertProperties.size() / MANIFOLD_PROPERTY_MAX);
+
+				size_t begin = mesh.vertProperties.size();
+				mesh.vertProperties.resize(mesh.vertProperties.size() + MANIFOLD_PROPERTY_MAX);
+				// Add the vertex properties.
+				// Use CSGBrush constants rather than push_back for clarity.
+				double* vert = &mesh.vertProperties[begin];
+				vert[MANIFOLD_PROPERTY_POSITION_X] = face.vertices[i].x;
+				vert[MANIFOLD_PROPERTY_POSITION_Y] = face.vertices[i].y;
+				vert[MANIFOLD_PROPERTY_POSITION_Z] = face.vertices[i].z;
+				vert[MANIFOLD_PROPERTY_UV_X_0] = face.uvs[i].x;
+				vert[MANIFOLD_PROPERTY_UV_Y_0] = face.uvs[i].y;
+				vert[MANIFOLD_PROPERTY_SMOOTH_GROUP] = face.smooth ? 1.0f : 0.0f;
+				vert[MANIFOLD_PROPERTY_INVERT] = face.invert ? 1.0f : 0.0f;
+			}
+		}
+	}
+	// runIndex needs an explicit end value.
+	mesh.runIndex.push_back(mesh.triVerts.size());
+	mesh.tolerance = 2 * FLT_EPSILON;
+	ERR_FAIL_COND_MSG(
+		mesh.vertProperties.size() % mesh.numProp != 0, "Invalid vertex properties size.");
+	mesh.Merge();
+#ifdef DEV_ENABLED
+	print_verbose(_export_meshgl_as_json(mesh));
+#endif // DEV_ENABLED
+	r_manifold = manifold::Manifold(mesh);
+}
+
+struct ManifoldOperation
+{
+	manifold::Manifold manifold;
+	manifold::OpType operation;
+
+	static manifold::OpType convert_csg_op(CSGShape3D::Operation op)
+	{
+		switch (op) {
+		case CSGShape3D::OPERATION_SUBTRACTION:
+			return manifold::OpType::Subtract;
+		case CSGShape3D::OPERATION_INTERSECTION:
+			return manifold::OpType::Intersect;
+		default:
+			return manifold::OpType::Add;
+		}
+	}
+
+	ManifoldOperation() : operation(manifold::OpType::Add) {}
+
+	ManifoldOperation(const manifold::Manifold& m, manifold::OpType op) : manifold(m), operation(op)
+	{
+	}
+};
+
+static void _generate_tangents_unindexed(float* p_tangents, size_t p_count,
+	const Vector3* p_positions, const Vector3* p_normals, const Vector2* p_uvs)
+{
+	ERR_FAIL_COND_MSG(
+		!SurfaceTool::generate_tangents_func, "Meshoptimizer library is not initialized.");
+	ERR_FAIL_COND(p_count % 3 != 0);
+
+	if (p_count == 0) {
+		return;
+	}
+
+	struct TangentVertex
+	{
+		float position[3];
+		float normal[3];
+		float uv[2];
+	};
+
+	// We can't operate on input arrays directly because in double-precision builds, vectors use
+	// double components So we convert the inputs to single precision floats before generating
+	// tangents.
+	LocalVector<TangentVertex> tangent_vertices;
+	tangent_vertices.resize(p_count);
+
+	for (size_t i = 0; i < p_count; i++) {
+		TangentVertex& tangent_vertex = tangent_vertices[i];
+
+		tangent_vertex.position[0] = p_positions[i].x;
+		tangent_vertex.position[1] = p_positions[i].y;
+		tangent_vertex.position[2] = p_positions[i].z;
+		tangent_vertex.normal[0] = p_normals[i].x;
+		tangent_vertex.normal[1] = p_normals[i].y;
+		tangent_vertex.normal[2] = p_normals[i].z;
+		tangent_vertex.uv[0] = p_uvs[i].x;
+		tangent_vertex.uv[1] = p_uvs[i].y;
+	}
+
+	SurfaceTool::generate_tangents_func(p_tangents, nullptr, p_count,
+		tangent_vertices.ptr()->position, p_count, sizeof(TangentVertex),
+		tangent_vertices.ptr()->normal, sizeof(TangentVertex), tangent_vertices.ptr()->uv,
+		sizeof(TangentVertex), 0);
+}
+
+void CSGShape3D::_build_surfaces_smoothed(CSGBrush* p_brush,
+	Vector<CSGShape3D::ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count)
+{
+	Vector<Vector3> smooth_faces;
+	LocalVector<Vector3> smooth_vertex;
+	smooth_faces.resize(p_brush->faces.size());
+	smooth_vertex.resize(p_brush->faces.size() * 3);
+
+	Vector3* smooth_faces_ptrw = smooth_faces.ptrw();
+	int* face_count_ptrw = r_face_count.ptrw();
+
+	for (int i = 0; i < p_brush->faces.size(); i++) {
+		int mat = p_brush->faces[i].material;
+		ERR_CONTINUE(mat < -1 || mat >= r_face_count.size());
+		int idx = mat == -1 ? r_face_count.size() - 1 : mat;
+
+		Plane p(p_brush->faces[i].vertices[0], p_brush->faces[i].vertices[1],
+			p_brush->faces[i].vertices[2]);
+
+		smooth_faces_ptrw[i] = p.normal;
+		// Not sure if resize populates the LocalVector.
+		smooth_vertex[i * 3 + 0] = Vector3(p.normal);
+		smooth_vertex[i * 3 + 1] = Vector3(p.normal);
+		smooth_vertex[i * 3 + 2] = Vector3(p.normal);
+		// We could use a AHashMap Vector3, int to store the number of connections of each vertex
+		// position and end the loop earlier. But I'm not sure if the performance gains outweigh the
+		// cost.
+		face_count_ptrw[idx]++;
+	}
+
+	const Vector3* smooth_faces_ptr = smooth_faces.ptr();
+	const int smooth_faces_size = smooth_faces.size();
+
+	// We could add a `use_groups` property later to only apply autosmooth on smooth faces or
+	// respect smoothing groups in some way.
+	if (smoothing_angle > 0.1) {
+		float smooth_angle_rad = Math::cos(Math::deg_to_rad(smoothing_angle));
+		for (int i = 0; i < smooth_faces_size; i++) {
+			for (int k = 0; k < 3; k++) {
+				int curr_vert = i * 3 + k;
+				// Skip the other vertices of the face as they will never occupy the same position.
+				Vector3 vert_a = p_brush->faces[i].vertices[k];
+				for (int j = i + 1; j < smooth_faces_size; j++) {
+					// Compare the angles of faces instead of vertices.
+					if (smooth_faces_ptr[i].dot(smooth_faces_ptr[j]) > smooth_angle_rad) {
+						for (int h = 0; h < 3; h++) {
+							Vector3 vert_b = p_brush->faces[j].vertices[h];
+							if (vert_a == vert_b) {
+								int curr_j = j * 3 + h;
+								smooth_vertex[curr_vert] += smooth_faces_ptr[j];
+								smooth_vertex[curr_j] += smooth_faces_ptr[i];
+								// Skip the other 2 vertices as only one vertex of each face can
+								// connect with one vertex of other face.
+								break;
+							}
+						}
+					}
+				}
+				smooth_vertex[curr_vert].normalize();
+			}
+		}
+	}
+
+	// create arrays
+	for (int i = 0; i < r_surfaces.size(); i++) {
+		r_surfaces.write[i].vertices.resize(r_face_count[i] * 3);
+		r_surfaces.write[i].normals.resize(r_face_count[i] * 3);
+		r_surfaces.write[i].uvs.resize(r_face_count[i] * 3);
+		if (calculate_tangents) {
+			r_surfaces.write[i].tans.resize(r_face_count[i] * 3 * 4);
+		}
+		r_surfaces.write[i].last_added = 0;
+
+		if (i != r_surfaces.size() - 1) {
+			r_surfaces.write[i].material = p_brush->materials[i];
+		}
+
+		r_surfaces.write[i].verticesw = r_surfaces.write[i].vertices.ptrw();
+		r_surfaces.write[i].normalsw = r_surfaces.write[i].normals.ptrw();
+		r_surfaces.write[i].uvsw = r_surfaces.write[i].uvs.ptrw();
+		if (calculate_tangents) {
+			r_surfaces.write[i].tansw = r_surfaces.write[i].tans.ptrw();
+		}
+	}
+
+	// fill arrays
+	{
+		for (int i = 0; i < p_brush->faces.size(); i++) {
+			int order[3] = {0, 1, 2};
+
+			if (p_brush->faces[i].invert) {
+				SWAP(order[1], order[2]);
+			}
+
+			int mat = p_brush->faces[i].material;
+			ERR_CONTINUE(mat < -1 || mat >= r_face_count.size());
+			int idx = mat == -1 ? r_face_count.size() - 1 : mat;
+
+			int last = r_surfaces[idx].last_added;
+
+			int face_pos_i = i * 3;
+
+			for (int j = 0; j < 3; j++) {
+				Vector3 v = p_brush->faces[i].vertices[j];
+
+				Vector3 normal = smooth_vertex[face_pos_i + j];
+
+				if (p_brush->faces[i].invert) {
+					normal = -normal;
+				}
+
+				int k = last + order[j];
+				r_surfaces[idx].verticesw[k] = v;
+				r_surfaces[idx].uvsw[k] = p_brush->faces[i].uvs[j];
+				r_surfaces[idx].normalsw[k] = normal;
+
+				if (calculate_tangents) {
+					// zero out our tangents for now
+					k *= 4;
+					r_surfaces[idx].tansw[k++] = 0.0;
+					r_surfaces[idx].tansw[k++] = 0.0;
+					r_surfaces[idx].tansw[k++] = 0.0;
+					r_surfaces[idx].tansw[k++] = 0.0;
+				}
+			}
+
+			r_surfaces.write[idx].last_added += 3;
+		}
+	}
+}
+
+Ref<ArrayMesh> CSGShape3D::bake_static_mesh()
+{
+	Ref<ArrayMesh> baked_mesh;
+	if (is_root_shape() && root_mesh.is_valid()) {
+		baked_mesh = root_mesh;
+	}
+	return baked_mesh;
+}
+
+#ifndef PHYSICS_3D_DISABLED
+Vector<Vector3> CSGShape3D::_get_brush_collision_faces()
+{
+	Vector<Vector3> collision_faces;
+	CSGBrush* n = _get_brush();
+	ERR_FAIL_NULL_V_MSG(n, collision_faces, "Cannot get CSGBrush.");
+	collision_faces.resize(n->faces.size() * 3);
+	Vector3* collision_faces_ptrw = collision_faces.ptrw();
+
+	for (int i = 0; i < n->faces.size(); i++) {
+		int order[3] = {0, 1, 2};
+
+		if (n->faces[i].invert) {
+			SWAP(order[1], order[2]);
+		}
+
+		collision_faces_ptrw[i * 3 + 0] = n->faces[i].vertices[order[0]];
+		collision_faces_ptrw[i * 3 + 1] = n->faces[i].vertices[order[1]];
+		collision_faces_ptrw[i * 3 + 2] = n->faces[i].vertices[order[2]];
+	}
+
+	return collision_faces;
+}
+
+void CSGShape3D::_update_collision_faces()
+{
+	if (use_collision && is_root_shape() && root_collision_shape.is_valid()) {
+		root_collision_shape->set_faces(_get_brush_collision_faces());
+
+		if (_is_debug_collision_shape_visible()) {
+			_update_debug_collision_shape();
+		}
+	}
+}
+
+Ref<Shape3D> CSGShape3D::bake_collision_shape()
+{
+	Ref<Shape3D> baked_collision_shape;
+	if (is_root_shape() && root_collision_shape.is_valid()) {
+		baked_collision_shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
+		baked_collision_shape->set_faces(root_collision_shape->get_faces());
+	}
+	else if (is_root_shape()) {
+		baked_collision_shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
+		baked_collision_shape->set_faces(_get_brush_collision_faces());
+	}
+	return baked_collision_shape;
+}
+
+bool CSGShape3D::_is_debug_collision_shape_visible()
+{
+	return !Engine::is_editor_hint() && is_inside_tree() &&
+		   SceneTree::is_debugging_collisions_hint();
+}
+
+void CSGShape3D::_update_debug_collision_shape()
+{
+	if (!use_collision || !is_root_shape() || root_collision_shape.is_null() ||
+		!_is_debug_collision_shape_visible()) {
+		return;
+	}
+
+	ERR_FAIL_NULL(Renderer::data);
+
+	if (root_collision_debug_instance.is_null()) {
+		root_collision_debug_instance = Renderer::instance_create();
+	}
+
+	Ref<Mesh> debug_mesh = root_collision_shape->get_debug_mesh();
+	Renderer::instance_set_scenario(
+		root_collision_debug_instance, get_world_3d()->get_scenario());
+	Renderer::instance_set_base(root_collision_debug_instance, debug_mesh->get_rid());
+	Renderer::instance_set_transform(
+		root_collision_debug_instance, get_global_transform());
+}
+
+void CSGShape3D::_clear_debug_collision_shape()
+{
+	if (root_collision_debug_instance.is_valid()) {
+		Renderer::free_rid(root_collision_debug_instance);
+		root_collision_debug_instance = RID();
+	}
+}
+
+void CSGShape3D::_on_transform_changed()
+{
+	if (root_collision_debug_instance.is_valid() &&
+		!debug_shape_old_transform.is_equal_approx(get_global_transform())) {
+		debug_shape_old_transform = get_global_transform();
+		Renderer::instance_set_transform(
+			root_collision_debug_instance, debug_shape_old_transform);
+	}
+}
+#endif // PHYSICS_3D_DISABLED
+
+AABB CSGShape3D::get_aabb() const { return node_aabb; }
+
+Vector<Vector3> CSGShape3D::get_brush_faces()
+{
+	ERR_FAIL_COND_V(!is_inside_tree(), Vector<Vector3>());
+	CSGBrush* b = _get_brush();
+	if (!b) {
+		return Vector<Vector3>();
+	}
+
+	Vector<Vector3> faces;
+	int fc = b->faces.size();
+	faces.resize(fc * 3);
+	{
+		Vector3* w = faces.ptrw();
+		for (int i = 0; i < fc; i++) {
+			w[i * 3 + 0] = b->faces[i].vertices[0];
+			w[i * 3 + 1] = b->faces[i].vertices[1];
+			w[i * 3 + 2] = b->faces[i].vertices[2];
+		}
+	}
+
+	return faces;
+}
+
+void CSGShape3D::set_shape_type(ShapeType p_type)
+{
+	if (shape_type == p_type) {
+		return;
+	}
+	shape_type = p_type;
+	_make_dirty();
+}
+
+void CSGShape3D::set_operation(Operation p_operation)
+{
+	if (operation == p_operation) {
+		return;
+	}
+	operation = p_operation;
+	_make_dirty();
+}
+
+CSGShape3D::Operation CSGShape3D::get_operation() const { return operation; }
+
+void CSGShape3D::set_calculate_tangents(bool p_calculate_tangents)
+{
+	calculate_tangents = p_calculate_tangents;
+	_make_dirty();
+}
+
+bool CSGShape3D::is_calculating_tangents() const { return calculate_tangents; }
+
+PackedStringArray CSGShape3D::get_configuration_warnings() const
+{
+	PackedStringArray warnings = Node::get_configuration_warnings();
+	const CSGShape3D* current_shape = this;
+	while (current_shape) {
+		if (!current_shape->brush || current_shape->brush->faces.is_empty()) {
+			warnings.push_back(RTR(
+				"The CSGShape3D has an empty shape.\nCSGShape3D empty shapes typically occur "
+				"because the mesh is not manifold.\nA manifold mesh forms a solid object without "
+				"gaps, holes, or loose edges.\nEach edge must be a member of exactly two faces."));
+			break;
+		}
+		current_shape = current_shape->parent_shape;
+	}
+	return warnings;
+}
+
+Ref<TriangleMesh> CSGShape3D::generate_triangle_mesh() const
+{
+	if (root_mesh.is_valid()) {
+		return root_mesh->generate_triangle_mesh();
+	}
+	return Ref<TriangleMesh>();
+}
+
+void CSGShape3D::_notification(int p_what)
+{
+	render_instance.notification(this, p_what);
+}
+
+void CSGShape3D::fti_update_servers_xform()
+{
+	render_instance.fti_update_servers_xform(this);
+}
+
+CSGShape3D::CSGShape3D(ShapeType p_type) : shape_type(p_type)
+{
+	set_notify_local_transform(true);
+	if (shape_type == SHAPE_POLYGON) {
+		smooth_faces = false;
+	}
+	polygon.push_back(Vector2(0, 0));
+	polygon.push_back(Vector2(0, 1));
+	polygon.push_back(Vector2(1, 1));
+	polygon.push_back(Vector2(1, 0));
+}
+
+CSGShape3D::~CSGShape3D()
+{
+	if (brush) {
+		memdelete(brush);
+		brush = nullptr;
+	}
+}
+
+CSGBrush* CSGShape3D::_build_brush()
+{
+	switch (shape_type) {
+	case SHAPE_COMBINER:
+		return memnew(CSGBrush);
+	case SHAPE_BOX:
+		return _build_box_brush();
+	case SHAPE_SPHERE:
+		return _build_sphere_brush();
+	case SHAPE_CYLINDER:
+		return _build_cylinder_brush();
+	case SHAPE_TORUS:
+		return _build_torus_brush();
+	case SHAPE_MESH:
+		return _build_mesh_brush();
+	case SHAPE_POLYGON:
+		return _build_polygon_brush();
+	}
+	return memnew(CSGBrush);
+}
+
+CSGBrush* CSGShape3D::_create_brush_from_arrays(const Vector<Vector3>& p_vertices,
+	const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
+	const Vector<Ref<Material>>& p_materials)
+{
+	CSGBrush* new_brush = memnew(CSGBrush);
+
+	Vector<bool> invert;
+	invert.resize(p_vertices.size() / 3);
+	{
+		int ic = invert.size();
+		bool* w = invert.ptrw();
+		for (int i = 0; i < ic; i++) {
+			w[i] = flip_faces;
+		}
+	}
+	new_brush->build_from_faces(p_vertices, p_uv, p_smooth, p_materials, invert);
+
+	return new_brush;
+}
+
+void CSGShape3D::set_flip_faces(bool p_invert)
+{
+	if (flip_faces == p_invert) {
+		return;
+	}
+	flip_faces = p_invert;
+	_make_dirty();
+}
+
+bool CSGShape3D::get_flip_faces() const { return flip_faces; }
+
+void CSGShape3D::set_smooth_faces(bool p_smooth_faces)
+{
+	if (smooth_faces == p_smooth_faces) {
+		return;
+	}
+	smooth_faces = p_smooth_faces;
+	_make_dirty();
+}
+
+bool CSGShape3D::get_smooth_faces() const { return smooth_faces; }
+
+void CSGShape3D::set_material(const Ref<Material>& p_material)
+{
+	if (material == p_material) {
+		return;
+	}
+	material = p_material;
+	_make_dirty();
+}
+
+Ref<Material> CSGShape3D::get_material() const { return material; }
+
+void CSGShape3D::set_mesh(const Ref<Mesh>& p_mesh)
+{
+	if (mesh == p_mesh) {
+		return;
+	}
+	mesh = p_mesh;
+	_make_dirty();
+}
+
+CSGBrush* CSGShape3D::_build_mesh_brush()
+{
+	if (mesh.is_null()) {
+		return memnew(CSGBrush);
+	}
+	Vector<Face3> faces = mesh->get_faces();
+	int face_count = faces.size();
+	if (face_count == 0) {
+		return memnew(CSGBrush);
+	}
+	Vector<Vector3> vertices;
+	vertices.resize(face_count * 3);
+	for (int i = 0; i < face_count; i++) {
+		vertices.write[i * 3 + 0] = faces[i].vertex[0];
+		vertices.write[i * 3 + 1] = faces[i].vertex[1];
+		vertices.write[i * 3 + 2] = faces[i].vertex[2];
+	}
+	Vector<Vector2> uvs;
+	uvs.resize(vertices.size());
+	Vector<bool> smooth;
+	smooth.resize(face_count);
+	Vector<Ref<Material>> materials;
+	materials.resize(face_count);
+	for (int i = 0; i < face_count; i++) {
+		smooth.write[i] = false;
+		materials.write[i] = material;
+	}
+	return _create_brush_from_arrays(vertices, uvs, smooth, materials);
+}
+
+CSGBrush* CSGShape3D::_build_sphere_brush()
+{
+	// set our bounding box
+
+	CSGBrush* new_brush = memnew(CSGBrush);
+
+	int face_count = rings * radial_segments * 2 - radial_segments * 2;
+
+	bool invert_val = get_flip_faces();
+	Ref<Material> base_material = get_material();
+
+	Vector<Vector3> faces;
+	Vector<Vector2> uvs;
+	Vector<bool> smooth;
+	Vector<Ref<Material>> materials;
+	Vector<bool> invert;
+
+	faces.resize(face_count * 3);
+	uvs.resize(face_count * 3);
+
+	smooth.resize(face_count);
+	materials.resize(face_count);
+	invert.resize(face_count);
+
+	{
+		Vector3* facesw = faces.ptrw();
+		Vector2* uvsw = uvs.ptrw();
+		bool* smoothw = smooth.ptrw();
+		Ref<Material>* materialsw = materials.ptrw();
+		bool* invertw = invert.ptrw();
+
+		// We want to follow an order that's convenient for UVs.
+		// For latitude step we start at the top and move down like in an image.
+		const double latitude_step = -Math::PI / rings;
+		const double longitude_step = Math::TAU / radial_segments;
+		int face = 0;
+		for (int i = 0; i < rings; i++) {
+			double cos0 = 0;
+			double sin0 = 1;
+			if (i > 0) {
+				double latitude0 = latitude_step * i + Math::TAU / 4;
+				cos0 = Math::cos(latitude0);
+				sin0 = Math::sin(latitude0);
+			}
+			double v0 = double(i) / rings;
+
+			double cos1 = 0;
+			double sin1 = -1;
+			if (i < rings - 1) {
+				double latitude1 = latitude_step * (i + 1) + Math::TAU / 4;
+				cos1 = Math::cos(latitude1);
+				sin1 = Math::sin(latitude1);
+			}
+			double v1 = double(i + 1) / rings;
+
+			for (int j = 0; j < radial_segments; j++) {
+				double longitude0 = longitude_step * j;
+				// We give sin to X and cos to Z on purpose.
+				// This allows UVs to be CCW on +X so it maps to images well.
+				double x0 = Math::sin(longitude0);
+				double z0 = Math::cos(longitude0);
+				double u0 = double(j) / radial_segments;
+
+				double longitude1 = longitude_step * (j + 1);
+				if (j == radial_segments - 1) {
+					longitude1 = 0;
+				}
+
+				double x1 = Math::sin(longitude1);
+				double z1 = Math::cos(longitude1);
+				double u1 = double(j + 1) / radial_segments;
+
+				Vector3 v[4] = {
+					Vector3(x0 * cos0, sin0, z0 * cos0) * radius,
+					Vector3(x1 * cos0, sin0, z1 * cos0) * radius,
+					Vector3(x1 * cos1, sin1, z1 * cos1) * radius,
+					Vector3(x0 * cos1, sin1, z0 * cos1) * radius,
+				};
+
+				Vector2 u[4] = {
+					Vector2(u0, v0),
+					Vector2(u1, v0),
+					Vector2(u1, v1),
+					Vector2(u0, v1),
+				};
+
+				// Draw the first face, but skip this at the north pole (i == 0).
+				if (i > 0) {
+					facesw[face * 3 + 0] = v[0];
+					facesw[face * 3 + 1] = v[1];
+					facesw[face * 3 + 2] = v[2];
+
+					uvsw[face * 3 + 0] = u[0];
+					uvsw[face * 3 + 1] = u[1];
+					uvsw[face * 3 + 2] = u[2];
+
+					smoothw[face] = smooth_faces;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+
+					face++;
+				}
+
+				// Draw the second face, but skip this at the south pole (i == rings - 1).
+				if (i < rings - 1) {
+					facesw[face * 3 + 0] = v[2];
+					facesw[face * 3 + 1] = v[3];
+					facesw[face * 3 + 2] = v[0];
+
+					uvsw[face * 3 + 0] = u[2];
+					uvsw[face * 3 + 1] = u[3];
+					uvsw[face * 3 + 2] = u[0];
+
+					smoothw[face] = smooth_faces;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+
+					face++;
+				}
+			}
+		}
+
+		if (face != face_count) {
+			ERR_PRINT("Face mismatch bug! fix code");
+		}
+	}
+
+	new_brush->build_from_faces(faces, uvs, smooth, materials, invert);
+
+	return new_brush;
+}
+
+CSGBrush* CSGShape3D::_build_box_brush()
+{
+	// set our bounding box
+
+	CSGBrush* new_brush = memnew(CSGBrush);
+
+	int face_count = 12; // it's a cube..
+
+	bool invert_val = get_flip_faces();
+	Ref<Material> base_material = get_material();
+
+	Vector<Vector3> faces;
+	Vector<Vector2> uvs;
+	Vector<bool> smooth;
+	Vector<Ref<Material>> materials;
+	Vector<bool> invert;
+
+	faces.resize(face_count * 3);
+	uvs.resize(face_count * 3);
+
+	smooth.resize(face_count);
+	materials.resize(face_count);
+	invert.resize(face_count);
+
+	{
+		Vector3* facesw = faces.ptrw();
+		Vector2* uvsw = uvs.ptrw();
+		bool* smoothw = smooth.ptrw();
+		Ref<Material>* materialsw = materials.ptrw();
+		bool* invertw = invert.ptrw();
+
+		int face = 0;
+
+		Vector3 vertex_mul = size / 2;
+
+		{
+			for (int i = 0; i < 6; i++) {
+				Vector3 face_points[4];
+				float uv_points[8] = {0, 0, 0, 1, 1, 1, 1, 0};
+
+				for (int j = 0; j < 4; j++) {
+					float v[3];
+					v[0] = 1.0;
+					v[1] = 1 - 2 * ((j >> 1) & 1);
+					v[2] = v[1] * (1 - 2 * (j & 1));
+
+					for (int k = 0; k < 3; k++) {
+						if (i < 3) {
+							face_points[j][(i + k) % 3] = v[k];
+						}
+						else {
+							face_points[3 - j][(i + k) % 3] = -v[k];
+						}
+					}
+				}
+
+				Vector2 u[4];
+				for (int j = 0; j < 4; j++) {
+					u[j] = Vector2(uv_points[j * 2 + 0], uv_points[j * 2 + 1]);
+				}
+
+				// face 1
+				facesw[face * 3 + 0] = face_points[0] * vertex_mul;
+				facesw[face * 3 + 1] = face_points[1] * vertex_mul;
+				facesw[face * 3 + 2] = face_points[2] * vertex_mul;
+
+				uvsw[face * 3 + 0] = u[0];
+				uvsw[face * 3 + 1] = u[1];
+				uvsw[face * 3 + 2] = u[2];
+
+				smoothw[face] = false;
+				invertw[face] = invert_val;
+				materialsw[face] = base_material;
+
+				face++;
+				// face 2
+				facesw[face * 3 + 0] = face_points[2] * vertex_mul;
+				facesw[face * 3 + 1] = face_points[3] * vertex_mul;
+				facesw[face * 3 + 2] = face_points[0] * vertex_mul;
+
+				uvsw[face * 3 + 0] = u[2];
+				uvsw[face * 3 + 1] = u[3];
+				uvsw[face * 3 + 2] = u[0];
+
+				smoothw[face] = false;
+				invertw[face] = invert_val;
+				materialsw[face] = base_material;
+
+				face++;
+			}
+		}
+
+		if (face != face_count) {
+			ERR_PRINT("Face mismatch bug! fix code");
+		}
+	}
+
+	new_brush->build_from_faces(faces, uvs, smooth, materials, invert);
+
+	return new_brush;
+}
+
+CSGBrush* CSGShape3D::_build_cylinder_brush()
+{
+	// set our bounding box
+
+	CSGBrush* new_brush = memnew(CSGBrush);
+
+	int face_count = sides * (cone ? 1 : 2) + sides + (cone ? 0 : sides);
+
+	bool invert_val = get_flip_faces();
+	Ref<Material> base_material = get_material();
+
+	Vector<Vector3> faces;
+	Vector<Vector2> uvs;
+	Vector<bool> smooth;
+	Vector<Ref<Material>> materials;
+	Vector<bool> invert;
+
+	faces.resize(face_count * 3);
+	uvs.resize(face_count * 3);
+
+	smooth.resize(face_count);
+	materials.resize(face_count);
+	invert.resize(face_count);
+
+	{
+		Vector3* facesw = faces.ptrw();
+		Vector2* uvsw = uvs.ptrw();
+		bool* smoothw = smooth.ptrw();
+		Ref<Material>* materialsw = materials.ptrw();
+		bool* invertw = invert.ptrw();
+
+		int face = 0;
+
+		Vector3 vertex_mul(radius, height * 0.5, radius);
+
+		{
+			for (int i = 0; i < sides; i++) {
+				float inc = float(i) / sides;
+				float inc_n = float((i + 1)) / sides;
+				if (i == sides - 1) {
+					inc_n = 0;
+				}
+
+				float ang = inc * Math::TAU;
+				float ang_n = inc_n * Math::TAU;
+
+				Vector3 face_base(Math::cos(ang), 0, Math::sin(ang));
+				Vector3 face_base_n(Math::cos(ang_n), 0, Math::sin(ang_n));
+
+				Vector3 face_points[4] = {
+					face_base + Vector3(0, -1, 0),
+					face_base_n + Vector3(0, -1, 0),
+					face_base_n * (cone ? 0.0 : 1.0) + Vector3(0, 1, 0),
+					face_base * (cone ? 0.0 : 1.0) + Vector3(0, 1, 0),
+				};
+
+				Vector2 u[4] = {
+					Vector2(inc, 0),
+					Vector2(inc_n, 0),
+					Vector2(inc_n, 1),
+					Vector2(inc, 1),
+				};
+
+				// side face 1
+				facesw[face * 3 + 0] = face_points[0] * vertex_mul;
+				facesw[face * 3 + 1] = face_points[1] * vertex_mul;
+				facesw[face * 3 + 2] = face_points[2] * vertex_mul;
+
+				uvsw[face * 3 + 0] = u[0];
+				uvsw[face * 3 + 1] = u[1];
+				uvsw[face * 3 + 2] = u[2];
+
+				smoothw[face] = smooth_faces;
+				invertw[face] = invert_val;
+				materialsw[face] = base_material;
+
+				face++;
+
+				if (!cone) {
+					// side face 2
+					facesw[face * 3 + 0] = face_points[2] * vertex_mul;
+					facesw[face * 3 + 1] = face_points[3] * vertex_mul;
+					facesw[face * 3 + 2] = face_points[0] * vertex_mul;
+
+					uvsw[face * 3 + 0] = u[2];
+					uvsw[face * 3 + 1] = u[3];
+					uvsw[face * 3 + 2] = u[0];
+
+					smoothw[face] = smooth_faces;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+					face++;
+				}
+
+				// bottom face 1
+				facesw[face * 3 + 0] = face_points[1] * vertex_mul;
+				facesw[face * 3 + 1] = face_points[0] * vertex_mul;
+				facesw[face * 3 + 2] = Vector3(0, -1, 0) * vertex_mul;
+
+				uvsw[face * 3 + 0] =
+					Vector2(face_points[1].x, face_points[1].y) * 0.5 + Vector2(0.5, 0.5);
+				uvsw[face * 3 + 1] =
+					Vector2(face_points[0].x, face_points[0].y) * 0.5 + Vector2(0.5, 0.5);
+				uvsw[face * 3 + 2] = Vector2(0.5, 0.5);
+
+				smoothw[face] = false;
+				invertw[face] = invert_val;
+				materialsw[face] = base_material;
+				face++;
+
+				if (!cone) {
+					// top face 1
+					facesw[face * 3 + 0] = face_points[3] * vertex_mul;
+					facesw[face * 3 + 1] = face_points[2] * vertex_mul;
+					facesw[face * 3 + 2] = Vector3(0, 1, 0) * vertex_mul;
+
+					uvsw[face * 3 + 0] =
+						Vector2(face_points[1].x, face_points[1].y) * 0.5 + Vector2(0.5, 0.5);
+					uvsw[face * 3 + 1] =
+						Vector2(face_points[0].x, face_points[0].y) * 0.5 + Vector2(0.5, 0.5);
+					uvsw[face * 3 + 2] = Vector2(0.5, 0.5);
+
+					smoothw[face] = false;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+					face++;
+				}
+			}
+		}
+
+		if (face != face_count) {
+			ERR_PRINT("Face mismatch bug! fix code");
+		}
+	}
+
+	new_brush->build_from_faces(faces, uvs, smooth, materials, invert);
+
+	return new_brush;
+}
+
+CSGBrush* CSGShape3D::_build_torus_brush()
+{
+	// set our bounding box
+	float min_radius = inner_radius;
+	float max_radius = outer_radius;
+
+	if (min_radius == max_radius) {
+		return memnew(CSGBrush); // sorry, can't
+	}
+
+	if (min_radius > max_radius) {
+		SWAP(min_radius, max_radius);
+	}
+
+	float radius = (max_radius - min_radius) * 0.5;
+
+	CSGBrush* new_brush = memnew(CSGBrush);
+
+	int face_count = ring_sides * sides * 2;
+
+	bool invert_val = get_flip_faces();
+	Ref<Material> base_material = get_material();
+
+	Vector<Vector3> faces;
+	Vector<Vector2> uvs;
+	Vector<bool> smooth;
+	Vector<Ref<Material>> materials;
+	Vector<bool> invert;
+
+	faces.resize(face_count * 3);
+	uvs.resize(face_count * 3);
+
+	smooth.resize(face_count);
+	materials.resize(face_count);
+	invert.resize(face_count);
+
+	{
+		Vector3* facesw = faces.ptrw();
+		Vector2* uvsw = uvs.ptrw();
+		bool* smoothw = smooth.ptrw();
+		Ref<Material>* materialsw = materials.ptrw();
+		bool* invertw = invert.ptrw();
+
+		int face = 0;
+
+		{
+			for (int i = 0; i < sides; i++) {
+				float inci = float(i) / sides;
+				float inci_n = float((i + 1)) / sides;
+				if (i == sides - 1) {
+					inci_n = 0;
+				}
+
+				float angi = inci * Math::TAU;
+				float angi_n = inci_n * Math::TAU;
+
+				Vector3 normali = Vector3(Math::cos(angi), 0, Math::sin(angi));
+				Vector3 normali_n = Vector3(Math::cos(angi_n), 0, Math::sin(angi_n));
+
+				for (int j = 0; j < ring_sides; j++) {
+					float incj = float(j) / ring_sides;
+					float incj_n = float((j + 1)) / ring_sides;
+					if (j == ring_sides - 1) {
+						incj_n = 0;
+					}
+
+					float angj = incj * Math::TAU;
+					float angj_n = incj_n * Math::TAU;
+
+					Vector2 normalj = Vector2(Math::cos(angj), Math::sin(angj)) * radius +
+									  Vector2(min_radius + radius, 0);
+					Vector2 normalj_n = Vector2(Math::cos(angj_n), Math::sin(angj_n)) * radius +
+										Vector2(min_radius + radius, 0);
+
+					Vector3 face_points[4] = {
+						Vector3(normali.x * normalj.x, normalj.y, normali.z * normalj.x),
+						Vector3(normali.x * normalj_n.x, normalj_n.y, normali.z * normalj_n.x),
+						Vector3(normali_n.x * normalj_n.x, normalj_n.y, normali_n.z * normalj_n.x),
+						Vector3(normali_n.x * normalj.x, normalj.y, normali_n.z * normalj.x)};
+
+					Vector2 u[4] = {
+						Vector2(inci, incj),
+						Vector2(inci, incj_n),
+						Vector2(inci_n, incj_n),
+						Vector2(inci_n, incj),
+					};
+
+					// face 1
+					facesw[face * 3 + 0] = face_points[0];
+					facesw[face * 3 + 1] = face_points[2];
+					facesw[face * 3 + 2] = face_points[1];
+
+					uvsw[face * 3 + 0] = u[0];
+					uvsw[face * 3 + 1] = u[2];
+					uvsw[face * 3 + 2] = u[1];
+
+					smoothw[face] = smooth_faces;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+
+					face++;
+
+					// face 2
+					facesw[face * 3 + 0] = face_points[3];
+					facesw[face * 3 + 1] = face_points[2];
+					facesw[face * 3 + 2] = face_points[0];
+
+					uvsw[face * 3 + 0] = u[3];
+					uvsw[face * 3 + 1] = u[2];
+					uvsw[face * 3 + 2] = u[0];
+
+					smoothw[face] = smooth_faces;
+					invertw[face] = invert_val;
+					materialsw[face] = base_material;
+					face++;
+				}
+			}
+		}
+
+		if (face != face_count) {
+			ERR_PRINT("Face mismatch bug! fix code");
+		}
+	}
+
+	new_brush->build_from_faces(faces, uvs, smooth, materials, invert);
+
+	return new_brush;
+}
+
+void CSGShape3D::set_size(const Vector3& p_size)
+{
+	size = p_size;
+	_make_dirty();
+}
+
+void CSGShape3D::set_radius(float p_radius)
+{
+	radius = p_radius;
+	_make_dirty();
+}
+
+void CSGShape3D::set_height(float p_height)
+{
+	height = p_height;
+	_make_dirty();
+}
+
+void CSGShape3D::set_inner_radius(float p_radius)
+{
+	inner_radius = p_radius;
+	_make_dirty();
+}
+
+void CSGShape3D::set_outer_radius(float p_radius)
+{
+	outer_radius = p_radius;
+	_make_dirty();
+}
+
+void CSGShape3D::set_radial_segments(int p_segments)
+{
+	radial_segments = MAX(4, p_segments);
+	_make_dirty();
+}
+
+void CSGShape3D::set_rings(int p_rings)
+{
+	rings = MAX(1, p_rings);
+	_make_dirty();
+}
+
+void CSGShape3D::set_sides(int p_sides)
+{
+	sides = MAX(3, p_sides);
+	_make_dirty();
+}
+
+void CSGShape3D::set_ring_sides(int p_ring_sides)
+{
+	ring_sides = MAX(3, p_ring_sides);
+	_make_dirty();
+}
+
+void CSGShape3D::set_cone(bool p_cone)
+{
+	cone = p_cone;
+	_make_dirty();
+}
+
+void CSGShape3D::set_polygon(const Vector<Vector2>& p_polygon)
+{
+	polygon = p_polygon;
+	_make_dirty();
+}
+
+void CSGShape3D::set_polygon_mode(PolygonMode p_mode)
+{
+	polygon_mode = p_mode;
+	_make_dirty();
+}
+
+void CSGShape3D::set_depth(float p_depth)
+{
+	depth = p_depth;
+	_make_dirty();
+}
+
+void CSGShape3D::set_spin_degrees(float p_degrees)
+{
+	spin_degrees = p_degrees;
+	_make_dirty();
+}
+
+void CSGShape3D::set_spin_sides(int p_sides)
+{
+	spin_sides = p_sides;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_node(const NodePath& p_path)
+{
+	path_node = p_path;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_interval_type(PathIntervalType p_type)
+{
+	path_interval_type = p_type;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_interval(float p_interval)
+{
+	path_interval = p_interval;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_simplify_angle(float p_angle)
+{
+	path_simplify_angle = p_angle;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_rotation(PathRotation p_rotation)
+{
+	path_rotation = p_rotation;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_rotation_accurate(bool p_accurate)
+{
+	path_rotation_accurate = p_accurate;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_local(bool p_local)
+{
+	path_local = p_local;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_continuous_u(bool p_enable)
+{
+	path_continuous_u = p_enable;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_u_distance(real_t p_distance)
+{
+	path_u_distance = p_distance;
+	_make_dirty();
+}
+
+void CSGShape3D::set_path_joined(bool p_joined)
+{
+	path_joined = p_joined;
+	_make_dirty();
+}
+
+void CSGShape3D::_path_exited() { path = nullptr; }
+
+bool CSGShape3D::_is_editable_3d_polygon() const { return shape_type == SHAPE_POLYGON; }
+
+bool CSGShape3D::_has_editable_3d_polygon_no_depth() const { return shape_type == SHAPE_POLYGON; }
+
+void CSGShape3D::_make_dirty(bool p_parent_removing)
+{
+	(void)p_parent_removing;
+	if (brush) {
+		memdelete(brush);
+		brush = nullptr;
+	}
+	dirty = true;
+}
+
+CSGBrush* CSGShape3D::_get_brush()
+{
+	if (!brush) {
+		brush = _build_brush();
+	}
+	return brush;
+}
+
+void CSGShape3D::navmesh_parse_init() {}
+
+CSGBrush* CSGShape3D::_build_polygon_brush()
+{
+	return memnew(CSGBrush);
+}
+
+// CSGBrush
+
+void CSGBrush::build_from_faces(const Vector<Vector3> &p_vertices, const Vector<Vector2> &p_uvs, const Vector<bool> &p_smooth, const Vector<Ref<Material>> &p_materials, const Vector<bool> &p_flip_faces) {
+	faces.clear();
+
+	int vc = p_vertices.size();
+
+	ERR_FAIL_COND((vc % 3) != 0);
+
+	const Vector3 *rv = p_vertices.ptr();
+	int uvc = p_uvs.size();
+	const Vector2 *ruv = p_uvs.ptr();
+	int sc = p_smooth.size();
+	const bool *rs = p_smooth.ptr();
+	int mc = p_materials.size();
+	const Ref<Material> *rm = p_materials.ptr();
+	int ic = p_flip_faces.size();
+	const bool *ri = p_flip_faces.ptr();
+
+	HashMap<Ref<Material>, int> material_map;
+
+	faces.resize(p_vertices.size() / 3);
+
+	for (int i = 0; i < faces.size(); i++) {
+		Face &f = faces.write[i];
+		f.vertices[0] = rv[i * 3 + 0];
+		f.vertices[1] = rv[i * 3 + 1];
+		f.vertices[2] = rv[i * 3 + 2];
+
+		if (uvc == vc) {
+			f.uvs[0] = ruv[i * 3 + 0];
+			f.uvs[1] = ruv[i * 3 + 1];
+			f.uvs[2] = ruv[i * 3 + 2];
+		}
+
+		if (sc == vc / 3) {
+			f.smooth = rs[i];
+		} else {
+			f.smooth = false;
+		}
+
+		if (ic == vc / 3) {
+			f.invert = ri[i];
+		} else {
+			f.invert = false;
+		}
+
+		if (mc == vc / 3) {
+			Ref<Material> mat = rm[i];
+			if (mat.is_valid()) {
+				HashMap<Ref<Material>, int>::ConstIterator E = material_map.find(mat);
+
+				if (E) {
+					f.material = E->value;
+				} else {
+					f.material = material_map.size();
+					material_map[mat] = f.material;
+				}
+
+			} else {
+				f.material = -1;
+			}
+		}
+	}
+
+	materials.resize(material_map.size());
+	for (const KeyValue<Ref<Material>, int> &E : material_map) {
+		materials.write[E.value] = E.key;
+	}
+
+	_regen_face_aabbs();
+}
+
+void CSGBrush::copy_from(const CSGBrush &p_brush, const Transform3D &p_xform) {
+	faces = p_brush.faces;
+	materials = p_brush.materials;
+
+	for (int i = 0; i < faces.size(); i++) {
+		for (int j = 0; j < 3; j++) {
+			faces.write[i].vertices[j] = p_xform.xform(p_brush.faces[i].vertices[j]);
+		}
+	}
+
+	_regen_face_aabbs();
+}
+
+void initialize_csg_module(ModuleInitializationLevel p_level)
+{
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+#ifndef NAVIGATION_3D_DISABLED
+		CSGShape3D::navmesh_parse_init();
+#endif // NAVIGATION_3D_DISABLED
+	}
+}
+
+void uninitialize_csg_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+#endif // defined(MODULE_CSG_ENABLED)
+
+
+// --- Merged from modules/gridmap/grid_map.cpp ---
+#if defined(MODULE_GRIDMAP_ENABLED)
+#include "core/config/engine.h"
+#include "modules/register_module_types.h"
+#include "core/io/marshalls.h"
+#include "core/templates/a_hash_map.h"
+#include "modules/csg/csg_shape.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/3d/primitive_meshes.h"
+#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+
+#ifndef PHYSICS_3D_DISABLED
+#include "core/math/geometry_3d.h"
+#include "scene/resources/3d/shape_3d.h"
+#include "scene/resources/material.h"
+#endif // PHYSICS_3D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+#include "servers/navigation_3d/navigation_server_3d.h"
+
+RID GridMap::_navmesh_source_geometry_parser;
+#endif // NAVIGATION_3D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+void GridMap::set_collision_layer(uint32_t p_layer)
+{
+	collision_layer = p_layer;
+	_update_physics_bodies_collision_properties();
+}
+
+uint32_t GridMap::get_collision_layer() const { return collision_layer; }
+
+void GridMap::set_collision_mask(uint32_t p_mask)
+{
+	collision_mask = p_mask;
+	_update_physics_bodies_collision_properties();
+}
+
+uint32_t GridMap::get_collision_mask() const { return collision_mask; }
+
+void GridMap::set_collision_layer_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t collision_layer_new = get_collision_layer();
+	if (p_value) {
+		collision_layer_new |= 1 << (p_layer_number - 1);
+	}
+	else {
+		collision_layer_new &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_layer(collision_layer_new);
+}
+
+bool GridMap::get_collision_layer_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_layer() & (1 << (p_layer_number - 1));
+}
+
+void GridMap::set_collision_mask_value(int p_layer_number, bool p_value)
+{
+	ERR_FAIL_COND_MSG(
+		p_layer_number < 1, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_MSG(
+		p_layer_number > 32, "Collision layer number must be between 1 and 32 inclusive.");
+	uint32_t mask = get_collision_mask();
+	if (p_value) {
+		mask |= 1 << (p_layer_number - 1);
+	}
+	else {
+		mask &= ~(1 << (p_layer_number - 1));
+	}
+	set_collision_mask(mask);
+}
+
+void GridMap::set_collision_priority(real_t p_priority)
+{
+	collision_priority = p_priority;
+	_update_physics_bodies_collision_properties();
+}
+
+real_t GridMap::get_collision_priority() const { return collision_priority; }
+
+void GridMap::set_collision_visibility_mode(DebugVisibilityMode p_visibility_mode)
+{
+	if (collision_visibility_mode == p_visibility_mode) {
+		return;
+	}
+	collision_visibility_mode = p_visibility_mode;
+	_recreate_octant_data();
+}
+
+GridMap::DebugVisibilityMode GridMap::get_collision_visibility_mode() const
+{
+	return collision_visibility_mode;
+}
+
+void GridMap::set_physics_material(Ref<PhysicsMaterial> p_material)
+{
+	physics_material = p_material;
+	_update_physics_bodies_characteristics();
+}
+
+Ref<PhysicsMaterial> GridMap::get_physics_material() const { return physics_material; }
+
+bool GridMap::get_collision_mask_value(int p_layer_number) const
+{
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number < 1, false, "Collision layer number must be between 1 and 32 inclusive.");
+	ERR_FAIL_COND_V_MSG(
+		p_layer_number > 32, false, "Collision layer number must be between 1 and 32 inclusive.");
+	return get_collision_mask() & (1 << (p_layer_number - 1));
+}
+
+RID GridMap::get_physics_body_from_octant_coord(const Vector3i& p_octant_coords) const
+{
+	OctantKey octantkey;
+	octantkey.x = p_octant_coords.x;
+	octantkey.y = p_octant_coords.y;
+	octantkey.z = p_octant_coords.z;
+
+	const HashMap<OctantKey, Octant*, OctantKey>::ConstIterator octant_kv =
+		octant_map.find(octantkey);
+
+	if (!octant_kv) {
+		return RID();
+	}
+
+	Octant* g = octant_kv->value;
+	RID body_rid = g->static_body;
+
+	return body_rid;
+}
+#endif // PHYSICS_3D_DISABLED
+
+void GridMap::set_bake_navigation(bool p_bake_navigation)
+{
+	bake_navigation = p_bake_navigation;
+	_recreate_octant_data();
+}
+
+bool GridMap::is_baking_navigation() { return bake_navigation; }
+
+#ifndef NAVIGATION_3D_DISABLED
+void GridMap::set_navigation_map(RID p_navigation_map)
+{
+	map_override = p_navigation_map;
+	for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+		Octant& g = *octant_map[E.key];
+		for (KeyValue<IndexKey, Octant::NavigationCell>& F : g.navigation_cell_ids) {
+			if (F.value.region.is_valid()) {
+				NavigationServer3D::region_set_map(F.value.region, map_override);
+			}
+		}
+	}
+}
+
+RID GridMap::get_navigation_map() const
+{
+	if (map_override.is_valid()) {
+		return map_override;
+	}
+	else if (is_inside_tree()) {
+		return get_world_3d()->get_navigation_map();
+	}
+	return RID();
+}
+#endif // NAVIGATION_3D_DISABLED
+
+Ref<MeshLibrary> GridMap::get_mesh_library() const { return mesh_library; }
+
+Vector3 GridMap::get_cell_size() const { return cell_size; }
+
+void GridMap::set_octant_size(int p_size)
+{
+	ERR_FAIL_COND(p_size == 0);
+	octant_size = p_size;
+	_recreate_octant_data();
+}
+
+int GridMap::get_octant_size() const { return octant_size; }
+
+void GridMap::set_center_x(bool p_enable)
+{
+	center_x = p_enable;
+	_recreate_octant_data();
+}
+
+bool GridMap::get_center_x() const { return center_x; }
+
+void GridMap::set_center_y(bool p_enable)
+{
+	center_y = p_enable;
+	_recreate_octant_data();
+}
+
+bool GridMap::get_center_y() const { return center_y; }
+
+void GridMap::set_center_z(bool p_enable)
+{
+	center_z = p_enable;
+	_recreate_octant_data();
+}
+
+bool GridMap::get_center_z() const { return center_z; }
+
+void GridMap::set_debug_octant_color(const Color& p_color)
+{
+#ifdef DEBUG_ENABLED
+	if (debug_octant_color == p_color) {
+		return;
+	}
+
+	debug_octant_color = p_color;
+#endif
+}
+
+Color GridMap::get_debug_octant_color() const { return debug_octant_color; }
+
+#ifdef DEBUG_ENABLED
+
+void GridMap::_debug_clear_octants()
+{
+	for (const KeyValue<OctantKey, Octant*>& ele : octant_map) {
+		OctantKey octant_key = ele.key;
+		HashMap<OctantKey, OctantDebug*, OctantKey>::Iterator E = debug_octant_map.find(octant_key);
+		if (E) {
+			OctantDebug& octant_debug = *E->value;
+
+			if (octant_debug.debug_line_mesh_rid.is_valid()) {
+				Renderer::free_rid(octant_debug.debug_line_mesh_rid);
+				octant_debug.debug_line_mesh_rid = RID();
+			}
+			if (octant_debug.debug_line_instance_rid.is_valid()) {
+				Renderer::free_rid(octant_debug.debug_line_instance_rid);
+				octant_debug.debug_line_instance_rid = RID();
+			}
+
+			memdelete(&octant_debug);
+		}
+	}
+
+	debug_octant_map.clear();
+}
+
+#endif // DEBUG_ENABLED
+
+int GridMap::get_cell_item(const Vector3i& p_position) const
+{
+	ERR_FAIL_INDEX_V(Math::abs(p_position.x), 1 << 20, INVALID_CELL_ITEM);
+	ERR_FAIL_INDEX_V(Math::abs(p_position.y), 1 << 20, INVALID_CELL_ITEM);
+	ERR_FAIL_INDEX_V(Math::abs(p_position.z), 1 << 20, INVALID_CELL_ITEM);
+
+	IndexKey key;
+	key.x = p_position.x;
+	key.y = p_position.y;
+	key.z = p_position.z;
+
+	if (!cell_map.has(key)) {
+		return INVALID_CELL_ITEM;
+	}
+	return cell_map[key].item;
+}
+
+int GridMap::get_cell_item_orientation(const Vector3i& p_position) const
+{
+	ERR_FAIL_INDEX_V(Math::abs(p_position.x), 1 << 20, -1);
+	ERR_FAIL_INDEX_V(Math::abs(p_position.y), 1 << 20, -1);
+	ERR_FAIL_INDEX_V(Math::abs(p_position.z), 1 << 20, -1);
+
+	IndexKey key;
+	key.x = p_position.x;
+	key.y = p_position.y;
+	key.z = p_position.z;
+
+	if (!cell_map.has(key)) {
+		return -1;
+	}
+	return cell_map[key].rot;
+}
+
+static const Basis _ortho_bases[24] = {Basis(1, 0, 0, 0, 1, 0, 0, 0, 1),
+	Basis(0, -1, 0, 1, 0, 0, 0, 0, 1), Basis(-1, 0, 0, 0, -1, 0, 0, 0, 1),
+	Basis(0, 1, 0, -1, 0, 0, 0, 0, 1), Basis(1, 0, 0, 0, 0, -1, 0, 1, 0),
+	Basis(0, 0, 1, 1, 0, 0, 0, 1, 0), Basis(-1, 0, 0, 0, 0, 1, 0, 1, 0),
+	Basis(0, 0, -1, -1, 0, 0, 0, 1, 0), Basis(1, 0, 0, 0, -1, 0, 0, 0, -1),
+	Basis(0, 1, 0, 1, 0, 0, 0, 0, -1), Basis(-1, 0, 0, 0, 1, 0, 0, 0, -1),
+	Basis(0, -1, 0, -1, 0, 0, 0, 0, -1), Basis(1, 0, 0, 0, 0, 1, 0, -1, 0),
+	Basis(0, 0, -1, 1, 0, 0, 0, -1, 0), Basis(-1, 0, 0, 0, 0, -1, 0, -1, 0),
+	Basis(0, 0, 1, -1, 0, 0, 0, -1, 0), Basis(0, 0, 1, 0, 1, 0, -1, 0, 0),
+	Basis(0, -1, 0, 0, 0, 1, -1, 0, 0), Basis(0, 0, -1, 0, -1, 0, -1, 0, 0),
+	Basis(0, 1, 0, 0, 0, -1, -1, 0, 0), Basis(0, 0, 1, 0, -1, 0, 1, 0, 0),
+	Basis(0, 1, 0, 0, 0, 1, 1, 0, 0), Basis(0, 0, -1, 0, 1, 0, 1, 0, 0),
+	Basis(0, -1, 0, 0, 0, -1, 1, 0, 0)};
+
+Basis GridMap::get_cell_item_basis(const Vector3i& p_position) const
+{
+	int orientation = get_cell_item_orientation(p_position);
+
+	if (orientation == -1) {
+		return Basis();
+	}
+
+	return get_basis_with_orthogonal_index(orientation);
+}
+
+Basis GridMap::get_basis_with_orthogonal_index(int p_index) const
+{
+	ERR_FAIL_INDEX_V(p_index, 24, Basis());
+
+	return _ortho_bases[p_index];
+}
+
+int GridMap::get_orthogonal_index_from_basis(const Basis& p_basis) const
+{
+	Basis orth = p_basis;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			real_t v = orth[i][j];
+			if (v > 0.5) {
+				v = 1.0;
+			}
+			else if (v < -0.5) {
+				v = -1.0;
+			}
+			else {
+				v = 0;
+			}
+
+			orth[i][j] = v;
+		}
+	}
+
+	for (int i = 0; i < 24; i++) {
+		if (_ortho_bases[i] == orth) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+GridMap::OctantKey GridMap::get_octant_key_from_index_key(const IndexKey& p_index_key) const
+{
+	const int x = p_index_key.x > 0 ? p_index_key.x / octant_size
+									: (p_index_key.x - (octant_size - 1)) / octant_size;
+	const int y = p_index_key.y > 0 ? p_index_key.y / octant_size
+									: (p_index_key.y - (octant_size - 1)) / octant_size;
+	const int z = p_index_key.z > 0 ? p_index_key.z / octant_size
+									: (p_index_key.z - (octant_size - 1)) / octant_size;
+
+	OctantKey ok;
+	ok.key = 0;
+	ok.x = x;
+	ok.y = y;
+	ok.z = z;
+	return ok;
+}
+
+GridMap::OctantKey GridMap::get_octant_key_from_cell_coords(const Vector3i& p_cell_coords) const
+{
+	const int x = p_cell_coords.x > 0 ? p_cell_coords.x / octant_size
+									  : (p_cell_coords.x - (octant_size - 1)) / octant_size;
+	const int y = p_cell_coords.y > 0 ? p_cell_coords.y / octant_size
+									  : (p_cell_coords.y - (octant_size - 1)) / octant_size;
+	const int z = p_cell_coords.z > 0 ? p_cell_coords.z / octant_size
+									  : (p_cell_coords.z - (octant_size - 1)) / octant_size;
+
+	OctantKey ok;
+	ok.key = 0;
+	ok.x = x;
+	ok.y = y;
+	ok.z = z;
+	return ok;
+}
+
+Vector3i GridMap::local_to_map(const Vector3& p_world_position) const
+{
+	Vector3 map_position = (p_world_position / cell_size).floor();
+	return Vector3i(map_position);
+}
+
+Vector3 GridMap::map_to_local(const Vector3i& p_map_position) const
+{
+	Vector3 offset = _get_offset();
+	Vector3 local_position(p_map_position.x * cell_size.x + offset.x,
+		p_map_position.y * cell_size.y + offset.y, p_map_position.z * cell_size.z + offset.z);
+	return local_position;
+}
+
+#ifndef PHYSICS_3D_DISABLED
+void GridMap::_update_physics_bodies_collision_properties()
+{
+	for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+		PhysicsServer3D::body_set_collision_layer(
+			E.value->static_body, collision_layer);
+		PhysicsServer3D::body_set_collision_mask(
+			E.value->static_body, collision_mask);
+		PhysicsServer3D::body_set_collision_priority(
+			E.value->static_body, collision_priority);
+	}
+}
+
+#endif // PHYSICS_3D_DISABLED
+
+void GridMap::_octant_clean_up(const OctantKey& p_key)
+{
+	ERR_FAIL_NULL(Renderer::data);
+#ifndef PHYSICS_3D_DISABLED
+	ERR_FAIL_COND(!PhysicsServer3D::is_initialized());
+#endif // PHYSICS_3D_DISABLED
+#ifndef NAVIGATION_3D_DISABLED
+	ERR_FAIL_NULL(NavigationServer3D::data);
+#endif // NAVIGATION_3D_DISABLED
+
+	ERR_FAIL_COND(!octant_map.has(p_key));
+	Octant& g = *octant_map[p_key];
+
+#ifndef PHYSICS_3D_DISABLED
+	if (g.collision_debug.is_valid()) {
+		Renderer::free_rid(g.collision_debug);
+	}
+	if (g.collision_debug_instance.is_valid()) {
+		Renderer::free_rid(g.collision_debug_instance);
+	}
+
+	PhysicsServer3D::free_rid(g.static_body);
+#endif // PHYSICS_3D_DISABLED
+
+#ifndef NAVIGATION_3D_DISABLED
+	// Erase navigation
+	for (const KeyValue<IndexKey, Octant::NavigationCell>& E : g.navigation_cell_ids) {
+		if (E.value.region.is_valid()) {
+			NavigationServer3D::free_rid(E.value.region);
+		}
+		if (E.value.navigation_mesh_debug_instance.is_valid()) {
+			Renderer::free_rid(E.value.navigation_mesh_debug_instance);
+		}
+	}
+	g.navigation_cell_ids.clear();
+#endif // NAVIGATION_3D_DISABLED
+
+#ifdef DEBUG_ENABLED
+	if (bake_navigation) {
+		if (g.navigation_debug_edge_connections_instance.is_valid()) {
+			Renderer::free_rid(
+				g.navigation_debug_edge_connections_instance);
+			g.navigation_debug_edge_connections_instance = RID();
+		}
+		if (g.navigation_debug_edge_connections_mesh.is_valid()) {
+			g.navigation_debug_edge_connections_mesh.unref();
+		}
+	}
+
+	_debug_clear_octants();
+#endif // DEBUG_ENABLED
+
+	// Erase multimeshes.
+
+	for (int i = 0; i < g.multimesh_instances.size(); i++) {
+		Renderer::free_rid(g.multimesh_instances[i].instance);
+		Renderer::free_rid(g.multimesh_instances[i].multimesh);
+	}
+	g.multimesh_instances.clear();
+}
+
+void GridMap::_notification(int p_what)
+{
+	switch (p_what) {
+	case NOTIFICATION_ENTER_WORLD: {
+		last_transform = get_global_transform();
+
+		for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+			_octant_enter_world(E.key);
+		}
+
+		for (int i = 0; i < baked_meshes.size(); i++) {
+			Renderer::instance_set_scenario(
+				baked_meshes[i].instance, get_world_3d()->get_scenario());
+			Renderer::instance_set_transform(
+				baked_meshes[i].instance, get_global_transform());
+		}
+	} break;
+
+	case NOTIFICATION_ENTER_TREE: {
+#ifdef DEBUG_ENABLED
+		_debug_update();
+
+#ifndef NAVIGATION_3D_DISABLED
+		if (bake_navigation &&
+			NavigationServer3D::get_debug_navigation_enabled()) {
+			_update_navigation_debug_edge_connections();
+		}
+#endif // NAVIGATION_3D_DISABLED
+
+#endif // DEBUG_ENABLED
+
+		_update_visibility();
+	} break;
+
+#ifdef DEBUG_ENABLED
+	case NOTIFICATION_EXIT_TREE: {
+		_debug_clear_octants();
+	} break;
+#endif
+
+	case NOTIFICATION_TRANSFORM_CHANGED: {
+		Transform3D new_xform = get_global_transform();
+		if (new_xform == last_transform) {
+			break;
+		}
+
+		for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+			_octant_transform(E.key);
+		}
+
+		last_transform = new_xform;
+
+		for (int i = 0; i < baked_meshes.size(); i++) {
+			Renderer::instance_set_transform(
+				baked_meshes[i].instance, get_global_transform());
+		}
+
+#ifdef DEBUG_ENABLED
+		for (const KeyValue<OctantKey, OctantDebug*>& E : debug_octant_map) {
+			OctantKey octant_key = E.key;
+			OctantDebug& octant_debug = *E.value;
+			if (octant_debug.debug_line_instance_rid.is_valid()) {
+				const Transform3D octant_transform =
+					new_xform *
+					(Transform3D(Basis(), Vector3(octant_key.x, octant_key.y, octant_key.z) *
+											  octant_size * cell_size));
+				Renderer::instance_set_transform(
+					octant_debug.debug_line_instance_rid, octant_transform);
+			}
+		}
+#endif
+	} break;
+
+	case NOTIFICATION_EXIT_WORLD: {
+		for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+			_octant_exit_world(E.key);
+		}
+
+		for (int i = 0; i < baked_meshes.size(); i++) {
+			Renderer::instance_set_scenario(baked_meshes[i].instance, RID());
+		}
+	} break;
+
+	case NOTIFICATION_VISIBILITY_CHANGED: {
+		_update_visibility();
+	} break;
+	}
+}
+
+void GridMap::_update_visibility()
+{
+	if (!is_inside_tree()) {
+		return;
+	}
+
+	for (KeyValue<OctantKey, Octant*>& e : octant_map) {
+		Octant* octant = e.value;
+		for (int i = 0; i < octant->multimesh_instances.size(); i++) {
+			const Octant::MultimeshInstance& mi = octant->multimesh_instances[i];
+			Renderer::instance_set_visible(mi.instance, is_visible_in_tree());
+		}
+	}
+
+	for (int i = 0; i < baked_meshes.size(); i++) {
+		Renderer::instance_set_visible(baked_meshes[i].instance, is_visible_in_tree());
+	}
+
+#ifdef DEBUG_ENABLED
+	for (const KeyValue<OctantKey, OctantDebug*>& E : debug_octant_map) {
+		OctantDebug& octant_debug = *E.value;
+		if (octant_debug.debug_line_instance_rid.is_valid()) {
+			Renderer::instance_set_visible(
+				octant_debug.debug_line_instance_rid, is_visible_in_tree());
+		}
+	}
+#endif
+}
+
+void GridMap::_recreate_octant_data()
+{
+	recreating_octants = true;
+
+	HashMap<IndexKey, Cell, IndexKey> cell_copy(cell_map);
+	_clear_internal();
+	for (const KeyValue<IndexKey, Cell>& E : cell_copy) {
+		set_cell_item(Vector3i(E.key), E.value.item, E.value.rot);
+	}
+
+	recreating_octants = false;
+#ifdef DEBUG_ENABLED
+	_debug_update();
+#endif
+}
+
+void GridMap::_clear_internal()
+{
+	for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+		if (is_inside_world()) {
+			_octant_exit_world(E.key);
+		}
+
+		_octant_clean_up(E.key);
+		memdelete(E.value);
+	}
+
+	octant_map.clear();
+	cell_map.clear();
+#ifdef DEBUG_ENABLED
+	_debug_clear_octants();
+	_debug_update();
+#endif
+}
+
+void GridMap::clear()
+{
+	_clear_internal();
+	clear_baked_meshes();
+}
+
+#ifndef DISABLE_DEPRECATED
+void GridMap::resource_changed(const Ref<Resource>& p_res) {}
+#endif
+
+void GridMap::_update_octants_callback()
+{
+	if (!awaiting_update) {
+		return;
+	}
+
+	LocalVector<OctantKey> to_delete;
+	to_delete.reserve(octant_map.size());
+	for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+		if (_octant_update(E.key)) {
+			to_delete.push_back(E.key);
+		}
+	}
+
+	while (!to_delete.is_empty()) {
+		const OctantKey& octantkey = to_delete[0];
+		memdelete(octant_map[octantkey]);
+		octant_map.erase(octantkey);
+		to_delete.remove_at_unordered(0);
+	}
+
+	_update_visibility();
+	awaiting_update = false;
+
+#ifdef DEBUG_ENABLED
+	_debug_update_octants();
+#endif
+}
+
+void GridMap::set_cell_scale(float p_scale)
+{
+	cell_scale = p_scale;
+	_recreate_octant_data();
+}
+
+float GridMap::get_cell_scale() const { return cell_scale; }
+
+Vector3i GridMap::get_octant_coords_from_cell_coords(const Vector3i& p_cell_coords) const
+{
+	return Vector3i(p_cell_coords.x > 0 ? p_cell_coords.x / octant_size
+										: (p_cell_coords.x - (octant_size - 1)) / octant_size,
+		p_cell_coords.y > 0 ? p_cell_coords.y / octant_size
+							: (p_cell_coords.y - (octant_size - 1)) / octant_size,
+		p_cell_coords.z > 0 ? p_cell_coords.z / octant_size
+							: (p_cell_coords.z - (octant_size - 1)) / octant_size);
+}
+
+LocalVector<GridMap::IndexKey> GridMap::get_index_keys_in_bounds(
+	const AABB& p_bounds, bool p_used_only) const
+{
+	LocalVector<IndexKey> index_keys;
+	if (!p_bounds.has_volume()) {
+		return index_keys;
+	}
+
+	Vector3i cell_coords_start = (p_bounds.position / cell_size).floor();
+	// -CMP_EPSILON because we don't want the octants that are just starting at the edge of the
+	// bounds.
+	Vector3i cell_coords_end =
+		((p_bounds.get_end() - Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON)) / cell_size).floor();
+
+	for (int z = cell_coords_start.z; z < cell_coords_end.z + 1; z++) {
+		for (int y = cell_coords_start.y; y < cell_coords_end.y + 1; y++) {
+			for (int x = cell_coords_start.x; x < cell_coords_end.x + 1; x++) {
+				IndexKey index_key;
+				index_key.x = x;
+				index_key.y = y;
+				index_key.z = z;
+
+				if (p_used_only) {
+					const HashMap<IndexKey, Cell, IndexKey>::ConstIterator index_key_kv =
+						cell_map.find(index_key);
+
+					if (index_key_kv) {
+						index_keys.push_back(index_key);
+					}
+				}
+				else {
+					index_keys.push_back(index_key);
+				}
+			}
+		}
+	}
+
+	return index_keys;
+}
+
+LocalVector<GridMap::OctantKey> GridMap::get_octant_keys_in_bounds(
+	const AABB& p_bounds, bool p_used_only) const
+{
+	LocalVector<OctantKey> octant_keys;
+	if (!p_bounds.has_volume()) {
+		return octant_keys;
+	}
+
+	Vector3i cell_coords_start = (p_bounds.position / cell_size).floor();
+	// -CMP_EPSILON because we don't want the octants that are just starting at the edge of the
+	// bounds.
+	Vector3i cell_coords_end =
+		((p_bounds.get_end() - Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON)) / cell_size).floor();
+
+	OctantKey octant_coords_start = get_octant_key_from_cell_coords(cell_coords_start);
+	OctantKey octant_coords_end = get_octant_key_from_cell_coords(cell_coords_end);
+
+	for (int z = octant_coords_start.z; z < octant_coords_end.z + 1; z++) {
+		for (int y = octant_coords_start.y; y < octant_coords_end.y + 1; y++) {
+			for (int x = octant_coords_start.x; x < octant_coords_end.x + 1; x++) {
+				OctantKey octant_key;
+				octant_key.x = x;
+				octant_key.y = y;
+				octant_key.z = z;
+
+				if (p_used_only) {
+					const HashMap<OctantKey, Octant*, OctantKey>::ConstIterator octant_kv =
+						octant_map.find(octant_key);
+
+					if (octant_kv) {
+						Vector3i octant_coord(x, y, z);
+						octant_keys.push_back(octant_key);
+					}
+				}
+				else {
+					octant_keys.push_back(octant_key);
+				}
+			}
+		}
+	}
+
+	return octant_keys;
+}
+
+Vector3 GridMap::_get_offset() const
+{
+	return Vector3(cell_size.x * 0.5 * int(center_x), cell_size.y * 0.5 * int(center_y),
+		cell_size.z * 0.5 * int(center_z));
+}
+
+void GridMap::clear_baked_meshes()
+{
+	ERR_FAIL_NULL(Renderer::data);
+	for (int i = 0; i < baked_meshes.size(); i++) {
+		Renderer::free_rid(baked_meshes[i].instance);
+	}
+	baked_meshes.clear();
+
+	_recreate_octant_data();
+}
+
+RID GridMap::get_bake_mesh_instance(int p_idx)
+{
+	ERR_FAIL_INDEX_V(p_idx, baked_meshes.size(), RID());
+	return baked_meshes[p_idx].instance;
+}
+
+void GridMap::set_debug_show_octants(bool p_enable)
+{
+#ifdef DEBUG_ENABLED
+	if (debug_show_octants == p_enable) {
+		return;
+	}
+
+	debug_show_octants = p_enable;
+	_debug_update();
+#endif
+}
+
+bool GridMap::get_debug_show_octants() const { return debug_show_octants; }
+
+#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
+void GridMap::_update_navigation_debug_edge_connections()
+{
+	if (bake_navigation) {
+		for (const KeyValue<OctantKey, Octant*>& E : octant_map) {
+			_update_octant_navigation_debug_edge_connections_mesh(E.key);
+		}
+	}
+}
+
+void GridMap::_navigation_map_changed(RID p_map)
+{
+	if (bake_navigation && is_inside_tree() && p_map == get_world_3d()->get_navigation_map()) {
+		_update_navigation_debug_edge_connections();
+	}
+}
+#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
+
+void GridMap::_debug_update() {}
+
+void GridMap::_update_octant_navigation_debug_edge_connections_mesh(GridMap::OctantKey const&) {}
+
+void GridMap::set_cell_item(Vector3i const&, int, int) {}
+
+void GridMap::_octant_exit_world(GridMap::OctantKey const&) {}
+
+void GridMap::_update_physics_bodies_characteristics() {}
+
+bool GridMap::_octant_update(GridMap::OctantKey const&) { return true; }
+
+void GridMap::_octant_transform(GridMap::OctantKey const&) {}
+
+void GridMap::_octant_enter_world(GridMap::OctantKey const&) {}
+
+void GridMap::navmesh_parse_init() {}
+
+void GridMap::_debug_update_octants() {}
+
+#ifndef _3D_DISABLED
+
+
+void initialize_gridmap_module(ModuleInitializationLevel p_level)
+{
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+#ifndef NAVIGATION_3D_DISABLED
+		GridMap::navmesh_parse_init();
+#endif // NAVIGATION_3D_DISABLED
+	}
+}
+
+void uninitialize_gridmap_module(ModuleInitializationLevel p_level)
+{
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
+
+#endif // _3D_DISABLED
+#endif // defined(MODULE_GRIDMAP_ENABLED)
+
+
+// --- Merged from modules/meshoptimizer/register_types.cpp ---
+#if defined(MODULE_MESHOPTIMIZER_ENABLED)
+#include "modules/register_module_types.h"
+
+#include "scene/resources/mesh.h"
+
+#include <thirdparty/meshoptimizer/meshoptimizer.h>
+
+void initialize_meshoptimizer_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	SurfaceTool::optimize_vertex_cache_func = meshopt_optimizeVertexCache;
+	SurfaceTool::optimize_vertex_fetch_remap_func = meshopt_optimizeVertexFetchRemap;
+	SurfaceTool::simplify_func = meshopt_simplify;
+	SurfaceTool::simplify_with_attrib_func = meshopt_simplifyWithAttributes;
+	SurfaceTool::simplify_scale_func = meshopt_simplifyScale;
+	SurfaceTool::generate_remap_func = meshopt_generateVertexRemap;
+	SurfaceTool::remap_vertex_func = meshopt_remapVertexBuffer;
+	SurfaceTool::remap_index_func = meshopt_remapIndexBuffer;
+	SurfaceTool::generate_tangents_func = meshopt_generateTangents;
+}
+
+void uninitialize_meshoptimizer_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+
+	SurfaceTool::optimize_vertex_cache_func = nullptr;
+	SurfaceTool::optimize_vertex_fetch_remap_func = nullptr;
+	SurfaceTool::simplify_func = nullptr;
+	SurfaceTool::simplify_scale_func = nullptr;
+	SurfaceTool::generate_remap_func = nullptr;
+	SurfaceTool::remap_vertex_func = nullptr;
+	SurfaceTool::remap_index_func = nullptr;
+	SurfaceTool::generate_tangents_func = nullptr;
+}
+#endif // defined(MODULE_MESHOPTIMIZER_ENABLED)

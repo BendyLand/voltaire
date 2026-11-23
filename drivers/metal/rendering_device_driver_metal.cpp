@@ -2931,7 +2931,6 @@ const RenderingShaderContainerFormat &RenderingDeviceDriverMetal::get_shader_con
 // --- Merged from drivers/metal/metal_device_profile.cpp ---
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
-#include "drivers/metal/rendering_device_driver_metal3.h"
 
 Mutex MetalDeviceProfile::profiles_lock;
 HashMap<MetalDeviceProfile::ProfileKey, MetalDeviceProfile> MetalDeviceProfile::profiles;
@@ -3384,7 +3383,6 @@ const SampleCount MetalDeviceProperties::sample_count[RenderingDeviceCommons::Te
 // --- Merged from drivers/metal/metal_objects_shared.cpp ---
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
-#include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <os/signpost.h>
 #include <simd/simd.h>
@@ -4257,7 +4255,6 @@ std::shared_ptr<MDLibrary> MDLibrary::create(ShaderCacheEntry *p_entry,
 // --- Merged from drivers/metal/pixel_formats.cpp ---
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
-#include "drivers/metal/rendering_device_driver_metal3.h"
 
 #if TARGET_OS_IPHONE || TARGET_OS_TV
 #if !(__IPHONE_OS_VERSION_MAX_ALLOWED >= 160400) // iOS/tvOS 16.4
@@ -5265,8 +5262,6 @@ void PixelFormats::buildDFFormatMaps() {
 
 #include "core/os/os.h"
 #include "core/templates/sort_array.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <objc/message.h>

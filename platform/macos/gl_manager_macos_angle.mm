@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 

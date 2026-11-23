@@ -34,7 +34,7 @@
 TEST_FORCE_LINK(test_stream_peer_tcp)
 
 #include "core/io/net_socket.h"
-#include "core/io/stream_peer_socket.h"
+#include "core/io/stream_peer.h"
 
 namespace TestStreamPeerTCP {
 

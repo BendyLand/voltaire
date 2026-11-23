@@ -39,7 +39,7 @@
 #include "core/string/translation_server.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/renderer.h"
@@ -50,7 +50,6 @@
 #include "tests/test_utils.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #endif // TOOLS_ENABLED
 

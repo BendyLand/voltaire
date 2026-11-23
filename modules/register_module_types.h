@@ -46,6 +46,9 @@ void uninitialize_modules(ModuleInitializationLevel p_level);
 #ifdef MODULE_OPENXR_ENABLED
 #define MODULE_OPENXR_HAS_PREREGISTER
 #endif
+#ifdef MODULE_GLSLANG_ENABLED
+#define MODULE_GLSLANG_HAS_PREREGISTER
+#endif
 
 inline void initialize_freetype_module(ModuleInitializationLevel p_level) {}
 inline void uninitialize_freetype_module(ModuleInitializationLevel p_level) {}

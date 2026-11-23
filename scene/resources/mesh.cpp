@@ -32,7 +32,7 @@
 #include "core/math/geometry_3d.h"
 #include "core/templates/pair.h"
 #include "mesh.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
@@ -2251,7 +2251,7 @@ void MeshDataTool::_bind_compatibility_methods() {}
 // --- surface_tool.cpp ---
 
 #include "core/templates/a_hash_map.h"
-#include "surface_tool.h"
+#include "scene/resources/mesh.h"
 
 #define EQ_VERTEX_DIST 0.00001
 
@@ -3083,7 +3083,7 @@ Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}
 #include "scene/2d/node_2d.h"
 #include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/property_utils.h"
+#include "scene/main/node.h"
 
 #ifndef _3D_DISABLED
 #include "scene/3d/node_3d.h"
@@ -3697,7 +3697,7 @@ void PackedScene::reload_from_file() {}
 #include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "scene/resources/packed_scene.h"
-#include "scene/property_utils.h"
+#include "scene/main/node.h"
 
 void ResourceLoaderText::_printerr()
 {
@@ -4074,7 +4074,7 @@ Error ResourceFormatSaverTextInstance::save(String const&, Ref<Resource> const&,
 
 // --- audio_stream_wav.cpp ---
 
-#include "audio_stream_wav.h"
+#include "servers/audio/audio_stream.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/io/marshalls.h"
 
@@ -10973,7 +10973,6 @@ Ref<SkeletonModificationStack2D> SkeletonModification2D::get_held_modification_s
 
 #include "scene/2d/node_2d.h"
 
-#include "scene/2d/node_2d.h"
 
 void SkeletonModificationStack2D::setup() {
 	if (is_setup) {
@@ -14720,7 +14719,6 @@ void SkeletonProfile::set_bone_name(int, String const&) {}
 #include "core/math/math_funcs.h"
 #include "core/os/main_loop.h"
 #include "scene/resources/theme.h"
-#include "scene/theme/theme_db.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 
@@ -15836,8 +15834,8 @@ bool PrimitiveMesh::is_uppercase() const { return _get_text_state().uppercase; }
 
 #include "core/io/marshalls.h"
 #include "core/math/random_pcg.h"
-#include "scene/resources/3d/importer_mesh.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/navigation_mesh.h"
+#include "scene/resources/mesh.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "core/math/geometry_3d.h"
@@ -17372,7 +17370,7 @@ void JointLimitation3D::draw_shape(Ref<SurfaceTool>& p_surface_tool, const Trans
 // --- world_3d.cpp ---
 
 #include "core/config/project_settings.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 #include "servers/rendering/renderer.h"

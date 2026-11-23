@@ -13116,7 +13116,6 @@ PluralRules* PluralRules::parse(const String& p_rules)
 /**************************************************************************/
 
 #include "core/string/translation_server.h"
-#include "core/string/translation_server.h"
 
 struct _character_accent_pair
 {
@@ -16237,7 +16236,6 @@ void TranslationServer::setup() {}
 // Merged from core/string/node_path.cpp
 // ============================================================================
 
-#include "core/types.h"
 #include "core/types.h"
 
 void NodePath::_update_hash_cache() const

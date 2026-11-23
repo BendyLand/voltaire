@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "openxr_metal_extension.h"
+#import "modules/openxr/openxr_platform_inc.h"
 
 #include "../../openxr_api.h"
 

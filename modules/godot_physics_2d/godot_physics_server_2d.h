@@ -1817,7 +1817,6 @@ struct BVH_ABB {
 // --- End core/math/bvh_abb.h ---
 #include "core/math/vector3.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/local_vector.h"
 
 #define BVHABB_CLASS BVH_ABB<BOUNDS, POINT>
 

@@ -34,9 +34,8 @@
 // --- Inlined/Folded from scene/gui/button.h ---
 #include "core/input/input_event.h"
 #include "scene/gui/control.h"
-#include "scene/resources/bit_map.h"
-#include "scene/resources/text_line.h"
-#include "scene/resources/text_line.h"
+#include "scene/resources/image_texture.h"
+#include "scene/resources/font.h"
 
 class Button;
 class ButtonGroup;
@@ -481,9 +480,9 @@ public:
 	~Popup();
 };
 #include "scene/gui/scroll_container.h"
-#include "scene/property_list_helper.h"
-#include "scene/resources/text_line.h"
-#include "servers/display/native_menu.h"
+#include "scene/main/node.h"
+#include "scene/resources/font.h"
+#include "servers/display/display_server.h"
 
 class Panel;
 class LineEdit;
@@ -1089,7 +1088,7 @@ public:
 
 #include "scene/gui/control.h"
 
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 class MenuButton : public Control
 {
@@ -1164,7 +1163,7 @@ public:
 
 #include "scene/gui/control.h"
 
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 class OptionButton : public Control
 {
@@ -1377,7 +1376,7 @@ public:
 #include "scene/gui/control.h"
 // --- Folded from scene/resources/label_settings.h ---
 #include "core/io/resource.h"
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 #include "scene/resources/font.h"
 
 /*************************************************************************/
@@ -1736,8 +1735,8 @@ public:
 // --- Folded from scene/gui/item_list.h ---
 #include "scene/gui/control.h"
 #include "scene/gui/scroll_container.h"
-#include "scene/property_list_helper.h"
-#include "scene/resources/text_line.h"
+#include "scene/main/node.h"
+#include "scene/resources/font.h"
 
 class ItemList : public Control
 {
@@ -2287,7 +2286,7 @@ public:
 // --- Folded from scene/gui/file_dialog.h ---
 #include "core/io/dir_access.h"
 
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 class DirAccess;
 class ItemList;
@@ -4081,11 +4080,10 @@ public:
 // --- Folded from scene/gui/rich_text_label.h ---
 #include "core/templates/rid_owner.h"
 #include "scene/gui/control.h"
-#include "scene/resources/text_line.h"
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #endif
 
 class PopupMenu;
@@ -5677,7 +5675,7 @@ public:
 };
 
 // --- End scene/resources/syntax_highlighter.h ---
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 
 class TextEdit : public Control
 {
@@ -7264,7 +7262,7 @@ public:
 
 // --- Folded from scene/gui/tree.h ---
 #include "scene/gui/control.h"
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 #include "servers/display/accessibility_server.h"
 
 class LineEdit;

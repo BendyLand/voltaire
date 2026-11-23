@@ -22,8 +22,15 @@ def make_default_theme_icons_action(target, source):
     icons_names_str = ",\n\t".join(icons_names)
     icons_raw_str = ",\n\t".join(icons_raw)
 
+    font_buf = methods.get_buffer("thirdparty/fonts/OpenSans_SemiBold.woff2")
+
     with methods.generated_wrapper(str(target[0])) as file:
         file.write(f"""\
+inline constexpr int _font_OpenSans_SemiBold_size = {len(font_buf)};
+inline constexpr unsigned char _font_OpenSans_SemiBold[] = {{
+	{methods.format_buffer(font_buf, 1)}
+}};
+
 inline constexpr int default_theme_icons_count = {len(icons_names)};
 inline constexpr const char *default_theme_icons_sources[] = {{
 	{icons_raw_str}

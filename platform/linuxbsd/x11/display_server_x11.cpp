@@ -42,11 +42,11 @@
 #include "core/os/os.h"
 #include "core/string/print_string.h"
 #include "core/string/ustring.h"
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 #include "drivers/unix/os_unix.h"
 #include "main/main.h"
 #include "servers/display/accessibility_server.h"
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 // --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
 #include "core/os/keyboard.h"
@@ -403,8 +403,6 @@ int initialize_xrender(int verbose);
 
 #ifdef GLES3_ENABLED
 #include "drivers/gles3/rasterizer_gles3.h"
-#include "platform/linuxbsd/x11/display_server_x11.h"
-#include "platform/linuxbsd/x11/display_server_x11.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 #endif
 

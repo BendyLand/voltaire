@@ -1171,8 +1171,8 @@ public:
 
 // --- Folded from scene/gui/tab_bar.h ---
 #include "scene/gui/control.h"
-#include "scene/property_list_helper.h"
-#include "scene/resources/text_line.h"
+#include "scene/main/node.h"
+#include "scene/resources/font.h"
 
 class Timer;
 
@@ -1474,7 +1474,7 @@ public:
 // --- Folded from scene/gui/tab_container.h ---
 #include "scene/gui/control.h"
 
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 class Button;
 class Popup;

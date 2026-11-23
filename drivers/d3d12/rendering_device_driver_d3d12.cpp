@@ -36,7 +36,6 @@
 #include "core/os/os.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 // --- Inlined/Folded from drivers/d3d12/godot_nir.h ---
 #include "core/typedefs.h"
 
@@ -7000,8 +6999,6 @@ bool RenderingContextDriverD3D12::get_tearing_supported() const {
 #include "core/templates/sort_array.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 #include <wrl/client.h>
 #include <zlib.h>

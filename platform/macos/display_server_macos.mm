@@ -29,22 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
-#import "platform/macos/os_macos.h"
-#import "platform/macos/os_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
-#import "platform/macos/display_server_macos.h"
 #import "os_macos.h"
 
 #include "core/config/project_settings.h"
@@ -56,14 +42,14 @@
 #include "core/os/keyboard.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 #include "main/main.h"
 #include "scene/resources/image_texture.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
 #ifdef TOOLS_ENABLED
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
 #import "editor/embedded_process_macos.h"
 #endif
@@ -73,9 +59,9 @@
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-#include "platform/macos/display_server_macos.h"
+#include "platform/macos/os_macos.h"
 #endif
-#include "platform/macos/display_server_macos.h"
+#include "platform/macos/os_macos.h"
 
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
@@ -85,7 +71,7 @@
 #include "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 #endif
 #if defined(METAL_ENABLED)
 #import "drivers/metal/rendering_context_driver_metal.h"
@@ -95,7 +81,7 @@
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
 #ifdef TOOLS_ENABLED
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 #endif
 
 #include <AppKit/AppKit.h>
@@ -4055,3 +4041,5285 @@ DisplayServerMacOS::~DisplayServerMacOS() {
 
 	cursors_cache.clear();
 }
+
+// === Merged from platform/macos/display_server_macos_base.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+#include "core/config/project_settings.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+#include "core/io/resource_loader.h"
+
+#if defined(RD_ENABLED)
+#include "servers/rendering/rendering_device_driver.h"
+#include "servers/rendering/rendering_device.h"
+#endif
+
+#import <Carbon/Carbon.h>
+
+void DisplayServerMacOSBase::_mouse_update_mode() {
+	DisplayServerEnums::MouseMode wanted_mouse_mode = mouse_mode_override_enabled
+			? mouse_mode_override
+			: mouse_mode_base;
+
+	if (wanted_mouse_mode == mouse_mode) {
+		return;
+	}
+
+	DisplayServerEnums::MouseMode prev_mode = mouse_mode;
+	mouse_mode = wanted_mouse_mode;
+	_mouse_apply_mode(prev_mode, wanted_mouse_mode);
+}
+
+void DisplayServerMacOSBase::mouse_set_mode(DisplayServerEnums::MouseMode p_mode) {
+	ERR_FAIL_INDEX(p_mode, DisplayServerEnums::MouseMode::MOUSE_MODE_MAX);
+	if (p_mode == mouse_mode_base) {
+		return;
+	}
+	mouse_mode_base = p_mode;
+	_mouse_update_mode();
+}
+
+DisplayServerEnums::MouseMode DisplayServerMacOSBase::mouse_get_mode() const {
+	return mouse_mode;
+}
+
+void DisplayServerMacOSBase::mouse_set_mode_override(DisplayServerEnums::MouseMode p_mode) {
+	ERR_FAIL_INDEX(p_mode, DisplayServerEnums::MouseMode::MOUSE_MODE_MAX);
+	if (p_mode == mouse_mode_override) {
+		return;
+	}
+	mouse_mode_override = p_mode;
+	_mouse_update_mode();
+}
+
+DisplayServerEnums::MouseMode DisplayServerMacOSBase::mouse_get_mode_override() const {
+	return mouse_mode_override;
+}
+
+void DisplayServerMacOSBase::mouse_set_mode_override_enabled(bool p_override_enabled) {
+	if (p_override_enabled == mouse_mode_override_enabled) {
+		return;
+	}
+	mouse_mode_override_enabled = p_override_enabled;
+	_mouse_update_mode();
+}
+
+bool DisplayServerMacOSBase::mouse_is_mode_override_enabled() const {
+	return mouse_mode_override_enabled;
+}
+
+void DisplayServerMacOSBase::clipboard_set(const String &p_text) {
+	_THREAD_SAFE_METHOD_
+
+	NSString *copiedString = [NSString stringWithUTF8String:p_text.utf8().get_data()];
+	NSArray *copiedStringArray = [NSArray arrayWithObject:copiedString];
+
+	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+	[pasteboard clearContents];
+	[pasteboard writeObjects:copiedStringArray];
+}
+
+String DisplayServerMacOSBase::clipboard_get() const {
+	_THREAD_SAFE_METHOD_
+
+	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+	NSArray *classArray = [NSArray arrayWithObject:[NSString class]];
+	NSDictionary *options = [NSDictionary dictionary];
+
+	BOOL ok = [pasteboard canReadObjectForClasses:classArray options:options];
+
+	if (!ok) {
+		return "";
+	}
+
+	NSArray *objectsToPaste = [pasteboard readObjectsForClasses:classArray options:options];
+	if (!objectsToPaste || [objectsToPaste count] < 1) {
+		return "";
+	}
+	NSString *string = [objectsToPaste objectAtIndex:0];
+
+	String ret;
+	ret.append_utf8([string UTF8String]);
+	return ret;
+}
+
+Ref<Image> DisplayServerMacOSBase::clipboard_get_image() const {
+	Ref<Image> image;
+	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+	NSString *result = [pasteboard availableTypeFromArray:[NSArray arrayWithObjects:NSPasteboardTypeTIFF, NSPasteboardTypePNG, nil]];
+	if (!result) {
+		return image;
+	}
+	NSData *data = [pasteboard dataForType:result];
+	if (!data) {
+		return image;
+	}
+	NSBitmapImageRep *bitmap = [NSBitmapImageRep imageRepWithData:data];
+	NSData *pngData = [bitmap representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+	image.instantiate();
+	PNGDriverCommon::png_to_image((const uint8_t *)pngData.bytes, pngData.length, false, image);
+	return image;
+}
+
+bool DisplayServerMacOSBase::clipboard_has() const {
+	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+	NSArray *classArray = [NSArray arrayWithObject:[NSString class]];
+	NSDictionary *options = [NSDictionary dictionary];
+	return [pasteboard canReadObjectForClasses:classArray options:options];
+}
+
+bool DisplayServerMacOSBase::clipboard_has_image() const {
+	NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+	NSString *result = [pasteboard availableTypeFromArray:[NSArray arrayWithObjects:NSPasteboardTypeTIFF, NSPasteboardTypePNG, nil]];
+	return result;
+}
+
+CGDirectDisplayID DisplayServerMacOSBase::_get_display_id_for_screen(NSScreen *p_screen) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 260000
+	if (@available(macOS 26.0, *)) {
+		return [p_screen CGDirectDisplayID];
+	} else {
+		return [[p_screen deviceDescription][@"NSScreenNumber"] unsignedIntValue];
+	}
+#else
+	return [[p_screen deviceDescription][@"NSScreenNumber"] unsignedIntValue];
+#endif
+}
+
+void DisplayServerMacOSBase::initialize_tts() const {
+	const_cast<DisplayServerMacOSBase *>(this)->tts = [[TTS_MacOS alloc] init];
+}
+
+bool DisplayServerMacOSBase::tts_is_speaking() const {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL_V(tts, false);
+	return [tts isSpeaking];
+}
+
+bool DisplayServerMacOSBase::tts_is_paused() const {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL_V(tts, false);
+	return [tts isPaused];
+}
+
+TypedArray<Dictionary> DisplayServerMacOSBase::tts_get_voices() const {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL_V(tts, TypedArray<Dictionary>());
+	return [tts getVoices];
+}
+
+void DisplayServerMacOSBase::tts_speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL(tts);
+	[tts speak:p_text voice:p_voice volume:p_volume pitch:p_pitch rate:p_rate utterance_id:p_utterance_id interrupt:p_interrupt];
+}
+
+void DisplayServerMacOSBase::tts_pause() {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL(tts);
+	[tts pauseSpeaking];
+}
+
+void DisplayServerMacOSBase::tts_resume() {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL(tts);
+	[tts resumeSpeaking];
+}
+
+void DisplayServerMacOSBase::tts_stop() {
+	if (unlikely(!tts)) {
+		initialize_tts();
+	}
+	ERR_FAIL_NULL(tts);
+	[tts stopSpeaking];
+}
+
+void DisplayServerMacOSBase::_update_keyboard_layouts() const {
+	kbd_layouts.clear();
+	current_layout = 0;
+
+	TISInputSourceRef cur_source = TISCopyCurrentKeyboardInputSource();
+	NSString *cur_name = (__bridge NSString *)TISGetInputSourceProperty(cur_source, kTISPropertyLocalizedName);
+	CFRelease(cur_source);
+
+	// Enum IME layouts.
+	NSDictionary *filter_ime = @{ (NSString *)kTISPropertyInputSourceType : (NSString *)kTISTypeKeyboardInputMode };
+	NSArray *list_ime = (__bridge NSArray *)TISCreateInputSourceList((__bridge CFDictionaryRef)filter_ime, false);
+	for (NSUInteger i = 0; i < [list_ime count]; i++) {
+		LayoutInfo ly;
+		NSString *name = (__bridge NSString *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_ime objectAtIndex:i], kTISPropertyLocalizedName);
+		ly.name.append_utf8([name UTF8String]);
+
+		NSArray *langs = (__bridge NSArray *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_ime objectAtIndex:i], kTISPropertyInputSourceLanguages);
+		ly.code.append_utf8([(NSString *)[langs objectAtIndex:0] UTF8String]);
+		kbd_layouts.push_back(ly);
+
+		if ([name isEqualToString:cur_name]) {
+			current_layout = kbd_layouts.size() - 1;
+		}
+	}
+
+	// Enum plain keyboard layouts.
+	NSDictionary *filter_kbd = @{ (NSString *)kTISPropertyInputSourceType : (NSString *)kTISTypeKeyboardLayout };
+	NSArray *list_kbd = (__bridge NSArray *)TISCreateInputSourceList((__bridge CFDictionaryRef)filter_kbd, false);
+	for (NSUInteger i = 0; i < [list_kbd count]; i++) {
+		LayoutInfo ly;
+		NSString *name = (__bridge NSString *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_kbd objectAtIndex:i], kTISPropertyLocalizedName);
+		ly.name.append_utf8([name UTF8String]);
+
+		NSArray *langs = (__bridge NSArray *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_kbd objectAtIndex:i], kTISPropertyInputSourceLanguages);
+		ly.code.append_utf8([(NSString *)[langs objectAtIndex:0] UTF8String]);
+		kbd_layouts.push_back(ly);
+
+		if ([name isEqualToString:cur_name]) {
+			current_layout = kbd_layouts.size() - 1;
+		}
+	}
+
+	keyboard_layout_dirty = false;
+}
+
+void DisplayServerMacOSBase::_keyboard_layout_changed(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef user_info) {
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOSBase>();
+	if (ds) {
+		ds->keyboard_layout_dirty = true;
+	}
+}
+
+int DisplayServerMacOSBase::keyboard_get_layout_count() const {
+	if (keyboard_layout_dirty) {
+		_update_keyboard_layouts();
+	}
+	return kbd_layouts.size();
+}
+
+void DisplayServerMacOSBase::keyboard_set_current_layout(int p_index) {
+	if (keyboard_layout_dirty) {
+		_update_keyboard_layouts();
+	}
+
+	ERR_FAIL_INDEX(p_index, kbd_layouts.size());
+
+	NSString *cur_name = [NSString stringWithUTF8String:kbd_layouts[p_index].name.utf8().get_data()];
+
+	NSDictionary *filter_kbd = @{ (NSString *)kTISPropertyInputSourceType : (NSString *)kTISTypeKeyboardLayout };
+	NSArray *list_kbd = (__bridge NSArray *)TISCreateInputSourceList((__bridge CFDictionaryRef)filter_kbd, false);
+	for (NSUInteger i = 0; i < [list_kbd count]; i++) {
+		NSString *name = (__bridge NSString *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_kbd objectAtIndex:i], kTISPropertyLocalizedName);
+		if ([name isEqualToString:cur_name]) {
+			TISSelectInputSource((__bridge TISInputSourceRef)[list_kbd objectAtIndex:i]);
+			break;
+		}
+	}
+
+	NSDictionary *filter_ime = @{ (NSString *)kTISPropertyInputSourceType : (NSString *)kTISTypeKeyboardInputMode };
+	NSArray *list_ime = (__bridge NSArray *)TISCreateInputSourceList((__bridge CFDictionaryRef)filter_ime, false);
+	for (NSUInteger i = 0; i < [list_ime count]; i++) {
+		NSString *name = (__bridge NSString *)TISGetInputSourceProperty((__bridge TISInputSourceRef)[list_ime objectAtIndex:i], kTISPropertyLocalizedName);
+		if ([name isEqualToString:cur_name]) {
+			TISSelectInputSource((__bridge TISInputSourceRef)[list_ime objectAtIndex:i]);
+			break;
+		}
+	}
+}
+
+int DisplayServerMacOSBase::keyboard_get_current_layout() const {
+	if (keyboard_layout_dirty) {
+		_update_keyboard_layouts();
+	}
+
+	return current_layout;
+}
+
+String DisplayServerMacOSBase::keyboard_get_layout_language(int p_index) const {
+	if (keyboard_layout_dirty) {
+		_update_keyboard_layouts();
+	}
+
+	ERR_FAIL_INDEX_V(p_index, kbd_layouts.size(), "");
+	return kbd_layouts[p_index].code;
+}
+
+String DisplayServerMacOSBase::keyboard_get_layout_name(int p_index) const {
+	if (keyboard_layout_dirty) {
+		_update_keyboard_layouts();
+	}
+
+	ERR_FAIL_INDEX_V(p_index, kbd_layouts.size(), "");
+	return kbd_layouts[p_index].name;
+}
+
+Key DisplayServerMacOSBase::keyboard_get_keycode_from_physical(Key p_keycode) const {
+	if (p_keycode == Key::PAUSE || p_keycode == Key::NONE) {
+		return p_keycode;
+	}
+
+	Key modifiers = p_keycode & KeyModifierMask::MODIFIER_MASK;
+	Key keycode_no_mod = p_keycode & KeyModifierMask::CODE_MASK;
+	unsigned int macos_keycode = KeyMappingMacOS::unmap_key(keycode_no_mod);
+	return (Key)(KeyMappingMacOS::remap_key(macos_keycode, 0, false) | modifiers);
+}
+
+Key DisplayServerMacOSBase::keyboard_get_label_from_physical(Key p_keycode) const {
+	if (p_keycode == Key::PAUSE || p_keycode == Key::NONE) {
+		return p_keycode;
+	}
+
+	Key modifiers = p_keycode & KeyModifierMask::MODIFIER_MASK;
+	Key keycode_no_mod = p_keycode & KeyModifierMask::CODE_MASK;
+	unsigned int macos_keycode = KeyMappingMacOS::unmap_key(keycode_no_mod);
+	return (Key)(KeyMappingMacOS::remap_key(macos_keycode, 0, true) | modifiers);
+}
+
+void DisplayServerMacOSBase::show_emoji_and_symbol_picker() const {
+	[[NSApplication sharedApplication] orderFrontCharacterPalette:nil];
+}
+
+bool DisplayServerMacOSBase::is_dark_mode_supported() const {
+	return true;
+}
+
+bool DisplayServerMacOSBase::is_dark_mode() const {
+	if (![[NSUserDefaults standardUserDefaults] objectForKey:@"AppleInterfaceStyle"]) {
+		return false;
+	} else {
+		return ([[[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"] isEqual:@"Dark"]);
+	}
+}
+
+Color DisplayServerMacOSBase::get_accent_color() const {
+	__block NSColor *color = nullptr;
+	[NSApp.effectiveAppearance performAsCurrentDrawingAppearance:^{
+		color = [[NSColor controlAccentColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	}];
+	if (!color) {
+		color = [[NSColor controlAccentColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	}
+	if (color) {
+		CGFloat components[4];
+		[color getRed:&components[0] green:&components[1] blue:&components[2] alpha:&components[3]];
+		return Color(components[0], components[1], components[2], components[3]);
+	} else {
+		return Color(0, 0, 0, 0);
+	}
+}
+
+Color DisplayServerMacOSBase::get_base_color() const {
+	__block NSColor *color = nullptr;
+	[NSApp.effectiveAppearance performAsCurrentDrawingAppearance:^{
+		color = [[NSColor windowBackgroundColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	}];
+	if (!color) {
+		color = [[NSColor controlColor] colorUsingColorSpace:[NSColorSpace genericRGBColorSpace]];
+	}
+	if (color) {
+		CGFloat components[4];
+		[color getRed:&components[0] green:&components[1] blue:&components[2] alpha:&components[3]];
+		return Color(components[0], components[1], components[2], components[3]);
+	} else {
+		return Color(0, 0, 0, 0);
+	}
+}
+
+void DisplayServerMacOSBase::set_system_theme_change_callback(const Callable &p_callable) {
+	system_theme_changed = p_callable;
+}
+
+bool DisplayServerMacOSBase::screen_is_kept_on() const {
+	return (screen_keep_on_assertion);
+}
+
+void DisplayServerMacOSBase::screen_set_keep_on(bool p_enable) {
+	if (screen_keep_on_assertion) {
+		IOPMAssertionRelease(screen_keep_on_assertion);
+		screen_keep_on_assertion = kIOPMNullAssertionID;
+	}
+
+	if (p_enable) {
+		String app_name_string = GLOBAL_GET("application/config/name");
+		NSString *name = [NSString stringWithUTF8String:(app_name_string.is_empty() ? "Godot Engine" : app_name_string.utf8().get_data())];
+		NSString *reason = @"Godot Engine running with display/window/energy_saving/keep_screen_on = true";
+		IOPMAssertionCreateWithDescription(kIOPMAssertPreventUserIdleDisplaySleep, (__bridge CFStringRef)name, (__bridge CFStringRef)reason, (__bridge CFStringRef)reason, nullptr, 0, nullptr, &screen_keep_on_assertion);
+	}
+}
+
+int DisplayServerMacOSBase::accessibility_should_increase_contrast() const {
+	return [(GodotApplicationDelegate *)[[NSApplication sharedApplication] delegate] getHighContrast];
+}
+
+int DisplayServerMacOSBase::accessibility_should_reduce_animation() const {
+	return [(GodotApplicationDelegate *)[[NSApplication sharedApplication] delegate] getReduceMotion];
+}
+
+int DisplayServerMacOSBase::accessibility_should_reduce_transparency() const {
+	return [(GodotApplicationDelegate *)[[NSApplication sharedApplication] delegate] getReduceTransparency];
+}
+
+int DisplayServerMacOSBase::accessibility_screen_reader_active() const {
+	return [(GodotApplicationDelegate *)[[NSApplication sharedApplication] delegate] getVoiceOver];
+}
+
+void DisplayServerMacOSBase::update_im_text(const Point2i &p_selection, const String &p_text) {
+	im_selection = p_selection;
+	im_text = p_text;
+
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_IME_UPDATE);
+	}
+}
+
+Point2i DisplayServerMacOSBase::ime_get_selection() const {
+	return im_selection;
+}
+
+String DisplayServerMacOSBase::ime_get_text() const {
+	return im_text;
+}
+
+DisplayServerEnums::CursorShape DisplayServerMacOSBase::cursor_get_shape() const {
+	return cursor_shape;
+}
+
+void DisplayServerMacOSBase::beep() const {
+	NSBeep();
+}
+
+int DisplayServerMacOSBase::get_primary_screen() const {
+	return 0;
+}
+
+float DisplayServerMacOSBase::screen_get_refresh_rate(int p_screen) const {
+	_THREAD_SAFE_METHOD_
+
+	p_screen = _get_screen_index(p_screen);
+	int screen_count = get_screen_count();
+	ERR_FAIL_INDEX_V(p_screen, screen_count, SCREEN_REFRESH_RATE_FALLBACK);
+
+	NSArray *screenArray = [NSScreen screens];
+	if ((NSUInteger)p_screen < [screenArray count]) {
+		NSScreen *screen = [screenArray objectAtIndex:p_screen];
+		const CGDisplayModeRef displayMode = CGDisplayCopyDisplayMode(_get_display_id_for_screen(screen));
+		const double displayRefreshRate = CGDisplayModeGetRefreshRate(displayMode);
+		return (float)displayRefreshRate;
+	}
+	ERR_PRINT("An error occurred while trying to get the screen refresh rate.");
+	return SCREEN_REFRESH_RATE_FALLBACK;
+}
+
+void DisplayServerMacOSBase::emit_system_theme_changed() {
+	if (system_theme_changed.is_valid()) {
+		Variant ret;
+		Callable::CallError ce;
+		system_theme_changed.callp(nullptr, 0, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat("Failed to execute system theme changed callback: %s.", Variant::get_callable_error_text(system_theme_changed, nullptr, 0, ce)));
+		}
+	}
+}
+
+// MARK: - HDR / EDR
+
+void DisplayServerMacOSBase::_update_hdr_output(DisplayServerEnums::WindowID p_window, const HDROutput &p_hdr) {
+#ifdef RD_ENABLED
+	if (!rendering_context) {
+		return;
+	}
+
+	CGFloat max_potential_edr, max_edr;
+	window_get_edr_values(p_window, &max_potential_edr, &max_edr);
+	bool desired_hdr_enabled = p_hdr.requested && max_potential_edr > 1.0f;
+	bool current_hdr_enabled = rendering_context->window_get_hdr_output_enabled(p_window);
+	bool hdr_state_changed = false;
+	if (current_hdr_enabled != desired_hdr_enabled) {
+		rendering_context->window_set_hdr_output_enabled(p_window, desired_hdr_enabled);
+		hdr_state_changed = true;
+	}
+
+	float new_reference_luminance = _calculate_current_reference_luminance(max_potential_edr, max_edr);
+	float current_ref_luminance = rendering_context->window_get_hdr_output_reference_luminance(p_window);
+	if (!Math::is_equal_approx(current_ref_luminance, new_reference_luminance)) {
+		rendering_context->window_set_hdr_output_reference_luminance(p_window, new_reference_luminance);
+		rendering_context->window_set_hdr_output_linear_luminance_scale(p_window, new_reference_luminance);
+		hdr_state_changed = true;
+	}
+
+	float new_max_luminance = p_hdr.is_auto_max_luminance() ? max_potential_edr * HARDWARE_REFERENCE_LUMINANCE_NITS : p_hdr.max_luminance;
+	float current_max_luminance = rendering_context->window_get_hdr_output_max_luminance(p_window);
+	if (!Math::is_equal_approx(current_max_luminance, new_max_luminance)) {
+		rendering_context->window_set_hdr_output_max_luminance(p_window, new_max_luminance);
+		hdr_state_changed = true;
+	}
+
+	if (hdr_state_changed) {
+		send_window_event_by_id(DisplayServerEnums::WINDOW_EVENT_OUTPUT_MAX_LINEAR_VALUE_CHANGED, p_window);
+	}
+#endif
+}
+
+bool DisplayServerMacOSBase::window_is_hdr_output_supported(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), false);
+	bool renderer_supports_hdr_output = false;
+	bool surface_supports_hdr_output = false;
+#if defined(RD_ENABLED)
+	if (rendering_device && rendering_device->has_feature(RenderingDevice::Features::SUPPORTS_HDR_OUTPUT)) {
+		renderer_supports_hdr_output = true;
+		surface_supports_hdr_output = rendering_device->screen_get_hdr_output_supported(p_window);
+	}
+#endif
+	if (!renderer_supports_hdr_output) {
+		return false;
+	}
+
+	if (!surface_supports_hdr_output) {
+		return false;
+	}
+
+	CGFloat max_potential_edr;
+	window_get_edr_values(p_window, &max_potential_edr, nullptr);
+	return max_potential_edr > 1.0f;
+}
+
+void DisplayServerMacOSBase::window_request_hdr_output(const bool p_enabled, DisplayServerEnums::WindowID p_window) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND(!has_window(p_window));
+	if (p_enabled) {
+		bool renderer_supports_hdr_output = false;
+		bool surface_supports_hdr_output = false;
+#if defined(RD_ENABLED)
+		if (rendering_device && rendering_device->has_feature(RenderingDevice::Features::SUPPORTS_HDR_OUTPUT)) {
+			renderer_supports_hdr_output = true;
+			surface_supports_hdr_output = rendering_device->screen_get_hdr_output_supported(p_window);
+		}
+#endif
+		if (!renderer_supports_hdr_output) {
+			WARN_PRINT("HDR output requested, but is not supported by the renderer or rendering device driver.");
+			return;
+		}
+
+		if (!surface_supports_hdr_output) {
+			WARN_PRINT("HDR output requested, but the window does not support an HDR format.");
+			return;
+		}
+	}
+
+	HDROutput &hdr = _get_hdr_output(p_window);
+	hdr.requested = p_enabled;
+	_update_hdr_output(p_window, hdr);
+}
+
+bool DisplayServerMacOSBase::window_is_hdr_output_requested(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), false);
+	return _get_hdr_output(p_window).requested;
+}
+
+bool DisplayServerMacOSBase::window_is_hdr_output_enabled(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), false);
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		return rendering_context->window_get_hdr_output_enabled(p_window);
+	}
+#endif
+
+	return false;
+}
+
+void DisplayServerMacOSBase::window_set_hdr_output_reference_luminance(const float p_reference_luminance, DisplayServerEnums::WindowID p_window) {
+	ERR_PRINT_ONCE("Manually setting reference white luminance is not supported on Apple devices, as they provide a user-facing brightness setting that directly controls reference white luminance.");
+}
+
+float DisplayServerMacOSBase::window_get_hdr_output_reference_luminance(DisplayServerEnums::WindowID p_window) const {
+	return -1.0f; // Always auto-adjusted by the OS on Apple platforms.
+}
+
+constexpr float DisplayServerMacOSBase::_calculate_current_reference_luminance(CGFloat p_max_potential_edr_value, CGFloat p_max_edr_value) const {
+	return (p_max_potential_edr_value * HARDWARE_REFERENCE_LUMINANCE_NITS) / p_max_edr_value;
+}
+
+float DisplayServerMacOSBase::window_get_hdr_output_current_reference_luminance(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), 0.0);
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		return rendering_context->window_get_hdr_output_reference_luminance(p_window);
+	}
+#endif
+	return 200.0f;
+}
+
+void DisplayServerMacOSBase::window_set_hdr_output_max_luminance(const float p_max_luminance, DisplayServerEnums::WindowID p_window) {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND(!has_window(p_window));
+	HDROutput &hdr = _get_hdr_output(p_window);
+
+	if (hdr.max_luminance == p_max_luminance) {
+		return;
+	}
+	hdr.max_luminance = p_max_luminance;
+	_update_hdr_output(p_window, hdr);
+}
+
+float DisplayServerMacOSBase::window_get_hdr_output_max_luminance(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), 0.0);
+	return _get_hdr_output(p_window).max_luminance;
+}
+
+float DisplayServerMacOSBase::window_get_hdr_output_current_max_luminance(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), 0.0);
+	const HDROutput &hdr = _get_hdr_output(p_window);
+	if (hdr.is_auto_max_luminance()) {
+		CGFloat max_potential_edr;
+		window_get_edr_values(p_window, &max_potential_edr, nullptr);
+		return max_potential_edr * HARDWARE_REFERENCE_LUMINANCE_NITS;
+	}
+	return hdr.max_luminance;
+}
+
+float DisplayServerMacOSBase::window_get_output_max_linear_value(DisplayServerEnums::WindowID p_window) const {
+	_THREAD_SAFE_METHOD_
+
+	ERR_FAIL_COND_V(!has_window(p_window), 1.0);
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		return rendering_context->window_get_output_max_linear_value(p_window);
+	}
+#endif
+
+	return 1.0f; // SDR
+}
+
+DisplayServerMacOSBase::DisplayServerMacOSBase() {
+	KeyMappingMacOS::initialize();
+
+	// Init TTS
+	bool tts_enabled = GLOBAL_GET("audio/general/text_to_speech");
+	if (tts_enabled) {
+		initialize_tts();
+	}
+
+	screen_set_keep_on(GLOBAL_GET("display/window/energy_saving/keep_screen_on"));
+
+	// Register to be notified on keyboard layout changes.
+	CFNotificationCenterAddObserver(CFNotificationCenterGetDistributedCenter(),
+			nullptr, _keyboard_layout_changed,
+			kTISNotifySelectedKeyboardInputSourceChanged, nullptr,
+			CFNotificationSuspensionBehaviorDeliverImmediately);
+}
+
+DisplayServerMacOSBase::~DisplayServerMacOSBase() {
+	if (screen_keep_on_assertion) {
+		IOPMAssertionRelease(screen_keep_on_assertion);
+		screen_keep_on_assertion = kIOPMNullAssertionID;
+	}
+
+	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDistributedCenter(), nullptr, kTISNotifySelectedKeyboardInputSourceChanged, nullptr);
+}
+
+// === Merged from platform/macos/godot_button_view.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+@implementation GodotButtonView
+
+- (id)initWithFrame:(NSRect)frame {
+	self = [super initWithFrame:frame];
+
+	tracking_area = nil;
+	offset = NSMakePoint(8, 8);
+	spacing = 20;
+	mouse_in_group = false;
+	rtl = false;
+	close_button = nullptr;
+	miniaturize_button = nullptr;
+	zoom_button = nullptr;
+
+	return self;
+}
+
+- (void)initButtons:(CGFloat)button_spacing offset:(NSPoint)button_offset rtl:(bool)is_rtl {
+	spacing = button_spacing;
+	rtl = is_rtl;
+
+	close_button = [NSWindow standardWindowButton:NSWindowCloseButton forStyleMask:NSWindowStyleMaskTitled];
+	[close_button setFrameOrigin:NSMakePoint(rtl ? spacing * 2 : 0, 0)];
+	[self addSubview:close_button];
+
+	miniaturize_button = [NSWindow standardWindowButton:NSWindowMiniaturizeButton forStyleMask:NSWindowStyleMaskTitled];
+	[miniaturize_button setFrameOrigin:NSMakePoint(spacing, 0)];
+	[self addSubview:miniaturize_button];
+
+	zoom_button = [NSWindow standardWindowButton:NSWindowZoomButton forStyleMask:NSWindowStyleMaskTitled];
+	[zoom_button setFrameOrigin:NSMakePoint(rtl ? 0 : spacing * 2, 0)];
+	[self addSubview:zoom_button];
+
+	offset.y = button_offset.y - zoom_button.frame.size.height / 2;
+	offset.x = button_offset.x - zoom_button.frame.size.width / 2;
+
+	if (rtl) {
+		[self setFrameSize:NSMakeSize(close_button.frame.origin.x + close_button.frame.size.width, close_button.frame.size.height)];
+	} else {
+		[self setFrameSize:NSMakeSize(zoom_button.frame.origin.x + zoom_button.frame.size.width, zoom_button.frame.size.height)];
+	}
+	[self displayButtons];
+}
+
+- (void)setOffset:(NSPoint)button_offset {
+	if (zoom_button) {
+		offset.y = button_offset.y - zoom_button.frame.size.height / 2;
+		offset.x = button_offset.x - zoom_button.frame.size.width / 2;
+
+		[self viewDidMoveToWindow];
+	}
+}
+
+- (NSPoint)getOffset {
+	return offset;
+}
+
+- (void)viewDidMoveToWindow {
+	if (!self.window) {
+		return;
+	}
+
+	if (rtl) {
+		[self setAutoresizingMask:NSViewMinXMargin | NSViewMinYMargin];
+		[self setFrameOrigin:NSMakePoint(self.window.frame.size.width - self.frame.size.width - offset.x, self.window.frame.size.height - self.frame.size.height - offset.y)];
+	} else {
+		[self setAutoresizingMask:NSViewMaxXMargin | NSViewMinYMargin];
+		[self setFrameOrigin:NSMakePoint(offset.x, self.window.frame.size.height - self.frame.size.height - offset.y)];
+	}
+}
+
+- (BOOL)_mouseInGroup:(NSButton *)button {
+	return mouse_in_group;
+}
+
+- (void)updateTrackingAreas {
+	if (tracking_area != nil) {
+		[self removeTrackingArea:tracking_area];
+	}
+
+	NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways | NSTrackingInVisibleRect;
+	tracking_area = [[NSTrackingArea alloc] initWithRect:NSZeroRect options:options owner:self userInfo:nil];
+
+	[self addTrackingArea:tracking_area];
+}
+
+- (void)mouseEntered:(NSEvent *)event {
+	[super mouseEntered:event];
+
+	mouse_in_group = true;
+	[self displayButtons];
+}
+
+- (void)mouseExited:(NSEvent *)event {
+	[super mouseExited:event];
+
+	mouse_in_group = false;
+	[self displayButtons];
+}
+
+- (void)displayButtons {
+	for (NSView *subview in self.subviews) {
+		[subview setNeedsDisplay:YES];
+	}
+}
+
+@end
+
+// === Merged from platform/macos/godot_content_view.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+#include "core/input/input.h"
+#include "core/input/input_event.h"
+#include "core/os/keyboard.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+#include "core/profiling/profiling.h"
+#include "main/main.h"
+
+@implementation GodotContentLayerDelegate
+
+- (id)init {
+	self = [super init];
+	window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	need_redraw = false;
+	return self;
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid {
+	window_id = wid;
+}
+
+- (void)setNeedRedraw:(bool)redraw {
+	need_redraw = redraw;
+}
+
+- (void)displayLayer:(CALayer *)layer {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (MainLoop::is_active() && ds->get_is_resizing() && need_redraw) {
+		GodotProfileFrameMark;
+		GodotProfileZone("[GodotContentLayerDelegate displayLayer]");
+
+		Main::force_redraw();
+		if (!Main::is_iterating()) { // Avoid cyclic loop.
+			Main::iteration();
+		}
+		need_redraw = false;
+	}
+}
+
+@end
+
+@implementation GodotContentView
+
+- (BOOL)acceptsFirstMouse:(NSEvent *)event {
+	return YES;
+}
+
+- (void)setFrameSize:(NSSize)newSize {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		NSRect frameRect = [wd.window_object frame];
+		if (wd.fs_transition || wd.initial_size) {
+			self.layerContentsPlacement = NSViewLayerContentsPlacementScaleAxesIndependently;
+			wd.initial_size = false;
+		} else {
+			bool left = (wd.last_frame_rect.origin.x != frameRect.origin.x);
+			bool bottom = (wd.last_frame_rect.origin.y != frameRect.origin.y);
+			bool right = (wd.last_frame_rect.origin.x + wd.last_frame_rect.size.width != frameRect.origin.x + frameRect.size.width);
+			bool top = (wd.last_frame_rect.origin.y + wd.last_frame_rect.size.height != frameRect.origin.y + frameRect.size.height);
+
+			if (left && top) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementBottomRight;
+			} else if (left && bottom) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementTopRight;
+			} else if (left) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementRight;
+			} else if (right && top) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementBottomLeft;
+			} else if (right && bottom) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementTopLeft;
+			} else if (right) {
+				self.layerContentsPlacement = NSViewLayerContentsPlacementLeft;
+			}
+		}
+		wd.last_frame_rect = frameRect;
+	}
+
+	[super setFrameSize:newSize];
+	[layer_delegate setNeedRedraw:true];
+	[self.layer setNeedsDisplay]; // Force "drawRect" call.
+}
+
+- (void)updateLayerDelegate {
+	self.layer.delegate = layer_delegate;
+	self.layer.autoresizingMask = kCALayerHeightSizable | kCALayerWidthSizable;
+	self.layer.needsDisplayOnBoundsChange = YES;
+}
+
+- (void)addObserver:(NSObject *)targetObserver forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(void *)context {
+	[registered_observers addObject:[[targetObserver description] stringByAppendingString:keyPath]];
+	[super addObserver:targetObserver forKeyPath:keyPath options:options context:context];
+}
+
+- (void)removeObserver:(NSObject *)targetObserver forKeyPath:(NSString *)keyPath {
+	if ([registered_observers containsObject:[[targetObserver description] stringByAppendingString:keyPath]]) {
+		@try {
+			[super removeObserver:targetObserver forKeyPath:keyPath];
+			[registered_observers removeObject:[[targetObserver description] stringByAppendingString:keyPath]];
+		} @catch (NSException *exception) {
+			ERR_PRINT("NSException: " + String::utf8([exception reason].UTF8String));
+		}
+	}
+}
+
+- (id)init {
+	self = [super init];
+	layer_delegate = [[GodotContentLayerDelegate alloc] init];
+	window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	tracking_area = nil;
+	ime_input_event_in_progress = false;
+	mouse_down_control = false;
+	ignore_momentum_scroll = false;
+	last_pen_inverted = false;
+	registered_observers = [[NSMutableSet alloc] init];
+	[self updateTrackingAreas];
+
+	self.layerContentsRedrawPolicy = NSViewLayerContentsRedrawDuringViewResize;
+	self.layerContentsPlacement = NSViewLayerContentsPlacementTopLeft;
+
+	[self registerForDraggedTypes:[NSArray arrayWithObject:NSPasteboardTypeFileURL]];
+	marked_text = [[NSMutableAttributedString alloc] init];
+	return self;
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid {
+	window_id = wid;
+	[layer_delegate setWindowID:window_id];
+}
+
+// MARK: Backing Layer
+
+- (CALayer *)makeBackingLayer {
+	CAMetalLayer *layer = [CAMetalLayer new];
+	layer.edgeAntialiasingMask = 0;
+	layer.masksToBounds = NO;
+	layer.presentsWithTransaction = NO;
+	[layer removeAllAnimations];
+	return layer;
+}
+
+- (BOOL)wantsUpdateLayer {
+	return YES;
+}
+
+- (BOOL)isOpaque {
+	return YES;
+}
+
+// MARK: IME
+
+- (BOOL)hasMarkedText {
+	return (marked_text.length > 0);
+}
+
+- (NSRange)markedRange {
+	return NSMakeRange(0, marked_text.length);
+}
+
+- (NSRange)selectedRange {
+	static const NSRange kEmptyRange = { NSNotFound, 0 };
+	return kEmptyRange;
+}
+
+- (void)setMarkedText:(id)aString selectedRange:(NSRange)selectedRange replacementRange:(NSRange)replacementRange {
+	if ([aString isKindOfClass:[NSAttributedString class]]) {
+		marked_text = [[NSMutableAttributedString alloc] initWithAttributedString:aString];
+	} else {
+		marked_text = [[NSMutableAttributedString alloc] initWithString:aString];
+	}
+	if (marked_text.length == 0) {
+		[self unmarkText];
+		return;
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	if (wd.im_active) {
+		ime_input_event_in_progress = true;
+		ds->pop_last_key_event();
+		ds->update_im_text(Point2i(selectedRange.location, selectedRange.length), String::utf8([[marked_text mutableString] UTF8String]));
+	}
+}
+
+- (void)doCommandBySelector:(SEL)aSelector {
+	[self tryToPerform:aSelector with:self];
+}
+
+- (void)unmarkText {
+	if (ime_input_event_in_progress) {
+		ime_suppress_next_keyup = true;
+	}
+	ime_input_event_in_progress = false;
+	[[marked_text mutableString] setString:@""];
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	if (wd.im_active) {
+		ds->update_im_text(Point2i(), String());
+	}
+}
+
+- (NSArray *)validAttributesForMarkedText {
+	return [NSArray array];
+}
+
+- (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange {
+	return nil;
+}
+
+- (NSUInteger)characterIndexForPoint:(NSPoint)aPoint {
+	return 0;
+}
+
+- (NSRect)firstRectForCharacterRange:(NSRange)aRange actualRange:(NSRangePointer)actualRange {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return NSMakeRect(0, 0, 0, 0);
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	if (!wd.im_active) {
+		return NSMakeRect(0, 0, 0, 0);
+	}
+
+	const NSRect content_rect = [wd.window_view frame];
+	const float scale = ds->screen_get_max_scale();
+	NSRect point_in_window_rect = NSMakeRect(wd.im_position.x / scale, content_rect.size.height - (wd.im_position.y / scale) - 1, 0, 0);
+	NSPoint point_on_screen = [wd.window_object convertRectToScreen:point_in_window_rect].origin;
+
+	return NSMakeRect(point_on_screen.x, point_on_screen.y, 0, 0);
+}
+
+- (void)cancelComposition {
+	[self unmarkText];
+	[[NSTextInputContext currentInputContext] discardMarkedText];
+}
+
+- (void)insertText:(id)aString {
+	[self insertText:aString replacementRange:NSMakeRange(0, 0)];
+}
+
+- (void)insertText:(id)aString replacementRange:(NSRange)replacementRange {
+	NSString *characters;
+	if ([aString isKindOfClass:[NSAttributedString class]]) {
+		characters = [aString string];
+	} else {
+		characters = (NSString *)aString;
+	}
+
+	NSCharacterSet *ctrl_chars = [NSCharacterSet controlCharacterSet];
+	NSCharacterSet *wsnl_chars = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+	if ([characters rangeOfCharacterFromSet:ctrl_chars].length && [characters rangeOfCharacterFromSet:wsnl_chars].length == 0) {
+		[[NSTextInputContext currentInputContext] discardMarkedText];
+		[self cancelComposition];
+		return;
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		[self cancelComposition];
+		return;
+	}
+
+	Char16String text;
+	text.resize_uninitialized([characters length] + 1);
+	[characters getCharacters:(unichar *)text.ptrw() range:NSMakeRange(0, [characters length])];
+
+	String u32text = String::utf16(text.ptr(), text.length());
+
+	for (int i = 0; i < u32text.length(); i++) {
+		const char32_t codepoint = u32text[i];
+		if ((codepoint & 0xFF00) == 0xF700) {
+			continue;
+		}
+
+		DisplayServerMacOS::KeyEvent ke;
+
+		ke.window_id = window_id;
+		ke.macos_state = 0;
+		ke.pressed = true;
+		ke.echo = false;
+		ke.raw = false; // IME input event.
+		ke.keycode = Key::NONE;
+		ke.physical_keycode = Key::NONE;
+		ke.key_label = Key::NONE;
+		ke.unicode = fix_unicode(codepoint);
+
+		ds->push_to_key_event_buffer(ke);
+	}
+	[self cancelComposition];
+}
+
+// MARK: Drag and drop
+
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
+	return NSDragOperationCopy;
+}
+
+- (NSDragOperation)draggingUpdated:(id<NSDraggingInfo>)sender {
+	return NSDragOperationCopy;
+}
+
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return NO;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	if (wd.drop_files_callback.is_valid()) {
+		Vector<String> files;
+		NSPasteboard *pboard = [sender draggingPasteboard];
+
+		NSArray *items = pboard.pasteboardItems;
+		for (NSPasteboardItem *item in items) {
+			NSString *url = [item stringForType:NSPasteboardTypeFileURL];
+			NSString *file = [NSURL URLWithString:url].path;
+			files.push_back(String::utf8([file UTF8String]));
+		}
+		Variant v_files = files;
+		const Variant *v_args[1] = { &v_files };
+		Variant ret;
+		Callable::CallError ce;
+		wd.drop_files_callback.callp((const Variant **)&v_args, 1, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_FAIL_V_MSG(NO, vformat("Failed to execute drop files callback: %s.", Variant::get_callable_error_text(wd.drop_files_callback, v_args, 1, ce)));
+		}
+		return YES;
+	}
+
+	return NO;
+}
+
+// MARK: Focus
+
+- (BOOL)canBecomeKeyView {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return YES;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	return !wd.no_focus;
+}
+
+- (BOOL)acceptsFirstResponder {
+	return YES;
+}
+
+// MARK: Mouse
+
+- (void)cursorUpdate:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds) {
+		return;
+	}
+
+	ds->cursor_update_shape();
+}
+
+- (void)processMouseEvent:(NSEvent *)event index:(MouseButton)index pressed:(bool)pressed outofstream:(bool)outofstream {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	Ref<InputEventMouseButton> mb;
+	mb.instantiate();
+	mb->set_window_id(window_id);
+	if (outofstream) {
+		ds->update_mouse_pos(wd, [wd.window_object mouseLocationOutsideOfEventStream]);
+	} else {
+		ds->update_mouse_pos(wd, [event locationInWindow]);
+	}
+	ds->get_key_modifier_state([event modifierFlags], mb);
+	mb->set_button_index(index);
+	mb->set_pressed(pressed);
+	mb->set_position(wd.mouse_pos);
+	mb->set_global_position(wd.mouse_pos);
+	mb->set_button_mask(ds->mouse_get_button_state());
+	if (!outofstream && index == MouseButton::LEFT && pressed) {
+		mb->set_double_click([event clickCount] == 2);
+	}
+
+	Input::parse_input_event(mb);
+}
+
+- (void)mouseDown:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		wd.edge = DisplayServerEnums::WINDOW_EDGE_MAX;
+	}
+	if (([event modifierFlags] & NSEventModifierFlagControl)) {
+		mouse_down_control = true;
+		[self processMouseEvent:event index:MouseButton::RIGHT pressed:true outofstream:false];
+	} else {
+		mouse_down_control = false;
+		[self processMouseEvent:event index:MouseButton::LEFT pressed:true outofstream:false];
+	}
+}
+
+- (void)mouseDragged:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		if (wd.edge != DisplayServerEnums::WINDOW_EDGE_MAX) {
+			Size2i max_size = wd.max_size / ds->screen_get_max_scale();
+			Size2i min_size = wd.min_size / ds->screen_get_max_scale();
+			NSRect frame = [wd.window_object frame];
+			switch (wd.edge) {
+				case DisplayServerEnums::WINDOW_EDGE_TOP_LEFT: {
+					int clamped_dx = CLAMP(frame.size.width - event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					int clamped_dy = CLAMP(frame.size.height - event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x - clamped_dx, frame.origin.y, frame.size.width + clamped_dx, frame.size.height + clamped_dy) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_TOP: {
+					int clamped_dy = CLAMP(frame.size.height - event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height + clamped_dy) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_TOP_RIGHT: {
+					int clamped_dx = CLAMP(frame.size.width + event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					int clamped_dy = CLAMP(frame.size.height - event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x, frame.origin.y, frame.size.width + clamped_dx, frame.size.height + clamped_dy) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_LEFT: {
+					int clamped_dx = CLAMP(frame.size.width - event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x - clamped_dx, frame.origin.y, frame.size.width + clamped_dx, frame.size.height) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_RIGHT: {
+					int clamped_dx = CLAMP(frame.size.width + event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x, frame.origin.y, frame.size.width + clamped_dx, frame.size.height) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_BOTTOM_LEFT: {
+					int clamped_dx = CLAMP(frame.size.width - event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					int clamped_dy = CLAMP(frame.size.height + event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x - clamped_dx, frame.origin.y - clamped_dy, frame.size.width + clamped_dx, frame.size.height + clamped_dy) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_BOTTOM: {
+					int clamped_dy = CLAMP(frame.size.height + event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x, frame.origin.y - clamped_dy, frame.size.width, frame.size.height + clamped_dy) display:YES];
+				} break;
+				case DisplayServerEnums::WINDOW_EDGE_BOTTOM_RIGHT: {
+					int clamped_dx = CLAMP(frame.size.width + event.deltaX, min_size.x, max_size.x) - frame.size.width;
+					int clamped_dy = CLAMP(frame.size.height + event.deltaY, min_size.y, max_size.y) - frame.size.height;
+					[wd.window_object setFrame:NSMakeRect(frame.origin.x, frame.origin.y - clamped_dy, frame.size.width + clamped_dx, frame.size.height + clamped_dy) display:YES];
+				} break;
+				default:
+					break;
+			}
+			return;
+		}
+	}
+	[self mouseMoved:event];
+}
+
+- (void)mouseUp:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		wd.edge = DisplayServerEnums::WINDOW_EDGE_MAX;
+	}
+	if (mouse_down_control) {
+		[self processMouseEvent:event index:MouseButton::RIGHT pressed:false outofstream:false];
+	} else {
+		[self processMouseEvent:event index:MouseButton::LEFT pressed:false outofstream:false];
+	}
+}
+
+- (void)mouseMoved:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	NSPoint delta = NSMakePoint([event deltaX], [event deltaY]);
+	NSPoint mpos = [event locationInWindow];
+
+	if (ds->update_mouse_wrap(wd, delta, mpos, [event timestamp])) {
+		return;
+	}
+
+	Ref<InputEventMouseMotion> mm;
+	mm.instantiate();
+
+	mm->set_window_id(window_id);
+	mm->set_button_mask(ds->mouse_get_button_state());
+	ds->update_mouse_pos(wd, mpos);
+	mm->set_position(wd.mouse_pos);
+	mm->set_pressure([event pressure]);
+	NSEventSubtype subtype = [event subtype];
+	if (subtype == NSEventSubtypeTabletPoint) {
+		const NSPoint p = [event tilt];
+		mm->set_tilt(Vector2(p.x, -p.y));
+		mm->set_pen_inverted(last_pen_inverted);
+	} else if (subtype == NSEventSubtypeTabletProximity) {
+		// Check if using the eraser end of pen only on proximity event.
+		last_pen_inverted = [event pointingDeviceType] == NSPointingDeviceTypeEraser;
+		mm->set_pen_inverted(last_pen_inverted);
+	}
+	mm->set_global_position(wd.mouse_pos);
+	mm->set_velocity(Input::get_last_mouse_velocity());
+	mm->set_screen_velocity(mm->get_velocity());
+	const Vector2i relativeMotion = Vector2i(delta.x, delta.y) * ds->screen_get_max_scale();
+	mm->set_relative(relativeMotion);
+	mm->set_relative_screen_position(relativeMotion);
+	ds->get_key_modifier_state([event modifierFlags], mm);
+
+	const NSRect contentRect = [wd.window_view frame];
+	if (NSPointInRect([event locationInWindow], contentRect) && [NSWindow windowNumberAtPoint:[NSEvent mouseLocation] belowWindowWithWindowNumber:0 /*topmost*/] == [wd.window_object windowNumber]) {
+		ds->mouse_enter_window(window_id);
+	}
+
+	Input::parse_input_event(mm);
+}
+
+- (void)rightMouseDown:(NSEvent *)event {
+	[self processMouseEvent:event index:MouseButton::RIGHT pressed:true outofstream:false];
+}
+
+- (void)rightMouseDragged:(NSEvent *)event {
+	[self mouseMoved:event];
+}
+
+- (void)rightMouseUp:(NSEvent *)event {
+	[self processMouseEvent:event index:MouseButton::RIGHT pressed:false outofstream:false];
+}
+
+- (void)otherMouseDown:(NSEvent *)event {
+	if ((int)[event buttonNumber] == 2) {
+		[self processMouseEvent:event index:MouseButton::MIDDLE pressed:true outofstream:false];
+	} else if ((int)[event buttonNumber] == 3) {
+		[self processMouseEvent:event index:MouseButton::MB_XBUTTON1 pressed:true outofstream:false];
+	} else if ((int)[event buttonNumber] == 4) {
+		[self processMouseEvent:event index:MouseButton::MB_XBUTTON2 pressed:true outofstream:false];
+	} else {
+		return;
+	}
+}
+
+- (void)otherMouseDragged:(NSEvent *)event {
+	[self mouseMoved:event];
+}
+
+- (void)otherMouseUp:(NSEvent *)event {
+	if ((int)[event buttonNumber] == 2) {
+		[self processMouseEvent:event index:MouseButton::MIDDLE pressed:false outofstream:false];
+	} else if ((int)[event buttonNumber] == 3) {
+		[self processMouseEvent:event index:MouseButton::MB_XBUTTON1 pressed:false outofstream:false];
+	} else if ((int)[event buttonNumber] == 4) {
+		[self processMouseEvent:event index:MouseButton::MB_XBUTTON2 pressed:false outofstream:false];
+	} else {
+		return;
+	}
+}
+
+- (void)swipeWithEvent:(NSEvent *)event {
+	// Swipe gesture on Trackpad/Magic Mouse, or physical back/forward mouse buttons.
+	if ([event phase] == NSEventPhaseEnded || [event phase] == NSEventPhaseChanged) {
+		if (Math::is_equal_approx([event deltaX], 1.0)) {
+			// Swipe left (back).
+			[self processMouseEvent:event index:MouseButton::MB_XBUTTON1 pressed:true outofstream:true];
+			[self processMouseEvent:event index:MouseButton::MB_XBUTTON1 pressed:false outofstream:true];
+		} else if (Math::is_equal_approx([event deltaX], -1.0)) {
+			// Swipe right (forward).
+			[self processMouseEvent:event index:MouseButton::MB_XBUTTON2 pressed:true outofstream:true];
+			[self processMouseEvent:event index:MouseButton::MB_XBUTTON2 pressed:false outofstream:true];
+		}
+	}
+}
+
+- (void)mouseExited:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	if (ds->mouse_get_mode() != DisplayServerEnums::MOUSE_MODE_CAPTURED) {
+		ds->mouse_exit_window(window_id);
+	}
+}
+
+- (void)mouseEntered:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	if (ds->mouse_get_mode() != DisplayServerEnums::MOUSE_MODE_CAPTURED) {
+		ds->mouse_enter_window(window_id);
+	}
+
+	ds->cursor_update_shape();
+}
+
+- (void)magnifyWithEvent:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	Ref<InputEventMagnifyGesture> ev;
+	ev.instantiate();
+	ev->set_window_id(window_id);
+	ds->get_key_modifier_state([event modifierFlags], ev);
+	ds->update_mouse_pos(wd, [event locationInWindow]);
+	ev->set_position(wd.mouse_pos);
+	ev->set_factor([event magnification] + 1.0);
+
+	Input::parse_input_event(ev);
+}
+
+- (void)updateTrackingAreas {
+	if (tracking_area != nil) {
+		[self removeTrackingArea:tracking_area];
+	}
+
+	NSTrackingAreaOptions options = NSTrackingMouseEnteredAndExited | NSTrackingActiveWhenFirstResponder | NSTrackingCursorUpdate | NSTrackingInVisibleRect;
+	tracking_area = [[NSTrackingArea alloc] initWithRect:[self bounds] options:options owner:self userInfo:nil];
+
+	[self addTrackingArea:tracking_area];
+	[super updateTrackingAreas];
+}
+
+// MARK: Keyboard
+
+- (void)keyDown:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	ignore_momentum_scroll = true;
+
+	// Ignore all input if IME input is in progress.
+	if (!ime_input_event_in_progress) {
+		NSString *characters = [event characters];
+		NSUInteger length = [characters length];
+
+		if (!wd.im_active && length > 0 && keycode_has_unicode(KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], true))) {
+			// Fallback unicode character handler used if IME is not active.
+			Char16String text;
+			text.resize_uninitialized([characters length] + 1);
+			[characters getCharacters:(unichar *)text.ptrw() range:NSMakeRange(0, [characters length])];
+
+			String u32text = String::utf16(text.ptr(), text.length());
+
+			DisplayServerMacOS::KeyEvent ke;
+			ke.window_id = window_id;
+			ke.macos_state = [event modifierFlags];
+			ke.pressed = true;
+			ke.echo = [event isARepeat];
+			ke.keycode = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], false);
+			ke.physical_keycode = KeyMappingMacOS::translate_key([event keyCode]);
+			ke.key_label = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], true);
+			ke.raw = true;
+
+			if (u32text.is_empty()) {
+				ke.unicode = 0;
+				ds->push_to_key_event_buffer(ke);
+			}
+			for (int i = 0; i < u32text.length(); i++) {
+				const char32_t codepoint = u32text[i];
+				ke.unicode = fix_unicode(codepoint);
+				ds->push_to_key_event_buffer(ke);
+			}
+		} else {
+			DisplayServerMacOS::KeyEvent ke;
+
+			ke.window_id = window_id;
+			ke.macos_state = [event modifierFlags];
+			ke.pressed = true;
+			ke.echo = [event isARepeat];
+			ke.keycode = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], false);
+			ke.physical_keycode = KeyMappingMacOS::translate_key([event keyCode]);
+			ke.key_label = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], true);
+			ke.unicode = 0;
+			ke.location = KeyMappingMacOS::translate_location([event keyCode]);
+			ke.raw = false;
+
+			ds->push_to_key_event_buffer(ke);
+		}
+	}
+
+	// Pass events to IME handler
+	if (wd.im_active) {
+		[self interpretKeyEvents:[NSArray arrayWithObject:event]];
+	}
+}
+
+- (void)flagsChanged:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+	ignore_momentum_scroll = true;
+
+	DisplayServerMacOS::KeyEvent ke;
+
+	ke.window_id = window_id;
+	ke.echo = false;
+	ke.raw = true;
+
+	int key = [event keyCode];
+	int mod = [event modifierFlags];
+
+	if (key == 0x36 || key == 0x37) {
+		if (mod & NSEventModifierFlagCommand) {
+			mod &= ~NSEventModifierFlagCommand;
+			ke.pressed = true;
+		} else {
+			ke.pressed = false;
+		}
+	} else if (key == 0x38 || key == 0x3c) {
+		if (mod & NSEventModifierFlagShift) {
+			mod &= ~NSEventModifierFlagShift;
+			ke.pressed = true;
+		} else {
+			ke.pressed = false;
+		}
+	} else if (key == 0x3a || key == 0x3d) {
+		if (mod & NSEventModifierFlagOption) {
+			mod &= ~NSEventModifierFlagOption;
+			ke.pressed = true;
+		} else {
+			ke.pressed = false;
+		}
+	} else if (key == 0x3b || key == 0x3e) {
+		if (mod & NSEventModifierFlagControl) {
+			mod &= ~NSEventModifierFlagControl;
+			ke.pressed = true;
+		} else {
+			ke.pressed = false;
+		}
+	} else {
+		return;
+	}
+
+	ke.macos_state = mod;
+	ke.keycode = KeyMappingMacOS::remap_key(key, mod, false);
+	ke.physical_keycode = KeyMappingMacOS::translate_key(key);
+	ke.key_label = KeyMappingMacOS::remap_key(key, mod, true);
+	ke.unicode = 0;
+	ke.location = KeyMappingMacOS::translate_location(key);
+
+	ds->push_to_key_event_buffer(ke);
+}
+
+- (void)keyUp:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	// Ignore all input if IME input is in progress.
+	if (ime_suppress_next_keyup) {
+		ime_suppress_next_keyup = false;
+		return;
+	}
+
+	if (!ime_input_event_in_progress) {
+		DisplayServerMacOS::KeyEvent ke;
+
+		ke.window_id = window_id;
+		ke.macos_state = [event modifierFlags];
+		ke.pressed = false;
+		ke.echo = [event isARepeat];
+		ke.keycode = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], false);
+		ke.physical_keycode = KeyMappingMacOS::translate_key([event keyCode]);
+		ke.key_label = KeyMappingMacOS::remap_key([event keyCode], [event modifierFlags], true);
+		ke.unicode = 0;
+		ke.location = KeyMappingMacOS::translate_location([event keyCode]);
+		ke.raw = true;
+
+		ds->push_to_key_event_buffer(ke);
+	}
+}
+
+// MARK: Scroll and pan
+
+- (void)processScrollEvent:(NSEvent *)event button:(MouseButton)button factor:(double)factor {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	MouseButtonMask mask = mouse_button_to_mask(button);
+
+	Ref<InputEventMouseButton> sc;
+	sc.instantiate();
+
+	sc->set_window_id(window_id);
+	ds->get_key_modifier_state([event modifierFlags], sc);
+	sc->set_button_index(button);
+	sc->set_factor(factor);
+	sc->set_pressed(true);
+	sc->set_position(wd.mouse_pos);
+	sc->set_global_position(wd.mouse_pos);
+	BitField<MouseButtonMask> scroll_mask = ds->mouse_get_button_state();
+	scroll_mask.set_flag(mask);
+	sc->set_button_mask(scroll_mask);
+
+	Input::parse_input_event(sc);
+
+	sc.instantiate();
+	sc->set_window_id(window_id);
+	sc->set_button_index(button);
+	sc->set_factor(factor);
+	sc->set_pressed(false);
+	sc->set_position(wd.mouse_pos);
+	sc->set_global_position(wd.mouse_pos);
+	scroll_mask.clear_flag(mask);
+	sc->set_button_mask(scroll_mask);
+
+	Input::parse_input_event(sc);
+}
+
+- (void)processPanEvent:(NSEvent *)event dx:(double)dx dy:(double)dy {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	Ref<InputEventPanGesture> pg;
+	pg.instantiate();
+
+	pg->set_window_id(window_id);
+	ds->get_key_modifier_state([event modifierFlags], pg);
+	pg->set_position(wd.mouse_pos);
+	pg->set_delta(Vector2(-dx, -dy));
+
+	Input::parse_input_event(pg);
+}
+
+- (void)scrollWheel:(NSEvent *)event {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	ds->update_mouse_pos(wd, [event locationInWindow]);
+
+	double delta_x = [event scrollingDeltaX];
+	double delta_y = [event scrollingDeltaY];
+
+	if ([event hasPreciseScrollingDeltas]) {
+		delta_x *= 0.03;
+		delta_y *= 0.03;
+	}
+
+	if ([event momentumPhase] != NSEventPhaseNone) {
+		if (ignore_momentum_scroll) {
+			return;
+		}
+	} else {
+		ignore_momentum_scroll = false;
+	}
+
+	if ([event phase] != NSEventPhaseNone || [event momentumPhase] != NSEventPhaseNone) {
+		[self processPanEvent:event dx:delta_x dy:delta_y];
+	} else {
+		if (std::abs(delta_x)) {
+			[self processScrollEvent:event button:(0 > delta_x ? MouseButton::WHEEL_RIGHT : MouseButton::WHEEL_LEFT) factor:std::abs(delta_x * 0.3)];
+		}
+		if (std::abs(delta_y)) {
+			[self processScrollEvent:event button:(0 < delta_y ? MouseButton::WHEEL_UP : MouseButton::WHEEL_DOWN) factor:std::abs(delta_y * 0.3)];
+		}
+	}
+}
+
+@end
+
+// === Merged from platform/macos/godot_core_cursor.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+@implementation GodotCoreCursor
+@synthesize _coreCursorType = _type;
+
+- (id)initWithType:(int32_t)type {
+	if ((self = [super init])) {
+		_type = type;
+	}
+	return self;
+}
+
+@end
+
+// === Merged from platform/macos/godot_status_item.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+@implementation GodotStatusItemDelegate
+
+- (id)init {
+	self = [super init];
+	return self;
+}
+
+- (IBAction)click:(id)sender {
+	NSEvent *current_event = [NSApp currentEvent];
+	MouseButton index = MouseButton::LEFT;
+	if (current_event) {
+		if (current_event.type == NSEventTypeLeftMouseDown) {
+			index = MouseButton::LEFT;
+		} else if (current_event.type == NSEventTypeRightMouseDown) {
+			index = MouseButton::RIGHT;
+		} else if (current_event.type == NSEventTypeOtherMouseDown) {
+			if ((int)[current_event buttonNumber] == 2) {
+				index = MouseButton::MIDDLE;
+			} else if ((int)[current_event buttonNumber] == 3) {
+				index = MouseButton::MB_XBUTTON1;
+			} else if ((int)[current_event buttonNumber] == 4) {
+				index = MouseButton::MB_XBUTTON2;
+			}
+		}
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds) {
+		return;
+	}
+
+	if (cb.is_valid()) {
+		Variant v_button = index;
+		Variant v_pos = ds->mouse_get_position();
+		const Variant *v_args[2] = { &v_button, &v_pos };
+		Variant ret;
+		Callable::CallError ce;
+		cb.callp((const Variant **)&v_args, 2, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat("Failed to execute status indicator callback: %s.", Variant::get_callable_error_text(cb, v_args, 2, ce)));
+		}
+	}
+}
+
+- (void)setCallback:(const Callable &)callback {
+	cb = callback;
+}
+
+@end
+
+// === Merged from platform/macos/godot_window_delegate.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+#include "servers/display/accessibility_server.h"
+
+@implementation GodotWindowDelegate {
+	DisplayServerEnums::WindowID window_id;
+	DisplayServerMacOS *ds;
+}
+
+- (instancetype)initWithDisplayServer:(DisplayServerMacOS *)p_ds {
+	if (self = [super init]) {
+		ds = p_ds;
+		window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	}
+	return self;
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid {
+	window_id = wid;
+}
+
+- (BOOL)windowShouldClose:(id)sender {
+	if (!ds->has_window(window_id)) {
+		return YES;
+	}
+
+	ds->send_window_event(ds->get_window(window_id), DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
+	return NO;
+}
+
+- (void)windowWillClose:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	ds->popup_close(window_id);
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	while (wd.transient_children.size()) {
+		ds->window_set_transient(*wd.transient_children.begin(), DisplayServerEnums::INVALID_WINDOW_ID);
+	}
+
+	if (wd.transient_parent != DisplayServerEnums::INVALID_WINDOW_ID) {
+		ds->window_set_transient(window_id, DisplayServerEnums::INVALID_WINDOW_ID);
+	}
+
+	ds->mouse_exit_window(window_id);
+	ds->window_destroy(window_id);
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.fs_transition = true;
+
+	// Temporary disable borderless and transparent state.
+	if ([wd.window_object styleMask] == NSWindowStyleMaskBorderless) {
+		[wd.window_object setStyleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable];
+	}
+	if (wd.layered_window) {
+		ds->set_window_per_pixel_transparency_enabled(false, window_id);
+	}
+}
+
+- (void)windowDidFailToEnterFullScreen:(NSWindow *)window {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.fs_transition = false;
+}
+
+- (void)windowDidEnterFullScreen:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.fullscreen = true;
+	wd.fs_transition = false;
+
+	// Reset window size limits.
+	[wd.window_object setContentMinSize:NSMakeSize(0, 0)];
+	[wd.window_object setContentMaxSize:NSMakeSize(FLT_MAX, FLT_MAX)];
+
+	// Reset custom window buttons.
+	if ([wd.window_object styleMask] & NSWindowStyleMaskFullSizeContentView) {
+		ds->window_set_custom_window_buttons(wd, false);
+	}
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_TITLEBAR_CHANGE);
+
+	// Force window resize event and redraw.
+	[self windowDidResize:notification];
+}
+
+- (void)windowWillExitFullScreen:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.fs_transition = true;
+
+	// Restore custom window buttons.
+	if ([wd.window_object styleMask] & NSWindowStyleMaskFullSizeContentView) {
+		ds->window_set_custom_window_buttons(wd, true);
+	}
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_TITLEBAR_CHANGE);
+}
+
+- (void)windowDidFailToExitFullScreen:(NSWindow *)window {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.fs_transition = false;
+
+	if ([wd.window_object styleMask] & NSWindowStyleMaskFullSizeContentView) {
+		ds->window_set_custom_window_buttons(wd, false);
+	}
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_TITLEBAR_CHANGE);
+}
+
+- (void)windowDidExitFullScreen:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	if (wd.exclusive_fullscreen) {
+		ds->update_presentation_mode();
+	}
+
+	wd.fullscreen = false;
+	wd.exclusive_fullscreen = false;
+	wd.fs_transition = false;
+
+	// Set window size limits.
+	const float scale = ds->screen_get_max_scale();
+	if (wd.min_size != Size2i()) {
+		Size2i size = wd.min_size / scale;
+		[wd.window_object setContentMinSize:NSMakeSize(size.x, size.y)];
+	}
+	if (wd.max_size != Size2i()) {
+		Size2i size = wd.max_size / scale;
+		[wd.window_object setContentMaxSize:NSMakeSize(size.x, size.y)];
+	}
+
+	// Restore borderless, transparent and resizability state.
+	if (wd.borderless) {
+		[wd.window_object setStyleMask:NSWindowStyleMaskBorderless];
+		[wd.window_object setHasShadow:NO];
+	} else {
+		[wd.window_object setStyleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | (wd.extend_to_title ? NSWindowStyleMaskFullSizeContentView : 0) | (wd.resize_disabled ? 0 : NSWindowStyleMaskResizable)];
+		[wd.window_object setHasShadow:YES];
+	}
+	if (wd.layered_window) {
+		ds->set_window_per_pixel_transparency_enabled(true, window_id);
+	}
+
+	// Restore on-top state.
+	if (ds->is_always_on_top_recursive(window_id)) {
+		[wd.window_object setLevel:NSFloatingWindowLevel];
+	}
+
+	// Force window resize event and redraw.
+	[self windowDidResize:notification];
+}
+
+- (BOOL)windowShouldZoom:(NSWindow *)window toFrame:(NSRect)newFrame {
+	if (ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		if (!wd.borderless && !(NSEqualRects([wd.window_object frame], [[wd.window_object screen] visibleFrame]))) {
+			wd.pre_zoom_rect = [wd.window_object frame];
+		}
+	}
+	return YES;
+}
+
+- (void)windowDidChangeBackingProperties:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	CGFloat new_scale_factor = [wd.window_object backingScaleFactor];
+	CGFloat old_scale_factor = [[[notification userInfo] objectForKey:@"NSBackingPropertyOldScaleFactorKey"] doubleValue];
+
+	if (new_scale_factor != old_scale_factor) {
+		// Set new display scale and window size.
+		const float scale = ds->screen_get_max_scale();
+		const NSRect content_rect = [wd.window_view frame];
+
+		wd.size.width = content_rect.size.width * scale;
+		wd.size.height = content_rect.size.height * scale;
+
+		ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_DPI_CHANGE);
+
+		CALayer *layer = [wd.window_view layer];
+		if (layer) {
+			layer.contentsScale = scale;
+		}
+
+		//Force window resize event
+		[self windowDidResize:notification];
+	}
+}
+
+- (void)windowWillStartLiveResize:(NSNotification *)notification {
+	if (ds->has_window(window_id)) {
+		DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+		wd.last_frame_rect = [wd.window_object frame];
+		ds->set_is_resizing(true);
+	}
+}
+
+- (void)windowDidEndLiveResize:(NSNotification *)notification {
+	ds->set_is_resizing(false);
+}
+
+- (void)windowDidResize:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	const NSRect content_rect = [wd.window_view frame];
+	const float scale = ds->screen_get_max_scale();
+	wd.size.width = content_rect.size.width * scale;
+	wd.size.height = content_rect.size.height * scale;
+
+	CALayer *layer = [wd.window_view layer];
+	if (layer) {
+		layer.contentsScale = scale;
+	}
+
+	ds->window_resize(window_id, wd.size.width, wd.size.height);
+
+	if (wd.rect_changed_callback.is_valid()) {
+		wd.rect_changed_callback.call(Rect2i(ds->window_get_position(window_id), ds->window_get_size(window_id)));
+	}
+}
+
+- (void)windowDidChangeScreen:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	ds->reparent_check(window_id);
+}
+
+- (void)windowDidMove:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	ds->release_pressed_events();
+
+	if (wd.rect_changed_callback.is_valid()) {
+		wd.rect_changed_callback.call(Rect2i(ds->window_get_position(window_id), ds->window_get_size(window_id)));
+	}
+}
+
+- (void)windowDidBecomeKey:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	if (wd.window_button_view) {
+		[wd.window_button_view displayButtons];
+	}
+
+	if (ds->mouse_get_mode() == DisplayServerEnums::MOUSE_MODE_CAPTURED) {
+		const NSRect content_rect = [wd.window_view frame];
+		NSRect point_in_window_rect = NSMakeRect(content_rect.size.width / 2, content_rect.size.height / 2, 0, 0);
+		NSPoint point_on_screen = [[wd.window_view window] convertRectToScreen:point_in_window_rect].origin;
+		CGPoint mouse_warp_pos = { point_on_screen.x, CGDisplayBounds(CGMainDisplayID()).size.height - point_on_screen.y };
+		CGWarpMouseCursorPosition(mouse_warp_pos);
+	} else {
+		ds->update_mouse_pos(wd, [wd.window_object mouseLocationOutsideOfEventStream]);
+	}
+
+	[self windowDidResize:notification]; // Emit resize event, to ensure content is resized if the window was resized while it was hidden.
+
+	wd.focused = true;
+	ds->set_last_focused_window(window_id);
+	AccessibilityServer::set_window_focused(window_id, true);
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
+}
+
+- (void)windowDidResignKey:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	if (wd.window_button_view) {
+		[wd.window_button_view displayButtons];
+	}
+
+	wd.focused = false;
+	ds->release_pressed_events();
+	AccessibilityServer::set_window_focused(window_id, false);
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
+}
+
+- (void)windowDidMiniaturize:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+
+	wd.focused = false;
+	ds->release_pressed_events();
+	AccessibilityServer::set_window_focused(window_id, false);
+
+	ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
+}
+
+- (void)windowDidDeminiaturize:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.is_visible = ([wd.window_object occlusionState] & NSWindowOcclusionStateVisible) && [wd.window_object isVisible];
+	if ([wd.window_object isKeyWindow]) {
+		wd.focused = true;
+		ds->set_last_focused_window(window_id);
+		AccessibilityServer::set_window_focused(window_id, true);
+
+		ds->send_window_event(wd, DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
+	}
+}
+
+- (void)windowDidChangeOcclusionState:(NSNotification *)notification {
+	if (!ds->has_window(window_id)) {
+		return;
+	}
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	wd.is_visible = ([wd.window_object occlusionState] & NSWindowOcclusionStateVisible) && [wd.window_object isVisible];
+}
+
+@end
+
+// === Merged from platform/macos/godot_window.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+@implementation GodotWindow
+
+- (id)init {
+	self = [super init];
+	window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	anim_duration = -1.0f;
+	return self;
+}
+
+- (void)setAnimDuration:(NSTimeInterval)duration {
+	anim_duration = duration;
+}
+
+- (NSTimeInterval)animationResizeTime:(NSRect)newFrame {
+	if (anim_duration > 0) {
+		return anim_duration;
+	} else {
+		return [super animationResizeTime:newFrame];
+	}
+}
+
+- (void)setWindowID:(DisplayServerEnums::WindowID)wid {
+	window_id = wid;
+}
+
+- (BOOL)canBecomeKeyWindow {
+	// Required for NSWindowStyleMaskBorderless windows.
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return YES;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	return !wd.no_focus;
+}
+
+- (BOOL)canBecomeMainWindow {
+	// Required for NSWindowStyleMaskBorderless windows.
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds || !ds->has_window(window_id)) {
+		return YES;
+	}
+
+	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
+	return !wd.no_focus && !wd.is_popup;
+}
+
+@end
+
+// === Merged from platform/macos/key_mapping_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
+
+#import <Carbon/Carbon.h>
+#import <Cocoa/Cocoa.h>
+
+struct HashMapHasherKeys {
+	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
+	static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
+	static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
+};
+
+HashSet<unsigned int> numpad_keys;
+HashMap<unsigned int, Key, HashMapHasherKeys> keysym_map;
+HashMap<Key, unsigned int, HashMapHasherKeys> keysym_map_inv;
+HashMap<Key, char32_t, HashMapHasherKeys> keycode_map;
+HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+
+void KeyMappingMacOS::initialize() {
+	numpad_keys.insert(0x41); //kVK_ANSI_KeypadDecimal
+	numpad_keys.insert(0x43); //kVK_ANSI_KeypadMultiply
+	numpad_keys.insert(0x45); //kVK_ANSI_KeypadPlus
+	numpad_keys.insert(0x47); //kVK_ANSI_KeypadClear
+	numpad_keys.insert(0x4b); //kVK_ANSI_KeypadDivide
+	numpad_keys.insert(0x4c); //kVK_ANSI_KeypadEnter
+	numpad_keys.insert(0x4e); //kVK_ANSI_KeypadMinus
+	numpad_keys.insert(0x51); //kVK_ANSI_KeypadEquals
+	numpad_keys.insert(0x52); //kVK_ANSI_Keypad0
+	numpad_keys.insert(0x53); //kVK_ANSI_Keypad1
+	numpad_keys.insert(0x54); //kVK_ANSI_Keypad2
+	numpad_keys.insert(0x55); //kVK_ANSI_Keypad3
+	numpad_keys.insert(0x56); //kVK_ANSI_Keypad4
+	numpad_keys.insert(0x57); //kVK_ANSI_Keypad5
+	numpad_keys.insert(0x58); //kVK_ANSI_Keypad6
+	numpad_keys.insert(0x59); //kVK_ANSI_Keypad7
+	numpad_keys.insert(0x5b); //kVK_ANSI_Keypad8
+	numpad_keys.insert(0x5c); //kVK_ANSI_Keypad9
+	numpad_keys.insert(0x5f); //kVK_JIS_KeypadComma
+
+	keysym_map[0x00] = Key::A;
+	keysym_map[0x01] = Key::S;
+	keysym_map[0x02] = Key::D;
+	keysym_map[0x03] = Key::F;
+	keysym_map[0x04] = Key::H;
+	keysym_map[0x05] = Key::G;
+	keysym_map[0x06] = Key::Z;
+	keysym_map[0x07] = Key::X;
+	keysym_map[0x08] = Key::C;
+	keysym_map[0x09] = Key::V;
+	keysym_map[0x0a] = Key::SECTION;
+	keysym_map[0x0b] = Key::B;
+	keysym_map[0x0c] = Key::Q;
+	keysym_map[0x0d] = Key::W;
+	keysym_map[0x0e] = Key::E;
+	keysym_map[0x0f] = Key::R;
+	keysym_map[0x10] = Key::Y;
+	keysym_map[0x11] = Key::T;
+	keysym_map[0x12] = Key::KEY_1;
+	keysym_map[0x13] = Key::KEY_2;
+	keysym_map[0x14] = Key::KEY_3;
+	keysym_map[0x15] = Key::KEY_4;
+	keysym_map[0x16] = Key::KEY_6;
+	keysym_map[0x17] = Key::KEY_5;
+	keysym_map[0x18] = Key::EQUAL;
+	keysym_map[0x19] = Key::KEY_9;
+	keysym_map[0x1a] = Key::KEY_7;
+	keysym_map[0x1b] = Key::MINUS;
+	keysym_map[0x1c] = Key::KEY_8;
+	keysym_map[0x1d] = Key::KEY_0;
+	keysym_map[0x1e] = Key::BRACKETRIGHT;
+	keysym_map[0x1f] = Key::O;
+	keysym_map[0x20] = Key::U;
+	keysym_map[0x21] = Key::BRACKETLEFT;
+	keysym_map[0x22] = Key::I;
+	keysym_map[0x23] = Key::P;
+	keysym_map[0x24] = Key::ENTER;
+	keysym_map[0x25] = Key::L;
+	keysym_map[0x26] = Key::J;
+	keysym_map[0x27] = Key::APOSTROPHE;
+	keysym_map[0x28] = Key::K;
+	keysym_map[0x29] = Key::SEMICOLON;
+	keysym_map[0x2a] = Key::BACKSLASH;
+	keysym_map[0x2b] = Key::COMMA;
+	keysym_map[0x2c] = Key::SLASH;
+	keysym_map[0x2d] = Key::N;
+	keysym_map[0x2e] = Key::M;
+	keysym_map[0x2f] = Key::PERIOD;
+	keysym_map[0x30] = Key::TAB;
+	keysym_map[0x31] = Key::SPACE;
+	keysym_map[0x32] = Key::QUOTELEFT;
+	keysym_map[0x33] = Key::BACKSPACE;
+	keysym_map[0x35] = Key::ESCAPE;
+	keysym_map[0x36] = Key::META;
+	keysym_map[0x37] = Key::META;
+	keysym_map[0x38] = Key::SHIFT;
+	keysym_map[0x39] = Key::CAPSLOCK;
+	keysym_map[0x3a] = Key::ALT;
+	keysym_map[0x3b] = Key::CTRL;
+	keysym_map[0x3c] = Key::SHIFT;
+	keysym_map[0x3d] = Key::ALT;
+	keysym_map[0x3e] = Key::CTRL;
+	keysym_map[0x40] = Key::F17;
+	keysym_map[0x41] = Key::KP_PERIOD;
+	keysym_map[0x43] = Key::KP_MULTIPLY;
+	keysym_map[0x45] = Key::KP_ADD;
+	keysym_map[0x47] = Key::NUMLOCK;
+	keysym_map[0x48] = Key::VOLUMEUP;
+	keysym_map[0x49] = Key::VOLUMEDOWN;
+	keysym_map[0x4a] = Key::VOLUMEMUTE;
+	keysym_map[0x4b] = Key::KP_DIVIDE;
+	keysym_map[0x4c] = Key::KP_ENTER;
+	keysym_map[0x4e] = Key::KP_SUBTRACT;
+	keysym_map[0x4f] = Key::F18;
+	keysym_map[0x50] = Key::F19;
+	keysym_map[0x51] = Key::EQUAL;
+	keysym_map[0x52] = Key::KP_0;
+	keysym_map[0x53] = Key::KP_1;
+	keysym_map[0x54] = Key::KP_2;
+	keysym_map[0x55] = Key::KP_3;
+	keysym_map[0x56] = Key::KP_4;
+	keysym_map[0x57] = Key::KP_5;
+	keysym_map[0x58] = Key::KP_6;
+	keysym_map[0x59] = Key::KP_7;
+	keysym_map[0x5a] = Key::F20;
+	keysym_map[0x5b] = Key::KP_8;
+	keysym_map[0x5c] = Key::KP_9;
+	keysym_map[0x5d] = Key::YEN;
+	keysym_map[0x5e] = Key::UNDERSCORE;
+	keysym_map[0x5f] = Key::COMMA;
+	keysym_map[0x60] = Key::F5;
+	keysym_map[0x61] = Key::F6;
+	keysym_map[0x62] = Key::F7;
+	keysym_map[0x63] = Key::F3;
+	keysym_map[0x64] = Key::F8;
+	keysym_map[0x65] = Key::F9;
+	keysym_map[0x66] = Key::JIS_EISU;
+	keysym_map[0x67] = Key::F11;
+	keysym_map[0x68] = Key::JIS_KANA;
+	keysym_map[0x69] = Key::F13;
+	keysym_map[0x6a] = Key::F16;
+	keysym_map[0x6b] = Key::F14;
+	keysym_map[0x6d] = Key::F10;
+	keysym_map[0x6e] = Key::MENU;
+	keysym_map[0x6f] = Key::F12;
+	keysym_map[0x71] = Key::F15;
+	keysym_map[0x72] = Key::INSERT;
+	keysym_map[0x73] = Key::HOME;
+	keysym_map[0x74] = Key::PAGEUP;
+	keysym_map[0x75] = Key::KEY_DELETE;
+	keysym_map[0x76] = Key::F4;
+	keysym_map[0x77] = Key::END;
+	keysym_map[0x78] = Key::F2;
+	keysym_map[0x79] = Key::PAGEDOWN;
+	keysym_map[0x7a] = Key::F1;
+	keysym_map[0x7b] = Key::LEFT;
+	keysym_map[0x7c] = Key::RIGHT;
+	keysym_map[0x7d] = Key::DOWN;
+	keysym_map[0x7e] = Key::UP;
+
+	for (const KeyValue<unsigned int, Key> &E : keysym_map) {
+		keysym_map_inv[E.value] = E.key;
+	}
+
+	keycode_map[Key::ESCAPE] = 0x001B;
+	keycode_map[Key::TAB] = 0x0009;
+	keycode_map[Key::BACKTAB] = 0x007F;
+	keycode_map[Key::BACKSPACE] = 0x0008;
+	keycode_map[Key::ENTER] = 0x000D;
+	keycode_map[Key::INSERT] = NSInsertFunctionKey;
+	keycode_map[Key::KEY_DELETE] = 0x007F;
+	keycode_map[Key::PAUSE] = NSPauseFunctionKey;
+	keycode_map[Key::PRINT] = NSPrintScreenFunctionKey;
+	keycode_map[Key::SYSREQ] = NSSysReqFunctionKey;
+	keycode_map[Key::CLEAR] = NSClearLineFunctionKey;
+	keycode_map[Key::HOME] = 0x2196;
+	keycode_map[Key::END] = 0x2198;
+	keycode_map[Key::LEFT] = 0x001C;
+	keycode_map[Key::UP] = 0x001E;
+	keycode_map[Key::RIGHT] = 0x001D;
+	keycode_map[Key::DOWN] = 0x001F;
+	keycode_map[Key::PAGEUP] = 0x21DE;
+	keycode_map[Key::PAGEDOWN] = 0x21DF;
+	keycode_map[Key::NUMLOCK] = NSClearLineFunctionKey;
+	keycode_map[Key::SCROLLLOCK] = NSScrollLockFunctionKey;
+	keycode_map[Key::F1] = NSF1FunctionKey;
+	keycode_map[Key::F2] = NSF2FunctionKey;
+	keycode_map[Key::F3] = NSF3FunctionKey;
+	keycode_map[Key::F4] = NSF4FunctionKey;
+	keycode_map[Key::F5] = NSF5FunctionKey;
+	keycode_map[Key::F6] = NSF6FunctionKey;
+	keycode_map[Key::F7] = NSF7FunctionKey;
+	keycode_map[Key::F8] = NSF8FunctionKey;
+	keycode_map[Key::F9] = NSF9FunctionKey;
+	keycode_map[Key::F10] = NSF10FunctionKey;
+	keycode_map[Key::F11] = NSF11FunctionKey;
+	keycode_map[Key::F12] = NSF12FunctionKey;
+	keycode_map[Key::F13] = NSF13FunctionKey;
+	keycode_map[Key::F14] = NSF14FunctionKey;
+	keycode_map[Key::F15] = NSF15FunctionKey;
+	keycode_map[Key::F16] = NSF16FunctionKey;
+	keycode_map[Key::F17] = NSF17FunctionKey;
+	keycode_map[Key::F18] = NSF18FunctionKey;
+	keycode_map[Key::F19] = NSF19FunctionKey;
+	keycode_map[Key::F20] = NSF20FunctionKey;
+	keycode_map[Key::F21] = NSF21FunctionKey;
+	keycode_map[Key::F22] = NSF22FunctionKey;
+	keycode_map[Key::F23] = NSF23FunctionKey;
+	keycode_map[Key::F24] = NSF24FunctionKey;
+	keycode_map[Key::F25] = NSF25FunctionKey;
+	keycode_map[Key::F26] = NSF26FunctionKey;
+	keycode_map[Key::F27] = NSF27FunctionKey;
+	keycode_map[Key::F28] = NSF28FunctionKey;
+	keycode_map[Key::F29] = NSF29FunctionKey;
+	keycode_map[Key::F30] = NSF30FunctionKey;
+	keycode_map[Key::F31] = NSF31FunctionKey;
+	keycode_map[Key::F32] = NSF32FunctionKey;
+	keycode_map[Key::F33] = NSF33FunctionKey;
+	keycode_map[Key::F34] = NSF34FunctionKey;
+	keycode_map[Key::F35] = NSF35FunctionKey;
+	keycode_map[Key::MENU] = NSMenuFunctionKey;
+	keycode_map[Key::HELP] = NSHelpFunctionKey;
+	keycode_map[Key::STOP] = NSStopFunctionKey;
+	keycode_map[Key::LAUNCH0] = NSUserFunctionKey;
+	keycode_map[Key::SPACE] = 0x0020;
+	keycode_map[Key::EXCLAM] = '!';
+	keycode_map[Key::QUOTEDBL] = '\"';
+	keycode_map[Key::NUMBERSIGN] = '#';
+	keycode_map[Key::DOLLAR] = '$';
+	keycode_map[Key::PERCENT] = '\%';
+	keycode_map[Key::AMPERSAND] = '&';
+	keycode_map[Key::APOSTROPHE] = '\'';
+	keycode_map[Key::PARENLEFT] = '(';
+	keycode_map[Key::PARENRIGHT] = ')';
+	keycode_map[Key::ASTERISK] = '*';
+	keycode_map[Key::PLUS] = '+';
+	keycode_map[Key::COMMA] = ',';
+	keycode_map[Key::MINUS] = '-';
+	keycode_map[Key::PERIOD] = '.';
+	keycode_map[Key::SLASH] = '/';
+	keycode_map[Key::KEY_0] = '0';
+	keycode_map[Key::KEY_1] = '1';
+	keycode_map[Key::KEY_2] = '2';
+	keycode_map[Key::KEY_3] = '3';
+	keycode_map[Key::KEY_4] = '4';
+	keycode_map[Key::KEY_5] = '5';
+	keycode_map[Key::KEY_6] = '6';
+	keycode_map[Key::KEY_7] = '7';
+	keycode_map[Key::KEY_8] = '8';
+	keycode_map[Key::KEY_9] = '9';
+	keycode_map[Key::COLON] = ':';
+	keycode_map[Key::SEMICOLON] = ';';
+	keycode_map[Key::LESS] = '<';
+	keycode_map[Key::EQUAL] = '=';
+	keycode_map[Key::GREATER] = '>';
+	keycode_map[Key::QUESTION] = '?';
+	keycode_map[Key::AT] = '@';
+	keycode_map[Key::A] = 'a';
+	keycode_map[Key::B] = 'b';
+	keycode_map[Key::C] = 'c';
+	keycode_map[Key::D] = 'd';
+	keycode_map[Key::E] = 'e';
+	keycode_map[Key::F] = 'f';
+	keycode_map[Key::G] = 'g';
+	keycode_map[Key::H] = 'h';
+	keycode_map[Key::I] = 'i';
+	keycode_map[Key::J] = 'j';
+	keycode_map[Key::K] = 'k';
+	keycode_map[Key::L] = 'l';
+	keycode_map[Key::M] = 'm';
+	keycode_map[Key::N] = 'n';
+	keycode_map[Key::O] = 'o';
+	keycode_map[Key::P] = 'p';
+	keycode_map[Key::Q] = 'q';
+	keycode_map[Key::R] = 'r';
+	keycode_map[Key::S] = 's';
+	keycode_map[Key::T] = 't';
+	keycode_map[Key::U] = 'u';
+	keycode_map[Key::V] = 'v';
+	keycode_map[Key::W] = 'w';
+	keycode_map[Key::X] = 'x';
+	keycode_map[Key::Y] = 'y';
+	keycode_map[Key::Z] = 'z';
+	keycode_map[Key::BRACKETLEFT] = '[';
+	keycode_map[Key::BACKSLASH] = '\\';
+	keycode_map[Key::BRACKETRIGHT] = ']';
+	keycode_map[Key::ASCIICIRCUM] = '^';
+	keycode_map[Key::UNDERSCORE] = '_';
+	keycode_map[Key::QUOTELEFT] = '`';
+	keycode_map[Key::BRACELEFT] = '{';
+	keycode_map[Key::BAR] = '|';
+	keycode_map[Key::BRACERIGHT] = '}';
+	keycode_map[Key::ASCIITILDE] = '~';
+
+	// Keysym -> physical location.
+	// Ctrl.
+	location_map[0x3b] = KeyLocation::LEFT;
+	location_map[0x3e] = KeyLocation::RIGHT;
+	// Shift.
+	location_map[0x38] = KeyLocation::LEFT;
+	location_map[0x3c] = KeyLocation::RIGHT;
+	// Alt/Option.
+	location_map[0x3a] = KeyLocation::LEFT;
+	location_map[0x3d] = KeyLocation::RIGHT;
+	// Meta/Command (yes, right < left).
+	location_map[0x36] = KeyLocation::RIGHT;
+	location_map[0x37] = KeyLocation::LEFT;
+}
+
+bool KeyMappingMacOS::is_numpad_key(unsigned int p_key) {
+	return numpad_keys.has(p_key);
+}
+
+// Translates a macOS keycode to a Godot keycode.
+Key KeyMappingMacOS::translate_key(unsigned int p_key) {
+	const Key *key = keysym_map.getptr(p_key);
+	if (key) {
+		return *key;
+	}
+	return Key::NONE;
+}
+
+// Translates a Godot keycode back to a macOS keycode.
+unsigned int KeyMappingMacOS::unmap_key(Key p_key) {
+	const unsigned int *key = keysym_map_inv.getptr(p_key);
+	if (key) {
+		return *key;
+	}
+	return 127;
+}
+
+// Remap key according to current keyboard layout.
+Key KeyMappingMacOS::remap_key(unsigned int p_key, unsigned int p_state, bool p_unicode) {
+	if (is_numpad_key(p_key)) {
+		return translate_key(p_key);
+	}
+
+	TISInputSourceRef current_keyboard = TISCopyCurrentKeyboardInputSource();
+	if (!current_keyboard) {
+		return translate_key(p_key);
+	}
+
+	CFDataRef layout_data = (CFDataRef)TISGetInputSourceProperty(current_keyboard, kTISPropertyUnicodeKeyLayoutData);
+	if (!layout_data) {
+		return translate_key(p_key);
+	}
+
+	const UCKeyboardLayout *keyboard_layout = (const UCKeyboardLayout *)CFDataGetBytePtr(layout_data);
+
+	String keysym;
+	UInt32 keys_down = 0;
+	UniChar chars[256] = {};
+	UniCharCount real_length = 0;
+
+	OSStatus err = UCKeyTranslate(keyboard_layout,
+			p_key,
+			kUCKeyActionDisplay,
+			(p_unicode) ? 0 : (p_state >> 8) & 0xFF,
+			LMGetKbdType(),
+			kUCKeyTranslateNoDeadKeysBit,
+			&keys_down,
+			std_size(chars),
+			&real_length,
+			chars);
+
+	if (err != noErr) {
+		return translate_key(p_key);
+	}
+
+	keysym = String::utf16((char16_t *)chars, real_length);
+	if (keysym.is_empty()) {
+		return translate_key(p_key);
+	}
+
+	char32_t c = keysym[0];
+	if (p_unicode) {
+		return fix_key_label(c, translate_key(p_key));
+	} else {
+		return fix_keycode(c, translate_key(p_key));
+	}
+}
+
+// Translates a macOS keycode to a Godot key location.
+KeyLocation KeyMappingMacOS::translate_location(unsigned int p_key) {
+	const KeyLocation *location = location_map.getptr(p_key);
+	if (location) {
+		return *location;
+	}
+	return KeyLocation::UNSPECIFIED;
+}
+
+String KeyMappingMacOS::keycode_get_native_string(Key p_keycode) {
+	const char32_t *key = keycode_map.getptr(p_keycode);
+	if (key) {
+		return String::chr(*key);
+	}
+	return String();
+}
+
+unsigned int KeyMappingMacOS::keycode_get_native_mask(Key p_keycode) {
+	unsigned int mask = 0;
+	if ((p_keycode & KeyModifierMask::CTRL) != Key::NONE) {
+		mask |= NSEventModifierFlagControl;
+	}
+	if ((p_keycode & KeyModifierMask::ALT) != Key::NONE) {
+		mask |= NSEventModifierFlagOption;
+	}
+	if ((p_keycode & KeyModifierMask::SHIFT) != Key::NONE) {
+		mask |= NSEventModifierFlagShift;
+	}
+	if ((p_keycode & KeyModifierMask::META) != Key::NONE) {
+		mask |= NSEventModifierFlagCommand;
+	}
+	if ((p_keycode & KeyModifierMask::KPAD) != Key::NONE) {
+		mask |= NSEventModifierFlagNumericPad;
+	}
+	return mask;
+}
+
+// === Merged from platform/macos/godot_menu_delegate.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+@implementation GodotMenuDelegate
+
+- (void)doNothing:(id)sender {
+}
+
+- (void)menuWillOpen:(NSMenu *)menu {
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
+		nmenu->_menu_open(menu);
+	}
+}
+
+- (void)menuNeedsUpdate:(NSMenu *)menu {
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
+		nmenu->_menu_need_update(menu);
+	}
+}
+
+- (void)menuDidClose:(NSMenu *)menu {
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
+		nmenu->_menu_close(menu);
+	}
+}
+
+- (void)menu:(NSMenu *)menu willHighlightItem:(NSMenuItem *)item {
+	if (item) {
+		GodotMenuItem *value = [item representedObject];
+		if (value && value->hover_callback.is_valid()) {
+			// If custom callback is set, use it.
+			Variant ret;
+			Callable::CallError ce;
+			const Variant *args[1] = { &value->meta };
+
+			value->hover_callback.callp(args, 1, ret, ce);
+			if (ce.error != Callable::CallError::CALL_OK) {
+				ERR_PRINT(vformat("Failed to execute menu hover callback: %s.", Variant::get_callable_error_text(value->hover_callback, args, 1, ce)));
+			}
+		}
+	}
+}
+
+- (BOOL)menuHasKeyEquivalent:(NSMenu *)menu forEvent:(NSEvent *)event target:(id *)target action:(SEL *)action {
+	NSString *ev_key = [[event charactersIgnoringModifiers] lowercaseString];
+	NSUInteger ev_modifiers = [event modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+	for (int i = 0; i < [menu numberOfItems]; i++) {
+		const NSMenuItem *menu_item = [menu itemAtIndex:i];
+		if ([menu_item isEnabled] && [[menu_item keyEquivalent] compare:ev_key] == NSOrderedSame) {
+			NSUInteger item_modifiers = [menu_item keyEquivalentModifierMask];
+
+			if (ev_modifiers == item_modifiers) {
+				GodotMenuItem *value = [menu_item representedObject];
+				if (value) {
+					if (value->key_callback.is_valid()) {
+						// If custom callback is set, use it.
+						Variant ret;
+						Callable::CallError ce;
+						const Variant *args[1] = { &value->meta };
+
+						value->key_callback.callp(args, 1, ret, ce);
+						if (ce.error != Callable::CallError::CALL_OK) {
+							ERR_PRINT(vformat("Failed to execute menu key callback: %s.", Variant::get_callable_error_text(value->key_callback, args, 1, ce)));
+						}
+					} else {
+						// Otherwise redirect event to the engine.
+						if (DisplayServer::is_initialized()) {
+							if ([[NSApplication sharedApplication] keyWindow].sheet) {
+								[[[[NSApplication sharedApplication] keyWindow] sheetParent] sendEvent:event];
+							} else {
+								[[[NSApplication sharedApplication] keyWindow] sendEvent:event];
+							}
+						}
+					}
+
+					// Suppress default menu action.
+					*target = self;
+					*action = @selector(doNothing:);
+				}
+				return YES;
+			}
+		}
+	}
+	return NO;
+}
+
+@end
+
+// === Merged from platform/macos/godot_menu_item.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+@implementation GodotMenuItem
+
+- (id)init {
+	self = [super init];
+
+	self->callback = Callable();
+	self->key_callback = Callable();
+	self->checkable_type = GlobalMenuCheckType::CHECKABLE_TYPE_NONE;
+	self->enabled = true;
+	self->checked = false;
+	self->indeterminate = false;
+	self->max_states = 0;
+	self->state = 0;
+	self->indent = 0;
+	self->accel = Key::NONE;
+
+	return self;
+}
+
+@end
+
+// === Merged from platform/macos/godot_open_save_delegate.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+@implementation GodotOpenSaveDelegate
+
+- (instancetype)init {
+	self = [super init];
+	if ((self = [super init])) {
+		dialog = nullptr;
+		cur_index = 0;
+		ctr_id = 1;
+		allowed_types = nullptr;
+		root = String();
+	}
+	return self;
+}
+
+- (void)makeAccessoryView:(NSSavePanel *)p_panel filters:(const Vector<String> &)p_filters options:(const TypedArray<Dictionary> &)p_options {
+	dialog = p_panel;
+
+	NSMutableArray *constraints = [NSMutableArray array];
+
+	NSView *base_view = [[NSView alloc] initWithFrame:NSZeroRect];
+	base_view.translatesAutoresizingMaskIntoConstraints = NO;
+
+	NSGridView *view = [NSGridView gridViewWithNumberOfColumns:2 rows:0];
+	view.translatesAutoresizingMaskIntoConstraints = NO;
+	view.columnSpacing = 10;
+	view.rowSpacing = 10;
+	view.rowAlignment = NSGridRowAlignmentLastBaseline;
+
+	int option_count = 0;
+
+	for (int i = 0; i < p_options.size(); i++) {
+		const Dictionary &item = p_options[i];
+		if (!item.has("name") || !item.has("values") || !item.has("default")) {
+			continue;
+		}
+		const String &name = item["name"];
+		const Vector<String> &values = item["values"];
+		int default_idx = item["default"];
+
+		NSTextField *label = [NSTextField labelWithString:[NSString stringWithUTF8String:name.utf8().get_data()]];
+		label.textColor = NSColor.secondaryLabelColor;
+		if (@available(macOS 11.10, *)) {
+			label.font = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+		}
+
+		NSView *popup = nullptr;
+		if (values.is_empty()) {
+			NSButton *popup_check = [NSButton checkboxWithTitle:@"" target:self action:@selector(popupCheckAction:)];
+			int tag = [self setDefaultBool:name value:(bool)default_idx];
+			popup_check.state = (default_idx) ? NSControlStateValueOn : NSControlStateValueOff;
+			popup_check.tag = tag;
+			popup = popup_check;
+		} else {
+			NSPopUpButton *popup_list = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+			for (int i = 0; i < values.size(); i++) {
+				[popup_list addItemWithTitle:[NSString stringWithUTF8String:values[i].utf8().get_data()]];
+			}
+			int tag = [self setDefaultInt:name value:default_idx];
+			[popup_list selectItemAtIndex:default_idx];
+			popup_list.tag = tag;
+			popup_list.target = self;
+			popup_list.action = @selector(popupOptionAction:);
+			popup = popup_list;
+		}
+
+		[view addRowWithViews:[NSArray arrayWithObjects:label, popup, nil]];
+
+		option_count++;
+	}
+
+	NSMutableArray *new_allowed_types = [[NSMutableArray alloc] init];
+	Vector<Vector<String>> pref_types;
+	bool has_type_popup = false;
+	{
+		NSTextField *label = [NSTextField labelWithString:[NSString stringWithUTF8String:RTR("Format").utf8().get_data()]];
+		label.textColor = NSColor.secondaryLabelColor;
+		if (@available(macOS 11.10, *)) {
+			label.font = [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+		}
+
+		if (p_filters.size() > 1) {
+			NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+			for (int i = 0; i < p_filters.size(); i++) {
+				Vector<String> tokens = p_filters[i].split(";");
+				Vector<String> pref_type;
+				if (tokens.size() >= 1) {
+					String flt = tokens[0].strip_edges();
+					String mime = (tokens.size() >= 3) ? tokens[2].strip_edges() : String();
+					int filter_slice_count = flt.get_slice_count(",");
+
+					NSMutableArray *type_filters = [[NSMutableArray alloc] init];
+					for (int j = 0; j < filter_slice_count; j++) {
+						String str = (flt.get_slicec(',', j).strip_edges());
+						if (!str.is_empty()) {
+							UTType *ut = nullptr;
+							if (str == "*.*") {
+								ut = UTTypeData;
+							} else {
+								ut = [UTType typeWithFilenameExtension:[NSString stringWithUTF8String:str.replace("*.", "").strip_edges().utf8().get_data()]];
+							}
+							if (ut) {
+								[type_filters addObject:ut];
+								pref_type.push_back(str.replace("*.", "").strip_edges());
+							}
+						}
+					}
+
+					filter_slice_count = mime.get_slice_count(",");
+					for (int j = 0; j < filter_slice_count; j++) {
+						String str = mime.get_slicec(',', j).strip_edges();
+						if (!str.is_empty()) {
+							UTType *ut = [UTType typeWithMIMEType:[NSString stringWithUTF8String:str.strip_edges().utf8().get_data()]];
+							if (ut) {
+								[type_filters addObject:ut];
+							}
+						}
+					}
+
+					if ([type_filters count] > 0) {
+						NSString *name_str = [NSString stringWithUTF8String:((tokens.size() == 1) ? tokens[0] : tokens[1].strip_edges()).utf8().get_data()];
+						[new_allowed_types addObject:type_filters];
+						pref_types.push_back(pref_type);
+						[popup addItemWithTitle:name_str];
+					}
+				}
+			}
+			if (popup.numberOfItems > 1) {
+				has_type_popup = true;
+				popup.target = self;
+				popup.action = @selector(popupFileAction:);
+
+				[view addRowWithViews:[NSArray arrayWithObjects:label, popup, nil]];
+			}
+		} else if (p_filters.size() == 1) {
+			Vector<String> tokens = p_filters[0].split(";");
+			Vector<String> pref_type;
+			if (tokens.size() >= 1) {
+				String flt = tokens[0].strip_edges();
+				String mime = (tokens.size() >= 3) ? tokens[2] : String();
+				int filter_slice_count = flt.get_slice_count(",");
+
+				NSMutableArray *type_filters = [[NSMutableArray alloc] init];
+				for (int j = 0; j < filter_slice_count; j++) {
+					String str = (flt.get_slicec(',', j).strip_edges());
+					if (!str.is_empty()) {
+						UTType *ut = nullptr;
+						if (str == "*.*") {
+							ut = UTTypeData;
+						} else {
+							ut = [UTType typeWithFilenameExtension:[NSString stringWithUTF8String:str.replace("*.", "").strip_edges().utf8().get_data()]];
+						}
+						if (ut) {
+							[type_filters addObject:ut];
+							pref_type.push_back(str.replace("*.", "").strip_edges());
+						}
+					}
+				}
+				filter_slice_count = mime.get_slice_count(",");
+				for (int j = 0; j < filter_slice_count; j++) {
+					String str = mime.get_slicec(',', j).strip_edges();
+					if (!str.is_empty()) {
+						UTType *ut = [UTType typeWithMIMEType:[NSString stringWithUTF8String:str.strip_edges().utf8().get_data()]];
+						if (ut) {
+							[type_filters addObject:ut];
+						}
+					}
+				}
+
+				if ([type_filters count] > 0) {
+					[new_allowed_types addObject:type_filters];
+					pref_types.push_back(pref_type);
+				}
+			}
+		}
+		[self setFileTypes:new_allowed_types pref:pref_types];
+	}
+
+	[base_view addSubview:view];
+	[constraints addObject:[view.topAnchor constraintEqualToAnchor:base_view.topAnchor constant:10]];
+	[constraints addObject:[base_view.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:10]];
+	[constraints addObject:[base_view.centerXAnchor constraintEqualToAnchor:view.centerXAnchor constant:10]];
+	[NSLayoutConstraint activateConstraints:constraints];
+
+	if (option_count > 0 || has_type_popup) {
+		[p_panel setAccessoryView:base_view];
+	}
+	if ([new_allowed_types count] > 0) {
+		NSMutableArray *type_filters = [new_allowed_types objectAtIndex:0];
+		if (type_filters && [type_filters count] == 1 && [type_filters objectAtIndex:0] == UTTypeData) {
+			[p_panel setAllowedContentTypes:@[ UTTypeData ]];
+			[p_panel setAllowsOtherFileTypes:true];
+		} else {
+			[p_panel setAllowsOtherFileTypes:false];
+			[p_panel setAllowedContentTypes:type_filters];
+		}
+	} else {
+		[p_panel setAllowedContentTypes:@[ UTTypeData ]];
+		[p_panel setAllowsOtherFileTypes:true];
+	}
+}
+
+- (int)getIndex {
+	return cur_index;
+}
+
+- (Dictionary)getSelection {
+	return options;
+}
+
+- (int)setDefaultInt:(const String &)p_name value:(int)p_value {
+	int cid = ctr_id++;
+	options[p_name] = p_value;
+	ctr_ids[cid] = p_name;
+
+	return cid;
+}
+
+- (int)setDefaultBool:(const String &)p_name value:(bool)p_value {
+	int cid = ctr_id++;
+	options[p_name] = p_value;
+	ctr_ids[cid] = p_name;
+
+	return cid;
+}
+
+- (void)setFileTypes:(NSMutableArray *)p_allowed_types pref:(const Vector<Vector<String>> &)p_preftypes {
+	allowed_types = p_allowed_types;
+	preferred_types = p_preftypes;
+}
+
+- (instancetype)initWithDialog:(NSSavePanel *)p_dialog {
+	if ((self = [super init])) {
+		dialog = p_dialog;
+		cur_index = 0;
+		ctr_id = 1;
+		allowed_types = nullptr;
+	}
+	return self;
+}
+
+- (void)popupCheckAction:(id)p_sender {
+	NSButton *btn = p_sender;
+	if (btn && ctr_ids.has(btn.tag)) {
+		options[ctr_ids[btn.tag]] = ([btn state] == NSControlStateValueOn);
+	}
+}
+
+- (void)popupOptionAction:(id)p_sender {
+	NSPopUpButton *btn = p_sender;
+	if (btn && ctr_ids.has(btn.tag)) {
+		options[ctr_ids[btn.tag]] = (int)[btn indexOfSelectedItem];
+	}
+}
+
+- (void)popupFileAction:(id)p_sender {
+	NSPopUpButton *btn = p_sender;
+	if (btn) {
+		NSUInteger index = [btn indexOfSelectedItem];
+		if (allowed_types && index < [allowed_types count]) {
+			NSMutableArray *type_filters = [allowed_types objectAtIndex:index];
+			if (type_filters && [type_filters count] == 1 && [type_filters objectAtIndex:0] == UTTypeData) {
+				[dialog setAllowedContentTypes:@[ UTTypeData ]];
+				[dialog setAllowsOtherFileTypes:true];
+			} else {
+				[dialog setAllowsOtherFileTypes:false];
+				[dialog setAllowedContentTypes:type_filters];
+			}
+			cur_index = index;
+		} else {
+			[dialog setAllowedContentTypes:@[ UTTypeData ]];
+			[dialog setAllowsOtherFileTypes:true];
+			cur_index = -1;
+		}
+	}
+}
+
+- (void)setRootPath:(const String &)p_root_path {
+	root = p_root_path;
+}
+
+- (String)validateFilename:(const String &)p_path {
+	if (allowed_types) {
+		NSMutableArray *type_filters = [allowed_types objectAtIndex:cur_index];
+		UTType *ut = [type_filters objectAtIndex:0];
+		String ext = String::utf8([[ut preferredFilenameExtension] UTF8String]);
+		Vector<String> pref_ext = preferred_types[cur_index];
+		if (!pref_ext.is_empty() && !pref_ext.has(ext) && p_path.has_extension(ext) && pref_ext[0] != "*") {
+			return p_path.get_basename() + "." + pref_ext[0];
+		}
+	}
+	return p_path;
+}
+
+- (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError *_Nullable *)outError {
+	if (root.is_empty()) {
+		return YES;
+	}
+
+	NSString *ns_path = url.URLByStandardizingPath.URLByResolvingSymlinksInPath.path;
+	String path = String::utf8([ns_path UTF8String]).simplify_path();
+	if (!path.begins_with(root.simplify_path())) {
+		return NO;
+	}
+
+	return YES;
+}
+
+@end
+
+// === Merged from platform/macos/native_menu_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+#include "core/object/callable_mp.h"
+#include "scene/resources/image_texture.h"
+
+void NativeMenuMacOS::_register_system_menus(NSMenu *p_main_menu, NSMenu *p_application_menu, NSMenu *p_window_menu, NSMenu *p_help_menu, NSMenu *p_dock_menu) {
+	{
+		MenuData *md = memnew(MenuData);
+		md->menu = p_main_menu;
+		md->is_system = true;
+		main_menu = menus.make_rid(md);
+		main_menu_ns = p_main_menu;
+		menu_lookup[md->menu] = main_menu;
+	}
+	{
+		MenuData *md = memnew(MenuData);
+		md->menu = p_application_menu;
+		md->is_system = true;
+		application_menu = menus.make_rid(md);
+		application_menu_ns = p_application_menu;
+		menu_lookup[md->menu] = application_menu;
+	}
+	{
+		MenuData *md = memnew(MenuData);
+		md->menu = p_window_menu;
+		md->is_system = true;
+		window_menu = menus.make_rid(md);
+		window_menu_ns = p_window_menu;
+		menu_lookup[md->menu] = window_menu;
+	}
+	{
+		MenuData *md = memnew(MenuData);
+		md->menu = p_help_menu;
+		md->is_system = true;
+		help_menu = menus.make_rid(md);
+		help_menu_ns = p_help_menu;
+		menu_lookup[md->menu] = help_menu;
+	}
+	{
+		MenuData *md = memnew(MenuData);
+		md->menu = p_dock_menu;
+		md->is_system = true;
+		dock_menu = menus.make_rid(md);
+		dock_menu_ns = p_dock_menu;
+		menu_lookup[md->menu] = dock_menu;
+	}
+}
+
+NSMenu *NativeMenuMacOS::_get_dock_menu() {
+	MenuData *md = menus.get_or_null(dock_menu);
+	if (md) {
+		return md->menu;
+	}
+	return nullptr;
+}
+
+void NativeMenuMacOS::_menu_open(NSMenu *p_menu) {
+	if (menu_lookup.has(p_menu)) {
+		MenuData *md = menus.get_or_null(menu_lookup[p_menu]);
+		if (md) {
+			// Note: Set "is_open" flag, but do not call callback, menu items can't be modified during this call and "_menu_need_update" will be called right before it.
+			md->is_open = true;
+		}
+	}
+}
+
+void NativeMenuMacOS::_menu_need_update(NSMenu *p_menu) {
+	if (menu_lookup.has(p_menu)) {
+		MenuData *md = menus.get_or_null(menu_lookup[p_menu]);
+		if (md) {
+			// Note: "is_open" flag is set by "_menu_open", this method is always called before menu is shown, but might be called for the other reasons as well.
+			if (md->open_cb.is_valid()) {
+				Variant ret;
+				Callable::CallError ce;
+
+				// Callback is called directly, since it's expected to modify menu items before it's shown.
+				md->open_cb.callp(nullptr, 0, ret, ce);
+				if (ce.error != Callable::CallError::CALL_OK) {
+					ERR_PRINT(vformat("Failed to execute menu open callback: %s.", Variant::get_callable_error_text(md->open_cb, nullptr, 0, ce)));
+				}
+			}
+		}
+	}
+}
+
+void NativeMenuMacOS::_menu_close(NSMenu *p_menu) {
+	if (menu_lookup.has(p_menu)) {
+		MenuData *md = menus.get_or_null(menu_lookup[p_menu]);
+		if (md) {
+			md->is_open = false;
+
+			// Callback called deferred, since it should not modify menu items during "_menu_close" call.
+			callable_mp(this, &NativeMenuMacOS::_menu_close_cb).call_deferred(menu_lookup[p_menu]);
+		}
+	}
+}
+
+void NativeMenuMacOS::_menu_close_cb(const RID &p_rid) {
+	MenuData *md = menus.get_or_null(p_rid);
+	if (md->close_cb.is_valid()) {
+		Variant ret;
+		Callable::CallError ce;
+
+		md->close_cb.callp(nullptr, 0, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat("Failed to execute menu close callback: %s.", Variant::get_callable_error_text(md->close_cb, nullptr, 0, ce)));
+		}
+	}
+}
+
+bool NativeMenuMacOS::_is_menu_opened(NSMenu *p_menu) const {
+	if (menu_lookup.has(p_menu)) {
+		const MenuData *md = menus.get_or_null(menu_lookup[p_menu]);
+		if (md && md->is_open) {
+			return true;
+		}
+	}
+	for (NSInteger i = (p_menu == [NSApp mainMenu]) ? 1 : 0; i < [p_menu numberOfItems]; i++) {
+		const NSMenuItem *menu_item = [p_menu itemAtIndex:i];
+		if ([menu_item submenu]) {
+			if (_is_menu_opened([menu_item submenu])) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int NativeMenuMacOS::_get_system_menu_start(const NSMenu *p_menu) const {
+	if (p_menu == [NSApp mainMenu]) { // Skip Apple menu.
+		return 1;
+	}
+	if (p_menu == application_menu_ns || p_menu == window_menu_ns || p_menu == help_menu_ns) {
+		int count = [p_menu numberOfItems];
+		for (int i = 0; i < count; i++) {
+			NSMenuItem *menu_item = [p_menu itemAtIndex:i];
+			if (menu_item.tag == MENU_TAG_START) {
+				return i + 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int NativeMenuMacOS::_get_system_menu_count(const NSMenu *p_menu) const {
+	if (p_menu == [NSApp mainMenu]) { // Skip Apple, Window and Help menu.
+		return [p_menu numberOfItems] - 3;
+	}
+	if (p_menu == application_menu_ns || p_menu == window_menu_ns || p_menu == help_menu_ns) {
+		int start = 0;
+		int count = [p_menu numberOfItems];
+		for (int i = 0; i < count; i++) {
+			NSMenuItem *menu_item = [p_menu itemAtIndex:i];
+			if (menu_item.tag == MENU_TAG_START) {
+				start = i + 1;
+			}
+			if (menu_item.tag == MENU_TAG_END) {
+				return i - start;
+			}
+		}
+	}
+	return [p_menu numberOfItems];
+}
+
+void NativeMenuMacOS::_update_align(MenuData *p_md) {
+	int item_start = _get_system_menu_start(p_md->menu);
+	int item_count = _get_system_menu_count(p_md->menu);
+
+	bool has_icon = false;
+	for (int i = item_start; i < item_start + item_count; i++) {
+		NSMenuItem *menu_item = [p_md->menu itemAtIndex:i];
+		if (!menu_item) {
+			continue;
+		}
+		const GodotMenuItem *obj = [menu_item representedObject];
+		if (obj && obj->img.is_valid()) {
+			has_icon = true;
+			break;
+		}
+	}
+	for (int i = item_start; i < item_start + item_count; i++) {
+		NSMenuItem *menu_item = [p_md->menu itemAtIndex:i];
+		if (!menu_item) {
+			continue;
+		}
+		const GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			if (has_icon && !obj->img.is_valid()) {
+				[menu_item setIndentationLevel:obj->indent + 2];
+			} else {
+				[menu_item setIndentationLevel:obj->indent];
+			}
+		}
+	}
+}
+
+bool NativeMenuMacOS::has_feature(Feature p_feature) const {
+	switch (p_feature) {
+		case FEATURE_GLOBAL_MENU:
+		case FEATURE_POPUP_MENU:
+		case FEATURE_OPEN_CLOSE_CALLBACK:
+		case FEATURE_HOVER_CALLBACK:
+		case FEATURE_KEY_CALLBACK:
+			return true;
+		default:
+			return false;
+	}
+}
+
+bool NativeMenuMacOS::has_system_menu(SystemMenus p_menu_id) const {
+	switch (p_menu_id) {
+		case MAIN_MENU_ID:
+		case APPLICATION_MENU_ID:
+		case WINDOW_MENU_ID:
+		case HELP_MENU_ID:
+		case DOCK_MENU_ID:
+			return true;
+		default:
+			return false;
+	}
+}
+
+RID NativeMenuMacOS::get_system_menu(SystemMenus p_menu_id) const {
+	switch (p_menu_id) {
+		case MAIN_MENU_ID:
+			return main_menu;
+		case APPLICATION_MENU_ID:
+			return application_menu;
+		case WINDOW_MENU_ID:
+			return window_menu;
+		case HELP_MENU_ID:
+			return help_menu;
+		case DOCK_MENU_ID:
+			return dock_menu;
+		default:
+			return RID();
+	}
+}
+
+String NativeMenuMacOS::get_system_menu_text(SystemMenus p_menu_id) const {
+	NSMenu *menu = nullptr;
+	switch (p_menu_id) {
+		case WINDOW_MENU_ID: {
+			menu = window_menu_ns;
+		} break;
+		case HELP_MENU_ID: {
+			menu = help_menu_ns;
+		} break;
+		default:
+			return String();
+	}
+	if (!menu) {
+		return String();
+	}
+	return String::utf8([[menu title] UTF8String]);
+}
+
+void NativeMenuMacOS::set_system_menu_text(SystemMenus p_menu_id, const String &p_name) {
+	NSMenu *menu = nullptr;
+	switch (p_menu_id) {
+		case WINDOW_MENU_ID: {
+			menu = window_menu_ns;
+		} break;
+		case HELP_MENU_ID: {
+			menu = help_menu_ns;
+		} break;
+		default:
+			return;
+	}
+	if (!menu || !main_menu_ns) {
+		return;
+	}
+	[menu setTitle:[NSString stringWithUTF8String:p_name.utf8().get_data()]];
+	int idx = [main_menu_ns indexOfItemWithSubmenu:(NSMenu *)menu];
+	NSMenuItem *menu_item = [main_menu_ns itemAtIndex:idx];
+	if (menu_item) {
+		[menu_item setTitle:[NSString stringWithUTF8String:p_name.utf8().get_data()]];
+	}
+}
+
+RID NativeMenuMacOS::create_menu() {
+	MenuData *md = memnew(MenuData);
+	md->menu = [[NSMenu alloc] initWithTitle:@""];
+	[md->menu setAutoenablesItems:NO];
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		ds->set_menu_delegate(md->menu);
+	}
+	RID rid = menus.make_rid(md);
+	menu_lookup[md->menu] = rid;
+	return rid;
+}
+
+bool NativeMenuMacOS::has_menu(const RID &p_rid) const {
+	return menus.owns(p_rid);
+}
+
+void NativeMenuMacOS::free_menu(const RID &p_rid) {
+	MenuData *md = menus.get_or_null(p_rid);
+	if (md && !md->is_system) {
+		clear(p_rid);
+		menus.free(p_rid);
+		menu_lookup.erase(md->menu);
+		md->menu = nullptr;
+		memdelete(md);
+	}
+}
+
+NSMenu *NativeMenuMacOS::get_native_menu_handle(const RID &p_rid) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, nullptr);
+
+	return md->menu;
+}
+
+Size2 NativeMenuMacOS::get_size(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Size2());
+
+	return Size2(md->menu.size.width, md->menu.size.height) * DisplayServer::screen_get_max_scale();
+}
+
+void NativeMenuMacOS::popup(const RID &p_rid, const Vector2i &p_position) {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		Point2i position = p_position;
+		// macOS native y-coordinate relative to _get_screens_origin() is negative,
+		// Godot passes a positive value.
+		position.y *= -1;
+		position += ds->_get_screens_origin();
+		position /= ds->screen_get_max_scale();
+
+		[md->menu popUpMenuPositioningItem:nil atLocation:NSMakePoint(position.x, position.y - 5) inView:nil]; // Menu vertical position doesn't include rounded corners, add `5` display pixels to better align it with Godot buttons.
+
+		ds->release_pressed_events(); // Note: context menu block main loop and consume events, pressed keys and mouse buttons should be released manually.
+		ds->sync_mouse_state();
+	}
+}
+
+void NativeMenuMacOS::set_interface_direction(const RID &p_rid, bool p_is_rtl) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	md->menu.userInterfaceLayoutDirection = p_is_rtl ? NSUserInterfaceLayoutDirectionRightToLeft : NSUserInterfaceLayoutDirectionLeftToRight;
+}
+
+void NativeMenuMacOS::set_popup_open_callback(const RID &p_rid, const Callable &p_callback) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	md->open_cb = p_callback;
+}
+
+Callable NativeMenuMacOS::get_popup_open_callback(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+
+	return md->open_cb;
+}
+
+void NativeMenuMacOS::set_popup_close_callback(const RID &p_rid, const Callable &p_callback) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	md->close_cb = p_callback;
+}
+
+Callable NativeMenuMacOS::get_popup_close_callback(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+
+	return md->close_cb;
+}
+
+void NativeMenuMacOS::set_minimum_width(const RID &p_rid, float p_width) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	md->menu.minimumWidth = p_width / DisplayServer::screen_get_max_scale();
+}
+
+float NativeMenuMacOS::get_minimum_width(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0.0);
+
+	return md->menu.minimumWidth * DisplayServer::screen_get_max_scale();
+}
+
+bool NativeMenuMacOS::is_opened(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	return md->is_open;
+}
+
+int NativeMenuMacOS::add_submenu_item(const RID &p_rid, const String &p_label, const RID &p_submenu_rid, const Variant &p_tag, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	MenuData *md_sub = menus.get_or_null(p_submenu_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	ERR_FAIL_NULL_V(md_sub, -1);
+	ERR_FAIL_COND_V_MSG(md->menu == md_sub->menu, -1, "Can't set submenu to self!");
+	ERR_FAIL_COND_V_MSG([md_sub->menu supermenu], -1, "Can't set submenu to menu that is already a submenu of some other menu!");
+
+	NSMenuItem *menu_item;
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	if (p_index < 0) {
+		p_index = item_start + item_count;
+	} else {
+		p_index += item_start;
+		p_index = CLAMP(p_index, item_start, item_start + item_count);
+	}
+	menu_item = [md->menu insertItemWithTitle:[NSString stringWithUTF8String:p_label.utf8().get_data()] action:nil keyEquivalent:@"" atIndex:p_index];
+
+	GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+	obj->meta = p_tag;
+	[menu_item setRepresentedObject:obj];
+
+	[md_sub->menu setTitle:[NSString stringWithUTF8String:p_label.utf8().get_data()]];
+	[md->menu setSubmenu:md_sub->menu forItem:menu_item];
+	_update_align(md);
+
+	return p_index - item_start;
+}
+
+NSMenuItem *NativeMenuMacOS::_menu_add_item(NSMenu *p_menu, const String &p_label, Key p_accel, int p_index, int *r_out) {
+	if (p_menu) {
+		String keycode = KeyMappingMacOS::keycode_get_native_string(p_accel & KeyModifierMask::CODE_MASK);
+		NSMenuItem *menu_item;
+		int item_start = _get_system_menu_start(p_menu);
+		int item_count = _get_system_menu_count(p_menu);
+		if (p_index < 0) {
+			p_index = item_start + item_count;
+		} else {
+			p_index += item_start;
+			p_index = CLAMP(p_index, item_start, item_start + item_count);
+		}
+		menu_item = [p_menu insertItemWithTitle:[NSString stringWithUTF8String:p_label.utf8().get_data()] action:@selector(globalMenuCallback:) keyEquivalent:[NSString stringWithUTF8String:keycode.utf8().get_data()] atIndex:p_index];
+		*r_out = p_index - item_start;
+		return menu_item;
+	}
+	return nullptr;
+}
+
+int NativeMenuMacOS::add_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->accel = p_accel;
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
+		obj->accel = p_accel;
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_icon_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->accel = p_accel;
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+			obj->img = p_icon->get_image();
+			obj->img = obj->img->duplicate();
+			if (obj->img->is_compressed()) {
+				obj->img->decompress();
+			}
+			NSImage *image = ds->_convert_to_nsimg(obj->img);
+			[image setSize:NSMakeSize(16, 16)];
+			[menu_item setImage:image];
+		}
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_icon_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->checkable_type = CHECKABLE_TYPE_CHECK_BOX;
+		obj->accel = p_accel;
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+			obj->img = p_icon->get_image();
+			obj->img = obj->img->duplicate();
+			if (obj->img->is_compressed()) {
+				obj->img->decompress();
+			}
+			NSImage *image = ds->_convert_to_nsimg(obj->img);
+			[image setSize:NSMakeSize(16, 16)];
+			[menu_item setImage:image];
+		}
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_radio_check_item(const RID &p_rid, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->checkable_type = CHECKABLE_TYPE_RADIO_BUTTON;
+		obj->accel = p_accel;
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_icon_radio_check_item(const RID &p_rid, const Ref<Texture2D> &p_icon, const String &p_label, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->checkable_type = CHECKABLE_TYPE_RADIO_BUTTON;
+		obj->accel = p_accel;
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+			obj->img = p_icon->get_image();
+			obj->img = obj->img->duplicate();
+			if (obj->img->is_compressed()) {
+				obj->img->decompress();
+			}
+			NSImage *image = ds->_convert_to_nsimg(obj->img);
+			[image setSize:NSMakeSize(16, 16)];
+			[menu_item setImage:image];
+		}
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_multistate_item(const RID &p_rid, const String &p_label, int p_max_states, int p_default_state, const Callable &p_callback, const Callable &p_key_callback, const Variant &p_tag, Key p_accel, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int out = -1;
+	NSMenuItem *menu_item = _menu_add_item(md->menu, p_label, p_accel, p_index, &out);
+	if (menu_item) {
+		GodotMenuItem *obj = [[GodotMenuItem alloc] init];
+		obj->callback = p_callback;
+		obj->key_callback = p_key_callback;
+		obj->meta = p_tag;
+		obj->max_states = p_max_states;
+		obj->state = p_default_state;
+		obj->accel = p_accel;
+		[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_accel)];
+		[menu_item setRepresentedObject:obj];
+		_update_align(md);
+	}
+	return out;
+}
+
+int NativeMenuMacOS::add_separator(const RID &p_rid, int p_index) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	if (md->menu == [NSApp mainMenu]) { // Do not add separators into main menu.
+		return -1;
+	}
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	if (p_index < 0) {
+		p_index = item_start + item_count;
+	} else {
+		p_index += item_start;
+		p_index = CLAMP(p_index, item_start, item_start + item_count);
+	}
+	[md->menu insertItem:[NSMenuItem separatorItem] atIndex:p_index];
+	return p_index - item_start;
+}
+
+int NativeMenuMacOS::find_item_index_with_text(const RID &p_rid, const String &p_text) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int index = [md->menu indexOfItemWithTitle:[NSString stringWithUTF8String:p_text.utf8().get_data()]];
+	if (index >= 0) {
+		return index - item_start;
+	}
+	return -1;
+}
+
+int NativeMenuMacOS::find_item_index_with_tag(const RID &p_rid, const Variant &p_tag) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	for (NSInteger i = item_start; i < item_start + item_count; i++) {
+		const NSMenuItem *menu_item = [md->menu itemAtIndex:i];
+		if (menu_item) {
+			const GodotMenuItem *obj = [menu_item representedObject];
+			if (obj && obj->meta == p_tag) {
+				return i - item_start;
+			}
+		}
+	}
+	return -1;
+}
+
+bool NativeMenuMacOS::is_item_checked(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		const GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->checked;
+		}
+	}
+	return false;
+}
+
+bool NativeMenuMacOS::is_item_indeterminate(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		const GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->indeterminate;
+		}
+	}
+	return false;
+}
+
+bool NativeMenuMacOS::is_item_checkable(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->checkable_type == CHECKABLE_TYPE_CHECK_BOX;
+		}
+	}
+	return false;
+}
+
+bool NativeMenuMacOS::is_item_radio_checkable(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->checkable_type == CHECKABLE_TYPE_RADIO_BUTTON;
+		}
+	}
+	return false;
+}
+
+Callable NativeMenuMacOS::get_item_callback(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Callable());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, Callable());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->callback;
+		}
+	}
+	return Callable();
+}
+
+Callable NativeMenuMacOS::get_item_key_callback(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Callable());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Callable());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, Callable());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->key_callback;
+		}
+	}
+	return Callable();
+}
+
+Variant NativeMenuMacOS::get_item_tag(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Variant());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Variant());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, Variant());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->meta;
+		}
+	}
+	return Variant();
+}
+
+String NativeMenuMacOS::get_item_text(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, String());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, String());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, String());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		return String::utf8([[menu_item title] UTF8String]);
+	}
+	return String();
+}
+
+RID NativeMenuMacOS::get_item_submenu(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, RID());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, RID());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, RID());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		NSMenu *sub_menu = [menu_item submenu];
+		if (sub_menu && menu_lookup.has(sub_menu)) {
+			return menu_lookup[sub_menu];
+		}
+	}
+	return RID();
+}
+
+Key NativeMenuMacOS::get_item_accelerator(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Key::NONE);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Key::NONE);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, Key::NONE);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		String ret = String::utf8([[menu_item keyEquivalent] UTF8String]);
+		Key keycode = find_keycode(ret);
+		NSUInteger mask = [menu_item keyEquivalentModifierMask];
+		if (mask & NSEventModifierFlagControl) {
+			keycode |= KeyModifierMask::CTRL;
+		}
+		if (mask & NSEventModifierFlagOption) {
+			keycode |= KeyModifierMask::ALT;
+		}
+		if (mask & NSEventModifierFlagShift) {
+			keycode |= KeyModifierMask::SHIFT;
+		}
+		if (mask & NSEventModifierFlagCommand) {
+			keycode |= KeyModifierMask::META;
+		}
+		if (mask & NSEventModifierFlagNumericPad) {
+			keycode |= KeyModifierMask::KPAD;
+		}
+		return keycode;
+	}
+	return Key::NONE;
+}
+
+bool NativeMenuMacOS::is_item_disabled(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		return ![menu_item isEnabled];
+	}
+	return false;
+}
+
+bool NativeMenuMacOS::is_item_hidden(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, false);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, false);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		return [menu_item isHidden];
+	}
+	return false;
+}
+
+String NativeMenuMacOS::get_item_tooltip(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, String());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, String());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, String());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		return String::utf8([[menu_item toolTip] UTF8String]);
+	}
+	return String();
+}
+
+int NativeMenuMacOS::get_item_state(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, 0);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, 0);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->state;
+		}
+	}
+	return 0;
+}
+
+int NativeMenuMacOS::get_item_max_states(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, 0);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, 0);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			return obj->max_states;
+		}
+	}
+	return 0;
+}
+
+Ref<Texture2D> NativeMenuMacOS::get_item_icon(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, Ref<Texture2D>());
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, Ref<Texture2D>());
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, Ref<Texture2D>());
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			if (obj->img.is_valid()) {
+				return ImageTexture::create_from_image(obj->img);
+			}
+		}
+	}
+	return Ref<Texture2D>();
+}
+
+int NativeMenuMacOS::get_item_indentation_level(const RID &p_rid, int p_idx) const {
+	ERR_FAIL_COND_V(p_idx < 0, 0);
+
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0);
+
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, 0);
+	const NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		return [menu_item indentationLevel];
+	}
+	return 0;
+}
+
+void NativeMenuMacOS::set_item_checked(const RID &p_rid, int p_idx, bool p_checked) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			obj->checked = p_checked;
+			obj->indeterminate = false;
+			if (p_checked) {
+				[menu_item setState:NSControlStateValueOn];
+			} else {
+				[menu_item setState:NSControlStateValueOff];
+			}
+		}
+	}
+}
+
+void NativeMenuMacOS::set_item_indeterminate(const RID &p_rid, int p_idx, bool p_indeterminate) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			obj->indeterminate = p_indeterminate;
+			obj->checked = false;
+			if (p_indeterminate) {
+				[menu_item setState:NSControlStateValueMixed];
+			} else {
+				[menu_item setState:NSControlStateValueOff];
+			}
+		}
+	}
+}
+
+void NativeMenuMacOS::set_item_checkable(const RID &p_rid, int p_idx, bool p_checkable) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->checkable_type = (p_checkable) ? CHECKABLE_TYPE_CHECK_BOX : CHECKABLE_TYPE_NONE;
+	}
+}
+
+void NativeMenuMacOS::set_item_radio_checkable(const RID &p_rid, int p_idx, bool p_checkable) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->checkable_type = (p_checkable) ? CHECKABLE_TYPE_RADIO_BUTTON : CHECKABLE_TYPE_NONE;
+	}
+}
+
+void NativeMenuMacOS::set_item_callback(const RID &p_rid, int p_idx, const Callable &p_callback) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->callback = p_callback;
+	}
+}
+
+void NativeMenuMacOS::set_item_key_callback(const RID &p_rid, int p_idx, const Callable &p_key_callback) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->key_callback = p_key_callback;
+	}
+}
+
+void NativeMenuMacOS::set_item_hover_callbacks(const RID &p_rid, int p_idx, const Callable &p_callback) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->hover_callback = p_callback;
+	}
+}
+
+void NativeMenuMacOS::set_item_tag(const RID &p_rid, int p_idx, const Variant &p_tag) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->meta = p_tag;
+	}
+}
+
+void NativeMenuMacOS::set_item_text(const RID &p_rid, int p_idx, const String &p_text) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		[menu_item setTitle:[NSString stringWithUTF8String:p_text.utf8().get_data()]];
+		NSMenu *sub_menu = [menu_item submenu];
+		if (sub_menu) {
+			[sub_menu setTitle:[NSString stringWithUTF8String:p_text.utf8().get_data()]];
+		}
+	}
+}
+
+void NativeMenuMacOS::set_item_submenu(const RID &p_rid, int p_idx, const RID &p_submenu_rid) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+
+	if (p_submenu_rid.is_valid()) {
+		MenuData *md_sub = menus.get_or_null(p_submenu_rid);
+		ERR_FAIL_NULL(md_sub);
+		ERR_FAIL_COND_MSG(md->menu == md_sub->menu, "Can't set submenu to self!");
+		ERR_FAIL_COND_MSG([md_sub->menu supermenu], "Can't set submenu to menu that is already a submenu of some other menu!");
+
+		int item_start = _get_system_menu_start(md->menu);
+		int item_count = _get_system_menu_count(md->menu);
+		p_idx += item_start;
+		ERR_FAIL_COND(p_idx >= item_start + item_count);
+		NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+		if (menu_item) {
+			[md->menu setSubmenu:md_sub->menu forItem:menu_item];
+			[menu_item setAction:nil];
+			[menu_item setKeyEquivalent:@""];
+		}
+	} else {
+		int item_start = _get_system_menu_start(md->menu);
+		int item_count = _get_system_menu_count(md->menu);
+		p_idx += item_start;
+		ERR_FAIL_COND(p_idx >= item_start + item_count);
+		NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+		if (menu_item) {
+			if ([menu_item submenu] && _is_menu_opened([menu_item submenu])) {
+				ERR_PRINT("Can't remove open menu!");
+				return;
+			}
+			GodotMenuItem *obj = [menu_item representedObject];
+			String keycode = KeyMappingMacOS::keycode_get_native_string(obj->accel & KeyModifierMask::CODE_MASK);
+			[md->menu setSubmenu:nil forItem:menu_item];
+			[menu_item setAction:@selector(globalMenuCallback:)];
+			[menu_item setKeyEquivalent:[NSString stringWithUTF8String:keycode.utf8().get_data()]];
+		}
+	}
+}
+
+void NativeMenuMacOS::set_item_accelerator(const RID &p_rid, int p_idx, Key p_keycode) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		obj->accel = p_keycode;
+		NSMenu *sub_menu = [menu_item submenu];
+		if (!sub_menu) {
+			if (p_keycode == Key::NONE) {
+				[menu_item setKeyEquivalent:@""];
+			} else {
+				[menu_item setKeyEquivalentModifierMask:KeyMappingMacOS::keycode_get_native_mask(p_keycode)];
+				String keycode = KeyMappingMacOS::keycode_get_native_string(p_keycode & KeyModifierMask::CODE_MASK);
+				[menu_item setKeyEquivalent:[NSString stringWithUTF8String:keycode.utf8().get_data()]];
+			}
+		}
+	}
+}
+
+void NativeMenuMacOS::set_item_disabled(const RID &p_rid, int p_idx, bool p_disabled) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		obj->enabled = !p_disabled;
+		[menu_item setEnabled:(!p_disabled)];
+	}
+}
+
+void NativeMenuMacOS::set_item_hidden(const RID &p_rid, int p_idx, bool p_hidden) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		[menu_item setHidden:p_hidden];
+	}
+}
+
+void NativeMenuMacOS::set_item_tooltip(const RID &p_rid, int p_idx, const String &p_tooltip) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		[menu_item setToolTip:[NSString stringWithUTF8String:p_tooltip.utf8().get_data()]];
+	}
+}
+
+void NativeMenuMacOS::set_item_state(const RID &p_rid, int p_idx, int p_state) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->state = p_state;
+	}
+}
+
+void NativeMenuMacOS::set_item_max_states(const RID &p_rid, int p_idx, int p_max_states) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		obj->max_states = p_max_states;
+	}
+}
+
+void NativeMenuMacOS::set_item_icon(const RID &p_rid, int p_idx, const Ref<Texture2D> &p_icon) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		ERR_FAIL_NULL(obj);
+		DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+		if (ds && p_icon.is_valid() && p_icon->get_width() > 0 && p_icon->get_height() > 0 && p_icon->get_image().is_valid()) {
+			obj->img = p_icon->get_image();
+			obj->img = obj->img->duplicate();
+			if (obj->img->is_compressed()) {
+				obj->img->decompress();
+			}
+			NSImage *image = ds->_convert_to_nsimg(obj->img);
+			[image setSize:NSMakeSize(16, 16)];
+			[menu_item setImage:image];
+		} else {
+			obj->img = Ref<Image>();
+			[menu_item setImage:nil];
+		}
+		_update_align(md);
+	}
+}
+
+void NativeMenuMacOS::set_item_indentation_level(const RID &p_rid, int p_idx, int p_level) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if (menu_item) {
+		GodotMenuItem *obj = [menu_item representedObject];
+		if (obj) {
+			obj->indent = p_level;
+			_update_align(md);
+		}
+	}
+}
+
+int NativeMenuMacOS::set_item_index(const RID &p_rid, int p_idx, int p_target_idx) {
+	ERR_FAIL_COND_V(p_idx < 0, -1);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, -1);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND_V(p_idx >= item_start + item_count, -1);
+	ERR_FAIL_INDEX_V(p_target_idx, item_count, -1);
+	p_target_idx += item_start;
+
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if ([menu_item submenu] && _is_menu_opened([menu_item submenu])) {
+		ERR_FAIL_V_MSG(-1, "Can't move open menu!");
+	}
+	if (menu_item) {
+		[md->menu removeItemAtIndex:p_idx];
+		[md->menu insertItem:menu_item atIndex:p_target_idx];
+	}
+	return p_target_idx - item_start;
+}
+
+int NativeMenuMacOS::get_item_count(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, 0);
+
+	return _get_system_menu_count(md->menu);
+}
+
+bool NativeMenuMacOS::is_system_menu(const RID &p_rid) const {
+	const MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL_V(md, false);
+
+	return md->is_system;
+}
+
+void NativeMenuMacOS::remove_item(const RID &p_rid, int p_idx) {
+	ERR_FAIL_COND(p_idx < 0);
+
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	int item_start = _get_system_menu_start(md->menu);
+	int item_count = _get_system_menu_count(md->menu);
+	p_idx += item_start;
+	ERR_FAIL_COND(p_idx >= item_start + item_count);
+	NSMenuItem *menu_item = [md->menu itemAtIndex:p_idx];
+	if ([menu_item submenu] && _is_menu_opened([menu_item submenu])) {
+		ERR_PRINT("Can't remove open menu!");
+		return;
+	}
+	[md->menu removeItemAtIndex:p_idx];
+	_update_align(md);
+}
+
+void NativeMenuMacOS::clear(const RID &p_rid) {
+	MenuData *md = menus.get_or_null(p_rid);
+	ERR_FAIL_NULL(md);
+	ERR_FAIL_COND_MSG(_is_menu_opened(md->menu), "Can't remove open menu!");
+
+	if (p_rid == application_menu || p_rid == window_menu || p_rid == help_menu) {
+		int start = _get_system_menu_start(md->menu);
+		int count = _get_system_menu_count(md->menu);
+		for (int i = start + count - 1; i >= start; i--) {
+			[md->menu removeItemAtIndex:i];
+		}
+	} else {
+		[md->menu removeAllItems];
+	}
+
+	if (p_rid == main_menu) {
+		// Restore Apple, Window and Help menu.
+		MenuData *md_app = menus.get_or_null(application_menu);
+		if (md_app) {
+			NSMenuItem *menu_item = [md->menu addItemWithTitle:@"" action:nil keyEquivalent:@""];
+			[md->menu setSubmenu:md_app->menu forItem:menu_item];
+		}
+		MenuData *md_win = menus.get_or_null(window_menu);
+		if (md_win) {
+			NSMenuItem *menu_item = [md->menu addItemWithTitle:@"Window" action:nil keyEquivalent:@""];
+			[md->menu setSubmenu:md_win->menu forItem:menu_item];
+		}
+		MenuData *md_hlp = menus.get_or_null(help_menu);
+		if (md_hlp) {
+			NSMenuItem *menu_item = [md->menu addItemWithTitle:@"Help" action:nil keyEquivalent:@""];
+			[md->menu setSubmenu:md_hlp->menu forItem:menu_item];
+		}
+	}
+}
+
+NativeMenuMacOS::NativeMenuMacOS() {}
+
+NativeMenuMacOS::~NativeMenuMacOS() {
+	if (main_menu.is_valid()) {
+		MenuData *md = menus.get_or_null(main_menu);
+		if (md) {
+			clear(main_menu);
+			menus.free(main_menu);
+			menu_lookup.erase(md->menu);
+			md->menu = nullptr;
+			main_menu_ns = nullptr;
+			memdelete(md);
+		}
+	}
+	if (application_menu.is_valid()) {
+		MenuData *md = menus.get_or_null(application_menu);
+		if (md) {
+			clear(application_menu);
+			menus.free(application_menu);
+			menu_lookup.erase(md->menu);
+			md->menu = nullptr;
+			application_menu_ns = nullptr;
+			memdelete(md);
+		}
+	}
+	if (window_menu.is_valid()) {
+		MenuData *md = menus.get_or_null(window_menu);
+		if (md) {
+			clear(window_menu);
+			menus.free(window_menu);
+			menu_lookup.erase(md->menu);
+			md->menu = nullptr;
+			window_menu_ns = nullptr;
+			memdelete(md);
+		}
+	}
+	if (help_menu.is_valid()) {
+		MenuData *md = menus.get_or_null(help_menu);
+		if (md) {
+			clear(help_menu);
+			menus.free(help_menu);
+			menu_lookup.erase(md->menu);
+			md->menu = nullptr;
+			help_menu_ns = nullptr;
+			memdelete(md);
+		}
+	}
+	if (dock_menu.is_valid()) {
+		MenuData *md = menus.get_or_null(dock_menu);
+		if (md) {
+			clear(dock_menu);
+			menus.free(dock_menu);
+			menu_lookup.erase(md->menu);
+			md->menu = nullptr;
+			dock_menu_ns = nullptr;
+			memdelete(md);
+		}
+	}
+}
+
+// === Merged from platform/macos/rendering_context_driver_vulkan_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#ifdef VULKAN_ENABLED
+
+#ifdef USE_VOLK
+#include <volk.h>
+#else
+#include <vulkan/vulkan_metal.h>
+#endif
+
+const char *RenderingContextDriverVulkanMacOS::_get_platform_surface_extension() const {
+	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+}
+
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkanMacOS::surface_create(const void *p_platform_data) {
+	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
+
+	VkMetalSurfaceCreateInfoEXT create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+	create_info.pLayer = *wpd->layer_ptr;
+
+	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
+	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
+
+	Surface *surface = memnew(Surface);
+	surface->vk_surface = vk_surface;
+	return SurfaceID(surface);
+}
+
+RenderingContextDriverVulkanMacOS::RenderingContextDriverVulkanMacOS() {
+	// Does nothing.
+}
+
+RenderingContextDriverVulkanMacOS::~RenderingContextDriverVulkanMacOS() {
+	// Does nothing.
+}
+
+#endif // VULKAN_ENABLED
+
+// === Merged from platform/macos/gl_manager_macos_legacy.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#include "core/os/os.h"
+
+#include <dlfcn.h>
+
+#include <cstdio>
+#include <cstdlib>
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+Error GLManagerLegacy_MacOS::create_context(GLWindow &win) {
+	NSOpenGLPixelFormatAttribute attributes[] = {
+		NSOpenGLPFADoubleBuffer,
+		NSOpenGLPFAClosestPolicy,
+		NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+		NSOpenGLPFAColorSize, 32,
+		NSOpenGLPFADepthSize, 24,
+		NSOpenGLPFAStencilSize, 8,
+		0
+	};
+
+	NSOpenGLPixelFormat *pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+	ERR_FAIL_NULL_V(pixel_format, ERR_CANT_CREATE);
+
+	win.context = [[NSOpenGLContext alloc] initWithFormat:pixel_format shareContext:shared_context];
+	ERR_FAIL_NULL_V(win.context, ERR_CANT_CREATE);
+	if (shared_context == nullptr) {
+		shared_context = win.context;
+	}
+
+	[win.context setView:win.window_view];
+	[win.context makeCurrentContext];
+
+	return OK;
+}
+
+Error GLManagerLegacy_MacOS::window_create(DisplayServerEnums::WindowID p_window_id, id p_view, int p_width, int p_height) {
+	GLWindow win;
+	win.window_view = p_view;
+
+	if (create_context(win) != OK) {
+		return FAILED;
+	}
+
+	windows[p_window_id] = win;
+	window_make_current(p_window_id);
+
+	return OK;
+}
+
+void GLManagerLegacy_MacOS::window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {
+	if (!windows.has(p_window_id)) {
+		return;
+	}
+
+	GLWindow &win = windows[p_window_id];
+
+	GLint dim[2];
+	dim[0] = p_width;
+	dim[1] = p_height;
+	CGLSetParameter((CGLContextObj)[win.context CGLContextObj], kCGLCPSurfaceBackingSize, &dim[0]);
+	CGLEnable((CGLContextObj)[win.context CGLContextObj], kCGLCESurfaceBackingSize);
+	if (OS::is_hidpi_allowed()) {
+		[win.window_view setWantsBestResolutionOpenGLSurface:YES];
+	} else {
+		[win.window_view setWantsBestResolutionOpenGLSurface:NO];
+	}
+
+	[win.context update];
+}
+
+void GLManagerLegacy_MacOS::window_destroy(DisplayServerEnums::WindowID p_window_id) {
+	if (!windows.has(p_window_id)) {
+		return;
+	}
+
+	if (current_window == p_window_id) {
+		current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+	}
+
+	windows.erase(p_window_id);
+}
+
+void GLManagerLegacy_MacOS::release_current() {
+	if (current_window == DisplayServerEnums::INVALID_WINDOW_ID) {
+		return;
+	}
+
+	[NSOpenGLContext clearCurrentContext];
+	current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+}
+
+void GLManagerLegacy_MacOS::window_make_current(DisplayServerEnums::WindowID p_window_id) {
+	if (current_window == p_window_id) {
+		return;
+	}
+	if (!windows.has(p_window_id)) {
+		return;
+	}
+
+	GLWindow &win = windows[p_window_id];
+	[win.context makeCurrentContext];
+
+	current_window = p_window_id;
+}
+
+void GLManagerLegacy_MacOS::swap_buffers() {
+	GLWindow &win = windows[current_window];
+	[win.context flushBuffer];
+}
+
+void GLManagerLegacy_MacOS::window_set_per_pixel_transparency_enabled(DisplayServerEnums::WindowID p_window_id, bool p_enabled) {
+	if (!windows.has(p_window_id)) {
+		return;
+	}
+
+	GLWindow &win = windows[p_window_id];
+	if (p_enabled) {
+		GLint opacity = 0;
+		[win.context setValues:&opacity forParameter:NSOpenGLContextParameterSurfaceOpacity];
+	} else {
+		GLint opacity = 1;
+		[win.context setValues:&opacity forParameter:NSOpenGLContextParameterSurfaceOpacity];
+	}
+	[win.context update];
+}
+
+Error GLManagerLegacy_MacOS::initialize() {
+	return framework_loaded ? OK : ERR_CANT_CREATE;
+}
+
+void GLManagerLegacy_MacOS::set_use_vsync(bool p_use) {
+	use_vsync = p_use;
+
+	CGLContextObj ctx = CGLGetCurrentContext();
+	if (ctx) {
+		GLint swapInterval = p_use ? 1 : 0;
+		if (CGLSetParameter(ctx, kCGLCPSwapInterval, &swapInterval) != kCGLNoError) {
+			WARN_PRINT("Could not set V-Sync mode.");
+		}
+		use_vsync = p_use;
+	}
+}
+
+bool GLManagerLegacy_MacOS::is_using_vsync() const {
+	return use_vsync;
+}
+
+NSOpenGLContext *GLManagerLegacy_MacOS::get_context(DisplayServerEnums::WindowID p_window_id) {
+	if (!windows.has(p_window_id)) {
+		return nullptr;
+	}
+
+	GLWindow &win = windows[p_window_id];
+	return win.context;
+}
+
+GLManagerLegacy_MacOS::GLManagerLegacy_MacOS() {
+	NSBundle *framework = [NSBundle bundleWithPath:@"/System/Library/Frameworks/OpenGL.framework"];
+	if (framework) {
+		void *library_handle = dlopen([framework.executablePath UTF8String], RTLD_NOW);
+		if (library_handle) {
+			CGLEnable = (CGLEnablePtr)dlsym(library_handle, "CGLEnable");
+			CGLSetParameter = (CGLSetParameterPtr)dlsym(library_handle, "CGLSetParameter");
+			CGLGetCurrentContext = (CGLGetCurrentContextPtr)dlsym(library_handle, "CGLGetCurrentContext");
+
+			framework_loaded = CGLEnable && CGLSetParameter && CGLGetCurrentContext;
+		}
+	}
+}
+
+GLManagerLegacy_MacOS::~GLManagerLegacy_MacOS() {
+	release_current();
+}
+
+GODOT_CLANG_WARNING_POP
+
+#endif // MACOS_ENABLED && GLES3_ENABLED
+
+// === Merged from platform/macos/godot_progress_view.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+@implementation GodotProgressView
+
+- (id)init {
+	self = [super init];
+	pr_state = DisplayServerEnums::PROGRESS_STATE_NOPROGRESS;
+	pr_value = 0.f;
+	pr_offset = 0.f;
+	return self;
+}
+
+- (void)setValue:(float)value {
+	pr_value = value;
+}
+
+- (void)setState:(DisplayServerEnums::ProgressState)state {
+	pr_state = state;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+	// Icon draw.
+	[[NSGraphicsContext currentContext] setImageInterpolation:NSImageInterpolationHigh];
+	[[NSApp applicationIconImage] drawInRect:self.bounds];
+
+	if (pr_state == DisplayServerEnums::PROGRESS_STATE_NOPROGRESS) {
+		return;
+	}
+
+	// Border draw.
+	NSRect rect = NSMakeRect(1.f, 1.f, self.bounds.size.width - 2.f, 16.f);
+	NSBezierPath *bezier_path = [NSBezierPath bezierPathWithRoundedRect:rect xRadius:8.f yRadius:8.f];
+	[bezier_path setLineWidth:2.0];
+	[[NSColor grayColor] set];
+	[bezier_path stroke];
+
+	// Fill clip path.
+	rect = NSMakeRect(2.f, 2.f, self.bounds.size.width - 4.f, 14.f);
+	bezier_path = [NSBezierPath bezierPathWithRoundedRect:rect xRadius:7.f yRadius:7.f];
+	[bezier_path setLineWidth:1.0];
+	[bezier_path addClip];
+
+	// Fill draw.
+	if (pr_state == DisplayServerEnums::PROGRESS_STATE_INDETERMINATE) {
+		rect.size.width /= 5.0;
+		pr_offset += rect.size.width / 10.0;
+		if (pr_offset > self.bounds.size.width - rect.size.width) {
+			pr_offset = 0.f;
+		}
+		rect.origin.x += pr_offset;
+	} else {
+		rect.size.width = Math::floor(rect.size.width * pr_value);
+	}
+	if (pr_state == DisplayServerEnums::PROGRESS_STATE_ERROR) {
+		[[NSColor colorWithSRGBRed:1.0 green:0.2 blue:0.2 alpha:1.0] set];
+	} else if (pr_state == DisplayServerEnums::PROGRESS_STATE_PAUSED) {
+		[[NSColor colorWithSRGBRed:1.0 green:1.0 blue:0.2 alpha:1.0] set];
+	} else {
+		[[NSColor colorWithSRGBRed:0.2 green:0.6 blue:1.0 alpha:1.0] set];
+	}
+	NSRectFill(rect);
+}
+
+@end

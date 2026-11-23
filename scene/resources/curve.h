@@ -33,7 +33,7 @@
 
 #include "core/io/resource.h"
 #include "core/templates/rb_map.h"
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 // y(x) curve
 class Curve : public Resource

@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_audio_stream_wav)
 #include "core/io/marshalls.h"
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
-#include "scene/resources/audio_stream_wav.h"
+#include "servers/audio/audio_stream.h"
 #include "tests/test_utils.h"
 
 namespace TestAudioStreamWAV {

@@ -41,12 +41,9 @@
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #import "drivers/apple/os_log_logger.h"
-#import "drivers/apple_embedded/app_delegate_service.h"
-#import "drivers/apple_embedded/display_server_apple_embedded.h"
-#import "drivers/apple_embedded/godot_view_apple_embedded.h"
-#import "drivers/apple_embedded/godot_view_controller.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
 #ifdef SDL_ENABLED
-#include "drivers/sdl/joypad_sdl.h"
+#include "core/input/input.h"
 #endif
 #include "main/main.h"
 #include "servers/camera/camera_server.h"
@@ -1017,3 +1014,1199 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 #endif
 
 #endif // APPLE_EMBEDDED_ENABLED
+
+// === Merged from drivers/apple_embedded/app_delegate_service.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/config/project_settings.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/coreaudio/audio_driver_coreaudio.h"
+#include "main/main.h"
+
+#import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioServices.h>
+
+int gargc;
+char **gargv;
+
+extern int apple_embedded_main(int, char **);
+extern void apple_embedded_finish();
+
+@implementation GDTAppDelegateService
+
+enum {
+	SESSION_CATEGORY_AMBIENT,
+	SESSION_CATEGORY_MULTI_ROUTE,
+	SESSION_CATEGORY_PLAY_AND_RECORD,
+	SESSION_CATEGORY_PLAYBACK,
+	SESSION_CATEGORY_RECORD,
+	SESSION_CATEGORY_SOLO_AMBIENT
+};
+
+static GDTViewController *mainViewController = nil;
+
++ (GDTViewController *)viewController {
+	return mainViewController;
+}
+
++ (void)setViewController:(GDTViewController *)viewController {
+	mainViewController = viewController;
+}
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+	// TODO: might be required to make an early return, so app wouldn't crash because of timeout.
+	// TODO: logo screen is not displayed while shaders are compiling
+	// DummyViewController(Splash/LoadingViewController) -> setup -> GodotViewController
+
+	// Fetch the command-line arguments from NSProcessInfo
+	NSArray *arguments = [[NSProcessInfo processInfo] arguments];
+	gargc = (int)[arguments count];
+	gargv = (char **)malloc(sizeof(char *) * gargc);
+	for (int i = 0; i < gargc; i++) {
+		NSString *arg = arguments[i];
+		gargv[i] = strdup([arg UTF8String]);
+	}
+
+	int err = apple_embedded_main(gargc, gargv);
+
+	if (err != 0) {
+		// bail, things did not go very well for us, should probably output a message on screen with our error code...
+		exit(0);
+		return NO;
+	}
+
+	[[NSNotificationCenter defaultCenter]
+			addObserver:self
+			   selector:@selector(onAudioInterruption:)
+				   name:AVAudioSessionInterruptionNotification
+				 object:[AVAudioSession sharedInstance]];
+
+	int sessionCategorySetting = GLOBAL_GET("audio/general/ios/session_category");
+
+	// Initialize with default Ambient category.
+	AVAudioSessionCategory category = AVAudioSessionCategoryAmbient;
+	AVAudioSessionCategoryOptions options = 0;
+
+	if (GLOBAL_GET("audio/general/ios/mix_with_others")) {
+		options |= AVAudioSessionCategoryOptionMixWithOthers;
+	}
+
+	if (sessionCategorySetting == SESSION_CATEGORY_MULTI_ROUTE) {
+		category = AVAudioSessionCategoryMultiRoute;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_PLAY_AND_RECORD) {
+		category = AVAudioSessionCategoryPlayAndRecord;
+		options |= AVAudioSessionCategoryOptionDefaultToSpeaker;
+		options |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
+		options |= AVAudioSessionCategoryOptionAllowAirPlay;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_PLAYBACK) {
+		category = AVAudioSessionCategoryPlayback;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_RECORD) {
+		category = AVAudioSessionCategoryRecord;
+	} else if (sessionCategorySetting == SESSION_CATEGORY_SOLO_AMBIENT) {
+		category = AVAudioSessionCategorySoloAmbient;
+	}
+
+	[[AVAudioSession sharedInstance] setCategory:category withOptions:options error:nil];
+
+	return YES;
+}
+
+- (void)onAudioInterruption:(NSNotification *)notification {
+	if ([notification.name isEqualToString:AVAudioSessionInterruptionNotification]) {
+		if ([[notification.userInfo valueForKey:AVAudioSessionInterruptionTypeKey] isEqualToNumber:[NSNumber numberWithInt:AVAudioSessionInterruptionTypeBegan]]) {
+			NSLog(@"Audio interruption began");
+			OS_AppleEmbedded::on_focus_out();
+		} else if ([[notification.userInfo valueForKey:AVAudioSessionInterruptionTypeKey] isEqualToNumber:[NSNumber numberWithInt:AVAudioSessionInterruptionTypeEnded]]) {
+			NSLog(@"Audio interruption ended");
+			OS_AppleEmbedded::on_focus_in();
+		}
+	}
+}
+
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application {
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_OS_MEMORY_WARNING);
+	}
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+	apple_embedded_finish();
+}
+
+// When application goes to background (e.g. user switches to another app or presses Home),
+// then applicationWillResignActive -> applicationDidEnterBackground are called.
+// When user opens the inactive app again,
+// applicationWillEnterForeground -> applicationDidBecomeActive are called.
+
+// There are cases when applicationWillResignActive -> applicationDidBecomeActive
+// sequence is called without the app going to background. For example, that happens
+// if you open the app list without switching to another app or open/close the
+// notification panel by swiping from the upper part of the screen.
+
+- (void)sceneDidDisconnect:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OS_AppleEmbedded::on_focus_out();
+}
+
+- (void)sceneWillResignActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OS_AppleEmbedded::on_focus_out();
+}
+
+- (void)sceneDidBecomeActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OS_AppleEmbedded::on_focus_in();
+}
+
+- (void)sceneDidEnterBackground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OS_AppleEmbedded::on_enter_background();
+}
+
+- (void)sceneWillEnterForeground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	OS_AppleEmbedded::on_exit_background();
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+	OS_AppleEmbedded::on_focus_out();
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+	OS_AppleEmbedded::on_focus_in();
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+	OS_AppleEmbedded::on_enter_background();
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+	OS_AppleEmbedded::on_exit_background();
+}
+
+- (void)dealloc {
+	self.window = nil;
+}
+
+@end
+
+// === Merged from drivers/apple_embedded/apple_embedded.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/object/class_db.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#import <CoreHaptics/CoreHaptics.h>
+#import <UIKit/UIKit.h>
+#include <sys/sysctl.h>
+
+void AppleEmbedded::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_rate_url", "app_id"), &AppleEmbedded::get_rate_url);
+	ClassDB::bind_method(D_METHOD("supports_haptic_engine"), &AppleEmbedded::supports_haptic_engine);
+	ClassDB::bind_method(D_METHOD("start_haptic_engine"), &AppleEmbedded::start_haptic_engine);
+	ClassDB::bind_method(D_METHOD("stop_haptic_engine"), &AppleEmbedded::stop_haptic_engine);
+}
+
+bool AppleEmbedded::supports_haptic_engine() {
+	if (@available(iOS 13, *)) {
+		id<CHHapticDeviceCapability> capabilities = [CHHapticEngine capabilitiesForHardware];
+		return capabilities.supportsHaptics;
+	}
+
+	return false;
+}
+
+CHHapticEngine *AppleEmbedded::get_haptic_engine_instance() API_AVAILABLE(ios(13)) {
+	if (haptic_engine == nullptr) {
+		NSError *error = nullptr;
+		haptic_engine = [[CHHapticEngine alloc] initAndReturnError:&error];
+
+		if (!error) {
+			[haptic_engine setAutoShutdownEnabled:true];
+		} else {
+			haptic_engine = nullptr;
+			NSLog(@"Could not initialize haptic engine: %@", error);
+		}
+	}
+
+	return haptic_engine;
+}
+
+void AppleEmbedded::vibrate_haptic_engine(float p_duration_seconds, float p_amplitude) API_AVAILABLE(ios(13)) {
+	if (@available(iOS 13, *)) { // We need the @available check every time to make the compiler happy...
+		if (supports_haptic_engine()) {
+			CHHapticEngine *cur_haptic_engine = get_haptic_engine_instance();
+			if (cur_haptic_engine) {
+				NSDictionary *hapticDict;
+				if (p_amplitude < 0) {
+					hapticDict = @{
+						CHHapticPatternKeyPattern : @[
+							@{CHHapticPatternKeyEvent : @{
+								CHHapticPatternKeyEventType : CHHapticEventTypeHapticContinuous,
+								CHHapticPatternKeyTime : @(CHHapticTimeImmediate),
+								CHHapticPatternKeyEventDuration : @(p_duration_seconds),
+							},
+							},
+						],
+					};
+				} else {
+					hapticDict = @{
+						CHHapticPatternKeyPattern : @[
+							@{CHHapticPatternKeyEvent : @{
+								CHHapticPatternKeyEventType : CHHapticEventTypeHapticContinuous,
+								CHHapticPatternKeyTime : @(CHHapticTimeImmediate),
+								CHHapticPatternKeyEventDuration : @(p_duration_seconds),
+								CHHapticPatternKeyEventParameters : @[
+									@{
+										CHHapticPatternKeyParameterID : @("HapticIntensity"),
+										CHHapticPatternKeyParameterValue : @(p_amplitude)
+									},
+								],
+							},
+							},
+						],
+					};
+				}
+
+				NSError *error;
+				CHHapticPattern *pattern = [[CHHapticPattern alloc] initWithDictionary:hapticDict error:&error];
+
+				[[cur_haptic_engine createPlayerWithPattern:pattern error:&error] startAtTime:0 error:&error];
+
+				NSLog(@"Could not vibrate using haptic engine: %@", error);
+			}
+
+			return;
+		}
+	}
+
+	NSLog(@"Haptic engine is not supported");
+}
+
+void AppleEmbedded::start_haptic_engine() {
+	if (@available(iOS 13, *)) {
+		if (supports_haptic_engine()) {
+			CHHapticEngine *cur_haptic_engine = get_haptic_engine_instance();
+			if (cur_haptic_engine) {
+				[cur_haptic_engine startWithCompletionHandler:^(NSError *returnedError) {
+					if (returnedError) {
+						NSLog(@"Could not start haptic engine: %@", returnedError);
+					}
+				}];
+			}
+
+			return;
+		}
+	}
+
+	NSLog(@"Haptic engine is not supported");
+}
+
+void AppleEmbedded::stop_haptic_engine() {
+	if (@available(iOS 13, *)) {
+		if (supports_haptic_engine()) {
+			CHHapticEngine *cur_haptic_engine = get_haptic_engine_instance();
+			if (cur_haptic_engine) {
+				[cur_haptic_engine stopWithCompletionHandler:^(NSError *returnedError) {
+					if (returnedError) {
+						NSLog(@"Could not stop haptic engine: %@", returnedError);
+					}
+				}];
+			}
+
+			return;
+		}
+	}
+
+	NSLog(@"Haptic engine is not supported");
+}
+
+void AppleEmbedded::alert(const char *p_alert, const char *p_title) {
+	NSString *title = [NSString stringWithUTF8String:p_title];
+	NSString *message = [NSString stringWithUTF8String:p_alert];
+
+	UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
+	UIAlertAction *button = [UIAlertAction actionWithTitle:@"OK"
+													 style:UIAlertActionStyleCancel
+												   handler:^(id){
+												   }];
+
+	[alert addAction:button];
+
+	[GDTAppDelegateService.viewController presentViewController:alert animated:YES completion:nil];
+}
+
+String AppleEmbedded::get_model() const {
+	// [[UIDevice currentDevice] model] only returns "iPad" or "iPhone".
+	size_t size;
+	sysctlbyname("hw.machine", nullptr, &size, nullptr, 0);
+	char *model = (char *)malloc(size);
+	if (model == nullptr) {
+		return "";
+	}
+	sysctlbyname("hw.machine", model, &size, nullptr, 0);
+	NSString *platform = [NSString stringWithCString:model encoding:NSUTF8StringEncoding];
+	free(model);
+	const char *str = [platform UTF8String];
+	return String::utf8(str != nullptr ? str : "");
+}
+
+String AppleEmbedded::get_rate_url(int p_app_id) const {
+	String app_url_path = "itms-apps://itunes.apple.com/app/idAPP_ID";
+
+	String ret = app_url_path.replace("APP_ID", String::num_int64(p_app_id));
+
+	print_verbose(vformat("Returning rate url %s", ret));
+	return ret;
+}
+
+AppleEmbedded::AppleEmbedded() {}
+
+// === Merged from drivers/apple_embedded/godot_app_delegate.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/typedefs.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+@implementation GDTApplicationDelegate
+
+static NSMutableArray<GDTAppDelegateServiceProtocol *> *services = nil;
+
++ (NSArray<GDTAppDelegateServiceProtocol *> *)services {
+	return services;
+}
+
++ (void)load {
+	services = [NSMutableArray new];
+	[services addObject:[GDTAppDelegateService new]];
+}
+
++ (void)addService:(GDTAppDelegateServiceProtocol *)service {
+	if (!services || !service) {
+		return;
+	}
+	[services addObject:service];
+}
+
+// UIApplicationDelegate documentation can be found here: https://developer.apple.com/documentation/uikit/uiapplicationdelegate
+
+// MARK: Window
+
+- (UIWindow *)window {
+	UIWindow *result = nil;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		UIWindow *value = [service window];
+
+		if (value) {
+			result = value;
+		}
+	}
+
+	return result;
+}
+
+// MARK: Initializing
+
+- (BOOL)application:(UIApplication *)application willFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application willFinishLaunchingWithOptions:launchOptions]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary<UIApplicationLaunchOptionsKey, id> *)launchOptions {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application didFinishLaunchingWithOptions:launchOptions]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+// MARK: Scene
+
+- (UISceneConfiguration *)application:(UIApplication *)application configurationForConnectingSceneSession:(UISceneSession *)connectingSceneSession options:(UISceneConnectionOptions *)options API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	UISceneConfiguration *config = [[UISceneConfiguration alloc] initWithName:@"Default Configuration" sessionRole:connectingSceneSession.role];
+	config.delegateClass = [GDTApplicationDelegate class];
+	return config;
+}
+
+- (void)application:(UIApplication *)application didDiscardSceneSessions:(NSSet<UISceneSession *> *)sceneSessions API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+}
+
+- (void)scene:(UIScene *)scene willConnectToSession:(UISceneSession *)session options:(UISceneConnectionOptions *)connectionOptions API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service scene:scene willConnectToSession:session options:connectionOptions];
+	}
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet<UIOpenURLContext *> *)URLContexts API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service scene:scene openURLContexts:URLContexts];
+	}
+}
+
+- (void)scene:(UIScene *)scene continueUserActivity:(NSUserActivity *)userActivity API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service scene:scene continueUserActivity:userActivity];
+	}
+}
+
+// MARK: Life-Cycle
+
+- (void)sceneDidDisconnect:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service sceneDidDisconnect:scene];
+	}
+}
+
+- (void)sceneDidBecomeActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service sceneDidBecomeActive:scene];
+	}
+}
+
+- (void)sceneWillResignActive:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service sceneWillResignActive:scene];
+	}
+}
+
+- (void)sceneDidEnterBackground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service sceneDidEnterBackground:scene];
+	}
+}
+
+- (void)sceneWillEnterForeground:(UIScene *)scene API_AVAILABLE(ios(13.0), tvos(13.0), visionos(1.0)) {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service sceneWillEnterForeground:scene];
+	}
+}
+
+// UIApplication lifecycle has become deprecated in favor of UIScene lifecycle
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationDidBecomeActive:application];
+	}
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationWillResignActive:application];
+	}
+}
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationDidEnterBackground:application];
+	}
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationWillEnterForeground:application];
+	}
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationWillTerminate:application];
+	}
+}
+
+// MARK: Environment Changes
+
+- (void)applicationProtectedDataDidBecomeAvailable:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationProtectedDataDidBecomeAvailable:application];
+	}
+}
+
+- (void)applicationProtectedDataWillBecomeUnavailable:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationProtectedDataWillBecomeUnavailable:application];
+	}
+}
+
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationDidReceiveMemoryWarning:application];
+	}
+}
+
+- (void)applicationSignificantTimeChange:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationSignificantTimeChange:application];
+	}
+}
+
+// MARK: App State Restoration
+
+- (BOOL)application:(UIApplication *)application shouldSaveSecureApplicationState:(NSCoder *)coder API_AVAILABLE(ios(13.2)) {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application shouldSaveSecureApplicationState:coder]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+- (BOOL)application:(UIApplication *)application shouldRestoreSecureApplicationState:(NSCoder *)coder API_AVAILABLE(ios(13.2)) {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application shouldRestoreSecureApplicationState:coder]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+- (UIViewController *)application:(UIApplication *)application viewControllerWithRestorationIdentifierPath:(NSArray<NSString *> *)identifierComponents coder:(NSCoder *)coder {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		UIViewController *controller = [service application:application viewControllerWithRestorationIdentifierPath:identifierComponents coder:coder];
+
+		if (controller) {
+			return controller;
+		}
+	}
+
+	return nil;
+}
+
+- (void)application:(UIApplication *)application willEncodeRestorableStateWithCoder:(NSCoder *)coder {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application willEncodeRestorableStateWithCoder:coder];
+	}
+}
+
+- (void)application:(UIApplication *)application didDecodeRestorableStateWithCoder:(NSCoder *)coder {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application didDecodeRestorableStateWithCoder:coder];
+	}
+}
+
+// MARK: Download Data in Background
+
+- (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)(void))completionHandler {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application handleEventsForBackgroundURLSession:identifier completionHandler:completionHandler];
+	}
+
+	completionHandler();
+}
+
+// MARK: Remote Notification
+
+// Moved to the iOS Plugin
+
+// MARK: User Activity and Handling Quick Actions
+
+- (BOOL)application:(UIApplication *)application willContinueUserActivityWithType:(NSString *)userActivityType {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application willContinueUserActivityWithType:userActivityType]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+- (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> *restorableObjects))restorationHandler {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application continueUserActivity:userActivity restorationHandler:restorationHandler]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+- (void)application:(UIApplication *)application didUpdateUserActivity:(NSUserActivity *)userActivity {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application didUpdateUserActivity:userActivity];
+	}
+}
+
+- (void)application:(UIApplication *)application didFailToContinueUserActivityWithType:(NSString *)userActivityType error:(NSError *)error {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application didFailToContinueUserActivityWithType:userActivityType error:error];
+	}
+}
+
+- (void)application:(UIApplication *)application performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem completionHandler:(void (^)(BOOL succeeded))completionHandler {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application performActionForShortcutItem:shortcutItem completionHandler:completionHandler];
+	}
+}
+
+// MARK: WatchKit
+
+- (void)application:(UIApplication *)application handleWatchKitExtensionRequest:(NSDictionary *)userInfo reply:(void (^)(NSDictionary *replyInfo))reply {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application handleWatchKitExtensionRequest:userInfo reply:reply];
+	}
+}
+
+// MARK: HealthKit
+
+- (void)applicationShouldRequestHealthAuthorization:(UIApplication *)application {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service applicationShouldRequestHealthAuthorization:application];
+	}
+}
+
+// MARK: Opening an URL
+
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:app openURL:url options:options]) {
+			return YES;
+		}
+	}
+
+	return NO;
+}
+
+// MARK: Disallowing Specified App Extension Types
+
+- (BOOL)application:(UIApplication *)application shouldAllowExtensionPointIdentifier:(UIApplicationExtensionPointIdentifier)extensionPointIdentifier {
+	BOOL result = NO;
+
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		if ([service application:application shouldAllowExtensionPointIdentifier:extensionPointIdentifier]) {
+			result = YES;
+		}
+	}
+
+	return result;
+}
+
+// MARK: SiriKit
+
+- (id)application:(UIApplication *)application handlerForIntent:(INIntent *)intent {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		id result = [service application:application handlerForIntent:intent];
+
+		if (result) {
+			return result;
+		}
+	}
+
+	return nil;
+}
+
+// MARK: CloudKit
+
+- (void)application:(UIApplication *)application userDidAcceptCloudKitShareWithMetadata:(CKShareMetadata *)cloudKitShareMetadata {
+	for (GDTAppDelegateServiceProtocol *service in services) {
+		if (![service respondsToSelector:_cmd]) {
+			continue;
+		}
+
+		[service application:application userDidAcceptCloudKitShareWithMetadata:cloudKitShareMetadata];
+	}
+}
+
+/* Handled By Info.plist file for now
+
+// MARK: Interface Geometry
+
+- (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {}
+
+*/
+
+@end
+
+GODOT_CLANG_WARNING_POP
+
+// === Merged from drivers/apple_embedded/main_utilities.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "core/string/ustring.h"
+
+#import <UIKit/UIKit.h>
+#include <unistd.h>
+
+#include <cstdio>
+
+void change_to_launch_dir(char **p_args) {
+	size_t len = strlen(p_args[0]);
+
+	while (len--) {
+		if (p_args[0][len] == '/') {
+			break;
+		}
+	}
+
+	if (len >= 0) {
+		char path[512];
+		memcpy(path, p_args[0], len > sizeof(path) ? sizeof(path) : len);
+		path[len] = 0;
+		chdir(path);
+	}
+}
+
+int add_cmdline(int p_argc, char **p_args) {
+	NSArray *arr = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"godot_cmdline"];
+	if (!arr) {
+		return p_argc;
+	}
+
+	for (NSUInteger i = 0; i < [arr count]; i++) {
+		NSString *str = [arr objectAtIndex:i];
+		if (!str) {
+			continue;
+		}
+		p_args[p_argc++] = (char *)[str cStringUsingEncoding:NSUTF8StringEncoding];
+	}
+
+	p_args[p_argc] = nullptr;
+
+	return p_argc;
+}
+
+int process_args(int p_argc, char **p_args, char **r_args) {
+	for (int i = 0; i < p_argc; i++) {
+		r_args[i] = p_args[i];
+	}
+	r_args[p_argc] = nullptr;
+	p_argc = add_cmdline(p_argc, r_args);
+	return p_argc;
+}
+
+// === Merged from drivers/apple_embedded/tts_apple_embedded.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "servers/display/display_server.h"
+
+@implementation GDTTTS
+
+- (id)init {
+	self = [super init];
+	self->speaking = false;
+	self->av_synth = [[AVSpeechSynthesizer alloc] init];
+	[self->av_synth setDelegate:self];
+	print_verbose("Text-to-Speech: AVSpeechSynthesizer initialized.");
+	return self;
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth willSpeakRangeOfSpeechString:(NSRange)characterRange utterance:(AVSpeechUtterance *)utterance {
+	NSString *string = [utterance speechString];
+
+	// Convert from UTF-16 to UTF-32 position.
+	int pos = 0;
+	for (NSUInteger i = 0; i < MIN(characterRange.location, string.length); i++) {
+		unichar c = [string characterAtIndex:i];
+		if ((c & 0xfffffc00) == 0xd800) {
+			i++;
+		}
+		pos++;
+	}
+
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, ids[utterance], pos);
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth didCancelSpeechUtterance:(AVSpeechUtterance *)utterance {
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[utterance]);
+	ids.erase(utterance);
+	speaking = false;
+	[self update];
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth didFinishSpeechUtterance:(AVSpeechUtterance *)utterance {
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, ids[utterance]);
+	ids.erase(utterance);
+	speaking = false;
+	[self update];
+}
+
+- (void)update {
+	if (!speaking && queue.size() > 0) {
+		TTSUtterance &message = queue.front()->get();
+
+		AVSpeechUtterance *new_utterance = [[AVSpeechUtterance alloc] initWithString:[NSString stringWithUTF8String:message.text.utf8().get_data()]];
+		[new_utterance setVoice:[AVSpeechSynthesisVoice voiceWithIdentifier:[NSString stringWithUTF8String:message.voice.utf8().get_data()]]];
+		if (message.rate > 1.f) {
+			[new_utterance setRate:Math::remap(message.rate, 1.f, 10.f, AVSpeechUtteranceDefaultSpeechRate, AVSpeechUtteranceMaximumSpeechRate)];
+		} else if (message.rate < 1.f) {
+			[new_utterance setRate:Math::remap(message.rate, 0.1f, 1.f, AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceDefaultSpeechRate)];
+		}
+		[new_utterance setPitchMultiplier:message.pitch];
+		[new_utterance setVolume:(Math::remap(message.volume, 0.f, 100.f, 0.f, 1.f))];
+
+		ids[new_utterance] = message.id;
+		[av_synth speakUtterance:new_utterance];
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
+
+		queue.pop_front();
+		speaking = true;
+	}
+}
+
+- (void)pauseSpeaking {
+	[av_synth pauseSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+}
+
+- (void)resumeSpeaking {
+	[av_synth continueSpeaking];
+}
+
+- (void)stopSpeaking {
+	for (TTSUtterance &message : queue) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
+	}
+	queue.clear();
+	[av_synth stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+	speaking = false;
+}
+
+- (bool)isSpeaking {
+	return speaking || (queue.size() > 0);
+}
+
+- (bool)isPaused {
+	return [av_synth isPaused];
+}
+
+- (void)speak:(const String &)text voice:(const String &)voice volume:(int)volume pitch:(float)pitch rate:(float)rate utterance_id:(int64_t)utterance_id interrupt:(bool)interrupt {
+	if (interrupt) {
+		[self stopSpeaking];
+	}
+
+	if (text.is_empty()) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, utterance_id);
+		return;
+	}
+
+	TTSUtterance message;
+	message.text = text;
+	message.voice = voice;
+	message.volume = CLAMP(volume, 0, 100);
+	message.pitch = CLAMP(pitch, 0.f, 2.f);
+	message.rate = CLAMP(rate, 0.1f, 10.f);
+	message.id = utterance_id;
+	queue.push_back(message);
+
+	if ([self isPaused]) {
+		[self resumeSpeaking];
+	} else {
+		[self update];
+	}
+}
+
+- (Array)getVoices {
+	Array list;
+	for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
+		NSString *voiceIdentifierString = [voice identifier];
+		NSString *voiceLocaleIdentifier = [voice language];
+		NSString *voiceName = [voice name];
+		Dictionary voice_d;
+		voice_d["name"] = String::utf8([voiceName UTF8String]);
+		voice_d["id"] = String::utf8([voiceIdentifierString UTF8String]);
+		voice_d["language"] = String::utf8([voiceLocaleIdentifier UTF8String]);
+		list.push_back(voice_d);
+	}
+	return list;
+}
+
+@end

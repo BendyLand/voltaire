@@ -34,7 +34,6 @@
 #include "core/io/image.h"
 #include "core/math/aabb.h"
 #include "core/math/rect2.h"
-#include "core/math/rect2.h"
 #include "core/math/transform_3d.h"
 #include "core/math/vector2.h"
 #include "core/math/projection.h"

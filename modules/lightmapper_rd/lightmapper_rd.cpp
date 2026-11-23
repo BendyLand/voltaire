@@ -8,7 +8,6 @@
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 // --- Inlined from modules/lightmapper_rd/lightmapper_rd.h ---
 #include "core/templates/local_vector.h"
@@ -341,11 +340,8 @@ struct Lightmapper::RDState
 
 
 // --- End modules/lightmapper_rd/lightmapper_rd.h ---
-#include "lm_blendseams.glsl.gen.h"
-#include "lm_compute.glsl.gen.h"
-#include "lm_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/rendering_device.h"
+#include "modules/lightmapper_rd/rd_raw_shaders.gen.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
@@ -1576,11 +1572,9 @@ void uninitialize_xatlas_unwrap_module(ModuleInitializationLevel p_level) {
 
 // --- Merged from modules/betsy/image_compress_betsy.cpp ---
 #if defined(MODULE_BETSY_ENABLED)
-#include "modules/betsy/alpha_stitch.glsl.gen.h"
+#include "modules/lightmapper_rd/rd_raw_shaders.gen.h"
 #include "modules/register_module_types.h"
-#include "modules/betsy/bc1.glsl.gen.h"
-#include "modules/betsy/bc4.glsl.gen.h"
-#include "modules/betsy/bc6h.glsl.gen.h"
+#include "modules/lightmapper_rd/rd_raw_shaders.gen.h"
 // --- Inlined from modules/betsy/betsy_bc1.h ---
 static unsigned char stb__OMatch5[256][2] = {
 	{ 0, 0 },
@@ -2214,10 +2208,9 @@ public:
 
 
 // --- End modules/betsy/image_compress_betsy.h ---
-#include "modules/betsy/rgb_to_rgba.glsl.gen.h"
+#include "modules/lightmapper_rd/rd_raw_shaders.gen.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_context_driver.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_device_driver.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 

@@ -41,7 +41,6 @@
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "editor/import/3d/resource_importer_scene.h"
-#include "editor/import/3d/resource_importer_scene.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/packed_scene.h"
 #include "tests/test_utils.h"

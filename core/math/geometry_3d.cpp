@@ -2541,7 +2541,6 @@ Expression::ENode* Expression::_parse_expression()
 // ============================================================================
 
 #include "core/math/geometry_3d.h"
-#include "core/math/geometry_3d.h"
 
 int64_t AStar3D::get_available_point_id() const
 {
@@ -7382,11 +7381,9 @@ Error QuickHull::build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_
 #include "core/math/transform_3d.h"
 #include "core/math/math_funcs.h"
 #include "core/math/rect2.h"
-#include "core/math/rect2.h"
 #include "core/math/transform_2d.h"
 #include "core/math/vector2.h"
 #include "core/math/vector2i.h"
-#include "core/math/vector3.h"
 #include "core/math/vector3.h"
 #include "core/math/projection.h"
 #include "core/string/ustring.h"
@@ -8465,7 +8462,7 @@ Rect2i::operator Rect2() const {
 #include "core/math/aabb.h"
 #include "core/math/color.h"
 #include "core/math/color_names.inc"
-#include "core/math/face3.h"
+#include "core/types.h"
 #include "core/math/geometry_3d.h"
 #include "core/math/math_funcs.h"
 #include "core/math/plane.h"
@@ -10106,7 +10103,7 @@ StaticRaycaster::~StaticRaycaster() {}
 #include "core/math/rect2.h"
 #include "core/math/transform_2d.h"
 #include "core/math/transform_3d.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "core/string/ustring.h"
 
 // --- quaternion.cpp ---

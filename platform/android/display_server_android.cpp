@@ -31,8 +31,6 @@
 
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 #include "os_android.h"
 #include "platform/android/os_android.h"
 
@@ -40,7 +38,7 @@
 #include "core/input/input.h"
 #include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -1051,8 +1049,6 @@ void DisplayServerAndroid::pip_mode_set_auto_enter_on_background(bool p_auto_ent
 // --- Merged from platform/android/android_input_handler.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #include "core/input/input.h"
 
@@ -1556,7 +1552,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_utils_DialogUtils_inputDialogC
 
 // --- End platform/android/dialog_utils_jni.h ---
 
-#include "platform/android/os_android.h"
 #include "platform/android/os_android.h"
 
 extern "C" {

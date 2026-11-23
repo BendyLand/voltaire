@@ -32,12 +32,9 @@
 #import "os_macos.h"
 
 #import "platform/macos/os_macos.h"
-#import "display_server_macos.h"
-#import "platform/macos/os_macos.h"
-#import "platform/macos/os_macos.h"
 
 #ifdef TOOLS_ENABLED
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 #endif
 
 #include "core/config/engine.h"
@@ -52,7 +49,7 @@
 #include "main/main.h"
 
 #ifdef SDL_ENABLED
-#include "drivers/sdl/joypad_sdl.h"
+#include "core/input/input.h"
 #endif
 
 #include <dlfcn.h>
@@ -1299,3 +1296,1250 @@ OS_MacOS_Embedded::OS_MacOS_Embedded(const char *p_execpath, int p_argc, char **
 }
 
 #endif
+
+// === Merged from drivers/coremidi/midi_driver_coremidi.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#ifdef COREMIDI_ENABLED
+
+#include "core/string/print_string.h"
+
+#import <CoreServices/CoreServices.h>
+
+MIDIDriverCoreMidi::InputConnection::InputConnection(int p_device_index, MIDIEndpointRef p_source) :
+		parser(p_device_index), source(p_source) {}
+
+void MIDIDriverCoreMidi::read(const MIDIPacketList *packet_list, void *read_proc_ref_con, void *src_conn_ref_con) {
+	(void)read_proc_ref_con;
+	if (!data) {
+		return;
+	}
+	MutexLock lock(data->mutex);
+	if (!data->core_midi_closed) {
+		InputConnection *source = static_cast<InputConnection *>(src_conn_ref_con);
+		const MIDIPacket *packet = packet_list->packet;
+		for (UInt32 packet_index = 0; packet_index < packet_list->numPackets; packet_index++) {
+			for (UInt16 data_index = 0; data_index < packet->length; data_index++) {
+				source->parser.parse_fragment(packet->data[data_index]);
+			}
+			packet = MIDIPacketNext(packet);
+		}
+	}
+}
+
+void MIDIDriverCoreMidi::initialize() {
+	if (data == nullptr) {
+		data = memnew(Data);
+	}
+}
+
+void MIDIDriverCoreMidi::finalize() {
+	if (data == nullptr) {
+		return;
+	}
+	close();
+	memdelete(data);
+	data = nullptr;
+}
+
+Error MIDIDriverCoreMidi::open() {
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(data->client || data->core_midi_closed, FAILED,
+			"MIDIDriverCoreMidi cannot be reopened.");
+
+	CFStringRef name = CFStringCreateWithCString(nullptr, "Godot", kCFStringEncodingASCII);
+	OSStatus result = MIDIClientCreate(name, nullptr, nullptr, &data->client);
+	CFRelease(name);
+	if (result != noErr) {
+		ERR_PRINT("MIDIClientCreate failed, code: " + itos(result));
+		return ERR_CANT_OPEN;
+	}
+
+	result = MIDIInputPortCreate(data->client, CFSTR("Godot Input"), MIDIDriverCoreMidi::read, nullptr, &data->port_in);
+	if (result != noErr) {
+		ERR_PRINT("MIDIInputPortCreate failed, code: " + itos(result));
+		return ERR_CANT_OPEN;
+	}
+
+	int source_count = MIDIGetNumberOfSources();
+	int connection_index = 0;
+	for (int i = 0; i < source_count; i++) {
+		MIDIEndpointRef source = MIDIGetSource(i);
+		if (source) {
+			InputConnection *conn = memnew(InputConnection(connection_index, source));
+			const OSStatus res = MIDIPortConnectSource(data->port_in, source, static_cast<void *>(conn));
+			if (res != noErr) {
+				memdelete(conn);
+			} else {
+				data->connected_sources.push_back(conn);
+
+				CFStringRef nameRef = nullptr;
+				char name[256];
+				MIDIObjectGetStringProperty(source, kMIDIPropertyDisplayName, &nameRef);
+				CFStringGetCString(nameRef, name, sizeof(name), kCFStringEncodingUTF8);
+				CFRelease(nameRef);
+				MIDIDriver::add_connected_input(name);
+
+				connection_index++; // Contiguous index for successfully connected inputs.
+			}
+		}
+	}
+
+	return OK;
+}
+
+void MIDIDriverCoreMidi::close() {
+	if (data == nullptr) {
+		return;
+	}
+
+	data->mutex.lock();
+	data->core_midi_closed = true;
+	data->mutex.unlock();
+
+	for (InputConnection *conn : data->connected_sources) {
+		MIDIPortDisconnectSource(data->port_in, conn->source);
+		memdelete(conn);
+	}
+
+	data->connected_sources.clear();
+	MIDIDriver::clear_connected_inputs();
+
+	if (data->port_in != 0) {
+		MIDIPortDispose(data->port_in);
+		data->port_in = 0;
+	}
+
+	if (data->client != 0) {
+		MIDIClientDispose(data->client);
+		data->client = 0;
+	}
+}
+
+#endif // COREMIDI_ENABLED
+
+// === Merged from platform/macos/crash_handler_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#include "core/config/project_settings.h"
+#include "core/object/script_language.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+#include "core/string/print_string.h"
+#include "core/version.h"
+#include "main/main.h"
+
+#include <unistd.h>
+
+#include <cstdio>
+
+#if defined(DEBUG_ENABLED)
+#define CRASH_HANDLER_ENABLED 1
+#endif
+
+#ifdef CRASH_HANDLER_ENABLED
+// --- Inlined/Folded from platform/macos/stack_trace_macos.h ---
+#include "core/os/os.h"
+
+#include <dlfcn.h>
+#include <mach-o/dyld.h>
+
+namespace StackTraceMacOS {
+
+static void *find_executable_load_address() {
+	char full_path[1024];
+	uint32_t size = sizeof(full_path);
+	if (!_NSGetExecutablePath(full_path, &size)) {
+		void *handle = dlopen(full_path, RTLD_LAZY | RTLD_NOLOAD);
+		void *addr = dlsym(handle, "main");
+		Dl_info info;
+		if (dladdr(addr, &info)) {
+			return info.dli_fbase;
+		}
+	}
+	return nullptr;
+}
+
+static Vector<String> symbolize_with_atos(const String &p_exec_path, const void *p_load_addr, const void *const *p_backtrace_addresses, size_t p_backtrace_size) {
+	List<String> args;
+	args.push_back("-o");
+	args.push_back(p_exec_path);
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64__)
+	args.push_back("-arch");
+	args.push_back("x86_64");
+#elif defined(__aarch64__) || defined(__arm64__)
+	args.push_back("-arch");
+	args.push_back("arm64");
+#endif
+	args.push_back("--fullPath");
+	args.push_back("-l");
+	// Add load address first, then the backtrace addresses.
+	char str[1024];
+	snprintf(str, sizeof(str), "%p", p_load_addr);
+	args.push_back(String(str));
+	for (size_t i = 0; i < p_backtrace_size; i++) {
+		snprintf(str, sizeof(str), "%p", p_backtrace_addresses[i]);
+		args.push_back(String(str));
+	}
+	// Execute atos with the arguments and capture the output.
+	String atos_output;
+	int ret = 0;
+	const Error err = OS::execute("atos", args, &atos_output, &ret);
+	if (err == OK && ret == 0 && !atos_output.is_empty()) {
+		return atos_output.split("\n", false);
+	}
+	return Vector<String>();
+}
+
+} // namespace StackTraceMacOS
+
+#include <cxxabi.h>
+#include <execinfo.h>
+
+static void handle_crash(int sig) {
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGFPE, SIG_DFL);
+	signal(SIGILL, SIG_DFL);
+	signal(SIGTRAP, SIG_DFL);
+
+	if (!OS::is_initialized()) {
+		abort();
+	}
+
+	if (OS::is_crash_handler_silent()) {
+		std::_Exit(0);
+	}
+
+	void *bt_buffer[256];
+	size_t size = backtrace(bt_buffer, 256);
+	String exec_path = OS::get_executable_path();
+
+	String msg;
+	if (ProjectSettings::is_initialized()) {
+		msg = GLOBAL_GET("debug/settings/crash_handler/message");
+	}
+
+	// Tell MainLoop about the crash. This can be handled by users too in Node.
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
+	}
+
+	// Dump the backtrace to stderr with a message to the user.
+	print_error("\n================================================================");
+	print_error(vformat("%s: Program crashed with signal %d", __FUNCTION__, sig));
+
+	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
+	if (String(VLTR_VERSION_HASH).is_empty()) {
+		print_error(vformat("Engine version: %s", VLTR_VERSION_FULL_NAME));
+	} else {
+		print_error(vformat("Engine version: %s (%s)", VLTR_VERSION_FULL_NAME, VLTR_VERSION_HASH));
+	}
+	print_error(vformat("Dumping the backtrace. %s", msg));
+
+	const void *load_addr = StackTraceMacOS::find_executable_load_address();
+	print_error(vformat("Load address: %x\n", (uint64_t)load_addr));
+
+	const Vector<String> lines = StackTraceMacOS::symbolize_with_atos(exec_path, load_addr, bt_buffer, size);
+
+	if (!lines.is_empty()) {
+		// Get demangled names from dladdr for fallback.
+		char **strings = backtrace_symbols(bt_buffer, size);
+
+		for (int i = 1; i < lines.size() && i < (int)size; i++) {
+			String output = lines[i];
+			String mod_name = "main";
+			uint64_t mod_off = (uint64_t)load_addr;
+
+			// If atos failed for this address, fall back to dladdr.
+			if (strings) {
+				bool atos_fail = output.substr(0, 2) == "0x";
+				if (atos_fail) {
+					Vector<String> fname_spl = String(strings[i]).split(" ", false, 3);
+					output = fname_spl[fname_spl.size() - 1];
+				}
+
+				Dl_info info;
+				if (dladdr(bt_buffer[i], &info)) {
+					mod_off = (uint64_t)info.dli_fbase;
+					if (mod_off != (uint64_t)load_addr) {
+						mod_name = String(info.dli_fname).get_file();
+					}
+					if (atos_fail && info.dli_sname && info.dli_sname[0] == '_') {
+						int status;
+						char *demangled = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
+
+						if (status == 0 && demangled) {
+							output = String(demangled);
+						}
+
+						if (demangled) {
+							free(demangled);
+						}
+					}
+				} else {
+					mod_name = "<unknown module>";
+				}
+			}
+
+			print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i], mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
+		}
+
+		if (strings) {
+			free(strings);
+		}
+	} else {
+		// Fallback if atos fails entirely
+		char **strings = backtrace_symbols(bt_buffer, size);
+		if (strings) {
+			for (size_t i = 0; i < size; i++) {
+				Vector<String> fname_spl = String(strings[i]).split(" ", false, 3);
+				String output = fname_spl[fname_spl.size() - 1];
+
+				String mod_name = "main";
+				uint64_t mod_off = (uint64_t)load_addr;
+
+				Dl_info info;
+				if (dladdr(bt_buffer[i], &info)) {
+					mod_off = (uint64_t)info.dli_fbase;
+					if (mod_off != (uint64_t)load_addr) {
+						mod_name = String(info.dli_fname).get_file();
+					}
+					if (info.dli_sname && info.dli_sname[0] == '_') {
+						int status;
+						char *demangled = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
+
+						if (status == 0 && demangled) {
+							output = String(demangled);
+						}
+
+						if (demangled) {
+							free(demangled);
+						}
+					}
+				} else {
+					mod_name = "<unknown module>";
+				}
+
+				print_error(vformat("[%d] %x (%s+%x) - %s", (int64_t)i, (uint64_t)bt_buffer[i], mod_name, (uint64_t)bt_buffer[i] - mod_off, output));
+			}
+			free(strings);
+		}
+	}
+
+	print_error("-- END OF C++ BACKTRACE --");
+	print_error("================================================================");
+
+	for (const Ref<ScriptBacktrace> &backtrace : ScriptServer::capture_script_backtraces(false)) {
+		if (!backtrace->is_empty()) {
+			print_error(backtrace->format());
+			print_error(vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
+			print_error("================================================================");
+		}
+	}
+
+	// Abort to pass the error to the OS
+	abort();
+}
+#endif
+
+CrashHandler::CrashHandler() {
+	disabled = false;
+}
+
+CrashHandler::~CrashHandler() {
+	disable();
+}
+
+void CrashHandler::disable() {
+	if (disabled) {
+		return;
+	}
+
+#ifdef CRASH_HANDLER_ENABLED
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGFPE, SIG_DFL);
+	signal(SIGILL, SIG_DFL);
+	signal(SIGTRAP, SIG_DFL);
+#endif
+
+	disabled = true;
+}
+
+void CrashHandler::initialize() {
+#ifdef CRASH_HANDLER_ENABLED
+	signal(SIGSEGV, handle_crash);
+	signal(SIGFPE, handle_crash);
+	signal(SIGILL, handle_crash);
+	signal(SIGTRAP, handle_crash);
+#endif
+}
+
+// === Merged from platform/macos/dir_access_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#if defined(UNIX_ENABLED)
+
+#include "core/config/project_settings.h"
+
+#import <AppKit/NSWorkspace.h>
+#import <Foundation/Foundation.h>
+#include <sys/mount.h>
+
+#include <cerrno>
+
+String DirAccessMacOS::get_filesystem_type() const {
+	struct statfs fs;
+	if (statfs(current_dir.utf8().get_data(), &fs) != 0) {
+		return "";
+	}
+	return String::utf8(fs.f_fstypename).to_upper();
+}
+
+String DirAccessMacOS::fix_unicode_name(const char *p_name) const {
+	String fname;
+	if (p_name != nullptr) {
+		NSString *nsstr = [[NSString stringWithUTF8String:p_name] precomposedStringWithCanonicalMapping];
+		fname.append_utf8([nsstr UTF8String]);
+	}
+
+	return fname;
+}
+
+int DirAccessMacOS::get_drive_count() {
+	NSArray *res_keys = [NSArray arrayWithObjects:NSURLVolumeURLKey, NSURLIsSystemImmutableKey, nil];
+	NSArray *vols = [[NSFileManager defaultManager] mountedVolumeURLsIncludingResourceValuesForKeys:res_keys options:NSVolumeEnumerationSkipHiddenVolumes];
+
+	return [vols count];
+}
+
+String DirAccessMacOS::get_drive(int p_drive) {
+	NSArray *res_keys = [NSArray arrayWithObjects:NSURLVolumeURLKey, NSURLIsSystemImmutableKey, nil];
+	NSArray *vols = [[NSFileManager defaultManager] mountedVolumeURLsIncludingResourceValuesForKeys:res_keys options:NSVolumeEnumerationSkipHiddenVolumes];
+	int count = [vols count];
+
+	ERR_FAIL_INDEX_V(p_drive, count, "");
+
+	String volname;
+	NSString *path = [vols[p_drive] path];
+
+	volname.append_utf8([path UTF8String]);
+
+	return volname;
+}
+
+bool DirAccessMacOS::is_hidden(const String &p_name) {
+	String f = get_current_dir().path_join(p_name);
+	NSURL *url = [NSURL fileURLWithPath:@(f.utf8().get_data())];
+	NSNumber *hidden = nil;
+	if (![url getResourceValue:&hidden forKey:NSURLIsHiddenKey error:nil]) {
+		return DirAccessUnix::is_hidden(p_name);
+	}
+	return [hidden boolValue];
+}
+
+bool DirAccessMacOS::is_case_sensitive(const String &p_path) const {
+	String f = p_path;
+	if (!f.is_absolute_path()) {
+		f = get_current_dir().path_join(f);
+	}
+	f = fix_path(f);
+
+	NSURL *url = [NSURL fileURLWithPath:@(f.utf8().get_data())];
+	NSNumber *cs = nil;
+	if (![url getResourceValue:&cs forKey:NSURLVolumeSupportsCaseSensitiveNamesKey error:nil]) {
+		return false;
+	}
+	return [cs boolValue];
+}
+
+bool DirAccessMacOS::is_bundle(const String &p_file) const {
+	String f = p_file;
+	if (!f.is_absolute_path()) {
+		f = get_current_dir().path_join(f);
+	}
+	f = fix_path(f);
+
+	return [[NSWorkspace sharedWorkspace] isFilePackageAtPath:[NSString stringWithUTF8String:f.utf8().get_data()]];
+}
+
+#endif // UNIX_ENABLED
+
+// === Merged from platform/macos/godot_application.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+GodotApplication *GodotApp = nil;
+
+@interface GodotApplication ()
+- (void)forceUnbundledWindowActivationHackStep1;
+- (void)forceUnbundledWindowActivationHackStep2;
+- (void)forceUnbundledWindowActivationHackStep3;
+@end
+
+@implementation GodotApplication
+
+- (GodotApplication *)init {
+	self = [super init];
+
+	GodotApp = self;
+
+	return self;
+}
+
+- (GodotApplicationDelegate *)godotDelegate {
+	return (GodotApplicationDelegate *)self.delegate;
+}
+
+- (void)activateApplication {
+	[NSApp activateIgnoringOtherApps:YES];
+	NSString *nsappname = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleName"];
+	const char *bundled_id = getenv("__CFBundleIdentifier");
+	NSString *nsbundleid_env = [NSString stringWithUTF8String:(bundled_id != nullptr) ? bundled_id : ""];
+	NSString *nsbundleid = [[NSBundle mainBundle] bundleIdentifier];
+	if (nsappname == nil || isatty(STDOUT_FILENO) || isatty(STDIN_FILENO) || isatty(STDERR_FILENO) || ![nsbundleid isEqualToString:nsbundleid_env]) {
+#ifdef TOOLS_ENABLED
+		if (!OS_MacOS::is_debugger_attached()) {
+#else
+		{
+#endif
+			// If the executable is started from terminal or is not bundled, macOS WindowServer won't register and activate app window correctly (menu and title bar are grayed out and input ignored).
+			[self performSelector:@selector(forceUnbundledWindowActivationHackStep1) withObject:nil afterDelay:0.02];
+		}
+	}
+}
+
+- (void)mediaKeyEvent:(int)key state:(BOOL)state repeat:(BOOL)repeat {
+	Key keycode = Key::NONE;
+	switch (key) {
+		case NX_KEYTYPE_SOUND_UP: {
+			keycode = Key::VOLUMEUP;
+		} break;
+		case NX_KEYTYPE_SOUND_DOWN: {
+			keycode = Key::VOLUMEDOWN;
+		} break;
+		//NX_KEYTYPE_BRIGHTNESS_UP
+		//NX_KEYTYPE_BRIGHTNESS_DOWN
+		case NX_KEYTYPE_CAPS_LOCK: {
+			keycode = Key::CAPSLOCK;
+		} break;
+		case NX_KEYTYPE_HELP: {
+			keycode = Key::HELP;
+		} break;
+		case NX_POWER_KEY: {
+			keycode = Key::STANDBY;
+		} break;
+		case NX_KEYTYPE_MUTE: {
+			keycode = Key::VOLUMEMUTE;
+		} break;
+		//NX_KEYTYPE_CONTRAST_UP
+		//NX_KEYTYPE_CONTRAST_DOWN
+		//NX_KEYTYPE_LAUNCH_PANEL
+		//NX_KEYTYPE_EJECT
+		//NX_KEYTYPE_VIDMIRROR
+		//NX_KEYTYPE_FAST
+		//NX_KEYTYPE_REWIND
+		//NX_KEYTYPE_ILLUMINATION_UP
+		//NX_KEYTYPE_ILLUMINATION_DOWN
+		//NX_KEYTYPE_ILLUMINATION_TOGGLE
+		case NX_KEYTYPE_PLAY: {
+			keycode = Key::MEDIAPLAY;
+		} break;
+		case NX_KEYTYPE_NEXT: {
+			keycode = Key::MEDIANEXT;
+		} break;
+		case NX_KEYTYPE_PREVIOUS: {
+			keycode = Key::MEDIAPREVIOUS;
+		} break;
+		default: {
+			keycode = Key::NONE;
+		} break;
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && keycode != Key::NONE) {
+		DisplayServerMacOS::KeyEvent ke;
+
+		ke.window_id = ds->_get_focused_window_or_popup();
+		ke.macos_state = 0;
+		ke.pressed = state;
+		ke.echo = repeat;
+		ke.keycode = keycode;
+		ke.physical_keycode = keycode;
+		ke.key_label = keycode;
+		ke.unicode = 0;
+		ke.raw = true;
+
+		ds->push_to_key_event_buffer(ke);
+	}
+}
+
+- (void)sendEvent:(NSEvent *)event {
+	if ([event type] == NSEventTypeSystemDefined && [event subtype] == 8) {
+		int keyCode = (([event data1] & 0xFFFF0000) >> 16);
+		int keyFlags = ([event data1] & 0x0000FFFF);
+		int keyState = (((keyFlags & 0xFF00) >> 8)) == 0xA;
+		int keyRepeat = (keyFlags & 0x1);
+
+		[self mediaKeyEvent:keyCode state:keyState repeat:keyRepeat];
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		if ([event type] == NSEventTypeLeftMouseDown || [event type] == NSEventTypeRightMouseDown || [event type] == NSEventTypeOtherMouseDown) {
+			if (ds->mouse_process_popups()) {
+				return;
+			}
+		}
+		ds->send_event(event);
+	}
+
+	// From http://cocoadev.com/index.pl?GameKeyboardHandlingAlmost
+	// This works around an AppKit bug, where key up events while holding
+	// down the command key don't get sent to the key window.
+	if ([event type] == NSEventTypeKeyUp && ([event modifierFlags] & NSEventModifierFlagCommand)) {
+		[[self keyWindow] sendEvent:event];
+	} else {
+		[super sendEvent:event];
+	}
+}
+
+- (void)forceUnbundledWindowActivationHackStep1 {
+	// Step 1: Switch focus to macOS SystemUIServer process.
+	// Required to perform step 2, TransformProcessType will fail if app is already the in focus.
+	for (NSRunningApplication *app in [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.apple.systemuiserver"]) {
+		[app activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+		break;
+	}
+	[self performSelector:@selector(forceUnbundledWindowActivationHackStep2)
+			   withObject:nil
+			   afterDelay:0.02];
+}
+
+- (void)forceUnbundledWindowActivationHackStep2 {
+	// Step 2: Register app as foreground process.
+	ProcessSerialNumber psn = { 0, kCurrentProcess };
+	(void)TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+	[self performSelector:@selector(forceUnbundledWindowActivationHackStep3) withObject:nil afterDelay:0.02];
+}
+
+- (void)forceUnbundledWindowActivationHackStep3 {
+	// Step 3: Switch focus back to app window.
+	[[NSRunningApplication currentApplication] activateWithOptions:NSApplicationActivateIgnoringOtherApps];
+}
+
+@end
+
+// === Merged from platform/macos/godot_application_delegate.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+
+#import "core/input/input.h"
+#import "core/input/input_event.h"
+#import "core/os/main_loop.h"
+#import "main/main.h"
+
+#import <Carbon/Carbon.h>
+
+@interface GodotApplicationDelegate ()
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
+- (void)accessibilityDisplayOptionsChange:(NSNotification *)notification;
+@end
+
+@implementation GodotApplicationDelegate {
+	bool high_contrast;
+	bool reduce_motion;
+	bool reduce_transparency;
+	bool voice_over;
+	OS_MacOS_NSApp *os_mac;
+}
+
+- (GodotApplicationDelegate *)initWithOS:(OS_MacOS_NSApp *)os {
+	self = [super init];
+	if (self) {
+		os_mac = os;
+	}
+
+	[[NSWorkspace sharedWorkspace] addObserver:self forKeyPath:@"voiceOverEnabled" options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld) context:(void *)godot_ac_ctx];
+	[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(accessibilityDisplayOptionsChange:) name:NSWorkspaceAccessibilityDisplayOptionsDidChangeNotification object:nil];
+	high_contrast = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldIncreaseContrast];
+	reduce_motion = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceMotion];
+	reduce_transparency = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceTransparency];
+	voice_over = [[NSWorkspace sharedWorkspace] isVoiceOverEnabled];
+
+	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(system_theme_changed:) name:@"AppleInterfaceThemeChangedNotification" object:nil];
+	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(system_theme_changed:) name:@"AppleColorPreferencesChangedNotification" object:nil];
+
+	return self;
+}
+
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app {
+	return YES;
+}
+
+- (NSArray<NSString *> *)localizedTitlesForItem:(id)item {
+	NSArray *item_name = @[ item[1] ];
+	return item_name;
+}
+
+- (void)searchForItemsWithSearchString:(NSString *)searchString resultLimit:(NSInteger)resultLimit matchedItemHandler:(void (^)(NSArray *items))handleMatchedItems {
+	NSMutableArray *found_items = [[NSMutableArray alloc] init];
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->_help_get_search_callback().is_valid()) {
+		Callable cb = ds->_help_get_search_callback();
+
+		Variant ret;
+		Variant search_string = String::utf8([searchString UTF8String]);
+		Variant result_limit = (uint64_t)resultLimit;
+		Callable::CallError ce;
+		const Variant *args[2] = { &search_string, &result_limit };
+
+		cb.callp(args, 2, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat(RTR("Failed to execute help search callback: %s."), Variant::get_callable_error_text(cb, args, 2, ce)));
+		}
+		Dictionary results = ret;
+		for (const Variant *E = results.next(); E; E = results.next(E)) {
+			const String &key = *E;
+			const String &value = results[*E];
+			if (key.length() > 0 && value.length() > 0) {
+				NSArray *item = @[ [NSString stringWithUTF8String:key.utf8().get_data()], [NSString stringWithUTF8String:value.utf8().get_data()] ];
+				[found_items addObject:item];
+			}
+		}
+	}
+
+	handleMatchedItems(found_items);
+}
+
+- (void)performActionForItem:(id)item {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->_help_get_action_callback().is_valid()) {
+		Callable cb = ds->_help_get_action_callback();
+
+		Variant ret;
+		Variant item_string = String::utf8([item[0] UTF8String]);
+		Callable::CallError ce;
+		const Variant *args[1] = { &item_string };
+
+		cb.callp(args, 1, ret, ce);
+		if (ce.error != Callable::CallError::CALL_OK) {
+			ERR_PRINT(vformat(RTR("Failed to execute help action callback: %s."), Variant::get_callable_error_text(cb, args, 1, ce)));
+		}
+	}
+}
+
+- (void)system_theme_changed:(NSNotification *)notification {
+	DisplayServerMacOSBase *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		ds->emit_system_theme_changed();
+	}
+}
+
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+	os_mac->start_main();
+}
+
+static const char *godot_ac_ctx = "gd_accessibility_observer_ctx";
+
+- (void)dealloc {
+	[[NSDistributedNotificationCenter defaultCenter] removeObserver:self name:@"AppleInterfaceThemeChangedNotification" object:nil];
+	[[NSDistributedNotificationCenter defaultCenter] removeObserver:self name:@"AppleColorPreferencesChangedNotification" object:nil];
+	[[NSWorkspace sharedWorkspace] removeObserver:self forKeyPath:@"voiceOverEnabled" context:(void *)godot_ac_ctx];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+	if (context == (void *)godot_ac_ctx) {
+		voice_over = [[NSWorkspace sharedWorkspace] isVoiceOverEnabled];
+	} else {
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+	}
+}
+
+- (void)accessibilityDisplayOptionsChange:(NSNotification *)notification {
+	high_contrast = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldIncreaseContrast];
+	reduce_motion = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceMotion];
+	reduce_transparency = [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceTransparency];
+}
+
+- (bool)getHighContrast {
+	return high_contrast;
+}
+
+- (bool)getReduceMotion {
+	return reduce_motion;
+}
+
+- (bool)getReduceTransparency {
+	return reduce_transparency;
+}
+
+- (bool)getVoiceOver {
+	return voice_over;
+}
+
+- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls {
+	List<String> args;
+	for (NSURL *url in urls) {
+		if ([url isFileURL]) {
+			args.push_back(String::utf8([url.path UTF8String]));
+		} else {
+			args.push_back(vformat("--uri=\"%s\"", String::utf8([url.absoluteString UTF8String])));
+		}
+	}
+	if (!args.is_empty()) {
+		if (MainLoop::is_active()) {
+			// Application is already running, open a new instance with the URL/files as command line arguments.
+			os_mac->create_instance(args);
+		} else if (os_mac->get_cmd_argc() == 0) {
+			// Application is just started, add to the list of command line arguments and continue.
+			os_mac->set_cmdline_platform_args(args);
+		}
+	}
+}
+
+- (void)application:(NSApplication *)sender openFiles:(NSArray<NSString *> *)filenames {
+	List<String> args;
+	for (NSString *filename in filenames) {
+		NSURL *url = [NSURL URLWithString:filename];
+		args.push_back(String::utf8([url.path UTF8String]));
+	}
+	if (!args.is_empty()) {
+		if (MainLoop::is_active()) {
+			// Application is already running, open a new instance with the URL/files as command line arguments.
+			os_mac->create_instance(args);
+		} else if (os_mac->get_cmd_argc() == 0) {
+			// Application is just started, add to the list of command line arguments and continue.
+			os_mac->set_cmdline_platform_args(args);
+		}
+	}
+}
+
+- (void)applicationDidResignActive:(NSNotification *)notification {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		ds->mouse_process_popups(true);
+	}
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
+	}
+}
+
+static const CGKeyCode modifiers[8] = {
+	kVK_Command,
+	kVK_RightCommand,
+	kVK_Shift,
+	kVK_RightShift,
+	kVK_Option,
+	kVK_RightOption,
+	kVK_Control,
+	kVK_RightControl,
+};
+
+// The list of modifier flags we care about for raising pressed events when the application becomes active.
+constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEventModifierFlagShift | NSEventModifierFlagOption | NSEventModifierFlagControl;
+
+- (void)applicationDidBecomeActive:(NSNotification *)notification {
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
+	}
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (!ds) {
+		return;
+	}
+	if (!Input::is_initialized()) {
+		return;
+	}
+
+	// Poll the modifier keys and submit pressed events if they are down when the application becomes active.
+	int mod = NSEvent.modifierFlags;
+	if ((mod & FLAGS) == 0) {
+		// No flags we care about.
+		return;
+	}
+
+	DisplayServerEnums::WindowID window_id = ds->get_focused_window();
+	NSEventModifierFlags flags = static_cast<NSEventModifierFlags>(mod);
+
+	for (const CGKeyCode key : modifiers) {
+		bool is_down = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, key);
+		if (likely(!is_down)) {
+			continue;
+		}
+		Ref<InputEventKey> ke;
+		ke.instantiate();
+
+		ke->set_window_id(window_id);
+		ke->set_echo(false);
+		ke->set_pressed(true);
+		ds->get_key_modifier_state(flags, ke);
+		ke->set_keycode(KeyMappingMacOS::remap_key(key, mod, false));
+		ke->set_physical_keycode(KeyMappingMacOS::translate_key(key));
+		ke->set_key_label(KeyMappingMacOS::remap_key(key, mod, true));
+		ke->set_location(KeyMappingMacOS::translate_location(key));
+		Input::parse_input_event(ke.ptr());
+	}
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)item {
+	if (item) {
+		GodotMenuItem *value = [item representedObject];
+		if (value) {
+			return value->enabled;
+		}
+	}
+	return YES;
+}
+
+- (void)globalMenuCallback:(id)sender {
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds) {
+		return ds->menu_callback(sender);
+	}
+}
+
+- (NSMenu *)applicationDockMenu:(NSApplication *)sender {
+	if (NativeMenu::is_initialized()) {
+		NativeMenuMacOS *nmenu = NativeMenu::driver_as<NativeMenuMacOS>();
+		return nmenu->_get_dock_menu();
+	} else {
+		return nullptr;
+	}
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+	os_mac->cleanup();
+	exit(os_mac->get_exit_code());
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+	if (os_mac->os_should_terminate()) {
+		return NSTerminateNow;
+	}
+
+	DisplayServerMacOS *ds = DisplayServer::driver_as<DisplayServerMacOS>();
+	if (ds && ds->has_window(DisplayServerEnums::MAIN_WINDOW_ID)) {
+		ds->send_window_event(ds->get_window(DisplayServerEnums::MAIN_WINDOW_ID), DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
+	}
+
+	return NSTerminateCancel;
+}
+
+- (void)showAbout:(id)sender {
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_WM_ABOUT);
+	}
+}
+
+@end
+
+// === Merged from platform/macos/tts_macos.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#include "servers/display/display_server.h"
+
+@implementation TTS_MacOS
+
+- (id)init {
+	self = [super init];
+	self->speaking = false;
+	self->synth = [[AVSpeechSynthesizer alloc] init];
+	[self->synth setDelegate:self];
+	print_verbose("Text-to-Speech: AVSpeechSynthesizer initialized.");
+	return self;
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth willSpeakRangeOfSpeechString:(NSRange)characterRange utterance:(AVSpeechUtterance *)utterance {
+	NSString *string = [utterance speechString];
+
+	// Convert from UTF-16 to UTF-32 position.
+	int pos = 0;
+	for (NSUInteger i = 0; i < MIN(characterRange.location, string.length); i++) {
+		unichar c = [string characterAtIndex:i];
+		if ((c & 0xfffffc00) == 0xd800) {
+			i++;
+		}
+		pos++;
+	}
+
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, ids[utterance], pos);
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth didCancelSpeechUtterance:(AVSpeechUtterance *)utterance {
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[utterance]);
+	ids.erase(utterance);
+	speaking = false;
+	[self update];
+}
+
+- (void)speechSynthesizer:(AVSpeechSynthesizer *)av_synth didFinishSpeechUtterance:(AVSpeechUtterance *)utterance {
+	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, ids[utterance]);
+	ids.erase(utterance);
+	speaking = false;
+	[self update];
+}
+
+- (void)update {
+	if (!speaking && queue.size() > 0) {
+		TTSUtterance &message = queue.front()->get();
+
+		AVSpeechSynthesizer *av_synth = synth;
+		AVSpeechUtterance *new_utterance = [[AVSpeechUtterance alloc] initWithString:[NSString stringWithUTF8String:message.text.utf8().get_data()]];
+		[new_utterance setVoice:[AVSpeechSynthesisVoice voiceWithIdentifier:[NSString stringWithUTF8String:message.voice.utf8().get_data()]]];
+		if (message.rate > 1.f) {
+			[new_utterance setRate:Math::remap(message.rate, 1.f, 10.f, AVSpeechUtteranceDefaultSpeechRate, AVSpeechUtteranceMaximumSpeechRate)];
+		} else if (message.rate < 1.f) {
+			[new_utterance setRate:Math::remap(message.rate, 0.1f, 1.f, AVSpeechUtteranceMinimumSpeechRate, AVSpeechUtteranceDefaultSpeechRate)];
+		}
+		[new_utterance setPitchMultiplier:message.pitch];
+		[new_utterance setVolume:(Math::remap(message.volume, 0.f, 100.f, 0.f, 1.f))];
+
+		ids[new_utterance] = message.id;
+		[av_synth speakUtterance:new_utterance];
+
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
+		queue.pop_front();
+
+		speaking = true;
+	}
+}
+
+- (void)pauseSpeaking {
+	AVSpeechSynthesizer *av_synth = synth;
+	[av_synth pauseSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+}
+
+- (void)resumeSpeaking {
+	AVSpeechSynthesizer *av_synth = synth;
+	[av_synth continueSpeaking];
+}
+
+- (void)stopSpeaking {
+	for (TTSUtterance &message : queue) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
+	}
+	queue.clear();
+	AVSpeechSynthesizer *av_synth = synth;
+	[av_synth stopSpeakingAtBoundary:AVSpeechBoundaryImmediate];
+	speaking = false;
+}
+
+- (bool)isSpeaking {
+	return speaking || (queue.size() > 0);
+}
+
+- (bool)isPaused {
+	AVSpeechSynthesizer *av_synth = synth;
+	return [av_synth isPaused];
+}
+
+- (void)speak:(const String &)text voice:(const String &)voice volume:(int)volume pitch:(float)pitch rate:(float)rate utterance_id:(int64_t)utterance_id interrupt:(bool)interrupt {
+	if (interrupt) {
+		[self stopSpeaking];
+	}
+
+	if (text.is_empty()) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, utterance_id);
+		return;
+	}
+
+	TTSUtterance message;
+	message.text = text;
+	message.voice = voice;
+	message.volume = CLAMP(volume, 0, 100);
+	message.pitch = CLAMP(pitch, 0.f, 2.f);
+	message.rate = CLAMP(rate, 0.1f, 10.f);
+	message.id = utterance_id;
+	queue.push_back(message);
+
+	if ([self isPaused]) {
+		[self resumeSpeaking];
+	} else {
+		[self update];
+	}
+}
+
+- (Array)getVoices {
+	Array list;
+	for (AVSpeechSynthesisVoice *voice in [AVSpeechSynthesisVoice speechVoices]) {
+		NSString *voiceIdentifierString = [voice identifier];
+		NSString *voiceLocaleIdentifier = [voice language];
+		NSString *voiceName = [voice name];
+		Dictionary voice_d;
+		voice_d["name"] = String::utf8([voiceName UTF8String]);
+		voice_d["id"] = String::utf8([voiceIdentifierString UTF8String]);
+		voice_d["language"] = String::utf8([voiceLocaleIdentifier UTF8String]);
+		list.push_back(voice_d);
+	}
+	return list;
+}
+
+@end

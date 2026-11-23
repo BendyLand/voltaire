@@ -38,7 +38,6 @@ TEST_FORCE_LINK(test_navigation_agent_3d)
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/3d/node_3d.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 

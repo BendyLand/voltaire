@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_nav_heap)
 
-#include "servers/nav_heap.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 
 namespace TestNavHeap {
 

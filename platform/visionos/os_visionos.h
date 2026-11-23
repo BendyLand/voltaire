@@ -50,7 +50,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/display_server_apple_embedded.h"
+#include "drivers/apple_embedded/os_apple_embedded.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -76,7 +76,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/apple_embedded.h"
+#include "drivers/apple_embedded/os_apple_embedded.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end

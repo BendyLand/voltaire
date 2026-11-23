@@ -34,8 +34,7 @@
 #include "core/templates/local_vector.h"
 #include "core/templates/rb_set.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "servers/rendering/storage/utilities.h"
 #include "shader_language.h"
 
@@ -11805,15 +11804,15 @@ void ShaderLanguage::finish() { global_func_set.clear(); }
 // ============================================================================
 
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 #ifdef DEV_ENABLED
 #include "scene/resources/shader.h"
 #endif
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 // --- Merged from servers/rendering/shader_compiler.cpp ---
 

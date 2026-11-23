@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_xml_parser)
 
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 
 namespace TestXMLParser {
 

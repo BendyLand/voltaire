@@ -29,12 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 
-#include "platform/windows/display_server_windows.h"
 
 #ifdef WINRT_ENABLED
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 #endif
 
 bool TTS_Windows::is_speaking()

@@ -37,7 +37,6 @@ TEST_FORCE_LINK(test_texture_button)
 #include "scene/gui/texture_button.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/bit_map.h"
 #include "scene/resources/image_texture.h"
 
 namespace TestTextureButton {

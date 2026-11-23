@@ -31,7 +31,7 @@
 
 #include "os_windows.h"
 
-#include "display_server_windows.h"
+#include "platform/windows/os_windows.h"
 // --- Inlined from platform/windows/lang_table.h ---
 #include <windef.h>
 
@@ -231,7 +231,7 @@ extern "C" {
 #endif
 
 #if defined(GLES3_ENABLED)
-#include "platform/windows/display_server_windows.h"
+#include "platform/windows/os_windows.h"
 #endif
 
 #if defined(VULKAN_ENABLED)

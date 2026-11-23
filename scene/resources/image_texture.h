@@ -34,7 +34,47 @@
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
-#include "scene/resources/bit_map.h"
+// --- Folded from scene/resources/bit_map.h ---
+#include "core/io/image.h"
+#include "core/io/resource.h"
+
+template <typename T> class TypedArray;
+
+class BitMap : public Resource
+{
+	Vector<uint8_t> bitmask;
+	int width = 0;
+	int height = 0;
+
+	Vector<Vector<Vector2>> _march_square(const Rect2i& p_rect, const Point2i& p_start) const;
+
+	TypedArray<PackedVector2Array> _opaque_to_polygons_bind(
+		const Rect2i& p_rect, float p_epsilon) const;
+
+public:
+	void create(const Size2i& p_size);
+
+	void set_bitv(const Point2i& p_pos, bool p_value);
+	void set_bit(int p_x, int p_y, bool p_value);
+	void set_bit_rect(const Rect2i& p_rect, bool p_value);
+	bool get_bitv(const Point2i& p_pos) const;
+	bool get_bit(int p_x, int p_y) const;
+
+	int get_true_bit_count() const;
+
+	Size2i get_size() const;
+	void resize(const Size2i& p_new_size);
+
+	void grow_mask(int p_pixels, const Rect2i& p_rect);
+	void shrink_mask(int p_pixels, const Rect2i& p_rect);
+
+	void blit(const Vector2i& p_pos, const Ref<BitMap>& p_bitmap);
+	Ref<Image> convert_to_image() const;
+
+	Vector<Vector<Vector2>> clip_opaque_to_polygons(
+		const Rect2i& p_rect, float p_epsilon = 2.0) const;
+};
+// --- End scene/resources/bit_map.h ---
 #include "scene/resources/texture.h"
 
 class BitMap;
@@ -323,7 +363,7 @@ public:
 };
 
 // --- Folded from scene/resources/compressed_texture.h ---
-#include "scene/resources/bit_map.h"
+
 #include "scene/resources/texture.h"
 #include "servers/rendering/rendering_server_enums.h"
 
@@ -587,3 +627,26 @@ public:
 };
 
 // --- End scene/resources/compressed_texture_resource_format.h ---
+
+// --- Folded from modules/dds/texture_loader_dds.h ---
+#include "core/io/image.h"
+#include "core/io/resource_loader.h"
+
+class ResourceFormatDDS final : public ResourceFormatLoader
+{
+public:
+	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
+		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
+		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual bool handles_type(const String& p_type) const override;
+	virtual String get_resource_type(const String& p_path) const override;
+
+	ResourceFormatDDS();
+
+	virtual ~ResourceFormatDDS() {}
+};
+
+Error save_dds(const String &p_path, const Ref<Image> &p_img);
+Vector<uint8_t> save_dds_buffer(const Ref<Image> &p_img);
+// --- End modules/dds/texture_loader_dds.h ---

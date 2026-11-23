@@ -67,7 +67,43 @@ def make_license_header(target, source):
     with open(src_license, "r", encoding="utf-8") as file:
         license_text = file.read()
 
+    authors_sections = {
+        "Project Founders": "AUTHORS_FOUNDERS",
+        "Lead Developer": "AUTHORS_LEAD_DEVELOPERS",
+        "Project Manager": "AUTHORS_PROJECT_MANAGERS",
+        "Developers": "AUTHORS_DEVELOPERS",
+    }
+    donors_sections = {
+        "Patrons": "DONORS_PATRONS",
+        "Platinum sponsors": "DONORS_SPONSORS_PLATINUM",
+        "Gold sponsors": "DONORS_SPONSORS_GOLD",
+        "Silver sponsors": "DONORS_SPONSORS_SILVER",
+        "Diamond members": "DONORS_MEMBERS_DIAMOND",
+        "Titanium members": "DONORS_MEMBERS_TITANIUM",
+        "Platinum members": "DONORS_MEMBERS_PLATINUM",
+        "Gold members": "DONORS_MEMBERS_GOLD",
+    }
+
+    def write_md_sections(out_file, md_path, section_map):
+        buf = methods.get_buffer(md_path)
+        reading = False
+        for ln in buf.decode().splitlines():
+            if ln.startswith("    ") and reading:
+                out_file.write(f'\t"{methods.to_escaped_cstring(ln).strip()}",\n')
+            elif ln.startswith("## "):
+                if reading:
+                    out_file.write("\tnullptr,\n};\n\n")
+                    reading = False
+                sec = section_map.get(ln[3:].strip())
+                if sec:
+                    out_file.write(f"inline constexpr const char *{sec}[] = {{\n")
+                    reading = True
+        if reading:
+            out_file.write("\tnullptr,\n};\n\n")
+
     with methods.generated_wrapper(str(target[0])) as file:
+        write_md_sections(file, "AUTHORS.md", authors_sections)
+        write_md_sections(file, "DONORS.md", donors_sections)
         file.write(f"""\
 inline constexpr const char *GODOT_LICENSE_TEXT = {{
 {methods.to_raw_cstring(license_text)}

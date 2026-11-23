@@ -39,18 +39,16 @@
 #include "core/io/dir_access.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/os/os.h"
-#include "core/os/process_id.h"
 #include "core/os/time.h"
 #include "main/main.h"
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "main/main.h"
 #include "main.h"
-#include "main/app_icon.gen.h"
+#include "main/splash.gen.h"
 // --- Inlined from main/main_timer_sync.h ---
 #include <cstdint>
 
@@ -302,16 +300,15 @@ private:
 #include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 #include "main/main.h"
 #include "scene/resources/packed_scene.h"
 #include "scene/main/viewport.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "servers/audio/audio_server.h"
 #include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "main/main.h"
 #include "main/main.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
@@ -338,7 +335,6 @@ private:
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
@@ -350,8 +346,7 @@ private:
 #ifdef TOOLS_ENABLED
 #include "editor/doc/doc_data_class_path.gen.h"
 #include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
 
@@ -5684,7 +5679,7 @@ SteamTracker::~SteamTracker() {
 
 
 // --- Merged from platform/android/api/api.cpp ---
-#include "platform/android/api/api.h"
+#include "platform/register_platform_apis.h"
 #include "platform/android/api/java_class_wrapper.h"
 #include "platform/android/os_android.h"
 
@@ -5725,7 +5720,7 @@ void register_android_api() {}
 // Merged from platform/ios/api/api.cpp
 // ============================================================================
 
-#include "platform/ios/api/api.h"
+#include "platform/register_platform_apis.h"
 
 #if defined(IOS_ENABLED)
 
@@ -5748,7 +5743,7 @@ void unregister_ios_api() {}
 // Merged from platform/visionos/api/api.cpp
 // ============================================================================
 
-#include "platform/visionos/api/api.h"
+#include "platform/register_platform_apis.h"
 
 #if defined(VISIONOS_ENABLED)
 
@@ -5771,7 +5766,7 @@ void unregister_visionos_api() {}
 // Merged from platform/web/api/api.cpp
 // ============================================================================
 
-#include "platform/web/api/api.h"
+#include "platform/register_platform_apis.h"
 #include "platform/web/os_web.h"
 
 void unregister_web_api() {}
@@ -5792,3 +5787,7 @@ void JavaScriptBridge::download_buffer(
 }
 
 #endif
+
+#include "platform/register_platform_apis.gen.cpp"
+
+#include "modules/register_module_types.gen.cpp"

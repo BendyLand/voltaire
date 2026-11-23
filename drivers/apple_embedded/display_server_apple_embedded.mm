@@ -29,21 +29,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "display_server_apple_embedded.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
 
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/os/os.h"
-#import "drivers/apple_embedded/app_delegate_service.h"
-#import "drivers/apple_embedded/apple_embedded.h"
-#import "drivers/apple_embedded/display_server_apple_embedded.h"
-#import "drivers/apple_embedded/godot_view_apple_embedded.h"
-#import "drivers/apple_embedded/godot_view_controller.h"
-#import "drivers/apple_embedded/display_server_apple_embedded.h"
 #import "drivers/apple_embedded/os_apple_embedded.h"
-#import "drivers/apple_embedded/display_server_apple_embedded.h"
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 
 #import <GameController/GameController.h>
 
@@ -974,3 +967,1418 @@ void DisplayServerAppleEmbedded::set_native_icon(const String &p_filename) {
 void DisplayServerAppleEmbedded::set_icon(const Ref<Image> &p_icon) {
 	// Not supported on Apple embedded platforms.
 }
+
+// === Merged from drivers/apple_embedded/godot_keyboard_input_view.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/os/keyboard.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+@interface GDTKeyboardInputView () <UITextViewDelegate>
+
+@property(nonatomic, copy) NSString *previousText;
+@property(nonatomic, assign) NSRange previousSelectedRange;
+
+@end
+
+@implementation GDTKeyboardInputView
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+	self = [super initWithCoder:coder];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame textContainer:(NSTextContainer *)textContainer {
+	self = [super initWithFrame:frame textContainer:textContainer];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (void)godot_commonInit {
+	self.hidden = YES;
+	self.delegate = self;
+
+	[[NSNotificationCenter defaultCenter] addObserver:self
+											 selector:@selector(observeTextChange:)
+												 name:UITextViewTextDidChangeNotification
+											   object:self];
+}
+
+- (void)dealloc {
+	self.delegate = nil;
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+// MARK: Keyboard
+
+- (BOOL)canBecomeFirstResponder {
+	return YES;
+}
+
+- (BOOL)becomeFirstResponderWithString:(NSString *)existingString cursorStart:(NSInteger)start cursorEnd:(NSInteger)end {
+	self.text = existingString;
+	self.previousText = existingString;
+
+	NSInteger safeStartIndex = MAX(start, 0);
+
+	NSRange textRange;
+
+	// Either a simple cursor or a selection.
+	if (end > 0) {
+		textRange = NSMakeRange(safeStartIndex, end - start);
+	} else {
+		textRange = NSMakeRange(safeStartIndex, 0);
+	}
+
+	self.selectedRange = textRange;
+	self.previousSelectedRange = textRange;
+
+	return [self becomeFirstResponder];
+}
+
+- (BOOL)resignFirstResponder {
+	self.text = nil;
+	self.previousText = nil;
+	return [super resignFirstResponder];
+}
+
+// MARK: OS Messages
+
+- (void)deleteText:(NSInteger)charactersToDelete {
+	for (int i = 0; i < charactersToDelete; i++) {
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(Key::BACKSPACE, 0, Key::BACKSPACE, Key::NONE, 0, true, KeyLocation::UNSPECIFIED);
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(Key::BACKSPACE, 0, Key::BACKSPACE, Key::NONE, 0, false, KeyLocation::UNSPECIFIED);
+	}
+}
+
+- (void)enterText:(NSString *)substring {
+	String characters = String::utf8([substring UTF8String]);
+
+	for (int i = 0; i < characters.size(); i++) {
+		int character = characters[i];
+		Key key = Key::NONE;
+
+		if (character == '\t') { // 0x09
+			key = Key::TAB;
+		} else if (character == '\n') { // 0x0A
+			key = Key::ENTER;
+		} else if (character == 0x2006) {
+			key = Key::SPACE;
+		}
+
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(key, character, key, Key::NONE, 0, true, KeyLocation::UNSPECIFIED);
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(key, character, key, Key::NONE, 0, false, KeyLocation::UNSPECIFIED);
+	}
+}
+
+// MARK: Observer
+
+- (void)observeTextChange:(NSNotification *)notification {
+	if (notification.object != self) {
+		return;
+	}
+
+	NSString *substringToDelete = nil;
+	if (self.previousSelectedRange.length == 0) {
+		// Get previous text to delete.
+		substringToDelete = [self.previousText substringToIndex:self.previousSelectedRange.location];
+	} else {
+		// If text was previously selected we are sending only one `backspace`. It will remove all text from text input.
+		[self deleteText:1];
+	}
+
+	NSString *substringToEnter = nil;
+	if (self.selectedRange.length == 0) {
+		// If previous cursor had a selection we have to calculate an inserted text.
+		if (self.previousSelectedRange.length != 0) {
+			NSInteger rangeEnd = self.selectedRange.location + self.selectedRange.length;
+			NSInteger rangeStart = MIN(self.previousSelectedRange.location, self.selectedRange.location);
+			NSInteger rangeLength = MAX(0, rangeEnd - rangeStart);
+
+			NSRange calculatedRange;
+
+			if (rangeLength >= 0) {
+				calculatedRange = NSMakeRange(rangeStart, rangeLength);
+			} else {
+				calculatedRange = NSMakeRange(rangeStart, 0);
+			}
+
+			substringToEnter = [self.text substringWithRange:calculatedRange];
+		} else {
+			substringToEnter = [self.text substringToIndex:self.selectedRange.location];
+		}
+	} else {
+		substringToEnter = [self.text substringWithRange:self.selectedRange];
+	}
+
+	NSInteger skip = 0;
+	if (substringToDelete != nil) {
+		for (NSUInteger i = 0; i < MIN([substringToDelete length], [substringToEnter length]); i++) {
+			if ([substringToDelete characterAtIndex:i] == [substringToEnter characterAtIndex:i]) {
+				skip++;
+			} else {
+				break;
+			}
+		}
+		[self deleteText:[substringToDelete length] - skip]; // Delete changed part of previous text.
+	}
+	[self enterText:[substringToEnter substringFromIndex:skip]]; // Enter changed part of new text.
+
+	self.previousText = self.text;
+	self.previousSelectedRange = self.selectedRange;
+}
+
+@end
+
+// === Merged from drivers/apple_embedded/godot_view_apple_embedded.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/config/project_settings.h"
+#include "core/os/keyboard.h"
+#include "core/string/ustring.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#import <CoreMotion/CoreMotion.h>
+
+static const int max_touches = 32;
+static const float earth_gravity = 9.80665;
+
+@interface GDTView () {
+	UITouch *godot_touches[max_touches];
+	CGFloat last_edr_headroom;
+}
+
+@property(assign, nonatomic) BOOL isActive;
+
+// CADisplayLink available on 3.1+ synchronizes the animation timer & drawing with the refresh rate of the display, only supports animation intervals of 1/60 1/30 & 1/15
+@property(strong, nonatomic) CADisplayLink *displayLink;
+
+// An animation timer that, when animation is started, will periodically call -drawView at the given rate.
+// Only used if CADisplayLink is not
+@property(strong, nonatomic) NSTimer *animationTimer;
+
+@property(strong, nonatomic) CALayer<GDTDisplayLayer> *renderingLayer;
+
+@property(strong, nonatomic) CMMotionManager *motionManager;
+
+@property(assign, nonatomic) BOOL delegateDidFinishSetUp;
+
+@end
+
+@implementation GDTView
+
+// Implemented in subclasses
+- (CALayer<GDTDisplayLayer> *)initializeRenderingForDriver:(NSString *)driverName {
+	return nil;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+	self = [super initWithCoder:coder];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+	self = [super initWithFrame:frame];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (void)dealloc {
+	[self stopRendering];
+
+	self.renderer = nil;
+	self.delegate = nil;
+
+	if (self.renderingLayer) {
+		[self.renderingLayer removeFromSuperlayer];
+		self.renderingLayer = nil;
+	}
+
+	if (self.motionManager) {
+		[self.motionManager stopDeviceMotionUpdates];
+		self.motionManager = nil;
+	}
+
+	if (self.displayLink) {
+		[self.displayLink invalidate];
+		self.displayLink = nil;
+	}
+
+	if (self.animationTimer) {
+		[self.animationTimer invalidate];
+		self.animationTimer = nil;
+	}
+}
+
+- (void)godot_commonInit {
+	self.preferredFrameRate = 60;
+	self.useCADisplayLink = bool(GLOBAL_DEF("display.AppleEmbedded/use_cadisplaylink", true)) ? YES : NO;
+	last_edr_headroom = 0.0;
+
+#if !defined(VISIONOS_ENABLED)
+	self.contentScaleFactor = [UIScreen mainScreen].scale;
+#endif
+
+	if (@available(iOS 17.0, *)) {
+		[self registerForTraitChanges:@[ [UITraitUserInterfaceStyle class] ] withTarget:self action:@selector(traitCollectionDidChangeWithView:previousTraitCollection:)];
+	}
+
+	[self initTouches];
+
+	self.multipleTouchEnabled = YES;
+
+	// Configure and start accelerometer
+	if (!self.motionManager) {
+		self.motionManager = [[CMMotionManager alloc] init];
+		if (self.motionManager.deviceMotionAvailable) {
+			self.motionManager.deviceMotionUpdateInterval = 1.0 / 70.0;
+			[self.motionManager startDeviceMotionUpdatesUsingReferenceFrame:CMAttitudeReferenceFrameXMagneticNorthZVertical];
+		} else {
+			self.motionManager = nil;
+		}
+	}
+}
+
+- (void)system_theme_changed {
+	DisplayServerAppleEmbedded *ds = DisplayServer::driver_as<DisplayServerAppleEmbedded>();
+	if (ds) {
+		ds->emit_system_theme_changed();
+	}
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+	if (@available(iOS 13.0, *)) {
+#if !defined(VISIONOS_ENABLED)
+		[super traitCollectionDidChange:previousTraitCollection];
+#endif
+		[self traitCollectionDidChangeWithView:self
+					   previousTraitCollection:previousTraitCollection];
+	}
+}
+
+- (void)traitCollectionDidChangeWithView:(UIView *)view previousTraitCollection:(UITraitCollection *)previousTraitCollection {
+	if (@available(iOS 13.0, *)) {
+		if ([UITraitCollection currentTraitCollection].userInterfaceStyle != previousTraitCollection.userInterfaceStyle) {
+			[self system_theme_changed];
+		}
+	}
+}
+
+- (void)stopRendering {
+	if (!self.isActive) {
+		return;
+	}
+
+	self.isActive = NO;
+
+	print_verbose("Stop animation!");
+
+	if (self.useCADisplayLink) {
+		[self.displayLink invalidate];
+		self.displayLink = nil;
+	} else {
+		[self.animationTimer invalidate];
+		self.animationTimer = nil;
+	}
+
+	[self clearTouches];
+}
+
+- (void)startRendering {
+	if (self.isActive) {
+		return;
+	}
+
+	self.isActive = YES;
+
+	print_verbose("Start animation!");
+
+	if (self.useCADisplayLink) {
+		self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(drawView)];
+		self.displayLink.preferredFramesPerSecond = self.preferredFrameRate;
+
+		// Setup DisplayLink in main thread
+		[self.displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+	} else {
+		self.animationTimer = [NSTimer scheduledTimerWithTimeInterval:(1.0 / self.preferredFrameRate) target:self selector:@selector(drawView) userInfo:nil repeats:YES];
+	}
+}
+
+- (void)drawView {
+	if (!self.isActive) {
+		print_verbose("Draw view not active!");
+		return;
+	}
+
+	if (self.useCADisplayLink) {
+		// Pause the CADisplayLink to avoid recursion
+		[self.displayLink setPaused:YES];
+
+		// Process all input events
+		while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, TRUE) == kCFRunLoopRunHandledSource) {
+			// Continue.
+		}
+
+		// We are good to go, resume the CADisplayLink
+		[self.displayLink setPaused:NO];
+	}
+
+	[self.renderingLayer startRenderDisplayLayer];
+
+	if (!self.renderer) {
+		return;
+	}
+
+	if ([self.renderer setupView:self]) {
+		return;
+	}
+
+	if (self.delegate && !self.delegateDidFinishSetUp) {
+		[self layoutRenderingLayer]; // Trigger DisplayServerVisionOS::resize_window after Main::start()
+		self.delegateDidFinishSetUp = [self.delegate godotViewFinishedSetup:self];
+		if (!_delegateDidFinishSetUp) {
+			return;
+		}
+	}
+
+	[self handleMotion];
+
+#if !defined(VISIONOS_ENABLED)
+	if (@available(iOS 16.0, *)) {
+		CGFloat edr_headroom = UIScreen.mainScreen.currentEDRHeadroom;
+		if (last_edr_headroom != edr_headroom) {
+			last_edr_headroom = edr_headroom;
+			if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+				DisplayServer::driver_as<DisplayServerAppleEmbedded>()->current_edr_headroom_changed();
+			}
+		}
+	}
+
+#endif
+
+	[self.renderer renderOnView:self];
+
+	[self.renderingLayer stopRenderDisplayLayer];
+}
+
+- (BOOL)canRender {
+	if (self.useCADisplayLink) {
+		return self.displayLink != nil;
+	} else {
+		return self.animationTimer != nil;
+	}
+}
+
+- (void)setPreferredFrameRate:(float)preferredFrameRate {
+	_preferredFrameRate = preferredFrameRate;
+
+	if (self.canRender) {
+		[self stopRendering];
+		[self startRendering];
+	}
+}
+
+- (void)layoutSubviews {
+	[super layoutSubviews];
+	[self layoutRenderingLayer];
+}
+
+- (void)layoutRenderingLayer {
+	if (self.renderingLayer) {
+		self.renderingLayer.frame = self.bounds;
+		[self.renderingLayer layoutDisplayLayer];
+
+		if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->resize_window(self.bounds.size);
+		}
+	}
+}
+
+// MARK: - Input
+
+// MARK: Touches
+
+- (void)initTouches {
+	for (int i = 0; i < max_touches; i++) {
+		godot_touches[i] = nullptr;
+	}
+}
+
+- (int)getTouchIDForTouch:(UITouch *)p_touch {
+	int first = -1;
+	for (int i = 0; i < max_touches; i++) {
+		if (first == -1 && godot_touches[i] == nullptr) {
+			first = i;
+			continue;
+		}
+		if (godot_touches[i] == p_touch) {
+			return i;
+		}
+	}
+
+	if (first != -1) {
+		godot_touches[first] = p_touch;
+		return first;
+	}
+
+	return -1;
+}
+
+- (int)removeTouch:(UITouch *)p_touch {
+	int remaining = 0;
+	for (int i = 0; i < max_touches; i++) {
+		if (godot_touches[i] == nullptr) {
+			continue;
+		}
+		if (godot_touches[i] == p_touch) {
+			godot_touches[i] = nullptr;
+		} else {
+			++remaining;
+		}
+	}
+	return remaining;
+}
+
+- (void)clearTouches {
+	for (int i = 0; i < max_touches; i++) {
+		godot_touches[i] = nullptr;
+	}
+}
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+	for (UITouch *touch in touches) {
+		int tid = [self getTouchIDForTouch:touch];
+		ERR_FAIL_COND(tid == -1);
+		CGPoint touchPoint = [touch locationInView:self];
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->touch_press(tid, touchPoint.x * self.contentScaleFactor, touchPoint.y * self.contentScaleFactor, true, touch.tapCount > 1);
+	}
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event {
+	for (UITouch *touch in touches) {
+		int tid = [self getTouchIDForTouch:touch];
+		ERR_FAIL_COND(tid == -1);
+		CGPoint touchPoint = [touch locationInView:self];
+		CGPoint prev_point = [touch previousLocationInView:self];
+		CGFloat alt = [touch altitudeAngle];
+		CGVector azim = [touch azimuthUnitVectorInView:self];
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->touch_drag(tid, prev_point.x * self.contentScaleFactor, prev_point.y * self.contentScaleFactor, touchPoint.x * self.contentScaleFactor, touchPoint.y * self.contentScaleFactor, [touch force] / [touch maximumPossibleForce], Vector2(azim.dx, azim.dy) * Math::cos(alt));
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
+	for (UITouch *touch in touches) {
+		int tid = [self getTouchIDForTouch:touch];
+		ERR_FAIL_COND(tid == -1);
+		[self removeTouch:touch];
+		CGPoint touchPoint = [touch locationInView:self];
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->touch_press(tid, touchPoint.x * self.contentScaleFactor, touchPoint.y * self.contentScaleFactor, false, false);
+	}
+}
+
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event {
+	for (UITouch *touch in touches) {
+		int tid = [self getTouchIDForTouch:touch];
+		ERR_FAIL_COND(tid == -1);
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->touches_canceled(tid);
+	}
+	[self clearTouches];
+}
+
+// MARK: Motion
+
+- (void)handleMotion {
+	if (!self.motionManager) {
+		return;
+	}
+
+	// Just using polling approach for now, we can set this up so it sends
+	// data to us in intervals, might be better. See Apple reference pages
+	// for more details:
+	// https://developer.apple.com/reference/coremotion/cmmotionmanager?language=objc
+
+	// Apple splits our accelerometer date into a gravity and user movement
+	// component. We add them back together.
+	CMAcceleration gravity = self.motionManager.deviceMotion.gravity;
+	CMAcceleration acceleration = self.motionManager.deviceMotion.userAcceleration;
+
+	// To be consistent with Android we convert the unit of measurement from g (Earth's gravity)
+	// to m/s^2.
+	gravity.x *= earth_gravity;
+	gravity.y *= earth_gravity;
+	gravity.z *= earth_gravity;
+	acceleration.x *= earth_gravity;
+	acceleration.y *= earth_gravity;
+	acceleration.z *= earth_gravity;
+
+	///@TODO We don't seem to be getting data here, is my device broken or
+	/// is this code incorrect?
+	CMMagneticField magnetic = self.motionManager.deviceMotion.magneticField.field;
+
+	///@TODO we can access rotationRate as a CMRotationRate variable
+	///(processed date) or CMGyroData (raw data), have to see what works
+	/// best
+	CMRotationRate rotation = self.motionManager.deviceMotion.rotationRate;
+
+	// Adjust for screen orientation.
+	// [[UIDevice currentDevice] orientation] changes even if we've fixed
+	// our orientation which is not a good thing when you're trying to get
+	// your user to move the screen in all directions and want consistent
+	// output
+#if defined(VISIONOS_ENABLED)
+	UIInterfaceOrientation interfaceOrientation = [UIApplication sharedApplication].delegate.window.windowScene.effectiveGeometry.interfaceOrientation;
+#else
+	UIInterfaceOrientation interfaceOrientation = [UIApplication sharedApplication].delegate.window.windowScene.interfaceOrientation;
+#endif
+
+	switch (interfaceOrientation) {
+		case UIInterfaceOrientationLandscapeLeft: {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gravity(Vector3(gravity.x, gravity.y, gravity.z).rotated(Vector3(0, 0, 1), -Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_accelerometer(Vector3(acceleration.x + gravity.x, acceleration.y + gravity.y, acceleration.z + gravity.z).rotated(Vector3(0, 0, 1), -Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_magnetometer(Vector3(magnetic.x, magnetic.y, magnetic.z).rotated(Vector3(0, 0, 1), -Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gyroscope(Vector3(rotation.x, rotation.y, rotation.z).rotated(Vector3(0, 0, 1), -Math::PI * 0.5));
+		} break;
+		case UIInterfaceOrientationLandscapeRight: {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gravity(Vector3(gravity.x, gravity.y, gravity.z).rotated(Vector3(0, 0, 1), Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_accelerometer(Vector3(acceleration.x + gravity.x, acceleration.y + gravity.y, acceleration.z + gravity.z).rotated(Vector3(0, 0, 1), Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_magnetometer(Vector3(magnetic.x, magnetic.y, magnetic.z).rotated(Vector3(0, 0, 1), Math::PI * 0.5));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gyroscope(Vector3(rotation.x, rotation.y, rotation.z).rotated(Vector3(0, 0, 1), Math::PI * 0.5));
+		} break;
+		case UIInterfaceOrientationPortraitUpsideDown: {
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gravity(Vector3(gravity.x, gravity.y, gravity.z).rotated(Vector3(0, 0, 1), Math::PI));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_accelerometer(Vector3(acceleration.x + gravity.x, acceleration.y + gravity.y, acceleration.z + gravity.z).rotated(Vector3(0, 0, 1), Math::PI));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_magnetometer(Vector3(magnetic.x, magnetic.y, magnetic.z).rotated(Vector3(0, 0, 1), Math::PI));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gyroscope(Vector3(rotation.x, rotation.y, rotation.z).rotated(Vector3(0, 0, 1), Math::PI));
+		} break;
+		default: { // assume portrait
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gravity(Vector3(gravity.x, gravity.y, gravity.z));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_accelerometer(Vector3(acceleration.x + gravity.x, acceleration.y + gravity.y, acceleration.z + gravity.z));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_magnetometer(Vector3(magnetic.x, magnetic.y, magnetic.z));
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->update_gyroscope(Vector3(rotation.x, rotation.y, rotation.z));
+		} break;
+	}
+}
+
+@end
+
+// === Merged from drivers/apple_embedded/godot_view_controller.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/config/project_settings.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+#include "servers/camera/camera_server.h"
+
+#import <AVFoundation/AVFoundation.h>
+#import <GameController/GameController.h>
+#import <objc/runtime.h>
+
+@interface GDTViewController () <GDTViewDelegate>
+
+@property(strong, nonatomic) GDTViewRenderer *renderer;
+@property(strong, nonatomic) GDTKeyboardInputView *keyboardView;
+
+@property(strong, nonatomic) UIView *godotLoadingOverlay;
+
+@end
+
+@implementation GDTViewController
+
+- (GDTView *)godotView {
+	return (GDTView *)self.view;
+}
+
+- (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+	[super pressesBegan:presses withEvent:event];
+
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>() || DisplayServer::driver_as<DisplayServerAppleEmbedded>()->is_keyboard_active()) {
+		return;
+	}
+	if (@available(iOS 13.4, *)) {
+		for (UIPress *press in presses) {
+			String u32lbl = String::utf8([press.key.charactersIgnoringModifiers UTF8String]);
+			String u32text = String::utf8([press.key.characters UTF8String]);
+			Key key = KeyMappingAppleEmbedded::remap_key(press.key.keyCode);
+
+			if (press.key.keyCode == 0 && u32text.is_empty() && u32lbl.is_empty()) {
+				continue;
+			}
+
+			char32_t us = 0;
+			if (!u32lbl.is_empty() && !u32lbl.begins_with("UIKey")) {
+				us = u32lbl[0];
+			}
+
+			KeyLocation location = KeyMappingAppleEmbedded::key_location(press.key.keyCode);
+
+			if (!u32text.is_empty() && !u32text.begins_with("UIKey")) {
+				for (int i = 0; i < u32text.length(); i++) {
+					const char32_t c = u32text[i];
+					DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), c, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
+				}
+			} else {
+				DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, true, location);
+			}
+		}
+	}
+}
+
+- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+	[super pressesEnded:presses withEvent:event];
+
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>() || DisplayServer::driver_as<DisplayServerAppleEmbedded>()->is_keyboard_active()) {
+		return;
+	}
+	if (@available(iOS 13.4, *)) {
+		for (UIPress *press in presses) {
+			String u32lbl = String::utf8([press.key.charactersIgnoringModifiers UTF8String]);
+			Key key = KeyMappingAppleEmbedded::remap_key(press.key.keyCode);
+
+			if (press.key.keyCode == 0 && u32lbl.is_empty()) {
+				continue;
+			}
+
+			char32_t us = 0;
+			if (!u32lbl.is_empty() && !u32lbl.begins_with("UIKey")) {
+				us = u32lbl[0];
+			}
+
+			KeyLocation location = KeyMappingAppleEmbedded::key_location(press.key.keyCode);
+
+			DisplayServer::driver_as<DisplayServerAppleEmbedded>()->key(fix_keycode(us, key), 0, fix_key_label(us, key), key, press.key.modifierFlags, false, location);
+		}
+	}
+}
+
+- (void)loadView {
+	GDTView *view = GDTViewCreate();
+	GDTViewRenderer *renderer = [[GDTViewRenderer alloc] init];
+
+	self.renderer = renderer;
+	self.view = view;
+
+	view.renderer = self.renderer;
+	view.delegate = self;
+}
+
+- (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
+	self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder {
+	self = [super initWithCoder:coder];
+
+	if (self) {
+		[self godot_commonInit];
+	}
+
+	return self;
+}
+
+- (void)godot_commonInit {
+	// Initialize view controller values.
+}
+
+- (void)didReceiveMemoryWarning {
+	[super didReceiveMemoryWarning];
+	print_verbose("Did receive memory warning!");
+}
+
+- (void)viewDidLoad {
+	[super viewDidLoad];
+
+	[self observeKeyboard];
+	[self displayLoadingOverlay];
+
+	[self setNeedsUpdateOfScreenEdgesDeferringSystemGestures];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+	[super viewDidAppear:animated];
+	[self.godotView startRendering];
+#ifdef IOS_ENABLED
+	[self propagateUIPreferencesToRootViewController];
+#endif
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+	[self.godotView stopRendering];
+	[super viewDidDisappear:animated];
+}
+
+- (void)observeKeyboard {
+	print_verbose("Setting up keyboard input view.");
+	self.keyboardView = [GDTKeyboardInputView new];
+	[self.view addSubview:self.keyboardView];
+
+	print_verbose("Adding observer for keyboard show/hide.");
+	[[NSNotificationCenter defaultCenter]
+			addObserver:self
+			   selector:@selector(keyboardOnScreen:)
+				   name:UIKeyboardDidShowNotification
+				 object:nil];
+	[[NSNotificationCenter defaultCenter]
+			addObserver:self
+			   selector:@selector(keyboardHidden:)
+				   name:UIKeyboardDidHideNotification
+				 object:nil];
+}
+
+- (void)displayLoadingOverlay {
+#if !defined(VISIONOS_ENABLED)
+	NSBundle *bundle = [NSBundle mainBundle];
+	NSString *storyboardName = @"Launch Screen";
+
+	if ([bundle pathForResource:storyboardName ofType:@"storyboardc"] == nil) {
+		return;
+	}
+
+	UIStoryboard *launchStoryboard = [UIStoryboard storyboardWithName:storyboardName bundle:bundle];
+
+	UIViewController *controller = [launchStoryboard instantiateInitialViewController];
+	self.godotLoadingOverlay = controller.view;
+	self.godotLoadingOverlay.frame = self.view.bounds;
+	self.godotLoadingOverlay.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+
+	[self.view addSubview:self.godotLoadingOverlay];
+#endif
+}
+
+- (BOOL)godotViewFinishedSetup:(GDTView *)view {
+	[self.godotLoadingOverlay removeFromSuperview];
+	self.godotLoadingOverlay = nil;
+
+	return YES;
+}
+
+- (void)dealloc {
+	self.keyboardView = nil;
+
+	self.renderer = nil;
+
+	if (self.godotLoadingOverlay) {
+		[self.godotLoadingOverlay removeFromSuperview];
+		self.godotLoadingOverlay = nil;
+	}
+
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+// Propagate UI preferences to the root VC (the SwiftUI hosting controller doesn't delegate these).
+#ifdef IOS_ENABLED
+- (void)propagateUIPreferencesToRootViewController {
+	UIViewController *rootVC = self.view.window.rootViewController;
+	if (!rootVC || rootVC == self) {
+		return;
+	}
+
+	Class rootClass = [rootVC class];
+
+	SEL selectors[] = {
+		@selector(preferredScreenEdgesDeferringSystemGestures),
+		@selector(prefersHomeIndicatorAutoHidden),
+		@selector(prefersStatusBarHidden),
+		@selector(shouldAutorotate),
+		@selector(supportedInterfaceOrientations),
+	};
+
+	for (SEL sel : selectors) {
+		Method method = class_getInstanceMethod([GDTViewController class], sel);
+		if (!class_addMethod(rootClass, sel, method_getImplementation(method), method_getTypeEncoding(method))) {
+			method_setImplementation(class_getInstanceMethod(rootClass, sel), method_getImplementation(method));
+		}
+	}
+
+	[rootVC setNeedsUpdateOfScreenEdgesDeferringSystemGestures];
+	[rootVC setNeedsUpdateOfHomeIndicatorAutoHidden];
+	[rootVC setNeedsStatusBarAppearanceUpdate];
+}
+#endif
+
+// MARK: Orientation
+
+#ifdef IOS_ENABLED
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+	[super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+
+	[coordinator animateAlongsideTransition:nil
+								 completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+									 // Get the new interface orientation after rotation completes (iOS only)
+									 UIInterfaceOrientation orientation = self.view.window.windowScene.interfaceOrientation;
+
+									 // Notify camera server of orientation change
+									 if (CameraServer::is_initialized()) {
+										 CameraServer::handle_display_rotation_change((int)orientation);
+									 }
+								 }];
+}
+#endif
+
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures {
+	if (GLOBAL_GET("display/window/ios/suppress_ui_gesture")) {
+		return UIRectEdgeAll;
+	} else {
+		return UIRectEdgeNone;
+	}
+}
+
+- (BOOL)shouldAutorotate {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		return NO;
+	}
+
+	switch (DisplayServer::driver_as<DisplayServerAppleEmbedded>()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
+		case DisplayServerEnums::SCREEN_SENSOR:
+		case DisplayServerEnums::SCREEN_SENSOR_LANDSCAPE:
+		case DisplayServerEnums::SCREEN_SENSOR_PORTRAIT:
+			return YES;
+		default:
+			return NO;
+	}
+}
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+	if (!DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		return UIInterfaceOrientationMaskAll;
+	}
+
+	switch (DisplayServer::driver_as<DisplayServerAppleEmbedded>()->screen_get_orientation(DisplayServerEnums::SCREEN_OF_MAIN_WINDOW)) {
+		case DisplayServerEnums::SCREEN_PORTRAIT:
+			return UIInterfaceOrientationMaskPortrait;
+		case DisplayServerEnums::SCREEN_REVERSE_LANDSCAPE:
+			if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+				return UIInterfaceOrientationMaskLandscapeLeft;
+			} else {
+				return UIInterfaceOrientationMaskLandscapeRight;
+			}
+		case DisplayServerEnums::SCREEN_REVERSE_PORTRAIT:
+			return UIInterfaceOrientationMaskPortraitUpsideDown;
+		case DisplayServerEnums::SCREEN_SENSOR_LANDSCAPE:
+			return UIInterfaceOrientationMaskLandscape;
+		case DisplayServerEnums::SCREEN_SENSOR_PORTRAIT:
+			return UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskPortraitUpsideDown;
+		case DisplayServerEnums::SCREEN_SENSOR:
+			return UIInterfaceOrientationMaskAll;
+		case DisplayServerEnums::SCREEN_LANDSCAPE:
+			if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+				return UIInterfaceOrientationMaskLandscapeRight;
+			} else {
+				return UIInterfaceOrientationMaskLandscapeLeft;
+			}
+	}
+}
+
+- (BOOL)prefersStatusBarHidden {
+	if (GLOBAL_GET("display/window/ios/hide_status_bar")) {
+		return YES;
+	} else {
+		return NO;
+	}
+}
+
+- (BOOL)prefersHomeIndicatorAutoHidden {
+	if (GLOBAL_GET("display/window/ios/hide_home_indicator")) {
+		return YES;
+	} else {
+		return NO;
+	}
+}
+
+// MARK: Keyboard
+
+- (void)keyboardOnScreen:(NSNotification *)notification {
+	NSDictionary *info = notification.userInfo;
+	NSValue *value = info[UIKeyboardFrameEndUserInfoKey];
+
+	CGRect rawFrame = [value CGRectValue];
+	CGRect keyboardFrame = [self.view convertRect:rawFrame fromView:nil];
+
+	if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->virtual_keyboard_set_height(keyboardFrame.size.height);
+	}
+}
+
+- (void)keyboardHidden:(NSNotification *)notification {
+	if (DisplayServer::driver_as<DisplayServerAppleEmbedded>()) {
+		DisplayServer::driver_as<DisplayServerAppleEmbedded>()->virtual_keyboard_set_height(0);
+	}
+}
+
+@end
+
+// === Merged from drivers/apple_embedded/godot_view_renderer.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/config/project_settings.h"
+#include "core/os/keyboard.h"
+#include "core/os/os.h"
+#import "drivers/apple_embedded/os_apple_embedded.h"
+#include "main/main.h"
+#include "servers/audio/audio_server.h"
+
+#import <AudioToolbox/AudioServices.h>
+#import <CoreMotion/CoreMotion.h>
+#import <GameController/GameController.h>
+#import <QuartzCore/QuartzCore.h>
+#import <UIKit/UIKit.h>
+
+@interface GDTViewRenderer ()
+
+@property(assign, nonatomic) BOOL hasFinishedProjectDataSetup;
+@property(assign, nonatomic) BOOL hasStartedMain;
+@property(assign, nonatomic) BOOL hasFinishedSetup;
+
+@end
+
+@implementation GDTViewRenderer
+
+- (BOOL)setupView:(UIView *)view {
+	if (self.hasFinishedSetup) {
+		return NO;
+	}
+
+	if (!OS::is_initialized()) {
+		exit(0);
+	}
+
+	if (!self.hasFinishedProjectDataSetup) {
+		[self setupProjectData];
+		return YES;
+	}
+
+	if (!self.hasStartedMain) {
+		self.hasStartedMain = YES;
+		OS_AppleEmbedded::start();
+		return YES;
+	}
+
+	self.hasFinishedSetup = YES;
+
+	return NO;
+}
+
+- (void)setupProjectData {
+	self.hasFinishedProjectDataSetup = YES;
+
+	Main::setup2();
+}
+
+- (void)renderOnView:(UIView *)view {
+	if (!OS_AppleEmbedded::is_initialized()) {
+		return;
+	}
+
+	OS_AppleEmbedded::iterate();
+}
+
+@end
+
+// === Merged from drivers/apple_embedded/key_mapping_apple_embedded.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#include "core/templates/hash_map.h"
+
+struct HashMapHasherKeys {
+	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
+	static _FORCE_INLINE_ uint32_t hash(const CFIndex p_key) { return hash_fmix32(p_key); }
+};
+
+HashMap<CFIndex, Key, HashMapHasherKeys> keyusage_map;
+HashMap<CFIndex, KeyLocation, HashMapHasherKeys> location_map;
+
+void KeyMappingAppleEmbedded::initialize() {
+	if (@available(iOS 13.4, *)) {
+		keyusage_map[UIKeyboardHIDUsageKeyboardA] = Key::A;
+		keyusage_map[UIKeyboardHIDUsageKeyboardB] = Key::B;
+		keyusage_map[UIKeyboardHIDUsageKeyboardC] = Key::C;
+		keyusage_map[UIKeyboardHIDUsageKeyboardD] = Key::D;
+		keyusage_map[UIKeyboardHIDUsageKeyboardE] = Key::E;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF] = Key::F;
+		keyusage_map[UIKeyboardHIDUsageKeyboardG] = Key::G;
+		keyusage_map[UIKeyboardHIDUsageKeyboardH] = Key::H;
+		keyusage_map[UIKeyboardHIDUsageKeyboardI] = Key::I;
+		keyusage_map[UIKeyboardHIDUsageKeyboardJ] = Key::J;
+		keyusage_map[UIKeyboardHIDUsageKeyboardK] = Key::K;
+		keyusage_map[UIKeyboardHIDUsageKeyboardL] = Key::L;
+		keyusage_map[UIKeyboardHIDUsageKeyboardM] = Key::M;
+		keyusage_map[UIKeyboardHIDUsageKeyboardN] = Key::N;
+		keyusage_map[UIKeyboardHIDUsageKeyboardO] = Key::O;
+		keyusage_map[UIKeyboardHIDUsageKeyboardP] = Key::P;
+		keyusage_map[UIKeyboardHIDUsageKeyboardQ] = Key::Q;
+		keyusage_map[UIKeyboardHIDUsageKeyboardR] = Key::R;
+		keyusage_map[UIKeyboardHIDUsageKeyboardS] = Key::S;
+		keyusage_map[UIKeyboardHIDUsageKeyboardT] = Key::T;
+		keyusage_map[UIKeyboardHIDUsageKeyboardU] = Key::U;
+		keyusage_map[UIKeyboardHIDUsageKeyboardV] = Key::V;
+		keyusage_map[UIKeyboardHIDUsageKeyboardW] = Key::W;
+		keyusage_map[UIKeyboardHIDUsageKeyboardX] = Key::X;
+		keyusage_map[UIKeyboardHIDUsageKeyboardY] = Key::Y;
+		keyusage_map[UIKeyboardHIDUsageKeyboardZ] = Key::Z;
+		keyusage_map[UIKeyboardHIDUsageKeyboard0] = Key::KEY_0;
+		keyusage_map[UIKeyboardHIDUsageKeyboard1] = Key::KEY_1;
+		keyusage_map[UIKeyboardHIDUsageKeyboard2] = Key::KEY_2;
+		keyusage_map[UIKeyboardHIDUsageKeyboard3] = Key::KEY_3;
+		keyusage_map[UIKeyboardHIDUsageKeyboard4] = Key::KEY_4;
+		keyusage_map[UIKeyboardHIDUsageKeyboard5] = Key::KEY_5;
+		keyusage_map[UIKeyboardHIDUsageKeyboard6] = Key::KEY_6;
+		keyusage_map[UIKeyboardHIDUsageKeyboard7] = Key::KEY_7;
+		keyusage_map[UIKeyboardHIDUsageKeyboard8] = Key::KEY_8;
+		keyusage_map[UIKeyboardHIDUsageKeyboard9] = Key::KEY_9;
+		keyusage_map[UIKeyboardHIDUsageKeyboardBackslash] = Key::BACKSLASH;
+		keyusage_map[UIKeyboardHIDUsageKeyboardCloseBracket] = Key::BRACKETRIGHT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardComma] = Key::COMMA;
+		keyusage_map[UIKeyboardHIDUsageKeyboardEqualSign] = Key::EQUAL;
+		keyusage_map[UIKeyboardHIDUsageKeyboardHyphen] = Key::MINUS;
+		keyusage_map[UIKeyboardHIDUsageKeyboardNonUSBackslash] = Key::SECTION;
+		keyusage_map[UIKeyboardHIDUsageKeyboardNonUSPound] = Key::ASCIITILDE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardOpenBracket] = Key::BRACKETLEFT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardPeriod] = Key::PERIOD;
+		keyusage_map[UIKeyboardHIDUsageKeyboardQuote] = Key::QUOTEDBL;
+		keyusage_map[UIKeyboardHIDUsageKeyboardSemicolon] = Key::SEMICOLON;
+		keyusage_map[UIKeyboardHIDUsageKeyboardSeparator] = Key::SECTION;
+		keyusage_map[UIKeyboardHIDUsageKeyboardSlash] = Key::SLASH;
+		keyusage_map[UIKeyboardHIDUsageKeyboardSpacebar] = Key::SPACE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardCapsLock] = Key::CAPSLOCK;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLeftAlt] = Key::ALT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLeftControl] = Key::CTRL;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLeftShift] = Key::SHIFT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardRightAlt] = Key::ALT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardRightControl] = Key::CTRL;
+		keyusage_map[UIKeyboardHIDUsageKeyboardRightShift] = Key::SHIFT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardScrollLock] = Key::SCROLLLOCK;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLeftArrow] = Key::LEFT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardRightArrow] = Key::RIGHT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardUpArrow] = Key::UP;
+		keyusage_map[UIKeyboardHIDUsageKeyboardDownArrow] = Key::DOWN;
+		keyusage_map[UIKeyboardHIDUsageKeyboardPageUp] = Key::PAGEUP;
+		keyusage_map[UIKeyboardHIDUsageKeyboardPageDown] = Key::PAGEDOWN;
+		keyusage_map[UIKeyboardHIDUsageKeyboardHome] = Key::HOME;
+		keyusage_map[UIKeyboardHIDUsageKeyboardEnd] = Key::END;
+		keyusage_map[UIKeyboardHIDUsageKeyboardDeleteForward] = Key::KEY_DELETE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardDeleteOrBackspace] = Key::BACKSPACE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardEscape] = Key::ESCAPE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardInsert] = Key::INSERT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardReturn] = Key::ENTER;
+		keyusage_map[UIKeyboardHIDUsageKeyboardTab] = Key::TAB;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF1] = Key::F1;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF2] = Key::F2;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF3] = Key::F3;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF4] = Key::F4;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF5] = Key::F5;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF6] = Key::F6;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF7] = Key::F7;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF8] = Key::F8;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF9] = Key::F9;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF10] = Key::F10;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF11] = Key::F11;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF12] = Key::F12;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF13] = Key::F13;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF14] = Key::F14;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF15] = Key::F15;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF16] = Key::F16;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF17] = Key::F17;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF18] = Key::F18;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF19] = Key::F19;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF20] = Key::F20;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF21] = Key::F21;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF22] = Key::F22;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF23] = Key::F23;
+		keyusage_map[UIKeyboardHIDUsageKeyboardF24] = Key::F24;
+		keyusage_map[UIKeyboardHIDUsageKeypad0] = Key::KP_0;
+		keyusage_map[UIKeyboardHIDUsageKeypad1] = Key::KP_1;
+		keyusage_map[UIKeyboardHIDUsageKeypad2] = Key::KP_2;
+		keyusage_map[UIKeyboardHIDUsageKeypad3] = Key::KP_3;
+		keyusage_map[UIKeyboardHIDUsageKeypad4] = Key::KP_4;
+		keyusage_map[UIKeyboardHIDUsageKeypad5] = Key::KP_5;
+		keyusage_map[UIKeyboardHIDUsageKeypad6] = Key::KP_6;
+		keyusage_map[UIKeyboardHIDUsageKeypad7] = Key::KP_7;
+		keyusage_map[UIKeyboardHIDUsageKeypad8] = Key::KP_8;
+		keyusage_map[UIKeyboardHIDUsageKeypad9] = Key::KP_9;
+		keyusage_map[UIKeyboardHIDUsageKeypadAsterisk] = Key::KP_MULTIPLY;
+		keyusage_map[UIKeyboardHIDUsageKeyboardGraveAccentAndTilde] = Key::BAR;
+		keyusage_map[UIKeyboardHIDUsageKeypadEnter] = Key::KP_ENTER;
+		keyusage_map[UIKeyboardHIDUsageKeypadHyphen] = Key::KP_SUBTRACT;
+		keyusage_map[UIKeyboardHIDUsageKeypadNumLock] = Key::NUMLOCK;
+		keyusage_map[UIKeyboardHIDUsageKeypadPeriod] = Key::KP_PERIOD;
+		keyusage_map[UIKeyboardHIDUsageKeypadPlus] = Key::KP_ADD;
+		keyusage_map[UIKeyboardHIDUsageKeypadSlash] = Key::KP_DIVIDE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardPause] = Key::PAUSE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardStop] = Key::STOP;
+		keyusage_map[UIKeyboardHIDUsageKeyboardMute] = Key::VOLUMEMUTE;
+		keyusage_map[UIKeyboardHIDUsageKeyboardVolumeUp] = Key::VOLUMEUP;
+		keyusage_map[UIKeyboardHIDUsageKeyboardVolumeDown] = Key::VOLUMEDOWN;
+		keyusage_map[UIKeyboardHIDUsageKeyboardFind] = Key::SEARCH;
+		keyusage_map[UIKeyboardHIDUsageKeyboardHelp] = Key::HELP;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLeftGUI] = Key::META;
+		keyusage_map[UIKeyboardHIDUsageKeyboardRightGUI] = Key::META;
+		keyusage_map[UIKeyboardHIDUsageKeyboardMenu] = Key::MENU;
+		keyusage_map[UIKeyboardHIDUsageKeyboardPrintScreen] = Key::PRINT;
+		keyusage_map[UIKeyboardHIDUsageKeyboardReturnOrEnter] = Key::ENTER;
+		keyusage_map[UIKeyboardHIDUsageKeyboardSysReqOrAttention] = Key::SYSREQ;
+		keyusage_map[0x01AE] = Key::KEYBOARD; // On-screen keyboard key on smart connector keyboard.
+		keyusage_map[0x029D] = Key::GLOBE; // "Globe" key on smart connector / Mac keyboard.
+		keyusage_map[UIKeyboardHIDUsageKeyboardLANG1] = Key::JIS_EISU;
+		keyusage_map[UIKeyboardHIDUsageKeyboardLANG2] = Key::JIS_KANA;
+
+		location_map[UIKeyboardHIDUsageKeyboardLeftAlt] = KeyLocation::LEFT;
+		location_map[UIKeyboardHIDUsageKeyboardRightAlt] = KeyLocation::RIGHT;
+		location_map[UIKeyboardHIDUsageKeyboardLeftControl] = KeyLocation::LEFT;
+		location_map[UIKeyboardHIDUsageKeyboardRightControl] = KeyLocation::RIGHT;
+		location_map[UIKeyboardHIDUsageKeyboardLeftShift] = KeyLocation::LEFT;
+		location_map[UIKeyboardHIDUsageKeyboardRightShift] = KeyLocation::RIGHT;
+		location_map[UIKeyboardHIDUsageKeyboardLeftGUI] = KeyLocation::LEFT;
+		location_map[UIKeyboardHIDUsageKeyboardRightGUI] = KeyLocation::RIGHT;
+	}
+}
+
+Key KeyMappingAppleEmbedded::remap_key(CFIndex p_keycode) {
+	if (@available(iOS 13.4, *)) {
+		const Key *key = keyusage_map.getptr(p_keycode);
+		if (key) {
+			return *key;
+		}
+	}
+	return Key::NONE;
+}
+
+KeyLocation KeyMappingAppleEmbedded::key_location(CFIndex p_keycode) {
+	if (@available(iOS 13.4, *)) {
+		const KeyLocation *location = location_map.getptr(p_keycode);
+		if (location) {
+			return *location;
+		}
+	}
+	return KeyLocation::UNSPECIFIED;
+}
+
+// === Merged from drivers/apple_embedded/rendering_context_driver_vulkan_apple_embedded.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple_embedded/os_apple_embedded.h"
+
+#ifdef VULKAN_ENABLED
+
+#ifdef USE_VOLK
+#include <volk.h>
+#else
+#include <vulkan/vulkan_metal.h>
+#endif
+
+const char *RenderingContextDriverVulkanAppleEmbedded::_get_platform_surface_extension() const {
+	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+}
+
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkanAppleEmbedded::surface_create(const void *p_platform_data) {
+	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
+
+	VkMetalSurfaceCreateInfoEXT create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+	create_info.pLayer = *wpd->layer_ptr;
+
+	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
+	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
+
+	Surface *surface = memnew(Surface);
+	surface->vk_surface = vk_surface;
+	return SurfaceID(surface);
+}
+
+RenderingContextDriverVulkanAppleEmbedded::RenderingContextDriverVulkanAppleEmbedded() {
+	// Does nothing.
+}
+
+RenderingContextDriverVulkanAppleEmbedded::~RenderingContextDriverVulkanAppleEmbedded() {
+	// Does nothing.
+}
+
+#endif // VULKAN_ENABLED

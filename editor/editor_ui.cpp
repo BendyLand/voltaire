@@ -2116,7 +2116,7 @@ void EditorUI::_ps_toggle_use_3d()
 #include "core/io/file_access.h"
 #include "core/os/keyboard.h"
 #include "editor/editor_ui.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -2905,15 +2905,13 @@ String read_project_name(const String& p_dir)
 #include "core/config/project_settings.h"
 #include "core/io/compression.h"
 #include "core/io/dir_access.h"
-#include "core/io/resource_importer.h"
-#include "core/io/xml_parser.h"
+#include "core/io/resource_loader.h"
+#include "core/io/config_file.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 #include "scene/resources/theme.h"
-#include "scene/theme/theme_db.h"
 
 static String _get_indent(const String& p_text)
 {
@@ -6284,7 +6282,7 @@ bool ProjectConverter3To4::convert() {}
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/editor_ui.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -7497,7 +7495,6 @@ bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProject
 #include "core/string/translation_server.h"
 #include "core/templates/rb_set.h"
 #include "core/version.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
 #include "main/main.h"
 #include "modules/regex/regex.h"
@@ -8207,7 +8204,7 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY(
 // Merged from editor/themes/editor_scale.cpp
 // ============================================================================
 
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 
 float EditorScale::_scale = 1.0f;
 
@@ -8453,13 +8450,10 @@ Vector<Vector<String>> get_extractable_message_list() {
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/resource_importer.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/os/os.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/packed_scene.h"
 #include "servers/display/display_server.h"
@@ -9368,7 +9362,7 @@ bool EditorFileSystem::_scan_extensions() { return true; }
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "main/main.h"
 
 bool EditorPaths::are_paths_valid() { return data ? data->paths_valid : false; }
@@ -9704,7 +9698,6 @@ void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort
 #include "core/config/project_settings.h"
 #include "core/io/config_file.h"
 #include "core/io/dir_access.h"
-#include "core/io/file_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
@@ -10074,7 +10067,6 @@ void EditorExport::emit_presets_runnable_changed() {}
 #include "core/io/dir_access.h"
 #include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/io/resource_uid.h"
@@ -10085,12 +10077,7 @@ void EditorExport::emit_presets_runnable_changed() {}
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 // Inlined editor/export/editor_export_platform.compat.inc
 #ifndef DISABLE_DEPRECATED
 
@@ -11653,7 +11640,6 @@ public:
 #include "core/version.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device_driver.h"
 
 #ifdef VULKAN_ENABLED
@@ -11951,7 +11937,7 @@ void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID 
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/config_file.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "modules/regex/regex.h"
 
 #include <ctime>
@@ -14356,18 +14342,16 @@ uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/editor_ui.h"
 #include "main/main.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/image_loader.h"
+#include "core/io/resource_loader.h"
 #include "servers/display/display_server.h"
 
 #ifdef MACOS_ENABLED
-#include "core/io/json.h"
-#include "core/os/process_id.h"
-#include "editor/file_system/editor_paths.h"
+#include "core/io/config_file.h"
+#include "core/os/os.h"
 #include "editor/settings/editor_settings.h"
 #endif
 
@@ -15370,17 +15354,16 @@ void EditorExportPlatformAppleEmbedded::get_export_options(
 #include "editor/settings/editor_settings.h"
 #include "editor/import/3d/resource_importer_scene.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/animation/animation_mixer.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/resources/3d/primitive_meshes.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/packed_scene.h"
-#include "scene/resources/physics_material.h"
+#include "scene/resources/material.h"
 #include "scene/resources/packed_scene.h"
 
 void EditorSceneFormatImporter::get_import_options(
@@ -15671,7 +15654,7 @@ void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const
 // Merged from editor/import/3d/collada.cpp
 // ============================================================================
 // --- Inlined from editor/import/3d/collada.h ---
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 
 class Collada
 {
@@ -18661,16 +18644,15 @@ public:
 
 
 // --- End editor/import/3d/editor_import_collada.h ---
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/node_3d.h"
-#include "scene/3d/node_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/animation/animation_mixer.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/resources/animation.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/mesh.h"
 
 struct ColladaImport
 {
@@ -19194,9 +19176,8 @@ public:
 // --- End editor/import/3d/resource_importer_obj.h ---
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/node_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/surface_tool.h"
 
 static Error _parse_material_library(const String& p_path,
 	HashMap<String, Ref<StandardMaterial3D>>& material_map, List<String>* r_missing_deps)
@@ -19437,7 +19418,7 @@ void ResourceImporterOBJ::get_import_options(
 // Merged from editor/import/editor_import_plugin.cpp
 // ============================================================================
 
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/import/3d/resource_importer_scene.h"
 
 bool EditorImportPlugin::can_import_threaded() const
@@ -19520,7 +19501,7 @@ public:
 #include "core/math/math_funcs_binary.h"
 #include "core/math/vector2.h"
 #include "core/math/vector2i.h"
-#include "scene/resources/bit_map.h"
+#include "scene/resources/image_texture.h"
 
 void EditorAtlasPacker::chart_pack(Vector<Chart> &charts, int &r_width, int &r_height, int p_atlas_max_size, int p_cell_resolution) {
 	int divide_by = MIN(64, p_cell_resolution);
@@ -19741,7 +19722,6 @@ void EditorAtlasPacker::chart_pack(Vector<Chart> &charts, int &r_width, int &r_h
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 #include "core/string/translation_server.h"
-#include "core/string/translation_server.h"
 #include "editor/import/3d/resource_importer_scene.h"
 
 String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
@@ -19775,7 +19755,7 @@ void ResourceImporterCSVTranslation::get_import_options(
 // Merged from editor/import/resource_importer_font.cpp
 // ============================================================================
 // --- Inlined from editor/import/resource_importer_font.h ---
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 class ResourceImporterFont final : public ResourceImporter
 {
@@ -19826,7 +19806,6 @@ public:
 
 #include "core/io/config_file.h"
 #include "core/io/file_access.h"
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "scene/resources/font.h"
@@ -19946,7 +19925,7 @@ void ResourceImporterFont::get_import_options(
 #include "core/io/file_access.h"
 #include "core/io/resource_saver.h"
 // --- Inlined from editor/import/resource_importer_shader_file.h ---
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 class ResourceImporterShaderFile : public ResourceImporter
 {
@@ -20021,17 +20000,13 @@ static String _include_function(const String& p_path, void* userpointer)
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
 #include "core/io/config_file.h"
-#include "core/io/image_loader.h"
+#include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
 #include "core/math/geometry_2d.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "editor/import/atlas_import_failed.xpm"
 
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
-#include "scene/resources/image_texture.h"
-#include "scene/resources/bit_map.h"
-#include "scene/resources/image_texture.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/mesh.h"
 
@@ -20822,7 +20797,7 @@ String ResourceImporterTexture::get_import_settings_string() const { return Stri
 
 #include "core/io/resource_saver.h"
 // --- Inlined from editor/import/resource_importer_wav.h ---
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 class ResourceImporterWAV : public ResourceImporter
 {
@@ -20845,7 +20820,7 @@ public:
 
 
 // --- End editor/import/resource_importer_wav.h ---
-#include "scene/resources/audio_stream_wav.h"
+#include "servers/audio/audio_stream.h"
 
 String ResourceImporterWAV::get_importer_name() const { return "wav"; }
 

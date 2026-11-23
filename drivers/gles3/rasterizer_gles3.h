@@ -33,25 +33,1652 @@
 
 #include "servers/rendering/renderer.h"
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/storage/utilities.h"
-// --- Folded from drivers/gles3/rasterizer_canvas_gles3.h ---
-#include "drivers/gles3/storage/texture_storage.h"
+// --- Folded from drivers/gles3/storage/utilities.h ---
+#include <cstdint>
+
+class RasterizerUtilGLES3 final
+{
+private:
+	static bool gles_over_gl;
+
+public:
+	static void set_gles_over_gl(bool p_gles_over_gl) { gles_over_gl = p_gles_over_gl; }
+	static bool is_gles_over_gl() { return gles_over_gl; }
+
+	static void clear_depth(float p_depth);
+	static void clear_stencil(int32_t p_stencil);
+};
+
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/shaders/canvas.glsl.gen.h"
-#include "drivers/gles3/shaders/canvas_occlusion.glsl.gen.h"
+#include <platform_gl.h>
+#include "core/string/ustring.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/rid_owner.h"
+// --- Folded from drivers/gles3/effects/gles3_effects.h ---
+#ifdef GLES3_ENABLED
+
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
+
+namespace GLES3
+{
+
+class CopyEffects final
+{
+public:
+	CopyEffects() = delete;
+	~CopyEffects() = delete;
+	CopyEffects(const CopyEffects&) = delete;
+	CopyEffects& operator=(const CopyEffects&) = delete;
+
+private:
+	struct Copy
+	{
+		CopyShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	struct Data
+	{
+		Copy copy;
+
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+
+		// Use for rect-based effects.
+		GLuint quad = 0;
+		GLuint quad_array = 0;
+	};
+
+	static inline Data* data = nullptr;
+
+public:
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	// These functions assume that a framebuffer and texture are bound already. They only manage the
+	// shader, uniforms, and vertex array.
+	static void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
+	static void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
+		bool p_linear_to_srgb = false);
+	static void copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
+		const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale,
+		float p_aspect_ration, bool p_linear_to_srgb = false);
+	static void copy_to_and_from_rect(const Rect2& p_rect);
+	static void copy_screen(float p_multiply = 1.0);
+	static void copy_with_exposure(float p_exposure, float p_multiply);
+	static void copy_cube_to_rect(const Rect2& p_rect);
+	static void copy_cube_to_panorama(float p_mip_level);
+	static void bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region);
+	static void gaussian_blur(
+		GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size);
+	static void set_color(const Color& p_color, const Rect2i& p_region);
+	static void draw_screen_triangle();
+	static void draw_screen_quad();
+};
+
+class CubemapFilter final
+{
+public:
+	CubemapFilter() = delete;
+	~CubemapFilter() = delete;
+	CubemapFilter(const CubemapFilter&) = delete;
+	CubemapFilter& operator=(const CubemapFilter&) = delete;
+
+private:
+	struct CMF
+	{
+		CubemapFilterShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	struct Data
+	{
+		CMF cubemap_filter;
+
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+
+		uint32_t ggx_samples = 128;
+	};
+
+	static inline Data* data = nullptr;
+
+public:
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	static void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+		GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
+};
+
+class FeedEffects final
+{
+public:
+	FeedEffects() = delete;
+	~FeedEffects() = delete;
+	FeedEffects(const FeedEffects&) = delete;
+	FeedEffects& operator=(const FeedEffects&) = delete;
+
+private:
+	struct Feed
+	{
+		FeedShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	struct Data
+	{
+		Feed feed;
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void draw_screen_triangle();
+
+public:
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	static void draw();
+};
+
+class Glow final
+{
+public:
+	Glow() = delete;
+	~Glow() = delete;
+	Glow(const Glow&) = delete;
+	Glow& operator=(const Glow&) = delete;
+
+	struct Level
+	{
+		Size2i size;
+		GLuint color = 0;
+		GLuint fbo = 0;
+	};
+
+private:
+	struct GlowShader
+	{
+		GlowShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	struct Data
+	{
+		GlowShader glow;
+
+		float luminance_multiplier = 1.0;
+
+		float glow_intensity = 1.0;
+		float glow_bloom = 0.0;
+		float glow_hdr_bleed_threshold = 1.0;
+		float glow_hdr_bleed_scale = 2.0;
+		float glow_hdr_luminance_cap = 12.0;
+
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _draw_screen_triangle();
+
+public:
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	static void set_intensity(float p_value)
+	{
+		if (data) {
+			data->glow_intensity = p_value;
+		}
+	}
+
+	static void set_luminance_multiplier(float p_luminance_multiplier)
+	{
+		if (data) {
+			data->luminance_multiplier = p_luminance_multiplier;
+		}
+	}
+
+	static void set_glow_bloom(float p_bloom)
+	{
+		if (data) {
+			data->glow_bloom = p_bloom;
+		}
+	}
+
+	static void set_glow_hdr_bleed_threshold(float p_threshold)
+	{
+		if (data) {
+			data->glow_hdr_bleed_threshold = p_threshold;
+		}
+	}
+
+	static void set_glow_hdr_bleed_scale(float p_scale)
+	{
+		if (data) {
+			data->glow_hdr_bleed_scale = p_scale;
+		}
+	}
+
+	static void set_glow_hdr_luminance_cap(float p_cap)
+	{
+		if (data) {
+			data->glow_hdr_luminance_cap = p_cap;
+		}
+	}
+
+	static void process_glow(GLuint p_source_color, Size2i p_size, const Level* p_glow_buffers,
+		uint32_t p_view = 0, bool p_use_multiview = false);
+};
+
+class PostEffects final
+{
+public:
+	PostEffects() = delete;
+	~PostEffects() = delete;
+	PostEffects(const PostEffects&) = delete;
+	PostEffects& operator=(const PostEffects&) = delete;
+
+private:
+	struct Post
+	{
+		PostShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	struct Data
+	{
+		Post post;
+
+		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
+		// pixel overdraw along the diagonal.
+		GLuint screen_triangle = 0;
+		GLuint screen_triangle_array = 0;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _draw_screen_triangle();
+
+public:
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	static void post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
+		GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
+		float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
+		const Glow::Level* p_glow_buffers, float p_glow_intensity, float p_srgb_white,
+		uint32_t p_view = 0, bool p_use_multiview = false, uint64_t p_spec_constants = 0,
+		bool p_bilinear_filtering = true);
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
+
+// --- End drivers/gles3/effects/gles3_effects.h ---
+#include "servers/rendering/rendering_device_commons.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/utilities.h"
+#undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
+
+#ifdef ANDROID_ENABLED
+typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC)(
+	GLenum, GLenum, GLuint, GLint, GLint, GLsizei);
+typedef void (*PFNGLTEXSTORAGE3DMULTISAMPLEPROC)(
+	GLenum, GLsizei, GLenum, GLsizei, GLsizei, GLsizei, GLboolean);
+typedef void (*PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC)(
+	GLenum, GLenum, GLenum, GLuint, GLint, GLsizei);
+typedef void (*PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC)(
+	GLenum, GLenum, GLuint, GLint, GLsizei, GLint, GLsizei);
+typedef void (*PFNEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, void*);
+#endif
+
+namespace GLES3
+{
+
+class Config final
+{
+private:
+	static inline bool _initialized = false;
+
+public:
+	Config() = delete;
+	~Config() = delete;
+	Config(const Config&) = delete;
+	Config& operator=(const Config&) = delete;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return _initialized; }
+
+	static inline bool use_nearest_mip_filter = false;
+	static inline bool use_depth_prepass = true;
+
+	static inline GLint max_vertex_texture_image_units = 0;
+	static inline GLint max_texture_image_units = 0;
+	static inline GLint max_texture_size = 0;
+	static inline GLint max_viewport_size[2] = {0, 0};
+	static inline GLint max_vertex_attribs = 0;
+	static inline GLint64 max_uniform_buffer_size = 0;
+	static inline uint32_t max_shader_varyings = 0;
+
+	static inline int64_t max_renderable_elements = 0;
+	static inline int64_t max_renderable_lights = 0;
+	static inline int64_t max_lights_per_object = 0;
+
+	static inline bool generate_wireframes = false;
+
+	static inline HashSet<String> extensions;
+
+	static inline bool float_texture_supported = false;
+	static inline bool float_texture_linear_supported = false;
+	static inline bool s3tc_supported = false;
+	static inline bool rgtc_supported = false;
+	static inline bool bptc_supported = false;
+	static inline bool etc2_supported = false;
+	static inline bool astc_supported = false;
+	static inline bool astc_hdr_supported = false;
+	static inline bool astc_layered_supported = false;
+	static inline bool astc_3d_supported = false;
+	static inline bool srgb_framebuffer_supported = false;
+	static inline bool unorm16_texture_supported = false;
+
+	static inline bool force_vertex_shading = false;
+	static inline bool specular_occlusion = false;
+
+	static inline bool support_anisotropic_filter = false;
+	static inline float anisotropic_level = 0.0f;
+
+	static inline GLint msaa_max_samples = 0;
+	static inline bool msaa_supported = false;
+	static inline bool msaa_multiview_supported = false;
+	static inline bool rt_msaa_supported = false;
+	static inline bool rt_msaa_multiview_supported = false;
+	static inline bool multiview_supported = false;
+	static inline bool external_texture_supported = false;
+
+	// Adreno 3XX compatibility.
+	static inline bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
+
+	// PowerVR GE 8320 workaround.
+	static inline bool disable_transform_feedback_shader_cache = false;
+
+	// ANGLE shader workaround.
+	static inline bool polyfill_half2float = true;
+
+#ifdef ANDROID_ENABLED
+	static inline PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR =
+		nullptr;
+	static inline PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
+	static inline PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC
+		eglFramebufferTexture2DMultisampleEXT = nullptr;
+	static inline PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
+		eglFramebufferTextureMultisampleMultiviewOVR = nullptr;
+	static inline PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
+
+#define glFramebufferTextureMultiviewOVR GLES3::Config::eglFramebufferTextureMultiviewOVR
+#define glTexStorage3DMultisample GLES3::Config::eglTexStorage3DMultisample
+#define glFramebufferTexture2DMultisampleEXT GLES3::Config::eglFramebufferTexture2DMultisampleEXT
+#define glFramebufferTextureMultisampleMultiviewOVR                                                \
+	GLES3::Config::eglFramebufferTextureMultisampleMultiviewOVR
+#define glEGLImageTargetTexture2DOES GLES3::Config::eglEGLImageTargetTexture2DOES
+#endif // ANDROID_ENABLED
+};
+
+} // namespace GLES3
+
+class RenderSceneBuffersGLES3 final : public RenderSceneBuffers
+{
+public:
+	Size2i internal_size; // Size of the buffer we render 3D content to.
+	Size2i target_size;	  // Size of our output buffer (render target).
+	RSE::ViewportScaling3DMode scaling_3d_mode = RSE::VIEWPORT_SCALING_3D_MODE_OFF;
+	uint32_t view_count = 1;
+	bool apply_environment_effects_in_post = false;
+	bool apply_canvas_bg_exposure = false;
+
+	RID render_target;
+
+	// Color format details from our render target
+	GLuint color_internal_format = GL_RGBA8;
+	GLuint color_format = GL_RGBA;
+	GLuint color_type = GL_UNSIGNED_BYTE;
+	uint32_t color_format_size = 4;
+
+	struct FBDEF
+	{
+		GLuint color = 0;
+		GLuint depth = 0;
+		GLuint fbo = 0;
+	};
+
+	struct RTMSAA3D
+	{
+		RSE::ViewportMSAA mode = RSE::VIEWPORT_MSAA_DISABLED;
+		bool needs_resolve = false;
+		GLsizei samples = 1;
+		GLuint color = 0;
+		GLuint depth = 0;
+		GLuint fbo = 0;
+
+		bool check_fbo_cache = false;
+		Vector<FBDEF> cached_fbos;
+	} msaa3d; // MSAA buffers used to render 3D
+
+	FBDEF internal3d; // buffers used to either render 3D (scaled/post) or to resolve MSAA into
+
+	FBDEF backbuffer3d; // our back buffer
+
+	// Buffers for our glow implementation
+	struct GLOW
+	{
+		GLES3::Glow::Level levels[4];
+	} glow;
+
+private:
+	void _check_render_buffers();
+	void _clear_msaa3d_buffers();
+	void _clear_intermediate_buffers();
+	void _clear_back_buffers();
+	void _clear_glow_buffers();
+
+	void _rt_attach_textures(GLuint p_color, GLuint p_depth, GLsizei p_samples,
+		uint32_t p_view_count, bool p_depth_has_stencil);
+	GLuint _rt_get_cached_fbo(
+		GLuint p_color, GLuint p_depth, GLsizei p_samples, uint32_t p_view_count);
+
+public:
+	RenderSceneBuffersGLES3();
+	virtual ~RenderSceneBuffersGLES3();
+	virtual void configure(const RenderSceneBuffersConfiguration* p_config) override;
+	void configure_for_probe(Size2i p_size);
+
+	virtual void set_anisotropic_filtering_level(
+		RSE::ViewportAnisotropicFiltering p_anisotropic_filtering_level) override
+	{
+	}
+
+	virtual void set_fsr_sharpness(float p_fsr_sharpness) override {}
+
+	virtual void set_texture_mipmap_bias(float p_texture_mipmap_bias) override {}
+
+	virtual void set_use_debanding(bool p_use_debanding) override {}
+
+	void set_apply_environment_effects_in_post(bool p_apply_environment_effects_in_post);
+	void set_apply_canvas_bg_exposure(bool p_apply_canvas_bg_exposure);
+
+	void free_render_buffer_data();
+
+	void check_backbuffer(
+		bool p_need_color, bool p_need_depth); // Check if we need to initialize our backbuffer.
+	void check_glow_buffers();				   // Check if we need to initialize our glow buffers.
+
+	GLuint get_render_fbo();
+
+	GLuint get_msaa3d_fbo()
+	{
+		_check_render_buffers();
+		return msaa3d.fbo;
+	}
+
+	GLuint get_msaa3d_color()
+	{
+		_check_render_buffers();
+		return msaa3d.color;
+	}
+
+	GLuint get_msaa3d_depth()
+	{
+		_check_render_buffers();
+		return msaa3d.depth;
+	}
+
+	bool get_msaa_needs_resolve()
+	{
+		_check_render_buffers();
+		return msaa3d.needs_resolve;
+	}
+
+	GLuint get_internal_fbo()
+	{
+		_check_render_buffers();
+		return internal3d.fbo;
+	}
+
+	GLuint get_internal_color()
+	{
+		_check_render_buffers();
+		return internal3d.color;
+	}
+
+	GLuint get_internal_depth()
+	{
+		_check_render_buffers();
+		return internal3d.depth;
+	}
+
+	GLuint get_backbuffer_fbo() const { return backbuffer3d.fbo; }
+
+	GLuint get_backbuffer() const { return backbuffer3d.color; }
+
+	GLuint get_backbuffer_depth() const { return backbuffer3d.depth; }
+
+	const GLES3::Glow::Level* get_glow_buffers() const { return &glow.levels[0]; }
+
+	// Getters
+
+	_FORCE_INLINE_ RID get_render_target() const { return render_target; }
+
+	_FORCE_INLINE_ uint32_t get_view_count() const { return view_count; }
+
+	_FORCE_INLINE_ Size2i get_internal_size() const { return internal_size; }
+
+	_FORCE_INLINE_ Size2i get_target_size() const { return target_size; }
+
+	_FORCE_INLINE_ RSE::ViewportScaling3DMode get_scaling_3d_mode() const
+	{
+		return scaling_3d_mode;
+	}
+
+	_FORCE_INLINE_ RSE::ViewportMSAA get_msaa_3d() const { return msaa3d.mode; }
+};
+
+namespace GLES3
+{
+
+/* VISIBILITY NOTIFIER */
+
+struct VisibilityNotifier
+{
+	AABB aabb;
+	Dependency dependency;
+};
+
+#define MAX_QUERIES 256
+
+struct Frame
+{
+	GLuint queries[MAX_QUERIES];
+	TightLocalVector<String> timestamp_names;
+	TightLocalVector<uint64_t> timestamp_cpu_values;
+	uint32_t timestamp_count = 0;
+	TightLocalVector<String> timestamp_result_names;
+	TightLocalVector<uint64_t> timestamp_cpu_result_values;
+	TightLocalVector<uint64_t> timestamp_result_values;
+	uint32_t timestamp_result_count = 0;
+	uint64_t index = 0;
+};
+
+class Utilities final
+{
+private:
+	/* VISIBILITY NOTIFIER */
+
+	static inline RID_Owner<VisibilityNotifier> visibility_notifier_owner;
+
+	/* MISC */
+
+	struct ResourceAllocation
+	{
+#ifdef DEV_ENABLED
+		String name;
+#endif
+		uint32_t size = 0;
+	};
+
+	static inline HashMap<GLuint, ResourceAllocation> buffer_allocs_cache;
+	static inline HashMap<GLuint, ResourceAllocation> render_buffer_allocs_cache;
+	static inline HashMap<GLuint, ResourceAllocation> texture_allocs_cache;
+
+	static inline uint64_t buffer_mem_cache = 0;
+	static inline uint64_t render_buffer_mem_cache = 0;
+	static inline uint64_t texture_mem_cache = 0;
+
+public:
+	Utilities() = delete;
+	Utilities(const Utilities&) = delete;
+	Utilities& operator=(const Utilities&) = delete;
+	~Utilities() = delete;
+
+	static void initialize();
+	static void finalize();
+
+	// Buffer size is specified in bytes
+	static Vector<uint8_t> buffer_get_data(
+		GLenum p_target, GLuint p_buffer, uint32_t p_buffer_size);
+
+	// Allocate memory with glBufferData. Does not handle resizing.
+	_FORCE_INLINE_ static void buffer_allocate_data(GLenum p_target, GLuint p_id, uint32_t p_size,
+		const void* p_data, GLenum p_usage, String p_name = "")
+	{
+		glBufferData(p_target, p_size, p_data, p_usage);
+		buffer_mem_cache += p_size;
+
+#ifdef DEV_ENABLED
+		ERR_FAIL_COND_MSG(buffer_allocs_cache.has(p_id), "trying to allocate buffer with name " +
+															 p_name + " but ID already used by " +
+															 buffer_allocs_cache[p_id].name);
+#endif
+
+		ResourceAllocation resource_allocation;
+		resource_allocation.size = p_size;
+#ifdef DEV_ENABLED
+		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+#endif
+		buffer_allocs_cache[p_id] = resource_allocation;
+	}
+
+	_FORCE_INLINE_ static void buffer_free_data(GLuint p_id)
+	{
+		ERR_FAIL_COND(!buffer_allocs_cache.has(p_id));
+		glDeleteBuffers(1, &p_id);
+		buffer_mem_cache -= buffer_allocs_cache[p_id].size;
+		buffer_allocs_cache.erase(p_id);
+	}
+
+	_FORCE_INLINE_ static void render_buffer_allocated_data(
+		GLuint p_id, uint32_t p_size, String p_name = "")
+	{
+		render_buffer_mem_cache += p_size;
+#ifdef DEV_ENABLED
+		ERR_FAIL_COND_MSG(render_buffer_allocs_cache.has(p_id),
+			"trying to allocate render buffer with name " + p_name + " but ID already used by " +
+				render_buffer_allocs_cache[p_id].name);
+#endif
+		ResourceAllocation resource_allocation;
+		resource_allocation.size = p_size;
+#ifdef DEV_ENABLED
+		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+#endif
+		render_buffer_allocs_cache[p_id] = resource_allocation;
+	}
+
+	_FORCE_INLINE_ static void render_buffer_free_data(GLuint p_id)
+	{
+		ERR_FAIL_COND(!render_buffer_allocs_cache.has(p_id));
+		glDeleteRenderbuffers(1, &p_id);
+		render_buffer_mem_cache -= render_buffer_allocs_cache[p_id].size;
+		render_buffer_allocs_cache.erase(p_id);
+	}
+
+	// Records that data was allocated for state tracking purposes.
+	// Size is measured in bytes.
+	_FORCE_INLINE_ static void texture_allocated_data(
+		GLuint p_id, uint32_t p_size, String p_name = "")
+	{
+		texture_mem_cache += p_size;
+#ifdef DEV_ENABLED
+		ERR_FAIL_COND_MSG(texture_allocs_cache.has(p_id), "trying to allocate texture with name " +
+															  p_name + " but ID already used by " +
+															  texture_allocs_cache[p_id].name);
+#endif
+		ResourceAllocation resource_allocation;
+		resource_allocation.size = p_size;
+#ifdef DEV_ENABLED
+		resource_allocation.name = p_name + ": " + itos((uint64_t)p_id);
+#endif
+		texture_allocs_cache[p_id] = resource_allocation;
+	}
+
+	_FORCE_INLINE_ static void texture_free_data(GLuint p_id)
+	{
+		ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
+		glDeleteTextures(1, &p_id);
+		texture_mem_cache -= texture_allocs_cache[p_id].size;
+		texture_allocs_cache.erase(p_id);
+	}
+
+	_FORCE_INLINE_ static void texture_resize_data(GLuint p_id, uint32_t p_size)
+	{
+		ERR_FAIL_COND(!texture_allocs_cache.has(p_id));
+		texture_mem_cache -= texture_allocs_cache[p_id].size;
+		texture_mem_cache += p_size;
+		texture_allocs_cache[p_id].size = p_size;
+	}
+
+	/* INSTANCES */
+
+	static RSE::InstanceType get_base_type(RID p_rid);
+	static bool free(RID p_rid);
+
+	/* DEPENDENCIES */
+
+	static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
+
+	/* VISIBILITY NOTIFIER */
+
+	_FORCE_INLINE_ static VisibilityNotifier* get_visibility_notifier(RID p_rid)
+	{
+		return visibility_notifier_owner.get_or_null(p_rid);
+	}
+
+	_FORCE_INLINE_ static bool owns_visibility_notifier(RID p_rid)
+	{
+		return visibility_notifier_owner.owns(p_rid);
+	}
+
+	static RID visibility_notifier_allocate();
+	static void visibility_notifier_initialize(RID p_notifier);
+	static void visibility_notifier_free(RID p_notifier);
+
+	static void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb);
+
+	static AABB visibility_notifier_get_aabb(RID p_notifier);
+	static void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred);
+
+	/* TIMING */
+
+#define FRAME_COUNT 3
+
+	static inline const uint32_t max_timestamp_query_elements = MAX_QUERIES;
+
+	static inline Frame frames[FRAME_COUNT];
+	static inline uint32_t frame = 0;
+
+	static void capture_timestamps_begin();
+	static void capture_timestamp(const String& p_name);
+	static uint32_t get_captured_timestamps_count();
+	static uint64_t get_captured_timestamps_frame();
+	static uint64_t get_captured_timestamp_gpu_time(uint32_t p_index);
+	static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index);
+	static String get_captured_timestamp_name(uint32_t p_index);
+	static void _capture_timestamps_begin();
+	static void capture_timestamps_end();
+
+	/* MISC */
+
+	static void update_dirty_resources();
+	static void set_debug_generate_wireframes(bool p_generate);
+
+	static bool has_os_feature(const String& p_feature);
+
+	static void update_memory_info();
+
+	static uint64_t get_rendering_info(RSE::RenderingInfo p_info);
+	static String get_video_adapter_name();
+	static String get_video_adapter_vendor();
+	static RenderingDeviceEnums::DeviceType get_video_adapter_type();
+	static String get_video_adapter_api_version();
+
+	static Size2i get_maximum_viewport_size();
+	static uint32_t get_maximum_shader_varyings();
+	static uint64_t get_maximum_uniform_buffer_size();
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
+// --- End drivers/gles3/storage/utilities.h ---
+// --- Folded from drivers/gles3/rasterizer_canvas_gles3.h ---
+// --- Folded from drivers/gles3/storage/texture_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include <platform_gl.h>
+#include "core/io/image.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/rb_map.h"
+#include "core/templates/rid_owner.h"
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
+
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server_types.h"
+
+#ifndef _GL_TEXTURE_EXTERNAL_OES
+#define _GL_TEXTURE_EXTERNAL_OES 0x8D65
+#endif
+
+#ifndef _GL_TEXTURE_MAX_ANISOTROPY_EXT
+#define _GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#endif
+
+#ifndef _EXT_TEXTURE_CUBE_MAP_SEAMLESS
+#define _EXT_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
+#endif
+
+#ifndef _EXT_R16
+#define _EXT_R16 0x822A
+#endif
+
+#ifndef _EXT_RG16
+#define _EXT_RG16 0x822C
+#endif
+
+#ifndef _EXT_RGB16
+#define _EXT_RGB16 0x8054
+#endif
+
+#ifndef _EXT_RGBA16
+#define _EXT_RGBA16 0x805B
+#endif
+
+#ifndef _EXT_COMPRESSED_RGB_S3TC_DXT1_EXT
+#define _EXT_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_S3TC_DXT1_EXT
+#define _EXT_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_S3TC_DXT3_EXT
+#define _EXT_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_S3TC_DXT5_EXT
+#define _EXT_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
+#endif
+
+#ifndef _EXT_COMPRESSED_RED_RGTC1_EXT
+#define _EXT_COMPRESSED_RED_RGTC1_EXT 0x8DBB
+#endif
+
+#ifndef _EXT_COMPRESSED_SIGNED_RED_RGTC1_EXT
+#define _EXT_COMPRESSED_SIGNED_RED_RGTC1_EXT 0x8DBC
+#endif
+
+#ifndef _EXT_COMPRESSED_RED_GREEN_RGTC2_EXT
+#define _EXT_COMPRESSED_RED_GREEN_RGTC2_EXT 0x8DBD
+#endif
+
+#ifndef _EXT_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT
+#define _EXT_COMPRESSED_SIGNED_RED_GREEN_RGTC2_EXT 0x8DBE
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_BPTC_UNORM
+#define _EXT_COMPRESSED_RGBA_BPTC_UNORM 0x8E8C
+#endif
+
+#ifndef _EXT_COMPRESSED_SRGB_ALPHA_BPTC_UNORM
+#define _EXT_COMPRESSED_SRGB_ALPHA_BPTC_UNORM 0x8E8D
+#endif
+
+#ifndef _EXT_COMPRESSED_RGB_BPTC_SIGNED_FLOAT
+#define _EXT_COMPRESSED_RGB_BPTC_SIGNED_FLOAT 0x8E8E
+#endif
+
+#ifndef _EXT_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT
+#define _EXT_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT 0x8E8F
+#endif
+
+#ifndef _EXT_COMPRESSED_R11_EAC
+#define _EXT_COMPRESSED_R11_EAC 0x9270
+#endif
+
+#ifndef _EXT_COMPRESSED_SIGNED_R11_EAC
+#define _EXT_COMPRESSED_SIGNED_R11_EAC 0x9271
+#endif
+
+#ifndef _EXT_COMPRESSED_RG11_EAC
+#define _EXT_COMPRESSED_RG11_EAC 0x9272
+#endif
+
+#ifndef _EXT_COMPRESSED_SIGNED_RG11_EAC
+#define _EXT_COMPRESSED_SIGNED_RG11_EAC 0x9273
+#endif
+
+#ifndef _EXT_COMPRESSED_RGB8_ETC2
+#define _EXT_COMPRESSED_RGB8_ETC2 0x9274
+#endif
+
+#ifndef _EXT_COMPRESSED_SRGB8_ETC2
+#define _EXT_COMPRESSED_SRGB8_ETC2 0x9275
+#endif
+
+#ifndef _EXT_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2
+#define _EXT_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 0x9276
+#endif
+
+#ifndef _EXT_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2
+#define _EXT_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 0x9277
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA8_ETC2_EAC
+#define _EXT_COMPRESSED_RGBA8_ETC2_EAC 0x9278
+#endif
+
+#ifndef _EXT_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC
+#define _EXT_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC 0x9279
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_ASTC_4x4_KHR
+#define _EXT_COMPRESSED_RGBA_ASTC_4x4_KHR 0x93B0
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR
+#define _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR 0x93B4
+#endif
+
+#ifndef _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR
+#define _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR 0x93B7
+#endif
+
+namespace GLES3
+{
+
+enum DefaultGLTexture
+{
+	DEFAULT_GL_TEXTURE_WHITE,
+	DEFAULT_GL_TEXTURE_BLACK,
+	DEFAULT_GL_TEXTURE_TRANSPARENT,
+	DEFAULT_GL_TEXTURE_NORMAL,
+	DEFAULT_GL_TEXTURE_ANISO,
+	DEFAULT_GL_TEXTURE_DEPTH,
+	DEFAULT_GL_TEXTURE_CUBEMAP_BLACK,
+	DEFAULT_GL_TEXTURE_CUBEMAP_WHITE,
+	DEFAULT_GL_TEXTURE_CUBEMAP_TRANSPARENT,
+	DEFAULT_GL_TEXTURE_3D_WHITE,
+	DEFAULT_GL_TEXTURE_3D_BLACK,
+	DEFAULT_GL_TEXTURE_3D_TRANSPARENT,
+	DEFAULT_GL_TEXTURE_2D_ARRAY_WHITE,
+	DEFAULT_GL_TEXTURE_2D_ARRAY_BLACK,
+	DEFAULT_GL_TEXTURE_2D_ARRAY_TRANSPARENT,
+	DEFAULT_GL_TEXTURE_EXT,
+	DEFAULT_GL_TEXTURE_MAX
+};
+
+struct RenderTarget;
+struct Texture;
+struct CanvasTexture;
+
+struct RenderTarget
+{
+	RID self;
+	Size2i size;
+	Point2i position;
+	GLuint fbo = 0;
+	GLuint color = 0;
+	GLuint depth = 0;
+	GLenum color_internal_format = GL_RGBA8;
+	GLenum color_format = GL_RGBA;
+	GLenum color_type = GL_UNSIGNED_BYTE;
+	uint32_t color_format_size = 4;
+	Image::Format image_format = Image::FORMAT_RGBA8;
+	bool direct_to_screen = false;
+	bool is_transparent = false;
+	bool was_used = false;
+	bool clear_requested = false;
+	Color clear_color;
+	RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
+	bool use_hdr = false;
+	bool hdr = false;
+	bool used_in_frame = false;
+
+	bool reattach_textures = false;
+	bool depth_has_stencil = false;
+
+	RID texture;
+
+	Rect2i render_region;
+
+	GLuint backbuffer_fbo = 0;
+	GLuint backbuffer = 0;
+	GLuint backbuffer_depth = 0;
+	int mipmap_count = 1;
+
+	bool sdf_enabled = false;
+	RSE::ViewportSDFOversize sdf_oversize = RSE::VIEWPORT_SDF_OVERSIZE_100_PERCENT;
+	RSE::ViewportSDFScale sdf_scale = RSE::VIEWPORT_SDF_SCALE_100_PERCENT;
+	Size2i process_size;
+	GLuint sdf_texture_read = 0;
+	GLuint sdf_texture_write = 0;
+	GLuint sdf_texture_process[2] = {0, 0};
+	GLuint sdf_texture_write_fb = 0;
+
+	struct RTOverridden
+	{
+		struct FBOCacheEntry
+		{
+			GLuint fbo = 0;
+			GLuint color = 0;
+			GLuint depth = 0;
+			bool depth_has_stencil = false;
+			Size2i size;
+			LocalVector<GLuint> allocated_textures;
+		};
+	};
+
+	struct Overridden
+	{
+		RID color;
+		RID depth;
+		RID velocity;
+		RID velocity_depth;
+		GLuint velocity_fbo = 0;
+		bool is_overridden = false;
+		bool depth_has_stencil = false;
+		RBMap<uint32_t, RTOverridden::FBOCacheEntry> fbo_cache;
+		RBMap<uint32_t, GLuint> velocity_fbo_cache;
+	} overridden;
+
+	uint32_t view_count = 1;
+	Size2i velocity_target_size;
+};
+
+struct CanvasTexture
+{
+	RID self;
+	RID diffuse;
+	RID normal_map;
+	RID specular;
+	Color specular_color = Color(1, 1, 1, 1);
+	real_t shininess = 1.0;
+	RSE::CanvasItemTextureFilter texture_filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
+	RSE::CanvasItemTextureRepeat texture_repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+};
+
+struct Texture
+{
+	enum Type
+	{
+		TYPE_2D,
+		TYPE_LAYERED,
+		TYPE_3D,
+	};
+
+	Type type = TYPE_2D;
+
+	RID self;
+	Image::Format format = Image::FORMAT_L8;
+	Image::Format real_format = Image::FORMAT_L8;
+	GLenum gl_format_cache = 0;
+	GLenum gl_internal_format_cache = 0;
+	GLenum gl_type_cache = 0;
+	GLenum target = GL_TEXTURE_2D;
+	int width = 0;
+	int height = 0;
+	int depth = 0;
+	int layers = 0;
+	int alloc_width = 0;
+	int alloc_height = 0;
+	int mipmaps = 1;
+	bool compressed = false;
+	bool active = false;
+	bool resize_to_po2 = false;
+	uint32_t stored_cube_sides = 0;
+	size_t total_data_size = 0;
+	GLuint tex_id = 0;
+	Ref<Image> image;
+	Ref<Image> image_cache_2d;
+	Vector<Ref<Image>> image_cache_3d;
+	String path;
+	bool is_render_target = false;
+	bool is_from_native_handle = false;
+	RenderTarget* render_target = nullptr;
+	CanvasTexture* canvas_texture = nullptr;
+	bool is_proxy = false;
+	RID proxy_to;
+	Vector<RID> proxies;
+
+	RSE::TextureLayeredType layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY;
+	RSE::TextureDrawableFormat drawable_type = RSE::TEXTURE_DRAWABLE_FORMAT_RGBA8;
+
+	RenderingServerTypes::TextureDetectCallback detect_3d_callback = nullptr;
+	void* detect_3d_callback_ud = nullptr;
+	RenderingServerTypes::TextureDetectCallback detect_normal_callback = nullptr;
+	void* detect_normal_callback_ud = nullptr;
+	RenderingServerTypes::TextureDetectRoughnessCallback detect_roughness_callback = nullptr;
+	void* detect_roughness_callback_ud = nullptr;
+	bool redraw_if_visible = false;
+
+	RSE::CanvasItemTextureFilter filter_cache = RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX;
+	RSE::CanvasItemTextureRepeat repeat_cache = RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX;
+
+	void copy_from(const Texture& p_from)
+	{
+		type = p_from.type;
+		format = p_from.format;
+		real_format = p_from.real_format;
+		gl_format_cache = p_from.gl_format_cache;
+		gl_internal_format_cache = p_from.gl_internal_format_cache;
+		gl_type_cache = p_from.gl_type_cache;
+		target = p_from.target;
+		width = p_from.width;
+		height = p_from.height;
+		depth = p_from.depth;
+		layers = p_from.layers;
+		alloc_width = p_from.alloc_width;
+		alloc_height = p_from.alloc_height;
+		mipmaps = p_from.mipmaps;
+		compressed = p_from.compressed;
+		active = p_from.active;
+		resize_to_po2 = p_from.resize_to_po2;
+		stored_cube_sides = p_from.stored_cube_sides;
+		total_data_size = p_from.total_data_size;
+		tex_id = p_from.tex_id;
+		image = p_from.image;
+		image_cache_2d = p_from.image_cache_2d;
+		image_cache_3d = p_from.image_cache_3d;
+		path = p_from.path;
+		is_render_target = p_from.is_render_target;
+		is_from_native_handle = p_from.is_from_native_handle;
+		render_target = p_from.render_target;
+		canvas_texture = p_from.canvas_texture;
+		is_proxy = true;
+		proxy_to = p_from.self;
+		layered_type = p_from.layered_type;
+		drawable_type = p_from.drawable_type;
+		filter_cache = p_from.filter_cache;
+		repeat_cache = p_from.repeat_cache;
+	}
+
+	void gl_set_filter(RSE::CanvasItemTextureFilter p_filter)
+	{
+		if (p_filter == filter_cache) {
+			return;
+		}
+		filter_cache = p_filter;
+		GLenum pmin = GL_NEAREST;
+		GLenum pmag = GL_NEAREST;
+		GLint max_lod = 0;
+		GLfloat anisotropy = 1.0f;
+		switch (filter_cache) {
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST: {
+			pmin = GL_NEAREST;
+			pmag = GL_NEAREST;
+			max_lod = 0;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR: {
+			pmin = GL_LINEAR;
+			pmag = GL_LINEAR;
+			max_lod = 0;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC: {
+			anisotropy = Config::anisotropic_level;
+		};
+			[[fallthrough]];
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS: {
+			pmag = GL_NEAREST;
+			if (mipmaps <= 1) {
+				pmin = GL_NEAREST;
+				max_lod = 0;
+			}
+			else if (Config::use_nearest_mip_filter) {
+				pmin = GL_NEAREST_MIPMAP_NEAREST;
+				max_lod = mipmaps - 1;
+			}
+			else {
+				pmin = GL_NEAREST_MIPMAP_LINEAR;
+				max_lod = mipmaps - 1;
+			}
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC: {
+			anisotropy = Config::anisotropic_level;
+		};
+			[[fallthrough]];
+		case RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS: {
+			pmag = GL_LINEAR;
+			if (mipmaps <= 1) {
+				pmin = GL_LINEAR;
+				max_lod = 0;
+			}
+			else if (Config::use_nearest_mip_filter) {
+				pmin = GL_LINEAR_MIPMAP_NEAREST;
+				max_lod = mipmaps - 1;
+			}
+			else {
+				pmin = GL_LINEAR_MIPMAP_LINEAR;
+				max_lod = mipmaps - 1;
+			}
+		} break;
+		default: {
+			return;
+		} break;
+		}
+		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, pmin);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, pmag);
+		glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, max_lod);
+		if (Config::support_anisotropic_filter) {
+			glTexParameterf(target, _GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+		}
+	}
+
+	void gl_set_repeat(RSE::CanvasItemTextureRepeat p_repeat)
+	{
+		if (p_repeat == repeat_cache) {
+			return;
+		}
+		repeat_cache = p_repeat;
+		GLenum prep = GL_CLAMP_TO_EDGE;
+		switch (repeat_cache) {
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED: {
+			prep = GL_CLAMP_TO_EDGE;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_ENABLED: {
+			prep = GL_REPEAT;
+		} break;
+		case RSE::CANVAS_ITEM_TEXTURE_REPEAT_MIRROR: {
+			prep = GL_MIRRORED_REPEAT;
+		} break;
+		default: {
+			return;
+		} break;
+		}
+		glTexParameteri(target, GL_TEXTURE_WRAP_T, prep);
+		glTexParameteri(target, GL_TEXTURE_WRAP_R, prep);
+		glTexParameteri(target, GL_TEXTURE_WRAP_S, prep);
+	}
+};
+
+struct TextureAtlas
+{
+	struct Texture
+	{
+		int users = 0;
+		Rect2 uv_rect;
+	};
+
+	struct SortItem
+	{
+		RID texture;
+		Size2i pixel_size;
+		Size2i size;
+		Point2i pos;
+
+		bool operator<(const SortItem& p_item) const { return size.height > p_item.size.height; }
+	};
+
+	HashMap<RID, Texture> textures;
+	GLuint texture = 0;
+	GLuint framebuffer = 0;
+	Size2i size;
+	bool dirty = false;
+};
+
+struct TexBlitShader
+{
+	CopyShaderGLES3 shader;
+	RID default_shader;
+	RID default_material;
+	RID default_version;
+	bool initialized = false;
+};
+
+class TextureStorage final
+{
+private:
+	static inline RID_Owner<RenderTarget, true> render_target_owner;
+	static inline RID_Owner<Texture, true> texture_owner;
+	static inline RID_Owner<CanvasTexture, true> canvas_texture_owner;
+
+	static inline GLuint current_fbo = 0;
+
+	static inline TexBlitShader tex_blit_shader;
+	static inline GLuint tex_blit_fbo = 0;
+	static inline GLuint tex_blit_quad = 0;
+	static inline GLuint tex_blit_quad_array = 0;
+
+	struct CanvasSdfShader
+	{
+		CanvasSdfShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	static inline CanvasSdfShader sdf_shader;
+
+	static inline TextureAtlas texture_atlas;
+	static inline RID default_gl_textures[DEFAULT_GL_TEXTURE_MAX];
+	static inline Ref<Image> texture_2d_placeholder;
+	static inline Vector<Ref<Image>> texture_2d_array_placeholder;
+	static inline Vector<Ref<Image>> cubemap_placeholder;
+	static inline Vector<Ref<Image>> texture_3d_placeholder;
+
+	static void _update_render_target_color(RenderTarget* rt);
+	static void _update_render_target_velocity(RenderTarget* rt);
+	static void _create_render_target_backbuffer(RenderTarget* rt);
+	static void _clear_render_target(RenderTarget* rt);
+	static void _render_target_allocate_sdf(RenderTarget* rt);
+	static void _render_target_clear_sdf(RenderTarget* rt);
+	static Rect2i _render_target_get_sdf_rect(const RenderTarget* rt);
+
+	static void _texture_set_data(
+		RID p_texture, const Ref<Image>& p_image, int p_layer = 0, bool p_sync = false);
+	static void _texture_set_3d_data(
+		RID p_texture, const Vector<Ref<Image>>& p_data, bool p_sync = false);
+	static void _texture_set_swizzle(Texture* p_texture, Image::Format p_real_format);
+	static Vector<Ref<Image>> _texture_3d_read_framebuffer(Texture* p_texture);
+	static Ref<Image> _get_gl_image_and_format(const Ref<Image>& p_image, Image::Format p_format,
+		Image::Format& r_real_format, GLenum& r_gl_format, GLenum& r_gl_internal_format,
+		GLenum& r_gl_type, bool& r_compressed, bool p_force_decompress = false);
+
+public:
+	static inline GLuint system_fbo = 0;
+
+	TextureStorage() = delete;
+	TextureStorage(const TextureStorage&) = delete;
+	TextureStorage& operator=(const TextureStorage&) = delete;
+	~TextureStorage() = delete;
+
+	static void initialize();
+	static void finalize();
+
+	/* RENDER TARGET API */
+
+	static RID render_target_create();
+	static void render_target_free(RID p_rid);
+
+	static void render_target_set_position(RID p_render_target, int p_x, int p_y);
+	static Point2i render_target_get_position(RID p_render_target);
+
+	static void tex_blit_shader_initialize();
+	static void tex_blit_shader_free();
+	static void _tex_blit_shader_initialize();
+	static void _tex_blit_shader_free();
+
+	static void render_target_set_size(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count);
+	static Size2i render_target_get_size(RID p_render_target);
+
+	static void render_target_set_transparent(RID p_render_target, bool p_is_transparent);
+	static bool render_target_is_transparent(RID p_render_target);
+	static bool render_target_get_transparent(RID p_render_target);
+
+	static void render_target_set_direct_to_screen(RID p_render_target, bool p_direct_to_screen);
+	static bool render_target_is_direct_to_screen(RID p_render_target);
+	static bool render_target_get_direct_to_screen(RID p_render_target);
+
+	static RID render_target_get_texture(RID p_render_target);
+
+	static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa);
+	static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target);
+
+	static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr);
+	static bool render_target_is_using_hdr(RID p_render_target);
+
+	static void render_target_request_clear(RID p_render_target, const Color& p_clear_color);
+	static bool render_target_is_clear_requested(RID p_render_target);
+	static Color render_target_get_clear_request_color(RID p_render_target);
+	static void render_target_do_clear_request(RID p_render_target);
+	static void render_target_disable_clear_request(RID p_render_target);
+
+	static GLuint render_target_get_fbo(RID p_render_target);
+	static GLuint render_target_get_color(RID p_render_target);
+	static GLuint render_target_get_depth(RID p_render_target);
+
+	static bool render_target_is_reattach_textures(RID p_render_target);
+	static void render_target_set_reattach_textures(RID p_render_target, bool p_reattach);
+	static bool render_target_get_depth_has_stencil(RID p_render_target);
+
+	static GLenum render_target_get_color_internal_format(RID p_render_target);
+	static GLenum render_target_get_color_format(RID p_render_target);
+	static GLenum render_target_get_color_type(RID p_render_target);
+	static uint32_t render_target_get_color_format_size(RID p_render_target);
+
+	static void render_target_copy_to_back_buffer(
+		RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps = false);
+	static void render_target_clear_back_buffer(
+		RID p_render_target, const Rect2i& p_region, const Color& p_color);
+	static void render_target_gen_back_buffer_mipmaps(RID p_render_target, const Rect2i& p_region);
+
+	static void render_target_set_sdf_size_and_scale(
+		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale);
+	static Rect2i render_target_get_sdf_rect(RID p_render_target);
+	static void render_target_mark_sdf_used(RID p_render_target);
+	static void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled);
+	static GLuint render_target_get_sdf_texture(RID p_render_target);
+	static GLuint render_target_get_sdf_framebuffer(RID p_render_target);
+	static void render_target_sdf_process(RID p_render_target);
+	static bool render_target_is_sdf_enabled(RID p_render_target);
+	static void render_target_copy_to_screen(
+		RID p_render_target, const Rect2& p_rect, int p_screen);
+	static void render_target_clear_sdf(RID p_render_target);
+	static RSE::ViewportSDFScale render_target_get_sdf_scale(RID p_render_target);
+
+	static void render_target_set_override(RID p_render_target, RID p_color_texture,
+		RID p_depth_texture, RID p_velocity = RID(), RID p_velocity_depth = RID());
+	static RID render_target_get_override_color(RID p_render_target);
+	static RID render_target_get_override_depth(RID p_render_target);
+	static RID render_target_get_override_velocity(RID p_render_target);
+	static RID render_target_get_override_velocity_depth(RID p_render_target);
+
+	static void render_target_set_render_region(RID p_render_target, const Rect2i& p_region);
+	static Rect2i render_target_get_render_region(RID p_render_target);
+
+	static void render_target_set_velocity_target_size(
+		RID p_render_target, const Size2i& p_target_size);
+	static Size2i render_target_get_velocity_target_size(RID p_render_target);
+
+	static bool render_target_was_used(RID p_render_target);
+	static void render_target_clear_used(RID p_render_target);
+	static void render_target_set_as_unused(RID p_render_target);
+
+	static void render_target_set_as_current(RID p_render_target);
+
+	/* TEXTURE API */
+
+	static RID texture_allocate();
+	static void texture_initialize(RID p_rid);
+	static void texture_free(RID p_rid);
+
+	static RID texture_2d_create(const Ref<Image>& p_image);
+	static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image);
+	static void texture_2d_initialize_from_texture(RID p_texture, const Texture& p_from_texture);
+	static void texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer);
+	static Ref<Image> texture_2d_get(RID p_texture);
+	static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer);
+	static void texture_2d_placeholder_initialize(RID p_texture);
+
+	static void texture_external_initialize(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer);
+	static void texture_external_update(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer);
+
+	static void texture_2d_layered_initialize(
+		RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type);
+	static void texture_2d_layered_placeholder_initialize(
+		RID p_texture, RSE::TextureLayeredType p_layered_type);
+
+	static void texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
+		int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data);
+	static void texture_3d_placeholder_initialize(RID p_texture);
+
+	static void texture_proxy_initialize(RID p_texture, RID p_base);
+	static void texture_proxy_update(RID p_texture, RID p_proxy_to);
+	static void texture_remap_proxies(RID p_from_texture, RID p_to_texture);
+	static Size2 texture_size_with_proxy(RID p_texture);
+
+	static void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+		RSE::TextureDrawableFormat p_format, const Color& p_color = Color(),
+		bool p_has_mipmaps = false);
+	static void texture_drawable_generate_mipmaps(RID p_texture);
+	static RID texture_drawable_get_default_material();
+
+	static RID texture_create_from_native_handle(RSE::TextureType p_type, Image::Format p_format,
+		uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1,
+		RSE::TextureLayeredType p_layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY);
+
+	static RID texture_3d_create(Image::Format p_format, int p_width, int p_height, int p_depth,
+		bool p_mipmaps, const Vector<Ref<Image>>& p_data);
+	static void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data);
+	static Vector<Ref<Image>> texture_3d_get(RID p_texture);
+
+	static RID texture_layered_create(
+		const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type);
+	static void texture_layered_update(RID p_texture, const Vector<Ref<Image>>& p_layers);
+
+	static void texture_set_format(RID p_texture, Image::Format p_format);
+	static Image::Format texture_get_format(RID p_texture);
+	static void texture_set_width(RID p_texture, int p_width);
+	static int texture_get_width(RID p_texture);
+	static void texture_set_height(RID p_texture, int p_height);
+	static int texture_get_height(RID p_texture);
+	static void texture_set_depth(RID p_texture, int p_depth);
+	static int texture_get_depth(RID p_texture);
+	static void texture_set_layers(RID p_texture, int p_layers);
+	static int texture_get_layers(RID p_texture);
+	static Vector3i texture_get_size(RID p_texture);
+	static uint32_t texture_get_texid(RID p_texture);
+
+	static void texture_set_path(RID p_texture, const String& p_path);
+	static String texture_get_path(RID p_texture);
+	static void texture_set_size_override(RID p_texture, int p_width, int p_height);
+
+	static void texture_replace(RID p_texture, RID p_by_texture);
+	static void texture_set_data(RID p_texture, const Ref<Image>& p_image, int p_layer = 0);
+
+	static void texture_set_detect_3d_callback(
+		RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata);
+	static void texture_set_detect_srgb_callback(
+		RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata);
+	static void texture_set_detect_normal_callback(
+		RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata);
+	static void texture_set_detect_roughness_callback(RID p_texture,
+		RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata);
+
+	static void texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info);
+	static void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable);
+
+	static void texture_bind(RID p_texture, uint32_t p_index);
+	static RID texture_gl_get_default(DefaultGLTexture p_texture);
+
+	static void texture_rd_initialize(
+		RID p_texture, const RID& p_rd_texture, RSE::TextureLayeredType p_layered_type);
+	static RID texture_get_rd_texture(RID p_texture, bool p_srgb = false);
+	static uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false);
+
+	/* ATLAS API */
+
+	static Rect2 texture_atlas_get_texture_rect(RID p_texture);
+	static GLuint texture_atlas_get_texture();
+	static void texture_add_to_texture_atlas(RID p_texture);
+	static void texture_remove_from_texture_atlas(RID p_texture);
+	static void texture_atlas_remove_texture(RID p_texture);
+	static void texture_atlas_mark_dirty_on_texture(RID p_texture);
+	static void update_texture_atlas();
+
+	static void texture_add_to_decal_atlas(RID p_texture, bool p_is_normal = false);
+	static void texture_remove_from_decal_atlas(RID p_texture, bool p_is_normal = false);
+	static void bind_dispatch();
+
+	static void render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode) {}
+
+	static void render_target_set_vrs_update_mode(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
+	{
+	}
+
+	static void render_target_set_vrs_texture(RID p_render_target, RID p_texture) {}
+
+	static void render_target_set_use_debanding(RID p_render_target, bool p_use_debanding) {}
+
+	static
+ bool render_target_get_msaa_needs_resolve(RID p_render_target) { return false; }
+
+	static void render_target_do_msaa_resolve(RID p_render_target) {}
+
+	/* DECAL API */
+
+	static RID decal_allocate();
+	static void decal_initialize(RID p_rid);
+	static void decal_set_size(RID p_decal, const Vector3& p_size);
+	static void decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture);
+	static void decal_set_emission_energy(RID p_decal, float p_energy);
+	static void decal_set_albedo_mix(RID p_decal, float p_mix);
+	static void decal_set_modulate(RID p_decal, const Color& p_modulate);
+	static void decal_set_cull_mask(RID p_decal, uint32_t p_layers);
+	static void decal_set_distance_fade(RID p_decal, bool p_enabled, float p_begin, float p_length);
+	static void decal_set_fade(RID p_decal, float p_above, float p_below);
+	static void decal_set_normal_fade(RID p_decal, float p_fade);
+	static AABB decal_get_aabb(RID p_decal);
+
+	/* CANVAS TEXTURE API */
+
+	static RID canvas_texture_allocate();
+	static void canvas_texture_initialize(RID p_rid);
+	static void canvas_texture_free(RID p_rid);
+
+	static void canvas_texture_set_channel(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture);
+	static void canvas_texture_set_shading_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter);
+	static void canvas_texture_set_shading_parameters(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess);
+	static void canvas_texture_set_texture_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter);
+	static void canvas_texture_set_texture_repeat(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat);
+
+	/* GL STATE & LOOKUP HELPERS */
+
+	static RenderTarget* get_render_target(RID p_rid)
+	{
+		return render_target_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_render_target(RID p_rid) { return render_target_owner.owns(p_rid); }
+
+	static Texture* get_texture(RID p_rid) { return texture_owner.get_or_null(p_rid); }
+
+	static bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); }
+
+	static CanvasTexture* get_canvas_texture(RID p_rid)
+	{
+		return canvas_texture_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_canvas_texture(RID p_rid) { return canvas_texture_owner.owns(p_rid); }
+
+	static String get_framebuffer_error(GLenum p_status);
+
+	static void bind_texture(RID p_texture, uint32_t p_index);
+	static void bind_texture_ext(RID p_texture, uint32_t p_index,
+		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat);
+
+	/* Decal Stubs for GLES3 */
+	static void decal_free(RID p_rid) {}
+
+	static uint32_t decal_get_cull_mask(RID p_decal) { return 0; }
+
+	static RID decal_instance_create(RID p_decal) { return RID(); }
+
+	static void decal_instance_free(RID p_decal_instance) {}
+
+	static void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform)
+	{
+	}
+
+	static void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) {}
+
+	/* Clear Color */
+	static void set_default_clear_color(const Color& p_color) { default_clear_color = p_color; }
+
+	static Color get_default_clear_color() { return default_clear_color; }
+
+	static inline Color default_clear_color = Color(0, 0, 0, 1);
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
+// --- End drivers/gles3/storage/texture_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
 // --- Inlined/Folded from drivers/gles3/storage/material_storage.h ---
 #ifdef GLES3_ENABLED
 
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "drivers/gles3/shaders/canvas.glsl.gen.h"
-#include "drivers/gles3/shaders/particles.glsl.gen.h"
-#include "drivers/gles3/shaders/scene.glsl.gen.h"
-#include "drivers/gles3/shaders/sky.glsl.gen.h"
-#include "drivers/gles3/shaders/tex_blit.glsl.gen.h"
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/shader_compiler.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
@@ -538,7 +2165,750 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-#include "drivers/gles3/storage/mesh_storage.h"
+// --- Folded from drivers/gles3/storage/mesh_storage.h ---
+#ifdef GLES3_ENABLED
+
+#include <platform_gl.h>
+#include "core/templates/local_vector.h"
+#include "core/templates/rid_owner.h"
+#include "core/templates/self_list.h"
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/utilities.h"
+#include "servers/rendering/renderer.h"
+
+namespace GLES3
+{
+
+struct MeshInstance;
+
+struct Mesh
+{
+	struct Surface
+	{
+		struct Attrib
+		{
+			bool enabled;
+			bool integer;
+			GLint size;
+			GLenum type;
+			GLboolean normalized;
+			GLsizei stride;
+			uint32_t offset;
+		};
+
+		RSE::PrimitiveType primitive = RSE::PRIMITIVE_POINTS;
+		uint64_t format = 0;
+
+		GLuint vertex_buffer = 0;
+		GLuint attribute_buffer = 0;
+		GLuint skin_buffer = 0;
+		uint32_t vertex_count = 0;
+		uint32_t vertex_buffer_size = 0;
+		uint32_t attribute_buffer_size = 0;
+		uint32_t skin_buffer_size = 0;
+
+		// Cache vertex arrays so they can be created
+		struct Version
+		{
+			uint32_t input_mask = 0;
+			bool uses_motion_vectors = false;
+			uint32_t current_vertex_buffer = 0;
+			uint32_t prev_vertex_buffer = 0;
+			GLuint vertex_array = 0;
+
+			Attrib attribs[RSE::ARRAY_MAX];
+		};
+
+		SpinLock version_lock;		 // needed to access versions
+		Version* versions = nullptr; // allocated on demand
+		uint32_t version_count = 0;
+
+		GLuint index_buffer = 0;
+		uint32_t index_count = 0;
+		uint32_t index_buffer_size = 0;
+
+		struct Wireframe
+		{
+			GLuint index_buffer = 0;
+			uint32_t index_count = 0;
+			uint32_t index_buffer_size = 0;
+		};
+
+		Wireframe* wireframe = nullptr;
+
+		struct LOD
+		{
+			float edge_length = 0.0;
+			uint32_t index_count = 0;
+			uint32_t index_buffer_size = 0;
+			GLuint index_buffer = 0;
+		};
+
+		LOD* lods = nullptr;
+		uint32_t lod_count = 0;
+
+		AABB aabb;
+
+		Vector<AABB> bone_aabbs;
+
+		// Transform used in runtime bone AABBs compute.
+		// As bone AABBs are saved in Mesh space, but bones animation is in Skeleton space.
+		Transform3D mesh_to_skeleton_xform;
+
+		Vector4 uv_scale;
+
+		struct BlendShape
+		{
+			GLuint vertex_buffer = 0;
+			GLuint vertex_array = 0;
+		};
+
+		BlendShape* blend_shapes = nullptr;
+		GLuint skeleton_vertex_array = 0;
+
+		RID material;
+	};
+
+	uint32_t blend_shape_count = 0;
+	RSE::BlendShapeMode blend_shape_mode = RSE::BLEND_SHAPE_MODE_NORMALIZED;
+
+	Surface** surfaces = nullptr;
+	uint32_t surface_count = 0;
+
+	bool has_bone_weights = false;
+
+	AABB aabb;
+	AABB custom_aabb;
+	uint64_t skeleton_aabb_version = 0;
+
+	Vector<RID> material_cache;
+
+	List<MeshInstance*> instances;
+
+	RID shadow_mesh;
+	HashSet<Mesh*> shadow_owners;
+
+	String path;
+
+	Dependency dependency;
+};
+
+/* Mesh Instance */
+
+struct MeshInstance
+{
+	Mesh* mesh = nullptr;
+	RID skeleton;
+
+	struct Surface
+	{
+		GLuint blend_shape_vertex_buffers[2] = {0, 0};
+		GLuint vertex_arrays[2] = {0, 0};
+		GLuint vertex_buffers[2] = {0, 0};
+		int vertex_stride_cache = 0;
+		int vertex_size_cache = 0;
+		int vertex_normal_offset_cache = 0;
+		int vertex_tangent_offset_cache = 0;
+		uint64_t format_cache = 0;
+
+		Mesh::Surface::Version* versions = nullptr; // allocated on demand
+		uint32_t version_count = 0;
+
+		bool uses_motion_vectors = false;
+		int current_vertex_buffer = 0;
+		int prev_vertex_buffer = 0;
+		uint64_t last_change = 0;
+	};
+
+	LocalVector<Surface> surfaces;
+	LocalVector<float> blend_weights;
+
+	List<MeshInstance*>::Element* I = nullptr; // used to erase itself
+	uint64_t skeleton_version = 0;
+	bool dirty = false;
+	bool weights_dirty = false;
+	SelfList<MeshInstance> weight_update_list;
+	SelfList<MeshInstance> array_update_list;
+	Transform2D canvas_item_transform_2d;
+
+	MeshInstance() : weight_update_list(this), array_update_list(this) {}
+};
+
+/* MultiMesh */
+
+struct MultiMesh
+{
+	RID mesh;
+	int instances = 0;
+	RSE::MultimeshTransformFormat xform_format = RSE::MULTIMESH_TRANSFORM_3D;
+	bool uses_colors = false;
+	bool uses_custom_data = false;
+	int visible_instances = -1;
+	AABB aabb;
+	AABB custom_aabb;
+	bool aabb_dirty = false;
+	bool buffer_set = false;
+	uint32_t stride_cache = 0;
+	uint32_t color_offset_cache = 0;
+	uint32_t custom_data_offset_cache = 0;
+
+	Vector<float> data_cache; // used if individual setting is used
+	bool* data_cache_dirty_regions = nullptr;
+	uint32_t data_cache_used_dirty_regions = 0;
+
+	GLuint buffer[2] = {0, 0};
+	int current_buffer = 0;
+	int prev_buffer = 0;
+	uint64_t last_change = 0;
+
+	bool dirty = false;
+	MultiMesh* dirty_list = nullptr;
+
+	RendererMeshStorage::MultiMeshInterpolator interpolator;
+
+	Dependency dependency;
+};
+
+struct Skeleton
+{
+	bool use_2d = false;
+	int size = 0;
+	int height = 0;
+	LocalVector<float> data;
+
+	bool dirty = false;
+	Skeleton* dirty_list = nullptr;
+	Transform2D base_transform_2d;
+
+	GLuint transforms_texture = 0;
+
+	uint64_t version = 1;
+
+	Dependency dependency;
+};
+
+class MeshStorage final
+{
+private:
+	struct SkeletonShader
+	{
+		SkeletonShaderGLES3 shader;
+		RID shader_version;
+	};
+
+	static inline SkeletonShader* skeleton_shader = nullptr;
+
+	/* Mesh */
+
+	static inline RID_Owner<Mesh, true> mesh_owner;
+
+	static inline void _mesh_surface_generate_version_for_input_mask(Mesh::Surface::Version& v, Mesh::Surface* s,
+		uint64_t p_input_mask, bool p_uses_motion_vectors, MeshInstance::Surface* mis = nullptr,
+		int p_current_vertex_buffer = 0, int p_prev_vertex_buffer = 0);
+	static inline void _mesh_surface_clear(Mesh* mesh, int p_surface);
+
+	/* Mesh Instance API */
+
+	static inline RID_Owner<MeshInstance> mesh_instance_owner;
+
+	static inline void _mesh_instance_clear(MeshInstance* mi);
+	static inline void _mesh_instance_add_surface(MeshInstance* mi, Mesh* mesh, uint32_t p_surface);
+	static inline void _mesh_instance_remove_surface(MeshInstance* mi, int p_surface);
+	static inline void _blend_shape_bind_mesh_instance_buffer(MeshInstance* p_mi, uint32_t p_surface);
+	static inline SelfList<MeshInstance>::List dirty_mesh_instance_weights;
+	static inline SelfList<MeshInstance>::List dirty_mesh_instance_arrays;
+
+	/* MultiMesh */
+
+	static inline RID_Owner<MultiMesh, true> multimesh_owner;
+
+	static inline MultiMesh* multimesh_dirty_list = nullptr;
+	static inline InterpolationData _interpolation_data;
+
+	static _FORCE_INLINE_ void _multimesh_make_local(MultiMesh* multimesh);
+	static _FORCE_INLINE_ void _multimesh_mark_dirty(MultiMesh* multimesh, int p_index, bool p_aabb);
+	static _FORCE_INLINE_ void _multimesh_mark_all_dirty(MultiMesh* multimesh, bool p_data, bool p_aabb);
+	static _FORCE_INLINE_ void _multimesh_re_create_aabb(
+		MultiMesh* multimesh, const float* p_data, int p_instances);
+
+	/* Skeleton */
+
+	static inline Skeleton* skeleton_dirty_list = nullptr;
+	static inline RID_Owner<Skeleton, true> skeleton_owner;
+	static _FORCE_INLINE_ void _skeleton_make_dirty(Skeleton* skeleton);
+
+	static inline void _compute_skeleton(MeshInstance* p_mi, Skeleton* p_sk, uint32_t p_surface);
+
+public:
+	MeshStorage() = delete;
+	~MeshStorage() = delete;
+
+	/* MESH API */
+
+	static void multimesh_allocate_data(RID p_rid, int i, RSE::MultimeshTransformFormat format);
+
+	static Mesh* get_mesh(RID p_rid) { return mesh_owner.get_or_null(p_rid); }
+
+	static bool owns_mesh(RID p_rid) { return mesh_owner.owns(p_rid); }
+
+	static RID multimesh_get_mesh(RID p_multimesh);
+	static RID mesh_allocate();
+	static void mesh_initialize(RID p_rid);
+	static void mesh_free(RID p_rid);
+	static void multimesh_free(RID p_rid);
+
+	static void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count);
+	static bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton);
+
+	static void mesh_add_surface(
+		RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface);
+
+	static int mesh_get_blend_shape_count(RID p_mesh);
+
+	static void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode);
+	static RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh);
+
+	static void mesh_surface_update_vertex_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	static void mesh_surface_update_attribute_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	static void mesh_surface_update_skin_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	static void mesh_surface_update_index_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+
+	static void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material);
+	static RID mesh_surface_get_material(RID p_mesh, int p_surface);
+
+	static RenderingServerTypes::SurfaceData mesh_get_surface(
+		RID p_mesh, int p_surface);
+
+	static RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface)
+	{
+		return RID();
+	}
+
+	static RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface)
+	{
+		return RID();
+	}
+
+	static RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface)
+	{
+		return RID();
+	}
+
+	static RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface)
+	{
+		return RID();
+	}
+
+	static AABB mesh_get_aabb(RID p_mesh, RID p_skeleton = RID());
+	static void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh);
+	static void mesh_clear(RID p_mesh);
+
+	static int mesh_get_surface_count(RID p_mesh);
+	static void mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb);
+	static AABB mesh_get_custom_aabb(RID p_mesh);
+	static void mesh_set_path(RID p_mesh, const String& p_path);
+	static String mesh_get_path(RID p_mesh);
+	static void mesh_surface_remove(RID p_mesh, int p_surface);
+
+	static void mesh_debug_usage(List<RenderingServerTypes::MeshInfo>* r_info) {}
+
+	static _FORCE_INLINE_ const RID* mesh_get_surface_count_and_materials(
+		RID p_mesh, uint32_t& r_surface_count)
+	{
+		Mesh* mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, nullptr);
+		r_surface_count = mesh->surface_count;
+		if (r_surface_count == 0) {
+			return nullptr;
+		}
+		if (mesh->material_cache.is_empty()) {
+			mesh->material_cache.resize(mesh->surface_count);
+			for (uint32_t i = 0; i < r_surface_count; i++) {
+				mesh->material_cache.write[i] = mesh->surfaces[i]->material;
+			}
+		}
+
+		return mesh->material_cache.ptr();
+	}
+
+	static _FORCE_INLINE_ void* mesh_get_surface(RID p_mesh, uint32_t p_surface_index)
+	{
+		Mesh* mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, nullptr);
+		ERR_FAIL_UNSIGNED_INDEX_V(p_surface_index, mesh->surface_count, nullptr);
+
+		return mesh->surfaces[p_surface_index];
+	}
+
+	static _FORCE_INLINE_ RID mesh_get_shadow_mesh(RID p_mesh)
+	{
+		Mesh* mesh = mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(mesh, RID());
+
+		return mesh->shadow_mesh;
+	}
+
+	static _FORCE_INLINE_ RSE::PrimitiveType mesh_surface_get_primitive(void* p_surface)
+	{
+		Mesh::Surface* surface = reinterpret_cast<Mesh::Surface*>(p_surface);
+		return surface->primitive;
+	}
+
+	static _FORCE_INLINE_ bool mesh_surface_has_lod(void* p_surface)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+		return s->lod_count > 0;
+	}
+
+	static _FORCE_INLINE_ uint32_t mesh_surface_get_vertices_drawn_count(void* p_surface)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+		return s->index_count ? s->index_count : s->vertex_count;
+	}
+
+	static _FORCE_INLINE_ uint32_t mesh_surface_get_lod(void* p_surface, float p_model_scale,
+		float p_distance_threshold, float p_mesh_lod_threshold, uint32_t& r_index_count)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+		ERR_FAIL_NULL_V(s, 0);
+
+		int32_t current_lod = -1;
+		r_index_count = s->index_count;
+
+		for (uint32_t i = 0; i < s->lod_count; i++) {
+			float screen_size = s->lods[i].edge_length * p_model_scale / p_distance_threshold;
+			if (screen_size > p_mesh_lod_threshold) {
+				break;
+			}
+			current_lod = i;
+		}
+		if (current_lod == -1) {
+			return 0;
+		}
+		else {
+			r_index_count = s->lods[current_lod].index_count;
+			return current_lod + 1;
+		}
+	}
+
+	static _FORCE_INLINE_ GLuint mesh_surface_get_index_buffer(void* p_surface, uint32_t p_lod)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+
+		if (p_lod == 0) {
+			return s->index_buffer;
+		}
+		else {
+			return s->lods[p_lod - 1].index_buffer;
+		}
+	}
+
+	static _FORCE_INLINE_ GLuint mesh_surface_get_index_buffer_wireframe(void* p_surface)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+
+		if (s->wireframe) {
+			return s->wireframe->index_buffer;
+		}
+
+		return 0;
+	}
+
+	static _FORCE_INLINE_ GLenum mesh_surface_get_index_type(void* p_surface)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+
+		return (s->vertex_count <= 65536 && s->vertex_count > 0) ? GL_UNSIGNED_SHORT
+																 : GL_UNSIGNED_INT;
+	}
+
+	// Use this to cache Vertex Array Objects so they are only generated once
+	static _FORCE_INLINE_ void mesh_surface_get_vertex_arrays_and_format(void* p_surface,
+		uint64_t p_input_mask, bool p_uses_motion_vectors, GLuint& r_vertex_array_gl)
+	{
+		Mesh::Surface* s = reinterpret_cast<Mesh::Surface*>(p_surface);
+
+		s->version_lock.lock();
+
+		// There will never be more than 3 or 4 versions, so iterating is the fastest way.
+
+		for (uint32_t i = 0; i < s->version_count; i++) {
+			if (s->versions[i].input_mask != p_input_mask ||
+				s->versions[i].uses_motion_vectors != p_uses_motion_vectors) {
+				continue;
+			}
+			// We have this version, hooray.
+			r_vertex_array_gl = s->versions[i].vertex_array;
+			s->version_lock.unlock();
+			return;
+		}
+
+		uint32_t version = s->version_count;
+		s->version_count++;
+		s->versions = (Mesh::Surface::Version*)memrealloc(
+			s->versions, sizeof(Mesh::Surface::Version) * s->version_count);
+
+		_mesh_surface_generate_version_for_input_mask(
+			s->versions[version], s, p_input_mask, p_uses_motion_vectors);
+
+		r_vertex_array_gl = s->versions[version].vertex_array;
+
+		s->version_lock.unlock();
+	}
+
+	/* MESH INSTANCE API */
+
+	static MeshInstance* get_mesh_instance(RID p_rid) { return mesh_instance_owner.get_or_null(p_rid); }
+
+	static bool owns_mesh_instance(RID p_rid) { return mesh_instance_owner.owns(p_rid); }
+
+	static RID mesh_instance_create(RID p_base);
+	static void mesh_instance_free(RID p_rid);
+	static void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton);
+	static void mesh_instance_set_blend_shape_weight(
+		RID p_mesh_instance, int p_shape, float p_weight);
+	static void mesh_instance_check_for_update(RID p_mesh_instance);
+	static void mesh_instance_set_canvas_item_transform(
+		RID p_mesh_instance, const Transform2D& p_transform);
+	static void update_mesh_instances();
+
+	// TODO: considering hashing versions with multimesh buffer RID.
+	// Doing so would allow us to avoid specifying multimesh buffer pointers every frame and may
+	// improve performance.
+	static _FORCE_INLINE_ void mesh_instance_surface_get_vertex_arrays_and_format(RID p_mesh_instance,
+		uint32_t p_surface_index, uint64_t p_input_mask, bool p_uses_motion_vectors,
+		GLuint& r_vertex_array_gl)
+	{
+		MeshInstance* mi = mesh_instance_owner.get_or_null(p_mesh_instance);
+		ERR_FAIL_NULL(mi);
+		Mesh* mesh = mi->mesh;
+		ERR_FAIL_UNSIGNED_INDEX(p_surface_index, mesh->surface_count);
+
+		MeshInstance::Surface* mis = &mi->surfaces[p_surface_index];
+		Mesh::Surface* s = mesh->surfaces[p_surface_index];
+
+		uint32_t current_buffer = mis->current_vertex_buffer;
+
+		// Using the previous buffer is only allowed if the surface was updated this frame and
+		// motion vectors are required.
+		uint32_t previous_buffer =
+			p_uses_motion_vectors && (RendererCompositor::get_frame_number() == mis->last_change)
+				? mis->prev_vertex_buffer
+				: current_buffer;
+
+		s->version_lock.lock();
+
+		// there will never be more than, at much, 3 or 4 versions, so iterating is the fastest way
+
+		for (uint32_t i = 0; i < mis->version_count; i++) {
+			if (mis->versions[i].input_mask != p_input_mask ||
+				mis->versions[i].uses_motion_vectors != p_uses_motion_vectors) {
+				continue;
+			}
+
+			if (mis->versions[i].current_vertex_buffer != current_buffer ||
+				mis->versions[i].prev_vertex_buffer != previous_buffer) {
+				continue;
+			}
+
+			// we have this version, hooray
+			r_vertex_array_gl = mis->versions[i].vertex_array;
+			s->version_lock.unlock();
+			return;
+		}
+
+		uint32_t version = mis->version_count;
+		mis->version_count++;
+		mis->versions = (Mesh::Surface::Version*)memrealloc(
+			mis->versions, sizeof(Mesh::Surface::Version) * mis->version_count);
+
+		_mesh_surface_generate_version_for_input_mask(mis->versions[version], s, p_input_mask,
+			p_uses_motion_vectors, mis, current_buffer, previous_buffer);
+
+		r_vertex_array_gl = mis->versions[version].vertex_array;
+
+		s->version_lock.unlock();
+	}
+
+	/* MULTIMESH API */
+
+	static MultiMesh* get_multimesh(RID p_rid) { return multimesh_owner.get_or_null(p_rid); }
+
+	static bool owns_multimesh(RID p_rid) { return multimesh_owner.owns(p_rid); }
+
+	static RID _multimesh_allocate();
+	static void _multimesh_initialize(RID p_rid);
+	static void _multimesh_free(RID p_rid);
+	static void _multimesh_allocate_data(RID p_multimesh, int p_instances,
+		RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
+		bool p_use_custom_data = false, bool p_use_indirect = false);
+	static int _multimesh_get_instance_count(RID p_multimesh);
+
+	static void _multimesh_set_mesh(RID p_multimesh, RID p_mesh);
+	static void _multimesh_instance_set_transform(
+		RID p_multimesh, int p_index, const Transform3D& p_transform);
+	static void _multimesh_instance_set_transform_2d(
+		RID p_multimesh, int p_index, const Transform2D& p_transform);
+	static void _multimesh_instance_set_color(
+		RID p_multimesh, int p_index, const Color& p_color);
+	static void _multimesh_instance_set_custom_data(
+		RID p_multimesh, int p_index, const Color& p_color);
+
+	static RID _multimesh_get_mesh(RID p_multimesh);
+	static void _multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
+	static AABB _multimesh_get_custom_aabb(RID p_multimesh);
+	static AABB _multimesh_get_aabb(RID p_multimesh);
+
+	static Transform3D _multimesh_instance_get_transform(
+		RID p_multimesh, int p_index);
+	static Transform2D _multimesh_instance_get_transform_2d(
+		RID p_multimesh, int p_index);
+	static Color _multimesh_instance_get_color(RID p_multimesh, int p_index);
+	static Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index);
+	static void _multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
+	static RID _multimesh_get_command_buffer_rd_rid(RID p_multimesh);
+	static RID _multimesh_get_buffer_rd_rid(RID p_multimesh);
+	static Vector<float> _multimesh_get_buffer(RID p_multimesh);
+
+	static void _multimesh_set_visible_instances(RID p_multimesh, int p_visible);
+	static int _multimesh_get_visible_instances(RID p_multimesh);
+
+	static RendererMeshStorage::MultiMeshInterpolator* _multimesh_get_interpolator(RID p_multimesh);
+
+	static void _update_dirty_multimeshes();
+	static void _update_dirty_multimesh(MultiMesh* p_multimesh, bool p_uses_motion_vectors);
+
+	static void multimesh_vertex_attrib_setup(GLuint p_instance_buffer, uint32_t p_stride,
+		bool p_uses_format_2d, bool p_has_color_or_custom_data, int p_attrib_base_index);
+
+	static _FORCE_INLINE_ RSE::MultimeshTransformFormat multimesh_get_transform_format(
+		RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, RSE::MULTIMESH_TRANSFORM_3D);
+		return multimesh->xform_format;
+	}
+
+	static _FORCE_INLINE_ bool multimesh_uses_colors(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, false);
+		return multimesh->uses_colors;
+	}
+
+	static _FORCE_INLINE_ bool multimesh_uses_custom_data(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, false);
+		return multimesh->uses_custom_data;
+	}
+
+	static _FORCE_INLINE_ uint32_t multimesh_get_instances_to_draw(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, 0);
+		if (multimesh->visible_instances >= 0) {
+			return multimesh->visible_instances;
+		}
+		return multimesh->instances;
+	}
+
+	static _FORCE_INLINE_ GLuint multimesh_get_gl_buffer(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, 0);
+		return multimesh->buffer[multimesh->current_buffer];
+	}
+
+	static _FORCE_INLINE_ GLuint multimesh_get_prev_gl_buffer(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		return multimesh->buffer[multimesh->prev_buffer];
+	}
+
+	static _FORCE_INLINE_ uint64_t multimesh_get_last_change(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		return multimesh->last_change;
+	}
+
+	static _FORCE_INLINE_ uint32_t multimesh_get_stride(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, 0);
+		return multimesh->stride_cache;
+	}
+
+	static _FORCE_INLINE_ uint32_t multimesh_get_color_offset(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, 0);
+		return multimesh->color_offset_cache;
+	}
+
+	static _FORCE_INLINE_ uint32_t multimesh_get_custom_data_offset(RID p_multimesh)
+	{
+		MultiMesh* multimesh = multimesh_owner.get_or_null(p_multimesh);
+		ERR_FAIL_NULL_V(multimesh, 0);
+		return multimesh->custom_data_offset_cache;
+	}
+
+	/* SKELETON API */
+
+	static Skeleton* get_skeleton(RID p_rid) { return skeleton_owner.get_or_null(p_rid); }
+
+	static bool owns_skeleton(RID p_rid) { return skeleton_owner.owns(p_rid); }
+
+	static RID skeleton_allocate();
+	static void skeleton_initialize(RID p_rid);
+	static void skeleton_free(RID p_rid);
+
+	static void skeleton_allocate_data(
+		RID p_skeleton, int p_bones, bool p_2d_skeleton = false);
+	static void skeleton_set_base_transform_2d(
+		RID p_skeleton, const Transform2D& p_base_transform);
+	static int skeleton_get_bone_count(RID p_skeleton);
+	static void skeleton_bone_set_transform(
+		RID p_skeleton, int p_bone, const Transform3D& p_transform);
+	static Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone);
+	static void skeleton_bone_set_transform_2d(
+		RID p_skeleton, int p_bone, const Transform2D& p_transform);
+	static Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone);
+
+	static void skeleton_update_dependency(RID p_base, DependencyTracker* p_instance);
+
+	static void _update_dirty_skeletons();
+
+	static _FORCE_INLINE_ bool skeleton_is_valid(RID p_skeleton)
+	{
+		return skeleton_owner.get_or_null(p_skeleton) != nullptr;
+	}
+
+	static inline void initialize()
+	{
+	    skeleton_shader = memnew(SkeletonShader);
+	}
+
+	static inline void finalize()
+	{
+	    if (skeleton_shader) {
+	        memdelete(skeleton_shader);
+	        skeleton_shader = nullptr;
+	    }
+	}
+};
+
+} // namespace GLES3
+
+#endif // GLES3_ENABLED
+// --- End drivers/gles3/storage/mesh_storage.h ---
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer_viewport.h"
@@ -972,7 +3342,6 @@ public:
 #include "core/math/aabb.h"
 #include "core/math/projection.h"
 #include "core/math/vector3.h"
-#include "core/math/vector3.h"
 #include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
@@ -982,8 +3351,8 @@ public:
 #include <platform_gl.h>
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
-#include "drivers/gles3/storage/texture_storage.h"
-#include "drivers/gles3/storage/utilities.h"
+
+
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -1980,10 +4349,8 @@ public:
 
 #endif // GLES3_ENABLED
 
-#include "drivers/gles3/storage/mesh_storage.h"
+
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -3182,13 +5549,13 @@ public:
 // --- End drivers/gles3/rasterizer_scene_gles3.h ---
 
 
-#include "drivers/gles3/storage/mesh_storage.h"
+
 // --- Inlined/Folded from drivers/gles3/storage/particles_storage.h ---
 #ifdef GLES3_ENABLED
 
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "drivers/gles3/shaders/particles_copy.glsl.gen.h"
+#include "drivers/gles3/shaders/gles3_shaders.gen.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -3644,9 +6011,8 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-#include "drivers/gles3/storage/texture_storage.h"
-#include "drivers/gles3/storage/utilities.h"
-#include "servers/rendering/renderer_compositor.h"
+
+
 #include "servers/rendering/renderer.h"
 
 class RasterizerGLES3 final

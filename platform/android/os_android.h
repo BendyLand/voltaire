@@ -289,7 +289,7 @@ public:
 };
 
 // --- Folded from platform/android/dir_access_jandroid.h ---
-#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/os_unix.h"
 
 #include <jni.h>
 

@@ -35,7 +35,7 @@
 
 #include "test_gltf.h"
 
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/3d/primitive_meshes.h"

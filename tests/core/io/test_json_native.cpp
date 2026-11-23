@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_json_native)
 
-#include "core/io/json.h"
+#include "core/io/config_file.h"
 
 namespace TestJSONNative {
 

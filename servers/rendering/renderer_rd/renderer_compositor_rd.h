@@ -32,31 +32,2178 @@
 #pragma once
 
 #include "core/io/image.h"
-#include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined/Folded from servers/rendering/renderer_rd/environment/rd_environment.h ---
 #include "core/templates/rid_owner.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sky.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+// --- Folded from servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
+#include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/paged_allocator.h"
+#include "core/templates/rb_map.h"
+#include "core/templates/rid_owner.h"
+#include "core/templates/sort_array.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/rendering_server_enums.h"
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/storage/utilities.h"
+
+namespace RendererRD
+{
+
+struct DecalAtlas
+{
+	struct SortItem
+	{
+		RID texture;
+		Vector2i pos;
+		Size2i size;
+		Vector2i pixel_size;
+
+		bool operator<(const SortItem& p_item) const { return size.width > p_item.size.width; }
+	};
+
+	struct MipMap
+	{
+		RID texture;
+		RID fb;
+		Size2i size;
+	};
+
+	struct Texture
+	{
+		uint32_t users = 0;
+		uint32_t panorama_to_dp_users = 0;
+		Rect2 uv_rect;
+	};
+
+	HashMap<RID, Texture> textures;
+	RID texture;
+	RID texture_srgb;
+	Vector<MipMap> texture_mipmaps;
+	int mipmaps = 1;
+	Size2i size;
+	bool dirty = false;
+};
+
+struct AreaLightAtlas
+{
+	struct SortItem
+	{
+		RID texture;
+		Vector2i pos;
+		Size2i size;
+		Vector2i pixel_size;
+
+		bool operator<(const SortItem& p_item) const { return size.width > p_item.size.width; }
+	};
+
+	struct MipMap
+	{
+		RID texture;
+		RID fb;
+		Size2i size;
+	};
+
+	struct Texture
+	{
+		uint32_t users = 0;
+		Rect2 uv_rect;
+	};
+
+	HashMap<RID, Texture> textures;
+	RID texture;
+	Vector<MipMap> texture_mipmaps;
+	int mipmaps = 1;
+	Size2i size;
+	bool dirty = false;
+};
+
+struct TexBlitShader
+{
+	ShaderRD shader{BlitShaderRD()};
+	ShaderCompiler compiler;
+	RID default_shader;
+	RID default_material;
+	bool initialized = false;
+};
+
+class TextureStorage final
+{
+public:
+	typedef void (*InvalidationCallback)(bool, void*);
+	typedef InvalidationCallback CanvasTextureInvalidationCallback;
+
+	static inline TexBlitShader tex_blit_shader;
+
+	enum
+	{
+		SAMPLERS_BINDING_FIRST_INDEX = 1,
+	};
+
+	struct RenderTargetSDF
+	{
+		struct PushConstant
+		{
+			int32_t size[2];
+			int32_t stride = 0;
+			int32_t shift = 0;
+			int32_t base_size[2];
+			float pad[2];
+		};
+
+		ShaderRD shader;
+		ShaderCompiler compiler;
+		RID shader_version;
+		RID pipeline;
+
+		RenderTargetSDF() : shader(CanvasSdfShaderRD()) {}
+	};
+
+	static inline RenderTargetSDF rt_sdf;
+
+	enum TextureType
+	{
+		TYPE_2D,
+		TYPE_LAYERED,
+		TYPE_3D,
+	};
+
+	struct CanvasTextureInfo
+	{
+		RID diffuse;
+		RID normal;
+		RID specular;
+		RID sampler;
+		Size2i size;
+		Color specular_color;
+		float shininess = 0.0;
+		bool use_normal = false;
+		bool use_specular = false;
+
+		_FORCE_INLINE_ bool is_null() const { return diffuse.is_null(); }
+	};
+
+	enum DefaultRDTexture
+	{
+		DEFAULT_RD_TEXTURE_WHITE,
+		DEFAULT_RD_TEXTURE_BLACK,
+		DEFAULT_RD_TEXTURE_TRANSPARENT,
+		DEFAULT_RD_TEXTURE_NORMAL,
+		DEFAULT_RD_TEXTURE_ANISO,
+		DEFAULT_RD_TEXTURE_DEPTH,
+		DEFAULT_RD_TEXTURE_2D_ARRAY_WHITE,
+		DEFAULT_RD_TEXTURE_2D_ARRAY_BLACK,
+		DEFAULT_RD_TEXTURE_2D_ARRAY_TRANSPARENT,
+		DEFAULT_RD_TEXTURE_2D_ARRAY_NORMAL,
+		DEFAULT_RD_TEXTURE_2D_ARRAY_DEPTH,
+		DEFAULT_RD_TEXTURE_3D_WHITE,
+		DEFAULT_RD_TEXTURE_3D_BLACK,
+		DEFAULT_RD_TEXTURE_3D_TRANSPARENT,
+		DEFAULT_RD_TEXTURE_CUBEMAP_WHITE,
+		DEFAULT_RD_TEXTURE_CUBEMAP_BLACK,
+		DEFAULT_RD_TEXTURE_CUBEMAP_TRANSPARENT,
+		DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_WHITE,
+		DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_BLACK,
+		DEFAULT_RD_TEXTURE_CUBEMAP_ARRAY_TRANSPARENT,
+		DEFAULT_RD_TEXTURE_MAX,
+		DEFAULT_RD_TEXTURE_ROUGHNESS,
+		DEFAULT_RD_TEXTURE_METALLIC,
+		DEFAULT_RD_TEXTURE_FLOWMAP,
+	};
+
+	struct CanvasTextureCache
+	{
+		RID diffuse;
+		RID normal;
+		RID specular;
+		RID sampler;
+	};
+
+	struct CanvasTexture
+	{
+		RID self;
+		RID diffuse;
+		RID normal_map;
+		RID specular;
+		Color specular_color = Color(1, 1, 1, 1);
+		real_t shininess = 1.0;
+		RSE::CanvasItemTextureFilter texture_filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
+		RSE::CanvasItemTextureRepeat texture_repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+
+		CanvasTextureCache info_cache[2];
+		Size2i size_cache = Size2i(1, 1);
+		bool use_normal_cache = false;
+		bool use_specular_cache = false;
+
+		InvalidationCallback invalidated_callback = nullptr;
+		void* invalidated_callback_userdata = nullptr;
+
+		void clear_cache();
+		~CanvasTexture();
+	};
+
+	struct RenderTarget
+	{
+		RID self;
+		Size2i size;
+		Point2i position;
+		RID color;
+		RID depth;
+		RID rd_framebuffer;
+		Vector<RID> color_slices;
+		RID color_multisample;
+
+		RenderingDeviceCommons::DataFormat color_format =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_UNORM;
+		RenderingDeviceCommons::DataFormat color_format_srgb =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_SRGB;
+		Image::Format image_format = Image::FORMAT_RGBA8;
+
+		RID backbuffer;
+		RID backbuffer_mipmap0;
+		RID backbuffer_fb;
+		Vector<RID> backbuffer_mipmaps;
+
+		RID framebuffer_uniform_set;
+		RID backbuffer_uniform_set;
+
+		bool direct_to_screen = false;
+		bool is_transparent = false;
+		bool was_used = false;
+		bool clear_requested = false;
+		Color clear_color;
+		RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
+		bool msaa_needs_resolve = false;
+		bool use_hdr = false;
+		bool use_debanding = false;
+
+		Rect2i render_region;
+
+		RID texture;
+
+		RSE::ViewportSDFOversize sdf_oversize = RSE::VIEWPORT_SDF_OVERSIZE_100_PERCENT;
+		RSE::ViewportSDFScale sdf_scale = RSE::VIEWPORT_SDF_SCALE_100_PERCENT;
+		bool sdf_enabled = false;
+		RID sdf_buffer_read;
+		RID sdf_buffer_write;
+		RID sdf_buffer_write_fb;
+		RID sdf_buffer_process[2];
+		RID sdf_buffer_process_uniform_sets[2];
+
+		struct RTOverridden
+		{
+			RID color;
+			RID depth;
+			RID velocity;
+			RID velocity_depth;
+			bool is_overridden = false;
+
+			struct SliceKey
+			{
+				RID texture;
+				uint32_t layer = 0;
+
+				SliceKey(RID p_texture = RID(), uint32_t p_layer = 0)
+					: texture(p_texture), layer(p_layer)
+				{
+				}
+
+				bool operator==(const SliceKey& p_key) const
+				{
+					return texture == p_key.texture && layer == p_key.layer;
+				}
+
+				uint32_t hash() const
+				{
+					uint32_t h = hash_murmur3_one_64(texture.get_id());
+					return hash_murmur3_one_32(layer, h);
+				}
+			};
+
+			HashMap<SliceKey, RID> cached_slices;
+		};
+
+		typedef RTOverridden Overridden;
+		Overridden overridden;
+
+		uint32_t view_count = 1;
+		static inline Size2i velocity_target_size;
+
+		RSE::ViewportVRSMode vrs_mode = RSE::VIEWPORT_VRS_DISABLED;
+		RSE::ViewportVRSUpdateMode vrs_update_mode = RSE::VIEWPORT_VRS_UPDATE_ONCE;
+		RID vrs_texture;
+		bool subsampled_enabled = false;
+		bool subsampled_allowed = false;
+
+		RID get_framebuffer();
+	};
+
+	struct Texture
+	{
+		HashSet<RID> lightmap_users;
+		TextureType type = TYPE_2D;
+
+		RID self;
+		Image::Format format = Image::FORMAT_L8;
+		Image::Format real_format = Image::FORMAT_L8;
+		Image::Format validated_format = Image::FORMAT_L8;
+		int width = 0;
+		int height = 0;
+		int depth = 0;
+		int layers = 0;
+		int mipmaps = 1;
+		int width_2d = 0;
+		int height_2d = 0;
+
+		Ref<Image> image;
+		Ref<Image> image_cache_2d;
+		String path;
+		bool is_render_target = false;
+		bool is_proxy = false;
+		RID proxy_to;
+		Vector<RID> proxies;
+
+		CanvasTexture* canvas_texture = nullptr;
+		RenderTarget* render_target = nullptr;
+
+		RenderingDeviceCommons::TextureType rd_type = RenderingDeviceCommons::TEXTURE_TYPE_2D;
+		RenderingDeviceCommons::DataFormat rd_format =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_UNORM;
+		RenderingDeviceCommons::DataFormat rd_format_srgb =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_SRGB;
+		RD::TextureView rd_view;
+		RID rd_texture;
+		RID rd_texture_srgb;
+
+		struct BufferSlice3D
+		{
+			uint32_t offset = 0;
+			uint32_t buffer_size = 0;
+			Size2i size;
+		};
+
+		uint32_t buffer_size_3d = 0;
+		Vector<BufferSlice3D> buffer_slices_3d;
+
+		RSE::TextureLayeredType layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY;
+		RSE::TextureDrawableFormat drawable_type = RSE::TEXTURE_DRAWABLE_FORMAT_RGBA8;
+
+		RenderingServerTypes::TextureDetectCallback detect_3d_callback = nullptr;
+		void* detect_3d_callback_ud = nullptr;
+		RenderingServerTypes::TextureDetectCallback detect_normal_callback = nullptr;
+		void* detect_normal_callback_ud = nullptr;
+		RenderingServerTypes::TextureDetectRoughnessCallback detect_roughness_callback = nullptr;
+		void* detect_roughness_callback_ud = nullptr;
+		bool redraw_if_visible = false;
+
+		void cleanup();
+	};
+
+	struct Decal
+	{
+		Dependency dependency;
+		Vector3 size = Vector3(2, 2, 2);
+		RID textures[RSE::DECAL_TEXTURE_MAX];
+		float emission_energy = 1.0;
+		float albedo_mix = 1.0;
+		Color modulate = Color(1, 1, 1, 1);
+		uint32_t cull_mask = 0xFFFFFFFF;
+		bool distance_fade = false;
+		float distance_fade_begin = 40.0;
+		float distance_fade_length = 10.0;
+		float upper_fade = 0.3;
+		float lower_fade = 0.3;
+		float normal_fade = 0.0;
+	};
+
+	struct DecalInstance
+	{
+		RID decal;
+		Transform3D transform;
+		float sorting_offset = 0.0;
+		uint32_t forward_id = 0;
+		uint32_t cull_mask = 0xFFFFFFFF;
+	};
+
+	struct DecalInstanceSort
+	{
+		DecalInstance* decal_instance = nullptr;
+		Decal* decal = nullptr;
+		float depth = 0.0;
+
+		bool operator<(const DecalInstanceSort& p_sort) const { return depth < p_sort.depth; }
+	};
+
+	struct DecalData
+	{
+		float xform[16];
+		float inv_xform[16];
+		float normal_xform[12];
+		float modulate[4];
+		float emission[4];
+		float emission_energy;
+		float albedo_mix;
+		float normal_factor;
+		float specular;
+		float metallic;
+		float roughness;
+		float normal_scale;
+		uint32_t cull_mask;
+		float normal[3];
+		float normal_fade;
+		float albedo_rect[4];
+		float normal_rect[4];
+		float orm_rect[4];
+		float emission_rect[4];
+		uint32_t mask;
+		float upper_fade;
+		float lower_fade;
+	};
+
+	struct TextureFromRDFormat
+	{
+		RenderingDeviceCommons::DataFormat rd_format =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_UNORM;
+		RenderingDeviceCommons::DataFormat rd_format_srgb =
+			RenderingDeviceCommons::DATA_FORMAT_R8G8B8A8_SRGB;
+		Image::Format image_format = Image::FORMAT_RGBA8;
+		RenderingDeviceCommons::TextureSwizzle swizzle_r =
+			RenderingDeviceCommons::TEXTURE_SWIZZLE_IDENTITY;
+		RenderingDeviceCommons::TextureSwizzle swizzle_g =
+			RenderingDeviceCommons::TEXTURE_SWIZZLE_IDENTITY;
+		RenderingDeviceCommons::TextureSwizzle swizzle_b =
+			RenderingDeviceCommons::TEXTURE_SWIZZLE_IDENTITY;
+		RenderingDeviceCommons::TextureSwizzle swizzle_a =
+			RenderingDeviceCommons::TEXTURE_SWIZZLE_IDENTITY;
+	};
+
+	static inline AreaLightAtlas area_light_atlas;
+	static inline DecalAtlas decal_atlas;
+	static inline uint32_t decal_count = 0;
+	static inline uint32_t max_decals = 0;
+	static inline DecalInstanceSort* decal_sort = nullptr;
+	static inline DecalData* decals = nullptr;
+	static inline RID decal_buffer;
+
+	static inline Ref<Image> texture_2d_placeholder;
+	static inline Vector<Ref<Image>> texture_2d_array_placeholder;
+	static inline Vector<Ref<Image>> cubemap_placeholder;
+	static inline Vector<Ref<Image>> texture_3d_placeholder;
+
+	static inline RID_Owner<RenderTarget, true> render_target_owner;
+	static inline RID_Owner<Texture, true> texture_owner;
+	static inline RID_Owner<CanvasTexture, true> canvas_texture_owner;
+	static inline RID_Owner<Decal, true> decal_owner;
+	static inline RID_Owner<DecalInstance> decal_instance_owner;
+
+	static inline RID default_rd_textures[DEFAULT_RD_TEXTURE_MAX];
+	static inline Color default_clear_color = Color(0, 0, 0, 1);
+	static inline void set_default_clear_color(const Color &p_color) { default_clear_color = p_color; }
+	static inline Color get_default_clear_color() { return default_clear_color; }
+
+	TextureStorage() = delete;
+	TextureStorage(const TextureStorage&) = delete;
+	TextureStorage& operator=(const TextureStorage&) = delete;
+	~TextureStorage() = delete;
+
+	static bool free(RID p_rid);
+
+	static void _tex_blit_shader_initialize();
+	static void _tex_blit_shader_free();
+
+	static void _texture_format_from_rd(
+		RenderingDeviceCommons::DataFormat p_rd_format, TextureFromRDFormat& r_format);
+	static Size2i texture_2d_get_size(RID p_texture);
+
+	// Decal atlas & buffers
+	static RID decal_atlas_get_texture();
+	static RID decal_atlas_get_texture_srgb();
+
+	static Rect2 decal_atlas_get_texture_rect(RID p_texture)
+	{
+		if (decal_atlas.textures.has(p_texture)) {
+			return decal_atlas.textures[p_texture].uv_rect;
+		}
+		return Rect2();
+	}
+
+	static void update_decal_atlas();
+	static void decal_atlas_mark_dirty_on_texture(RID p_texture);
+	static void decal_atlas_remove_texture(RID p_texture);
+	static Dependency* decal_get_dependency(RID p_decal);
+
+	static RID get_decal_buffer() { return decal_buffer; }
+
+	static uint32_t decal_instance_get_forward_id(RID p_decal_instance);
+	static void update_decal_buffer(
+		const PagedArray<RID>& p_decals, const Transform3D& p_cam_transform);
+	static void free_decal_data();
+	static void set_max_decals(const uint32_t p_max_decals);
+
+	// Area light atlas queries
+	static RID area_light_atlas_get_texture();
+
+	static Rect2 area_light_atlas_get_texture_rect(RID p_texture)
+	{
+		if (area_light_atlas.textures.has(p_texture)) {
+			return area_light_atlas.textures[p_texture].uv_rect;
+		}
+		return Rect2();
+	}
+
+	static Size2i area_light_atlas_get_size() { return area_light_atlas.size; }
+
+	static int area_light_atlas_get_mipmaps() { return area_light_atlas.mipmaps; }
+
+	static void update_area_light_atlas();
+	static void area_light_atlas_mark_dirty_on_texture(RID p_texture);
+	static void area_light_atlas_remove_texture(RID p_texture);
+
+	// Render target format & slice overrides
+	static RenderingDeviceCommons::DataFormat render_target_get_color_format(
+		bool p_hdr, bool p_is_multiview = false);
+	static uint32_t render_target_get_color_usage_bits(bool p_vrs);
+	static RID render_target_get_override_depth_slice(RID p_render_target, uint32_t p_layer);
+	static RID render_target_get_override_velocity_slice(RID p_render_target, uint32_t p_layer);
+
+	// Default RD Texture fallback
+	static RID texture_rd_get_default(DefaultRDTexture p_texture)
+	{
+		ERR_FAIL_INDEX_V(p_texture, DEFAULT_RD_TEXTURE_MAX, RID());
+		return default_rd_textures[p_texture];
+	}
+
+	static CanvasTextureInfo canvas_texture_get_info(RID p_texture,
+		RenderingServerEnums::CanvasItemTextureFilter p_filter,
+		RenderingServerEnums::CanvasItemTextureRepeat p_repeat, bool p_use_linear_colors,
+		bool p_is_data);
+	static TextureType texture_get_type(RID p_texture);
+
+	// Canvas texture helpers
+	static void canvas_texture_set_invalidation_callback(
+		RID p_texture, CanvasTextureInvalidationCallback p_callback, void* p_userdata);
+
+	// Render Target RD textures, backbuffers, and framebuffers
+	static RID render_target_get_rd_texture(RID p_render_target);
+	static RID render_target_get_rd_texture_msaa(RID p_render_target);
+	static RID render_target_get_rd_texture_slice(RID p_render_target, uint32_t p_layer);
+	static RID render_target_get_rd_backbuffer(RID p_render_target);
+	static RID render_target_get_rd_framebuffer(RID p_render_target);
+	static RID render_target_get_sdf_texture(RID p_render_target);
+	static bool render_target_is_sdf_enabled(RID p_render_target);
+
+	// Render Target uniform sets and backbuffer operations
+	static void render_target_set_backbuffer_uniform_set(RID p_render_target, RID p_uniform_set);
+	static void render_target_set_framebuffer_uniform_set(RID p_render_target, RID p_uniform_set);
+	static void render_target_copy_to_back_buffer(
+		RID p_render_target, const Rect2i& p_region, bool p_gen_mipmaps);
+	static void render_target_clear_back_buffer(
+		RID p_render_target, const Rect2i& p_region, const Color& p_color);
+	static void render_target_gen_back_buffer_mipmaps(RID p_render_target, const Rect2i& p_region);
+
+	// Render Target internal helpers implemented in texture_storage.cpp
+	static void _clear_render_target(RenderTarget* rt);
+	static void _update_render_target(RenderTarget* rt);
+	static void _create_render_target_backbuffer(RenderTarget* rt);
+	static Rect2i _render_target_get_sdf_rect(const RenderTarget* rt);
+	static void _render_target_clear_sdf(RenderTarget* rt);
+	static void _render_target_allocate_sdf(RenderTarget* rt);
+	static RID render_target_get_sdf_framebuffer(RID p_render_target);
+	static void render_target_sdf_process(RID p_render_target);
+	static RID render_target_get_framebuffer_uniform_set(RID p_render_target);
+	static RID render_target_get_backbuffer_uniform_set(RID p_render_target);
+	static RID render_target_get_rd_backbuffer_framebuffer(RID p_render_target);
+
+	// Texture queries
+	static int texture_get_layers(RID p_texture);
+
+	static void initialize();
+	static void finalize();
+
+	/* CANVAS TEXTURE API */
+
+	static RID canvas_texture_allocate();
+	static void canvas_texture_initialize(RID p_rid);
+	static void canvas_texture_free(RID p_rid);
+
+	static void canvas_texture_set_channel(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture);
+	static void canvas_texture_set_shading_parameters(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess);
+	static void canvas_texture_set_texture_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter);
+	static void canvas_texture_set_texture_repeat(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat);
+
+	/* TEXTURE API */
+
+	static RID texture_allocate();
+	static void texture_free(RID p_rid);
+
+	static void texture_external_initialize(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer);
+	static void texture_proxy_initialize(RID p_texture, RID p_base);
+	static RID texture_create_from_native_handle(RSE::TextureType p_type, Image::Format p_format,
+		uint64_t p_native_handle, int p_width, int p_height, int p_depth, int p_layers = 1,
+		RSE::TextureLayeredType p_layered_type = RSE::TEXTURE_LAYERED_2D_ARRAY);
+
+	static void texture_external_update(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer);
+	static void texture_proxy_update(RID p_proxy, RID p_base);
+
+	static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image);
+	static void texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer = 0);
+	static void texture_2d_placeholder_initialize(RID p_texture);
+	static void texture_2d_layered_initialize(
+		RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type);
+	static void texture_2d_layered_placeholder_initialize(
+		RID p_texture, RSE::TextureLayeredType p_layered_type);
+
+	static void texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
+		int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data);
+	static void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data);
+	static void texture_3d_placeholder_initialize(RID p_texture);
+
+	static Ref<Image> texture_2d_get(RID p_texture);
+	static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer);
+	static Vector<Ref<Image>> texture_3d_get(RID p_texture);
+
+	static void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+		RSE::TextureDrawableFormat p_format, const Color& p_color = Color(),
+		bool p_has_mipmaps = false);
+	static void texture_drawable_generate_mipmaps(RID p_texture);
+	static RID texture_drawable_get_default_material();
+
+	static void texture_replace(RID p_texture, RID p_by_texture);
+	static void texture_set_size_override(RID p_texture, int p_width, int p_height);
+
+	static void texture_set_path(RID p_texture, const String& p_path);
+	static String texture_get_path(RID p_texture);
+
+	static void texture_set_format(RID p_texture, Image::Format p_format);
+	static Image::Format texture_get_format(RID p_texture);
+
+	static void texture_set_detect_3d_callback(
+		RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata);
+	static void texture_set_detect_normal_callback(
+		RID p_texture, RenderingServerTypes::TextureDetectCallback p_callback, void* p_userdata);
+	static void texture_set_detect_roughness_callback(RID p_texture,
+		RenderingServerTypes::TextureDetectRoughnessCallback p_callback, void* p_userdata);
+
+	static void texture_debug_usage(List<RenderingServerTypes::TextureInfo>* r_info);
+	static void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable);
+
+	static Size2 texture_size_with_proxy(RID p_proxy);
+
+	static void texture_rd_initialize(
+		RID p_texture, const RID& p_rd_texture, RSE::TextureLayeredType p_layered_type);
+	static RID texture_get_rd_texture(RID p_texture, bool p_srgb = false);
+	static uint64_t texture_get_native_handle(RID p_texture, bool p_srgb = false);
+
+	static void texture_add_to_area_light_atlas(RID p_texture);
+	static void texture_remove_from_area_light_atlas(RID p_texture);
+
+	static void texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp = false);
+	static void texture_remove_from_decal_atlas(RID p_texture, bool p_panorama_to_dp = false);
+
+	/* DECAL API */
+
+	static RID decal_allocate();
+	static void decal_initialize(RID p_decal);
+	static void decal_free(RID p_rid);
+
+	static void decal_set_size(RID p_decal, const Vector3& p_size);
+	static void decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture);
+	static void decal_set_emission_energy(RID p_decal, float p_energy);
+	static void decal_set_albedo_mix(RID p_decal, float p_mix);
+	static void decal_set_modulate(RID p_decal, const Color& p_modulate);
+	static void decal_set_cull_mask(RID p_decal, uint32_t p_layers);
+	static void decal_set_distance_fade(RID p_decal, bool p_enabled, float p_begin, float p_length);
+	static void decal_set_fade(RID p_decal, float p_above, float p_below);
+	static void decal_set_normal_fade(RID p_decal, float p_fade);
+
+	static AABB decal_get_aabb(RID p_decal);
+	static uint32_t decal_get_cull_mask(RID p_decal);
+
+	static RID decal_instance_create(RID p_decal);
+	static void decal_instance_free(RID p_decal_instance);
+	static void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform);
+	static void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset);
+
+	/* RENDER TARGET API */
+
+	static RID render_target_create();
+	static void render_target_free(RID p_rid);
+
+	static void render_target_set_position(RID p_render_target, int p_x, int p_y);
+	static Point2i render_target_get_position(RID p_render_target);
+
+	static void render_target_set_size(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count);
+	static Size2i render_target_get_size(RID p_render_target);
+
+	static void render_target_set_transparent(RID p_render_target, bool p_is_transparent);
+	static bool render_target_get_transparent(RID p_render_target);
+
+	static void render_target_set_direct_to_screen(RID p_render_target, bool p_direct_to_screen);
+	static bool render_target_get_direct_to_screen(RID p_render_target);
+
+	static bool render_target_was_used(RID p_render_target);
+	static void render_target_set_as_unused(RID p_render_target);
+
+	static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa);
+	static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target);
+
+	static void render_target_set_msaa_needs_resolve(RID p_render_target, bool p_needs_resolve);
+	static bool render_target_get_msaa_needs_resolve(RID p_render_target);
+	static void render_target_do_msaa_resolve(RID p_render_target);
+
+	static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr);
+	static bool render_target_is_using_hdr(RID p_render_target);
+
+	static void render_target_set_use_debanding(RID p_render_target, bool p_use_debanding);
+	static bool render_target_is_using_debanding(RID p_render_target);
+
+	static void render_target_request_clear(RID p_render_target, const Color& p_clear_color);
+	static bool render_target_is_clear_requested(RID p_render_target);
+	static Color render_target_get_clear_request_color(RID p_render_target);
+	static void render_target_disable_clear_request(RID p_render_target);
+	static void render_target_do_clear_request(RID p_render_target);
+
+	static void render_target_set_sdf_size_and_scale(
+		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale);
+	static Rect2i render_target_get_sdf_rect(RID p_render_target);
+	static void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled);
+
+	static void render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode);
+	static RSE::ViewportVRSMode render_target_get_vrs_mode(RID p_render_target);
+	static void render_target_set_vrs_update_mode(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode);
+	static RSE::ViewportVRSUpdateMode render_target_get_vrs_update_mode(RID p_render_target);
+	static void render_target_set_vrs_texture(RID p_render_target, RID p_texture);
+	static RID render_target_get_vrs_texture(RID p_render_target);
+
+	static void render_target_set_override(RID p_render_target, RID p_color_texture,
+		RID p_depth_texture, RID p_velocity = RID(), RID p_velocity_depth = RID());
+	static RID render_target_get_override_color(RID p_render_target);
+	static RID render_target_get_override_depth(RID p_render_target);
+	static RID render_target_get_override_velocity(RID p_render_target);
+	static RID render_target_get_override_velocity_depth(RID p_render_target);
+
+	static void render_target_set_render_region(RID p_render_target, const Rect2i& p_render_region);
+	static Rect2i render_target_get_render_region(RID p_render_target);
+
+	static void render_target_set_subsampled_enabled(RID p_render_target, bool p_enabled);
+	static bool render_target_is_subsampled_enabled(RID p_render_target);
+	static void render_target_set_subsampled_allowed(RID p_render_target, bool p_allowed);
+	static bool render_target_is_subsampled_allowed(RID p_render_target);
+
+	static RID render_target_get_texture(RID p_render_target);
+
+	static void render_target_set_velocity_target_size(
+		RID p_render_target, const Size2i& p_target_size)
+	{}
+
+	static Size2i render_target_get_velocity_target_size(RID p_render_target)
+	{
+		return RenderTarget::velocity_target_size;
+	}
+
+	static RenderTarget* get_render_target(RID p_rid)
+	{
+		return render_target_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_render_target(RID p_rid) { return render_target_owner.owns(p_rid); }
+
+	static Texture* get_texture(RID p_rid) { return texture_owner.get_or_null(p_rid); }
+
+	static bool owns_texture(RID p_rid) { return texture_owner.owns(p_rid); }
+
+	static CanvasTexture* get_canvas_texture(RID p_rid)
+	{
+		return canvas_texture_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_canvas_texture(RID p_rid) { return canvas_texture_owner.owns(p_rid); }
+
+	static Decal* get_decal(RID p_rid) { return decal_owner.get_or_null(p_rid); }
+
+	static bool owns_decal(RID p_rid) { return decal_owner.owns(p_rid); }
+
+	static DecalInstance* get_decal_instance(RID p_rid)
+	{
+		return decal_instance_owner.get_or_null(p_rid);
+	}
+
+	static bool owns_decal_instance(RID p_rid) { return decal_instance_owner.owns(p_rid); }
+};
+
+} // namespace RendererRD
+// --- End servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
+
+// --- Folded from servers/rendering/renderer_rd/storage_rd/material_storage.h ---
+#include "core/templates/rid_owner.h"
+#include "core/templates/self_list.h"
+
+#include "servers/rendering/renderer_rd/shader_rd.h"
+
+#include "servers/rendering/rendering_server_types.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/storage/utilities.h"
+
+struct Projection;
+
+namespace RendererRD
+{
+
+struct GlobalShaderUniforms
+{
+	enum
+	{
+		BUFFER_DIRTY_REGION_SIZE = 1024
+	};
+
+	struct Variable
+	{
+		HashSet<RID> texture_materials;
+
+		RSE::GlobalShaderParameterType type;
+		int32_t buffer_index;
+		int32_t buffer_elements;
+	};
+
+	HashMap<String, Variable> variables;
+
+	struct Value
+	{
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct ValueInt
+	{
+		int32_t x;
+		int32_t y;
+		int32_t z;
+		int32_t w;
+	};
+
+	struct ValueUInt
+	{
+		uint32_t x;
+		uint32_t y;
+		uint32_t z;
+		uint32_t w;
+	};
+
+	struct ValueUsage
+	{
+		uint32_t elements = 0;
+	};
+
+	List<RID> materials_using_buffer;
+	List<RID> materials_using_texture;
+
+	RID buffer;
+	Value* buffer_values = nullptr;
+	ValueUsage* buffer_usage = nullptr;
+	bool* buffer_dirty_regions = nullptr;
+	uint32_t buffer_dirty_region_count = 0;
+
+	uint32_t buffer_size = 0;
+
+	bool must_update_texture_materials = false;
+	bool must_update_buffer_materials = false;
+
+	HashMap<RID, int32_t> instance_buffer_pos;
+};
+
+struct Samplers
+{
+	RID rids[RSE::CANVAS_ITEM_TEXTURE_FILTER_MAX][RSE::CANVAS_ITEM_TEXTURE_REPEAT_MAX];
+	float mipmap_bias = 0.0f;
+	bool use_nearest_mipmap_filter = false;
+	int anisotropic_filtering_level = 2;
+
+	_FORCE_INLINE_ RID get_sampler(
+		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat) const
+	{
+		return rids[p_filter][p_repeat];
+	}
+
+	template <typename Collection>
+	void append_uniforms(Collection& p_uniforms, int p_first_index) const;
+	bool is_valid() const;
+	bool is_null() const;
+};
+
+class MaterialStorage final
+{
+public:
+	enum ShaderType
+	{
+		SHADER_TYPE_2D,
+		SHADER_TYPE_3D,
+		SHADER_TYPE_PARTICLES,
+		SHADER_TYPE_SKY,
+		SHADER_TYPE_FOG,
+		SHADER_TYPE_TEXTURE_BLIT,
+		SHADER_TYPE_MAX
+	};
+
+	struct ShaderData
+	{
+		enum BlendMode
+		{
+			BLEND_MODE_MIX,
+			BLEND_MODE_ADD,
+			BLEND_MODE_SUB,
+			BLEND_MODE_MUL,
+			BLEND_MODE_ALPHA_TO_COVERAGE,
+			BLEND_MODE_PREMULTIPLIED_ALPHA,
+			BLEND_MODE_DISABLED
+		};
+
+		String path;
+		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
+		HashMap<String, HashMap<int, RID>> default_texture_params;
+
+		bool is_tex_blit = false;
+		bool tex_blit_valid = false;
+		RID tex_blit_version;
+
+		virtual void set_path_hint(const String& p_hint);
+		virtual void set_default_texture_parameter(
+			const String& p_name, RID p_texture, int p_index);
+		virtual void get_instance_param_list(
+			List<InstanceShaderParam>* p_param_list) const;
+		virtual bool is_parameter_texture(const String& p_param) const;
+
+		virtual void set_code(const String& p_Code);
+		virtual bool is_animated() const;
+		virtual bool casts_shadows() const;
+		virtual RenderingServerTypes::ShaderNativeSourceCode get_native_source_code() const;
+		virtual Pair<ShaderRD*, RID> get_native_shader_and_version() const;
+
+		virtual ~ShaderData();
+
+		static RDC::PipelineColorBlendState::Attachment blend_mode_to_blend_attachment(
+			BlendMode p_mode);
+		static bool blend_mode_uses_blend_alpha(BlendMode p_mode);
+	};
+
+	struct MaterialData
+	{
+		Vector<RendererRD::TextureStorage::RenderTarget*> render_target_cache;
+		bool is_tex_blit = false;
+		ShaderData* tex_blit_shader_data = nullptr;
+		RID tex_blit_uniform_set;
+		bool tex_blit_uniform_set_updated = false;
+
+		void set_as_used();
+		RID get_default_texture_id(
+			ShaderLanguage::DataType p_type, ShaderLanguage::ShaderNode::Uniform::Hint p_hint);
+
+		virtual void set_render_priority(int p_priority) {}
+		virtual void set_next_pass(RID p_pass) {}
+		virtual ~MaterialData();
+
+		void free_parameters_uniform_set(RID p_uniform_set);
+
+	private:
+		friend class MaterialStorage;
+
+		RID self;
+		List<RID>::Element* global_buffer_E = nullptr;
+		List<RID>::Element* global_texture_E = nullptr;
+		uint64_t global_textures_pass = 0;
+		HashMap<String, uint64_t> used_global_textures;
+
+		Vector<uint8_t> ubo_data[2];
+		RID uniform_buffer[2];
+		Vector<RID> texture_cache;
+	};
+
+	/* Texture Blit Shader */
+
+	static ShaderData* _create_tex_blit_shader_func();
+
+	static MaterialStorage::ShaderData* _create_tex_blit_shader_funcs()
+	{
+		return _create_tex_blit_shader_func();
+	}
+
+	static MaterialData* _create_tex_blit_material_func(ShaderData* p_shader);
+
+	static MaterialStorage::MaterialData* _create_tex_blit_material_funcs(
+		MaterialStorage::ShaderData* p_shader)
+	{
+		return _create_tex_blit_material_func(p_shader);
+	}
+
+private:
+	/* Samplers */
+
+	static inline Samplers default_samplers;
+
+	/* Buffers */
+
+	static inline RID quad_index_buffer;
+	static inline RID quad_index_array;
+
+	/* GLOBAL SHADER UNIFORM API */
+
+	static inline GlobalShaderUniforms global_shader_uniforms;
+
+	static int32_t _global_shader_uniform_allocate(uint32_t p_elements);
+	static void _global_shader_uniform_mark_buffer_dirty(int32_t p_index, int32_t p_elements);
+
+	/* SHADER API */
+
+	struct Material;
+
+	struct Shader
+	{
+		Mutex* mutex = nullptr;
+		ShaderData* data = nullptr;
+		String code;
+		String path_hint;
+		ShaderType type;
+		HashMap<String, HashMap<int, RID>> default_texture_parameter;
+		HashSet<Material*> owners;
+		bool embedded = false;
+	};
+
+	typedef ShaderData* (*ShaderDataRequestFunction)();
+	static inline ShaderDataRequestFunction shader_data_request_func[SHADER_TYPE_MAX] = {};
+
+	static inline RID_Owner<Shader, true> shader_owner;
+	static inline HashSet<RID> embedded_set;
+	static inline Mutex embedded_set_mutex;
+
+	static Shader* get_shader(RID p_rid) { return shader_owner.get_or_null(p_rid); }
+
+	/* MATERIAL API */
+
+	typedef MaterialData* (*MaterialDataRequestFunction)(ShaderData*);
+
+	struct Material
+	{
+		RID self;
+		MaterialData* data = nullptr;
+		Shader* shader = nullptr;
+		ShaderType shader_type = SHADER_TYPE_MAX;
+		uint32_t shader_id = 0;
+		bool uniform_dirty = false;
+		bool texture_dirty = false;
+		int32_t priority = 0;
+		RID next_pass;
+		SelfList<Material> update_element;
+
+		Dependency dependency;
+
+		Material() : update_element(this) {}
+	};
+
+	static inline MaterialDataRequestFunction material_data_request_func[SHADER_TYPE_MAX] = {};
+	static inline RID_Owner<Material, true> material_owner;
+
+	static Material* get_material(RID p_rid) { return material_owner.get_or_null(p_rid); }
+
+	static inline SelfList<Material>::List material_update_list;
+	static inline Mutex material_update_list_mutex;
+
+	static void _material_uniform_set_erased(void* p_material);
+
+public:
+	// Lifecycle
+	static void initialize();
+	static void finalize();
+
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
+
+	static bool free(RID p_rid);
+
+	/* Helpers */
+
+	static _FORCE_INLINE_ void store_transform(const Transform3D& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.basis.rows[0][0];
+		p_array[1] = p_mtx.basis.rows[1][0];
+		p_array[2] = p_mtx.basis.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.basis.rows[0][1];
+		p_array[5] = p_mtx.basis.rows[1][1];
+		p_array[6] = p_mtx.basis.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.basis.rows[0][2];
+		p_array[9] = p_mtx.basis.rows[1][2];
+		p_array[10] = p_mtx.basis.rows[2][2];
+		p_array[11] = 0;
+		p_array[12] = p_mtx.origin.x;
+		p_array[13] = p_mtx.origin.y;
+		p_array[14] = p_mtx.origin.z;
+		p_array[15] = 1;
+	}
+
+	static _FORCE_INLINE_ void store_basis_3x4(const Basis& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.rows[0][0];
+		p_array[1] = p_mtx.rows[1][0];
+		p_array[2] = p_mtx.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.rows[0][1];
+		p_array[5] = p_mtx.rows[1][1];
+		p_array[6] = p_mtx.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.rows[0][2];
+		p_array[9] = p_mtx.rows[1][2];
+		p_array[10] = p_mtx.rows[2][2];
+		p_array[11] = 0;
+	}
+
+	static _FORCE_INLINE_ void store_transform_3x3(const Basis& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.rows[0][0];
+		p_array[1] = p_mtx.rows[1][0];
+		p_array[2] = p_mtx.rows[2][0];
+		p_array[3] = 0;
+		p_array[4] = p_mtx.rows[0][1];
+		p_array[5] = p_mtx.rows[1][1];
+		p_array[6] = p_mtx.rows[2][1];
+		p_array[7] = 0;
+		p_array[8] = p_mtx.rows[0][2];
+		p_array[9] = p_mtx.rows[1][2];
+		p_array[10] = p_mtx.rows[2][2];
+		p_array[11] = 0;
+	}
+
+	static _FORCE_INLINE_ void store_transform_transposed_3x4(
+		const Transform3D& p_mtx, float* p_array)
+	{
+		p_array[0] = p_mtx.basis.rows[0][0];
+		p_array[1] = p_mtx.basis.rows[0][1];
+		p_array[2] = p_mtx.basis.rows[0][2];
+		p_array[3] = p_mtx.origin.x;
+		p_array[4] = p_mtx.basis.rows[1][0];
+		p_array[5] = p_mtx.basis.rows[1][1];
+		p_array[6] = p_mtx.basis.rows[1][2];
+		p_array[7] = p_mtx.origin.y;
+		p_array[8] = p_mtx.basis.rows[2][0];
+		p_array[9] = p_mtx.basis.rows[2][1];
+		p_array[10] = p_mtx.basis.rows[2][2];
+		p_array[11] = p_mtx.origin.z;
+	}
+
+	static _FORCE_INLINE_ void store_camera(const Projection& p_mtx, float* p_array)
+	{
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				p_array[i * 4 + j] = p_mtx.columns[i][j];
+			}
+		}
+	}
+
+	static _FORCE_INLINE_ void store_soft_shadow_kernel(const float* p_kernel, float* p_array)
+	{
+		for (int i = 0; i < 128; i++) {
+			p_array[i] = p_kernel[i];
+		}
+	}
+
+#ifdef REAL_T_IS_DOUBLE
+	static _FORCE_INLINE_ void split_double(double a, float* a_hi, float* a_lo)
+	{
+		const double SPLITTER = (1 << 29) + 1;
+		double t = a * SPLITTER;
+		double t_hi = t - (t - a);
+		double t_lo = a - t_hi;
+		*a_hi = (float)t_hi;
+		*a_lo = (float)t_lo;
+	}
+#endif
+
+	/* Samplers */
+
+	static Samplers samplers_rd_allocate(
+		float p_mipmap_bias = 0.0f, RSE::ViewportAnisotropicFiltering anisotropic_filtering_level =
+										RSE::ViewportAnisotropicFiltering::VIEWPORT_ANISOTROPY_4X);
+	static void samplers_rd_free(Samplers& p_samplers);
+
+	static _FORCE_INLINE_ RID sampler_rd_get_default(
+		RSE::CanvasItemTextureFilter p_filter, RSE::CanvasItemTextureRepeat p_repeat)
+	{
+		return default_samplers.get_sampler(p_filter, p_repeat);
+	}
+
+	static _FORCE_INLINE_ const Samplers& samplers_rd_get_default() { return default_samplers; }
+
+	/* Buffers */
+
+	static RID get_quad_index_array() { return quad_index_array; }
+
+	/* GLOBAL SHADER UNIFORM API */
+
+	static void _update_global_shader_uniforms();
+
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
+
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+		const String& p_name);
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type_internal(
+		const String& p_name);
+
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
+	static void global_shader_parameters_clear();
+
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance);
+	static void global_shader_parameters_instance_free(RID p_instance);
+
+	static RID global_shader_uniforms_get_storage_buffer();
+
+	/* SHADER API */
+
+	static bool owns_shader(RID p_rid) { return shader_owner.owns(p_rid); }
+
+	static RID shader_allocate();
+	static void shader_initialize(RID p_shader, bool p_embedded = true);
+	static void shader_free(RID p_rid);
+
+	static void shader_set_code(RID p_shader, const String& p_code);
+	static void shader_set_path_hint(RID p_shader, const String& p_path);
+	static String shader_get_code(RID p_shader);
+
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const String& p_name, RID p_texture, int p_index);
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const String& p_name, int p_index);
+	static void shader_set_data_request_function(
+		ShaderType p_shader_type, ShaderDataRequestFunction p_function);
+	static ShaderData* shader_get_data(RID p_shader);
+
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader);
+	static void shader_embedded_set_lock();
+	static const HashSet<RID>& shader_embedded_set_get();
+	static void shader_embedded_set_unlock();
+
+	/* MATERIAL API */
+
+	static bool owns_material(RID p_rid) { return material_owner.owns(p_rid); }
+
+	static void _material_queue_update(Material* material, bool p_uniform, bool p_texture);
+	static void _update_queued_materials();
+
+	static RID material_allocate();
+	static void material_initialize(RID p_material);
+	static void material_free(RID p_rid);
+
+	static void material_set_shader(RID p_material, RID p_shader);
+	static ShaderData* material_get_shader_data(RID p_material);
+
+	static void material_set_next_pass(RID p_material, RID p_next_material);
+	static void material_set_render_priority(RID p_material, int priority);
+
+	static bool material_is_animated(RID p_material);
+	static bool material_casts_shadows(RID p_material);
+	static RSE::CullMode material_get_cull_mode(RID p_material);
+
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<InstanceShaderParam>* r_parameters);
+
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance);
+
+	static void material_set_data_request_function(
+		ShaderType p_shader_type, MaterialDataRequestFunction p_function);
+	static MaterialDataRequestFunction material_get_data_request_function(ShaderType p_shader_type);
+
+	static _FORCE_INLINE_ uint32_t material_get_shader_id(RID p_material)
+	{
+		Material* material = material_owner.get_or_null(p_material);
+		return material->shader_id;
+	}
+
+	static _FORCE_INLINE_ MaterialData* material_get_data(RID p_material, ShaderType p_shader_type)
+	{
+		Material* material = material_owner.get_or_null(p_material);
+		if (!material || material->shader_type != p_shader_type) {
+			return nullptr;
+		}
+		else {
+			return material->data;
+		}
+	}
+};
+
+} // namespace RendererRD
+// --- End servers/rendering/renderer_rd/storage_rd/material_storage.h ---
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "core/templates/local_vector.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/shaders/environment/gi.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sdfgi_debug.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sdfgi_debug_probes.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sdfgi_direct_light.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sdfgi_integrate.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/sdfgi_preprocess.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/voxel_gi.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/voxel_gi_debug.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/storage/utilities.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/environment/volumetric_fog_process.glsl.gen.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+// --- Folded from servers/rendering/renderer_rd/rd_caches.h ---
+#include "core/templates/local_vector.h"
+#include "core/templates/paged_allocator.h"
+#include "servers/rendering/rendering_device.h"
+#include "core/os/mutex.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/rb_map.h"
+#include "core/templates/rb_set.h"
+#include "core/templates/rid.h"
+#include "core/templates/vector.h"
+#include "servers/rendering/rendering_server_enums.h"
+
+class FramebufferCacheRD final
+{
+public:
+    struct Cache
+    {
+        Cache* prev = nullptr;
+        Cache* next = nullptr;
+        uint32_t hash = 0;
+        RID cache;
+        LocalVector<RID> textures;
+        LocalVector<RD::FramebufferPass> passes;
+        uint32_t views = 0;
+    };
+
+    enum
+    {
+        HASH_TABLE_SIZE = 16381 // Prime
+    };
+
+    struct Data
+    {
+        PagedAllocator<Cache> cache_allocator;
+        Cache* hash_table[HASH_TABLE_SIZE] = {};
+        uint32_t cache_instances_used = 0;
+    };
+
+    static inline Data* data = nullptr;
+
+    static void initialize();
+    static void finalize();
+    static bool is_initialized() { return data != nullptr; }
+
+private:
+    static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
+    {
+        h = hash_murmur3_one_32(p.depth_attachment, h);
+        h = hash_murmur3_one_32(p.depth_resolve_attachment, h);
+
+        h = hash_murmur3_one_32(p.color_attachments.size(), h);
+        for (int i = 0; i < p.color_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.color_attachments[i], h);
+        }
+
+        h = hash_murmur3_one_32(p.resolve_attachments.size(), h);
+        for (int i = 0; i < p.resolve_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.resolve_attachments[i], h);
+        }
+
+        h = hash_murmur3_one_32(p.preserve_attachments.size(), h);
+        for (int i = 0; i < p.preserve_attachments.size(); i++) {
+            h = hash_murmur3_one_32(p.preserve_attachments[i], h);
+        }
+
+        return h;
+    }
+
+    static _FORCE_INLINE_ bool _compare_pass(
+        const RD::FramebufferPass& a, const RD::FramebufferPass& b)
+    {
+        if (a.depth_attachment != b.depth_attachment) {
+            return false;
+        }
+
+        if (a.depth_resolve_attachment != b.depth_resolve_attachment) {
+            return false;
+        }
+
+        if (a.color_attachments.size() != b.color_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.color_attachments.size(); i++) {
+            if (a.color_attachments[i] != b.color_attachments[i]) {
+                return false;
+            }
+        }
+
+        if (a.resolve_attachments.size() != b.resolve_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.resolve_attachments.size(); i++) {
+            if (a.resolve_attachments[i] != b.resolve_attachments[i]) {
+                return false;
+            }
+        }
+
+        if (a.preserve_attachments.size() != b.preserve_attachments.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.preserve_attachments.size(); i++) {
+            if (a.preserve_attachments[i] != b.preserve_attachments[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static _FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
+    {
+        return hash_murmur3_one_64(arg.get_id(), h);
+    }
+
+    template <typename... Args> static uint32_t _hash_rids(uint32_t h, const RID& arg, Args... args)
+    {
+        h = hash_murmur3_one_64(arg.get_id(), h);
+        return _hash_rids(h, args...);
+    }
+
+    static _FORCE_INLINE_ bool _compare_args(
+        uint32_t idx, const LocalVector<RID>& textures, const RID& arg)
+    {
+        return textures[idx] == arg;
+    }
+
+    template <typename... Args>
+    static _FORCE_INLINE_ bool _compare_args(
+        uint32_t idx, const LocalVector<RID>& textures, const RID& arg, Args... args)
+    {
+        if (textures[idx] != arg) {
+            return false;
+        }
+        return _compare_args(idx + 1, textures, args...);
+    }
+
+    static void _invalidate(Cache* p_cache);
+    static void _framebuffer_invalidation_callback(void* p_userdata);
+
+    static RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
+        const Vector<RID>& p_textures, const Vector<RD::FramebufferPass>& p_passes)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
+
+        RID rid;
+        if (p_passes.size()) {
+            rid = RD::framebuffer_create_multipass(
+                p_textures, p_passes, RDC::INVALID_ID, p_views);
+        }
+        else {
+            rid = RD::framebuffer_create(p_textures, RDC::INVALID_ID, p_views);
+        }
+
+        ERR_FAIL_COND_V(rid.is_null(), rid);
+
+        Cache* c = data->cache_allocator.alloc();
+        c->views = p_views;
+        c->cache = rid;
+        c->hash = p_hash;
+        c->textures.resize(p_textures.size());
+        for (uint32_t i = 0; i < c->textures.size(); i++) {
+            c->textures[i] = p_textures[i];
+        }
+        c->passes.resize(p_passes.size());
+        for (uint32_t i = 0; i < c->passes.size(); i++) {
+            c->passes[i] = p_passes[i];
+        }
+        c->prev = nullptr;
+        c->next = data->hash_table[p_table_idx];
+        if (data->hash_table[p_table_idx]) {
+            data->hash_table[p_table_idx]->prev = c;
+        }
+        data->hash_table[p_table_idx] = c;
+
+        RD::framebuffer_set_invalidation_callback(
+            rid, _framebuffer_invalidation_callback, c);
+
+        data->cache_instances_used++;
+
+        return rid;
+    }
+
+public:
+    template <typename... Args> static RID get_cache(Args... args)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
+
+        uint32_t h = hash_murmur3_one_32(1); // 1 view
+        h = hash_murmur3_one_32(sizeof...(Args), h);
+        h = _hash_rids(h, args...);
+        h = hash_murmur3_one_32(0, h); // 0 passes
+        h = hash_fmix32(h);
+
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
+
+            while (c) {
+                if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+                    c->views == 1 && _compare_args(0, c->textures, args...)) {
+                    return c->cache;
+                }
+                c = c->next;
+            }
+        }
+
+        // Not in cache, create:
+        return _allocate_from_data(
+            1, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
+    }
+
+    template <typename... Args> static RID get_cache_multiview(uint32_t p_views, Args... args)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
+
+        uint32_t h = hash_murmur3_one_32(p_views);
+        h = hash_murmur3_one_32(sizeof...(Args), h);
+        h = _hash_rids(h, args...);
+        h = hash_murmur3_one_32(0, h); // 0 passes
+        h = hash_fmix32(h);
+
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
+
+            while (c) {
+                if (c->hash == h && c->passes.is_empty() && c->textures.size() == sizeof...(Args) &&
+                    c->views == p_views && _compare_args(0, c->textures, args...)) {
+                    return c->cache;
+                }
+                c = c->next;
+            }
+        }
+
+        // Not in cache, create:
+        return _allocate_from_data(
+            p_views, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
+    }
+
+    static RID get_cache_multipass(const Vector<RID>& p_textures,
+        const Vector<RD::FramebufferPass>& p_passes, uint32_t p_views = 1)
+    {
+        ERR_FAIL_COND_V(data == nullptr, RID());
+
+        uint32_t h = hash_murmur3_one_32(p_views);
+        h = hash_murmur3_one_32(p_textures.size(), h);
+        for (int i = 0; i < p_textures.size(); i++) {
+            h = hash_murmur3_one_64(p_textures[i].get_id(), h);
+        }
+        h = hash_murmur3_one_32(p_passes.size(), h);
+        for (int i = 0; i < p_passes.size(); i++) {
+            h = _hash_pass(p_passes[i], h);
+        }
+
+        h = hash_fmix32(h);
+
+        uint32_t table_idx = h % HASH_TABLE_SIZE;
+        {
+            const Cache* c = data->hash_table[table_idx];
+
+            while (c) {
+                if (c->hash == h && c->views == p_views &&
+                    c->textures.size() == (uint32_t)p_textures.size() &&
+                    c->passes.size() == (uint32_t)p_passes.size()) {
+                    bool all_ok = true;
+
+                    for (int i = 0; i < p_textures.size(); i++) {
+                        if (p_textures[i] != c->textures[i]) {
+                            all_ok = false;
+                            break;
+                        }
+                    }
+
+                    if (all_ok) {
+                        for (int i = 0; i < p_passes.size(); i++) {
+                            if (!_compare_pass(p_passes[i], c->passes[i])) {
+                                all_ok = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (all_ok) {
+                        return c->cache;
+                    }
+                }
+                c = c->next;
+            }
+        }
+
+        // Not in cache, create:
+        return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
+    }
+
+    FramebufferCacheRD() = delete;
+    FramebufferCacheRD(const FramebufferCacheRD&) = delete;
+    FramebufferCacheRD& operator=(const FramebufferCacheRD&) = delete;
+    ~FramebufferCacheRD() = delete;
+};
+
+class PipelineCacheRD final
+{
+	SpinLock spin_lock;
+
+	RID shader;
+
+	RDC::RenderPrimitive render_primitive;
+	RDC::PipelineRasterizationState rasterization_state;
+	RDC::PipelineMultisampleState multisample_state;
+	RDC::PipelineDepthStencilState depth_stencil_state;
+	RDC::PipelineColorBlendState blend_state;
+	int dynamic_state_flags = 0;
+	Vector<RDC::PipelineSpecializationConstant> base_specialization_constants;
+
+	struct Version
+	{
+		RD::VertexFormatID vertex_id;
+		RD::FramebufferFormatID framebuffer_id;
+		uint32_t render_pass;
+		bool wireframe;
+		uint32_t bool_specializations;
+		RID pipeline;
+	};
+
+	Version* versions = nullptr;
+	uint32_t version_count;
+
+	RID _generate_version(RD::VertexFormatID p_vertex_format_id,
+		RD::FramebufferFormatID p_framebuffer_format_id, bool p_wireframe, uint32_t p_render_pass,
+		uint32_t p_bool_specializations = 0);
+
+	void _clear();
+
+public:
+	void setup(RID p_shader, RDC::RenderPrimitive p_primitive,
+		const RDC::PipelineRasterizationState& p_rasterization_state,
+		RDC::PipelineMultisampleState p_multisample,
+		const RDC::PipelineDepthStencilState& p_depth_stencil_state,
+		const RDC::PipelineColorBlendState& p_blend_state, int p_dynamic_state_flags = 0,
+		const Vector<RDC::PipelineSpecializationConstant>& p_base_specialization_constants =
+			Vector<RDC::PipelineSpecializationConstant>());
+	void update_specialization_constants(
+		const Vector<RDC::PipelineSpecializationConstant>& p_base_specialization_constants);
+	void update_shader(RID p_shader);
+
+	_FORCE_INLINE_ RID get_render_pipeline(RD::VertexFormatID p_vertex_format_id,
+		RD::FramebufferFormatID p_framebuffer_format_id, bool p_wireframe = false,
+		uint32_t p_render_pass = 0, uint32_t p_bool_specializations = 0)
+	{
+#ifdef DEBUG_ENABLED
+		ERR_FAIL_COND_V_MSG(
+			shader.is_null(), RID(), "Attempted to use an unused shader variant (shader is null),");
+#endif
+
+		spin_lock.lock();
+		p_wireframe |= rasterization_state.wireframe;
+
+		RID result;
+		for (uint32_t i = 0; i < version_count; i++) {
+			if (versions[i].vertex_id == p_vertex_format_id &&
+				versions[i].framebuffer_id == p_framebuffer_format_id &&
+				versions[i].wireframe == p_wireframe && versions[i].render_pass == p_render_pass &&
+				versions[i].bool_specializations == p_bool_specializations) {
+				result = versions[i].pipeline;
+				spin_lock.unlock();
+				return result;
+			}
+		}
+		result = _generate_version(p_vertex_format_id, p_framebuffer_format_id, p_wireframe,
+			p_render_pass, p_bool_specializations);
+		spin_lock.unlock();
+		return result;
+	}
+
+	_FORCE_INLINE_ uint64_t get_vertex_input_mask()
+	{
+		ERR_FAIL_COND_V(shader.is_null(), 0);
+		return RD::shader_get_vertex_input_attribute_mask(shader);
+	}
+
+	void clear();
+	PipelineCacheRD();
+	~PipelineCacheRD();
+};
+
+class UniformSetCacheRD final
+{
+public:
+	struct Cache
+	{
+		Cache* prev = nullptr;
+		Cache* next = nullptr;
+		uint32_t hash = 0;
+		RID shader;
+		uint32_t set = 0;
+		RID cache;
+		LocalVector<RD::Uniform> uniforms;
+	};
+
+	enum
+	{
+		HASH_TABLE_SIZE = 16381 // Prime
+	};
+
+	struct Data
+	{
+		PagedAllocator<Cache> cache_allocator;
+		Cache* hash_table[HASH_TABLE_SIZE] = {};
+		uint32_t cache_instances_used = 0;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+private:
+	static _FORCE_INLINE_ uint32_t _hash_uniform(const RD::Uniform& u, uint32_t h)
+	{
+		h = hash_murmur3_one_32(u.uniform_type, h);
+		h = hash_murmur3_one_32(u.binding, h);
+		uint32_t rsize = u.get_id_count();
+		for (uint32_t j = 0; j < rsize; j++) {
+			h = hash_murmur3_one_64(u.get_id(j).get_id(), h);
+		}
+		return hash_fmix32(h);
+	}
+
+	static _FORCE_INLINE_ bool _compare_uniform(const RD::Uniform& a, const RD::Uniform& b)
+	{
+		if (a.binding != b.binding) {
+			return false;
+		}
+		if (a.uniform_type != b.uniform_type) {
+			return false;
+		}
+		uint32_t rsize = a.get_id_count();
+		if (rsize != b.get_id_count()) {
+			return false;
+		}
+		for (uint32_t j = 0; j < rsize; j++) {
+			if (a.get_id(j) != b.get_id(j)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	static _FORCE_INLINE_ uint32_t _hash_args(uint32_t h, const RD::Uniform& arg)
+	{
+		return _hash_uniform(arg, h);
+	}
+
+	template <typename... Args>
+	static uint32_t _hash_args(uint32_t h, const RD::Uniform& arg, Args... args)
+	{
+		h = _hash_uniform(arg, h);
+		return _hash_args(h, args...);
+	}
+
+	static _FORCE_INLINE_ bool _compare_args(
+		uint32_t idx, const LocalVector<RD::Uniform>& uniforms, const RD::Uniform& arg)
+	{
+		return _compare_uniform(uniforms[idx], arg);
+	}
+
+	template <typename... Args>
+	static _FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RD::Uniform>& uniforms,
+		const RD::Uniform& arg, Args... args)
+	{
+		if (!_compare_uniform(uniforms[idx], arg)) {
+			return false;
+		}
+		return _compare_args(idx + 1, uniforms, args...);
+	}
+
+	static void _invalidate(Cache* p_cache);
+	static void _uniform_set_invalidation_callback(void* p_userdata);
+
+	template <typename Collection>
+	static RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash,
+		uint32_t p_table_idx, const Collection& p_uniforms)
+	{
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
+		RID rid = RD::uniform_set_create(p_uniforms, p_shader, p_set);
+		ERR_FAIL_COND_V(rid.is_null(), rid);
+
+		Cache* c = data->cache_allocator.alloc();
+		c->hash = p_hash;
+		c->set = p_set;
+		c->shader = p_shader;
+		c->cache = rid;
+		c->uniforms.resize(p_uniforms.size());
+		for (uint32_t i = 0; i < c->uniforms.size(); i++) {
+			c->uniforms[i] = p_uniforms[i];
+		}
+		c->prev = nullptr;
+		c->next = data->hash_table[p_table_idx];
+		if (data->hash_table[p_table_idx]) {
+			data->hash_table[p_table_idx]->prev = c;
+		}
+		data->hash_table[p_table_idx] = c;
+
+		RD::uniform_set_set_invalidation_callback(rid, _uniform_set_invalidation_callback, c);
+
+		data->cache_instances_used++;
+
+		return rid;
+	}
+
+public:
+	template <typename... Args> static RID get_cache(RID p_shader, uint32_t p_set, Args... args)
+	{
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
+		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
+		h = hash_murmur3_one_32(p_set, h);
+		h = _hash_args(h, args...);
+
+		uint32_t table_idx = h % HASH_TABLE_SIZE;
+		{
+			const Cache* c = data->hash_table[table_idx];
+
+			while (c) {
+				if (c->hash == h && c->set == p_set && c->shader == p_shader &&
+					sizeof...(Args) == c->uniforms.size() &&
+					_compare_args(0, c->uniforms, args...)) {
+					return c->cache;
+				}
+				c = c->next;
+			}
+		}
+
+		// Not in cache, create:
+		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, Vector<RD::Uniform>{args...});
+	}
+
+	static RID get_cache_vec(
+		RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
+	{
+		ERR_FAIL_COND_V(data == nullptr, RID());
+
+		uint32_t h = hash_murmur3_one_64(p_shader.get_id());
+		h = hash_murmur3_one_32(p_set, h);
+		for (uint32_t i = 0; i < p_uniforms.size(); i++) {
+			h = _hash_uniform(p_uniforms[i], h);
+		}
+
+		h = hash_fmix32(h);
+
+		uint32_t table_idx = h % HASH_TABLE_SIZE;
+		{
+			const Cache* c = data->hash_table[table_idx];
+
+			while (c) {
+				if (c->hash == h && c->set == p_set && c->shader == p_shader &&
+					(uint32_t)p_uniforms.size() == c->uniforms.size()) {
+					bool all_ok = true;
+					for (uint32_t i = 0; i < p_uniforms.size(); i++) {
+						if (!_compare_uniform(p_uniforms[i], c->uniforms[i])) {
+							all_ok = false;
+							break;
+						}
+					}
+
+					if (all_ok) {
+						return c->cache;
+					}
+				}
+				c = c->next;
+			}
+		}
+
+		// Not in cache, create:
+		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, p_uniforms);
+	}
+
+	UniformSetCacheRD() = delete;
+	UniformSetCacheRD(const UniformSetCacheRD&) = delete;
+	UniformSetCacheRD& operator=(const UniformSetCacheRD&) = delete;
+	~UniformSetCacheRD() = delete;
+};
+
+// Helper class for automatically deferring compilation of a pipeline to a background task.
+// When attempting to retrieve the pipeline with the getter, the caller will automatically
+// wait for it to be ready.
+
+class PipelineDeferredRD final
+{
+protected:
+	struct CreationParameters
+	{
+		RID shader;
+		RD::FramebufferFormatID framebuffer_format;
+		RD::VertexFormatID vertex_format;
+		RDC::RenderPrimitive render_primitive;
+		RDC::PipelineRasterizationState rasterization_state;
+		RDC::PipelineMultisampleState multisample_state;
+		RDC::PipelineDepthStencilState depth_stencil_state;
+		RDC::PipelineColorBlendState blend_state;
+		uint32_t dynamic_state_flags;
+		uint32_t for_render_pass;
+		Vector<RDC::PipelineSpecializationConstant> specialization_constants;
+		bool is_compute;
+	};
+
+	RID pipeline;
+
+	void _create(const CreationParameters& c)
+	{
+		if (c.is_compute) {
+			pipeline =
+				RD::compute_pipeline_create(c.shader, c.specialization_constants);
+		}
+		else {
+			pipeline = RD::render_pipeline_create(c.shader, c.framebuffer_format,
+				c.vertex_format, c.render_primitive, c.rasterization_state, c.multisample_state,
+				c.depth_stencil_state, c.blend_state, c.dynamic_state_flags, c.for_render_pass,
+				c.specialization_constants);
+		}
+	}
+
+	void _start(const CreationParameters& c) { free(); }
+
+public:
+	PipelineDeferredRD()
+	{
+		// Default constructor.
+	}
+
+	~PipelineDeferredRD()
+	{
+#ifdef DEV_ENABLED
+		ERR_FAIL_COND_MSG(
+			pipeline.is_valid(), "'free()' must be called manually before deconstruction and "
+								 "before the corresponding shader is freed.");
+#endif
+	}
+
+	void create_render_pipeline(RID p_shader, RD::FramebufferFormatID p_framebuffer_format,
+		RD::VertexFormatID p_vertex_format, RDC::RenderPrimitive p_render_primitive,
+		const RDC::PipelineRasterizationState& p_rasterization_state,
+		const RDC::PipelineMultisampleState& p_multisample_state,
+		const RDC::PipelineDepthStencilState& p_depth_stencil_state,
+		const RDC::PipelineColorBlendState& p_blend_state, uint32_t())
+	{
+		CreationParameters c;
+		c.shader = p_shader;
+		c.framebuffer_format = p_framebuffer_format;
+		c.vertex_format = p_vertex_format;
+		c.render_primitive = p_render_primitive;
+		c.rasterization_state = p_rasterization_state;
+		c.multisample_state = p_multisample_state;
+		c.depth_stencil_state = p_depth_stencil_state;
+		c.blend_state = p_blend_state;
+		c.is_compute = false;
+		_start(c);
+	}
+
+	void create_compute_pipeline(
+		RID p_shader, const Vector<RDC::PipelineSpecializationConstant>& p_specialization_constants =
+						  Vector<RDC::PipelineSpecializationConstant>())
+	{
+		CreationParameters c = {};
+		c.shader = p_shader;
+		c.specialization_constants = p_specialization_constants;
+		c.is_compute = true;
+		_start(c);
+	}
+
+	RID get_rid() { return pipeline; }
+
+	void free()
+	{
+		if (pipeline.is_valid()) {
+#ifdef DEV_ENABLED
+			ERR_FAIL_COND_MSG(!(RD::render_pipeline_is_valid(pipeline) ||
+								  RD::compute_pipeline_is_valid(pipeline)),
+				"`free()` must be called  manually before the dependent shader is freed.");
+#endif
+			RD::free_rid(pipeline);
+			pipeline = RID();
+		}
+	}
+};
+
+#define PRINT_PIPELINE_COMPILATION_KEYS 0
+
+template <typename Key, typename CreationClass, typename CreationFunction> class PipelineHashMapRD final
+{
+private:
+	CreationClass* creation_object = nullptr;
+	CreationFunction creation_function = nullptr;
+	Mutex* compilations_mutex = nullptr;
+	uint32_t* compilations = nullptr;
+	RBMap<uint32_t, RID> hash_map;
+	LocalVector<Pair<uint32_t, RID>> compiled_queue;
+	Mutex compiled_queue_mutex;
+	RBSet<uint32_t> compilation_set;
+	Mutex local_mutex;
+
+	bool _add_new_pipelines_to_map()
+	{
+		bool added = false;
+		MutexLock lock(compiled_queue_mutex);
+		for (const Pair<uint32_t, RID>& pair : compiled_queue) {
+			hash_map[pair.first] = pair.second;
+			added = true;
+		}
+		compiled_queue.clear();
+		return added;
+	}
+
+public:
+	void add_compiled_pipeline(uint32_t p_hash, RID p_pipeline)
+	{
+		compiled_queue_mutex.lock();
+		compiled_queue.push_back({p_hash, p_pipeline});
+		compiled_queue_mutex.unlock();
+	}
+
+	// Start compilation of a pipeline ahead of time in the background. Returns true if the
+	// compilation was started, false if it wasn't required. Source is only used for collecting
+	// statistics.
+	void compile_pipeline(
+		const Key& p_key, uint32_t p_key_hash, RSE::PipelineSource p_source, bool p_high_priority)
+	{
+		DEV_ASSERT(
+			(creation_object != nullptr) && (creation_function != nullptr) &&
+			"Creation object and function was not set before attempting to compile a pipeline.");
+
+		{
+			MutexLock local_lock(local_mutex);
+			if (compilation_set.has(p_key_hash)) {
+				// Check if the pipeline was already submitted.
+				return;
+			}
+
+			// Record the pipeline as submitted, a task can't be started for it again.
+			compilation_set.insert(p_key_hash);
+
+			if (compilations_mutex != nullptr) {
+				MutexLock compilations_lock(*compilations_mutex);
+				compilations[p_source]++;
+			}
+		}
+
+#if PRINT_PIPELINE_COMPILATION_KEYS
+		String source_name = "UNKNOWN";
+		switch (p_source) {
+		case RSE::PIPELINE_SOURCE_CANVAS:
+			source_name = "CANVAS";
+			break;
+		case RSE::PIPELINE_SOURCE_MESH:
+			source_name = "MESH";
+			break;
+		case RSE::PIPELINE_SOURCE_SURFACE:
+			source_name = "SURFACE";
+			break;
+		case RSE::PIPELINE_SOURCE_DRAW:
+			source_name = "DRAW";
+			break;
+		case RSE::PIPELINE_SOURCE_SPECIALIZATION:
+			source_name = "SPECIALIZATION";
+			break;
+		}
+
+		print_line("HASH:", p_key_hash, "SOURCE:", source_name);
+#endif
+
+		(creation_object->*creation_function)(p_key);
+	}
+
+	RID get_pipeline(const Key& p_key, uint32_t p_key_hash, bool p_wait_for_compilation,
+		RSE::PipelineSource p_source)
+	{
+		RBMap<uint32_t, RID>::Element* e = hash_map.find(p_key_hash);
+
+		if (e == nullptr) {
+			if (_add_new_pipelines_to_map()) {
+				e = hash_map.find(p_key_hash);
+			}
+		}
+
+		if (e == nullptr) {
+			compile_pipeline(p_key, p_key_hash, p_source, p_wait_for_compilation);
+			_add_new_pipelines_to_map();
+
+			e = hash_map.find(p_key_hash);
+			if (e != nullptr) {
+				return e->value();
+			}
+			else if (p_wait_for_compilation) {
+				hash_map[p_key_hash] = RID();
+				return RID();
+			}
+			else {
+				return RID();
+			}
+		}
+		else {
+			return e->value();
+		}
+	}
+
+	void clear_pipelines()
+	{
+		_add_new_pipelines_to_map();
+
+		if (RD::is_initialized()) {
+			for (KeyValue<uint32_t, RID> entry : hash_map) {
+				if (entry.value.is_valid()) {
+					RD::free_rid(entry.value);
+				}
+			}
+		}
+
+		hash_map.clear();
+		compilation_set.clear();
+	}
+
+	// Set the external pipeline compilations array to increase the counters on every time a
+	// pipeline is compiled.
+	void set_compilations(uint32_t* p_compilations, Mutex* p_compilations_mutex)
+	{
+		compilations = p_compilations;
+		compilations_mutex = p_compilations_mutex;
+	}
+
+	void set_creation_object_and_function(
+		CreationClass* p_creation_object, CreationFunction p_creation_function)
+	{
+		creation_object = p_creation_object;
+		creation_function = p_creation_function;
+	}
+
+	PipelineHashMapRD() {}
+
+	~PipelineHashMapRD() { clear_pipelines(); }
+};
+// --- End servers/rendering/renderer_rd/rd_caches.h ---
 
 // Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes
 // are pretty tightly bound
@@ -1678,32 +3825,16 @@ public:
 };
 
 } // namespace RendererRD
-#include "servers/rendering/renderer_rd/rd_caches.h"
+
 // --- Folded from servers/rendering/renderer_rd/renderer_canvas_render_rd.h ---
 #include "core/templates/hash_map.h"
 // --- Inlined/Folded from servers/rendering/renderer_rd/renderer_scene_render_rd.h ---
-#include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h ---
 #include "core/templates/hash_map.h"
 // --- Inlined/Folded from servers/rendering/renderer_rd/effects/copy_effects.h ---
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/effects/blur_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/copy.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/copy_to_fb.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/cube_to_dp.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/cube_to_octmap.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/motion_vectors_store.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_downsampler.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_downsampler_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_filter.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_filter_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_roughness.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/octmap_roughness_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/resolve_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/roughness_limiter.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/sort.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/specular_merge.glsl.gen.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 class RenderSceneBuffersRD;
 
@@ -2270,19 +4401,8 @@ public:
 
 // --- Folded from servers/rendering/renderer_rd/effects/post_effects.h ---
 #include "core/types.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/bokeh_dof_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/luminance_reduce_raster.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/motion_vectors.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/shadow_frustum.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/smaa_blending.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/smaa_edge_detection.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/smaa_weight_calculation.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/tonemap.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/tonemap_mobile.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/vrs.glsl.gen.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #define RB_LUMINANCE_BUFFERS SNAME("luminance_buffers")
 
@@ -2842,22 +4962,8 @@ public:
 // --- End servers/rendering/renderer_rd/effects/post_effects.h ---
 
 // --- Folded from servers/rendering/renderer_rd/effects/ss_effects.h ---
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/effects/screen_space_reflection.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/screen_space_reflection_downsample.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/screen_space_reflection_filter.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/screen_space_reflection_hiz.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/screen_space_reflection_resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ss_effects_downsample.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssao.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssao_blur.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssao_importance_map.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssao_interleave.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssil.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssil_blur.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssil_importance_map.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/ssil_interleave.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/subsurface_scattering.glsl.gen.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #define RB_SCOPE_SSLF SNAME("rb_sslf")
 #define RB_SCOPE_SSDS SNAME("rb_ssds")
@@ -3409,24 +5515,14 @@ private:
 } // namespace RendererRD
 
 // --- End servers/rendering/renderer_rd/effects/ss_effects.h ---
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_device.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 
 // --- Inlined/Folded from servers/rendering/renderer_rd/effects/upscale_effects.h ---
 #include "core/types.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_accumulate_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_autogen_reactive_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_compute_luminance_pyramid_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_depth_clip_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_lock_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_rcas_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_reconstruct_previous_depth_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr2/fsr2_tcr_autogen_pass.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/fsr_upscale.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #if defined(METAL_ENABLED) && !defined(VISIONOS_ENABLED)
 #define METAL_MFXTEMPORAL_ENABLED
@@ -3434,7 +5530,7 @@ private:
 
 #ifdef METAL_ENABLED
 #include "core/templates/paged_allocator.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device_driver.h"
 
 namespace MTLFX
@@ -4448,8 +6544,6 @@ public:
 
 
 // --- End servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
-
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -5679,7 +7773,7 @@ public:
 // --- Folded from servers/rendering/renderer_rd/storage_rd/render_data_rd.h ---
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h ---
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 
 // This is a container for data related to rendering a single frame of a viewport where we load this
 // data into a UBO that can be used by the main scene shader but also by various effects.
@@ -5922,14 +8016,12 @@ public:
 
 // --- End servers/rendering/renderer_rd/storage_rd/render_data_rd.h ---
 
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
-#include "servers/rendering/renderer_scene_render.h"
+
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/renderer_rd/shaders/cluster_debug.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/cluster_render.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/cluster_store.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 
 
 class ClusterBuilderSharedDataRD final {
@@ -7151,17 +9243,16 @@ public:
 // --- End servers/rendering/multi_uma_buffer.h ---
 
 // --- Folded from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h ---
-#include "servers/rendering/renderer_rd/shaders/forward_clustered/scene_forward_clustered.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 #include "servers/rendering/rendering_server_types.h"
 #include "core/templates/paged_allocator.h"
 
 
 
 
-#include "servers/rendering/renderer_rd/shaders/forward_clustered/best_fit_normal.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/forward_clustered/integrate_dfg.glsl.gen.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 
 namespace RendererSceneRenderImplementation
 {
@@ -8633,13 +10724,13 @@ public:
 // --- End servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h ---
 
 // --- Folded from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
-#include "servers/rendering/renderer_rd/shaders/forward_mobile/scene_forward_mobile.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 #include "servers/rendering/rendering_server_types.h"
 #include "core/templates/paged_allocator.h"
 
 
-#include "servers/rendering/renderer_rd/rd_caches.h"
+
 
 namespace RendererSceneRenderImplementation
 {
@@ -9960,13 +12051,12 @@ public:
 
 // --- End servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/canvas.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/canvas_occlusion.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 typedef uint64_t PolygonID;
 
@@ -10754,16 +12844,15 @@ public:
 
 // --- End servers/rendering/renderer_rd/renderer_canvas_render_rd.h ---
 
-#include "servers/rendering/renderer_rd/shaders/blit.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/mesh_storage.h ---
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/shaders/skeleton.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -11631,12 +13720,11 @@ public:
 #include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/shaders/particles.glsl.gen.h"
-#include "servers/rendering/renderer_rd/shaders/particles_copy.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+
+#include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
+
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -12276,7 +14364,7 @@ public:
 };
 
 } // namespace RendererRD
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+
 // --- Folded from servers/rendering/renderer_rd/storage_rd/utilities.h ---
 #include "core/templates/rid_owner.h"
 #include "servers/rendering/rendering_device_commons.h"
@@ -12379,9 +14467,6 @@ public:
 } // namespace RendererRD
 
 // --- End servers/rendering/renderer_rd/storage_rd/utilities.h ---
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 
 class RendererCompositorRD final

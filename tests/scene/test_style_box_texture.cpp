@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_style_box_texture)
 
-#include "scene/resources/style_box.h"
+#include "scene/resources/theme.h"
 
 namespace TestStyleBoxTexture {
 

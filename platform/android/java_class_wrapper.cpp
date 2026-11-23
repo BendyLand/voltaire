@@ -32,7 +32,6 @@
 #include "api/java_class_wrapper.h"
 
 #include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 bool JavaClass::_call_method(JavaObject *p_instance, const String &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error, Variant &ret) {
 	HashMap<String, List<MethodInfo>>::Iterator M = methods.find(p_method);
@@ -1993,16 +1992,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 #include "platform/android/os_android.h"
 #include "platform/android/api/java_class_wrapper.h"
 #include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
@@ -2695,7 +2684,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 // --- Merged from platform/android/java_godot_wrapper.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
 
 // JNIEnv is only valid within the thread it belongs to, in a multi threading environment
 // we can't cache it.
@@ -3426,7 +3414,6 @@ void GodotJavaWrapper::set_auto_enter_pip_mode_on_background(bool p_auto_enter_o
 // --- Merged from platform/android/java_godot_view_wrapper.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
 
 #include "core/string/ustring.h"
 
@@ -3517,8 +3504,6 @@ GodotJavaViewWrapper::~GodotJavaViewWrapper() {
 // --- Merged from platform/android/java_godot_io_wrapper.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #include "core/math/rect2.h"
 
@@ -4381,7 +4366,6 @@ jclass jni_find_class(JNIEnv *p_env, const char *p_class_name) {
 #include "platform/android/os_android.h"
 
 #include "api/java_class_wrapper.h"
-#include "platform/android/os_android.h"
 #include "platform/android/os_android.h"
 
 #include "core/config/engine.h"

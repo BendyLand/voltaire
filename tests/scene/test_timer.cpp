@@ -34,7 +34,6 @@
 TEST_FORCE_LINK(test_timer)
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "tests/signal_watcher.h"
 

@@ -33,7 +33,7 @@
 
 #ifdef WAYLAND_ENABLED
 
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 #include "servers/display/display_server.h"
 // --- Folded from platform/linuxbsd/wayland/wayland_thread.h ---
 #ifdef WAYLAND_ENABLED
@@ -160,38 +160,22 @@ int initialize_wayland_egl(int verbose);
 #endif // SOWRAP_ENABLED
 
 // These must go after the Wayland client include to work properly.
-#include "wayland/protocol/idle_inhibit.gen.h"
-#include "wayland/protocol/primary_selection.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 // These protocol headers name wl_pointer method arguments as `pointer`,
 // which is the same name as X11's pointer typedef. This trips some very
 // annoying shadowing warnings. A `#define` works around this issue.
 #define pointer wl_pointer
-#include "wayland/protocol/cursor_shape.gen.h"
-#include "wayland/protocol/pointer_constraints.gen.h"
-#include "wayland/protocol/pointer_gestures.gen.h"
-#include "wayland/protocol/pointer_warp.gen.h"
-#include "wayland/protocol/relative_pointer.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 #undef pointer
 
-#include "wayland/protocol/color_management.gen.h"
-#include "wayland/protocol/fractional_scale.gen.h"
-#include "wayland/protocol/tablet.gen.h"
-#include "wayland/protocol/text_input.gen.h"
-#include "wayland/protocol/viewporter.gen.h"
-#include "wayland/protocol/wayland.gen.h"
-#include "wayland/protocol/xdg_activation.gen.h"
-#include "wayland/protocol/xdg_decoration.gen.h"
-#include "wayland/protocol/xdg_foreign_v2.gen.h"
-#include "wayland/protocol/xdg_shell.gen.h"
-#include "wayland/protocol/xdg_system_bell.gen.h"
-#include "wayland/protocol/xdg_toplevel_icon.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 // NOTE: Deprecated.
-#include "wayland/protocol/xdg_foreign_v1.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 // Custom internal protocol.
-#include "wayland/protocol/godot_embedding_compositor.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 #ifdef LIBDECOR_ENABLED
 #ifdef SOWRAP_ENABLED
@@ -384,7 +368,7 @@ int initialize_libdecor(int verbose);
 #endif // LIBDECOR_ENABLED
 
 #include "core/input/input_event.h"
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 #include "core/os/thread.h"
 #include "servers/display/display_server_enums.h"
 // --- Folded from platform/linuxbsd/wayland/wayland_embedder.h ---
@@ -392,38 +376,11 @@ int initialize_libdecor(int verbose);
 
 #ifdef TOOLS_ENABLED
 
-#include "protocol/wayland.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 // Keep wayland protocol included first.
 
-#include "protocol/color_management.gen.h"
-#include "protocol/commit_timing_v1.gen.h"
-#include "protocol/cursor_shape.gen.h"
-#include "protocol/fifo_v1.gen.h"
-#include "protocol/fractional_scale.gen.h"
-#include "protocol/godot_embedding_compositor.gen.h"
-#include "protocol/idle_inhibit.gen.h"
-#include "protocol/linux_dmabuf_v1.gen.h"
-#include "protocol/linux_drm_syncobj_v1.gen.h"
-#include "protocol/linux_explicit_synchronization_unstable_v1.gen.h"
-#include "protocol/pointer_constraints.gen.h"
-#include "protocol/pointer_gestures.gen.h"
-#include "protocol/pointer_warp.gen.h"
-#include "protocol/primary_selection.gen.h"
-#include "protocol/relative_pointer.gen.h"
-#include "protocol/tablet.gen.h"
-#include "protocol/tearing_control_v1.gen.h"
-#include "protocol/text_input.gen.h"
-#include "protocol/viewporter.gen.h"
-#include "protocol/wayland-drm.gen.h"
-#include "protocol/wayland.gen.h"
-#include "protocol/xdg_activation.gen.h"
-#include "protocol/xdg_decoration.gen.h"
-#include "protocol/xdg_foreign_v1.gen.h"
-#include "protocol/xdg_foreign_v2.gen.h"
-#include "protocol/xdg_shell.gen.h"
-#include "protocol/xdg_system_bell.gen.h"
-#include "protocol/xdg_toplevel_icon.gen.h"
+#include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
 #include "core/io/dir_access.h"
 #include "core/os/thread.h"

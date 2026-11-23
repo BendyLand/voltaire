@@ -903,8 +903,6 @@ using VKC = RenderingContextDriverVulkan;
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 #include <thirdparty/swappy-frame-pacing/swappyVk.h>
 #include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 #endif
 
 #define ARRAY_SIZE(a) std_size(a)

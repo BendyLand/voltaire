@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_panel_container)
 #include "scene/gui/panel_container.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
-#include "scene/resources/style_box.h"
+#include "scene/resources/theme.h"
 
 namespace TestPanelContainer {
 

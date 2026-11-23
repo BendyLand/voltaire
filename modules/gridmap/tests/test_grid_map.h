@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "../grid_map.h"
+#include "modules/csg/csg_shape.h"
 
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"

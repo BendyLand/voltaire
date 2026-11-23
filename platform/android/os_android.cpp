@@ -32,11 +32,6 @@
 #include "os_android.h"
 
 #include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #ifndef TOOLS_ENABLED
 #include "platform/android/os_android.h"
@@ -45,10 +40,9 @@
 #include "core/config/engine.h"
 #include "core/extension/gdextension_manager.h"
 #include "core/input/input.h"
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/os_unix.h"
 #include "main/main.h"
 #include "scene/main/scene_tree.h"
@@ -1083,7 +1077,6 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 // --- Merged from platform/android/file_access_android.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
 
 #include "core/string/print_string.h"
 
@@ -1245,7 +1238,6 @@ void FileAccessAndroid::terminate() {
 // --- Merged from platform/android/file_access_filesystem_jandroid.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
 
 #include "core/templates/local_vector.h"
 
@@ -1947,8 +1939,6 @@ AudioDriverOpenSL::AudioDriverOpenSL() {
 // --- Merged from platform/android/dir_access_jandroid.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #include "core/string/print_string.h"
 
@@ -2284,8 +2274,6 @@ void DirAccessJAndroid::dir_close(int p_id) {
 // --- Merged from platform/android/tts_android.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
-#include "platform/android/os_android.h"
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
@@ -2619,7 +2607,6 @@ JNIEnv *get_jni_env() {
 // --- Merged from platform/android/net_socket_android.cpp ---
 #include "platform/android/os_android.h"
 
-#include "platform/android/os_android.h"
 
 jobject NetSocketAndroid::net_utils = nullptr;
 jclass NetSocketAndroid::cls = nullptr;

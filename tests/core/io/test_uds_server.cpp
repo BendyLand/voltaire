@@ -37,8 +37,7 @@ TEST_FORCE_LINK(test_uds_server)
 
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/stream_peer_socket.h"
-#include "core/io/stream_peer_socket.h"
+#include "core/io/stream_peer.h"
 #include "core/os/os.h"
 
 #include <functional>

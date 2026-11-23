@@ -65,7 +65,6 @@
 // after we've stopped, that is accessed directly from both threads.
 
 #include "modules/openxr/openxr_api.h"
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 
 // declare some default strings
@@ -3018,7 +3017,7 @@ public:
 #endif
 
 #ifdef METAL_ENABLED
-#include "extensions/platform/openxr_metal_extension.h"
+#include "modules/openxr/openxr_platform_inc.h"
 #endif
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
@@ -3117,7 +3116,7 @@ public:
 #endif
 
 #ifdef D3D12_ENABLED
-#include "extensions/platform/openxr_d3d12_extension.h"
+#include "modules/openxr/openxr_platform_inc.h"
 #endif
 
 #ifdef ANDROID_ENABLED
@@ -6051,7 +6050,7 @@ OpenXRAPIExtension::OpenXRAPIExtension() {}
 
 
 #ifdef ANDROID_ENABLED
-#include "extensions/platform/openxr_android_extension.h"
+#include "modules/openxr/openxr_platform_inc.h"
 #endif
 
 static Ref<OpenXRInterface> openxr_interface;
@@ -8381,8 +8380,7 @@ Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
 #include "core/config/project_settings.h"
 
 #include "platform/android/api/java_class_wrapper.h"
-#include "scene/3d/camera_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/viewport.h"
@@ -9504,7 +9502,6 @@ void OpenXRRenderModelManager::_update_models() {}
 #include "core/string/print_string.h"
 
 #include "platform/android/api/java_class_wrapper.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/xr/xr_server.h"
 
@@ -16558,7 +16555,7 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain,
 #ifdef GLES3_ENABLED
 
 #include "modules/openxr/openxr_api.h"
-#include "drivers/gles3/storage/texture_storage.h"
+#include "drivers/gles3/rasterizer_gles3.h"
 #include "servers/display/display_server.h"
 
 void OpenXROpenGLExtension::initialize()

@@ -234,3 +234,30 @@ public:
 	virtual bool activate_feed();
 	virtual void deactivate_feed();
 };
+
+// --- Folded from modules/camera/camera_apple.h ---
+#if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
+///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
+// If you fix something here, make sure you fix it there as well!
+
+
+
+class CameraApple final
+{
+public:
+	static void initialize() {}
+	static void finalize();
+
+	static void update_feeds();
+	static void set_monitoring_feeds(bool p_monitoring_feeds);
+	static void handle_display_rotation_change(int p_orientation);
+	static void handle_application_pause();
+	static void handle_application_resume();
+
+	CameraApple() = delete;
+	CameraApple(const CameraApple&) = delete;
+	CameraApple& operator=(const CameraApple&) = delete;
+	~CameraApple() = delete;
+};
+#endif // defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
+// --- End modules/camera/camera_apple.h ---

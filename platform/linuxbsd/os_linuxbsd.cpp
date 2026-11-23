@@ -40,7 +40,7 @@
 #include "servers/rendering/renderer.h"
 
 #ifdef SDL_ENABLED
-#include "drivers/sdl/joypad_sdl.h"
+#include "core/input/input.h"
 #endif
 
 #ifdef X11_ENABLED

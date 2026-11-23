@@ -467,3 +467,183 @@ public:
 	StreamPeerTLS();
 	~StreamPeerTLS();
 };
+
+// --- Folded from core/io/packet_peer.h ---
+
+#include "core/types.h"
+
+class PacketPeer : public RefCounted
+{
+	Error _put_packet(const Vector<uint8_t>& p_buffer);
+	Vector<uint8_t> _get_packet();
+	Error _get_packet_error() const;
+
+	mutable Error last_get_error = OK;
+
+	int encode_buffer_max_size = 8 * 1024 * 1024;
+	Vector<uint8_t> encode_buffer;
+
+public:
+	virtual int get_available_packet_count() const = 0;
+	virtual Error get_packet(
+		const uint8_t** r_buffer, int& r_buffer_size) = 0; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) = 0;
+
+	virtual int get_max_packet_size() const = 0;
+
+	/* helpers / binders */
+
+	virtual Error get_packet_buffer(Vector<uint8_t>& r_buffer);
+	virtual Error put_packet_buffer(const Vector<uint8_t>& p_buffer);
+
+	void set_encode_buffer_max_size(int p_max_size);
+	int get_encode_buffer_max_size() const;
+};
+
+class PacketPeerExtension : public PacketPeer
+{
+protected:
+	static void _bind_methods();
+
+public:
+	virtual Error get_packet(const uint8_t** r_buffer,
+		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+};
+
+class PacketPeerStream : public PacketPeer
+{
+	// the way the buffers work sucks, will change later
+
+	mutable Ref<StreamPeer> peer;
+	mutable RingBuffer<uint8_t> ring_buffer;
+	mutable Vector<uint8_t> input_buffer;
+	mutable Vector<uint8_t> output_buffer;
+
+	Error _poll_buffer() const;
+
+public:
+	virtual int get_available_packet_count() const override;
+	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
+	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
+
+	virtual int get_max_packet_size() const override;
+
+	void set_stream_peer(const Ref<StreamPeer>& p_peer);
+	Ref<StreamPeer> get_stream_peer() const;
+	void set_input_buffer_max_size(int p_max_size);
+	int get_input_buffer_max_size() const;
+	void set_output_buffer_max_size(int p_max_size);
+	int get_output_buffer_max_size() const;
+	PacketPeerStream();
+};
+// --- End core/io/packet_peer.h ---
+
+// --- Folded from core/io/stream_peer_socket.h ---
+#include "core/io/ip.h"
+#include "core/io/net_socket.h"
+
+
+class StreamPeerSocket final : public StreamPeer
+{
+public:
+	enum Domain
+	{
+		DOMAIN_TCP,
+		DOMAIN_UDS,
+	};
+
+	enum Status
+	{
+		STATUS_NONE,
+		STATUS_CONNECTING,
+		STATUS_CONNECTED,
+		STATUS_ERROR,
+	};
+
+private:
+	Domain domain = DOMAIN_TCP;
+	Ref<NetSocket> _sock;
+	uint64_t timeout = 0;
+	Status status = STATUS_NONE;
+	NetSocket::Address peer_address;
+	String peer_path;
+
+	Error write(const uint8_t* p_data, int p_bytes, int& r_sent, bool p_block);
+	Error read(uint8_t* p_buffer, int p_bytes, int& r_received, bool p_block);
+
+public:
+	Domain get_domain() const { return domain; }
+
+	void accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr);
+
+	// TCP operations.
+	Error bind(int p_port, const IPAddress& p_host = IPAddress("*"));
+	Error connect_to_host(const IPAddress& p_host, int p_port);
+	void set_no_delay(bool p_enabled);
+	IPAddress get_connected_host() const;
+	int get_connected_port() const;
+	int get_local_port() const;
+
+	// UDS operations.
+	Error bind(const String& p_path);
+	Error bind_path(const String& p_path) { return bind(p_path); }
+	Error connect_to_path(const String& p_path);
+	String get_connected_path() const;
+
+	void disconnect_from_host();
+
+	int get_available_bytes() const override;
+	Status get_status() const;
+
+	// Poll socket updating its state.
+	Error poll();
+
+	// Wait or check for writable, readable.
+	Error wait(NetSocket::PollType p_type, int p_timeout = 0);
+
+	// Read/Write from StreamPeer.
+	Error put_data(const uint8_t* p_data, int p_bytes) override;
+	Error put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent) override;
+	Error get_data(uint8_t* p_buffer, int p_bytes) override;
+	Error get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received) override;
+
+	StreamPeerSocket(Domain p_domain = DOMAIN_TCP);
+	~StreamPeerSocket() override;
+};
+
+// --- Folded from core/io/socket_server.h ---
+#include "core/io/ip.h"
+#include "core/io/net_socket.h"
+
+class SocketServer final : public RefCounted
+{
+private:
+	enum
+	{
+		MAX_PENDING_CONNECTIONS = 8,
+	};
+
+	StreamPeerSocket::Domain domain = StreamPeerSocket::DOMAIN_TCP;
+	Ref<NetSocket> _sock;
+
+	Error _listen(const NetSocket::Address& p_addr);
+
+public:
+	Error listen(uint16_t p_port, const IPAddress& p_bind_address = IPAddress("*"));
+	Error listen_path(const String& p_path);
+	Error listen(const String& p_path) { return listen_path(p_path); }
+
+	int get_local_port() const;
+
+	bool is_listening() const;
+	bool is_connection_available() const;
+	Ref<StreamPeerSocket> take_connection();
+	Ref<StreamPeerSocket> take_socket_connection() { return take_connection(); }
+
+	void stop(); // Stop listening
+
+	SocketServer();
+	~SocketServer() override;
+};
+// --- End core/io/stream_peer_socket.h ---

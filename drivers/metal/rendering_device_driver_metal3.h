@@ -2630,7 +2630,6 @@ private:
 
 // --- Folded from drivers/metal/rendering_shader_container_metal.h ---
 #include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/rendering_device_driver.h"
 
 constexpr uint32_t R32UI_ALIGNMENT_CONSTANT_ID = 65535;
 /// Metal buffer index for the view mask when rendering multi-view.

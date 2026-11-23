@@ -638,7 +638,7 @@ public:
 // --- End editor/project_manager/project_manager.h ---
 
 // --- Folded from editor/export/editor_export_platform.h ---
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 // --- Folded preset section from editor/export/editor_export.h ---
 #ifndef EDITOR_EXPORT_PRESET_SECTION_H
 #define EDITOR_EXPORT_PRESET_SECTION_H
@@ -2488,3 +2488,43 @@ public:
 };
 
 #define EditorString(m_name) EditorStrings::_get_data()->m_name
+
+// --- Folded from editor/export/register_exporters.h ---
+void register_exporter_types();
+void register_exporters();
+// --- End editor/export/register_exporters.h ---
+
+// --- Folded from platform/android/export/export.h ---
+void register_android_exporter_types();
+void register_android_exporter();
+// --- End platform/android/export/export.h ---
+
+// --- Folded from platform/ios/export/export.h ---
+void register_ios_exporter_types();
+void register_ios_exporter();
+// --- End platform/ios/export/export.h ---
+
+// --- Folded from platform/linuxbsd/export/export.h ---
+void register_linuxbsd_exporter_types();
+void register_linuxbsd_exporter();
+// --- End platform/linuxbsd/export/export.h ---
+
+// --- Folded from platform/macos/export/export.h ---
+void register_macos_exporter_types();
+void register_macos_exporter();
+// --- End platform/macos/export/export.h ---
+
+// --- Folded from platform/visionos/export/export.h ---
+void register_visionos_exporter_types();
+void register_visionos_exporter();
+// --- End platform/visionos/export/export.h ---
+
+// --- Folded from platform/web/export/export.h ---
+void register_web_exporter_types();
+void register_web_exporter();
+// --- End platform/web/export/export.h ---
+
+// --- Folded from platform/windows/export/export.h ---
+void register_windows_exporter_types();
+void register_windows_exporter();
+// --- End platform/windows/export/export.h ---

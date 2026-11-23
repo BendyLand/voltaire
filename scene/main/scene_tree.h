@@ -42,7 +42,7 @@
 #include "core/templates/hash_set.h"
 #include "core/types.h"
 // --- Inlined/Folded from scene/main/multiplayer_peer.h ---
-#include "core/io/packet_peer.h"
+#include "core/io/stream_peer.h"
 
 class MultiplayerPeer : public PacketPeer
 {

@@ -829,3 +829,68 @@ public:
 };
 
 #endif // MINIZIP_ENABLED
+
+// --- Folded from modules/zip/zip_reader.h ---
+#include <thirdparty/minizip/unzip.h>
+#include <thirdparty/minizip/zip.h>
+#include "core/io/file_access.h"
+
+class ZIPPacker final : public RefCounted
+{
+	Ref<FileAccess> fa;
+	zipFile zf = nullptr;
+	int compression_level = Z_DEFAULT_COMPRESSION;
+	HashSet<String> directories;
+
+public:
+	enum ZipAppend
+	{
+		APPEND_CREATE = 0,
+		APPEND_CREATEAFTER = 1,
+		APPEND_ADDINZIP = 2,
+	};
+
+	enum CompressionLevel
+	{
+		COMPRESSION_DEFAULT = Z_DEFAULT_COMPRESSION,
+		COMPRESSION_NONE = Z_NO_COMPRESSION,
+		COMPRESSION_FAST = Z_BEST_SPEED,
+		COMPRESSION_BEST = Z_BEST_COMPRESSION,
+	};
+
+	Error open(const String& p_path, ZipAppend p_append);
+	Error close();
+
+	void set_compression_level(int p_compression_level);
+	int get_compression_level() const;
+
+	Error start_file(
+		const String& p_path, uint32_t p_permissions = 0644, uint64_t p_modified_time = 0);
+	Error write_file(const Vector<uint8_t>& p_data);
+	Error close_file();
+
+	Error add_directory(
+		const String& p_path, uint32_t p_permissions = 0755, uint64_t p_modified_time = 0);
+
+	ZIPPacker();
+	~ZIPPacker();
+};
+
+class ZIPReader final : public RefCounted
+{
+	Ref<FileAccess> fa;
+	unzFile uzf = nullptr;
+
+public:
+	Error open(const String& p_path);
+	Error close();
+
+	PackedStringArray get_files();
+	PackedByteArray read_file(const String& p_path, bool p_case_sensitive);
+	bool file_exists(const String& p_path, bool p_case_sensitive);
+	int get_compression_level(const String& p_path, bool p_case_sensitive);
+
+	ZIPReader();
+	~ZIPReader();
+};
+// --- End modules/zip/zip_reader.h ---

@@ -434,7 +434,7 @@ public:
 // --- Folded from scene/resources/3d/mesh_library.h ---
 #include "core/io/resource.h"
 #include "core/templates/rb_map.h"
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/navigation_mesh.h"
 #include "servers/rendering/rendering_server_enums.h"

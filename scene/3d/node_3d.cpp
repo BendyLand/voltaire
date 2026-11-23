@@ -30,12 +30,12 @@
 /**************************************************************************/
 
 #include "core/config/engine.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "node_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
-#include "scene/property_utils.h"
+#include "scene/main/node.h"
 #include "scene/resources/environment.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/renderer.h"
@@ -911,14 +911,14 @@ void Node3D::clear_subgizmo_selection() {}
 // Merged from scene/3d/camera_3d.cpp
 // ==========================================================================
 
-#include "camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "core/config/engine.h"
 #include "core/math/projection.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_server.h"
 
 void Camera3D::_update_audio_listener_state() {}
 
@@ -1905,7 +1905,7 @@ void RemoteTransform3D::_update_cache() {}
 // Merged from scene/3d/velocity_tracker_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 #include "core/config/engine.h"
 
@@ -2002,7 +2002,7 @@ VelocityTracker3D::VelocityTracker3D() {
 // Merged from scene/3d/audio_listener_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/main/viewport.h"
 
 void AudioListener3D::_update_audio_listener_state() {}
@@ -2135,16 +2135,16 @@ AudioListener3D::~AudioListener3D() {}
 // --- audio_stream_player_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 bool AudioStreamPlayer3D::_is_autoplay_enabled_bind_compat_86907() { return is_autoplay_enabled(); }
 
 void AudioStreamPlayer3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "core/config/project_settings.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/animation/animation_mixer.h"
 #include "scene/main/viewport.h"
 #include "servers/audio/audio_stream.h"
@@ -2918,7 +2918,7 @@ Area3D* AudioStreamPlayer3D::_get_overriding_area() {}
 #include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 
 void WorldEnvironment::_notification(int p_what)
 {
@@ -11553,7 +11553,6 @@ PackedStringArray Area3D::get_configuration_warnings() const {
 
 #include "scene/3d/skeleton_3d.h"
 
-#include "scene/3d/skeleton_3d.h"
 #include "scene/main/scene_tree.h"
 
 void CollisionShape3D::_update_in_shape_owner(bool p_xform_only) {
@@ -12546,7 +12545,7 @@ void ShapeCast3D::_clear_debug_shape()
 // ==========================================================================
 
 #include "core/config/engine.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/3d/shape_3d.h"
 // --- Inlined from scene/3d/physics/spring_arm_3d.h ---
@@ -14845,7 +14844,6 @@ RenderInstance3D::~RenderInstance3D()
 // Merged from scene/3d/mesh_instance_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/mesh_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
@@ -15195,7 +15193,7 @@ AABB MultiMeshInstance3D::get_aabb() const
 // ==========================================================================
 
 #include "scene/3d/skeleton_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 
 void ImporterMeshInstance3D::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
 
@@ -15915,7 +15913,6 @@ Sprite3D::~Sprite3D()
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
-#include "scene/theme/theme_db.h"
 #include "servers/rendering/renderer.h"
 
 AABB Label3D::get_aabb() const { return aabb; }
@@ -16628,9 +16625,8 @@ FogVolume::~FogVolume()
 #include "core/math/geometry_2d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
-#include "scene/resources/surface_tool.h"
+#include "scene/resources/navigation_mesh.h"
+#include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
 RID Occluder3D::get_rid() const { return occluder; }
@@ -17553,7 +17549,7 @@ public:
 
 
 // --- End scene/3d/cpu_particles_3d.h ---
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 // --- Inlined from scene/3d/gpu_particles_3d.h ---
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/skeleton_3d.h"
@@ -18915,8 +18911,8 @@ public:
 
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
-#include "scene/3d/camera_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
 
@@ -21012,7 +21008,7 @@ public:
 
 
 // --- End scene/3d/lightmap_probe.h ---
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/resources/material.h"
 #include "scene/resources/environment.h"
 #include "scene/resources/image_texture.h"
@@ -22132,7 +22128,7 @@ ReflectionProbe::~ReflectionProbe()
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
@@ -24304,10 +24300,10 @@ void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/types.h"
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
-#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_server.h"
 #include "scene/3d/node_3d.h"
 
 // XRNode3D is a node that has its transform updated by an XRTracker.
@@ -25301,10 +25297,9 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 // ==========================================================================
 
 #include "servers/xr/xr_server.h"
-#include "servers/xr/xr_server.h"
 // --- Inlined from scene/3d/xr/xr_face_modifier_3d.h ---
 #include "core/templates/rb_map.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/node_3d.h"
 
 /**

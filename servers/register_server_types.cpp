@@ -36,20 +36,14 @@
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/camera/camera_server.h"
-#include "servers/camera/camera_server.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/display/native_menu.h"
 #include "main/main.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_compiler.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/shader_language.h"
+#include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 
 // 2D physics and navigation.
@@ -70,8 +64,6 @@
 
 // XR
 #ifndef XR_DISABLED
-#include "servers/xr/xr_interface.h"
-#include "servers/xr/xr_server.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
@@ -104,7 +96,6 @@ void register_server_types()
 // Merged from servers/camera/camera_server.cpp
 // ============================================================================
 
-#include "servers/camera/camera_server.h"
 #include "servers/camera/camera_server.h"
 
 ////////////////////////////////////////////////////////
@@ -2606,7 +2597,6 @@ void AudioFilterSW::Processor::process(float *p_samples, int p_amount, int p_str
 
 #include "servers/audio/audio_server.h"
 
-#include "servers/audio/audio_server.h"
 #include "core/math/math_funcs_binary.h"
 #include "core/os/memory.h"
 
@@ -2842,12 +2832,11 @@ AudioRBResampler::~AudioRBResampler() {
 
 #include "servers/audio/audio_server.h"
 
-#include "servers/audio/audio_server.h"
 // --- Inlined from servers/audio/effects/audio_effects.h ---
 #include "core/os/thread.h"
 #include "core/templates/local_vector.h"
 #include "core/types.h"
-#include "scene/resources/audio_stream_wav.h"
+#include "servers/audio/audio_stream.h"
 #include "servers/audio/audio_server.h"
 // --- Folded from servers/audio/effects/eq_filter.h ---
 #include "core/templates/vector.h"
@@ -9036,7 +9025,6 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 #include "scene/resources/texture.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
-#include "servers/display/native_menu.h"
 #include "servers/rendering/renderer.h"
 
 #if defined(RD_ENABLED)
@@ -12663,7 +12651,7 @@ void AccessibilityServer::update_set_foreground_color(const RID& p_id, const Col
 
 #include "core/input/input.h"
 #include "core/input/input_event.h"
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
 DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_rendering_driver,
@@ -12702,7 +12690,7 @@ void DisplayServerHeadless::_dispatch_input_event(const InputEvent&) {}
 // Merged from servers/display/native_menu.cpp
 // ============================================================================
 
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 #include "scene/resources/texture.h"
 
 NativeMenuDriver::NativeMenuDriver() { NativeMenu::_bind_driver(this); }
@@ -14566,7 +14554,6 @@ real_t PhysicsTestMotionResult2D::get_collision_unsafe_fraction() const
 #include "modules/modules_enabled.gen.h"
 
 #ifdef MODULE_JOLT_PHYSICS_ENABLED
-#include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "modules/jolt_physics/jolt_physics_server_3d.h"
 #endif
 
@@ -17588,7 +17575,6 @@ void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
 #if !defined(XR_DISABLED)
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 // Inlined servers/xr/xr_server.compat.inc
 #ifndef DISABLE_DEPRECATED
@@ -17741,10 +17727,8 @@ void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
 // ============================================================================
 
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/xr/xr_server.h"
-#include "servers/xr/xr_interface.h"
 
 bool XRInterface::is_primary()
 {

@@ -35,16 +35,11 @@
 #include "renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_viewport.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/utilities.h"
 
@@ -2914,7 +2909,6 @@ void Renderer::draw(bool p_swap_buffers, double frame_step)
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
 
 /* LightStorage */
 
@@ -3388,7 +3382,7 @@ RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/math/geometry_2d.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
@@ -6277,20 +6271,19 @@ void RendererCanvasCull::finalize() {}
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "core/os/os.h"
 #include "renderer_viewport.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
@@ -8065,8 +8058,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 // Merged from servers/rendering/renderer_scene_render.cpp
 // ============================================================================
 
-#include "servers/rendering/renderer_scene_render.h"
-#include "servers/rendering/renderer_compositor.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 #include "core/os/os.h"
 
@@ -8086,7 +8078,6 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 #endif // XR_DISABLED
 #include "servers/rendering/renderer_viewport.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
 
 // --- Merged from servers/rendering/renderer_scene_render.cpp ---
 
@@ -9546,15 +9537,14 @@ AABB RenderGeometryInstance::get_aabb() {
 #ifdef DEBUG_ENABLED
 #include "core/os/os.h"
 #endif
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef DEBUG_ENABLED
 #include "core/os/os.h"
 #endif
 #include "core/config/engine.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/rendering/storage/utilities.h"
 
@@ -11374,7 +11364,6 @@ Dependency::~Dependency() {
 #include "servers/rendering/storage/utilities.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif
 

@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "openxr_android_extension.h"
+#include "modules/openxr/openxr_platform_inc.h"
 
 #include "../../openxr_api.h" // IWYU pragma: keep. `XR_FAILED` macro.
 #include "platform/android/os_android.h"

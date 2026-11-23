@@ -50,7 +50,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/display_server_apple_embedded.h"
+#include "drivers/apple_embedded/os_apple_embedded.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -85,7 +85,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/apple_embedded.h"
+#include "drivers/apple_embedded/os_apple_embedded.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>

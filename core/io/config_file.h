@@ -229,3 +229,158 @@ public:
 
 
 // --- End core/io/translation_loader_po.h ---
+
+// --- Folded from core/io/json.h ---
+#include "core/io/resource.h"
+
+class JSON : public Resource
+{
+	enum TokenType
+	{
+		TK_CURLY_BRACKET_OPEN,
+		TK_CURLY_BRACKET_CLOSE,
+		TK_BRACKET_OPEN,
+		TK_BRACKET_CLOSE,
+		TK_IDENTIFIER,
+		TK_STRING,
+		TK_NUMBER,
+		TK_COLON,
+		TK_COMMA,
+		TK_EOF,
+		TK_MAX
+	};
+
+	enum Expecting
+	{
+		EXPECT_OBJECT,
+		EXPECT_OBJECT_KEY,
+		EXPECT_COLON,
+		EXPECT_OBJECT_VALUE,
+	};
+
+	struct Token
+	{
+		TokenType type;
+	};
+
+	String text;
+	String err_str;
+	int err_line = 0;
+
+	static const char* tk_name[];
+
+	static void _add_indent(String& r_result, const String& p_indent, int p_size);
+	static Error _get_token(const char32_t* p_str, int& r_index, int p_len, Token& r_token,
+		int& r_line, String& r_err_str);
+
+protected:
+
+public:
+	Error parse(const String& p_json_string, bool p_keep_text = false);
+	String get_parsed_text() const;
+
+	_FORCE_INLINE_ int get_error_line() const { return err_line; }
+
+	_FORCE_INLINE_ String get_error_message() const { return err_str; }
+};
+// --- End core/io/json.h ---
+
+// --- Folded from core/io/xml_parser.h ---
+#include "core/string/ustring.h"
+#include "core/templates/vector.h"
+#include "core/types.h"
+
+/*
+  Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada
+  loader.
+*/
+
+class XMLParser : public RefCounted
+{
+public:
+	//! Enumeration of all supported source text file formats
+	enum SourceFormat
+	{
+		SOURCE_ASCII,
+		SOURCE_UTF8,
+		SOURCE_UTF16_BE,
+		SOURCE_UTF16_LE,
+		SOURCE_UTF32_BE,
+		SOURCE_UTF32_LE
+	};
+
+	enum NodeType
+	{
+		NODE_NONE,
+		NODE_ELEMENT,
+		NODE_ELEMENT_END,
+		NODE_TEXT,
+		NODE_COMMENT,
+		NODE_CDATA,
+		NODE_UNKNOWN
+	};
+
+private:
+	char* data_copy = nullptr;
+	const char* data = nullptr;
+	const char* P = nullptr;
+	uint64_t length = 0;
+	uint64_t current_line = 0;
+	String node_name;
+	bool node_empty = false;
+	NodeType node_type = NODE_NONE;
+	uint64_t node_offset = 0;
+
+	struct Attribute
+	{
+		String name;
+		String value;
+	};
+
+	Vector<Attribute> attributes;
+
+	bool _set_text(const char* p_start, const char* p_end);
+	void _parse_closing_xml_element();
+	void _ignore_definition();
+	bool _parse_cdata();
+	void _parse_comment();
+	void _parse_opening_xml_element();
+	void _parse_current_node();
+
+	_FORCE_INLINE_ void next_char()
+	{
+		if (*P == '\n') {
+			current_line++;
+		}
+		P++;
+	}
+
+
+public:
+	Error read();
+	NodeType get_node_type();
+	String get_node_name() const;
+	String get_node_data() const;
+	uint64_t get_node_offset() const;
+	int get_attribute_count() const;
+	String get_attribute_name(int p_idx) const;
+	String get_attribute_value(int p_idx) const;
+	bool has_attribute(const String& p_name) const;
+	String get_named_attribute_value(const String& p_name) const;
+	String get_named_attribute_value_safe(
+		const String& p_name) const; // do not print error if doesn't exist
+	bool is_empty() const;
+	int get_current_line() const;
+
+	void skip_section();
+	Error seek(uint64_t p_pos);
+
+	Error open(const String& p_path);
+	Error open_buffer(const Vector<uint8_t>& p_buffer);
+	Error _open_buffer(const uint8_t* p_buffer, size_t p_size);
+
+	void close();
+
+	~XMLParser();
+};
+// --- End core/io/xml_parser.h ---

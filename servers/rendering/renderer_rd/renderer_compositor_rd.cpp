@@ -36,15 +36,7 @@
 #include "renderer_compositor_rd.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_compositor.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_server_types.h"
 
@@ -607,7 +599,7 @@ RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_fo
 // Merged from servers/rendering/renderer_rd/rd_caches.cpp
 // ============================================================================
 
-#include "servers/rendering/renderer_rd/rd_caches.h"
+#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "core/os/memory.h"
 
@@ -828,15 +820,12 @@ void UniformSetCacheRD::finalize()
 #include "core/math/geometry_2d.h"
 #include "core/math/math_defs.h"
 #include "core/math/math_funcs.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "core/templates/span.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_viewport.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 
 void RendererCanvasRenderRD::_update_transform_2d_to_mat4(
 	const Transform2D& p_transform, float* p_mat4)
@@ -4214,17 +4203,10 @@ void RendererRD::CanvasShaderData::set_code(const String& p_code)
 // ============================================================================
 
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "core/config/project_settings.h"
 #include "core/math/math_defs.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "core/math/geometry_3d.h"
 
 // --- Merged from servers/rendering/renderer_rd/environment/sky.cpp ---
@@ -7244,9 +7226,6 @@ Vector3i Fog::_point_get_position_in_froxel_volume(const Vector3& p_point, float
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/rendering_device.h"
 
 using namespace RendererRD;
@@ -7587,18 +7566,11 @@ MotionVectorsStore::~MotionVectorsStore() { motion_shader.version_free(shader_ve
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer_rd/effects/smaa_area_tex.gen.h"
-#include "servers/rendering/renderer_rd/effects/smaa_search_tex.gen.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
@@ -8168,10 +8140,6 @@ VRS::VRS()
 
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 using namespace RendererRD;
 
@@ -8656,14 +8624,9 @@ void SSEffects::gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_sl
 // ============================================================================
 
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "servers/rendering/rendering_device.h"
 
 #ifdef METAL_ENABLED
-#include "drivers/metal/rendering_device_driver_metal3.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <MetalFX/MetalFX.hpp>
@@ -9646,15 +9609,10 @@ void MFXTemporalEffect::callback(
 
 // --- Merged from servers/rendering/renderer_rd/renderer_scene_render_rd.cpp ---
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/rd_caches.h"
 #include "core/config/project_settings.h"
 #include "core/io/image.h"
 #include "core/os/memory.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/renderer.h"
@@ -11923,7 +11881,7 @@ void ClusterBuilderRD::bake_cluster() {}
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/version.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
 
 #define ENABLE_SHADER_CACHE 1
@@ -13124,11 +13082,8 @@ void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
 #include "core/io/resource_loader.h"
 #include "core/math/projection.h"
 #include "core/templates/local_vector.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/renderer_rd/storage_rd/texture_storage.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_scene_render.h"
 
 using namespace RendererRD;
 

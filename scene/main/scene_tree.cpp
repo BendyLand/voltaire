@@ -34,7 +34,6 @@
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "core/input/input.h"
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "scene/animation/animation_mixer.h"
@@ -54,7 +53,6 @@
 #include "servers/rendering/renderer.h"
 
 #ifndef _3D_DISABLED
-#include "scene/3d/node_3d.h"
 #include "scene/3d/node_3d.h"
 #endif // _3D_DISABLED
 
@@ -1088,7 +1086,7 @@ bool SceneTree::process(double p_time)
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 #include "core/os/os.h"
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/main/scene_tree.h"
@@ -1941,7 +1939,6 @@ bool MultiplayerPeerExtension::is_server_relay_supported() const
 #include "core/os/thread.h"
 // --- Inlined from scene/main/http_request.h ---
 #include "core/io/stream_peer.h"
-#include "core/io/stream_peer.h"
 #include "core/templates/safe_refcount.h"
 #include "scene/main/node.h"
 
@@ -2707,8 +2704,6 @@ void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray&
 #include "core/io/resource_loader.h"
 #include "core/string/print_string.h"
 #include "scene/animation/animation_mixer.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/scene_tree.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/viewport.h"
 #include "scene/main/window.h"
@@ -5133,7 +5128,7 @@ Rect2 StatusIndicator::get_rect() const
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/3d/visual_instance_3d.h"
-#include "scene/resources/style_box.h"
+#include "scene/resources/theme.h"
 #include "scene/main/viewport.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/rendering/renderer.h"
@@ -6322,7 +6317,6 @@ void CanvasItem::_bind_compatibility_methods() {}
 #include "scene/2d/line_2d.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/viewport.h"
-#include "scene/main/viewport.h"
 #include "servers/rendering/renderer.h"
 
 void CanvasLayer::_notification(int p_what)
@@ -6689,13 +6683,12 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 #include "core/templates/sort_array.h"
 #include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
-#include "scene/gui/dialogs.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/main/canvas_item.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 #include "servers/audio/audio_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -6706,7 +6699,7 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 #include "scene/main/viewport.h"
 
 #ifndef _3D_DISABLED
-#include "scene/3d/camera_3d.h"
+#include "scene/3d/visual_instance_3d.h"
 #include "scene/3d/node_3d.h"
 #endif // _3D_DISABLED
 
@@ -6716,7 +6709,6 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 
 #ifndef XR_DISABLED
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_interface.h"
 #include "servers/xr/xr_server.h"
 #endif // XR_DISABLED
 
@@ -9280,7 +9272,7 @@ void Viewport::_bind_compatibility_methods() {}
 #include "core/os/os.h"
 #include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "servers/display/accessibility_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -11023,7 +11015,7 @@ void register_scene_singletons() {}
 // Merged from scene/property_list_helper.cpp
 // ==========================================================================
 
-#include "scene/property_list_helper.h"
+#include "scene/main/node.h"
 
 HashMap<String, Vector<PropertyListHelper*>> PropertyListHelper::base_helpers; // static
 
@@ -11079,7 +11071,7 @@ void PropertyListHelper::clear() {}
 #include "core/config/engine.h"
 #include "core/io/resource_loader.h"
 #include "core/templates/local_vector.h"
-#include "scene/property_utils.h"
+#include "scene/main/node.h"
 #include "scene/resources/packed_scene.h"
 
 // Like SceneState::PackState, but using a raw pointer to avoid the cost of
@@ -11439,7 +11431,7 @@ String AudioStreamPlayerInternal::get_bus() const
 #include "scene/main/node.h"
 #include "scene/main/window.h"
 #include "scene/resources/font.h"
-#include "scene/resources/style_box.h"
+#include "scene/resources/theme.h"
 #include "scene/resources/texture.h"
 // --- Inlined from scene/theme/default_theme.h ---
 #include "scene/resources/theme.h"
@@ -11450,7 +11442,7 @@ void make_default_theme(float p_scale, Ref<Font> p_font, TextServer::SubpixelPos
 // --- End scene/theme/default_theme.h ---
 #include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 
 void ThemeDB::initialize()
 {
@@ -11776,7 +11768,7 @@ Ref<Theme> ThemeContext::get_fallback_theme() const
 
 #include "scene/gui/control.h"
 #include "scene/main/window.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 
 Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
 {
@@ -11949,15 +11941,14 @@ void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}
 #include "scene/resources/font.h"
 #include "scene/resources/gradient.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/style_box.h"
 #include "scene/resources/theme.h"
 #include "scene/main/node.h"
 #include "scene/theme/default_theme_icons.gen.h"
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "servers/text/text_server.h"
 
 #ifdef BROTLI_ENABLED
-#include "scene/theme/default_font.gen.h"
+#include "scene/theme/default_theme_icons.gen.h"
 #endif
 
 static const int default_font_size = 16;
@@ -12101,7 +12092,6 @@ void AnimationTree::_bind_compatibility_methods() {}
 #endif // DISABLE_DEPRECATED
 #include "scene/animation/animation_mixer.h"
 #include "core/config/engine.h"
-#include "scene/animation/animation_mixer.h"
 #include "scene/animation/animation_mixer.h"
 
 thread_local AnimationNode::ProcessState* AnimationNode::tls_process_state = nullptr;
@@ -15776,14 +15766,13 @@ AnimationNode::NodeTimeInfo AnimationNodeStateMachine::_process(
 #include "core/string/ustring.h"
 #include "scene/2d/node_2d.h"
 #include "scene/animation/animation_mixer.h"
-#include "scene/animation/animation_mixer.h"
 #include "scene/resources/animation.h"
 #include "servers/audio/audio_server.h"
 #include "servers/audio/audio_stream.h"
 
 #ifndef _3D_DISABLED
-#include "scene/3d/camera_3d.h"
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/visual_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/node_3d.h"
 #include "scene/3d/skeleton_3d.h"
 #endif // _3D_DISABLED

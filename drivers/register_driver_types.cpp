@@ -33,7 +33,7 @@
 
 #include "core/io/resource_saver.h"
 // --- Inlined/Folded from drivers/png/image_loader_png.h ---
-#include "core/io/image_loader.h"
+#include "core/io/resource_loader.h"
 
 class ImageLoaderPNG : public ImageFormatLoader {
 private:
@@ -9900,8 +9900,10 @@ void FileAccessWindows::finalize() {
 
 #endif // WINDOWS_ENABLED
 
+#ifdef _MSC_VER
 #ifdef S_ISREG
 #undef S_ISREG
+#endif
 #endif
 
 // ============================================================================
@@ -11454,7 +11456,7 @@ void MIDIDriverWinMidi::close()
 // --- Merged from drivers/png/image_loader_png.cpp ---
 
 
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 
 Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	const uint64_t buffer_size = f->get_length();
@@ -11530,7 +11532,7 @@ ImageLoaderPNG::ImageLoaderPNG() {
 // Merged from drivers/png/png_driver_common.cpp
 // ============================================================================
 
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/config/engine.h"
@@ -11641,7 +11643,7 @@ Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, 
 
 #include "core/io/file_access.h"
 #include "core/io/image.h"
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 
 #include "scene/resources/image_texture.h"
 
@@ -11706,7 +11708,7 @@ void ResourceSaverPNG::get_recognized_extensions(
 
 // --- Merged from drivers/sdl/joypad_sdl.cpp ---
 #if defined(SDL_ENABLED)
-#include "drivers/sdl/joypad_sdl.h"
+#include "core/input/input.h"
 
 #ifdef SDL_ENABLED
 
@@ -12072,7 +12074,6 @@ SDL_Gamepad* JoypadSDL::Joypad::get_sdl_gamepad() const
 
 #ifdef UNIX_ENABLED
 
-#include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/os_unix.h"
 // --- Inlined from drivers/unix/file_access_unix_pipe.h ---
 #if defined(UNIX_ENABLED)
@@ -13179,7 +13180,7 @@ void OS_Unix::initialize()
 // Merged from drivers/unix/dir_access_unix.cpp
 // ============================================================================
 
-#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(UNIX_ENABLED)
 

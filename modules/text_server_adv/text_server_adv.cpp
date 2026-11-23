@@ -30,7 +30,7 @@
 /**************************************************************************/
 
 #include "core/config/project_settings.h"
-#include "core/io/xml_parser.h"
+#include "core/io/config_file.h"
 #include "modules/register_module_types.h"
 #include "core/error/error_macros.h"
 #include "core/io/file_access.h"

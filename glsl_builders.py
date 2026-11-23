@@ -189,31 +189,24 @@ def build_rd_header_lines_for_raytracing_stage(lines, stage: str):
 """
 
 
-def build_rd_header(filename: str, shader: str) -> None:
+def build_rd_shader_body(shader: str) -> str:
     include_file_in_rd_header(shader, header_data := RDHeaderStruct(), 0)
     class_name = os.path.basename(shader).replace(".glsl", "").title().replace("_", "").replace(".", "") + "ShaderRD"
 
-    with generated_wrapper(filename) as file:
-        file.write(f"""\
-#include "core/types.h"
-#include "servers/rendering/renderer_rd/shader_rd.h"
-
-inline ShaderRD::StageData {class_name}() {{
-""")
-
-        if (
-            header_data.raygen_lines
-            or header_data.any_hit_lines
-            or header_data.closest_hit_lines
-            or header_data.miss_lines
-            or header_data.intersection_lines
-        ):
-            file.write(build_rd_header_lines_for_raytracing_stage(header_data.raygen_lines, "raygen"))
-            file.write(build_rd_header_lines_for_raytracing_stage(header_data.any_hit_lines, "any_hit"))
-            file.write(build_rd_header_lines_for_raytracing_stage(header_data.closest_hit_lines, "closest_hit"))
-            file.write(build_rd_header_lines_for_raytracing_stage(header_data.miss_lines, "miss"))
-            file.write(build_rd_header_lines_for_raytracing_stage(header_data.intersection_lines, "intersection"))
-            file.write(f"""\
+    out = [f"inline ShaderRD::StageData {class_name}() {{\n"]
+    if (
+        header_data.raygen_lines
+        or header_data.any_hit_lines
+        or header_data.closest_hit_lines
+        or header_data.miss_lines
+        or header_data.intersection_lines
+    ):
+        out.append(build_rd_header_lines_for_raytracing_stage(header_data.raygen_lines, "raygen"))
+        out.append(build_rd_header_lines_for_raytracing_stage(header_data.any_hit_lines, "any_hit"))
+        out.append(build_rd_header_lines_for_raytracing_stage(header_data.closest_hit_lines, "closest_hit"))
+        out.append(build_rd_header_lines_for_raytracing_stage(header_data.miss_lines, "miss"))
+        out.append(build_rd_header_lines_for_raytracing_stage(header_data.intersection_lines, "intersection"))
+        out.append(f"""\
 	ShaderRD::StageData d;
 	d.raygen_code = _raygen_code;
 	d.any_hit_code = _any_hit_code;
@@ -224,8 +217,8 @@ inline ShaderRD::StageData {class_name}() {{
 	d.is_raytracing = true;
 	return d;
 """)
-        elif header_data.compute_lines:
-            file.write(f"""\
+    elif header_data.compute_lines:
+        out.append(f"""\
 	static const char _compute_code[] = {{
 {to_raw_cstring(header_data.compute_lines)}
 	}};
@@ -234,8 +227,8 @@ inline ShaderRD::StageData {class_name}() {{
 	d.name = "{class_name}";
 	return d;
 """)
-        else:
-            file.write(f"""\
+    else:
+        out.append(f"""\
 	static const char _vertex_code[] = {{
 {to_raw_cstring(header_data.vertex_lines)}
 	}};
@@ -248,10 +241,23 @@ inline ShaderRD::StageData {class_name}() {{
 	d.name = "{class_name}";
 	return d;
 """)
+    out.append("}\n")
+    return "".join(out)
 
-        file.write("""\
-}
-""")
+
+def build_rd_header(filename: str, shader: str) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "core/types.h"\n#include "servers/rendering/renderer_rd/shader_rd.h"\n\n')
+        file.write(build_rd_shader_body(shader))
+
+
+def build_rd_headers_bundle(filename: str, shaders: list[str]) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "core/types.h"\n#include "servers/rendering/renderer_rd/shader_rd.h"\n\n')
+        for idx, shader in enumerate(shaders):
+            if idx:
+                file.write("\n")
+            file.write(build_rd_shader_body(shader))
 
 
 def build_rd_headers(target, source, env):
@@ -284,17 +290,28 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
             line = fs.readline()
 
 
-def build_raw_header(filename: str, shader: str) -> None:
+def build_raw_shader_body(shader: str) -> str:
     include_file_in_raw_header(shader, header_data := RAWHeaderStruct(), 0)
-
-    with generated_wrapper(filename) as file:
-        file.write(f"""\
-#include "core/types.h"
-
+    return f"""\
 static const char {os.path.basename(shader).replace(".glsl", "_shader_glsl")}[] = {{
 {to_raw_cstring(header_data.code)}
 }};
-""")
+"""
+
+
+def build_raw_header(filename: str, shader: str) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "core/types.h"\n\n')
+        file.write(build_raw_shader_body(shader))
+
+
+def build_raw_headers_bundle(filename: str, shaders: list[str]) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "core/types.h"\n\n')
+        for idx, shader in enumerate(shaders):
+            if idx:
+                file.write("\n")
+            file.write(build_raw_shader_body(shader))
 
 
 def build_raw_headers(target, source, env):

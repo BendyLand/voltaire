@@ -42,10 +42,10 @@
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_commons.h"
 #include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 #ifdef MODULE_GLSLANG_ENABLED
-#include "modules/glslang/register_types.h"
+#include "servers/rendering/rendering_device_commons.h"
 #endif
 
 #define FORCE_SEPARATE_PRESENT_QUEUE 0
@@ -8218,16 +8218,14 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/rendering_device_commons.h"
 #ifdef MODULE_GLSLANG_ENABLED
-#include "modules/glslang/register_types.h"
+#include "servers/rendering/rendering_device_commons.h"
 #endif
 
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
 #include "core/io/compression.h"
 #include "servers/rendering/renderer_rd/shader_rd.h"
-#include "servers/rendering/rendering_context_driver.h"
 #include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/rendering_device_driver.h"
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 // --- Merged from servers/rendering/rendering_device_commons.cpp ---
 

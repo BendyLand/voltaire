@@ -31,9 +31,8 @@
 
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "export.h"
+#include "editor/editor_ui.h"
 // --- Inlined from platform/android/export/export_plugin.h ---
 #ifndef DISABLE_DEPRECATED
 // --- Folded from platform/android/export/godot_plugin_config.h ---
@@ -741,7 +740,7 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/json.h"
+#include "core/io/config_file.h"
 #include "core/io/marshalls.h"
 #include "core/math/random_pcg.h"
 #include "core/os/os.h"
@@ -749,15 +748,12 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #include "core/string/translation_server.h"
 #include "core/version.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 
-#include "logo_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/image_loader.h"
-#include "run_icon_svg.gen.h"
+#include "core/io/resource_loader.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
 #ifdef MODULE_MONO_ENABLED
@@ -2184,7 +2180,6 @@ void PluginConfigAndroid::get_plugins_names(
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
 
 #include "modules/regex/regex.h"
 
@@ -2429,7 +2424,6 @@ Error _store_temp_file(const String& p_simplified_path, const Vector<uint8_t>& p
 
 // --- Merged from platform/ios/export/export.cpp ---
 #include "editor/editor_ui.h"
-#include "platform/ios/export/export.h"
 // --- Inlined from platform/ios/export/export_plugin.h ---
 #include "editor/editor_ui.h"
 
@@ -2501,9 +2495,9 @@ void register_ios_exporter()
 
 #include "core/config/engine.h"
 
-#include "platform/ios/export/logo_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "main/splash.gen.h"
-#include "platform/ios/export/run_icon_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 
 Vector<String> EditorExportPlatformIOS::device_types({"iPhone", "iPad"});
 
@@ -2597,9 +2591,8 @@ Error EditorExportPlatformIOS::_export_icons(
 
 // --- Merged from platform/linuxbsd/export/export.cpp ---
 #include "editor/editor_ui.h"
-#include "platform/linuxbsd/export/export.h"
 // --- Inlined from platform/linuxbsd/export/export_plugin.h ---
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 #include "editor/editor_ui.h"
 #include "scene/resources/image_texture.h"
 
@@ -2742,17 +2735,13 @@ void register_linuxbsd_exporter()
 
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 
-#include "platform/linuxbsd/export/logo_svg.gen.h"
-#include "core/io/image_loader.h"
-#include "platform/linuxbsd/export/run_icon_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
+#include "core/io/resource_loader.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 
 Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset>& p_preset,
 	const String& p_app_name, const String& p_pkg_name, const String& p_path)
@@ -3090,12 +3079,12 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 // --- Merged from platform/macos/export/export.cpp ---
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
-#include "platform/macos/export/export.h"
+#include "editor/editor_ui.h"
 // --- Inlined from platform/macos/export/export_plugin.h ---
 #include <sys/stat.h>
 #include "core/io/dir_access.h"
 #include "core/io/image.h"
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 #include "editor/editor_ui.h"
 #include "scene/resources/image_texture.h"
 
@@ -3270,17 +3259,13 @@ void register_macos_exporter() {}
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/string/translation_server.h"
-#include "drivers/png/png_driver_common.h"
+#include "core/io/resource_loader.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 
-#include "platform/macos/export/logo_svg.gen.h"
-#include "core/io/image_loader.h"
-#include "platform/macos/export/run_icon_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
+#include "core/io/resource_loader.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
 struct DataCollectionInfo
@@ -3525,7 +3510,6 @@ Error EditorExportPlatformMacOS::_copy_and_sign_files(Ref<DirAccess>& dir_access
 
 // --- Merged from platform/visionos/export/export.cpp ---
 #include "editor/editor_ui.h"
-#include "platform/visionos/export/export.h"
 // --- Inlined from platform/visionos/export/export_plugin.h ---
 #include "editor/editor_ui.h"
 
@@ -3586,8 +3570,7 @@ void register_visionos_exporter()
 
 #include "core/config/engine.h"
 
-#include "platform/visionos/export/logo_svg.gen.h"
-#include "platform/visionos/export/run_icon_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 
 Vector<String> EditorExportPlatformVisionOS::device_types({"realityDevice"});
 
@@ -3678,12 +3661,10 @@ void EditorExportPlatformVisionOS::get_export_options(
 // --- Merged from platform/web/export/export.cpp ---
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
-#include "platform/web/export/export.h"
+#include "editor/editor_ui.h"
 // --- Inlined from platform/web/export/export_plugin.h ---
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
 // --- Folded from platform/web/export/editor_http_server.h ---
-#include "core/io/stream_peer_socket.h"
 #include "core/io/stream_peer.h"
 
 class EditorHTTPServer : public RefCounted
@@ -3836,7 +3817,7 @@ void register_web_exporter_types() {}
 
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "editor/file_system/editor_paths.h"
+#include "editor/settings/editor_settings.h"
 
 void EditorHTTPServer::_server_thread_poll(void *data) {
 	EditorHTTPServer *web_server = static_cast<EditorHTTPServer *>(data);
@@ -4071,15 +4052,12 @@ EditorHTTPServer::~EditorHTTPServer() {
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 
-#include "platform/web/export/logo_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/image_loader.h"
-#include "platform/web/export/run_icon_svg.gen.h"
+#include "core/io/resource_loader.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "scene/resources/image_texture.h"
 
 Error EditorExportPlatformWeb::_extract_template(
@@ -4379,9 +4357,9 @@ void register_web_exporter() {}
 // --- Merged from platform/windows/export/export.cpp ---
 #include "editor/editor_ui.h"
 #include "editor/settings/editor_settings.h"
-#include "platform/windows/export/export.h"
+#include "editor/editor_ui.h"
 // --- Inlined from platform/windows/export/export_plugin.h ---
-#include "core/os/process_id.h"
+#include "core/os/os.h"
 #include "editor/editor_ui.h"
 
 // Optional environment variables for defining confidential information. If any
@@ -4481,17 +4459,13 @@ void register_windows_exporter_types() {}
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
-#include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "editor/editor_ui.h"
-#include "editor/editor_ui.h"
-#include "editor/file_system/editor_paths.h"
 #include "editor/settings/editor_settings.h"
-#include "editor/file_system/editor_paths.h"
 
-#include "platform/windows/export/logo_svg.gen.h"
-#include "core/io/image_loader.h"
-#include "platform/windows/export/run_icon_svg.gen.h"
+#include "platform/android/export/export_icons_svg.gen.h"
+#include "core/io/resource_loader.h"
+#include "platform/android/export/export_icons_svg.gen.h"
 #include "scene/resources/image_texture.h"
 // --- Inlined from platform/windows/export/template_modifier.h ---
 #include "core/io/file_access.h"
@@ -5605,3 +5579,9 @@ HashMap<String, String> TemplateModifier::_get_strings(Ref<EditorExportPreset> c
 {
 	return HashMap<String, String>();
 }
+
+#ifdef TOOLS_ENABLED
+#include "editor/export/register_exporters.gen.cpp"
+#include "editor/translations/doc_translations.gen.cpp"
+#include "editor/translations/extractable_translations.gen.cpp"
+#endif

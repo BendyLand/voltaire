@@ -34,7 +34,6 @@
 TEST_FORCE_LINK(test_rect2i)
 
 #include "core/math/rect2.h"
-#include "core/math/rect2.h"
 
 namespace TestRect2i {
 

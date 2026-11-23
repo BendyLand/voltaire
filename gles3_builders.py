@@ -243,19 +243,41 @@ def include_file_in_gles3_header(filename: str, header_data: GLES3HeaderStruct, 
     return header_data
 
 
+from io import StringIO
+
+
+def build_gles3_shader_body(shader: str) -> str:
+    buf = StringIO()
+    _write_gles3_struct(buf, shader)
+    return buf.getvalue()
+
+
 def build_gles3_header(filename: str, shader: str) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "drivers/gles3/shader_gles3.h"\n\n')
+        _write_gles3_struct(file, shader)
+
+
+def build_gles3_headers_bundle(filename: str, shaders: list[str]) -> None:
+    with generated_wrapper(filename) as file:
+        file.write('#include "drivers/gles3/shader_gles3.h"\n\n')
+        for idx, shader in enumerate(shaders):
+            if idx:
+                file.write("\n")
+            _write_gles3_struct(file, shader)
+
+
+def _write_gles3_struct(file, shader: str) -> None:
     include_file_in_gles3_header(shader, header_data := GLES3HeaderStruct(), 0)
     out_file_class = (
         os.path.basename(shader).replace(".glsl", "").title().replace("_", "").replace(".", "") + "ShaderGLES3"
     )
 
-    with generated_wrapper(filename) as file:
+    if True:
         defspec = 0
         defvariant = ""
 
         file.write(f"""\
-#include "drivers/gles3/shader_gles3.h"
-
 struct {out_file_class} {{
 	using TextureUniformData = ShaderGLES3::TextureUniformData;
 

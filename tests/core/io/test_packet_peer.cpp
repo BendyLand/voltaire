@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_packet_peer)
 
-#include "core/io/packet_peer.h"
+#include "core/io/stream_peer.h"
 
 namespace TestPacketPeer {
 

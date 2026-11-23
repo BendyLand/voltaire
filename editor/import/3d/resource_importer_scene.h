@@ -32,9 +32,9 @@
 #pragma once
 
 #include "core/error/error_macros.h"
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 #include "scene/3d/skeleton_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/resources/3d/shape_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/mesh.h"
@@ -512,7 +512,7 @@ Transform3D ResourceImporterScene::get_collision_shapes_transform(const M& p_opt
 }
 
 // --- Folded from editor/import/editor_import_plugin.h ---
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 class EditorImportPlugin : public ResourceImporter
 {
@@ -535,7 +535,7 @@ public:
 };
 
 // --- Folded from editor/import/resource_importer_csv_translation.h ---
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 
 class ResourceImporterCSVTranslation : public ResourceImporter
 {
@@ -562,7 +562,7 @@ public:
 // --- Folded from editor/import/resource_importer_texture.h ---
 #include "core/io/file_access.h"
 #include "core/io/image.h"
-#include "core/io/resource_importer.h"
+#include "core/io/resource_loader.h"
 #include "servers/rendering/rendering_server_enums.h"
 
 class CompressedTexture2D;

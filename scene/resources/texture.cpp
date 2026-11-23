@@ -998,14 +998,13 @@ AtlasTexture::~AtlasTexture()
 
 #include "image_texture.h"
 
-#include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
 #include "modules/modules_enabled.gen.h" // For svg.
-#include "scene/resources/bit_map.h"
+#include "scene/resources/image_texture.h"
 #include "servers/rendering/renderer.h"
 #include "servers/text/text_server.h"
 #ifdef MODULE_SVG_ENABLED
-#include "core/io/image_loader.h"
+#include "core/io/resource_loader.h"
 #endif
 
 Mutex ImageTexture::svg_mutex;
@@ -2766,7 +2765,7 @@ void GradientTexture2D::update_now() const
 
 // --- bit_map.cpp ---
 
-#include "bit_map.h"
+#include "scene/resources/image_texture.h"
 
 void BitMap::create(const Size2i& p_size)
 {
@@ -3583,7 +3582,7 @@ void SpriteFrames::get_argument_options(
 #include "core/io/file_access.h"
 #include "core/io/marshalls.h"
 #include "core/io/resource_loader.h"
-#include "scene/resources/bit_map.h"
+#include "scene/resources/image_texture.h"
 #include "servers/rendering/renderer.h"
 
 static const char* compression_mode_names[7] = {
@@ -4581,7 +4580,6 @@ CompressedTextureLayered::~CompressedTextureLayered()
 
 #include "scene/resources/image_texture.h"
 
-#include "scene/resources/image_texture.h"
 
 Ref<Resource> ResourceFormatLoaderCompressedTexture::load(const String& p_path,
 	const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
@@ -6833,16 +6831,14 @@ PackedColorArray ColorPalette::get_colors() const { return colors; }
 // ============================================================================
 
 #include "core/config/engine.h"
-#include "core/io/image_loader.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/templates/hash_map.h"
 #include "core/types.h"
 #include "font.h"
 #include "scene/resources/image_texture.h"
-#include "scene/resources/text_line.h"
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 #include "scene/resources/theme.h"
-#include "scene/theme/theme_db.h"
 #include "servers/rendering/renderer.h"
 
 /*************************************************************************/
@@ -8614,7 +8610,7 @@ real_t Font::_draw_char_outline_bind_compat_104872(RID p_canvas_item, const Poin
 
 // --- text_line.cpp ---
 
-#include "text_line.h"
+#include "scene/resources/font.h"
 
 RID TextLine::get_rid() const { return rid; }
 
@@ -8934,7 +8930,7 @@ void TextLine::_bind_compatibility_methods() {}
 
 // --- text_paragraph.cpp ---
 
-#include "scene/resources/text_line.h"
+#include "scene/resources/font.h"
 
 RID TextParagraph::get_rid() const { return rid; }
 
@@ -10174,7 +10170,7 @@ Color CodeHighlighter::get_member_variable_color() const { return member_color; 
 // Merged from scene/resources/theme.cpp
 // ============================================================================
 
-#include "scene/theme/theme_db.h"
+#include "scene/resources/theme.h"
 #include "theme.h"
 
 bool Theme::is_valid_type_name(const String& p_name)
@@ -11746,7 +11742,7 @@ void Theme::clear() {}
 
 // --- style_box.cpp ---
 
-#include "style_box.h"
+#include "scene/resources/theme.h"
 
 #include <cfloat> // FLT_EPSILON
 #include "core/config/engine.h"
@@ -16212,7 +16208,7 @@ void ParticleProcessMaterial::set_collision_bounce(float) {}
 
 // --- physics_material.cpp ---
 
-#include "scene/resources/physics_material.h"
+#include "scene/resources/material.h"
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
@@ -16252,7 +16248,6 @@ void PhysicsMaterial::set_absorbent(bool p_val)
 #include "scene/resources/texture.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/shader_language.h"
-#include "servers/rendering/shader_compiler.h"
 #include "scene/resources/shader.h"
 
 #ifdef TOOLS_ENABLED
@@ -16403,7 +16398,7 @@ void Shader::_bind_compatibility_methods() {}
 
 // --- shader_include.cpp ---
 
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 #include "scene/resources/shader.h"
 
 void ShaderInclude::_dependency_changed() { emit_changed(); }

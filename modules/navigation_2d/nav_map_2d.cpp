@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "nav_map_2d.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 #include "modules/register_module_types.h"
 
 #include "core/config/project_settings.h"
@@ -45,7 +45,6 @@
 #include "scene/2d/node_2d.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
-#include "servers/navigation_2d/navigation_server_2d.h"
 #include "servers/navigation_2d/navigation_server_2d.h"
 
 Mutex NavMeshGenerator2D::baking_navmesh_mutex;
@@ -2169,7 +2168,7 @@ void NavMapBuilder2D::_build_step_navlink_connections(NavMapIterationBuild2D& r_
 	// Search for polygons within range of a nav link.
 	for (const Ref<NavIteration2D>& link : links) {
 		polygon_count++;
-		Polygon& new_polygon = navlink_polygons[navlink_index++];
+		Nav2D::Polygon& new_polygon = navlink_polygons[navlink_index++];
 
 		new_polygon.id = 0;
 		new_polygon.owner = link.ptr();
@@ -2177,11 +2176,11 @@ void NavMapBuilder2D::_build_step_navlink_connections(NavMapIterationBuild2D& r_
 		const Vector2 link_start_pos = link->get_start_position();
 		const Vector2 link_end_pos = link->get_end_position();
 
-		Polygon* closest_start_polygon = nullptr;
+		Nav2D::Polygon* closest_start_polygon = nullptr;
 		real_t closest_start_sqr_dist = link_connection_radius_sqr;
 		Vector2 closest_start_point;
 
-		Polygon* closest_end_polygon = nullptr;
+		Nav2D::Polygon* closest_end_polygon = nullptr;
 		real_t closest_end_sqr_dist = link_connection_radius_sqr;
 		Vector2 closest_end_point;
 
@@ -2192,7 +2191,7 @@ void NavMapBuilder2D::_build_step_navlink_connections(NavMapIterationBuild2D& r_
 				continue;
 			}
 
-			for (Polygon& polyon : region->navmesh_polygons) {
+			for (Nav2D::Polygon& polyon : region->navmesh_polygons) {
 				for (uint32_t point_id = 2; point_id < polyon.vertices.size(); point_id += 1) {
 					const Triangle2 triangle(polyon.vertices[0], polyon.vertices[point_id - 1],
 						polyon.vertices[point_id]);
@@ -2308,13 +2307,13 @@ void NavMapBuilder2D::_build_update_map_iteration(NavMapIterationBuild2D& r_buil
 
 		int polygon_id = 0;
 		for (Ref<NavIteration2D>& region : map_iteration->region_iterations) {
-			for (const Polygon& polygon : region->navmesh_polygons) {
+			for (const Nav2D::Polygon& polygon : region->navmesh_polygons) {
 				p_path_query_slot.poly_to_id[&polygon] = polygon_id;
 				polygon_id++;
 			}
 		}
 
-		for (const Polygon& polygon : map_iteration->navlink_polygons) {
+		for (const Nav2D::Polygon& polygon : map_iteration->navlink_polygons) {
 			p_path_query_slot.poly_to_id[&polygon] = polygon_id;
 			polygon_id++;
 		}
@@ -2373,7 +2372,7 @@ void NavRegionBuilder2D::_build_step_process_navmesh_data(NavRegionIterationBuil
 	bool first_vertex = true;
 
 	for (uint32_t i = 0; i < navmesh_polygons.size(); i++) {
-		Polygon& polygon = navmesh_polygons[i];
+		Nav2D::Polygon& polygon = navmesh_polygons[i];
 		polygon.id = i;
 		polygon.owner = region_iteration.ptr();
 		polygon.surface_area = 0.0;
@@ -2479,7 +2478,7 @@ void NavRegionBuilder2D::_build_step_find_edge_connection_pairs(NavRegionIterati
 	int free_edges_count = 0;
 	int edge_merge_error_count = 0;
 
-	for (Polygon& poly : region_iteration->navmesh_polygons) {
+	for (Nav2D::Polygon& poly : region_iteration->navmesh_polygons) {
 		for (uint32_t p = 0; p < poly.vertices.size(); p++) {
 			const int next_point = (p + 1) % poly.vertices.size();
 			const EdgeKey ek =
@@ -2579,9 +2578,9 @@ void NavRegionBuilder2D::_build_update_iteration(NavRegionIterationBuild2D& r_bu
 #define THREE_POINTS_CROSS_PRODUCT(m_a, m_b, m_c) (-((m_c) - (m_a)).cross((m_b) - (m_a)))
 
 Vector2 NavMeshQueries2D::polygons_get_random_point(
-	const LocalVector<Polygon>& p_polygons, uint32_t p_navigation_layers, bool p_uniformly)
+	const LocalVector<Nav2D::Polygon>& p_polygons, uint32_t p_navigation_layers, bool p_uniformly)
 {
-	const LocalVector<Polygon>& region_polygons = p_polygons;
+	const LocalVector<Nav2D::Polygon>& region_polygons = p_polygons;
 
 	if (region_polygons.is_empty()) {
 		return Vector2();
@@ -2592,7 +2591,7 @@ Vector2 NavMeshQueries2D::polygons_get_random_point(
 		RBMap<real_t, uint32_t> region_area_map;
 
 		for (uint32_t rp_index = 0; rp_index < region_polygons.size(); rp_index++) {
-			const Polygon& region_polygon = region_polygons[rp_index];
+			const Nav2D::Polygon& region_polygon = region_polygons[rp_index];
 			real_t polyon_area = region_polygon.surface_area;
 
 			if (polyon_area == 0.0) {
@@ -2614,7 +2613,7 @@ Vector2 NavMeshQueries2D::polygons_get_random_point(
 		uint32_t rrp_polygon_index = region_E->value;
 		ERR_FAIL_UNSIGNED_INDEX_V(rrp_polygon_index, region_polygons.size(), Vector2());
 
-		const Polygon& rr_polygon = region_polygons[rrp_polygon_index];
+		const Nav2D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
 
 		real_t accumulated_polygon_area = 0;
 		RBMap<real_t, uint32_t> polygon_area_map;
@@ -2653,7 +2652,7 @@ Vector2 NavMeshQueries2D::polygons_get_random_point(
 	else {
 		uint32_t rrp_polygon_index = Math::random(int(0), region_polygons.size() - 1);
 
-		const Polygon& rr_polygon = region_polygons[rrp_polygon_index];
+		const Nav2D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
 
 		uint32_t rrp_face_index = Math::random(int(2), rr_polygon.vertices.size() - 1);
 
@@ -2679,7 +2678,7 @@ void NavMeshQueries2D::_query_task_find_start_end_positions(
 		}
 
 		// Find the initial poly and the end poly on this map.
-		for (const Polygon& p : region->get_navmesh_polygons()) {
+		for (const Nav2D::Polygon& p : region->get_navmesh_polygons()) {
 			// Only consider the polygon if it in a region with compatible layers.
 			if ((p_query_task.navigation_layers & p.owner->get_navigation_layers()) == 0) {
 				continue;
@@ -2762,8 +2761,8 @@ void NavMeshQueries2D::_query_task_build_path_corridor(
 	NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration)
 {
 	const Vector2 p_target_position = p_query_task.target_position;
-	const Polygon* begin_poly = p_query_task.begin_polygon;
-	const Polygon* end_poly = p_query_task.end_polygon;
+	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
+	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
 	Vector2 begin_point = p_query_task.begin_position;
 	Vector2 end_point = p_query_task.end_position;
 
@@ -2790,7 +2789,7 @@ void NavMeshQueries2D::_query_task_build_path_corridor(
 	uint32_t least_cost_id = p_query_task.path_query_slot->poly_to_id[begin_poly];
 	bool found_route = false;
 
-	const Polygon* reachable_end = nullptr;
+	const Nav2D::Polygon* reachable_end = nullptr;
 	real_t distance_to_reachable_end = FLT_MAX;
 	bool is_reachable = true;
 	real_t poly_enter_cost = 0.0;
@@ -3009,9 +3008,9 @@ float NavMeshQueries2D::_calculate_path_length(
 void NavMeshQueries2D::_query_task_post_process_corridorfunnel(NavMeshPathQueryTask2D& p_query_task)
 {
 	Vector2 end_point = p_query_task.end_position;
-	const Polygon* end_poly = p_query_task.end_polygon;
+	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
 	Vector2 begin_point = p_query_task.begin_position;
-	const Polygon* begin_poly = p_query_task.begin_polygon;
+	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
 	uint32_t least_cost_id = p_query_task.least_cost_id;
 	LocalVector<NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
 
@@ -3113,9 +3112,9 @@ void NavMeshQueries2D::_query_task_post_process_corridorfunnel(NavMeshPathQueryT
 void NavMeshQueries2D::_query_task_post_process_edgecentered(NavMeshPathQueryTask2D& p_query_task)
 {
 	Vector2 end_point = p_query_task.end_position;
-	const Polygon* end_poly = p_query_task.end_polygon;
+	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
 	Vector2 begin_point = p_query_task.begin_position;
-	const Polygon* begin_poly = p_query_task.begin_polygon;
+	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
 	uint32_t least_cost_id = p_query_task.least_cost_id;
 	LocalVector<NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
 
@@ -3150,9 +3149,9 @@ void NavMeshQueries2D::_query_task_post_process_nopostprocessing(
 	NavMeshPathQueryTask2D& p_query_task)
 {
 	Vector2 end_point = p_query_task.end_position;
-	const Polygon* end_poly = p_query_task.end_polygon;
+	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
 	Vector2 begin_point = p_query_task.begin_position;
-	const Polygon* begin_poly = p_query_task.begin_polygon;
+	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
 	uint32_t least_cost_id = p_query_task.least_cost_id;
 	LocalVector<NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
 
@@ -3194,7 +3193,7 @@ ClosestPointQueryResult NavMeshQueries2D::map_iteration_get_closest_point_info(
 
 	const LocalVector<Ref<NavIteration2D>>& regions = p_map_iteration.region_iterations;
 	for (const Ref<NavIteration2D>& region : regions) {
-		for (const Polygon& polygon : region->get_navmesh_polygons()) {
+		for (const Nav2D::Polygon& polygon : region->get_navmesh_polygons()) {
 			real_t cross = -(polygon.vertices[1] - polygon.vertices[0])
 								.cross(polygon.vertices[2] - polygon.vertices[0]);
 			Vector2 closest_on_polygon;
@@ -3333,21 +3332,21 @@ Vector2 NavMeshQueries2D::map_iteration_get_random_point(
 }
 
 Vector2 NavMeshQueries2D::polygons_get_closest_point(
-	const LocalVector<Polygon>& p_polygons, const Vector2& p_point)
+	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
 {
 	ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
 	return cp.point;
 }
 
 ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(
-	const LocalVector<Polygon>& p_polygons, const Vector2& p_point)
+	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
 {
 	ClosestPointQueryResult result;
 	real_t closest_point_distance_squared = FLT_MAX;
 
 	// TODO: Check for further 2D improvements.
 
-	for (const Polygon& polygon : p_polygons) {
+	for (const Nav2D::Polygon& polygon : p_polygons) {
 		real_t cross = -(polygon.vertices[1] - polygon.vertices[0])
 							.cross(polygon.vertices[2] - polygon.vertices[0]);
 		Vector2 closest_on_polygon;
@@ -3410,7 +3409,7 @@ ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(
 }
 
 RID NavMeshQueries2D::polygons_get_closest_point_owner(
-	const LocalVector<Polygon>& p_polygons, const Vector2& p_point)
+	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
 {
 	ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
 	return cp.owner;
@@ -3505,7 +3504,7 @@ bool NavMeshQueries2D::_query_task_is_connection_owner_usable(
 			}
 		} break;
 		case NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK: {
-			const LocalVector<Polygon>& link_polygons = p_owner->get_navmesh_polygons();
+			const LocalVector<Nav2D::Polygon>& link_polygons = p_owner->get_navmesh_polygons();
 			if (link_polygons.size() != 2) {
 				// Not usable. Whatever this is, it is not a valid connected link.
 				owner_usable = false;

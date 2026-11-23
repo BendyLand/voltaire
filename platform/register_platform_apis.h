@@ -33,3 +33,33 @@
 
 void register_platform_apis();
 void unregister_platform_apis();
+
+// --- Folded from platform/android/api/api.h ---
+void register_android_api();
+void unregister_android_api();
+// --- End platform/android/api/api.h ---
+
+// --- Folded from platform/ios/api/api.h ---
+#if defined(IOS_ENABLED)
+extern void godot_apple_embedded_plugins_initialize();
+extern void godot_apple_embedded_plugins_deinitialize();
+#endif
+
+void register_ios_api();
+void unregister_ios_api();
+// --- End platform/ios/api/api.h ---
+
+// --- Folded from platform/visionos/api/api.h ---
+#if defined(VISIONOS_ENABLED)
+extern void godot_apple_embedded_plugins_initialize();
+extern void godot_apple_embedded_plugins_deinitialize();
+#endif
+
+void register_visionos_api();
+void unregister_visionos_api();
+// --- End platform/visionos/api/api.h ---
+
+// --- Folded from platform/web/api/api.h ---
+void register_web_api();
+void unregister_web_api();
+// --- End platform/web/api/api.h ---

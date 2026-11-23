@@ -35,7 +35,7 @@ TEST_FORCE_LINK(test_physics_material)
 
 #ifndef PHYSICS_3D_DISABLED
 
-#include "scene/resources/physics_material.h"
+#include "scene/resources/material.h"
 
 namespace TestPhysicsMaterial {
 

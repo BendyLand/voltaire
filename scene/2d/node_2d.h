@@ -986,7 +986,7 @@ public:
 // --- Folded from scene/2d/physics/physics_body_2d.h ---
 
 
-#include "scene/resources/physics_material.h"
+#include "scene/resources/material.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 class Joint2D;

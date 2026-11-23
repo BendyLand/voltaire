@@ -36,14 +36,7 @@ GLES3_SHADERS = [
 ]
 
 
+BUNDLE_TARGET = "drivers/gles3/shaders/gles3_shaders.gen.h"
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--all":
-        for s in GLES3_SHADERS:
-            gles3_builders.build_gles3_header(f"{s}.gen.h", s)
-    else:
-        run = utils.get_run_arg()
-        if 0 <= run < len(GLES3_SHADERS):
-            s = GLES3_SHADERS[run]
-            build_gles3_headers([f"{s}.gen.h"], [s])
-        else:
-            print("No commands left to run.")
+    gles3_builders.build_gles3_headers_bundle(BUNDLE_TARGET, GLES3_SHADERS)

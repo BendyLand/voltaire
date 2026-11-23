@@ -636,4 +636,257 @@ public:
 	~SystemFont();
 };
 
+// --- Folded from scene/resources/text_line.h ---
 
+#include "servers/text/text_server.h"
+
+/*************************************************************************/
+
+class TextLine : public RefCounted
+{
+private:
+	RID rid;
+
+	mutable bool dirty = true;
+
+	float width = -1.0;
+	uint32_t flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA;
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	String el_char = U"…";
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_TRIM_ELLIPSIS;
+
+	Vector<float> tab_stops;
+
+protected:
+#ifndef DISABLE_DEPRECATED
+	void _draw_bind_compat_104872(
+		RID p_canvas, const Vector2& p_pos, const Color& p_color = Color(1, 1, 1)) const;
+	void _draw_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+		int p_outline_size = 1, const Color& p_color = Color(1, 1, 1)) const;
+	static void _bind_compatibility_methods();
+#endif
+
+
+	void _shape() const;
+
+public:
+	RID get_rid() const;
+
+	void clear();
+	Ref<TextLine> duplicate() const;
+
+	void set_direction(TextServer::Direction p_direction);
+	TextServer::Direction get_direction() const;
+	TextServer::Direction get_inferred_direction() const;
+
+	void set_orientation(TextServer::Orientation p_orientation);
+	TextServer::Orientation get_orientation() const;
+
+	void set_preserve_invalid(bool p_enabled);
+	bool get_preserve_invalid() const;
+
+	void set_preserve_control(bool p_enabled);
+	bool get_preserve_control() const;
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void tab_align(const Vector<float>& p_tab_stops);
+
+	void set_flags(uint32_t p_flags);
+	uint32_t get_flags() const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_ellipsis_char(const String& p_char);
+	String get_ellipsis_char() const;
+
+	void set_width(float p_width);
+	float get_width() const;
+
+	Size2 get_size() const;
+
+	float get_line_ascent() const;
+	float get_line_descent() const;
+	float get_line_width() const;
+	float get_line_underline_position() const;
+	float get_line_underline_thickness() const;
+
+	void draw(RID p_canvas, const Vector2& p_pos, const Color& p_color = Color(1, 1, 1),
+		float p_oversampling = 0.0) const;
+	void draw_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size = 1,
+		const Color& p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+
+	int hit_test(float p_coords) const;
+
+	TextLine(const String& p_text, const Ref<Font>& p_font, int p_font_size,
+		const String& p_language = "",
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL);
+	TextLine();
+	~TextLine();
+};
+
+// --- Folded from scene/resources/text_paragraph.h ---
+#include "core/os/thread_safe.h"
+#include "core/templates/local_vector.h"
+
+#include "servers/text/text_server.h"
+
+/*************************************************************************/
+
+class TextParagraph : public RefCounted
+{
+	_THREAD_SAFE_CLASS_
+
+private:
+	mutable RID dropcap_rid;
+	mutable int dropcap_lines = 0;
+	Rect2 dropcap_margins;
+
+	RID rid;
+	mutable LocalVector<RID> lines_rid;
+
+	mutable bool lines_dirty = true;
+
+	float line_spacing = 0.0;
+	float width = -1.0;
+	int max_lines_visible = -1;
+
+	uint32_t brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND;
+	uint32_t jst_flags = TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+						 TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+						 TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	String el_char = U"…";
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
+
+	Vector<float> tab_stops;
+
+protected:
+#ifndef DISABLE_DEPRECATED
+	void _draw_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+		const Color& p_color = Color(1, 1, 1), const Color& p_dc_color = Color(1, 1, 1)) const;
+	void _draw_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+		int p_outline_size = 1, const Color& p_color = Color(1, 1, 1),
+		const Color& p_dc_color = Color(1, 1, 1)) const;
+	void _draw_line_bind_compat_104872(RID p_canvas, const Vector2& p_pos, int p_line,
+		const Color& p_color = Color(1, 1, 1)) const;
+	void _draw_line_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos, int p_line,
+		int p_outline_size = 1, const Color& p_color = Color(1, 1, 1)) const;
+	void _draw_dropcap_bind_compat_104872(
+		RID p_canvas, const Vector2& p_pos, const Color& p_color = Color(1, 1, 1)) const;
+	void _draw_dropcap_outline_bind_compat_104872(RID p_canvas, const Vector2& p_pos,
+		int p_outline_size = 1, const Color& p_color = Color(1, 1, 1)) const;
+
+	static void _bind_compatibility_methods();
+#endif
+
+	void _shape_lines() const;
+
+public:
+	RID get_rid() const;
+	RID get_line_rid(int p_line) const;
+	RID get_dropcap_rid() const;
+
+	void clear();
+
+	Ref<TextParagraph> duplicate() const;
+
+	void set_direction(TextServer::Direction p_direction);
+	TextServer::Direction get_direction() const;
+	TextServer::Direction get_inferred_direction() const;
+
+	void set_orientation(TextServer::Orientation p_orientation);
+	TextServer::Orientation get_orientation() const;
+
+	void set_preserve_invalid(bool p_enabled);
+	bool get_preserve_invalid() const;
+
+	void set_preserve_control(bool p_enabled);
+	bool get_preserve_control() const;
+
+	void set_custom_punctuation(const String& p_punct);
+	String get_custom_punctuation() const;
+
+	bool set_dropcap(const String& p_text, const Ref<Font>& p_font, int p_font_size,
+		const Rect2& p_dropcap_margins = Rect2(), const String& p_language = "");
+	void clear_dropcap();
+
+	void set_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_alignment() const;
+
+	void tab_align(const Vector<float>& p_tab_stops);
+
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
+
+	void set_break_flags(uint32_t p_flags);
+	uint32_t get_break_flags() const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_ellipsis_char(const String& p_char);
+	String get_ellipsis_char() const;
+
+	void set_width(float p_width);
+	float get_width() const;
+
+	void set_max_lines_visible(int p_lines);
+	int get_max_lines_visible() const;
+
+	void set_line_spacing(float p_spacing);
+	float get_line_spacing() const;
+
+	Size2 get_non_wrapped_size() const;
+
+	Size2 get_size() const;
+
+	Vector2i get_range() const;
+
+	int get_line_count() const;
+
+	Size2 get_line_size(int p_line) const;
+	float get_line_ascent(int p_line) const;
+	float get_line_descent(int p_line) const;
+	float get_line_width(int p_line) const;
+	Vector2i get_line_range(int p_line) const;
+	float get_line_underline_position(int p_line) const;
+	float get_line_underline_thickness(int p_line) const;
+
+	Size2 get_dropcap_size() const;
+	int get_dropcap_lines() const;
+
+	void draw(RID p_canvas, const Vector2& p_pos, const Color& p_color = Color(1, 1, 1),
+		const Color& p_dc_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+	void draw_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size = 1,
+		const Color& p_color = Color(1, 1, 1), const Color& p_dc_color = Color(1, 1, 1),
+		float p_oversampling = 0.0) const;
+
+	void draw_line(RID p_canvas, const Vector2& p_pos, int p_line,
+		const Color& p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+	void draw_line_outline(RID p_canvas, const Vector2& p_pos, int p_line, int p_outline_size = 1,
+		const Color& p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+
+	void draw_dropcap(RID p_canvas, const Vector2& p_pos, const Color& p_color = Color(1, 1, 1),
+		float p_oversampling = 0.0) const;
+	void draw_dropcap_outline(RID p_canvas, const Vector2& p_pos, int p_outline_size = 1,
+		const Color& p_color = Color(1, 1, 1), float p_oversampling = 0.0) const;
+
+	int hit_test(const Point2& p_coords) const;
+
+	bool is_dirty();
+
+	Mutex& get_mutex() const { return _thread_safe_; }
+
+	TextParagraph(const String& p_text, const Ref<Font>& p_font, int p_font_size,
+		const String& p_language = "", float p_width = -1.f,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL);
+	TextParagraph();
+	~TextParagraph();
+};
+// --- End scene/resources/text_line.h ---

@@ -729,3 +729,374 @@ AudioDriverCoreAudio::AudioDriverCoreAudio() {
 }
 
 #endif // COREAUDIO_ENABLED
+
+// === Merged from drivers/apple/foundation_helpers.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "drivers/apple/foundation_helpers.h"
+
+#import "core/string/ustring.h"
+#import "core/templates/span.h"
+
+#import <CoreFoundation/CFString.h>
+
+namespace conv {
+
+NSString *to_nsstring(const String &p_str) {
+	return [[NSString alloc] initWithBytes:(const void *)p_str.ptr()
+									length:p_str.length() * sizeof(char32_t)
+								  encoding:NSUTF32LittleEndianStringEncoding];
+}
+
+NSString *to_nsstring(Span<char> p_str) {
+	return [[NSString alloc] initWithBytes:(const void *)p_str.ptr()
+									length:p_str.size()
+								  encoding:NSASCIIStringEncoding];
+}
+
+NSString *to_nsstring(const CharString &p_str) {
+	return [[NSString alloc] initWithBytes:(const void *)p_str.ptr()
+									length:p_str.length()
+								  encoding:NSUTF8StringEncoding];
+}
+
+String to_string(NSString *p_str) {
+	CFStringRef str = (__bridge CFStringRef)p_str;
+	CFStringEncoding fastest = CFStringGetFastestEncoding(str);
+	// Sometimes, CFString will return a pointer to it's encoded data,
+	// so we can create the string without allocating intermediate buffers.
+	const char *p = CFStringGetCStringPtr(str, fastest);
+	if (p) {
+		switch (fastest) {
+			case kCFStringEncodingASCII:
+				return String::ascii(Span(p, CFStringGetLength(str)));
+			case kCFStringEncodingUTF8:
+				return String::utf8(p);
+			case kCFStringEncodingUTF32LE:
+				return String::utf32(Span((char32_t *)p, CFStringGetLength(str)));
+			default:
+				break;
+		}
+	}
+
+	CFRange range = CFRangeMake(0, CFStringGetLength(str));
+	CFIndex byte_len = 0;
+	// Try to losslessly convert the string directly into a String's buffer to avoid intermediate allocations.
+	CFIndex n = CFStringGetBytes(str, range, kCFStringEncodingUTF32LE, 0, NO, nil, 0, &byte_len);
+	if (n == range.length) {
+		String res;
+		res.resize_uninitialized((byte_len / sizeof(char32_t)) + 1);
+		res[n] = 0;
+		n = CFStringGetBytes(str, range, kCFStringEncodingUTF32LE, 0, NO, (UInt8 *)res.ptrw(), res.length() * sizeof(char32_t), nil);
+		return res;
+	}
+
+	return String::utf8(p_str.UTF8String);
+}
+
+} //namespace conv
+
+// === Merged from drivers/apple/os_log_logger.cpp ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "drivers/apple/os_log_logger.h"
+
+#include "core/os/memory.h"
+#include "core/string/print_string.h"
+
+#include <cstdio> // For vsnprintf.
+
+OsLogLogger::OsLogLogger(const char *p_subsystem) {
+	const char *subsystem = p_subsystem;
+	if (!subsystem) {
+		subsystem = "org.godotengine.godot";
+		os_log_info(OS_LOG_DEFAULT, "Missing subsystem for os_log logging; using %{public}s", subsystem);
+	}
+
+	log = os_log_create(subsystem, "engine");
+	error_log = os_log_create(subsystem, error_type_string(ErrorType::ERR_ERROR));
+	warning_log = os_log_create(subsystem, error_type_string(ErrorType::ERR_WARNING));
+	script_log = os_log_create(subsystem, error_type_string(ErrorType::ERR_SCRIPT));
+	shader_log = os_log_create(subsystem, error_type_string(ErrorType::ERR_SHADER));
+}
+
+void OsLogLogger::logv(const char *p_format, va_list p_list, bool p_err) {
+	constexpr int static_buf_size = 1024;
+	char static_buf[static_buf_size] = { '\0' };
+	char *buf = static_buf;
+	va_list list_copy;
+	va_copy(list_copy, p_list);
+	int len = vsnprintf(buf, static_buf_size, p_format, p_list);
+	if (len >= static_buf_size) {
+		buf = (char *)Memory::alloc_static(len + 1);
+		vsnprintf(buf, len + 1, p_format, list_copy);
+	}
+	va_end(list_copy);
+
+	// Choose appropriate log type based on error flag.
+	os_log_type_t log_type = p_err ? OS_LOG_TYPE_ERROR : OS_LOG_TYPE_INFO;
+	os_log_with_type(log, log_type, "%{public}s", buf);
+
+	if (len >= static_buf_size) {
+		Memory::free_static(buf);
+	}
+}
+
+void OsLogLogger::log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type, const Vector<Ref<ScriptBacktrace>> &p_script_backtraces) {
+	os_log_t selected_log;
+	switch (p_type) {
+		case ERR_WARNING:
+			selected_log = warning_log;
+			break;
+		case ERR_SCRIPT:
+			selected_log = script_log;
+			break;
+		case ERR_SHADER:
+			selected_log = shader_log;
+			break;
+		case ERR_ERROR:
+		default:
+			selected_log = error_log;
+			break;
+	}
+	const char *err_details;
+	if (p_rationale && *p_rationale) {
+		err_details = p_rationale;
+	} else {
+		err_details = p_code;
+	}
+
+	// Choose log level based on error type.
+	os_log_type_t log_type;
+	switch (p_type) {
+		case ERR_WARNING:
+			log_type = OS_LOG_TYPE_DEFAULT;
+			break;
+		case ERR_ERROR:
+		case ERR_SCRIPT:
+		case ERR_SHADER:
+		default:
+			log_type = OS_LOG_TYPE_ERROR;
+			break;
+	}
+
+	// Append script backtraces, if any.
+	String back_trace;
+	for (const Ref<ScriptBacktrace> &backtrace : p_script_backtraces) {
+		if (backtrace.is_valid() && !backtrace->is_empty()) {
+			back_trace += "\n";
+			back_trace += backtrace->format(strlen(error_type_indent(p_type)));
+		}
+	}
+
+	if (back_trace.is_empty()) {
+		os_log_with_type(selected_log, log_type, "%{public}s:%d:%{public}s(): %{public}s %{public}s", p_file, p_line, p_function, err_details, p_code);
+	} else {
+		os_log_with_type(selected_log, log_type, "%{public}s:%d:%{public}s(): %{public}s %{public}s%{public}s", p_file, p_line, p_function, err_details, p_code, back_trace.utf8().ptr());
+	}
+}
+
+// === Merged from drivers/apple/thread_apple.cpp ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "drivers/apple/thread_apple.h"
+
+#include "core/error/error_macros.h"
+#include "core/string/ustring.h"
+
+SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.
+thread_local Thread::ID Thread::caller_id = Thread::id_counter.increment();
+
+struct ThreadData {
+	Thread::Callback callback;
+	void *userdata;
+	Thread::ID caller_id;
+};
+
+void *Thread::thread_callback(void *p_data) {
+	ThreadData *thread_data = static_cast<ThreadData *>(p_data);
+
+	// Set the caller ID for this thread
+	caller_id = thread_data->caller_id;
+
+	ScriptServer::thread_enter(); // Scripts may need to attach a stack.
+
+	// Call the actual callback
+	thread_data->callback(thread_data->userdata);
+
+	ScriptServer::thread_exit();
+
+	// Clean up
+	memdelete(thread_data);
+
+	return nullptr;
+}
+
+void Thread::make_main_thread() {
+	if (caller_id == MAIN_ID) {
+		return; // We're already the main thread
+	}
+	CRASH_COND_MSG(!is_main_thread_assigned.set_if_clear(), "A second thread attempted to become the main thread.");
+	caller_id = MAIN_ID;
+}
+
+void Thread::release_main_thread() {
+	CRASH_COND_MSG(caller_id != MAIN_ID, "Trying to release main thread from a thread that isn't main.");
+	CRASH_COND(!is_main_thread_assigned.clear_if_set());
+	caller_id = id_counter.increment();
+}
+
+Error Thread::set_name(const String &p_name) {
+	int err = pthread_setname_np(p_name.utf8().get_data());
+	return err == 0 ? OK : ERR_INVALID_PARAMETER;
+}
+
+Thread::ID Thread::start(Thread::Callback p_callback, void *p_user, const Settings &p_settings) {
+	ERR_FAIL_COND_V_MSG(id != UNASSIGNED_ID, UNASSIGNED_ID, "A Thread object has been re-started without wait_to_finish() having been called on it.");
+	id = id_counter.increment();
+
+	ThreadData *thread_data = memnew(ThreadData);
+	thread_data->callback = p_callback;
+	thread_data->userdata = p_user;
+	thread_data->caller_id = id;
+
+	// Create the thread
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+
+	switch (p_settings.priority) {
+		case PRIORITY_LOW:
+			pthread_attr_set_qos_class_np(&attr, QOS_CLASS_UTILITY, 0);
+			break;
+		case PRIORITY_NORMAL:
+			pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INITIATED, 0);
+			break;
+		case PRIORITY_HIGH:
+			pthread_attr_set_qos_class_np(&attr, QOS_CLASS_USER_INTERACTIVE, 0);
+			break;
+	}
+
+	// The default stack size for secondary threads on Apple platforms is 512KiB.
+	// This is insufficient when using a library like SPIRV-Cross, which can generate deep stacks and result in a stack overflow.
+	// It also creates a problematic discrepancy with other platforms, where secondary threads are often at least 1 MiB.
+	pthread_attr_setstacksize(&attr,
+#if __has_feature(address_sanitizer) || __has_feature(thread_sanitizer)
+			// ASan (and to some degree TSan) needs a lot of extra stack size.
+			4 * 1024 * 1024 // 4 MiB
+#elif !defined(__OPTIMIZE__)
+			// Unoptimized builds also need a larger stack size.
+			2 * 1024 * 1024 // 2 MiB
+#else
+			1 * 1024 * 1024 // 1 MiB
+#endif
+	);
+
+	// Create the thread
+	pthread_create(&pthread, &attr, thread_callback, thread_data);
+
+	// Clean up attributes
+	pthread_attr_destroy(&attr);
+
+	return id;
+}
+
+void Thread::wait_to_finish() {
+	ERR_FAIL_COND_MSG(id == UNASSIGNED_ID, "Attempt of waiting to finish on a thread that was never started.");
+	ERR_FAIL_COND_MSG(id == get_caller_id(), "Threads can't wait to finish on themselves, another thread must wait.");
+
+	int err = pthread_join(pthread, nullptr);
+	if (err != 0) {
+		ERR_FAIL_MSG("Thread::wait_to_finish() failed to join thread.");
+	}
+	pthread = pthread_t();
+	id = UNASSIGNED_ID;
+}
+
+Thread::~Thread() {
+	if (id != UNASSIGNED_ID) {
+#ifdef DEBUG_ENABLED
+		WARN_PRINT(
+				"A Thread object is being destroyed without its completion having been realized.\n"
+				"Please call wait_to_finish() on it to ensure correct cleanup.");
+#endif
+		pthread_detach(pthread);
+	}
+}

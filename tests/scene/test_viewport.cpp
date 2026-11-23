@@ -44,7 +44,6 @@ TEST_FORCE_LINK(test_viewport)
 
 #ifndef PHYSICS_2D_DISABLED
 #include "scene/2d/node_2d.h"
-#include "scene/2d/node_2d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_2D_DISABLED
 

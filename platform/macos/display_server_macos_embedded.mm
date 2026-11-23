@@ -29,9 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
-#import "platform/macos/display_server_macos.h"
 
 #import "core/config/project_settings.h"
 #import "core/debugger/engine_debugger.h"
@@ -40,10 +39,10 @@
 #import "core/io/marshalls.h"
 #import "core/os/main_loop.h"
 #import "core/os/os.h"
-#import "servers/display/native_menu.h"
+#import "servers/display/display_server.h"
 
 #if defined(GLES3_ENABLED)
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
 #import "drivers/gles3/rasterizer_gles3.h"
 
@@ -55,7 +54,7 @@
 #import "servers/rendering/rendering_device.h"
 
 #if defined(VULKAN_ENABLED)
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 #endif // VULKAN_ENABLED
 #if defined(METAL_ENABLED)
 #import "drivers/metal/rendering_context_driver_metal.h"
@@ -64,7 +63,7 @@
 
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
-#import "platform/macos/display_server_macos.h"
+#import "platform/macos/os_macos.h"
 
 DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, Error &r_error) {
 	EmbeddedDebugger::initialize(this);
@@ -829,3 +828,551 @@ Error DisplayServerMacOSEmbeddedState::deserialize(const PackedByteArray &p_data
 
 	return OK;
 }
+
+// === Merged from platform/macos/embedded_debugger.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "platform/macos/os_macos.h"
+
+
+#include "core/debugger/engine_debugger.h"
+#include "core/input/input.h"
+#include "core/input/input_event.h"
+#include "core/input/input.h"
+#include "core/os/main_loop.h"
+#include "core/os/os.h"
+
+void EmbeddedDebugger::initialize(DisplayServerMacOSEmbedded* p_ds)
+{
+#ifdef DEBUG_ENABLED
+	if (EngineDebugger::is_active() && !data) {
+		data = memnew(Data);
+		data->ds = p_ds;
+		_init_parse_message_handlers();
+		EngineDebugger::register_message_capture(
+			"embed", EngineDebugger::Capture(nullptr, EmbeddedDebugger::parse_message));
+	}
+#endif
+}
+
+void EmbeddedDebugger::deinitialize()
+{
+#ifdef DEBUG_ENABLED
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+#endif
+}
+
+#ifdef DEBUG_ENABLED
+void EmbeddedDebugger::_init_parse_message_handlers()
+{
+	data->parse_message_handlers["window_size"] = &EmbeddedDebugger::_msg_window_size;
+	data->parse_message_handlers["mouse_set_mode"] = &EmbeddedDebugger::_msg_mouse_set_mode;
+	data->parse_message_handlers["event"] = &EmbeddedDebugger::_msg_event;
+	data->parse_message_handlers["win_event"] = &EmbeddedDebugger::_msg_win_event;
+	data->parse_message_handlers["notification"] = &EmbeddedDebugger::_msg_notification;
+	data->parse_message_handlers["ime_update"] = &EmbeddedDebugger::_msg_ime_update;
+	data->parse_message_handlers["ds_state"] = &EmbeddedDebugger::_msg_ds_state;
+}
+
+Error EmbeddedDebugger::_msg_window_size(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'window_size' message.");
+	Size2i size = p_args[0];
+	data->ds->_window_set_size(size);
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_mouse_set_mode(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'mouse_set_mode' message.");
+	DisplayServerEnums::MouseMode mode = p_args[0];
+	data->ds->mouse_set_mode(mode);
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_event(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'event' message.");
+	if (!Input::is_initialized()) {
+		// Ignore if we've received an event before the process has initialized.
+		return OK;
+	}
+
+	PackedByteArray buf = p_args[0];
+	Ref<InputEvent> event;
+	decode_input_event(buf, event);
+
+	// Events arrive in points (normalized by the editor). Scale to the
+	// game's pixel coordinate space.
+	float scale = data->ds->screen_get_max_scale();
+
+	{
+		Ref<InputEventMouse> e = event;
+		if (e.is_valid()) {
+			e->set_position(e->get_position() * scale);
+			e->set_global_position(e->get_global_position() * scale);
+			Ref<InputEventMouseMotion> mm = e;
+			if (mm.is_valid()) {
+				mm->set_relative(mm->get_relative() * scale);
+			}
+			Input::set_mouse_position(e->get_position());
+		}
+	}
+
+	{
+		Ref<InputEventMagnifyGesture> e = event;
+		if (e.is_valid()) {
+			e->set_position(e->get_position() * scale);
+			Input::set_mouse_position(e->get_position());
+		}
+	}
+
+	{
+		Ref<InputEventPanGesture> e = event;
+		if (e.is_valid()) {
+			e->set_position(e->get_position() * scale);
+			Input::set_mouse_position(e->get_position());
+		}
+	}
+
+	if (event.is_valid()) {
+		Input::parse_input_event(event.ptr());
+	}
+
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_win_event(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'win_event' message.");
+	DisplayServerEnums::WindowEvent win_event = p_args[0];
+	data->ds->send_window_event_by_id(win_event, DisplayServerEnums::MAIN_WINDOW_ID);
+	if (win_event == DisplayServerEnums::WindowEvent::WINDOW_EVENT_MOUSE_EXIT) {
+		Input::release_pressed_events();
+	}
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_ime_update(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 2, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'ime_update' message.");
+	String ime_text = p_args[0];
+	Vector2i ime_selection = p_args[1];
+	data->ds->update_im_text(ime_selection, ime_text);
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_notification(const Array& p_args)
+{
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'notification' message.");
+	int notification = p_args[0];
+	if (MainLoop::is_active()) {
+		MainLoop::notification(notification);
+	}
+	return OK;
+}
+
+Error EmbeddedDebugger::_msg_ds_state(const Array& p_args)
+{
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(p_args.size() != 1, ERR_INVALID_PARAMETER,
+		"Invalid number of arguments for 'ds_state' message.");
+	PackedByteArray buf = p_args[0];
+	DisplayServerMacOSEmbeddedState state;
+	state.deserialize(buf);
+	data->ds->set_state(state);
+	return OK;
+}
+
+Error EmbeddedDebugger::parse_message(
+	void* p_user, const String& p_msg, const Array& p_args, bool& r_captured)
+{
+	r_captured = true;
+	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+
+	ParseMessageFunc* fn_ptr = data->parse_message_handlers.getptr(p_msg);
+	if (fn_ptr) {
+		return (*fn_ptr)(p_args);
+	}
+	else {
+		// Any other messages with this prefix should be ignored.
+		WARN_PRINT("Unknown message: " + p_msg);
+		return ERR_SKIP;
+	}
+}
+#endif
+
+// === Merged from platform/macos/embedded_gl_manager.mm ===
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "platform/macos/os_macos.h"
+
+#if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
+
+#import "drivers/gles3/rasterizer_gles3.h"
+
+#import <platform_gl.h>
+
+#import <QuartzCore/QuartzCore.h>
+#include <dlfcn.h>
+
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
+
+Error GLManagerEmbedded::create_context(GLWindow &p_win) {
+	NSOpenGLPixelFormatAttribute attributes[] = {
+		NSOpenGLPFADoubleBuffer,
+		NSOpenGLPFAClosestPolicy,
+		NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+		NSOpenGLPFAColorSize, 32,
+		NSOpenGLPFADepthSize, 24,
+		NSOpenGLPFAStencilSize, 8,
+		0
+	};
+
+	NSOpenGLPixelFormat *pixel_format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+	ERR_FAIL_NULL_V(pixel_format, ERR_CANT_CREATE);
+
+	p_win.context = [[NSOpenGLContext alloc] initWithFormat:pixel_format shareContext:shared_context];
+	ERR_FAIL_NULL_V(p_win.context, ERR_CANT_CREATE);
+	if (shared_context == nullptr) {
+		shared_context = p_win.context;
+	}
+
+	[p_win.context makeCurrentContext];
+
+	return OK;
+}
+
+Error GLManagerEmbedded::window_create(DisplayServerEnums::WindowID p_window_id, CALayer *p_layer, int p_width, int p_height) {
+	GLWindow win;
+	win.layer = p_layer;
+	win.width = 0;
+	win.height = 0;
+
+	if (create_context(win) != OK) {
+		return FAILED;
+	}
+
+	windows[p_window_id] = win;
+	window_make_current(p_window_id);
+
+	return OK;
+}
+
+void GLManagerEmbedded::window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {
+	GLWindowElement *el = windows.find(p_window_id);
+	ERR_FAIL_NULL_MSG(el, "Window resize failed: window does not exist.");
+
+	GLWindow &win = el->get();
+
+	if (win.width == (uint32_t)p_width && win.height == (uint32_t)p_height) {
+		return;
+	}
+
+	win.width = (uint32_t)p_width;
+	win.height = (uint32_t)p_height;
+
+	win.destroy_framebuffers();
+
+	for (FrameBuffer &fb : win.framebuffers) {
+		NSDictionary *surfaceProps = @{
+			(NSString *)kIOSurfaceWidth : @(p_width),
+			(NSString *)kIOSurfaceHeight : @(p_height),
+			(NSString *)kIOSurfaceBytesPerElement : @(4),
+			(NSString *)kIOSurfacePixelFormat : @(kCVPixelFormatType_32BGRA),
+		};
+		fb.surface = IOSurfaceCreate((__bridge CFDictionaryRef)surfaceProps);
+		if (fb.surface == nullptr) {
+			ERR_PRINT(vformat("Failed to create IOSurface: width=%d, height=%d", p_width, p_height));
+			win.destroy_framebuffers();
+			return;
+		}
+
+		glGenTextures(1, &fb.tex);
+		glBindTexture(GL_TEXTURE_RECTANGLE, fb.tex);
+
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(),
+				GL_TEXTURE_RECTANGLE,
+				GL_RGBA,
+				p_width,
+				p_height,
+				GL_BGRA,
+				GL_UNSIGNED_INT_8_8_8_8_REV,
+				fb.surface,
+				0);
+		if (err != kCGLNoError) {
+			String err_string = String(CGLErrorString(err));
+			ERR_PRINT(vformat("CGLTexImageIOSurface2D failed (%d): %s", err, err_string));
+			win.destroy_framebuffers();
+			return;
+		}
+
+		glGenFramebuffers(1, &fb.fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, fb.tex, 0);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			ERR_PRINT("Unable to create framebuffer from IOSurface texture.");
+			win.destroy_framebuffers();
+			return;
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	}
+	win.current_fb = 0;
+	GLES3::TextureStorage::system_fbo = win.framebuffers[win.current_fb].fbo;
+	win.is_valid = true;
+}
+
+void GLManagerEmbedded::GLWindow::destroy_framebuffers() {
+	is_valid = false;
+	GLES3::TextureStorage::system_fbo = 0;
+
+	for (FrameBuffer &fb : framebuffers) {
+		if (fb.fbo) {
+			glDeleteFramebuffers(1, &fb.fbo);
+			fb.fbo = 0;
+		}
+
+		if (fb.tex) {
+			glDeleteTextures(1, &fb.tex);
+			fb.tex = 0;
+		}
+
+		if (fb.surface) {
+			IOSurfaceRef old_surface = fb.surface;
+			fb.surface = nullptr;
+			CFRelease(old_surface);
+		}
+	}
+}
+
+Size2i GLManagerEmbedded::window_get_size(DisplayServerEnums::WindowID p_window_id) const {
+	const GLWindowElement *el = windows.find(p_window_id);
+	if (el == nullptr) {
+		return Size2i();
+	}
+
+	const GLWindow &win = el->value();
+	return Size2i(win.width, win.height);
+}
+
+void GLManagerEmbedded::window_destroy(DisplayServerEnums::WindowID p_window_id) {
+	GLWindowElement *el = windows.find(p_window_id);
+	if (el == nullptr) {
+		return;
+	}
+
+	if (current_window == p_window_id) {
+		current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+	}
+
+	windows.erase(el);
+}
+
+void GLManagerEmbedded::release_current() {
+	if (current_window == DisplayServerEnums::INVALID_WINDOW_ID) {
+		return;
+	}
+
+	[NSOpenGLContext clearCurrentContext];
+	current_window = DisplayServerEnums::INVALID_WINDOW_ID;
+}
+
+void GLManagerEmbedded::window_make_current(DisplayServerEnums::WindowID p_window_id) {
+	if (current_window == p_window_id) {
+		return;
+	}
+
+	const GLWindowElement *el = windows.find(p_window_id);
+	if (el == nullptr) {
+		return;
+	}
+
+	const GLWindow &win = el->value();
+	[win.context makeCurrentContext];
+
+	current_window = p_window_id;
+}
+
+void GLManagerEmbedded::swap_buffers() {
+	GLWindow &win = windows[current_window];
+	[win.context flushBuffer];
+
+	static bool last_valid = false;
+	if (!win.is_valid) {
+		if (last_valid) {
+			ERR_PRINT("GLWindow framebuffers are invalid.");
+			last_valid = false;
+		}
+		return;
+	}
+	last_valid = true;
+
+	if (display_link_running) {
+		dispatch_semaphore_wait(display_semaphore, DISPATCH_TIME_FOREVER);
+	}
+
+	[CATransaction begin];
+	[CATransaction setDisableActions:YES];
+	win.layer.contents = (__bridge id)win.framebuffers[win.current_fb].surface;
+	[CATransaction commit];
+	win.current_fb = (win.current_fb + 1) % BUFFER_COUNT;
+	GLES3::TextureStorage::system_fbo = win.framebuffers[win.current_fb].fbo;
+}
+
+Error GLManagerEmbedded::initialize() {
+	return framework_loaded ? OK : ERR_CANT_CREATE;
+}
+
+void GLManagerEmbedded::create_display_link() {
+	DEV_ASSERT(display_link == nullptr);
+
+	CVReturn err = CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &display_link);
+	ERR_FAIL_COND_MSG(err != kCVReturnSuccess, "Failed to create display link.");
+
+	__block dispatch_semaphore_t local_semaphore = display_semaphore;
+
+	CVDisplayLinkSetOutputHandler(display_link, ^CVReturn(CVDisplayLinkRef p_display_link, const CVTimeStamp *p_now, const CVTimeStamp *p_output_time, CVOptionFlags p_flags, CVOptionFlags *p_flags_out) {
+		dispatch_semaphore_signal(local_semaphore);
+		return kCVReturnSuccess;
+	});
+}
+
+void GLManagerEmbedded::release_display_link() {
+	DEV_ASSERT(display_link != nullptr);
+	if (CVDisplayLinkIsRunning(display_link)) {
+		CVDisplayLinkStop(display_link);
+	}
+	CVDisplayLinkRelease(display_link);
+	display_link = nullptr;
+}
+
+void GLManagerEmbedded::set_display_id(uint32_t p_display_id) {
+	if (display_id == p_display_id) {
+		return;
+	}
+
+	CVReturn err = CVDisplayLinkSetCurrentCGDisplay(display_link, static_cast<CGDirectDisplayID>(p_display_id));
+	ERR_FAIL_COND_MSG(err != kCVReturnSuccess, "Failed to set display ID for display link.");
+}
+
+void GLManagerEmbedded::set_vsync_enabled(bool p_enabled) {
+	if (p_enabled == vsync_enabled) {
+		return;
+	}
+
+	vsync_enabled = p_enabled;
+
+	if (vsync_enabled) {
+		if (!CVDisplayLinkIsRunning(display_link)) {
+			CVReturn err = CVDisplayLinkStart(display_link);
+			ERR_FAIL_COND_MSG(err != kCVReturnSuccess, "Failed to start display link.");
+			display_link_running = true;
+		}
+	} else {
+		if (CVDisplayLinkIsRunning(display_link)) {
+			CVReturn err = CVDisplayLinkStop(display_link);
+			ERR_FAIL_COND_MSG(err != kCVReturnSuccess, "Failed to stop display link.");
+			display_link_running = false;
+		}
+	}
+}
+
+GLManagerEmbedded::GLManagerEmbedded() {
+	display_semaphore = dispatch_semaphore_create(BUFFER_COUNT);
+
+	create_display_link();
+
+	NSBundle *framework = [NSBundle bundleWithIdentifier:@"com.apple.opengl"];
+	if ([framework load]) {
+		void *library_handle = dlopen([framework.executablePath UTF8String], RTLD_NOW);
+		if (library_handle) {
+			CGLGetCurrentContext = (CGLGetCurrentContextPtr)dlsym(library_handle, "CGLGetCurrentContext");
+			CGLTexImageIOSurface2D = (CGLTexImageIOSurface2DPtr)dlsym(library_handle, "CGLTexImageIOSurface2D");
+			CGLErrorString = (CGLErrorStringPtr)dlsym(library_handle, "CGLErrorString");
+			framework_loaded = CGLGetCurrentContext && CGLTexImageIOSurface2D && CGLErrorString;
+		}
+	}
+}
+
+GLManagerEmbedded::~GLManagerEmbedded() {
+	release_display_link();
+	release_current();
+}
+
+GODOT_CLANG_WARNING_POP
+
+#endif // MACOS_ENABLED && GLES3_ENABLED

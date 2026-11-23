@@ -35219,3 +35219,7 @@ return 0;
 
 #endif // PULSEAUDIO_ENABLED
 #endif // defined(ALSA_ENABLED) || defined(PULSEAUDIO_ENABLED)
+
+#ifdef WAYLAND_ENABLED
+#include "wayland/protocol/wayland_protocols.gen.c"
+#endif

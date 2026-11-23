@@ -4016,14 +4016,10 @@ project "voltaire"
     -- -------------------------------------------------------------------------
     files {
         -- Core & MbedTLS Godot platform glue
-        "core/input/default_controller_mappings.gen.cpp",
         "core/io/file_access.cpp",
-        "core/io/resource_loader.cpp",
         "core/math/geometry_3d.cpp",
         "core/register_core_types.cpp",
-        "core/script_encryption_key.gen.cpp",
         "core/string/ustring.cpp",
-        "core/version_hash.gen.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
 
         -- Main
@@ -4031,7 +4027,6 @@ project "voltaire"
 
         -- Scene (always-enabled)
         "scene/2d/node_2d.cpp",
-        "scene/gui/control.cpp",
         "scene/gui/dialogs.cpp",
         "scene/main/scene_tree.cpp",
         "scene/resources/mesh.cpp",
@@ -4040,7 +4035,6 @@ project "voltaire"
         -- Servers (always-enabled)
         "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
-        "servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp",
         "servers/rendering/renderer_rd/renderer_compositor_rd.cpp",
         "servers/rendering/renderer_rd/storage_rd/texture_storage.cpp",
         "servers/rendering/rendering_device.cpp",
@@ -4049,16 +4043,8 @@ project "voltaire"
         -- Drivers (common)
         "drivers/register_driver_types.cpp",
 
-        -- Platform API registry (common across all platforms)
-        "platform/register_platform_apis.gen.cpp",
-
         -- Modules (always-enabled)
-        "modules/astcenc/image_compress_astcenc.cpp",
-        "modules/interactive_music/audio_stream_interactive.cpp",
         "modules/multiplayer/scene_multiplayer.cpp",
-        "modules/noise/fastnoise_lite.cpp",
-        "modules/camera/register_types.cpp",
-        "modules/register_module_types.gen.cpp",
         "modules/svg/image_loader_svg.cpp",
         "modules/text_server_adv/text_server_adv.cpp",
     }
@@ -4067,14 +4053,10 @@ project "voltaire"
     if not disable_3d then
         files {
             "scene/3d/node_3d.cpp",
-            "modules/csg/csg_shape.cpp",
             "modules/gltf/gltf_document.cpp",
         }
     end
-    if not disable_phys_2d then
-        files { "modules/godot_physics_2d/godot_physics_server_2d.cpp" }
-    end
-    if not disable_phys_3d then
+    if not disable_phys_2d or not disable_phys_3d then
         files {
             "modules/jolt_physics/jolt_physics_server_3d.cpp",
         }
@@ -4090,15 +4072,11 @@ project "voltaire"
         }
     end
     if not disable_xr then
-        files {
-            "modules/mobile_vr/mobile_vr_interface.cpp",
-        }
     end
     if has_webxr then
     end
     if use_opengl3 then
         files {
-            "drivers/gles3/rasterizer_canvas_gles3.cpp",
             "drivers/gles3/rasterizer_scene_gles3.cpp",
         }
     end
@@ -4153,11 +4131,8 @@ project "voltaire"
     filter "configurations:editor"
         files {
             "editor/editor_ui.cpp",
-            "editor/export/register_exporters.gen.cpp",
             "editor/project_upgrade/renames_map_3_to_4.cpp",
-            "editor/translations/doc_translations.gen.cpp",
             "editor/translations/editor_translations.gen.cpp",
-            "editor/translations/extractable_translations.gen.cpp",
             "editor/translations/property_translations.gen.cpp",
             "modules/lightmapper_rd/lightmapper_rd.cpp",
             "platform/android/export/export.cpp",
@@ -4204,23 +4179,16 @@ project "voltaire"
         end
         if opt_bool("sowrap") then
             files { "platform/linuxbsd/xkbcommon-so_wrap.c" }
+        elseif opt_bool("wayland") then
+            files { "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c" }
         end
         if opt_bool("x11") then
             files { "platform/linuxbsd/x11/display_server_x11.cpp" }
-            if opt_bool("sowrap") then
-            end
-            if use_opengl3 then
-            end
         end
         if opt_bool("wayland") then
             files {
                 "platform/linuxbsd/wayland/display_server_wayland.cpp",
-                "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c",
             }
-            if opt_bool("sowrap") then
-            end
-            if use_opengl3 then
-            end
         end
 
         if use_accesskit then
@@ -4440,33 +4408,9 @@ project "voltaire"
         filter {}
 
         files {
-            "drivers/apple/foundation_helpers.mm",
-            "drivers/apple/os_log_logger.cpp",
-            "drivers/apple/thread_apple.cpp",
             "drivers/coreaudio/audio_driver_coreaudio.mm",
-            "drivers/coremidi/midi_driver_coremidi.mm",
             "platform/macos/os_macos.mm",
-            "platform/macos/godot_application.mm",
-            "platform/macos/godot_application_delegate.mm",
-            "platform/macos/crash_handler_macos.mm",
-            "platform/macos/display_server_macos_base.mm",
             "platform/macos/display_server_macos.mm",
-            "platform/macos/godot_button_view.mm",
-            "platform/macos/godot_content_view.mm",
-            "platform/macos/godot_core_cursor.mm",
-            "platform/macos/godot_status_item.mm",
-            "platform/macos/godot_window_delegate.mm",
-            "platform/macos/godot_window.mm",
-            "platform/macos/key_mapping_macos.mm",
-            "platform/macos/godot_menu_delegate.mm",
-            "platform/macos/godot_menu_item.mm",
-            "platform/macos/godot_open_save_delegate.mm",
-            "platform/macos/native_menu_macos.mm",
-            "platform/macos/dir_access_macos.mm",
-            "platform/macos/tts_macos.mm",
-            "platform/macos/rendering_context_driver_vulkan_macos.mm",
-            "platform/macos/gl_manager_macos_legacy.mm",
-            "platform/macos/godot_progress_view.mm",
         }
         if use_angle then
             files { "platform/macos/gl_manager_macos_angle.mm" }
@@ -4479,8 +4423,6 @@ project "voltaire"
         filter "configurations:editor"
             files {
                 "platform/macos/display_server_macos_embedded.mm",
-                "platform/macos/embedded_debugger.mm",
-                "platform/macos/embedded_gl_manager.mm",
             }
         filter {}
 
@@ -4614,39 +4556,16 @@ project "voltaire"
         defines { (target_platform == "ios") and "SDL_PLATFORM_IOS" or "SDL_PLATFORM_VISIONOS" }
         buildoptions { "-fmodules", "-fcxx-modules" }
         files {
-            "drivers/apple/foundation_helpers.mm",
-            "drivers/apple/os_log_logger.cpp",
-            "drivers/apple/thread_apple.cpp",
             "drivers/coreaudio/audio_driver_coreaudio.mm",
-            "drivers/apple_embedded/app_delegate_service.mm",
-            "drivers/apple_embedded/apple_embedded.mm",
             "drivers/apple_embedded/display_server_apple_embedded.mm",
-            "drivers/apple_embedded/godot_app_delegate.mm",
-            "drivers/apple_embedded/godot_keyboard_input_view.mm",
-            "drivers/apple_embedded/godot_view_apple_embedded.mm",
-            "drivers/apple_embedded/godot_view_controller.mm",
-            "drivers/apple_embedded/godot_view_renderer.mm",
-            "drivers/apple_embedded/key_mapping_apple_embedded.mm",
-            "drivers/apple_embedded/main_utilities.mm",
             "drivers/apple_embedded/os_apple_embedded.mm",
-            "drivers/apple_embedded/rendering_context_driver_vulkan_apple_embedded.mm",
-            "drivers/apple_embedded/tts_apple_embedded.mm",
         }
         if target_platform == "ios" then
             files {
-                "platform/ios/device_metrics.mm",
-                "platform/ios/display_layer_ios.mm",
-                "platform/ios/display_server_ios.mm",
-                "platform/ios/godot_view_ios.mm",
-                "platform/ios/main_ios.mm",
                 "platform/ios/os_ios.mm",
             }
         else
             files {
-                "platform/visionos/display_layer_visionos.mm",
-                "platform/visionos/display_server_visionos.mm",
-                "platform/visionos/godot_view_visionos.mm",
-                "platform/visionos/main_visionos.mm",
                 "platform/visionos/os_visionos.mm",
             }
         end

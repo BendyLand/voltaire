@@ -378,10 +378,6 @@ RDD::CommandBufferID RenderingDeviceDriverMetal::command_buffer_create(CommandPo
 // --- Merged from drivers/metal/metal3_objects.cpp ---
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
-#include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <algorithm>
 

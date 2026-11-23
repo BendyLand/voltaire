@@ -29,7 +29,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "compat_checker.h"
+// --- Inlined from tests/compatibility_test/src/compat_checker.h ---
+#include "deps/gdextension_interface.h"
+
+void initialize_compatibility_test(void *p_userdata, GDExtensionInitializationLevel p_level);
+void deinitialize_compatibility_test(void *p_userdata, GDExtensionInitializationLevel p_level);
+GDExtensionBool class_methods_compatibility_test();
+GDExtensionBool builtin_methods_compatibility_test();
+GDExtensionBool utility_functions_compatibility_test();
+GDExtensionBool __attribute__((visibility("default"))) compatibility_test_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization);
+// --- End tests/compatibility_test/src/compat_checker.h ---
 
 #include <stdbool.h>
 #include <stdio.h>

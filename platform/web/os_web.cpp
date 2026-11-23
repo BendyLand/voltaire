@@ -32,7 +32,6 @@
 #include "os_web.h"
 
 #include "platform/web/os_web.h"
-#include "platform/web/os_web.h"
 // --- Inlined from platform/web/ip_web.h ---
 #include "core/io/ip.h"
 
@@ -108,7 +107,6 @@ public:
 #include "core/io/file_access.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/os_unix.h"
 #include "main/main.h"
 
@@ -1464,7 +1462,6 @@ HTTPClientWeb::~HTTPClientWeb() {
 // --- Merged from platform/web/javascript_bridge_singleton.cpp ---
 #include "platform/web/os_web.h"
 
-#include "platform/web/os_web.h"
 
 #include <emscripten.h>
 
@@ -1848,8 +1845,6 @@ void register_web_api() {}
 
 
 // --- Merged from platform/web/web_main.cpp ---
-#include "platform/web/os_web.h"
-#include "platform/web/os_web.h"
 #include "platform/web/os_web.h"
 
 #include "core/config/engine.h"

@@ -33,7 +33,7 @@
 
 TEST_FORCE_LINK(test_shader_preprocessor)
 
-#include "servers/rendering/shader_compiler.h"
+#include "servers/rendering/shader_language.h"
 
 #include <cctype>
 

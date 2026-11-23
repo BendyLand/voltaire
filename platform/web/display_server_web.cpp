@@ -40,7 +40,7 @@
 #include "core/input/input_event.h"
 #include "core/os/main_loop.h"
 #include "core/os/os.h"
-#include "servers/display/native_menu.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/dummy/rasterizer_dummy.h"
 
 #ifdef PROXY_TO_PTHREAD_ENABLED

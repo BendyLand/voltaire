@@ -37,7 +37,7 @@ TEST_FORCE_LINK(test_triangle2)
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "modules/navigation_2d/nav_map_2d.h"
+#include "servers/navigation_2d/navigation_server_2d.h"
 
 namespace TestTriangle2 {
 

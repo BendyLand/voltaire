@@ -80,8 +80,7 @@ class Camera3D;
 template <typename T> class TypedArray;
 
 #include "scene/3d/skeleton_3d.h"
-#include "scene/3d/skeleton_3d.h"
-#include "scene/resources/3d/importer_mesh.h"
+#include "scene/resources/navigation_mesh.h"
 #include "scene/3d/skeleton_3d.h"
 #include "scene/resources/animation.h"
 #include "scene/resources/material.h"
@@ -1274,7 +1273,7 @@ public:
 };
 
 
-#include "scene/3d/mesh_instance_3d.h"
+#include "scene/3d/skeleton_3d.h"
 #include "scene/3d/visual_instance_3d.h"
 
 class CSGShape3D;

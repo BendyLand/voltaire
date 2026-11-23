@@ -33,19 +33,19 @@
 
 #include "core/templates/rid_owner.h"
 #include "servers/display/display_server_enums.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 
 #pragma once
 
 #include "core/templates/rid_owner.h"
 #include "servers/display/display_server_enums.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_enums.h"
 #include "servers/rendering/rendering_server_types.h"
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 
 class RendererViewport final
 {
@@ -792,7 +792,7 @@ void DynamicBVH::ray_query(const Vector3 &p_from, const Vector3 &p_to, QueryResu
 }
 
 // --- End core/math/dynamic_bvh.h ---
-#include "core/math/transform_interpolator.h"
+#include "core/math/geometry_3d.h"
 // --- Folded from core/templates/bin_sorted_array.h ---
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_allocator.h"
@@ -944,12 +944,10 @@ public:
 // --- End core/templates/bin_sorted_array.h ---
 #include "core/templates/local_vector.h"
 #include "core/templates/paged_allocator.h"
-#include "core/templates/paged_allocator.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "core/math/plane.h"
 #include "core/math/vector3.h"
-#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 // --- Folded from servers/rendering/renderer_scene_occlusion_cull.h ---
 #include "core/io/image.h"
@@ -1279,10 +1277,10 @@ public:
 };
 
 // --- End servers/rendering/renderer_scene_occlusion_cull.h ---
-#include "servers/rendering/renderer_scene_render.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server_types.h"
 #include "servers/rendering/storage/utilities.h"
-#include "servers/xr/xr_interface.h"
+#include "servers/xr/xr_server.h"
 
 class InstanceUniforms final
 {
