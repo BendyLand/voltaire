@@ -31,8 +31,7 @@
 
 #pragma once
 
-#include "core/io/resource_uid.h" // IWYU pragma: export. Make available to all resources.
-#include "core/templates/self_list.h"
+#include "core/types.h" // IWYU pragma: export. Make available to all resources.
 #include "core/types.h"
 
 class Node;

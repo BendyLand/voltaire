@@ -79,9 +79,8 @@ using GLTFTextureSamplerIndex = int;
 class Camera3D;
 template <typename T> class TypedArray;
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
@@ -775,7 +774,7 @@ public:
 	bool has_json_pointers() const;
 	void set_json_pointers(const Vector<PackedStringArray>& p_json_pointers);
 };
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Light3D;
 
@@ -909,7 +908,7 @@ public:
 };
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 // GLTFPhysicsBody is an intermediary between Godot's physics body nodes
 // and the OMI_physics_body extension.
@@ -1035,7 +1034,6 @@ public:
 };
 #endif // PHYSICS_3D_DISABLED
 
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 
 class GLTFState final : public Resource
@@ -1273,7 +1271,7 @@ public:
 };
 
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class CSGShape3D;
 class GridMap;
@@ -1627,9 +1625,9 @@ public:
 
 #ifdef TOOLS_ENABLED
 // --- Folded from editor/import/3d/resource_importer_scene.h ---
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/io/resource_loader.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
@@ -2158,7 +2156,7 @@ public:
 #include "core/io/file_access.h"
 #include "core/io/image.h"
 #include "core/io/resource_loader.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class CompressedTexture2D;
 
@@ -2362,10 +2360,9 @@ public:
 #endif // TOOLS_ENABLED
 
 // --- Folded from modules/csg/csg_shape.h ---
-#include "core/math/aabb.h"
 #include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/math/vector3.h"
+#include "core/math/plane.h"
 #include "core/templates/vector.h"
 #include "scene/resources/material.h"
 
@@ -2400,7 +2397,7 @@ struct CSGBrush
 		const Vector<bool>& p_invert_faces);
 	void copy_from(const CSGBrush& p_brush, const Transform3D& p_xform);
 };
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 
 #ifndef PHYSICS_3D_DISABLED
@@ -2736,7 +2733,7 @@ public:
 };
 
 // --- Folded from modules/gridmap/grid_map.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 
 class NavigationMesh;

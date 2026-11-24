@@ -34,9 +34,9 @@
 #include "core/os/condition_variable.h"
 #include "core/os/os.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "core/templates/rb_set.h"
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
 // --- Folded from servers/rendering/rendering_device_commons.h ---
@@ -2662,7 +2662,7 @@ public:
 
 
 #ifdef DEV_ENABLED
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #endif
 
 // Buffer barriers have not shown any significant improvement or shown to be
@@ -5969,15 +5969,13 @@ public:
 
 // --- Folded from servers/rendering/rendering_server_types.h ---
 #include "core/io/image.h"
-#include "core/math/aabb.h"
-#include "core/math/rect2.h"
 #include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/math/projection.h"
+#include "core/types.h"
 #include "core/string/ustring.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/vector.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 #include <cstdint>
 

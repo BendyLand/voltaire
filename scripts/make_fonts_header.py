@@ -31,13 +31,17 @@ inline constexpr _DocDataClassPath _doc_data_class_paths[{len(paths) + 1}] = {{
             buffer = methods.get_buffer(src)
             name = os.path.splitext(os.path.basename(src))[0]
 
+            if name == "OpenSans_SemiBold":
+                file.write("#ifndef _FONT_OPENSANS_SEMIBOLD_DEFINED\n#define _FONT_OPENSANS_SEMIBOLD_DEFINED\n")
             file.write(f"""\
 inline constexpr int _font_{name}_size = {len(buffer)};
 inline constexpr unsigned char _font_{name}[] = {{
 	{methods.format_buffer(buffer, 1)}
 }};
-
 """)
+            if name == "OpenSans_SemiBold":
+                file.write("#endif // _FONT_OPENSANS_SEMIBOLD_DEFINED\n")
+            file.write("\n")
 
 run = utils.get_run_arg()
 match run:

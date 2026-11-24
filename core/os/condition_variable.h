@@ -33,7 +33,7 @@
 
 #include "core/os/mutex.h"
 // --- Folded from core/os/safe_binary_mutex.h ---
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/os/mutex.h"
 #include "core/typedefs.h"
 

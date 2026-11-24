@@ -40,7 +40,7 @@
 #ifdef PLATFORM_THREAD_OVERRIDE
 
 // --- Folded from drivers/apple/thread_apple.h ---
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 #include "core/typedefs.h"
 
 #include <pthread.h>
@@ -125,7 +125,7 @@ public:
 
 #ifdef THREADS_ENABLED
 
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 
 #include <new> // IWYU pragma: keep // For hardware interference size.
 

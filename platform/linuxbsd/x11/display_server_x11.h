@@ -3902,7 +3902,7 @@ public:
 // --- Folded from platform/linuxbsd/x11/gl_manager_x11_egl.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
-#include "drivers/egl/egl_manager.h"
+#include "drivers/gles3/shader_gles3.h"
 #include "servers/display/display_server.h"
 
 class GLManagerEGL_X11 : public EGLManager

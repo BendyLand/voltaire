@@ -66,7 +66,7 @@ def generate_wayland_protocols(sowrap=True):
 
     h_chunks = ["#pragma once\n"]
     c_chunks = ["/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n"]
-    wrap_inc = "wayland/dynwrappers/wayland-client-core-so_wrap.h"
+    wrap_inc = "platform/linuxbsd/xkbcommon-so_wrap.h"
 
     for name, xml_path in WAYLAND_PROTOCOLS:
         with open(xml_path, "rb") as xml_in:
@@ -97,13 +97,10 @@ def generate_all():
         "make_license_header.py",
         "make_default_controller_mappings.py",
         "make_splash.py",
-        "make_default_theme_icons_action.py",
-        "areatex_builder.py",
         "modules_enabled_builder.py",
         "register_module_types_builder.py",
         "register_platform_apis_builder.py",
         "register_exporters_builder.py",
-        "export_icon_builder.py",
         "make_icu_data.py",
     ]
     for s in single_scripts:
@@ -115,7 +112,6 @@ def generate_all():
     run_script("make_fonts_header.py", 0)
     run_script("run.py", 0)
 
-    run_script("build_raw_headers.py", "--all")
     run_script("build_rd_headers.py", "--all")
     run_script("build_gles3_headers.py", "--all")
     generate_wayland_protocols(sowrap=True)

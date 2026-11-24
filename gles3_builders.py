@@ -260,7 +260,6 @@ def build_gles3_header(filename: str, shader: str) -> None:
 
 def build_gles3_headers_bundle(filename: str, shaders: list[str]) -> None:
     with generated_wrapper(filename) as file:
-        file.write('#include "drivers/gles3/shader_gles3.h"\n\n')
         for idx, shader in enumerate(shaders):
             if idx:
                 file.write("\n")

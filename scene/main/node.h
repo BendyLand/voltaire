@@ -1417,7 +1417,7 @@ public:
 // --- Folded from scene/resources/resource_format_text.h ---
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 
 
 class ResourceLoaderText

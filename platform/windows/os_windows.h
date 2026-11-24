@@ -71,8 +71,8 @@ public:
 
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/memory.h"
+#include "servers/display/display_server.h"
 
 #include <windows.h>
 
@@ -205,8 +205,8 @@ public:
 // --- Folded from drivers/xaudio2/audio_driver_xaudio2.h ---
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/memory.h"
+#include "servers/display/display_server.h"
 
 #include <windows.h>
 
@@ -927,8 +927,8 @@ public:
 #include "core/input/input_event.h"
 #include "core/io/image.h"
 #include "core/os/os.h"
-#include "core/templates/a_hash_map.h"
-#include "core/templates/rb_map.h"
+#include "core/types.h"
+#include "core/templates/hash_map.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -945,7 +945,7 @@ public:
 // --- Folded from platform/windows/gl_manager_windows_angle.h ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "drivers/egl/egl_manager.h"
+#include "drivers/gles3/shader_gles3.h"
 #include "servers/display/display_server.h"
 
 #include <windows.h>
@@ -973,7 +973,7 @@ public:
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/templates/local_vector.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "servers/display/display_server.h"
 
 #include <windows.h>
@@ -1823,7 +1823,7 @@ VLTR_GCC_WARNING_POP
 // --- End platform/windows/drop_target_windows.h ---
 
 // --- Folded from platform/windows/key_mapping_windows.h ---
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 
 #include <windows.h>
 
@@ -1847,7 +1847,7 @@ public:
 // --- Folded from platform/windows/native_menu_windows.h ---
 #include "core/io/image.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 
 #include <windows.h>

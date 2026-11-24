@@ -476,7 +476,7 @@ protected:
 @end
 // --- End platform/visionos/os_visionos.h ---
 
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 
 #import <GameController/GameController.h>
 

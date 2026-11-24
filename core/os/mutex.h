@@ -309,7 +309,7 @@ public:
 #ifdef THREADS_ENABLED
 
 #ifdef DEBUG_ENABLED
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #endif
 
 #ifdef MINGW_ENABLED

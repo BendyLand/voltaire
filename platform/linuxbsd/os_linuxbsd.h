@@ -53,8 +53,8 @@ public:
 
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/memory.h"
+#include "servers/display/display_server.h"
 
 typedef struct _snd_pcm snd_pcm_t;
 typedef unsigned long snd_pcm_uframes_t;
@@ -118,7 +118,7 @@ public:
 #include "core/os/os.h"
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 #include "core/templates/vector.h"
 
 typedef struct _snd_rawmidi snd_rawmidi_t;
@@ -174,8 +174,8 @@ public:
 
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/memory.h"
+#include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
 // --- Inlined/Folded from drivers/pulseaudio/pulse-so_wrap.h ---
@@ -1803,7 +1803,7 @@ public:
 #ifdef DBUS_ENABLED
 
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 
 class FreeDesktopAtSPIMonitor {
 private:
@@ -1833,7 +1833,7 @@ public:
 
 #include "core/os/mutex.h"
 #include "core/os/thread.h"
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 #include "servers/display/display_server.h"
 #include "core/types.h"
 

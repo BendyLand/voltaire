@@ -33,14 +33,14 @@
 
 #include "core/config/project_settings.h"
 // --- Folded from editor/ui_widgets.h ---
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/input/input_event.h"
 #include "core/templates/hashfuncs.h"
-#include "core/math/rect2.h"
+#include "core/types.h"
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/hashfuncs.h"
-#include "scene/resources/font.h"
+#include "scene/resources/theme.h"
 
 // Composable, zero-inheritance Canvas UI state structs and drawing primitives
 // shared by Voltaire's EditorUI and ProjectManager.
@@ -1425,7 +1425,7 @@ protected:
 // --- End editor/export/editor_export_plugin.h ---
 
 // --- Folded from editor/export/apple_export_utils.h ---
-#include "core/io/config_file.h"
+#include "core/io/resource_loader.h"
 #include "core/io/file_access.h"
 #include "core/string/ustring.h"
 
@@ -1994,9 +1994,9 @@ struct PluginConfigAppleEmbedded
 #include <sys/stat.h>
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 
-#include "scene/resources/image_texture.h"
+#include "scene/resources/material.h"
 
 #ifdef MACOS_ENABLED
 #include <functional>

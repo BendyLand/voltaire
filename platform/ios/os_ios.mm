@@ -635,9 +635,9 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 
 
 #include "core/config/project_settings.h"
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 #include "main/main.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #import <AudioToolbox/AudioServices.h>
 #import <GameController/GameController.h>
@@ -1134,7 +1134,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 // --- End platform/ios/os_ios.h ---
 
 #include "core/config/project_settings.h"
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 
 @interface GDTViewIOS ()
 

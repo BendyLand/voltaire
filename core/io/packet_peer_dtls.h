@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "core/crypto/crypto.h"
+#include "core/io/net_socket.h"
 #include "core/io/packet_peer_udp.h"
 
 class PacketPeerDTLS : public PacketPeer

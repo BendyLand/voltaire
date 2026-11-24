@@ -40,12 +40,12 @@
  */
 
 #include <initializer_list>
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 // --- Inlined/Folded from core/templates/cowdata.h ---
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/os/memory.h"
-#include "core/string/print_string.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
-#include "core/templates/safe_refcount.h"
+#include "core/templates/span.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
+#include "core/os/memory.h"
 #include "core/templates/span.h"
 
 #include <initializer_list>
@@ -603,7 +603,7 @@ VLTR_GCC_WARNING_POP
 // Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
 template <typename T>
 struct is_zero_constructible<CowData<T>> : std::true_type {};
-#include "core/templates/sort_array.h"
+#include "core/templates/span.h"
 #include "core/typedefs.h"
 
 template <typename T> class Vector;

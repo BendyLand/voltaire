@@ -51,15 +51,13 @@
 
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
-#include "drivers/apple/foundation_helpers.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_context_driver_metal.h"
+#include "drivers/coreaudio/audio_driver_coreaudio.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <Metal/Metal.hpp>
@@ -5258,10 +5256,10 @@ void PixelFormats::buildDFFormatMaps() {
 
 
 // --- Merged from drivers/metal/rendering_context_driver_metal.cpp ---
-#include "drivers/metal/rendering_context_driver_metal.h"
+#include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include "core/os/os.h"
-#include "core/templates/sort_array.h"
+#include "core/templates/span.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <objc/message.h>

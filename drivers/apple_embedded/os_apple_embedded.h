@@ -74,7 +74,7 @@ public:
 // --- End drivers/apple_embedded/apple_embedded.h ---
 #import "drivers/coreaudio/audio_driver_coreaudio.h"
 #include "drivers/unix/os_unix.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #if defined(RD_ENABLED)
@@ -353,12 +353,12 @@ public:
 #endif // VULKAN_ENABLED
 
 #if defined(METAL_ENABLED)
-#import "drivers/metal/rendering_context_driver_metal.h"
+#import "drivers/metal/rendering_device_driver_metal3.h"
 #endif // METAL_ENABLED
 #endif // RD_ENABLED
 
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 #endif // GLES3_ENABLED
 
 #import <Foundation/Foundation.h>
@@ -579,7 +579,7 @@ public:
 @end
 
 // --- Folded from drivers/apple_embedded/key_mapping_apple_embedded.h ---
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 
 #import <UIKit/UIKit.h>
 

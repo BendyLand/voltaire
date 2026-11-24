@@ -29,34 +29,28 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "test_main.h"
+#include "main/main.h"
 
-#include "core/config/engine.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"
-#include "core/string/translation_server.h"
+#include "core/config/project_settings.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
-#include "servers/audio/audio_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "tests/display_server_mock.h"
-#include "tests/force_link.gen.h"
-#include "tests/signal_watcher.h"
 #include "tests/test_macros.h"
-#include "tests/test_utils.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #endif // TOOLS_ENABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
@@ -66,7 +60,31 @@
 #include "servers/physics_3d/physics_server_3d.h"
 #endif // PHYSICS_3D_DISABLED
 
-#include "modules/modules_tests.gen.h" // IWYU pragma: keep // TODO: Migrate module tests to compilation files.
+
+namespace ForceLink {
+	void force_link_tests();
+	void force_link_test_core();
+	void force_link_test_file_access();
+	void force_link_test_math();
+	void force_link_test_templates();
+	void force_link_test_servers();
+	void force_link_test_scene_gui();
+	void force_link_test_scene_resources();
+	void force_link_test_scene_nodes();
+	void force_link_test_modules();
+} // namespace ForceLink
+
+void ForceLink::force_link_tests() {
+	force_link_test_core();
+	force_link_test_file_access();
+	force_link_test_math();
+	force_link_test_templates();
+	force_link_test_servers();
+	force_link_test_scene_gui();
+	force_link_test_scene_resources();
+	force_link_test_scene_nodes();
+	force_link_test_modules();
+}
 
 int test_main(int argc, char *argv[]) {
 	ForceLink::force_link_tests();
@@ -337,3 +355,373 @@ private:
 };
 
 REGISTER_LISTENER("GodotTestCaseListener", 1, GodotTestCaseListener);
+
+// === Merged from tests/display_server_mock.cpp ===
+/*  display_server_mock.cpp                                               */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "tests/test_macros.h"
+
+#include "core/os/os.h"
+#include "core/input/input_event.h"
+#include "servers/rendering/renderer.h"
+
+Vector<String> DisplayServerMock::get_rendering_drivers_func() {
+	Vector<String> drivers;
+	drivers.push_back("dummy");
+	return drivers;
+}
+
+void DisplayServerMock::_set_mouse_position(const Point2i &p_position) {
+	if (mouse_position == p_position) {
+		return;
+	}
+	mouse_position = p_position;
+	_set_window_over(Rect2i(Point2i(0, 0), window_get_size()).has_point(p_position));
+}
+void DisplayServerMock::_set_window_over(bool p_over) {
+	if (p_over == window_over) {
+		return;
+	}
+	window_over = p_over;
+	_send_window_event(p_over ? DisplayServerEnums::WINDOW_EVENT_MOUSE_ENTER : DisplayServerEnums::WINDOW_EVENT_MOUSE_EXIT);
+}
+void DisplayServerMock::_send_window_event(DisplayServerEnums::WindowEvent p_event) {
+	if (event_callback.is_valid()) {
+		Variant event = int(p_event);
+		event_callback.call(event);
+	}
+}
+
+bool DisplayServerMock::has_feature(DisplayServerEnums::Feature p_feature) const {
+	switch (p_feature) {
+		case DisplayServerEnums::FEATURE_MOUSE:
+		case DisplayServerEnums::FEATURE_CURSOR_SHAPE:
+		case DisplayServerEnums::FEATURE_CLIPBOARD:
+		case DisplayServerEnums::FEATURE_CLIPBOARD_PRIMARY:
+			return true;
+		default: {
+		}
+	}
+	return false;
+}
+
+DisplayServerDriver *DisplayServerMock::create_func(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
+	r_error = OK;
+	RasterizerDummy::make_current();
+	return memnew(DisplayServerMock());
+}
+
+void DisplayServerMock::simulate_event(Ref<InputEvent> p_event) {
+	Ref<InputEvent> event = p_event;
+	Ref<InputEventMouse> me = p_event;
+	if (me.is_valid()) {
+		Ref<InputEventMouseMotion> mm = p_event;
+		if (mm.is_valid()) {
+			mm->set_relative(mm->get_position() - mouse_position);
+			event = mm;
+		}
+		_set_mouse_position(me->get_position());
+	}
+	Input::parse_input_event(event);
+}
+
+// === Merged from tests/signal_watcher.cpp ===
+/*  signal_watcher.cpp                                                    */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "tests/test_macros.h"
+
+void SignalWatcher::_add_signal_entry(const Array &p_args, const String &p_name) {
+	ERR_FAIL_NULL(data);
+	if (!data->_signals.has(p_name)) {
+		data->_signals[p_name] = Array();
+	}
+	data->_signals[p_name].push_back(p_args);
+}
+
+void SignalWatcher::_signal_callback_zero(const String &p_name) {
+	Array args;
+	_add_signal_entry(args, p_name);
+}
+
+void SignalWatcher::_signal_callback_one(Variant p_arg1, const String &p_name) {
+	Array args = { p_arg1 };
+	_add_signal_entry(args, p_name);
+}
+
+void SignalWatcher::_signal_callback_two(Variant p_arg1, Variant p_arg2, const String &p_name) {
+	Array args = { p_arg1, p_arg2 };
+	_add_signal_entry(args, p_name);
+}
+
+void SignalWatcher::_signal_callback_three(Variant p_arg1, Variant p_arg2, Variant p_arg3, const String &p_name) {
+	Array args = { p_arg1, p_arg2, p_arg3 };
+	_add_signal_entry(args, p_name);
+}
+
+void SignalWatcher::watch_signal(Object *p_object, const String &p_signal) {
+	MethodInfo method_info;
+	ClassDB::get_signal(p_object->get_class(), p_signal, &method_info);
+	switch (method_info.arguments.size()) {
+		case 0: {
+			p_object->connect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_zero).bind(p_signal));
+		} break;
+		case 1: {
+			p_object->connect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_one).bind(p_signal));
+		} break;
+		case 2: {
+			p_object->connect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_two).bind(p_signal));
+		} break;
+		case 3: {
+			p_object->connect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_three).bind(p_signal));
+		} break;
+		default: {
+			MESSAGE("Signal ", p_signal, " arg count not supported.");
+		} break;
+	}
+}
+
+void SignalWatcher::unwatch_signal(Object *p_object, const String &p_signal) {
+	MethodInfo method_info;
+	ClassDB::get_signal(p_object->get_class(), p_signal, &method_info);
+	switch (method_info.arguments.size()) {
+		case 0: {
+			p_object->disconnect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_zero));
+		} break;
+		case 1: {
+			p_object->disconnect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_one));
+		} break;
+		case 2: {
+			p_object->disconnect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_two));
+		} break;
+		case 3: {
+			p_object->disconnect(p_signal, callable_mp_static(&SignalWatcher::_signal_callback_three));
+		} break;
+		default: {
+			MESSAGE("Signal ", p_signal, " arg count not supported.");
+		} break;
+	}
+}
+
+bool SignalWatcher::check(const String &p_name, const Array &p_args) {
+	ERR_FAIL_NULL_V(data, false);
+	if (!data->_signals.has(p_name)) {
+		MESSAGE("Signal ", p_name, " not emitted");
+		return false;
+	}
+
+	if (p_args.size() != data->_signals[p_name].size()) {
+		MESSAGE("Signal has " << data->_signals[p_name] << " expected " << p_args);
+		discard_signal(p_name);
+		return false;
+	}
+
+	bool match = true;
+	for (int i = 0; i < p_args.size(); i++) {
+		if (((Array)p_args[i]).size() != ((Array)data->_signals[p_name][i]).size()) {
+			MESSAGE("Signal has " << data->_signals[p_name][i] << " expected " << p_args[i]);
+			match = false;
+			continue;
+		}
+
+		for (int j = 0; j < ((Array)p_args[i]).size(); j++) {
+			if (((Array)p_args[i])[j] != ((Array)data->_signals[p_name][i])[j]) {
+				MESSAGE("Signal has " << data->_signals[p_name][i] << " expected " << p_args[i]);
+				match = false;
+				break;
+			}
+		}
+	}
+
+	discard_signal(p_name);
+	return match;
+}
+
+bool SignalWatcher::check_false(const String &p_name) {
+	ERR_FAIL_NULL_V(data, false);
+	bool has = data->_signals.has(p_name);
+	if (has) {
+		MESSAGE("Signal has " << data->_signals[p_name] << " expected none.");
+	}
+	discard_signal(p_name);
+	return !has;
+}
+
+void SignalWatcher::discard_signal(const String &p_name) {
+	if (data && data->_signals.has(p_name)) {
+		data->_signals.erase(p_name);
+	}
+}
+
+void SignalWatcher::_clear_signals() {
+	if (data) {
+		data->_signals.clear();
+	}
+}
+
+void SignalWatcher::initialize() {
+	ERR_FAIL_COND_MSG(data, "SignalWatcher is already initialized.");
+	data = memnew(Data);
+}
+
+void SignalWatcher::finalize() {
+	if (data) {
+		memdelete(data);
+		data = nullptr;
+	}
+}
+
+// === Merged from tests/test_macros.cpp ===
+/*  test_macros.cpp                                                       */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#define DOCTEST_CONFIG_IMPLEMENT
+#include "tests/test_macros.h"
+
+HashMap<String, TestFunc> *test_commands = nullptr;
+
+int register_test_command(String p_command, TestFunc p_function) {
+	if (!test_commands) {
+		test_commands = new HashMap<String, TestFunc>;
+	}
+	test_commands->insert(p_command, p_function);
+	return 0;
+}
+
+// === Merged from tests/test_utils.cpp ===
+/*  test_utils.cpp                                                        */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "tests/test_macros.h"
+
+#include "core/config/project_settings.h"
+#include "core/io/dir_access.h"
+#include "core/os/os.h"
+
+String TestUtils::get_data_path(const String &p_file) {
+	String data_path = "../tests/data";
+	return get_executable_dir().path_join(data_path.path_join(p_file));
+}
+
+String TestUtils::get_executable_dir() {
+	return OS::get_executable_path().get_base_dir();
+}
+
+String TestUtils::get_temp_path(const String &p_suffix) {
+	const String temp_base = OS::get_cache_path().path_join("godot_test");
+	DirAccess::make_dir_absolute(temp_base); // Ensure the directory exists.
+	return temp_base.path_join(p_suffix);
+}
+
+String &TestProjectSettingsInternalsAccessor::resource_path() {
+	return ProjectSettings::resource_path;
+}

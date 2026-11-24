@@ -46,7 +46,7 @@ public:
 };
 
 #include "core/input/input_event.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #import "drivers/coreaudio/audio_driver_coreaudio.h"
 // --- Inlined/Folded from drivers/coremidi/midi_driver_coremidi.h ---
 #ifdef COREMIDI_ENABLED
@@ -99,7 +99,7 @@ public:
 
 #endif // COREMIDI_ENABLED
 #include "drivers/unix/os_unix.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 class JoypadSDL;
 
@@ -1032,7 +1032,7 @@ public:
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/templates/vector.h"
-#include "drivers/egl/egl_manager.h"
+#include "drivers/gles3/shader_gles3.h"
 #include "servers/display/display_server.h"
 
 // Suppress redefinition conflicts
@@ -1069,7 +1069,7 @@ public:
 #include "drivers/gles3/shader_gles3.h"
 
 #include "core/typedefs.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
@@ -1547,7 +1547,7 @@ public:
 
 #include "core/typedefs.h"
 #include "core/templates/hashfuncs.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
@@ -1638,7 +1638,7 @@ GODOT_CLANG_WARNING_PUSH
 #endif // MACOS_ENABLED && GLES3_ENABLED
 
 // --- Folded from platform/macos/key_mapping_macos.h ---
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 
 class KeyMappingMacOS {
 	KeyMappingMacOS() {}
@@ -1661,7 +1661,7 @@ public:
 
 // --- Folded from platform/macos/native_menu_macos.h ---
 #include "core/templates/hash_map.h"
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 
 #import <AppKit/AppKit.h>
@@ -1810,7 +1810,7 @@ public:
 
 // --- Folded from platform/macos/godot_menu_item.h ---
 #include "core/io/image.h"
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>

@@ -30,19 +30,18 @@
 /**************************************************************************/
 
 #include <cstdlib>
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/types.h"
-#include "core/crypto/crypto.h"
-#include "core/input/input.h"
+#include "core/io/net_socket.h"
+#include "core/os/os.h"
 #include "core/io/dir_access.h"
-#include "core/io/file_access_wrappers.h"
 #include "core/io/image.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "main/main.h"
-#include "core/string/translation_server.h"
+#include "core/config/project_settings.h"
 #include "core/version.h"
 #include "main/main.h"
 #include "main.h"
@@ -300,21 +299,20 @@ private:
 #include "scene/main/node.h"
 #include "main/main.h"
 #include "scene/main/node.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "scene/resources/theme.h"
-#include "servers/audio/audio_server.h"
-#include "servers/xr/xr_server.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 #include "main/main.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 // 2D
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
@@ -323,7 +321,7 @@ private:
 
 // 3D
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
@@ -331,20 +329,20 @@ private:
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 #endif // XR_DISABLED
 
 #ifdef TESTS_ENABLED
-#include "servers/rendering/dummy/rasterizer_dummy.h"
-#include "tests/test_main.h"
+#include "servers/rendering/renderer.h"
+#include "main/main.h"
 #endif
 
 #ifdef TOOLS_ENABLED
 #include "editor/themes/builtin_fonts.gen.h"
 #include "editor/editor_ui.h"
-#include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #include "editor/editor_ui.h"
-#include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
 #include "main/splash_editor.gen.h"
@@ -4591,7 +4589,7 @@ void Main::setup_boot_logo() {}
 // Uncomment this define to get more debugging logs for the delta smoothing.
 // #define GODOT_DEBUG_DELTA_SMOOTHER
 #ifdef GODOT_DEBUG_DELTA_SMOOTHER
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 #include "core/string/string.h"
 #endif
 
@@ -5101,20 +5099,19 @@ MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_
 // Merged from main/performance.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
 #include "core/os/os.h"
 
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED

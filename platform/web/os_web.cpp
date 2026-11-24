@@ -568,9 +568,9 @@ extern void godot_audio_script_start(float *p_in_buf, int p_in_size, float *p_ou
 
 // --- End platform/web/godot_audio.h ---
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/types.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #include <emscripten.h>
 
@@ -1130,7 +1130,7 @@ void MIDIDriverWebMidi::_on_midi_message(int p_device_index, int p_status, const
 
 // --- Merged from platform/web/http_client_web.cpp ---
 // --- Inlined/Folded from platform/web/http_client_web.h ---
-#include "core/io/stream_peer.h"
+#include "core/io/net_socket.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1205,7 +1205,7 @@ public:
 
 
 #ifdef DEBUG_ENABLED
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #endif
 
 void HTTPClientWeb::_parse_headers(int p_len, const char **p_headers, void *p_ref) {
@@ -1846,7 +1846,7 @@ void register_web_api() {}
 // --- Merged from platform/web/web_main.cpp ---
 #include "platform/web/os_web.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "main/main.h"
@@ -2033,17 +2033,17 @@ int main(int argc, char *argv[]) {
 #include "platform/web/os_web.h"
 
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/rasterizer_dummy.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
 #endif
 
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 #endif
 
 #include <emscripten.h>

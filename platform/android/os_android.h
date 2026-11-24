@@ -34,7 +34,7 @@
 #ifdef ANDROID_ENABLED
 // --- Folded from platform/android/audio_driver_opensl.h ---
 #include "core/os/mutex.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -560,7 +560,7 @@ public:
 // --- End platform/android/net_socket_android.h ---
 
 // --- Folded from platform/android/android_keys_utils.h ---
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 
 #include <android/input.h>
 
@@ -811,7 +811,7 @@ public:
 #include "core/os/thread.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/safe_refcount.h"
+#include "core/os/memory.h"
 
 #include <jni.h>
 
@@ -905,7 +905,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitS
 #endif // ANDROID_ENABLED
 
 // --- Folded from platform/android/api/jni_singleton.h ---
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "main/main.h"
 
 class JNISingleton
@@ -1169,7 +1169,7 @@ public:
 
 #ifdef ANDROID_ENABLED
 // --- Folded from platform/android/java_godot_io_wrapper.h ---
-#include "core/math/rect2.h"
+#include "core/types.h"
 
 #include <android/log.h>
 #include <jni.h>

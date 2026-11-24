@@ -251,13 +251,17 @@ def build_rd_header(filename: str, shader: str) -> None:
         file.write(build_rd_shader_body(shader))
 
 
-def build_rd_headers_bundle(filename: str, shaders: list[str]) -> None:
+def build_rd_headers_bundle(filename: str, shaders: list[str], raw_shaders: list[str] | None = None) -> None:
     with generated_wrapper(filename) as file:
-        file.write('#include "core/types.h"\n#include "servers/rendering/renderer_rd/shader_rd.h"\n\n')
+        file.write('#include "core/types.h"\n#include "servers/rendering/renderer.h"\n\n')
         for idx, shader in enumerate(shaders):
             if idx:
                 file.write("\n")
             file.write(build_rd_shader_body(shader))
+        if raw_shaders:
+            for shader in raw_shaders:
+                file.write("\n")
+                file.write(build_raw_shader_body(shader))
 
 
 def build_rd_headers(target, source, env):
@@ -293,7 +297,7 @@ def include_file_in_raw_header(filename: str, header_data: RAWHeaderStruct, dept
 def build_raw_shader_body(shader: str) -> str:
     include_file_in_raw_header(shader, header_data := RAWHeaderStruct(), 0)
     return f"""\
-static const char {os.path.basename(shader).replace(".glsl", "_shader_glsl")}[] = {{
+inline constexpr const char {os.path.basename(shader).replace(".glsl", "_shader_glsl")}[] = {{
 {to_raw_cstring(header_data.code)}
 }};
 """

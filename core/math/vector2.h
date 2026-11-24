@@ -31,8 +31,7 @@
 
 #pragma once
 
-#include "core/error/error_macros.h"
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 #include "core/templates/hashfuncs.h"
 
 class String;

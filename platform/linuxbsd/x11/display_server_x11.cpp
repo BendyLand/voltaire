@@ -35,19 +35,22 @@
 
 #include <X11/Xatom.h>
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
-#include "core/io/file_access.h"
-#include "core/math/math_funcs.h"
 #include "core/os/os.h"
-#include "core/string/print_string.h"
+#include "core/io/file_access.h"
+#include "core/typedefs.h"
+#include "core/os/os.h"
+#include "core/templates/span.h"
 #include "core/string/ustring.h"
 #include "core/io/resource_loader.h"
+#pragma push_macro("Status")
+#undef Status
 #include "drivers/unix/os_unix.h"
+#pragma pop_macro("Status")
 #include "main/main.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/rasterizer_dummy.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
-#include "core/os/keyboard.h"
+#include "core/input/input_event.h"
 #include "core/templates/hash_map.h"
 
 #include <X11/XF86keysym.h>
@@ -400,7 +403,7 @@ int initialize_xrender(int verbose);
 #endif
 
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 #endif
 
@@ -7459,7 +7462,7 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 #include "drivers/gles3/shader_gles3.h"
 #include <thirdparty/glad/glad/glx.h>
 #include "core/types.h"
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 #include "core/types.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 

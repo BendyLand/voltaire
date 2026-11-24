@@ -7578,7 +7578,7 @@ return 0;
 // flags: generate-wrapper.py --include ./thirdparty/linuxbsd_headers/libdecor-0/libdecor.h --sys-include ./thirdparty/linuxbsd_headers/libdecor-0/libdecor.h --soname libdecor-0.so.0 --init-name libdecor --output-header ./platform/linuxbsd/wayland/dynwrappers/libdecor-so_wrap.h --output-implementation ./platform/linuxbsd/wayland/dynwrappers/libdecor-so_wrap.c --omit-prefix wl_
 //
 #include <stdint.h>
-#include "platform/linuxbsd/wayland/dynwrappers/wayland-client-core-so_wrap.h"
+#include "platform/linuxbsd/xkbcommon-so_wrap.h"
 
 #define libdecor_unref libdecor_unref_dylibloader_orig_libdecor
 #define libdecor_new libdecor_new_dylibloader_orig_libdecor

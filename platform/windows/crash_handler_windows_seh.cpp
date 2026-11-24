@@ -33,7 +33,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 #include "core/version.h"
 
 #ifdef CRASH_HANDLER_EXCEPTION

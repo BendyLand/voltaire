@@ -31,11 +31,11 @@
 
 #pragma once
 // --- Folded from drivers/d3d12/rendering_device_driver_d3d12.h ---
-#include "core/templates/a_hash_map.h"
+#include "core/types.h"
 #include "core/templates/hash_map.h"
 #include "core/types.h"
-#include "core/templates/rb_map.h"
-#include "core/templates/self_list.h"
+#include "core/templates/hash_map.h"
+#include "core/types.h"
 // --- Folded from drivers/d3d12/rendering_shader_container_d3d12.h ---
 #include "servers/rendering/rendering_device.h"
 

@@ -3654,7 +3654,6 @@ if target_platform == "windows" then
             if not is_msvc and os.isdir(winrt_mingw_path) then
                 includedirs { winrt_mingw_path }
             end
-            files { "platform/windows/tts_driver_onecore.cpp" }
         end
     register_tp("tp_winrt")
 end
@@ -4014,7 +4013,6 @@ project "voltaire"
     -- -------------------------------------------------------------------------
     files {
         -- Core & MbedTLS Godot platform glue
-        "core/io/file_access.cpp",
         "core/register_core_types.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
 
@@ -4024,12 +4022,10 @@ project "voltaire"
         -- Scene (always-enabled)
         "scene/2d/node_2d.cpp",
         "scene/main/scene_tree.cpp",
-        "scene/resources/mesh.cpp",
 
         -- Servers (always-enabled)
         "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
-        "servers/rendering/rendering_device.cpp",
 
         -- Drivers (common)
         "drivers/register_driver_types.cpp",
@@ -4041,24 +4037,12 @@ project "voltaire"
 
     -- Feature-conditional scene/server/module files
     if not disable_3d or has_openxr then
-        files {
-            "modules/gltf/gltf_document.cpp",
-        }
     end
     if not disable_nav_2d then
-        files {
-            "modules/navigation_2d/nav_map_2d.cpp",
-        }
     end
     if not disable_nav_3d then
-        files {
-            "modules/navigation_3d/nav_map_3d.cpp",
-        }
     end
     if use_opengl3 then
-        files {
-            "drivers/gles3/rasterizer_scene_gles3.cpp",
-        }
     end
     if use_rd then
     end
@@ -4096,7 +4080,7 @@ project "voltaire"
         end
     end
     if betsy_templates or cvtt_templates then
-        files { "platform/android/export/export.cpp" }
+        files { "editor/editor_ui.cpp" }
     end
 
     -- Editor-only sources & platform exporters
@@ -4106,7 +4090,6 @@ project "voltaire"
             "editor/project_upgrade/renames_map_3_to_4.cpp",
             "editor/translations/editor_translations.gen.cpp",
             "editor/translations/property_translations.gen.cpp",
-            "platform/android/export/export.cpp",
         }
     filter {}
 
@@ -4369,21 +4352,12 @@ project "voltaire"
         files {
             "drivers/coreaudio/audio_driver_coreaudio.mm",
             "platform/macos/os_macos.mm",
-            "platform/macos/display_server_macos.mm",
         }
-        if use_angle then
-            files { "platform/macos/gl_manager_macos_angle.mm" }
-        end
         if library_type == "executable" then
             files { "platform/macos/godot_main_macos.mm" }
         else
             files { "platform/macos/libgodot_macos.mm" }
         end
-        filter "configurations:editor"
-            files {
-                "platform/macos/display_server_macos_embedded.mm",
-            }
-        filter {}
 
         if apple_sdk_path ~= "" then
             linkoptions { "-isysroot", apple_sdk_path }
@@ -4514,7 +4488,6 @@ project "voltaire"
         buildoptions { "-fmodules", "-fcxx-modules" }
         files {
             "drivers/coreaudio/audio_driver_coreaudio.mm",
-            "drivers/apple_embedded/display_server_apple_embedded.mm",
             "drivers/apple_embedded/os_apple_embedded.mm",
         }
         if target_platform == "ios" then

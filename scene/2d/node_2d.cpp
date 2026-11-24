@@ -29,8 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "node_2d.h"
-#include "scene/main/viewport.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -369,11 +369,11 @@ void Node2D::set_transform(Transform2D const&) {}
 // Merged from scene/2d/camera_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
-#include "core/config/engine.h"
+#include "scene/main/scene_tree.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 
 void Camera2D::_update_process_callback()
 {
@@ -707,7 +707,7 @@ Transform2D Camera2D::get_camera_transform() { return Transform2D(); }
 // Merged from scene/2d/canvas_group.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 real_t CanvasGroup::get_fit_margin() const { return fit_margin; }
@@ -742,7 +742,7 @@ void CanvasGroup::set_fit_margin(float) {}
 // Merged from scene/2d/canvas_modulate.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/canvas_modulate.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class CanvasModulate : public Node2D
 {
@@ -852,7 +852,7 @@ void CanvasModulate::_on_in_canvas_visibility_changed(bool) {}
 // Merged from scene/2d/back_buffer_copy.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/back_buffer_copy.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class BackBufferCopy : public Node2D
 {
@@ -890,7 +890,7 @@ public:
 
 
 // --- End scene/2d/back_buffer_copy.h ---
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 
 void BackBufferCopy::_update_copy_mode()
@@ -946,9 +946,9 @@ BackBufferCopy::~BackBufferCopy() {}
 // Merged from scene/2d/marker_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/2d/marker_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class Marker2D : public Node2D
 {
@@ -1040,7 +1040,7 @@ Marker2D::Marker2D() { set_hide_clip_children(true); }
 // Merged from scene/2d/remote_transform_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/remote_transform_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class RemoteTransform2D : public Node2D
 {
@@ -1153,9 +1153,9 @@ void RemoteTransform2D::_update_cache() {}
 // Merged from scene/2d/visible_on_screen_notifier_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef TOOLS_ENABLED
@@ -1270,8 +1270,8 @@ VisibleOnScreenNotifier2D::VisibleOnScreenNotifier2D(bool p_enabler) : enabler_e
 // Merged from scene/2d/audio_listener_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
-#include "scene/main/viewport.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 
 void AudioListener2D::_notification(int p_what)
 {
@@ -1333,23 +1333,22 @@ AudioListener2D::AudioListener2D() { set_hide_clip_children(true); }
 // --- audio_stream_player_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 bool AudioStreamPlayer2D::_is_autoplay_enabled_bind_compat_86907() { return is_autoplay_enabled(); }
 
 void AudioStreamPlayer2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "scene/2d/node_2d.h"
-#include "core/config/project_settings.h"
-#include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
-#include "servers/audio/audio_server.h"
+#include "core/config/project_settings.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
+#include "servers/display/display_server.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_2D_DISABLED
 
 void AudioStreamPlayer2D::_notification(int p_what)
@@ -1631,13 +1630,13 @@ String AudioStreamPlayer2D::_get_actual_bus() {}
 // Merged from scene/2d/cpu_particles_2d.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/types.h"
 #include "core/math/geometry_3d.h"
 // --- cpu_particles_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 // --- Inlined from scene/2d/cpu_particles_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
 class RandomNumberGenerator;
@@ -1959,7 +1958,7 @@ void CPUParticles2D::_bind_compatibility_methods() {}
 #endif // DISABLE_DEPRECATED
 
 // --- Inlined from scene/2d/gpu_particles_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class GPUParticles2D : public Node2D
 {
@@ -2133,7 +2132,6 @@ public:
 
 // --- End scene/2d/gpu_particles_2d.h ---
 #include "scene/main/scene_tree.h"
-#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
@@ -3110,7 +3108,6 @@ PackedStringArray CPUParticles2D::get_configuration_warnings() const { return Pa
 // Merged from scene/2d/gpu_particles_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
 #include "core/os/os.h"
 // --- gpu_particles_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
@@ -3128,7 +3125,6 @@ void GPUParticles2D::_bind_compatibility_methods() {}
 #endif // DISABLE_DEPRECATED
 
 
-#include "scene/resources/image_texture.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
@@ -3530,10 +3526,10 @@ void GPUParticles2D::set_visibility_rect(const Rect2& p_visibility_rect) {}
 // Merged from scene/2d/line_2d.cpp
 // ============================================================================
 
-#include "core/math/geometry_2d.h"
-#include "scene/2d/node_2d.h"
+#include "core/math/geometry_3d.h"
+#include "scene/main/scene_tree.h"
 // --- line_builder.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class LineBuilder {
 public:
@@ -3681,7 +3677,7 @@ void Line2D::_draw() {}
 // Merged from scene/2d/line_builder.cpp
 // ==========================================================================
 
-#include "core/math/geometry_2d.h"
+#include "core/math/geometry_3d.h"
 
 // Utility method.
 static inline Vector2 interpolate(const Rect2 &r, const Vector2 &v) {
@@ -4252,9 +4248,8 @@ void LineBuilder::new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Col
 // Merged from scene/2d/path_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
+#include "core/math/geometry_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
@@ -4486,9 +4481,9 @@ void Path2D::_debug_update() {}
 // Merged from scene/2d/parallax_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/2d/node_2d.h"
-#include "scene/main/viewport.h"
+#include "core/os/os.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 #include "servers/rendering/renderer.h"
 
 void Parallax2D::_notification(int p_what)
@@ -4706,9 +4701,9 @@ bool Parallax2D::is_ignore_camera_scroll() { return ignore_camera_scroll; }
 // Merged from scene/2d/parallax_layer.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/2d/node_2d.h"
-#include "scene/main/canvas_item.h"
+#include "core/os/os.h"
+#include "scene/main/scene_tree.h"
+#include "scene/gui/control.h"
 #include "servers/rendering/renderer.h"
 
 void ParallaxLayer::set_motion_scale(const Size2& p_scale)
@@ -4812,7 +4807,7 @@ void ParallaxLayer::_update_mirroring() {}
 // Merged from scene/2d/light_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/light_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class Light2D : public Node2D
 {
@@ -4963,7 +4958,7 @@ public:
 
 // --- End scene/2d/light_2d.h ---
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
@@ -5293,9 +5288,9 @@ Light2D::~Light2D()
 // Merged from scene/2d/light_occluder_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
+#include "core/math/geometry_3d.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #define LINE_GRAB_WIDTH 8
@@ -5468,10 +5463,10 @@ void LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&) {}
 // Merged from scene/2d/sprite_2d.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
-#include "scene/main/viewport.h"
+#include "core/os/os.h"
+#include "scene/main/window.h"
 #include "servers/display/display_server.h"
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 #ifdef DEBUG_ENABLED
 bool Sprite2D::_edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const
@@ -5708,8 +5703,7 @@ void Sprite2D::set_frame(int) {}
 // Merged from scene/2d/animated_sprite_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/animated_sprite_2d.h ---
-#include "scene/2d/node_2d.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class AnimatedSprite2D : public Node2D
 {
@@ -5798,8 +5792,8 @@ public:
 
 
 // --- End scene/2d/animated_sprite_2d.h ---
-#include "core/config/engine.h"
-#include "scene/main/viewport.h"
+#include "core/os/os.h"
+#include "scene/main/window.h"
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_ENABLED
@@ -5954,7 +5948,7 @@ void AnimatedSprite2D::_stop_internal(bool) {}
 // Merged from scene/2d/mesh_instance_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/mesh_instance_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 
 class NavigationPolygon;
@@ -6000,7 +5994,7 @@ public:
 
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 RID MeshInstance2D::_navmesh_source_geometry_parser;
@@ -6054,8 +6048,7 @@ PackedStringArray MeshInstance2D::get_configuration_warnings() const
 // Merged from scene/2d/multimesh_instance_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/multimesh_instance_2d.h ---
-#include "scene/2d/node_2d.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class NavigationPolygon;
 class NavigationMeshSourceGeometryData2D;
@@ -6103,7 +6096,7 @@ public:
 
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 RID MultiMeshInstance2D::_navmesh_source_geometry_parser;
@@ -6157,13 +6150,13 @@ Rect2 MultiMeshInstance2D::_edit_get_rect() const
 // Merged from scene/2d/polygon_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
+#include "core/math/geometry_3d.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 RID Polygon2D::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_2D_DISABLED
@@ -6289,13 +6282,13 @@ bool Polygon2D::_edit_is_selected_on_click(const Vector2& p_point, double p_tole
 // Merged from scene/2d/skeleton_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/math/geometry_3d.h"
 #include "servers/rendering/renderer.h"
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 #ifdef TOOLS_ENABLED
-#include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
@@ -6596,15 +6589,14 @@ void Skeleton2D::_update_bone_setup() {}
 // Merged from scene/2d/tile_map_layer.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
-#include "core/math/geometry_2d.h"
+#include "core/math/geometry_3d.h"
 #include "core/types.h"
-#include "core/templates/a_hash_map.h"
 // --- Inlined from scene/2d/tile_map.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class Control;
 #ifndef NAVIGATION_2D_DISABLED
@@ -6854,16 +6846,16 @@ public:
 #include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "servers/rendering/renderer.h"
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 RID TileMapLayer::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_2D_DISABLED
 
@@ -8822,7 +8814,7 @@ void TileMapLayer::set_light_mask(int p_light_mask) {}
 // Merged from scene/2d/tile_map.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
 // --- tile_map.compat.inc ---
 #ifndef DISABLE_DEPRECATED
@@ -8855,7 +8847,7 @@ void TileMap::_bind_compatibility_methods() {}
 
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #define TILEMAP_CALL_FOR_LAYER(layer, function, ...)                                               \
@@ -9435,11 +9427,11 @@ void TileMap::_set_tile_map_data_using_compatibility_format(int, TileMapDataForm
 
 
 // --- Merged from scene/2d/physics/physics_body_2d.cpp ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/2d/physics/joints/joint_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class PhysicsBody2D;
 
@@ -9537,7 +9529,6 @@ public:
 };
 
 // --- End scene/2d/physics/joints/joint_2d.h ---
-#include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
@@ -10078,7 +10069,7 @@ PackedStringArray PhysicsBody2D::get_configuration_warnings() const {
 // Merged from scene/2d/physics/kinematic_collision_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 Vector2 KinematicCollision2D::get_position() const { return result.collision_point; }
 
@@ -10106,9 +10097,9 @@ Vector2 KinematicCollision2D::get_collider_velocity() const { return result.coll
 // Merged from scene/2d/physics/collision_object_2d.cpp
 // ============================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 void CollisionState2D::init(bool p_area, PS2DE::BodyMode p_mode) {
@@ -10588,10 +10579,10 @@ uint32_t CollisionState2D::shape_find_owner(int p_shape_index) const {
 // Merged from scene/2d/physics/area_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/os.h"
+#include "servers/display/display_server.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 Area2D::Area2D() {
@@ -10779,10 +10770,9 @@ PackedStringArray Area2D::get_configuration_warnings() const {
 // Merged from scene/2d/physics/collision_shape_2d.cpp
 // ==========================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 
 void CollisionShape2D::_update_in_shape_owner(bool p_xform_only) {
@@ -10942,7 +10932,7 @@ PackedStringArray CollisionShape2D::get_configuration_warnings() const {
 // Merged from scene/2d/physics/collision_polygon_2d.cpp
 // ==========================================================================
 // --- Inlined from scene/2d/physics/collision_polygon_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class CollisionPolygon2D : public Node2D {
 public:
@@ -10999,11 +10989,9 @@ public:
 
 // --- End scene/2d/physics/collision_polygon_2d.h ---
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
+#include "core/math/geometry_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/2d/node_2d.h"
 
 void CollisionPolygon2D::_build_polygon() {
 	if (!collision_state) {
@@ -11187,9 +11175,9 @@ PackedStringArray CollisionPolygon2D::get_configuration_warnings() const {
 // Merged from scene/2d/physics/ray_cast_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/2d/physics/ray_cast_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 class RayCast2D : public Node2D
 {
@@ -11261,9 +11249,8 @@ public:
 
 
 // --- End scene/2d/physics/ray_cast_2d.h ---
-#include "scene/2d/node_2d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 Vector2 RayCast2D::get_target_position() const { return target_position; }
@@ -11391,13 +11378,12 @@ void RayCast2D::_update_raycast_state() {}
 // Merged from scene/2d/physics/shape_cast_2d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "servers/physics_2d/physics_server_2d.h"
 // --- Inlined from scene/2d/physics/shape_cast_2d.h ---
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
 class ShapeCast2D : public Node2D
@@ -11619,14 +11605,13 @@ void ShapeCast2D::_update_shapecast_state() {}
 // Merged from scene/2d/physics/touch_screen_button.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "servers/display/display_server.h"
 // --- Inlined from scene/2d/physics/touch_screen_button.h ---
-#include "scene/2d/node_2d.h"
-#include "scene/resources/image_texture.h"
+#include "scene/main/scene_tree.h"
+#include "scene/resources/material.h"
 #include "scene/resources/texture.h"
 
 class TouchScreenButton : public Node2D
@@ -11809,8 +11794,7 @@ void TouchScreenButton::input(const InputEvent& p_event) {}
 // ============================================================================
 
 
-#include "core/config/engine.h"
-#include "scene/2d/node_2d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_2d/physics_server_2d.h"
 
@@ -12099,10 +12083,10 @@ PackedStringArray Joint2D::get_configuration_warnings() const {
 // Merged from scene/resources/2d/shape_2d.cpp
 // ============================================================================
 
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/config/project_settings.h"
-#include "core/math/geometry_2d.h"
+#include "core/math/geometry_3d.h"
 #include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/renderer.h"
 
@@ -12730,15 +12714,15 @@ Shape2D::~Shape2D()
 
 // --- Merged from scene/2d/navigation/navigation_2d.cpp ---
 #if !defined(NAVIGATION_2D_DISABLED)
-#include "scene/2d/node_2d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
+#include "core/os/os.h"
+#include "core/math/geometry_3d.h"
 #include "core/types.h"
 #include "scene/main/scene_tree.h"
-#include "servers/navigation_2d/navigation_server_2d.h"
-#include "scene/main/viewport.h"
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/window.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #include "servers/rendering/renderer.h"
 
 void NavigationAgent2D::_notification(int p_what)
@@ -14311,9 +14295,9 @@ void NavigationRegion2D::_region_enter_navigation_map() {}
 // ============================================================================
 
 #include <thirdparty/misc/polypartition.h>
-#include "core/math/geometry_2d.h"
+#include "core/math/geometry_3d.h"
 #include "core/os/mutex.h"
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 NavigationPolygon::NavigationPolygon() :
 		cell_size(NavigationDefaults2D::NAV_MESH_CELL_SIZE) {
@@ -14787,7 +14771,7 @@ bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const
 
 // --- navigation_mesh_source_geometry_data_2d.cpp ---
 
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
 void NavigationMeshSourceGeometryData2D::clear()
 {
@@ -15019,7 +15003,7 @@ Rect2 NavigationMeshSourceGeometryData2D::get_bounds()
 
 // --- polygon_path_finder.cpp ---
 
-#include "core/math/geometry_2d.h"
+#include "core/math/geometry_3d.h"
 // --- Inlined from scene/resources/2d/polygon_path_finder.h ---
 #include "core/io/resource.h"
 
@@ -15534,20 +15518,20 @@ PolygonPathFinder::PolygonPathFinder() {}
 #include "servers/display/display_server.h"
 #include "scene/gui/control.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/types.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "scene/gui/dialogs.h"
-#include "scene/main/canvas_item.h"
+#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 #ifdef TOOLS_ENABLED
 void Control::_edit_set_position(const Point2& p_position)
@@ -19325,9 +19309,9 @@ void MenuBar::move_child_notify(Node* p_child) {}
 
 #include <cmath>
 #include <thirdparty/misc/r128.h>
-#include "core/string/translation_server.h"
+#include "core/config/project_settings.h"
 #include "scene/gui/dialogs.h"
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/gui/progress_bar.h ---
 #include "scene/gui/control.h"
 #include "scene/gui/dialogs.h"
@@ -19457,12 +19441,11 @@ private:
 };
 
 // --- End scene/gui/progress_bar.h ---
-#include "scene/resources/font.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "scene/gui/dialogs.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "scene/gui/dialogs.h"
 #include "core/types.h"
 #include "scene/gui/dialogs.h"
@@ -20821,15 +20804,14 @@ ScrollBar::~ScrollBar() {}
 #include "scene/resources/theme.h"
 #include "scene/gui/dialogs.h"
 #include "servers/display/display_server.h"
-#include "core/config/engine.h"
-#include "core/input/input.h"
-#include "scene/main/viewport.h"
+#include "core/os/os.h"
+#include "scene/main/window.h"
 #include "scene/gui/dialogs.h"
 #include <cfloat>
 #include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/gui/dialogs.h"
-#include "scene/resources/font.h"
+#include "scene/resources/theme.h"
 #include "core/types.h"
 #include "scene/gui/dialogs.h"
 
@@ -23197,13 +23179,12 @@ Separator::~Separator() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/math/geometry_3d.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "scene/main/node.h"
-#include "scene/resources/environment.h"
+#include "scene/resources/material.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -24078,14 +24059,13 @@ void Node3D::clear_subgizmo_selection() {}
 // Merged from scene/3d/camera_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
-#include "core/config/engine.h"
-#include "core/math/projection.h"
+#include "scene/main/scene_tree.h"
+#include "core/os/os.h"
+#include "core/types.h"
 #include "core/math/geometry_3d.h"
-#include "scene/3d/node_3d.h"
-#include "scene/main/viewport.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_server.h"
 
 void Camera3D::_update_audio_listener_state() {}
 
@@ -24691,7 +24671,7 @@ Camera3D::~Camera3D()
 // Merged from scene/3d/marker_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/marker_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Marker3D : public Node3D
 {
@@ -24717,8 +24697,7 @@ Marker3D::Marker3D() {}
 // Merged from scene/3d/path_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
@@ -24959,7 +24938,7 @@ void Path3D::_update_debug_mesh() {}
 // Merged from scene/3d/remote_transform_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/remote_transform_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class RemoteTransform3D : public Node3D
 {
@@ -25072,9 +25051,9 @@ void RemoteTransform3D::_update_cache() {}
 // Merged from scene/3d/velocity_tracker_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 
 void VelocityTracker3D::set_track_physics_step(bool p_track_physics_step) {
 	physics_step = p_track_physics_step;
@@ -25169,8 +25148,8 @@ VelocityTracker3D::VelocityTracker3D() {
 // Merged from scene/3d/audio_listener_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
-#include "scene/main/viewport.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 
 void AudioListener3D::_update_audio_listener_state() {}
 
@@ -25302,22 +25281,21 @@ AudioListener3D::~AudioListener3D() {}
 // --- audio_stream_player_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 bool AudioStreamPlayer3D::_is_autoplay_enabled_bind_compat_86907() { return is_autoplay_enabled(); }
 
 void AudioStreamPlayer3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "scene/3d/node_3d.h"
-#include "core/config/project_settings.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
-#include "servers/audio/audio_server.h"
+#include "core/config/project_settings.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
+#include "servers/display/display_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_3D_DISABLED
 
 // Based on "A Novel Multichannel Panning Method for Standard and Arbitrary Loudspeaker
@@ -26082,10 +26060,9 @@ Area3D* AudioStreamPlayer3D::_get_overriding_area() {}
 // Merged from scene/3d/world_environment.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 
 void WorldEnvironment::_notification(int p_what)
 {
@@ -26189,20 +26166,20 @@ void WorldEnvironment::_update_current_compositor() {}
 // Merged from scene/3d/skeleton_3d.cpp
 // ============================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 // --- skeleton_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 void Skeleton3D::_add_bone_bind_compat_88791(const String& p_name) { add_bone(p_name); }
 
 void Skeleton3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #if !defined(DISABLE_DEPRECATED) && !defined(PHYSICS_3D_DISABLED)
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // _DISABLE_DEPRECATED && PHYSICS_3D_DISABLED
 #include "servers/rendering/renderer.h"
 
@@ -26966,7 +26943,7 @@ void Skeleton3D::move_child_notify(Node* p_child) {}
 // ==========================================================================
 
 #include "core/config/project_settings.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 bool SkeletonModifier3D::should_check_node_path()
 {
@@ -27230,7 +27207,7 @@ void SkeletonModifier3D::process_modification(double) {}
 // --- bone_attachment_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 void BoneAttachment3D::_on_bone_pose_update_bind_compat_90575(int p_bone_index)
 {
@@ -27240,8 +27217,8 @@ void BoneAttachment3D::_on_bone_pose_update_bind_compat_90575(int p_bone_index)
 void BoneAttachment3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-#include "scene/3d/node_3d.h"
-#include "core/config/engine.h"
+#include "scene/main/scene_tree.h"
+#include "core/os/os.h"
 
 void BoneAttachment3D::_transform_changed()
 {
@@ -27385,9 +27362,8 @@ PackedStringArray BoneAttachment3D::get_configuration_warnings() const
 // Merged from scene/3d/look_at_modifier_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/3d/look_at_modifier_3d.h ---
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 
 class LookAtModifier3D : public SkeletonModifier3D
@@ -27952,7 +27928,6 @@ void LookAtModifier3D::_process_modification(double p_delta) {}
 // Merged from scene/3d/retarget_modifier_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/retarget_modifier_3d.h ---
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 
 class RetargetModifier3D : public SkeletonModifier3D
@@ -28139,7 +28114,7 @@ void RetargetModifier3D::_skeleton_changed(Skeleton3D* p_old_skeleton, Skeleton3
 // Merged from scene/3d/spring_bone_collision_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/spring_bone_collision_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class SpringBoneCollision3D : public Node3D {
 public:
@@ -28208,9 +28183,9 @@ public:
 
 // --- End scene/3d/spring_bone_collision_3d.h ---
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/3d/spring_bone_simulator_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -28682,7 +28657,7 @@ PackedStringArray SpringBoneCollision3D::get_configuration_warnings() const {
 // Merged from scene/3d/spring_bone_simulator_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 
 // --- spring_bone_simulator_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
@@ -29324,9 +29299,9 @@ void SpringBoneSimulator3D::_process_modification(double p_delta) {}
 // Merged from scene/3d/bone_constraint_3d.cpp
 // ============================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 // --- Inlined from scene/3d/ik_modifier_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Curve3D;
 
@@ -30899,8 +30874,8 @@ void BoneConstraint3D::_process_copy(int p_index, Skeleton3D *p_skeleton, int p_
 // ============================================================================
 
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
+#include "scene/main/scene_tree.h"
 
 // --- JointSetting ---
 
@@ -32747,10 +32722,9 @@ void IKModifier3D::_process_two_bone_joints(double p_delta, Skeleton3D *p_skelet
 
 // --- Merged from scene/3d/physics/physics_body_3d.cpp ---
 #if !defined(_3D_DISABLED)
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
@@ -33849,7 +33823,7 @@ PackedStringArray PhysicsBody3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/kinematic_collision_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 Vector3 KinematicCollision3D::get_travel() const { return result.travel; }
 
@@ -33900,10 +33874,10 @@ Vector3 KinematicCollision3D::get_collider_velocity(int p_collision_index) const
 // Merged from scene/3d/physics/physical_bone_simulator_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
+#include "scene/main/scene_tree.h"
 
 void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D *p_skeleton, int p_bone_id) {
 	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_bone_id, bones.size());
@@ -33976,9 +33950,9 @@ void PhysicalBoneSimulator3D::_skeleton_changed(Skeleton3D *p_old_skeleton, Skel
 // Merged from scene/3d/physics/collision_object_3d.cpp
 // ============================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
@@ -34450,10 +34424,10 @@ uint32_t CollisionState3D::shape_find_owner(int p_shape_index) const {
 // Merged from scene/3d/physics/area_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "servers/audio/audio_server.h"
+#include "core/os/os.h"
+#include "servers/display/display_server.h"
 
 Area3D::Area3D() {
 	collision_state.init(true);
@@ -34718,9 +34692,8 @@ PackedStringArray Area3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/collision_shape_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
-
 #include "scene/main/scene_tree.h"
+
 
 void CollisionShape3D::_update_in_shape_owner(bool p_xform_only) {
 	if (!collision_state) {
@@ -34864,7 +34837,7 @@ PackedStringArray CollisionShape3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/collision_polygon_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/physics/collision_polygon_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class CollisionPolygon3D : public Node3D {
 	real_t margin = 0.04f;
@@ -34906,7 +34879,6 @@ public:
 
 // --- End scene/3d/physics/collision_polygon_3d.h ---
 
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 
 void CollisionPolygon3D::_update_in_shape_owner(bool p_xform_only) {
@@ -35006,9 +34978,9 @@ PackedStringArray CollisionPolygon3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/ray_cast_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/3d/physics/ray_cast_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
 class ArrayMesh;
@@ -35110,7 +35082,6 @@ public:
 
 
 // --- End scene/3d/physics/ray_cast_3d.h ---
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
@@ -35316,13 +35287,12 @@ void RayCast3D::_update_raycast_state() {}
 // Merged from scene/3d/physics/shape_cast_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined from scene/3d/physics/shape_cast_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
 
@@ -35710,12 +35680,11 @@ void ShapeCast3D::_clear_debug_shape()
 // Merged from scene/3d/physics/spring_arm_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 // --- Inlined from scene/3d/physics/spring_arm_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 
 class SpringArm3D : public Node3D
@@ -35803,7 +35772,7 @@ void SpringArm3D::process_spring() {}
 // Merged from scene/3d/physics/joints/joint_3d.cpp
 // ============================================================================
 // --- Inlined from scene/3d/physics/joints/joint_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Joint3D : public Node3D {
 public:
@@ -36345,11 +36314,11 @@ PackedStringArray Joint3D::get_configuration_warnings() const {
 // Merged from scene/3d/physics/soft_body_3d.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
-#include "scene/3d/node_3d.h"
+#include "core/os/os.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined from scene/3d/physics/soft_body_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/physics_3d/physics_server_3d.h"
 
@@ -37636,7 +37605,7 @@ Ref<ArrayMesh> Shape3D::get_debug_mesh()
 
 // --- Merged from scene/3d/visual_instance_3d.cpp ---
 #if !defined(_3D_DISABLED)
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
@@ -38008,19 +37977,18 @@ RenderInstance3D::~RenderInstance3D()
 // Merged from scene/3d/mesh_instance_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #include <cfloat> // FLT_EPSILON
@@ -38291,12 +38259,12 @@ MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
 // Merged from scene/3d/multimesh_instance_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 RID MultiMeshInstance3D::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
@@ -38356,7 +38324,7 @@ AABB MultiMeshInstance3D::get_aabb() const
 // Merged from scene/3d/importer_mesh_instance_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 
 void ImporterMeshInstance3D::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
@@ -38432,11 +38400,11 @@ ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 // Merged from scene/3d/sprite_3d.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/math/geometry_3d.h"
-#include "scene/resources/image_texture.h"
+#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 Color Sprite3D::_get_color_accum()
@@ -39072,9 +39040,9 @@ Sprite3D::~Sprite3D()
 // Merged from scene/3d/label_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/math/geometry_3d.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "servers/rendering/renderer.h"
@@ -39524,7 +39492,7 @@ Ref<Font> Label3D::_get_font_or_default() const { return Ref<Font>(); }
 // ==========================================================================
 
 #include "core/os/os.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 Vector3 Decal::get_size() const { return size; }
@@ -39677,7 +39645,7 @@ Decal::~Decal()
 #include "core/os/os.h"
 // --- Inlined from scene/3d/fog_volume.h ---
 #include "core/templates/hashfuncs.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
 class FogVolume : public Node3D
@@ -39718,8 +39686,8 @@ public:
 };
 
 // --- End scene/3d/fog_volume.h ---
-#include "scene/main/viewport.h"
-#include "scene/resources/environment.h"
+#include "scene/main/window.h"
+#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 Vector3 FogVolume::get_size() const { return size; }
@@ -39782,11 +39750,11 @@ FogVolume::~FogVolume()
 // Merged from scene/3d/occluder_instance_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "core/math/geometry_2d.h"
-#include "scene/3d/node_3d.h"
+#include "core/math/geometry_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
@@ -40234,7 +40202,7 @@ void OccluderInstance3D::_bake_node(Node*, Vector<Vector3>&, Vector<int>&) {}
 // Merged from scene/3d/visible_on_screen_notifier_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/visible_on_screen_notifier_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class VisibleOnScreenNotifier3D : public Node3D
 {
@@ -40288,7 +40256,7 @@ public:
 
 // --- End scene/3d/visible_on_screen_notifier_3d.h ---
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 
 void VisibleOnScreenNotifier3D::set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
@@ -40393,10 +40361,10 @@ VisibleOnScreenNotifier3D::~VisibleOnScreenNotifier3D()
 // Merged from scene/3d/cpu_particles_3d.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/types.h"
 // --- Inlined from scene/3d/cpu_particles_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 
 class Mesh;
@@ -40709,9 +40677,9 @@ public:
 
 
 // --- End scene/3d/cpu_particles_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 // --- Inlined from scene/3d/gpu_particles_3d.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Mesh;
 
@@ -40905,7 +40873,7 @@ public:
 
 
 // --- End scene/3d/gpu_particles_3d.h ---
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "scene/resources/material.h"
 #include "scene/resources/mesh.h"
 #include "scene/resources/material.h"
@@ -41513,7 +41481,6 @@ PackedStringArray CPUParticles3D::get_configuration_warnings() const { return Pa
 // Merged from scene/3d/gpu_particles_3d.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
 #include "core/os/os.h"
 
 
@@ -41867,7 +41834,7 @@ void GPUParticles3D::set_draw_passes(int) {}
 // ==========================================================================
 // --- Inlined from scene/3d/gpu_particles_collision_3d.h ---
 #include "core/templates/local_vector.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Mesh;
 
@@ -42068,8 +42035,8 @@ public:
 
 #include "core/math/geometry_3d.h"
 #include "core/os/os.h"
-#include "scene/3d/node_3d.h"
-#include "scene/main/viewport.h"
+#include "scene/main/scene_tree.h"
+#include "scene/main/window.h"
 #include "servers/rendering/renderer.h"
 
 GPUParticlesCollision3D::BakeBeginFunc GPUParticlesCollision3D::bake_begin_function = nullptr;
@@ -42406,9 +42373,9 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 // Merged from scene/3d/light_3d.cpp
 // ============================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
@@ -42819,7 +42786,7 @@ Light3D::~Light3D()
 #include "core/math/geometry_3d.h"
 #include "scene/resources/texture.h"
 // --- voxelizer.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class Image;
 
@@ -43801,15 +43768,14 @@ Voxelizer::Voxelizer() {}
 // Merged from scene/3d/lightmap_gi.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
-#include "core/io/config_file.h"
 #include "core/io/resource_loader.h"
 #include "core/math/geometry_3d.h"
 // --- Inlined from scene/3d/lightmap_gi.h ---
 #include "core/io/resource.h"
 #include "core/templates/local_vector.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class CameraAttributes;
 class Light3D;
@@ -44150,9 +44116,9 @@ public:
 
 // --- End scene/3d/lightmap_gi.h ---
 #include "modules/modules_enabled.gen.h" // IWYU pragma: keep. For lightmapper_rd.
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 // --- Inlined from scene/3d/lightmap_probe.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class LightmapProbe : public Node3D
 {
@@ -44163,11 +44129,8 @@ public:
 
 
 // --- End scene/3d/lightmap_probe.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
-#include "scene/resources/environment.h"
-#include "scene/resources/image_texture.h"
-#include "scene/resources/environment.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef MODULE_LIGHTMAPPER_RD_ENABLED
@@ -44919,7 +44882,7 @@ LightmapProbe::LightmapProbe() {
 // Merged from scene/3d/lightmapper.cpp
 // ==========================================================================
 
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 #include "modules/modules_enabled.gen.h"
 
@@ -45040,9 +45003,9 @@ Vector<Color> Lightmapper::get_bake_probe_sh(int p_probe) const { return Vector<
 // Merged from scene/3d/reflection_probe.cpp
 // ==========================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 // --- Inlined from scene/3d/reflection_probe.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class ReflectionProbe : public Node3D
 {
@@ -45283,12 +45246,11 @@ ReflectionProbe::~ReflectionProbe()
 
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined from scene/3d/voxel_gi.h ---
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
 class CameraAttributes;
 class Mesh;
@@ -45662,16 +45624,15 @@ void VoxelGI::bake(Node*, bool) {}
 
 // --- Merged from scene/3d/navigation/navigation_3d.cpp ---
 #if !defined(_3D_DISABLED) && !defined(NAVIGATION_3D_DISABLED)
-#include "scene/3d/node_3d.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/engine.h"
-#include "core/math/geometry_2d.h"
+#include "core/os/os.h"
 #include "core/math/geometry_3d.h"
 #include "core/types.h"
 #include "scene/main/scene_tree.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #include "scene/resources/mesh.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #include "servers/rendering/renderer.h"
 
 void NavigationAgent3D::_notification(int p_what)
@@ -47198,8 +47159,8 @@ void NavigationRegion3D::_update_debug_edge_connections_mesh() {}
 // Merged from scene/resources/3d/navigation_mesh_source_geometry_data_3d.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "core/os/os.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
 void NavigationMeshSourceGeometryData3D::set_vertices(const Vector<float>& p_vertices)
 {
@@ -47451,14 +47412,13 @@ void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D
 
 // --- Merged from scene/3d/xr/xr_nodes.cpp ---
 #if !defined(_3D_DISABLED) && !defined(XR_DISABLED)
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/types.h"
-#include "scene/3d/node_3d.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/viewport.h"
-#include "servers/xr/xr_server.h"
-#include "scene/3d/node_3d.h"
+#include "scene/main/window.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 
 // XRNode3D is a node that has its transform updated by an XRTracker.
 // Note that trackers are only available at runtime and only after an XRInterface registers one.
@@ -47842,8 +47802,8 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 // Merged from scene/3d/xr/xr_body_modifier_3d.cpp
 // ==========================================================================
 // --- Inlined from scene/3d/xr/xr_body_modifier_3d.h ---
-#include "scene/3d/node_3d.h"
-#include "servers/xr/xr_server.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 
 class Skeleton3D;
 
@@ -47925,8 +47885,8 @@ private:
 
 // --- End scene/3d/xr/xr_body_modifier_3d.h ---
 
-#include "scene/3d/node_3d.h"
-#include "servers/xr/xr_server.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 
 XRBodyModifier3D::XRBodyModifier3D(TargetMode p_mode) :
 		target_mode(p_mode) {
@@ -48450,10 +48410,10 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 // Merged from scene/3d/xr/xr_face_modifier_3d.cpp
 // ==========================================================================
 
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined from scene/3d/xr/xr_face_modifier_3d.h ---
-#include "core/templates/rb_map.h"
-#include "scene/3d/node_3d.h"
+#include "core/templates/hash_map.h"
+#include "scene/main/scene_tree.h"
 
 /**
 	The XRFaceModifier3D node drives the blend shapes of a MeshInstance3D

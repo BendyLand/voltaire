@@ -131,7 +131,7 @@ void unregister_server_types();
 // --- Folded from servers/movie_writer/movie_writer.h ---
 #include "core/io/image.h"
 #include "core/templates/local_vector.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 class MovieWriter
 {
@@ -264,7 +264,7 @@ void unregister_web_api();
 #ifdef ANDROID_ENABLED
 #include <android/log.h>
 #include <jni.h>
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #endif
 
 #ifdef ANDROID_ENABLED
@@ -577,3 +577,7 @@ inline void uninitialize_msdfgen_module(ModuleInitializationLevel p_level) {}
 void initialize_text_server_adv_module(ModuleInitializationLevel p_level);
 void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level);
 // --- End modules/register_module_types.h ---
+
+// --- Folded from tests/test_main.h ---
+int test_main(int argc, char *argv[]);
+// --- End tests/test_main.h ---

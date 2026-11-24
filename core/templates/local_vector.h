@@ -33,10 +33,10 @@
 
 #include <initializer_list>
 #include <type_traits>
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/os/memory.h"
-#include "core/string/print_string.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
-#include "core/templates/sort_array.h"
+#include "core/templates/span.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
+#include "core/templates/span.h"
 #include "core/templates/vector.h"
 
 // If tight, it grows strictly as much as needed.

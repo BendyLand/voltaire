@@ -33,7 +33,7 @@
 
 #ifdef COREAUDIO_ENABLED
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/types.h"
 #include "core/os/os.h"
@@ -759,7 +759,7 @@ AudioDriverCoreAudio::AudioDriverCoreAudio() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple/foundation_helpers.h"
+#import "drivers/coreaudio/audio_driver_coreaudio.h"
 
 #import "core/string/ustring.h"
 #import "core/templates/span.h"
@@ -854,7 +854,7 @@ String to_string(NSString *p_str) {
 #include "drivers/coreaudio/audio_driver_coreaudio.h"
 
 #include "core/os/memory.h"
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 
 #include <cstdio> // For vsnprintf.
 
@@ -979,7 +979,7 @@ void OsLogLogger::log_error(const char *p_function, const char *p_file, int p_li
 
 #include "core/os/thread.h"
 
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/string/ustring.h"
 
 SafeNumeric<uint64_t> Thread::id_counter(1); // The first value after .increment() is 2, hence by default the main thread ID should be 1.

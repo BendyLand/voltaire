@@ -35,13 +35,13 @@
 #include "core/os/os.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/hashfuncs.h"
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 // --- Inlined/Folded from servers/rendering/environment/renderer_fog.h ---
-#include "core/math/aabb.h"
-#include "core/math/vector3.h"
+#include "core/types.h"
+#include "core/math/plane.h"
 #include "core/templates/hashfuncs.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class RendererFog
 {
@@ -77,10 +77,9 @@ public:
 	}
 };
 // --- Folded from servers/rendering/environment/renderer_gi.h ---
-#include "core/math/projection.h"
 #include "core/types.h"
 #include "core/templates/hashfuncs.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class RendererGI
 {
@@ -174,19 +173,18 @@ public:
 // --- Folded from servers/rendering/renderer_compositor.h ---
 #include "core/io/image.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 // --- Folded from servers/rendering/storage/utilities.h ---
-#include "core/math/aabb.h"
+#include "core/types.h"
 #include "core/templates/hashfuncs.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/list.h"
-#include "core/templates/pair.h"
 #include "core/templates/hashfuncs.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class DependencyTracker;
 
@@ -414,11 +412,11 @@ public:
 using RC = RendererCompositor;
 // --- End servers/rendering/renderer_compositor.h ---
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 // --- Folded from servers/rendering/storage/camera_attributes_storage.h ---
-#include "core/templates/rid_owner.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "core/types.h"
+#include "scene/resources/texture.h"
 
 class RendererCameraAttributes final
 {
@@ -537,20 +535,17 @@ public:
 
 // --- End servers/rendering/storage/camera_attributes_storage.h ---
 // --- Inlined/Folded from servers/rendering/storage/light_storage.h ---
-#include "core/math/aabb.h"
+#include "core/types.h"
 #include "core/templates/hashfuncs.h"
-#include "core/math/projection.h"
 #include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/math/vector3.h"
+#include "core/math/plane.h"
 #include "core/templates/hashfuncs.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 // --- Folded from servers/rendering/renderer_scene_render.h ---
-#include "core/math/projection.h"
 #include "core/types.h"
 // --- Folded from servers/rendering/renderer_geometry_instance.h ---
 #include "core/templates/hashfuncs.h"
-#include "core/math/rect2.h"
 #include "core/types.h"
 #include "core/templates/hashfuncs.h"
 
@@ -651,8 +646,8 @@ public:
 // --- End servers/rendering/renderer_geometry_instance.h ---
 #include "servers/rendering/rendering_device.h"
 // --- Folded from servers/rendering/storage/compositor_storage.h ---
-#include "core/templates/rid_owner.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "core/types.h"
+#include "scene/resources/texture.h"
 
 class RendererCompositorStorage final
 {
@@ -732,8 +727,8 @@ public:
 
 // --- End servers/rendering/storage/compositor_storage.h ---
 // --- Folded from servers/rendering/storage/environment_storage.h ---
-#include "core/templates/rid_owner.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "core/types.h"
+#include "scene/resources/texture.h"
 
 class RendererEnvironmentStorage final
 {
@@ -1072,7 +1067,7 @@ public:
 // --- End servers/rendering/storage/environment_storage.h ---
 // --- Inlined/Folded from servers/rendering/storage/render_scene_buffers.h ---
 #include "core/types.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class RenderSceneBuffersConfiguration : public RefCounted
 {
@@ -1565,7 +1560,7 @@ public:
 // --- Folded from servers/rendering/storage/variant_converters.h ---
 #include <initializer_list>
 #include <type_traits>
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/types.h"
 
 template <typename T> struct VariantConverterStd140
@@ -2791,7 +2786,7 @@ public:
 	}
 };
 // --- Inlined/Folded from servers/rendering/storage/material_storage.h ---
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 
@@ -3071,7 +3066,7 @@ public:
 #include "core/templates/hashfuncs.h"
 #include "core/types.h"
 #include "core/templates/local_vector.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 
@@ -3303,14 +3298,14 @@ public:
     static void update_interpolation_frame(bool p_process = true);
 };
 // --- Inlined/Folded from servers/rendering/storage/particles_storage.h ---
-#include "core/math/aabb.h"
-#include "core/templates/hashfuncs.h"
-#include "core/math/math_defs.h"
 #include "core/types.h"
-#include "core/math/vector3.h"
+#include "core/templates/hashfuncs.h"
+#include "core/typedefs.h"
+#include "core/types.h"
+#include "core/math/plane.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/vector.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class RendererParticlesStorage
 {
@@ -3525,13 +3520,12 @@ public:
 };
 // --- Inlined/Folded from servers/rendering/storage/texture_storage.h ---
 #include "core/io/image.h"
-#include "core/math/aabb.h"
-#include "core/templates/hashfuncs.h"
-#include "core/math/rect2.h"
 #include "core/types.h"
-#include "core/math/vector3.h"
 #include "core/templates/hashfuncs.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "core/types.h"
+#include "core/math/plane.h"
+#include "core/templates/hashfuncs.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 struct RenderTargetSetOverrideFn
@@ -5442,7 +5436,7 @@ public:
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
 #include "core/templates/local_vector.h"
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/rendering/rendering_device.h"
 
 class StringBuilder;
@@ -5750,19 +5744,19 @@ public:
 // --- End servers/rendering/renderer_rd/shader_rd.h ---
 
 // --- Folded from servers/rendering/renderer_viewport.h ---
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 
 #pragma once
 
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 
@@ -6066,7 +6060,7 @@ public:
 #include "core/types.h"
 // --- Inlined/Folded from servers/rendering/renderer_scene_cull.h ---
 // --- Folded from core/math/dynamic_bvh.h ---
-#include "core/math/aabb.h"
+#include "core/types.h"
 #include "core/templates/list.h"
 #include "core/templates/local_vector.h"
 #include "core/types.h"
@@ -6663,16 +6657,13 @@ public:
 // --- End core/templates/bin_sorted_array.h ---
 #include "core/templates/local_vector.h"
 #include "core/types.h"
-#include "core/templates/rid_owner.h"
-#include "core/templates/self_list.h"
 #include "core/math/plane.h"
-#include "core/math/vector3.h"
 
 // --- Folded from servers/rendering/renderer_scene_occlusion_cull.h ---
 #include "core/io/image.h"
-#include "core/math/projection.h"
+#include "core/types.h"
 #include "core/templates/local_vector.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 #include <cfloat> // FLT_MIN, FLT_MAX
 
@@ -6999,7 +6990,1103 @@ public:
 
 #include "servers/rendering/rendering_device.h"
 
-#include "servers/xr/xr_server.h"
+// --- Folded from servers/xr/xr_server.h ---
+#include "core/os/os.h"
+#include "core/types.h"
+
+class XRInterface;
+class XRTracker;
+
+class XRServer final
+{
+	static inline Mutex _thread_safe_;
+
+public:
+	enum XRMode
+	{
+		XRMODE_DEFAULT, /* Default behavior, means we check project settings */
+		XRMODE_OFF,		/* Ignore project settings, disable OpenXR, disable shaders */
+		XRMODE_ON, /* Ignore project settings, enable OpenXR, enable shaders, run editor in VR (if
+					  applicable) */
+	};
+
+	enum TrackerType
+	{
+		TRACKER_HEAD = 0x01, /* tracks the position of the players head (or in case of handheld AR,
+								location of the phone) */
+		TRACKER_CONTROLLER = 0x02,	/* tracks a controller */
+		TRACKER_BASESTATION = 0x04, /* tracks location of a base station */
+		TRACKER_ANCHOR =
+			0x08,			 /* tracks an anchor point, used in AR to track a real live location */
+		TRACKER_HAND = 0x10, /* tracks a hand */
+		TRACKER_BODY = 0x20, /* tracks a body */
+		TRACKER_FACE = 0x40, /* tracks a face */
+		TRACKER_UNKNOWN = 0x80, /* unknown tracker */
+
+		TRACKER_ANY_KNOWN = 0x7f, /* all except unknown */
+		TRACKER_ANY = 0xff		  /* used by get_connected_trackers to return all types */
+	};
+
+	enum RotationMode
+	{
+		RESET_FULL_ROTATION = 0, /* we reset the full rotation, regardless of how the HMD is
+									oriented, we're looking dead ahead */
+		RESET_BUT_KEEP_TILT = 1, /* reset rotation but keep tilt. */
+		DONT_RESET_ROTATION = 2, /* don't reset the rotation, we will only center on position */
+	};
+
+private:
+	static XRMode xr_mode;
+
+	// As we may be updating our main state for our next frame while we're still rendering our
+	// previous frame, we need to keep copies around.
+	struct RenderState
+	{
+		double world_scale = 1.0; /* scale by which we multiply our tracker positions */
+		Transform3D world_origin; /* our world origin point, maps a location in our virtual world to
+									 the origin point in our real world tracking volume */
+		Transform3D reference_frame; /* our reference frame */
+	};
+
+	struct Data
+	{
+		double world_scale = 1.0; /* scale by which we multiply our tracker positions */
+		bool camera_locked_to_origin = false;
+		RenderState render_state;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void _set_render_world_scale(double p_world_scale);
+	static void _set_render_world_origin(const Transform3D& p_world_origin);
+	static void _set_render_reference_frame(const Transform3D& p_reference_frame);
+
+	static void set_render_world_scale(double p_world_scale);
+	static void set_render_world_origin(const Transform3D& p_world_origin);
+	static void set_render_reference_frame(const Transform3D& p_reference_frame);
+
+#ifndef DISABLE_DEPRECATED
+	static void _bind_compatibility_methods();
+	static void _add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	static void _remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	static Ref<XRTracker> _get_tracker_bind_compat_90645(const String& p_name);
+#endif
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static XRMode get_xr_mode();
+	static void set_xr_mode(XRMode p_mode);
+
+	static double get_world_scale();
+	static void set_world_scale(double p_world_scale);
+
+	static Transform3D get_world_origin();
+	static void set_world_origin(const Transform3D& p_world_origin);
+
+	static Transform3D get_reference_frame();
+	static void clear_reference_frame();
+	static void center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height);
+
+	static Transform3D get_hmd_transform();
+
+	static void set_camera_locked_to_origin(bool p_enable);
+
+	static inline bool is_camera_locked_to_origin()
+	{
+		return data ? data->camera_locked_to_origin : false;
+	}
+
+	static void add_interface(const Ref<XRInterface>& p_interface);
+	static void remove_interface(const Ref<XRInterface>& p_interface);
+	static int get_interface_count();
+	static Ref<XRInterface> get_interface(int p_index);
+	static Ref<XRInterface> find_interface(const String& p_name);
+
+	static Ref<XRInterface> get_primary_interface();
+	static void set_primary_interface(const Ref<XRInterface>& p_primary_interface);
+
+	static void add_tracker(const Ref<XRTracker>& p_tracker);
+	static void remove_tracker(const Ref<XRTracker>& p_tracker);
+	static Ref<XRTracker> get_tracker(const String& p_name);
+
+	static PackedStringArray get_suggested_tracker_names();
+	static PackedStringArray get_suggested_pose_names(const String& p_tracker_name);
+
+	static void _process();
+	static void pre_render();
+	static void end_frame();
+
+	XRServer() = delete;
+	XRServer(const XRServer&) = delete;
+	XRServer& operator=(const XRServer&) = delete;
+	~XRServer() = delete;
+};
+
+#define XR XRServer
+
+// --- Folded from servers/xr/xr_tracker.h ---
+#include "core/os/os.h"
+#include "core/types.h"
+
+class XRPose final : public RefCounted
+{
+public:
+	// TrackingConfidence gives an indication of how reliable our transform data is.
+	enum TrackingConfidence
+	{
+		XR_TRACKING_CONFIDENCE_NONE, // No tracking information is available for this pose.
+		XR_TRACKING_CONFIDENCE_LOW,	 // Tracking information may be inaccurate or estimated.
+		XR_TRACKING_CONFIDENCE_HIGH	 // Tracking information is deemed accurate and up to date.
+	};
+
+private:
+	bool has_tracking_data = false;
+	String name;
+	Transform3D transform;
+	Vector3 linear_velocity;
+	Vector3 angular_velocity;
+	TrackingConfidence tracking_confidence = XR_TRACKING_CONFIDENCE_NONE;
+
+public:
+	void set_has_tracking_data(const bool p_has_tracking_data);
+	bool get_has_tracking_data() const;
+
+	void set_name(const String& p_name);
+	String get_name() const;
+
+	void set_transform(const Transform3D p_transform);
+	Transform3D get_transform() const;
+	Transform3D get_adjusted_transform() const;
+
+	void set_linear_velocity(const Vector3 p_velocity);
+	Vector3 get_linear_velocity() const;
+
+	void set_angular_velocity(const Vector3 p_velocity);
+	Vector3 get_angular_velocity() const;
+
+	void set_tracking_confidence(const TrackingConfidence p_tracking_confidence);
+	TrackingConfidence get_tracking_confidence() const;
+};
+
+/**
+	Unified XR tracker representing positional, controller, body, hand, and face trackers,
+	discriminated by XRServer::TrackerType.
+*/
+
+class XRTracker final : public RefCounted
+{
+	_THREAD_SAFE_CLASS_
+
+public:
+	enum TrackerHand
+	{
+		TRACKER_HAND_UNKNOWN, /* unknown or not applicable */
+		TRACKER_HAND_LEFT,	  /* controller/hand is the left hand */
+		TRACKER_HAND_RIGHT,	  /* controller/hand is the right hand */
+		TRACKER_HAND_MAX
+	};
+
+	enum BodyFlags
+	{
+		BODY_FLAG_UPPER_BODY_SUPPORTED = 1,
+		BODY_FLAG_LOWER_BODY_SUPPORTED = 2,
+		BODY_FLAG_HANDS_SUPPORTED = 4,
+	};
+
+	enum Joint
+	{
+		JOINT_ROOT,
+
+		// Upper Body Joints
+		JOINT_HIPS,
+		JOINT_SPINE,
+		JOINT_CHEST,
+		JOINT_UPPER_CHEST,
+		JOINT_NECK,
+		JOINT_HEAD,
+		JOINT_HEAD_TIP,
+		JOINT_LEFT_SHOULDER,
+		JOINT_LEFT_UPPER_ARM,
+		JOINT_LEFT_LOWER_ARM,
+		JOINT_RIGHT_SHOULDER,
+		JOINT_RIGHT_UPPER_ARM,
+		JOINT_RIGHT_LOWER_ARM,
+
+		// Lower Body Joints
+		JOINT_LEFT_UPPER_LEG,
+		JOINT_LEFT_LOWER_LEG,
+		JOINT_LEFT_FOOT,
+		JOINT_LEFT_TOES,
+		JOINT_RIGHT_UPPER_LEG,
+		JOINT_RIGHT_LOWER_LEG,
+		JOINT_RIGHT_FOOT,
+		JOINT_RIGHT_TOES,
+
+		// Left Hand Joints
+		JOINT_LEFT_HAND,
+		JOINT_LEFT_PALM,
+		JOINT_LEFT_WRIST,
+		JOINT_LEFT_THUMB_METACARPAL,
+		JOINT_LEFT_THUMB_PHALANX_PROXIMAL,
+		JOINT_LEFT_THUMB_PHALANX_DISTAL,
+		JOINT_LEFT_THUMB_TIP,
+		JOINT_LEFT_INDEX_FINGER_METACARPAL,
+		JOINT_LEFT_INDEX_FINGER_PHALANX_PROXIMAL,
+		JOINT_LEFT_INDEX_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_LEFT_INDEX_FINGER_PHALANX_DISTAL,
+		JOINT_LEFT_INDEX_FINGER_TIP,
+		JOINT_LEFT_MIDDLE_FINGER_METACARPAL,
+		JOINT_LEFT_MIDDLE_FINGER_PHALANX_PROXIMAL,
+		JOINT_LEFT_MIDDLE_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_LEFT_MIDDLE_FINGER_PHALANX_DISTAL,
+		JOINT_LEFT_MIDDLE_FINGER_TIP,
+		JOINT_LEFT_RING_FINGER_METACARPAL,
+		JOINT_LEFT_RING_FINGER_PHALANX_PROXIMAL,
+		JOINT_LEFT_RING_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_LEFT_RING_FINGER_PHALANX_DISTAL,
+		JOINT_LEFT_RING_FINGER_TIP,
+		JOINT_LEFT_PINKY_FINGER_METACARPAL,
+		JOINT_LEFT_PINKY_FINGER_PHALANX_PROXIMAL,
+		JOINT_LEFT_PINKY_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_LEFT_PINKY_FINGER_PHALANX_DISTAL,
+		JOINT_LEFT_PINKY_FINGER_TIP,
+
+		// Right Hand Joints
+		JOINT_RIGHT_HAND,
+		JOINT_RIGHT_PALM,
+		JOINT_RIGHT_WRIST,
+		JOINT_RIGHT_THUMB_METACARPAL,
+		JOINT_RIGHT_THUMB_PHALANX_PROXIMAL,
+		JOINT_RIGHT_THUMB_PHALANX_DISTAL,
+		JOINT_RIGHT_THUMB_TIP,
+		JOINT_RIGHT_INDEX_FINGER_METACARPAL,
+		JOINT_RIGHT_INDEX_FINGER_PHALANX_PROXIMAL,
+		JOINT_RIGHT_INDEX_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_RIGHT_INDEX_FINGER_PHALANX_DISTAL,
+		JOINT_RIGHT_INDEX_FINGER_TIP,
+		JOINT_RIGHT_MIDDLE_FINGER_METACARPAL,
+		JOINT_RIGHT_MIDDLE_FINGER_PHALANX_PROXIMAL,
+		JOINT_RIGHT_MIDDLE_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_RIGHT_MIDDLE_FINGER_PHALANX_DISTAL,
+		JOINT_RIGHT_MIDDLE_FINGER_TIP,
+		JOINT_RIGHT_RING_FINGER_METACARPAL,
+		JOINT_RIGHT_RING_FINGER_PHALANX_PROXIMAL,
+		JOINT_RIGHT_RING_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_RIGHT_RING_FINGER_PHALANX_DISTAL,
+		JOINT_RIGHT_RING_FINGER_TIP,
+		JOINT_RIGHT_PINKY_FINGER_METACARPAL,
+		JOINT_RIGHT_PINKY_FINGER_PHALANX_PROXIMAL,
+		JOINT_RIGHT_PINKY_FINGER_PHALANX_INTERMEDIATE,
+		JOINT_RIGHT_PINKY_FINGER_PHALANX_DISTAL,
+		JOINT_RIGHT_PINKY_FINGER_TIP,
+
+		// Extra joints that aren't part of the Godot humanoid skeleton, but are commonly used in
+		// some VR avatars.
+		JOINT_LOWER_CHEST,
+		JOINT_LEFT_SCAPULA,
+		JOINT_LEFT_WRIST_TWIST,
+		JOINT_RIGHT_SCAPULA,
+		JOINT_RIGHT_WRIST_TWIST,
+		JOINT_LEFT_FOOT_TWIST,
+		JOINT_LEFT_HEEL,
+		JOINT_LEFT_MIDDLE_FOOT,
+		JOINT_RIGHT_FOOT_TWIST,
+		JOINT_RIGHT_HEEL,
+		JOINT_RIGHT_MIDDLE_FOOT,
+
+		JOINT_MAX,
+	};
+
+	enum JointFlags
+	{
+		JOINT_FLAG_ORIENTATION_VALID = 1,
+		JOINT_FLAG_ORIENTATION_TRACKED = 2,
+		JOINT_FLAG_POSITION_VALID = 4,
+		JOINT_FLAG_POSITION_TRACKED = 8,
+	};
+
+	enum HandTrackingSource
+	{
+		HAND_TRACKING_SOURCE_UNKNOWN,
+		HAND_TRACKING_SOURCE_UNOBSTRUCTED,
+		HAND_TRACKING_SOURCE_CONTROLLER,
+		HAND_TRACKING_SOURCE_NOT_TRACKED,
+		HAND_TRACKING_SOURCE_MAX
+	};
+
+	enum HandJoint
+	{
+		HAND_JOINT_PALM,
+		HAND_JOINT_WRIST,
+		HAND_JOINT_THUMB_METACARPAL,
+		HAND_JOINT_THUMB_PHALANX_PROXIMAL,
+		HAND_JOINT_THUMB_PHALANX_DISTAL,
+		HAND_JOINT_THUMB_TIP,
+		HAND_JOINT_INDEX_FINGER_METACARPAL,
+		HAND_JOINT_INDEX_FINGER_PHALANX_PROXIMAL,
+		HAND_JOINT_INDEX_FINGER_PHALANX_INTERMEDIATE,
+		HAND_JOINT_INDEX_FINGER_PHALANX_DISTAL,
+		HAND_JOINT_INDEX_FINGER_TIP,
+		HAND_JOINT_MIDDLE_FINGER_METACARPAL,
+		HAND_JOINT_MIDDLE_FINGER_PHALANX_PROXIMAL,
+		HAND_JOINT_MIDDLE_FINGER_PHALANX_INTERMEDIATE,
+		HAND_JOINT_MIDDLE_FINGER_PHALANX_DISTAL,
+		HAND_JOINT_MIDDLE_FINGER_TIP,
+		HAND_JOINT_RING_FINGER_METACARPAL,
+		HAND_JOINT_RING_FINGER_PHALANX_PROXIMAL,
+		HAND_JOINT_RING_FINGER_PHALANX_INTERMEDIATE,
+		HAND_JOINT_RING_FINGER_PHALANX_DISTAL,
+		HAND_JOINT_RING_FINGER_TIP,
+		HAND_JOINT_PINKY_FINGER_METACARPAL,
+		HAND_JOINT_PINKY_FINGER_PHALANX_PROXIMAL,
+		HAND_JOINT_PINKY_FINGER_PHALANX_INTERMEDIATE,
+		HAND_JOINT_PINKY_FINGER_PHALANX_DISTAL,
+		HAND_JOINT_PINKY_FINGER_TIP,
+		HAND_JOINT_MAX,
+	};
+
+	enum HandJointFlags
+	{
+		HAND_JOINT_FLAG_ORIENTATION_VALID = 1,
+		HAND_JOINT_FLAG_ORIENTATION_TRACKED = 2,
+		HAND_JOINT_FLAG_POSITION_VALID = 4,
+		HAND_JOINT_FLAG_POSITION_TRACKED = 8,
+		HAND_JOINT_FLAG_LINEAR_VELOCITY_VALID = 16,
+		HAND_JOINT_FLAG_ANGULAR_VELOCITY_VALID = 32,
+	};
+
+	enum BlendShapeEntry
+	{
+		// Base Shapes
+		FT_EYE_LOOK_OUT_RIGHT,		 // Right eye looks outwards.
+		FT_EYE_LOOK_IN_RIGHT,		 // Right eye looks inwards.
+		FT_EYE_LOOK_UP_RIGHT,		 // Right eye looks upwards.
+		FT_EYE_LOOK_DOWN_RIGHT,		 // Right eye looks downwards.
+		FT_EYE_LOOK_OUT_LEFT,		 // Left eye looks outwards.
+		FT_EYE_LOOK_IN_LEFT,		 // Left eye looks inwards.
+		FT_EYE_LOOK_UP_LEFT,		 // Left eye looks upwards.
+		FT_EYE_LOOK_DOWN_LEFT,		 // Left eye looks downwards.
+		FT_EYE_CLOSED_RIGHT,		 // Closes the right eyelid.
+		FT_EYE_CLOSED_LEFT,			 // Closes the left eyelid.
+		FT_EYE_SQUINT_RIGHT,		 // Squeezes the right eye socket muscles.
+		FT_EYE_SQUINT_LEFT,			 // Squeezes the left eye socket muscles.
+		FT_EYE_WIDE_RIGHT,			 // Right eyelid widens beyond relaxed.
+		FT_EYE_WIDE_LEFT,			 // Left eyelid widens beyond relaxed.
+		FT_EYE_DILATION_RIGHT,		 // Dilates the right eye pupil.
+		FT_EYE_DILATION_LEFT,		 // Dilates the left eye pupil.
+		FT_EYE_CONSTRICT_RIGHT,		 // Constricts the right eye pupil.
+		FT_EYE_CONSTRICT_LEFT,		 // Constricts the left eye pupil.
+		FT_BROW_PINCH_RIGHT,		 // Right eyebrow pinches in.
+		FT_BROW_PINCH_LEFT,			 // Left eyebrow pinches in.
+		FT_BROW_LOWERER_RIGHT,		 // Outer right eyebrow pulls down.
+		FT_BROW_LOWERER_LEFT,		 // Outer left eyebrow pulls down.
+		FT_BROW_INNER_UP_RIGHT,		 // Inner right eyebrow pulls up.
+		FT_BROW_INNER_UP_LEFT,		 // Inner left eyebrow pulls up.
+		FT_BROW_OUTER_UP_RIGHT,		 // Outer right eyebrow pulls up.
+		FT_BROW_OUTER_UP_LEFT,		 // Outer left eyebrow pulls up.
+		FT_NOSE_SNEER_RIGHT,		 // Right side face sneers.
+		FT_NOSE_SNEER_LEFT,			 // Left side face sneers.
+		FT_NASAL_DILATION_RIGHT,	 // Right side nose canal dilates.
+		FT_NASAL_DILATION_LEFT,		 // Left side nose canal dilates.
+		FT_NASAL_CONSTRICT_RIGHT,	 // Right side nose canal constricts.
+		FT_NASAL_CONSTRICT_LEFT,	 // Left side nose canal constricts.
+		FT_CHEEK_SQUINT_RIGHT,		 // Raises the right side cheek.
+		FT_CHEEK_SQUINT_LEFT,		 // Raises the left side cheek.
+		FT_CHEEK_PUFF_RIGHT,		 // Puffs the right side cheek.
+		FT_CHEEK_PUFF_LEFT,			 // Puffs the left side cheek.
+		FT_CHEEK_SUCK_RIGHT,		 // Sucks in the right side cheek.
+		FT_CHEEK_SUCK_LEFT,			 // Sucks in the left side cheek.
+		FT_JAW_OPEN,				 // Opens jawbone.
+		FT_MOUTH_CLOSED,			 // Closes the mouth.
+		FT_JAW_RIGHT,				 // Pushes jawbone right.
+		FT_JAW_LEFT,				 // Pushes jawbone left.
+		FT_JAW_FORWARD,				 // Pushes jawbone forward.
+		FT_JAW_BACKWARD,			 // Pushes jawbone backward.
+		FT_JAW_CLENCH,				 // Flexes jaw muscles.
+		FT_JAW_MANDIBLE_RAISE,		 // Raises the jawbone.
+		FT_LIP_SUCK_UPPER_RIGHT,	 // Upper right lip part tucks in the mouth.
+		FT_LIP_SUCK_UPPER_LEFT,		 // Upper left lip part tucks in the mouth.
+		FT_LIP_SUCK_LOWER_RIGHT,	 // Lower right lip part tucks in the mouth.
+		FT_LIP_SUCK_LOWER_LEFT,		 // Lower left lip part tucks in the mouth.
+		FT_LIP_SUCK_CORNER_RIGHT,	 // Right lip corner folds into the mouth.
+		FT_LIP_SUCK_CORNER_LEFT,	 // Left lip corner folds into the mouth.
+		FT_LIP_FUNNEL_UPPER_RIGHT,	 // Upper right lip part pushes into a funnel.
+		FT_LIP_FUNNEL_UPPER_LEFT,	 // Upper left lip part pushes into a funnel.
+		FT_LIP_FUNNEL_LOWER_RIGHT,	 // Lower right lip part pushes into a funnel.
+		FT_LIP_FUNNEL_LOWER_LEFT,	 // Lower left lip part pushes into a funnel.
+		FT_LIP_PUCKER_UPPER_RIGHT,	 // Upper right lip part pushes outwards.
+		FT_LIP_PUCKER_UPPER_LEFT,	 // Upper left lip part pushes outwards.
+		FT_LIP_PUCKER_LOWER_RIGHT,	 // Lower right lip part pushes outwards.
+		FT_LIP_PUCKER_LOWER_LEFT,	 // Lower left lip part pushes outwards.
+		FT_MOUTH_UPPER_UP_RIGHT,	 // Upper right part of the lip pulls up.
+		FT_MOUTH_UPPER_UP_LEFT,		 // Upper left part of the lip pulls up.
+		FT_MOUTH_LOWER_DOWN_RIGHT,	 // Lower right part of the lip pulls up.
+		FT_MOUTH_LOWER_DOWN_LEFT,	 // Lower left part of the lip pulls up.
+		FT_MOUTH_UPPER_DEEPEN_RIGHT, // Upper right lip part pushes in the cheek.
+		FT_MOUTH_UPPER_DEEPEN_LEFT,	 // Upper left lip part pushes in the cheek.
+		FT_MOUTH_UPPER_RIGHT,		 // Moves upper lip right.
+		FT_MOUTH_UPPER_LEFT,		 // Moves upper lip left.
+		FT_MOUTH_LOWER_RIGHT,		 // Moves lower lip right.
+		FT_MOUTH_LOWER_LEFT,		 // Moves lower lip left.
+		FT_MOUTH_CORNER_PULL_RIGHT,	 // Right lip corner pulls diagonally up and out.
+		FT_MOUTH_CORNER_PULL_LEFT,	 // Left lip corner pulls diagonally up and out.
+		FT_MOUTH_CORNER_SLANT_RIGHT, // Right corner lip slants up.
+		FT_MOUTH_CORNER_SLANT_LEFT,	 // Left corner lip slants up.
+		FT_MOUTH_FROWN_RIGHT,		 // Right corner lip pulls down.
+		FT_MOUTH_FROWN_LEFT,		 // Left corner lip pulls down.
+		FT_MOUTH_STRETCH_RIGHT,		 // Mouth corner lip pulls out and down.
+		FT_MOUTH_STRETCH_LEFT,		 // Mouth corner lip pulls out and down.
+		FT_MOUTH_DIMPLE_RIGHT,		 // Right lip corner is pushed backwards.
+		FT_MOUTH_DIMPLE_LEFT,		 // Left lip corner is pushed backwards.
+		FT_MOUTH_RAISER_UPPER,		 // Raises and slightly pushes out the upper mouth.
+		FT_MOUTH_RAISER_LOWER,		 // Raises and slightly pushes out the lower mouth.
+		FT_MOUTH_PRESS_RIGHT,		 // Right side lips press and flatten together vertically.
+		FT_MOUTH_PRESS_LEFT,		 // Left side lips press and flatten together vertically.
+		FT_MOUTH_TIGHTENER_RIGHT,	 // Right side lips squeeze together horizontally.
+		FT_MOUTH_TIGHTENER_LEFT,	 // Left side lips squeeze together horizontally.
+		FT_TONGUE_OUT,				 // Tongue visibly sticks out of the mouth.
+		FT_TONGUE_UP,				 // Tongue points upwards.
+		FT_TONGUE_DOWN,				 // Tongue points downwards.
+		FT_TONGUE_RIGHT,			 // Tongue points right.
+		FT_TONGUE_LEFT,				 // Tongue points left.
+		FT_TONGUE_ROLL,				 // Sides of the tongue funnel, creating a roll.
+		FT_TONGUE_BLEND_DOWN,		 // Tongue arches up then down inside the mouth.
+		FT_TONGUE_CURL_UP,			 // Tongue arches down then up inside the mouth.
+		FT_TONGUE_SQUISH,			 // Tongue squishes together and thickens.
+		FT_TONGUE_FLAT,				 // Tongue flattens and thins out.
+		FT_TONGUE_TWIST_RIGHT, // Tongue tip rotates clockwise, with the rest following gradually.
+		FT_TONGUE_TWIST_LEFT,  // Tongue tip rotates counter-clockwise, with the rest following
+							   // gradually.
+		FT_SOFT_PALATE_CLOSE,  // Inner mouth throat closes.
+		FT_THROAT_SWALLOW,	   // The Adam's apple visibly swallows.
+		FT_NECK_FLEX_RIGHT,	   // Right side neck visibly flexes.
+		FT_NECK_FLEX_LEFT,	   // Left side neck visibly flexes.
+		// Blended Shapes
+		FT_EYE_CLOSED,		  // Closes both eye lids.
+		FT_EYE_WIDE,		  // Widens both eye lids.
+		FT_EYE_SQUINT,		  // Squints both eye lids.
+		FT_EYE_DILATION,	  // Dilates both pupils.
+		FT_EYE_CONSTRICT,	  // Constricts both pupils.
+		FT_BROW_DOWN_RIGHT,	  // Pulls the right eyebrow down and in.
+		FT_BROW_DOWN_LEFT,	  // Pulls the left eyebrow down and in.
+		FT_BROW_DOWN,		  // Pulls both eyebrows down and in.
+		FT_BROW_UP_RIGHT,	  // Right brow appears worried.
+		FT_BROW_UP_LEFT,	  // Left brow appears worried.
+		FT_BROW_UP,			  // Both brows appear worried.
+		FT_NOSE_SNEER,		  // Entire face sneers.
+		FT_NASAL_DILATION,	  // Both nose canals dilate.
+		FT_NASAL_CONSTRICT,	  // Both nose canals constrict.
+		FT_CHEEK_PUFF,		  // Puffs both cheeks.
+		FT_CHEEK_SUCK,		  // Sucks in both cheeks.
+		FT_CHEEK_SQUINT,	  // Raises both cheeks.
+		FT_LIP_SUCK_UPPER,	  // Tucks in the upper lips.
+		FT_LIP_SUCK_LOWER,	  // Tucks in the lower lips.
+		FT_LIP_SUCK,		  // Tucks in both lips.
+		FT_LIP_FUNNEL_UPPER,  // Funnels in the upper lips.
+		FT_LIP_FUNNEL_LOWER,  // Funnels in the lower lips.
+		FT_LIP_FUNNEL,		  // Funnels in both lips.
+		FT_LIP_PUCKER_UPPER,  // Upper lip part pushes outwards.
+		FT_LIP_PUCKER_LOWER,  // Lower lip part pushes outwards.
+		FT_LIP_PUCKER,		  // Lips push outwards.
+		FT_MOUTH_UPPER_UP,	  // Raises the upper lips.
+		FT_MOUTH_LOWER_DOWN,  // Lowers the lower lips.
+		FT_MOUTH_OPEN,		  // Mouth opens, revealing teeth.
+		FT_MOUTH_RIGHT,		  // Moves mouth right.
+		FT_MOUTH_LEFT,		  // Moves mouth left.
+		FT_MOUTH_SMILE_RIGHT, // Right side of the mouth smiles.
+		FT_MOUTH_SMILE_LEFT,  // Left side of the mouth smiles.
+		FT_MOUTH_SMILE,		  // Mouth expresses a smile.
+		FT_MOUTH_SAD_RIGHT,	  // Right side of the mouth expresses sadness.
+		FT_MOUTH_SAD_LEFT,	  // Left side of the mouth expresses sadness.
+		FT_MOUTH_SAD,		  // Mouth expresses sadness.
+		FT_MOUTH_STRETCH,	  // Mouth stretches.
+		FT_MOUTH_DIMPLE,	  // Lip corners dimple.
+		FT_MOUTH_TIGHTENER,	  // Mouth tightens.
+		FT_MOUTH_PRESS,		  // Mouth presses together.
+		FT_MAX				  // Maximum blend shape.
+	};
+
+	struct InputValue
+	{
+		enum Type
+		{
+			INPUT_NONE,
+			INPUT_BOOL,
+			INPUT_FLOAT,
+			INPUT_VECTOR2,
+		};
+		Type type = INPUT_NONE;
+		union
+		{
+			bool bool_val;
+			float float_val;
+			struct
+			{
+				real_t x;
+				real_t y;
+			} vec2_val;
+		};
+
+		InputValue() : type(INPUT_NONE), vec2_val{0, 0} {}
+	};
+
+protected:
+	XRServer::TrackerType type = XRServer::TRACKER_UNKNOWN;
+	String name = "Unknown";
+	String description;
+	String profile;
+	TrackerHand tracker_hand = TRACKER_HAND_UNKNOWN;
+	bool has_tracking_data = false;
+
+	HashMap<String, Ref<XRPose>> poses;
+	HashMap<String, InputValue> inputs;
+
+private:
+	struct BodyData
+	{
+		uint32_t body_flags = 0;
+		uint32_t joint_flags[JOINT_MAX] = {};
+		Transform3D joint_transforms[JOINT_MAX];
+	};
+
+	struct HandData
+	{
+		HandTrackingSource hand_tracking_source = HAND_TRACKING_SOURCE_UNKNOWN;
+		uint32_t hand_joint_flags[HAND_JOINT_MAX] = {};
+		Transform3D hand_joint_transforms[HAND_JOINT_MAX];
+		float hand_joint_radii[HAND_JOINT_MAX] = {};
+		Vector3 hand_joint_linear_velocities[HAND_JOINT_MAX];
+		Vector3 hand_joint_angular_velocities[HAND_JOINT_MAX];
+	};
+
+	BodyData* body_data = nullptr;
+	HandData* hand_data = nullptr;
+	PackedFloat32Array blend_shapes;
+	Ref<RefCounted> custom_data;
+
+	BodyData* _ensure_body_data();
+	HandData* _ensure_hand_data();
+
+public:
+	void set_custom_data(const Ref<RefCounted>& p_custom_data) { custom_data = p_custom_data; }
+	Ref<RefCounted> get_custom_data() const { return custom_data; }
+	void set_tracker_type(XRServer::TrackerType p_type);
+	XRServer::TrackerType get_tracker_type() const;
+	void set_tracker_name(const String& p_name);
+	String get_tracker_name() const;
+	void set_tracker_desc(const String& p_desc);
+	String get_tracker_desc() const;
+
+	void set_tracker_profile(const String& p_profile);
+	String get_tracker_profile() const;
+
+	TrackerHand get_tracker_hand() const;
+	void set_tracker_hand(const TrackerHand p_hand);
+
+	void set_has_tracking_data(bool p_has_tracking_data);
+	bool get_has_tracking_data() const;
+
+	// Positional poses
+	bool has_pose(const String& p_action_name) const;
+	Ref<XRPose> get_pose(const String& p_action_name) const;
+	void invalidate_pose(const String& p_action_name);
+	void set_pose(const String& p_action_name, const Transform3D& p_transform,
+		const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
+		const XRPose::TrackingConfidence p_tracking_confidence =
+			XRPose::XR_TRACKING_CONFIDENCE_HIGH);
+
+	// Controller inputs
+	void set_input(const String& p_action_name, bool p_value);
+	void set_input(const String& p_action_name, float p_value);
+	void set_input(const String& p_action_name, const Vector2& p_value);
+	InputValue get_input(const String& p_action_name) const;
+	bool is_button_pressed(const String& p_action_name) const;
+	float get_input_float(const String& p_action_name) const;
+	Vector2 get_input_vector2(const String& p_action_name) const;
+
+	// Body tracking
+	void set_body_flags(uint32_t p_body_flags);
+	uint32_t get_body_flags() const;
+
+	void set_joint_flags(Joint p_joint, uint32_t p_flags);
+	uint32_t get_joint_flags(Joint p_joint) const;
+
+	void set_joint_transform(Joint p_joint, const Transform3D& p_transform);
+	Transform3D get_joint_transform(Joint p_joint) const;
+
+	// Hand tracking
+	void set_hand_tracking_source(HandTrackingSource p_source);
+	HandTrackingSource get_hand_tracking_source() const;
+
+	void set_hand_joint_flags(HandJoint p_joint, uint32_t p_flags);
+	uint32_t get_hand_joint_flags(HandJoint p_joint) const;
+
+	void set_hand_joint_transform(HandJoint p_joint, const Transform3D& p_transform);
+	Transform3D get_hand_joint_transform(HandJoint p_joint) const;
+
+	void set_hand_joint_radius(HandJoint p_joint, float p_radius);
+	float get_hand_joint_radius(HandJoint p_joint) const;
+
+	void set_hand_joint_linear_velocity(HandJoint p_joint, const Vector3& p_velocity);
+	Vector3 get_hand_joint_linear_velocity(HandJoint p_joint) const;
+
+	void set_hand_joint_angular_velocity(HandJoint p_joint, const Vector3& p_velocity);
+	Vector3 get_hand_joint_angular_velocity(HandJoint p_joint) const;
+
+	// Face tracking
+	float get_blend_shape(BlendShapeEntry p_blend_shape) const;
+	void set_blend_shape(BlendShapeEntry p_blend_shape, float p_value);
+
+	PackedFloat32Array get_blend_shapes() const;
+	void set_blend_shapes(const PackedFloat32Array& p_blend_shapes);
+
+	XRTracker(XRServer::TrackerType p_type = XRServer::TRACKER_UNKNOWN);
+	~XRTracker() override;
+};
+
+// --- Folded from servers/xr/xr_interface.h ---
+#include "core/os/os.h"
+#include "core/types.h"
+#include "servers/rendering/rendering_device.h"
+/**
+	The XR interface is a template class on top of which we build interface to different AR, VR and
+   tracking SDKs. The idea is that we subclass this class, implement the logic, and then instantiate
+   a singleton of each interface when Godot starts. These instances do not initialize themselves but
+   register themselves with the AR/VR server.
+
+	If the user wants to enable AR/VR, they can choose the interface they want to use and initialize
+   it.
+
+	Note that we may make this into a fully instantiable class for GDExtension support.
+*/
+
+struct Projection;
+
+namespace RenderingServerTypes
+{
+struct BlitToScreen;
+}
+
+class XRInterface : public RefCounted
+{
+public:
+	enum Capabilities
+	{				   /* purely metadata, provides some info about what this interface supports */
+		XR_NONE = 0,   /* no capabilities */
+		XR_MONO = 1,   /* can be used with mono output */
+		XR_STEREO = 2, /* can be used with stereo output */
+		XR_QUAD = 4,   /* can be used with quad output (not currently supported) */
+		XR_VR = 8,	   /* offers VR support */
+		XR_AR = 16,	   /* offers AR support */
+		XR_EXTERNAL = 32 /* renders to external device */
+	};
+
+	enum TrackingStatus
+	{ /* tracking status currently based on AR but we can start doing more with this for VR as well
+	   */
+		XR_NORMAL_TRACKING,
+		XR_EXCESSIVE_MOTION,
+		XR_INSUFFICIENT_FEATURES,
+		XR_UNKNOWN_TRACKING,
+		XR_NOT_TRACKING
+	};
+
+	enum PlayAreaMode
+	{						  /* defines the mode used by the XR interface for tracking */
+		XR_PLAY_AREA_UNKNOWN, /* Area mode not set or not available */
+		XR_PLAY_AREA_3DOF, /* Only support orientation tracking, no positional tracking, area will
+							  center around player */
+		XR_PLAY_AREA_SITTING,	/* Player is in seated position, limited positional tracking, fixed
+								   guardian around player */
+		XR_PLAY_AREA_ROOMSCALE, /* Player is free to move around, full positional tracking */
+		XR_PLAY_AREA_STAGE,		/* Same as roomscale but origin point is fixed to the center of the
+								   physical space */
+		XR_PLAY_AREA_CUSTOM = 0x7FFFFFFF, /* Used to denote that a custom, possibly non-standard,
+											 play area is being used */
+	};
+
+	enum EnvironmentBlendMode
+	{
+		XR_ENV_BLEND_MODE_OPAQUE,	   /* You cannot see the real world, VR like */
+		XR_ENV_BLEND_MODE_ADDITIVE,	   /* You can see the real world, AR like */
+		XR_ENV_BLEND_MODE_ALPHA_BLEND, /* Real world is passed through where alpha channel is 0.0
+										  and gradually blends to opaque for value 1.0. */
+	};
+
+	enum VRSTextureFormat
+	{
+		XR_VRS_TEXTURE_FORMAT_UNIFIED,
+		XR_VRS_TEXTURE_FORMAT_FRAGMENT_SHADING_RATE,
+		XR_VRS_TEXTURE_FORMAT_FRAGMENT_DENSITY_MAP,
+	};
+
+protected:
+	_THREAD_SAFE_CLASS_
+
+public:
+	virtual PackedStringArray get_suggested_tracker_names() const; /* return a list of likely/suggested tracker names */
+	virtual PackedStringArray get_suggested_pose_names(const String& p_tracker_name)
+		const; /* return a list of likely/suggested action names for this tracker */
+	virtual TrackingStatus get_tracking_status() const; /* get the status of our current tracking */
+	virtual void trigger_haptic_pulse(const String& p_action_name, const String& p_tracker_name,
+		double p_frequency, double p_amplitude, double p_duration_sec,
+		double p_delay_sec = 0); /* trigger a haptic pulse */
+
+	/** general interface information **/
+	virtual String get_name() const;
+	virtual uint32_t get_capabilities() const;
+
+	bool is_primary();
+	void set_primary(bool p_is_primary);
+
+	virtual bool is_initialized() const; /* returns true if we've initialized this interface */
+	virtual bool initialize();	 /* initialize this interface, if this has an HMD it becomes the
+										primary interface */
+	virtual void uninitialize(); /* deinitialize this interface */
+
+	/** specific to VR **/
+	virtual bool supports_play_area_mode(XRInterface::PlayAreaMode
+			p_mode); /* query if this interface supports this play area mode */
+	virtual XRInterface::PlayAreaMode get_play_area_mode() const; /* get the current play area mode */
+	virtual bool set_play_area_mode(
+		XRInterface::PlayAreaMode p_mode); /* change the play area mode, note that this should
+											  return false if the mode is not available */
+	virtual PackedVector3Array get_play_area() const; /* if available, returns an array of vectors denoting the play area the
+							  player can move around in */
+
+	/** specific to AR **/
+	virtual bool get_anchor_detection_is_enabled() const;
+	virtual void set_anchor_detection_is_enabled(bool p_enable);
+	virtual int get_camera_feed_id();
+
+	/** rendering and internal **/
+
+	// These methods are called from the main thread.
+	virtual Transform3D get_camera_transform(); /* returns the position of our camera, only used for updating
+								   reference frame. For monoscopic this is equal to the views
+								   transform, for stereoscopic this should be an average */
+	virtual void process();
+
+	// These methods can be called from both main and render thread.
+	virtual Size2 get_render_target_size(); /* returns the recommended render target size per
+												   eye for this device */
+	virtual uint32_t get_view_count();		/* returns the view count we need (1 is monoscopic, 2 is
+												   stereoscopic but can be more) */
+
+	// These methods are called from the rendering thread.
+	virtual Transform3D get_transform_for_view(
+		uint32_t p_view, const Transform3D& p_cam_transform); /* get each views transform */
+	virtual Projection get_projection_for_view(uint32_t p_view, double p_aspect, double p_z_near,
+		double p_z_far);			 /* get each view projection matrix */
+	virtual RID get_color_texture(); /* obtain color output texture (if applicable) */
+	virtual RID get_depth_texture(); /* obtain depth output texture (if applicable, used for reprojection) */
+	virtual RID get_velocity_texture(); /* obtain velocity output texture (if applicable, used for spacewarp) */
+	virtual RID get_velocity_depth_texture();
+	virtual Size2i get_velocity_target_size();
+	virtual Rect2i get_render_region();
+
+	virtual void pre_render() {}
+
+	virtual bool pre_draw_viewport(RID p_render_target)
+	{
+		return true;
+	} /* inform XR interface we are about to start our viewport draw process */
+
+	virtual Vector<RenderingServerTypes::BlitToScreen> post_draw_viewport(RID p_render_target,
+		const Rect2& p_screen_rect); /* inform XR interface we finished our viewport draw process */
+
+	virtual void end_frame() {}
+
+	/** passthrough **/
+
+	virtual bool is_passthrough_supported() { return false; }
+
+	virtual bool is_passthrough_enabled() { return false; }
+
+	virtual bool start_passthrough() { return false; }
+
+	virtual void stop_passthrough() {}
+
+	virtual XRInterface::EnvironmentBlendMode get_environment_blend_mode() const
+	{
+		return XR_ENV_BLEND_MODE_OPAQUE;
+	}
+
+	virtual bool set_environment_blend_mode(EnvironmentBlendMode mode) { return false; }
+
+	/** VRS **/
+	virtual RID get_vrs_texture(); /* obtain VRS texture */
+
+	virtual VRSTextureFormat get_vrs_texture_format() { return XR_VRS_TEXTURE_FORMAT_UNIFIED; }
+
+	XRInterface() = default;
+	~XRInterface() = default;
+};
+
+/* Helper class for generating stereoscopic VRS images */
+
+class XRVRS final
+{
+private:
+	float vrs_min_radius = 20.0f;
+	float vrs_strength = 1.0f;
+	Rect2i vrs_render_region;
+	bool vrs_dirty = true;
+
+	RID vrs_texture;
+	Size2i target_size;
+	Vector<Vector2> eye_foci;
+
+public:
+	~XRVRS();
+
+	float get_vrs_min_radius() const;
+	void set_vrs_min_radius(float p_vrs_min_radius);
+	float get_vrs_strength() const;
+	void set_vrs_strength(float p_vrs_strength);
+	Rect2i get_vrs_render_region() const;
+	void set_vrs_render_region(const Rect2i& p_vrs_render_region);
+
+	RID make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p_eye_foci);
+};
+// --- End servers/xr/xr_interface.h ---
+
+// --- Folded from servers/camera/camera_server.h ---
+#include "core/os/os.h"
+#include "core/templates/hashfuncs.h"
+#include "core/types.h"
+
+/**
+	The camera server is a singleton object that gives access to the various
+	camera feeds that can be used as the background for our environment.
+**/
+
+class CameraFeed;
+template <typename T> class TypedArray;
+
+class CameraServer final
+{
+	static inline Mutex _thread_safe_;
+
+public:
+	enum FeedImage
+	{
+		FEED_RGBA_IMAGE = 0,
+		FEED_YCBCR_IMAGE = 0,
+		FEED_Y_IMAGE = 0,
+		FEED_CBCR_IMAGE = 1,
+		FEED_IMAGES = 2
+	};
+
+	static inline constexpr const char feeds_updated_signal_name[] = "camera_feeds_updated";
+
+	struct Data
+	{
+		bool monitoring_feeds = false;
+		Vector<Ref<CameraFeed>> feeds;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void _default_initialize_backend() {}
+	static void _default_finalize_backend() {}
+	static void _default_set_monitoring_feeds(bool p_monitoring_feeds);
+	static void _default_handle_application_pause() {}
+	static void _default_handle_application_resume() {}
+	static void _default_handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
+
+	inline static void (*_initialize_backend)() = &_default_initialize_backend;
+	inline static void (*_finalize_backend)() = &_default_finalize_backend;
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static void set_monitoring_feeds_state(bool p_monitoring_feeds);
+	_FORCE_INLINE_ static bool is_monitoring_feeds()
+	{
+		return data ? data->monitoring_feeds : false;
+	}
+
+	inline static void (*set_monitoring_feeds)(
+		bool p_monitoring_feeds) = &_default_set_monitoring_feeds;
+	inline static void (*handle_application_pause)() = &_default_handle_application_pause;
+	inline static void (*handle_application_resume)() = &_default_handle_application_resume;
+	inline static void (*handle_display_rotation_change)(
+		int p_orientation) = &_default_handle_display_rotation_change;
+
+	template <typename Impl> static void bind()
+	{
+		_initialize_backend = &Impl::initialize;
+		_finalize_backend = &Impl::finalize;
+		set_monitoring_feeds = &Impl::set_monitoring_feeds;
+		handle_application_pause = &Impl::handle_application_pause;
+		handle_application_resume = &Impl::handle_application_resume;
+		handle_display_rotation_change = &Impl::handle_display_rotation_change;
+	}
+
+	static void reset_backend()
+	{
+		_initialize_backend = &_default_initialize_backend;
+		_finalize_backend = &_default_finalize_backend;
+		set_monitoring_feeds = &_default_set_monitoring_feeds;
+		handle_application_pause = &_default_handle_application_pause;
+		handle_application_resume = &_default_handle_application_resume;
+		handle_display_rotation_change = &_default_handle_display_rotation_change;
+	}
+
+	// Right now we identify our feed by it's ID when it's used in the background.
+	// May see if we can change this to purely relying on CameraFeed objects or by name.
+	static int get_free_id();
+	static int get_feed_index(int p_id);
+	static Ref<CameraFeed> get_feed_by_id(int p_id);
+
+	// Add and remove feeds.
+	static void add_feed(const Ref<CameraFeed>& p_feed);
+	static void remove_feed(const Ref<CameraFeed>& p_feed);
+
+	// Get our feeds.
+	static Ref<CameraFeed> get_feed(int p_index);
+	static int get_feed_count();
+
+	// Intended for use with custom CameraServer implementation.
+	static RID feed_texture(int p_id, FeedImage p_texture);
+
+	CameraServer() = delete;
+	CameraServer(const CameraServer&) = delete;
+	CameraServer& operator=(const CameraServer&) = delete;
+	~CameraServer() = delete;
+};
+
+// --- Folded from servers/camera/camera_feed.h ---
+#include "core/io/image.h"
+#include "core/types.h"
+
+/**
+	The camera server is a singleton object that gives access to the various
+	camera feeds that can be used as the background for our environment.
+**/
+
+class CameraFeed : public RefCounted
+{
+public:
+	enum FeedDataType
+	{
+		FEED_NOIMAGE, // we don't have an image yet
+		FEED_RGB,	  // our texture will contain a normal RGB texture that can be used directly
+		FEED_YCBCR,	  // our texture will contain a YCbCr texture that needs to be converted to RGB
+					  // before output
+		FEED_YCBCR_SEP, // our camera is split into two textures, first plane contains Y data,
+						// second plane contains CbCr data
+		FEED_EXTERNAL,	// specific for android atm, camera feed is managed externally, assumed RGB
+						// for now
+	};
+
+	enum FeedPosition
+	{
+		FEED_UNSPECIFIED, // we have no idea
+		FEED_FRONT,		  // this is a camera on the front of the device
+		FEED_BACK		  // this is a camera on the back of the device
+	};
+
+private:
+	int id; // unique id for this, for internal use in case feeds are removed
+	const String format_changed_signal_name = "format_changed";
+	const String frame_changed_signal_name = "frame_changed";
+
+protected:
+	struct FeedFormat
+	{
+		int width = 0;
+		int height = 0;
+		String format;
+		int frame_numerator = 0;
+		int frame_denominator = 0;
+		uint32_t pixel_format = 0;
+	};
+
+	String name;		   // name of our camera feed
+	FeedDataType datatype; // type of texture data stored
+	FeedPosition position; // position of camera on the device
+	Transform2D transform; // display transform
+	int base_width = 0;
+	int base_height = 0;
+	Vector<FeedFormat> formats;
+	int selected_format = -1;
+
+	bool active; // only when active do we actually update the camera texture each frame
+	RID texture[CameraServer::FEED_IMAGES]; // texture images needed for this
+
+
+public:
+	int get_id() const;
+	bool is_active() const;
+	void set_active(bool p_is_active);
+
+	String get_name() const;
+	void set_name(String p_name);
+
+	int get_base_width() const;
+	int get_base_height() const;
+
+	FeedPosition get_position() const;
+	void set_position(FeedPosition p_position);
+
+	Transform2D get_transform() const;
+	void set_transform(const Transform2D& p_transform);
+
+	RID get_texture(CameraServer::FeedImage p_which);
+	uint64_t get_texture_tex_id(CameraServer::FeedImage p_which);
+
+	CameraFeed();
+	CameraFeed(String p_name, FeedPosition p_position = CameraFeed::FEED_UNSPECIFIED);
+	virtual ~CameraFeed();
+
+	FeedDataType get_datatype() const;
+	void set_rgb_image(const Ref<Image>& p_rgb_img);
+	void set_ycbcr_image(const Ref<Image>& p_ycbcr_img);
+	void set_ycbcr_images(const Ref<Image>& p_y_img, const Ref<Image>& p_cbcr_img);
+	void set_external(int p_width, int p_height);
+
+	virtual FeedFormat get_format() const;
+
+	virtual bool activate_feed();
+	virtual void deactivate_feed();
+};
+
+// --- Folded from modules/camera/camera_apple.h ---
+#if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
+///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
+// If you fix something here, make sure you fix it there as well!
+
+
+
+class CameraApple final
+{
+public:
+	static void initialize() {}
+	static void finalize();
+
+	static void update_feeds();
+	static void set_monitoring_feeds(bool p_monitoring_feeds);
+	static void handle_display_rotation_change(int p_orientation);
+	static void handle_application_pause();
+	static void handle_application_resume();
+
+	CameraApple() = delete;
+	CameraApple(const CameraApple&) = delete;
+	CameraApple& operator=(const CameraApple&) = delete;
+	~CameraApple() = delete;
+};
+#endif // defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
+// --- End modules/camera/camera_apple.h ---
+// --- End servers/camera/camera_server.h ---
+// --- End servers/xr/xr_server.h ---
 
 class InstanceUniforms final
 {
@@ -8698,7 +9785,7 @@ private:
 #endif
 };
 // --- Inlined/Folded from servers/rendering/renderer_canvas_render.h ---
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 class Renderer;
@@ -9265,7 +10352,7 @@ public:
     }
 };
 
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 class RendererCanvasCull
@@ -9724,3 +10811,4265 @@ public:
 
 // --- End servers/rendering/renderer_canvas_cull.h ---
 // --- End servers/rendering/renderer_viewport.h ---
+
+// --- Folded from servers/rendering/shader_language.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
+#include "core/templates/hash_map.h"
+#include "core/os/memory.h"
+#include "core/typedefs.h"
+#include "core/types.h"
+
+#ifdef DEBUG_ENABLED
+
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+
+class ShaderWarning final
+{
+public:
+	enum Code
+	{
+		FLOAT_COMPARISON,
+		UNUSED_CONSTANT,
+		UNUSED_FUNCTION,
+		UNUSED_STRUCT,
+		UNUSED_UNIFORM,
+		UNUSED_VARYING,
+		UNUSED_LOCAL_VARIABLE,
+		FORMATTING_ERROR,
+		DEVICE_LIMIT_EXCEEDED,
+		MAGIC_POSITION_WRITE,
+		WARNING_MAX,
+	};
+
+	enum CodeFlags : uint32_t
+	{
+		NONE_FLAG = 0U,
+		FLOAT_COMPARISON_FLAG = 1U,
+		UNUSED_CONSTANT_FLAG = 2U,
+		UNUSED_FUNCTION_FLAG = 4U,
+		UNUSED_STRUCT_FLAG = 8U,
+		UNUSED_UNIFORM_FLAG = 16U,
+		UNUSED_VARYING_FLAG = 32U,
+		UNUSED_LOCAL_VARIABLE_FLAG = 64U,
+		FORMATTING_ERROR_FLAG = 128U,
+		DEVICE_LIMIT_EXCEEDED_FLAG = 256U,
+		MAGIC_POSITION_WRITE_FLAG = 512U,
+	};
+
+private:
+	Code code;
+	int line;
+	String subject;
+
+public:
+	Code get_code() const;
+	int get_line() const;
+	const String& get_subject() const;
+	String get_message() const;
+	String get_name() const;
+
+	static String get_name_from_code(Code p_code);
+	static Code get_code_from_name(const String& p_name);
+	static CodeFlags get_flags_from_codemap(const HashMap<Code, bool>& p_map);
+};
+
+#endif // DEBUG_ENABLED
+
+class ShaderLanguage
+{
+public:
+	struct TkPos
+	{
+		int char_idx;
+		int tk_line;
+	};
+
+	enum TokenType
+	{
+		TK_EMPTY,
+		TK_IDENTIFIER,
+		TK_TRUE,
+		TK_FALSE,
+		TK_FLOAT_CONSTANT,
+		TK_INT_CONSTANT,
+		TK_UINT_CONSTANT,
+		TK_STRING_CONSTANT,
+		TK_TYPE_VOID,
+		TK_TYPE_BOOL,
+		TK_TYPE_BVEC2,
+		TK_TYPE_BVEC3,
+		TK_TYPE_BVEC4,
+		TK_TYPE_INT,
+		TK_TYPE_IVEC2,
+		TK_TYPE_IVEC3,
+		TK_TYPE_IVEC4,
+		TK_TYPE_UINT,
+		TK_TYPE_UVEC2,
+		TK_TYPE_UVEC3,
+		TK_TYPE_UVEC4,
+		TK_TYPE_FLOAT,
+		TK_TYPE_VEC2,
+		TK_TYPE_VEC3,
+		TK_TYPE_VEC4,
+		TK_TYPE_MAT2,
+		TK_TYPE_MAT3,
+		TK_TYPE_MAT4,
+		TK_TYPE_SAMPLER2D,
+		TK_TYPE_ISAMPLER2D,
+		TK_TYPE_USAMPLER2D,
+		TK_TYPE_SAMPLER2DARRAY,
+		TK_TYPE_ISAMPLER2DARRAY,
+		TK_TYPE_USAMPLER2DARRAY,
+		TK_TYPE_SAMPLER3D,
+		TK_TYPE_ISAMPLER3D,
+		TK_TYPE_USAMPLER3D,
+		TK_TYPE_SAMPLERCUBE,
+		TK_TYPE_SAMPLERCUBEARRAY,
+		TK_TYPE_SAMPLEREXT,
+		TK_INTERPOLATION_FLAT,
+		TK_INTERPOLATION_SMOOTH,
+		TK_CONST,
+		TK_STRUCT,
+		TK_PRECISION_LOW,
+		TK_PRECISION_MID,
+		TK_PRECISION_HIGH,
+		TK_OP_EQUAL,
+		TK_OP_NOT_EQUAL,
+		TK_OP_LESS,
+		TK_OP_LESS_EQUAL,
+		TK_OP_GREATER,
+		TK_OP_GREATER_EQUAL,
+		TK_OP_AND,
+		TK_OP_OR,
+		TK_OP_NOT,
+		TK_OP_ADD,
+		TK_OP_SUB,
+		TK_OP_MUL,
+		TK_OP_DIV,
+		TK_OP_MOD,
+		TK_OP_SHIFT_LEFT,
+		TK_OP_SHIFT_RIGHT,
+		TK_OP_ASSIGN,
+		TK_OP_ASSIGN_ADD,
+		TK_OP_ASSIGN_SUB,
+		TK_OP_ASSIGN_MUL,
+		TK_OP_ASSIGN_DIV,
+		TK_OP_ASSIGN_MOD,
+		TK_OP_ASSIGN_SHIFT_LEFT,
+		TK_OP_ASSIGN_SHIFT_RIGHT,
+		TK_OP_ASSIGN_BIT_AND,
+		TK_OP_ASSIGN_BIT_OR,
+		TK_OP_ASSIGN_BIT_XOR,
+		TK_OP_BIT_AND,
+		TK_OP_BIT_OR,
+		TK_OP_BIT_XOR,
+		TK_OP_BIT_INVERT,
+		TK_OP_INCREMENT,
+		TK_OP_DECREMENT,
+		TK_CF_IF,
+		TK_CF_ELSE,
+		TK_CF_FOR,
+		TK_CF_WHILE,
+		TK_CF_DO,
+		TK_CF_SWITCH,
+		TK_CF_CASE,
+		TK_CF_DEFAULT,
+		TK_CF_BREAK,
+		TK_CF_CONTINUE,
+		TK_CF_RETURN,
+		TK_CF_DISCARD,
+		TK_BRACKET_OPEN,
+		TK_BRACKET_CLOSE,
+		TK_CURLY_BRACKET_OPEN,
+		TK_CURLY_BRACKET_CLOSE,
+		TK_PARENTHESIS_OPEN,
+		TK_PARENTHESIS_CLOSE,
+		TK_QUESTION,
+		TK_COMMA,
+		TK_COLON,
+		TK_SEMICOLON,
+		TK_PERIOD,
+		TK_UNIFORM,
+		TK_UNIFORM_GROUP,
+		TK_INSTANCE,
+		TK_GLOBAL,
+		TK_VARYING,
+		TK_ARG_IN,
+		TK_ARG_OUT,
+		TK_ARG_INOUT,
+		TK_RENDER_MODE,
+		TK_STENCIL_MODE,
+		TK_HINT_DEFAULT_WHITE_TEXTURE,
+		TK_HINT_DEFAULT_BLACK_TEXTURE,
+		TK_HINT_DEFAULT_TRANSPARENT_TEXTURE,
+		TK_HINT_NORMAL_TEXTURE,
+		TK_HINT_ROUGHNESS_NORMAL_TEXTURE,
+		TK_HINT_ROUGHNESS_R,
+		TK_HINT_ROUGHNESS_G,
+		TK_HINT_ROUGHNESS_B,
+		TK_HINT_ROUGHNESS_A,
+		TK_HINT_ROUGHNESS_GRAY,
+		TK_HINT_ANISOTROPY_TEXTURE,
+		TK_HINT_SOURCE_COLOR,
+		TK_HINT_COLOR_CONVERSION_DISABLED,
+		TK_HINT_RANGE,
+		TK_HINT_ENUM,
+		TK_HINT_INSTANCE_INDEX,
+		TK_HINT_SCREEN_TEXTURE,
+		TK_HINT_NORMAL_ROUGHNESS_TEXTURE,
+		TK_HINT_DEPTH_TEXTURE,
+		TK_HINT_BLIT_SOURCE0,
+		TK_HINT_BLIT_SOURCE1,
+		TK_HINT_BLIT_SOURCE2,
+		TK_HINT_BLIT_SOURCE3,
+		TK_FILTER_NEAREST,
+		TK_FILTER_LINEAR,
+		TK_FILTER_NEAREST_MIPMAP,
+		TK_FILTER_LINEAR_MIPMAP,
+		TK_FILTER_NEAREST_MIPMAP_ANISOTROPIC,
+		TK_FILTER_LINEAR_MIPMAP_ANISOTROPIC,
+		TK_REPEAT_ENABLE,
+		TK_REPEAT_DISABLE,
+		TK_SHADER_TYPE,
+		TK_CURSOR,
+		TK_ERROR,
+		TK_EOF,
+		TK_MAX
+	};
+
+/* COMPILER */
+
+// lame work around to Apple defining this as a macro in 10.12 SDK
+#ifdef TYPE_BOOL
+#undef TYPE_BOOL
+#endif
+
+	enum DataType
+	{
+		TYPE_VOID,
+		TYPE_BOOL,
+		TYPE_BVEC2,
+		TYPE_BVEC3,
+		TYPE_BVEC4,
+		TYPE_INT,
+		TYPE_IVEC2,
+		TYPE_IVEC3,
+		TYPE_IVEC4,
+		TYPE_UINT,
+		TYPE_UVEC2,
+		TYPE_UVEC3,
+		TYPE_UVEC4,
+		TYPE_FLOAT,
+		TYPE_VEC2,
+		TYPE_VEC3,
+		TYPE_VEC4,
+		TYPE_MAT2,
+		TYPE_MAT3,
+		TYPE_MAT4,
+		TYPE_SAMPLER2D,
+		TYPE_ISAMPLER2D,
+		TYPE_USAMPLER2D,
+		TYPE_SAMPLER2DARRAY,
+		TYPE_ISAMPLER2DARRAY,
+		TYPE_USAMPLER2DARRAY,
+		TYPE_SAMPLER3D,
+		TYPE_ISAMPLER3D,
+		TYPE_USAMPLER3D,
+		TYPE_SAMPLERCUBE,
+		TYPE_SAMPLERCUBEARRAY,
+		TYPE_SAMPLEREXT,
+		TYPE_STRUCT,
+		TYPE_MAX
+	};
+
+	enum DataPrecision
+	{
+		PRECISION_LOWP,
+		PRECISION_MEDIUMP,
+		PRECISION_HIGHP,
+		PRECISION_DEFAULT,
+	};
+
+	enum DataInterpolation
+	{
+		INTERPOLATION_FLAT,
+		INTERPOLATION_SMOOTH,
+		INTERPOLATION_DEFAULT,
+	};
+
+	enum Operator
+	{
+		OP_EQUAL,
+		OP_NOT_EQUAL,
+		OP_LESS,
+		OP_LESS_EQUAL,
+		OP_GREATER,
+		OP_GREATER_EQUAL,
+		OP_AND,
+		OP_OR,
+		OP_NOT,
+		OP_NEGATE,
+		OP_ADD,
+		OP_SUB,
+		OP_MUL,
+		OP_DIV,
+		OP_MOD,
+		OP_SHIFT_LEFT,
+		OP_SHIFT_RIGHT,
+		OP_ASSIGN,
+		OP_ASSIGN_ADD,
+		OP_ASSIGN_SUB,
+		OP_ASSIGN_MUL,
+		OP_ASSIGN_DIV,
+		OP_ASSIGN_MOD,
+		OP_ASSIGN_SHIFT_LEFT,
+		OP_ASSIGN_SHIFT_RIGHT,
+		OP_ASSIGN_BIT_AND,
+		OP_ASSIGN_BIT_OR,
+		OP_ASSIGN_BIT_XOR,
+		OP_BIT_AND,
+		OP_BIT_OR,
+		OP_BIT_XOR,
+		OP_BIT_INVERT,
+		OP_INCREMENT,
+		OP_DECREMENT,
+		OP_SELECT_IF,
+		OP_SELECT_ELSE, // used only internally, then only IF appears with 3 arguments
+		OP_POST_INCREMENT,
+		OP_POST_DECREMENT,
+		OP_CALL,
+		OP_CONSTRUCT,
+		OP_STRUCT,
+		OP_INDEX,
+		OP_EMPTY,
+		OP_MAX
+	};
+
+	enum FlowOperation
+	{
+		FLOW_OP_IF,
+		FLOW_OP_RETURN,
+		FLOW_OP_FOR,
+		FLOW_OP_WHILE,
+		FLOW_OP_DO,
+		FLOW_OP_BREAK,
+		FLOW_OP_SWITCH,
+		FLOW_OP_CASE,
+		FLOW_OP_DEFAULT,
+		FLOW_OP_CONTINUE,
+		FLOW_OP_DISCARD
+	};
+
+	enum ArgumentQualifier
+	{
+		ARGUMENT_QUALIFIER_IN,
+		ARGUMENT_QUALIFIER_OUT,
+		ARGUMENT_QUALIFIER_INOUT,
+	};
+
+	enum SubClassTag
+	{
+		TAG_GLOBAL,
+		TAG_ARRAY,
+	};
+
+	enum TextureFilter
+	{
+		FILTER_NEAREST,
+		FILTER_LINEAR,
+		FILTER_NEAREST_MIPMAP,
+		FILTER_LINEAR_MIPMAP,
+		FILTER_NEAREST_MIPMAP_ANISOTROPIC,
+		FILTER_LINEAR_MIPMAP_ANISOTROPIC,
+		FILTER_DEFAULT,
+	};
+
+	enum TextureRepeat
+	{
+		REPEAT_DISABLE,
+		REPEAT_ENABLE,
+		REPEAT_DEFAULT,
+	};
+
+	enum
+	{
+		MAX_INSTANCE_UNIFORM_INDICES = 16
+	};
+
+	struct VaryingFunctionNames
+	{
+		String fragment;
+		String vertex;
+		String light;
+
+		VaryingFunctionNames()
+		{
+			fragment = "fragment";
+			vertex = "vertex";
+			light = "light";
+		}
+	};
+
+	union Scalar
+	{
+		bool boolean = false;
+		float real;
+		int32_t sint;
+		uint32_t uint;
+	};
+
+	struct Node
+	{
+		Node* next = nullptr;
+
+		enum Type
+		{
+			NODE_TYPE_SHADER,
+			NODE_TYPE_FUNCTION,
+			NODE_TYPE_BLOCK,
+			NODE_TYPE_VARIABLE,
+			NODE_TYPE_VARIABLE_DECLARATION,
+			NODE_TYPE_CONSTANT,
+			NODE_TYPE_OPERATOR,
+			NODE_TYPE_CONTROL_FLOW,
+			NODE_TYPE_MEMBER,
+			NODE_TYPE_ARRAY,
+			NODE_TYPE_ARRAY_CONSTRUCT,
+			NODE_TYPE_STRUCT,
+		};
+
+		Type type;
+
+		virtual DataType get_datatype() const { return TYPE_VOID; }
+
+		virtual String get_datatype_name() const { return ""; }
+
+		virtual int get_array_size() const { return 0; }
+
+		virtual bool is_indexed() const { return false; }
+
+		virtual Vector<Scalar> get_values() const { return Vector<Scalar>(); }
+
+		Node(Type t) : type(t) {}
+
+		virtual ~Node() {}
+	};
+
+	template <typename T> T* alloc_node()
+	{
+		T* node = memnew(T);
+		node->next = nodes;
+		nodes = node;
+		return node;
+	}
+
+	Node* nodes = nullptr;
+
+	struct OperatorNode : public Node
+	{
+		DataType return_cache = TYPE_VOID;
+		DataPrecision return_precision_cache = PRECISION_DEFAULT;
+		int return_array_size = 0;
+		Operator op = OP_EQUAL;
+		String struct_name;
+		Vector<Node*> arguments;
+		Vector<Scalar> values;
+
+		virtual DataType get_datatype() const override { return return_cache; }
+
+		virtual String get_datatype_name() const override { return String(struct_name); }
+
+		virtual int get_array_size() const override { return return_array_size; }
+
+		virtual bool is_indexed() const override { return op == OP_INDEX; }
+
+		virtual Vector<Scalar> get_values() const override { return values; }
+
+		OperatorNode() : Node(NODE_TYPE_OPERATOR) {}
+	};
+
+	struct VariableNode : public Node
+	{
+		DataType datatype_cache = TYPE_VOID;
+		String name;
+		String rname;
+		String struct_name;
+		bool is_const = false;
+		bool is_local = false;
+
+		virtual DataType get_datatype() const override { return datatype_cache; }
+
+		virtual String get_datatype_name() const override { return String(struct_name); }
+
+		VariableNode() : Node(NODE_TYPE_VARIABLE) {}
+	};
+
+	struct VariableDeclarationNode : public Node
+	{
+		DataPrecision precision = PRECISION_DEFAULT;
+		DataType datatype = TYPE_VOID;
+		String struct_name;
+		bool is_const = false;
+
+		struct Declaration
+		{
+			String name;
+			uint32_t size = 0U;
+			Node* size_expression = nullptr;
+			Vector<Node*> initializer;
+			bool single_expression = false;
+		};
+
+		Vector<Declaration> declarations;
+
+		virtual DataType get_datatype() const override { return datatype; }
+
+		VariableDeclarationNode() : Node(NODE_TYPE_VARIABLE_DECLARATION) {}
+	};
+
+	struct ArrayNode : public Node
+	{
+		DataType datatype_cache = TYPE_VOID;
+		String struct_name;
+		String name;
+		Node* index_expression = nullptr;
+		Node* call_expression = nullptr;
+		Node* assign_expression = nullptr;
+		bool is_const = false;
+		int array_size = 0;
+		bool is_local = false;
+
+		virtual DataType get_datatype() const override
+		{
+			return call_expression ? call_expression->get_datatype() : datatype_cache;
+		}
+
+		virtual String get_datatype_name() const override
+		{
+			return call_expression ? call_expression->get_datatype_name() : String(struct_name);
+		}
+
+		virtual int get_array_size() const override
+		{
+			return (index_expression || call_expression) ? 0 : array_size;
+		}
+
+		virtual bool is_indexed() const override { return index_expression != nullptr; }
+
+		ArrayNode() : Node(NODE_TYPE_ARRAY) {}
+	};
+
+	struct ArrayConstructNode : public Node
+	{
+		DataType datatype = TYPE_VOID;
+		String struct_name;
+		Vector<Node*> initializer;
+
+		virtual DataType get_datatype() const override { return datatype; }
+
+		virtual String get_datatype_name() const override { return struct_name; }
+
+		virtual int get_array_size() const override { return initializer.size(); }
+
+		ArrayConstructNode() : Node(NODE_TYPE_ARRAY_CONSTRUCT) {}
+	};
+
+	struct ConstantNode : public Node
+	{
+		DataType datatype = TYPE_VOID;
+		String struct_name = "";
+		int array_size = 0;
+
+		Vector<Scalar> values;
+		Vector<VariableDeclarationNode::Declaration> array_declarations;
+
+		virtual DataType get_datatype() const override { return datatype; }
+
+		virtual String get_datatype_name() const override { return struct_name; }
+
+		virtual int get_array_size() const override { return array_size; }
+
+		virtual Vector<Scalar> get_values() const override { return values; }
+
+		ConstantNode() : Node(NODE_TYPE_CONSTANT) {}
+	};
+
+	struct FunctionNode;
+
+	struct BlockNode : public Node
+	{
+		FunctionNode* parent_function = nullptr;
+		BlockNode* parent_block = nullptr;
+
+		enum BlockType
+		{
+			BLOCK_TYPE_STANDARD,
+			BLOCK_TYPE_FOR_INIT,
+			BLOCK_TYPE_FOR_CONDITION,
+			BLOCK_TYPE_FOR_EXPRESSION,
+			BLOCK_TYPE_SWITCH,
+			BLOCK_TYPE_CASE,
+			BLOCK_TYPE_DEFAULT,
+		};
+
+		int block_type = BLOCK_TYPE_STANDARD;
+		SubClassTag block_tag = SubClassTag::TAG_GLOBAL;
+
+		struct Variable
+		{
+			DataType type;
+			String struct_name;
+			DataPrecision precision;
+			int line; // for completion
+			int array_size;
+			bool is_const;
+			Vector<Scalar> values;
+		};
+
+		HashMap<String, Variable> variables;
+		List<Node*> statements;
+		bool single_statement = false;
+		bool use_comma_between_statements = false;
+		bool use_op_eval = true;
+
+		DataType expected_type = TYPE_VOID;
+		HashSet<int> constants;
+
+		BlockNode() : Node(NODE_TYPE_BLOCK) {}
+	};
+
+	struct ControlFlowNode : public Node
+	{
+		FlowOperation flow_op = FLOW_OP_IF;
+		Vector<Node*> expressions;
+		Vector<BlockNode*> blocks;
+
+		ControlFlowNode() : Node(NODE_TYPE_CONTROL_FLOW) {}
+	};
+
+	struct MemberNode : public Node
+	{
+		DataType basetype = TYPE_VOID;
+		bool basetype_const = false;
+		String base_struct_name;
+		DataPrecision precision = PRECISION_DEFAULT;
+		DataType datatype = TYPE_VOID;
+		int array_size = 0;
+		String struct_name;
+		String name;
+		Node* owner = nullptr;
+		Node* index_expression = nullptr;
+		Node* assign_expression = nullptr;
+		Node* call_expression = nullptr;
+		bool has_swizzling_duplicates = false;
+
+		virtual DataType get_datatype() const override
+		{
+			return call_expression ? call_expression->get_datatype() : datatype;
+		}
+
+		virtual String get_datatype_name() const override
+		{
+			return call_expression ? call_expression->get_datatype_name() : String(struct_name);
+		}
+
+		virtual int get_array_size() const override
+		{
+			return (index_expression || call_expression) ? 0 : array_size;
+		}
+
+		virtual bool is_indexed() const override
+		{
+			return index_expression != nullptr || call_expression != nullptr;
+		}
+
+		MemberNode() : Node(NODE_TYPE_MEMBER) {}
+	};
+
+	struct StructNode : public Node
+	{
+		List<MemberNode*> members;
+
+		StructNode() : Node(NODE_TYPE_STRUCT) {}
+	};
+
+	struct ShaderNode : public Node
+	{
+		struct Constant
+		{
+			String name;
+			DataType type;
+			String struct_name;
+			DataPrecision precision;
+			Node* initializer = nullptr;
+			int array_size;
+		};
+
+		struct Function
+		{
+			String name;
+			String rname;
+			FunctionNode* function = nullptr;
+			HashSet<String> uses_function;
+			bool callable;
+		};
+
+		struct Struct
+		{
+			String name;
+			StructNode* shader_struct = nullptr;
+		};
+
+		struct Varying
+		{
+			enum Stage
+			{
+				STAGE_UNKNOWN,
+				STAGE_VERTEX,
+				STAGE_FRAGMENT,
+			};
+
+			Stage stage = STAGE_UNKNOWN;
+			DataType type = TYPE_VOID;
+			DataInterpolation interpolation = INTERPOLATION_FLAT;
+			DataPrecision precision = PRECISION_DEFAULT;
+			int array_size = 0;
+			TkPos tkpos;
+
+			uint32_t get_size() const
+			{
+				uint32_t size = 1;
+				if (array_size > 0) {
+					size = (uint32_t)array_size;
+				}
+
+				switch (type) {
+				case TYPE_MAT2:
+					size *= 2;
+					break;
+				case TYPE_MAT3:
+					size *= 3;
+					break;
+				case TYPE_MAT4:
+					size *= 4;
+					break;
+				default:
+					break;
+				}
+				return size;
+			}
+
+			Varying() {}
+		};
+
+		struct Uniform
+		{
+			enum Hint
+			{
+				HINT_NONE,
+				HINT_RANGE,
+				HINT_ENUM,
+				HINT_SOURCE_COLOR,
+				HINT_COLOR_CONVERSION_DISABLED,
+				HINT_NORMAL,
+				HINT_ROUGHNESS_NORMAL,
+				HINT_ROUGHNESS_R,
+				HINT_ROUGHNESS_G,
+				HINT_ROUGHNESS_B,
+				HINT_ROUGHNESS_A,
+				HINT_ROUGHNESS_GRAY,
+				HINT_DEFAULT_BLACK,
+				HINT_DEFAULT_WHITE,
+				HINT_DEFAULT_TRANSPARENT,
+				HINT_ANISOTROPY,
+				HINT_SCREEN_TEXTURE,
+				HINT_BLIT_SOURCE0,
+				HINT_BLIT_SOURCE1,
+				HINT_BLIT_SOURCE2,
+				HINT_BLIT_SOURCE3,
+				HINT_NORMAL_ROUGHNESS_TEXTURE,
+				HINT_DEPTH_TEXTURE,
+				HINT_MAX
+			};
+
+			enum Scope
+			{
+				SCOPE_LOCAL,
+				SCOPE_INSTANCE,
+				SCOPE_GLOBAL,
+			};
+
+			int order = 0;
+			int prop_order = 0;
+			int texture_order = 0;
+			int texture_binding = 0;
+			DataType type = TYPE_VOID;
+			DataPrecision precision = PRECISION_DEFAULT;
+			int array_size = 0;
+			Vector<Scalar> default_value;
+			Scope scope = SCOPE_LOCAL;
+			Hint hint = HINT_NONE;
+			bool use_color = false;
+			TextureFilter filter = FILTER_DEFAULT;
+			TextureRepeat repeat = REPEAT_DEFAULT;
+			float hint_range[3];
+			PackedStringArray hint_enum_names;
+			int instance_index = 0;
+			String group;
+
+			_FORCE_INLINE_ bool is_texture() const
+			{
+				// Order is assigned to -1 for texture uniforms.
+				return order < 0;
+			}
+
+			Uniform()
+			{
+				hint_range[0] = 0.0f;
+				hint_range[1] = 1.0f;
+				hint_range[2] = 0.001f;
+			}
+		};
+
+		HashMap<String, Constant> constants;
+		HashMap<String, Varying> varyings;
+		HashMap<String, Uniform> uniforms;
+		HashMap<String, Struct> structs;
+		HashMap<String, Function> functions;
+		Vector<String> render_modes;
+		Vector<String> stencil_modes;
+		int stencil_reference = -1;
+
+		Vector<Function> vfunctions;
+		Vector<Constant> vconstants;
+		Vector<Struct> vstructs;
+
+		ShaderNode() : Node(NODE_TYPE_SHADER) {}
+	};
+
+	struct FunctionNode : public Node
+	{
+		struct Argument
+		{
+			ArgumentQualifier qualifier;
+			String name;
+			DataType type;
+			String struct_name;
+			DataPrecision precision;
+			// for passing textures as arguments
+			bool tex_argument_check;
+			TextureFilter tex_argument_filter;
+			TextureRepeat tex_argument_repeat;
+			bool tex_builtin_check;
+			String tex_builtin;
+			ShaderNode::Uniform::Hint tex_hint;
+			bool is_const;
+			int array_size;
+
+			HashMap<String, HashSet<int>> tex_argument_connect;
+		};
+
+		String name;
+		String rname;
+		DataType return_type = TYPE_VOID;
+		String return_struct_name;
+		DataPrecision return_precision = PRECISION_DEFAULT;
+		int return_array_size = 0;
+		Vector<Argument> arguments;
+		BlockNode* body = nullptr;
+		bool can_discard = false;
+
+		virtual DataType get_datatype() const override { return return_type; }
+
+		virtual String get_datatype_name() const override { return String(return_struct_name); }
+
+		virtual int get_array_size() const override { return return_array_size; }
+
+		FunctionNode() : Node(NODE_TYPE_FUNCTION) {}
+	};
+
+	struct UniformOrderComparator
+	{
+		_FORCE_INLINE_ bool operator()(
+			const Pair<String, int>& A, const Pair<String, int>& B) const
+		{
+			return A.second < B.second;
+		}
+	};
+
+	struct Expression
+	{
+		bool is_op;
+
+		union
+		{
+			Operator op;
+			Node* node = nullptr;
+		};
+	};
+
+	struct ExpressionInfo
+	{
+		Vector<Expression>* expression = nullptr;
+		TokenType tt_break = TK_EMPTY;
+		bool is_last_expr = false;
+	};
+
+	struct VarInfo
+	{
+		String name;
+		DataType type;
+	};
+
+	enum CompletionType
+	{
+		COMPLETION_NONE,
+		COMPLETION_SHADER_TYPE,
+		COMPLETION_RENDER_MODE,
+		COMPLETION_STENCIL_MODE,
+		COMPLETION_MAIN_FUNCTION,
+		COMPLETION_IDENTIFIER,
+		COMPLETION_FUNCTION_CALL,
+		COMPLETION_CALL_ARGUMENTS,
+		COMPLETION_INDEX,
+		COMPLETION_STRUCT,
+		COMPLETION_HINT,
+	};
+
+	struct Token
+	{
+		TokenType type;
+		String text;
+		double constant;
+		uint16_t line;
+
+		bool is_integer_constant() const
+		{
+			return type == TK_INT_CONSTANT || type == TK_UINT_CONSTANT;
+		}
+	};
+
+	static String get_operator_text(Operator p_op);
+	static String get_token_text(Token p_token);
+
+	static bool is_token_datatype(TokenType p_type);
+	static bool is_token_variable_datatype(TokenType p_type);
+	static DataType get_token_datatype(TokenType p_type);
+	static bool is_token_interpolation(TokenType p_type);
+	static DataInterpolation get_token_interpolation(TokenType p_type);
+	static bool is_token_precision(TokenType p_type);
+	static bool is_token_arg_qual(TokenType p_type);
+	static DataPrecision get_token_precision(TokenType p_type);
+	static String get_precision_name(DataPrecision p_type);
+	static String get_interpolation_name(DataInterpolation p_interpolation);
+	static String get_datatype_name(DataType p_type);
+	static String get_uniform_hint_name(ShaderNode::Uniform::Hint p_hint);
+	static String get_texture_filter_name(TextureFilter p_filter);
+	static String get_texture_repeat_name(TextureRepeat p_repeat);
+	static bool is_token_nonvoid_datatype(TokenType p_type);
+	static bool is_token_operator(TokenType p_type);
+	static bool is_token_operator_assign(TokenType p_type);
+	static bool is_token_hint(TokenType p_type);
+
+	static bool convert_constant(
+		ConstantNode* p_constant, DataType p_to_type, Scalar* p_value = nullptr);
+	static DataType get_scalar_type(DataType p_type);
+	static int get_cardinality(DataType p_type);
+	static bool is_scalar_type(DataType p_type);
+	static bool is_float_type(DataType p_type);
+	static bool is_sampler_type(DataType p_type);
+	static bool is_hint_color(ShaderNode::Uniform::Hint p_hint);
+	static uint32_t get_datatype_size(DataType p_type);
+	static uint32_t get_datatype_component_count(DataType p_type);
+
+	static void get_keyword_list(List<String>* r_keywords);
+	static bool is_control_flow_keyword(String p_keyword);
+	static void get_builtin_funcs(List<String>* r_keywords);
+
+	static SafeNumeric<int> instance_counter;
+
+	struct BuiltInInfo
+	{
+		DataType type = TYPE_VOID;
+		bool constant = false;
+		Vector<Scalar> values;
+
+		BuiltInInfo() {}
+
+		BuiltInInfo(DataType p_type, bool p_constant = false, const Vector<Scalar>& p_values = {})
+			: type(p_type), constant(p_constant), values(p_values)
+		{
+		}
+	};
+
+	struct StageFunctionInfo
+	{
+		struct Argument
+		{
+			String name;
+			DataType type;
+
+			Argument(const String& p_name = String(), DataType p_type = TYPE_VOID)
+			{
+				name = p_name;
+				type = p_type;
+			}
+		};
+
+		Vector<Argument> arguments;
+		DataType return_type = TYPE_VOID;
+		String skip_function;
+	};
+
+	struct ModeInfo
+	{
+		String name;
+		Vector<String> options;
+
+		ModeInfo() {}
+
+		ModeInfo(const String& p_name) : name(p_name) {}
+
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2)
+			: name(p_name)
+		{
+			options.push_back(p_arg1);
+			options.push_back(p_arg2);
+		}
+
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3)
+			: name(p_name)
+		{
+			options.push_back(p_arg1);
+			options.push_back(p_arg2);
+			options.push_back(p_arg3);
+		}
+
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4)
+			: name(p_name)
+		{
+			options.push_back(p_arg1);
+			options.push_back(p_arg2);
+			options.push_back(p_arg3);
+			options.push_back(p_arg4);
+		}
+
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4, const String& p_arg5)
+			: name(p_name)
+		{
+			options.push_back(p_arg1);
+			options.push_back(p_arg2);
+			options.push_back(p_arg3);
+			options.push_back(p_arg4);
+			options.push_back(p_arg5);
+		}
+
+		ModeInfo(const String& p_name, const String& p_arg1, const String& p_arg2,
+			const String& p_arg3, const String& p_arg4, const String& p_arg5,
+			const String& p_arg6)
+			: name(p_name)
+		{
+			options.push_back(p_arg1);
+			options.push_back(p_arg2);
+			options.push_back(p_arg3);
+			options.push_back(p_arg4);
+			options.push_back(p_arg5);
+			options.push_back(p_arg6);
+		}
+
+		ModeInfo(const String& p_name, std::initializer_list<String> p_args) : name(p_name)
+		{
+			for (const String& arg : p_args) {
+				options.push_back(arg);
+			}
+		}
+	};
+
+	struct FunctionInfo
+	{
+		HashMap<String, BuiltInInfo> built_ins;
+		HashMap<String, StageFunctionInfo> stage_functions;
+
+		bool can_discard = false;
+		bool main_function = false;
+	};
+
+	static bool has_builtin(const HashMap<String, ShaderLanguage::FunctionInfo>& p_functions,
+		const String& p_name, bool p_check_global_funcs = false);
+
+	typedef DataType (*GlobalShaderUniformGetTypeFunc)(const String& p_name);
+
+	struct FilePosition
+	{
+		String file;
+		int line = 0;
+	};
+
+private:
+	struct KeyWord
+	{
+		TokenType token;
+		const char* text;
+		uint32_t flags;
+		const Vector<String> excluded_shader_types;
+		const Vector<String> excluded_functions;
+	};
+
+	static const KeyWord keyword_list[];
+
+	GlobalShaderUniformGetTypeFunc global_shader_uniform_get_type_func = nullptr;
+
+	bool error_set = false;
+	String error_str;
+	int error_line = 0;
+
+	Vector<FilePosition> include_positions;
+	HashSet<String> include_markers_handled;
+	HashMap<String, int> function_overload_count;
+
+	// Additional function information (eg. call hierarchy). No need to expose it to compiler.
+	struct CallInfo
+	{
+		struct Item
+		{
+			enum ItemType
+			{
+				ITEM_TYPE_BUILTIN,
+				ITEM_TYPE_VARYING,
+			} type;
+
+			TkPos pos;
+
+			Item() {}
+
+			Item(ItemType p_type, TkPos p_pos) : type(p_type), pos(p_pos) {}
+		};
+
+		String name;
+		List<Pair<String, Item>> uses_restricted_items;
+		List<CallInfo*> calls;
+	};
+
+	RBMap<String, CallInfo> calls_info;
+
+#ifdef DEBUG_ENABLED
+	struct Usage
+	{
+		int decl_line;
+		bool used = false;
+
+		Usage(int p_decl_line = -1) { decl_line = p_decl_line; }
+	};
+
+	HashMap<String, Usage> used_constants;
+	HashMap<String, Usage> used_varyings;
+	HashMap<String, Usage> used_uniforms;
+	HashMap<String, Usage> used_functions;
+	HashMap<String, Usage> used_structs;
+	HashMap<ShaderWarning::Code, HashMap<String, Usage>*> warnings_check_map;
+
+	HashMap<String, HashMap<String, Usage>> used_local_vars;
+	HashMap<ShaderWarning::Code, HashMap<String, HashMap<String, Usage>>*>
+		warnings_check_map2;
+
+	List<ShaderWarning> warnings;
+
+	bool check_warnings = false;
+	uint32_t warning_flags = 0;
+	void _check_warning_accums();
+#endif // DEBUG_ENABLED
+
+	String code;
+	int char_idx = 0;
+	int tk_line = 0;
+
+	String shader_type_identifier;
+	String current_function;
+	bool is_const_decl = false;
+	String last_name;
+	bool is_shader_inc = false;
+
+	String current_uniform_group_name;
+
+	VaryingFunctionNames varying_function_names;
+	uint32_t base_varying_index = 0;
+
+	TkPos _get_tkpos()
+	{
+		TkPos tkp;
+		tkp.char_idx = char_idx;
+		tkp.tk_line = tk_line;
+		return tkp;
+	}
+
+	void _set_tkpos(TkPos p_pos)
+	{
+		char_idx = p_pos.char_idx;
+		tk_line = p_pos.tk_line;
+	}
+
+	void _set_error(const String& p_str)
+	{
+		if (error_set) {
+			return;
+		}
+
+		error_line = tk_line;
+		error_set = true;
+		error_str = p_str;
+		include_positions.write[include_positions.size() - 1].line = tk_line;
+	}
+
+	void _set_expected_error(const String& p_what)
+	{
+		_set_error(vformat(RTR("Expected a '%s'."), p_what));
+	}
+
+	void _set_expected_error(const String& p_first, const String p_second)
+	{
+		_set_error(vformat(RTR("Expected a '%s' or '%s'."), p_first, p_second));
+	}
+
+	void _set_expected_after_error(const String& p_what, const String& p_after)
+	{
+		_set_error(vformat(RTR("Expected a '%s' after '%s'."), p_what, p_after));
+	}
+
+	void _set_redefinition_error(const String& p_what)
+	{
+		_set_error(vformat(RTR("Redefinition of '%s'."), p_what));
+	}
+
+	void _set_parsing_error() { _set_error("Parser bug."); }
+
+	static const char* token_names[TK_MAX];
+
+	Token _make_token(TokenType p_type, const String& p_text = String());
+	Token _get_token();
+	bool _lookup_next(Token& r_tk);
+	Token _peek();
+
+	ShaderNode* shader = nullptr;
+
+	enum IdentifierType
+	{
+		IDENTIFIER_FUNCTION,
+		IDENTIFIER_UNIFORM,
+		IDENTIFIER_VARYING,
+		IDENTIFIER_FUNCTION_ARGUMENT,
+		IDENTIFIER_LOCAL_VAR,
+		IDENTIFIER_BUILTIN_VAR,
+		IDENTIFIER_CONSTANT,
+		IDENTIFIER_MAX,
+	};
+
+	IdentifierType last_type = IDENTIFIER_MAX;
+
+	bool _find_identifier(const BlockNode* p_block, bool p_allow_reassign,
+		const FunctionInfo& p_function_info, const String& p_identifier,
+		DataType* r_data_type = nullptr, IdentifierType* r_type = nullptr,
+		bool* r_is_const = nullptr, int* r_array_size = nullptr,
+		String* r_struct_name = nullptr, Vector<Scalar>* r_constant_values = nullptr);
+#ifdef DEBUG_ENABLED
+	void _parse_used_identifier(
+		const String& p_identifier, IdentifierType p_type, const String& p_function);
+#endif // DEBUG_ENABLED
+	bool _is_operator_assign(Operator p_op) const;
+	bool _validate_assign(
+		Node* p_node, const FunctionInfo& p_function_info, String* r_message = nullptr);
+	bool _validate_operator(const BlockNode* p_block, const FunctionInfo& p_function_info,
+		OperatorNode* p_op, DataType* r_ret_type = nullptr, int* r_ret_size = nullptr,
+		String* r_ret_struct_name = nullptr);
+
+	Vector<Scalar> _get_node_values(
+		const BlockNode* p_block, const FunctionInfo& p_function_info, Node* p_node);
+	bool _eval_operator(
+		const BlockNode* p_block, const FunctionInfo& p_function_info, OperatorNode* p_op);
+	Scalar _eval_unary_scalar(const Scalar& p_a, Operator p_op, DataType p_ret_type);
+	Scalar _eval_scalar(
+		const Scalar& p_a, const Scalar& p_b, Operator p_op, DataType p_ret_type, bool& r_is_valid);
+	Vector<Scalar> _eval_unary_vector(
+		const Vector<Scalar>& p_va, DataType p_ret_type, Operator p_op);
+	Vector<Scalar> _eval_vector(const Vector<Scalar>& p_va, const Vector<Scalar>& p_vb,
+		DataType p_left_type, DataType p_right_type, DataType p_ret_type, Operator p_op,
+		bool& r_is_valid);
+	Vector<Scalar> _eval_vector_transform(const Vector<Scalar>& p_va, const Vector<Scalar>& p_vb,
+		DataType p_left_type, DataType p_right_type, DataType p_ret_type);
+
+	struct BuiltinEntry
+	{
+		const char* name;
+	};
+
+	struct BuiltinFuncDef
+	{
+		enum
+		{
+			MAX_ARGS = 5
+		};
+
+		const char* name;
+		DataType rettype;
+		const DataType args[MAX_ARGS];
+		const char* args_names[MAX_ARGS];
+		SubClassTag tag;
+		bool high_end;
+	};
+
+	struct BuiltinFuncOutArgs
+	{ // arguments used as out in built in functions
+
+		enum
+		{
+			MAX_ARGS = 2
+		};
+
+		const char* name;
+		const int arguments[MAX_ARGS];
+	};
+
+	struct BuiltinFuncConstArgs
+	{
+		const char* name;
+		int arg;
+		int min;
+		int max;
+	};
+
+	CompletionType completion_type;
+	ShaderNode::Uniform::Hint current_uniform_hint = ShaderNode::Uniform::HINT_NONE;
+	TextureFilter current_uniform_filter = FILTER_DEFAULT;
+	TextureRepeat current_uniform_repeat = REPEAT_DEFAULT;
+	bool current_uniform_instance_index_defined = false;
+	int completion_line = 0;
+	BlockNode* completion_block = nullptr;
+	DataType completion_base;
+	bool completion_base_array = false;
+	SubClassTag completion_class;
+	String completion_function;
+	String completion_struct;
+	int completion_argument = 0;
+
+#ifdef DEBUG_ENABLED
+	uint32_t keyword_completion_context;
+#endif // DEBUG_ENABLED
+
+	const HashMap<String, FunctionInfo>* stages = nullptr;
+	bool is_supported_frag_only_funcs = false;
+	bool is_discard_supported = false;
+
+	bool _get_completable_identifier(
+		BlockNode* p_block, CompletionType p_type, String& identifier);
+	static const BuiltinFuncDef builtin_func_defs[];
+	static const BuiltinFuncOutArgs builtin_func_out_args[];
+	static const BuiltinFuncConstArgs builtin_func_const_args[];
+	static const BuiltinEntry frag_only_func_defs[];
+
+	static bool is_const_suffix_lut_initialized;
+
+	Error _validate_precision(DataType p_type, DataPrecision p_precision);
+	bool _compare_datatypes(DataType p_datatype_a, String p_datatype_name_a, int p_array_size_a,
+		DataType p_datatype_b, String p_datatype_name_b, int p_array_size_b);
+	bool _compare_datatypes_in_nodes(Node* a, Node* b);
+
+	bool _validate_function_call(BlockNode* p_block, const FunctionInfo& p_function_info,
+		OperatorNode* p_func, DataType* r_ret_type, String* r_ret_type_str,
+		bool* r_is_custom_function = nullptr);
+	bool _parse_function_arguments(BlockNode* p_block, const FunctionInfo& p_function_info,
+		OperatorNode* p_func, int* r_complete_arg = nullptr);
+	ShaderNode::Uniform::Hint _sanitize_hint(ShaderNode::Uniform::Hint p_hint);
+	bool _propagate_function_call_sampler_uniform_settings(const String& p_name, int p_argument,
+		TextureFilter p_filter, TextureRepeat p_repeat, ShaderNode::Uniform::Hint p_hint);
+	bool _propagate_function_call_sampler_builtin_reference(
+		const String& p_name, int p_argument, const String& p_builtin);
+	bool _validate_varying_assign(ShaderNode::Varying& p_varying, String* r_message);
+	bool _check_node_constness(const Node* p_node) const;
+
+	bool _check_restricted_func(
+		const String& p_name, const String& p_current_function) const;
+	bool _validate_restricted_func(
+		const String& p_call_name, const CallInfo* p_func_info, bool p_is_builtin_hint = false);
+
+	Node* _parse_expression(BlockNode* p_block, const FunctionInfo& p_function_info,
+		const ExpressionInfo* p_previous_expression_info = nullptr);
+	Error _parse_array_size(BlockNode* p_block, const FunctionInfo& p_function_info,
+		bool p_forbid_unknown_size, Node** r_size_expression, int* r_array_size,
+		bool* r_unknown_size);
+	Node* _parse_array_constructor(BlockNode* p_block, const FunctionInfo& p_function_info);
+	Node* _parse_array_constructor(BlockNode* p_block, const FunctionInfo& p_function_info,
+		DataType p_type, const String& p_struct_name, int p_array_size);
+	ShaderLanguage::Node* _reduce_expression(BlockNode* p_block, ShaderLanguage::Node* p_node);
+
+	Node* _parse_and_reduce_expression(BlockNode* p_block, const FunctionInfo& p_function_info,
+		const ExpressionInfo* p_previous_expression_info = nullptr);
+	Error _parse_block(BlockNode* p_block, const FunctionInfo& p_function_info,
+		bool p_just_one = false, bool p_can_break = false, bool p_can_continue = false);
+	String _get_shader_type_list(const HashSet<String>& p_shader_types) const;
+	String _get_qualifier_str(ArgumentQualifier p_qualifier) const;
+
+	bool _parse_numeric_constant_expression(const FunctionInfo& p_function_info, float& r_constant);
+	Error _parse_shader(const HashMap<String, FunctionInfo>& p_functions,
+		const Vector<ModeInfo>& p_render_modes, const Vector<ModeInfo>& p_stencil_modes,
+		const HashSet<String>& p_shader_types);
+
+	Error _find_last_flow_op_in_block(BlockNode* p_block, FlowOperation p_op);
+	Error _find_last_flow_op_in_op(ControlFlowNode* p_flow, FlowOperation p_op);
+
+	Error _parse_shader_mode(bool p_is_stencil, const Vector<ModeInfo>& p_modes,
+		HashMap<String, String>& r_defined_modes);
+
+public:
+#ifdef DEBUG_ENABLED
+	List<ShaderWarning>::Element* get_warnings_ptr();
+
+	void enable_warning_checking(bool p_enabled);
+	bool is_warning_checking_enabled() const;
+
+	void set_warning_flags(uint32_t p_flags);
+	uint32_t get_warning_flags() const;
+#endif // DEBUG_ENABLED
+
+	// static void get_keyword_list(ShaderType p_type,List<String> *p_keywords);
+
+	static void finish();
+	void clear();
+
+	static String get_shader_type(const String& p_code);
+	static bool is_builtin_func_out_parameter(const String& p_name, int p_param);
+
+	struct ShaderCompileInfo
+	{
+		HashMap<String, FunctionInfo> functions;
+		Vector<ModeInfo> render_modes;
+		Vector<ModeInfo> stencil_modes;
+		VaryingFunctionNames varying_function_names;
+		HashSet<String> shader_types;
+		GlobalShaderUniformGetTypeFunc global_shader_uniform_type_func = nullptr;
+		bool is_include = false;
+		uint32_t base_varying_index = 0;
+	};
+
+	Error compile(const String& p_code, const ShaderCompileInfo& p_info);
+
+	String get_error_text();
+	Vector<FilePosition> get_include_positions();
+
+	CompletionType get_completion_type() const { return completion_type; }
+
+	int get_error_line();
+
+	ShaderNode* get_shader();
+
+	String token_debug(const String& p_code);
+
+	ShaderLanguage();
+	~ShaderLanguage();
+};
+
+// --- Folded from servers/rendering/shader_compiler.h ---
+#include "core/templates/hashfuncs.h"
+#include "scene/resources/texture.h"
+
+
+class ShaderCompiler final
+{
+public:
+	enum Stage
+	{
+		STAGE_VERTEX,
+		STAGE_FRAGMENT,
+		STAGE_COMPUTE,
+		STAGE_RAYGEN,
+		STAGE_ANY_HIT,
+		STAGE_CLOSEST_HIT,
+		STAGE_MISS,
+		STAGE_INTERSECTION,
+		STAGE_MAX
+	};
+
+	struct IdentifierActions
+	{
+		HashMap<String, Stage> entry_point_stages;
+
+		HashMap<String, Pair<int*, int>> render_mode_values;
+		HashMap<String, bool*> render_mode_flags;
+		HashMap<String, bool*> usage_flag_pointers;
+		HashMap<String, bool*> write_flag_pointers;
+		HashMap<String, Pair<int*, int>> stencil_mode_values;
+		int* stencil_reference = nullptr;
+
+		HashMap<String, ShaderLanguage::ShaderNode::Uniform>* uniforms = nullptr;
+	};
+
+	struct GeneratedCode
+	{
+		Vector<String> defines;
+
+		struct Texture
+		{
+			String name;
+			ShaderLanguage::DataType type = ShaderLanguage::DataType::TYPE_VOID;
+			ShaderLanguage::ShaderNode::Uniform::Hint hint =
+				ShaderLanguage::ShaderNode::Uniform::Hint::HINT_NONE;
+			bool use_color = false;
+			ShaderLanguage::TextureFilter filter = ShaderLanguage::TextureFilter::FILTER_DEFAULT;
+			ShaderLanguage::TextureRepeat repeat = ShaderLanguage::TextureRepeat::REPEAT_DEFAULT;
+			bool global = false;
+			int array_size = 0;
+		};
+
+		Vector<Texture> texture_uniforms;
+
+		Vector<uint32_t> uniform_offsets;
+		uint32_t uniform_total_size = 0;
+		String uniforms;
+		String stage_globals[STAGE_MAX];
+
+		HashMap<String, String> code;
+
+		bool uses_global_textures = false;
+		bool uses_fragment_time = false;
+		bool uses_vertex_time = false;
+		bool uses_screen_texture_mipmaps = false;
+		bool uses_screen_texture = false;
+		bool uses_depth_texture = false;
+		bool uses_normal_roughness_texture = false;
+	};
+
+	struct DefaultIdentifierActions
+	{
+		HashMap<String, String> renames;
+		HashMap<String, String> render_mode_defines;
+		HashMap<String, String> usage_defines;
+		HashMap<String, String> custom_samplers;
+		ShaderLanguage::TextureFilter default_filter =
+			ShaderLanguage::TextureFilter::FILTER_NEAREST;
+		ShaderLanguage::TextureRepeat default_repeat =
+			ShaderLanguage::TextureRepeat::REPEAT_DISABLE;
+		int base_texture_binding_index = 0;
+		int texture_layout_set = 0;
+		String base_uniform_string;
+		String global_buffer_array_variable;
+		String instance_uniform_index_variable;
+		uint32_t base_varying_index = 0;
+		bool apply_luminance_multiplier = false;
+		bool check_multiview_samplers = false;
+	};
+
+private:
+	ShaderLanguage parser;
+
+	String _get_sampler_name(
+		ShaderLanguage::TextureFilter p_filter, ShaderLanguage::TextureRepeat p_repeat);
+
+	void _dump_function_deps(const ShaderLanguage::ShaderNode* p_node, const String& p_for_func,
+		const HashMap<String, String>& p_func_code, String& r_to_add,
+		HashSet<String>& added);
+	String _dump_node_code(const ShaderLanguage::Node* p_node, int p_level,
+		GeneratedCode& r_gen_code, IdentifierActions& p_actions,
+		const DefaultIdentifierActions& p_default_actions, bool p_assigning, bool p_scope = true);
+
+	const ShaderLanguage::ShaderNode* shader = nullptr;
+	const ShaderLanguage::FunctionNode* function = nullptr;
+	String current_func_name;
+	String time_name;
+	HashSet<String> texture_functions;
+
+	HashSet<String> used_name_defines;
+	HashSet<String> used_flag_pointers;
+	HashSet<String> used_rmode_defines;
+	HashSet<String> internal_functions;
+	HashSet<String> fragment_varyings;
+
+	DefaultIdentifierActions actions;
+
+	static ShaderLanguage::DataType _get_global_shader_uniform_type(const String& p_name);
+
+public:
+	Error compile(RSE::ShaderMode p_mode, const String& p_code, IdentifierActions* p_actions,
+		const String& p_path, GeneratedCode& r_gen_code);
+
+	void initialize(DefaultIdentifierActions p_actions);
+	ShaderCompiler();
+};
+
+// --- Folded from servers/rendering/shader_preprocessor.h ---
+#include "core/string/ustring.h"
+#include "core/templates/list.h"
+#include "core/templates/local_vector.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/rb_set.h"
+#include "scene/resources/material.h"
+
+class ShaderPreprocessor
+{
+public:
+	enum CompletionType
+	{
+		COMPLETION_TYPE_NONE,
+		COMPLETION_TYPE_DIRECTIVE,
+		COMPLETION_TYPE_PRAGMA_DIRECTIVE,
+		COMPLETION_TYPE_PRAGMA,
+		COMPLETION_TYPE_CONDITION,
+		COMPLETION_TYPE_INCLUDE_PATH,
+	};
+
+	struct FilePosition
+	{
+		String file;
+		int line = 0;
+	};
+
+	struct Region
+	{
+		String file;
+		int from_line = -1;
+		int to_line = -1;
+		bool enabled = false;
+		Region* parent = nullptr;
+	};
+
+private:
+	struct Token
+	{
+		char32_t text;
+		int line;
+
+		Token();
+		Token(char32_t p_text, int p_line);
+	};
+
+	// The real preprocessor that understands basic shader and preprocessor language syntax.
+	class Tokenizer
+	{
+	public:
+		String code;
+		int line;
+		int index;
+		int size;
+		LocalVector<Token> generated;
+
+	private:
+		void add_generated(const Token& p_t);
+		char32_t next();
+
+	public:
+		int get_line() const;
+		int get_index() const;
+		char32_t peek();
+		int consume_line_continuations(int p_offset);
+
+		void get_and_clear_generated(LocalVector<char32_t>* r_out);
+		void backtrack(char32_t p_what);
+		LocalVector<Token> advance(char32_t p_what);
+		void skip_whitespace();
+		bool consume_empty_line();
+		String get_identifier(bool* r_is_cursor = nullptr, bool p_started = false);
+		String peek_identifier();
+		Token get_token();
+
+		Tokenizer(const String& p_code);
+	};
+
+	class CommentRemover
+	{
+	private:
+		LocalVector<char32_t> stripped;
+		String code;
+		int index;
+		int line;
+		int comment_line_open;
+		int comments_open;
+		int strings_open;
+
+	public:
+		String get_error() const;
+		int get_error_line() const;
+		char32_t peek() const;
+
+		bool advance(char32_t p_what);
+		String strip();
+
+		CommentRemover(const String& p_code);
+	};
+
+	struct Define
+	{
+		Vector<String> arguments;
+		String body;
+		bool is_builtin = false;
+	};
+
+	struct Branch
+	{
+		Vector<bool> conditions;
+		Branch* parent = nullptr;
+		bool else_defined = false;
+
+		Branch() {}
+
+		Branch(bool p_condition, Branch* p_parent) : parent(p_parent)
+		{
+			conditions.push_back(p_condition);
+		}
+	};
+
+	struct State
+	{
+		RBMap<String, Define*> defines;
+		List<Branch> branches;
+		Branch* current_branch = nullptr;
+		int condition_depth = 0;
+		RBSet<String> includes;
+		List<uint64_t> cyclic_include_hashes; // Holds code hash of includes.
+		int include_depth = 0;
+		String current_filename;
+		String current_shader_type;
+		String error;
+		List<FilePosition> include_positions;
+		bool save_regions = false;
+		RBMap<String, List<Region>> regions;
+		Region* previous_region = nullptr;
+		bool disabled = false;
+		CompletionType completion_type = COMPLETION_TYPE_NONE;
+		HashSet<Ref<ShaderInclude>> shader_includes;
+		bool completion_show_defines = false;
+	};
+
+private:
+	LocalVector<char32_t> output;
+	State* state = nullptr;
+
+private:
+	static bool is_char_word(char32_t p_char);
+	static bool is_char_space(char32_t p_char);
+	static bool is_char_end(char32_t p_char);
+	static String vector_to_string(
+		const LocalVector<char32_t>& p_v, int p_start = 0, int p_end = -1);
+	static String tokens_to_string(const LocalVector<Token>& p_tokens);
+
+	void _set_expected_error(const String& p_what, int p_line)
+	{
+		set_error(vformat(RTR("Expected a '%s'."), p_what), p_line);
+	}
+
+	void _set_unexpected_token_error(const String& p_what, int p_line)
+	{
+		set_error(vformat(RTR("Unexpected token: '%s'."), p_what), p_line);
+	}
+
+	void process_directive(Tokenizer* p_tokenizer);
+	void process_define(Tokenizer* p_tokenizer);
+	void process_elif(Tokenizer* p_tokenizer);
+	void process_else(Tokenizer* p_tokenizer);
+	void process_endif(Tokenizer* p_tokenizer);
+	void process_error(Tokenizer* p_tokenizer);
+	void process_if(Tokenizer* p_tokenizer);
+	void process_ifdef(Tokenizer* p_tokenizer);
+	void process_ifndef(Tokenizer* p_tokenizer);
+	void process_include(Tokenizer* p_tokenizer);
+	void process_pragma(Tokenizer* p_tokenizer);
+	void process_undef(Tokenizer* p_tokenizer);
+
+	void add_region(int p_line, bool p_enabled, Region* p_parent_region);
+	void start_branch_condition(Tokenizer* p_tokenizer, bool p_success, bool p_continue = false);
+
+	Error expand_condition(const String& p_string, int p_line, String& r_result);
+	void expand_output_macros(int p_start, int p_line);
+	Error expand_macros(const String& p_string, int p_line, String& r_result);
+	bool expand_macros_once(const String& p_line, int p_line_number,
+		const RBMap<String, Define*>::Element* p_define_pair, String& r_expanded);
+	bool find_match(
+		const String& p_string, const String& p_value, int& r_index, int& r_index_start);
+	void concatenate_macro_body(String& r_body);
+
+	String next_directive(Tokenizer* p_tokenizer, const Vector<String>& p_directives);
+	void add_to_output(const String& p_str);
+	void set_error(const String& p_error, int p_line);
+
+	static Define* create_define(const String& p_body);
+	void insert_builtin_define(String p_name, String p_value, State& p_state);
+
+	void clear_state();
+
+	Error preprocess(State* p_state, const String& p_code, String& r_result);
+
+public:
+	static void get_keyword_list(List<String>* r_keywords, bool p_include_shader_keywords,
+		bool p_ignore_context_keywords = false);
+	static void get_pragma_list(List<String>* r_pragmas);
+
+	ShaderPreprocessor() = default;
+	~ShaderPreprocessor() = default;
+};
+
+
+
+// --- End servers/rendering/shader_preprocessor.h ---
+
+// --- Folded from servers/rendering/shader_types.h ---
+#include "scene/resources/texture.h"
+
+
+class ShaderTypes
+{
+public:
+    ShaderTypes() = delete;
+    ~ShaderTypes() = delete;
+
+    struct Type
+    {
+        HashMap<String, ShaderLanguage::FunctionInfo> functions;
+        Vector<ShaderLanguage::ModeInfo> modes;
+        Vector<ShaderLanguage::ModeInfo> stencil_modes;
+    };
+
+    static inline HashMap<RSE::ShaderMode, Type> shader_modes;
+    static inline HashSet<String> shader_types;
+    static inline List<String> shader_types_list;
+
+    static const HashMap<String, ShaderLanguage::FunctionInfo>& get_functions(
+        RSE::ShaderMode p_mode);
+    static const Vector<ShaderLanguage::ModeInfo>& get_modes(RSE::ShaderMode p_mode);
+    static const Vector<ShaderLanguage::ModeInfo>& get_stencil_modes(RSE::ShaderMode p_mode);
+    static const HashSet<String>& get_types();
+    static const List<String>& get_types_list();
+
+    static void initialize();
+    static void finalize();
+};
+
+
+// --- End servers/rendering/shader_types.h ---
+
+// --- Folded from servers/rendering/shader_include_db.h ---
+#include "core/types.h"
+
+class ShaderIncludeDB
+{
+private:
+	static HashMap<String, String> built_in_includes;
+
+protected:
+
+public:
+	static void register_built_in_include_file(
+		const String& p_filename, const String& p_shader_code);
+	static PackedStringArray list_built_in_include_files();
+	static bool has_built_in_include_file(const String& p_filename);
+	static String get_built_in_include_file(const String& p_filename);
+	static String parse_include_files(const String& p_code);
+};
+
+
+
+// --- End servers/rendering/shader_include_db.h ---
+// --- End servers/rendering/shader_compiler.h ---
+// --- End servers/rendering/shader_language.h ---
+
+// --- Folded from servers/rendering/dummy/rasterizer_dummy.h ---
+#include "core/types.h"
+#include "core/math/plane.h"
+#include "core/types.h"
+#include "core/templates/hashfuncs.h"
+#include "core/types.h"
+
+#include "scene/resources/texture.h"
+#include "servers/rendering/rendering_device.h"
+
+
+
+class DependencyTracker;
+class Image;
+
+namespace RendererDummy
+{
+
+class Fog final
+{
+public:
+	Fog() = delete;
+	~Fog() = delete;
+	Fog(const Fog&) = delete;
+	Fog& operator=(const Fog&) = delete;
+
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static bool is_initialized() { return true; }
+
+	static bool free(RID p_rid) { return false; }
+
+	/* FOG VOLUMES */
+
+	static bool owns_fog_volume(RID p_rid) { return false; }
+
+	static RID fog_volume_allocate() { return RID(); }
+
+	static void fog_volume_initialize(RID p_rid) {}
+
+	static void fog_volume_free(RID p_rid) {}
+
+	static void fog_volume_set_shape(RID p_fog_volume, RSE::FogVolumeShape p_shape) {}
+
+	static void fog_volume_set_size(RID p_fog_volume, const Vector3& p_size) {}
+
+	static void fog_volume_set_material(RID p_fog_volume, RID p_material) {}
+
+	static AABB fog_volume_get_aabb(RID p_fog_volume) { return AABB(); }
+
+	static RSE::FogVolumeShape fog_volume_get_shape(RID p_fog_volume)
+	{
+		return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
+	}
+};
+
+class GI final
+{
+public:
+	GI() = delete;
+	~GI() = delete;
+	GI(const GI&) = delete;
+	GI& operator=(const GI&) = delete;
+
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static bool is_initialized() { return true; }
+
+	static bool free(RID p_rid) { return false; }
+
+	/* VOXEL GI API */
+
+	static bool owns_voxel_gi(RID p_rid) { return false; }
+
+	static RID voxel_gi_allocate() { return RID(); }
+
+	static void voxel_gi_free(RID p_rid) {}
+
+	static void voxel_gi_initialize(RID p_rid) {}
+
+	static void voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+		const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
+		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
+		const Vector<int>& p_level_counts)
+	{
+	}
+
+	static AABB voxel_gi_get_bounds(RID p_voxel_gi) { return AABB(); }
+
+	static Vector3i voxel_gi_get_octree_size(RID p_voxel_gi) { return Vector3i(); }
+
+	static Vector<uint8_t> voxel_gi_get_octree_cells(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+	static Vector<uint8_t> voxel_gi_get_data_cells(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+	static Vector<uint8_t> voxel_gi_get_distance_field(RID p_voxel_gi) { return Vector<uint8_t>(); }
+
+	static Vector<int> voxel_gi_get_level_counts(RID p_voxel_gi) { return Vector<int>(); }
+
+	static Transform3D voxel_gi_get_to_cell_xform(RID p_voxel_gi) { return Transform3D(); }
+
+	static void voxel_gi_set_dynamic_range(RID p_voxel_gi, float p_range) {}
+
+	static float voxel_gi_get_dynamic_range(RID p_voxel_gi) { return 0.0f; }
+
+	static void voxel_gi_set_propagation(RID p_voxel_gi, float p_range) {}
+
+	static float voxel_gi_get_propagation(RID p_voxel_gi) { return 0.0f; }
+
+	static void voxel_gi_set_energy(RID p_voxel_gi, float p_range) {}
+
+	static float voxel_gi_get_energy(RID p_voxel_gi) { return 0.0f; }
+
+	static void voxel_gi_set_baked_exposure_normalization(RID p_voxel_gi, float p_baked_exposure) {}
+
+	static float voxel_gi_get_baked_exposure_normalization(RID p_voxel_gi) { return 1.0f; }
+
+	static void voxel_gi_set_bias(RID p_voxel_gi, float p_range) {}
+
+	static float voxel_gi_get_bias(RID p_voxel_gi) { return 0.0f; }
+
+	static void voxel_gi_set_normal_bias(RID p_voxel_gi, float p_range) {}
+
+	static float voxel_gi_get_normal_bias(RID p_voxel_gi) { return 0.0f; }
+
+	static void voxel_gi_set_interior(RID p_voxel_gi, bool p_enable) {}
+
+	static bool voxel_gi_is_interior(RID p_voxel_gi) { return false; }
+
+	static void voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable) {}
+
+	static bool voxel_gi_is_using_two_bounces(RID p_voxel_gi) { return false; }
+
+	static uint32_t voxel_gi_get_version(RID p_voxel_gi) { return 0; }
+
+	static void sdfgi_reset() {}
+};
+
+class LightStorage final
+{
+public:
+	struct Lightmap
+	{
+		// dummy lightmap, no data
+	};
+
+	struct LightmapInstance
+	{
+		RID lightmap;
+	};
+
+private:
+	struct Data
+	{
+		RID_Owner<Lightmap, true> lightmap_owner;
+		RID_Owner<LightmapInstance> lightmap_instance_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			initialize();
+		}
+		return data;
+	}
+
+public:
+	LightStorage() = delete;
+	LightStorage(const LightStorage&) = delete;
+	LightStorage& operator=(const LightStorage&) = delete;
+	~LightStorage() = delete;
+
+	static void initialize();
+	static void finalize();
+	static bool free(RID p_rid);
+
+	/* Light API */
+	static RID directional_light_allocate() { return RID(); }
+
+	static void directional_light_initialize(RID p_rid) {}
+
+	static RID omni_light_allocate() { return RID(); }
+
+	static void omni_light_initialize(RID p_rid) {}
+
+	static RID spot_light_allocate() { return RID(); }
+
+	static void spot_light_initialize(RID p_rid) {}
+
+	static RID area_light_allocate() { return RID(); }
+
+	static void area_light_initialize(RID p_rid) {}
+
+	static void light_free(RID p_rid) {}
+
+	static void light_set_color(RID p_light, const Color& p_color) {}
+
+	static void light_set_param(RID p_light, RSE::LightParam p_param, float p_value) {}
+
+	static void light_set_shadow(RID p_light, bool p_enabled) {}
+
+	static void light_set_projector(RID p_light, RID p_texture) {}
+
+	static void light_set_negative(RID p_light, bool p_enable) {}
+
+	static void light_set_cull_mask(RID p_light, uint32_t p_mask) {}
+
+	static void light_set_distance_fade(
+		RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length)
+	{
+	}
+
+	static void light_set_reverse_cull_face_mode(RID p_light, bool p_enabled) {}
+
+	static void light_set_shadow_caster_mask(RID p_light, uint32_t p_caster_mask) {}
+
+	static uint32_t light_get_shadow_caster_mask(RID p_light) { return 0xFFFFFFFF; }
+
+	static void light_set_bake_mode(RID p_light, RSE::LightBakeMode p_bake_mode) {}
+
+	static void light_set_max_sdfgi_cascade(RID p_light, uint32_t p_cascade) {}
+
+	static void light_omni_set_shadow_mode(RID p_light, RSE::LightOmniShadowMode p_mode) {}
+
+	static void light_directional_set_shadow_mode(
+		RID p_light, RSE::LightDirectionalShadowMode p_mode)
+	{
+	}
+
+	static void light_directional_set_blend_splits(RID p_light, bool p_enable) {}
+
+	static bool light_directional_get_blend_splits(RID p_light) { return false; }
+
+	static void light_directional_set_sky_mode(RID p_light, RSE::LightDirectionalSkyMode p_mode) {}
+
+	static RSE::LightDirectionalSkyMode light_directional_get_sky_mode(RID p_light)
+	{
+		return RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY;
+	}
+
+	static RSE::LightDirectionalShadowMode light_directional_get_shadow_mode(RID p_light)
+	{
+		return RSE::LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL;
+	}
+
+	static RSE::LightOmniShadowMode light_omni_get_shadow_mode(RID p_light)
+	{
+		return RSE::LIGHT_OMNI_SHADOW_DUAL_PARABOLOID;
+	}
+
+	static void light_area_set_size(RID p_light, const Vector2& p_size) {}
+
+	static Vector2 light_area_get_size(RID p_light) { return Vector2(); }
+
+	static void light_area_set_normalize_energy(RID p_light, bool p_enabled) {}
+
+	static bool light_area_get_normalize_energy(RID p_light) { return true; }
+
+	static void light_area_set_texture(RID p_light, RID p_texture) {}
+
+	static RID light_area_get_texture(RID p_light) { return RID(); }
+
+	static bool light_has_shadow(RID p_light) { return false; }
+
+	static bool light_has_projector(RID p_light) { return false; }
+
+	static RSE::LightType light_get_type(RID p_light) { return RSE::LIGHT_OMNI; }
+
+	static AABB light_get_aabb(RID p_light) { return AABB(); }
+
+	static float light_get_param(RID p_light, RSE::LightParam p_param) { return 0.0f; }
+
+	static Color light_get_color(RID p_light) { return Color(); }
+
+	static bool light_get_reverse_cull_face_mode(RID p_light) { return false; }
+
+	static RSE::LightBakeMode light_get_bake_mode(RID p_light) { return RSE::LIGHT_BAKE_DISABLED; }
+
+	static uint32_t light_get_max_sdfgi_cascade(RID p_light) { return 0; }
+
+	static uint64_t light_get_version(RID p_light) { return 0; }
+
+	static uint32_t light_get_cull_mask(RID p_light) { return 0; }
+
+	/* LIGHT INSTANCE API */
+	static RID light_instance_create(RID p_light) { return RID(); }
+
+	static void light_instance_free(RID p_light) {}
+
+	static void light_instance_set_transform(RID p_light_instance, const Transform3D& p_transform)
+	{
+	}
+
+	static void light_instance_set_aabb(RID p_light_instance, const AABB& p_aabb) {}
+
+	static void light_instance_set_shadow_transform(RID p_light_instance,
+		const Projection& p_projection, const Transform3D& p_transform, float p_far, float p_split,
+		int p_pass, float p_shadow_texel_size, float p_bias_scale = 1.0, float p_range_begin = 0,
+		const Vector2& p_uv_scale = Vector2())
+	{
+	}
+
+	static void light_instance_mark_visible(RID p_light_instance) {}
+
+	static bool light_instance_is_shadow_visible_at_position(
+		RID p_light_instance, const Vector3& p_position)
+	{
+		return false;
+	}
+
+	/* PROBE API */
+	static RID reflection_probe_allocate() { return RID(); }
+
+	static void reflection_probe_initialize(RID p_rid) {}
+
+	static void reflection_probe_free(RID p_rid) {}
+
+	static void reflection_probe_set_update_mode(RID p_probe, RSE::ReflectionProbeUpdateMode p_mode)
+	{
+	}
+
+	static void reflection_probe_set_intensity(RID p_probe, float p_intensity) {}
+
+	static void reflection_probe_set_blend_distance(RID p_probe, float p_blend_distance) {}
+
+	static void reflection_probe_set_ambient_mode(
+		RID p_probe, RSE::ReflectionProbeAmbientMode p_mode)
+	{
+	}
+
+	static void reflection_probe_set_ambient_color(RID p_probe, const Color& p_color) {}
+
+	static void reflection_probe_set_ambient_energy(RID p_probe, float p_energy) {}
+
+	static void reflection_probe_set_max_distance(RID p_probe, float p_distance) {}
+
+	static void reflection_probe_set_size(RID p_probe, const Vector3& p_size) {}
+
+	static void reflection_probe_set_origin_offset(RID p_probe, const Vector3& p_offset) {}
+
+	static void reflection_probe_set_as_interior(RID p_probe, bool p_enable) {}
+
+	static void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable) {}
+
+	static void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable) {}
+
+	static void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers) {}
+
+	static void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers) {}
+
+	static void reflection_probe_set_resolution(RID p_probe, int p_resolution) {}
+
+	static void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio) {}
+
+	static float reflection_probe_get_mesh_lod_threshold(RID p_probe) { return 0.0f; }
+
+	static AABB reflection_probe_get_aabb(RID p_probe) { return AABB(); }
+
+	static RSE::ReflectionProbeUpdateMode reflection_probe_get_update_mode(RID p_probe)
+	{
+		return RSE::REFLECTION_PROBE_UPDATE_ONCE;
+	}
+
+	static uint32_t reflection_probe_get_cull_mask(RID p_probe) { return 0; }
+
+	static uint32_t reflection_probe_get_reflection_mask(RID p_probe) { return 0; }
+
+	static Vector3 reflection_probe_get_size(RID p_probe) { return Vector3(); }
+
+	static Vector3 reflection_probe_get_origin_offset(RID p_probe) { return Vector3(); }
+
+	static float reflection_probe_get_origin_max_distance(RID p_probe) { return 0.0f; }
+
+	static bool reflection_probe_renders_shadows(RID p_probe) { return false; }
+
+	/* REFLECTION ATLAS */
+	static RID reflection_atlas_create() { return RID(); }
+
+	static void reflection_atlas_free(RID p_ref_atlas) {}
+
+	static int reflection_atlas_get_size(RID p_ref_atlas) { return 0; }
+
+	static void reflection_atlas_set_size(
+		RID p_ref_atlas, int p_reflection_size, int p_reflection_count)
+	{
+	}
+
+	/* REFLECTION PROBE INSTANCE */
+	static RID reflection_probe_instance_create(RID p_probe) { return RID(); }
+
+	static void reflection_probe_instance_free(RID p_instance) {}
+
+	static void reflection_probe_instance_set_transform(
+		RID p_instance, const Transform3D& p_transform)
+	{
+	}
+
+	static bool reflection_probe_has_atlas_index(RID p_instance) { return false; }
+
+	static void reflection_probe_release_atlas_index(RID p_instance) {}
+
+	static bool reflection_probe_instance_needs_redraw(RID p_instance) { return false; }
+
+	static bool reflection_probe_instance_has_reflection(RID p_instance) { return false; }
+
+	static bool reflection_probe_instance_begin_render(RID p_instance, RID p_reflection_atlas)
+	{
+		return false;
+	}
+
+	static bool reflection_probe_instance_end_render(RID p_instance, RID p_reflection_atlas)
+	{
+		return false;
+	}
+
+	static Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(RID p_reflection_atlas)
+	{
+		return Ref<RenderSceneBuffers>();
+	}
+
+	static bool reflection_probe_instance_postprocess_step(RID p_instance) { return true; }
+
+	/* LIGHTMAP CAPTURE */
+	static bool owns_lightmap(RID p_rid) { return data && data->lightmap_owner.owns(p_rid); }
+
+	static RID lightmap_allocate();
+	static void lightmap_initialize(RID p_rid);
+	static void lightmap_free(RID p_rid);
+
+	static void lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_harmonics)
+	{
+	}
+
+	static void lightmap_set_probe_bounds(RID p_lightmap, const AABB& p_bounds) {}
+
+	static void lightmap_set_probe_interior(RID p_lightmap, bool p_interior) {}
+
+	static void lightmap_set_probe_capture_data(RID p_lightmap, const PackedVector3Array& p_points,
+		const PackedColorArray& p_point_sh, const PackedInt32Array& p_tetrahedra,
+		const PackedInt32Array& p_bsp_tree)
+	{
+	}
+
+	static void lightmap_set_baked_exposure_normalization(RID p_lightmap, float p_exposure) {}
+
+	static PackedVector3Array lightmap_get_probe_capture_points(RID p_lightmap)
+	{
+		return PackedVector3Array();
+	}
+
+	static PackedColorArray lightmap_get_probe_capture_sh(RID p_lightmap)
+	{
+		return PackedColorArray();
+	}
+
+	static PackedInt32Array lightmap_get_probe_capture_tetrahedra(RID p_lightmap)
+	{
+		return PackedInt32Array();
+	}
+
+	static PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap)
+	{
+		return PackedInt32Array();
+	}
+
+	static AABB lightmap_get_aabb(RID p_lightmap) { return AABB(); }
+
+	static void lightmap_tap_sh_light(RID p_lightmap, const Vector3& p_point, Color* r_sh) {}
+
+	static bool lightmap_is_interior(RID p_lightmap) { return false; }
+
+	static void lightmap_set_probe_capture_update_speed(float p_speed) {}
+
+	static float lightmap_get_probe_capture_update_speed() { return 0.0f; }
+
+	static void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow) {}
+
+	static RSE::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap)
+	{
+		return RSE::SHADOWMASK_MODE_NONE;
+	}
+
+	static void lightmap_set_shadowmask_mode(RID p_lightmap, RSE::ShadowmaskMode p_mode) {}
+
+	/* LIGHTMAP INSTANCE */
+	static bool owns_lightmap_instance(RID p_rid)
+	{
+		return data && data->lightmap_instance_owner.owns(p_rid);
+	}
+
+	static RID lightmap_instance_create(RID p_lightmap);
+	static void lightmap_instance_free(RID p_lightmap);
+
+	static void lightmap_instance_set_transform(RID p_lightmap, const Transform3D& p_transform) {}
+
+	/* SHADOW ATLAS API */
+	static RID shadow_atlas_create() { return RID(); }
+
+	static void shadow_atlas_free(RID p_atlas) {}
+
+	static void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_16_bits = true) {}
+
+	static void shadow_atlas_set_quadrant_subdivision(
+		RID p_atlas, int p_quadrant, int p_subdivision)
+	{
+	}
+
+	static bool shadow_atlas_update_light(
+		RID p_atlas, RID p_light_instance, float p_coverage, uint64_t p_light_version)
+	{
+		return false;
+	}
+
+	static void shadow_atlas_update(RID p_atlas) {}
+
+	static void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true) {}
+
+	static int get_directional_light_shadow_size(RID p_light_instance) { return 0; }
+
+	static void set_directional_shadow_count(int p_count) {}
+};
+
+class MaterialStorage final
+{
+private:
+	struct DummyShader
+	{
+		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
+	};
+
+	struct DummyMaterial
+	{
+		RID shader;
+		RID next_pass;
+	};
+
+	struct Data
+	{
+		HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
+		RID_Owner<DummyShader> shader_owner;
+		ShaderCompiler* dummy_compiler = nullptr;
+		HashSet<RID> dummy_embedded_set;
+		RID_Owner<DummyMaterial> material_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			initialize();
+		}
+		return data;
+	}
+
+public:
+	MaterialStorage() = delete;
+	MaterialStorage(const MaterialStorage&) = delete;
+	MaterialStorage& operator=(const MaterialStorage&) = delete;
+	~MaterialStorage() = delete;
+
+	static void initialize();
+	static void finalize();
+
+	/* GLOBAL SHADER UNIFORM API */
+	static void global_shader_parameter_remove(const String& p_name);
+	static Vector<String> global_shader_parameter_get_list();
+
+	static RSE::GlobalShaderParameterType global_shader_parameter_get_type(const String& p_name);
+
+	static void global_shader_parameters_load_settings(bool p_load_textures = true);
+
+	static void global_shader_parameters_clear() {}
+
+	static int32_t global_shader_parameters_instance_allocate(RID p_instance) { return 0; }
+
+	static void global_shader_parameters_instance_free(RID p_instance) {}
+
+	/* SHADER API */
+	static bool owns_shader(RID p_rid) { return data && data->shader_owner.owns(p_rid); }
+
+	static RID shader_allocate();
+	static void shader_initialize(RID p_rid, bool p_embedded = true);
+	static void shader_free(RID p_rid);
+
+	static void shader_set_code(RID p_shader, const String& p_code);
+
+	static void shader_set_path_hint(RID p_shader, const String& p_code) {}
+
+	static String shader_get_code(RID p_shader) { return ""; }
+
+	static void shader_set_default_texture_parameter(
+		RID p_shader, const String& p_name, RID p_texture, int p_index)
+	{
+	}
+
+	static RID shader_get_default_texture_parameter(
+		RID p_shader, const String& p_name, int p_index)
+	{
+		return RID();
+	}
+
+	static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader)
+	{
+		return RenderingServerTypes::ShaderNativeSourceCode();
+	}
+
+	static void shader_embedded_set_lock() {}
+
+	static const HashSet<RID>& shader_embedded_set_get()
+	{
+		return _get_data()->dummy_embedded_set;
+	}
+
+	static void shader_embedded_set_unlock() {}
+
+	/* MATERIAL API */
+	static bool owns_material(RID p_rid) { return data && data->material_owner.owns(p_rid); }
+
+	static RID material_allocate();
+	static void material_initialize(RID p_rid);
+	static void material_free(RID p_rid);
+
+	static void material_set_render_priority(RID p_material, int priority) {}
+
+	static void material_set_shader(RID p_shader_material, RID p_shader);
+
+	static void material_set_next_pass(RID p_material, RID p_next_material);
+
+	static bool material_is_animated(RID p_material) { return false; }
+
+	static bool material_casts_shadows(RID p_material) { return false; }
+
+	static RSE::CullMode material_get_cull_mode(RID p_material) { return RSE::CULL_MODE_DISABLED; }
+
+	static void material_get_instance_shader_parameters(
+		RID p_material, List<InstanceShaderParam>* r_parameters);
+
+	static void material_update_dependency(RID p_material, DependencyTracker* p_instance) {}
+};
+
+struct DummyMesh
+{
+	Vector<RenderingServerTypes::SurfaceData> surfaces;
+	int blend_shape_count = 0;
+	RSE::BlendShapeMode blend_shape_mode = RSE::BLEND_SHAPE_MODE_NORMALIZED;
+	PackedFloat32Array blend_shape_values;
+	Dependency dependency;
+};
+
+class MeshStorage final
+{
+private:
+	struct DummyMultiMesh
+	{
+		PackedFloat32Array buffer;
+	};
+
+	struct Data
+	{
+		RID_Owner<DummyMesh> mesh_owner;
+		RID_Owner<DummyMultiMesh> multimesh_owner;
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			data = memnew(Data);
+		}
+		return data;
+	}
+
+public:
+	MeshStorage() = delete;
+	MeshStorage(const MeshStorage&) = delete;
+	MeshStorage& operator=(const MeshStorage&) = delete;
+	~MeshStorage() = delete;
+
+	static void initialize()
+	{
+		if (!data) {
+			data = memnew(Data);
+		}
+	}
+
+	static void finalize()
+	{
+		if (data) {
+			memdelete(data);
+			data = nullptr;
+		}
+	}
+
+	/* MESH API */
+	static _FORCE_INLINE_ DummyMesh* get_mesh(RID p_rid)
+	{
+		return data ? data->mesh_owner.get_or_null(p_rid) : nullptr;
+	}
+	static bool owns_mesh(RID p_rid) { return data && data->mesh_owner.owns(p_rid); }
+
+	static RID mesh_allocate() { return _get_data()->mesh_owner.allocate_rid(); }
+	static void mesh_initialize(RID p_rid)
+	{
+		_get_data()->mesh_owner.initialize_rid(p_rid, DummyMesh());
+	}
+	static void mesh_free(RID p_rid)
+	{
+		if (!data) {
+			return;
+		}
+		data->mesh_owner.free(p_rid);
+	}
+
+	static void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		m->blend_shape_count = p_blend_shape_count;
+	}
+
+	static bool mesh_needs_instance(RID p_mesh, bool p_has_skeleton) { return false; }
+
+	static void mesh_add_surface(RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		m->surfaces.push_back(p_surface);
+	}
+
+	static int mesh_get_blend_shape_count(RID p_mesh)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(m, 0);
+		return m->blend_shape_count;
+	}
+
+	static void mesh_set_blend_shape_mode(RID p_mesh, RSE::BlendShapeMode p_mode)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		m->blend_shape_mode = p_mode;
+	}
+
+	static RSE::BlendShapeMode mesh_get_blend_shape_mode(RID p_mesh)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(m, RSE::BLEND_SHAPE_MODE_NORMALIZED);
+		return m->blend_shape_mode;
+	}
+
+	static void mesh_surface_update_vertex_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+	{
+	}
+	static void mesh_surface_update_attribute_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+	{
+	}
+	static void mesh_surface_update_skin_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+	{
+	}
+	static void mesh_surface_update_index_region(
+		RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data)
+	{
+	}
+
+	static void mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		ERR_FAIL_INDEX(p_surface, m->surfaces.size());
+		m->surfaces.write[p_surface].material = p_material;
+	}
+
+	static RID mesh_surface_get_material(RID p_mesh, int p_surface)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(m, RID());
+		ERR_FAIL_INDEX_V(p_surface, m->surfaces.size(), RID());
+		return m->surfaces[p_surface].material;
+	}
+
+	static RenderingServerTypes::SurfaceData mesh_get_surface(RID p_mesh, int p_surface)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(m, RenderingServerTypes::SurfaceData());
+		ERR_FAIL_INDEX_V(p_surface, m->surfaces.size(), RenderingServerTypes::SurfaceData());
+		return m->surfaces[p_surface];
+	}
+
+	static RID mesh_surface_get_vertex_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+	static RID mesh_surface_get_attribute_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+	static RID mesh_surface_get_skin_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+	static RID mesh_surface_get_index_buffer_rd_rid(RID p_mesh, int p_surface) { return RID(); }
+
+	static int mesh_get_surface_count(RID p_mesh)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL_V(m, 0);
+		return m->surfaces.size();
+	}
+
+	static void mesh_set_custom_aabb(RID p_mesh, const AABB& p_aabb) {}
+	static AABB mesh_get_custom_aabb(RID p_mesh) { return AABB(); }
+	static AABB mesh_get_aabb(RID p_mesh, RID p_skeleton) { return AABB(); }
+
+	static void mesh_set_path(RID p_mesh, const String& p_path) {}
+	static String mesh_get_path(RID p_mesh) { return String(); }
+	static void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh) {}
+
+	static void mesh_clear(RID p_mesh)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		m->surfaces.clear();
+	}
+
+	static void mesh_surface_remove(RID p_mesh, int p_surface)
+	{
+		DummyMesh* m = _get_data()->mesh_owner.get_or_null(p_mesh);
+		ERR_FAIL_NULL(m);
+		ERR_FAIL_INDEX(p_surface, m->surfaces.size());
+		m->surfaces.remove_at(p_surface);
+	}
+
+	static void mesh_debug_usage(List<RenderingServerTypes::MeshInfo>* r_info) {}
+
+	/* MESH INSTANCE API */
+
+	static RID mesh_instance_create(RID p_base) { return RID(); }
+	static void mesh_instance_free(RID p_rid) {}
+	static void mesh_instance_set_skeleton(RID p_mesh_instance, RID p_skeleton) {}
+	static void mesh_instance_set_blend_shape_weight(
+		RID p_mesh_instance, int p_shape, float p_weight)
+	{
+	}
+	static void mesh_instance_check_for_update(RID p_mesh_instance) {}
+	static void mesh_instance_set_canvas_item_transform(
+		RID p_mesh_instance, const Transform2D& p_transform)
+	{
+	}
+	static void update_mesh_instances() {}
+
+	/* MULTIMESH API */
+	static _FORCE_INLINE_ void multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
+	static bool owns_multimesh(RID p_rid) { return data && data->multimesh_owner.owns(p_rid); }
+
+	static RID _multimesh_allocate() { return _get_data()->multimesh_owner.allocate_rid(); }
+	static void _multimesh_initialize(RID p_rid)
+	{
+		_get_data()->multimesh_owner.initialize_rid(p_rid, DummyMultiMesh());
+	}
+	static void _multimesh_free(RID p_rid)
+	{
+		if (!data) {
+			return;
+		}
+		data->multimesh_owner.free(p_rid);
+	}
+
+	static void _multimesh_allocate_data(RID p_multimesh, int p_instances,
+		RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
+		bool p_use_custom_data = false, bool p_use_indirect = false)
+	{
+	}
+	static int _multimesh_get_instance_count(RID p_multimesh) { return 0; }
+
+	static void _multimesh_set_mesh(RID p_multimesh, RID p_mesh) {}
+	static void _multimesh_instance_set_transform(
+		RID p_multimesh, int p_index, const Transform3D& p_transform)
+	{
+	}
+	static void _multimesh_instance_set_transform_2d(
+		RID p_multimesh, int p_index, const Transform2D& p_transform)
+	{
+	}
+	static void _multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color) {}
+	static void _multimesh_instance_set_custom_data(
+		RID p_multimesh, int p_index, const Color& p_color)
+	{
+	}
+
+	static void _multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb) {}
+	static AABB _multimesh_get_custom_aabb(RID p_multimesh) { return AABB(); }
+	static RID _multimesh_get_mesh(RID p_multimesh) { return RID(); }
+
+	static Transform3D _multimesh_instance_get_transform(RID p_multimesh, int p_index)
+	{
+		return Transform3D();
+	}
+	static Transform2D _multimesh_instance_get_transform_2d(RID p_multimesh, int p_index)
+	{
+		return Transform2D();
+	}
+	static Color _multimesh_instance_get_color(RID p_multimesh, int p_index) { return Color(); }
+	static Color _multimesh_instance_get_custom_data(RID p_multimesh, int p_index)
+	{
+		return Color();
+	}
+
+	static void _multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer) {}
+	static RID _multimesh_get_command_buffer_rd_rid(RID p_multimesh) { return RID(); }
+	static RID _multimesh_get_buffer_rd_rid(RID p_multimesh) { return RID(); }
+	static Vector<float> _multimesh_get_buffer(RID p_multimesh) { return Vector<float>(); }
+
+	static void _multimesh_set_visible_instances(RID p_multimesh, int p_visible) {}
+	static int _multimesh_get_visible_instances(RID p_multimesh) { return 0; }
+
+	static AABB _multimesh_get_aabb(RID p_multimesh) { return AABB(); }
+
+	static RendererMeshStorage::MultiMeshInterpolator* _multimesh_get_interpolator(RID p_multimesh)
+	{
+		return nullptr;
+	}
+
+	/* SKELETON API */
+
+	static RID skeleton_allocate() { return RID(); }
+	static void skeleton_initialize(RID p_rid) {}
+	static void skeleton_free(RID p_rid) {}
+
+	static void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton = false) {}
+	static void skeleton_set_base_transform_2d(
+		RID p_skeleton, const Transform2D& p_base_transform)
+	{
+	}
+	static int skeleton_get_bone_count(RID p_skeleton) { return 0; }
+	static void skeleton_bone_set_transform(
+		RID p_skeleton, int p_bone, const Transform3D& p_transform)
+	{
+	}
+	static Transform3D skeleton_bone_get_transform(RID p_skeleton, int p_bone)
+	{
+		return Transform3D();
+	}
+	static void skeleton_bone_set_transform_2d(
+		RID p_skeleton, int p_bone, const Transform2D& p_transform)
+	{
+	}
+	static Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone)
+	{
+		return Transform2D();
+	}
+
+	static void skeleton_update_dependency(RID p_base, DependencyTracker* p_instance) {}
+};
+
+class ParticlesStorage final
+{
+public:
+	ParticlesStorage() = delete;
+	~ParticlesStorage() = delete;
+	ParticlesStorage(const ParticlesStorage&) = delete;
+	ParticlesStorage& operator=(const ParticlesStorage&) = delete;
+
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static bool is_initialized() { return true; }
+
+	static bool free(RID p_rid) { return false; }
+
+	/* PARTICLES */
+
+	static bool owns_particles(RID p_rid) { return false; }
+
+	static RID particles_allocate() { return RID(); }
+
+	static void particles_initialize(RID p_rid) {}
+
+	static void particles_free(RID p_rid) {}
+
+	static void particles_set_mode(RID p_particles, RSE::ParticlesMode p_mode) {}
+
+	static void particles_emit(RID p_particles, const Transform3D& p_transform,
+		const Vector3& p_velocity, const Color& p_color, const Color& p_custom,
+		uint32_t p_emit_flags)
+	{
+	}
+
+	static void particles_set_emitting(RID p_particles, bool p_emitting) {}
+
+	static void particles_set_amount(RID p_particles, int p_amount) {}
+
+	static void particles_set_amount_ratio(RID p_particles, float p_amount_ratio) {}
+
+	static void particles_set_lifetime(RID p_particles, double p_lifetime) {}
+
+	static void particles_set_one_shot(RID p_particles, bool p_one_shot) {}
+
+	static void particles_set_pre_process_time(RID p_particles, double p_time) {}
+
+	static void particles_request_process_time(
+		RID p_particles, real_t p_request_process_time, real_t p_particles_request_process_time)
+	{
+	}
+
+	static void particles_set_explosiveness_ratio(RID p_particles, real_t p_ratio) {}
+
+	static void particles_set_randomness_ratio(RID p_particles, real_t p_ratio) {}
+
+	static void particles_set_seed(RID p_particles, uint32_t p_seed) {}
+
+	static void particles_set_custom_aabb(RID p_particles, const AABB& p_aabb) {}
+
+	static void particles_set_speed_scale(RID p_particles, double p_scale) {}
+
+	static void particles_set_use_local_coordinates(RID p_particles, bool p_enable) {}
+
+	static void particles_set_process_material(RID p_particles, RID p_material) {}
+
+	static RID particles_get_process_material(RID p_particles) { return RID(); }
+
+	static void particles_set_fixed_fps(RID p_particles, int p_fps) {}
+
+	static void particles_set_interpolate(RID p_particles, bool p_enable) {}
+
+	static void particles_set_fractional_delta(RID p_particles, bool p_enable) {}
+
+	static void particles_set_subemitter(RID p_particles, RID p_subemitter_particles) {}
+
+	static void particles_set_view_axis(
+		RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis)
+	{
+	}
+
+	static void particles_set_collision_base_size(RID p_particles, real_t p_size) {}
+
+	static void particles_set_transform_align(
+		RID p_particles, RSE::ParticlesTransformAlign p_transform_align)
+	{
+	}
+
+	static void particles_set_transform_align_channel_filter(
+		RID p_particles, RSE::ParticlesTransformAlignCustomSrc p_transform_align_channel_filter)
+	{
+	}
+
+	static void particles_set_transform_align_axis(
+		RID p_particles, RSE::ParticlesTransformAlignAxis p_rotation_axis)
+	{
+	}
+
+	static void particles_set_trails(RID p_particles, bool p_enable, double p_length) {}
+
+	static void particles_set_trail_bind_poses(
+		RID p_particles, const Vector<Transform3D>& p_bind_poses)
+	{
+	}
+
+	static void particles_restart(RID p_particles) {}
+
+	static void particles_set_draw_order(RID p_particles, RSE::ParticlesDrawOrder p_order) {}
+
+	static void particles_set_draw_passes(RID p_particles, int p_count) {}
+
+	static void particles_set_draw_pass_mesh(RID p_particles, int p_pass, RID p_mesh) {}
+
+	static void particles_request_process(RID p_particles) {}
+
+	static AABB particles_get_current_aabb(RID p_particles) { return AABB(); }
+
+	static AABB particles_get_aabb(RID p_particles) { return AABB(); }
+
+	static void particles_set_emission_transform(RID p_particles, const Transform3D& p_transform) {}
+
+	static void particles_set_emitter_velocity(RID p_particles, const Vector3& p_velocity) {}
+
+	static void particles_set_interp_to_end(RID p_particles, float p_interp) {}
+
+	static bool particles_get_emitting(RID p_particles) { return false; }
+
+	static int particles_get_draw_passes(RID p_particles) { return 0; }
+
+	static RID particles_get_draw_pass_mesh(RID p_particles, int p_pass) { return RID(); }
+
+	static void particles_add_collision(RID p_particles, RID p_instance) {}
+
+	static void particles_remove_collision(RID p_particles, RID p_instance) {}
+
+	static void update_particles() {}
+
+	/* PARTICLES COLLISION */
+
+	static bool owns_particles_collision(RID p_rid) { return false; }
+
+	static RID particles_collision_allocate() { return RID(); }
+
+	static void particles_collision_initialize(RID p_rid) {}
+
+	static void particles_collision_free(RID p_rid) {}
+
+	static void particles_collision_set_collision_type(
+		RID p_particles_collision, RSE::ParticlesCollisionType p_type)
+	{
+	}
+
+	static void particles_collision_set_cull_mask(RID p_particles_collision, uint32_t p_cull_mask)
+	{
+	}
+
+	static void particles_collision_set_sphere_radius(RID p_particles_collision, real_t p_radius) {}
+
+	static void particles_collision_set_box_extents(
+		RID p_particles_collision, const Vector3& p_extents)
+	{
+	}
+
+	static void particles_collision_set_attractor_strength(
+		RID p_particles_collision, real_t p_strength)
+	{
+	}
+
+	static void particles_collision_set_attractor_directionality(
+		RID p_particles_collision, real_t p_directionality)
+	{
+	}
+
+	static void particles_collision_set_attractor_attenuation(
+		RID p_particles_collision, real_t p_curve)
+	{
+	}
+
+	static void particles_collision_set_field_texture(RID p_particles_collision, RID p_texture) {}
+
+	static void particles_collision_height_field_update(RID p_particles_collision) {}
+
+	static void particles_collision_set_height_field_resolution(
+		RID p_particles_collision, RSE::ParticlesCollisionHeightfieldResolution p_resolution)
+	{
+	}
+
+	static AABB particles_collision_get_aabb(RID p_particles_collision) { return AABB(); }
+
+	static bool particles_collision_is_heightfield(RID p_particles_collision) { return false; }
+
+	static uint32_t particles_collision_get_height_field_mask(RID p_particles_collision)
+	{
+		return 0;
+	}
+
+	static void particles_collision_set_height_field_mask(
+		RID p_particles_collision, uint32_t p_heightfield_mask)
+	{
+	}
+
+	static uint32_t particles_collision_get_cull_mask(RID p_particles_collision) { return 0; }
+
+	static bool owns_particles_collision_instance(RID p_rid) { return false; }
+
+	static RID particles_collision_instance_create(RID p_collision) { return RID(); }
+
+	static void particles_collision_instance_free(RID p_rid) {}
+
+	static void particles_collision_instance_set_transform(
+		RID p_collision_instance, const Transform3D& p_transform)
+	{
+	}
+
+	static void particles_collision_instance_set_active(RID p_collision_instance, bool p_active) {}
+
+	static bool particles_is_inactive(RID p_particles) { return false; }
+};
+
+struct DummyTexture
+{
+	String path;
+	int width = 0;
+	int height = 0;
+	int depth = 0;
+	int layers = 0;
+	Image::Format format = Image::FORMAT_L8;
+	Ref<Image> image;
+};
+
+struct DummyRenderTarget
+{
+	Point2i position;
+	Size2i size;
+	RID texture;
+	bool direct_to_screen = false;
+	bool is_transparent = false;
+	bool was_used = false;
+	bool clear_requested = false;
+	Color clear_color;
+	RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
+	bool use_hdr = false;
+};
+
+struct DummyCanvasTexture
+{
+	RID diffuse;
+	RID normal_map;
+	RID specular;
+	Color specular_color = Color(1, 1, 1, 1);
+	real_t shininess = 1.0;
+	RSE::CanvasItemTextureFilter filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
+	RSE::CanvasItemTextureRepeat repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+};
+
+class TextureStorage final
+{
+private:
+	struct Data
+	{
+		RID_Owner<DummyTexture> texture_owner;
+		RID_Owner<DummyRenderTarget> render_target_owner;
+		RID_Owner<DummyCanvasTexture> canvas_texture_owner;
+		Color default_clear_color = Color(0, 0, 0, 1);
+	};
+
+	static inline Data* data = nullptr;
+
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			data = memnew(Data);
+		}
+		return data;
+	}
+
+public:
+	TextureStorage() = delete;
+	TextureStorage(const TextureStorage&) = delete;
+	TextureStorage& operator=(const TextureStorage&) = delete;
+	~TextureStorage() = delete;
+
+	static void initialize()
+	{
+		if (!data) {
+			data = memnew(Data);
+		}
+	}
+
+	static void finalize()
+	{
+		if (data) {
+			memdelete(data);
+			data = nullptr;
+		}
+	}
+
+	static bool owns_texture(RID p_rid) { return data && data->texture_owner.owns(p_rid); }
+	static bool owns_render_target(RID p_rid)
+	{
+		return data && data->render_target_owner.owns(p_rid);
+	}
+	static bool owns_canvas_texture(RID p_rid)
+	{
+		return data && data->canvas_texture_owner.owns(p_rid);
+	}
+
+	/* CANVAS TEXTURE API */
+
+	static RID canvas_texture_allocate() { return _get_data()->canvas_texture_owner.allocate_rid(); }
+
+	static void canvas_texture_initialize(RID p_rid)
+	{
+		_get_data()->canvas_texture_owner.initialize_rid(p_rid, DummyCanvasTexture());
+	}
+
+	static void canvas_texture_free(RID p_rid)
+	{
+		if (!data) {
+			return;
+		}
+		data->canvas_texture_owner.free(p_rid);
+	}
+
+	static void canvas_texture_set_channel(
+		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
+	{
+		DummyCanvasTexture* ct = _get_data()->canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		switch (p_channel) {
+		case RSE::CANVAS_TEXTURE_CHANNEL_DIFFUSE:
+			ct->diffuse = p_texture;
+			break;
+		case RSE::CANVAS_TEXTURE_CHANNEL_NORMAL:
+			ct->normal_map = p_texture;
+			break;
+		case RSE::CANVAS_TEXTURE_CHANNEL_SPECULAR:
+			ct->specular = p_texture;
+			break;
+		}
+	}
+
+	static void canvas_texture_set_shading_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
+	{
+		DummyCanvasTexture* ct = _get_data()->canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->filter = p_filter;
+	}
+
+	static void canvas_texture_set_shading_parameters(
+		RID p_canvas_texture, const Color& p_base_color, float p_shininess)
+	{
+		DummyCanvasTexture* ct = _get_data()->canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->specular_color = p_base_color;
+		ct->shininess = p_shininess;
+	}
+
+	static void canvas_texture_set_texture_filter(
+		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
+	{
+		DummyCanvasTexture* ct = _get_data()->canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->filter = p_filter;
+	}
+
+	static void canvas_texture_set_texture_repeat(
+		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
+	{
+		DummyCanvasTexture* ct = _get_data()->canvas_texture_owner.get_or_null(p_canvas_texture);
+		ERR_FAIL_NULL(ct);
+		ct->repeat = p_repeat;
+	}
+
+	/* TEXTURE 2D / GENERAL API */
+
+	static RID texture_allocate() { return _get_data()->texture_owner.allocate_rid(); }
+
+	static void texture_initialize(RID p_rid)
+	{
+		_get_data()->texture_owner.initialize_rid(p_rid, DummyTexture());
+	}
+
+	static void texture_free(RID p_rid)
+	{
+		if (!data) {
+			return;
+		}
+		data->texture_owner.free(p_rid);
+	}
+
+	static RID texture_2d_create(const Ref<Image>& p_image)
+	{
+		RID rid = _get_data()->texture_owner.allocate_rid();
+		texture_2d_initialize(rid, p_image);
+		return rid;
+	}
+
+	static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+	{
+		DummyTexture t;
+		if (p_image.is_valid()) {
+			t.image = p_image;
+			t.width = p_image->get_width();
+			t.height = p_image->get_height();
+			t.format = p_image->get_format();
+		}
+		_get_data()->texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_2d_update(RID p_texture, const Ref<Image>& p_image, int p_layer)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->image = p_image;
+	}
+
+	static Ref<Image> texture_2d_get(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, Ref<Image>());
+		return t->image;
+	}
+
+	static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer)
+	{
+		return texture_2d_get(p_texture);
+	}
+
+	static void texture_2d_placeholder_initialize(RID p_texture) { texture_initialize(p_texture); }
+
+	static void texture_2d_layered_initialize(
+		RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
+	{
+		DummyTexture t;
+		t.layers = p_layers.size();
+		if (!p_layers.is_empty() && p_layers[0].is_valid()) {
+			t.image = p_layers[0];
+			t.width = p_layers[0]->get_width();
+			t.height = p_layers[0]->get_height();
+			t.format = p_layers[0]->get_format();
+		}
+		_get_data()->texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_2d_layered_placeholder_initialize(
+		RID p_texture, RSE::TextureLayeredType p_layered_type)
+	{
+		texture_initialize(p_texture);
+	}
+
+	static void texture_3d_initialize(RID p_texture, Image::Format p_format, int p_width,
+		int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
+	{
+		DummyTexture t;
+		t.width = p_width;
+		t.height = p_height;
+		t.depth = p_depth;
+		t.format = p_format;
+		_get_data()->texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data) {}
+
+	static Vector<Ref<Image>> texture_3d_get(RID p_texture) { return Vector<Ref<Image>>(); }
+
+	static void texture_3d_placeholder_initialize(RID p_texture) { texture_initialize(p_texture); }
+
+	static void texture_proxy_initialize(RID p_texture, RID p_base)
+	{
+		texture_initialize(p_texture);
+	}
+
+	static void texture_proxy_update(RID p_proxy, RID p_base) {}
+
+	static void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+		RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_has_mipmaps)
+	{
+		DummyTexture t;
+		t.width = p_width;
+		t.height = p_height;
+		_get_data()->texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_drawable_generate_mipmaps(RID p_texture) {}
+
+	static RID texture_drawable_get_default_material() { return RID(); }
+
+	static void texture_external_initialize(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
+	{
+		DummyTexture t;
+		t.width = p_width;
+		t.height = p_height;
+		_get_data()->texture_owner.initialize_rid(p_texture, t);
+	}
+
+	static void texture_external_update(
+		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
+	{
+	}
+
+	static uint64_t texture_get_native_handle(RID p_texture, bool p_srgb) { return 0; }
+
+	static void texture_set_format(RID p_texture, Image::Format p_format)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->format = p_format;
+	}
+
+	static Image::Format texture_get_format(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, Image::FORMAT_L8);
+		return t->format;
+	}
+
+	static void texture_set_width(RID p_texture, int p_width)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->width = p_width;
+	}
+
+	static int texture_get_width(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->width;
+	}
+
+	static void texture_set_height(RID p_texture, int p_height)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->height = p_height;
+	}
+
+	static int texture_get_height(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->height;
+	}
+
+	static void texture_set_depth(RID p_texture, int p_depth)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->depth = p_depth;
+	}
+
+	static int texture_get_depth(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->depth;
+	}
+
+	static void texture_set_layers(RID p_texture, int p_layers)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->layers = p_layers;
+	}
+
+	static int texture_get_layers(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, 0);
+		return t->layers;
+	}
+
+	static void texture_set_path(RID p_texture, const String& p_path)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL(t);
+		t->path = p_path;
+	}
+
+	static String texture_get_path(RID p_texture)
+	{
+		DummyTexture* t = _get_data()->texture_owner.get_or_null(p_texture);
+		ERR_FAIL_NULL_V(t, String());
+		return t->path;
+	}
+
+	static void texture_set_size_override(RID p_texture, int p_width, int p_height) {}
+
+	static void texture_replace(RID p_texture, RID p_by_texture) {}
+
+	static void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) {}
+
+	static Size2 texture_size_with_proxy(RID p_proxy)
+	{
+		return Size2(texture_get_width(p_proxy), texture_get_height(p_proxy));
+	}
+
+	/* DECAL API */
+
+	static RID decal_allocate() { return RID(); }
+	static void decal_initialize(RID p_rid) {}
+	static void decal_free(RID p_rid) {}
+	static void decal_set_size(RID p_decal, const Vector3& p_size) {}
+	static void decal_set_texture(RID p_decal, RSE::DecalTexture p_type, RID p_texture) {}
+	static void decal_set_emission_energy(RID p_decal, float p_energy) {}
+	static void decal_set_albedo_mix(RID p_decal, float p_mix) {}
+	static void decal_set_modulate(RID p_decal, const Color& p_modulate) {}
+	static void decal_set_cull_mask(RID p_decal, uint32_t p_layers) {}
+	static void decal_set_distance_fade(RID p_decal, bool p_enabled, float p_begin, float p_length)
+	{
+	}
+	static void decal_set_fade(RID p_decal, float p_above, float p_below) {}
+	static void decal_set_normal_fade(RID p_decal, float p_fade) {}
+	static AABB decal_get_aabb(RID p_decal) { return AABB(); }
+	static uint32_t decal_get_cull_mask(RID p_decal) { return 0; }
+
+	static RID decal_instance_create(RID p_decal) { return RID(); }
+	static void decal_instance_free(RID p_decal_instance) {}
+	static void decal_instance_set_transform(RID p_decal_instance, const Transform3D& p_transform)
+	{
+	}
+	static void decal_instance_set_sorting_offset(RID p_decal_instance, float p_sorting_offset) {}
+
+	/* RENDER TARGET API */
+
+	static RID render_target_create()
+	{
+		Data* d = _get_data();
+		RID rid = d->render_target_owner.allocate_rid();
+		DummyRenderTarget rt;
+		rt.texture = texture_allocate();
+		texture_initialize(rt.texture);
+		d->render_target_owner.initialize_rid(rid, rt);
+		return rid;
+	}
+
+	static void render_target_free(RID p_render_target)
+	{
+		if (!data) {
+			return;
+		}
+		DummyRenderTarget* rt = data->render_target_owner.get_or_null(p_render_target);
+		if (rt) {
+			if (rt->texture.is_valid()) {
+				texture_free(rt->texture);
+			}
+			data->render_target_owner.free(p_render_target);
+		}
+	}
+
+	static void render_target_set_position(RID p_render_target, int p_x, int p_y)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->position = Point2i(p_x, p_y);
+	}
+
+	static Point2i render_target_get_position(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Point2i());
+		return rt->position;
+	}
+
+	static void render_target_set_size(
+		RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->size = Size2i(p_width, p_height);
+	}
+
+	static Size2i render_target_get_size(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Size2i());
+		return rt->size;
+	}
+
+	static void render_target_set_transparent(RID p_render_target, bool p_is_transparent)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->is_transparent = p_is_transparent;
+	}
+
+	static bool render_target_is_transparent(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->is_transparent;
+	}
+
+	static void render_target_set_direct_to_screen(RID p_render_target, bool p_direct_to_screen)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->direct_to_screen = p_direct_to_screen;
+	}
+
+	static bool render_target_is_direct_to_screen(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->direct_to_screen;
+	}
+
+	static RID render_target_get_texture(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, RID());
+		return rt->texture;
+	}
+
+	static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->msaa = p_msaa;
+	}
+
+	static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, RSE::VIEWPORT_MSAA_DISABLED);
+		return rt->msaa;
+	}
+
+	static bool render_target_get_msaa_needs_resolve(RID p_render_target) { return false; }
+
+	static void render_target_do_msaa_resolve(RID p_render_target) {}
+
+	static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->use_hdr = p_use_hdr;
+	}
+
+	static bool render_target_is_using_hdr(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->use_hdr;
+	}
+
+	static void render_target_set_use_debanding(RID p_render_target, bool p_use_debanding) {}
+
+	static void render_target_set_vrs_mode(RID p_render_target, RSE::ViewportVRSMode p_mode) {}
+
+	static void render_target_set_vrs_update_mode(
+		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
+	{
+	}
+
+	static void render_target_set_vrs_texture(RID p_render_target, RID p_texture) {}
+
+	static void render_target_request_clear(RID p_render_target, const Color& p_clear_color)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->clear_requested = true;
+		rt->clear_color = p_clear_color;
+	}
+
+	static bool render_target_is_clear_requested(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->clear_requested;
+	}
+
+	static Color render_target_get_clear_request_color(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, Color());
+		return rt->clear_color;
+	}
+
+	static void render_target_do_clear_request(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->clear_requested = false;
+	}
+
+	static void render_target_set_sdf_size_and_scale(
+		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
+	{
+	}
+
+	static Rect2i render_target_get_sdf_rect(RID p_render_target) { return Rect2i(); }
+
+	static void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled) {}
+
+	static void render_target_set_override(RID p_render_target, RID p_color_texture,
+		RID p_depth_texture, RID p_velocity, RID p_velocity_depth)
+	{
+	}
+
+	static RID render_target_get_override_color(RID p_render_target) { return RID(); }
+	static RID render_target_get_override_depth(RID p_render_target) { return RID(); }
+	static RID render_target_get_override_velocity(RID p_render_target) { return RID(); }
+	static RID render_target_get_override_velocity_depth(RID p_render_target) { return RID(); }
+
+	static void render_target_set_render_region(RID p_render_target, const Rect2i& p_render_region)
+	{
+	}
+
+	static Rect2i render_target_get_render_region(RID p_render_target) { return Rect2i(); }
+
+	static void render_target_set_velocity_target_size(
+		RID p_render_target, const Size2i& p_target_size)
+	{
+	}
+
+	static Size2i render_target_get_velocity_target_size(RID p_render_target) { return Size2i(); }
+
+	static bool render_target_was_used(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL_V(rt, false);
+		return rt->was_used;
+	}
+
+	static void render_target_set_as_unused(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->was_used = false;
+	}
+
+	static void render_target_set_as_current(RID p_render_target)
+	{
+		DummyRenderTarget* rt = _get_data()->render_target_owner.get_or_null(p_render_target);
+		ERR_FAIL_NULL(rt);
+		rt->was_used = true;
+	}
+
+	static void set_default_clear_color(const Color& p_color)
+	{
+		_get_data()->default_clear_color = p_color;
+	}
+
+	static Color get_default_clear_color() { return _get_data()->default_clear_color; }
+};
+
+class Utilities final
+{
+public:
+	Utilities() = delete;
+	Utilities(const Utilities&) = delete;
+	Utilities& operator=(const Utilities&) = delete;
+	~Utilities() = delete;
+
+	static void initialize() {}
+	static void finalize() {}
+
+	static RSE::InstanceType get_base_type(RID p_rid);
+	static bool free(RID p_rid);
+
+	static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
+
+	static RID visibility_notifier_allocate() { return RID(); }
+	static void visibility_notifier_initialize(RID p_notifier) {}
+	static void visibility_notifier_free(RID p_notifier) {}
+	static void visibility_notifier_set_aabb(RID p_notifier, const AABB& p_aabb) {}
+	static AABB visibility_notifier_get_aabb(RID p_notifier) { return AABB(); }
+	static void visibility_notifier_call(RID p_notifier, bool p_enter, bool p_deferred) {}
+
+	static void capture_timestamps_begin() {}
+	static void capture_timestamp(const String& p_name) {}
+	static uint32_t get_captured_timestamps_count() { return 0; }
+	static uint64_t get_captured_timestamps_frame() { return 0; }
+	static uint64_t get_captured_timestamp_gpu_time(uint32_t p_index) { return 0; }
+	static uint64_t get_captured_timestamp_cpu_time(uint32_t p_index) { return 0; }
+	static String get_captured_timestamp_name(uint32_t p_index) { return String(); }
+
+	static void update_dirty_resources() {}
+	static void set_debug_generate_wireframes(bool p_generate) {}
+
+	static bool has_os_feature(const String& p_feature)
+	{
+		return p_feature == "rgtc" || p_feature == "bptc" || p_feature == "s3tc" ||
+			   p_feature == "etc2";
+	}
+
+	static void update_memory_info() {}
+
+	static uint64_t get_rendering_info(RSE::RenderingInfo p_info) { return 0; }
+
+	static String get_video_adapter_name() { return String(); }
+	static String get_video_adapter_vendor() { return String(); }
+	static RenderingDeviceEnums::DeviceType get_video_adapter_type()
+	{
+		return RenderingDeviceEnums::DeviceType::DEVICE_TYPE_OTHER;
+	}
+	static String get_video_adapter_api_version() { return String(); }
+
+	static Size2i get_maximum_viewport_size() { return Size2i(); }
+
+	static uint32_t get_maximum_shader_varyings() { return 31; }
+
+	static uint64_t get_maximum_uniform_buffer_size() { return 65536; }
+};
+
+} // namespace RendererDummy
+
+class RasterizerCanvasDummy final
+{
+public:
+	static void initialize() {}
+
+	static void finalize() {}
+
+	static void set_time(double p_time) {}
+
+	static void update() {}
+
+	static bool free(RID p_rid) { return false; }
+
+	static PolygonID request_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
+		const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
+		const Vector<int>& p_bones = Vector<int>(),
+		const Vector<float>& p_weights = Vector<float>(), int p_count = -1)
+	{
+		return 0;
+	}
+
+	static void free_polygon(PolygonID p_polygon) {}
+
+	static void canvas_render_items(RID p_to_render_target, RCR::Item* p_item_list,
+		const Color& p_modulate, RendererCanvasRender::Light* p_light_list,
+		RendererCanvasRender::Light* p_directional_list, const Transform2D& p_canvas_transform,
+		RSE::CanvasItemTextureFilter p_default_filter,
+		RSE::CanvasItemTextureRepeat p_default_repeat, bool p_snap_2d_vertices_to_pixel,
+		bool& r_sdf_used, RenderingServerTypes::RenderInfo* r_render_info = nullptr)
+	{
+	}
+
+	static void set_debug_redraw(bool p_enabled, double p_time, const Color& p_color) {}
+
+	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) { return 0; }
+
+	static RID light_create() { return RID(); }
+
+	static void light_set_texture(RID p_rid, RID p_texture) {}
+
+	static void light_set_use_shadow(RID p_rid, bool p_enable) {}
+
+	static void light_update_shadow(RID p_rid, int p_shadow_index, const Transform2D& p_light_xform,
+		int p_light_mask, float p_near, float p_far,
+		RendererCanvasRender::LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
+	{
+	}
+
+	static void light_update_directional_shadow(RID p_rid, int p_shadow_index,
+		const Transform2D& p_light_xform, int p_light_mask, float p_cull_distance,
+		const Rect2& p_clip_rect, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	{
+	}
+
+	static void render_sdf(
+		RID p_render_target, RendererCanvasRender::LightOccluderInstance* p_occluders)
+	{
+	}
+
+	static RID occluder_polygon_create() { return RID(); }
+
+	static void occluder_polygon_set_shape(
+		RID p_occluder, const Vector<Vector2>& p_points, bool p_closed)
+	{
+	}
+
+	static void occluder_polygon_set_cull_mode(
+		RID p_occluder, RSE::CanvasOccluderPolygonCullMode p_mode)
+	{
+	}
+
+	static void set_shadow_texture_size(int p_size) {}
+
+	RasterizerCanvasDummy() = delete;
+	~RasterizerCanvasDummy() = delete;
+};
+
+class RasterizerSceneDummy final : public RendererSceneRender
+{
+public:
+	class GeometryInstanceDummy final : public RenderGeometryInstance
+	{
+	public:
+		GeometryInstanceDummy() {}
+
+		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
+			const AABB& p_transformed_aabb) override
+		{
+		}
+	};
+
+	PagedAllocator<GeometryInstanceDummy> geometry_instance_alloc;
+
+public:
+	RenderGeometryInstance* geometry_instance_create(RID p_base) override
+	{
+		RSE::InstanceType type = RendererDummy::Utilities::get_base_type(p_base);
+		ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
+
+		GeometryInstanceDummy* ginstance = geometry_instance_alloc.alloc();
+
+		return ginstance;
+	}
+
+	void geometry_instance_free(RenderGeometryInstance* p_geometry_instance) override
+	{
+		GeometryInstanceDummy* ginstance = static_cast<GeometryInstanceDummy*>(p_geometry_instance);
+		ERR_FAIL_NULL(ginstance);
+
+		geometry_instance_alloc.free(ginstance);
+	}
+
+	uint32_t geometry_instance_get_pair_mask() override { return 0; }
+
+	virtual uint32_t get_max_lights_total() override { return 0; }
+
+	virtual uint32_t get_max_lights_per_mesh() override { return 0; }
+
+	/* PIPELINES */
+
+	virtual void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation) override {}
+
+	virtual uint32_t get_pipeline_compilations(RSE::PipelineSource p_source) override { return 0; }
+
+	/* SDFGI UPDATE */
+
+	void sdfgi_update(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_environment,
+		const Vector3& p_world_position) override
+	{
+	}
+
+	int sdfgi_get_pending_region_count(
+		const Ref<RenderSceneBuffers>& p_render_buffers) const override
+	{
+		return 0;
+	}
+
+	AABB sdfgi_get_pending_region_bounds(
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override
+	{
+		return AABB();
+	}
+
+	uint32_t sdfgi_get_pending_region_cascade(
+		const Ref<RenderSceneBuffers>& p_render_buffers, int p_region) const override
+	{
+		return 0;
+	}
+
+	/* SKY API */
+
+	RID sky_allocate() override { return RID(); }
+
+	void sky_initialize(RID p_rid) override {}
+
+	void sky_set_radiance_size(RID p_sky, int p_radiance_size) override {}
+
+	void sky_set_mode(RID p_sky, RSE::SkyMode p_samples) override {}
+
+	void sky_set_material(RID p_sky, RID p_material) override {}
+
+	Ref<Image> sky_bake_panorama(
+		RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i& p_size) override
+	{
+		return Ref<Image>();
+	}
+
+	/* ENVIRONMENT API */
+
+	void environment_glow_set_use_bicubic_upscale(bool p_enable) override {}
+
+	void environment_set_ssr_half_size(bool p_half_size) override {}
+
+	void environment_set_ssr_roughness_quality(
+		RSE::EnvironmentSSRRoughnessQuality p_quality) override
+	{
+	}
+
+	void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size,
+		float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
+		float p_fadeout_to) override
+	{
+	}
+
+	void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size,
+		float p_adaptive_target, int p_blur_passes, float p_fadeout_from,
+		float p_fadeout_to) override
+	{
+	}
+
+	void environment_set_sdfgi_ray_count(RSE::EnvironmentSDFGIRayCount p_ray_count) override {}
+
+	void environment_set_sdfgi_frames_to_converge(
+		RSE::EnvironmentSDFGIFramesToConverge p_frames) override
+	{
+	}
+
+	void environment_set_sdfgi_frames_to_update_light(
+		RSE::EnvironmentSDFGIFramesToUpdateLight p_update) override
+	{
+	}
+
+	void environment_set_volumetric_fog_volume_size(int p_size, int p_depth) override {}
+
+	void environment_set_volumetric_fog_filter_active(bool p_enable) override {}
+
+	Ref<Image> environment_bake_panorama(
+		RID p_env, bool p_bake_irradiance, const Size2i& p_size) override
+	{
+		return Ref<Image>();
+	}
+
+	void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override {}
+
+	void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_quality) override {}
+
+	RID fog_volume_instance_create(RID p_fog_volume) override { return RID(); }
+
+	void fog_volume_instance_set_transform(
+		RID p_fog_volume_instance, const Transform3D& p_transform) override
+	{
+	}
+
+	void fog_volume_instance_set_active(RID p_fog_volume_instance, bool p_active) override {}
+
+	RID fog_volume_instance_get_volume(RID p_fog_volume_instance) const override { return RID(); }
+
+	Vector3 fog_volume_instance_get_position(RID p_fog_volume_instance) const override
+	{
+		return Vector3();
+	}
+
+	RID voxel_gi_instance_create(RID p_voxel_gi) override { return RID(); }
+
+	void voxel_gi_instance_set_transform_to_data(RID p_probe, const Transform3D& p_xform) override
+	{
+	}
+
+	bool voxel_gi_needs_update(RID p_probe) const override { return false; }
+
+	void voxel_gi_update(RID p_probe, bool p_update_light_instances,
+		const Vector<RID>& p_light_instances,
+		const PagedArray<RenderGeometryInstance*>& p_dynamic_objects) override
+	{
+	}
+
+	void voxel_gi_set_quality(RSE::VoxelGIQuality) override {}
+
+	void render_scene(const Ref<RenderSceneBuffers>& p_render_buffers,
+		const CameraData* p_camera_data, const CameraData* p_prev_camera_data,
+		const PagedArray<RenderGeometryInstance*>& p_instances, const PagedArray<RID>& p_lights,
+		const PagedArray<RID>& p_reflection_probes, const PagedArray<RID>& p_voxel_gi_instances,
+		const PagedArray<RID>& p_decals, const PagedArray<RID>& p_lightmaps,
+		const PagedArray<RID>& p_fog_volumes, RID p_environment, RID p_camera_attributes,
+		RID p_compositor, RID p_shadow_atlas, RID p_occluder_debug_tex, RID p_reflection_atlas,
+		RID p_reflection_probe, int p_reflection_probe_pass, float p_screen_mesh_lod_threshold,
+		const RenderShadowData* p_render_shadows, int p_render_shadow_count,
+		const RenderSDFGIData* p_render_sdfgi_regions, int p_render_sdfgi_region_count,
+		float p_window_output_max_value, const RenderSDFGIUpdateData* p_sdfgi_update_data = nullptr,
+		RenderingServerTypes::RenderInfo* r_info = nullptr) override
+	{
+	}
+
+	void render_material(const Transform3D& p_cam_transform, const Projection& p_cam_projection,
+		bool p_cam_orthogonal, const PagedArray<RenderGeometryInstance*>& p_instances,
+		RID p_framebuffer, const Rect2i& p_region) override
+	{
+	}
+
+	void render_particle_collider_heightfield(RID p_collider, const Transform3D& p_transform,
+		const PagedArray<RenderGeometryInstance*>& p_instances) override
+	{
+	}
+
+	void set_scene_pass(uint64_t p_pass) override {}
+
+	void set_time(double p_time, double p_step) override {}
+
+	void set_debug_draw_mode(RSE::ViewportDebugDraw p_debug_draw) override {}
+
+	Ref<RenderSceneBuffers> render_buffers_create() override { return Ref<RenderSceneBuffers>(); }
+
+	void gi_set_use_half_resolution(bool p_enable) override {}
+
+	void screen_space_roughness_limiter_set_active(
+		bool p_enable, float p_amount, float p_curve) override
+	{
+	}
+
+	bool screen_space_roughness_limiter_is_active() const { return false; }
+
+	void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_quality) override {}
+
+	void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) override {}
+
+	bool free(RID p_rid) override;
+
+	void update() override {}
+
+	void sdfgi_set_debug_probe_select(const Vector3& p_position, const Vector3& p_dir) override {}
+
+	virtual void decals_set_filter(RSE::DecalFilter p_filter) override {}
+
+	virtual void light_projectors_set_filter(RSE::LightProjectorFilter p_filter) override {}
+
+	virtual void lightmaps_set_bicubic_filter(bool p_enable) override {}
+
+	virtual void material_set_use_debanding(bool p_enable) override {}
+
+	RasterizerSceneDummy() {}
+
+	~RasterizerSceneDummy() {}
+};
+
+class RasterizerDummy final
+{
+private:
+	static inline uint64_t frame = 1;
+	static inline double delta = 0.0;
+	static inline double time = 0.0;
+
+	static inline RasterizerCanvasDummy* canvas = nullptr;
+	static inline RasterizerSceneDummy* scene = nullptr;
+
+	static inline RendererDummy::Fog* fog = nullptr;
+	static inline RendererDummy::GI* gi = nullptr;
+	static inline RendererDummy::LightStorage* light_storage = nullptr;
+	static inline RendererDummy::MaterialStorage* material_storage = nullptr;
+	static inline RendererDummy::MeshStorage* mesh_storage = nullptr;
+	static inline RendererDummy::ParticlesStorage* particles_storage = nullptr;
+	static inline RendererDummy::TextureStorage* texture_storage = nullptr;
+	static inline RendererDummy::Utilities* utilities = nullptr;
+
+public:
+	static RendererSceneRender* get_scene();
+
+	static RendererFog* get_fog();
+
+	static RendererDummy::Utilities* get_utilities();
+
+	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true)
+	{
+	}
+
+	static void initialize();
+
+	static void begin_frame(double frame_step);
+
+	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
+	{
+	}
+
+	_ALWAYS_INLINE_ static bool is_opengl() { return false; }
+
+	_ALWAYS_INLINE_ static void gl_end_frame(bool p_swap_buffers) {}
+
+	static void end_frame(bool p_present);
+
+	static void finalize();
+
+	static Error _create_current()
+	{
+		RasterizerDummy::initialize();
+		return OK;
+	}
+
+	static void make_current();
+
+	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
+
+	_ALWAYS_INLINE_ static double get_frame_delta_time() { return delta; }
+
+	_ALWAYS_INLINE_ static double get_total_time() { return time; }
+
+	_ALWAYS_INLINE_ static bool can_create_resources_async() { return false; }
+
+public:
+	static void bind_mesh_storage()
+	{
+		RendererMeshStorage::mesh_allocate = &RendererDummy::MeshStorage::mesh_allocate;
+		RendererMeshStorage::mesh_initialize = &RendererDummy::MeshStorage::mesh_initialize;
+		RendererMeshStorage::mesh_free = &RendererDummy::MeshStorage::mesh_free;
+		RendererMeshStorage::mesh_set_blend_shape_count =
+			&RendererDummy::MeshStorage::mesh_set_blend_shape_count;
+		RendererMeshStorage::mesh_needs_instance = &RendererDummy::MeshStorage::mesh_needs_instance;
+		RendererMeshStorage::mesh_add_surface = &RendererDummy::MeshStorage::mesh_add_surface;
+		RendererMeshStorage::mesh_get_blend_shape_count =
+			&RendererDummy::MeshStorage::mesh_get_blend_shape_count;
+		RendererMeshStorage::mesh_set_blend_shape_mode =
+			&RendererDummy::MeshStorage::mesh_set_blend_shape_mode;
+		RendererMeshStorage::mesh_get_blend_shape_mode =
+			&RendererDummy::MeshStorage::mesh_get_blend_shape_mode;
+		RendererMeshStorage::mesh_surface_update_vertex_region =
+			&RendererDummy::MeshStorage::mesh_surface_update_vertex_region;
+		RendererMeshStorage::mesh_surface_update_attribute_region =
+			&RendererDummy::MeshStorage::mesh_surface_update_attribute_region;
+		RendererMeshStorage::mesh_surface_update_skin_region =
+			&RendererDummy::MeshStorage::mesh_surface_update_skin_region;
+		RendererMeshStorage::mesh_surface_update_index_region =
+			&RendererDummy::MeshStorage::mesh_surface_update_index_region;
+		RendererMeshStorage::mesh_surface_set_material =
+			&RendererDummy::MeshStorage::mesh_surface_set_material;
+		RendererMeshStorage::mesh_surface_get_material =
+			&RendererDummy::MeshStorage::mesh_surface_get_material;
+		RendererMeshStorage::mesh_get_surface = &RendererDummy::MeshStorage::mesh_get_surface;
+		RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+			&RendererDummy::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+			&RendererDummy::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+			&RendererDummy::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+			&RendererDummy::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
+		RendererMeshStorage::mesh_get_surface_count =
+			&RendererDummy::MeshStorage::mesh_get_surface_count;
+		RendererMeshStorage::mesh_set_custom_aabb =
+			&RendererDummy::MeshStorage::mesh_set_custom_aabb;
+		RendererMeshStorage::mesh_get_custom_aabb =
+			&RendererDummy::MeshStorage::mesh_get_custom_aabb;
+		RendererMeshStorage::mesh_get_aabb = &RendererDummy::MeshStorage::mesh_get_aabb;
+		RendererMeshStorage::mesh_set_path = &RendererDummy::MeshStorage::mesh_set_path;
+		RendererMeshStorage::mesh_get_path = &RendererDummy::MeshStorage::mesh_get_path;
+		RendererMeshStorage::mesh_set_shadow_mesh =
+			&RendererDummy::MeshStorage::mesh_set_shadow_mesh;
+		RendererMeshStorage::mesh_clear = &RendererDummy::MeshStorage::mesh_clear;
+		RendererMeshStorage::mesh_surface_remove = &RendererDummy::MeshStorage::mesh_surface_remove;
+		RendererMeshStorage::mesh_debug_usage = &RendererDummy::MeshStorage::mesh_debug_usage;
+
+		RendererMeshStorage::mesh_instance_create =
+			&RendererDummy::MeshStorage::mesh_instance_create;
+		RendererMeshStorage::mesh_instance_free = &RendererDummy::MeshStorage::mesh_instance_free;
+		RendererMeshStorage::mesh_instance_set_skeleton =
+			&RendererDummy::MeshStorage::mesh_instance_set_skeleton;
+		RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+			&RendererDummy::MeshStorage::mesh_instance_set_blend_shape_weight;
+		RendererMeshStorage::mesh_instance_check_for_update =
+			&RendererDummy::MeshStorage::mesh_instance_check_for_update;
+		RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+			&RendererDummy::MeshStorage::mesh_instance_set_canvas_item_transform;
+		RendererMeshStorage::update_mesh_instances =
+			&RendererDummy::MeshStorage::update_mesh_instances;
+
+		RendererMeshStorage::_multimesh_allocate = &RendererDummy::MeshStorage::_multimesh_allocate;
+		RendererMeshStorage::_multimesh_initialize =
+			&RendererDummy::MeshStorage::_multimesh_initialize;
+		RendererMeshStorage::_multimesh_free = &RendererDummy::MeshStorage::_multimesh_free;
+		RendererMeshStorage::_multimesh_allocate_data =
+			&RendererDummy::MeshStorage::_multimesh_allocate_data;
+		RendererMeshStorage::_multimesh_get_instance_count =
+			&RendererDummy::MeshStorage::_multimesh_get_instance_count;
+		RendererMeshStorage::_multimesh_set_mesh = &RendererDummy::MeshStorage::_multimesh_set_mesh;
+		RendererMeshStorage::_multimesh_instance_set_transform =
+			&RendererDummy::MeshStorage::_multimesh_instance_set_transform;
+		RendererMeshStorage::_multimesh_instance_set_transform_2d =
+			&RendererDummy::MeshStorage::_multimesh_instance_set_transform_2d;
+		RendererMeshStorage::_multimesh_instance_set_color =
+			&RendererDummy::MeshStorage::_multimesh_instance_set_color;
+		RendererMeshStorage::_multimesh_instance_set_custom_data =
+			&RendererDummy::MeshStorage::_multimesh_instance_set_custom_data;
+		RendererMeshStorage::_multimesh_set_custom_aabb =
+			&RendererDummy::MeshStorage::_multimesh_set_custom_aabb;
+		RendererMeshStorage::_multimesh_get_custom_aabb =
+			&RendererDummy::MeshStorage::_multimesh_get_custom_aabb;
+		RendererMeshStorage::_multimesh_get_mesh = &RendererDummy::MeshStorage::_multimesh_get_mesh;
+		RendererMeshStorage::_multimesh_instance_get_transform =
+			&RendererDummy::MeshStorage::_multimesh_instance_get_transform;
+		RendererMeshStorage::_multimesh_instance_get_transform_2d =
+			&RendererDummy::MeshStorage::_multimesh_instance_get_transform_2d;
+		RendererMeshStorage::_multimesh_instance_get_color =
+			&RendererDummy::MeshStorage::_multimesh_instance_get_color;
+		RendererMeshStorage::_multimesh_instance_get_custom_data =
+			&RendererDummy::MeshStorage::_multimesh_instance_get_custom_data;
+		RendererMeshStorage::_multimesh_set_buffer =
+			&RendererDummy::MeshStorage::_multimesh_set_buffer;
+		RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+			&RendererDummy::MeshStorage::_multimesh_get_command_buffer_rd_rid;
+		RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+			&RendererDummy::MeshStorage::_multimesh_get_buffer_rd_rid;
+		RendererMeshStorage::_multimesh_get_buffer =
+			&RendererDummy::MeshStorage::_multimesh_get_buffer;
+		RendererMeshStorage::_multimesh_set_visible_instances =
+			&RendererDummy::MeshStorage::_multimesh_set_visible_instances;
+		RendererMeshStorage::_multimesh_get_visible_instances =
+			&RendererDummy::MeshStorage::_multimesh_get_visible_instances;
+		RendererMeshStorage::_multimesh_get_aabb = &RendererDummy::MeshStorage::_multimesh_get_aabb;
+		RendererMeshStorage::_multimesh_get_interpolator =
+			&RendererDummy::MeshStorage::_multimesh_get_interpolator;
+
+		RendererMeshStorage::skeleton_allocate = &RendererDummy::MeshStorage::skeleton_allocate;
+		RendererMeshStorage::skeleton_initialize = &RendererDummy::MeshStorage::skeleton_initialize;
+		RendererMeshStorage::skeleton_free = &RendererDummy::MeshStorage::skeleton_free;
+		RendererMeshStorage::skeleton_allocate_data =
+			&RendererDummy::MeshStorage::skeleton_allocate_data;
+		RendererMeshStorage::skeleton_set_base_transform_2d =
+			&RendererDummy::MeshStorage::skeleton_set_base_transform_2d;
+		RendererMeshStorage::skeleton_get_bone_count =
+			&RendererDummy::MeshStorage::skeleton_get_bone_count;
+		RendererMeshStorage::skeleton_bone_set_transform =
+			&RendererDummy::MeshStorage::skeleton_bone_set_transform;
+		RendererMeshStorage::skeleton_bone_get_transform =
+			&RendererDummy::MeshStorage::skeleton_bone_get_transform;
+		RendererMeshStorage::skeleton_bone_set_transform_2d =
+			&RendererDummy::MeshStorage::skeleton_bone_set_transform_2d;
+		RendererMeshStorage::skeleton_bone_get_transform_2d =
+			&RendererDummy::MeshStorage::skeleton_bone_get_transform_2d;
+		RendererMeshStorage::skeleton_update_dependency =
+			&RendererDummy::MeshStorage::skeleton_update_dependency;
+	}
+
+	static void bind_texture_storage();
+
+	static void bind_material_storage();
+
+	static void bind_canvas();
+
+	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
+
+	static void bind_particles_storage();
+
+	static void bind_utilities();
+
+	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
+
+	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
+
+	RasterizerDummy() = delete;
+	RasterizerDummy(const RasterizerDummy&) = delete;
+	~RasterizerDummy() = delete;
+};
+
+using RDummy = RasterizerDummy;
+// --- End servers/rendering/dummy/rasterizer_dummy.h ---

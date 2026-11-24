@@ -32,7 +32,7 @@
 #pragma once
 
 #include <initializer_list>
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/os/memory.h"
 // --- Inlined/Folded from core/templates/sort_list.h ---
 #include "core/typedefs.h"

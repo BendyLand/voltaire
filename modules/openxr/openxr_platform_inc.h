@@ -43,6 +43,7 @@
 #ifdef X11_ENABLED
 #define Window OpenXRX11Window
 #define Font OpenXRX11Font
+#define Time OpenXRX11Time
 #endif
 
 #ifdef VULKAN_ENABLED
@@ -52,7 +53,7 @@
 
 #ifdef METAL_ENABLED
 #define XR_USE_GRAPHICS_API_METAL
-#include "drivers/metal/rendering_context_driver_metal.h"
+#include "drivers/metal/rendering_device_driver_metal3.h"
 #endif // METAL_ENABLED
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
@@ -104,6 +105,7 @@
 #include <openxr/openxr_platform.h>
 
 #ifdef X11_ENABLED
+#undef Time
 #undef Font
 #undef Window
 #ifdef CursorShape

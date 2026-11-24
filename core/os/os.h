@@ -32,7 +32,192 @@
 #pragma once
 
 #include <cstdlib>
-#include "core/config/engine.h"
+// --- Folded from core/config/engine.h ---
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
+
+class Engine
+{
+private:
+	friend class Main;
+
+	static inline uint64_t frames_drawn = 0;
+	static inline uint32_t _frame_delay = 0;
+	static inline uint64_t _frame_ticks = 0;
+	static inline double _process_step = 0;
+
+	static inline int ips = 60;
+	static inline int user_ips = 60;
+	static inline double physics_jitter_fix = 0.5;
+	static inline double _fps = 1;
+	static inline int _max_fps = 0;
+	static inline int _audio_output_latency = 0;
+	static inline double _time_scale = 1.0;
+	static inline double _game_time_scale = 1.0;
+	static inline double _user_time_scale = 1.0;
+	static inline uint64_t _physics_frames = 0;
+	static inline int max_physics_steps_per_frame = 8;
+	static inline int max_user_physics_steps_per_frame = 8;
+	static inline double _physics_interpolation_fraction = 0.0f;
+	static inline bool abort_on_gpu_errors = false;
+	static inline bool use_validation_layers = false;
+	static inline bool generate_spirv_debug_info = false;
+	static inline bool extra_gpu_memory_tracking = false;
+#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
+	static inline bool accurate_breadcrumbs = false;
+#endif
+	static inline int32_t gpu_idx = -1;
+
+	static inline uint64_t _process_frames = 0;
+	static inline bool _in_physics = false;
+
+	static inline bool editor_hint = false;
+	static inline bool project_manager_hint = false;
+	static inline bool extension_reloading = false;
+	static inline bool embedded_in_editor = false;
+	static inline bool recovery_mode_hint = false;
+
+	static inline bool _print_header = true;
+
+	static inline String write_movie_path;
+	static inline String shader_cache_path;
+
+	static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
+	static inline int server_syncs = 0;
+	static inline bool frame_server_synced = false;
+
+	static inline bool freeze_time_scale = false;
+
+protected:
+	static void _update_time_scale();
+
+public:
+	static void set_physics_ticks_per_second(int p_ips);
+	static int get_physics_ticks_per_second();
+	static int get_user_physics_ticks_per_second();
+
+	static void set_max_physics_steps_per_frame(int p_max_physics_steps);
+	static int get_max_physics_steps_per_frame();
+	static int get_user_max_physics_steps_per_frame();
+
+	static void set_physics_jitter_fix(double p_threshold);
+	static double get_physics_jitter_fix();
+
+	static void set_max_fps(int p_fps);
+	static int get_max_fps();
+
+	static void set_audio_output_latency(int p_msec);
+	static int get_audio_output_latency();
+
+	static double get_frames_per_second() { return _fps; }
+
+	static uint64_t get_frames_drawn();
+
+	static uint64_t get_physics_frames() { return _physics_frames; }
+
+	static uint64_t get_process_frames() { return _process_frames; }
+
+	static bool is_in_physics_frame() { return _in_physics; }
+
+	static uint64_t get_frame_ticks() { return _frame_ticks; }
+
+	static double get_process_step() { return _process_step; }
+
+	static double get_physics_interpolation_fraction() { return _physics_interpolation_fraction; }
+
+	static void set_time_scale(double p_scale);
+	static double get_time_scale();
+	static void set_user_time_scale(double p_scale);
+	static double get_effective_time_scale();
+	static double get_unfrozen_time_scale();
+
+	static void set_print_to_stdout(bool p_enabled);
+	static bool is_printing_to_stdout();
+
+	static void set_print_error_messages(bool p_enabled);
+	static bool is_printing_error_messages();
+	static void print_header(const String& p_string);
+	static void print_header_rich(const String& p_string);
+
+	static void set_frame_delay(uint32_t p_msec);
+	static uint32_t get_frame_delay();
+
+#ifdef TOOLS_ENABLED
+	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) { editor_hint = p_enabled; }
+
+	_FORCE_INLINE_ static bool is_editor_hint() { return editor_hint; }
+
+	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled)
+	{
+		project_manager_hint = p_enabled;
+	}
+
+	_FORCE_INLINE_ static bool is_project_manager_hint() { return project_manager_hint; }
+
+	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled)
+	{
+		extension_reloading = p_enabled;
+	}
+
+	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return extension_reloading; }
+
+	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled)
+	{
+		recovery_mode_hint = p_enabled;
+	}
+
+	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return recovery_mode_hint; }
+#else
+	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) {}
+
+	_FORCE_INLINE_ static bool is_editor_hint() { return false; }
+
+	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled) {}
+
+	_FORCE_INLINE_ static bool is_project_manager_hint() { return false; }
+
+	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled) {}
+
+	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return false; }
+
+	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled) {}
+
+	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return false; }
+#endif
+
+	static String get_license_text();
+
+	static void set_write_movie_path(const String& p_path);
+	static String get_write_movie_path();
+
+	static String get_architecture_name();
+
+	static void set_shader_cache_path(const String& p_path);
+	static String get_shader_cache_path();
+
+	static bool is_abort_on_gpu_errors_enabled();
+	static bool is_validation_layers_enabled();
+	static bool is_generate_spirv_debug_info_enabled();
+	static bool is_extra_gpu_memory_tracking_enabled();
+#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
+	static bool is_accurate_breadcrumbs_enabled();
+#endif
+	static int32_t get_gpu_index();
+
+	static void increment_frames_drawn();
+	static bool notify_frame_server_synced();
+
+	static void set_freeze_time_scale(bool p_frozen);
+	static void set_embedded_in_editor(bool p_enabled);
+	static bool is_embedded_in_editor();
+
+	Engine() = delete;
+	~Engine() = delete;
+	Engine(const Engine&) = delete;
+	Engine& operator=(const Engine&) = delete;
+};
+// --- End core/config/engine.h ---
 // --- Inlined/Folded from core/io/logger.h ---
 #include <cstdarg>
 #include "core/io/file_access.h"
@@ -847,3 +1032,683 @@ public:
 	_FORCE_INLINE_ static bool is_active() { return _active; }
 };
 // --- End core/os/main_loop.h ---
+
+// --- Folded from core/input/input.h ---
+#include "core/input/input_event.h"
+#include "core/io/resource.h"
+#include "core/templates/hashfuncs.h"
+#include "core/input/input_event.h"
+
+#include "core/templates/list.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/rb_set.h"
+
+class GamepadMotion;
+
+namespace InputClassEnums
+{
+// Keep synced with DisplayServerEnums::MouseMode enum.
+enum MouseMode : int
+{
+	MOUSE_MODE_VISIBLE,
+	MOUSE_MODE_HIDDEN,
+	MOUSE_MODE_CAPTURED,
+	MOUSE_MODE_CONFINED,
+	MOUSE_MODE_CONFINED_HIDDEN,
+	MOUSE_MODE_MAX,
+};
+
+// Keep synced with DisplayServerEnums and Control enums.
+#undef CursorShape
+
+enum CursorShape : int
+{
+	CURSOR_ARROW,
+	CURSOR_IBEAM,
+	CURSOR_POINTING_HAND,
+	CURSOR_CROSS,
+	CURSOR_WAIT,
+	CURSOR_BUSY,
+	CURSOR_DRAG,
+	CURSOR_CAN_DROP,
+	CURSOR_FORBIDDEN,
+	CURSOR_VSIZE,
+	CURSOR_HSIZE,
+	CURSOR_BDIAGSIZE,
+	CURSOR_FDIAGSIZE,
+	CURSOR_MOVE,
+	CURSOR_VSPLIT,
+	CURSOR_HSPLIT,
+	CURSOR_HELP,
+	CURSOR_MAX
+};
+} // namespace InputClassEnums
+
+class Input final
+{
+	static inline Mutex _thread_safe_;
+
+	static constexpr uint64_t MAX_EVENT = 32;
+
+public:
+	// TODO: When we migrate to C++20, replace these with "using enum" and skip prefixing MouseMode
+	// and CursorShape in other files.
+	using MouseMode = InputClassEnums::MouseMode;
+	using CursorShape = InputClassEnums::CursorShape;
+	static Vector<uint32_t> get_joy_touchpad_fingers(int p_device, int p_touchpad);
+
+	class JoypadFeatures
+	{
+	public:
+		virtual ~JoypadFeatures() {}
+
+		virtual bool has_joy_vibration() const { return false; }
+
+		virtual bool has_joy_light() const { return false; }
+
+		virtual void set_joy_light(const Color& p_color) {}
+
+		virtual bool has_joy_motion_sensors() const { return false; }
+
+		virtual void set_joy_motion_sensors_enabled(bool p_enable) {}
+
+		virtual int get_joy_num_touchpads() const { return 0; }
+	};
+
+	static constexpr int32_t JOYPADS_MAX = 16;
+
+	typedef void (*EventDispatchFunc)(const InputEvent& p_event);
+
+	struct ActionState
+	{
+		uint64_t pressed_physics_frame = UINT64_MAX;
+		uint64_t pressed_process_frame = UINT64_MAX;
+		uint64_t released_physics_frame = UINT64_MAX;
+		uint64_t released_process_frame = UINT64_MAX;
+		bool exact = true;
+
+		struct DeviceState
+		{
+			bool pressed[MAX_EVENT] = {false};
+			float strength[MAX_EVENT] = {0.0};
+			float raw_strength[MAX_EVENT] = {0.0};
+			InputEventType event_type[MAX_EVENT] = {InputEventType::INVALID};
+		};
+
+		bool api_pressed = false;
+		float api_strength = 0.0;
+		HashMap<int, DeviceState> device_states;
+
+		// Cache.
+		struct ActionStateCache
+		{
+			bool pressed = false;
+			float strength = false;
+			float raw_strength = false;
+		} cache;
+	};
+
+	struct VibrationInfo
+	{
+		float weak_magnitude;
+		float strong_magnitude;
+		float duration; // Duration in seconds
+		uint64_t timestamp;
+	};
+
+	struct MotionInfo
+	{
+		bool sensors_enabled : 1;
+		bool calibrating : 1;
+		bool calibrated : 1;
+		float sensor_data_rate = 0.0f;
+		uint64_t last_timestamp = 0;
+		GamepadMotion* gamepad_motion = nullptr;
+
+		MotionInfo()
+		{
+			sensors_enabled = false;
+			calibrating = false;
+			calibrated = false;
+		}
+	};
+
+	struct TouchpadFingerInfo
+	{
+		Vector2 position;
+		float pressure;
+	};
+
+	struct TouchpadInfo
+	{
+		int num_touchpads = 0;
+		HashMap<uint16_t, TouchpadFingerInfo> finger_info;
+	};
+
+	struct VelocityTrack
+	{
+		uint64_t last_tick = 0;
+		Vector2 velocity;
+		Vector2 screen_velocity;
+		Vector2 accum;
+		Vector2 screen_accum;
+		float accum_t = 0.0f;
+		float min_ref_frame;
+		float max_ref_frame;
+
+		void update(const Vector2& p_delta_p, const Vector2& p_screen_delta_p);
+		void reset();
+		VelocityTrack();
+	};
+
+	struct Joypad
+	{
+		String name;
+		String uid;
+		bool connected = false;
+		bool is_known = false;
+		bool last_buttons[(size_t)JoyButton::MAX] = {false};
+		float last_axis[(size_t)JoyAxis::MAX] = {0.0f};
+		HatMask last_hat = HatMask::CENTER;
+		int mapping = -1;
+		int hat_current = 0;
+		bool has_light = false;
+		bool has_vibration = false;
+		Input::JoypadFeatures* features = nullptr;
+	};
+
+	enum JoyType
+	{
+		TYPE_BUTTON,
+		TYPE_AXIS,
+		TYPE_HAT,
+		TYPE_MAX,
+	};
+
+	enum JoyAxisRange
+	{
+		NEGATIVE_HALF_AXIS = -1,
+		FULL_AXIS = 0,
+		POSITIVE_HALF_AXIS = 1
+	};
+
+	struct JoyEvent
+	{
+		int type = TYPE_MAX;
+		int index = -1; // Can be either JoyAxis or JoyButton.
+		float value = 0.f;
+	};
+
+	struct JoyBinding
+	{
+		JoyType inputType;
+
+		union
+		{
+			JoyButton button;
+
+			struct
+			{
+				JoyAxis axis;
+				JoyAxisRange range;
+				bool invert;
+			} axis;
+
+			struct
+			{
+				HatDir hat;
+				HatMask hat_mask;
+			} hat;
+
+		} input;
+
+		JoyType outputType;
+
+		union
+		{
+			JoyButton button;
+
+			struct
+			{
+				JoyAxis axis;
+				JoyAxisRange range;
+			} axis;
+
+		} output;
+	};
+
+	struct JoyDeviceMapping
+	{
+		String uid;
+		String name;
+		Vector<JoyBinding> bindings;
+	};
+
+	struct Data
+	{
+		uint32_t mouse_button_mask = 0;
+
+		RBSet<Key> key_label_pressed;
+		RBSet<Key> physical_keys_pressed;
+		RBSet<Key> keys_pressed;
+		RBSet<JoyButton> joy_buttons_pressed;
+		RBMap<JoyAxis, float> _joy_axis;
+
+		bool gravity_enabled = false;
+		Vector3 gravity;
+		bool accelerometer_enabled = false;
+		Vector3 accelerometer;
+		bool magnetometer_enabled = false;
+		Vector3 magnetometer;
+		bool gyroscope_enabled = false;
+		Vector3 gyroscope;
+		Vector2 mouse_pos;
+		int64_t mouse_window = 0;
+		bool legacy_just_pressed_behavior = false;
+		bool disable_input = false;
+		bool ignore_joypad_on_unfocused_application = false;
+		bool application_focused = true;
+		bool embedder_focused = false;
+
+		HashMap<String, ActionState> action_states;
+
+		bool emulate_touch_from_mouse = false;
+		bool emulate_mouse_from_touch = false;
+		bool agile_input_event_flushing = false;
+		bool use_accumulated_input = true;
+
+		int mouse_from_touch_index = -1;
+
+		HashMap<int, VibrationInfo> joy_vibration;
+		HashMap<int, MotionInfo> joy_motion;
+		HashMap<int, TouchpadInfo> joy_touch;
+
+		VelocityTrack mouse_velocity_track;
+		HashMap<int, VelocityTrack> touch_velocity_track;
+		HashMap<int, Joypad> joy_names;
+
+		HashSet<uint32_t> ignored_device_ids;
+
+		int fallback_mapping = -1; // Index of the guid in map_db.
+
+		CursorShape default_shape = CursorShape::CURSOR_ARROW;
+
+		Vector<JoyDeviceMapping> map_db;
+
+		List<InputEvent> buffered_events;
+
+		EventDispatchFunc event_dispatch_function = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static void _set_joypad_mapping(Joypad& p_js, int p_map_index);
+
+	static JoyEvent _get_mapped_button_event(const JoyDeviceMapping& p_mapping, JoyButton p_button);
+	static JoyEvent _get_mapped_axis_event(
+		const JoyDeviceMapping& p_mapping, JoyAxis p_axis, float p_value, JoyAxisRange& r_range);
+	static void _get_mapped_hat_events(
+		const JoyDeviceMapping& p_mapping, HatDir p_hat, JoyEvent r_events[(size_t)HatDir::MAX]);
+	static JoyButton _get_output_button(const String& p_output);
+	static JoyAxis _get_output_axis(const String& p_output);
+	static void _button_event(int p_device, JoyButton p_index, bool p_pressed);
+	static void _axis_event(int p_device, JoyAxis p_axis, float p_value);
+	static void _update_action_cache(const String& p_action_name, ActionState& r_action_state);
+	static void _update_joypad_features(int p_device);
+
+	static void _parse_input_event_impl(const InputEvent& p_event, bool p_is_emulated);
+
+	friend class DisplayServer;
+	friend class SceneTree;
+	friend class SceneDebugger;
+
+	static void (*set_mouse_mode_func)(MouseMode);
+	static MouseMode (*get_mouse_mode_func)();
+	static void (*set_mouse_mode_override_func)(MouseMode);
+	static MouseMode (*get_mouse_mode_override_func)();
+	static void (*set_mouse_mode_override_enabled_func)(bool);
+	static bool (*is_mouse_mode_override_enabled_func)();
+	static void (*warp_mouse_func)(const Vector2& p_position);
+
+	static CursorShape (*get_current_cursor_shape_func)();
+	static void (*set_custom_mouse_cursor_func)(const Ref<Resource>&, CursorShape, const Vector2&);
+
+	static bool _should_ignore_joypad_events();
+
+#ifndef DISABLE_DEPRECATED
+	static void _vibrate_handheld_bind_compat_91143(int p_duration_ms = 500);
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static void set_mouse_mode(MouseMode p_mode);
+	static MouseMode get_mouse_mode();
+	static void set_mouse_mode_override(MouseMode p_mode);
+	static MouseMode get_mouse_mode_override();
+	static void set_mouse_mode_override_enabled(bool p_override_enabled);
+	static bool is_mouse_mode_override_enabled();
+
+	static bool is_anything_pressed();
+	static bool is_any_key_pressed();
+	static bool is_key_pressed(Key p_keycode);
+	static bool is_physical_key_pressed(Key p_keycode);
+	static bool is_key_label_pressed(Key p_keycode);
+	static bool is_mouse_button_pressed(MouseButton p_button);
+	static bool is_joy_button_pressed(int p_device, JoyButton p_button);
+	static bool is_action_pressed(const String& p_action, bool p_exact = false);
+	static bool is_action_just_pressed(const String& p_action, bool p_exact = false);
+	static bool is_action_just_released(const String& p_action, bool p_exact = false);
+	static bool is_action_just_pressed_by_event(
+		const String& p_action, const InputEvent& p_event, bool p_exact = false);
+	static bool is_action_just_released_by_event(
+		const String& p_action, const InputEvent& p_event, bool p_exact = false);
+	static float get_action_strength(const String& p_action, bool p_exact = false);
+	static float get_action_raw_strength(const String& p_action, bool p_exact = false);
+
+	static float get_axis(const String& p_negative_action, const String& p_positive_action);
+	static Vector2 get_vector(const String& p_negative_x, const String& p_positive_x,
+		const String& p_negative_y, const String& p_positive_y, float p_deadzone = -1.0f);
+
+	static float get_joy_axis(int p_device, JoyAxis p_axis);
+	static String get_joy_name(int p_idx);
+	static Vector2 get_joy_vibration_strength(int p_device);
+	static float get_joy_vibration_duration(int p_device);
+	static float get_joy_vibration_remaining_duration(int p_device);
+	static uint64_t get_joy_vibration_timestamp(int p_device);
+	static bool is_joy_vibrating(int p_device);
+	static bool has_joy_vibration(int p_device);
+
+	static Vector3 get_gravity();
+	static Vector3 get_accelerometer();
+	static Vector3 get_magnetometer();
+	static Vector3 get_gyroscope();
+
+	static int get_joy_num_touchpads(int p_device);
+
+	static Point2 get_mouse_position();
+	static Vector2 get_last_mouse_velocity();
+	static Vector2 get_last_mouse_screen_velocity();
+	static uint32_t get_mouse_button_mask();
+
+	static void warp_mouse(const Vector2& p_position);
+	static Point2 warp_mouse_motion(const InputEvent& p_motion, const Rect2& p_rect);
+
+	static void parse_input_event(const InputEvent& p_event);
+
+	static void set_gravity(const Vector3& p_gravity);
+	static void set_accelerometer(const Vector3& p_accel);
+	static void set_magnetometer(const Vector3& p_magnetometer);
+	static void set_gyroscope(const Vector3& p_gyroscope);
+	static void set_joy_axis(int p_device, JoyAxis p_axis, float p_value);
+
+	static void set_joy_features(int p_device, JoypadFeatures* p_features);
+
+	static void set_joy_light(int p_device, const Color& p_color);
+	static bool has_joy_light(int p_device);
+
+	static Vector3 get_joy_accelerometer(int p_device);
+	static Vector3 get_joy_gravity(int p_device);
+	static Vector3 get_joy_gyroscope(int p_device);
+
+	static void set_joy_motion_sensors_enabled(int p_device, bool p_enable);
+	static bool is_joy_motion_sensors_enabled(int p_device);
+
+	static bool has_joy_motion_sensors(int p_device);
+	static float get_joy_motion_sensors_rate(int p_device);
+
+	static void start_joy_motion_sensors_calibration(int p_device);
+	static void stop_joy_motion_sensors_calibration(int p_device);
+	static void clear_joy_motion_sensors_calibration(int p_device);
+
+	static bool is_joy_motion_sensors_calibrating(int p_device);
+	static bool is_joy_motion_sensors_calibrated(int p_device);
+
+	static void set_joy_motion_sensors_rate(int p_device, float p_rate);
+
+	static Vector2 get_joy_touchpad_finger_position(
+		int p_device, int p_finger, int p_touchpad = 0);
+	static float get_joy_touchpad_finger_pressure(
+		int p_device, int p_finger, int p_touchpad = 0);
+
+	static void start_joy_vibration(
+		int p_device, float p_weak_magnitude, float p_strong_magnitude, float p_duration = 0);
+	static void stop_joy_vibration(int p_device);
+	static void vibrate_handheld(int p_duration_ms = 500, float p_amplitude = -1.0);
+
+	static void set_ignore_joypad_on_unfocused_application(bool p_ignore);
+	static bool is_ignoring_joypad_on_unfocused_application();
+	static void set_application_focused(bool p_focused);
+
+	static void set_mouse_position(const Point2& p_posf);
+
+	static void action_press(const String& p_action, float p_strength = 1.f);
+	static void action_release(const String& p_action);
+
+	static void set_emulate_touch_from_mouse(bool p_emulate);
+	static bool is_emulating_touch_from_mouse();
+	static void ensure_touch_mouse_raised();
+
+	static void set_emulate_mouse_from_touch(bool p_emulate);
+	static bool is_emulating_mouse_from_touch();
+
+	static CursorShape get_default_cursor_shape();
+	static void set_default_cursor_shape(CursorShape p_shape);
+	static CursorShape get_current_cursor_shape();
+	static void set_custom_mouse_cursor(const Ref<Resource>& p_cursor,
+		CursorShape p_shape = Input::CursorShape::CURSOR_ARROW,
+		const Vector2& p_hotspot = Vector2());
+
+	static void parse_mapping(const String& p_mapping);
+	static void joy_button(int p_device, JoyButton p_button, bool p_pressed);
+	static void joy_axis(int p_device, JoyAxis p_axis, float p_value);
+	static void joy_hat(int p_device, uint32_t p_val);
+	static void joy_motion_sensors(
+		int p_device, const Vector3& p_accelerometer, const Vector3& p_gyroscope);
+	static void joy_touchpad(int p_device, int p_touchpad, int p_finger, const Vector2& p_position,
+		float p_pressure, bool p_pressed);
+
+	static void add_joy_mapping(const String& p_mapping, bool p_update_existing = false);
+	static void remove_joy_mapping(const String& p_guid);
+
+	static int get_unused_joy_id();
+
+	static bool is_joy_known(int p_device);
+	static String get_joy_guid(int p_device);
+	static bool should_ignore_device(int p_vendor_id, int p_product_id);
+	static void set_fallback_mapping(const String& p_guid);
+
+	static void flush_buffered_events();
+	static bool is_agile_input_event_flushing();
+	static void set_agile_input_event_flushing(bool p_enable);
+	static void set_use_accumulated_input(bool p_enable);
+	static bool is_using_accumulated_input();
+
+	static void release_pressed_events();
+
+	static void set_event_dispatch_function(EventDispatchFunc p_function);
+
+	static void set_disable_input(bool p_disable);
+	static bool is_input_disabled();
+
+	Input() = delete;
+	Input(const Input&) = delete;
+	Input& operator=(const Input&) = delete;
+	~Input() = delete;
+};
+
+// --- Folded from core/input/default_controller_mappings.h ---
+class DefaultControllerMappings {
+public:
+	static const char *mappings[];
+};
+
+// --- End core/input/default_controller_mappings.h ---
+
+// --- Folded from core/input/input_event_codec.h ---
+#include "core/input/input_event.h"
+
+/**
+ * Encodes the input event as a byte array.
+ *
+ * Returns `true` if the event was successfully encoded, `false` otherwise.
+ */
+bool encode_input_event(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event);
+
+void encode_input_event_key(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_mouse_button(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_mouse_motion(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_joypad_button(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_joypad_motion(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_gesture_pan(const InputEvent& p_event, Vector<uint8_t>& r_data);
+void encode_input_event_gesture_magnify(const InputEvent& p_event, Vector<uint8_t>& r_data);
+
+// --- End core/input/input_event_codec.h ---
+
+// --- Folded from drivers/sdl/joypad_sdl.h ---
+#if defined(SDL_ENABLED)
+
+
+typedef uint32_t SDL_JoystickID;
+typedef struct SDL_Joystick SDL_Joystick;
+typedef struct SDL_Gamepad SDL_Gamepad;
+
+class JoypadSDL {
+public:
+	~JoypadSDL();
+
+	Error initialize();
+	void process_events();
+
+private:
+	class Joypad : public Input::JoypadFeatures {
+	public:
+		bool attached = false;
+		String guid;
+
+		SDL_JoystickID sdl_instance_idx;
+
+		bool supports_force_feedback = false;
+		bool supports_motion_sensors = false;
+		uint64_t ff_effect_timestamp = 0;
+
+		virtual bool has_joy_light() const override;
+		virtual void set_joy_light(const Color &p_color) override;
+
+		virtual bool has_joy_motion_sensors() const override;
+		virtual void set_joy_motion_sensors_enabled(bool p_enable) override;
+
+		virtual bool has_joy_vibration() const override;
+
+		virtual int get_joy_num_touchpads() const override;
+
+		SDL_Joystick *get_sdl_joystick() const;
+		SDL_Gamepad *get_sdl_gamepad() const;
+	};
+
+	Joypad joypads[Input::JOYPADS_MAX];
+	HashMap<SDL_JoystickID, int> sdl_instance_id_to_joypad_id;
+
+	void close_joypad(int p_pad_idx);
+};
+#endif // defined(SDL_ENABLED)
+// --- End drivers/sdl/joypad_sdl.h ---
+
+// --- Folded from core/input/input_map.h ---
+#include "core/input/input_event.h"
+#include "core/templates/hash_map.h"
+#include "core/templates/list.h"
+
+class InputMap final
+{
+public:
+	/**
+	 * A special value used to signify that a given Action can be triggered by any device
+	 */
+	static constexpr int ALL_DEVICES = -1;
+
+	struct Action
+	{
+		int id = 0;
+		float deadzone = DEFAULT_DEADZONE;
+		List<InputEvent> inputs;
+	};
+
+	static constexpr float DEFAULT_DEADZONE = 0.2f;
+	// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
+	static constexpr float DEFAULT_TOGGLE_DEADZONE = 0.5f;
+
+	struct Data
+	{
+		HashMap<String, Action> input_map;
+		HashMap<String, List<InputEvent>> default_builtin_cache;
+		HashMap<String, List<InputEvent>> default_builtin_with_overrides_cache;
+		int last_id = 1;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+	static List<InputEvent>::Element* _find_event(Action& p_action, const InputEvent& p_event,
+		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
+		float* r_raw_strength = nullptr, int* r_event_index = nullptr);
+
+#ifndef DISABLE_DEPRECATED
+	static void _add_action_bind_compat_97281(const String& p_action, float p_deadzone = 0.5);
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static bool has_action(const String& p_action);
+	static void add_action(const String& p_action, float p_deadzone = DEFAULT_DEADZONE);
+	static void erase_action(const String& p_action);
+
+	static String get_action_description(const String& p_action);
+
+	static float action_get_deadzone(const String& p_action);
+	static void action_set_deadzone(const String& p_action, float p_deadzone);
+	static void action_add_event(const String& p_action, const InputEvent& p_event);
+	static bool action_has_event(const String& p_action, const InputEvent& p_event);
+	static void action_erase_event(const String& p_action, const InputEvent& p_event);
+	static void action_erase_events(const String& p_action);
+
+	static const List<InputEvent>* action_get_events(const String& p_action);
+	static bool event_is_action(
+		const InputEvent& p_event, const String& p_action, bool p_exact_match = false);
+	static int event_get_index(
+		const InputEvent& p_event, const String& p_action, bool p_exact_match = false);
+	static bool event_get_action_status(const InputEvent& p_event, const String& p_action,
+		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
+		float* r_raw_strength = nullptr, int* r_event_index = nullptr);
+
+	static const HashMap<String, Action>& get_action_map();
+	static void load_from_project_settings();
+	static void load_default();
+
+	static String suggest_actions(const String& p_action);
+
+#ifdef TOOLS_ENABLED
+	static void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options);
+#endif
+
+	static String get_builtin_display_name(const String& p_name);
+	static const HashMap<String, List<InputEvent>>& get_builtins();
+	static const HashMap<String, List<InputEvent>>& get_builtins_with_feature_overrides_applied();
+
+	InputMap() = delete;
+	InputMap(const InputMap&) = delete;
+	InputMap& operator=(const InputMap&) = delete;
+	~InputMap() = delete;
+};
+// --- End core/input/input_map.h ---
+// --- End core/input/input.h ---

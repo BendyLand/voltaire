@@ -35,7 +35,7 @@
 #include "core/types.h"
 #include "core/math/geometry_3d.h"
 #include "scene/resources/material.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
 
 #ifndef PHYSICS_3D_DISABLED
@@ -693,10 +693,10 @@ public:
 // --- End scene/resources/immediate_mesh.h ---
 
 // --- Folded from scene/resources/surface_tool.h ---
-#include "core/math/projection.h"
+#include "core/types.h"
 #include "core/templates/local_vector.h"
 
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class SurfaceTool : public RefCounted
 {
@@ -1108,7 +1108,7 @@ public:
 #include "core/io/resource.h"
 
 
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 
 #ifndef PHYSICS_3D_DISABLED
 
@@ -1215,9 +1215,8 @@ public:
 #include <memory>
 
 #include "scene/resources/material.h"
-#include "scene/resources/font.h"
+#include "scene/resources/theme.h"
 
-#include "servers/text/text_server.h"
 
 /**
 	Parameterized procedural single-surface mesh covering box, capsule, cylinder,
@@ -1614,11 +1613,11 @@ public:
 
 // --- Folded from scene/resources/3d/mesh_library.h ---
 #include "core/io/resource.h"
-#include "core/templates/rb_map.h"
+#include "core/templates/hash_map.h"
 #include "scene/main/node.h"
 
 
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 #ifndef PHYSICS_3D_DISABLED
 

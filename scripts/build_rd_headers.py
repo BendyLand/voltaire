@@ -104,7 +104,18 @@ SHADERS = [
 ]
 
 
+RAW_SHADERS = [
+    "modules/betsy/alpha_stitch.glsl",
+    "modules/betsy/bc1.glsl",
+    "modules/betsy/bc4.glsl",
+    "modules/betsy/bc6h.glsl",
+    "modules/betsy/rgb_to_rgba.glsl",
+    "modules/lightmapper_rd/lm_blendseams.glsl",
+    "modules/lightmapper_rd/lm_compute.glsl",
+    "modules/lightmapper_rd/lm_raster.glsl",
+]
+
 BUNDLE_TARGET = "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 if __name__ == "__main__":
-    glsl_builders.build_rd_headers_bundle(BUNDLE_TARGET, SHADERS)
+    glsl_builders.build_rd_headers_bundle(BUNDLE_TARGET, SHADERS, RAW_SHADERS)

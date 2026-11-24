@@ -29,6 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -240,11 +241,489 @@ template <typename T, typename... Args> _FORCE_INLINE_ Ref<T> memnew_ref(Args&&.
 
 // Math primitives
 // --- Folded from core/math/transform_3d.h ---
-#include "core/math/aabb.h"
+// --- Folded from core/math/aabb.h ---
+#include "core/math/plane.h"
+#include "core/templates/hashfuncs.h"
+
+/**
+ * AABB (Axis Aligned Bounding Box)
+ * This is implemented by a point (position) and the box size.
+ */
+
+struct [[nodiscard]] AABB {
+	Vector3 position;
+	Vector3 size;
+
+	real_t get_volume() const;
+	_FORCE_INLINE_ bool has_volume() const {
+		return size.x > 0.0f && size.y > 0.0f && size.z > 0.0f;
+	}
+
+	_FORCE_INLINE_ bool has_surface() const {
+		return size.x > 0.0f || size.y > 0.0f || size.z > 0.0f;
+	}
+
+	const Vector3 &get_position() const { return position; }
+	void set_position(const Vector3 &p_pos) { position = p_pos; }
+	const Vector3 &get_size() const { return size; }
+	void set_size(const Vector3 &p_size) { size = p_size; }
+
+	constexpr bool operator==(const AABB &p_rval) const {
+		return position == p_rval.position && size == p_rval.size;
+	}
+	constexpr bool operator!=(const AABB &p_rval) const {
+		return position != p_rval.position || size != p_rval.size;
+	}
+
+	bool is_equal_approx(const AABB &p_aabb) const;
+	bool is_same(const AABB &p_aabb) const;
+	bool is_finite() const;
+	_FORCE_INLINE_ bool intersects(const AABB &p_aabb) const; /// Both AABBs overlap
+	_FORCE_INLINE_ bool intersects_inclusive(const AABB &p_aabb) const; /// Both AABBs (or their faces) overlap
+	_FORCE_INLINE_ bool encloses(const AABB &p_aabb) const; /// p_aabb is completely inside this
+
+	AABB merge(const AABB &p_with) const;
+	void merge_with(const AABB &p_aabb); ///merge with another AABB
+	AABB intersection(const AABB &p_aabb) const; ///get box where two intersect, empty if no intersection occurs
+	_FORCE_INLINE_ bool smits_intersect_ray(const Vector3 &p_from, const Vector3 &p_dir, real_t p_t0, real_t p_t1) const;
+
+	bool intersects_segment(const Vector3 &p_from, const Vector3 &p_to, Vector3 *r_intersection_point = nullptr, Vector3 *r_normal = nullptr) const;
+	bool intersects_ray(const Vector3 &p_from, const Vector3 &p_dir) const {
+		bool inside;
+		return find_intersects_ray(p_from, p_dir, inside);
+	}
+	bool find_intersects_ray(const Vector3 &p_from, const Vector3 &p_dir, bool &r_inside, Vector3 *r_intersection_point = nullptr, Vector3 *r_normal = nullptr) const;
+
+	_FORCE_INLINE_ bool intersects_convex_shape(const Plane *p_planes, int p_plane_count, const Vector3 *p_points, int p_point_count) const;
+	_FORCE_INLINE_ bool inside_convex_shape(const Plane *p_planes, int p_plane_count) const;
+	bool intersects_plane(const Plane &p_plane) const;
+
+	_FORCE_INLINE_ bool has_point(const Vector3 &p_point) const;
+	_FORCE_INLINE_ Vector3 get_support(const Vector3 &p_direction) const;
+
+	Vector3 get_longest_axis() const;
+	int get_longest_axis_index() const;
+	_FORCE_INLINE_ real_t get_longest_axis_size() const;
+
+	Vector3 get_shortest_axis() const;
+	int get_shortest_axis_index() const;
+	_FORCE_INLINE_ real_t get_shortest_axis_size() const;
+
+	AABB grow(real_t p_by) const;
+	_FORCE_INLINE_ void grow_by(real_t p_amount);
+
+	void get_edge(int p_edge, Vector3 &r_from, Vector3 &r_to) const;
+	_FORCE_INLINE_ Vector3 get_endpoint(int p_point) const;
+
+	AABB expand(const Vector3 &p_vector) const;
+	_FORCE_INLINE_ void project_range_in_plane(const Plane &p_plane, real_t &r_min, real_t &r_max) const;
+	_FORCE_INLINE_ void expand_to(const Vector3 &p_vector); /** expand to contain a point if necessary */
+
+	_FORCE_INLINE_ AABB abs() const {
+		return AABB(position + size.minf(0), size.abs());
+	}
+
+	_FORCE_INLINE_ void quantize(real_t p_unit);
+	_FORCE_INLINE_ AABB quantized(real_t p_unit) const;
+
+	_FORCE_INLINE_ void set_end(const Vector3 &p_end) {
+		size = p_end - position;
+	}
+
+	_FORCE_INLINE_ Vector3 get_end() const {
+		return position + size;
+	}
+
+	_FORCE_INLINE_ Vector3 get_center() const {
+		return position + (size * 0.5f);
+	}
+
+	uint32_t hash() const {
+		uint32_t h = hash_murmur3_one_real(position.x);
+		h = hash_murmur3_one_real(position.y, h);
+		h = hash_murmur3_one_real(position.z, h);
+		h = hash_murmur3_one_real(size.x, h);
+		h = hash_murmur3_one_real(size.y, h);
+		h = hash_murmur3_one_real(size.z, h);
+		return hash_fmix32(h);
+	}
+
+	explicit operator String() const;
+
+	AABB() = default;
+	constexpr AABB(const Vector3 &p_pos, const Vector3 &p_size) :
+			position(p_pos),
+			size(p_size) {
+	}
+};
+
+inline bool AABB::intersects(const AABB &p_aabb) const {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0 || p_aabb.size.x < 0 || p_aabb.size.y < 0 || p_aabb.size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	if (position.x >= (p_aabb.position.x + p_aabb.size.x)) {
+		return false;
+	}
+	if ((position.x + size.x) <= p_aabb.position.x) {
+		return false;
+	}
+	if (position.y >= (p_aabb.position.y + p_aabb.size.y)) {
+		return false;
+	}
+	if ((position.y + size.y) <= p_aabb.position.y) {
+		return false;
+	}
+	if (position.z >= (p_aabb.position.z + p_aabb.size.z)) {
+		return false;
+	}
+	if ((position.z + size.z) <= p_aabb.position.z) {
+		return false;
+	}
+
+	return true;
+}
+
+inline bool AABB::intersects_inclusive(const AABB &p_aabb) const {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0 || p_aabb.size.x < 0 || p_aabb.size.y < 0 || p_aabb.size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	if (position.x > (p_aabb.position.x + p_aabb.size.x)) {
+		return false;
+	}
+	if ((position.x + size.x) < p_aabb.position.x) {
+		return false;
+	}
+	if (position.y > (p_aabb.position.y + p_aabb.size.y)) {
+		return false;
+	}
+	if ((position.y + size.y) < p_aabb.position.y) {
+		return false;
+	}
+	if (position.z > (p_aabb.position.z + p_aabb.size.z)) {
+		return false;
+	}
+	if ((position.z + size.z) < p_aabb.position.z) {
+		return false;
+	}
+
+	return true;
+}
+
+inline bool AABB::encloses(const AABB &p_aabb) const {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0 || p_aabb.size.x < 0 || p_aabb.size.y < 0 || p_aabb.size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	Vector3 src_min = position;
+	Vector3 src_max = position + size;
+	Vector3 dst_min = p_aabb.position;
+	Vector3 dst_max = p_aabb.position + p_aabb.size;
+
+	return (
+			(src_min.x <= dst_min.x) &&
+			(src_max.x >= dst_max.x) &&
+			(src_min.y <= dst_min.y) &&
+			(src_max.y >= dst_max.y) &&
+			(src_min.z <= dst_min.z) &&
+			(src_max.z >= dst_max.z));
+}
+
+Vector3 AABB::get_support(const Vector3 &p_direction) const {
+	Vector3 support = position;
+	if (p_direction.x > 0.0f) {
+		support.x += size.x;
+	}
+	if (p_direction.y > 0.0f) {
+		support.y += size.y;
+	}
+	if (p_direction.z > 0.0f) {
+		support.z += size.z;
+	}
+	return support;
+}
+
+Vector3 AABB::get_endpoint(int p_point) const {
+	switch (p_point) {
+		case 0:
+			return Vector3(position.x, position.y, position.z);
+		case 1:
+			return Vector3(position.x, position.y, position.z + size.z);
+		case 2:
+			return Vector3(position.x, position.y + size.y, position.z);
+		case 3:
+			return Vector3(position.x, position.y + size.y, position.z + size.z);
+		case 4:
+			return Vector3(position.x + size.x, position.y, position.z);
+		case 5:
+			return Vector3(position.x + size.x, position.y, position.z + size.z);
+		case 6:
+			return Vector3(position.x + size.x, position.y + size.y, position.z);
+		case 7:
+			return Vector3(position.x + size.x, position.y + size.y, position.z + size.z);
+	}
+
+	ERR_FAIL_V(Vector3());
+}
+
+bool AABB::intersects_convex_shape(const Plane *p_planes, int p_plane_count, const Vector3 *p_points, int p_point_count) const {
+	Vector3 half_extents = size * 0.5f;
+	Vector3 ofs = position + half_extents;
+
+	for (int i = 0; i < p_plane_count; i++) {
+		const Plane &p = p_planes[i];
+		Vector3 point(
+				(p.normal.x > 0) ? -half_extents.x : half_extents.x,
+				(p.normal.y > 0) ? -half_extents.y : half_extents.y,
+				(p.normal.z > 0) ? -half_extents.z : half_extents.z);
+		point += ofs;
+		if (p.is_point_over(point)) {
+			return false;
+		}
+	}
+
+	// Make sure all points in the shape aren't fully separated from the AABB on
+	// each axis.
+	int bad_point_counts_positive[3] = { 0 };
+	int bad_point_counts_negative[3] = { 0 };
+
+	for (int k = 0; k < 3; k++) {
+		for (int i = 0; i < p_point_count; i++) {
+			if (p_points[i][k] > ofs[k] + half_extents[k]) {
+				bad_point_counts_positive[k]++;
+			}
+			if (p_points[i][k] < ofs[k] - half_extents[k]) {
+				bad_point_counts_negative[k]++;
+			}
+		}
+
+		if (bad_point_counts_negative[k] == p_point_count) {
+			return false;
+		}
+		if (bad_point_counts_positive[k] == p_point_count) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool AABB::inside_convex_shape(const Plane *p_planes, int p_plane_count) const {
+	Vector3 half_extents = size * 0.5f;
+	Vector3 ofs = position + half_extents;
+
+	for (int i = 0; i < p_plane_count; i++) {
+		const Plane &p = p_planes[i];
+		Vector3 point(
+				(p.normal.x < 0) ? -half_extents.x : half_extents.x,
+				(p.normal.y < 0) ? -half_extents.y : half_extents.y,
+				(p.normal.z < 0) ? -half_extents.z : half_extents.z);
+		point += ofs;
+		if (p.is_point_over(point)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool AABB::has_point(const Vector3 &p_point) const {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	if (p_point.x < position.x) {
+		return false;
+	}
+	if (p_point.y < position.y) {
+		return false;
+	}
+	if (p_point.z < position.z) {
+		return false;
+	}
+	if (p_point.x > position.x + size.x) {
+		return false;
+	}
+	if (p_point.y > position.y + size.y) {
+		return false;
+	}
+	if (p_point.z > position.z + size.z) {
+		return false;
+	}
+
+	return true;
+}
+
+inline void AABB::expand_to(const Vector3 &p_vector) {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	Vector3 begin = position;
+	Vector3 end = position + size;
+
+	if (p_vector.x < begin.x) {
+		begin.x = p_vector.x;
+	}
+	if (p_vector.y < begin.y) {
+		begin.y = p_vector.y;
+	}
+	if (p_vector.z < begin.z) {
+		begin.z = p_vector.z;
+	}
+
+	if (p_vector.x > end.x) {
+		end.x = p_vector.x;
+	}
+	if (p_vector.y > end.y) {
+		end.y = p_vector.y;
+	}
+	if (p_vector.z > end.z) {
+		end.z = p_vector.z;
+	}
+
+	position = begin;
+	size = end - begin;
+}
+
+void AABB::project_range_in_plane(const Plane &p_plane, real_t &r_min, real_t &r_max) const {
+	Vector3 half_extents(size.x * 0.5f, size.y * 0.5f, size.z * 0.5f);
+	Vector3 center(position.x + half_extents.x, position.y + half_extents.y, position.z + half_extents.z);
+
+	real_t length = p_plane.normal.abs().dot(half_extents);
+	real_t distance = p_plane.distance_to(center);
+	r_min = distance - length;
+	r_max = distance + length;
+}
+
+inline real_t AABB::get_longest_axis_size() const {
+	real_t max_size = size.x;
+
+	if (size.y > max_size) {
+		max_size = size.y;
+	}
+
+	if (size.z > max_size) {
+		max_size = size.z;
+	}
+
+	return max_size;
+}
+
+inline real_t AABB::get_shortest_axis_size() const {
+	real_t max_size = size.x;
+
+	if (size.y < max_size) {
+		max_size = size.y;
+	}
+
+	if (size.z < max_size) {
+		max_size = size.z;
+	}
+
+	return max_size;
+}
+
+bool AABB::smits_intersect_ray(const Vector3 &p_from, const Vector3 &p_dir, real_t p_t0, real_t p_t1) const {
+#ifdef MATH_CHECKS
+	if (unlikely(size.x < 0 || size.y < 0 || size.z < 0)) {
+		ERR_PRINT("AABB size is negative, this is not supported. Use AABB.abs() to get an AABB with a positive size.");
+	}
+#endif
+	real_t divx = 1.0f / p_dir.x;
+	real_t divy = 1.0f / p_dir.y;
+	real_t divz = 1.0f / p_dir.z;
+
+	Vector3 upbound = position + size;
+	real_t tmin, tmax, tymin, tymax, tzmin, tzmax;
+	if (p_dir.x >= 0) {
+		tmin = (position.x - p_from.x) * divx;
+		tmax = (upbound.x - p_from.x) * divx;
+	} else {
+		tmin = (upbound.x - p_from.x) * divx;
+		tmax = (position.x - p_from.x) * divx;
+	}
+	if (p_dir.y >= 0) {
+		tymin = (position.y - p_from.y) * divy;
+		tymax = (upbound.y - p_from.y) * divy;
+	} else {
+		tymin = (upbound.y - p_from.y) * divy;
+		tymax = (position.y - p_from.y) * divy;
+	}
+	if ((tmin > tymax) || (tymin > tmax)) {
+		return false;
+	}
+	if (tymin > tmin) {
+		tmin = tymin;
+	}
+	if (tymax < tmax) {
+		tmax = tymax;
+	}
+	if (p_dir.z >= 0) {
+		tzmin = (position.z - p_from.z) * divz;
+		tzmax = (upbound.z - p_from.z) * divz;
+	} else {
+		tzmin = (upbound.z - p_from.z) * divz;
+		tzmax = (position.z - p_from.z) * divz;
+	}
+	if ((tmin > tzmax) || (tzmin > tmax)) {
+		return false;
+	}
+	if (tzmin > tmin) {
+		tmin = tzmin;
+	}
+	if (tzmax < tmax) {
+		tmax = tzmax;
+	}
+	return ((tmin < p_t1) && (tmax > p_t0));
+}
+
+void AABB::grow_by(real_t p_amount) {
+	position.x -= p_amount;
+	position.y -= p_amount;
+	position.z -= p_amount;
+	size.x += 2.0f * p_amount;
+	size.y += 2.0f * p_amount;
+	size.z += 2.0f * p_amount;
+}
+
+void AABB::quantize(real_t p_unit) {
+	size += position;
+
+	position.x -= Math::fposmodp(position.x, p_unit);
+	position.y -= Math::fposmodp(position.y, p_unit);
+	position.z -= Math::fposmodp(position.z, p_unit);
+
+	size.x -= Math::fposmodp(size.x, p_unit);
+	size.y -= Math::fposmodp(size.y, p_unit);
+	size.z -= Math::fposmodp(size.z, p_unit);
+
+	size.x += p_unit;
+	size.y += p_unit;
+	size.z += p_unit;
+
+	size -= position;
+}
+
+AABB AABB::quantized(real_t p_unit) const {
+	AABB ret = *this;
+	ret.quantize(p_unit);
+	return ret;
+}
+
+template <>
+struct is_zero_constructible<AABB> : std::true_type {};
+// --- End core/math/aabb.h ---
 // --- Inlined/Folded from core/math/basis.h ---
 // --- Inlined/Folded from core/math/quaternion.h ---
-#include "core/math/math_funcs.h"
-#include "core/math/vector3.h"
+#include "core/typedefs.h"
+#include "core/math/plane.h"
 #include "core/string/ustring.h"
 
 struct [[nodiscard]] Quaternion {
@@ -459,7 +938,7 @@ constexpr Quaternion Quaternion::operator*(const Quaternion &p_q) const {
 constexpr Quaternion operator*(real_t p_real, const Quaternion &p_quaternion) {
 	return p_quaternion * p_real;
 }
-#include "core/math/vector3.h"
+#include "core/math/plane.h"
 
 struct [[nodiscard]] Basis {
 	static const Basis FLIP_X;
@@ -1063,14 +1542,12 @@ _FORCE_INLINE_ Plane Transform3D::xform_inv_fast(const Plane &p_plane, const Tra
 }
 // --- End core/math/transform_3d.h ---
 #include "core/templates/hashfuncs.h"
-#include "core/math/math_defs.h"
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 // --- Folded from core/math/face3.h ---
-#include "core/math/aabb.h"
+
 #include "core/math/plane.h"
 
-#include "core/math/vector3.h"
 
 struct [[nodiscard]] Face3 {
 	enum Side {
@@ -1274,10 +1751,660 @@ bool Face3::intersects_aabb2(const AABB &p_aabb) const {
 template <>
 struct is_zero_constructible<Face3> : std::true_type {};
 // --- End core/math/face3.h ---
-#include "core/math/rect2.h"
+// --- Folded from core/math/rect2.h ---
+#include "core/typedefs.h"
+#include "core/math/vector2.h"
+#include "core/templates/hashfuncs.h"
+
+class String;
+struct Rect2i;
+struct Transform2D;
+
+struct [[nodiscard]] Rect2
+{
+	Point2 position;
+	Size2 size;
+
+	const Vector2& get_position() const { return position; }
+
+	void set_position(const Vector2& p_pos) { position = p_pos; }
+
+	const Vector2& get_size() const { return size; }
+
+	void set_size(const Vector2& p_size) { size = p_size; }
+
+	real_t get_area() const { return size.width * size.height; }
+
+	_FORCE_INLINE_ Vector2 get_center() const { return position + (size * 0.5f); }
+
+	inline bool intersects(const Rect2& p_rect, bool p_include_borders = false) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		if (p_include_borders) {
+			if (position.x > (p_rect.position.x + p_rect.size.width)) {
+				return false;
+			}
+			if ((position.x + size.width) < p_rect.position.x) {
+				return false;
+			}
+			if (position.y > (p_rect.position.y + p_rect.size.height)) {
+				return false;
+			}
+			if ((position.y + size.height) < p_rect.position.y) {
+				return false;
+			}
+		}
+		else {
+			if (position.x >= (p_rect.position.x + p_rect.size.width)) {
+				return false;
+			}
+			if ((position.x + size.width) <= p_rect.position.x) {
+				return false;
+			}
+			if (position.y >= (p_rect.position.y + p_rect.size.height)) {
+				return false;
+			}
+			if ((position.y + size.height) <= p_rect.position.y) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	inline real_t distance_to(const Vector2& p_point) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		real_t dist = 0.0;
+		bool inside = true;
+
+		if (p_point.x < position.x) {
+			real_t d = position.x - p_point.x;
+			dist = d;
+			inside = false;
+		}
+		if (p_point.y < position.y) {
+			real_t d = position.y - p_point.y;
+			dist = inside ? d : MIN(dist, d);
+			inside = false;
+		}
+		if (p_point.x >= (position.x + size.x)) {
+			real_t d = p_point.x - (position.x + size.x);
+			dist = inside ? d : MIN(dist, d);
+			inside = false;
+		}
+		if (p_point.y >= (position.y + size.y)) {
+			real_t d = p_point.y - (position.y + size.y);
+			dist = inside ? d : MIN(dist, d);
+			inside = false;
+		}
+
+		if (inside) {
+			return 0;
+		}
+		else {
+			return dist;
+		}
+	}
+
+	bool intersects_transformed(const Transform2D& p_xform, const Rect2& p_rect) const;
+
+	bool intersects_segment(const Point2& p_from, const Point2& p_to, Point2* r_pos = nullptr,
+		Point2* r_normal = nullptr) const;
+
+	inline bool encloses(const Rect2& p_rect) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		return (p_rect.position.x >= position.x) && (p_rect.position.y >= position.y) &&
+			   ((p_rect.position.x + p_rect.size.x) <= (position.x + size.x)) &&
+			   ((p_rect.position.y + p_rect.size.y) <= (position.y + size.y));
+	}
+
+	_FORCE_INLINE_ bool has_area() const { return size.x > 0.0f && size.y > 0.0f; }
+
+	Rect2 intersection_transformed(const Transform2D& p_xform, const Rect2& p_rect) const;
+
+	// Returns the intersection between two Rect2s or an empty Rect2 if there is no intersection.
+	inline Rect2 intersection(const Rect2& p_rect) const
+	{
+		Rect2 new_rect = p_rect;
+
+		if (!intersects(new_rect)) {
+			return Rect2();
+		}
+
+		new_rect.position = p_rect.position.max(position);
+
+		Point2 p_rect_end = p_rect.position + p_rect.size;
+		Point2 end = position + size;
+
+		new_rect.size = p_rect_end.min(end) - new_rect.position;
+
+		return new_rect;
+	}
+
+	inline Rect2 merge(const Rect2& p_rect) const
+	{ ///< return a merged rect
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		Rect2 new_rect;
+
+		new_rect.position = p_rect.position.min(position);
+
+		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
+
+		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
+
+		return new_rect;
+	}
+
+	inline bool has_point(const Point2& p_point) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		if (p_point.x < position.x) {
+			return false;
+		}
+		if (p_point.y < position.y) {
+			return false;
+		}
+
+		if (p_point.x >= (position.x + size.x)) {
+			return false;
+		}
+		if (p_point.y >= (position.y + size.y)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool is_equal_approx(const Rect2& p_rect) const;
+	bool is_same(const Rect2& p_rect) const;
+	bool is_finite() const;
+
+	constexpr bool operator==(const Rect2& p_rect) const
+	{
+		return position == p_rect.position && size == p_rect.size;
+	}
+
+	constexpr bool operator!=(const Rect2& p_rect) const
+	{
+		return position != p_rect.position || size != p_rect.size;
+	}
+
+	inline Rect2 grow(real_t p_amount) const
+	{
+		Rect2 g = *this;
+		g.grow_by(p_amount);
+		return g;
+	}
+
+	inline void grow_by(real_t p_amount)
+	{
+		position.x -= p_amount;
+		position.y -= p_amount;
+		size.width += p_amount * 2;
+		size.height += p_amount * 2;
+	}
+
+	inline Rect2 grow_side(Side p_side, real_t p_amount) const
+	{
+		Rect2 g = *this;
+		g = g.grow_individual((SIDE_LEFT == p_side) ? p_amount : 0,
+			(SIDE_TOP == p_side) ? p_amount : 0, (SIDE_RIGHT == p_side) ? p_amount : 0,
+			(SIDE_BOTTOM == p_side) ? p_amount : 0);
+		return g;
+	}
+
+	inline Rect2 grow_side_bind(uint32_t p_side, real_t p_amount) const
+	{
+		return grow_side(Side(p_side), p_amount);
+	}
+
+	inline Rect2 grow_individual(real_t p_left, real_t p_top, real_t p_right, real_t p_bottom) const
+	{
+		Rect2 g = *this;
+		g.position.x -= p_left;
+		g.position.y -= p_top;
+		g.size.width += p_left + p_right;
+		g.size.height += p_top + p_bottom;
+
+		return g;
+	}
+
+	_FORCE_INLINE_ Rect2 expand(const Vector2& p_vector) const
+	{
+		Rect2 r = *this;
+		r.expand_to(p_vector);
+		return r;
+	}
+
+	inline void expand_to(const Vector2& p_vector)
+	{ // In place function for speed.
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0)) {
+			ERR_PRINT("Rect2 size is negative, this is not supported. Use Rect2.abs() to get a "
+					  "Rect2 with a positive size.");
+		}
+#endif
+		Vector2 begin = position;
+		Vector2 end = position + size;
+
+		if (p_vector.x < begin.x) {
+			begin.x = p_vector.x;
+		}
+		if (p_vector.y < begin.y) {
+			begin.y = p_vector.y;
+		}
+
+		if (p_vector.x > end.x) {
+			end.x = p_vector.x;
+		}
+		if (p_vector.y > end.y) {
+			end.y = p_vector.y;
+		}
+
+		position = begin;
+		size = end - begin;
+	}
+
+	_FORCE_INLINE_ Rect2 abs() const { return Rect2(position + size.minf(0), size.abs()); }
+
+	_FORCE_INLINE_ Rect2 round() const { return Rect2(position.round(), size.round()); }
+
+	Vector2 get_support(const Vector2& p_direction) const
+	{
+		Vector2 support = position;
+		if (p_direction.x > 0.0f) {
+			support.x += size.x;
+		}
+		if (p_direction.y > 0.0f) {
+			support.y += size.y;
+		}
+		return support;
+	}
+
+	_FORCE_INLINE_ bool intersects_filled_polygon(const Vector2* p_points, int p_point_count) const
+	{
+		Vector2 center = get_center();
+		int side_plus = 0;
+		int side_minus = 0;
+		Vector2 end = position + size;
+
+		int i_f = p_point_count - 1;
+		for (int i = 0; i < p_point_count; i++) {
+			const Vector2& a = p_points[i_f];
+			const Vector2& b = p_points[i];
+			i_f = i;
+
+			Vector2 r = (b - a);
+			const real_t l = r.length();
+			if (l == 0.0f) {
+				continue;
+			}
+
+			// Check inside.
+			Vector2 tg = r.orthogonal();
+			const real_t s = tg.dot(center) - tg.dot(a);
+			if (s < 0.0f) {
+				side_plus++;
+			}
+			else {
+				side_minus++;
+			}
+
+			// Check ray box.
+			r /= l;
+			Vector2 ir(1.0f / r.x, 1.0f / r.y);
+
+			// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+			// r.org is origin of ray
+			Vector2 t13 = (position - a) * ir;
+			Vector2 t24 = (end - a) * ir;
+
+			const real_t tmin = MAX(MIN(t13.x, t24.x), MIN(t13.y, t24.y));
+			const real_t tmax = MIN(MAX(t13.x, t24.x), MAX(t13.y, t24.y));
+
+			// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+			if (tmax < 0 || tmin > tmax || tmin >= l) {
+				continue;
+			}
+
+			return true;
+		}
+
+		if (side_plus * side_minus == 0) {
+			return true; // All inside.
+		}
+		else {
+			return false;
+		}
+	}
+
+	_FORCE_INLINE_ void set_end(const Vector2& p_end) { size = p_end - position; }
+
+	_FORCE_INLINE_ Vector2 get_end() const { return position + size; }
+
+	explicit operator String() const;
+	operator Rect2i() const;
+
+	uint32_t hash() const
+	{
+		uint32_t h = hash_murmur3_one_real(position.x);
+		h = hash_murmur3_one_real(position.y, h);
+		h = hash_murmur3_one_real(size.x, h);
+		h = hash_murmur3_one_real(size.y, h);
+		return hash_fmix32(h);
+	}
+
+	static Rect2 from_points(const Vector2* p_points, int p_point_count)
+	{
+		Rect2 result;
+		ERR_FAIL_NULL_V_MSG(p_points, result, "The pointer of points passed in is invalid.");
+		ERR_FAIL_COND_V_MSG(
+			p_point_count <= 0, result, "The number of points passed in is invalid.");
+		result.position = p_points[0];
+		Vector2 end = result.position;
+		for (int i = 1; i < p_point_count; i++) {
+			const Vector2& p = p_points[i];
+
+			if (p.x < result.position.x) {
+				result.position.x = p.x;
+			}
+			else if (p.x > end.x) {
+				end.x = p.x;
+			}
+			if (p.y < result.position.y) {
+				result.position.y = p.y;
+			}
+			else if (p.y > end.y) {
+				end.y = p.y;
+			}
+		}
+		result.size = end - result.position;
+		return result;
+	}
+
+	Rect2() = default;
+
+	constexpr Rect2(real_t p_x, real_t p_y, real_t p_width, real_t p_height)
+		: position(Point2(p_x, p_y)), size(Size2(p_width, p_height))
+	{
+	}
+
+	constexpr Rect2(const Point2& p_pos, const Size2& p_size) : position(p_pos), size(p_size) {}
+};
+
+template <> struct is_zero_constructible<Rect2> : std::true_type
+{
+};
+
+// --- Folded from core/math/rect2i.h ---
+#include "core/typedefs.h"
+#include "core/templates/hashfuncs.h"
+
+class String;
+struct Rect2;
+
+struct [[nodiscard]] Rect2i
+{
+	Point2i position;
+	Size2i size;
+
+	const Point2i& get_position() const { return position; }
+
+	void set_position(const Point2i& p_position) { position = p_position; }
+
+	const Size2i& get_size() const { return size; }
+
+	void set_size(const Size2i& p_size) { size = p_size; }
+
+	int get_area() const { return size.width * size.height; }
+
+	_FORCE_INLINE_ Vector2i get_center() const { return position + (size / 2); }
+
+	inline bool intersects(const Rect2i& p_rect) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a "
+					  "Rect2i with a positive size.");
+		}
+#endif
+		if (position.x >= (p_rect.position.x + p_rect.size.width)) {
+			return false;
+		}
+		if ((position.x + size.width) <= p_rect.position.x) {
+			return false;
+		}
+		if (position.y >= (p_rect.position.y + p_rect.size.height)) {
+			return false;
+		}
+		if ((position.y + size.height) <= p_rect.position.y) {
+			return false;
+		}
+
+		return true;
+	}
+
+	inline bool encloses(const Rect2i& p_rect) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a "
+					  "Rect2i with a positive size.");
+		}
+#endif
+		return (p_rect.position.x >= position.x) && (p_rect.position.y >= position.y) &&
+			   ((p_rect.position.x + p_rect.size.x) <= (position.x + size.x)) &&
+			   ((p_rect.position.y + p_rect.size.y) <= (position.y + size.y));
+	}
+
+	_FORCE_INLINE_ bool has_area() const { return size.x > 0 && size.y > 0; }
+
+	// Returns the intersection between two Rect2is or an empty Rect2i if there is no intersection.
+	inline Rect2i intersection(const Rect2i& p_rect) const
+	{
+		Rect2i new_rect = p_rect;
+
+		if (!intersects(new_rect)) {
+			return Rect2i();
+		}
+
+		new_rect.position = p_rect.position.max(position);
+
+		Point2i p_rect_end = p_rect.position + p_rect.size;
+		Point2i end = position + size;
+
+		new_rect.size = p_rect_end.min(end) - new_rect.position;
+
+		return new_rect;
+	}
+
+	inline Rect2i merge(const Rect2i& p_rect) const
+	{ ///< return a merged rect
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0 || p_rect.size.x < 0 || p_rect.size.y < 0)) {
+			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a "
+					  "Rect2i with a positive size.");
+		}
+#endif
+		Rect2i new_rect;
+
+		new_rect.position = p_rect.position.min(position);
+
+		new_rect.size = (p_rect.position + p_rect.size).max(position + size);
+
+		new_rect.size = new_rect.size - new_rect.position; // Make relative again.
+
+		return new_rect;
+	}
+
+	bool has_point(const Point2i& p_point) const
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0)) {
+			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a "
+					  "Rect2i with a positive size.");
+		}
+#endif
+		if (p_point.x < position.x) {
+			return false;
+		}
+		if (p_point.y < position.y) {
+			return false;
+		}
+
+		if (p_point.x >= (position.x + size.x)) {
+			return false;
+		}
+		if (p_point.y >= (position.y + size.y)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	constexpr bool operator==(const Rect2i& p_rect) const
+	{
+		return position == p_rect.position && size == p_rect.size;
+	}
+
+	constexpr bool operator!=(const Rect2i& p_rect) const
+	{
+		return position != p_rect.position || size != p_rect.size;
+	}
+
+	Rect2i grow(int p_amount) const
+	{
+		Rect2i g = *this;
+		g.position.x -= p_amount;
+		g.position.y -= p_amount;
+		g.size.width += p_amount * 2;
+		g.size.height += p_amount * 2;
+		return g;
+	}
+
+	inline Rect2i grow_side(Side p_side, int p_amount) const
+	{
+		Rect2i g = *this;
+		g = g.grow_individual((SIDE_LEFT == p_side) ? p_amount : 0,
+			(SIDE_TOP == p_side) ? p_amount : 0, (SIDE_RIGHT == p_side) ? p_amount : 0,
+			(SIDE_BOTTOM == p_side) ? p_amount : 0);
+		return g;
+	}
+
+	inline Rect2i grow_side_bind(uint32_t p_side, int p_amount) const
+	{
+		return grow_side(Side(p_side), p_amount);
+	}
+
+	inline Rect2i grow_individual(int p_left, int p_top, int p_right, int p_bottom) const
+	{
+		Rect2i g = *this;
+		g.position.x -= p_left;
+		g.position.y -= p_top;
+		g.size.width += p_left + p_right;
+		g.size.height += p_top + p_bottom;
+
+		return g;
+	}
+
+	_FORCE_INLINE_ Rect2i expand(const Vector2i& p_vector) const
+	{
+		Rect2i r = *this;
+		r.expand_to(p_vector);
+		return r;
+	}
+
+	inline void expand_to(const Point2i& p_vector)
+	{
+#ifdef MATH_CHECKS
+		if (unlikely(size.x < 0 || size.y < 0)) {
+			ERR_PRINT("Rect2i size is negative, this is not supported. Use Rect2i.abs() to get a "
+					  "Rect2i with a positive size.");
+		}
+#endif
+		Point2i begin = position;
+		Point2i end = position + size;
+
+		if (p_vector.x < begin.x) {
+			begin.x = p_vector.x;
+		}
+		if (p_vector.y < begin.y) {
+			begin.y = p_vector.y;
+		}
+
+		if (p_vector.x > end.x) {
+			end.x = p_vector.x;
+		}
+		if (p_vector.y > end.y) {
+			end.y = p_vector.y;
+		}
+
+		position = begin;
+		size = end - begin;
+	}
+
+	_FORCE_INLINE_ Rect2i abs() const { return Rect2i(position + size.mini(0), size.abs()); }
+
+	_FORCE_INLINE_ void set_end(const Vector2i& p_end) { size = p_end - position; }
+
+	_FORCE_INLINE_ Vector2i get_end() const { return position + size; }
+
+	explicit operator String() const;
+	operator Rect2() const;
+
+	uint32_t hash() const
+	{
+		uint32_t h = hash_murmur3_one_32(uint32_t(position.x));
+		h = hash_murmur3_one_32(uint32_t(position.y), h);
+		h = hash_murmur3_one_32(uint32_t(size.x), h);
+		h = hash_murmur3_one_32(uint32_t(size.y), h);
+		return hash_fmix32(h);
+	}
+
+	Rect2i() = default;
+
+	constexpr Rect2i(int p_x, int p_y, int p_width, int p_height)
+		: position(Point2i(p_x, p_y)), size(Size2i(p_width, p_height))
+	{
+	}
+
+	constexpr Rect2i(const Point2i& p_pos, const Size2i& p_size) : position(p_pos), size(p_size) {}
+};
+
+template <> struct is_zero_constructible<Rect2i> : std::true_type
+{
+};
+// --- End core/math/rect2.h ---
 // --- Folded from core/math/transform_2d.h ---
-#include "core/math/math_funcs.h"
-#include "core/math/rect2.h"
+#include "core/typedefs.h"
+
 #include "core/math/vector2.h"
 #include "core/templates/vector.h"
 
@@ -1545,8 +2672,802 @@ Vector<Vector2> Transform2D::xform_inv(const Vector<Vector2> &p_array) const {
 
 #include "core/math/vector2.h"
 #include "core/templates/hashfuncs.h"
-#include "core/math/vector3.h"
-#include "core/math/projection.h"
+#include "core/math/plane.h"
+// --- Folded from core/math/projection.h ---
+#include "core/math/plane.h"
+// --- Inlined/Folded from core/math/vector4.h ---
+#include "core/typedefs.h"
+#include "core/templates/hashfuncs.h"
+#include "core/typedefs.h"
+
+class String;
+struct Vector4i;
+
+struct [[nodiscard]] Vector4 {
+	static constexpr int AXIS_COUNT = 4;
+
+	enum Axis {
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+		AXIS_W,
+	};
+
+	real_t x = 0.0f;
+	real_t y = 0.0f;
+	real_t z = 0.0f;
+	real_t w = 0.0f;
+
+	constexpr real_t &operator[](int p_axis) {
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(Vector4, x) == 0 * sizeof(real_t));
+		static_assert(offsetof(Vector4, y) == 1 * sizeof(real_t));
+		static_assert(offsetof(Vector4, z) == 2 * sizeof(real_t));
+		static_assert(offsetof(Vector4, w) == 3 * sizeof(real_t));
+		static_assert(sizeof(Vector4) == 4 * sizeof(real_t));
+
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return (&x)[p_axis];
+	}
+	constexpr const real_t &operator[](int p_axis) const {
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return (&x)[p_axis];
+	}
+
+	Vector4::Axis min_axis_index() const;
+	Vector4::Axis max_axis_index() const;
+
+	Vector4 min(const Vector4 &p_vector4) const {
+		return Vector4(MIN(x, p_vector4.x), MIN(y, p_vector4.y), MIN(z, p_vector4.z), MIN(w, p_vector4.w));
+	}
+
+	Vector4 minf(real_t p_scalar) const {
+		return Vector4(MIN(x, p_scalar), MIN(y, p_scalar), MIN(z, p_scalar), MIN(w, p_scalar));
+	}
+
+	Vector4 max(const Vector4 &p_vector4) const {
+		return Vector4(MAX(x, p_vector4.x), MAX(y, p_vector4.y), MAX(z, p_vector4.z), MAX(w, p_vector4.w));
+	}
+
+	Vector4 maxf(real_t p_scalar) const {
+		return Vector4(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar), MAX(w, p_scalar));
+	}
+
+	_FORCE_INLINE_ real_t length_squared() const;
+	bool is_equal_approx(const Vector4 &p_vec4) const;
+	bool is_zero_approx() const;
+	bool is_same(const Vector4 &p_vec4) const;
+	bool is_finite() const;
+	real_t length() const;
+	void normalize();
+	Vector4 normalized() const;
+	bool is_normalized() const;
+
+	void zero() { x = y = z = w = 0; }
+
+	real_t distance_to(const Vector4 &p_to) const;
+	real_t distance_squared_to(const Vector4 &p_to) const;
+	Vector4 direction_to(const Vector4 &p_to) const;
+
+	Vector4 abs() const;
+	Vector4 sign() const;
+	Vector4 floor() const;
+	Vector4 ceil() const;
+	Vector4 round() const;
+	Vector4 lerp(const Vector4 &p_to, real_t p_weight) const;
+	Vector4 cubic_interpolate(const Vector4 &p_b, const Vector4 &p_pre_a, const Vector4 &p_post_b, real_t p_weight) const;
+	Vector4 cubic_interpolate_in_time(const Vector4 &p_b, const Vector4 &p_pre_a, const Vector4 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
+
+	Vector4 posmod(real_t p_mod) const;
+	Vector4 posmodv(const Vector4 &p_modv) const;
+	void snap(const Vector4 &p_step);
+	void snapf(real_t p_step);
+	Vector4 snapped(const Vector4 &p_step) const;
+	Vector4 snappedf(real_t p_step) const;
+	Vector4 clamp(const Vector4 &p_min, const Vector4 &p_max) const;
+	Vector4 clampf(real_t p_min, real_t p_max) const;
+
+	Vector4 inverse() const;
+	_FORCE_INLINE_ real_t dot(const Vector4 &p_vec4) const;
+
+	constexpr void operator+=(const Vector4 &p_vec4);
+	constexpr void operator-=(const Vector4 &p_vec4);
+	constexpr void operator*=(const Vector4 &p_vec4);
+	constexpr void operator/=(const Vector4 &p_vec4);
+	constexpr void operator*=(real_t p_s);
+	constexpr void operator/=(real_t p_s);
+	constexpr Vector4 operator+(const Vector4 &p_vec4) const;
+	constexpr Vector4 operator-(const Vector4 &p_vec4) const;
+	constexpr Vector4 operator*(const Vector4 &p_vec4) const;
+	constexpr Vector4 operator/(const Vector4 &p_vec4) const;
+	constexpr Vector4 operator-() const;
+	constexpr Vector4 operator*(real_t p_s) const;
+	constexpr Vector4 operator/(real_t p_s) const;
+
+	constexpr bool operator==(const Vector4 &p_vec4) const;
+	constexpr bool operator!=(const Vector4 &p_vec4) const;
+	constexpr bool operator>(const Vector4 &p_vec4) const;
+	constexpr bool operator<(const Vector4 &p_vec4) const;
+	constexpr bool operator>=(const Vector4 &p_vec4) const;
+	constexpr bool operator<=(const Vector4 &p_vec4) const;
+
+	explicit operator String() const;
+	operator Vector4i() const;
+
+	uint32_t hash() const {
+		uint32_t h = hash_murmur3_one_real(x);
+		h = hash_murmur3_one_real(y, h);
+		h = hash_murmur3_one_real(z, h);
+		h = hash_murmur3_one_real(w, h);
+		return hash_fmix32(h);
+	}
+
+	constexpr Vector4() = default;
+	constexpr Vector4(real_t p_x, real_t p_y, real_t p_z, real_t p_w) :
+			x(p_x), y(p_y), z(p_z), w(p_w) {}
+};
+
+real_t Vector4::dot(const Vector4 &p_vec4) const {
+	return x * p_vec4.x + y * p_vec4.y + z * p_vec4.z + w * p_vec4.w;
+}
+
+real_t Vector4::length_squared() const {
+	return dot(*this);
+}
+
+constexpr void Vector4::operator+=(const Vector4 &p_vec4) {
+	x += p_vec4.x;
+	y += p_vec4.y;
+	z += p_vec4.z;
+	w += p_vec4.w;
+}
+
+constexpr void Vector4::operator-=(const Vector4 &p_vec4) {
+	x -= p_vec4.x;
+	y -= p_vec4.y;
+	z -= p_vec4.z;
+	w -= p_vec4.w;
+}
+
+constexpr void Vector4::operator*=(const Vector4 &p_vec4) {
+	x *= p_vec4.x;
+	y *= p_vec4.y;
+	z *= p_vec4.z;
+	w *= p_vec4.w;
+}
+
+constexpr void Vector4::operator/=(const Vector4 &p_vec4) {
+	x /= p_vec4.x;
+	y /= p_vec4.y;
+	z /= p_vec4.z;
+	w /= p_vec4.w;
+}
+constexpr void Vector4::operator*=(real_t p_s) {
+	x *= p_s;
+	y *= p_s;
+	z *= p_s;
+	w *= p_s;
+}
+
+constexpr void Vector4::operator/=(real_t p_s) {
+	x /= p_s;
+	y /= p_s;
+	z /= p_s;
+	w /= p_s;
+}
+
+constexpr Vector4 Vector4::operator+(const Vector4 &p_vec4) const {
+	return Vector4(x + p_vec4.x, y + p_vec4.y, z + p_vec4.z, w + p_vec4.w);
+}
+
+constexpr Vector4 Vector4::operator-(const Vector4 &p_vec4) const {
+	return Vector4(x - p_vec4.x, y - p_vec4.y, z - p_vec4.z, w - p_vec4.w);
+}
+
+constexpr Vector4 Vector4::operator*(const Vector4 &p_vec4) const {
+	return Vector4(x * p_vec4.x, y * p_vec4.y, z * p_vec4.z, w * p_vec4.w);
+}
+
+constexpr Vector4 Vector4::operator/(const Vector4 &p_vec4) const {
+	return Vector4(x / p_vec4.x, y / p_vec4.y, z / p_vec4.z, w / p_vec4.w);
+}
+
+constexpr Vector4 Vector4::operator-() const {
+	return Vector4(-x, -y, -z, -w);
+}
+
+constexpr Vector4 Vector4::operator*(real_t p_s) const {
+	return Vector4(x * p_s, y * p_s, z * p_s, w * p_s);
+}
+
+constexpr Vector4 Vector4::operator/(real_t p_s) const {
+	return Vector4(x / p_s, y / p_s, z / p_s, w / p_s);
+}
+
+constexpr bool Vector4::operator==(const Vector4 &p_vec4) const {
+	return x == p_vec4.x && y == p_vec4.y && z == p_vec4.z && w == p_vec4.w;
+}
+
+constexpr bool Vector4::operator!=(const Vector4 &p_vec4) const {
+	return x != p_vec4.x || y != p_vec4.y || z != p_vec4.z || w != p_vec4.w;
+}
+
+constexpr bool Vector4::operator<(const Vector4 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w < p_v.w;
+			}
+			return z < p_v.z;
+		}
+		return y < p_v.y;
+	}
+	return x < p_v.x;
+}
+
+constexpr bool Vector4::operator>(const Vector4 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w > p_v.w;
+			}
+			return z > p_v.z;
+		}
+		return y > p_v.y;
+	}
+	return x > p_v.x;
+}
+
+constexpr bool Vector4::operator<=(const Vector4 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w <= p_v.w;
+			}
+			return z < p_v.z;
+		}
+		return y < p_v.y;
+	}
+	return x < p_v.x;
+}
+
+constexpr bool Vector4::operator>=(const Vector4 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w >= p_v.w;
+			}
+			return z > p_v.z;
+		}
+		return y > p_v.y;
+	}
+	return x > p_v.x;
+}
+
+constexpr Vector4 operator*(float p_scalar, const Vector4 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector4 operator*(double p_scalar, const Vector4 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector4 operator*(int32_t p_scalar, const Vector4 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector4 operator*(int64_t p_scalar, const Vector4 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+template <>
+struct is_zero_constructible<Vector4> : std::true_type {};
+
+// --- Folded from core/math/vector4i.h ---
+#include "core/typedefs.h"
+#include "core/templates/hashfuncs.h"
+
+class String;
+struct Vector4;
+
+struct [[nodiscard]] Vector4i {
+	static constexpr int AXIS_COUNT = 4;
+
+	enum Axis {
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+		AXIS_W,
+	};
+
+	int32_t x = 0;
+	int32_t y = 0;
+	int32_t z = 0;
+	int32_t w = 0;
+
+	constexpr int32_t &operator[](int p_axis) {
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(Vector4i, x) == 0 * sizeof(int32_t));
+		static_assert(offsetof(Vector4i, y) == 1 * sizeof(int32_t));
+		static_assert(offsetof(Vector4i, z) == 2 * sizeof(int32_t));
+		static_assert(offsetof(Vector4i, w) == 3 * sizeof(int32_t));
+		static_assert(sizeof(Vector4i) == 4 * sizeof(int32_t));
+
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return (&x)[p_axis];
+	}
+	constexpr const int32_t &operator[](int p_axis) const {
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return (&x)[p_axis];
+	}
+
+	Vector4i::Axis min_axis_index() const;
+	Vector4i::Axis max_axis_index() const;
+
+	Vector4i min(const Vector4i &p_vector4i) const {
+		return Vector4i(MIN(x, p_vector4i.x), MIN(y, p_vector4i.y), MIN(z, p_vector4i.z), MIN(w, p_vector4i.w));
+	}
+
+	Vector4i mini(int32_t p_scalar) const {
+		return Vector4i(MIN(x, p_scalar), MIN(y, p_scalar), MIN(z, p_scalar), MIN(w, p_scalar));
+	}
+
+	Vector4i max(const Vector4i &p_vector4i) const {
+		return Vector4i(MAX(x, p_vector4i.x), MAX(y, p_vector4i.y), MAX(z, p_vector4i.z), MAX(w, p_vector4i.w));
+	}
+
+	Vector4i maxi(int32_t p_scalar) const {
+		return Vector4i(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar), MAX(w, p_scalar));
+	}
+
+	_FORCE_INLINE_ int64_t length_squared() const;
+	_FORCE_INLINE_ double length() const;
+
+	_FORCE_INLINE_ void zero();
+
+	_FORCE_INLINE_ double distance_to(const Vector4i &p_to) const;
+	_FORCE_INLINE_ int64_t distance_squared_to(const Vector4i &p_to) const;
+
+	_FORCE_INLINE_ Vector4i abs() const;
+	_FORCE_INLINE_ Vector4i sign() const;
+	Vector4i clamp(const Vector4i &p_min, const Vector4i &p_max) const;
+	Vector4i clampi(int32_t p_min, int32_t p_max) const;
+	Vector4i snapped(const Vector4i &p_step) const;
+	Vector4i snappedi(int32_t p_step) const;
+
+	/* Operators */
+
+	constexpr Vector4i &operator+=(const Vector4i &p_v);
+	constexpr Vector4i operator+(const Vector4i &p_v) const;
+	constexpr Vector4i &operator-=(const Vector4i &p_v);
+	constexpr Vector4i operator-(const Vector4i &p_v) const;
+	constexpr Vector4i &operator*=(const Vector4i &p_v);
+	constexpr Vector4i operator*(const Vector4i &p_v) const;
+	constexpr Vector4i &operator/=(const Vector4i &p_v);
+	constexpr Vector4i operator/(const Vector4i &p_v) const;
+	constexpr Vector4i &operator%=(const Vector4i &p_v);
+	constexpr Vector4i operator%(const Vector4i &p_v) const;
+
+	constexpr Vector4i &operator*=(int32_t p_scalar);
+	constexpr Vector4i operator*(int32_t p_scalar) const;
+	constexpr Vector4i &operator/=(int32_t p_scalar);
+	constexpr Vector4i operator/(int32_t p_scalar) const;
+	constexpr Vector4i &operator%=(int32_t p_scalar);
+	constexpr Vector4i operator%(int32_t p_scalar) const;
+
+	constexpr Vector4i operator-() const;
+
+	constexpr bool operator==(const Vector4i &p_v) const;
+	constexpr bool operator!=(const Vector4i &p_v) const;
+	constexpr bool operator<(const Vector4i &p_v) const;
+	constexpr bool operator<=(const Vector4i &p_v) const;
+	constexpr bool operator>(const Vector4i &p_v) const;
+	constexpr bool operator>=(const Vector4i &p_v) const;
+
+	explicit operator String() const;
+	operator Vector4() const;
+
+	uint32_t hash() const {
+		uint32_t h = hash_murmur3_one_32(uint32_t(x));
+		h = hash_murmur3_one_32(uint32_t(y), h);
+		h = hash_murmur3_one_32(uint32_t(z), h);
+		h = hash_murmur3_one_32(uint32_t(w), h);
+		return hash_fmix32(h);
+	}
+
+	constexpr Vector4i() = default;
+	constexpr Vector4i(int32_t p_x, int32_t p_y, int32_t p_z, int32_t p_w) :
+			x(p_x), y(p_y), z(p_z), w(p_w) {}
+};
+
+int64_t Vector4i::length_squared() const {
+	return x * (int64_t)x + y * (int64_t)y + z * (int64_t)z + w * (int64_t)w;
+}
+
+double Vector4i::length() const {
+	return Math::sqrt((double)length_squared());
+}
+
+double Vector4i::distance_to(const Vector4i &p_to) const {
+	return (p_to - *this).length();
+}
+
+int64_t Vector4i::distance_squared_to(const Vector4i &p_to) const {
+	return (p_to - *this).length_squared();
+}
+
+Vector4i Vector4i::abs() const {
+	return Vector4i(Math::abs(x), Math::abs(y), Math::abs(z), Math::abs(w));
+}
+
+Vector4i Vector4i::sign() const {
+	return Vector4i(SIGN(x), SIGN(y), SIGN(z), SIGN(w));
+}
+
+/* Operators */
+
+constexpr Vector4i &Vector4i::operator+=(const Vector4i &p_v) {
+	x += p_v.x;
+	y += p_v.y;
+	z += p_v.z;
+	w += p_v.w;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator+(const Vector4i &p_v) const {
+	return Vector4i(x + p_v.x, y + p_v.y, z + p_v.z, w + p_v.w);
+}
+
+constexpr Vector4i &Vector4i::operator-=(const Vector4i &p_v) {
+	x -= p_v.x;
+	y -= p_v.y;
+	z -= p_v.z;
+	w -= p_v.w;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator-(const Vector4i &p_v) const {
+	return Vector4i(x - p_v.x, y - p_v.y, z - p_v.z, w - p_v.w);
+}
+
+constexpr Vector4i &Vector4i::operator*=(const Vector4i &p_v) {
+	x *= p_v.x;
+	y *= p_v.y;
+	z *= p_v.z;
+	w *= p_v.w;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator*(const Vector4i &p_v) const {
+	return Vector4i(x * p_v.x, y * p_v.y, z * p_v.z, w * p_v.w);
+}
+
+constexpr Vector4i &Vector4i::operator/=(const Vector4i &p_v) {
+	x /= p_v.x;
+	y /= p_v.y;
+	z /= p_v.z;
+	w /= p_v.w;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator/(const Vector4i &p_v) const {
+	return Vector4i(x / p_v.x, y / p_v.y, z / p_v.z, w / p_v.w);
+}
+
+constexpr Vector4i &Vector4i::operator%=(const Vector4i &p_v) {
+	x %= p_v.x;
+	y %= p_v.y;
+	z %= p_v.z;
+	w %= p_v.w;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator%(const Vector4i &p_v) const {
+	return Vector4i(x % p_v.x, y % p_v.y, z % p_v.z, w % p_v.w);
+}
+
+constexpr Vector4i &Vector4i::operator*=(int32_t p_scalar) {
+	x *= p_scalar;
+	y *= p_scalar;
+	z *= p_scalar;
+	w *= p_scalar;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator*(int32_t p_scalar) const {
+	return Vector4i(x * p_scalar, y * p_scalar, z * p_scalar, w * p_scalar);
+}
+
+// Multiplication operators required to workaround issues with LLVM using implicit conversion.
+
+constexpr Vector4i operator*(int32_t p_scalar, const Vector4i &p_vector) {
+	return p_vector * p_scalar;
+}
+
+constexpr Vector4i operator*(int64_t p_scalar, const Vector4i &p_vector) {
+	return p_vector * p_scalar;
+}
+
+constexpr Vector4i operator*(float p_scalar, const Vector4i &p_vector) {
+	return p_vector * p_scalar;
+}
+
+constexpr Vector4i operator*(double p_scalar, const Vector4i &p_vector) {
+	return p_vector * p_scalar;
+}
+
+constexpr Vector4i &Vector4i::operator/=(int32_t p_scalar) {
+	x /= p_scalar;
+	y /= p_scalar;
+	z /= p_scalar;
+	w /= p_scalar;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator/(int32_t p_scalar) const {
+	return Vector4i(x / p_scalar, y / p_scalar, z / p_scalar, w / p_scalar);
+}
+
+constexpr Vector4i &Vector4i::operator%=(int32_t p_scalar) {
+	x %= p_scalar;
+	y %= p_scalar;
+	z %= p_scalar;
+	w %= p_scalar;
+	return *this;
+}
+
+constexpr Vector4i Vector4i::operator%(int32_t p_scalar) const {
+	return Vector4i(x % p_scalar, y % p_scalar, z % p_scalar, w % p_scalar);
+}
+
+constexpr Vector4i Vector4i::operator-() const {
+	return Vector4i(-x, -y, -z, -w);
+}
+
+constexpr bool Vector4i::operator==(const Vector4i &p_v) const {
+	return (x == p_v.x && y == p_v.y && z == p_v.z && w == p_v.w);
+}
+
+constexpr bool Vector4i::operator!=(const Vector4i &p_v) const {
+	return (x != p_v.x || y != p_v.y || z != p_v.z || w != p_v.w);
+}
+
+constexpr bool Vector4i::operator<(const Vector4i &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w < p_v.w;
+			} else {
+				return z < p_v.z;
+			}
+		} else {
+			return y < p_v.y;
+		}
+	} else {
+		return x < p_v.x;
+	}
+}
+
+constexpr bool Vector4i::operator>(const Vector4i &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w > p_v.w;
+			} else {
+				return z > p_v.z;
+			}
+		} else {
+			return y > p_v.y;
+		}
+	} else {
+		return x > p_v.x;
+	}
+}
+
+constexpr bool Vector4i::operator<=(const Vector4i &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w <= p_v.w;
+			} else {
+				return z < p_v.z;
+			}
+		} else {
+			return y < p_v.y;
+		}
+	} else {
+		return x < p_v.x;
+	}
+}
+
+constexpr bool Vector4i::operator>=(const Vector4i &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			if (z == p_v.z) {
+				return w >= p_v.w;
+			} else {
+				return z > p_v.z;
+			}
+		} else {
+			return y > p_v.y;
+		}
+	} else {
+		return x > p_v.x;
+	}
+}
+
+void Vector4i::zero() {
+	x = y = z = w = 0;
+}
+
+template <>
+struct is_zero_constructible<Vector4i> : std::true_type {};
+
+// --- End core/math/vector4i.h ---
+
+template <typename T>
+class Vector;
+
+struct AABB;
+struct Plane;
+struct Rect2;
+struct Transform3D;
+struct Vector2;
+
+struct [[nodiscard]] Projection {
+	enum Planes {
+		PLANE_NEAR,
+		PLANE_FAR,
+		PLANE_LEFT,
+		PLANE_TOP,
+		PLANE_RIGHT,
+		PLANE_BOTTOM
+	};
+
+	Vector4 columns[4] = {
+		{ 1, 0, 0, 0 },
+		{ 0, 1, 0, 0 },
+		{ 0, 0, 1, 0 },
+		{ 0, 0, 0, 1 },
+	};
+
+	constexpr const Vector4 &operator[](int p_axis) const {
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return columns[p_axis];
+	}
+
+	constexpr Vector4 &operator[](int p_axis) {
+		DEV_ASSERT((unsigned int)p_axis < 4);
+		return columns[p_axis];
+	}
+
+	real_t determinant() const;
+	void set_identity();
+	void set_zero();
+	void set_light_bias();
+	void set_depth_correction(bool p_flip_y = true, bool p_reverse_z = true, bool p_remap_z = true);
+
+	void set_light_atlas_rect(const Rect2 &p_rect);
+	void set_perspective(real_t p_fovy_degrees, real_t p_aspect, real_t p_z_near, real_t p_z_far, bool p_flip_fov = false);
+	void set_perspective(real_t p_fovy_degrees, real_t p_aspect, real_t p_z_near, real_t p_z_far, bool p_flip_fov, int p_eye, real_t p_intraocular_dist, real_t p_convergence_dist);
+	void set_for_hmd(int p_eye, real_t p_aspect, real_t p_intraocular_dist, real_t p_display_width, real_t p_display_to_lens, real_t p_oversample, real_t p_z_near, real_t p_z_far);
+	void set_orthogonal(real_t p_left, real_t p_right, real_t p_bottom, real_t p_top, real_t p_znear, real_t p_zfar);
+	void set_orthogonal(real_t p_size, real_t p_aspect, real_t p_znear, real_t p_zfar, bool p_flip_fov = false);
+	void set_frustum(real_t p_left, real_t p_right, real_t p_bottom, real_t p_top, real_t p_near, real_t p_far);
+	void set_frustum(real_t p_size, real_t p_aspect, Vector2 p_offset, real_t p_near, real_t p_far, bool p_flip_fov = false);
+	void adjust_perspective_znear(real_t p_new_znear);
+
+	static Projection create_depth_correction(bool p_flip_y);
+	static Projection create_light_atlas_rect(const Rect2 &p_rect);
+	static Projection create_perspective(real_t p_fovy_degrees, real_t p_aspect, real_t p_z_near, real_t p_z_far, bool p_flip_fov = false);
+	static Projection create_perspective_hmd(real_t p_fovy_degrees, real_t p_aspect, real_t p_z_near, real_t p_z_far, bool p_flip_fov, int p_eye, real_t p_intraocular_dist, real_t p_convergence_dist);
+	static Projection create_for_hmd(int p_eye, real_t p_aspect, real_t p_intraocular_dist, real_t p_display_width, real_t p_display_to_lens, real_t p_oversample, real_t p_z_near, real_t p_z_far);
+	static Projection create_orthogonal(real_t p_left, real_t p_right, real_t p_bottom, real_t p_top, real_t p_znear, real_t p_zfar);
+	static Projection create_orthogonal_aspect(real_t p_size, real_t p_aspect, real_t p_znear, real_t p_zfar, bool p_flip_fov = false);
+	static Projection create_frustum(real_t p_left, real_t p_right, real_t p_bottom, real_t p_top, real_t p_near, real_t p_far);
+	static Projection create_frustum_aspect(real_t p_size, real_t p_aspect, Vector2 p_offset, real_t p_near, real_t p_far, bool p_flip_fov = false);
+	static Projection create_fit_aabb(const AABB &p_aabb);
+	Projection perspective_znear_adjusted(real_t p_new_znear) const;
+	Plane get_projection_plane(Planes p_plane) const;
+	Projection flipped_y() const;
+	Projection jitter_offseted(const Vector2 &p_offset) const;
+
+	static real_t get_fovy(real_t p_fovx, real_t p_aspect) {
+		return Math::rad_to_deg(Math::atan(p_aspect * Math::tan(Math::deg_to_rad(p_fovx) * 0.5)) * 2.0);
+	}
+
+	real_t get_z_far() const;
+	real_t get_z_near() const;
+	real_t get_aspect() const;
+	real_t get_fov() const;
+	bool is_orthogonal() const;
+
+	Vector<Plane> get_projection_planes(const Transform3D &p_transform) const;
+
+	bool get_endpoints(const Transform3D &p_transform, Vector3 *p_8points) const;
+	Vector2 get_viewport_half_extents() const;
+	Vector2 get_far_plane_half_extents() const;
+
+	void invert();
+	Projection inverse() const;
+
+	constexpr Projection operator*(const Projection &p_matrix) const;
+
+	Plane xform4(const Plane &p_vec4) const;
+	_FORCE_INLINE_ Vector3 xform(const Vector3 &p_vec3) const;
+
+	Vector4 xform(const Vector4 &p_vec4) const;
+	Vector4 xform_inv(const Vector4 &p_vec4) const;
+
+	explicit operator String() const;
+
+	void scale_translate_to_fit(const AABB &p_aabb);
+	void add_jitter_offset(const Vector2 &p_offset);
+	void make_scale(const Vector3 &p_scale);
+	int get_pixels_per_meter(int p_for_pixel_width) const;
+	operator Transform3D() const;
+
+	void flip_y();
+
+	bool is_same(const Projection &p_cam) const;
+
+	constexpr bool operator==(const Projection &p_cam) const {
+		for (uint32_t i = 0; i < 4; i++) {
+			for (uint32_t j = 0; j < 4; j++) {
+				if (columns[i][j] != p_cam.columns[i][j]) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	constexpr bool operator!=(const Projection &p_cam) const {
+		return !(*this == p_cam);
+	}
+
+	real_t get_lod_multiplier() const;
+
+	Projection() = default;
+	constexpr Projection(const Vector4 &p_x, const Vector4 &p_y, const Vector4 &p_z, const Vector4 &p_w) :
+			columns{ p_x, p_y, p_z, p_w } {}
+	constexpr Projection(real_t p_xx, real_t p_xy, real_t p_xz, real_t p_xw, real_t p_yx, real_t p_yy, real_t p_yz, real_t p_yw, real_t p_zx, real_t p_zy, real_t p_zz, real_t p_zw, real_t p_wx, real_t p_wy, real_t p_wz, real_t p_ww) :
+			columns{
+				{ p_xx, p_xy, p_xz, p_xw },
+				{ p_yx, p_yy, p_yz, p_yw },
+				{ p_zx, p_zy, p_zz, p_zw },
+				{ p_wx, p_wy, p_wz, p_ww },
+			} {}
+	Projection(const Transform3D &p_transform);
+};
+
+constexpr Projection Projection::operator*(const Projection &p_matrix) const {
+	Projection new_matrix;
+
+	for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			real_t ab = 0;
+			for (int k = 0; k < 4; k++) {
+				ab += columns[k][i] * p_matrix.columns[j][k];
+			}
+			new_matrix.columns[j][i] = ab;
+		}
+	}
+
+	return new_matrix;
+}
+
+Vector3 Projection::xform(const Vector3 &p_vec3) const {
+	Vector3 ret;
+	ret.x = columns[0][0] * p_vec3.x + columns[1][0] * p_vec3.y + columns[2][0] * p_vec3.z + columns[3][0];
+	ret.y = columns[0][1] * p_vec3.x + columns[1][1] * p_vec3.y + columns[2][1] * p_vec3.z + columns[3][1];
+	ret.z = columns[0][2] * p_vec3.x + columns[1][2] * p_vec3.y + columns[2][2] * p_vec3.z + columns[3][2];
+	real_t w = columns[0][3] * p_vec3.x + columns[1][3] * p_vec3.y + columns[2][3] * p_vec3.z + columns[3][3];
+	return ret / w;
+}
+// --- End core/math/projection.h ---
 
 // Strings & Paths
 // --- Inlined/Folded from core/string/node_path.h ---
@@ -2683,7 +4604,7 @@ public:
 
 
 // --- Folded from core/math/random_pcg.h ---
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 #include <thirdparty/misc/pcg.h>
 
@@ -2838,3 +4759,1561 @@ public:
 // --- End core/math/random_pcg.h ---
 
 #endif // TYPES_H
+
+// --- Folded from core/templates/self_list.h ---
+#include "core/typedefs.h"
+#include "core/templates/list.h"
+#include "core/typedefs.h"
+
+template <typename T> class _WARN_UNUSED_ SelfList
+{
+public:
+	class List
+	{
+		SelfList<T>* _first = nullptr;
+		SelfList<T>* _last = nullptr;
+
+	public:
+		void add(SelfList<T>* p_elem)
+		{
+			ERR_FAIL_COND(p_elem->_root);
+
+			p_elem->_root = this;
+			p_elem->_next = _first;
+			p_elem->_prev = nullptr;
+
+			if (_first) {
+				_first->_prev = p_elem;
+
+			}
+			else {
+				_last = p_elem;
+			}
+
+			_first = p_elem;
+		}
+
+		void add_last(SelfList<T>* p_elem)
+		{
+			ERR_FAIL_COND(p_elem->_root);
+
+			p_elem->_root = this;
+			p_elem->_next = nullptr;
+			p_elem->_prev = _last;
+
+			if (_last) {
+				_last->_next = p_elem;
+
+			}
+			else {
+				_first = p_elem;
+			}
+
+			_last = p_elem;
+		}
+
+		void remove(SelfList<T>* p_elem)
+		{
+			ERR_FAIL_COND(p_elem->_root != this);
+			if (p_elem->_next) {
+				p_elem->_next->_prev = p_elem->_prev;
+			}
+
+			if (p_elem->_prev) {
+				p_elem->_prev->_next = p_elem->_next;
+			}
+
+			if (_first == p_elem) {
+				_first = p_elem->_next;
+			}
+
+			if (_last == p_elem) {
+				_last = p_elem->_prev;
+			}
+
+			p_elem->_next = nullptr;
+			p_elem->_prev = nullptr;
+			p_elem->_root = nullptr;
+		}
+
+		void clear()
+		{
+			while (_first) {
+				remove(_first);
+			}
+		}
+
+		void sort() { sort_custom<Comparator<T>>(); }
+
+		template <typename C> void sort_custom()
+		{
+			if (_first == _last) {
+				return;
+			}
+
+			struct PtrComparator
+			{
+				C compare;
+
+				_FORCE_INLINE_ bool operator()(const T* p_a, const T* p_b) const
+				{
+					return compare(*p_a, *p_b);
+				}
+			};
+
+			using Element = SelfList<T>;
+			SortList<Element, T*, _self_ref, _prev_ref, _next_ref, PtrComparator> sorter;
+			sorter.sort(_first, _last);
+		}
+
+		_FORCE_INLINE_ SelfList<T>* first() { return _first; }
+
+		_FORCE_INLINE_ const SelfList<T>* first() const { return _first; }
+
+		// Forbid copying, which has broken behavior.
+		void operator=(const List&) = delete;
+
+		_FORCE_INLINE_ ~List()
+		{
+			// A self list must be empty on destruction.
+			DEV_ASSERT(_first == nullptr);
+		}
+	};
+
+private:
+	List* _root = nullptr;
+	T* _self = nullptr;
+	SelfList<T>* _next = nullptr;
+	SelfList<T>* _prev = nullptr;
+	// Specify pointers in variables to work around a VS 2022 bug (GH-121326).
+	static constexpr T* SelfList<T>::*_self_ref = &SelfList<T>::_self;
+	static constexpr SelfList<T>* SelfList<T>::*_prev_ref = &SelfList<T>::_prev;
+	static constexpr SelfList<T>* SelfList<T>::*_next_ref = &SelfList<T>::_next;
+
+public:
+	_FORCE_INLINE_ bool in_list() const { return _root; }
+
+	_FORCE_INLINE_ void remove_from_list()
+	{
+		if (_root) {
+			_root->remove(this);
+		}
+	}
+
+	_FORCE_INLINE_ SelfList<T>* next() { return _next; }
+
+	_FORCE_INLINE_ SelfList<T>* prev() { return _prev; }
+
+	_FORCE_INLINE_ const SelfList<T>* next() const { return _next; }
+
+	_FORCE_INLINE_ const SelfList<T>* prev() const { return _prev; }
+
+	_FORCE_INLINE_ T* self() const { return _self; }
+
+	// Forbid copying, which has broken behavior.
+	void operator=(const SelfList<T>&) = delete;
+
+	_FORCE_INLINE_ SelfList() { this; }
+
+	_FORCE_INLINE_ SelfList(T* p_self) { _self = p_self; }
+
+	_FORCE_INLINE_ ~SelfList()
+	{
+		if (_root) {
+			_root->remove(this);
+		}
+	}
+};
+// --- End core/templates/self_list.h ---
+
+// --- Folded from core/templates/a_hash_map.h ---
+#include <initializer_list>
+
+#include "core/os/memory.h"
+#include "core/templates/span.h"
+#include "core/string/ustring.h"
+#include "core/templates/hashfuncs.h"
+
+class String;
+class String;
+
+/**
+ * An array-based implementation of a hash map. It is very efficient in terms of performance and
+ * memory usage. Works like a dynamic array, adding elements to the end of the array, and
+ * allows you to access array elements by their index by using `get_by_index` method.
+ * Example:
+ * ```
+ *  AHashMap<int, Object *> map;
+ *
+ *  int get_object_id_by_number(int p_number) {
+ *		int id = map.get_index(p_number);
+ *		return id;
+ *  }
+ *
+ *  Object *get_object_by_id(int p_id) {
+ *		map.get_by_index(p_id).value;
+ *  }
+ * ```
+ * Still, don`t erase the elements because ID can break.
+ *
+ * When an element erase, its place is taken by the element from the end.
+ *
+ *        <-------------
+ *      |               |
+ *  6 8 X 9 32 -1 5 -10 7 X X X
+ *  6 8 7 9 32 -1 5 -10 X X X X
+ *
+ *
+ * Use RBMap if you need to iterate over sorted elements.
+ *
+ * Use HashMap if:
+ *   - You need to keep an iterator or const pointer to Key and you intend to add/remove elements in
+ *the meantime.
+ *   - You need to preserve the insertion order when using erase.
+ *
+ * It is recommended to use `HashMap` if `KeyValue` size is very large.
+ */
+template <typename TKey, typename TValue, typename Hasher = HashMapHasherDefault,
+	typename Comparator = HashMapComparatorDefault<TKey>>
+class _WARN_UNUSED_ AHashMap
+{
+public:
+	// Must be a power of two.
+	static constexpr uint32_t INITIAL_CAPACITY = 16;
+	static constexpr uint32_t EMPTY_HASH = 0;
+	static_assert(EMPTY_HASH == 0, "EMPTY_HASH must always be 0 for the memcpy() optimization.");
+
+private:
+	struct Metadata
+	{
+		uint32_t hash;
+		uint32_t element_idx;
+	};
+
+	static_assert(sizeof(Metadata) == 8);
+
+	typedef KeyValue<TKey, TValue> MapKeyValue;
+	MapKeyValue* _elements = nullptr;
+	Metadata* _metadata = nullptr;
+
+	// Due to optimization, this is `capacity - 1`. Use + 1 to get normal capacity.
+	uint32_t _capacity_mask = 0;
+	uint32_t _size = 0;
+
+	uint32_t _hash(const TKey& p_key) const
+	{
+		uint32_t hash = Hasher::hash(p_key);
+
+		if (unlikely(hash == EMPTY_HASH)) {
+			hash = EMPTY_HASH + 1;
+		}
+
+		return hash;
+	}
+
+	static _FORCE_INLINE_ uint32_t _get_resize_count(uint32_t p_capacity_mask)
+	{
+		return p_capacity_mask ^
+			   (p_capacity_mask + 1) >>
+				   2; // = get_capacity() * 0.75 - 1; Works only if p_capacity_mask = 2^n - 1.
+	}
+
+	static _FORCE_INLINE_ uint32_t _get_probe_length(
+		uint32_t p_meta_idx, uint32_t p_hash, uint32_t p_capacity)
+	{
+		const uint32_t original_idx = p_hash & p_capacity;
+		return (p_meta_idx - original_idx + p_capacity + 1) & p_capacity;
+	}
+
+	bool _lookup_idx(const TKey& p_key, uint32_t& r_element_idx, uint32_t& r_meta_idx) const
+	{
+		if (unlikely(_elements == nullptr)) {
+			return false; // Failed lookups, no _elements.
+		}
+		return _lookup_idx_with_hash(p_key, r_element_idx, r_meta_idx, _hash(p_key));
+	}
+
+	bool _lookup_idx_with_hash(
+		const TKey& p_key, uint32_t& r_element_idx, uint32_t& r_meta_idx, uint32_t p_hash) const
+	{
+		if (unlikely(_elements == nullptr)) {
+			return false; // Failed lookups, no _elements.
+		}
+
+		uint32_t meta_idx = p_hash & _capacity_mask;
+		Metadata metadata = _metadata[meta_idx];
+		if (metadata.hash == p_hash &&
+			Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
+			r_element_idx = metadata.element_idx;
+			r_meta_idx = meta_idx;
+			return true;
+		}
+
+		if (metadata.hash == EMPTY_HASH) {
+			return false;
+		}
+
+		// A collision occurred.
+		meta_idx = (meta_idx + 1) & _capacity_mask;
+		uint32_t distance = 1;
+		while (true) {
+			metadata = _metadata[meta_idx];
+			if (metadata.hash == p_hash &&
+				Comparator::compare(_elements[metadata.element_idx].key, p_key)) {
+				r_element_idx = metadata.element_idx;
+				r_meta_idx = meta_idx;
+				return true;
+			}
+
+			if (metadata.hash == EMPTY_HASH) {
+				return false;
+			}
+
+			if (distance > _get_probe_length(meta_idx, metadata.hash, _capacity_mask)) {
+				return false;
+			}
+
+			meta_idx = (meta_idx + 1) & _capacity_mask;
+			distance++;
+		}
+	}
+
+	uint32_t _insert_metadata(uint32_t p_hash, uint32_t p_element_idx)
+	{
+		uint32_t meta_idx = p_hash & _capacity_mask;
+
+		if (_metadata[meta_idx].hash == EMPTY_HASH) {
+			_metadata[meta_idx] = Metadata{p_hash, p_element_idx};
+			return meta_idx;
+		}
+
+		uint32_t distance = 1;
+		meta_idx = (meta_idx + 1) & _capacity_mask;
+		Metadata metadata;
+		metadata.hash = p_hash;
+		metadata.element_idx = p_element_idx;
+
+		while (true) {
+			if (_metadata[meta_idx].hash == EMPTY_HASH) {
+#ifdef DEV_ENABLED
+				if (unlikely(distance > 12)) {
+					WARN_PRINT("Excessive collision count, is the right hash function being used?");
+				}
+#endif
+				_metadata[meta_idx] = metadata;
+				return meta_idx;
+			}
+
+			// Not an empty slot, let's check the probing length of the existing one.
+			uint32_t existing_probe_len =
+				_get_probe_length(meta_idx, _metadata[meta_idx].hash, _capacity_mask);
+			if (existing_probe_len < distance) {
+				SWAP(metadata, _metadata[meta_idx]);
+				distance = existing_probe_len;
+			}
+
+			meta_idx = (meta_idx + 1) & _capacity_mask;
+			distance++;
+		}
+	}
+
+	void _resize_and_rehash(uint32_t p_new_capacity)
+	{
+		uint32_t real_old_capacity = _capacity_mask + 1;
+		// Capacity can't be 0 and must be 2^n - 1.
+		_capacity_mask = MAX(4u, p_new_capacity);
+		uint32_t real_capacity = Math::next_power_of_2(_capacity_mask);
+		_capacity_mask = real_capacity - 1;
+
+		Metadata* old_map_data = _metadata;
+
+		_metadata = reinterpret_cast<Metadata*>(
+			Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
+		_elements = reinterpret_cast<MapKeyValue*>(Memory::realloc_static(
+			_elements, sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+
+		if (_size != 0) {
+			for (uint32_t i = 0; i < real_old_capacity; i++) {
+				Metadata metadata = old_map_data[i];
+				if (metadata.hash != EMPTY_HASH) {
+					_insert_metadata(metadata.hash, metadata.element_idx);
+				}
+			}
+		}
+
+		Memory::free_static(old_map_data);
+	}
+
+	int32_t _insert_element(const TKey& p_key, const TValue& p_value, uint32_t p_hash)
+	{
+		if (unlikely(_elements == nullptr)) {
+			// Allocate on demand to save memory.
+
+			uint32_t real_capacity = _capacity_mask + 1;
+			_metadata = reinterpret_cast<Metadata*>(
+				Memory::alloc_static_zeroed(sizeof(Metadata) * real_capacity));
+			_elements = reinterpret_cast<MapKeyValue*>(Memory::alloc_static(
+				sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+		}
+
+		if (unlikely(_size > _get_resize_count(_capacity_mask))) {
+			_resize_and_rehash(_capacity_mask * 2);
+		}
+
+		memnew_placement(&_elements[_size], MapKeyValue(p_key, p_value));
+
+		_insert_metadata(p_hash, _size);
+		_size++;
+		return _size - 1;
+	}
+
+	void _init_from(const AHashMap& p_other)
+	{
+		_capacity_mask = p_other._capacity_mask;
+		uint32_t real_capacity = _capacity_mask + 1;
+		_size = p_other._size;
+
+		if (p_other._size == 0) {
+			return;
+		}
+
+		_metadata =
+			reinterpret_cast<Metadata*>(Memory::alloc_static(sizeof(Metadata) * real_capacity));
+		_elements = reinterpret_cast<MapKeyValue*>(
+			Memory::alloc_static(sizeof(MapKeyValue) * (_get_resize_count(_capacity_mask) + 1)));
+
+		if constexpr (std::is_trivially_copyable_v<TKey> && std::is_trivially_copyable_v<TValue>) {
+			void* destination = _elements;
+			const void* source = p_other._elements;
+			memcpy(destination, source, sizeof(MapKeyValue) * _size);
+		}
+		else {
+			for (uint32_t i = 0; i < _size; i++) {
+				memnew_placement(&_elements[i], MapKeyValue(p_other._elements[i]));
+			}
+		}
+
+		memcpy(_metadata, p_other._metadata, sizeof(Metadata) * real_capacity);
+	}
+
+public:
+	/* Standard Godot Container API */
+
+	_FORCE_INLINE_ uint32_t get_capacity() const { return _capacity_mask + 1; }
+
+	_FORCE_INLINE_ uint32_t size() const { return _size; }
+
+	_FORCE_INLINE_ bool is_empty() const { return _size == 0; }
+
+	void clear()
+	{
+		if (_elements == nullptr || _size == 0) {
+			return;
+		}
+
+		memset(_metadata, EMPTY_HASH, (_capacity_mask + 1) * sizeof(Metadata));
+		if constexpr (!(std::is_trivially_destructible_v<TKey> &&
+						  std::is_trivially_destructible_v<TValue>)) {
+			for (uint32_t i = 0; i < _size; i++) {
+				_elements[i].key.~TKey();
+				_elements[i].value.~TValue();
+			}
+		}
+
+		_size = 0;
+	}
+
+	TValue& get(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		CRASH_COND_MSG(!exists, "AHashMap key not found.");
+		return _elements[element_idx].value;
+	}
+
+	const TValue& get(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		CRASH_COND_MSG(!exists, "AHashMap key not found.");
+		return _elements[element_idx].value;
+	}
+
+	const TValue* getptr(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+
+		if (exists) {
+			return &_elements[element_idx].value;
+		}
+		return nullptr;
+	}
+
+	TValue* getptr(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+
+		if (exists) {
+			return &_elements[element_idx].value;
+		}
+		return nullptr;
+	}
+
+	bool has(const TKey& p_key) const
+	{
+		uint32_t _idx = 0;
+		uint32_t meta_idx = 0;
+		return _lookup_idx(p_key, _idx, meta_idx);
+	}
+
+	bool erase(const TKey& p_key)
+	{
+		uint32_t meta_idx = 0;
+		uint32_t element_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+
+		if (!exists) {
+			return false;
+		}
+
+		uint32_t next_meta_idx = (meta_idx + 1) & _capacity_mask;
+		while (
+			_metadata[next_meta_idx].hash != EMPTY_HASH &&
+			_get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
+			SWAP(_metadata[next_meta_idx], _metadata[meta_idx]);
+
+			meta_idx = next_meta_idx;
+			next_meta_idx = (next_meta_idx + 1) & _capacity_mask;
+		}
+
+		_metadata[meta_idx].hash = EMPTY_HASH;
+		_elements[element_idx].key.~TKey();
+		_elements[element_idx].value.~TValue();
+		_size--;
+
+		if (element_idx < _size) {
+			memcpy((void*)&_elements[element_idx], (const void*)&_elements[_size],
+				sizeof(MapKeyValue));
+			uint32_t moved_element_idx = 0;
+			uint32_t moved_meta_idx = 0;
+			_lookup_idx(_elements[_size].key, moved_element_idx, moved_meta_idx);
+			_metadata[moved_meta_idx].element_idx = element_idx;
+		}
+
+		return true;
+	}
+
+	// Replace the key of an entry in-place, without invalidating iterators or changing the entries
+	// position during iteration. p_old_key must exist in the map and p_new_key must not, unless it
+	// is equal to p_old_key.
+	bool replace_key(const TKey& p_old_key, const TKey& p_new_key)
+	{
+		if (p_old_key == p_new_key) {
+			return true;
+		}
+		uint32_t meta_idx = 0;
+		uint32_t element_idx = 0;
+		ERR_FAIL_COND_V(_lookup_idx(p_new_key, element_idx, meta_idx), false);
+		ERR_FAIL_COND_V(!_lookup_idx(p_old_key, element_idx, meta_idx), false);
+		MapKeyValue& element = _elements[element_idx];
+		const_cast<TKey&>(element.key) = p_new_key;
+
+		uint32_t next_meta_idx = (meta_idx + 1) & _capacity_mask;
+		while (
+			_metadata[next_meta_idx].hash != EMPTY_HASH &&
+			_get_probe_length(next_meta_idx, _metadata[next_meta_idx].hash, _capacity_mask) != 0) {
+			SWAP(_metadata[next_meta_idx], _metadata[meta_idx]);
+
+			meta_idx = next_meta_idx;
+			next_meta_idx = (next_meta_idx + 1) & _capacity_mask;
+		}
+
+		_metadata[meta_idx].hash = EMPTY_HASH;
+
+		uint32_t hash = _hash(p_new_key);
+		_insert_metadata(hash, element_idx);
+
+		return true;
+	}
+
+	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	// If adding a known (possibly large) number of elements at once, must be larger than old
+	// capacity.
+	void reserve(uint32_t p_new_capacity)
+	{
+		if (_elements == nullptr) {
+			_capacity_mask = MAX(4u, p_new_capacity);
+			_capacity_mask = Math::next_power_of_2(_capacity_mask) - 1;
+			return; // Unallocated yet.
+		}
+		if (p_new_capacity <= get_capacity()) {
+			if (p_new_capacity < size()) {
+				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This "
+							 "is likely a mistake.");
+			}
+			return;
+		}
+		_resize_and_rehash(p_new_capacity);
+	}
+
+	/** Iterator API **/
+
+	struct ConstIterator
+	{
+		_FORCE_INLINE_ const MapKeyValue& operator*() const { return *pair; }
+
+		_FORCE_INLINE_ const MapKeyValue* operator->() const { return pair; }
+
+		_FORCE_INLINE_ ConstIterator& operator++()
+		{
+			pair++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ ConstIterator& operator--()
+		{
+			pair--;
+			if (pair < begin) {
+				pair = end;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const ConstIterator& p_other) const
+		{
+			return pair == p_other.pair;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const ConstIterator& p_other) const
+		{
+			return pair != p_other.pair;
+		}
+
+		_FORCE_INLINE_ explicit operator bool() const { return pair != end; }
+
+		_FORCE_INLINE_ ConstIterator(MapKeyValue* p_key, MapKeyValue* p_begin, MapKeyValue* p_end)
+		{
+			pair = p_key;
+			begin = p_begin;
+			end = p_end;
+		}
+
+		_FORCE_INLINE_ ConstIterator() {}
+
+		_FORCE_INLINE_ ConstIterator(const ConstIterator& p_it)
+		{
+			pair = p_it.pair;
+			begin = p_it.begin;
+			end = p_it.end;
+		}
+
+		_FORCE_INLINE_ void operator=(const ConstIterator& p_it)
+		{
+			pair = p_it.pair;
+			begin = p_it.begin;
+			end = p_it.end;
+		}
+
+	private:
+		MapKeyValue* pair = nullptr;
+		MapKeyValue* begin = nullptr;
+		MapKeyValue* end = nullptr;
+	};
+
+	struct Iterator
+	{
+		_FORCE_INLINE_ MapKeyValue& operator*() const { return *pair; }
+
+		_FORCE_INLINE_ MapKeyValue* operator->() const { return pair; }
+
+		_FORCE_INLINE_ Iterator& operator++()
+		{
+			pair++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ Iterator& operator--()
+		{
+			pair--;
+			if (pair < begin) {
+				pair = end;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator& p_other) const
+		{
+			return pair == p_other.pair;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const Iterator& p_other) const
+		{
+			return pair != p_other.pair;
+		}
+
+		_FORCE_INLINE_ explicit operator bool() const { return pair != end; }
+
+		_FORCE_INLINE_ Iterator(MapKeyValue* p_key, MapKeyValue* p_begin, MapKeyValue* p_end)
+		{
+			pair = p_key;
+			begin = p_begin;
+			end = p_end;
+		}
+
+		_FORCE_INLINE_ Iterator() {}
+
+		_FORCE_INLINE_ Iterator(const Iterator& p_it)
+		{
+			pair = p_it.pair;
+			begin = p_it.begin;
+			end = p_it.end;
+		}
+
+		_FORCE_INLINE_ void operator=(const Iterator& p_it)
+		{
+			pair = p_it.pair;
+			begin = p_it.begin;
+			end = p_it.end;
+		}
+
+		operator ConstIterator() const { return ConstIterator(pair, begin, end); }
+
+	private:
+		MapKeyValue* pair = nullptr;
+		MapKeyValue* begin = nullptr;
+		MapKeyValue* end = nullptr;
+	};
+
+	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_
+	{
+		return Iterator(_elements, _elements, _elements + _size);
+	}
+
+	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_
+	{
+		return Iterator(_elements + _size, _elements, _elements + _size);
+	}
+
+	_FORCE_INLINE_ Iterator last() _LIFETIME_BOUND_
+	{
+		if (unlikely(_size == 0)) {
+			return Iterator(nullptr, nullptr, nullptr);
+		}
+		return Iterator(_elements + _size - 1, _elements, _elements + _size);
+	}
+
+	Iterator find(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t meta_idx = 0;
+		uint32_t element_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		if (!exists) {
+			return end();
+		}
+		return Iterator(_elements + element_idx, _elements, _elements + _size);
+	}
+
+	void remove(const Iterator& p_iter)
+	{
+		if (p_iter) {
+			erase(p_iter->key);
+		}
+	}
+
+	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(_elements, _elements, _elements + _size);
+	}
+
+	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(_elements + _size, _elements, _elements + _size);
+	}
+
+	_FORCE_INLINE_ ConstIterator last() const _LIFETIME_BOUND_
+	{
+		if (unlikely(_size == 0)) {
+			return ConstIterator(nullptr, nullptr, nullptr);
+		}
+		return ConstIterator(_elements + _size - 1, _elements, _elements + _size);
+	}
+
+	ConstIterator find(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		if (!exists) {
+			return end();
+		}
+		return ConstIterator(_elements + element_idx, _elements, _elements + _size);
+	}
+
+	/* Indexing */
+
+	const TValue& operator[](const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		CRASH_COND(!exists);
+		return _elements[element_idx].value;
+	}
+
+	TValue& operator[](const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		uint32_t hash = _hash(p_key);
+		bool exists = _lookup_idx_with_hash(p_key, element_idx, meta_idx, hash);
+
+		if (exists) {
+			return _elements[element_idx].value;
+		}
+		else {
+			element_idx = _insert_element(p_key, TValue(), hash);
+			return _elements[element_idx].value;
+		}
+	}
+
+	/* Insert */
+
+	Iterator insert(const TKey& p_key, const TValue& p_value) _LIFETIME_BOUND_
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		uint32_t hash = _hash(p_key);
+		bool exists = _lookup_idx_with_hash(p_key, element_idx, meta_idx, hash);
+
+		if (!exists) {
+			element_idx = _insert_element(p_key, p_value, hash);
+		}
+		else {
+			_elements[element_idx].value = p_value;
+		}
+		return Iterator(_elements + element_idx, _elements, _elements + _size);
+	}
+
+	// Inserts an element without checking if it already exists.
+	Iterator insert_new(const TKey& p_key, const TValue& p_value) _LIFETIME_BOUND_
+	{
+		DEV_ASSERT(!has(p_key));
+		uint32_t hash = _hash(p_key);
+		uint32_t element_idx = _insert_element(p_key, p_value, hash);
+		return Iterator(_elements + element_idx, _elements, _elements + _size);
+	}
+
+	/* Array methods. */
+
+	// Unsafe. Changing keys and going outside the bounds of an array can lead to undefined
+	// behavior.
+	KeyValue<TKey, TValue>* get_elements_ptr() _LIFETIME_BOUND_ { return _elements; }
+
+	// Returns the element index. If not found, returns -1.
+	int get_index(const TKey& p_key)
+	{
+		uint32_t element_idx = 0;
+		uint32_t meta_idx = 0;
+		bool exists = _lookup_idx(p_key, element_idx, meta_idx);
+		if (!exists) {
+			return -1;
+		}
+		return element_idx;
+	}
+
+	KeyValue<TKey, TValue>& get_by_index(uint32_t p_index) _LIFETIME_BOUND_
+	{
+		CRASH_BAD_UNSIGNED_INDEX(p_index, _size);
+		return _elements[p_index];
+	}
+
+	bool erase_by_index(uint32_t p_index)
+	{
+		if (p_index >= size()) {
+			return false;
+		}
+		return erase(_elements[p_index].key);
+	}
+
+	/* Constructors */
+
+	AHashMap(AHashMap&& p_other)
+	{
+		_elements = p_other._elements;
+		_metadata = p_other._metadata;
+		_capacity_mask = p_other._capacity_mask;
+		_size = p_other._size;
+
+		p_other._elements = nullptr;
+		p_other._metadata = nullptr;
+		p_other._capacity_mask = 0;
+		p_other._size = 0;
+	}
+
+	explicit AHashMap(const AHashMap& p_other) { _init_from(p_other); }
+
+	void operator=(const AHashMap& p_other)
+	{
+		if (this == &p_other) {
+			return; // Ignore self assignment.
+		}
+
+		reset();
+
+		_init_from(p_other);
+	}
+
+	AHashMap(uint32_t p_initial_capacity)
+	{
+		// Capacity can't be 0 and must be 2^n - 1.
+		_capacity_mask = MAX(4u, p_initial_capacity);
+		_capacity_mask = Math::next_power_of_2(_capacity_mask) - 1;
+	}
+
+	AHashMap() : _capacity_mask(INITIAL_CAPACITY - 1) {}
+
+	AHashMap(std::initializer_list<KeyValue<TKey, TValue>> p_init)
+	{
+		reserve(p_init.size());
+		for (const KeyValue<TKey, TValue>& E : p_init) {
+			insert(E.key, E.value);
+		}
+	}
+
+	void reset()
+	{
+		if (_elements != nullptr) {
+			if constexpr (!(std::is_trivially_destructible_v<TKey> &&
+							  std::is_trivially_destructible_v<TValue>)) {
+				for (uint32_t i = 0; i < _size; i++) {
+					_elements[i].key.~TKey();
+					_elements[i].value.~TValue();
+				}
+			}
+			Memory::free_static(_elements);
+			Memory::free_static(_metadata);
+			_elements = nullptr;
+		}
+		_capacity_mask = INITIAL_CAPACITY - 1;
+		_size = 0;
+	}
+
+	~AHashMap() { reset(); }
+};
+
+extern template class AHashMap<int, int>;
+extern template class AHashMap<String, int>;
+extern template class AHashMap<String, String>;
+extern template class AHashMap<String, int>;
+// --- End core/templates/a_hash_map.h ---
+
+// --- Folded from core/templates/rid_owner.h ---
+#include <cstdio>
+#include <typeinfo> // IWYU pragma: keep // Used in macro.
+#include "core/os/memory.h"
+#include "core/os/mutex.h"
+#include "core/templates/span.h"
+#include "core/templates/local_vector.h"
+#include "core/os/memory.h"
+
+
+#ifdef TSAN_ENABLED
+#include <sanitizer/tsan_interface.h>
+#endif
+
+// The following macros would need to be implemented somehow
+// for purely weakly ordered architectures. There's a test case
+// ("[RID_Owner] Thread safety") with potential to catch issues
+// on such architectures if these primitives fail to be implemented.
+// For now, they will be just markers about needs that may arise.
+#define WEAK_MEMORY_ORDER 0
+#if WEAK_MEMORY_ORDER
+// Ideally, we'd have implementations that collaborate with the
+// sync mechanism used (e.g., the mutex) so instead of some full
+// memory barriers being issued, some acquire-release on the
+// primitive itself. However, these implementations will at least
+// provide correctness.
+#define SYNC_ACQUIRE std::atomic_thread_fence(std::memory_order_acquire);
+#define SYNC_RELEASE std::atomic_thread_fence(std::memory_order_release);
+#else
+// Compiler barriers are enough in this case.
+#define SYNC_ACQUIRE std::atomic_signal_fence(std::memory_order_acquire);
+#define SYNC_RELEASE std::atomic_signal_fence(std::memory_order_release);
+#endif
+
+class RID_AllocBase
+{
+	static inline SafeNumeric<uint64_t> base_id{1};
+
+protected:
+	static RID _make_from_id(uint64_t p_id)
+	{
+		RID rid;
+		rid._id = p_id;
+		return rid;
+	}
+
+	static RID _gen_rid() { return _make_from_id(_gen_id()); }
+
+	friend struct VariantUtilityFunctions;
+
+	static uint64_t _gen_id() { return base_id.increment(); }
+
+public:
+	virtual ~RID_AllocBase() {}
+};
+
+template <typename T, bool THREAD_SAFE = false> class RID_Alloc : public RID_AllocBase
+{
+	struct Chunk
+	{
+		T data;
+		uint32_t validator;
+	};
+
+	Chunk** chunks = nullptr;
+	uint32_t** free_list_chunks = nullptr;
+
+	uint32_t elements_in_chunk;
+	uint32_t max_alloc = 0;
+	uint32_t alloc_count = 0;
+	uint32_t chunk_limit = 0;
+
+	const char* description = nullptr;
+
+	mutable Mutex mutex;
+
+	_FORCE_INLINE_ RID _allocate_rid()
+	{
+		if constexpr (THREAD_SAFE) {
+			mutex.lock();
+		}
+
+		if (alloc_count == max_alloc) {
+			// allocate a new chunk
+			uint32_t chunk_count = alloc_count == 0 ? 0 : (max_alloc / elements_in_chunk);
+			if (THREAD_SAFE && chunk_count == chunk_limit) {
+				mutex.unlock();
+			}
+
+			// grow chunks
+			if constexpr (!THREAD_SAFE) {
+				chunks = (Chunk**)memrealloc(chunks, sizeof(Chunk*) * (chunk_count + 1));
+			}
+			chunks[chunk_count] =
+				(Chunk*)memalloc(sizeof(Chunk) * elements_in_chunk); // but don't initialize
+			// grow free lists
+			if constexpr (!THREAD_SAFE) {
+				free_list_chunks =
+					(uint32_t**)memrealloc(free_list_chunks, sizeof(uint32_t*) * (chunk_count + 1));
+			}
+			free_list_chunks[chunk_count] =
+				(uint32_t*)memalloc(sizeof(uint32_t) * elements_in_chunk);
+
+			// initialize
+			for (uint32_t i = 0; i < elements_in_chunk; i++) {
+				// Don't initialize chunk.
+				chunks[chunk_count][i].validator = 0xFFFFFFFF;
+				free_list_chunks[chunk_count][i] = alloc_count + i;
+			}
+
+			if constexpr (THREAD_SAFE) {
+				// Store atomically to avoid data race with the load in get_or_null().
+				((std::atomic<uint32_t>*)&max_alloc)
+					->store(max_alloc + elements_in_chunk, std::memory_order_relaxed);
+			}
+			else {
+				max_alloc += elements_in_chunk;
+			}
+		}
+
+		uint32_t free_index =
+			free_list_chunks[alloc_count / elements_in_chunk][alloc_count % elements_in_chunk];
+
+		uint32_t free_chunk = free_index / elements_in_chunk;
+		uint32_t free_element = free_index % elements_in_chunk;
+
+		uint32_t validator = 1 + (uint32_t)(_gen_id() % 0x7FFFFFFF);
+		uint64_t id = validator;
+		id <<= 32;
+		id |= free_index;
+
+		chunks[free_chunk][free_element].validator = validator;
+		chunks[free_chunk][free_element].validator |= 0x80000000; // mark uninitialized bit
+
+		alloc_count++;
+
+		if constexpr (THREAD_SAFE) {
+			mutex.unlock();
+		}
+
+		return _make_from_id(id);
+	}
+
+public:
+	RID make_rid()
+	{
+		RID rid = _allocate_rid();
+		initialize_rid(rid);
+		return rid;
+	}
+
+	RID make_rid(const T& p_value)
+	{
+		RID rid = _allocate_rid();
+		initialize_rid(rid, p_value);
+		return rid;
+	}
+
+	// allocate but don't initialize, use initialize_rid afterwards
+	RID allocate_rid() { return _allocate_rid(); }
+
+	_FORCE_INLINE_ T* get_or_null(const RID& p_rid, bool p_initialize = false)
+	{
+		if (p_rid == RID()) {
+			return nullptr;
+		}
+
+		if constexpr (THREAD_SAFE) {
+			SYNC_ACQUIRE;
+		}
+
+		uint64_t id = p_rid.get_id();
+		uint32_t idx = uint32_t(id & 0xFFFFFFFF);
+		uint32_t ma;
+		if constexpr (THREAD_SAFE) { // Read atomically to avoid data race with the store in
+									 // _allocate_rid().
+			ma = ((std::atomic<uint32_t>*)&max_alloc)->load(std::memory_order_relaxed);
+		}
+		else {
+			ma = max_alloc;
+		}
+		if (unlikely(idx >= ma)) {
+			return nullptr;
+		}
+
+		uint32_t idx_chunk = idx / elements_in_chunk;
+		uint32_t idx_element = idx % elements_in_chunk;
+
+		uint32_t validator = uint32_t(id >> 32);
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_acquire(&chunks[idx_chunk]);				 // We know not a race in practice.
+			__tsan_acquire(&chunks[idx_chunk][idx_element]); // We know not a race in practice.
+#endif
+		}
+
+		Chunk& c = chunks[idx_chunk][idx_element];
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_release(&chunks[idx_chunk]);
+			__tsan_release(&chunks[idx_chunk][idx_element]);
+			__tsan_acquire(&c.validator); // We know not a race in practice.
+#endif
+		}
+
+		if (unlikely(p_initialize)) {
+			if (unlikely(!(c.validator & 0x80000000))) {
+				ERR_FAIL_V_MSG(nullptr, "Initializing already initialized RID");
+			}
+
+			if (unlikely((c.validator & 0x7FFFFFFF) != validator)) {
+				ERR_FAIL_V_MSG(nullptr, "Attempting to initialize the wrong RID");
+			}
+
+			c.validator &= 0x7FFFFFFF; // initialized
+
+		}
+		else if (unlikely(c.validator != validator)) {
+			if ((c.validator & 0x80000000) && c.validator != 0xFFFFFFFF) {
+				ERR_FAIL_V_MSG(nullptr, "Attempting to use an uninitialized RID");
+			}
+			return nullptr;
+		}
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_release(&c.validator);
+#endif
+		}
+
+		T* ptr = &c.data;
+
+		return ptr;
+	}
+
+	void initialize_rid(RID p_rid)
+	{
+		T* mem = get_or_null(p_rid, true);
+		ERR_FAIL_NULL(mem);
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_acquire(mem); // We know not a race in practice.
+#endif
+		}
+
+		memnew_placement(mem, T);
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_release(mem);
+#endif
+			SYNC_RELEASE;
+		}
+	}
+
+	void initialize_rid(RID p_rid, const T& p_value)
+	{
+		T* mem = get_or_null(p_rid, true);
+		ERR_FAIL_NULL(mem);
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_acquire(mem); // We know not a race in practice.
+#endif
+		}
+
+		memnew_placement(mem, T(p_value));
+
+		if constexpr (THREAD_SAFE) {
+#ifdef TSAN_ENABLED
+			__tsan_release(mem);
+#endif
+			SYNC_RELEASE;
+		}
+	}
+
+	_FORCE_INLINE_ bool owns(const RID& p_rid) const
+	{
+		if constexpr (THREAD_SAFE) {
+			mutex.lock();
+		}
+
+		uint64_t id = p_rid.get_id();
+		uint32_t idx = uint32_t(id & 0xFFFFFFFF);
+		if (unlikely(idx >= max_alloc)) {
+			if constexpr (THREAD_SAFE) {
+				mutex.unlock();
+			}
+			return false;
+		}
+
+		uint32_t idx_chunk = idx / elements_in_chunk;
+		uint32_t idx_element = idx % elements_in_chunk;
+
+		uint32_t validator = uint32_t(id >> 32);
+
+		bool owned = (chunks[idx_chunk][idx_element].validator & 0x7FFFFFFF) == validator;
+
+		if constexpr (THREAD_SAFE) {
+			mutex.unlock();
+		}
+
+		return owned;
+	}
+
+	_FORCE_INLINE_ void free(const RID& p_rid)
+	{
+		if constexpr (THREAD_SAFE) {
+			mutex.lock();
+		}
+
+		uint64_t id = p_rid.get_id();
+		uint32_t idx = uint32_t(id & 0xFFFFFFFF);
+		if (unlikely(idx >= max_alloc)) {
+			if constexpr (THREAD_SAFE) {
+				mutex.unlock();
+			}
+			ERR_FAIL();
+		}
+
+		uint32_t idx_chunk = idx / elements_in_chunk;
+		uint32_t idx_element = idx % elements_in_chunk;
+
+		uint32_t validator = uint32_t(id >> 32);
+		if (unlikely(chunks[idx_chunk][idx_element].validator & 0x80000000)) {
+			if constexpr (THREAD_SAFE) {
+				mutex.unlock();
+			}
+			ERR_FAIL_MSG("Attempted to free an uninitialized or invalid RID");
+		}
+		else if (unlikely(chunks[idx_chunk][idx_element].validator != validator)) {
+			if constexpr (THREAD_SAFE) {
+				mutex.unlock();
+			}
+			ERR_FAIL();
+		}
+
+		chunks[idx_chunk][idx_element].data.~T();
+		chunks[idx_chunk][idx_element].validator = 0xFFFFFFFF; // go invalid
+
+		alloc_count--;
+		free_list_chunks[alloc_count / elements_in_chunk][alloc_count % elements_in_chunk] = idx;
+
+		if constexpr (THREAD_SAFE) {
+			mutex.unlock();
+		}
+	}
+
+	_FORCE_INLINE_ uint32_t get_rid_count() const { return alloc_count; }
+
+	LocalVector<RID> get_owned_list() const
+	{
+		LocalVector<RID> owned;
+		if constexpr (THREAD_SAFE) {
+			mutex.lock();
+		}
+		for (size_t i = 0; i < max_alloc; i++) {
+			uint64_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
+			if (validator != 0xFFFFFFFF) {
+				owned.push_back(_make_from_id((validator << 32) | i));
+			}
+		}
+		if constexpr (THREAD_SAFE) {
+			mutex.unlock();
+		}
+		return owned;
+	}
+
+	// used for fast iteration in the elements or RIDs
+	void fill_owned_buffer(RID* p_rid_buffer) const
+	{
+		if constexpr (THREAD_SAFE) {
+			mutex.lock();
+		}
+		uint32_t idx = 0;
+		for (size_t i = 0; i < max_alloc; i++) {
+			uint64_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
+			if (validator != 0xFFFFFFFF) {
+				p_rid_buffer[idx] = _make_from_id((validator << 32) | i);
+				idx++;
+			}
+		}
+
+		if constexpr (THREAD_SAFE) {
+			mutex.unlock();
+		}
+	}
+
+	void set_description(const char* p_description) { description = p_description; }
+
+	RID_Alloc(
+		uint32_t p_target_chunk_byte_size = 65536, uint32_t p_maximum_number_of_elements = 262144)
+	{
+		elements_in_chunk =
+			sizeof(T) > p_target_chunk_byte_size ? 1 : (p_target_chunk_byte_size / sizeof(T));
+		if constexpr (THREAD_SAFE) {
+			chunk_limit = (p_maximum_number_of_elements / elements_in_chunk) + 1;
+			chunks = (Chunk**)memalloc(sizeof(Chunk*) * chunk_limit);
+			free_list_chunks = (uint32_t**)memalloc(sizeof(uint32_t*) * chunk_limit);
+			SYNC_RELEASE;
+		}
+	}
+
+	~RID_Alloc()
+	{
+		if constexpr (THREAD_SAFE) {
+			SYNC_ACQUIRE;
+		}
+
+		if (alloc_count) {
+			for (size_t i = 0; i < max_alloc; i++) {
+				uint32_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
+				if (validator & 0x80000000) {
+					continue; // uninitialized
+				}
+				if (validator != 0xFFFFFFFF) {
+					chunks[i / elements_in_chunk][i % elements_in_chunk].data.~T();
+				}
+			}
+		}
+
+		uint32_t chunk_count = max_alloc / elements_in_chunk;
+		for (uint32_t i = 0; i < chunk_count; i++) {
+			memfree(chunks[i]);
+			memfree(free_list_chunks[i]);
+		}
+
+		if (chunks) {
+			memfree(chunks);
+			memfree(free_list_chunks);
+		}
+	}
+};
+
+template <typename T, bool THREAD_SAFE = false> class RID_PtrOwner
+{
+	RID_Alloc<T*, THREAD_SAFE> alloc;
+
+public:
+	_FORCE_INLINE_ RID make_rid(T* p_ptr) { return alloc.make_rid(p_ptr); }
+
+	_FORCE_INLINE_ RID allocate_rid() { return alloc.allocate_rid(); }
+
+	_FORCE_INLINE_ void initialize_rid(RID p_rid, T* p_ptr) { alloc.initialize_rid(p_rid, p_ptr); }
+
+	_FORCE_INLINE_ T* get_or_null(const RID& p_rid)
+	{
+		T** ptr = alloc.get_or_null(p_rid);
+		if (unlikely(!ptr)) {
+			return nullptr;
+		}
+		return *ptr;
+	}
+
+	_FORCE_INLINE_ void replace(const RID& p_rid, T* p_new_ptr)
+	{
+		T** ptr = alloc.get_or_null(p_rid);
+		ERR_FAIL_NULL(ptr);
+		*ptr = p_new_ptr;
+	}
+
+	_FORCE_INLINE_ bool owns(const RID& p_rid) const { return alloc.owns(p_rid); }
+
+	_FORCE_INLINE_ void free(const RID& p_rid) { alloc.free(p_rid); }
+
+	_FORCE_INLINE_ uint32_t get_rid_count() const { return alloc.get_rid_count(); }
+
+	_FORCE_INLINE_ LocalVector<RID> get_owned_list() const { return alloc.get_owned_list(); }
+
+	void fill_owned_buffer(RID* p_rid_buffer) const { alloc.fill_owned_buffer(p_rid_buffer); }
+
+	void set_description(const char* p_description) { alloc.set_description(p_description); }
+
+	RID_PtrOwner(
+		uint32_t p_target_chunk_byte_size = 65536, uint32_t p_maximum_number_of_elements = 262144)
+		: alloc(p_target_chunk_byte_size, p_maximum_number_of_elements)
+	{
+	}
+};
+
+template <typename T, bool THREAD_SAFE = false> class RID_Owner
+{
+	RID_Alloc<T, THREAD_SAFE> alloc;
+
+public:
+	_FORCE_INLINE_ RID make_rid() { return alloc.make_rid(); }
+
+	_FORCE_INLINE_ RID make_rid(const T& p_ptr) { return alloc.make_rid(p_ptr); }
+
+	_FORCE_INLINE_ RID allocate_rid() { return alloc.allocate_rid(); }
+
+	_FORCE_INLINE_ void initialize_rid(RID p_rid) { alloc.initialize_rid(p_rid); }
+
+	_FORCE_INLINE_ void initialize_rid(RID p_rid, const T& p_ptr)
+	{
+		alloc.initialize_rid(p_rid, p_ptr);
+	}
+
+	_FORCE_INLINE_ T* get_or_null(const RID& p_rid) { return alloc.get_or_null(p_rid); }
+
+	_FORCE_INLINE_ bool owns(const RID& p_rid) const { return alloc.owns(p_rid); }
+
+	_FORCE_INLINE_ void free(const RID& p_rid) { alloc.free(p_rid); }
+
+	_FORCE_INLINE_ uint32_t get_rid_count() const { return alloc.get_rid_count(); }
+
+	_FORCE_INLINE_ LocalVector<RID> get_owned_list() const { return alloc.get_owned_list(); }
+
+	void fill_owned_buffer(RID* p_rid_buffer) const { alloc.fill_owned_buffer(p_rid_buffer); }
+
+	void set_description(const char* p_description) { alloc.set_description(p_description); }
+
+	RID_Owner(
+		uint32_t p_target_chunk_byte_size = 65536, uint32_t p_maximum_number_of_elements = 262144)
+		: alloc(p_target_chunk_byte_size, p_maximum_number_of_elements)
+	{
+	}
+};
+// --- End core/templates/rid_owner.h ---
+
+// --- Folded from core/io/resource_uid.h ---
+
+#include "core/string/ustring.h"
+#include "core/templates/hash_map.h"
+
+class FileAccess;
+
+typedef void (*ResourceUIDScanForUIDOnStartup)();
+
+class ResourceUID final
+{
+public:
+	typedef int64_t ID;
+	constexpr const static ID INVALID_ID = -1;
+
+	static String get_cache_file();
+
+private:
+	struct Cache
+	{
+		CharString cs;
+		bool saved_to_cache = false;
+	};
+
+	struct Data
+	{
+		Mutex mutex;
+		HashMap<ID, Cache> unique_ids; // Unique IDs and utf8 paths (less memory used).
+		bool use_reverse_cache = false;
+		HashMap<CharString, ID> reverse_cache; // Used at runtime.
+		uint32_t cache_entries = 0;
+		bool changed = false;
+		bool cache_initialized = false;
+	};
+
+	static inline Data* data = nullptr;
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	inline static ResourceUIDScanForUIDOnStartup scan_for_uid_on_startup = nullptr;
+
+	static String id_to_text(ID p_id);
+	static ID text_to_id(const String& p_text);
+
+	static ID create_id();
+	static ID create_id_for_path(const String& p_path);
+	static bool has_id(ID p_id);
+	static void add_id(ID p_id, const String& p_path);
+	static void set_id(ID p_id, const String& p_path);
+	static String get_id_path(ID p_id);
+	static ID get_path_id(const String& p_path);
+	static void remove_id(ID p_id);
+
+	static String uid_to_path(const String& p_uid);
+	static String path_to_uid(const String& p_path);
+	static String ensure_path(const String& p_uid_or_path);
+
+	static Error load_from_cache(bool p_reset);
+	static Error save_to_cache();
+	static Error update_cache();
+	static String get_path_from_cache(Ref<FileAccess>& p_cache_file, const String& p_uid_string);
+	static Vector<uint8_t> encode_binary_cache(const Vector<Pair<ID, String>>& p_entries);
+
+	static void enable_reverse_cache()
+	{
+		if (data) {
+			data->use_reverse_cache = true;
+		}
+	}
+
+	static void clear();
+
+	ResourceUID() = delete;
+	ResourceUID(const ResourceUID&) = delete;
+	ResourceUID& operator=(const ResourceUID&) = delete;
+	~ResourceUID() = delete;
+};
+// --- End core/io/resource_uid.h ---

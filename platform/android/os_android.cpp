@@ -37,10 +37,10 @@
 #include "platform/android/os_android.h"
 #endif
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/extension/gdextension_manager.h"
-#include "core/input/input.h"
-#include "core/io/config_file.h"
+#include "core/os/os.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "drivers/unix/os_unix.h"
 #include "main/main.h"
@@ -1077,7 +1077,7 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 #include "platform/android/os_android.h"
 
 
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 
 #include <android/asset_manager_jni.h>
 
@@ -1939,7 +1939,7 @@ AudioDriverOpenSL::AudioDriverOpenSL() {
 #include "platform/android/os_android.h"
 
 
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 
 jobject DirAccessJAndroid::dir_access_handler = nullptr;
 jclass DirAccessJAndroid::cls = nullptr;
@@ -4712,22 +4712,20 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 #include "main/main.h"
 #include "platform/android/os_android.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
 #include "core/os/os.h"
 #include "core/os/thread.h"
 #include "core/os/os.h"
 #include "main/main.h"
-#include "servers/xr/xr_server.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
-#include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #endif
 
 #include <android/asset_manager_jni.h>
@@ -6223,7 +6221,7 @@ GodotJavaViewWrapper::~GodotJavaViewWrapper() {
 #include "platform/android/os_android.h"
 
 
-#include "core/math/rect2.h"
+#include "core/types.h"
 
 // JNIEnv is only valid within the thread it belongs to, in a multi threading environment
 // we can't cache it.
@@ -7086,8 +7084,8 @@ jclass jni_find_class(JNIEnv *p_env, const char *p_class_name) {
 #include "main/main.h"
 #include "platform/android/os_android.h"
 
-#include "core/config/engine.h"
-#include "core/error/error_macros.h"
+#include "core/os/os.h"
+#include "core/typedefs.h"
 
 static HashMap<String, JNISingleton *> jni_singletons;
 
@@ -7208,7 +7206,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_variant_Callable_releaseNative
 
 #include "platform/android/os_android.h"
 
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 
 static Callable _generate_callable(JNIEnv *p_env, jlong p_object_id, jstring p_method_name, jobjectArray p_parameters) {
 	Object *obj = ObjectDB::get_instance(ObjectID(p_object_id));
@@ -7335,7 +7333,7 @@ Java_org_godotengine_godot_variant_Callable_releaseNativePointer(JNIEnv *p_env, 
 
 
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
@@ -7350,7 +7348,7 @@ Java_org_godotengine_godot_variant_Callable_releaseNativePointer(JNIEnv *p_env, 
 #endif
 
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 
 #include <EGL/egl.h>
 #endif
@@ -8350,7 +8348,7 @@ void DisplayServerAndroid::pip_mode_set_auto_enter_on_background(bool p_auto_ent
 #include "platform/android/os_android.h"
 
 
-#include "core/input/input.h"
+#include "core/os/os.h"
 
 void AndroidInputHandler::process_joy_event(AndroidInputHandler::JoypadEvent p_event) {
 	switch (p_event.type) {

@@ -29,24 +29,22 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "main/main.h"
-#include "servers/audio/audio_server.h"
-#include "servers/xr/xr_server.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 #include "main/main.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/shader_language.h"
-#include "servers/rendering/renderer.h"
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 // 2D physics and navigation.
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 #endif // NAVIGATION_2D_DISABLED
 #ifndef PHYSICS_2D_DISABLED
 #include "servers/physics_2d/physics_server_2d.h"
@@ -54,7 +52,7 @@
 
 // 3D physics and navigation.
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 #endif // NAVIGATION_3D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/physics_3d/physics_server_3d.h"
@@ -62,7 +60,7 @@
 
 // XR
 #ifndef XR_DISABLED
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 #endif // XR_DISABLED
 
 static bool has_server_feature_callback(const String& p_feature)
@@ -94,7 +92,7 @@ void register_server_types()
 // Merged from servers/camera/camera_server.cpp
 // ============================================================================
 
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 
 ////////////////////////////////////////////////////////
 // CameraServer
@@ -247,7 +245,6 @@ RID CameraServer::feed_texture(int p_id, CameraServer::FeedImage p_texture)
 // Merged from servers/camera/camera_feed.cpp
 // ============================================================================
 
-#include "servers/xr/xr_server.h"
 #include "servers/rendering/renderer.h"
 
 int CameraFeed::get_id() const { return id; }
@@ -357,14 +354,13 @@ void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}
 // Merged from servers/movie_writer/movie_writer.cpp
 // ============================================================================
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/os/time.h"
 #include "core/templates/rb_set.h"
 #include "main/main.h"
 #include "scene/main/window.h"
-#include "servers/audio/audio_server.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -653,16 +649,16 @@ void MovieWriterPNGWAV::write_end()
 // Merged from servers/audio/audio_server.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "core/config/project_settings.h"
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/io/resource_loader.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/templates/pair.h"
+#include "core/templates/hashfuncs.h"
 #include "scene/main/node.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
 #define MARK_EDITED this->obj->set_edited(true);
@@ -2234,7 +2230,7 @@ void AudioServer::get_argument_options(
 // Merged from servers/audio/audio_driver_dummy.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
@@ -2355,9 +2351,9 @@ AudioDriverDummy::AudioDriverDummy() {}
 // Merged from servers/audio/audio_filter_sw.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 void AudioFilterSW::set_mode(Mode p_mode) {
 	mode = p_mode;
@@ -2592,7 +2588,7 @@ void AudioFilterSW::Processor::process(float *p_samples, int p_amount, int p_str
 // Merged from servers/audio/audio_rb_resampler.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #include "core/types.h"
 #include "core/os/memory.h"
@@ -2827,13 +2823,13 @@ AudioRBResampler::~AudioRBResampler() {
 // Merged from servers/audio/audio_effect.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 // --- Inlined from servers/audio/effects/audio_effects.h ---
 #include "core/os/thread.h"
 #include "core/templates/local_vector.h"
 #include "core/types.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 // --- Folded from servers/audio/effects/eq_filter.h ---
 #include "core/templates/vector.h"
 
@@ -4213,9 +4209,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 // Merged from servers/audio/audio_stream.cpp
 // ============================================================================
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "core/config/project_settings.h"
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 constexpr uint64_t POLYPHONIC_ID_MASK = 0xFFFFFFFF;
 constexpr uint64_t POLYPHONIC_INDEX_SHIFT = 32;
@@ -5343,9 +5339,9 @@ AudioStreamPlaybackPolyphonic::~AudioStreamPlaybackPolyphonic()
 
 
 #include "core/io/resource_loader.h"
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 #include "core/os/os.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 #include <cmath>
 #include <cstring>
@@ -7189,8 +7185,7 @@ float AudioEffectStereoEnhanceConfig::get_surround() const { return surround; }
 // ============================================================================
 
 
-#include "core/error/error_macros.h"
-#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
 
 #define POW2(v) ((v) * (v))
 
@@ -7374,7 +7369,7 @@ EQ::~EQ() {
 // ============================================================================
 
 
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "core/os/memory.h"
 
 const float Reverb::comb_tunings[MAX_COMBS] = {
@@ -7697,7 +7692,7 @@ Reverb::~Reverb() {
 // Inlined servers/text/text_server.compat.inc
 #ifndef DISABLE_DEPRECATED
 
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 void TextServer::_font_draw_glyph_bind_compat_104872(const RID& p_font, const RID& p_canvas,
 	int64_t p_size, const Vector2& p_pos, int64_t p_index, const Color& p_color) const
@@ -7730,10 +7725,10 @@ void TextServer::_shaped_text_draw_outline_bind_compat_104872(const RID& p_shape
 
 
 
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 #ifndef DISABLE_DEPRECATED
-#include "core/string/translation_server.h"
+#include "core/config/project_settings.h"
 #endif // DISABLE_DEPRECATED
 
 void TextServerManager::initialize()
@@ -9015,7 +9010,6 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 
 
 #include "servers/display/display_server.h"
-#include "core/input/input.h"
 #include "core/os/os.h"
 #include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
@@ -9057,7 +9051,7 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 #endif
 #if defined(METAL_ENABLED)
-#include "drivers/metal/rendering_context_driver_metal.h"
+#include "drivers/metal/rendering_device_driver_metal3.h"
 #endif
 
 
@@ -12643,10 +12637,10 @@ void AccessibilityServer::update_set_foreground_color(const RID& p_id, const Col
 
 #include "servers/display/display_server.h"
 
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/input/input_event.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/rasterizer_dummy.h"
+#include "servers/rendering/renderer.h"
 
 DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_rendering_driver,
 	DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode,
@@ -16182,9 +16176,9 @@ real_t PhysicsTestMotionResult3D::get_collision_depth(int p_collision_index) con
 
 // --- Merged from servers/navigation_2d/navigation_server_2d.cpp ---
 #if !defined(NAVIGATION_2D_DISABLED)
-#include "servers/navigation_2d/navigation_server_2d.h"
+#include "servers/physics_2d/physics_server_2d.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
 
@@ -16799,9 +16793,9 @@ void NavigationServer2D::agent_set_paused(RID p_agent, bool p_paused) {}
 
 // --- Merged from servers/navigation_3d/navigation_server_3d.cpp ---
 #if !defined(NAVIGATION_3D_DISABLED)
-#include "servers/navigation_3d/navigation_server_3d.h"
+#include "servers/physics_3d/physics_server_3d.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "scene/main/node.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
 
@@ -17569,11 +17563,10 @@ void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
 #if !defined(XR_DISABLED)
 #include "core/config/project_settings.h"
 #include "servers/rendering/renderer.h"
-#include "servers/xr/xr_server.h"
 // Inlined servers/xr/xr_server.compat.inc
 #ifndef DISABLE_DEPRECATED
 
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 
 void XRServer::_add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker)
 {
@@ -17596,7 +17589,7 @@ void XRServer::_bind_compatibility_methods() {}
 
 
 
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 
 XRServer::XRMode XRServer::xr_mode = XRMODE_DEFAULT;
 
@@ -17722,7 +17715,7 @@ void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
 
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 
 bool XRInterface::is_primary()
 {
@@ -17994,7 +17987,7 @@ RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p
 // Merged from servers/xr/xr_tracker.cpp
 // ============================================================================
 
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 
 // XRPose
 
@@ -18416,7 +18409,7 @@ XRTracker::~XRTracker()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
@@ -29946,7 +29939,7 @@ void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
@@ -31415,7 +31408,7 @@ void RendererRD::Utilities::visibility_notifier_call(
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/storage/ltc_lut.gen.h"
 #include "servers/rendering/renderer.h"
-#include "core/math/math_defs.h"
+#include "core/typedefs.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 // --- Merged from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp ---
@@ -38371,9 +38364,9 @@ void RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData:
 #include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
-#include "servers/xr/xr_server.h"
+#include "servers/rendering/renderer.h"
 #endif
-#include "core/math/math_defs.h"
+#include "core/typedefs.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 // --- Merged from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp ---

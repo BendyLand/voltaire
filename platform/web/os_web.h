@@ -145,7 +145,7 @@ extern void godot_js_display_vk_hide();
 #ifdef __cplusplus
 }
 #endif
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 
 class AudioDriverWeb : public AudioDriver
 {
@@ -435,7 +435,6 @@ public:
 
 
 #include "core/input/input_event.h"
-#include "core/os/keyboard.h"
 #include "servers/display/display_server.h"
 
 #include <emscripten.h>

@@ -31,7 +31,7 @@
 
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
@@ -6631,7 +6631,7 @@ void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash) {
 // --- Merged from drivers/d3d12/rendering_context_driver_d3d12.cpp ---
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
 #include "core/string/ustring.h"
 #include "core/templates/local_vector.h"
@@ -6996,7 +6996,7 @@ bool RenderingContextDriverD3D12::get_tearing_supported() const {
 // --- Merged from drivers/d3d12/rendering_shader_container_d3d12.cpp ---
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
-#include "core/templates/sort_array.h"
+#include "core/templates/span.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 

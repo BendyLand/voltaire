@@ -34,21 +34,20 @@
 #include "core/io/image.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined/Folded from servers/rendering/renderer_rd/environment/rd_environment.h ---
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 // --- Folded from servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
 #include "core/templates/hash_map.h"
 #include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
 #include "core/types.h"
-#include "core/templates/rb_map.h"
-#include "core/templates/rid_owner.h"
-#include "core/templates/sort_array.h"
+#include "core/templates/hash_map.h"
+#include "core/types.h"
+#include "core/templates/span.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 
 namespace RendererRD
@@ -847,13 +846,11 @@ public:
 // --- End servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/material_storage.h ---
-#include "core/templates/rid_owner.h"
-#include "core/templates/self_list.h"
+#include "core/types.h"
 
 #include "servers/rendering/renderer.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 
 struct Projection;
@@ -1349,7 +1346,7 @@ public:
 // --- End servers/rendering/renderer_rd/storage_rd/material_storage.h ---
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
+#include "servers/rendering/renderer.h"
 #include "core/templates/local_vector.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
@@ -1361,11 +1358,10 @@ public:
 #include "servers/rendering/rendering_device.h"
 #include "core/os/mutex.h"
 #include "core/templates/hash_map.h"
-#include "core/templates/rb_map.h"
 #include "core/templates/rb_set.h"
 #include "core/templates/hashfuncs.h"
 #include "core/templates/vector.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 
 class FramebufferCacheRD final
 {
@@ -6472,7 +6468,6 @@ public:
 
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/light_storage.h ---
 #include "core/types.h"
-#include "core/templates/rid_owner.h"
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
 #include <cstdint>
@@ -12050,7 +12045,7 @@ public:
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
+#include "servers/rendering/renderer.h"
 
 typedef uint64_t PolygonID;
 
@@ -12843,8 +12838,7 @@ public:
 
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/mesh_storage.h ---
 #include "core/templates/local_vector.h"
-#include "core/templates/rid_owner.h"
-#include "core/templates/self_list.h"
+#include "core/types.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 #include "servers/rendering/renderer.h"
@@ -13711,13 +13705,11 @@ public:
 } // namespace RendererRD
 // --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/particles_storage.h ---
 #include "core/templates/local_vector.h"
-#include "core/templates/rid_owner.h"
-#include "core/templates/self_list.h"
+#include "core/types.h"
 
 #include "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/shader_language.h"
 #include "servers/rendering/renderer.h"
 
 namespace RendererRD
@@ -14358,9 +14350,9 @@ public:
 } // namespace RendererRD
 
 // --- Folded from servers/rendering/renderer_rd/storage_rd/utilities.h ---
-#include "core/templates/rid_owner.h"
+#include "core/types.h"
 #include "servers/rendering/rendering_device.h"
-#include "servers/rendering/rendering_server_enums.h"
+#include "scene/resources/texture.h"
 #include "servers/rendering/renderer.h"
 
 namespace RendererRD

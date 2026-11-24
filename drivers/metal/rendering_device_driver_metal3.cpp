@@ -35,7 +35,6 @@
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
-#include "drivers/metal/rendering_context_driver_metal.h"
 
 namespace MTL3 {
 

@@ -195,15 +195,15 @@ static const _WinLocale _win_locales[] = {
 // --- End platform/windows/lang_table.h ---
 #include "platform/windows/os_windows.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/debugger/script_debugger.h"
 #include "core/os/os.h"
 #include "core/version_generated.gen.h"
 #include "platform/windows/os_windows.h"
 #include "main/main.h"
-#include "servers/audio/audio_server.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/text/text_server.h"
+#include "scene/resources/theme.h"
 
 #include <avrt.h>
 #include <bcrypt.h>
@@ -241,7 +241,7 @@ extern "C" {
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 #endif
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 #endif
 
 #ifdef DEBUG_ENABLED
@@ -3204,7 +3204,7 @@ WindowsTerminalLogger::~WindowsTerminalLogger() {}
 
 #ifdef WINDOWS_ENABLED
 
-#include "core/error/error_macros.h"
+#include "core/typedefs.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 
@@ -3655,24 +3655,23 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #include "platform/windows/os_windows.h"
 
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/config/project_settings.h"
-#include "core/input/input.h"
+#include "core/os/os.h"
 #include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/io/config_file.h"
 #include "core/os/os.h"
 #include "core/version.h"
 #include "core/io/resource_loader.h"
 #include "main/main.h"
 #include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/dummy/rasterizer_dummy.h"
+#include "servers/rendering/renderer.h"
 #include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 #ifdef SDL_ENABLED
-#include "core/input/input.h"
+#include "core/os/os.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
@@ -3684,7 +3683,7 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #include <dxgi1_6.h>
 #endif
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/gles3/shader_gles3.h"
 #endif
 
 #include <avrt.h>
@@ -12448,7 +12447,7 @@ KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended
 #include "platform/windows/os_windows.h"
 
 
-#include "scene/resources/image_texture.h"
+#include "scene/resources/material.h"
 
 HBITMAP NativeMenuWindows::_make_bitmap(const Ref<Image> &p_img) const {
 	p_img->convert(Image::FORMAT_RGBA8);
@@ -14205,7 +14204,7 @@ GLManagerNative_Windows::~GLManagerNative_Windows() {
 
 
 #include "core/os/os.h"
-#include "core/string/print_string.h"
+#include "core/templates/span.h"
 #include "core/string/ustring.h"
 
 #include <windows.h>
@@ -14836,7 +14835,6 @@ void GLManagerANGLE_Windows::window_resize(DisplayServerEnums::WindowID p_window
 
 #include "platform/windows/os_windows.h"
 
-#include "core/config/engine.h"
 #include "core/os/os.h"
 
 #include <functiondiscoverykeys.h>
@@ -15890,7 +15888,7 @@ AudioDriverWASAPI::AudioDriverWASAPI() {
 
 #include "platform/windows/os_windows.h"
 
-#include "core/config/engine.h"
+#include "core/os/os.h"
 #include "core/types.h"
 
 Error AudioDriverXAudio2::init() {
