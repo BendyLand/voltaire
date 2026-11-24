@@ -132,7 +132,50 @@ def generate_all():
     generate_wayland_protocols(sowrap=True)
 
 
+REQUIRED_GENERATED_FILES = [
+    "core/version_generated.gen.h",
+    "core/version_hash.gen.cpp",
+    "core/disabled_classes.gen.h",
+    "core/script_encryption_key.gen.cpp",
+    "core/io/certs_compressed.gen.h",
+    "core/authors.gen.h",
+    "core/donors.gen.h",
+    "core/license.gen.h",
+    "core/input/default_controller_mappings.gen.cpp",
+    "main/splash.gen.h",
+    "main/app_icon.gen.h",
+    "scene/theme/default_theme_icons.gen.h",
+    "scene/theme/default_font.gen.h",
+    "modules/modules_enabled.gen.h",
+    "modules/register_module_types.gen.cpp",
+    "platform/register_platform_apis.gen.cpp",
+    "editor/doc/doc_data_class_path.gen.h",
+    "editor/doc/doc_data_compressed.gen.h",
+    "editor/export/register_exporters.gen.cpp",
+    "editor/themes/editor_icons.gen.h",
+    "editor/themes/builtin_fonts.gen.h",
+    "editor/translations/editor_translations.gen.cpp",
+    "editor/translations/property_translations.gen.cpp",
+    "editor/translations/doc_translations.gen.cpp",
+    "editor/translations/extractable_translations.gen.cpp",
+    "thirdparty/icu4c/icudata.gen.h",
+    "servers/rendering/storage/ltc_lut.gen.h",
+    "servers/rendering/renderer_rd/effects/smaa_area_tex.gen.h",
+    "servers/rendering/renderer_rd/effects/smaa_search_tex.gen.h",
+    "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c",
+]
+
+
+def _missing_generated_files():
+    return [p for p in REQUIRED_GENERATED_FILES if not os.path.exists(p)]
+
+
 if __name__ == "__main__":
-    if "--if-needed" in sys.argv and os.path.exists("core/version_generated.gen.h") and os.path.exists("modules/modules_enabled.gen.h"):
-        sys.exit(0)
+    if "--if-needed" in sys.argv:
+        missing = _missing_generated_files()
+        if not missing:
+            sys.exit(0)
+        if missing == ["platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c"]:
+            generate_wayland_protocols(sowrap=True)
+            sys.exit(0)
     generate_all()

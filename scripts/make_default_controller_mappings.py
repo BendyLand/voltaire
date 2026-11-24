@@ -10,7 +10,7 @@ import methods
 def make_default_controller_mappings(target, source):
     with methods.generated_wrapper(str(target[0])) as file:
         file.write("""\
-#include "core/input/default_controller_mappings.h"
+#include "core/input/input.h"
 
 #include "core/typedefs.h"
 

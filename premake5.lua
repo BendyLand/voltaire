@@ -1,18 +1,9 @@
-setmetatable(_OPTIONS, {
-    __newindex = function(t, k, v)
-        if v == "" then
-            print("EMPTY OPTION:", k)
-            print(debug.traceback())
-        end
-        rawset(t, k, v)
-    end
-})
 -- =============================================================================
 -- Premake5 Cross-Platform Build Script for Voltaire Engine
 --
 -- Replaces SCons (`SConstruct`, `platform/*/detect.py`, and all `SCsub` files)
 -- while preserving upstream Godot's full target, platform, architecture, and
--- feature matrix for Make (`gmake2` / `gmake`), Ninja (`ninja`), Visual Studio
+-- feature matrix for Make (`gmake` / `gmake2`), Ninja (`ninja`), Visual Studio
 -- (`vs2022`), and Clangd (`compilecommands`).
 --
 -- Targets (configurations):
@@ -30,7 +21,7 @@ setmetatable(_OPTIONS, {
 --   web               WebAssembly via Emscripten emcc/em++ (wasm32, wasm64)
 --
 -- Common Usage Examples:
---   premake5 gmake2                         && make -C build -j$(nproc)
+--   premake5 gmake                          && make -C build -j$(nproc)
 --   premake5 ninja                          && ninja -C build
 --   premake5 ninja                          && ninja -C build template_release_x86_64
 --   premake5 --p=windows --arch=x86_64 ninja && ninja -C build
@@ -40,6 +31,11 @@ setmetatable(_OPTIONS, {
 --   premake5 --p=web --arch=wasm32 ninja    && ninja -C build
 --   premake5 --help                         (list all Voltaire build options)
 -- =============================================================================
+
+-- Register fallback Ninja action when running on Premake5 builds without native ninja
+if premake and premake.action and not premake.action.get("ninja") and os.isfile("scripts/premake_ninja.lua") then
+    dofile("scripts/premake_ninja.lua")
+end
 
 -- =============================================================================
 -- 1. COMMAND-LINE OPTIONS (parity with SConstruct & platform/*/detect.py)
@@ -623,6 +619,16 @@ elseif target_platform == "android" or target_platform == "web" then
     target_configs = { "template_debug", "template_release", "editor" }
 else
     target_configs = { "editor", "template_debug", "template_release" }
+end
+
+-- Ensure required generated headers/sources (including wayland_protocols.gen.c and
+-- *.gen.cpp translation units) exist before Make/Ninja validates source inputs.
+if _ACTION and _ACTION ~= "clean" and os.isfile("scripts/generate_headers.py") then
+    local py = (host_os == "windows") and "python" or "python3"
+    local ok = os.execute(py .. " scripts/generate_headers.py --if-needed")
+    if not ok then
+        print("WARNING: scripts/generate_headers.py --if-needed failed; run it manually before building.")
+    end
 end
 
 -- =============================================================================
@@ -3878,7 +3884,7 @@ project "voltaire"
     -- subshell + zero single quotes guarantees 100% Premake Ninja & Make compatibility!)
     if host_os ~= "windows" then
         prebuildcommands {
-            [[(if [ -f ../premake5.lua ]; then cd ..; fi; test -f core/version_generated.gen.h || python3 scripts/generate_headers.py --if-needed)]],
+            [[(if [ -f ../premake5.lua ]; then cd ..; fi; python3 scripts/generate_headers.py --if-needed)]],
         }
     end
 
