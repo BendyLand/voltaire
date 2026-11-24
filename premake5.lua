@@ -1,3 +1,12 @@
+setmetatable(_OPTIONS, {
+    __newindex = function(t, k, v)
+        if v == "" then
+            print("EMPTY OPTION:", k)
+            print(debug.traceback())
+        end
+        rawset(t, k, v)
+    end
+})
 -- =============================================================================
 -- Premake5 Cross-Platform Build Script for Voltaire Engine
 --
@@ -218,7 +227,6 @@ bool_option("xaudio2", "no", "Enable XAudio2 audio driver (Windows)")
 newoption {
     trigger = "accesskit-sdk-path",
     value = "PATH",
-    default = "",
     description = "Custom path to AccessKit C SDK (defaults to bin/build_deps/accesskit)"
 }
 
@@ -237,7 +245,7 @@ bool_option("execinfo", "no", "Link libexecinfo for crash handler on non-glibc (
 
 -- Windows options
 tri_option("use-mingw", "Use MinGW-w64 instead of MSVC on Windows (auto: yes when cross-compiling or gmake/ninja without cl)")
-newoption { trigger = "mingw-prefix", value = "PATH", default = "", description = "MinGW installation prefix (or $MINGW_PREFIX)" }
+newoption { trigger = "mingw-prefix", value = "PATH", description = "MinGW installation prefix (or $MINGW_PREFIX)" }
 newoption {
     trigger = "windows-subsystem",
     value = "MODE",
@@ -250,22 +258,22 @@ newoption {
 }
 tri_option("winrt", "Enable WinRT OneCore TTS support on Windows (C++20)")
 bool_option("debug-crt", "no", "Use MSVC dynamic debug CRT (/MDd)")
-newoption { trigger = "mesa-libs", value = "PATH", default = "", description = "Path to Godot Mesa/NIR static libraries for D3D12" }
-newoption { trigger = "angle-libs", value = "PATH", default = "", description = "Path to ANGLE static libraries" }
-newoption { trigger = "agility-sdk-path", value = "PATH", default = "", description = "Path to DirectX 12 Agility SDK" }
-newoption { trigger = "pix-path", value = "PATH", default = "", description = "Path to WinPixEventRuntime SDK" }
-newoption { trigger = "winrt-path", value = "PATH", default = "", description = "Path to cppwinrt headers for MinGW" }
+newoption { trigger = "mesa-libs", value = "PATH", description = "Path to Godot Mesa/NIR static libraries for D3D12" }
+newoption { trigger = "angle-libs", value = "PATH", description = "Path to ANGLE static libraries" }
+newoption { trigger = "agility-sdk-path", value = "PATH", description = "Path to DirectX 12 Agility SDK" }
+newoption { trigger = "pix-path", value = "PATH", description = "Path to WinPixEventRuntime SDK" }
+newoption { trigger = "winrt-path", value = "PATH", description = "Path to cppwinrt headers for MinGW" }
 
 -- Apple (macOS / iOS / visionOS) options
-newoption { trigger = "apple-sdk-path", value = "PATH", default = "", description = "Explicit macOS/iOS/visionOS SDK sysroot path" }
-newoption { trigger = "apple-toolchain-path", value = "PATH", default = "", description = "Explicit Xcode toolchain path (for iOS/visionOS)" }
-newoption { trigger = "apple-target-triple", value = "TRIPLE", default = "", description = "Apple cross-toolchain binary prefix" }
+newoption { trigger = "apple-sdk-path", value = "PATH", description = "Explicit macOS/iOS/visionOS SDK sysroot path" }
+newoption { trigger = "apple-toolchain-path", value = "PATH", description = "Explicit Xcode toolchain path (for iOS/visionOS)" }
+newoption { trigger = "apple-target-triple", value = "TRIPLE", description = "Apple cross-toolchain binary prefix" }
 newoption { trigger = "osxcross-sdk", value = "SDK", default = "darwin16", description = "OSXCross SDK suffix (e.g. darwin16)" }
-newoption { trigger = "vulkan-sdk-path", value = "PATH", default = "", description = "Path to MoltenVK / Vulkan SDK on macOS/iOS" }
+newoption { trigger = "vulkan-sdk-path", value = "PATH", description = "Path to MoltenVK / Vulkan SDK on macOS/iOS" }
 bool_option("simulator", "no", "Target iOS / visionOS Simulator instead of physical device")
 
 -- Android options
-newoption { trigger = "android-home", value = "PATH", default = "", description = "Path to Android SDK ($ANDROID_HOME / $ANDROID_SDK_ROOT)" }
+newoption { trigger = "android-home", value = "PATH", description = "Path to Android SDK ($ANDROID_HOME / $ANDROID_SDK_ROOT)" }
 newoption { trigger = "ndk-platform", value = "API", default = "android-24", description = "Minimum Android API level (e.g. android-24)" }
 tri_option("swappy", "Link Android Swappy frame-pacing library if present in thirdparty/swappy-frame-pacing")
 
