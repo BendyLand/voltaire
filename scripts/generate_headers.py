@@ -2631,9 +2631,37 @@ def generate_all():
     generate_wayland_protocols(sowrap=True)
 
 
+REQUIRED_GENERATED_FILES = [
+    "core/version_generated.gen.h",
+    "main/splash.gen.h",
+    "thirdparty/icu4c/icudata.gen.h",
+    "editor/translations/editor_translations.gen.h",
+    "editor/translations/editor_translations.gen.cpp",
+    "editor/translations/property_translations.gen.h",
+    "editor/translations/property_translations.gen.cpp",
+]
+
+WAYLAND_GENERATED_FILES = [
+    "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h",
+    "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c",
+]
+
+
+def _missing_generated_files():
+    req = list(REQUIRED_GENERATED_FILES)
+    if shutil.which("wayland-scanner"):
+        req.extend(WAYLAND_GENERATED_FILES)
+    return [p for p in req if not os.path.exists(p)]
+
+
 if __name__ == "__main__":
-    if "--if-needed" in sys.argv and os.path.exists("core/version_generated.gen.h") and os.path.exists("main/splash.gen.h"):
-        sys.exit(0)
+    if "--if-needed" in sys.argv:
+        missing = _missing_generated_files()
+        if not missing:
+            sys.exit(0)
+        if set(missing) <= set(WAYLAND_GENERATED_FILES):
+            generate_wayland_protocols(sowrap=True)
+            sys.exit(0)
     if "--splash-only" in sys.argv:
         make_splash_and_icons("main/splash.gen.h", "main/splash.png", "main/app_icon.png")
         sys.exit(0)

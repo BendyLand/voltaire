@@ -3,7 +3,7 @@
 --
 -- Replaces SCons (`SConstruct`, `platform/*/detect.py`, and all `SCsub` files)
 -- while preserving upstream Godot's full target, platform, architecture, and
--- feature matrix for Make (`gmake2` / `gmake`), Ninja (`ninja`), Visual Studio
+-- feature matrix for Make (`gmake` / `gmake2`), Ninja (`ninja`), Visual Studio
 -- (`vs2022`), and Clangd (`compilecommands`).
 --
 -- Targets (configurations):
@@ -21,7 +21,7 @@
 --   web               WebAssembly via Emscripten emcc/em++ (wasm32, wasm64)
 --
 -- Common Usage Examples:
---   premake5 gmake2                         && make -C build -j$(nproc)
+--   premake5 gmake                          && make -C build -j$(nproc)
 --   premake5 ninja                          && ninja -C build
 --   premake5 ninja                          && ninja -C build template_release_x86_64
 --   premake5 --p=windows --arch=x86_64 ninja && ninja -C build
@@ -31,6 +31,11 @@
 --   premake5 --p=web --arch=wasm32 ninja    && ninja -C build
 --   premake5 --help                         (list all Voltaire build options)
 -- =============================================================================
+
+-- Register fallback Ninja action when running on Premake5 builds without native ninja
+if premake and premake.action and not premake.action.get("ninja") and os.isfile("scripts/premake_ninja.lua") then
+    dofile("scripts/premake_ninja.lua")
+end
 
 -- =============================================================================
 -- 1. COMMAND-LINE OPTIONS (parity with SConstruct & platform/*/detect.py)
@@ -218,7 +223,6 @@ bool_option("xaudio2", "no", "Enable XAudio2 audio driver (Windows)")
 newoption {
     trigger = "accesskit-sdk-path",
     value = "PATH",
-    default = "",
     description = "Custom path to AccessKit C SDK (defaults to bin/build_deps/accesskit)"
 }
 
@@ -237,7 +241,7 @@ bool_option("execinfo", "no", "Link libexecinfo for crash handler on non-glibc (
 
 -- Windows options
 tri_option("use-mingw", "Use MinGW-w64 instead of MSVC on Windows (auto: yes when cross-compiling or gmake/ninja without cl)")
-newoption { trigger = "mingw-prefix", value = "PATH", default = "", description = "MinGW installation prefix (or $MINGW_PREFIX)" }
+newoption { trigger = "mingw-prefix", value = "PATH", description = "MinGW installation prefix (or $MINGW_PREFIX)" }
 newoption {
     trigger = "windows-subsystem",
     value = "MODE",
@@ -250,22 +254,22 @@ newoption {
 }
 tri_option("winrt", "Enable WinRT OneCore TTS support on Windows (C++20)")
 bool_option("debug-crt", "no", "Use MSVC dynamic debug CRT (/MDd)")
-newoption { trigger = "mesa-libs", value = "PATH", default = "", description = "Path to Godot Mesa/NIR static libraries for D3D12" }
-newoption { trigger = "angle-libs", value = "PATH", default = "", description = "Path to ANGLE static libraries" }
-newoption { trigger = "agility-sdk-path", value = "PATH", default = "", description = "Path to DirectX 12 Agility SDK" }
-newoption { trigger = "pix-path", value = "PATH", default = "", description = "Path to WinPixEventRuntime SDK" }
-newoption { trigger = "winrt-path", value = "PATH", default = "", description = "Path to cppwinrt headers for MinGW" }
+newoption { trigger = "mesa-libs", value = "PATH", description = "Path to Godot Mesa/NIR static libraries for D3D12" }
+newoption { trigger = "angle-libs", value = "PATH", description = "Path to ANGLE static libraries" }
+newoption { trigger = "agility-sdk-path", value = "PATH", description = "Path to DirectX 12 Agility SDK" }
+newoption { trigger = "pix-path", value = "PATH", description = "Path to WinPixEventRuntime SDK" }
+newoption { trigger = "winrt-path", value = "PATH", description = "Path to cppwinrt headers for MinGW" }
 
 -- Apple (macOS / iOS / visionOS) options
-newoption { trigger = "apple-sdk-path", value = "PATH", default = "", description = "Explicit macOS/iOS/visionOS SDK sysroot path" }
-newoption { trigger = "apple-toolchain-path", value = "PATH", default = "", description = "Explicit Xcode toolchain path (for iOS/visionOS)" }
-newoption { trigger = "apple-target-triple", value = "TRIPLE", default = "", description = "Apple cross-toolchain binary prefix" }
+newoption { trigger = "apple-sdk-path", value = "PATH", description = "Explicit macOS/iOS/visionOS SDK sysroot path" }
+newoption { trigger = "apple-toolchain-path", value = "PATH", description = "Explicit Xcode toolchain path (for iOS/visionOS)" }
+newoption { trigger = "apple-target-triple", value = "TRIPLE", description = "Apple cross-toolchain binary prefix" }
 newoption { trigger = "osxcross-sdk", value = "SDK", default = "darwin16", description = "OSXCross SDK suffix (e.g. darwin16)" }
-newoption { trigger = "vulkan-sdk-path", value = "PATH", default = "", description = "Path to MoltenVK / Vulkan SDK on macOS/iOS" }
+newoption { trigger = "vulkan-sdk-path", value = "PATH", description = "Path to MoltenVK / Vulkan SDK on macOS/iOS" }
 bool_option("simulator", "no", "Target iOS / visionOS Simulator instead of physical device")
 
 -- Android options
-newoption { trigger = "android-home", value = "PATH", default = "", description = "Path to Android SDK ($ANDROID_HOME / $ANDROID_SDK_ROOT)" }
+newoption { trigger = "android-home", value = "PATH", description = "Path to Android SDK ($ANDROID_HOME / $ANDROID_SDK_ROOT)" }
 newoption { trigger = "ndk-platform", value = "API", default = "android-24", description = "Minimum Android API level (e.g. android-24)" }
 tri_option("swappy", "Link Android Swappy frame-pacing library if present in thirdparty/swappy-frame-pacing")
 
@@ -615,6 +619,16 @@ elseif target_platform == "android" or target_platform == "web" then
     target_configs = { "template_debug", "template_release", "editor" }
 else
     target_configs = { "editor", "template_debug", "template_release" }
+end
+
+-- Ensure required generated headers/sources (including wayland_protocols.gen.c and
+-- *.gen.cpp translation units) exist before Make/Ninja validates source inputs.
+if _ACTION and _ACTION ~= "clean" and os.isfile("scripts/generate_headers.py") then
+    local py = (host_os == "windows") and "python" or "python3"
+    local ok = os.execute(py .. " scripts/generate_headers.py --if-needed")
+    if not ok then
+        print("WARNING: scripts/generate_headers.py --if-needed failed; run it manually before building.")
+    end
 end
 
 -- =============================================================================
@@ -3859,7 +3873,7 @@ project "voltaire"
     -- subshell + zero single quotes guarantees 100% Premake Ninja & Make compatibility!)
     if host_os ~= "windows" then
         prebuildcommands {
-            [[(if [ -f ../premake5.lua ]; then cd ..; fi; test -f core/version_generated.gen.h || python3 scripts/generate_headers.py --if-needed)]],
+            [[(if [ -f ../premake5.lua ]; then cd ..; fi; python3 scripts/generate_headers.py --if-needed)]],
         }
     end
 
