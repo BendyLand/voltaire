@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #ifdef TOOLS_ENABLED
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 #endif
 
 #include "core/os/os.h"
@@ -43,7 +43,6 @@
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #include "core/version_generated.gen.h"
-#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 
 #ifdef SDL_ENABLED
@@ -1324,7 +1323,7 @@ OS_MacOS_Embedded::OS_MacOS_Embedded(const char *p_execpath, int p_argc, char **
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #ifdef COREMIDI_ENABLED
 
@@ -1473,7 +1472,7 @@ void MIDIDriverCoreMidi::close() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/object/script_language.h"
@@ -1756,7 +1755,7 @@ void CrashHandler::initialize() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #if defined(UNIX_ENABLED)
 
@@ -1874,7 +1873,7 @@ bool DirAccessMacOS::is_bundle(const String &p_file) const {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 GodotApplication *GodotApp = nil;
@@ -2067,7 +2066,7 @@ GodotApplication *GodotApp = nil;
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #import "core/os/os.h"
@@ -2397,7 +2396,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
 
@@ -2570,23 +2569,20 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #include "core/object/callable_mp.h"
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
-#include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 
 #ifdef TOOLS_ENABLED
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #import "editor/embedded_process_macos.h"
 #endif
@@ -2596,28 +2592,27 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
-#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #if defined(VULKAN_ENABLED)
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 #endif
 #if defined(METAL_ENABLED)
-#import "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
 #endif
 #endif // RD_ENABLED
 
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
 #ifdef TOOLS_ENABLED
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 #endif
 
 #include <AppKit/AppKit.h>
@@ -6607,14 +6602,14 @@ DisplayServerMacOS::~DisplayServerMacOS() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #import <Carbon/Carbon.h>
@@ -7331,7 +7326,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 @implementation GodotButtonView
 
@@ -7470,7 +7465,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
@@ -8391,7 +8386,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 @implementation GodotCoreCursor
 @synthesize _coreCursorType = _type;
@@ -8434,7 +8429,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 @implementation GodotStatusItemDelegate
@@ -8516,7 +8511,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #include "servers/display/display_server.h"
@@ -8907,7 +8902,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 @implementation GodotWindow
@@ -8988,7 +8983,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -9437,7 +9432,7 @@ unsigned int KeyMappingMacOS::keycode_get_native_mask(Key p_keycode) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 @implementation GodotMenuDelegate
@@ -9557,7 +9552,7 @@ unsigned int KeyMappingMacOS::keycode_get_native_mask(Key p_keycode) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 @implementation GodotMenuItem
 
@@ -9609,7 +9604,7 @@ unsigned int KeyMappingMacOS::keycode_get_native_mask(Key p_keycode) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 @implementation GodotOpenSaveDelegate
 
@@ -9949,11 +9944,11 @@ unsigned int KeyMappingMacOS::keycode_get_native_mask(Key p_keycode) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #include "core/object/callable_mp.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 void NativeMenuMacOS::_register_system_menus(NSMenu *p_main_menu, NSMenu *p_application_menu, NSMenu *p_window_menu, NSMenu *p_help_menu, NSMenu *p_dock_menu) {
 	{
@@ -11507,7 +11502,7 @@ NativeMenuMacOS::~NativeMenuMacOS() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #ifdef VULKAN_ENABLED
 
@@ -11576,7 +11571,7 @@ RenderingContextDriverVulkanMacOS::~RenderingContextDriverVulkanMacOS() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -11787,7 +11782,7 @@ GODOT_CLANG_WARNING_POP
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 @implementation GodotProgressView
 
@@ -11884,7 +11879,7 @@ GODOT_CLANG_WARNING_POP
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 
 #import "core/os/os.h"
@@ -11893,26 +11888,25 @@ GODOT_CLANG_WARNING_POP
 #import "servers/display/display_server.h"
 
 #if defined(GLES3_ENABLED)
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
-#import "servers/rendering/renderer.h"
 
 #endif
 
 #if defined(RD_ENABLED)
-#import "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
 
 #if defined(VULKAN_ENABLED)
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 #endif // VULKAN_ENABLED
 #if defined(METAL_ENABLED)
-#import "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
 #endif
 #endif // RD_ENABLED
 
 // Keep Quartz after rendering includes, as it includes system GL.h
 // which clashes with GLAD.
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, Error &r_error) {
 	EmbeddedDebugger::initialize(this);
@@ -12707,7 +12701,7 @@ Error DisplayServerMacOSEmbeddedState::deserialize(const PackedByteArray &p_data
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/debugger/engine_debugger.h"
@@ -12916,11 +12910,11 @@ Error EmbeddedDebugger::parse_message(
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
-#import "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
 
 
 #import <QuartzCore/QuartzCore.h>
@@ -13254,7 +13248,7 @@ GODOT_CLANG_WARNING_POP
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 

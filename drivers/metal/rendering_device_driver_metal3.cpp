@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace MTL3 {
 
@@ -374,7 +374,7 @@ RDD::CommandBufferID RenderingDeviceDriverMetal::command_buffer_create(CommandPo
 
 
 // --- Merged from drivers/metal/metal3_objects.cpp ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 #include <algorithm>

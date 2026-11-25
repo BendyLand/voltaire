@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #include "core/io/packet_peer_udp.h"
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/windows/lang_table.h ---
 #include <windef.h>
 
@@ -194,15 +194,12 @@ static const _WinLocale _win_locales[] = {
 };
 
 // --- End platform/windows/lang_table.h ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/debugger/script_debugger.h"
 #include "core/os/os.h"
 #include "core/version_generated.gen.h"
-#include "drivers/unix/os_unix.h"
-#include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 #include <avrt.h>
@@ -227,21 +224,21 @@ extern "C" {
 #endif
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #if defined(GLES3_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+#include "servers/display/display_server.h"
 #endif
 #if defined(D3D12_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 #if defined(GLES3_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #ifdef DEBUG_ENABLED
@@ -3088,7 +3085,7 @@ OS_Windows::~OS_Windows() {
 
 
 // --- Merged from platform/windows/windows_terminal_logger.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #ifdef WINDOWS_ENABLED
 
@@ -3200,7 +3197,7 @@ WindowsTerminalLogger::~WindowsTerminalLogger() {}
 
 
 // --- Merged from platform/windows/windows_utils.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #ifdef WINDOWS_ENABLED
 
@@ -3454,9 +3451,8 @@ void WindowsUtils::remove_temp_pdbs(const String &p_dll_path) {
 
 // --- Merged from platform/windows/godot_windows.cpp ---
 #if !defined(LIBGODOT_ENABLED)
-#include "drivers/unix/os_unix.h"
-
 #include "servers/display/display_server.h"
+
 
 #include <clocale>
 
@@ -3581,7 +3577,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 // --- Merged from platform/windows/libgodot_windows.cpp ---
 #if defined(LIBGODOT_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"
@@ -3652,7 +3648,7 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
@@ -3663,22 +3659,21 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #include "core/typedefs.h"
 #include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 
 #ifdef SDL_ENABLED
 #include "core/os/os.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
 #if defined(D3D12_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <dxgi1_6.h>
 #endif
 #if defined(GLES3_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #include <avrt.h>
@@ -12017,7 +12012,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 
 
 // --- Merged from platform/windows/key_mapping_windows.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/io/ip.h"
 
@@ -12439,10 +12434,9 @@ KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended
 
 
 // --- Merged from platform/windows/native_menu_windows.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
-#include "servers/rendering/renderer.h"
 
 HBITMAP NativeMenuWindows::_make_bitmap(const Ref<Image> &p_img) const {
 	p_img->convert(Image::FORMAT_RGBA8);
@@ -13647,7 +13641,7 @@ NativeMenuWindows::~NativeMenuWindows() {}
 
 
 // --- Merged from platform/windows/gl_manager_windows_native.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -14194,7 +14188,7 @@ GLManagerNative_Windows::~GLManagerNative_Windows() {
 // --- Merged from platform/windows/wgl_detect_version.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
@@ -14359,7 +14353,7 @@ Dictionary detect_wgl() {
 // --- Merged from platform/windows/rendering_context_driver_vulkan_windows.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(VULKAN_ENABLED)
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
@@ -14401,7 +14395,7 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 
 
 // --- Merged from platform/windows/drop_target_windows.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
@@ -14751,7 +14745,7 @@ HRESULT STDMETHODCALLTYPE DropTargetWindows::Drop(IDataObject *pDataObj, DWORD g
 
 // --- Merged from platform/windows/gl_manager_windows_angle.cpp ---
 #if defined(ANGLE_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -14826,7 +14820,7 @@ void GLManagerANGLE_Windows::window_resize(DisplayServerEnums::WindowID p_window
 
 #ifdef WASAPI_ENABLED
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
@@ -15879,7 +15873,7 @@ AudioDriverWASAPI::AudioDriverWASAPI() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/io/ip.h"

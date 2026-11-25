@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #include "core/profiling/profiling.h"
 #include "servers/display/display_server.h"

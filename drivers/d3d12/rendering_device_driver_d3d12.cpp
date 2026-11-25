@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 // --- Inlined/Folded from drivers/d3d12/godot_nir.h ---
 #include "core/typedefs.h"
@@ -6431,7 +6431,7 @@ Error RenderingDeviceDriverD3D12::initialize(uint32_t p_device_index, uint32_t p
 
 
 // --- Merged from drivers/d3d12/d3d12_hooks.cpp ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 void D3D12Hooks::reset()
 {
@@ -6448,7 +6448,7 @@ void D3D12Hooks::reset()
 // Based on the patched public domain implementation released by Microsoft here:
 // https://github.com/microsoft/hlsl-specs/blob/main/proposals/infra/INF-0004-validator-hashing.md
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <memory.h>
 
@@ -6627,7 +6627,7 @@ void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash) {
 
 
 // --- Merged from drivers/d3d12/rendering_context_driver_d3d12.cpp ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"
@@ -6990,10 +6990,10 @@ bool RenderingContextDriverD3D12::get_tearing_supported() const {
 
 
 // --- Merged from drivers/d3d12/rendering_shader_container_d3d12.cpp ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/string/ustring.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 #include <wrl/client.h>
@@ -8018,7 +8018,7 @@ RenderingShaderContainerFormatD3D12::~RenderingShaderContainerFormatD3D12() {
 
 #ifdef D3D12_ENABLED
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 void OpenXRD3D12Extension::initialize()
 {

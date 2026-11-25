@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 // --- Inlined from platform/web/ip_web.h ---
 #include "core/io/ip.h"
@@ -105,7 +105,6 @@ public:
 
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 
 #include <dlfcn.h>
@@ -509,7 +508,7 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 
 
 // --- Merged from platform/web/audio_driver_web.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/web/godot_audio.h ---
 #include <cstdint>
 
@@ -1033,7 +1032,7 @@ void AudioDriverScriptProcessor::start(float *p_out_buf, int p_out_buf_size, flo
 
 
 // --- Merged from platform/web/webmidi_driver.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/web/godot_midi.h ---
 #include <cstdint>
 
@@ -1458,7 +1457,7 @@ HTTPClientWeb::~HTTPClientWeb() {
 
 
 // --- Merged from platform/web/javascript_bridge_singleton.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include <emscripten.h>
@@ -1843,7 +1842,7 @@ void register_web_api() {}
 
 
 // --- Merged from platform/web/web_main.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
@@ -2026,20 +2025,19 @@ int main(int argc, char *argv[]) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "platform/web/dom_keys.inc"
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
 #endif
 
 #ifdef GLES3_ENABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #include <emscripten.h>

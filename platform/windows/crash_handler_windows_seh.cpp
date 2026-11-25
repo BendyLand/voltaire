@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"

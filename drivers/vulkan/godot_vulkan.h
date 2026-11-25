@@ -33,7 +33,10 @@
 
 // IWYU pragma: begin_exports.
 #ifdef USE_VOLK
+#pragma push_macro("Window")
+#define Window VkX11Window
 #include <volk.h>
+#pragma pop_macro("Window")
 #else
 #include <cstdint>
 #define VK_NO_STDINT_H

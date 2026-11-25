@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #ifdef WINRT_ENABLED
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
 
 bool TTS_Windows::is_speaking()
@@ -164,9 +164,8 @@ void TTS_Windows::finalize()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
-
 #include "servers/display/display_server.h"
+
 
 void __stdcall TTSDriverSAPI::speech_event_callback(WPARAM wParam, LPARAM lParam) {
 	TTSDriverSAPI *self = reinterpret_cast<TTSDriverSAPI *>(wParam);
@@ -436,7 +435,7 @@ TTSDriverSAPI::~TTSDriverSAPI() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/typedefs.h"
 
@@ -698,9 +697,8 @@ void WinRTUtils::destroy_wd(WinRTWindowData *p_data) {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
-
 #include "servers/display/display_server.h"
+
 
 void TTSDriverOneCore::_speech_index_mark(int p_msg_id, int p_index_mark) {
 	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, p_msg_id, p_index_mark);

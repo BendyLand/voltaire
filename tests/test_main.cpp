@@ -36,7 +36,6 @@
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 // --- Inlined from tests/test_macros.h ---
 #include "core/io/ip.h"
 #include "core/io/ip.h" // IWYU pragma: keep. Used in macro.
@@ -814,7 +813,7 @@ REGISTER_LISTENER("GodotTestCaseListener", 1, GodotTestCaseListener);
 
 
 #include "core/os/os.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 Vector<String> DisplayServerMock::get_rendering_drivers_func() {
 	Vector<String> drivers;
@@ -15483,7 +15482,7 @@ TEST_CASE("[AABB] Finite number checks") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestAStar {
 
@@ -16852,7 +16851,7 @@ TEST_CASE("[Expression] Unusual expressions") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGeometry2D {
 
@@ -17746,7 +17745,7 @@ TEST_CASE("[Geometry2D] Bresenham line") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGeometry3D {
 
@@ -21394,7 +21393,7 @@ TEST_CASE("[Transform3D] Rotate in-place (local rotation)") {
 
 #ifndef _3D_DISABLED
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #include "scene/main/scene_tree.h"
 
 namespace TestTriangleMesh {
@@ -27144,7 +27143,7 @@ TEST_FORCE_LINK(test_templates)
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <cctype>
 
@@ -53952,7 +53951,7 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 #include "core/io/net_socket.h"
 #include "scene/gui/texture_button.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestTextureButton {
 
@@ -54392,7 +54391,7 @@ TEST_CASE("[SceneTree][TextureProgressBar]") {
 
 #include "core/io/net_socket.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestTextureRect {
 
@@ -55598,7 +55597,7 @@ TEST_CASE("[Audio][AudioStreamWAV] Saving IMA ADPCM is not supported") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestBitMap {
 
@@ -56102,7 +56101,7 @@ TEST_CASE("[BitMap] Clip to polygon") {
 
 
 #include "core/typedefs.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestCurve {
 
@@ -56535,7 +56534,7 @@ TEST_CASE("[Curve3D] Linear sampling should return exact value") {
 
 
 #include "core/typedefs.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestCurve2D {
 
@@ -56835,7 +56834,7 @@ TEST_CASE("[Curve2D] Even length tessellation") {
 
 
 #include "core/typedefs.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestCurve3D {
 
@@ -57260,7 +57259,7 @@ TEST_CASE("[FontFile] Create font file and check data") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGradient {
 
@@ -57405,7 +57404,7 @@ TEST_CASE("[Gradient] Custom gradient (points specified out-of-order)") {
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGradientTexture {
 
@@ -57494,7 +57493,7 @@ TEST_CASE("[SceneTree][GradientTexture2D] Create GradientTexture2D") {
 
 
 #include "core/io/net_socket.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestImageTexture {
 
@@ -57602,7 +57601,7 @@ TEST_CASE("[SceneTree][ImageTexture] set_path") {
 
 
 #include "core/io/net_socket.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestImageTexture3D {
 
@@ -57986,7 +57985,7 @@ TEST_CASE("[PackedScene] Recreate State") {
 
 #ifndef _3D_DISABLED
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestSky {
 
@@ -58591,7 +58590,6 @@ TEST_CASE("[StyleBox] STYLE_TEXTURE get_draw_rect") {
 
 
 
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 namespace TestTheme {
@@ -58866,7 +58864,7 @@ TEST_FORCE_LINK(test_scene_resources)
 #ifndef _3D_DISABLED
 
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestArrayMesh {
 
@@ -64572,7 +64570,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Calculate forward vector with degenerate cu
 
 #ifndef PHYSICS_3D_DISABLED
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestPhysicsMaterial {
 
@@ -68917,7 +68915,7 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 
 // === Merged from modules/dds/tests/test_dds.h ===
 #ifdef MODULE_DDS_ENABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
@@ -69056,7 +69054,7 @@ TEST_CASE("[SceneTree][DDSSaver] Save DDS - Save valid uncompressed image") {
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #include "scene/main/scene_tree.h"
 
 namespace TestGltf {
@@ -69221,7 +69219,7 @@ TEST_CASE("[SceneTree][Node] GLTF emissiveTexture without emissiveFactor uses wh
 
 #include "scene/main/scene_tree.h"
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGltf {
 
@@ -69356,7 +69354,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 
 
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 namespace TestGltf {
 Ref<Texture2D> _check_texture(Node *p_node) {
@@ -69620,7 +69618,7 @@ public:
 
 // === Merged from modules/noise/tests/test_fastnoise_lite.h ===
 #ifdef MODULE_NOISE_ENABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 namespace TestFastNoiseLite {
@@ -70223,7 +70221,7 @@ TEST_CASE("[FastNoiseLite] Generating seamless 2D images (11x11px) and compare t
 } //namespace TestFastNoiseLite
 
 // --- Folded from modules/noise/tests/test_noise_texture_2d.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 namespace TestNoiseTexture2D {
@@ -70455,7 +70453,7 @@ TEST_CASE("[NoiseTexture2D][SceneTree] Generating a seamless noise texture") {
 // --- End modules/noise/tests/test_noise_texture_2d.h ---
 
 // --- Folded from modules/noise/tests/test_noise_texture_3d.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 namespace TestNoiseTexture3D {

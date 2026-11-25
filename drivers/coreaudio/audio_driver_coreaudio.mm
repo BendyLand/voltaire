@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #ifdef COREAUDIO_ENABLED
 
@@ -758,7 +758,7 @@ AudioDriverCoreAudio::AudioDriverCoreAudio() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/unix/os_unix.h"
+#import "servers/display/display_server.h"
 
 #import "core/string/ustring.h"
 
@@ -849,7 +849,7 @@ String to_string(NSString *p_str) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/memory.h"
 #include "core/string/ustring.h"
@@ -1135,9 +1135,9 @@ Thread::~Thread() {
 ///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
 // If you fix something here, make sure you fix it there as well!
 
-#import "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #import <AVFoundation/AVFoundation.h>
 #ifdef IOS_ENABLED
@@ -1737,10 +1737,10 @@ void unregister_camera_external_module() {
 
 #import "modules/openxr/openxr_platform_inc.h"
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
-#import "servers/rendering/renderer.h"
-#include "servers/rendering/renderer.h"
+#import "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/rendering_server.h"
 
 HashMap<String, bool *> OpenXRMetalExtension::get_requested_extensions(XrVersion p_version) {

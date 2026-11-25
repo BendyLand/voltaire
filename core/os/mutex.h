@@ -273,6 +273,8 @@ public:
 	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Winterference-size")
 	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
 	VLTR_GCC_WARNING_POP
+#elif defined(__GCC_DESTRUCTIVE_SIZE) && !defined(ANDROID_ENABLED)
+	static constexpr size_t CACHE_LINE_BYTES = __GCC_DESTRUCTIVE_SIZE;
 #else
 	// At a negligible memory cost, we use a conservatively high value.
 	static constexpr size_t CACHE_LINE_BYTES = 128;

@@ -4012,18 +4012,12 @@ project "voltaire"
     -- Engine Source Files (core, main, scene, servers, common drivers & modules)
     -- -------------------------------------------------------------------------
     files {
-        -- Core, Main & MbedTLS Godot platform glue
+        -- Core, Main, Editor & Common Drivers + MbedTLS Godot platform glue
         "core/register_core_types.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
 
-        -- Scene (always-enabled)
+        -- Scene, Servers & Modules (always-enabled)
         "scene/main/scene_tree.cpp",
-
-        -- Servers & Modules (always-enabled)
-        "servers/rendering/renderer.cpp",
-
-        -- Drivers (common)
-        "drivers/register_driver_types.cpp",
     }
 
     -- Feature-conditional scene/server/module files
@@ -4089,9 +4083,6 @@ project "voltaire"
             files { "platform/linuxbsd/xkbcommon-so_wrap.c" }
         elseif opt_bool("wayland") then
             files { "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.c" }
-        end
-        if opt_bool("x11") then
-            files { "platform/linuxbsd/x11/display_server_x11.cpp" }
         end
 
         if use_accesskit then

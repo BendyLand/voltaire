@@ -3464,7 +3464,7 @@ public:
 
 // --- Folded from scene/animation/animation_blend_tree.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class AnimationNodeBlendNode final : public AnimationNode
 {
@@ -5580,7 +5580,6 @@ public:
 // --- Folded from scene/gui/control.h ---
 // --- Folded from scene/main/canvas_item.h ---
 
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class CanvasLayer;
@@ -6228,7 +6227,6 @@ public:
 	~CanvasLayer();
 };
 // --- End scene/main/canvas_item.h ---
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class Label;
@@ -7148,7 +7146,7 @@ public:
 		callable_mp(this, &to::_can_drop_data_fw).bind(from),                                      \
 		callable_mp(this, &to::_drop_data_fw).bind(from));
 // --- End scene/gui/control.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 struct CollisionState2D;
 
@@ -7764,9 +7762,7 @@ public:
 };
 // --- Folded from scene/resources/mesh.h ---
 #include "core/io/ip.h"
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
 // --- Folded from scene/resources/3d/shape_3d.h ---
@@ -8838,7 +8834,7 @@ public:
 #include "core/io/ip.h"
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
 
@@ -8944,7 +8940,6 @@ public:
 // --- Folded from scene/resources/3d/primitive_meshes.h ---
 #include <memory>
 
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 
@@ -12359,7 +12354,7 @@ private:
 #undef VERBOSE_PRINT
 
 // --- End core/math/bvh_tree.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #include "core/os/mutex.h"
 
 #include <climits> // INT_MAX
@@ -16040,7 +16035,7 @@ public:
 // --- Folded from scene/2d/physics/physics_body_2d.h ---
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 class Joint2D;
@@ -17039,7 +17034,7 @@ public:
 
 // --- Folded from scene/2d/line_2d.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class Line2D : public Node2D
 {
@@ -17341,7 +17336,7 @@ public:
 
 // --- Folded from scene/2d/path_2d.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class Timer;
 
@@ -17946,7 +17941,7 @@ private:
 #include "core/io/ip.h"
 #include "core/templates/rb_set.h"
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 #ifndef PHYSICS_2D_DISABLED
@@ -17958,7 +17953,7 @@ private:
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef DISABLE_DEPRECATED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 class ArrayMesh;
@@ -19663,7 +19658,7 @@ public:
 
 // --- Inlined/Folded from scene/resources/3d/world_3d.h ---
 #include "core/io/ip.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 class CameraAttributes;
@@ -19723,7 +19718,6 @@ public:
 	World3D();
 	~World3D();
 };
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 struct CollisionState3D;
@@ -23009,7 +23003,7 @@ private:
 };
 
 // --- Folded from scene/3d/path_3d.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class ArrayMesh;
 
@@ -23105,7 +23099,7 @@ public:
 };
 
 // --- Folded from scene/3d/xr/xr_nodes.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 /*
 	XRNode3D is a consolidated helper node that binds to an XRTracker
@@ -23218,7 +23212,6 @@ public:
 
 // --- Folded from scene/3d/visual_instance_3d.h ---
 
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class TriangleMesh;
@@ -23441,8 +23434,6 @@ public:
 
 // --- Folded from scene/3d/label_3d.h ---
 
-#include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class Label3D : public Node3D
@@ -23822,7 +23813,7 @@ public:
 
 // --- Folded from scene/3d/sprite_3d.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 // --- Folded from scene/resources/sprite_frames.h ---
 #include "servers/display/display_server.h"
 
@@ -24803,7 +24794,7 @@ public:
 
 
 // --- End scene/3d/velocity_tracker_3d.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class Camera3D : public Node3D
 {
@@ -25220,7 +25211,7 @@ public:
 
 // --- Folded from scene/3d/world_environment.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class WorldEnvironment : public Node
 {
@@ -25726,7 +25717,7 @@ public:
 
 // --- Folded from scene/3d/bone_constraint_3d.h ---
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class BoneConstraint3D : public SkeletonModifier3D {
 public:
@@ -26226,7 +26217,7 @@ public:
 // --- Folded from scene/3d/physics/physics_body_3d.h ---
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 class PhysicsBody3D;
@@ -27242,7 +27233,7 @@ public:
 #include "core/string/ustring.h"
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -28919,7 +28910,6 @@ public:
 // --- Inlined/Folded from scene/gui/button.h ---
 #include "core/os/os.h"
 
-#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class Button;
@@ -33584,7 +33574,7 @@ public:
 };
 
 // --- End scene/gui/graph_node.h ---
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class Button;
 class GraphEdit;
@@ -34189,7 +34179,7 @@ public:
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class ColorMode;
 class ColorPickerShape;
@@ -39349,7 +39339,7 @@ template <typename T> class TypedArray;
 
 
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class GLTFTextureSampler final : public Resource
 {
@@ -41630,7 +41620,7 @@ public:
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 struct CSGBrush
 {

@@ -37,7 +37,7 @@
 // IWYU pragma: begin_keep
 
 #ifdef VULKAN_ENABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif
 
 #ifdef X11_ENABLED
@@ -48,12 +48,12 @@
 
 #ifdef VULKAN_ENABLED
 #define XR_USE_GRAPHICS_API_VULKAN
-#include "drivers/vulkan/rendering_context_driver_vulkan.h"
+#include "servers/display/display_server.h"
 #endif // VULKAN_ENABLED
 
 #ifdef METAL_ENABLED
 #define XR_USE_GRAPHICS_API_METAL
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif // METAL_ENABLED
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
@@ -83,7 +83,7 @@
 
 #ifdef D3D12_ENABLED
 #define XR_USE_GRAPHICS_API_D3D12
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif // D3D12_ENABLED
 
 #ifdef X11_ENABLED
@@ -135,7 +135,7 @@
 
 // --- Folded from modules/openxr/extensions/platform/openxr_android_extension.h ---
 #if defined(ANDROID_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <jni.h>
 
@@ -180,10 +180,10 @@ public:
 #if defined(D3D12_ENABLED)
 #ifdef D3D12_ENABLED
 
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/string/ustring.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 // Always include this as late as possible.
 
@@ -255,7 +255,7 @@ public:
 
 // --- Folded from modules/openxr/extensions/platform/openxr_metal_extension.h ---
 #if defined(METAL_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include "core/string/ustring.h"
 

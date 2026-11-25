@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #ifndef TOOLS_ENABLED
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
 
 #include "core/os/os.h"
@@ -41,10 +41,9 @@
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 #include "scene/main/scene_tree.h"
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <dlfcn.h>
 #include <sys/system_properties.h>
@@ -1073,7 +1072,7 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 
 
 // --- Merged from platform/android/file_access_android.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/string/ustring.h"
@@ -1234,7 +1233,7 @@ void FileAccessAndroid::terminate() {
 
 
 // --- Merged from platform/android/file_access_filesystem_jandroid.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/string/ustring.h"
@@ -1600,7 +1599,7 @@ FileAccessFilesystemJAndroid::~FileAccessFilesystemJAndroid() {
 
 
 // --- Merged from platform/android/audio_driver_opensl.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
@@ -1935,7 +1934,7 @@ AudioDriverOpenSL::AudioDriverOpenSL() {
 
 
 // --- Merged from platform/android/dir_access_jandroid.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/string/ustring.h"
@@ -2270,7 +2269,7 @@ void DirAccessJAndroid::dir_close(int p_id) {
 
 
 // --- Merged from platform/android/tts_android.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
@@ -2546,7 +2545,7 @@ void TTS_Android::stop() {
 
 
 // --- Merged from platform/android/thread_jandroid.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/mutex.h"
 
@@ -2602,7 +2601,7 @@ JNIEnv *get_jni_env() {
 
 
 // --- Merged from platform/android/net_socket_android.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 jobject NetSocketAndroid::net_utils = nullptr;
@@ -2748,7 +2747,6 @@ Error NetSocketAndroid::leave_multicast_group(const IPAddress &p_multi_address, 
 
 #include "servers/display/display_server.h"
 
-#include "drivers/unix/os_unix.h"
 
 bool JavaClass::_call_method(JavaObject *p_instance, const String &p_method, const Variant **p_args, int p_argcount, Callable::CallError &r_error, Variant &ret) {
 	HashMap<String, List<MethodInfo>>::Iterator M = methods.find(p_method);
@@ -4706,18 +4704,15 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 
 // --- End platform/android/java_godot_lib_jni.h ---
 
-#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
-#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 #include "core/os/mutex.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
@@ -5394,7 +5389,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 
 
 // --- Merged from platform/android/java_godot_wrapper.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 // JNIEnv is only valid within the thread it belongs to, in a multi threading environment
@@ -6124,7 +6119,7 @@ void GodotJavaWrapper::set_auto_enter_pip_mode_on_background(bool p_auto_enter_o
 
 
 // --- Merged from platform/android/java_godot_view_wrapper.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/string/ustring.h"
@@ -6214,7 +6209,7 @@ GodotJavaViewWrapper::~GodotJavaViewWrapper() {
 
 
 // --- Merged from platform/android/java_godot_io_wrapper.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/io/ip.h"
@@ -6500,9 +6495,8 @@ void GodotIOJavaWrapper::set_vk_height(int p_height) {
 
 
 // --- Merged from platform/android/jni_utils.cpp ---
-#include "drivers/unix/os_unix.h"
-
 #include "servers/display/display_server.h"
+
 
 // Maximum recursion depth allowed when converting variants to jobjects or vice-versa.
 #define RECURSION_DEPTH_LIMIT 64
@@ -7075,10 +7069,8 @@ jclass jni_find_class(JNIEnv *p_env, const char *p_class_name) {
 
 
 // --- Merged from platform/android/plugin/godot_plugin_jni.cpp ---
-#include "drivers/unix/os_unix.h"
-
 #include "servers/display/display_server.h"
-#include "drivers/unix/os_unix.h"
+
 
 #include "core/os/os.h"
 #include "core/typedefs.h"
@@ -7200,7 +7192,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_variant_Callable_releaseNative
 
 // --- End platform/android/variant/callable_jni.h ---
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #include "core/typedefs.h"
 
@@ -7325,22 +7317,22 @@ Java_org_godotengine_godot_variant_Callable_releaseNativePointer(JNIEnv *p_env, 
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #if defined(VULKAN_ENABLED)
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 #endif
 #endif
 
 #ifdef GLES3_ENABLED
-#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 #include <EGL/egl.h>
 #endif
@@ -8337,7 +8329,7 @@ void DisplayServerAndroid::pip_mode_set_auto_enter_on_background(bool p_auto_ent
 
 
 // --- Merged from platform/android/android_input_handler.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 
 #include "core/os/os.h"
@@ -8772,7 +8764,7 @@ uint32_t AndroidInputHandler::_android_button_mask_to_godot_button_mask(int andr
 
 
 // --- Merged from platform/android/android_keys_utils.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 Key godot_code_from_android_code(unsigned int p_code) {
 	for (int i = 0; android_godot_code_pairs[i].android_code != AKEYCODE_MAX; i++) {
@@ -8794,7 +8786,7 @@ KeyLocation godot_location_from_android_code(unsigned int p_code) {
 
 
 // --- Merged from platform/android/rendering_context_driver_vulkan_android.cpp ---
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #ifdef VULKAN_ENABLED
 
@@ -8842,7 +8834,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_utils_DialogUtils_inputDialogC
 
 // --- End platform/android/dialog_utils_jni.h ---
 
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 extern "C" {
 
@@ -8897,8 +8889,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_utils_DialogUtils_inputDialogC
 
 #include "modules/openxr/openxr_platform_inc.h"
 
-#include "servers/rendering/renderer.h" // IWYU pragma: keep. `XR_FAILED` macro.
-#include "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h" // IWYU pragma: keep. `XR_FAILED` macro.
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
