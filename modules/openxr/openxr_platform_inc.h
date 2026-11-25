@@ -37,7 +37,7 @@
 // IWYU pragma: begin_keep
 
 #ifdef VULKAN_ENABLED
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #ifdef X11_ENABLED
@@ -135,7 +135,7 @@
 
 // --- Folded from modules/openxr/extensions/platform/openxr_android_extension.h ---
 #if defined(ANDROID_ENABLED)
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
 #include <jni.h>
 
@@ -180,9 +180,9 @@ public:
 #if defined(D3D12_ENABLED)
 #ifdef D3D12_ENABLED
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 #include "drivers/d3d12/rendering_context_driver_d3d12.h"
 
 // Always include this as late as possible.
@@ -255,9 +255,9 @@ public:
 
 // --- Folded from modules/openxr/extensions/platform/openxr_metal_extension.h ---
 #if defined(METAL_ENABLED)
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 // Always include this as late as possible.
 

@@ -29,11 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "platform/macos/os_macos.h"
-#import "os_macos.h"
+#import "drivers/unix/os_unix.h"
 
 #include "core/profiling/profiling.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #if defined(ASAN_ENABLED)
 #include <sys/resource.h>

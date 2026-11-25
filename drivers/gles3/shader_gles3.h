@@ -105,10 +105,9 @@ void godot_webgl2_glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr 
 #endif
 // --- End platform/*/platform_gl.h ---
 #include "core/types.h"
-#include "core/templates/hash_map.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 class StringBuilder;
 
@@ -363,7 +362,7 @@ public:
 // --- Folded from drivers/egl/egl_manager.h ---
 #ifdef EGL_ENABLED
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 // --- Unified from platform/*/platform_egl.h ---
 #if defined(ANDROID_ENABLED)
@@ -495,7 +494,6 @@ public:
 
 
 #include "core/string/ustring.h"
-#include "core/templates/hash_set.h"
 #include "core/types.h"
 // --- Folded from drivers/gles3/effects/gles3_effects.h ---
 #ifdef GLES3_ENABLED
@@ -776,8 +774,8 @@ public:
 #endif // GLES3_ENABLED
 
 // --- End drivers/gles3/effects/gles3_effects.h ---
-#include "servers/rendering/rendering_device.h"
-#include "scene/resources/texture.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 
@@ -1274,14 +1272,13 @@ public:
 #ifdef GLES3_ENABLED
 
 
-#include "core/io/image.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/hash_map.h"
+#include "core/io/resource_loader.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
 
-#include "scene/resources/texture.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef _GL_TEXTURE_EXTERNAL_OES
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
@@ -2118,7 +2115,6 @@ public:
 
 #include "core/types.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 namespace GLES3
@@ -2607,11 +2603,11 @@ public:
 #ifdef GLES3_ENABLED
 
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 #include "drivers/gles3/shaders/gles3_shaders.gen.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 namespace GLES3
@@ -3345,7 +3341,7 @@ public:
 #endif // GLES3_ENABLED
 // --- End drivers/gles3/storage/mesh_storage.h ---
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 namespace GLES3
@@ -3775,13 +3771,11 @@ public:
 #ifdef GLES3_ENABLED
 
 #include "core/types.h"
-#include "core/math/plane.h"
-#include "core/types.h"
 // --- Inlined/Folded from drivers/gles3/storage/light_storage.h ---
 #ifdef GLES3_ENABLED
 
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 
 
@@ -4782,8 +4776,8 @@ public:
 
 
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 
 namespace GLES3
 {

@@ -4024,30 +4024,16 @@ project "voltaire"
         "scene/main/scene_tree.cpp",
 
         -- Servers (always-enabled)
-        "servers/register_server_types.cpp",
         "servers/rendering/renderer.cpp",
 
         -- Drivers (common)
         "drivers/register_driver_types.cpp",
 
         -- Modules (always-enabled)
-        "modules/multiplayer/scene_multiplayer.cpp",
         "modules/svg/image_loader_svg.cpp",
     }
 
     -- Feature-conditional scene/server/module files
-    if not disable_3d or has_openxr then
-    end
-    if not disable_nav_2d then
-    end
-    if not disable_nav_3d then
-    end
-    if use_opengl3 then
-    end
-    if use_rd then
-    end
-    if use_sdl then
-    end
     if has_theora then
         filter "platforms:not rv64"
         filter {}
@@ -4058,35 +4044,10 @@ project "voltaire"
             filter {}
         end
     end
-    if has_camera then
-        if target_platform == "linuxbsd" then
-        elseif target_platform == "windows" then
-        elseif target_platform == "macos" or target_platform == "ios" or target_platform == "visionos" then
-            files { "modules/camera/camera_apple.mm" }
-        elseif target_platform == "android" then
-        end
-    end
-    if has_openxr then
-        if target_platform == "android" then
-            files { "modules/openxr/extensions/platform/openxr_android_extension.cpp" }
-        end
-        if use_d3d12 then
-            files { "modules/openxr/extensions/platform/openxr_d3d12_extension.cpp" }
-        end
-        if use_metal then
-            filter "platforms:arm64"
-                files { "modules/openxr/extensions/platform/openxr_metal_extension.mm" }
-            filter {}
-        end
-    end
-    if betsy_templates or cvtt_templates then
-        files { "editor/editor_ui.cpp" }
-    end
 
     -- Editor-only sources & platform exporters
     filter "configurations:editor"
         files {
-            "editor/editor_ui.cpp",
             "editor/project_upgrade/renames_map_3_to_4.cpp",
             "editor/translations/editor_translations.gen.cpp",
             "editor/translations/property_translations.gen.cpp",

@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 // --- Folded from core/templates/iterable.h ---
 #include <utility>
@@ -1162,7 +1161,7 @@ template <typename... VarArgs> Error Node::rpc(const String& p_method, VarArgs..
 // --- Folded from scene/property_utils.h ---
 
 // --- Folded from scene/resources/packed_scene.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 #include "core/typedefs.h"
 
 
@@ -1417,7 +1416,7 @@ public:
 // --- Folded from scene/resources/resource_format_text.h ---
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 
 class ResourceLoaderText
@@ -1605,7 +1604,7 @@ public:
 // --- End scene/resources/resource_format_text.h ---
 
 // --- Folded from scene/resources/video_stream.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 class VideoStreamPlayback : public Resource
 {

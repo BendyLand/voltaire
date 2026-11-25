@@ -29,7 +29,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/io/resource_loader.h"
 // --- Inlined/Folded from drivers/png/image_loader_png.h ---
@@ -49,7 +49,6 @@ public:
 };
 
 // --- Folded from drivers/png/resource_saver_png.h ---
-#include "core/io/image.h"
 #include "core/io/resource_loader.h"
 
 class ResourceSaverPNG : public ResourceFormatSaver
@@ -7810,7 +7809,6 @@ void MIDIDriverALSAMidi::unlock()
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 
@@ -8328,10 +8326,9 @@ EGLManager::~EGLManager() {
 #ifdef PULSEAUDIO_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 
 #ifdef ALSAMIDI_ENABLED
 #ifdef SOWRAP_ENABLED
@@ -9221,9 +9218,8 @@ AudioDriverPulseAudio::AudioDriverPulseAudio()
 
 #include "platform/windows/os_windows.h"
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <io.h>
 #include <share.h> // _SH_DENYNO
@@ -9916,7 +9912,7 @@ void FileAccessWindows::finalize() {
 
 #include "core/os/memory.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "platform/windows/os_windows.h"
 
 #include <windows.h>
@@ -11327,7 +11323,7 @@ Error NetSocketWinSock::leave_multicast_group(const IPAddress &p_multi_address, 
 
 #include "platform/windows/os_windows.h"
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/string/ustring.h"
 
 #include <windows.h>
@@ -11360,7 +11356,7 @@ void init_thread_win() {
 
 #include "platform/windows/os_windows.h"
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 void MIDIDriverWinMidi::read(
 	HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
@@ -11642,10 +11638,9 @@ Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, 
 // ============================================================================
 
 #include "core/io/file_access.h"
-#include "core/io/image.h"
 #include "core/io/resource_loader.h"
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 Error ResourceSaverPNG::save(
 	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
@@ -13185,7 +13180,7 @@ void OS_Unix::initialize()
 #if defined(UNIX_ENABLED)
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 #include <fcntl.h>
@@ -15719,7 +15714,7 @@ SyslogLogger::~SyslogLogger() {
 #if defined(UNIX_ENABLED)
 
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/string/ustring.h"
 
 #if defined(PLATFORM_THREAD_OVERRIDE) && defined(__APPLE__)
@@ -15801,18 +15796,14 @@ void init_thread_posix() {
 /**************************************************************************/
 
 #include <thirdparty/misc/smolv.h>
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 // --- Inlined from drivers/vulkan/rendering_device_driver_vulkan.h ---
-#include "core/templates/hash_map.h"
 #include "core/types.h"
-#include "core/templates/hash_map.h"
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef DEBUG_ENABLED
 #ifndef _MSC_VER
@@ -25454,8 +25445,7 @@ RenderingDeviceDriverVulkan::~RenderingDeviceDriverVulkan()
 #ifdef VULKAN_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 
@@ -26977,12 +26967,11 @@ void VulkanHooks::reset()
 
 #ifdef GLES3_ENABLED
 
-#include "core/config/project_settings.h"
-#include "core/templates/span.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
 #include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/rendering_device.h"
-#include "servers/rendering/storage/ltc_lut.gen.h"
+#include "core/license.gen.h"
 
 RenderGeometryInstance* RasterizerSceneGLES3::geometry_instance_create(RID p_base)
 {
@@ -32620,8 +32609,6 @@ void RasterizerUtilGLES3::clear_stencil(int32_t p_stencil)
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
 #include "drivers/gles3/shader_gles3.h"
 
 #ifdef ANDROID_ENABLED
@@ -34043,8 +34030,8 @@ uint64_t Utilities::get_maximum_uniform_buffer_size()
 
 #ifdef GLES3_ENABLED
 
-#include "core/config/project_settings.h"
-#include "core/math/geometry_3d.h"
+#include "core/os/os.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 #include "drivers/gles3/shader_gles3.h"
 
@@ -35995,10 +35982,8 @@ void GLES3::LightStorage::initialize() {}
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "drivers/gles3/shader_gles3.h"
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 using namespace GLES3;
@@ -46985,11 +46970,9 @@ void GLES3::TextureStorage::texture_set_format(RID p_texture, Image::Format p_fo
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/rendering_device.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
 	const Transform2D& p_transform, float* p_mat4)
@@ -50317,7 +50300,7 @@ void RasterizerCanvasGLES3::finalize()
 
 #ifdef GLES3_ENABLED
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/string/ustring.h"
 #include "drivers/gles3/shader_gles3.h"
 
@@ -51196,14 +51179,12 @@ ShaderGLES3::~ShaderGLES3()
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
-#include "core/io/image.h"
+#include "core/io/net_socket.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "drivers/gles3/shader_gles3.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/rendering_device.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
 #define _EXT_DEBUG_NEXT_LOGGED_MESSAGE_LENGTH_ARB 0x8243
@@ -51897,10 +51878,9 @@ void RasterizerGLES3::bind_utilities()
 
 #ifdef GLES3_ENABLED
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "drivers/gles3/shader_gles3.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 using namespace GLES3;
 

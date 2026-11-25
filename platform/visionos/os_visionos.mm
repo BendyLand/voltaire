@@ -32,7 +32,7 @@
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -49,7 +49,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -75,7 +75,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -84,7 +84,7 @@ protected:
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -101,7 +101,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -127,7 +127,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -182,7 +182,7 @@ String OS::get_name() {
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -199,7 +199,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -225,7 +225,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -279,7 +279,7 @@ protected:
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -296,7 +296,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -322,7 +322,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -418,7 +418,7 @@ float DisplayServerVisionOS::_screen_current_edr_headroom() const {
 /**************************************************************************/
 
 // --- Inlined/Folded from platform/visionos/godot_view_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTViewVisionOS : GDTView
 
@@ -427,7 +427,7 @@ float DisplayServerVisionOS::_screen_current_edr_headroom() const {
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -444,7 +444,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -470,7 +470,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -557,7 +557,7 @@ GDTView *GDTViewCreate() {
 // --- Inlined from platform/visionos/os_visionos.h ---
 #ifdef VISIONOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_VisionOS final
 {
@@ -574,7 +574,7 @@ public:
 #endif // VISIONOS_ENABLED
 
 // --- Folded from platform/visionos/display_server_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerVisionOS : public DisplayServerAppleEmbedded {
 
@@ -600,7 +600,7 @@ protected:
 };
 
 // --- Folded from platform/visionos/display_layer_visionos.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTMetalLayer : CAMetalLayer <GDTDisplayLayer>
 @end
@@ -608,8 +608,8 @@ protected:
 
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
-#include "main/main.h"
+#import "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #import <UIKit/UIKit.h>
 

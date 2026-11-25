@@ -35,9 +35,7 @@
 
 
 #include "scene/gui/aspect_ratio_container.h"
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestAspectRatioContainer {
 
@@ -395,9 +393,7 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 
 
 #include "scene/gui/box_container.h"
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestBoxContainer {
 
@@ -1021,9 +1017,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 
 
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestButton {
@@ -1091,9 +1085,7 @@ TEST_CASE("[SceneTree][Button] is_hovered()") {
 
 
 #include "scene/gui/center_container.h"
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestCenterContainer {
 
@@ -1265,7 +1257,6 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/os/os.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "tests/test_macros.h"
 
@@ -6962,7 +6953,6 @@ func _ready():
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "tests/test_macros.h"
 
@@ -7028,9 +7018,6 @@ TEST_CASE("[SceneTree][ColorPicker]") {
 
 #include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_ACTION` macro.
 #include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestControl {
@@ -8315,10 +8302,9 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 
 
 
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/gui/flow_container.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestFlowContainer {
 
@@ -8895,10 +8881,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/control.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestFoldableContainer {
 
@@ -9167,7 +9150,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestGraphNode {
 
@@ -9249,10 +9232,9 @@ TEST_CASE("[GraphNode][SceneTree]") {
 
 
 
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/gui/grid_container.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestGridContainer {
 
@@ -9520,9 +9502,7 @@ TEST_CASE("[SceneTree][GridContainer] RTL placement") {
 
 #if defined(MODULE_TEXT_SERVER_FB_ENABLED) || defined(MODULE_TEXT_SERVER_ADV_ENABLED)
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestLabel {
 
@@ -9781,10 +9761,9 @@ TEST_CASE("[SceneTree][Label] Sizing") {
 
 
 
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/gui/margin_container.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestMarginContainer {
 
@@ -9929,10 +9908,8 @@ TEST_CASE("[SceneTree][MarginContainer] Multiple children use maximum minimum si
 
 
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "tests/test_macros.h"
 
 namespace TestNinePatchRect {
@@ -10188,7 +10165,7 @@ TEST_CASE("[SceneTree][NinePatchRect] Axis stretch modes") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestOptionButton {
 
@@ -10350,10 +10327,9 @@ TEST_CASE("[SceneTree][OptionButton] Many items") {
 
 
 
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/gui/panel_container.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/resources/theme.h"
 
 namespace TestPanelContainer {
@@ -10468,9 +10444,7 @@ TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum siz
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestRichTextLabel {
 
@@ -10610,10 +10584,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 
 
 
-#include "scene/gui/control.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestScrollContainer {
 
@@ -11124,9 +11095,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Configuration warnings") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/typedefs.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestSpinBox {
 
@@ -11302,9 +11271,7 @@ TEST_CASE("[SceneTree][SpinBox] Combined minimum size in tree") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestSplitContainer {
@@ -13345,9 +13312,7 @@ TEST_CASE("[SceneTree][SplitContainer] More children") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestTabBar {
@@ -14500,9 +14465,7 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/box_container.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestTabContainer {
@@ -15402,7 +15365,6 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/os/os.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "tests/test_macros.h"
 
@@ -23457,11 +23419,10 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 
 
 
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 #include "scene/gui/texture_button.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestTextureButton {
 
@@ -23810,7 +23771,7 @@ TEST_CASE("[SceneTree][TextureButton] has_point with click mask and stretch keep
 
 
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestTextureProgressBar {
 
@@ -23901,11 +23862,9 @@ TEST_CASE("[SceneTree][TextureProgressBar]") {
 
 
 
-#include "core/io/image.h"
-#include "scene/gui/dialogs.h"
+#include "core/io/resource_loader.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestTextureRect {
 
@@ -24126,7 +24085,7 @@ TEST_CASE("[SceneTree][TextureRect] Configuration warnings") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestTree {
 

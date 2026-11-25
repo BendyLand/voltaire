@@ -31,7 +31,6 @@
 
 #include "rendering_device_driver_metal3.h"
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"

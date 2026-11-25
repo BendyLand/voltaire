@@ -31,13 +31,12 @@
 
 #pragma once
 
-#include "core/io/resource.h"
+#include "core/types.h"
 // --- Folded from scene/resources/font.h ---
-#include "core/io/resource.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 // --- Folded from servers/text/text_server.h ---
-#include "core/io/image.h"
-#include "core/templates/hashfuncs.h"
+#include "core/io/resource_loader.h"
+#include "core/math/vector2.h"
 #include "core/types.h"
 
 template <typename T> class TypedArray;
@@ -2121,7 +2120,7 @@ public:
 
 // --- Folded from scene/resources/text_paragraph.h ---
 #include "core/os/os.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 
 
@@ -2283,8 +2282,8 @@ public:
 // --- End scene/resources/text_line.h ---
 // --- End scene/resources/font.h ---
 // --- Folded from scene/resources/style_box.h ---
-#include "core/io/resource.h"
-#include "scene/resources/texture.h"
+#include "core/types.h"
+#include "servers/display/display_server.h"
 
 class CanvasItem;
 
@@ -2462,7 +2461,7 @@ public:
 	StyleBox(StyleType p_type = STYLE_EMPTY);
 };
 // --- End scene/resources/style_box.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 class Theme : public Resource
 {

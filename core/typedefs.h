@@ -2328,3 +2328,83 @@ _ALWAYS_INLINE_ float snap_scalar_separation(float p_offset, float p_step, float
 
 }; // namespace Math
 // --- End core/math/math_funcs.h ---
+
+// --- Folded from core/version.h ---
+#include "core/version_generated.gen.h" // IWYU pragma: export
+
+// Copied from typedefs.h to stay lean.
+#ifndef _STR
+#define _STR(m_x) #m_x
+#define _MKSTR(m_x) _STR(m_x)
+#endif
+
+// Godot versions are of the form <major>.<minor> for the initial release,
+// and then <major>.<minor>.<patch> for subsequent bugfix releases where <patch> != 0
+// That's arbitrary, but we find it pretty and it's the current policy.
+
+// Defines the main "branch" version. Patch versions in this branch should be
+// forward-compatible.
+// Example: "3.1"
+#define VLTR_VERSION_BRANCH _MKSTR(VLTR_VERSION_MAJOR) "." _MKSTR(VLTR_VERSION_MINOR)
+#if VLTR_VERSION_PATCH
+// Example: "3.1.4"
+#define VLTR_VERSION_NUMBER VLTR_VERSION_BRANCH "." _MKSTR(VLTR_VERSION_PATCH)
+#else // patch is 0, we don't include it in the "pretty" version number.
+// Example: "3.1" instead of "3.1.0"
+#define VLTR_VERSION_NUMBER VLTR_VERSION_BRANCH
+#endif // VLTR_VERSION_PATCH
+
+// Version number encoded as hexadecimal int with one byte for each number,
+// for easy comparison from code.
+// Example: 3.1.4 will be 0x030104, making comparison easy from script.
+#define VLTR_VERSION_HEX 0x10000 * VLTR_VERSION_MAJOR + 0x100 * VLTR_VERSION_MINOR + VLTR_VERSION_PATCH
+
+// Describes the full configuration of that Godot version, including the version number,
+// the status (beta, stable, etc.), potential module-specific features (e.g. mono)
+// and double-precision status.
+// Example: "3.1.4.stable.mono.double"
+#ifdef REAL_T_IS_DOUBLE
+#define VLTR_VERSION_FULL_CONFIG VLTR_VERSION_NUMBER "." VLTR_VERSION_STATUS VLTR_VERSION_MODULE_CONFIG ".double"
+#else
+#define VLTR_VERSION_FULL_CONFIG VLTR_VERSION_NUMBER "." VLTR_VERSION_STATUS VLTR_VERSION_MODULE_CONFIG
+#endif
+
+// Similar to VLTR_VERSION_FULL_CONFIG, but also includes the (potentially custom) VLTR_VERSION_BUILD
+// description (e.g. official, custom_build, etc.).
+// Example: "3.1.4.stable.mono.double.official"
+#define VLTR_VERSION_FULL_BUILD VLTR_VERSION_FULL_CONFIG "." VLTR_VERSION_BUILD
+
+// Same as above, but prepended with Godot's name and a cosmetic "v" for "version".
+// Example: "Godot v3.1.4.stable.official.mono.double"
+#define VLTR_VERSION_FULL_NAME VLTR_VERSION_NAME " v" VLTR_VERSION_FULL_BUILD
+
+// Git commit hash, generated at build time in `core/version_hash.gen.cpp`.
+extern const char *const VLTR_VERSION_HASH;
+
+// Git commit date UNIX timestamp (in seconds), generated at build time in `core/version_hash.gen.cpp`.
+// Set to 0 if unknown.
+extern const unsigned long long VLTR_VERSION_TIMESTAMP;
+
+#ifndef DISABLE_DEPRECATED
+// Compatibility with pre-4.5 modules.
+#define VERSION_SHORT_NAME VLTR_VERSION_SHORT_NAME
+#define VERSION_NAME VLTR_VERSION_NAME
+#define VERSION_MAJOR VLTR_VERSION_MAJOR
+#define VERSION_MINOR VLTR_VERSION_MINOR
+#define VERSION_PATCH VLTR_VERSION_PATCH
+#define VERSION_STATUS VLTR_VERSION_STATUS
+#define VERSION_BUILD VLTR_VERSION_BUILD
+#define VERSION_MODULE_CONFIG VLTR_VERSION_MODULE_CONFIG
+#define VERSION_WEBSITE VLTR_VERSION_WEBSITE
+#define VERSION_DOCS_BRANCH VLTR_VERSION_DOCS_BRANCH
+#define VERSION_DOCS_URL VLTR_VERSION_DOCS_URL
+#define VERSION_BRANCH VLTR_VERSION_BRANCH
+#define VERSION_NUMBER VLTR_VERSION_NUMBER
+#define VERSION_HEX VLTR_VERSION_HEX
+#define VERSION_FULL_CONFIG VLTR_VERSION_FULL_CONFIG
+#define VERSION_FULL_BUILD VLTR_VERSION_FULL_BUILD
+#define VERSION_FULL_NAME VLTR_VERSION_FULL_NAME
+#define VERSION_HASH VLTR_VERSION_HASH
+#define VERSION_TIMESTAMP VLTR_VERSION_TIMESTAMP
+#endif // DISABLE_DEPRECATED
+// --- End core/version.h ---

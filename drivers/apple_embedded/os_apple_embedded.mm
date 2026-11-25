@@ -29,22 +29,20 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #ifdef APPLE_EMBEDDED_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
-#import "drivers/coreaudio/audio_driver_coreaudio.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 #ifdef SDL_ENABLED
 #include "core/os/os.h"
 #endif
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #import <AVFoundation/AVFAudio.h>
@@ -57,7 +55,7 @@
 #include <iterator>
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer.h"
 
 #import <QuartzCore/CAMetalLayer.h>
 
@@ -1043,13 +1041,11 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
-#import "drivers/coreaudio/audio_driver_coreaudio.h"
-#include "main/main.h"
+#import "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioServices.h>
@@ -1242,10 +1238,10 @@ static GDTViewController *mainViewController = nil;
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #include "core/object/class_db.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #import <CoreHaptics/CoreHaptics.h>
 #import <UIKit/UIKit.h>
@@ -1442,10 +1438,10 @@ AppleEmbedded::AppleEmbedded() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #include "core/typedefs.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 @implementation GDTApplicationDelegate
 
@@ -2073,7 +2069,7 @@ int process_args(int p_argc, char **p_args, char **r_args) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #include "servers/display/display_server.h"
 
@@ -2240,13 +2236,12 @@ int process_args(int p_argc, char **p_args, char **r_args) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 
 #import <GameController/GameController.h>
@@ -3208,10 +3203,10 @@ void DisplayServerAppleEmbedded::set_icon(const Ref<Image> &p_icon) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/input/input_event.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#include "core/os/os.h"
+#import "drivers/unix/os_unix.h"
 
 @interface GDTKeyboardInputView () <UITextViewDelegate>
 
@@ -3407,12 +3402,11 @@ void DisplayServerAppleEmbedded::set_icon(const Ref<Image> &p_icon) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 #include "core/string/ustring.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #import <CoreMotion/CoreMotion.h>
 
@@ -3875,10 +3869,10 @@ static const float earth_gravity = 9.80665;
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#include "core/os/os.h"
+#import "drivers/unix/os_unix.h"
 #include "servers/rendering/renderer.h"
 
 #import <AVFoundation/AVFoundation.h>
@@ -4253,13 +4247,10 @@ static const float earth_gravity = 9.80665;
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
-#include "main/main.h"
+#import "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 
 #import <AudioToolbox/AudioServices.h>
@@ -4348,9 +4339,9 @@ static const float earth_gravity = 9.80665;
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 struct HashMapHasherKeys {
 	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
@@ -4554,7 +4545,7 @@ KeyLocation KeyMappingAppleEmbedded::key_location(CFIndex p_keycode) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 #ifdef VULKAN_ENABLED
 

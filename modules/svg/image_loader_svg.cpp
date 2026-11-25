@@ -1,8 +1,9 @@
 #include "modules/modules_enabled.gen.h"
+#include "core/io/packet_peer_udp.h"
 
 #if defined(MODULE_SVG_ENABLED)
 #include "core/io/resource_loader.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 
@@ -281,9 +282,9 @@ public:
 };
 
 // --- End modules/bmp/image_loader_bmp.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 
 static uint8_t get_mask_width(uint16_t mask) {
 	// Returns number of ones in the binary value of the parameter: mask.
@@ -610,11 +611,9 @@ void uninitialize_bmp_module(ModuleInitializationLevel p_level) {
 // --- Merged from modules/dds/texture_loader_dds.cpp ---
 #if defined(MODULE_DDS_ENABLED)
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
 #include "core/io/net_socket.h"
-#include "main/main.h"
-#include "scene/resources/texture.h"
-#include "scene/resources/material.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 
 #define PF_FOURCC(m_s) ((uint32_t)(((m_s)[3] << 24U) | ((m_s)[2] << 16U) | ((m_s)[1] << 8U) | ((m_s)[0])))
 
@@ -2166,7 +2165,7 @@ public:
 };
 
 // --- End modules/hdr/image_loader_hdr.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	String header = f->get_token();
@@ -2322,9 +2321,9 @@ void uninitialize_hdr_module(ModuleInitializationLevel p_level) {
 // --- Merged from modules/jpg/image_loader_libjpeg_turbo.cpp ---
 #if defined(MODULE_JPG_ENABLED)
 #include <turbojpeg.h>
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 // --- Inlined from modules/jpg/image_loader_libjpeg_turbo.h ---
 #include "core/io/resource_loader.h"
 
@@ -2335,7 +2334,7 @@ public:
 	ImageLoaderLibJPEGTurbo() = default;
 };
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 class MovieWriterMJPEG final : public MovieWriter
 {
@@ -2771,12 +2770,11 @@ void uninitialize_jpg_module(ModuleInitializationLevel p_level) {
 #endif
 #endif
 #include <ktx.h>
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "core/io/resource_loader.h"
 #include <vk_format.h>
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
-#include "scene/resources/material.h"
+#include "core/io/net_socket.h"
 #include "servers/rendering/renderer.h"
 // --- Inlined from modules/ktx/texture_loader_ktx.h ---
 #include "core/io/resource_loader.h"
@@ -3491,11 +3489,11 @@ public:
 };
 
 // --- End modules/tga/image_loader_tga.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/typedefs.h"
-#include "core/io/dir_access.h"
-#include "core/io/image.h"
+#include "core/io/net_socket.h"
+#include "core/io/resource_loader.h"
 
 Error ImageLoaderTGA::decode_tga_rle(const uint8_t *p_compressed_buffer, size_t p_pixel_size, uint8_t *p_uncompressed_buffer, size_t p_output_size, size_t p_input_size) {
 	Error error;
@@ -3883,10 +3881,10 @@ Vector<uint8_t> save_exr_buffer(const Ref<Image> &p_img, bool p_grayscale, bool 
 // --- End modules/tinyexr/image_loader_tinyexr.h ---
 #include "core/io/file_access.h"
 #include "core/typedefs.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include <cstdlib>
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 
 #include <zlib.h>
 // zlib should come before including tinyexr.
@@ -4482,11 +4480,11 @@ void uninitialize_tinyexr_module(ModuleInitializationLevel p_level) {
 // --- Merged from modules/webp/image_loader_webp.cpp ---
 #if defined(MODULE_WEBP_ENABLED)
 #include <webp/decode.h>
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "main/main.h"
-#include "scene/resources/material.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 #include <webp/encode.h>
 // --- Inlined from modules/webp/image_loader_webp.h ---
 #include "core/io/resource_loader.h"
@@ -4752,7 +4750,7 @@ void uninitialize_webp_module(ModuleInitializationLevel p_level) {
 
 #if defined(MODULE_ASTCENC_ENABLED)
 // --- Inlined from modules/astcenc/image_compress_astcenc.h ---
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 
 #ifdef TOOLS_ENABLED
 void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::CompressProfile p_profile);
@@ -4761,10 +4759,10 @@ void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::Compres
 void _decompress_astc(Image *r_img);
 
 // --- End modules/astcenc/image_compress_astcenc.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <astcenc.h>
 
@@ -5073,13 +5071,13 @@ void uninitialize_astcenc_module(ModuleInitializationLevel p_level) {
 
 // --- Merged from modules/basis_universal/image_compress_basisu.cpp ---
 #if defined(MODULE_BASIS_UNIVERSAL_ENABLED)
-#include "core/config/project_settings.h"
-#include "main/main.h"
-#include "core/io/image.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "servers/display/display_server.h"
+#include "core/io/resource_loader.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
 // --- Inlined from modules/basis_universal/image_compress_basisu.h ---
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 
 enum BasisDecompressFormat
 {
@@ -5450,7 +5448,7 @@ void uninitialize_basis_universal_module(ModuleInitializationLevel p_level)
 // --- Merged from modules/bcdec/image_decompress_bcdec.cpp ---
 #if defined(MODULE_BCDEC_ENABLED)
 // --- Inlined from modules/bcdec/image_decompress_bcdec.h ---
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 
 enum BCdecFormat {
 	BCdec_BC1,
@@ -5466,10 +5464,10 @@ enum BCdecFormat {
 void image_decompress_bcdec(Image *p_image);
 
 // --- End modules/bcdec/image_decompress_bcdec.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #define BCDEC_IMPLEMENTATION
 #include <thirdparty/misc/bcdec.h>
@@ -5760,7 +5758,7 @@ void uninitialize_bcdec_module(ModuleInitializationLevel p_level) {
 // --- Merged from modules/etcpak/image_compress_etcpak.cpp ---
 #if defined(MODULE_ETCPAK_ENABLED)
 // --- Inlined from modules/etcpak/image_compress_etcpak.h ---
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 
 #ifdef TOOLS_ENABLED
 
@@ -5796,12 +5794,12 @@ enum EtcpakFormat {
 void _decompress_etc(Image *p_image);
 
 // --- End modules/etcpak/image_compress_etcpak.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <ProcessDxtc.hpp>
 #include <ProcessRGB.hpp>
@@ -6076,7 +6074,7 @@ void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
 #endif // TOOLS_ENABLED
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <DecodeRGB.hpp>
 
@@ -6316,10 +6314,10 @@ void uninitialize_etcpak_module(ModuleInitializationLevel p_level) {
 
 #if defined(MODULE_NOISE_ENABLED)
 #include <cfloat> // FLT_MAX
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 _FastNoiseLite::FractalType FastNoiseLite::_convert_domain_warp_fractal_type_enum(
 	DomainWarpFractalType p_domain_warp_fractal_type)
@@ -7159,8 +7157,8 @@ void uninitialize_noise_module(ModuleInitializationLevel p_level)
 // --- Merged from modules/regex/regex.cpp ---
 #if defined(MODULE_REGEX_ENABLED)
 #include "core/os/memory.h"
-#include "main/main.h"
-#include "core/config/project_settings.h"
+#include "servers/display/display_server.h"
+#include "core/os/os.h"
 
 extern "C"
 {
@@ -7497,12 +7495,12 @@ void uninitialize_regex_module(ModuleInitializationLevel p_level)
 
 // --- Merged from modules/zip/zip_reader.cpp ---
 #if defined(MODULE_ZIP_ENABLED)
-#include "core/io/dir_access.h"
-#include "main/main.h"
+#include "core/io/net_socket.h"
+#include "servers/display/display_server.h"
 
 #include "core/typedefs.h"
 #include "core/io/file_access.h"
-#include "core/os/time.h"
+#include "core/os/os.h"
 
 // ZIPPacker
 
@@ -7766,16 +7764,15 @@ void uninitialize_zip_module(ModuleInitializationLevel p_level)
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "core/typedefs.h"
 #include "core/io/file_access.h"
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "modules/modules_enabled.gen.h" // For freetype, msdfgen, svg.
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined from modules/text_server_adv/text_server_adv.h ---
 /*************************************************************************/
 /* ICU/HarfBuzz/Graphite backed Text Server implementation with BiDi,    */
@@ -7783,11 +7780,10 @@ void uninitialize_zip_module(ModuleInitializationLevel p_level)
 /*************************************************************************/
 
 #include "core/os/os.h"
-#include "core/templates/hash_map.h"
 #include "core/types.h"
 #include "core/os/memory.h"
 #include "modules/modules_enabled.gen.h" // For freetype, msdfgen, svg.
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 
 // Thirdparty headers.
@@ -15886,14 +15882,14 @@ void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level)
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "servers/physics_2d/physics_server_2d.h"
-#include "main/main.h"
+#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
-#include "core/config/project_settings.h"
-#include "core/math/geometry_3d.h"
 #include "core/os/os.h"
-#include "core/templates/hash_map.h"
-#include "servers/physics_2d/physics_server_2d.h"
+#include "servers/rendering/renderer.h"
+#include "core/os/os.h"
+#include "core/types.h"
+#include "scene/main/scene_tree.h"
 #include "thirdparty/rvo2/rvo2_2d/Obstacle2d.h"
 
 #ifdef CLIPPER2_ENABLED
@@ -15902,7 +15898,6 @@ void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level)
 #include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
-#include "servers/physics_2d/physics_server_2d.h"
 
 Mutex NavMeshGenerator2D::baking_navmesh_mutex;
 Mutex NavMeshGenerator2D::generator_task_mutex;
@@ -19478,22 +19473,20 @@ void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
 
 #if defined(MODULE_GLTF_ENABLED)
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 #include "core/io/net_socket.h"
-#include "core/version.h"
-#include "modules/gltf/gltf_document.h"
+#include "core/typedefs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 // --- Inlined from core/math/disjoint_set.h ---
-#include "core/templates/hash_map.h"
-#include "core/templates/vector.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
 
 /* This DisjointSet class uses Find with path compression and Union by rank */
 template <typename T, typename H = HashMapHasherDefault, typename C = HashMapComparatorDefault<T>, typename AL = DefaultAllocator>
@@ -19609,19 +19602,19 @@ void DisjointSet<T, H, C, AL>::get_members(Vector<T> &r_out_members, T p_represe
 }
 
 // --- End core/math/disjoint_set.h ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #include "modules/modules_enabled.gen.h" // For csg, gridmap.
 
 #ifdef MODULE_CSG_ENABLED
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 #endif
 #ifdef MODULE_GRIDMAP_ENABLED
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #include <cstdio>
@@ -22110,16 +22103,14 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 // Merged from modules/gltf/gltf_extensions.cpp
 // ============================================================================
 
-#include "modules/gltf/gltf_document.h"
-
 #include "scene/main/scene_tree.h"
+
 
 #include <cfloat>
 
 #ifndef PHYSICS_3D_DISABLED
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/mesh.h"
 #endif // PHYSICS_3D_DISABLED
 
 // ============================================================================
@@ -22746,10 +22737,9 @@ GLTFMeshIndex _get_or_insert_mesh_in_state(
 // Merged from modules/gltf/gltf_structures.cpp
 // ============================================================================
 
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 
 #include "core/types.h"
-#include "modules/gltf/gltf_document.h"
 #include "scene/main/scene_tree.h"
 
 // ============================================================================
@@ -24488,19 +24478,18 @@ void GLTFObjectModelProperty::set_json_pointers(const Vector<PackedStringArray>&
 // --- Merged from modules/fbx/fbx_document.cpp ---
 #if defined(MODULE_FBX_ENABLED)
 #include "core/os/os.h"
-#include "main/main.h"
-#include "core/config/project_settings.h"
+#include "servers/display/display_server.h"
+#include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
-#include "core/io/image.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 // --- Inlined from modules/fbx/fbx_document.h ---
 #include <ufbx.h>
-#include "core/io/resource.h"
-#include "modules/gltf/gltf_document.h"
+#include "core/types.h"
+#include "scene/main/scene_tree.h"
 
 class FBXState final : public Resource
 {
@@ -24529,7 +24518,7 @@ public:
 
 	FBXState();
 };
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 
 class FBXDocument final : public Resource
 {
@@ -24607,7 +24596,7 @@ public:
 };
 
 #ifdef TOOLS_ENABLED
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 
 class Animation;
 class Node;
@@ -24636,13 +24625,12 @@ public:
 #endif // TOOLS_ENABLED
 
 // --- End modules/fbx/fbx_document.h ---
-#include "modules/gltf/gltf_document.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 
 #ifdef TOOLS_ENABLED
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #include <ufbx.h>
@@ -25224,12 +25212,9 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 
 #if defined(MODULE_CSG_ENABLED)
 #include "core/os/os.h"
-#include "main/main.h"
-#include "core/math/geometry_3d.h"
-#include "modules/gltf/gltf_document.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
-#include "servers/physics_3d/physics_server_3d.h"
-#include "scene/resources/mesh.h"
 
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/rendering/renderer.h" // Only used for debug collision shapes.
@@ -25240,7 +25225,7 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 #endif // DEV_ENABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #include <cfloat> // FLT_EPSILON
@@ -26888,22 +26873,20 @@ void uninitialize_csg_module(ModuleInitializationLevel p_level)
 // --- Merged from modules/gridmap/grid_map.cpp ---
 #if defined(MODULE_GRIDMAP_ENABLED)
 #include "core/os/os.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "core/io/resource_loader.h"
 #include "core/types.h"
-#include "modules/gltf/gltf_document.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "core/math/geometry_3d.h"
-#include "scene/resources/mesh.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 
 RID GridMap::_navmesh_source_geometry_parser;
 #endif // NAVIGATION_3D_DISABLED
@@ -27751,9 +27734,9 @@ void uninitialize_gridmap_module(ModuleInitializationLevel p_level)
 
 // --- Merged from modules/meshoptimizer/register_types.cpp ---
 #if defined(MODULE_MESHOPTIMIZER_ENABLED)
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 #include <thirdparty/meshoptimizer/meshoptimizer.h>
 
@@ -27822,17 +27805,16 @@ void uninitialize_meshoptimizer_module(ModuleInitializationLevel p_level) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/typedefs.h"
 #include "core/os/memory.h"
 #include "core/types.h"
-#include "core/version.h"
-#include "modules/openxr/openxr_api.h"
+#include "core/typedefs.h"
+#include "servers/rendering/renderer.h"
 // --- Inlined/Folded from modules/openxr/extensions/openxr_extensions.h ---
 #include <openxr/openxr.h>
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 // --- Folded from modules/openxr/openxr_interface.h ---
 // A note on multithreading and thread safety in OpenXR.
 //
@@ -27857,7 +27839,6 @@ void uninitialize_meshoptimizer_module(ModuleInitializationLevel p_level) {
 // As some data is setup before we start rendering, and cleaned up
 // after we've stopped, that is accessed directly from both threads.
 
-#include "modules/openxr/openxr_api.h"
 #include "servers/rendering/renderer.h"
 
 // declare some default strings
@@ -28575,9 +28556,7 @@ private:
 
 // --- End modules/openxr/openxr_interface.h ---
 #include "core/types.h"
-#include "core/templates/hash_map.h"
-#include "core/types.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 #include "modules/modules_enabled.gen.h"
 #include "servers/rendering/renderer.h"
@@ -29690,8 +29669,7 @@ public:
 
 // --- Folded from modules/openxr/extensions/openxr_interaction_profile_extension.h ---
 #include <openxr/openxr.h>
-#include "modules/openxr/openxr_api.h"
-#include "core/templates/hash_map.h"
+#include "servers/rendering/renderer.h"
 #include "core/types.h"
 
 class OpenXRInteractionProfileExtension final
@@ -29847,14 +29825,14 @@ public:
 
 // --- Folded from modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
 #include <openxr/openxr.h>
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/types.h"
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #define XR_NULL_ENTITY 0x7FFFFFFF
@@ -30714,8 +30692,8 @@ public:
 
 #ifdef VULKAN_ENABLED
 // --- Inlined/Folded from modules/openxr/extensions/platform/openxr_vulkan_extension.h ---
-#include "modules/openxr/openxr_api.h"
-#include "core/templates/vector.h"
+#include "servers/rendering/renderer.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 
 // Always include this as late as possible.
@@ -30814,8 +30792,8 @@ public:
 // --- Inlined/Folded from modules/openxr/extensions/platform/openxr_opengl_extension.h ---
 #ifdef GLES3_ENABLED
 
-#include "modules/openxr/openxr_api.h"
-#include "core/templates/vector.h"
+#include "servers/rendering/renderer.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 
 // Always include this as late as possible.
@@ -33827,16 +33805,14 @@ OpenXRAPIExtension::OpenXRAPIExtension() {}
 // Merged from modules/openxr/register_types.cpp
 // ============================================================================
 
-#include "modules/openxr/openxr_api.h"
-#include "core/os/os.h"
-#include "core/config/project_settings.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 
 
 #include "modules/modules_enabled.gen.h"
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 
 #ifdef ANDROID_ENABLED
@@ -33892,13 +33868,13 @@ void initialize_openxr_module(ModuleInitializationLevel p_level) {}
 // ============================================================================
 
 #include <openxr/openxr.h>
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
 
 
 #include "servers/display/display_server.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 String OpenXRInterface::get_name() const { return String("OpenXR"); }
 
@@ -34935,7 +34911,7 @@ bool OpenXRInterface::is_passthrough_supported() { return false; }
 // Merged from modules/openxr/action_map/openxr_action_map.cpp
 // ============================================================================
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRAction
@@ -36163,15 +36139,12 @@ Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
 // ============================================================================
 
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
 #include "servers/rendering/renderer.h"
 
 ////////////////////////////////////////////////////////////////////////////
@@ -37281,12 +37254,11 @@ void OpenXRRenderModelManager::_update_models() {}
 // Merged from modules/openxr/extensions/openxr_extensions.cpp
 // ============================================================================
 
-#include "modules/openxr/openxr_api.h"
-#include "core/config/project_settings.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef XR_USE_PLATFORM_ANDROID
@@ -39342,7 +39314,6 @@ void OpenXRHandTrackingExtension::on_process() {}
 // OpenXRRenderModelExtension
 
 #ifdef MODULE_GLTF_ENABLED
-#include "modules/gltf/gltf_document.h"
 #include "scene/main/scene_tree.h"
 
 OpenXRRenderModelData::OpenXRRenderModelData() = default;
@@ -40621,9 +40592,9 @@ HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(XrVe
 // Merged from modules/openxr/extensions/openxr_interaction_profile_extension.cpp
 // ============================================================================
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 #include "core/typedefs.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 
 #ifndef XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME
@@ -41152,14 +41123,14 @@ PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
 
 #include <cstring>
 #include <openxr/openxr.h>
-#include "modules/openxr/openxr_api.h"
-#include "core/config/project_settings.h"
+#include "servers/rendering/renderer.h"
+#include "core/os/os.h"
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 ////////////////////////////////////////////////////////////////////////////
@@ -43846,11 +43817,10 @@ void OpenXRSpatialPlaneTrackingCapability::on_process() {}
 
 // --- Merged from modules/openxr/extensions/platform/openxr_vulkan_extension.cpp ---
 #if defined(VULKAN_ENABLED)
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
-#include "servers/rendering/rendering_device.h"
 #include "servers/rendering/renderer.h"
 
 void OpenXRVulkanExtension::initialize()
@@ -44338,7 +44308,7 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain,
 
 #ifdef GLES3_ENABLED
 
-#include "modules/openxr/openxr_api.h"
+#include "servers/rendering/renderer.h"
 #include "drivers/gles3/shader_gles3.h"
 #include "servers/display/display_server.h"
 

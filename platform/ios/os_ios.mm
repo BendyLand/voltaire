@@ -32,7 +32,7 @@
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -49,7 +49,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -84,7 +84,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -115,7 +115,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -132,7 +132,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -167,7 +167,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -244,7 +244,7 @@ String OS::get_name() {
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -261,7 +261,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -296,7 +296,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -553,7 +553,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -570,7 +570,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -605,7 +605,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -634,9 +634,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 // --- End platform/ios/os_ios.h ---
 
 
-#include "core/config/project_settings.h"
-#include "core/input/input_event.h"
-#include "main/main.h"
+#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #import <AudioToolbox/AudioServices.h>
@@ -827,7 +825,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -844,7 +842,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -879,7 +877,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -1044,7 +1042,7 @@ float DisplayServerIOS::_screen_current_edr_headroom() const {
 /**************************************************************************/
 
 // --- Inlined/Folded from platform/ios/godot_view_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 @interface GDTViewIOS : GDTView
 
@@ -1053,7 +1051,7 @@ float DisplayServerIOS::_screen_current_edr_headroom() const {
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -1070,7 +1068,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -1105,7 +1103,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -1133,7 +1131,7 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 #endif
 // --- End platform/ios/os_ios.h ---
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/typedefs.h"
 
 @interface GDTViewIOS ()
@@ -1228,7 +1226,7 @@ GDTView *GDTViewCreate() {
 // --- Inlined from platform/ios/os_ios.h ---
 #ifdef IOS_ENABLED
 
-#import "drivers/apple_embedded/os_apple_embedded.h"
+#import "drivers/unix/os_unix.h"
 
 class OS_IOS final
 {
@@ -1245,7 +1243,7 @@ public:
 #endif // IOS_ENABLED
 
 // --- Folded from platform/ios/display_server_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 class DisplayServerIOS final : public DisplayServerAppleEmbedded {
 
@@ -1280,7 +1278,7 @@ protected:
 @end
 
 // --- Folded from platform/ios/display_layer_ios.h ---
-#include "drivers/apple_embedded/os_apple_embedded.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(GLES3_ENABLED)
 #import <OpenGLES/EAGLDrawable.h>
@@ -1310,8 +1308,8 @@ API_DEPRECATED("OpenGLES is deprecated", ios(2.0, 12.0))
 
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
-#import "drivers/apple_embedded/os_apple_embedded.h"
-#include "main/main.h"
+#import "drivers/unix/os_unix.h"
+#include "servers/display/display_server.h"
 
 #import <UIKit/UIKit.h>
 

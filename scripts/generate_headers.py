@@ -92,25 +92,18 @@ def generate_wayland_protocols(sowrap=True):
 def generate_all():
     single_scripts = [
         "version_info_builder.py",
-        "version_hash_builder.py",
-        "encryption_key_builder.py",
         "make_license_header.py",
-        "make_default_controller_mappings.py",
         "make_splash.py",
         "modules_enabled_builder.py",
-        "register_module_types_builder.py",
-        "register_platform_apis_builder.py",
-        "register_exporters_builder.py",
         "make_icu_data.py",
     ]
     for s in single_scripts:
         if os.path.exists(os.path.join("scripts", s)):
             run_script(s)
 
-    for idx in range(4):
+    for idx in (0, 1, 3):
         run_script("make_translations.py", idx)
     run_script("make_fonts_header.py", 0)
-    run_script("run.py", 0)
 
     run_script("build_rd_headers.py", "--all")
     run_script("build_gles3_headers.py", "--all")

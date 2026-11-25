@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_macos.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 static OS_MacOS *os = nullptr;
 

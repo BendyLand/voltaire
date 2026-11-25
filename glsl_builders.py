@@ -253,7 +253,7 @@ def build_rd_header(filename: str, shader: str) -> None:
 
 def build_rd_headers_bundle(filename: str, shaders: list[str], raw_shaders: list[str] | None = None) -> None:
     with generated_wrapper(filename) as file:
-        file.write('#include "core/types.h"\n#include "servers/rendering/renderer.h"\n\n')
+        file.write('#include "core/types.h"\n\n')
         for idx, shader in enumerate(shaders):
             if idx:
                 file.write("\n")

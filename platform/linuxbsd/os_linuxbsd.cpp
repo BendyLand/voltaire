@@ -36,8 +36,8 @@
 // --- Folded from platform/linuxbsd/wayland/wayland_thread.h ---
 #ifdef WAYLAND_ENABLED
 // --- Folded from platform/linuxbsd/wayland/key_mapping_xkb.h ---
-#include "core/input/input_event.h"
-#include "core/templates/hash_map.h"
+#include "core/os/os.h"
+#include "core/types.h"
 
 typedef uint32_t xkb_keycode_t;
 typedef uint32_t xkb_keysym_t;
@@ -365,9 +365,8 @@ int initialize_libdecor(int verbose);
 #endif // SOWRAP_ENABLED
 #endif // LIBDECOR_ENABLED
 
-#include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "servers/display/display_server.h"
 // --- Folded from platform/linuxbsd/wayland/wayland_embedder.h ---
 #ifdef WAYLAND_ENABLED
@@ -380,10 +379,10 @@ int initialize_libdecor(int verbose);
 
 #include "platform/linuxbsd/wayland/protocol/wayland_protocols.gen.h"
 
-#include "core/io/dir_access.h"
-#include "core/os/thread.h"
+#include "core/io/net_socket.h"
+#include "core/os/mutex.h"
 #include "core/types.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 #include <poll.h>
 #include <sys/socket.h>
@@ -3084,9 +3083,6 @@ public:
 #define DEBUG_LOG_WAYLAND(...)
 #endif
 
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -3096,7 +3092,7 @@ public:
 
 #endif
 
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #ifdef GLES3_ENABLED
@@ -5545,7 +5541,6 @@ void DisplayServerWayland::register_wayland_driver()
 
 
 #include "core/types.h"
-#include "core/templates/span.h"
 #include "core/string/ustring.h"
 
 #ifdef GLAD_ENABLED
@@ -6247,7 +6242,7 @@ KeyLocation KeyMappingXKB::get_location(unsigned int p_code) {
 #ifdef WAYLAND_ENABLED
 
 #include "core/os/os.h"
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 
 #ifdef __FreeBSD__
@@ -16421,10 +16416,10 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 /**************************************************************************/
 
 #include "core/license.gen.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "os_linuxbsd.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
@@ -16458,11 +16453,11 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 
 #include "modules/modules_enabled.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #endif
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
@@ -18930,13 +18925,13 @@ void OS::finalize()
 // Merged from platform/linuxbsd/crash_handler_linuxbsd.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
-#include "core/version.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
 #include "platform/linuxbsd/os_linuxbsd.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #ifndef DEBUG_ENABLED
 #undef CRASH_HANDLER_ENABLED
@@ -19660,7 +19655,7 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 
 #ifdef DBUS_ENABLED
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
 #include "platform/linuxbsd/os_linuxbsd.h"
@@ -19988,7 +19983,7 @@ FreeDesktopAtSPIMonitor::~FreeDesktopAtSPIMonitor() {
 
 #include "platform/linuxbsd/os_linuxbsd.h"
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "scene/resources/theme.h"
 
@@ -20212,7 +20207,7 @@ void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
 #include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "platform/linuxbsd/os_linuxbsd.h"
 
 #if defined(ASAN_ENABLED)
@@ -20328,7 +20323,7 @@ int main(int argc, char* argv[])
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 static OS_LinuxBSD *os = nullptr;
 

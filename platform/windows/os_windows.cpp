@@ -30,6 +30,7 @@
 /**************************************************************************/
 
 #include "os_windows.h"
+#include "core/io/packet_peer_udp.h"
 
 #include "platform/windows/os_windows.h"
 // --- Inlined from platform/windows/lang_table.h ---
@@ -200,7 +201,6 @@ static const _WinLocale _win_locales[] = {
 #include "core/os/os.h"
 #include "core/version_generated.gen.h"
 #include "platform/windows/os_windows.h"
-#include "main/main.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
@@ -227,7 +227,7 @@ extern "C" {
 #endif
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(GLES3_ENABLED)
@@ -3205,7 +3205,7 @@ WindowsTerminalLogger::~WindowsTerminalLogger() {}
 #ifdef WINDOWS_ENABLED
 
 #include "core/typedefs.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 
 #include <windows.h>
@@ -3456,7 +3456,7 @@ void WindowsUtils::remove_temp_pdbs(const String &p_dll_path) {
 #if !defined(LIBGODOT_ENABLED)
 #include "platform/windows/os_windows.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include <clocale>
 
@@ -3585,7 +3585,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 static OS_Windows *os = nullptr;
 
@@ -3656,19 +3656,14 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 #include "core/io/resource_loader.h"
-#include "main/main.h"
-#include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
 
 #ifdef SDL_ENABLED
 #include "core/os/os.h"
@@ -12024,7 +12019,7 @@ DisplayServerWindows::~DisplayServerWindows() {
 // --- Merged from platform/windows/key_mapping_windows.cpp ---
 #include "platform/windows/os_windows.h"
 
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 // This provides translation from Windows virtual key codes to Godot and back.
 // See WinUser.h and the below for documentation:
@@ -12447,7 +12442,7 @@ KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended
 #include "platform/windows/os_windows.h"
 
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 HBITMAP NativeMenuWindows::_make_bitmap(const Ref<Image> &p_img) const {
 	p_img->convert(Image::FORMAT_RGBA8);
@@ -13656,9 +13651,8 @@ NativeMenuWindows::~NativeMenuWindows() {}
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 
 #include <thirdparty/misc/nvapi_minimal.h>
 
@@ -14204,7 +14198,6 @@ GLManagerNative_Windows::~GLManagerNative_Windows() {
 
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
 #include "core/string/ustring.h"
 
 #include <windows.h>
@@ -14410,9 +14403,9 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 // --- Merged from platform/windows/drop_target_windows.cpp ---
 #include "platform/windows/os_windows.h"
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/types.h"
-#include "core/os/time.h"
+#include "core/os/os.h"
 
 #include <fileapi.h>
 #include <shellapi.h>

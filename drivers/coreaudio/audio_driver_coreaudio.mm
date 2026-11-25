@@ -29,12 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "audio_driver_coreaudio.h"
+#import "drivers/unix/os_unix.h"
 
 #ifdef COREAUDIO_ENABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/types.h"
 #include "core/os/os.h"
 
@@ -759,10 +758,9 @@ AudioDriverCoreAudio::AudioDriverCoreAudio() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "drivers/coreaudio/audio_driver_coreaudio.h"
+#import "drivers/unix/os_unix.h"
 
 #import "core/string/ustring.h"
-#import "core/templates/span.h"
 
 #import <CoreFoundation/CFString.h>
 
@@ -851,10 +849,10 @@ String to_string(NSString *p_str) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/coreaudio/audio_driver_coreaudio.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/memory.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <cstdio> // For vsnprintf.
 
@@ -977,7 +975,7 @@ void OsLogLogger::log_error(const char *p_function, const char *p_file, int p_li
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 
 #include "core/typedefs.h"
 #include "core/string/ustring.h"
@@ -1100,3 +1098,919 @@ Thread::~Thread() {
 		pthread_detach(pthread);
 	}
 }
+
+// === Merged from modules/camera/camera_apple.mm ===
+#include "modules/modules_enabled.gen.h"
+#if defined(MODULE_CAMERA_ENABLED)
+/*  camera_apple.mm                                                       */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
+// If you fix something here, make sure you fix it there as well!
+
+#import "servers/rendering/renderer.h"
+
+#include "servers/rendering/renderer.h"
+
+#import <AVFoundation/AVFoundation.h>
+#ifdef IOS_ENABLED
+#import <UIKit/UIKit.h>
+#endif
+
+//////////////////////////////////////////////////////////////////////////
+// MyCaptureSession - This is a little helper class so we can capture our frames
+
+@interface MyCaptureSession : AVCaptureSession <AVCaptureVideoDataOutputSampleBufferDelegate> {
+	Ref<CameraFeed> feed;
+	size_t width[2];
+	size_t height[2];
+	Vector<uint8_t> img_data[2];
+
+	AVCaptureDeviceInput *input;
+	AVCaptureVideoDataOutput *output;
+}
+
+@end
+
+@implementation MyCaptureSession
+
+- (id)initForFeed:(Ref<CameraFeed>)p_feed andDevice:(AVCaptureDevice *)p_device {
+	if (self = [super init]) {
+		NSError *error;
+		feed = p_feed;
+		width[0] = 0;
+		height[0] = 0;
+		width[1] = 0;
+		height[1] = 0;
+
+#ifdef IOS_ENABLED
+		if ([p_device lockForConfiguration:&error]) {
+			if ([p_device isFocusModeSupported:AVCaptureFocusModeContinuousAutoFocus]) {
+				[p_device setFocusMode:AVCaptureFocusModeContinuousAutoFocus];
+			}
+			if ([p_device isExposureModeSupported:AVCaptureExposureModeContinuousAutoExposure]) {
+				[p_device setExposureMode:AVCaptureExposureModeContinuousAutoExposure];
+			}
+			if ([p_device isWhiteBalanceModeSupported:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance]) {
+				[p_device setWhiteBalanceMode:AVCaptureWhiteBalanceModeContinuousAutoWhiteBalance];
+			}
+
+			[p_device unlockForConfiguration];
+		}
+#endif // IOS_ENABLED
+
+		[self beginConfiguration];
+
+#ifdef IOS_ENABLED
+		self.sessionPreset = AVCaptureSessionPreset1280x720;
+#endif // IOS_ENABLED
+
+		input = [[AVCaptureDeviceInput alloc] initWithDevice:p_device error:&error];
+
+		if (!input) {
+			print_line("Couldn't get input device for camera");
+			[self commitConfiguration];
+			return nil;
+		}
+		if (![self canAddInput:input]) {
+			print_line("Couldn't add input to capture session");
+			input = nullptr;
+			[self commitConfiguration];
+			return nil;
+		}
+		[self addInput:input];
+
+		output = [AVCaptureVideoDataOutput new];
+		if (!output) {
+			print_line("Couldn't get output device for camera");
+			[self removeInput:input];
+			input = nullptr;
+			[self commitConfiguration];
+			return nil;
+		}
+		if (![self canAddOutput:output]) {
+			print_line("Couldn't add output to capture session");
+			[self removeInput:input];
+			input = nullptr;
+			output = nullptr;
+			[self commitConfiguration];
+			return nil;
+		}
+
+		NSDictionary *settings = @{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) };
+		output.videoSettings = settings;
+
+		// discard if the data output queue is blocked (as we process the still image)
+		[output setAlwaysDiscardsLateVideoFrames:YES];
+
+		// now set ourselves as the delegate to receive new frames.
+		[output setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
+
+		// this takes ownership
+		[self addOutput:output];
+
+		[self commitConfiguration];
+
+		// kick off our session..
+		[self startRunning];
+	};
+	return self;
+}
+
+- (void)cleanup {
+	// stop running
+	[self stopRunning];
+
+	// cleanup
+	[self beginConfiguration];
+
+	// remove input
+	if (input) {
+		[self removeInput:input];
+		// don't release this
+		input = nullptr;
+	}
+
+	// free up our output
+	if (output) {
+		[self removeOutput:output];
+		[output setSampleBufferDelegate:nil queue:nullptr];
+		output = nullptr;
+	}
+
+	[self commitConfiguration];
+}
+
+- (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection {
+	// This gets called every time our camera has a new image for us to process.
+	// May need to investigate in a way to throttle this if we get more images then we're rendering frames..
+
+	// For now, version 1, we're just doing the bare minimum to make this work...
+	CVImageBufferRef pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+	if (pixelBuffer == nullptr) {
+		return;
+	}
+
+	// It says that we need to lock this on the documentation pages but it's not in the samples
+	// need to lock our base address so we can access our pixel buffers, better safe then sorry?
+	CVPixelBufferLockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+
+	// Check if we have the expected number of planes (Y and CbCr).
+	size_t planeCount = CVPixelBufferGetPlaneCount(pixelBuffer);
+	if (planeCount < 2) {
+		static bool plane_count_error_logged = false;
+		if (!plane_count_error_logged) {
+			ERR_PRINT("Unexpected plane count in pixel buffer (expected 2, got " + itos(planeCount) + ")");
+			plane_count_error_logged = true;
+		}
+		CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+		return;
+	}
+
+	// get our buffers
+	unsigned char *dataY = (unsigned char *)CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0);
+	unsigned char *dataCbCr = (unsigned char *)CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1);
+	if (dataY == nullptr || dataCbCr == nullptr) {
+		static bool buffer_access_error_logged = false;
+		if (!buffer_access_error_logged) {
+			ERR_PRINT("Couldn't access pixel buffer plane data");
+			buffer_access_error_logged = true;
+		}
+		CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+		return;
+	}
+
+	Ref<Image> img[2];
+
+	{
+		// do Y
+		size_t new_width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0);
+		size_t new_height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 0);
+		size_t row_stride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0);
+
+		if ((width[0] != new_width) || (height[0] != new_height)) {
+			width[0] = new_width;
+			height[0] = new_height;
+			img_data[0].resize(new_width * new_height);
+		}
+
+		uint8_t *w = img_data[0].ptrw();
+		if (new_width == row_stride) {
+			memcpy(w, dataY, new_width * new_height);
+		} else {
+			for (size_t i = 0; i < new_height; i++) {
+				memcpy(w, dataY, new_width);
+				w += new_width;
+				dataY += row_stride;
+			}
+		}
+
+		img[0].instantiate();
+		img[0]->set_data(new_width, new_height, 0, Image::FORMAT_R8, img_data[0]);
+	}
+
+	{
+		// do CbCr
+		size_t new_width = CVPixelBufferGetWidthOfPlane(pixelBuffer, 1);
+		size_t new_height = CVPixelBufferGetHeightOfPlane(pixelBuffer, 1);
+		size_t row_stride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1);
+
+		if ((width[1] != new_width) || (height[1] != new_height)) {
+			width[1] = new_width;
+			height[1] = new_height;
+			img_data[1].resize(2 * new_width * new_height);
+		}
+
+		uint8_t *w = img_data[1].ptrw();
+		if (new_width * 2 == row_stride) {
+			memcpy(w, dataCbCr, 2 * new_width * new_height);
+		} else {
+			for (size_t i = 0; i < new_height; i++) {
+				memcpy(w, dataCbCr, new_width * 2);
+				w += new_width * 2;
+				dataCbCr += row_stride;
+			}
+		}
+
+		///TODO OpenGL doesn't support FORMAT_RG8, need to do some form of conversion
+		img[1].instantiate();
+		img[1]->set_data(new_width, new_height, 0, Image::FORMAT_RG8, img_data[1]);
+	}
+
+	// set our texture...
+	feed->set_ycbcr_images(img[0], img[1]);
+
+	// and unlock
+	CVPixelBufferUnlockBaseAddress(pixelBuffer, kCVPixelBufferLock_ReadOnly);
+}
+
+@end
+
+//////////////////////////////////////////////////////////////////////////
+// CameraFeedApple - Subclass for camera feeds in macOS
+
+class CameraFeedApple : public CameraFeed {
+	VLTRSOFTCLASS(CameraFeedApple, CameraFeed);
+
+private:
+	AVCaptureDevice *device;
+	MyCaptureSession *capture_session;
+	bool device_locked;
+	bool was_active_before_pause = false;
+
+public:
+	AVCaptureDevice *get_device() const;
+
+	CameraFeedApple();
+	~CameraFeedApple();
+
+	void set_device(AVCaptureDevice *p_device);
+
+	void handle_rotation_change(int p_orientation);
+	void handle_pause();
+	void handle_resume();
+
+	bool activate_feed() override;
+	void deactivate_feed() override;
+};
+
+AVCaptureDevice *CameraFeedApple::get_device() const {
+	return device;
+}
+
+CameraFeedApple::CameraFeedApple() {
+	device = nullptr;
+	capture_session = nullptr;
+	device_locked = false;
+	transform = Transform2D(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+}
+
+CameraFeedApple::~CameraFeedApple() {
+	if (is_active()) {
+		deactivate_feed();
+	}
+}
+
+void CameraFeedApple::set_device(AVCaptureDevice *p_device) {
+	device = p_device;
+
+	// get some info
+	NSString *device_name = p_device.localizedName;
+	name = String::utf8(device_name.UTF8String);
+	position = CameraFeed::FEED_UNSPECIFIED;
+	if ([p_device position] == AVCaptureDevicePositionBack) {
+		position = CameraFeed::FEED_BACK;
+	} else if ([p_device position] == AVCaptureDevicePositionFront) {
+		position = CameraFeed::FEED_FRONT;
+	};
+}
+
+void CameraFeedApple::handle_rotation_change(int p_orientation) {
+	// UIInterfaceOrientation values:
+	// 1 = UIInterfaceOrientationPortrait
+	// 2 = UIInterfaceOrientationPortraitUpsideDown
+	// 3 = UIInterfaceOrientationLandscapeLeft
+	// 4 = UIInterfaceOrientationLandscapeRight
+	int display_rotation = 0;
+	switch (p_orientation) {
+		case 1:
+			display_rotation = 0;
+			break;
+		case 2:
+			display_rotation = 180;
+			break;
+		case 3:
+			display_rotation = 270;
+			break;
+		case 4:
+			display_rotation = 90;
+			break;
+		default:
+			display_rotation = 0;
+			break;
+	}
+
+	// iOS camera sensor orientation is 90 degrees.
+	int sensor_orientation = 90;
+	int sign = position == CameraFeed::FEED_FRONT ? 1 : -1;
+	int image_rotation = (sensor_orientation - display_rotation * sign + 360) % 360;
+
+	transform = Transform2D();
+	transform = transform.rotated(Math::deg_to_rad((float)image_rotation));
+}
+
+void CameraFeedApple::handle_pause() {
+	if (capture_session) {
+		was_active_before_pause = true;
+		deactivate_feed();
+	} else {
+		was_active_before_pause = false;
+	}
+}
+
+void CameraFeedApple::handle_resume() {
+	if (was_active_before_pause) {
+		activate_feed();
+		was_active_before_pause = false;
+	}
+}
+
+bool CameraFeedApple::activate_feed() {
+	if (capture_session) {
+		// Already recording.
+		return true;
+	}
+
+	// Start camera capture, check permission.
+	AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+	if (status == AVAuthorizationStatusAuthorized) {
+		capture_session = [[MyCaptureSession alloc] initForFeed:this andDevice:device];
+		return capture_session != nullptr;
+	} else if (status == AVAuthorizationStatusNotDetermined) {
+		// Request permission asynchronously.
+		[AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo
+								 completionHandler:^(BOOL granted) {
+									 if (granted) {
+										 capture_session = [[MyCaptureSession alloc] initForFeed:this andDevice:device];
+									 }
+								 }];
+		return false;
+	} else if (status == AVAuthorizationStatusDenied) {
+		print_line("Camera permission denied by user.");
+		return false;
+	} else if (status == AVAuthorizationStatusRestricted) {
+		print_line("Camera access restricted.");
+		return false;
+	}
+	return false;
+}
+
+void CameraFeedApple::deactivate_feed() {
+	// end camera capture if we have one
+	if (capture_session) {
+		[capture_session cleanup];
+		capture_session = nullptr;
+	};
+	if (device_locked) {
+		[device unlockForConfiguration];
+		device_locked = false;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+// MyDeviceNotifications - This is a little helper class gets notifications
+// when devices are connected/disconnected
+
+@interface MyDeviceNotifications : NSObject
+
+@end
+
+@implementation MyDeviceNotifications
+
+- (void)devices_changed:(NSNotification *)notification {
+	CameraApple::update_feeds();
+}
+
+- (id)init {
+	if (self = [super init]) {
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(devices_changed:) name:AVCaptureDeviceWasConnectedNotification object:nil];
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(devices_changed:) name:AVCaptureDeviceWasDisconnectedNotification object:nil];
+	}
+	return self;
+}
+
+- (void)dealloc {
+	// remove notifications
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:AVCaptureDeviceWasConnectedNotification object:nil];
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:AVCaptureDeviceWasDisconnectedNotification object:nil];
+}
+
+@end
+
+MyDeviceNotifications *device_notifications = nil;
+
+//////////////////////////////////////////////////////////////////////////
+// CameraApple - Subclass for our camera server on macOS
+
+void CameraApple::finalize() {
+	device_notifications = nil;
+}
+
+void CameraApple::update_feeds() {
+	ERR_FAIL_NULL(CameraServer::data);
+
+	NSArray<AVCaptureDevice *> *devices = nullptr;
+#ifdef APPLE_EMBEDDED_ENABLED
+	{
+		NSMutableArray *deviceTypes = [NSMutableArray array];
+		if (@available(iOS 14.0, visionOS 2.1, *)) {
+			[deviceTypes addObject:AVCaptureDeviceTypeBuiltInWideAngleCamera];
+		}
+#ifdef IOS_ENABLED
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInTelephotoCamera];
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInDualCamera];
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInTrueDepthCamera];
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInUltraWideCamera];
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInDualWideCamera];
+		[deviceTypes addObject:AVCaptureDeviceTypeBuiltInTripleCamera];
+#endif // IOS_ENABLED
+		AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+		devices = session.devices;
+	}
+#else // APPLE_EMBEDDED_ENABLED
+	AVCaptureDeviceDiscoverySession *session;
+	if (@available(macOS 14.0, *)) {
+		session = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:[NSArray arrayWithObjects:AVCaptureDeviceTypeExternal, AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeContinuityCamera, nil] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+	} else {
+		session = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:[NSArray arrayWithObjects:AVCaptureDeviceTypeExternalUnknown, AVCaptureDeviceTypeBuiltInWideAngleCamera, nil] mediaType:AVMediaTypeVideo position:AVCaptureDevicePositionUnspecified];
+	}
+	devices = session.devices;
+#endif // APPLE_EMBEDDED_ENABLED
+
+	// Deactivate feeds that are gone before removing them.
+	for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
+		if (feed.is_null()) {
+			continue;
+		}
+
+		if (![devices containsObject:feed->get_device()]) {
+			if (feed->is_active()) {
+				feed->deactivate_feed();
+			}
+			CameraServer::remove_feed(feed);
+		}
+	}
+
+	for (AVCaptureDevice *device in devices) {
+		bool found = false;
+		for (int i = 0; i < CameraServer::data->feeds.size() && !found; i++) {
+			Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
+			if (feed.is_null()) {
+				continue;
+			}
+			if (feed->get_device() == device) {
+				found = true;
+			}
+		}
+
+		if (!found) {
+			Ref<CameraFeedApple> newfeed;
+			newfeed.instantiate();
+			newfeed->set_device(device);
+
+			CameraServer::add_feed(newfeed);
+		}
+	}
+
+#ifdef IOS_ENABLED
+	// Update rotation for all feeds.
+	UIInterfaceOrientation orientation = UIInterfaceOrientationUnknown;
+	UIWindow *window = [UIApplication sharedApplication].delegate.window;
+	UIWindowScene *windowScene = window.windowScene;
+	if (windowScene) {
+		orientation = windowScene.interfaceOrientation;
+	}
+	handle_display_rotation_change((int)orientation);
+#endif // IOS_ENABLED
+}
+
+void CameraApple::set_monitoring_feeds(bool p_monitoring_feeds) {
+	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
+		return;
+	}
+
+	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
+	if (p_monitoring_feeds) {
+		// Find available cameras we have at this time.
+		update_feeds();
+
+		// Get notified on feed changes.
+		device_notifications = [[MyDeviceNotifications alloc] init];
+	} else {
+		// Stop monitoring feed changes.
+		device_notifications = nil;
+	}
+}
+
+void CameraApple::handle_display_rotation_change(int p_orientation) {
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
+		if (feed.is_valid()) {
+			feed->handle_rotation_change(p_orientation);
+		}
+	}
+}
+
+void CameraApple::handle_application_pause() {
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
+		if (feed.is_valid()) {
+			feed->handle_pause();
+		}
+	}
+}
+
+void CameraApple::handle_application_resume() {
+	ERR_FAIL_NULL(CameraServer::data);
+	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
+		Ref<CameraFeedApple> feed = (Ref<CameraFeedApple>)CameraServer::data->feeds[i];
+		if (feed.is_valid()) {
+			feed->handle_resume();
+		}
+	}
+}
+
+#ifdef APPLE_EMBEDDED_ENABLED
+
+void register_camera_external_module() {
+	CameraServer::bind<CameraApple>();
+}
+
+void unregister_camera_external_module() {
+}
+
+#endif // APPLE_EMBEDDED_ENABLED
+#endif // defined(MODULE_CAMERA_ENABLED)
+
+// === Merged from modules/openxr/extensions/platform/openxr_metal_extension.mm ===
+#include "modules/modules_enabled.gen.h"
+#if defined(MODULE_OPENXR_ENABLED) && defined(METAL_ENABLED)
+/*  openxr_metal_extension.mm                                             */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#import "modules/openxr/openxr_platform_inc.h"
+
+#include "servers/rendering/renderer.h"
+
+#import "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
+#include "servers/rendering/rendering_server.h"
+
+HashMap<String, bool *> OpenXRMetalExtension::get_requested_extensions(XrVersion p_version) {
+	HashMap<String, bool *> request_extensions;
+
+	request_extensions[XR_KHR_METAL_ENABLE_EXTENSION_NAME] = nullptr;
+
+	return request_extensions;
+}
+
+void OpenXRMetalExtension::on_instance_created(const XrInstance p_instance) {
+	// Obtain pointers to functions we're accessing here.
+	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
+
+	EXT_INIT_XR_FUNC(xrGetMetalGraphicsRequirementsKHR);
+	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
+}
+
+bool OpenXRMetalExtension::check_graphics_api_support() {
+	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
+
+	// TODO We may need to do a callback like we do in Vulkan where we run this first
+	// and provide the obtained metalDevice to our Metal driver to use.
+	// But according to Stuart Macs only have 1 device so it should always be the
+	// same one and we should be able to get away with not doing this just yet.
+	// If we do go forward with this, this means that just like with Vulkan,
+	// we have to start with OpenXR before Metal can be setup, and we thus
+	// can't support applications that want to add XR as an optional/temporary
+	// feature that users enable when needed.
+
+	XrSystemId system_id = OpenXRAPI::get_system_id();
+	XrInstance instance = OpenXRAPI::get_instance();
+
+	XrGraphicsRequirementsMetalKHR metal_requirements;
+	metal_requirements.type = XR_TYPE_GRAPHICS_REQUIREMENTS_METAL_KHR;
+	metal_requirements.next = nullptr;
+	metal_requirements.metalDevice = nullptr;
+
+	XrResult result = xrGetMetalGraphicsRequirementsKHR(instance, system_id, &metal_requirements);
+	if (!OpenXRAPI::xr_result(result, "Failed to get Metal graphics requirements!")) {
+		return false;
+	}
+
+	// See what metal device we are using...
+	ERR_FAIL_NULL_V(RD::data, false);
+
+	void *our_metal_device = (void *)RD::get_driver_resource(RD::DRIVER_RESOURCE_LOGICAL_DEVICE);
+
+	// Make sure we're using the same one.
+	ERR_FAIL_COND_V(metal_requirements.metalDevice != our_metal_device, false);
+
+	return true;
+}
+
+XrGraphicsBindingMetalKHR OpenXRMetalExtension::graphics_binding_metal;
+
+void *OpenXRMetalExtension::set_session_create_and_get_next_pointer(void *p_next_pointer) {
+	if (!check_graphics_api_support()) {
+		return p_next_pointer;
+	}
+
+	ERR_FAIL_NULL_V(RD::data, p_next_pointer);
+
+	graphics_binding_metal.type = XR_TYPE_GRAPHICS_BINDING_METAL_KHR;
+	graphics_binding_metal.next = p_next_pointer;
+	graphics_binding_metal.commandQueue = (void *)RD::get_driver_resource(RD::DRIVER_RESOURCE_COMMAND_QUEUE);
+
+	return &graphics_binding_metal;
+}
+
+void OpenXRMetalExtension::get_usable_swapchain_formats(Vector<int64_t> &p_usable_swap_chains) {
+	p_usable_swap_chains.push_back(MTLPixelFormatRGBA8Unorm_sRGB);
+	p_usable_swap_chains.push_back(MTLPixelFormatBGRA8Unorm_sRGB);
+	p_usable_swap_chains.push_back(MTLPixelFormatRGBA8Uint);
+}
+
+void OpenXRMetalExtension::get_usable_depth_formats(Vector<int64_t> &p_usable_swap_chains) {
+	p_usable_swap_chains.push_back(MTLPixelFormatDepth24Unorm_Stencil8);
+	p_usable_swap_chains.push_back(MTLPixelFormatDepth32Float_Stencil8);
+	p_usable_swap_chains.push_back(MTLPixelFormatDepth32Float);
+}
+
+#define ENUM_TO_STRING_CASE(m_e) \
+	case m_e: { \
+		return String(#m_e); \
+	} break;
+
+String OpenXRMetalExtension::get_swapchain_format_name(int64_t p_swapchain_format) const {
+	// This really should be in vulkan_context...
+	MTLPixelFormat format = MTLPixelFormat(p_swapchain_format);
+	switch (format) {
+		ENUM_TO_STRING_CASE(MTLPixelFormatRGBA8Unorm)
+		ENUM_TO_STRING_CASE(MTLPixelFormatRGBA8Unorm_sRGB)
+		ENUM_TO_STRING_CASE(MTLPixelFormatBGRA8Unorm)
+		ENUM_TO_STRING_CASE(MTLPixelFormatBGRA8Unorm_sRGB)
+		ENUM_TO_STRING_CASE(MTLPixelFormatRGBA8Uint)
+		ENUM_TO_STRING_CASE(MTLPixelFormatDepth24Unorm_Stencil8)
+		ENUM_TO_STRING_CASE(MTLPixelFormatDepth32Float_Stencil8)
+		ENUM_TO_STRING_CASE(MTLPixelFormatDepth32Float)
+		default: {
+			return String("Swapchain format ") + String::num_int64(int64_t(p_swapchain_format));
+		} break;
+	}
+}
+
+bool OpenXRMetalExtension::get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) {
+	LocalVector<XrSwapchainImageMetalKHR, uint32_t, false, true> images;
+
+	ERR_FAIL_NULL_V(RD::data, false);
+
+	uint32_t swapchain_length;
+	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
+	if (XR_FAILED(result)) {
+		print_line("OpenXR: Failed to get swapchain image count [", OpenXRAPI::get_error_string(result), "]");
+		return false;
+	}
+
+	images.resize(swapchain_length);
+
+	for (XrSwapchainImageMetalKHR &image : images) {
+		image.type = XR_TYPE_SWAPCHAIN_IMAGE_METAL_KHR;
+		image.next = nullptr;
+		image.texture = nullptr;
+	}
+
+	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length, (XrSwapchainImageBaseHeader *)images.ptr());
+	if (XR_FAILED(result)) {
+		print_line("OpenXR: Failed to get swapchain images [", OpenXRAPI::get_error_string(result), "]");
+		return false;
+	}
+
+	SwapchainGraphicsData *data = memnew(SwapchainGraphicsData);
+	if (data == nullptr) {
+		print_line("OpenXR: Failed to allocate memory for swapchain data");
+		return false;
+	}
+	*r_swapchain_graphics_data = data;
+	data->is_multiview = (p_array_size > 1);
+
+	RenderingDevice::DataFormat format = RenderingDevice::DATA_FORMAT_R8G8B8A8_SRGB;
+	RenderingDevice::TextureSamples samples = RenderingDevice::TEXTURE_SAMPLES_1;
+	uint64_t usage_flags = RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT;
+
+	switch (p_swapchain_format) {
+		case MTLPixelFormatRGBA8Unorm_sRGB:
+			// Even though this is an sRGB framebuffer format we're using UNORM here.
+			// The reason here is because Godot does a linear to sRGB conversion while
+			// with the sRGB format, this conversion would be doubled by the hardware.
+			// This also means we're reading the values as is for our preview on screen.
+			// The OpenXR runtime however is still treating this as an sRGB format and
+			// will thus do an sRGB -> Linear conversion as expected.
+			//format = RenderingDevice::DATA_FORMAT_R8G8B8A8_SRGB;
+			format = RenderingDevice::DATA_FORMAT_R8G8B8A8_UNORM;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			break;
+		case MTLPixelFormatBGRA8Unorm_sRGB:
+			format = RenderingDevice::DATA_FORMAT_B8G8R8A8_UNORM;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			break;
+		case MTLPixelFormatRGBA8Uint:
+			format = RenderingDevice::DATA_FORMAT_R8G8B8A8_UINT;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
+			break;
+		case MTLPixelFormatDepth32Float:
+			format = RenderingDevice::DATA_FORMAT_D32_SFLOAT;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RenderingDevice::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT;
+			break;
+		case MTLPixelFormatDepth24Unorm_Stencil8:
+			format = RenderingDevice::DATA_FORMAT_D24_UNORM_S8_UINT;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RenderingDevice::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT;
+			break;
+		case MTLPixelFormatDepth32Float_Stencil8:
+			format = RenderingDevice::DATA_FORMAT_D32_SFLOAT_S8_UINT;
+			usage_flags |= RenderingDevice::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | RenderingDevice::TEXTURE_USAGE_DEPTH_RESOLVE_ATTACHMENT_BIT;
+			break;
+		default:
+			// Continue with our default value.
+			print_line("OpenXR: Unsupported swapchain format", p_swapchain_format);
+			break;
+	}
+
+	switch (p_sample_count) {
+		case 1:
+			samples = RenderingDevice::TEXTURE_SAMPLES_1;
+			break;
+		case 2:
+			samples = RenderingDevice::TEXTURE_SAMPLES_2;
+			break;
+		case 4:
+			samples = RenderingDevice::TEXTURE_SAMPLES_4;
+			break;
+		case 8:
+			samples = RenderingDevice::TEXTURE_SAMPLES_8;
+			break;
+		case 16:
+			samples = RenderingDevice::TEXTURE_SAMPLES_16;
+			break;
+		case 32:
+			samples = RenderingDevice::TEXTURE_SAMPLES_32;
+			break;
+		case 64:
+			samples = RenderingDevice::TEXTURE_SAMPLES_64;
+			break;
+		default:
+			// Continue with our default value.
+			print_line("OpenXR: Unsupported sample count", p_sample_count);
+			break;
+	}
+
+	Vector<RID> texture_rids;
+
+	// Create Godot texture objects for each entry in our swapchain.
+	for (uint64_t i = 0; i < swapchain_length; i++) {
+		// Note, the formats we sent to render_device are ignored on metal.
+		RID image_rid = RD::texture_create_from_extension(
+				p_array_size == 1 ? RenderingDevice::TEXTURE_TYPE_2D : RenderingDevice::TEXTURE_TYPE_2D_ARRAY,
+				format,
+				samples,
+				usage_flags,
+				(uint64_t)images[i].texture,
+				p_width,
+				p_height,
+				1,
+				p_array_size,
+				1);
+
+		texture_rids.push_back(image_rid);
+	}
+
+	data->texture_rids = texture_rids;
+
+	return true;
+}
+
+void OpenXRMetalExtension::cleanup_swapchain_graphics_data(void **p_swapchain_graphics_data) {
+	if (*p_swapchain_graphics_data == nullptr) {
+		return;
+	}
+
+	SwapchainGraphicsData *data = (SwapchainGraphicsData *)*p_swapchain_graphics_data;
+
+	ERR_FAIL_NULL(RD::data);
+
+	for (const RID &texture_rid : data->texture_rids) {
+		RD::free_rid(texture_rid);
+	}
+	data->texture_rids.clear();
+
+	memdelete(data);
+	*p_swapchain_graphics_data = nullptr;
+}
+
+bool OpenXRMetalExtension::create_projection_fov(const XrFovf p_fov, double p_z_near, double p_z_far, Projection &r_camera_matrix) {
+	OpenXRUtil::XrMatrix4x4f matrix;
+	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, p_fov, (float)p_z_near, (float)p_z_far);
+
+	for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < 4; i++) {
+			r_camera_matrix.columns[j][i] = matrix.m[j * 4 + i];
+		}
+	}
+
+	return true;
+}
+
+RID OpenXRMetalExtension::get_texture(void *p_swapchain_graphics_data, int p_image_index) {
+	SwapchainGraphicsData *data = (SwapchainGraphicsData *)p_swapchain_graphics_data;
+	ERR_FAIL_NULL_V(data, RID());
+
+	ERR_FAIL_INDEX_V(p_image_index, data->texture_rids.size(), RID());
+	return data->texture_rids[p_image_index];
+}
+#endif // defined(MODULE_OPENXR_ENABLED) && defined(METAL_ENABLED)

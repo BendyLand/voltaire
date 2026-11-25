@@ -350,9 +350,8 @@ TEST_CASE("[AHashMap] Array methods") {
 
 
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/os/condition_variable.h"
 
 namespace TestCommandQueue {
@@ -850,7 +849,7 @@ TEST_CASE("[CommandQueue] Test Parameter Passing Semantics") {
 
 
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 namespace TestFixedVector {
 
@@ -988,7 +987,7 @@ TEST_CASE("[FixedVector] Alignment Checks") {
 
 
 
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 namespace TestHashMap {
 
@@ -1167,7 +1166,7 @@ TEST_CASE("[HashMap] Sort") {
 
 
 
-#include "core/templates/hash_set.h"
+#include "core/types.h"
 
 namespace TestHashSet {
 
@@ -1978,7 +1977,7 @@ TEST_CASE("[List] Swap adjacent back and front (reverse order of elements)") {
 
 
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 namespace TestLocalVector {
 
@@ -2244,7 +2243,7 @@ TEST_CASE("[LocalVector] Size / Resize / Reserve.") {
 
 
 
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 namespace TestLRU {
 
@@ -2545,9 +2544,9 @@ TEST_CASE("[PagedArray] Extensive merge_unordered() test") {
 
 
 #include "core/os/os.h"
-#include "core/os/thread.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/hashfuncs.h"
+#include "core/os/mutex.h"
+#include "core/string/ustring.h"
+#include "core/math/vector2.h"
 #include "core/types.h"
 
 #ifdef TSAN_ENABLED
@@ -2867,7 +2866,7 @@ TEST_CASE("[SelfList] Sort") {
 
 
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 namespace TestSpan {
 
@@ -2943,7 +2942,7 @@ TEST_CASE("[Span] Constexpr Validators") {
 
 
 
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 namespace TestVector {
 
@@ -3655,7 +3654,7 @@ TEST_CASE("[Vector] Cyclic Reference") {
 
 
 
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 namespace TestVSet {
 

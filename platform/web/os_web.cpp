@@ -29,9 +29,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_web.h"
+#include "drivers/unix/os_unix.h"
 
-#include "platform/web/os_web.h"
 // --- Inlined from platform/web/ip_web.h ---
 #include "core/io/ip.h"
 
@@ -107,7 +106,7 @@ public:
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "drivers/unix/os_unix.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include <dlfcn.h>
 #include <emscripten.h>
@@ -510,7 +509,7 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 
 
 // --- Merged from platform/web/audio_driver_web.cpp ---
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 // --- Inlined from platform/web/godot_audio.h ---
 #include <cstdint>
 
@@ -1034,7 +1033,7 @@ void AudioDriverScriptProcessor::start(float *p_out_buf, int p_out_buf_size, flo
 
 
 // --- Merged from platform/web/webmidi_driver.cpp ---
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 // --- Inlined from platform/web/godot_midi.h ---
 #include <cstdint>
 
@@ -1459,7 +1458,7 @@ HTTPClientWeb::~HTTPClientWeb() {
 
 
 // --- Merged from platform/web/javascript_bridge_singleton.cpp ---
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 
 
 #include <emscripten.h>
@@ -1844,17 +1843,17 @@ void register_web_api() {}
 
 
 // --- Merged from platform/web/web_main.cpp ---
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/io/file_access.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h" // SceneTree only forward declares it.
+#include "scene/main/scene_tree.h" // SceneTree only forward declares it.
 #endif
 
 #include <emscripten/emscripten.h>
@@ -2027,14 +2026,11 @@ int main(int argc, char *argv[]) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 
 #include "platform/web/dom_keys.inc"
-#include "platform/web/os_web.h"
+#include "drivers/unix/os_unix.h"
 
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"

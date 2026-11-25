@@ -42,6 +42,7 @@
 class Tweener;
 class Node;
 class SceneTree;
+class PhysicsDirectSpaceState3D;
 
 class Tween final : public RefCounted
 {
@@ -243,8 +244,8 @@ private:
 #include "scene/main/node.h"
 // --- Folded from scene/resources/animation.h ---
 #include <memory>
-#include "core/io/resource.h"
-#include "core/templates/local_vector.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
 
 #define ANIM_MIN_LENGTH 0.001
 
@@ -757,7 +758,7 @@ public:
 };
 
 // --- Folded from scene/resources/skeleton_profile.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 class SkeletonProfile : public Resource
 {
@@ -889,7 +890,7 @@ public:
 // --- End scene/resources/bone_map.h ---
 // --- End scene/resources/animation.h ---
 // --- Folded from scene/resources/animation_library.h ---
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 
 class AnimationLibrary : public Resource
@@ -1811,7 +1812,7 @@ public:
 
 // --- Folded from scene/animation/animation_blend_tree.h ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class AnimationNodeBlendNode final : public AnimationNode
 {
@@ -2518,7 +2519,6 @@ public:
 };
 // --- End scene/animation/animation_mixer.h ---
 // --- Inlined/Folded from scene/main/multiplayer_api.h ---
-#include "core/templates/hash_set.h"
 #include "core/types.h"
 // --- Inlined/Folded from scene/main/multiplayer_peer.h ---
 #include "core/io/net_socket.h"
@@ -2722,7 +2722,7 @@ public:
 };
 // --- Folded from scene/main/scene_tree_fti.h ---
 #include "core/os/mutex.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 class Node3D;
 class Node;
@@ -3421,7 +3421,7 @@ private:
 };
 
 // --- Folded from modules/multiplayer/scene_multiplayer.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 #include "core/io/net_socket.h"
 #include "core/templates/rb_set.h"
 
@@ -3783,7 +3783,7 @@ struct MultiplayerAPI::SceneData
 };
 
 // --- Folded from modules/multiplayer/multiplayer_synchronizer.h ---
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "scene/main/node.h"
 
 
@@ -3925,8 +3925,1580 @@ public:
 // --- End modules/multiplayer/scene_multiplayer.h ---
 
 // --- Folded from scene/2d/node_2d.h ---
-#include "scene/gui/control.h"
-#include "scene/resources/material.h"
+// --- Folded from scene/gui/control.h ---
+// --- Folded from scene/main/canvas_item.h ---
+#include "scene/main/node.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
+#include "scene/resources/theme.h"
+
+class CanvasLayer;
+class Font;
+class Material;
+class Mesh;
+class MultiMesh;
+class StyleBox;
+class Window;
+class World2D;
+
+class CanvasItem : public Node
+{
+	friend class CanvasLayer;
+
+public:
+	using DrawCallback = void (*)(CanvasItem*);
+    DrawCallback draw_callback = nullptr;
+
+	RID canvas_item;
+
+	enum TextureFilter
+	{
+		TEXTURE_FILTER_PARENT_NODE,
+		TEXTURE_FILTER_NEAREST,
+		TEXTURE_FILTER_LINEAR,
+		TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+		TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+		TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+		TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+		TEXTURE_FILTER_MAX
+	};
+
+	enum TextureRepeat
+	{
+		TEXTURE_REPEAT_PARENT_NODE,
+		TEXTURE_REPEAT_DISABLED,
+		TEXTURE_REPEAT_ENABLED,
+		TEXTURE_REPEAT_MIRROR,
+		TEXTURE_REPEAT_MAX,
+	};
+
+	enum ClipChildrenMode
+	{
+		CLIP_CHILDREN_DISABLED,
+		CLIP_CHILDREN_ONLY,
+		CLIP_CHILDREN_AND_DRAW,
+		CLIP_CHILDREN_MAX,
+	};
+
+	enum OversamplingWithScale
+	{
+		OVERSAMPLING_WITH_SCALE_PARENT_NODE,
+		OVERSAMPLING_WITH_SCALE_DISABLED,
+		OVERSAMPLING_WITH_SCALE_ENABLED,
+		OVERSAMPLING_WITH_SCALE_MAX,
+	};
+
+private:
+	mutable SelfList<Node> xform_change;
+
+	String canvas_group;
+
+	CanvasLayer* canvas_layer = nullptr;
+
+	Color modulate = Color(1, 1, 1, 1);
+	Color self_modulate = Color(1, 1, 1, 1);
+
+	struct Data
+	{
+		// An unordered vector of `CanvasItem` children only.
+		// This is a subset of the `Node::children`, purely
+		// an optimization for faster traversal.
+		LocalVector<CanvasItem*> canvas_item_children;
+		uint32_t index_in_parent = UINT32_MAX;
+	};
+
+	Data data;
+
+	int light_mask = 1;
+	uint32_t visibility_layer = 1;
+
+	int z_index = 0;
+	bool z_relative = true;
+	bool y_sort_enabled = false;
+
+	static constexpr int DEFAULT_FONT_SIZE = 16; // Keep synced with font.h.
+
+	Window* window = nullptr;
+	bool visible = true;
+	bool parent_visible_in_tree = false;
+	bool pending_update = false;
+	bool draw_commands_dirty = false;
+	bool top_level = false;
+	bool block_transform_notify = false;
+	bool behind = false;
+	bool use_parent_material = false;
+	bool notify_local_transform = false;
+	bool notify_transform = false;
+	bool hide_clip_children = false;
+#ifdef TOOLS_ENABLED
+	mutable HashMap<String, String> instance_parameter_cache;
+#endif
+	OversamplingWithScale oversampling_with_scale = OVERSAMPLING_WITH_SCALE_PARENT_NODE;
+	double oversampling_override = -1.0;
+	bool is_oversampling_with_scale_cache = false;
+	double oversampling_override_cache = -1.0;
+
+	void _update_oversampling(bool p_propagate = false);
+	bool _is_oversampling_with_scale() const;
+
+	ClipChildrenMode clip_children_mode = CLIP_CHILDREN_DISABLED;
+
+	mutable RSE::CanvasItemTextureFilter texture_filter_cache =
+		RSE::CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
+	mutable RSE::CanvasItemTextureRepeat texture_repeat_cache =
+		RSE::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED;
+	TextureFilter texture_filter = TEXTURE_FILTER_PARENT_NODE;
+	TextureRepeat texture_repeat = TEXTURE_REPEAT_PARENT_NODE;
+
+	Ref<Material> material;
+
+	mutable Transform2D global_transform;
+	mutable MTFlag global_invalid;
+
+	_FORCE_INLINE_ bool _is_global_invalid() const
+	{
+		return is_group_processing() ? global_invalid.mt.is_set() : global_invalid.st;
+	}
+
+	void _set_global_invalid(bool p_invalid) const;
+
+	void _top_level_raise_self();
+
+	void _propagate_visibility_changed(bool p_parent_visible_in_tree);
+	void _handle_visibility_change(bool p_visible);
+
+	virtual void _top_level_changed();
+	virtual void _top_level_changed_on_parent();
+
+	void _redraw_callback();
+
+	void _enter_canvas();
+	void _exit_canvas();
+
+	void _window_visibility_changed();
+
+	static CanvasItem* current_item_drawn;
+	friend class Viewport;
+	void _refresh_texture_repeat_cache() const;
+	void _update_texture_repeat_changed(bool p_propagate);
+	void _refresh_texture_filter_cache() const;
+	void _update_texture_filter_changed(bool p_propagate);
+
+	void _notify_transform_deferred();
+	const String* _instance_shader_parameter_get_remap(const String& p_name) const;
+
+protected:
+#ifdef TOOLS_ENABLED
+	bool _property_can_revert(const String& p_name) const;
+#endif
+
+	virtual void _physics_interpolated_changed() override;
+
+	virtual void _update_self_texture_repeat(RSE::CanvasItemTextureRepeat p_texture_repeat);
+	virtual void _update_self_texture_filter(RSE::CanvasItemTextureFilter p_texture_filter);
+
+	void item_rect_changed(bool p_size_changed = true);
+
+	void set_canvas_item_use_identity_transform(bool p_enable);
+
+	void _notification(int p_what);
+	static void _bind_methods();
+
+#ifndef DISABLE_DEPRECATED
+	void _draw_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
+		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
+		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
+	void _draw_multiline_string_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
+		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
+		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
+	void _draw_string_outline_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
+		const String& p_text, HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT,
+		float p_width = -1, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
+	void _draw_multiline_string_outline_bind_compat_104872(const Ref<Font>& p_font,
+		const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL) const;
+	void _draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
+		const String& p_char, int p_font_size = DEFAULT_FONT_SIZE,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0)) const;
+	void _draw_char_outline_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
+		const String& p_char, int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0)) const;
+	void _draw_circle_bind_compat_84472(const Point2& p_pos, real_t p_radius, const Color& p_color);
+	void _draw_rect_bind_compat_84523(
+		const Rect2& p_rect, const Color& p_color, bool p_filled, real_t p_width);
+	void _draw_dashed_line_bind_compat_84523(const Point2& p_from, const Point2& p_to,
+		const Color& p_color, real_t p_width, real_t p_dash, bool p_aligned);
+	void _draw_multiline_bind_compat_84523(
+		const Vector<Point2>& p_points, const Color& p_color, real_t p_width);
+	void _draw_multiline_colors_bind_compat_84523(
+		const Vector<Point2>& p_points, const Vector<Color>& p_colors, real_t p_width);
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+	_FORCE_INLINE_ void set_hide_clip_children(bool p_value) { hide_clip_children = p_value; }
+
+public:
+	bool drawing = false;
+	enum
+	{
+		NOTIFICATION_TRANSFORM_CHANGED = 2000, // Keep in sync with SceneTree.
+		NOTIFICATION_DRAW = 30,
+		NOTIFICATION_VISIBILITY_CHANGED = 31,
+		NOTIFICATION_ENTER_CANVAS = 32,
+		NOTIFICATION_EXIT_CANVAS = 33,
+		NOTIFICATION_LOCAL_TRANSFORM_CHANGED = 35,
+		NOTIFICATION_WORLD_2D_CHANGED = 36,
+	};
+
+	/* EDITOR AND DEBUGGING */
+
+#ifdef TOOLS_ENABLED
+	// Save and restore a CanvasItem state
+
+	// Used to move the node
+	virtual void _edit_set_position(const Point2& p_position);
+	virtual Point2 _edit_get_position() const;
+
+	// Used to scale the node
+	virtual void _edit_set_scale(const Size2& p_scale);
+	virtual Size2 _edit_get_scale() const;
+
+	// Used to rotate the node
+	virtual bool _edit_use_rotation() const { return false; }
+
+	virtual void _edit_set_rotation(real_t p_rotation) {}
+
+	virtual real_t _edit_get_rotation() const { return 0.0; }
+
+	// Used to resize/move the node
+	virtual void _edit_set_rect(const Rect2& p_rect) {}
+
+	virtual Size2 _edit_get_minimum_size() const { return Size2(-1, -1); } // LOOKS WEIRD
+
+	// Used to set a pivot
+	virtual bool _edit_use_pivot() const { return false; }
+
+	virtual void _edit_set_pivot(const Point2& p_pivot) {}
+
+	virtual Point2 _edit_get_pivot() const { return Point2(); }
+
+	virtual Transform2D _edit_get_transform() const;
+#endif // TOOLS_ENABLED
+
+#ifdef DEBUG_ENABLED
+	// Those need to be available in debug runtime, to allow for node selection.
+
+	// Select the node.
+	virtual bool _edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const;
+
+	// Used to resize/move the node.
+	virtual bool _edit_use_rect() const
+	{
+		return false;
+	} // Maybe replace with _edit_get_editmode().
+
+	virtual Rect2 _edit_get_rect() const { return Rect2(0, 0, 0, 0); }
+#endif // DEBUG_ENABLED
+
+	void update_draw_order();
+
+	/* VISIBILITY */
+
+	void set_visible(bool p_visible);
+	bool is_visible() const;
+	bool is_visible_in_tree() const;
+	void show();
+	void hide();
+
+	void queue_redraw();
+	void move_to_front();
+
+	void set_clip_children_mode(ClipChildrenMode p_clip_mode);
+	ClipChildrenMode get_clip_children_mode() const;
+
+	virtual void set_light_mask(int p_light_mask);
+	int get_light_mask() const;
+
+	void set_modulate(const Color& p_modulate);
+	Color get_modulate() const;
+	Color get_modulate_in_tree() const;
+
+	virtual void set_self_modulate(const Color& p_self_modulate);
+	Color get_self_modulate() const;
+
+	void set_visibility_layer(uint32_t p_visibility_layer);
+	uint32_t get_visibility_layer() const;
+
+	void set_visibility_layer_bit(uint32_t p_visibility_layer, bool p_enable);
+	bool get_visibility_layer_bit(uint32_t p_visibility_layer) const;
+
+	/* ORDERING */
+
+	virtual void set_z_index(int p_z);
+	int get_z_index() const;
+	int get_effective_z_index() const;
+
+	void set_z_as_relative(bool p_enabled);
+	bool is_z_relative() const;
+
+	virtual void set_y_sort_enabled(bool p_enabled);
+	virtual bool is_y_sort_enabled() const;
+
+	/* DRAWING API */
+
+	void draw_dashed_line(const Point2& p_from, const Point2& p_to, const Color& p_color,
+		real_t p_width = -1.0, real_t p_dash = 2.0, bool p_aligned = true,
+		bool p_antialiased = false);
+	void draw_line(const Point2& p_from, const Point2& p_to, const Color& p_color,
+		real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_polyline(const Vector<Point2>& p_points, const Color& p_color, real_t p_width = -1.0,
+		bool p_antialiased = false);
+	void draw_polyline_colors(const Vector<Point2>& p_points, const Vector<Color>& p_colors,
+		real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_ellipse_arc(const Vector2& p_center, real_t p_major, real_t p_minor,
+		real_t p_start_angle, real_t p_end_angle, int p_point_count, const Color& p_color,
+		real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_arc(const Vector2& p_center, real_t p_radius, real_t p_start_angle,
+		real_t p_end_angle, int p_point_count, const Color& p_color, real_t p_width = -1.0,
+		bool p_antialiased = false);
+	void draw_multiline(const Vector<Point2>& p_points, const Color& p_color, real_t p_width = -1.0,
+		bool p_antialiased = false);
+	void draw_multiline_colors(const Vector<Point2>& p_points, const Vector<Color>& p_colors,
+		real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_rect(const Rect2& p_rect, const Color& p_color, bool p_filled = true,
+		real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_ellipse(const Point2& p_pos, real_t p_major, real_t p_minor, const Color& p_color,
+		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_circle(const Point2& p_pos, real_t p_radius, const Color& p_color,
+		bool p_filled = true, real_t p_width = -1.0, bool p_antialiased = false);
+	void draw_texture(
+		Texture2D* rp_texture, const Point2& p_pos, const Color& p_modulate = Color(1, 1, 1, 1));
+	void draw_texture_rect(Texture2D* rp_texture, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false);
+	void draw_texture_rect_region(Texture2D* rp_texture, const Rect2& p_rect,
+		const Rect2& p_src_rect, const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
+		bool p_clip_uv = false);
+	void draw_msdf_texture_rect_region(Texture2D* rp_texture, const Rect2& p_rect,
+		const Rect2& p_src_rect, const Color& p_modulate = Color(1, 1, 1), double p_outline = 0.0,
+		double p_pixel_range = 4.0, double p_scale = 1.0);
+	void draw_lcd_texture_rect_region(Texture2D* rp_texture, const Rect2& p_rect,
+		const Rect2& p_src_rect, const Color& p_modulate = Color(1, 1, 1));
+	void draw_style_box(StyleBox* rp_style_box, const Rect2& p_rect);
+	void draw_primitive(const Vector<Point2>& p_points, const Vector<Color>& p_colors,
+		const Vector<Point2>& p_uvs, Ref<Texture2D> p_texture = Ref<Texture2D>());
+	void draw_polygon(const Vector<Point2>& p_points, const Vector<Color>& p_colors,
+		const Vector<Point2>& p_uvs = Vector<Point2>(),
+		Ref<Texture2D> p_texture = Ref<Texture2D>());
+	void draw_colored_polygon(const Vector<Point2>& p_points, const Color& p_color,
+		const Vector<Point2>& p_uvs = Vector<Point2>(),
+		Ref<Texture2D> p_texture = Ref<Texture2D>());
+
+	void draw_mesh(Mesh* rp_mesh, const Ref<Texture2D>& p_texture,
+		const Transform2D& p_transform = Transform2D(), const Color& p_modulate = Color(1, 1, 1));
+	void draw_multimesh(MultiMesh* rp_multimesh, const Ref<Texture2D>& p_texture);
+
+	void draw_string(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
+		float p_oversampling = 0.0) const;
+	void draw_multiline_string(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
+		float p_oversampling = 0.0) const;
+
+	void draw_string_outline(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
+		float p_oversampling = 0.0) const;
+	void draw_multiline_string_outline(Font* rp_font, const Point2& p_pos, const String& p_text,
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, float p_width = -1,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_max_lines = -1, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		uint32_t p_brk_flags = TextServer::BREAK_MANDATORY | TextServer::BREAK_WORD_BOUND,
+		uint32_t p_jst_flags = TextServer::JUSTIFICATION_KASHIDA |
+							   TextServer::JUSTIFICATION_WORD_BOUND,
+		TextServer::Direction p_direction = TextServer::DIRECTION_AUTO,
+		TextServer::Orientation p_orientation = TextServer::ORIENTATION_HORIZONTAL,
+		float p_oversampling = 0.0) const;
+
+	void draw_char(Font* rp_font, const Point2& p_pos, const String& p_char,
+		int p_font_size = DEFAULT_FONT_SIZE, const Color& p_modulate = Color(1.0, 1.0, 1.0),
+		float p_oversampling = 0.0) const;
+	void draw_char_outline(Font* rp_font, const Point2& p_pos, const String& p_char,
+		int p_font_size = DEFAULT_FONT_SIZE, int p_size = 1,
+		const Color& p_modulate = Color(1.0, 1.0, 1.0), float p_oversampling = 0.0) const;
+
+	void draw_set_transform(
+		const Point2& p_offset, real_t p_rot = 0.0, const Size2& p_scale = Size2(1.0, 1.0));
+	void draw_set_transform_matrix(const Transform2D& p_matrix);
+	void draw_animation_slice(
+		double p_animation_length, double p_slice_begin, double p_slice_end, double p_offset = 0);
+	void draw_end_animation();
+
+	static CanvasItem* get_current_item_drawn();
+
+	/* RECT / TRANSFORM */
+
+	void set_as_top_level(bool p_top_level);
+	bool is_set_as_top_level() const;
+
+	void set_draw_behind_parent(bool p_enable);
+	bool is_draw_behind_parent_enabled() const;
+
+	CanvasItem* get_parent_item() const;
+
+	virtual Transform2D get_transform() const;
+
+	virtual Transform2D get_global_transform() const;
+	virtual Transform2D get_global_transform_const() const;
+	virtual Transform2D get_global_transform_with_canvas() const;
+	virtual Transform2D get_screen_transform() const;
+
+	CanvasItem* get_top_level() const;
+
+	_FORCE_INLINE_ RID get_canvas_item() const { return canvas_item; }
+
+	void set_block_transform_notify(bool p_enable);
+	bool is_block_transform_notify_enabled() const;
+
+	Transform2D get_canvas_transform() const;
+	Transform2D get_viewport_transform() const;
+	Rect2 get_viewport_rect() const;
+	RID get_viewport_rid() const;
+	RID get_canvas() const;
+	Ref<World2D> get_world_2d() const;
+
+	virtual void set_material(const Ref<Material>& p_material);
+	Ref<Material> get_material() const;
+
+	virtual void set_use_parent_material(bool p_use_parent_material);
+	bool get_use_parent_material() const;
+
+	InputEvent make_input_local(const InputEvent& p_event) const;
+	Vector2 make_canvas_position_local(const Vector2& screen_point) const;
+
+	Vector2 get_global_mouse_position() const;
+	Vector2 get_local_mouse_position() const;
+
+	void set_notify_local_transform(bool p_enable);
+	bool is_local_transform_notification_enabled() const;
+
+	void set_notify_transform(bool p_enable);
+	bool is_transform_notification_enabled() const;
+
+	void force_update_transform();
+
+	virtual void set_texture_filter(TextureFilter p_texture_filter);
+	TextureFilter get_texture_filter() const;
+
+	virtual void set_texture_repeat(TextureRepeat p_texture_repeat);
+	TextureRepeat get_texture_repeat() const;
+
+	TextureFilter get_texture_filter_in_tree() const;
+	TextureRepeat get_texture_repeat_in_tree() const;
+
+	OversamplingWithScale get_oversampling_with_scale() const;
+	void set_oversampling_with_scale(OversamplingWithScale p_mode);
+
+	// Used by control nodes to retrieve the parent's anchorable area
+	virtual Rect2 get_anchorable_rect() const { return Rect2(0, 0, 0, 0); }
+
+	int get_canvas_layer() const;
+	CanvasLayer* get_canvas_layer_node() const;
+
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	CanvasItem();
+	~CanvasItem();
+};
+
+// --- Folded from scene/main/canvas_layer.h ---
+#include "scene/main/node.h"
+
+class Viewport;
+
+class CanvasLayer : public Node
+{
+	mutable bool locrotscale_dirty = false;
+	mutable Vector2 ofs;
+	mutable Size2 scale = Vector2(1, 1);
+	mutable real_t rot = 0.0;
+	int layer = 1;
+	Transform2D transform;
+	RID canvas;
+
+	Viewport* custom_viewport = nullptr;
+
+	RID viewport;
+	Viewport* vp = nullptr;
+
+	int sort_index = 0;
+	bool visible = true;
+
+	bool follow_viewport = false;
+	float follow_viewport_scale = 1.0;
+
+	struct ParallaxState
+	{
+		Point2 offset;
+		real_t scale = 1.0;
+		Point2 base_offset;
+		Point2 base_scale = Vector2(1, 1);
+		Point2 screen_offset;
+		String group_name;
+		Point2 limit_begin;
+		Point2 limit_end;
+		Point2 final_offset;
+		bool ignore_camera_zoom = false;
+	};
+
+	bool parallax_enabled = false;
+	ParallaxState parallax;
+
+	void _update_xform();
+	void _update_locrotscale() const;
+	void _update_follow_viewport(bool p_force_exit = false);
+	void _update_scroll();
+
+protected:
+	void _notification(int p_what);
+
+public:
+	void update_draw_order();
+
+	void set_layer(int p_xform);
+	int get_layer() const;
+
+	void set_visible(bool p_visible);
+	bool is_visible() const;
+	void show();
+	void hide();
+
+	void set_transform(const Transform2D& p_xform);
+	Transform2D get_transform() const;
+	Transform2D get_final_transform() const;
+
+	void set_offset(const Vector2& p_offset);
+	Vector2 get_offset() const;
+
+	void set_rotation(real_t p_radians);
+	real_t get_rotation() const;
+
+	void set_scale(const Size2& p_scale);
+	Size2 get_scale() const;
+
+	Size2 get_viewport_size() const;
+
+	RID get_viewport() const;
+
+	void set_custom_viewport(Node* p_viewport);
+	Node* get_custom_viewport() const;
+
+	void reset_sort_index();
+	int get_sort_index();
+
+	void set_follow_viewport(bool p_enable);
+	bool is_following_viewport() const;
+
+	void set_follow_viewport_scale(float p_ratio);
+	float get_follow_viewport_scale() const;
+
+	RID get_canvas() const;
+
+	// Parallax background support.
+	void set_parallax_enabled(bool p_enabled);
+	bool is_parallax_enabled() const { return parallax_enabled; }
+
+	void _camera_moved(const Transform2D& p_transform, const Point2& p_screen_offset,
+		const Point2& p_adj_screen_offset);
+
+	void set_scroll_offset(const Point2& p_ofs);
+	Point2 get_scroll_offset() const;
+
+	void set_scroll_scale(real_t p_scale);
+	real_t get_scroll_scale() const;
+
+	void set_scroll_base_offset(const Point2& p_ofs);
+	Point2 get_scroll_base_offset() const;
+
+	void set_scroll_base_scale(const Point2& p_ofs);
+	Point2 get_scroll_base_scale() const;
+
+	void set_limit_begin(const Point2& p_ofs);
+	Point2 get_limit_begin() const;
+
+	void set_limit_end(const Point2& p_ofs);
+	Point2 get_limit_end() const;
+
+	void set_ignore_camera_zoom(bool p_ignore);
+	bool is_ignore_camera_zoom() const;
+
+	Vector2 get_final_offset() const;
+
+	CanvasLayer(bool p_parallax = false);
+	~CanvasLayer();
+};
+// --- End scene/main/canvas_item.h ---
+#include "servers/rendering/renderer.h"
+#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
+
+class Label;
+class Panel;
+class ThemeContext;
+class ThemeOwner;
+class Viewport;
+struct Transform2D;
+
+class Control : public CanvasItem
+{
+#ifdef TOOLS_ENABLED
+	bool saving = false;
+#endif // TOOLS_ENABLED
+
+public:
+	enum Anchor
+	{
+		ANCHOR_BEGIN = 0,
+		ANCHOR_END = 1
+	};
+
+	enum GrowDirection
+	{
+		GROW_DIRECTION_BEGIN,
+		GROW_DIRECTION_END,
+		GROW_DIRECTION_BOTH
+	};
+
+	enum FocusMode
+	{
+		FOCUS_NONE,
+		FOCUS_CLICK,
+		FOCUS_ALL,
+		FOCUS_ACCESSIBILITY,
+	};
+
+	enum FocusBehaviorRecursive
+	{
+		FOCUS_BEHAVIOR_INHERITED,
+		FOCUS_BEHAVIOR_DISABLED,
+		FOCUS_BEHAVIOR_ENABLED,
+	};
+
+	enum SizeFlags
+	{
+		SIZE_SHRINK_BEGIN = 0,
+		SIZE_FILL = 1,
+		SIZE_EXPAND = 2,
+		SIZE_SHRINK_CENTER = 4,
+		SIZE_SHRINK_END = 8,
+
+		SIZE_EXPAND_FILL = SIZE_EXPAND | SIZE_FILL,
+	};
+
+	enum MouseFilter
+	{
+		MOUSE_FILTER_STOP,
+		MOUSE_FILTER_PASS,
+		MOUSE_FILTER_IGNORE
+	};
+
+	enum MouseBehaviorRecursive
+	{
+		MOUSE_BEHAVIOR_INHERITED,
+		MOUSE_BEHAVIOR_DISABLED,
+		MOUSE_BEHAVIOR_ENABLED,
+	};
+
+	// Keep synced with InputClassEnums and DisplayServerEnums enums.
+	enum CursorShape
+	{
+		CURSOR_ARROW,
+		CURSOR_IBEAM,
+		CURSOR_POINTING_HAND,
+		CURSOR_CROSS,
+		CURSOR_WAIT,
+		CURSOR_BUSY,
+		CURSOR_DRAG,
+		CURSOR_CAN_DROP,
+		CURSOR_FORBIDDEN,
+		CURSOR_VSIZE,
+		CURSOR_HSIZE,
+		CURSOR_BDIAGSIZE,
+		CURSOR_FDIAGSIZE,
+		CURSOR_MOVE,
+		CURSOR_VSPLIT,
+		CURSOR_HSPLIT,
+		CURSOR_HELP,
+		CURSOR_MAX
+	};
+
+	enum LayoutPreset
+	{
+		PRESET_TOP_LEFT,
+		PRESET_TOP_RIGHT,
+		PRESET_BOTTOM_LEFT,
+		PRESET_BOTTOM_RIGHT,
+		PRESET_CENTER_LEFT,
+		PRESET_CENTER_TOP,
+		PRESET_CENTER_RIGHT,
+		PRESET_CENTER_BOTTOM,
+		PRESET_CENTER,
+		PRESET_LEFT_WIDE,
+		PRESET_TOP_WIDE,
+		PRESET_RIGHT_WIDE,
+		PRESET_BOTTOM_WIDE,
+		PRESET_VCENTER_WIDE,
+		PRESET_HCENTER_WIDE,
+		PRESET_FULL_RECT
+	};
+
+	enum LayoutPresetMode
+	{
+		PRESET_MODE_MINSIZE,
+		PRESET_MODE_KEEP_WIDTH,
+		PRESET_MODE_KEEP_HEIGHT,
+		PRESET_MODE_KEEP_SIZE
+	};
+
+	enum LayoutMode
+	{
+		LAYOUT_MODE_POSITION,
+		LAYOUT_MODE_ANCHORS,
+		LAYOUT_MODE_CONTAINER,
+		LAYOUT_MODE_UNCONTROLLED,
+	};
+
+	enum LayoutDirection
+	{
+		LAYOUT_DIRECTION_INHERITED,
+		LAYOUT_DIRECTION_APPLICATION_LOCALE,
+		LAYOUT_DIRECTION_LTR,
+		LAYOUT_DIRECTION_RTL,
+		LAYOUT_DIRECTION_SYSTEM_LOCALE,
+		LAYOUT_DIRECTION_MAX,
+#ifndef DISABLE_DEPRECATED
+		LAYOUT_DIRECTION_LOCALE = LAYOUT_DIRECTION_APPLICATION_LOCALE,
+#endif // DISABLE_DEPRECATED
+	};
+
+	enum TextDirection
+	{
+		TEXT_DIRECTION_AUTO = TextServer::DIRECTION_AUTO,
+		TEXT_DIRECTION_LTR = TextServer::DIRECTION_LTR,
+		TEXT_DIRECTION_RTL = TextServer::DIRECTION_RTL,
+		TEXT_DIRECTION_INHERITED = TextServer::DIRECTION_INHERITED,
+	};
+
+	struct LayoutConfig
+	{
+		enum Type
+		{
+			LAYOUT_NONE,
+			LAYOUT_BOX,
+			LAYOUT_GRID,
+			LAYOUT_FLOW,
+			LAYOUT_MARGIN,
+			LAYOUT_CENTER,
+			LAYOUT_ASPECT_RATIO,
+			LAYOUT_SPLIT,
+		};
+
+		enum AlignmentMode
+		{
+			ALIGNMENT_BEGIN,
+			ALIGNMENT_CENTER,
+			ALIGNMENT_END,
+		};
+
+		enum LastWrapAlignmentMode
+		{
+			LAST_WRAP_ALIGNMENT_INHERIT,
+			LAST_WRAP_ALIGNMENT_BEGIN,
+			LAST_WRAP_ALIGNMENT_CENTER,
+			LAST_WRAP_ALIGNMENT_END,
+		};
+
+		enum StretchMode
+		{
+			STRETCH_WIDTH_CONTROLS_HEIGHT,
+			STRETCH_HEIGHT_CONTROLS_WIDTH,
+			STRETCH_FIT,
+			STRETCH_COVER,
+		};
+
+		enum SortableVisibilityMode
+		{
+			SORTABLE_VISIBILITY_VISIBLE,
+			SORTABLE_VISIBILITY_VISIBLE_IN_TREE,
+			SORTABLE_VISIBILITY_IGNORE,
+		};
+
+		Type type = LAYOUT_NONE;
+		Orientation orientation = HORIZONTAL;
+		AlignmentMode alignment = ALIGNMENT_BEGIN;
+		AlignmentMode v_alignment = ALIGNMENT_CENTER;
+		LastWrapAlignmentMode last_wrap_alignment = LAST_WRAP_ALIGNMENT_INHERIT;
+		StretchMode stretch_mode = STRETCH_FIT;
+		int columns = 1;
+		int separation = 0;
+		int h_separation = 0;
+		int v_separation = 0;
+		int margins[4] = {0, 0, 0, 0};
+		float ratio = 1.0f;
+		bool reverse_fill = false;
+		bool use_top_left = false;
+		bool accessibility_region = false;
+		bool pending_sort = false;
+	};
+
+	LayoutConfig layout;
+
+private:
+	// This Data struct is to avoid namespace pollution in derived classes.
+	struct Data
+	{
+		struct OffsetTransform
+		{
+			static constexpr Vector2 DEFAULT_TRANSLATION_ABSOLUTE = Vector2();
+			static constexpr Vector2 DEFAULT_TRANSLATION_RELATIVE = Vector2();
+			static constexpr Vector2 DEFAULT_SCALE = Vector2(1, 1);
+			static constexpr real_t DEFAULT_ROTATION = 0.0;
+			static constexpr Vector2 DEFAULT_PIVOT_ABSOLUTE = Vector2();
+			static constexpr Vector2 DEFAULT_PIVOT_RELATIVE = Vector2(0.5, 0.5);
+			static constexpr bool DEFAULT_VISUAL_ONLY = true;
+
+			bool enabled = false;
+			Vector2 translation_absolute = DEFAULT_TRANSLATION_ABSOLUTE;
+			Vector2 translation_relative = DEFAULT_TRANSLATION_RELATIVE;
+			Vector2 scale = DEFAULT_SCALE;
+			real_t rotation = DEFAULT_ROTATION;
+			Vector2 pivot_absolute = DEFAULT_PIVOT_ABSOLUTE;
+			Vector2 pivot_relative = DEFAULT_PIVOT_RELATIVE;
+			bool visual_only = DEFAULT_VISUAL_ONLY;
+		};
+
+		bool initialized = false;
+
+		// Global relations.
+
+		List<Control*>::Element* RI = nullptr;
+
+		Control* parent_control = nullptr;
+		Window* parent_window = nullptr;
+		CanvasItem* parent_canvas_item = nullptr;
+
+		// Positioning and sizing.
+		LayoutMode stored_layout_mode = LayoutMode::LAYOUT_MODE_POSITION;
+		bool stored_use_custom_anchors = false;
+
+		real_t offset[4] = {0.0, 0.0, 0.0, 0.0};
+		real_t anchor[4] = {ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN, ANCHOR_BEGIN};
+		FocusMode focus_mode = FOCUS_NONE;
+		FocusBehaviorRecursive focus_behavior_recursive = FOCUS_BEHAVIOR_INHERITED;
+		bool parent_focus_behavior_recursive_enabled = false;
+		GrowDirection h_grow = GROW_DIRECTION_END;
+		GrowDirection v_grow = GROW_DIRECTION_END;
+
+		real_t rotation = 0.0;
+		Vector2 scale = Vector2(1, 1);
+		Vector2 pivot_offset;
+		Vector2 pivot_offset_ratio;
+
+		OffsetTransform* offset_transform = nullptr;
+
+		Point2 pos_cache;
+		Size2 size_cache;
+
+		mutable Size2 maximum_size_cache;
+		mutable bool maximum_size_valid = false;
+
+		mutable Size2 parent_maximum_size_cache = Size2(-1, -1);
+
+		Size2 last_maximum_size;
+		bool updating_last_maximum_size = false;
+		bool block_maximum_size_adjust = false;
+
+		mutable Size2 minimum_size_cache;
+		mutable bool minimum_size_valid = false;
+
+		Size2 last_minimum_size;
+		bool updating_last_minimum_size = false;
+		bool block_minimum_size_adjust = false;
+
+		mutable Size2 desired_size_cache;
+		mutable bool desired_size_valid = false;
+
+		Size2 last_desired_size;
+		bool updating_last_desired_size = false;
+
+		bool expanded_by_desired_size = false;
+
+		bool layout_pending = false;
+
+		bool size_warning = true;
+
+		// Container sizing.
+
+		uint32_t h_size_flags = SIZE_FILL;
+		uint32_t v_size_flags = SIZE_FILL;
+		real_t expand = 1.0;
+		Size2 custom_maximum_size = Size2(-1, -1);
+		Size2 custom_minimum_size;
+
+		bool propagate_maximum_size = false;
+
+		// Input events and rendering.
+
+		MouseFilter mouse_filter = MOUSE_FILTER_STOP;
+		MouseBehaviorRecursive mouse_behavior_recursive = MOUSE_BEHAVIOR_INHERITED;
+		bool parent_mouse_behavior_recursive_enabled = true;
+		bool force_pass_scroll_events = true;
+
+		bool clip_contents = false;
+		bool disable_visibility_clip = false;
+
+		CursorShape default_cursor = CURSOR_ARROW;
+
+		// Focus.
+
+		NodePath focus_neighbor[4];
+		NodePath focus_next;
+		NodePath focus_prev;
+
+
+		// Accessibility.
+
+		String accessibility_name;
+		String accessibility_description;
+		AccessibilityServerEnums::AccessibilityLiveMode accessibility_live =
+			AccessibilityServerEnums::AccessibilityLiveMode::LIVE_OFF;
+
+		Vector<NodePath> accessibility_controls_nodes;
+		Vector<NodePath> accessibility_described_by_nodes;
+		Vector<NodePath> accessibility_labeled_by_nodes;
+		Vector<NodePath> accessibility_flow_to_nodes;
+
+		// Theming.
+
+		ThemeOwner* theme_owner = nullptr;
+		Ref<Theme> theme;
+		String theme_type_variation;
+
+		bool bulk_theme_override = false;
+		Theme::ThemeIconMap theme_icon_override;
+		Theme::ThemeStyleMap theme_style_override;
+		Theme::ThemeFontMap theme_font_override;
+		Theme::ThemeFontSizeMap theme_font_size_override;
+		Theme::ThemeColorMap theme_color_override;
+		Theme::ThemeConstantMap theme_constant_override;
+
+		mutable HashMap<String, Theme::ThemeIconMap> theme_icon_cache;
+		mutable HashMap<String, Theme::ThemeStyleMap> theme_style_cache;
+		mutable HashMap<String, Theme::ThemeFontMap> theme_font_cache;
+		mutable HashMap<String, Theme::ThemeFontSizeMap> theme_font_size_cache;
+		mutable HashMap<String, Theme::ThemeColorMap> theme_color_cache;
+		mutable HashMap<String, Theme::ThemeConstantMap> theme_constant_cache;
+
+		// Internationalization.
+
+		LayoutDirection layout_dir = LAYOUT_DIRECTION_INHERITED;
+		mutable bool is_rtl_dirty = true;
+		mutable bool is_rtl = false;
+
+		bool localize_numeral_system = true;
+
+		// Extra properties.
+
+		String tooltip;
+		String translation_context;
+		AutoTranslateMode tooltip_auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+
+	} data;
+
+	// Dynamic properties.
+
+	static constexpr unsigned properties_managed_by_container_count = 12;
+	static String properties_managed_by_container[properties_managed_by_container_count];
+
+	// Global relations.
+
+	friend class Viewport;
+
+	// Positioning and sizing.
+
+	void _update_canvas_item_transform();
+	Transform2D _get_internal_transform() const;
+
+	void _set_anchor(Side p_side, real_t p_anchor);
+	void _set_position(const Point2& p_point);
+	void _set_global_position(const Point2& p_point);
+	void _set_size(const Size2& p_size);
+
+	void _compute_layout_rect(Rect2 p_rect, bool p_keep_offsets = false);
+
+	void _set_layout_mode(LayoutMode p_mode);
+	void _update_layout_mode();
+	LayoutMode _get_layout_mode() const;
+	LayoutMode _get_default_layout_mode() const;
+	void _set_anchors_layout_preset(int p_preset);
+	int _get_anchors_layout_preset() const;
+
+	void _update_maximum_size_cache() const;
+	void _update_maximum_size();
+	void _update_minimum_size_cache() const;
+	void _update_minimum_size();
+	void _update_desired_size_cache() const;
+	void _update_desired_size();
+	void _grow_to_desired_size();
+	void _size_changed();
+
+	void _top_level_changed() override {
+	} // Controls don't need to do anything, only other CanvasItems.
+
+	void _top_level_changed_on_parent() override;
+
+	void _clear_size_warning();
+
+	// Input events.
+
+	void _call_gui_input(const InputEvent& p_event);
+
+	// Mouse Filter.
+
+	bool _is_mouse_filter_enabled() const;
+	void _update_mouse_behavior_recursive();
+	void _propagate_mouse_behavior_recursive_recursively(bool p_enabled, bool p_skip_non_inherited);
+
+	// Focus.
+
+	void _window_find_focus_neighbor(const Vector2& p_dir, Node* p_at, const Rect2& p_rect,
+		const Rect2& p_clamp, real_t p_min, real_t& r_closest_dist_squared, Control** r_closest);
+	Control* _get_focus_neighbor(Side p_side, int p_count = 0);
+	bool _is_focus_mode_enabled() const;
+	void _update_focus_behavior_recursive();
+	void _propagate_focus_behavior_recursive_recursively(bool p_enabled, bool p_skip_non_inherited);
+
+	// Theming.
+
+	void _theme_changed();
+	void _notify_theme_override_changed();
+	void _invalidate_theme_cache();
+
+	void _ensure_allocated_offset_transform();
+
+	// Extra properties.
+
+	static int root_layout_direction;
+
+protected:
+	bool _property_can_revert(const String& p_name) const;
+
+	// Localization
+
+	virtual String _get_translation_context_with_override(
+		const String& p_context) const override;
+
+	// Theming.
+
+	virtual void _update_theme_item_cache();
+
+	// Base object overrides.
+
+	void _notification(int p_notification);
+	static void _bind_methods();
+
+#ifndef DISABLE_DEPRECATED
+	bool _has_focus_bind_compat_110250() const;
+	void _grab_focus_bind_compat_110250();
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+	// Focus.
+	bool _is_focusable() const;
+
+	// Node overrides.
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	enum
+	{
+		NOTIFICATION_RESIZED = 40,
+		NOTIFICATION_MOUSE_ENTER = 41,
+		NOTIFICATION_MOUSE_EXIT = 42,
+		NOTIFICATION_FOCUS_ENTER = 43,
+		NOTIFICATION_FOCUS_EXIT = 44,
+		NOTIFICATION_THEME_CHANGED = 45,
+		NOTIFICATION_SCROLL_BEGIN = 47,
+		NOTIFICATION_SCROLL_END = 48,
+		NOTIFICATION_LAYOUT_DIRECTION_CHANGED = 49,
+		NOTIFICATION_PRE_SORT_CHILDREN = 50,
+		NOTIFICATION_SORT_CHILDREN = 51,
+		NOTIFICATION_MOUSE_ENTER_SELF = 60,
+		NOTIFICATION_MOUSE_EXIT_SELF = 61,
+	};
+
+	// Editor plugin interoperability.
+
+	// TODO: Decouple controls from their editor plugin and get rid of this.
+#ifdef TOOLS_ENABLED
+	virtual void _edit_set_position(const Point2& p_position) override;
+	virtual Point2 _edit_get_position() const override;
+
+	virtual void _edit_set_scale(const Size2& p_scale) override;
+	virtual Size2 _edit_get_scale() const override;
+
+	virtual void _edit_set_rect(const Rect2& p_edit_rect) override;
+
+	virtual void _edit_set_rotation(real_t p_rotation) override;
+	virtual real_t _edit_get_rotation() const override;
+	virtual bool _edit_use_rotation() const override;
+
+	virtual void _edit_set_pivot(const Point2& p_pivot) override;
+	virtual Point2 _edit_get_pivot() const override;
+	virtual bool _edit_use_pivot() const override;
+
+	virtual Size2 _edit_get_minimum_size() const override;
+#endif // TOOLS_ENABLED
+
+#ifdef DEBUG_ENABLED
+	virtual Rect2 _edit_get_rect() const override;
+	virtual bool _edit_use_rect() const override;
+#endif // DEBUG_ENABLED
+
+	void reparent(Node* p_parent, bool p_keep_global_transform = true);
+
+	// Editor integration.
+
+	static void set_root_layout_direction(int p_root_dir);
+
+	PackedStringArray get_configuration_warnings() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const ;
+#ifdef TOOLS_ENABLED
+	virtual void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options) const;
+#endif // TOOLS_ENABLED
+
+	virtual bool is_text_field() const;
+
+	// Global relations.
+
+	Control* get_parent_control() const;
+	Window* get_parent_window() const;
+	Control* get_root_parent_control() const;
+
+	Size2 get_parent_area_size() const;
+	Rect2 get_parent_anchorable_rect() const;
+
+	// Positioning and sizing.
+
+	virtual Transform2D get_transform() const override;
+
+	void set_anchor(Side p_side, real_t p_anchor, bool p_keep_offset = true,
+		bool p_push_opposite_anchor = true);
+	real_t get_anchor(Side p_side) const;
+	void set_offset(Side p_side, real_t p_value);
+	real_t get_offset(Side p_side) const;
+	void set_anchor_and_offset(
+		Side p_side, real_t p_anchor, real_t p_pos, bool p_push_opposite_anchor = true);
+
+	// TODO: Rename to set_begin/end_offsets ?
+	void set_begin(const Point2& p_point);
+	Point2 get_begin() const;
+	void set_end(const Point2& p_point);
+	Point2 get_end() const;
+
+	void set_h_grow_direction(GrowDirection p_direction);
+	GrowDirection get_h_grow_direction() const;
+	void set_v_grow_direction(GrowDirection p_direction);
+	GrowDirection get_v_grow_direction() const;
+
+	void set_anchors_preset(LayoutPreset p_preset, bool p_keep_offsets = true);
+	void set_offsets_preset(LayoutPreset p_preset,
+		LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
+	void set_anchors_and_offsets_preset(LayoutPreset p_preset,
+		LayoutPresetMode p_resize_mode = PRESET_MODE_MINSIZE, int p_margin = 0);
+	void set_grow_direction_preset(LayoutPreset p_preset);
+
+	void set_position(const Point2& p_point, bool p_keep_offsets = false);
+	void set_global_position(const Point2& p_point, bool p_keep_offsets = false);
+	Point2 get_position() const;
+	Point2 get_global_position() const;
+	Point2 get_screen_position() const;
+
+	void set_size(const Size2& p_size, bool p_keep_offsets = false);
+	Size2 get_size() const;
+	void reset_size();
+
+	void set_rect(const Rect2&
+			p_rect); // Reset anchors to begin and set rect, for faster container children sorting.
+	Rect2 get_rect() const;
+	Rect2 get_global_rect() const;
+	Rect2 get_screen_rect() const;
+	Rect2 get_anchorable_rect() const override;
+
+	void set_scale(const Vector2& p_scale);
+	Vector2 get_scale() const;
+	void set_rotation(real_t p_radians);
+	void set_rotation_degrees(real_t p_degrees);
+	real_t get_rotation() const;
+	real_t get_rotation_degrees() const;
+	void set_pivot_offset_ratio(const Vector2& p_ratio);
+	Vector2 get_pivot_offset_ratio() const;
+	void set_pivot_offset(const Vector2& p_pivot);
+	Vector2 get_pivot_offset() const;
+	Vector2 get_combined_pivot_offset() const;
+
+	void set_propagate_maximum_size(bool p_propagate);
+	bool is_propagating_maximum_size();
+
+	void update_maximum_size();
+	void update_minimum_size();
+	void update_desired_size();
+
+	void grow_to_desired_size();
+	bool is_expanded_by_desired_size() const;
+
+	void set_block_maximum_size_adjust(bool p_block);
+	void set_block_minimum_size_adjust(bool p_block);
+
+	virtual Size2 get_maximum_size() const;
+	virtual Size2 get_combined_maximum_size() const;
+	virtual Size2 get_inner_combined_maximum_size() const;
+
+	void set_custom_maximum_size(const Size2& p_custom);
+	Size2 get_custom_maximum_size() const;
+
+	void set_parent_maximum_size_cache(const Size2& p_size);
+
+	virtual Size2 get_minimum_size() const;
+	virtual Size2 get_combined_minimum_size() const;
+
+	void set_custom_minimum_size(const Size2& p_custom);
+	Size2 get_custom_minimum_size() const;
+
+	virtual Size2 get_bound_minimum_size() const;
+
+	Size2 get_bound_desired_size() const;
+	virtual Size2 get_desired_size() const;
+
+	bool is_layout_pending() const;
+	bool is_layout_pending_in_tree() const;
+	void layout_pending_start();
+	void layout_pending_finish();
+	Control* get_layout_pending_control_in_tree() const;
+
+	// Container sizing & composed layout.
+
+	void set_h_size_flags(uint32_t p_flags);
+	uint32_t get_h_size_flags() const;
+	void set_v_size_flags(uint32_t p_flags);
+	uint32_t get_v_size_flags() const;
+	void set_stretch_ratio(real_t p_ratio);
+	real_t get_stretch_ratio() const;
+
+	void set_layout_type(LayoutConfig::Type p_type);
+	LayoutConfig::Type get_layout_type() const { return layout.type; }
+	void queue_sort();
+	void fit_child_in_rect(Control* p_child, const Rect2& p_rect);
+	Control* as_sortable_control(Node* p_node,
+		LayoutConfig::SortableVisibilityMode p_visibility_mode =
+			LayoutConfig::SORTABLE_VISIBILITY_VISIBLE_IN_TREE) const;
+	Control* add_spacer(bool p_begin = false);
+
+	static Control* create_box(Orientation p_orientation,
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN);
+	static Control* create_hbox(
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN)
+	{
+		return create_box(HORIZONTAL, p_alignment);
+	}
+	static Control* create_vbox(
+		LayoutConfig::AlignmentMode p_alignment = LayoutConfig::ALIGNMENT_BEGIN)
+	{
+		return create_box(VERTICAL, p_alignment);
+	}
+	static Control* create_grid(int p_columns = 1);
+	static Control* create_flow(Orientation p_orientation = HORIZONTAL);
+	static Control* create_margin(
+		int p_left = 0, int p_top = 0, int p_right = 0, int p_bottom = 0);
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const;
+	virtual Vector<int> get_allowed_size_flags_vertical() const;
+
+	// Offset transform.
+
+	void set_offset_transform_enabled(bool p_enabled);
+	bool is_offset_transform_enabled() const;
+	void set_offset_transform_position(const Vector2& p_offset);
+	Vector2 get_offset_transform_position() const;
+	void set_offset_transform_position_ratio(const Vector2& p_offset);
+	Vector2 get_offset_transform_position_ratio() const;
+	void set_offset_transform_scale(const Vector2& p_scale);
+	Vector2 get_offset_transform_scale() const;
+	void set_offset_transform_rotation(real_t p_rotation);
+	real_t get_offset_transform_rotation() const;
+	void set_offset_transform_pivot(const Vector2& p_pivot);
+	Vector2 get_offset_transform_pivot() const;
+	void set_offset_transform_pivot_ratio(const Vector2& p_pivot);
+	Vector2 get_offset_transform_pivot_ratio() const;
+	void set_offset_transform_visual_only(bool p_enabled);
+	bool is_offset_transform_visual_only() const;
+	Transform2D get_offset_transform() const;
+
+	// Input events.
+	void accept_event();
+
+	virtual bool has_point(const Point2& p_point) const;
+
+	void set_mouse_filter(MouseFilter p_filter);
+	MouseFilter get_mouse_filter() const;
+	MouseFilter get_mouse_filter_with_override() const;
+
+	void set_mouse_behavior_recursive(MouseBehaviorRecursive p_mouse_behavior_recursive);
+	MouseBehaviorRecursive get_mouse_behavior_recursive() const;
+
+	void set_force_pass_scroll_events(bool p_force_pass_scroll_events);
+	bool is_force_pass_scroll_events() const;
+
+	void warp_mouse(const Point2& p_position);
+
+	bool is_focus_owner_in_shortcut_context() const;
+	void set_shortcut_context(const Node* p_node);
+	Node* get_shortcut_context() const;
+
+	// Drag and drop handling.
+
+	void set_drag_preview(Control* p_control);
+	void accessibility_drag();
+	void accessibility_drop();
+	bool is_drag_successful() const;
+
+	// Focus.
+
+	void set_focus_mode(FocusMode p_focus_mode);
+	FocusMode get_focus_mode() const;
+	FocusMode get_focus_mode_with_override() const;
+	void set_focus_behavior_recursive(FocusBehaviorRecursive p_focus_behavior_recursive);
+	FocusBehaviorRecursive get_focus_behavior_recursive() const;
+	bool has_focus(bool p_ignore_hidden_focus = false) const;
+	void grab_focus(bool p_hide_focus = false);
+	void grab_click_focus();
+	void release_focus();
+
+	Control* find_next_valid_focus() const;
+	Control* find_prev_valid_focus() const;
+	Control* find_valid_focus_neighbor(Side p_size) const;
+
+	void set_focus_neighbor(Side p_side, const NodePath& p_neighbor);
+	NodePath get_focus_neighbor(Side p_side) const;
+
+	void set_focus_next(const NodePath& p_next);
+	NodePath get_focus_next() const;
+	void set_focus_previous(const NodePath& p_prev);
+	NodePath get_focus_previous() const;
+
+	// Accessibility.
+
+	virtual String get_accessibility_container_name(const Node* p_node) const;
+
+	void set_accessibility_name(const String& p_name);
+	String get_accessibility_name() const;
+
+	virtual String _get_accessibility_name() const;
+
+	void set_accessibility_description(const String& p_description);
+	String get_accessibility_description() const;
+
+	void set_accessibility_live(AccessibilityServerEnums::AccessibilityLiveMode p_mode);
+	AccessibilityServerEnums::AccessibilityLiveMode get_accessibility_live() const;
+
+	void set_accessibility_controls_nodes(const TypedArray<NodePath>& p_node_path);
+	TypedArray<NodePath> get_accessibility_controls_nodes() const;
+
+	void set_accessibility_described_by_nodes(const TypedArray<NodePath>& p_node_path);
+	TypedArray<NodePath> get_accessibility_described_by_nodes() const;
+
+	void set_accessibility_labeled_by_nodes(const TypedArray<NodePath>& p_node_path);
+	TypedArray<NodePath> get_accessibility_labeled_by_nodes() const;
+
+	void set_accessibility_flow_to_nodes(const TypedArray<NodePath>& p_node_path);
+	TypedArray<NodePath> get_accessibility_flow_to_nodes() const;
+
+	virtual Transform2D get_accessibility_transform() const override { return get_transform(); }
+
+	// Rendering.
+
+	void set_default_cursor_shape(CursorShape p_shape);
+	CursorShape get_default_cursor_shape() const;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2()) const;
+
+	void set_clip_contents(bool p_clip);
+	bool is_clipping_contents();
+
+	void set_disable_visibility_clip(bool p_ignore);
+	bool is_visibility_clip_disabled() const;
+
+	// Theming.
+
+	void set_theme_owner_node(Node* p_node);
+	Node* get_theme_owner_node() const;
+	bool has_theme_owner_node() const;
+
+	void set_theme_context(ThemeContext* p_context, bool p_propagate = true);
+
+	void set_theme(const Ref<Theme>& p_theme);
+	Ref<Theme> get_theme() const;
+
+	void set_theme_type_variation(const String& p_theme_type);
+	String get_theme_type_variation() const;
+
+	void begin_bulk_theme_override();
+	void end_bulk_theme_override();
+
+	void add_theme_icon_override(const String& p_name, Texture2D* rp_icon);
+	void add_theme_style_override(const String& p_name, StyleBox* rp_style);
+	void add_theme_font_override(const String& p_name, Font* rp_font);
+	void add_theme_font_size_override(const String& p_name, int p_font_size);
+	void add_theme_color_override(const String& p_name, const Color& p_color);
+	void add_theme_constant_override(const String& p_name, int p_constant);
+
+	void remove_theme_icon_override(const String& p_name);
+	void remove_theme_style_override(const String& p_name);
+	void remove_theme_font_override(const String& p_name);
+	void remove_theme_font_size_override(const String& p_name);
+	void remove_theme_color_override(const String& p_name);
+	void remove_theme_constant_override(const String& p_name);
+
+	Ref<Texture2D> get_theme_icon(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Ref<StyleBox> get_theme_stylebox(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Ref<Font> get_theme_font(
+		const String& p_name, const String& p_theme_type = String()) const;
+	int get_theme_font_size(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Color get_theme_color(
+		const String& p_name, const String& p_theme_type = String()) const;
+	int get_theme_constant(
+		const String& p_name, const String& p_theme_type = String()) const;
+#ifdef TOOLS_ENABLED
+	Ref<Texture2D> get_editor_theme_icon(const String& p_name) const;
+#endif // TOOLS_ENABLED
+
+	bool has_theme_icon_override(const String& p_name) const;
+	bool has_theme_stylebox_override(const String& p_name) const;
+	bool has_theme_font_override(const String& p_name) const;
+	bool has_theme_font_size_override(const String& p_name) const;
+	bool has_theme_color_override(const String& p_name) const;
+	bool has_theme_constant_override(const String& p_name) const;
+
+	bool has_theme_icon(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_stylebox(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_font(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_font_size(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_color(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_constant(
+		const String& p_name, const String& p_theme_type = String()) const;
+
+	float get_theme_default_base_scale() const;
+	Ref<Font> get_theme_default_font() const;
+	int get_theme_default_font_size() const;
+
+	// Internationalization.
+
+	void set_layout_direction(LayoutDirection p_direction);
+	LayoutDirection get_layout_direction() const;
+	virtual bool is_layout_rtl() const;
+
+	void set_localize_numeral_system(bool p_enable);
+	bool is_localizing_numeral_system() const;
+
+#ifndef DISABLE_DEPRECATED
+	void set_auto_translate(bool p_enable);
+	bool is_auto_translating() const;
+#endif // DISABLE_DEPRECATED
+
+	void set_tooltip_auto_translate_mode(AutoTranslateMode p_mode);
+	AutoTranslateMode get_tooltip_auto_translate_mode() const;
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Vector2& p_at) const;
+
+	// Extra properties.
+
+	String get_tooltip_text() const;
+	void set_tooltip_text(const String& text);
+	String get_translation_context() const;
+	void set_translation_context(const String& p_context);
+	virtual Control* make_custom_tooltip(const String& p_text) const;
+
+	virtual String accessibility_get_contextual_info() const;
+
+	Control() = default;
+	~Control() = default;
+};
+
+// G = get_drag_data_fw, C = can_drop_data_fw, D = drop_data_fw, U = underscore
+#define SET_DRAG_FORWARDING_CD(from, to)                                                           \
+	from->set_drag_forwarding(Callable(), callable_mp(this, &to::can_drop_data_fw).bind(from),     \
+		callable_mp(this, &to::drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_CDU(from, to)                                                          \
+	from->set_drag_forwarding(Callable(), callable_mp(this, &to::_can_drop_data_fw).bind(from),    \
+		callable_mp(this, &to::_drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_GCD(from, to)                                                          \
+	from->set_drag_forwarding(callable_mp(this, &to::get_drag_data_fw).bind(from),                 \
+		callable_mp(this, &to::can_drop_data_fw).bind(from),                                       \
+		callable_mp(this, &to::drop_data_fw).bind(from));
+#define SET_DRAG_FORWARDING_GCDU(from, to)                                                         \
+	from->set_drag_forwarding(callable_mp(this, &to::_get_drag_data_fw).bind(from),                \
+		callable_mp(this, &to::_can_drop_data_fw).bind(from),                                      \
+		callable_mp(this, &to::_drop_data_fw).bind(from));
+// --- End scene/gui/control.h ---
+#include "servers/rendering/renderer.h"
 
 struct CollisionState2D;
 
@@ -4414,10 +5986,10 @@ public:
 // --- End scene/2d/visible_on_screen_notifier_2d.h ---
 
 // --- Folded from scene/2d/physics/collision_object_2d.h ---
-#include "core/templates/local_vector.h"
-#include "core/templates/hash_map.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
 // --- Inlined/Folded from scene/resources/2d/shape_2d.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 class Shape2D : public Resource
 {
@@ -4540,7 +6112,7945 @@ public:
 	Shape2D(ShapeType p_type = SHAPE_RECTANGLE);
 	~Shape2D();
 };
-#include "servers/physics_2d/physics_server_2d.h"
+// --- Folded from scene/resources/mesh.h ---
+#include "core/types.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
+#include "servers/rendering/renderer.h"
+
+#ifndef PHYSICS_3D_DISABLED
+// --- Folded from scene/resources/3d/shape_3d.h ---
+#include "core/types.h"
+
+class ArrayMesh;
+class Image;
+class Material;
+
+class Shape3D : public Resource
+{
+public:
+	enum ShapeType
+	{
+		SHAPE_WORLD_BOUNDARY,
+		SHAPE_SEPARATION_RAY,
+		SHAPE_SPHERE,
+		SHAPE_BOX,
+		SHAPE_CAPSULE,
+		SHAPE_CYLINDER,
+		SHAPE_CONVEX_POLYGON,
+		SHAPE_CONCAVE_POLYGON,
+		SHAPE_HEIGHTMAP,
+	};
+
+private:
+	struct DrawEdge
+	{
+		Vector3 a;
+		Vector3 b;
+
+		static uint32_t hash(const DrawEdge& p_edge)
+		{
+			uint32_t h = hash_murmur3_one_32(HashMapHasherDefault::hash(p_edge.a));
+			return hash_murmur3_one_32(HashMapHasherDefault::hash(p_edge.b), h);
+		}
+
+		bool operator==(const DrawEdge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
+
+		DrawEdge(const Vector3& p_a = Vector3(), const Vector3& p_b = Vector3())
+		{
+			a = p_a;
+			b = p_b;
+			if (a < b) {
+				SWAP(a, b);
+			}
+		}
+	};
+
+	ShapeType shape_type = SHAPE_BOX;
+	RID shape;
+	real_t custom_bias = 0.0;
+	real_t margin = 0.04;
+
+	Ref<ArrayMesh> debug_mesh_cache;
+
+	// Not wrapped in `#ifdef DEBUG_ENABLED` as it is used for rendering.
+	Color debug_color = Color(0.0, 0.0, 0.0, 0.0);
+	bool debug_fill = true;
+#ifdef DEBUG_ENABLED
+	bool debug_properties_edited = false;
+#endif // DEBUG_ENABLED
+
+	// World boundary parameters
+	Plane plane = Plane(0, 1, 0, 0);
+
+	// Separation ray parameters
+	float length = 1.0f;
+	bool slide_on_slope = false;
+
+	// Sphere / Capsule / Cylinder parameters
+	float radius = 0.5f;
+	float height = 2.0f;
+
+	// Box parameters
+	Vector3 size = Vector3(1, 1, 1);
+
+	// Convex polygon parameters
+	Vector<Vector3> points;
+
+	// Concave polygon parameters
+	Vector<Vector3> faces;
+	bool backface_collision = false;
+
+	// Heightmap parameters
+	int map_width = 2;
+	int map_depth = 2;
+	Vector<real_t> map_data;
+	real_t min_height = 0.0;
+	real_t max_height = 0.0;
+
+	static RID _create_shape_rid(ShapeType p_type);
+	void _ensure_heightmap_initialized();
+	void _update_shape();
+
+public:
+	ShapeType get_shape_type() const { return shape_type; }
+	void set_shape_type(ShapeType p_type);
+
+	virtual RID get_rid() const override { return shape; }
+
+	// World boundary
+	void set_plane(const Plane& p_plane);
+	const Plane& get_plane() const;
+
+	// Separation ray
+	void set_length(float p_length);
+	float get_length() const;
+	void set_slide_on_slope(bool p_active);
+	bool get_slide_on_slope() const;
+
+	// Sphere / Capsule / Cylinder
+	void set_radius(float p_radius);
+	float get_radius() const;
+	void set_height(float p_height);
+	float get_height() const;
+	void set_mid_height(real_t p_mid_height);
+	real_t get_mid_height() const;
+
+	// Box
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const;
+
+	// Convex polygon
+	void set_points(const Vector<Vector3>& p_points);
+	Vector<Vector3> get_points() const;
+
+	// Concave polygon
+	void set_faces(const Vector<Vector3>& p_faces);
+	Vector<Vector3> get_faces() const;
+	void set_backface_collision_enabled(bool p_enabled);
+	bool is_backface_collision_enabled() const;
+
+	// Heightmap
+	void set_map_width(int p_new);
+	int get_map_width() const;
+	void set_map_depth(int p_new);
+	int get_map_depth() const;
+	void set_map_data(Vector<real_t> p_new);
+	Vector<real_t> get_map_data() const;
+	real_t get_min_height() const;
+	real_t get_max_height() const;
+	void update_map_data_from_image(
+		const Ref<Image>& p_image, real_t p_height_min, real_t p_height_max);
+
+	Ref<ArrayMesh> get_debug_mesh();
+	Vector<Vector3> get_debug_mesh_lines() const;
+	Ref<ArrayMesh> get_debug_arraymesh_faces(const Color& p_modulate) const;
+	/// Returns the radius of a sphere that fully encloses this shape.
+	real_t get_enclosing_radius() const;
+
+	void add_vertices_to_array(Vector<Vector3>& array, const Transform3D& p_xform);
+
+	void set_custom_solver_bias(real_t p_bias);
+	real_t get_custom_solver_bias() const;
+
+	real_t get_margin() const;
+	void set_margin(real_t p_margin);
+
+	void set_debug_color(const Color& p_color);
+	Color get_debug_color() const;
+
+	void set_debug_fill(bool p_fill);
+	bool get_debug_fill() const;
+
+#ifdef DEBUG_ENABLED
+	_FORCE_INLINE_ bool are_debug_properties_edited() const { return debug_properties_edited; }
+#endif // DEBUG_ENABLED
+
+	Shape3D(ShapeType p_type = SHAPE_BOX);
+	~Shape3D();
+};
+// --- End scene/resources/3d/shape_3d.h ---
+
+class Shape3D;
+#endif // PHYSICS_3D_DISABLED
+class MeshConvexDecompositionSettings;
+
+class Mesh : public Resource
+{
+	mutable Ref<TriangleMesh> triangle_mesh;				   // cached
+	mutable Vector<Ref<TriangleMesh>> surface_triangle_meshes; // cached
+	mutable Vector<Vector3> debug_lines;
+	Size2i lightmap_size_hint;
+
+	Vector<Vector3> _get_faces() const;
+
+public:
+	enum PrimitiveType
+	{
+		PRIMITIVE_POINTS = RSE::PRIMITIVE_POINTS,
+		PRIMITIVE_LINES = RSE::PRIMITIVE_LINES,
+		PRIMITIVE_LINE_STRIP = RSE::PRIMITIVE_LINE_STRIP,
+		PRIMITIVE_TRIANGLES = RSE::PRIMITIVE_TRIANGLES,
+		PRIMITIVE_TRIANGLE_STRIP = RSE::PRIMITIVE_TRIANGLE_STRIP,
+		PRIMITIVE_MAX = RSE::PRIMITIVE_MAX,
+	};
+
+protected:
+
+public:
+	enum
+	{
+		NO_INDEX_ARRAY = RSE::NO_INDEX_ARRAY,
+		ARRAY_WEIGHTS_SIZE = RSE::ARRAY_WEIGHTS_SIZE
+	};
+
+	enum BlendShapeMode
+	{
+		BLEND_SHAPE_MODE_NORMALIZED = RSE::BLEND_SHAPE_MODE_NORMALIZED,
+		BLEND_SHAPE_MODE_RELATIVE = RSE::BLEND_SHAPE_MODE_RELATIVE,
+	};
+
+	enum ArrayType
+	{
+		ARRAY_VERTEX = RSE::ARRAY_VERTEX,
+		ARRAY_NORMAL = RSE::ARRAY_NORMAL,
+		ARRAY_TANGENT = RSE::ARRAY_TANGENT,
+		ARRAY_COLOR = RSE::ARRAY_COLOR,
+		ARRAY_TEX_UV = RSE::ARRAY_TEX_UV,
+		ARRAY_TEX_UV2 = RSE::ARRAY_TEX_UV2,
+		ARRAY_CUSTOM0 = RSE::ARRAY_CUSTOM0,
+		ARRAY_CUSTOM1 = RSE::ARRAY_CUSTOM1,
+		ARRAY_CUSTOM2 = RSE::ARRAY_CUSTOM2,
+		ARRAY_CUSTOM3 = RSE::ARRAY_CUSTOM3,
+		ARRAY_BONES = RSE::ARRAY_BONES,
+		ARRAY_WEIGHTS = RSE::ARRAY_WEIGHTS,
+		ARRAY_INDEX = RSE::ARRAY_INDEX,
+		ARRAY_MAX = RSE::ARRAY_MAX
+
+	};
+
+	enum ArrayCustomFormat
+	{
+		ARRAY_CUSTOM_RGBA8_UNORM = RSE::ARRAY_CUSTOM_RGBA8_UNORM,
+		ARRAY_CUSTOM_RGBA8_SNORM = RSE::ARRAY_CUSTOM_RGBA8_SNORM,
+		ARRAY_CUSTOM_RG_HALF = RSE::ARRAY_CUSTOM_RG_HALF,
+		ARRAY_CUSTOM_RGBA_HALF = RSE::ARRAY_CUSTOM_RGBA_HALF,
+		ARRAY_CUSTOM_R_FLOAT = RSE::ARRAY_CUSTOM_R_FLOAT,
+		ARRAY_CUSTOM_RG_FLOAT = RSE::ARRAY_CUSTOM_RG_FLOAT,
+		ARRAY_CUSTOM_RGB_FLOAT = RSE::ARRAY_CUSTOM_RGB_FLOAT,
+		ARRAY_CUSTOM_RGBA_FLOAT = RSE::ARRAY_CUSTOM_RGBA_FLOAT,
+		ARRAY_CUSTOM_MAX = RSE::ARRAY_CUSTOM_MAX
+	};
+
+	enum ArrayFormat : uint64_t
+	{
+		ARRAY_FORMAT_VERTEX = RSE::ARRAY_FORMAT_VERTEX,
+		ARRAY_FORMAT_NORMAL = RSE::ARRAY_FORMAT_NORMAL,
+		ARRAY_FORMAT_TANGENT = RSE::ARRAY_FORMAT_TANGENT,
+		ARRAY_FORMAT_COLOR = RSE::ARRAY_FORMAT_COLOR,
+		ARRAY_FORMAT_TEX_UV = RSE::ARRAY_FORMAT_TEX_UV,
+		ARRAY_FORMAT_TEX_UV2 = RSE::ARRAY_FORMAT_TEX_UV2,
+		ARRAY_FORMAT_CUSTOM0 = RSE::ARRAY_FORMAT_CUSTOM0,
+		ARRAY_FORMAT_CUSTOM1 = RSE::ARRAY_FORMAT_CUSTOM1,
+		ARRAY_FORMAT_CUSTOM2 = RSE::ARRAY_FORMAT_CUSTOM2,
+		ARRAY_FORMAT_CUSTOM3 = RSE::ARRAY_FORMAT_CUSTOM3,
+		ARRAY_FORMAT_BONES = RSE::ARRAY_FORMAT_BONES,
+		ARRAY_FORMAT_WEIGHTS = RSE::ARRAY_FORMAT_WEIGHTS,
+		ARRAY_FORMAT_INDEX = RSE::ARRAY_FORMAT_INDEX,
+
+		ARRAY_FORMAT_BLEND_SHAPE_MASK = RSE::ARRAY_FORMAT_BLEND_SHAPE_MASK,
+
+		ARRAY_FORMAT_CUSTOM_BASE = RSE::ARRAY_FORMAT_CUSTOM_BASE,
+		ARRAY_FORMAT_CUSTOM_BITS = RSE::ARRAY_FORMAT_CUSTOM_BITS,
+		ARRAY_FORMAT_CUSTOM0_SHIFT = RSE::ARRAY_FORMAT_CUSTOM0_SHIFT,
+		ARRAY_FORMAT_CUSTOM1_SHIFT = RSE::ARRAY_FORMAT_CUSTOM1_SHIFT,
+		ARRAY_FORMAT_CUSTOM2_SHIFT = RSE::ARRAY_FORMAT_CUSTOM2_SHIFT,
+		ARRAY_FORMAT_CUSTOM3_SHIFT = RSE::ARRAY_FORMAT_CUSTOM3_SHIFT,
+
+		ARRAY_FORMAT_CUSTOM_MASK = RSE::ARRAY_FORMAT_CUSTOM_MASK,
+		ARRAY_COMPRESS_FLAGS_BASE = RSE::ARRAY_COMPRESS_FLAGS_BASE,
+
+		ARRAY_FLAG_USE_2D_VERTICES = RSE::ARRAY_FLAG_USE_2D_VERTICES,
+		ARRAY_FLAG_USE_DYNAMIC_UPDATE = RSE::ARRAY_FLAG_USE_DYNAMIC_UPDATE,
+		ARRAY_FLAG_USE_8_BONE_WEIGHTS = RSE::ARRAY_FLAG_USE_8_BONE_WEIGHTS,
+
+		ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY = RSE::ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY,
+		ARRAY_FLAG_COMPRESS_ATTRIBUTES = RSE::ARRAY_FLAG_COMPRESS_ATTRIBUTES,
+		ARRAY_FLAG_USE_STORAGE_BUFFER = RSE::ARRAY_FLAG_USE_STORAGE_BUFFER,
+
+		ARRAY_FLAG_FORMAT_VERSION_BASE = RSE::ARRAY_FLAG_FORMAT_VERSION_BASE,
+		ARRAY_FLAG_FORMAT_VERSION_SHIFT = RSE::ARRAY_FLAG_FORMAT_VERSION_SHIFT,
+		ARRAY_FLAG_FORMAT_VERSION_1 = RSE::ARRAY_FLAG_FORMAT_VERSION_1,
+		ARRAY_FLAG_FORMAT_VERSION_2 = (uint64_t)RSE::ARRAY_FLAG_FORMAT_VERSION_2,
+		ARRAY_FLAG_FORMAT_CURRENT_VERSION = (uint64_t)RSE::ARRAY_FLAG_FORMAT_CURRENT_VERSION,
+		ARRAY_FLAG_FORMAT_VERSION_MASK = RSE::ARRAY_FLAG_FORMAT_VERSION_MASK,
+	};
+
+	virtual int get_surface_count() const;
+	virtual int surface_get_array_len(int p_idx) const;
+	virtual int surface_get_array_index_len(int p_idx) const;
+	virtual uint32_t surface_get_format(int p_idx) const;
+	virtual PrimitiveType surface_get_primitive_type(int p_idx) const;
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material);
+	virtual Ref<Material> surface_get_material(int p_idx) const;
+	virtual int get_blend_shape_count() const;
+	virtual String get_blend_shape_name(int p_index) const;
+	virtual void set_blend_shape_name(int p_index, const String& p_name);
+	virtual AABB get_aabb() const;
+
+	Vector<Face3> get_faces() const;
+	Vector<Face3> get_surface_faces(int p_surface) const;
+	Ref<TriangleMesh> generate_triangle_mesh() const;
+	Ref<TriangleMesh> generate_surface_triangle_mesh(int p_surface) const;
+	void generate_debug_mesh_lines(Vector<Vector3>& r_lines);
+	void generate_debug_mesh_indices(Vector<Vector3>& r_points);
+
+	Ref<Mesh> create_outline(float p_margin) const;
+
+	void set_lightmap_size_hint(const Size2i& p_size);
+	Size2i get_lightmap_size_hint() const;
+	void clear_cache() const;
+
+#ifndef PHYSICS_3D_DISABLED
+	typedef Vector<Vector<Vector3>> (*ConvexDecompositionFunc)(const real_t* p_vertices,
+		int p_vertex_count, const uint32_t* p_triangles, int p_triangle_count,
+		const Ref<MeshConvexDecompositionSettings>& p_settings,
+		Vector<Vector<uint32_t>>* r_convex_indices);
+
+	static ConvexDecompositionFunc convex_decomposition_function;
+
+	Vector<Ref<Shape3D>> convex_decompose(
+		const Ref<MeshConvexDecompositionSettings>& p_settings) const;
+	Ref<Shape3D> create_convex_shape(
+		bool p_clean = true, bool p_simplify = false) const;
+	Ref<Shape3D> create_trimesh_shape() const;
+#endif // PHYSICS_3D_DISABLED
+
+	virtual int get_builtin_bind_pose_count() const;
+	virtual Transform3D get_builtin_bind_pose(int p_index) const;
+
+	virtual Ref<Resource> create_placeholder() const;
+
+	Mesh();
+};
+
+class MeshConvexDecompositionSettings : public RefCounted
+{
+public:
+	enum Mode : int
+	{
+		CONVEX_DECOMPOSITION_MODE_VOXEL = 0,
+		CONVEX_DECOMPOSITION_MODE_TETRAHEDRON = 1
+	};
+
+private:
+	Mode mode = CONVEX_DECOMPOSITION_MODE_VOXEL;
+
+	/// Maximum concavity. [Range: 0.0 -> 1.0]
+	real_t max_concavity = 1.0;
+	/// Controls the bias toward clipping along symmetry planes. [Range: 0.0 -> 1.0]
+	real_t symmetry_planes_clipping_bias = 0.05;
+	/// Controls the bias toward clipping along revolution axes. [Range: 0.0 -> 1.0]
+	real_t revolution_axes_clipping_bias = 0.05;
+	real_t min_volume_per_convex_hull = 0.0001;
+	/// Maximum number of voxels generated during the voxelization stage.
+	uint32_t resolution = 10'000;
+	uint32_t max_num_vertices_per_convex_hull = 32;
+	/// Controls the granularity of the search for the "best" clipping plane.
+	/// [Range: 1 -> 16]
+	uint32_t plane_downsampling = 4;
+	/// Controls the precision of the convex-hull generation process during the
+	/// clipping plane selection stage.
+	/// [Range: 1 -> 16]
+	uint32_t convex_hull_downsampling = 4;
+	/// enable/disable normalizing the mesh before applying the convex decomposition.
+	bool normalize_mesh = false;
+
+	bool convex_hull_approximation = true;
+	/// This is the maximum number of convex hulls to produce from the merge operation.
+	uint32_t max_convex_hulls = 1;
+	bool project_hull_vertices = true;
+
+protected:
+
+public:
+	void set_max_concavity(real_t p_max_concavity);
+	real_t get_max_concavity() const;
+
+	void set_symmetry_planes_clipping_bias(real_t p_symmetry_planes_clipping_bias);
+	real_t get_symmetry_planes_clipping_bias() const;
+
+	void set_revolution_axes_clipping_bias(real_t p_revolution_axes_clipping_bias);
+	real_t get_revolution_axes_clipping_bias() const;
+
+	void set_min_volume_per_convex_hull(real_t p_min_volume_per_convex_hull);
+	real_t get_min_volume_per_convex_hull() const;
+
+	void set_resolution(uint32_t p_resolution);
+	uint32_t get_resolution() const;
+
+	void set_max_num_vertices_per_convex_hull(uint32_t p_max_num_vertices_per_convex_hull);
+	uint32_t get_max_num_vertices_per_convex_hull() const;
+
+	void set_plane_downsampling(uint32_t p_plane_downsampling);
+	uint32_t get_plane_downsampling() const;
+
+	void set_convex_hull_downsampling(uint32_t p_convex_hull_downsampling);
+	uint32_t get_convex_hull_downsampling() const;
+
+	void set_normalize_mesh(bool p_normalize_mesh);
+	bool get_normalize_mesh() const;
+
+	void set_mode(Mode p_mode);
+	Mode get_mode() const;
+
+	void set_convex_hull_approximation(bool p_convex_hull_approximation);
+	bool get_convex_hull_approximation() const;
+
+	void set_max_convex_hulls(uint32_t p_max_convex_hulls);
+	uint32_t get_max_convex_hulls() const;
+
+	void set_project_hull_vertices(bool p_project_hull_vertices);
+	bool get_project_hull_vertices() const;
+};
+
+class ArrayMesh : public Mesh
+{
+	PackedStringArray _get_blend_shape_names() const;
+	void _set_blend_shape_names(const PackedStringArray& p_names);
+
+	Ref<ArrayMesh> shadow_mesh;
+
+private:
+	struct Surface
+	{
+		uint64_t format = 0;
+		int array_length = 0;
+		int index_array_length = 0;
+		PrimitiveType primitive = PrimitiveType::PRIMITIVE_MAX;
+
+		String name;
+		AABB aabb;
+		Ref<Material> material;
+		bool is_2d = false;
+	};
+
+	Vector<Surface> surfaces;
+	mutable RID mesh;
+	AABB aabb;
+	BlendShapeMode blend_shape_mode = BLEND_SHAPE_MODE_RELATIVE;
+	Vector<String> blend_shapes;
+	AABB custom_aabb;
+
+	_FORCE_INLINE_ void _create_if_empty() const;
+	void _recompute_aabb();
+
+protected:
+	virtual bool _is_generated() const { return false; }
+
+	bool surface_index_0 = false;
+
+	virtual void reset_state() override;
+
+
+public:
+	void add_surface(uint32_t p_format, PrimitiveType p_primitive,
+		const Vector<uint8_t>& p_array, const Vector<uint8_t>& p_attribute_array,
+		const Vector<uint8_t>& p_skin_array, int p_vertex_count,
+		const Vector<uint8_t>& p_index_array, int p_index_count, const AABB& p_aabb,
+		const Vector<uint8_t>& p_blend_shape_data = Vector<uint8_t>(),
+		const Vector<AABB>& p_bone_aabbs = Vector<AABB>(),
+		const Vector<RenderingServerTypes::SurfaceData::LOD>& p_lods =
+			Vector<RenderingServerTypes::SurfaceData::LOD>(),
+		const Vector4 p_uv_scale = Vector4());
+
+	void add_blend_shape(const String& p_name);
+	int get_blend_shape_count() const override;
+	String get_blend_shape_name(int p_index) const override;
+	void set_blend_shape_name(int p_index, const String& p_name) override;
+	void clear_blend_shapes();
+
+	void set_blend_shape_mode(BlendShapeMode p_mode);
+	BlendShapeMode get_blend_shape_mode() const;
+
+	void surface_update_vertex_region(int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	void surface_update_attribute_region(
+		int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+	void surface_update_skin_region(int p_surface, int p_offset, const Vector<uint8_t>& p_data);
+
+	int get_surface_count() const override;
+
+	void surface_remove(int p_surface);
+	void clear_surfaces();
+
+	void surface_set_custom_aabb(int p_idx, const AABB& p_aabb); // only recognized by driver
+
+	int surface_get_array_len(int p_idx) const override;
+	int surface_get_array_index_len(int p_idx) const override;
+	uint32_t surface_get_format(int p_idx) const override;
+	PrimitiveType surface_get_primitive_type(int p_idx) const override;
+
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
+	virtual Ref<Material> surface_get_material(int p_idx) const override;
+
+	int surface_find_by_name(const String& p_name) const;
+	void surface_set_name(int p_idx, const String& p_name);
+	String surface_get_name(int p_idx) const;
+
+	void set_custom_aabb(const AABB& p_custom);
+	AABB get_custom_aabb() const;
+
+	AABB get_aabb() const override;
+	virtual RID get_rid() const override;
+
+	void regen_normal_maps();
+
+	Error lightmap_unwrap(
+		const Transform3D& p_base_transform = Transform3D(), float p_texel_size = 0.05);
+	Error lightmap_unwrap_cached(const Transform3D& p_base_transform, float p_texel_size,
+		const Vector<uint8_t>& p_src_cache, Vector<uint8_t>& r_dst_cache,
+		bool p_generate_cache = true);
+
+	virtual void reload_from_file() override;
+
+	void set_shadow_mesh(const Ref<ArrayMesh>& p_mesh);
+	Ref<ArrayMesh> get_shadow_mesh() const;
+
+	ArrayMesh();
+
+	~ArrayMesh();
+};
+
+class PlaceholderMesh : public Mesh
+{
+	RID rid;
+	AABB aabb;
+
+protected:
+
+public:
+	virtual int get_surface_count() const override { return 0; }
+
+	virtual int surface_get_array_len(int p_idx) const override { return 0; }
+
+	virtual int surface_get_array_index_len(int p_idx) const override { return 0; }
+
+	virtual uint32_t surface_get_format(int p_idx) const override { return 0; }
+
+	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override
+	{
+		return PRIMITIVE_TRIANGLES;
+	}
+
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override {}
+
+	virtual Ref<Material> surface_get_material(int p_idx) const override { return Ref<Material>(); }
+
+	virtual int get_blend_shape_count() const override { return 0; }
+
+	virtual String get_blend_shape_name(int p_index) const override { return String(); }
+
+	virtual void set_blend_shape_name(int p_index, const String& p_name) override {}
+
+	virtual RID get_rid() const override { return rid; }
+
+	virtual AABB get_aabb() const override { return aabb; }
+
+	void set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
+
+	virtual int get_builtin_bind_pose_count() const override { return 0; }
+
+	virtual Transform3D get_builtin_bind_pose(int p_index) const override { return Transform3D(); }
+
+	PlaceholderMesh();
+	~PlaceholderMesh();
+};
+
+// --- Folded from scene/resources/immediate_mesh.h ---
+#include "core/string/ustring.h"
+
+
+class ImmediateMesh : public Mesh
+{
+	RID mesh;
+
+	bool uses_colors = false;
+	bool uses_normals = false;
+	bool uses_tangents = false;
+	bool uses_uvs = false;
+	bool uses_uv2s = false;
+
+	Color current_color;
+	Vector3 current_normal;
+	Plane current_tangent;
+	Vector2 current_uv;
+	Vector2 current_uv2;
+
+	LocalVector<Color> colors;
+	LocalVector<Vector3> normals;
+	LocalVector<Plane> tangents;
+	LocalVector<Vector2> uvs;
+	LocalVector<Vector2> uv2s;
+	LocalVector<Vector3> vertices;
+
+	struct Surface
+	{
+		PrimitiveType primitive;
+		Ref<Material> material;
+		bool vertex_2d = false;
+		int array_len = 0;
+		uint64_t format = 0;
+		AABB aabb;
+	};
+
+	LocalVector<Surface> surfaces;
+
+	bool surface_active = false;
+	Surface active_surface_data;
+
+	Vector<uint8_t> surface_vertex_create_cache;
+	Vector<uint8_t> surface_attribute_create_cache;
+
+	const Vector3 SMALL_VEC3 = Vector3(CMP_EPSILON, CMP_EPSILON, CMP_EPSILON);
+
+protected:
+
+public:
+	void surface_begin(
+		PrimitiveType p_primitive, const Ref<Material>& p_material = Ref<Material>());
+	void surface_set_color(const Color& p_color);
+	void surface_set_normal(const Vector3& p_normal);
+	void surface_set_tangent(const Plane& p_tangent);
+	void surface_set_uv(const Vector2& p_uv);
+	void surface_set_uv2(const Vector2& p_uv2);
+	void surface_add_vertex(const Vector3& p_vertex);
+	void surface_add_vertex_2d(const Vector2& p_vertex);
+	void surface_end();
+
+	void clear_surfaces();
+
+	virtual int get_surface_count() const override;
+	virtual int surface_get_array_len(int p_idx) const override;
+	virtual int surface_get_array_index_len(int p_idx) const override;
+	virtual uint32_t surface_get_format(int p_idx) const override;
+	virtual PrimitiveType surface_get_primitive_type(int p_idx) const override;
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
+	virtual Ref<Material> surface_get_material(int p_idx) const override;
+	virtual int get_blend_shape_count() const override;
+	virtual String get_blend_shape_name(int p_index) const override;
+	virtual void set_blend_shape_name(int p_index, const String& p_name) override;
+
+	virtual AABB get_aabb() const override;
+
+	virtual RID get_rid() const override;
+
+	ImmediateMesh();
+	~ImmediateMesh();
+};
+
+
+
+// --- End scene/resources/immediate_mesh.h ---
+
+// --- Folded from scene/resources/surface_tool.h ---
+#include "core/types.h"
+#include "core/string/ustring.h"
+
+#include "servers/display/display_server.h"
+
+class SurfaceTool : public RefCounted
+{
+	static const uint32_t custom_mask[RSE::ARRAY_CUSTOM_COUNT];
+	static const uint32_t custom_shift[RSE::ARRAY_CUSTOM_COUNT];
+
+public:
+	struct Vertex
+	{
+		// Trivial data for which the hash is computed using hash_buffer.
+		// ----------------------------------------------------------------
+		uint32_t smooth_group = 0; // Must be first.
+
+		Color color;
+		Vector3 normal;
+		Vector4 tangent; // xyz tangent, w orientation.
+		Vector2 uv;
+		Vector2 uv2;
+		Color custom[RSE::ARRAY_CUSTOM_COUNT];
+
+		Vector3 vertex; // Must be last.
+		// ----------------------------------------------------------------
+
+		Vector<int> bones;
+		Vector<float> weights;
+
+		bool operator==(const Vertex& p_vertex) const;
+	};
+
+	enum CustomFormat
+	{
+		CUSTOM_RGBA8_UNORM = RSE::ARRAY_CUSTOM_RGBA8_UNORM,
+		CUSTOM_RGBA8_SNORM = RSE::ARRAY_CUSTOM_RGBA8_SNORM,
+		CUSTOM_RG_HALF = RSE::ARRAY_CUSTOM_RG_HALF,
+		CUSTOM_RGBA_HALF = RSE::ARRAY_CUSTOM_RGBA_HALF,
+		CUSTOM_R_FLOAT = RSE::ARRAY_CUSTOM_R_FLOAT,
+		CUSTOM_RG_FLOAT = RSE::ARRAY_CUSTOM_RG_FLOAT,
+		CUSTOM_RGB_FLOAT = RSE::ARRAY_CUSTOM_RGB_FLOAT,
+		CUSTOM_RGBA_FLOAT = RSE::ARRAY_CUSTOM_RGBA_FLOAT,
+		CUSTOM_MAX = RSE::ARRAY_CUSTOM_MAX
+	};
+
+	enum SkinWeightCount
+	{
+		SKIN_4_WEIGHTS,
+		SKIN_8_WEIGHTS
+	};
+
+	enum
+	{
+		/* Do not move vertices that are located on the topological border (vertices on triangle
+		   edges that don't have a paired triangle). Useful for simplifying portions of the larger
+		   mesh. */
+		SIMPLIFY_LOCK_BORDER = 1 << 0, // From meshopt_SimplifyLockBorder
+		/* Improve simplification performance assuming input indices are a sparse subset of the
+		   mesh. Note that error becomes relative to subset extents. */
+		SIMPLIFY_SPARSE = 1 << 1, // From meshopt_SimplifySparse
+		/* Treat error limit and resulting error as absolute instead of relative to mesh extents. */
+		SIMPLIFY_ERROR_ABSOLUTE = 1 << 2, // From meshopt_SimplifyErrorAbsolute
+		/* Remove disconnected parts of the mesh during simplification incrementally, regardless of
+		   the topological restrictions inside components. */
+		SIMPLIFY_PRUNE = 1 << 3, // From meshopt_SimplifyPrune
+		/* Produce more regular triangle sizes and shapes during simplification, at some cost to
+		   geometric quality. */
+		SIMPLIFY_REGULARIZE = 1 << 4, // From meshopt_SimplifyRegularize
+		/* Allow collapses across attribute discontinuities, except for vertices that are tagged
+		   with 0x02 in vertex_lock. */
+		SIMPLIFY_PERMISSIVE = 1 << 5, // From meshopt_SimplifyPermissive
+		/* Produce tangents compatible with MikkTSpace (same weighting and fallbacks) at the cost of
+		   reduced quality. Not recommended unless normal maps are baked. */
+		TANGENT_COMPATIBLE = 1 << 0, // From meshopt_TangentCompatible
+	};
+
+	typedef void (*OptimizeVertexCacheFunc)(unsigned int* destination, const unsigned int* indices,
+		size_t index_count, size_t vertex_count);
+	static OptimizeVertexCacheFunc optimize_vertex_cache_func;
+	typedef size_t (*OptimizeVertexFetchRemapFunc)(unsigned int* destination,
+		const unsigned int* indices, size_t index_count, size_t vertex_count);
+	static OptimizeVertexFetchRemapFunc optimize_vertex_fetch_remap_func;
+	typedef size_t (*SimplifyFunc)(unsigned int* destination, const unsigned int* indices,
+		size_t index_count, const float* vertex_positions, size_t vertex_count,
+		size_t vertex_positions_stride, size_t target_index_count, float target_error,
+		unsigned int options, float* r_error);
+	static SimplifyFunc simplify_func;
+	typedef size_t (*SimplifyWithAttribFunc)(unsigned int* destination, const unsigned int* indices,
+		size_t index_count, const float* vertex_data, size_t vertex_count, size_t vertex_stride,
+		const float* attributes, size_t attribute_stride, const float* attribute_weights,
+		size_t attribute_count, const unsigned char* vertex_lock, size_t target_index_count,
+		float target_error, unsigned int options, float* result_error);
+	static SimplifyWithAttribFunc simplify_with_attrib_func;
+	typedef float (*SimplifyScaleFunc)(
+		const float* vertex_positions, size_t vertex_count, size_t vertex_positions_stride);
+	static SimplifyScaleFunc simplify_scale_func;
+	typedef size_t (*GenerateRemapFunc)(unsigned int* destination, const unsigned int* indices,
+		size_t index_count, const void* vertices, size_t vertex_count, size_t vertex_size);
+	static GenerateRemapFunc generate_remap_func;
+	typedef void (*RemapVertexFunc)(void* destination, const void* vertices, size_t vertex_count,
+		size_t vertex_size, const unsigned int* remap);
+	static RemapVertexFunc remap_vertex_func;
+	typedef void (*RemapIndexFunc)(unsigned int* destination, const unsigned int* indices,
+		size_t index_count, const unsigned int* remap);
+	static RemapIndexFunc remap_index_func;
+	typedef void (*GenerateTangentsFunc)(float* result, const unsigned int* indices,
+		size_t index_count, const float* vertex_positions, size_t vertex_count,
+		size_t vertex_positions_stride, const float* vertex_normals, size_t vertex_normals_stride,
+		const float* vertex_uvs, size_t vertex_uvs_stride, unsigned int options);
+	static GenerateTangentsFunc generate_tangents_func;
+	static void strip_mesh_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
+
+private:
+	struct VertexHasher
+	{
+		static _FORCE_INLINE_ uint32_t hash(const Vertex& p_vtx);
+	};
+
+	struct SmoothGroupVertex
+	{
+		Vector3 vertex;
+		uint32_t smooth_group = 0;
+		bool operator==(const SmoothGroupVertex& p_vertex) const;
+
+		SmoothGroupVertex(const Vertex& p_vertex)
+		{
+			vertex = p_vertex.vertex;
+			smooth_group = p_vertex.smooth_group;
+		}
+	};
+
+	struct SmoothGroupVertexHasher
+	{
+		static _FORCE_INLINE_ uint32_t hash(const SmoothGroupVertex& p_vtx);
+	};
+
+	struct TriangleHasher
+	{
+		static _FORCE_INLINE_ uint32_t hash(const int* p_triangle);
+		static _FORCE_INLINE_ bool compare(const int* p_lhs, const int* p_rhs);
+	};
+
+	struct WeightSort
+	{
+		int index = 0;
+		float weight = 0.0;
+
+		bool operator<(const WeightSort& p_right) const { return weight < p_right.weight; }
+	};
+
+	bool begun = false;
+	bool first = false;
+	Mesh::PrimitiveType primitive = Mesh::PRIMITIVE_LINES;
+	uint64_t format = 0;
+	Ref<Material> material;
+	// arrays
+	LocalVector<Vertex> vertex_array;
+	LocalVector<int> index_array;
+
+	// memory
+	Color last_color;
+	Vector3 last_normal;
+	Vector2 last_uv;
+	Vector2 last_uv2;
+	Vector<int> last_bones;
+	Vector<float> last_weights;
+	Vector4 last_tangent;
+	uint32_t last_smooth_group = 0;
+
+	SkinWeightCount skin_weights = SKIN_4_WEIGHTS;
+
+	Color last_custom[RSE::ARRAY_CUSTOM_COUNT];
+
+	CustomFormat last_custom_format[RSE::ARRAY_CUSTOM_COUNT];
+
+	void _create_list(const Ref<Mesh>& p_existing, int p_surface, LocalVector<Vertex>* r_vertex,
+		LocalVector<int>* r_index, uint64_t& lformat);
+
+	void _generate_tangents_bind();
+
+protected:
+
+public:
+	void set_skin_weight_count(SkinWeightCount p_weights);
+	SkinWeightCount get_skin_weight_count() const;
+
+	void set_custom_format(int p_channel_index, CustomFormat p_format);
+	CustomFormat get_custom_format(int p_channel_index) const;
+
+	Mesh::PrimitiveType get_primitive_type() const;
+
+	void begin(Mesh::PrimitiveType p_primitive);
+
+	void set_color(Color p_color);
+	void set_normal(const Vector3& p_normal);
+	void set_tangent(const Plane& p_tangent);
+	void set_uv(const Vector2& p_uv);
+	void set_uv2(const Vector2& p_uv2);
+	void set_custom(int p_channel_index, const Color& p_custom);
+	void set_bones(const Vector<int>& p_bones);
+	void set_weights(const Vector<float>& p_weights);
+	void set_smooth_group(uint32_t p_group);
+
+	void add_vertex(const Vector3& p_vertex);
+
+	void add_triangle_fan(const Vector<Vector3>& p_vertices,
+		const Vector<Vector2>& p_uvs = Vector<Vector2>(),
+		const Vector<Color>& p_colors = Vector<Color>(),
+		const Vector<Vector2>& p_uv2s = Vector<Vector2>(),
+		const Vector<Vector3>& p_normals = Vector<Vector3>(),
+		const Vector<Plane>& p_tangents = Vector<Plane>());
+
+	void add_index(int p_index);
+
+	void index();
+	void deindex();
+	void generate_normals(bool p_flip = false);
+	void generate_tangents(bool p_split = false);
+
+	void optimize_indices_for_cache();
+	AABB get_aabb() const;
+	Vector<int> generate_lod(float p_threshold, int p_target_index_count = 3);
+
+	void set_material(const Ref<Material>& p_material);
+	Ref<Material> get_material() const;
+
+	void clear();
+
+	LocalVector<Vertex>& get_vertex_array() { return vertex_array; }
+
+	void create_from(const Ref<Mesh>& p_existing, int p_surface);
+	void create_from_blend_shape(
+		const Ref<Mesh>& p_existing, int p_surface, const String& p_blend_shape_name);
+	void append_from(const Ref<Mesh>& p_existing, int p_surface, const Transform3D& p_xform);
+	Ref<ArrayMesh> commit(
+		const Ref<ArrayMesh>& p_existing = Ref<ArrayMesh>(), uint64_t p_compress_flags = 0);
+
+	SurfaceTool();
+};
+// --- End scene/resources/surface_tool.h ---
+
+// --- Folded from scene/resources/navigation_mesh.h ---
+#include "core/os/mutex.h"
+
+
+class NavigationMesh : public Resource
+{
+	RWLock rwlock;
+
+	Vector<Vector3> vertices;
+	Vector<Vector<int>> polygons;
+	Ref<ArrayMesh> debug_mesh;
+
+protected:
+
+public:
+	enum SamplePartitionType
+	{
+		SAMPLE_PARTITION_WATERSHED = 0,
+		SAMPLE_PARTITION_MONOTONE,
+		SAMPLE_PARTITION_LAYERS,
+		SAMPLE_PARTITION_MAX
+	};
+
+	enum ParsedGeometryType
+	{
+		PARSED_GEOMETRY_MESH_INSTANCES = 0,
+		PARSED_GEOMETRY_STATIC_COLLIDERS,
+		PARSED_GEOMETRY_BOTH,
+		PARSED_GEOMETRY_MAX
+	};
+
+	enum SourceGeometryMode
+	{
+		SOURCE_GEOMETRY_ROOT_NODE_CHILDREN = 0,
+		SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN,
+		SOURCE_GEOMETRY_GROUPS_EXPLICIT,
+		SOURCE_GEOMETRY_MAX
+	};
+
+protected:
+	float cell_size = 0.25f;
+	float cell_height = 0.25f;
+	float border_size = 0.0f;
+	float agent_height = 1.5f;
+	float agent_radius = 0.5f;
+	float agent_max_climb = 0.25f;
+	float agent_max_slope = 45.0f;
+	float region_min_size = 2.0f;
+	float region_merge_size = 20.0f;
+	float edge_max_length = 0.0f;
+	float edge_max_error = 1.3f;
+	float vertices_per_polygon = 6.0f;
+	float detail_sample_distance = 6.0f;
+	float detail_sample_max_error = 1.0f;
+
+	SamplePartitionType partition_type = SAMPLE_PARTITION_WATERSHED;
+	ParsedGeometryType parsed_geometry_type = PARSED_GEOMETRY_BOTH;
+	uint32_t collision_mask = 0xFFFFFFFF;
+
+	SourceGeometryMode source_geometry_mode = SOURCE_GEOMETRY_ROOT_NODE_CHILDREN;
+	String source_group_name = "navigation_mesh_source_group";
+
+	bool filter_low_hanging_obstacles = false;
+	bool filter_ledge_spans = false;
+	bool filter_walkable_low_height_spans = false;
+	AABB filter_baking_aabb;
+	Vector3 filter_baking_aabb_offset;
+
+public:
+	NavigationMesh();
+
+	// Recast settings
+	void set_sample_partition_type(SamplePartitionType p_value);
+	SamplePartitionType get_sample_partition_type() const;
+
+	void set_parsed_geometry_type(ParsedGeometryType p_value);
+	ParsedGeometryType get_parsed_geometry_type() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	void set_source_geometry_mode(SourceGeometryMode p_geometry_mode);
+	SourceGeometryMode get_source_geometry_mode() const;
+
+	void set_source_group_name(const String& p_group_name);
+	String get_source_group_name() const;
+
+	void set_cell_size(float p_value);
+	float get_cell_size() const;
+
+	void set_cell_height(float p_value);
+	float get_cell_height() const;
+
+	void set_border_size(float p_value);
+	float get_border_size() const;
+
+	void set_agent_height(float p_value);
+	float get_agent_height() const;
+
+	void set_agent_radius(float p_value);
+	float get_agent_radius();
+
+	void set_agent_max_climb(float p_value);
+	float get_agent_max_climb() const;
+
+	void set_agent_max_slope(float p_value);
+	float get_agent_max_slope() const;
+
+	void set_region_min_size(float p_value);
+	float get_region_min_size() const;
+
+	void set_region_merge_size(float p_value);
+	float get_region_merge_size() const;
+
+	void set_edge_max_length(float p_value);
+	float get_edge_max_length() const;
+
+	void set_edge_max_error(float p_value);
+	float get_edge_max_error() const;
+
+	void set_vertices_per_polygon(float p_value);
+	float get_vertices_per_polygon() const;
+
+	void set_detail_sample_distance(float p_value);
+	float get_detail_sample_distance() const;
+
+	void set_detail_sample_max_error(float p_value);
+	float get_detail_sample_max_error() const;
+
+	void set_filter_low_hanging_obstacles(bool p_value);
+	bool get_filter_low_hanging_obstacles() const;
+
+	void set_filter_ledge_spans(bool p_value);
+	bool get_filter_ledge_spans() const;
+
+	void set_filter_walkable_low_height_spans(bool p_value);
+	bool get_filter_walkable_low_height_spans() const;
+
+	void set_filter_baking_aabb(const AABB& p_aabb);
+	AABB get_filter_baking_aabb() const;
+
+	void set_filter_baking_aabb_offset(const Vector3& p_aabb_offset);
+	Vector3 get_filter_baking_aabb_offset() const;
+
+	void create_from_mesh(const Ref<Mesh>& p_mesh);
+
+	void set_vertices(const Vector<Vector3>& p_vertices);
+	Vector<Vector3> get_vertices() const;
+
+	void add_polygon(const Vector<int>& p_polygon);
+	int get_polygon_count() const;
+	Vector<int> get_polygon(int p_idx);
+	void clear_polygons();
+	void set_polygons(const Vector<Vector<int>>& p_polygons);
+	Vector<Vector<int>> get_polygons() const;
+
+	void clear();
+
+	void set_data(const Vector<Vector3>& p_vertices, const Vector<Vector<int>>& p_polygons);
+	void get_data(Vector<Vector3>& r_vertices, Vector<Vector<int>>& r_polygons);
+
+#ifdef DEBUG_ENABLED
+	Ref<ArrayMesh> get_debug_mesh();
+#endif // DEBUG_ENABLED
+};
+
+// --- Folded from scene/resources/3d/importer_mesh.h ---
+#include "core/types.h"
+
+
+#include "drivers/gles3/shader_gles3.h"
+
+#ifndef PHYSICS_3D_DISABLED
+
+#endif // PHYSICS_3D_DISABLED
+
+// The following classes are used by importers instead of ArrayMesh and MeshInstance3D
+// so the data is not registered (hence, quality loss), importing happens faster and
+// its easier to modify before saving
+
+using BlendShape = GLES3::Mesh::Surface::BlendShape;
+
+class ImporterMesh : public Resource
+{
+	struct Surface
+	{
+		Mesh::PrimitiveType primitive;
+
+		Vector<BlendShape> blend_shape_data;
+
+		struct LOD
+		{
+			Vector<int> indices;
+			float distance = 0.0f;
+		};
+
+		Vector<LOD> lods;
+		Ref<Material> material;
+		String name;
+		uint64_t flags = 0;
+
+		struct LODComparator
+		{
+			_FORCE_INLINE_ bool operator()(const LOD& l, const LOD& r) const
+			{
+				return l.distance < r.distance;
+			}
+		};
+	};
+
+	Vector<Surface> surfaces;
+	Vector<String> blend_shapes;
+	Mesh::BlendShapeMode blend_shape_mode = Mesh::BLEND_SHAPE_MODE_NORMALIZED;
+
+	Ref<ArrayMesh> mesh;
+
+	Ref<ImporterMesh> shadow_mesh;
+
+	Size2i lightmap_size_hint;
+
+protected:
+
+public:
+	void add_blend_shape(const String& p_name);
+	int get_blend_shape_count() const;
+	String get_blend_shape_name(int p_blend_shape) const;
+
+	static String validate_blend_shape_name(const String& p_name);
+
+	int get_surface_count() const;
+
+	void set_blend_shape_mode(Mesh::BlendShapeMode p_blend_shape_mode);
+	Mesh::BlendShapeMode get_blend_shape_mode() const;
+
+	Mesh::PrimitiveType get_surface_primitive_type(int p_surface);
+	String get_surface_name(int p_surface) const;
+	void set_surface_name(int p_surface, const String& p_name);
+	int get_surface_lod_count(int p_surface) const;
+	Vector<int> get_surface_lod_indices(int p_surface, int p_lod) const;
+	float get_surface_lod_size(int p_surface, int p_lod) const;
+	Ref<Material> get_surface_material(int p_surface) const;
+	uint64_t get_surface_format(int p_surface) const;
+
+	void set_surface_material(int p_surface, const Ref<Material>& p_material);
+
+	void optimize_indices();
+
+	void create_shadow_mesh();
+	Ref<ImporterMesh> get_shadow_mesh() const;
+
+	Vector<Face3> get_faces() const;
+#ifndef PHYSICS_3D_DISABLED
+	Vector<Ref<Shape3D>> convex_decompose(
+		const Ref<MeshConvexDecompositionSettings>& p_settings) const;
+	Ref<Shape3D> create_convex_shape(
+		bool p_clean = true, bool p_simplify = false) const;
+	Ref<Shape3D> create_trimesh_shape() const;
+#endif // PHYSICS_3D_DISABLED
+	Ref<NavigationMesh> create_navigation_mesh();
+	Error lightmap_unwrap_cached(const Transform3D& p_base_transform, float p_texel_size,
+		const Vector<uint8_t>& p_src_cache, Vector<uint8_t>& r_dst_cache);
+
+	void set_lightmap_size_hint(const Size2i& p_size);
+	Size2i get_lightmap_size_hint() const;
+
+	bool has_mesh() const;
+	Ref<ArrayMesh> get_mesh(const Ref<ArrayMesh>& p_base = Ref<ArrayMesh>());
+	static Ref<ImporterMesh> from_mesh(const Ref<Mesh>& p_mesh);
+	void clear();
+};
+// --- End scene/resources/3d/importer_mesh.h ---
+// --- End scene/resources/navigation_mesh.h ---
+
+// --- Folded from scene/resources/3d/primitive_meshes.h ---
+#include <memory>
+
+#include "servers/rendering/renderer.h"
+#include "scene/resources/theme.h"
+
+
+/**
+	Parameterized procedural single-surface mesh covering box, capsule, cylinder,
+	plane, quad, prism, sphere, torus, point, tube trail, ribbon trail, and 3D text.
+*/
+class PrimitiveMesh : public Mesh
+{
+public:
+	enum MeshType
+	{
+		MESH_BOX,
+		MESH_CAPSULE,
+		MESH_CYLINDER,
+		MESH_PLANE,
+		MESH_QUAD,
+		MESH_PRISM,
+		MESH_SPHERE,
+		MESH_TORUS,
+		MESH_POINT,
+		MESH_TUBE_TRAIL,
+		MESH_RIBBON_TRAIL,
+		MESH_TEXT,
+	};
+
+	enum Orientation
+	{
+		FACE_X,
+		FACE_Y,
+		FACE_Z,
+	};
+
+	enum RibbonShape
+	{
+		SHAPE_FLAT,
+		SHAPE_CROSS,
+	};
+
+private:
+	struct BoxPrismParams
+	{
+		Vector3 size = Vector3(1.0f, 1.0f, 1.0f);
+		float left_to_right = 0.5f;
+		int subdivide_w = 0;
+		int subdivide_h = 0;
+		int subdivide_d = 0;
+	};
+
+	struct PlaneParams
+	{
+		Size2 size = Size2(2.0f, 2.0f);
+		Vector3 center_offset;
+		Orientation orientation = FACE_Y;
+	};
+
+	struct RadialParams
+	{
+		float radius = 0.5f;
+		float top_radius = 0.5f;
+		float bottom_radius = 0.5f;
+		float inner_radius = 0.5f;
+		float outer_radius = 1.0f;
+		float height = 2.0f;
+		int radial_segments = 64;
+		int rings = 8;
+		int ring_segments = 32;
+		bool cap_top = true;
+		bool cap_bottom = true;
+		bool is_hemisphere = false;
+	};
+
+	struct TrailParams
+	{
+		float ribbon_size = 1.0f;
+		int radial_steps = 8;
+		int sections = 5;
+		float section_length = 0.2f;
+		int section_rings = 3;
+		int section_segments = 3;
+		RibbonShape ribbon_shape = SHAPE_CROSS;
+		Ref<Curve> curve;
+	};
+
+	struct TextMeshState
+	{
+		struct ContourPoint
+		{
+			Vector2 point;
+			bool sharp = false;
+
+			ContourPoint() = default;
+			ContourPoint(const Vector2& p_pt, bool p_sharp) : point(p_pt), sharp(p_sharp) {}
+		};
+
+		struct ContourInfo
+		{
+			real_t length = 0.0;
+			bool ccw = true;
+
+			ContourInfo() = default;
+			ContourInfo(real_t p_len, bool p_ccw) : length(p_len), ccw(p_ccw) {}
+		};
+
+		struct GlyphMeshKey
+		{
+			uint64_t font_id = 0;
+			uint32_t gl_id = 0;
+
+			bool operator==(const GlyphMeshKey& p_b) const
+			{
+				return (font_id == p_b.font_id) && (gl_id == p_b.gl_id);
+			}
+
+			GlyphMeshKey(uint64_t p_font_id, uint32_t p_gl_id) :
+					font_id(p_font_id), gl_id(p_gl_id) {}
+		};
+
+		struct GlyphMeshKeyHasher
+		{
+			_FORCE_INLINE_ static uint32_t hash(const GlyphMeshKey& p_a)
+			{
+				return hash_murmur3_buffer(&p_a, sizeof(GlyphMeshKey));
+			}
+		};
+
+		struct GlyphMeshData
+		{
+			Vector<Vector2> triangles;
+			Vector<Vector<ContourPoint>> contours;
+			Vector<ContourInfo> contours_info;
+			Vector2 min_p = Vector2(Math::INF, Math::INF);
+			Vector2 max_p = Vector2(-Math::INF, -Math::INF);
+		};
+
+		mutable HashMap<GlyphMeshKey, GlyphMeshData, GlyphMeshKeyHasher> cache;
+
+		mutable RID text_rid;
+		mutable Vector<RID> lines_rid;
+
+		String text;
+		String xl_text;
+
+		int font_size = 16;
+		Ref<Font> font_override;
+
+		TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+		uint32_t jst_flags = TextServer::JUSTIFICATION_WORD_BOUND |
+							 TextServer::JUSTIFICATION_KASHIDA |
+							 TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+							 TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+		float width = 500.0f;
+		float line_spacing = 0.0f;
+		Point2 lbl_offset;
+
+		HorizontalAlignment horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
+		VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_CENTER;
+		bool uppercase = false;
+		String language;
+		TextServer::Direction text_direction = TextServer::DIRECTION_AUTO;
+		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+
+		real_t depth = 0.05;
+		real_t pixel_size = 0.01;
+		real_t curve_step = 0.5;
+
+		mutable bool dirty_lines = true;
+		mutable bool dirty_text = true;
+		mutable bool dirty_font = true;
+		mutable bool dirty_cache = true;
+
+		RID ensure_shaped_text() const;
+		~TextMeshState();
+	};
+
+	MeshType mesh_type = MESH_BOX;
+
+	RID mesh;
+	mutable AABB aabb;
+	AABB custom_aabb;
+
+	mutable int array_len = 0;
+	mutable int index_array_len = 0;
+
+	Ref<Material> material;
+	bool flip_faces = false;
+
+	bool add_uv2 = false;
+	float uv2_padding = 2.0f;
+
+	mutable bool pending_request = true;
+	Mesh::PrimitiveType primitive_type = Mesh::PRIMITIVE_TRIANGLES;
+	float texel_size = 0.2f;
+
+	BoxPrismParams box_prism;
+	PlaneParams plane;
+	RadialParams radial;
+	TrailParams trail;
+	std::unique_ptr<TextMeshState> text_state;
+
+	void _apply_mesh_type_defaults(MeshType p_type);
+	TextMeshState& _ensure_text_state();
+	const TextMeshState& _get_text_state() const;
+
+	Vector2 get_uv2_scale(Vector2 p_margin_scale = Vector2(1.0f, 1.0f)) const;
+	float get_lightmap_texel_size() const;
+
+	void _update() const;
+	void _update_lightmap_size();
+	void _on_settings_changed();
+	void _curve_changed();
+	void _font_changed();
+
+public:
+	PrimitiveMesh(MeshType p_type = MESH_BOX);
+	virtual ~PrimitiveMesh() override;
+
+	void set_mesh_type(MeshType p_type);
+	MeshType get_mesh_type() const { return mesh_type; }
+
+	virtual int get_surface_count() const override;
+	virtual int surface_get_array_len(int p_idx) const override;
+	virtual int surface_get_array_index_len(int p_idx) const override;
+	virtual uint32_t surface_get_format(int p_idx) const override;
+	virtual Mesh::PrimitiveType surface_get_primitive_type(int p_idx) const override;
+	virtual void surface_set_material(int p_idx, const Ref<Material>& p_material) override;
+	virtual Ref<Material> surface_get_material(int p_idx) const override;
+	virtual int get_blend_shape_count() const override;
+	virtual String get_blend_shape_name(int p_index) const override;
+	virtual void set_blend_shape_name(int p_index, const String& p_name) override;
+	virtual AABB get_aabb() const override;
+	virtual RID get_rid() const override;
+	virtual int get_builtin_bind_pose_count() const override;
+	virtual Transform3D get_builtin_bind_pose(int p_index) const override;
+
+	void set_material(const Ref<Material>& p_material);
+	Ref<Material> get_material() const;
+
+	void set_custom_aabb(const AABB& p_custom);
+	AABB get_custom_aabb() const;
+
+	void set_flip_faces(bool p_enable);
+	bool get_flip_faces() const;
+
+	void set_add_uv2(bool p_enable);
+	bool get_add_uv2() const { return add_uv2; }
+
+	void set_uv2_padding(float p_padding);
+	float get_uv2_padding() const { return uv2_padding; }
+
+	void request_update();
+
+	// Box / Prism / Plane / Quad parameters.
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const;
+
+	void set_plane_size(const Size2& p_size);
+	Size2 get_plane_size() const;
+	void set_size(const Size2& p_size) { set_plane_size(p_size); }
+
+	void set_subdivide_width(int p_divisions);
+	int get_subdivide_width() const;
+
+	void set_subdivide_height(int p_divisions);
+	int get_subdivide_height() const;
+
+	void set_subdivide_depth(int p_divisions);
+	int get_subdivide_depth() const;
+
+	void set_center_offset(const Vector3& p_offset);
+	Vector3 get_center_offset() const;
+
+	void set_orientation(Orientation p_orientation);
+	Orientation get_orientation() const;
+
+	void set_left_to_right(float p_left_to_right);
+	float get_left_to_right() const;
+
+	// Capsule / Cylinder / Sphere / Torus parameters.
+	void set_radius(float p_radius);
+	float get_radius() const;
+
+	void set_top_radius(float p_radius);
+	float get_top_radius() const;
+
+	void set_bottom_radius(float p_radius);
+	float get_bottom_radius() const;
+
+	void set_inner_radius(float p_inner_radius);
+	float get_inner_radius() const;
+
+	void set_outer_radius(float p_outer_radius);
+	float get_outer_radius() const;
+
+	void set_height(float p_height);
+	float get_height() const;
+
+	void set_radial_segments(int p_segments);
+	int get_radial_segments() const;
+
+	void set_rings(int p_rings);
+	int get_rings() const;
+
+	void set_ring_segments(int p_ring_segments);
+	int get_ring_segments() const;
+
+	void set_cap_top(bool p_cap_top);
+	bool is_cap_top() const;
+
+	void set_cap_bottom(bool p_cap_bottom);
+	bool is_cap_bottom() const;
+
+	void set_is_hemisphere(bool p_is_hemisphere);
+	bool get_is_hemisphere() const;
+
+	// TubeTrail / RibbonTrail parameters.
+	void set_radial_steps(int p_radial_steps);
+	int get_radial_steps() const;
+
+	void set_sections(int p_sections);
+	int get_sections() const;
+
+	void set_section_length(float p_section_length);
+	float get_section_length() const;
+
+	void set_section_rings(int p_section_rings);
+	int get_section_rings() const;
+
+	void set_section_segments(int p_section_segments);
+	int get_section_segments() const;
+
+	void set_ribbon_size(float p_size);
+	float get_ribbon_size() const;
+
+	void set_ribbon_shape(RibbonShape p_shape);
+	RibbonShape get_ribbon_shape() const;
+	void set_shape(RibbonShape p_shape) { set_ribbon_shape(p_shape); }
+	RibbonShape get_shape() const { return get_ribbon_shape(); }
+
+	void set_curve(const Ref<Curve>& p_curve);
+	Ref<Curve> get_curve() const;
+
+	// Text parameters.
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_vertical_alignment(VerticalAlignment p_alignment);
+	VerticalAlignment get_vertical_alignment() const;
+
+	void set_text(const String& p_string);
+	String get_text() const;
+
+	void set_font(const Ref<Font>& p_font);
+	Ref<Font> get_font() const;
+	Ref<Font> _get_font_or_default() const;
+
+	void set_font_size(int p_size);
+	int get_font_size() const;
+
+	void set_line_spacing(float p_line_spacing);
+	float get_line_spacing() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
+
+	void set_text_direction(TextServer::Direction p_text_direction);
+	TextServer::Direction get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_uppercase(bool p_uppercase);
+	bool is_uppercase() const;
+
+	void set_width(real_t p_width);
+	real_t get_width() const;
+
+	void set_depth(real_t p_depth);
+	real_t get_depth() const;
+
+	void set_curve_step(real_t p_step);
+	real_t get_curve_step() const;
+
+	void set_pixel_size(real_t p_amount);
+	real_t get_pixel_size() const;
+
+	void set_offset(const Point2& p_offset);
+	Point2 get_offset() const;
+};
+
+// --- Folded from scene/resources/3d/mesh_library.h ---
+#include "core/types.h"
+#include "scene/main/node.h"
+
+
+#include "servers/display/display_server.h"
+
+#ifndef PHYSICS_3D_DISABLED
+
+#endif // PHYSICS_3D_DISABLED
+
+class MeshLibrary : public Resource
+{
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+	bool init_property = false;
+
+	bool _validate_index(int p_idx);
+
+public:
+#ifndef PHYSICS_3D_DISABLED
+	struct ShapeData
+	{
+		Ref<Shape3D> shape;
+		Transform3D local_transform;
+	};
+#endif // PHYSICS_3D_DISABLED
+
+	struct Item
+	{
+		String name;
+		String category;
+		Ref<Mesh> mesh;
+		Transform3D mesh_transform;
+		RSE::ShadowCastingSetting mesh_cast_shadow = RSE::SHADOW_CASTING_SETTING_ON;
+#ifndef PHYSICS_3D_DISABLED
+		Vector<ShapeData> shapes;
+#endif // PHYSICS_3D_DISABLED
+		Ref<Texture2D> preview;
+		Ref<NavigationMesh> navigation_mesh;
+		Transform3D navigation_mesh_transform;
+		uint32_t navigation_layers = 1;
+	};
+
+private:
+	RBMap<int, Item> item_map;
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	virtual void reset_state() override;
+
+public:
+	void create_item(int p_item);
+	void set_item_name(int p_item, const String& p_name);
+	void set_item_category(int p_item, const String& p_category);
+	void set_item_mesh(int p_item, const Ref<Mesh>& p_mesh);
+	void set_item_mesh_transform(int p_item, const Transform3D& p_transform);
+	void set_item_mesh_cast_shadow(int p_item, RSE::ShadowCastingSetting p_shadow_casting_setting);
+#ifndef NAVIGATION_3D_DISABLED
+	void set_item_navigation_mesh(int p_item, const Ref<NavigationMesh>& p_navigation_mesh);
+	void set_item_navigation_mesh_transform(int p_item, const Transform3D& p_transform);
+	void set_item_navigation_layers(int p_item, uint32_t p_navigation_layers);
+#endif // NAVIGATION_3D_DISABLED
+
+#ifndef PHYSICS_3D_DISABLED
+	void set_item_shapes(int p_item, const Vector<ShapeData>& p_shapes);
+#endif // PHYSICS_3D_DISABLED
+	void set_item_preview(int p_item, const Ref<Texture2D>& p_preview);
+
+	String get_item_name(int p_item) const;
+	String get_item_category(int p_item) const;
+	Ref<Mesh> get_item_mesh(int p_item) const;
+	Transform3D get_item_mesh_transform(int p_item) const;
+	RSE::ShadowCastingSetting get_item_mesh_cast_shadow(int p_item) const;
+	Ref<NavigationMesh> get_item_navigation_mesh(int p_item) const;
+	Transform3D get_item_navigation_mesh_transform(int p_item) const;
+	uint32_t get_item_navigation_layers(int p_item) const;
+#ifndef PHYSICS_3D_DISABLED
+	Vector<ShapeData> get_item_shapes(int p_item) const;
+#endif // PHYSICS_3D_DISABLED
+	Ref<Texture2D> get_item_preview(int p_item) const;
+
+	void remove_item(int p_item);
+	bool has_item(int p_item) const;
+
+	void clear();
+
+	int find_item_by_name(const String& p_name) const;
+
+	Vector<int> get_item_list() const;
+
+	int get_item_count() const { return item_map.size(); }
+
+	int get_last_unused_item_id() const;
+
+	MeshLibrary();
+};
+
+
+
+// --- End scene/resources/3d/mesh_library.h ---
+// --- End scene/resources/3d/primitive_meshes.h ---
+// --- End scene/resources/mesh.h ---
+// --- Folded from servers/physics_2d/physics_server_2d.h ---
+// --- Folded from servers/physics_2d/direct_states/physics_direct_body_state_2d.h ---
+// --- Folded from servers/physics_2d/direct_states/physics_direct_space_state_2d.h ---
+// --- Folded from servers/physics_2d/physics_server_2d_types.h ---
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/math/vector2.h"
+
+namespace PhysicsServer2DTypes
+{
+
+struct RayParameters
+{
+	Vector2 from;
+	Vector2 to;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool hit_from_inside = false;
+};
+
+struct RayResult
+{
+	Vector2 position;
+	Vector2 normal;
+	RID rid;
+	int shape = 0;
+};
+
+struct ShapeResult
+{
+	RID rid;
+	int shape = 0;
+};
+
+struct PointParameters
+{
+	Vector2 position;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool pick_point = false;
+};
+
+struct ShapeParameters
+{
+	RID shape_rid;
+	Vector2 motion;
+	real_t margin = 0.0;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeRestInfo
+{
+	Vector2 point;
+	Vector2 normal;
+	RID rid;
+	int shape = 0;
+	Vector2 linear_velocity; // Velocity at contact point.
+};
+
+struct MotionParameters
+{
+	Vector2 motion;
+	real_t margin = 0.08;
+	bool collide_separation_ray = false;
+	HashSet<RID> exclude_bodies;
+	bool recovery_as_collision = false;
+
+	MotionParameters() {}
+};
+
+struct MotionResult
+{
+	Vector2 travel;
+	Vector2 remainder;
+
+	Vector2 collision_point;
+	Vector2 collision_normal;
+	Vector2 collider_velocity;
+	real_t collision_depth = 0.0;
+	real_t collision_safe_fraction = 0.0;
+	real_t collision_unsafe_fraction = 0.0;
+	int collision_local_shape = 0;
+	RID collider;
+	int collider_shape = 0;
+
+	real_t get_angle(Vector2 p_up_direction) const
+	{
+		return Math::acos(collision_normal.dot(p_up_direction));
+	}
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer2DTypes
+
+// Alias to make it easier to use.
+#define PS2DT PhysicsServer2DTypes
+
+
+
+// --- End servers/physics_2d/physics_server_2d_types.h ---
+// --- Folded from servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
+#include "core/types.h"
+
+
+template <typename T> class TypedArray;
+
+class PhysicsRayQueryParameters2D : public RefCounted
+{
+	PS2DT::RayParameters parameters;
+
+protected:
+
+public:
+	static Ref<PhysicsRayQueryParameters2D> create(
+		Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude);
+
+	const PS2DT::RayParameters& get_parameters() const { return parameters; }
+
+	void set_from(const Vector2& p_from) { parameters.from = p_from; }
+
+	const Vector2& get_from() const { return parameters.from; }
+
+	void set_to(const Vector2& p_to) { parameters.to = p_to; }
+
+	const Vector2& get_to() const { return parameters.to; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
+
+	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
+
+	void set_exclude(const TypedArray<RID>& p_exclude);
+	TypedArray<RID> get_exclude() const;
+};
+
+
+
+// --- End servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
+// --- Folded from servers/physics_2d/queries/physics_shape_query_parameters_2d.h ---
+#include "core/types.h"
+
+
+class Resource;
+template <typename T> class Ref;
+
+class PhysicsShapeQueryParameters2D : public RefCounted
+{
+	PS2DT::ShapeParameters parameters;
+
+	Ref<Resource> shape_ref;
+
+protected:
+
+public:
+	const PS2DT::ShapeParameters& get_parameters() const { return parameters; }
+
+	void set_shape(const Ref<Resource>& p_shape_ref);
+	Ref<Resource> get_shape() const;
+
+	void set_shape_rid(const RID& p_shape);
+
+	RID get_shape_rid() const { return parameters.shape_rid; }
+
+	void set_motion(const Vector2& p_motion) { parameters.motion = p_motion; }
+
+	const Vector2& get_motion() const { return parameters.motion; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+};
+
+
+
+// --- End servers/physics_2d/queries/physics_shape_query_parameters_2d.h ---
+
+class GodotSpace2D;
+
+class PhysicsDirectSpaceState2D final
+{
+	GodotSpace2D* space = nullptr;
+
+	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters2D* rp_shape_query);
+
+public:
+	PhysicsDirectSpaceState2D() = default;
+	explicit PhysicsDirectSpaceState2D(GodotSpace2D* p_space);
+
+	bool intersect_ray(
+		const PS2DT::RayParameters& p_parameters, PS2DT::RayResult& r_result);
+
+	int intersect_point(const PS2DT::PointParameters& p_parameters,
+		PS2DT::ShapeResult* r_results, int p_result_max);
+
+	int intersect_shape(const PS2DT::ShapeParameters& p_parameters,
+		PS2DT::ShapeResult* r_results, int p_result_max);
+	bool cast_motion(const PS2DT::ShapeParameters& p_parameters, real_t& p_closest_safe,
+		real_t& p_closest_unsafe);
+	bool collide_shape(const PS2DT::ShapeParameters& p_parameters, Vector2* r_results,
+		int p_result_max, int& r_result_count);
+	bool rest_info(
+		const PS2DT::ShapeParameters& p_parameters, PS2DT::ShapeRestInfo* r_info);
+
+	GodotSpace2D& get_space() const { return *space; }
+};
+
+// --- End servers/physics_2d/direct_states/physics_direct_space_state_2d.h ---
+
+class GodotBody2D;
+
+class PhysicsDirectBodyState2D final
+{
+	GodotBody2D* body = nullptr;
+
+public:
+	PhysicsDirectBodyState2D() = default;
+	explicit PhysicsDirectBodyState2D(GodotBody2D* p_body);
+
+	Vector2 get_total_gravity() const;
+	real_t get_total_linear_damp() const;
+	real_t get_total_angular_damp() const;
+
+	Vector2 get_center_of_mass() const;
+	Vector2 get_center_of_mass_local() const;
+	real_t get_inverse_mass() const;
+	real_t get_inverse_inertia() const;
+
+	void set_linear_velocity(const Vector2& p_velocity);
+	Vector2 get_linear_velocity() const;
+
+	void set_angular_velocity(real_t p_velocity);
+	real_t get_angular_velocity() const;
+
+	void set_transform(const Transform2D& p_transform);
+	Transform2D get_transform() const;
+
+	Vector2 get_velocity_at_local_position(const Vector2& p_position) const;
+
+	void apply_central_impulse(const Vector2& p_impulse);
+	void apply_torque_impulse(real_t p_torque);
+	void apply_impulse(const Vector2& p_impulse, const Vector2& p_position = Vector2());
+
+	void apply_central_force(const Vector2& p_force);
+	void apply_force(const Vector2& p_force, const Vector2& p_position = Vector2());
+	void apply_torque(real_t p_torque);
+
+	void add_constant_central_force(const Vector2& p_force);
+	void add_constant_force(const Vector2& p_force, const Vector2& p_position = Vector2());
+	void add_constant_torque(real_t p_torque);
+
+	void set_constant_force(const Vector2& p_force);
+	Vector2 get_constant_force() const;
+
+	void set_constant_torque(real_t p_torque);
+	real_t get_constant_torque() const;
+
+	void set_sleep_state(bool p_enable);
+	bool is_sleeping() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	int get_contact_count() const;
+
+	Vector2 get_contact_local_position(int p_contact_idx) const;
+	Vector2 get_contact_local_normal(int p_contact_idx) const;
+	int get_contact_local_shape(int p_contact_idx) const;
+	Vector2 get_contact_local_velocity_at_position(int p_contact_idx) const;
+
+	RID get_contact_collider(int p_contact_idx) const;
+	Vector2 get_contact_collider_position(int p_contact_idx) const;
+	int get_contact_collider_shape(int p_contact_idx) const;
+	Vector2 get_contact_collider_velocity_at_position(int p_contact_idx) const;
+	Vector2 get_contact_impulse(int p_contact_idx) const;
+
+	real_t get_step() const;
+	void integrate_forces();
+
+	PhysicsDirectSpaceState2D* get_space_state();
+};
+
+// --- End servers/physics_2d/direct_states/physics_direct_body_state_2d.h ---
+
+// --- Folded from servers/physics_2d/physics_server_2d_enums.h ---
+namespace PhysicsServer2DEnums {
+
+/* SHAPE API */
+
+enum ShapeType {
+	SHAPE_WORLD_BOUNDARY, ///< plane:"plane"
+	SHAPE_SEPARATION_RAY, ///< float:"length"
+	SHAPE_SEGMENT, ///< float:"length"
+	SHAPE_CIRCLE, ///< float:"radius"
+	SHAPE_RECTANGLE, ///< vec3:"extents"
+	SHAPE_CAPSULE,
+	SHAPE_CONVEX_POLYGON, ///< array of planes:"planes"
+	SHAPE_CONCAVE_POLYGON, ///< Vector2 array:"triangles" , or Dictionary with "indices" (int array) and "triangles" (Vector2 array)
+	SHAPE_CUSTOM, ///< Server-Implementation based custom shape, calling shape_create() with this value will result in an error
+};
+
+/* SPACE API */
+
+enum SpaceParameter {
+	SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
+	SPACE_PARAM_CONTACT_MAX_SEPARATION,
+	SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
+	SPACE_PARAM_CONTACT_DEFAULT_BIAS,
+	SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_TIME_TO_SLEEP,
+	SPACE_PARAM_CONSTRAINT_DEFAULT_BIAS,
+	SPACE_PARAM_SOLVER_ITERATIONS,
+};
+
+/* AREA API */
+
+enum AreaParameter {
+	AREA_PARAM_GRAVITY_OVERRIDE_MODE,
+	AREA_PARAM_GRAVITY,
+	AREA_PARAM_GRAVITY_VECTOR,
+	AREA_PARAM_GRAVITY_IS_POINT,
+	AREA_PARAM_GRAVITY_POINT_UNIT_DISTANCE,
+	AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_LINEAR_DAMP,
+	AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_ANGULAR_DAMP,
+	AREA_PARAM_PRIORITY
+};
+
+enum AreaSpaceOverrideMode {
+	AREA_SPACE_OVERRIDE_DISABLED,
+	AREA_SPACE_OVERRIDE_COMBINE,
+	AREA_SPACE_OVERRIDE_COMBINE_REPLACE, // Combines, then discards all subsequent calculations
+	AREA_SPACE_OVERRIDE_REPLACE,
+	AREA_SPACE_OVERRIDE_REPLACE_COMBINE // Discards all previous calculations, then keeps combining
+};
+
+/* BODY API */
+
+enum BodyMode {
+	BODY_MODE_STATIC,
+	BODY_MODE_KINEMATIC,
+	BODY_MODE_RIGID,
+	BODY_MODE_RIGID_LINEAR,
+};
+
+enum BodyDampMode {
+	BODY_DAMP_MODE_COMBINE,
+	BODY_DAMP_MODE_REPLACE,
+};
+
+// common body variables
+enum BodyParameter {
+	BODY_PARAM_BOUNCE,
+	BODY_PARAM_FRICTION,
+	BODY_PARAM_MASS, ///< unused for static, always infinite
+	BODY_PARAM_INERTIA,
+	BODY_PARAM_CENTER_OF_MASS,
+	BODY_PARAM_GRAVITY_SCALE,
+	BODY_PARAM_LINEAR_DAMP_MODE,
+	BODY_PARAM_ANGULAR_DAMP_MODE,
+	BODY_PARAM_LINEAR_DAMP,
+	BODY_PARAM_ANGULAR_DAMP,
+	BODY_PARAM_MAX,
+};
+
+enum BodyState {
+	BODY_STATE_TRANSFORM,
+	BODY_STATE_LINEAR_VELOCITY,
+	BODY_STATE_ANGULAR_VELOCITY,
+	BODY_STATE_SLEEPING,
+	BODY_STATE_CAN_SLEEP,
+};
+
+enum CCDMode {
+	CCD_MODE_DISABLED,
+	CCD_MODE_CAST_RAY,
+	CCD_MODE_CAST_SHAPE,
+};
+
+/* JOINT API */
+
+enum JointType {
+	JOINT_TYPE_PIN,
+	JOINT_TYPE_GROOVE,
+	JOINT_TYPE_DAMPED_SPRING,
+	JOINT_TYPE_MAX
+};
+
+enum JointParam {
+	JOINT_PARAM_BIAS,
+	JOINT_PARAM_MAX_BIAS,
+	JOINT_PARAM_MAX_FORCE,
+};
+
+enum PinJointParam {
+	PIN_JOINT_SOFTNESS,
+	PIN_JOINT_LIMIT_UPPER,
+	PIN_JOINT_LIMIT_LOWER,
+	PIN_JOINT_MOTOR_TARGET_VELOCITY
+};
+
+enum PinJointFlag {
+	PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED,
+	PIN_JOINT_FLAG_MOTOR_ENABLED
+};
+
+enum DampedSpringParam {
+	DAMPED_SPRING_REST_LENGTH,
+	DAMPED_SPRING_STIFFNESS,
+	DAMPED_SPRING_DAMPING
+};
+
+/* QUERY API */
+
+enum AreaBodyStatus {
+	AREA_BODY_ADDED,
+	AREA_BODY_REMOVED
+};
+
+enum ProcessInfo {
+	INFO_ACTIVE_OBJECTS,
+	INFO_COLLISION_PAIRS,
+	INFO_ISLAND_COUNT
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer2DEnums
+
+// Alias to make it easier to use.
+#define PS2DE PhysicsServer2DEnums
+
+// --- End servers/physics_2d/physics_server_2d_enums.h ---
+
+
+// --- Folded from servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
+#include "core/types.h"
+
+
+class PhysicsTestMotionParameters2D : public RefCounted
+{
+	PS2DT::MotionParameters parameters;
+
+protected:
+
+public:
+	const PS2DT::MotionParameters& get_parameters() const { return parameters; }
+
+	const Vector2& get_motion() const { return parameters.motion; }
+
+	void set_motion(const Vector2& p_motion) { parameters.motion = p_motion; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	bool is_collide_separation_ray_enabled() const { return parameters.collide_separation_ray; }
+
+	void set_collide_separation_ray_enabled(bool p_enabled)
+	{
+		parameters.collide_separation_ray = p_enabled;
+	}
+
+	bool is_recovery_as_collision_enabled() const { return parameters.recovery_as_collision; }
+
+	void set_recovery_as_collision_enabled(bool p_enabled)
+	{
+		parameters.recovery_as_collision = p_enabled;
+	}
+};
+
+
+
+// --- End servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
+// --- Folded from servers/physics_2d/queries/physics_testmotion_query_result_2d.h ---
+
+#include "core/types.h"
+
+class PhysicsTestMotionResult2D : public RefCounted
+{
+	PS2DT::MotionResult result;
+
+protected:
+
+public:
+	PS2DT::MotionResult* get_result_ptr() { return &result; }
+
+	Vector2 get_travel() const;
+	Vector2 get_remainder() const;
+
+	Vector2 get_collision_point() const;
+	Vector2 get_collision_normal() const;
+	Vector2 get_collider_velocity() const;
+	RID get_collider_rid() const;
+	int get_collider_shape() const;
+	int get_collision_local_shape() const;
+	real_t get_collision_depth() const;
+	real_t get_collision_safe_fraction() const;
+	real_t get_collision_unsafe_fraction() const;
+};
+
+
+
+// --- End servers/physics_2d/queries/physics_testmotion_query_result_2d.h ---
+
+class GodotPhysicsServer2D;
+class PhysicsDirectSpaceState2D;
+template <typename T> class TypedArray;
+
+template <typename T> class Ref;
+
+class PhysicsTestMotionParameters2D;
+class PhysicsTestMotionResult2D;
+
+class PhysicsServer2D final
+{
+public:
+	struct Data
+	{
+		GodotPhysicsServer2D* server = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize(bool p_using_threads = false);
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized()
+	{
+		return data != nullptr && data->server != nullptr;
+	}
+	_FORCE_INLINE_ static GodotPhysicsServer2D* get_driver() { return data ? data->server : nullptr; }
+
+	static RID world_boundary_shape_create();
+	static RID separation_ray_shape_create();
+	static RID segment_shape_create();
+	static RID circle_shape_create();
+	static RID rectangle_shape_create();
+	static RID capsule_shape_create();
+	static RID convex_polygon_shape_create();
+	static RID concave_polygon_shape_create();
+	static void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+	static PS2DE::ShapeType shape_get_type(RID p_shape);
+	static real_t shape_get_custom_solver_bias(RID p_shape);
+	static bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count);
+	static RID space_create();
+	static void space_set_active(RID p_space, bool p_active);
+	static bool space_is_active(RID p_space);
+	static void space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
+	static real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param);
+	static PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
+	static void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	static Vector<Vector2> space_get_contacts(RID p_space);
+	static int space_get_contact_count(RID p_space);
+	static RID area_create();
+	static void area_set_space(RID p_area, RID p_space);
+	static RID area_get_space(RID p_area);
+	static void area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	static void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	static void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform);
+	static int area_get_shape_count(RID p_area);
+	static RID area_get_shape(RID p_area, int p_shape_idx);
+	static Transform2D area_get_shape_transform(RID p_area, int p_shape_idx);
+	static void area_remove_shape(RID p_area, int p_shape_idx);
+	static void area_clear_shapes(RID p_area);
+	static void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
+	static void area_set_transform(RID p_area, const Transform2D& p_transform);
+	static Transform2D area_get_transform(RID p_area);
+	static void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	static uint32_t area_get_collision_layer(RID p_area);
+	static void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	static uint32_t area_get_collision_mask(RID p_area);
+	static void area_set_monitorable(RID p_area, bool p_monitorable);
+	static void area_set_pickable(RID p_area, bool p_pickable);
+	static RID body_create();
+	static void body_set_space(RID p_body, RID p_space);
+	static RID body_get_space(RID p_body);
+	static void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
+	static PS2DE::BodyMode body_get_mode(RID p_body);
+	static void body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	static void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	static void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform);
+	static int body_get_shape_count(RID p_body);
+	static RID body_get_shape(RID p_body, int p_shape_idx);
+	static Transform2D body_get_shape_transform(RID p_body, int p_shape_idx);
+	static void body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled);
+	static void body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
+	static void body_remove_shape(RID p_body, int p_shape_idx);
+	static void body_clear_shapes(RID p_body);
+	static void body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode);
+	static PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body);
+	static void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	static uint32_t body_get_collision_layer(RID p_body);
+	static void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	static uint32_t body_get_collision_mask(RID p_body);
+	static void body_set_collision_priority(RID p_body, real_t p_priority);
+	static real_t body_get_collision_priority(RID p_body);
+	static void body_reset_mass_properties(RID p_body);
+	static void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
+	static void body_apply_torque_impulse(RID p_body, real_t p_torque);
+	static void body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
+	static void body_apply_central_force(RID p_body, const Vector2& p_force);
+	static void body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	static void body_apply_torque(RID p_body, real_t p_torque);
+	static void body_add_constant_central_force(RID p_body, const Vector2& p_force);
+	static void body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	static void body_add_constant_torque(RID p_body, real_t p_torque);
+	static void body_set_constant_force(RID p_body, const Vector2& p_force);
+	static Vector2 body_get_constant_force(RID p_body);
+	static void body_set_constant_torque(RID p_body, real_t p_torque);
+	static real_t body_get_constant_torque(RID p_body);
+	static void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
+	static void body_add_collision_exception(RID p_body, RID p_body_b);
+	static void body_remove_collision_exception(RID p_body, RID p_body_b);
+	static void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	static void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	static int body_get_max_contacts_reported(RID p_body);
+	static void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	static real_t body_get_contacts_reported_depth_threshold(RID p_body);
+	static void body_set_omit_force_integration(RID p_body, bool p_omit);
+	static bool body_is_omitting_force_integration(RID p_body);
+	static bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count);
+	static void body_set_pickable(RID p_body, bool p_pickable);
+	static PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
+	static bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result = nullptr);
+	static RID joint_create();
+	static void joint_clear(RID p_joint);
+	static void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
+	static real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param);
+	static void joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable);
+	static bool joint_is_disabled_collisions_between_bodies(RID p_joint);
+	static void joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
+	static void joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
+	static void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
+	static void pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
+	static real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param);
+	static void pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
+	static bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag);
+	static void damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
+	static real_t damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param);
+	static PS2DE::JointType joint_get_type(RID p_joint);
+	static void free_rid(RID p_rid);
+	static void set_active(bool p_active);
+	static void init();
+	static void step(real_t p_step);
+	static void sync();
+	static void flush_queries();
+	static void end_sync();
+	static void finish();
+	static bool is_flushing_queries();
+	static int get_process_info(PS2DE::ProcessInfo p_info);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] static void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
+
+	PhysicsServer2D() = delete;
+	PhysicsServer2D(const PhysicsServer2D&) = delete;
+	PhysicsServer2D& operator=(const PhysicsServer2D&) = delete;
+	~PhysicsServer2D() = delete;
+};
+
+// --- Folded from servers/physics_2d/physics_server_2d_constants.h ---
+namespace PhysicsServer2DConstants {
+
+constexpr int MAX_CONTACTS_REPORTED_2D_MAX = 4096;
+
+} // namespace PhysicsServer2DConstants
+
+// Alias to make it easier to use.
+#define PS2DC PhysicsServer2DConstants
+
+// --- End servers/physics_2d/physics_server_2d_constants.h ---
+
+// --- Folded from modules/godot_physics_2d/godot_physics_server_2d.h ---
+#include "core/types.h"
+// --- Folded from modules/godot_physics_2d/godot_constraints_2d.h ---
+// --- Folded from modules/godot_physics_2d/godot_objects_2d.h ---
+#include "core/types.h"
+#include "core/templates/list.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
+// --- Folded from modules/godot_physics_2d/godot_shape_2d.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
+
+
+class GodotCollisionObject2D;
+
+class GodotShape2D final
+{
+public:
+	// Returns true to stop the query.
+	typedef bool (*QueryCallback)(void* p_userdata, GodotShape2D* p_convex);
+
+	struct ConvexPoint
+	{
+		Vector2 pos;
+		Vector2 normal; // normal to next segment
+	};
+
+	struct ConcaveSegment
+	{
+		int points[2] = {};
+	};
+
+	struct BVH
+	{
+		Rect2 aabb;
+		int left = 0, right = 0;
+	};
+
+private:
+	RID self;
+	PS2DE::ShapeType type = PS2DE::SHAPE_CUSTOM;
+	Rect2 aabb;
+	bool configured = false;
+	real_t custom_bias = 0.0;
+
+	HashMap<GodotCollisionObject2D*, int> owners;
+
+	// World boundary data
+	Vector2 wb_normal;
+	real_t wb_d = 0.0;
+
+	// Separation ray data
+	real_t ray_length = 0.0;
+	bool slide_on_slope = false;
+
+	// Segment data
+	Vector2 seg_a;
+	Vector2 seg_b;
+	Vector2 seg_n;
+
+	// Circle / Capsule data
+	real_t radius = 0.0;
+	real_t height = 0.0;
+
+	// Rectangle data
+	Vector2 half_extents;
+
+	// Convex polygon data
+	ConvexPoint* convex_points = nullptr;
+	int convex_point_count = 0;
+
+	// Concave polygon data
+	Vector<ConcaveSegment> concave_segments;
+	Vector<Point2> concave_points;
+	Vector<BVH> concave_bvh;
+	int concave_bvh_depth = 0;
+
+	struct BVH_CompareX
+	{
+		_FORCE_INLINE_ bool operator()(const BVH& a, const BVH& b) const
+		{
+			return (a.aabb.position.x + a.aabb.size.x * 0.5) <
+				   (b.aabb.position.x + b.aabb.size.x * 0.5);
+		}
+	};
+
+	struct BVH_CompareY
+	{
+		_FORCE_INLINE_ bool operator()(const BVH& a, const BVH& b) const
+		{
+			return (a.aabb.position.y + a.aabb.size.y * 0.5) <
+				   (b.aabb.position.y + b.aabb.size.y * 0.5);
+		}
+	};
+
+	static constexpr double segment_is_valid_support_threshold = 0.99998;
+	static inline const double segment_is_valid_support_threshold_lower =
+		Math::sqrt(1.0 - segment_is_valid_support_threshold * segment_is_valid_support_threshold);
+
+	void configure(const Rect2& p_aabb);
+	int _generate_bvh(BVH* p_bvh, int p_len, int p_depth);
+
+public:
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	_FORCE_INLINE_ PS2DE::ShapeType get_type() const { return type; }
+
+	_FORCE_INLINE_ Rect2 get_aabb() const { return aabb; }
+
+	_FORCE_INLINE_ bool is_configured() const { return configured; }
+
+	_FORCE_INLINE_ bool allows_one_way_collision() const
+	{
+		return type != PS2DE::SHAPE_SEPARATION_RAY;
+	}
+
+	_FORCE_INLINE_ bool is_concave() const { return type == PS2DE::SHAPE_CONCAVE_POLYGON; }
+
+	_FORCE_INLINE_ void set_custom_bias(real_t p_bias) { custom_bias = p_bias; }
+
+	_FORCE_INLINE_ real_t get_custom_bias() const { return custom_bias; }
+
+	void add_owner(GodotCollisionObject2D* p_owner);
+	void remove_owner(GodotCollisionObject2D* p_owner);
+	bool is_owner(GodotCollisionObject2D* p_owner) const;
+	const HashMap<GodotCollisionObject2D*, int>& get_owners() const;
+
+	// Typed shape configuration setters
+	void set_world_boundary(const Vector2& p_normal, real_t p_d);
+	void set_separation_ray(real_t p_length, bool p_slide_on_slope);
+	void set_segment(const Vector2& p_a, const Vector2& p_b);
+	void set_circle(real_t p_radius);
+	void set_rectangle(const Vector2& p_half_extents);
+	void set_capsule(real_t p_height, real_t p_radius);
+	void set_convex_polygon(const Vector<Vector2>& p_points);
+	void set_concave_polygon(const Vector<Vector2>& p_segments);
+
+	// Shape-specific inline accessors
+	_FORCE_INLINE_ const Vector2& get_world_boundary_normal() const { return wb_normal; }
+	_FORCE_INLINE_ real_t get_world_boundary_d() const { return wb_d; }
+
+	_FORCE_INLINE_ real_t get_length() const { return ray_length; }
+	_FORCE_INLINE_ bool get_slide_on_slope() const { return slide_on_slope; }
+
+	_FORCE_INLINE_ const Vector2& get_a() const { return seg_a; }
+	_FORCE_INLINE_ const Vector2& get_b() const { return seg_b; }
+	_FORCE_INLINE_ const Vector2& get_segment_normal() const { return seg_n; }
+	_FORCE_INLINE_ Vector2 get_xformed_normal(const Transform2D& p_xform) const
+	{
+		return (p_xform.xform(seg_b) - p_xform.xform(seg_a)).normalized().orthogonal();
+	}
+
+	_FORCE_INLINE_ const real_t& get_radius() const { return radius; }
+	_FORCE_INLINE_ const real_t& get_height() const { return height; }
+
+	_FORCE_INLINE_ const Vector2& get_half_extents() const { return half_extents; }
+
+	_FORCE_INLINE_ Vector2 get_circle_axis(
+		const Transform2D& p_xform, const Transform2D& p_xform_inv, const Vector2& p_circle) const
+	{
+		Vector2 local_v = p_xform_inv.xform(p_circle);
+
+		Vector2 he((local_v.x < 0) ? -half_extents.x : half_extents.x,
+			(local_v.y < 0) ? -half_extents.y : half_extents.y);
+
+		return (p_xform.xform(he) - p_circle).normalized();
+	}
+
+	_FORCE_INLINE_ Vector2 get_box_axis(const Transform2D& p_xform, const Transform2D& p_xform_inv,
+		const GodotShape2D* p_B, const Transform2D& p_B_xform,
+		const Transform2D& p_B_xform_inv) const
+	{
+		Vector2 a, b;
+
+		{
+			Vector2 local_v = p_xform_inv.xform(p_B_xform.get_origin());
+
+			Vector2 he((local_v.x < 0) ? -half_extents.x : half_extents.x,
+				(local_v.y < 0) ? -half_extents.y : half_extents.y);
+
+			a = p_xform.xform(he);
+		}
+		{
+			Vector2 local_v = p_B_xform_inv.xform(p_xform.get_origin());
+
+			Vector2 he((local_v.x < 0) ? -p_B->half_extents.x : p_B->half_extents.x,
+				(local_v.y < 0) ? -p_B->half_extents.y : p_B->half_extents.y);
+
+			b = p_B_xform.xform(he);
+		}
+
+		return (a - b).normalized();
+	}
+
+	_FORCE_INLINE_ int get_point_count() const { return convex_point_count; }
+	_FORCE_INLINE_ const Vector2& get_point(int p_idx) const { return convex_points[p_idx].pos; }
+	_FORCE_INLINE_ const Vector2& get_convex_segment_normal(int p_idx) const
+	{
+		return convex_points[p_idx].normal;
+	}
+	_FORCE_INLINE_ Vector2 get_xformed_segment_normal(const Transform2D& p_xform, int p_idx) const
+	{
+		Vector2 a = convex_points[p_idx].pos;
+		p_idx++;
+		Vector2 b = convex_points[p_idx == convex_point_count ? 0 : p_idx].pos;
+		return (p_xform.xform(b) - p_xform.xform(a)).normalized().orthogonal();
+	}
+
+	void cull(const Rect2& p_local_aabb, QueryCallback p_callback, void* p_userdata) const;
+
+	// Non-virtual query methods
+	bool contains_point(const Vector2& p_point) const;
+	bool intersect_segment(
+		const Vector2& p_begin, const Vector2& p_end, Vector2& r_point, Vector2& r_normal) const;
+	real_t get_moment_of_inertia(real_t p_mass, const Size2& p_scale) const;
+
+	Vector2 get_support(const Vector2& p_normal) const;
+	void get_supports(const Vector2& p_normal, Vector2* r_supports, int& r_amount) const;
+
+	template <PS2DE::ShapeType T>
+	_FORCE_INLINE_ void project_range_t(
+		const Vector2& p_normal, const Transform2D& p_transform, real_t& r_min, real_t& r_max) const
+	{
+		if constexpr (T == PS2DE::SHAPE_WORLD_BOUNDARY) {
+			r_min = -1e10;
+			r_max = 1e10;
+		}
+		else if constexpr (T == PS2DE::SHAPE_SEPARATION_RAY) {
+			r_max = p_normal.dot(p_transform.get_origin());
+			r_min = p_normal.dot(p_transform.xform(Vector2(0, ray_length)));
+			if (r_max < r_min) {
+				SWAP(r_max, r_min);
+			}
+		}
+		else if constexpr (T == PS2DE::SHAPE_SEGMENT) {
+			r_max = p_normal.dot(p_transform.xform(seg_a));
+			r_min = p_normal.dot(p_transform.xform(seg_b));
+			if (r_max < r_min) {
+				SWAP(r_max, r_min);
+			}
+		}
+		else if constexpr (T == PS2DE::SHAPE_CIRCLE) {
+			real_t d = p_normal.dot(p_transform.get_origin());
+			Vector2 local_normal = p_transform.basis_xform_inv(p_normal);
+			real_t scale = local_normal.length();
+			r_min = d - radius * scale;
+			r_max = d + radius * scale;
+		}
+		else if constexpr (T == PS2DE::SHAPE_RECTANGLE) {
+			r_max = -1e20;
+			r_min = 1e20;
+			for (int i = 0; i < 4; i++) {
+				real_t d = p_normal.dot(p_transform.xform(Vector2(
+					((i & 1) * 2 - 1) * half_extents.x, ((i >> 1) * 2 - 1) * half_extents.y)));
+
+				if (d > r_max) {
+					r_max = d;
+				}
+				if (d < r_min) {
+					r_min = d;
+				}
+			}
+		}
+		else if constexpr (T == PS2DE::SHAPE_CAPSULE) {
+			Vector2 n = p_transform.basis_xform_inv(p_normal).normalized();
+			real_t h = height * 0.5 - radius;
+
+			n *= radius;
+			n.y += (n.y > 0) ? h : -h;
+
+			r_max = p_normal.dot(p_transform.xform(n));
+			r_min = p_normal.dot(p_transform.xform(-n));
+
+			if (r_max < r_min) {
+				SWAP(r_max, r_min);
+			}
+		}
+		else if constexpr (T == PS2DE::SHAPE_CONVEX_POLYGON) {
+			if (!convex_points || convex_point_count <= 0) {
+				r_min = r_max = 0;
+				return;
+			}
+
+			r_min = r_max = p_normal.dot(p_transform.xform(convex_points[0].pos));
+			for (int i = 1; i < convex_point_count; i++) {
+				real_t d = p_normal.dot(p_transform.xform(convex_points[i].pos));
+				if (d > r_max) {
+					r_max = d;
+				}
+				if (d < r_min) {
+					r_min = d;
+				}
+			}
+		}
+		else {
+			r_min = 0;
+			r_max = 0;
+			ERR_FAIL_MSG("Unsupported call to project_range in GodotShape2D");
+		}
+	}
+
+	template <PS2DE::ShapeType T>
+	_FORCE_INLINE_ void project_range_cast_t(const Vector2& p_cast, const Vector2& p_normal,
+		const Transform2D& p_transform, real_t& r_min, real_t& r_max) const
+	{
+		if constexpr (T == PS2DE::SHAPE_WORLD_BOUNDARY) {
+			r_min = -1e10;
+			r_max = 1e10;
+		}
+		else {
+			real_t mina, maxa;
+			real_t minb, maxb;
+			Transform2D ofsb = p_transform;
+			ofsb.columns[2] += p_cast;
+			project_range_t<T>(p_normal, p_transform, mina, maxa);
+			project_range_t<T>(p_normal, ofsb, minb, maxb);
+			r_min = MIN(mina, minb);
+			r_max = MAX(maxa, maxb);
+		}
+	}
+
+	void project_range(
+		const Vector2& p_normal, const Transform2D& p_transform, real_t& r_min, real_t& r_max) const;
+	void project_range_cast(const Vector2& p_cast, const Vector2& p_normal,
+		const Transform2D& p_transform, real_t& r_min, real_t& r_max) const;
+
+	_FORCE_INLINE_ void project_rangev(
+		const Vector2& p_normal, const Transform2D& p_transform, real_t& r_min, real_t& r_max) const
+	{
+		project_range(p_normal, p_transform, r_min, r_max);
+	}
+
+	_FORCE_INLINE_ void project_range_castv(const Vector2& p_cast, const Vector2& p_normal,
+		const Transform2D& p_transform, real_t& r_min, real_t& r_max) const
+	{
+		project_range_cast(p_cast, p_normal, p_transform, r_min, r_max);
+	}
+
+	_FORCE_INLINE_ void get_supports_transformed_cast(const Vector2& p_cast,
+		const Vector2& p_normal, const Transform2D& p_xform, Vector2* r_supports,
+		int& r_amount) const
+	{
+		get_supports(p_xform.basis_xform_inv(p_normal).normalized(), r_supports, r_amount);
+		for (int i = 0; i < r_amount; i++) {
+			r_supports[i] = p_xform.xform(r_supports[i]);
+		}
+
+		if (r_amount == 1) {
+			if (Math::abs(p_normal.dot(p_cast.normalized())) <
+				segment_is_valid_support_threshold_lower) {
+				// make line because they are parallel
+				r_amount = 2;
+				r_supports[1] = r_supports[0] + p_cast;
+			}
+			else if (p_cast.dot(p_normal) > 0) {
+				// normal points towards cast, add cast
+				r_supports[0] += p_cast;
+			}
+		}
+		else {
+			if (Math::abs(p_normal.dot(p_cast.normalized())) <
+				segment_is_valid_support_threshold_lower) {
+				// optimize line and make it larger because they are parallel
+				if ((r_supports[1] - r_supports[0]).dot(p_cast) > 0) {
+					// larger towards 1
+					r_supports[1] += p_cast;
+				}
+				else {
+					// larger towards 0
+					r_supports[0] += p_cast;
+				}
+			}
+			else if (p_cast.dot(p_normal) > 0) {
+				// normal points towards cast, add cast
+				r_supports[0] += p_cast;
+				r_supports[1] += p_cast;
+			}
+		}
+	}
+
+	explicit GodotShape2D(PS2DE::ShapeType p_type) : type(p_type) {}
+
+	_FORCE_INLINE_ GodotShape2D(const Vector2& p_a, const Vector2& p_b, const Vector2& p_n)
+		: type(PS2DE::SHAPE_SEGMENT), seg_a(p_a), seg_b(p_b), seg_n(p_n)
+	{
+	}
+
+	GodotShape2D(const GodotShape2D&) = delete;
+	GodotShape2D& operator=(const GodotShape2D&) = delete;
+
+	~GodotShape2D();
+};
+
+// --- Folded from modules/godot_physics_2d/godot_collision_solver_2d.h ---
+
+
+class GodotCollisionSolver2D {
+public:
+	typedef void (*CallbackResult)(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_userdata);
+
+private:
+	static bool solve_static_world_boundary(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, real_t p_margin = 0);
+	static bool concave_callback(void *p_userdata, GodotShape2D *p_convex);
+	static bool solve_concave(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
+	static bool solve_separation_ray(const GodotShape2D *p_shape_A, const Vector2 &p_motion_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin = 0);
+
+public:
+	static bool solve(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
+};
+
+// --- End modules/godot_physics_2d/godot_collision_solver_2d.h ---
+
+// --- End modules/godot_physics_2d/godot_shape_2d.h ---
+
+
+class GodotSpace2D;
+class GodotArea2D;
+class GodotBody2D;
+class GodotConstraint2D;
+class PhysicsDirectBodyState2D;
+
+class GodotCollisionObject2D
+{
+public:
+	enum Type
+	{
+		TYPE_AREA,
+		TYPE_BODY
+	};
+
+private:
+	Type type;
+	RID self;
+	bool pickable = true;
+
+	struct Shape
+	{
+		Transform2D xform;
+		Transform2D xform_inv;
+		uint32_t bpid = 0;
+		Rect2 aabb_cache; // for rayqueries
+		GodotShape2D* shape = nullptr;
+		bool disabled = false;
+		bool one_way_collision = false;
+		real_t one_way_collision_margin = 0.0;
+		Vector2 one_way_collision_direction = Vector2(0.0, 1.0);
+	};
+
+	Vector<Shape> shapes;
+	GodotSpace2D* space = nullptr;
+	Transform2D transform;
+	Transform2D inv_transform;
+	uint32_t collision_mask = 1;
+	uint32_t collision_layer = 1;
+	real_t collision_priority = 1.0;
+	bool _static = true;
+
+	SelfList<GodotCollisionObject2D> pending_shape_update_list;
+
+	void _update_shapes();
+
+protected:
+	void _update_shapes_with_motion(const Vector2& p_motion);
+	void _unregister_shapes();
+
+	_FORCE_INLINE_ void _set_transform(const Transform2D& p_transform, bool p_update_shapes = true)
+	{
+		transform = p_transform;
+		if (p_update_shapes) {
+			_update_shapes();
+		}
+	}
+
+	_FORCE_INLINE_ void _set_inv_transform(const Transform2D& p_transform)
+	{
+		inv_transform = p_transform;
+	}
+
+	void _set_static(bool p_static);
+
+	virtual void _shapes_changed() = 0;
+	void _set_space(GodotSpace2D* p_space);
+
+	GodotCollisionObject2D(Type p_type);
+
+public:
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	void _shape_changed();
+
+	_FORCE_INLINE_ Type get_type() const { return type; }
+
+	void add_shape(GodotShape2D* p_shape, const Transform2D& p_transform = Transform2D(),
+		bool p_disabled = false);
+	void set_shape(int p_index, GodotShape2D* p_shape);
+	void set_shape_transform(int p_index, const Transform2D& p_transform);
+
+	_FORCE_INLINE_ int get_shape_count() const { return shapes.size(); }
+
+	_FORCE_INLINE_ GodotShape2D* get_shape(int p_index) const
+	{
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].shape;
+	}
+
+	_FORCE_INLINE_ const Transform2D& get_shape_transform(int p_index) const
+	{
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].xform;
+	}
+
+	_FORCE_INLINE_ const Transform2D& get_shape_inv_transform(int p_index) const
+	{
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].xform_inv;
+	}
+
+	_FORCE_INLINE_ const Rect2& get_shape_aabb(int p_index) const
+	{
+		CRASH_BAD_INDEX(p_index, shapes.size());
+		return shapes[p_index].aabb_cache;
+	}
+
+	_FORCE_INLINE_ const Transform2D& get_transform() const { return transform; }
+
+	_FORCE_INLINE_ const Transform2D& get_inv_transform() const { return inv_transform; }
+
+	_FORCE_INLINE_ GodotSpace2D* get_space() const { return space; }
+
+	void set_shape_disabled(int p_idx, bool p_disabled);
+
+	_FORCE_INLINE_ bool is_shape_disabled(int p_idx) const
+	{
+		ERR_FAIL_INDEX_V(p_idx, shapes.size(), false);
+		return shapes[p_idx].disabled;
+	}
+
+	_FORCE_INLINE_ void set_shape_as_one_way_collision(
+		int p_idx, bool p_one_way_collision, real_t p_margin, const Vector2& p_direction)
+	{
+		CRASH_BAD_INDEX(p_idx, shapes.size());
+		shapes.write[p_idx].one_way_collision = p_one_way_collision;
+		shapes.write[p_idx].one_way_collision_margin = p_margin;
+		shapes.write[p_idx].one_way_collision_direction = p_direction;
+	}
+
+	_FORCE_INLINE_ bool is_shape_set_as_one_way_collision(int p_idx) const
+	{
+		CRASH_BAD_INDEX(p_idx, shapes.size());
+		return shapes[p_idx].one_way_collision;
+	}
+
+	_FORCE_INLINE_ real_t get_shape_one_way_collision_margin(int p_idx) const
+	{
+		CRASH_BAD_INDEX(p_idx, shapes.size());
+		return shapes[p_idx].one_way_collision_margin;
+	}
+
+	Vector2 get_shape_one_way_collision_direction(int p_idx) const
+	{
+		CRASH_BAD_INDEX(p_idx, shapes.size());
+		return shapes[p_idx].one_way_collision_direction;
+	}
+
+	void set_collision_mask(uint32_t p_mask)
+	{
+		collision_mask = p_mask;
+		_shape_changed();
+	}
+
+	_FORCE_INLINE_ uint32_t get_collision_mask() const { return collision_mask; }
+
+	void set_collision_layer(uint32_t p_layer)
+	{
+		collision_layer = p_layer;
+		_shape_changed();
+	}
+
+	_FORCE_INLINE_ uint32_t get_collision_layer() const { return collision_layer; }
+
+	_FORCE_INLINE_ void set_collision_priority(real_t p_priority)
+	{
+		ERR_FAIL_COND_MSG(p_priority <= 0, "Priority must be greater than 0.");
+		collision_priority = p_priority;
+		_shape_changed();
+	}
+
+	_FORCE_INLINE_ real_t get_collision_priority() const { return collision_priority; }
+
+	void remove_shape(GodotShape2D* p_shape);
+	void remove_shape(int p_index);
+
+	virtual void set_space(GodotSpace2D* p_space) = 0;
+
+	_FORCE_INLINE_ bool is_static() const { return _static; }
+
+	void set_pickable(bool p_pickable) { pickable = p_pickable; }
+
+	_FORCE_INLINE_ bool is_pickable() const { return pickable; }
+
+	_FORCE_INLINE_ bool collides_with(GodotCollisionObject2D* p_other) const
+	{
+		return p_other->collision_layer & collision_mask;
+	}
+
+	_FORCE_INLINE_ bool interacts_with(const GodotCollisionObject2D* p_other) const
+	{
+		return collision_layer & p_other->collision_mask ||
+			   p_other->collision_layer & collision_mask;
+	}
+
+	virtual ~GodotCollisionObject2D() {}
+};
+
+class GodotArea2D final : public GodotCollisionObject2D
+{
+	PS2DE::AreaSpaceOverrideMode gravity_override_mode = PS2DE::AREA_SPACE_OVERRIDE_DISABLED;
+	PS2DE::AreaSpaceOverrideMode linear_damping_override_mode = PS2DE::AREA_SPACE_OVERRIDE_DISABLED;
+	PS2DE::AreaSpaceOverrideMode angular_damping_override_mode =
+		PS2DE::AREA_SPACE_OVERRIDE_DISABLED;
+
+	real_t gravity = 9.80665;
+	Vector2 gravity_vector = Vector2(0, -1);
+	bool gravity_is_point = false;
+	real_t gravity_point_unit_distance = 0.0;
+	real_t linear_damp = 0.1;
+	real_t angular_damp = 1.0;
+	int priority = 0;
+	bool monitorable = false;
+
+	SelfList<GodotArea2D> monitor_query_list;
+	SelfList<GodotArea2D> moved_list;
+
+	struct BodyKey
+	{
+		RID rid;
+		uint32_t body_shape = 0;
+		uint32_t area_shape = 0;
+
+		static uint32_t hash(const BodyKey& p_key)
+		{
+			uint32_t h = hash_one_uint64(p_key.rid.get_id());
+			h = hash_murmur3_one_32(p_key.area_shape, h);
+			return hash_fmix32(hash_murmur3_one_32(p_key.body_shape, h));
+		}
+
+		_FORCE_INLINE_ bool operator==(const BodyKey& p_key) const
+		{
+			return rid == p_key.rid && body_shape == p_key.body_shape &&
+				   area_shape == p_key.area_shape;
+		}
+
+		_FORCE_INLINE_ BodyKey() {}
+
+		BodyKey(GodotBody2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape);
+		BodyKey(GodotArea2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape);
+	};
+
+	struct BodyState
+	{
+		int state = 0;
+
+		_FORCE_INLINE_ void inc() { state++; }
+
+		_FORCE_INLINE_ void dec() { state--; }
+	};
+
+	HashMap<BodyKey, BodyState, BodyKey> monitored_bodies;
+	HashMap<BodyKey, BodyState, BodyKey> monitored_areas;
+
+	HashSet<GodotConstraint2D*> constraints;
+
+	virtual void _shapes_changed() override;
+	void _queue_monitor_update();
+
+	void _set_space_override_mode(
+		PS2DE::AreaSpaceOverrideMode& r_mode, PS2DE::AreaSpaceOverrideMode p_new_mode);
+
+public:
+	_FORCE_INLINE_ void add_body_to_query(
+		GodotBody2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape);
+	_FORCE_INLINE_ void remove_body_from_query(
+		GodotBody2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape);
+
+	_FORCE_INLINE_ void add_area_to_query(
+		GodotArea2D* p_area, uint32_t p_area_shape, uint32_t p_self_shape);
+	_FORCE_INLINE_ void remove_area_from_query(
+		GodotArea2D* p_area, uint32_t p_area_shape, uint32_t p_self_shape);
+
+	_FORCE_INLINE_ void set_gravity(real_t p_gravity) { gravity = p_gravity; }
+
+	_FORCE_INLINE_ real_t get_gravity() const { return gravity; }
+
+	_FORCE_INLINE_ void set_gravity_vector(const Vector2& p_gravity) { gravity_vector = p_gravity; }
+
+	_FORCE_INLINE_ Vector2 get_gravity_vector() const { return gravity_vector; }
+
+	_FORCE_INLINE_ void set_gravity_as_point(bool p_enable) { gravity_is_point = p_enable; }
+
+	_FORCE_INLINE_ bool is_gravity_point() const { return gravity_is_point; }
+
+	_FORCE_INLINE_ void set_gravity_point_unit_distance(real_t scale)
+	{
+		gravity_point_unit_distance = scale;
+	}
+
+	_FORCE_INLINE_ real_t get_gravity_point_unit_distance() const
+	{
+		return gravity_point_unit_distance;
+	}
+
+	_FORCE_INLINE_ void set_linear_damp(real_t p_linear_damp) { linear_damp = p_linear_damp; }
+
+	_FORCE_INLINE_ real_t get_linear_damp() const { return linear_damp; }
+
+	_FORCE_INLINE_ void set_angular_damp(real_t p_angular_damp) { angular_damp = p_angular_damp; }
+
+	_FORCE_INLINE_ real_t get_angular_damp() const { return angular_damp; }
+
+	_FORCE_INLINE_ void set_priority(int p_priority) { priority = p_priority; }
+
+	_FORCE_INLINE_ int get_priority() const { return priority; }
+
+	_FORCE_INLINE_ void add_constraint(GodotConstraint2D* p_constraint)
+	{
+		constraints.insert(p_constraint);
+	}
+
+	_FORCE_INLINE_ void remove_constraint(GodotConstraint2D* p_constraint)
+	{
+		constraints.erase(p_constraint);
+	}
+
+	_FORCE_INLINE_ const HashSet<GodotConstraint2D*>& get_constraints() const
+	{
+		return constraints;
+	}
+
+	_FORCE_INLINE_ void clear_constraints() { constraints.clear(); }
+
+	void set_monitorable(bool p_monitorable);
+
+	_FORCE_INLINE_ bool is_monitorable() const { return monitorable; }
+
+	void set_transform(const Transform2D& p_transform);
+
+	void set_space(GodotSpace2D* p_space) override;
+
+	void call_queries();
+
+	void compute_gravity(const Vector2& p_position, Vector2& r_gravity) const;
+
+	GodotArea2D();
+	~GodotArea2D();
+};
+
+void GodotArea2D::add_body_to_query(
+	GodotBody2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape)
+{
+	BodyKey bk(p_body, p_body_shape, p_area_shape);
+	monitored_bodies[bk].inc();
+	if (!monitor_query_list.in_list()) {
+		_queue_monitor_update();
+	}
+}
+
+void GodotArea2D::remove_body_from_query(
+	GodotBody2D* p_body, uint32_t p_body_shape, uint32_t p_area_shape)
+{
+	BodyKey bk(p_body, p_body_shape, p_area_shape);
+	monitored_bodies[bk].dec();
+	if (get_space() && !monitor_query_list.in_list()) {
+		_queue_monitor_update();
+	}
+}
+
+void GodotArea2D::add_area_to_query(
+	GodotArea2D* p_area, uint32_t p_area_shape, uint32_t p_self_shape)
+{
+	BodyKey bk(p_area, p_area_shape, p_self_shape);
+	monitored_areas[bk].inc();
+	if (!monitor_query_list.in_list()) {
+		_queue_monitor_update();
+	}
+}
+
+void GodotArea2D::remove_area_from_query(
+	GodotArea2D* p_area, uint32_t p_area_shape, uint32_t p_self_shape)
+{
+	BodyKey bk(p_area, p_area_shape, p_self_shape);
+	monitored_areas[bk].dec();
+	if (get_space() && !monitor_query_list.in_list()) {
+		_queue_monitor_update();
+	}
+}
+
+class GodotBody2D final : public GodotCollisionObject2D
+{
+	PS2DE::BodyMode mode = PS2DE::BODY_MODE_RIGID;
+
+	Vector2 biased_linear_velocity;
+	real_t biased_angular_velocity = 0.0;
+
+	Vector2 linear_velocity;
+	real_t angular_velocity = 0.0;
+
+	Vector2 prev_linear_velocity;
+	real_t prev_angular_velocity = 0.0;
+
+	Vector2 constant_linear_velocity;
+	real_t constant_angular_velocity = 0.0;
+
+	PS2DE::BodyDampMode linear_damp_mode = PS2DE::BODY_DAMP_MODE_COMBINE;
+	PS2DE::BodyDampMode angular_damp_mode = PS2DE::BODY_DAMP_MODE_COMBINE;
+
+	real_t linear_damp = 0.0;
+	real_t angular_damp = 0.0;
+
+	real_t total_linear_damp = 0.0;
+	real_t total_angular_damp = 0.0;
+
+	real_t gravity_scale = 1.0;
+
+	real_t bounce = 0.0;
+	real_t friction = 1.0;
+
+	real_t mass = 1.0;
+	real_t _inv_mass = 1.0;
+
+	real_t inertia = 0.0;
+	real_t _inv_inertia = 0.0;
+
+	Vector2 center_of_mass_local;
+	Vector2 center_of_mass;
+
+	bool calculate_inertia = true;
+	bool calculate_center_of_mass = true;
+
+	Vector2 gravity;
+
+	real_t still_time = 0.0;
+
+	Vector2 applied_force;
+	real_t applied_torque = 0.0;
+
+	Vector2 constant_force;
+	real_t constant_torque = 0.0;
+
+	SelfList<GodotBody2D> active_list;
+	SelfList<GodotBody2D> mass_properties_update_list;
+	SelfList<GodotBody2D> direct_state_query_list;
+
+	VSet<RID> exceptions;
+	PS2DE::CCDMode continuous_cd_mode = PS2DE::CCD_MODE_DISABLED;
+	bool omit_force_integration = false;
+	bool active = true;
+	bool can_sleep = true;
+	bool first_time_kinematic = false;
+	void _mass_properties_changed();
+	virtual void _shapes_changed() override;
+	Transform2D new_transform;
+
+	List<Pair<GodotConstraint2D*, int>> constraint_list;
+
+	struct AreaCMP
+	{
+		GodotArea2D* area = nullptr;
+		int refCount = 0;
+
+		_FORCE_INLINE_ bool operator==(const AreaCMP& p_cmp) const
+		{
+			return area->get_self() == p_cmp.area->get_self();
+		}
+
+		_FORCE_INLINE_ bool operator<(const AreaCMP& p_cmp) const
+		{
+			return area->get_priority() < p_cmp.area->get_priority();
+		}
+
+		_FORCE_INLINE_ AreaCMP() {}
+
+		_FORCE_INLINE_ AreaCMP(GodotArea2D* p_area)
+		{
+			area = p_area;
+			refCount = 1;
+		}
+	};
+
+	Vector<AreaCMP> areas;
+
+	struct Contact
+	{
+		Vector2 local_pos;
+		Vector2 local_normal;
+		Vector2 local_velocity_at_pos;
+		real_t depth = 0.0;
+		int local_shape = 0;
+		Vector2 collider_pos;
+		int collider_shape = 0;
+		RID collider;
+		Vector2 collider_velocity_at_pos;
+		Vector2 impulse;
+	};
+
+	Vector<Contact> contacts; // no contacts by default
+	int contact_count = 0;
+
+	PhysicsDirectBodyState2D* direct_state = nullptr;
+
+	uint64_t island_step = 0;
+
+	void _update_transform_dependent();
+
+	friend class PhysicsDirectBodyState2D;
+
+public:
+	void add_contact(const Vector2& p_local_pos, const Vector2& p_local_normal, real_t p_depth,
+		int p_local_shape, const Vector2& p_local_velocity_at_pos, const Vector2& p_collider_pos,
+		int p_collider_shape, const RID& p_collider, const Vector2& p_collider_velocity_at_pos,
+		const Vector2& p_impulse);
+
+	PhysicsDirectBodyState2D* get_direct_state();
+
+	_FORCE_INLINE_ void add_area(GodotArea2D* p_area)
+	{
+		int index = areas.find(AreaCMP(p_area));
+		if (index > -1) {
+			areas.write[index].refCount += 1;
+		}
+		else {
+			areas.ordered_insert(AreaCMP(p_area));
+		}
+	}
+
+	_FORCE_INLINE_ void remove_area(GodotArea2D* p_area)
+	{
+		int index = areas.find(AreaCMP(p_area));
+		if (index > -1) {
+			areas.write[index].refCount -= 1;
+			if (areas[index].refCount < 1) {
+				areas.remove_at(index);
+			}
+		}
+	}
+
+	_FORCE_INLINE_ void set_max_contacts_reported(int p_size)
+	{
+		ERR_FAIL_INDEX(p_size, PS2DC::MAX_CONTACTS_REPORTED_2D_MAX);
+		contacts.resize(p_size);
+		contact_count = 0;
+		if (mode == PS2DE::BODY_MODE_KINEMATIC && p_size) {
+			set_active(true);
+		}
+	}
+
+	_FORCE_INLINE_ int get_max_contacts_reported() const { return contacts.size(); }
+
+	_FORCE_INLINE_ bool can_report_contacts() const { return !contacts.is_empty(); }
+
+	_FORCE_INLINE_ void add_exception(const RID& p_exception) { exceptions.insert(p_exception); }
+
+	_FORCE_INLINE_ void remove_exception(const RID& p_exception) { exceptions.erase(p_exception); }
+
+	_FORCE_INLINE_ bool has_exception(const RID& p_exception) const
+	{
+		return exceptions.has(p_exception);
+	}
+
+	_FORCE_INLINE_ const VSet<RID>& get_exceptions() const { return exceptions; }
+
+	_FORCE_INLINE_ uint64_t get_island_step() const { return island_step; }
+
+	_FORCE_INLINE_ void set_island_step(uint64_t p_step) { island_step = p_step; }
+
+	_FORCE_INLINE_ void add_constraint(GodotConstraint2D* p_constraint, int p_pos)
+	{
+		constraint_list.push_back({p_constraint, p_pos});
+	}
+
+	_FORCE_INLINE_ void remove_constraint(GodotConstraint2D* p_constraint, int p_pos)
+	{
+		constraint_list.erase({p_constraint, p_pos});
+	}
+
+	const List<Pair<GodotConstraint2D*, int>>& get_constraint_list() const
+	{
+		return constraint_list;
+	}
+
+	_FORCE_INLINE_ void clear_constraint_list() { constraint_list.clear(); }
+
+	_FORCE_INLINE_ void set_omit_force_integration(bool p_omit_force_integration)
+	{
+		omit_force_integration = p_omit_force_integration;
+	}
+
+	_FORCE_INLINE_ bool get_omit_force_integration() const { return omit_force_integration; }
+
+	_FORCE_INLINE_ void set_linear_velocity(const Vector2& p_velocity)
+	{
+		linear_velocity = p_velocity;
+	}
+
+	_FORCE_INLINE_ Vector2 get_linear_velocity() const { return linear_velocity; }
+
+	_FORCE_INLINE_ void set_angular_velocity(real_t p_velocity) { angular_velocity = p_velocity; }
+
+	_FORCE_INLINE_ real_t get_angular_velocity() const { return angular_velocity; }
+
+	_FORCE_INLINE_ Vector2 get_prev_linear_velocity() const { return prev_linear_velocity; }
+
+	_FORCE_INLINE_ real_t get_prev_angular_velocity() const { return prev_angular_velocity; }
+
+	_FORCE_INLINE_ void set_biased_linear_velocity(const Vector2& p_velocity)
+	{
+		biased_linear_velocity = p_velocity;
+	}
+
+	_FORCE_INLINE_ Vector2 get_biased_linear_velocity() const { return biased_linear_velocity; }
+
+	_FORCE_INLINE_ void set_biased_angular_velocity(real_t p_velocity)
+	{
+		biased_angular_velocity = p_velocity;
+	}
+
+	_FORCE_INLINE_ real_t get_biased_angular_velocity() const { return biased_angular_velocity; }
+
+	_FORCE_INLINE_ void apply_central_impulse(const Vector2& p_impulse)
+	{
+		linear_velocity += p_impulse * _inv_mass;
+	}
+
+	_FORCE_INLINE_ void apply_impulse(
+		const Vector2& p_impulse, const Vector2& p_position = Vector2())
+	{
+		linear_velocity += p_impulse * _inv_mass;
+		angular_velocity += _inv_inertia * (p_position - center_of_mass).cross(p_impulse);
+	}
+
+	_FORCE_INLINE_ void apply_torque_impulse(real_t p_torque)
+	{
+		angular_velocity += _inv_inertia * p_torque;
+	}
+
+	_FORCE_INLINE_ void apply_bias_impulse(const Vector2& p_impulse,
+		const Vector2& p_position = Vector2(), real_t p_max_delta_av = -1.0)
+	{
+		biased_linear_velocity += p_impulse * _inv_mass;
+		if (p_max_delta_av != 0.0) {
+			real_t delta_av = _inv_inertia * (p_position - center_of_mass).cross(p_impulse);
+			if (p_max_delta_av > 0 && delta_av > p_max_delta_av) {
+				delta_av = p_max_delta_av;
+			}
+			biased_angular_velocity += delta_av;
+		}
+	}
+
+	_FORCE_INLINE_ void apply_central_force(const Vector2& p_force) { applied_force += p_force; }
+
+	_FORCE_INLINE_ void apply_force(const Vector2& p_force, const Vector2& p_position = Vector2())
+	{
+		applied_force += p_force;
+		applied_torque += (p_position - center_of_mass).cross(p_force);
+	}
+
+	_FORCE_INLINE_ void apply_torque(real_t p_torque) { applied_torque += p_torque; }
+
+	_FORCE_INLINE_ void add_constant_central_force(const Vector2& p_force)
+	{
+		constant_force += p_force;
+	}
+
+	_FORCE_INLINE_ void add_constant_force(
+		const Vector2& p_force, const Vector2& p_position = Vector2())
+	{
+		constant_force += p_force;
+		constant_torque += (p_position - center_of_mass).cross(p_force);
+	}
+
+	_FORCE_INLINE_ void add_constant_torque(real_t p_torque) { constant_torque += p_torque; }
+
+	void set_constant_force(const Vector2& p_force) { constant_force = p_force; }
+
+	Vector2 get_constant_force() const { return constant_force; }
+
+	void set_constant_torque(real_t p_torque) { constant_torque = p_torque; }
+
+	real_t get_constant_torque() const { return constant_torque; }
+
+	void set_active(bool p_active);
+
+	_FORCE_INLINE_ bool is_active() const { return active; }
+
+	_FORCE_INLINE_ void wakeup()
+	{
+		if ((!get_space()) || mode == PS2DE::BODY_MODE_STATIC ||
+			mode == PS2DE::BODY_MODE_KINEMATIC) {
+			return;
+		}
+		set_active(true);
+	}
+
+	void set_mode(PS2DE::BodyMode p_mode);
+	PS2DE::BodyMode get_mode() const;
+
+	_FORCE_INLINE_ void set_continuous_collision_detection_mode(PS2DE::CCDMode p_mode)
+	{
+		continuous_cd_mode = p_mode;
+	}
+
+	_FORCE_INLINE_ PS2DE::CCDMode get_continuous_collision_detection_mode() const
+	{
+		return continuous_cd_mode;
+	}
+
+	void set_space(GodotSpace2D* p_space) override;
+
+	void update_mass_properties();
+	void reset_mass_properties();
+
+	_FORCE_INLINE_ const Vector2& get_center_of_mass() const { return center_of_mass; }
+
+	_FORCE_INLINE_ const Vector2& get_center_of_mass_local() const { return center_of_mass_local; }
+
+	_FORCE_INLINE_ real_t get_inv_mass() const { return _inv_mass; }
+
+	_FORCE_INLINE_ real_t get_inv_inertia() const { return _inv_inertia; }
+
+	_FORCE_INLINE_ real_t get_friction() const { return friction; }
+
+	_FORCE_INLINE_ real_t get_bounce() const { return bounce; }
+
+	void integrate_forces(real_t p_step);
+	void integrate_velocities(real_t p_step);
+
+	_FORCE_INLINE_ Vector2 get_velocity_in_local_point(const Vector2& rel_pos) const
+	{
+		return linear_velocity + Vector2(-angular_velocity * (rel_pos.y - center_of_mass.y),
+									 angular_velocity * (rel_pos.x - center_of_mass.x));
+	}
+
+	_FORCE_INLINE_ Vector2 get_motion() const
+	{
+		if (mode > PS2DE::BODY_MODE_KINEMATIC) {
+			return new_transform.get_origin() - get_transform().get_origin();
+		}
+		else if (mode == PS2DE::BODY_MODE_KINEMATIC) {
+			return get_transform().get_origin() -
+				   new_transform.get_origin(); // kinematic simulates forward
+		}
+		return Vector2();
+	}
+
+	void call_queries();
+	void wakeup_neighbours();
+
+	bool sleep_test(real_t p_step);
+
+	GodotBody2D();
+	~GodotBody2D();
+};
+
+_FORCE_INLINE_ void GodotBody2D::add_contact(const Vector2& p_local_pos, const Vector2& p_local_normal,
+	real_t p_depth, int p_local_shape, const Vector2& p_local_velocity_at_pos,
+	const Vector2& p_collider_pos, int p_collider_shape, const RID& p_collider,
+	const Vector2& p_collider_velocity_at_pos, const Vector2& p_impulse)
+{
+	int c_max = contacts.size();
+
+	if (c_max == 0) {
+		return;
+	}
+
+	Contact* c = contacts.ptrw();
+
+	int idx = -1;
+
+	if (contact_count < c_max) {
+		idx = contact_count++;
+	}
+	else {
+		real_t least_depth = 1e20;
+		int least_deep = -1;
+		for (int i = 0; i < c_max; i++) {
+			if (i == 0 || c[i].depth < least_depth) {
+				least_deep = i;
+				least_depth = c[i].depth;
+			}
+		}
+
+		if (least_deep >= 0 && least_depth < p_depth) {
+			idx = least_deep;
+		}
+		if (idx == -1) {
+			return; // none least deepe than this
+		}
+	}
+
+	c[idx].local_pos = p_local_pos;
+	c[idx].local_normal = p_local_normal;
+	c[idx].local_velocity_at_pos = p_local_velocity_at_pos;
+	c[idx].depth = p_depth;
+	c[idx].local_shape = p_local_shape;
+	c[idx].collider_pos = p_collider_pos;
+	c[idx].collider_shape = p_collider_shape;
+	c[idx].collider = p_collider;
+	c[idx].collider_velocity_at_pos = p_collider_velocity_at_pos;
+	c[idx].impulse = p_impulse;
+}
+
+// --- End modules/godot_physics_2d/godot_objects_2d.h ---
+
+class GodotConstraint2D {
+	GodotBody2D **_body_ptr;
+	int _body_count;
+	uint64_t island_step = 0;
+	bool disabled_collisions_between_bodies = true;
+
+	RID self;
+
+protected:
+	GodotConstraint2D(GodotBody2D **p_body_ptr = nullptr, int p_body_count = 0) {
+		_body_ptr = p_body_ptr;
+		_body_count = p_body_count;
+	}
+
+public:
+	_FORCE_INLINE_ void set_self(const RID &p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	_FORCE_INLINE_ uint64_t get_island_step() const { return island_step; }
+	_FORCE_INLINE_ void set_island_step(uint64_t p_step) { island_step = p_step; }
+
+	_FORCE_INLINE_ GodotBody2D **get_body_ptr() const { return _body_ptr; }
+	_FORCE_INLINE_ int get_body_count() const { return _body_count; }
+
+	_FORCE_INLINE_ void disable_collisions_between_bodies(const bool p_disabled) { disabled_collisions_between_bodies = p_disabled; }
+	_FORCE_INLINE_ bool is_disabled_collisions_between_bodies() const { return disabled_collisions_between_bodies; }
+
+	virtual bool setup(real_t p_step) = 0;
+	virtual bool pre_solve(real_t p_step) = 0;
+	virtual void solve(real_t p_step) = 0;
+
+	virtual ~GodotConstraint2D() {}
+};
+
+class GodotBodyPair2D final : public GodotConstraint2D {
+	enum {
+		MAX_CONTACTS = 2
+	};
+	union {
+		struct {
+			GodotBody2D *A;
+			GodotBody2D *B;
+		};
+
+		GodotBody2D *_arr[2] = { nullptr, nullptr };
+	};
+
+	int shape_A = 0;
+	int shape_B = 0;
+
+	bool collide_A = false;
+	bool collide_B = false;
+
+	GodotSpace2D *space = nullptr;
+
+	struct Contact {
+		Vector2 position;
+		Vector2 normal;
+		Vector2 local_A, local_B;
+		Vector2 acc_impulse; // accumulated impulse
+		real_t acc_normal_impulse = 0.0; // accumulated normal impulse (Pn)
+		real_t acc_tangent_impulse = 0.0; // accumulated tangent impulse (Pt)
+		real_t acc_bias_impulse = 0.0; // accumulated normal impulse for position bias (Pnb)
+		real_t acc_bias_impulse_center_of_mass = 0.0; // accumulated normal impulse for position bias applied to com
+		real_t mass_normal = 0.0, mass_tangent = 0.0;
+		real_t bias = 0.0;
+
+		real_t depth = 0.0;
+		bool active = false;
+		bool used = false;
+		Vector2 rA, rB;
+		real_t bounce = 0.0;
+	};
+
+	Vector2 offset_B; //use local A coordinates to avoid numerical issues on collision detection
+
+	Vector2 sep_axis;
+	Contact contacts[MAX_CONTACTS];
+	int contact_count = 0;
+	bool collided = false;
+	bool check_ccd = false;
+	bool oneway_disabled = false;
+	bool report_contacts_only = false;
+
+	bool _test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B);
+	void _validate_contacts();
+	static void _add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self);
+	_FORCE_INLINE_ void _contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B);
+
+public:
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+	virtual void solve(real_t p_step) override;
+
+	GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
+	virtual ~GodotBodyPair2D() override;
+};
+
+class GodotAreaPair2D final : public GodotConstraint2D {
+	GodotBody2D *body = nullptr;
+	GodotArea2D *area = nullptr;
+	int body_shape = 0;
+	int area_shape = 0;
+	bool colliding = false;
+	bool has_space_override = false;
+	bool process_collision = false;
+	bool body_has_attached_area = false;
+
+public:
+	virtual void solve(real_t p_step) override;
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+
+	GodotAreaPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape);
+	virtual ~GodotAreaPair2D() override = default;
+};
+
+class GodotArea2Pair2D final : public GodotConstraint2D {
+	GodotArea2D *area_a = nullptr;
+	GodotArea2D *area_b = nullptr;
+	int shape_a = 0;
+	int shape_b = 0;
+	bool colliding_a = false;
+	bool colliding_b = false;
+	bool process_collision_a = false;
+	bool process_collision_b = false;
+	bool area_a_monitorable = false;
+	bool area_b_monitorable = false;
+
+public:
+	virtual void solve(real_t p_step) override;
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+
+	GodotArea2Pair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
+	virtual ~GodotArea2Pair2D() override = default;
+};
+
+class GodotJoint2D final : public GodotConstraint2D {
+	PS2DE::JointType type = PS2DE::JOINT_TYPE_MAX;
+
+	union {
+		struct {
+			GodotBody2D *A;
+			GodotBody2D *B;
+		};
+
+		GodotBody2D *_arr[2] = { nullptr, nullptr };
+	};
+
+	real_t bias = 0.0;
+	real_t max_bias = 3.40282e+38;
+	real_t max_force = 3.40282e+38;
+
+	bool dynamic_A = false;
+	bool dynamic_B = false;
+
+	// Shared working fields
+	Vector2 rA, rB;
+	Vector2 anchor_A;
+	Vector2 anchor_B;
+	real_t jn_max = 0.0;
+
+	// Pin joint fields
+	Transform2D M;
+	Vector2 pin_bias;
+	real_t initial_angle = 0.0;
+	real_t bias_velocity = 0.0;
+	real_t j_acc = 0.0;
+	real_t i_sum = 0.0;
+	Vector2 P;
+	real_t softness = 0.0;
+	real_t angular_limit_lower = 0.0;
+	real_t angular_limit_upper = 0.0;
+	real_t motor_target_velocity = 0.0;
+	bool is_joint_at_limit = false;
+	bool motor_enabled = false;
+	bool angular_limit_enabled = false;
+
+	// Groove joint fields
+	Vector2 A_groove_1;
+	Vector2 A_groove_2;
+	Vector2 A_groove_normal;
+	Vector2 B_anchor;
+	Vector2 jn_acc;
+	Vector2 gbias;
+	real_t clamp = 0.0;
+	Vector2 xf_normal;
+	Vector2 k1, k2;
+	bool correct = false;
+
+	// Damped spring joint fields
+	real_t rest_length = 0.0;
+	real_t damping = 1.5;
+	real_t stiffness = 20.0;
+	Vector2 n;
+	Vector2 j;
+	real_t n_mass = 0.0;
+	real_t target_vrn = 0.0;
+	real_t v_coef = 0.0;
+
+	bool _setup_pin(real_t p_step);
+	bool _pre_solve_pin(real_t p_step);
+	void _solve_pin(real_t p_step);
+
+	bool _setup_groove(real_t p_step);
+	bool _pre_solve_groove(real_t p_step);
+	void _solve_groove(real_t p_step);
+
+	bool _setup_damped_spring(real_t p_step);
+	bool _pre_solve_damped_spring(real_t p_step);
+	void _solve_damped_spring(real_t p_step);
+
+public:
+	_FORCE_INLINE_ PS2DE::JointType get_type() const { return type; }
+
+	_FORCE_INLINE_ void set_max_force(real_t p_force) { max_force = p_force; }
+	_FORCE_INLINE_ real_t get_max_force() const { return max_force; }
+
+	_FORCE_INLINE_ void set_bias(real_t p_bias) { bias = p_bias; }
+	_FORCE_INLINE_ real_t get_bias() const { return bias; }
+
+	_FORCE_INLINE_ void set_max_bias(real_t p_bias) { max_bias = p_bias; }
+	_FORCE_INLINE_ real_t get_max_bias() const { return max_bias; }
+
+	void copy_settings_from(GodotJoint2D *p_joint);
+
+	virtual bool setup(real_t p_step) override;
+	virtual bool pre_solve(real_t p_step) override;
+	virtual void solve(real_t p_step) override;
+
+	// Pin joint parameters & flags
+	void set_param(PS2DE::PinJointParam p_param, real_t p_value);
+	real_t get_param(PS2DE::PinJointParam p_param) const;
+	void set_flag(PS2DE::PinJointFlag p_flag, bool p_enabled);
+	bool get_flag(PS2DE::PinJointFlag p_flag) const;
+
+	// Damped spring parameters
+	void set_param(PS2DE::DampedSpringParam p_param, real_t p_value);
+	real_t get_param(PS2DE::DampedSpringParam p_param) const;
+
+	// Empty joint (JOINT_TYPE_MAX)
+	GodotJoint2D() :
+			GodotConstraint2D(_arr, 0) {}
+
+	// Pin joint (JOINT_TYPE_PIN)
+	GodotJoint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b = nullptr);
+
+	// Groove joint (JOINT_TYPE_GROOVE)
+	GodotJoint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+
+	// Damped spring joint (JOINT_TYPE_DAMPED_SPRING)
+	GodotJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+
+	GodotJoint2D(const GodotJoint2D &) = delete;
+	GodotJoint2D &operator=(const GodotJoint2D &) = delete;
+
+	virtual ~GodotJoint2D() override {
+		for (int i = 0; i < get_body_count(); i++) {
+			GodotBody2D *body = get_body_ptr()[i];
+			if (body) {
+				body->remove_constraint(this, i);
+			}
+		}
+	}
+};
+
+// --- End modules/godot_physics_2d/godot_constraints_2d.h ---
+
+// --- Folded from modules/godot_physics_2d/godot_space_2d.h ---
+// --- Folded from core/math/bvh.h ---
+// BVH
+// This class provides a wrapper around BVH tree, which contains most of the functionality
+// for a dynamic BVH with templated leaf size.
+// However BVH also adds facilities for pairing, to maintain compatibility with Godot 3.2.
+// Pairing is a collision pairing system, on top of the basic BVH.
+
+// Some notes on the use of BVH / Octree from Godot 3.2.
+// This is not well explained elsewhere.
+// The rendering tree mask and types that are sent to the BVH are NOT layer masks.
+// They are INSTANCE_TYPES (defined in visual_server.h), e.g. MESH, MULTIMESH, PARTICLES etc.
+// Thus the lights do no cull by layer mask in the BVH.
+
+// Layer masks are implemented in the renderers as a later step, and light_cull_mask appears to be
+// implemented in GLES3 but not GLES2. Layer masks are not yet implemented for directional lights.
+
+// In the physics, the pairable_type is based on 1 << p_object->get_type() where:
+// TYPE_AREA,
+// TYPE_BODY
+// and pairable_mask is either 0 if static, or set to all if non static
+// --- Folded from core/math/bvh_tree.h ---
+// BVH Tree
+// This is an implementation of a dynamic BVH with templated leaf size.
+// This differs from most dynamic BVH in that it can handle more than 1 object
+// in leaf nodes. This can make it far more efficient in certain circumstances.
+// It also means that the splitting logic etc have to be completely different
+// to a simpler tree.
+// Note that MAX_CHILDREN should be fixed at 2 for now.
+
+#include "core/types.h"
+// --- Folded from core/math/bvh_abb.h ---
+#include "core/types.h"
+
+#include <cfloat> // FLT_MAX
+
+// special optimized version of axis aligned bounding box
+template <typename BOUNDS = AABB, typename POINT = Vector3>
+struct BVH_ABB {
+	struct ConvexHull {
+		// convex hulls (optional)
+		const Plane *planes;
+		int num_planes;
+		const Vector3 *points;
+		int num_points;
+	};
+
+	struct Segment {
+		POINT from;
+		POINT to;
+	};
+
+	enum IntersectResult {
+		IR_MISS = 0,
+		IR_PARTIAL,
+		IR_FULL,
+	};
+
+	// we store mins with a negative value in order to test them with SIMD
+	POINT min;
+	POINT neg_max;
+
+	bool operator==(const BVH_ABB &p_other) const { return (min == p_other.min) && (neg_max == p_other.neg_max); }
+	bool operator!=(const BVH_ABB &p_other) const { return (*this == p_other) == false; }
+
+	void set(const POINT &p_min, const POINT &p_max) {
+		min = p_min;
+		neg_max = -p_max;
+	}
+
+	// to and from standard AABB
+	void from(const BOUNDS &p_aabb) {
+		min = p_aabb.position;
+		neg_max = -(p_aabb.position + p_aabb.size);
+	}
+
+	void to(BOUNDS &r_aabb) const {
+		r_aabb.position = min;
+		r_aabb.size = calculate_size();
+	}
+
+	void merge(const BVH_ABB &p_o) {
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			neg_max[axis] = MIN(neg_max[axis], p_o.neg_max[axis]);
+			min[axis] = MIN(min[axis], p_o.min[axis]);
+		}
+	}
+
+	POINT calculate_size() const {
+		return -neg_max - min;
+	}
+
+	POINT calculate_center() const {
+		return POINT((calculate_size() * 0.5) + min);
+	}
+
+	real_t get_proximity_to(const BVH_ABB &p_b) const {
+		const POINT d = (min - neg_max) - (p_b.min - p_b.neg_max);
+		real_t proximity = 0.0;
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			proximity += Math::abs(d[axis]);
+		}
+		return proximity;
+	}
+
+	int select_by_proximity(const BVH_ABB &p_a, const BVH_ABB &p_b) const {
+		return (get_proximity_to(p_a) < get_proximity_to(p_b) ? 0 : 1);
+	}
+
+	uint32_t find_cutting_planes(const typename BVH_ABB::ConvexHull &p_hull, uint32_t *p_plane_ids) const {
+		uint32_t count = 0;
+
+		for (int n = 0; n < p_hull.num_planes; n++) {
+			const Plane &p = p_hull.planes[n];
+			if (intersects_plane(p)) {
+				p_plane_ids[count++] = n;
+			}
+		}
+
+		return count;
+	}
+
+	bool intersects_plane(const Plane &p_p) const {
+		Vector3 size = calculate_size();
+		Vector3 half_extents = size * 0.5;
+		Vector3 ofs = min + half_extents;
+
+		// forward side of plane?
+		Vector3 point_offset(
+				(p_p.normal.x < 0) ? -half_extents.x : half_extents.x,
+				(p_p.normal.y < 0) ? -half_extents.y : half_extents.y,
+				(p_p.normal.z < 0) ? -half_extents.z : half_extents.z);
+		Vector3 point = point_offset + ofs;
+
+		if (!p_p.is_point_over(point)) {
+			return false;
+		}
+
+		point = -point_offset + ofs;
+		if (p_p.is_point_over(point)) {
+			return false;
+		}
+
+		return true;
+	}
+
+	bool intersects_convex_optimized(const ConvexHull &p_hull, const uint32_t *p_plane_ids, uint32_t p_num_planes) const {
+		Vector3 size = calculate_size();
+		Vector3 half_extents = size * 0.5;
+		Vector3 ofs = min + half_extents;
+
+		for (unsigned int i = 0; i < p_num_planes; i++) {
+			const Plane &p = p_hull.planes[p_plane_ids[i]];
+			Vector3 point(
+					(p.normal.x > 0) ? -half_extents.x : half_extents.x,
+					(p.normal.y > 0) ? -half_extents.y : half_extents.y,
+					(p.normal.z > 0) ? -half_extents.z : half_extents.z);
+			point += ofs;
+			if (p.is_point_over(point)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	bool intersects_convex_partial(const ConvexHull &p_hull) const {
+		BOUNDS bb;
+		to(bb);
+		return bb.intersects_convex_shape(p_hull.planes, p_hull.num_planes, p_hull.points, p_hull.num_points);
+	}
+
+	IntersectResult intersects_convex(const ConvexHull &p_hull) const {
+		if (intersects_convex_partial(p_hull)) {
+			// fully within? very important for tree checks
+			if (is_within_convex(p_hull)) {
+				return IR_FULL;
+			}
+
+			return IR_PARTIAL;
+		}
+
+		return IR_MISS;
+	}
+
+	bool is_within_convex(const ConvexHull &p_hull) const {
+		// use half extents routine
+		BOUNDS bb;
+		to(bb);
+		return bb.inside_convex_shape(p_hull.planes, p_hull.num_planes);
+	}
+
+	bool is_point_within_hull(const ConvexHull &p_hull, const Vector3 &p_pt) const {
+		for (int n = 0; n < p_hull.num_planes; n++) {
+			if (p_hull.planes[n].distance_to(p_pt) > 0.0f) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool intersects_segment(const Segment &p_s) const {
+		BOUNDS bb;
+		to(bb);
+		return bb.intersects_segment(p_s.from, p_s.to);
+	}
+
+	bool intersects_point(const POINT &p_pt) const {
+		if (_any_lessthan(-p_pt, neg_max)) {
+			return false;
+		}
+		if (_any_lessthan(p_pt, min)) {
+			return false;
+		}
+		return true;
+	}
+
+	// Very hot in profiling, make sure optimized
+	bool intersects(const BVH_ABB &p_o) const {
+		if (_any_morethan(p_o.min, -neg_max)) {
+			return false;
+		}
+		if (_any_morethan(min, -p_o.neg_max)) {
+			return false;
+		}
+		return true;
+	}
+
+	// for pre-swizzled tester (this object)
+	bool intersects_swizzled(const BVH_ABB &p_o) const {
+		if (_any_lessthan(min, p_o.min)) {
+			return false;
+		}
+		if (_any_lessthan(neg_max, p_o.neg_max)) {
+			return false;
+		}
+		return true;
+	}
+
+	bool is_other_within(const BVH_ABB &p_o) const {
+		if (_any_lessthan(p_o.neg_max, neg_max)) {
+			return false;
+		}
+		if (_any_lessthan(p_o.min, min)) {
+			return false;
+		}
+		return true;
+	}
+
+	void grow(const POINT &p_change) {
+		neg_max -= p_change;
+		min -= p_change;
+	}
+
+	void expand(real_t p_change) {
+		POINT change;
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			change[axis] = p_change;
+		}
+		grow(change);
+	}
+
+	// Actually surface area metric.
+	real_t get_area() const {
+		POINT d = calculate_size();
+		return 2.0f * (d.x * d.y + d.y * d.z + d.z * d.x);
+	}
+
+	void set_to_max_opposite_extents() {
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			neg_max[axis] = FLT_MAX;
+		}
+		min = neg_max;
+	}
+
+	bool _any_morethan(const POINT &p_a, const POINT &p_b) const {
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			if (p_a[axis] > p_b[axis]) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool _any_lessthan(const POINT &p_a, const POINT &p_b) const {
+		for (int axis = 0; axis < POINT::AXIS_COUNT; ++axis) {
+			if (p_a[axis] < p_b[axis]) {
+				return true;
+			}
+		}
+		return false;
+	}
+};
+
+// --- End core/math/bvh_abb.h ---
+#include "core/types.h"
+#include "core/string/ustring.h"
+
+#define BVHABB_CLASS BVH_ABB<BOUNDS, POINT>
+
+// not sure if this is better yet so making optional
+#define BVH_EXPAND_LEAF_AABBS
+
+// never do these checks in release
+#ifdef DEV_ENABLED
+//#define BVH_VERBOSE
+//#define BVH_VERBOSE_TREE
+//#define BVH_VERBOSE_PAIRING
+//#define BVH_VERBOSE_MOVES
+
+//#define BVH_VERBOSE_FRAME
+//#define BVH_CHECKS
+//#define BVH_INTEGRITY_CHECKS
+#endif
+
+// debug only assert
+#ifdef BVH_CHECKS
+#define BVH_ASSERT(a) CRASH_COND((a) == false)
+#else
+#define BVH_ASSERT(a)
+#endif
+
+#ifdef BVH_VERBOSE
+#define VERBOSE_PRINT print_line
+#else
+#define VERBOSE_PRINT(a)
+#endif
+
+// really just a namespace
+struct BVHCommon {
+	// these could possibly also be the same constant,
+	// although this may be useful for debugging.
+	// or use zero for invalid and +1 based indices.
+	static const uint32_t INVALID = (0xffffffff);
+	static const uint32_t INACTIVE = (0xfffffffe);
+};
+
+// really a handle, can be anything
+// note that zero is a valid reference for the BVH .. this may involve using
+// a plus one based ID for clients that expect 0 to be invalid.
+struct BVHHandle {
+	// conversion operator
+	operator uint32_t() const { return _data; }
+	void set(uint32_t p_value) { _data = p_value; }
+
+	uint32_t _data;
+
+	void set_invalid() { _data = BVHCommon::INVALID; }
+	bool is_invalid() const { return _data == BVHCommon::INVALID; }
+	uint32_t id() const { return _data; }
+	void set_id(uint32_t p_id) { _data = p_id; }
+
+	bool operator==(const BVHHandle &p_h) const { return _data == p_h._data; }
+	bool operator!=(const BVHHandle &p_h) const { return (*this == p_h) == false; }
+};
+
+// helper class to make iterative versions of recursive functions
+template <typename T>
+class BVH_IterativeInfo {
+public:
+	constexpr static const size_t ALLOCA_STACK_SIZE = 128;
+
+	int32_t depth = 1;
+	int32_t threshold = ALLOCA_STACK_SIZE - 2;
+	T *stack;
+	//only used in rare occasions when you run out of alloca memory
+	// because tree is too unbalanced.
+	LocalVector<T> aux_stack;
+	int32_t get_alloca_stacksize() const { return ALLOCA_STACK_SIZE * sizeof(T); }
+
+	T *get_first() const {
+		return &stack[0];
+	}
+
+	// pop the last member of the stack, or return false
+	bool pop(T &r_value) {
+		if (!depth) {
+			return false;
+		}
+
+		depth--;
+		r_value = stack[depth];
+		return true;
+	}
+
+	// request new addition to stack
+	T *request() {
+		if (depth > threshold) {
+			if (aux_stack.is_empty()) {
+				aux_stack.resize(ALLOCA_STACK_SIZE * 2);
+				memcpy(aux_stack.ptr(), stack, get_alloca_stacksize());
+			} else {
+				aux_stack.resize(aux_stack.size() * 2);
+			}
+			stack = aux_stack.ptr();
+			threshold = aux_stack.size() - 2;
+		}
+		return &stack[depth++];
+	}
+};
+
+template <typename T>
+class BVH_DummyPairTestFunction {
+public:
+	static bool user_collision_check(T *p_a, T *p_b) {
+		// return false if no collision, decided by masks etc
+		return true;
+	}
+};
+
+template <typename T>
+class BVH_DummyCullTestFunction {
+public:
+	static bool user_cull_check(T *p_a, T *p_b) {
+		// return false if no collision
+		return true;
+	}
+};
+
+template <typename T, int NUM_TREES, int MAX_CHILDREN, int MAX_ITEMS, typename USER_PAIR_TEST_FUNCTION = BVH_DummyPairTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyCullTestFunction<T>, bool USE_PAIRS = false, typename BOUNDS = AABB, typename POINT = Vector3>
+class BVH_Tree {
+	friend class BVH;
+
+#include "core/math/bvh_pair.inc"
+#include "core/math/bvh_structs.inc"
+
+public:
+	BVH_Tree() {
+		for (int n = 0; n < NUM_TREES; n++) {
+			_root_node_id[n] = BVHCommon::INVALID;
+		}
+
+		// disallow zero leaf ids
+		// (as these ids are stored as negative numbers in the node)
+		uint32_t dummy_leaf_id;
+		_leaves.request(dummy_leaf_id);
+
+		// In many cases you may want to change this default in the client code,
+		// or expose this value to the user.
+		// This default may make sense for a typically scaled 3d game, but maybe not for 2d on a pixel scale.
+		params_set_pairing_expansion(0.1);
+	}
+
+private:
+	bool node_add_child(uint32_t p_node_id, uint32_t p_child_node_id) {
+		TNode &tnode = _nodes[p_node_id];
+		if (tnode.is_full_of_children()) {
+			return false;
+		}
+
+		tnode.children[tnode.num_children] = p_child_node_id;
+		tnode.num_children += 1;
+
+		// back link in the child to the parent
+		TNode &tnode_child = _nodes[p_child_node_id];
+		tnode_child.parent_id = p_node_id;
+
+		return true;
+	}
+
+	void node_replace_child(uint32_t p_parent_id, uint32_t p_old_child_id, uint32_t p_new_child_id) {
+		TNode &parent = _nodes[p_parent_id];
+		BVH_ASSERT(!parent.is_leaf());
+
+		int child_num = parent.find_child(p_old_child_id);
+		BVH_ASSERT(child_num != -1);
+		parent.children[child_num] = p_new_child_id;
+
+		TNode &new_child = _nodes[p_new_child_id];
+		new_child.parent_id = p_parent_id;
+	}
+
+	void node_remove_child(uint32_t p_parent_id, uint32_t p_child_id, uint32_t p_tree_id, bool p_prevent_sibling = false) {
+		TNode &parent = _nodes[p_parent_id];
+		BVH_ASSERT(!parent.is_leaf());
+
+		int child_num = parent.find_child(p_child_id);
+		BVH_ASSERT(child_num != -1);
+
+		parent.remove_child_internal(child_num);
+
+		// no need to keep back references for children at the moment
+
+		uint32_t sibling_id = 0; // always a node id, as tnode is never a leaf
+		bool sibling_present = false;
+
+		// if there are more children, or this is the root node, don't try and delete
+		if (parent.num_children > 1) {
+			return;
+		}
+
+		// if there is 1 sibling, it can be moved to be a child of the
+		if (parent.num_children == 1) {
+			// else there is now a redundant node with one child, which can be removed
+			sibling_id = parent.children[0];
+			sibling_present = true;
+		}
+
+		// now there may be no children in this node .. in which case it can be deleted
+		// remove node if empty
+		// remove link from parent
+		uint32_t grandparent_id = parent.parent_id;
+
+		// special case for root node
+		if (grandparent_id == BVHCommon::INVALID) {
+			if (sibling_present) {
+				// change the root node
+				change_root_node(sibling_id, p_tree_id);
+
+				// delete the old root node as no longer needed
+				node_free_node_and_leaf(p_parent_id);
+			}
+
+			return;
+		}
+
+		if (sibling_present) {
+			node_replace_child(grandparent_id, p_parent_id, sibling_id);
+		} else {
+			node_remove_child(grandparent_id, p_parent_id, p_tree_id, true);
+		}
+
+		// put the node on the free list to recycle
+		node_free_node_and_leaf(p_parent_id);
+	}
+
+	// A node can either be a node, or a node AND a leaf combo.
+	// Both must be deleted to prevent a leak.
+	void node_free_node_and_leaf(uint32_t p_node_id) {
+		TNode &node = _nodes[p_node_id];
+		if (node.is_leaf()) {
+			int leaf_id = node.get_leaf_id();
+			_leaves.free(leaf_id);
+		}
+
+		_nodes.free(p_node_id);
+	}
+
+	void change_root_node(uint32_t p_new_root_id, uint32_t p_tree_id) {
+		_root_node_id[p_tree_id] = p_new_root_id;
+		TNode &root = _nodes[p_new_root_id];
+
+		// mark no parent
+		root.parent_id = BVHCommon::INVALID;
+	}
+
+	void node_make_leaf(uint32_t p_node_id) {
+		uint32_t child_leaf_id;
+		TLeaf *child_leaf = _leaves.request(child_leaf_id);
+		child_leaf->clear();
+
+		// zero is reserved at startup, to prevent this id being used
+		// (as they are stored as negative values in the node, and zero is already taken)
+		BVH_ASSERT(child_leaf_id != 0);
+
+		TNode &node = _nodes[p_node_id];
+		node.neg_leaf_id = -(int)child_leaf_id;
+	}
+
+	void node_remove_item(uint32_t p_ref_id, uint32_t p_tree_id, BVHABB_CLASS *r_old_aabb = nullptr) {
+		// get the reference
+		ItemRef &ref = _refs[p_ref_id];
+		uint32_t owner_node_id = ref.tnode_id;
+
+		// debug draw special
+		// This may not be needed
+		if (owner_node_id == BVHCommon::INVALID) {
+			return;
+		}
+
+		TNode &tnode = _nodes[owner_node_id];
+		CRASH_COND(!tnode.is_leaf());
+
+		TLeaf &leaf = _node_get_leaf(tnode);
+
+		// if the aabb is not determining the corner size, then there is no need to refit!
+		// (optimization, as merging AABBs takes a lot of time)
+		const BVHABB_CLASS &old_aabb = leaf.get_aabb(ref.item_id);
+
+		// shrink a little to prevent using corner aabbs
+		// in order to miss the corners first we shrink by node_expansion
+		// (which is added to the overall bound of the leaf), then we also
+		// shrink by an epsilon, in order to miss out the very corner aabbs
+		// which are important in determining the bound. Any other aabb
+		// within this can be removed and not affect the overall bound.
+		BVHABB_CLASS node_bound = tnode.aabb;
+		node_bound.expand(-_node_expansion - 0.001f);
+		bool refit = true;
+
+		if (node_bound.is_other_within(old_aabb)) {
+			refit = false;
+		}
+
+		// record the old aabb if required (for incremental remove_and_reinsert)
+		if (r_old_aabb) {
+			*r_old_aabb = old_aabb;
+		}
+
+		leaf.remove_item_unordered(ref.item_id);
+
+		if (leaf.num_items) {
+			// the swapped item has to have its reference changed to, to point to the new item id
+			uint32_t swapped_ref_id = leaf.get_item_ref_id(ref.item_id);
+
+			ItemRef &swapped_ref = _refs[swapped_ref_id];
+
+			swapped_ref.item_id = ref.item_id;
+
+			// only have to refit if it is an edge item
+			// This is a VERY EXPENSIVE STEP
+			// we defer the refit updates until the update function is called once per frame
+			if (refit) {
+				leaf.set_dirty(true);
+			}
+		} else {
+			// remove node if empty
+			// remove link from parent
+			if (tnode.parent_id != BVHCommon::INVALID) {
+				// DANGER .. this can potentially end up with root node with 1 child ...
+				// we don't want this and must check for it
+
+				uint32_t parent_id = tnode.parent_id;
+
+				node_remove_child(parent_id, owner_node_id, p_tree_id);
+				refit_upward(parent_id);
+
+				// put the node on the free list to recycle
+				node_free_node_and_leaf(owner_node_id);
+			}
+
+			// else if no parent, it is the root node. Do not delete
+		}
+
+		ref.tnode_id = BVHCommon::INVALID;
+		ref.item_id = BVHCommon::INVALID; // unset
+	}
+
+	// returns true if needs refit of PARENT tree only, the node itself AABB is calculated
+	// within this routine
+	bool _node_add_item(uint32_t p_node_id, uint32_t p_ref_id, const BVHABB_CLASS &p_aabb) {
+		ItemRef &ref = _refs[p_ref_id];
+		ref.tnode_id = p_node_id;
+
+		TNode &node = _nodes[p_node_id];
+		BVH_ASSERT(node.is_leaf());
+		TLeaf &leaf = _node_get_leaf(node);
+
+		// optimization - we only need to do a refit
+		// if the added item is changing the AABB of the node.
+		// in most cases it won't.
+		bool needs_refit = true;
+
+		// expand bound now
+		BVHABB_CLASS expanded = p_aabb;
+		expanded.expand(_node_expansion);
+
+		// the bound will only be valid if there is an item in there already
+		if (leaf.num_items) {
+			if (node.aabb.is_other_within(expanded)) {
+				// no change to node AABBs
+				needs_refit = false;
+			} else {
+				node.aabb.merge(expanded);
+			}
+		} else {
+			// bound of the node = the new aabb
+			node.aabb = expanded;
+		}
+
+		ref.item_id = leaf.request_item();
+		BVH_ASSERT(ref.item_id != BVHCommon::INVALID);
+
+		// set the aabb of the new item
+		leaf.get_aabb(ref.item_id) = p_aabb;
+
+		// back reference on the item back to the item reference
+		leaf.get_item_ref_id(ref.item_id) = p_ref_id;
+
+		return needs_refit;
+	}
+
+	uint32_t _node_create_another_child(uint32_t p_node_id, const BVHABB_CLASS &p_aabb) {
+		uint32_t child_node_id;
+		TNode *child_node = _nodes.request(child_node_id);
+		child_node->clear();
+
+		// may not be necessary
+		child_node->aabb = p_aabb;
+
+		node_add_child(p_node_id, child_node_id);
+
+		return child_node_id;
+	}
+
+#include "core/math/bvh_cull.inc"
+#include "core/math/bvh_debug.inc"
+#include "core/math/bvh_integrity.inc"
+#include "core/math/bvh_logic.inc"
+#include "core/math/bvh_misc.inc"
+#include "core/math/bvh_public.inc"
+#include "core/math/bvh_refit.inc"
+#include "core/math/bvh_split.inc"
+};
+
+#undef VERBOSE_PRINT
+
+// --- End core/math/bvh_tree.h ---
+#include "servers/rendering/renderer.h"
+#include "core/os/mutex.h"
+
+#include <climits> // INT_MAX
+
+#define BVHTREE_CLASS BVH_Tree<T, NUM_TREES, 2, MAX_ITEMS, USER_PAIR_TEST_FUNCTION, USER_CULL_TEST_FUNCTION, USE_PAIRS, BOUNDS, POINT>
+#define BVH_LOCKED_FUNCTION BVHLockedFunction _lock_guard(&_mutex, BVH_THREAD_SAFE &&_thread_safe);
+
+template <typename T, int NUM_TREES = 1, bool USE_PAIRS = false, int MAX_ITEMS = 32, typename USER_PAIR_TEST_FUNCTION = BVH_DummyPairTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyCullTestFunction<T>, typename BOUNDS = AABB, typename POINT = Vector3, bool BVH_THREAD_SAFE = true>
+class BVH_Manager {
+public:
+	// note we are using uint32_t instead of BVHHandle, losing type safety, but this
+	// is for compatibility with octree
+	typedef void *(*PairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int);
+	typedef void (*UnpairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int, void *);
+	typedef void *(*CheckPairCallback)(void *, uint32_t, T *, int, uint32_t, T *, int, void *);
+
+	// allow locally toggling thread safety if the template has been compiled with BVH_THREAD_SAFE
+	void params_set_thread_safe(bool p_enable) {
+		_thread_safe = p_enable;
+	}
+
+	// these 2 are crucial for fine tuning, and can be applied manually
+	// see the variable declarations for more info.
+	void params_set_node_expansion(real_t p_value) {
+		BVH_LOCKED_FUNCTION
+		if (p_value >= 0.0) {
+			tree._node_expansion = p_value;
+			tree._auto_node_expansion = false;
+		} else {
+			tree._auto_node_expansion = true;
+		}
+	}
+
+	void params_set_pairing_expansion(real_t p_value) {
+		BVH_LOCKED_FUNCTION
+		tree.params_set_pairing_expansion(p_value);
+	}
+
+	void set_pair_callback(PairCallback p_callback, void *p_userdata) {
+		BVH_LOCKED_FUNCTION
+		pair_callback = p_callback;
+		pair_callback_userdata = p_userdata;
+	}
+	void set_unpair_callback(UnpairCallback p_callback, void *p_userdata) {
+		BVH_LOCKED_FUNCTION
+		unpair_callback = p_callback;
+		unpair_callback_userdata = p_userdata;
+	}
+	void set_check_pair_callback(CheckPairCallback p_callback, void *p_userdata) {
+		BVH_LOCKED_FUNCTION
+		check_pair_callback = p_callback;
+		check_pair_callback_userdata = p_userdata;
+	}
+
+	BVHHandle create(T *p_userdata, bool p_active = true, uint32_t p_tree_id = 0, uint32_t p_tree_collision_mask = 1, const BOUNDS &p_aabb = BOUNDS(), int p_subindex = 0) {
+		BVH_LOCKED_FUNCTION
+
+		// not sure if absolutely necessary to flush collisions here. It will cost performance to, instead
+		// of waiting for update, so only uncomment this if there are bugs.
+		if (USE_PAIRS) {
+			//_check_for_collisions();
+		}
+
+		BVHHandle h = tree.item_add(p_userdata, p_active, p_aabb, p_subindex, p_tree_id, p_tree_collision_mask);
+
+		if (USE_PAIRS) {
+			// for safety initialize the expanded AABB
+			BOUNDS &expanded_aabb = tree._pairs[h.id()].expanded_aabb;
+			expanded_aabb = p_aabb;
+			expanded_aabb.grow_by(tree._pairing_expansion);
+
+			// force a collision check no matter the AABB
+			if (p_active) {
+				_add_changed_item(h, p_aabb, false);
+				_check_for_collisions(true);
+			}
+		}
+
+		return h;
+	}
+
+	////////////////////////////////////////////////////
+	// wrapper versions that use uint32_t instead of handle
+	// for backward compatibility. Less type safe
+	void move(uint32_t p_handle, const BOUNDS &p_aabb) {
+		BVHHandle h;
+		h.set(p_handle);
+		move(h, p_aabb);
+	}
+
+	void recheck_pairs(uint32_t p_handle) {
+		BVHHandle h;
+		h.set(p_handle);
+		recheck_pairs(h);
+	}
+
+	void erase(uint32_t p_handle) {
+		BVHHandle h;
+		h.set(p_handle);
+		erase(h);
+	}
+
+	void force_collision_check(uint32_t p_handle) {
+		BVHHandle h;
+		h.set(p_handle);
+		force_collision_check(h);
+	}
+
+	bool activate(uint32_t p_handle, const BOUNDS &p_aabb, bool p_delay_collision_check = false) {
+		BVHHandle h;
+		h.set(p_handle);
+		return activate(h, p_aabb, p_delay_collision_check);
+	}
+
+	bool deactivate(uint32_t p_handle) {
+		BVHHandle h;
+		h.set(p_handle);
+		return deactivate(h);
+	}
+
+	void set_tree(uint32_t p_handle, uint32_t p_tree_id, uint32_t p_tree_collision_mask, bool p_force_collision_check = true) {
+		BVHHandle h;
+		h.set(p_handle);
+		set_tree(h, p_tree_id, p_tree_collision_mask, p_force_collision_check);
+	}
+
+	uint32_t get_tree_id(uint32_t p_handle) const {
+		BVHHandle h;
+		h.set(p_handle);
+		return item_get_tree_id(h);
+	}
+	int get_subindex(uint32_t p_handle) const {
+		BVHHandle h;
+		h.set(p_handle);
+		return item_get_subindex(h);
+	}
+
+	T *get(uint32_t p_handle) const {
+		BVHHandle h;
+		h.set(p_handle);
+		return item_get_userdata(h);
+	}
+
+	////////////////////////////////////////////////////
+
+	void move(BVHHandle p_handle, const BOUNDS &p_aabb) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		if (tree.item_move(p_handle, p_aabb)) {
+			if (USE_PAIRS) {
+				_add_changed_item(p_handle, p_aabb);
+			}
+		}
+	}
+
+	void recheck_pairs(BVHHandle p_handle) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		force_collision_check(p_handle);
+	}
+
+	void erase(BVHHandle p_handle) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		// call unpair and remove all references to the item
+		// before deleting from the tree
+		if (USE_PAIRS) {
+			_remove_changed_item(p_handle);
+		}
+
+		tree.item_remove(p_handle);
+
+		_check_for_collisions(true);
+	}
+
+	// use in conjunction with activate if you have deferred the collision check, and
+	// set pairable has never been called.
+	// (deferred collision checks are a workaround for visual server for historical reasons)
+	void force_collision_check(BVHHandle p_handle) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		if (USE_PAIRS) {
+			// the aabb should already be up to date in the BVH
+			BOUNDS aabb;
+			item_get_AABB(p_handle, aabb);
+
+			// add it as changed even if aabb not different
+			_add_changed_item(p_handle, aabb, false);
+
+			// force an immediate full collision check, much like calls to set_pairable
+			_check_for_collisions(true);
+		}
+	}
+
+	// these should be read as set_visible for render trees,
+	// but generically this makes items add or remove from the
+	// tree internally, to speed things up by ignoring inactive items
+	bool activate(BVHHandle p_handle, const BOUNDS &p_aabb, bool p_delay_collision_check = false) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		// sending the aabb here prevents the need for the BVH to maintain
+		// a redundant copy of the aabb.
+		// returns success
+		if (tree.item_activate(p_handle, p_aabb)) {
+			if (USE_PAIRS) {
+				// in the special case of the render tree, when setting visibility we are using the combination of
+				// activate then set_pairable. This would case 2 sets of collision checks. For efficiency here we allow
+				// deferring to have a single collision check at the set_pairable call.
+				// Watch for bugs! This may cause bugs if set_pairable is not called.
+				if (!p_delay_collision_check) {
+					_add_changed_item(p_handle, p_aabb, false);
+
+					// force an immediate collision check, much like calls to set_pairable
+					_check_for_collisions(true);
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	bool deactivate(BVHHandle p_handle) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		// returns success
+		if (tree.item_deactivate(p_handle)) {
+			// call unpair and remove all references to the item
+			// before deleting from the tree
+			if (USE_PAIRS) {
+				_remove_changed_item(p_handle);
+
+				// force check for collisions, much like an erase was called
+				_check_for_collisions(true);
+			}
+			return true;
+		}
+
+		return false;
+	}
+
+	bool get_active(BVHHandle p_handle) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		return tree.item_get_active(p_handle);
+	}
+
+	// call e.g. once per frame (this does a trickle optimize)
+	void update() {
+		BVH_LOCKED_FUNCTION
+		tree.update();
+		_check_for_collisions();
+#ifdef BVH_INTEGRITY_CHECKS
+		tree._integrity_check_all();
+#endif
+	}
+
+	// this can be called more frequently than per frame if necessary
+	void update_collisions() {
+		BVH_LOCKED_FUNCTION
+		_check_for_collisions();
+	}
+
+	// prefer calling this directly as type safe
+	void set_tree(const BVHHandle &p_handle, uint32_t p_tree_id, uint32_t p_tree_collision_mask, bool p_force_collision_check = true) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVH_LOCKED_FUNCTION
+		// Returns true if the pairing state has changed.
+		bool state_changed = tree.item_set_tree(p_handle, p_tree_id, p_tree_collision_mask);
+
+		if (USE_PAIRS) {
+			// not sure if absolutely necessary to flush collisions here. It will cost performance to, instead
+			// of waiting for update, so only uncomment this if there are bugs.
+			//_check_for_collisions();
+
+			if ((p_force_collision_check || state_changed) && tree.item_get_active(p_handle)) {
+				// when the pairable state changes, we need to force a collision check because newly pairable
+				// items may be in collision, and unpairable items might move out of collision.
+				// We cannot depend on waiting for the next update, because that may come much later.
+				BOUNDS aabb;
+				item_get_AABB(p_handle, aabb);
+
+				// passing false disables the optimization which prevents collision checks if
+				// the aabb hasn't changed
+				_add_changed_item(p_handle, aabb, false);
+
+				// force an immediate collision check (probably just for this one item)
+				// but it must be a FULL collision check, also checking pairable state and masks.
+				// This is because AABB intersecting objects may have changed pairable state / mask
+				// such that they should no longer be paired. E.g. lights.
+				_check_for_collisions(true);
+			} // only if active
+		}
+	}
+
+	// cull tests
+	int cull_aabb(const BOUNDS &p_aabb, T **p_result_array, int p_result_max, const T *p_tester, uint32_t p_tree_collision_mask = 0xFFFFFFFF, int *p_subindex_array = nullptr) {
+		BVH_LOCKED_FUNCTION
+		typename BVHTREE_CLASS::CullParams params;
+
+		params.result_count_overall = 0;
+		params.result_max = p_result_max;
+		params.result_array = p_result_array;
+		params.subindex_array = p_subindex_array;
+		params.tree_collision_mask = p_tree_collision_mask;
+		params.abb.from(p_aabb);
+		params.tester = p_tester;
+
+		tree.cull_aabb(params);
+
+		return params.result_count_overall;
+	}
+
+	int cull_segment(const POINT &p_from, const POINT &p_to, T **p_result_array, int p_result_max, const T *p_tester, uint32_t p_tree_collision_mask = 0xFFFFFFFF, int *p_subindex_array = nullptr) {
+		BVH_LOCKED_FUNCTION
+		typename BVHTREE_CLASS::CullParams params;
+
+		params.result_count_overall = 0;
+		params.result_max = p_result_max;
+		params.result_array = p_result_array;
+		params.subindex_array = p_subindex_array;
+		params.tester = p_tester;
+		params.tree_collision_mask = p_tree_collision_mask;
+
+		params.segment.from = p_from;
+		params.segment.to = p_to;
+
+		tree.cull_segment(params);
+
+		return params.result_count_overall;
+	}
+
+	int cull_point(const POINT &p_point, T **p_result_array, int p_result_max, const T *p_tester, uint32_t p_tree_collision_mask = 0xFFFFFFFF, int *p_subindex_array = nullptr) {
+		BVH_LOCKED_FUNCTION
+		typename BVHTREE_CLASS::CullParams params;
+
+		params.result_count_overall = 0;
+		params.result_max = p_result_max;
+		params.result_array = p_result_array;
+		params.subindex_array = p_subindex_array;
+		params.tester = p_tester;
+		params.tree_collision_mask = p_tree_collision_mask;
+
+		params.point = p_point;
+
+		tree.cull_point(params);
+		return params.result_count_overall;
+	}
+
+	int cull_convex(const Vector<Plane> &p_convex, T **p_result_array, int p_result_max, const T *p_tester, uint32_t p_tree_collision_mask = 0xFFFFFFFF) {
+		BVH_LOCKED_FUNCTION
+		if (!p_convex.size()) {
+			return 0;
+		}
+
+		Vector<Vector3> convex_points = Geometry3D::compute_convex_mesh_points(&p_convex[0], p_convex.size());
+		if (convex_points.is_empty()) {
+			return 0;
+		}
+
+		typename BVHTREE_CLASS::CullParams params;
+		params.result_count_overall = 0;
+		params.result_max = p_result_max;
+		params.result_array = p_result_array;
+		params.subindex_array = nullptr;
+		params.tester = p_tester;
+		params.tree_collision_mask = p_tree_collision_mask;
+
+		params.hull.planes = &p_convex[0];
+		params.hull.num_planes = p_convex.size();
+		params.hull.points = &convex_points[0];
+		params.hull.num_points = convex_points.size();
+
+		tree.cull_convex(params);
+
+		return params.result_count_overall;
+	}
+
+private:
+	// do this after moving etc.
+	void _check_for_collisions(bool p_full_check = false) {
+		if (!changed_items.size()) {
+			// noop
+			return;
+		}
+
+		typename BVHTREE_CLASS::CullParams params;
+
+		params.result_count_overall = 0;
+		params.result_max = INT_MAX;
+		params.result_array = nullptr;
+		params.subindex_array = nullptr;
+
+		for (const BVHHandle &h : changed_items) {
+			// use the expanded aabb for pairing
+			const BOUNDS &expanded_aabb = tree._pairs[h.id()].expanded_aabb;
+			BVHABB_CLASS abb;
+			abb.from(expanded_aabb);
+
+			tree.item_fill_cullparams(h, params);
+
+			// find all the existing paired aabbs that are no longer
+			// paired, and send callbacks
+			_find_leavers(h, abb, p_full_check);
+
+			uint32_t changed_item_ref_id = h.id();
+
+			params.abb = abb;
+
+			params.result_count_overall = 0; // might not be needed
+			tree.cull_aabb(params, false);
+
+			for (const uint32_t ref_id : tree._cull_hits) {
+				// don't collide against ourself
+				if (ref_id == changed_item_ref_id) {
+					continue;
+				}
+
+				// checkmasks is already done in the cull routine.
+				BVHHandle h_collidee;
+				h_collidee.set_id(ref_id);
+
+				// find NEW enterers, and send callbacks for them only
+				_collide(h, h_collidee);
+			}
+		}
+		_reset();
+	}
+
+public:
+	void item_get_AABB(BVHHandle p_handle, BOUNDS &r_aabb) {
+		DEV_ASSERT(!p_handle.is_invalid());
+		BVHABB_CLASS abb;
+		tree.item_get_ABB(p_handle, abb);
+		abb.to(r_aabb);
+	}
+
+private:
+	// supplemental funcs
+	uint32_t item_get_tree_id(BVHHandle p_handle) const { return _get_extra(p_handle).tree_id; }
+	T *item_get_userdata(BVHHandle p_handle) const { return _get_extra(p_handle).userdata; }
+	int item_get_subindex(BVHHandle p_handle) const { return _get_extra(p_handle).subindex; }
+
+	void _unpair(BVHHandle p_from, BVHHandle p_to) {
+		tree._handle_sort(p_from, p_to);
+
+		typename BVHTREE_CLASS::ItemExtra &exa = tree._extra[p_from.id()];
+		typename BVHTREE_CLASS::ItemExtra &exb = tree._extra[p_to.id()];
+
+		// if the userdata is the same, no collisions should occur
+		if ((exa.userdata == exb.userdata) && exa.userdata) {
+			return;
+		}
+
+		typename BVHTREE_CLASS::ItemPairs &pairs_from = tree._pairs[p_from.id()];
+		typename BVHTREE_CLASS::ItemPairs &pairs_to = tree._pairs[p_to.id()];
+
+		void *ud_from = pairs_from.remove_pair_to(p_to);
+		pairs_to.remove_pair_to(p_from);
+
+#ifdef BVH_VERBOSE_PAIRING
+		print_line("_unpair " + itos(p_from.id()) + " from " + itos(p_to.id()));
+#endif
+
+		// callback
+		if (unpair_callback) {
+			unpair_callback(pair_callback_userdata, p_from, exa.userdata, exa.subindex, p_to, exb.userdata, exb.subindex, ud_from);
+		}
+	}
+
+	void *_recheck_pair(BVHHandle p_from, BVHHandle p_to, void *p_pair_data) {
+		tree._handle_sort(p_from, p_to);
+
+		typename BVHTREE_CLASS::ItemExtra &exa = tree._extra[p_from.id()];
+		typename BVHTREE_CLASS::ItemExtra &exb = tree._extra[p_to.id()];
+
+		// if the userdata is the same, no collisions should occur
+		if ((exa.userdata == exb.userdata) && exa.userdata) {
+			return p_pair_data;
+		}
+
+		// callback
+		if (check_pair_callback) {
+			return check_pair_callback(check_pair_callback_userdata, p_from, exa.userdata, exa.subindex, p_to, exb.userdata, exb.subindex, p_pair_data);
+		}
+
+		return p_pair_data;
+	}
+
+	// returns true if unpair
+	bool _find_leavers_process_pair(typename BVHTREE_CLASS::ItemPairs &p_pairs_from, const BVHABB_CLASS &p_abb_from, BVHHandle p_from, BVHHandle p_to, bool p_full_check) {
+		BVHABB_CLASS abb_to;
+		tree.item_get_ABB(p_to, abb_to);
+
+		// do they overlap?
+		if (p_abb_from.intersects(abb_to)) {
+			// the full check for pairable / non pairable (i.e. tree_id and tree_masks) and mask changes is extra expense
+			// this need not be done in most cases (for speed) except in the case where set_tree is called
+			// where the masks etc of the objects in question may have changed
+			if (!p_full_check) {
+				return false;
+			}
+			const typename BVHTREE_CLASS::ItemExtra &exa = _get_extra(p_from);
+			const typename BVHTREE_CLASS::ItemExtra &exb = _get_extra(p_to);
+
+			// Checking tree_ids and tree_collision_masks
+			if (exa.are_item_trees_compatible(exb)) {
+				bool pair_allowed = USER_PAIR_TEST_FUNCTION::user_pair_check(exa.userdata, exb.userdata);
+
+				// the masks must still be compatible to pair
+				// i.e. if there is a hit between the two and they intersect, then they should stay paired
+				if (pair_allowed) {
+					return false;
+				}
+			}
+		}
+
+		_unpair(p_from, p_to);
+		return true;
+	}
+
+	// find all the existing paired aabbs that are no longer
+	// paired, and send callbacks
+	void _find_leavers(BVHHandle p_handle, const BVHABB_CLASS &p_expanded_abb_from, bool p_full_check) {
+		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_handle.id()];
+
+		BVHABB_CLASS abb_from = p_expanded_abb_from;
+
+		// remove from pairing list for every partner
+		for (unsigned int n = 0; n < p_from.extended_pairs.size(); n++) {
+			BVHHandle h_to = p_from.extended_pairs[n].handle;
+			if (_find_leavers_process_pair(p_from, abb_from, p_handle, h_to, p_full_check)) {
+				// we need to keep the counter n up to date if we deleted a pair
+				// as the number of items in p_from.extended_pairs will have decreased by 1
+				// and we don't want to miss an item
+				n--;
+			}
+		}
+	}
+
+	// find NEW enterers, and send callbacks for them only
+	// handle a and b
+	void _collide(BVHHandle p_ha, BVHHandle p_hb) {
+		// only have to do this oneway, lower ID then higher ID
+		tree._handle_sort(p_ha, p_hb);
+
+		const typename BVHTREE_CLASS::ItemExtra &exa = _get_extra(p_ha);
+		const typename BVHTREE_CLASS::ItemExtra &exb = _get_extra(p_hb);
+
+		// user collision callback
+		if (!USER_PAIR_TEST_FUNCTION::user_pair_check(exa.userdata, exb.userdata)) {
+			return;
+		}
+
+		// if the userdata is the same, no collisions should occur
+		if ((exa.userdata == exb.userdata) && exa.userdata) {
+			return;
+		}
+
+		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_ha.id()];
+		typename BVHTREE_CLASS::ItemPairs &p_to = tree._pairs[p_hb.id()];
+
+		// does this pair exist already?
+		// or only check the one with lower number of pairs for greater speed
+		if (p_from.num_pairs <= p_to.num_pairs) {
+			if (p_from.contains_pair_to(p_hb)) {
+				return;
+			}
+		} else {
+			if (p_to.contains_pair_to(p_ha)) {
+				return;
+			}
+		}
+
+		// callback
+		void *callback_userdata = nullptr;
+
+#ifdef BVH_VERBOSE_PAIRING
+		print_line("_pair " + itos(p_ha.id()) + " to " + itos(p_hb.id()));
+#endif
+
+		if (pair_callback) {
+			callback_userdata = pair_callback(pair_callback_userdata, p_ha, exa.userdata, exa.subindex, p_hb, exb.userdata, exb.subindex);
+		}
+
+		// new pair! .. only really need to store the userdata on the lower handle, but both have storage so...
+		p_from.add_pair_to(p_hb, callback_userdata);
+		p_to.add_pair_to(p_ha, callback_userdata);
+	}
+
+	// if we remove an item, we need to immediately remove the pairs, to prevent reading the pair after deletion
+	void _remove_pairs_containing(BVHHandle p_handle) {
+		typename BVHTREE_CLASS::ItemPairs &p_from = tree._pairs[p_handle.id()];
+
+		// remove from pairing list for every partner.
+		// can't easily use a for loop here, because removing changes the size of the list
+		while (p_from.extended_pairs.size()) {
+			BVHHandle h_to = p_from.extended_pairs[0].handle;
+			_unpair(p_handle, h_to);
+		}
+	}
+
+	// Send pair callbacks again for all existing pairs for the given handle.
+	void _recheck_pairs(BVHHandle p_handle) {
+		typename BVHTREE_CLASS::ItemPairs &from = tree._pairs[p_handle.id()];
+
+		// checking pair for every partner.
+		for (unsigned int n = 0; n < from.extended_pairs.size(); n++) {
+			typename BVHTREE_CLASS::ItemPairs::Link &pair = from.extended_pairs[n];
+			BVHHandle h_to = pair.handle;
+			void *new_pair_data = _recheck_pair(p_handle, h_to, pair.userdata);
+
+			if (new_pair_data != pair.userdata) {
+				pair.userdata = new_pair_data;
+
+				// Update pair data for the second item.
+				typename BVHTREE_CLASS::ItemPairs &to = tree._pairs[h_to.id()];
+				for (unsigned int to_index = 0; to_index < to.extended_pairs.size(); to_index++) {
+					typename BVHTREE_CLASS::ItemPairs::Link &to_pair = to.extended_pairs[to_index];
+					if (to_pair.handle == p_handle) {
+						to_pair.userdata = new_pair_data;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+private:
+	const typename BVHTREE_CLASS::ItemExtra &_get_extra(BVHHandle p_handle) const {
+		return tree._extra[p_handle.id()];
+	}
+	const typename BVHTREE_CLASS::ItemRef &_get_ref(BVHHandle p_handle) const {
+		return tree._refs[p_handle.id()];
+	}
+
+	void _reset() {
+		changed_items.clear();
+		_tick++;
+	}
+
+	void _add_changed_item(BVHHandle p_handle, const BOUNDS &p_aabb, bool p_check_aabb = true) {
+		// Note that non pairable items can pair with pairable,
+		// so all types must be added to the list
+
+#ifdef BVH_EXPAND_LEAF_AABBS
+		// if using expanded AABB in the leaf, the redundancy check will already have been made
+		BOUNDS &expanded_aabb = tree._pairs[p_handle.id()].expanded_aabb;
+		item_get_AABB(p_handle, expanded_aabb);
+#else
+		// aabb check with expanded aabb. This greatly decreases processing
+		// at the cost of slightly less accurate pairing checks
+		// Note this pairing AABB is separate from the AABB in the actual tree
+		BOUNDS &expanded_aabb = tree._pairs[p_handle.id()].expanded_aabb;
+
+		// passing p_check_aabb false disables the optimization which prevents collision checks if
+		// the aabb hasn't changed. This is needed where set_pairable has been called, but the position
+		// has not changed.
+		if (p_check_aabb && tree.expanded_aabb_encloses_not_shrink(expanded_aabb, p_aabb)) {
+			return;
+		}
+
+		// ALWAYS update the new expanded aabb, even if already changed once
+		// this tick, because it is vital that the AABB is kept up to date
+		expanded_aabb = p_aabb;
+		expanded_aabb.grow_by(tree._pairing_expansion);
+#endif
+
+		// this code is to ensure that changed items only appear once on the updated list
+		// collision checking them multiple times is not needed, and repeats the same thing
+		uint32_t &last_updated_tick = tree._extra[p_handle.id()].last_updated_tick;
+
+		if (last_updated_tick == _tick) {
+			return; // already on changed list
+		}
+
+		// mark as on list
+		last_updated_tick = _tick;
+
+		// add to the list
+		changed_items.push_back(p_handle);
+	}
+
+	void _remove_changed_item(BVHHandle p_handle) {
+		// Care has to be taken here for items that are deleted. The ref ID
+		// could be reused on the same tick for new items. This is probably
+		// rare but should be taken into consideration
+
+		// callbacks
+		_remove_pairs_containing(p_handle);
+
+		// remove from changed items (not very efficient yet)
+		for (int n = 0; n < (int)changed_items.size(); n++) {
+			if (changed_items[n] == p_handle) {
+				changed_items.remove_at_unordered(n);
+
+				// because we are using an unordered remove,
+				// the last changed item will now be at spot 'n',
+				// and we need to redo it, so we prevent moving on to
+				// the next n at the next for iteration.
+				n--;
+			}
+		}
+
+		// reset the last updated tick (may not be necessary but just in case)
+		tree._extra[p_handle.id()].last_updated_tick = 0;
+	}
+
+	PairCallback pair_callback = nullptr;
+	UnpairCallback unpair_callback = nullptr;
+	CheckPairCallback check_pair_callback = nullptr;
+	void *pair_callback_userdata = nullptr;
+	void *unpair_callback_userdata = nullptr;
+	void *check_pair_callback_userdata = nullptr;
+
+	BVHTREE_CLASS tree;
+
+	// for collision pairing,
+	// maintain a list of all items moved etc on each frame / tick
+	LocalVector<BVHHandle> changed_items;
+	uint32_t _tick = 1; // Start from 1 so items with 0 indicate never updated.
+
+	class BVHLockedFunction {
+	public:
+		BVHLockedFunction(Mutex *p_mutex, bool p_thread_safe) {
+			// will be compiled out if not set in template
+			if (p_thread_safe) {
+				_mutex = p_mutex;
+				_mutex->lock();
+
+			} else {
+				_mutex = nullptr;
+			}
+		}
+		~BVHLockedFunction() {
+			// will be compiled out if not set in template
+			if (_mutex) {
+				_mutex->unlock();
+			}
+		}
+
+	private:
+		Mutex *_mutex = nullptr;
+	};
+
+	Mutex _mutex;
+
+	// local toggle for turning on and off thread safety in project settings
+	bool _thread_safe = BVH_THREAD_SAFE;
+};
+
+#undef BVHTREE_CLASS
+
+// --- End core/math/bvh.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
+
+
+
+class GodotConstraint2D;
+
+class GodotBroadPhase2D final
+{
+public:
+	typedef uint32_t ID;
+
+	typedef void* (*PairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_userdata);
+	typedef void (*UnpairCallback)(GodotCollisionObject2D* A, int p_subindex_A, GodotCollisionObject2D* B, int p_subindex_B, void* p_data, void* p_userdata);
+
+private:
+	template <typename T>
+	class UserPairTestFunction
+	{
+	public:
+		static bool user_pair_check(const T* p_a, const T* p_b)
+		{
+			// return false if no collision, decided by masks etc
+			return p_a->interacts_with(p_b);
+		}
+	};
+
+	template <typename T>
+	class UserCullTestFunction
+	{
+	public:
+		static bool user_cull_check(const T* p_a, const T* p_b)
+		{
+			return true;
+		}
+	};
+
+	enum Tree
+	{
+		TREE_STATIC = 0,
+		TREE_DYNAMIC = 1,
+	};
+
+	enum TreeFlag
+	{
+		TREE_FLAG_STATIC = 1 << TREE_STATIC,
+		TREE_FLAG_DYNAMIC = 1 << TREE_DYNAMIC,
+	};
+
+	BVH_Manager<GodotCollisionObject2D, 2, true, 128, UserPairTestFunction<GodotCollisionObject2D>, UserCullTestFunction<GodotCollisionObject2D>, Rect2, Vector2> bvh;
+
+	static void* _pair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int);
+	static void _unpair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int, void*);
+
+	PairCallback pair_callback = nullptr;
+	void* pair_userdata = nullptr;
+	UnpairCallback unpair_callback = nullptr;
+	void* unpair_userdata = nullptr;
+
+public:
+	// 0 is an invalid ID
+	ID create(GodotCollisionObject2D* p_object, int p_subindex = 0, const Rect2& p_aabb = Rect2(), bool p_static = false);
+	void move(ID p_id, const Rect2& p_aabb);
+	void set_static(ID p_id, bool p_static);
+	void remove(ID p_id);
+
+	GodotCollisionObject2D* get_object(ID p_id) const;
+	bool is_static(ID p_id) const;
+	int get_subindex(ID p_id) const;
+
+	int cull_segment(const Vector2& p_from, const Vector2& p_to, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
+	int cull_aabb(const Rect2& p_aabb, GodotCollisionObject2D** p_results, int p_max_results, int* p_result_indices = nullptr);
+
+	void set_pair_callback(PairCallback p_pair_callback, void* p_userdata);
+	void set_unpair_callback(UnpairCallback p_unpair_callback, void* p_userdata);
+
+	void update();
+
+	GodotBroadPhase2D();
+	~GodotBroadPhase2D() = default;
+};
+
+class GodotSpace2D final
+{
+public:
+	enum ElapsedTime
+	{
+		ELAPSED_TIME_INTEGRATE_FORCES,
+		ELAPSED_TIME_GENERATE_ISLANDS,
+		ELAPSED_TIME_SETUP_CONSTRAINTS,
+		ELAPSED_TIME_SOLVE_CONSTRAINTS,
+		ELAPSED_TIME_INTEGRATE_VELOCITIES,
+		ELAPSED_TIME_MAX
+	};
+
+private:
+	struct ExcludedShapeSW
+	{
+		GodotShape2D* local_shape = nullptr;
+		const GodotCollisionObject2D* against_object = nullptr;
+		int against_shape_index = 0;
+	};
+
+	uint64_t elapsed_time[ELAPSED_TIME_MAX] = {};
+
+	PhysicsDirectSpaceState2D* direct_access = nullptr;
+	RID self;
+
+	GodotBroadPhase2D* broadphase = nullptr;
+	SelfList<GodotBody2D>::List active_list;
+	SelfList<GodotBody2D>::List mass_properties_update_list;
+	SelfList<GodotBody2D>::List state_query_list;
+	SelfList<GodotArea2D>::List monitor_query_list;
+	SelfList<GodotArea2D>::List area_moved_list;
+
+	static void* _broadphase_pair(GodotCollisionObject2D* A, int p_subindex_A,
+		GodotCollisionObject2D* B, int p_subindex_B, void* p_self);
+	static void _broadphase_unpair(GodotCollisionObject2D* A, int p_subindex_A,
+		GodotCollisionObject2D* B, int p_subindex_B, void* p_data, void* p_self);
+
+	HashSet<GodotCollisionObject2D*> objects;
+
+	GodotArea2D* area = nullptr;
+
+	int solver_iterations = 0;
+
+	real_t contact_recycle_radius = 0.0;
+	real_t contact_max_separation = 0.0;
+	real_t contact_max_allowed_penetration = 0.0;
+	real_t contact_bias = 0.0;
+	real_t constraint_bias = 0.0;
+
+	enum
+	{
+		INTERSECTION_QUERY_MAX = 2048
+	};
+
+	GodotCollisionObject2D* intersection_query_results[INTERSECTION_QUERY_MAX];
+	int intersection_query_subindex_results[INTERSECTION_QUERY_MAX];
+
+	real_t body_linear_velocity_sleep_threshold = 0.0;
+	real_t body_angular_velocity_sleep_threshold = 0.0;
+	real_t body_time_to_sleep = 0.0;
+
+	bool locked = false;
+
+	real_t last_step = 0.001;
+
+	int island_count = 0;
+	int active_objects = 0;
+	int collision_pairs = 0;
+
+	int _cull_aabb_for_body(GodotBody2D* p_body, const Rect2& p_aabb);
+
+	Vector<Vector2> contact_debug;
+	int contact_debug_count = 0;
+
+	friend class PhysicsDirectSpaceState2D;
+
+public:
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	void set_default_area(GodotArea2D* p_area) { area = p_area; }
+
+	GodotArea2D* get_default_area() const { return area; }
+
+	const SelfList<GodotBody2D>::List& get_active_body_list() const;
+	void body_add_to_active_list(SelfList<GodotBody2D>* p_body);
+	void body_remove_from_active_list(SelfList<GodotBody2D>* p_body);
+	void body_add_to_mass_properties_update_list(SelfList<GodotBody2D>* p_body);
+	void body_remove_from_mass_properties_update_list(SelfList<GodotBody2D>* p_body);
+	void area_add_to_moved_list(SelfList<GodotArea2D>* p_area);
+	void area_remove_from_moved_list(SelfList<GodotArea2D>* p_area);
+	const SelfList<GodotArea2D>::List& get_moved_area_list() const;
+
+	void body_add_to_state_query_list(SelfList<GodotBody2D>* p_body);
+	void body_remove_from_state_query_list(SelfList<GodotBody2D>* p_body);
+
+	void area_add_to_monitor_query_list(SelfList<GodotArea2D>* p_area);
+	void area_remove_from_monitor_query_list(SelfList<GodotArea2D>* p_area);
+
+	GodotBroadPhase2D* get_broadphase();
+
+	void add_object(GodotCollisionObject2D* p_object);
+	void remove_object(GodotCollisionObject2D* p_object);
+	const HashSet<GodotCollisionObject2D*>& get_objects() const;
+
+	_FORCE_INLINE_ int get_solver_iterations() const { return solver_iterations; }
+
+	_FORCE_INLINE_ real_t get_contact_recycle_radius() const { return contact_recycle_radius; }
+
+	_FORCE_INLINE_ real_t get_contact_max_separation() const { return contact_max_separation; }
+
+	_FORCE_INLINE_ real_t get_contact_max_allowed_penetration() const
+	{
+		return contact_max_allowed_penetration;
+	}
+
+	_FORCE_INLINE_ real_t get_contact_bias() const { return contact_bias; }
+
+	_FORCE_INLINE_ real_t get_constraint_bias() const { return constraint_bias; }
+
+	_FORCE_INLINE_ real_t get_body_linear_velocity_sleep_threshold() const
+	{
+		return body_linear_velocity_sleep_threshold;
+	}
+
+	_FORCE_INLINE_ real_t get_body_angular_velocity_sleep_threshold() const
+	{
+		return body_angular_velocity_sleep_threshold;
+	}
+
+	_FORCE_INLINE_ real_t get_body_time_to_sleep() const { return body_time_to_sleep; }
+
+	void update();
+	void setup();
+	void call_queries();
+
+	bool is_locked() const;
+	void lock();
+	void unlock();
+
+	real_t get_last_step() const { return last_step; }
+
+	void set_last_step(real_t p_step) { last_step = p_step; }
+
+	void set_param(PS2DE::SpaceParameter p_param, real_t p_value);
+	real_t get_param(PS2DE::SpaceParameter p_param) const;
+
+	void set_island_count(int p_island_count) { island_count = p_island_count; }
+
+	int get_island_count() const { return island_count; }
+
+	void set_active_objects(int p_active_objects) { active_objects = p_active_objects; }
+
+	int get_active_objects() const { return active_objects; }
+
+	int get_collision_pairs() const { return collision_pairs; }
+
+	bool test_body_motion(GodotBody2D* p_body, const PS2DT::MotionParameters& p_parameters,
+		PS2DT::MotionResult* r_result);
+
+	void set_debug_contacts(int p_amount) { contact_debug.resize(p_amount); }
+
+	_FORCE_INLINE_ bool is_debugging_contacts() const { return !contact_debug.is_empty(); }
+
+	_FORCE_INLINE_ void add_debug_contact(const Vector2& p_contact)
+	{
+		if (contact_debug_count < contact_debug.size()) {
+			contact_debug.write[contact_debug_count++] = p_contact;
+		}
+	}
+
+	_FORCE_INLINE_ Vector<Vector2> get_debug_contacts() { return contact_debug; }
+
+	_FORCE_INLINE_ int get_debug_contact_count() { return contact_debug_count; }
+
+	PhysicsDirectSpaceState2D* get_direct_state();
+
+	void set_elapsed_time(ElapsedTime p_time, uint64_t p_msec) { elapsed_time[p_time] = p_msec; }
+
+	uint64_t get_elapsed_time(ElapsedTime p_time) const { return elapsed_time[p_time]; }
+
+	GodotSpace2D();
+	~GodotSpace2D();
+};
+
+class GodotStep2D final
+{
+	uint64_t _step = 1;
+
+	int iterations = 0;
+	real_t delta = 0.0;
+
+	LocalVector<LocalVector<GodotBody2D*>> body_islands;
+	LocalVector<LocalVector<GodotConstraint2D*>> constraint_islands;
+	LocalVector<GodotConstraint2D*> all_constraints;
+
+	void _populate_island(GodotBody2D* p_body, LocalVector<GodotBody2D*>& p_body_island, LocalVector<GodotConstraint2D*>& p_constraint_island);
+	void _setup_constraint(uint32_t p_constraint_index, void* p_userdata = nullptr);
+	void _pre_solve_island(LocalVector<GodotConstraint2D*>& p_constraint_island) const;
+	void _solve_island(uint32_t p_island_index, void* p_userdata = nullptr) const;
+	void _check_suspend(LocalVector<GodotBody2D*>& p_body_island) const;
+
+public:
+	void step(GodotSpace2D* p_space, real_t p_delta);
+	GodotStep2D();
+	~GodotStep2D();
+};
+
+// --- End modules/godot_physics_2d/godot_space_2d.h ---
+
+
+class GodotPhysicsServer2D final
+{
+	friend class PhysicsDirectSpaceState2D;
+	friend class PhysicsDirectBodyState2D;
+	bool active = true;
+	bool doing_sync = false;
+
+	int island_count = 0;
+	int active_objects = 0;
+	int collision_pairs = 0;
+
+	bool using_threads = false;
+
+	bool flushing_queries = false;
+
+	GodotStep2D* stepper = nullptr;
+	HashSet<GodotSpace2D*> active_spaces;
+
+	mutable RID_PtrOwner<GodotShape2D, true> shape_owner;
+	mutable RID_PtrOwner<GodotSpace2D, true> space_owner;
+	mutable RID_PtrOwner<GodotArea2D, true> area_owner;
+	mutable RID_PtrOwner<GodotBody2D, true> body_owner{65536, 1048576};
+	mutable RID_PtrOwner<GodotJoint2D, true> joint_owner;
+
+	friend class GodotCollisionObject2D;
+	SelfList<GodotCollisionObject2D>::List pending_shape_update_list;
+	void _update_shapes();
+
+	RID _shape_create(PS2DE::ShapeType p_shape);
+
+public:
+	struct CollCbkData
+	{
+		Vector2 valid_dir;
+		real_t valid_depth = 0.0;
+		int max = 0;
+		int amount = 0;
+		int passed = 0;
+		int invalid_by_dir = 0;
+		Vector2* ptr = nullptr;
+	};
+
+	RID world_boundary_shape_create();
+	RID separation_ray_shape_create();
+	RID segment_shape_create();
+	RID circle_shape_create();
+	RID rectangle_shape_create();
+	RID capsule_shape_create();
+	RID convex_polygon_shape_create();
+	RID concave_polygon_shape_create();
+
+	static void _shape_col_cbk(
+		const Vector2& p_point_A, const Vector2& p_point_B, void* p_userdata);
+
+	void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+
+	PS2DE::ShapeType shape_get_type(RID p_shape) const;
+	real_t shape_get_custom_solver_bias(RID p_shape) const;
+
+	bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A,
+		const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B,
+		const Vector2& p_motion_B, Vector2* r_results, int p_result_max,
+		int& r_result_count);
+
+	/* SPACE API */
+
+	RID space_create();
+	void space_set_active(RID p_space, bool p_active);
+	bool space_is_active(RID p_space) const;
+
+	void space_set_param(
+		RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
+	real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param) const;
+
+	void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	Vector<Vector2> space_get_contacts(RID p_space) const;
+	int space_get_contact_count(RID p_space) const;
+
+	// this function only works on physics process, errors and returns null otherwise
+	PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
+
+	/* AREA API */
+
+	RID area_create();
+
+	void area_set_space(RID p_area, RID p_space);
+	RID area_get_space(RID p_area) const;
+
+	void area_add_shape(RID p_area, RID p_shape,
+		const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	void area_set_shape_transform(
+		RID p_area, int p_shape_idx, const Transform2D& p_transform);
+
+	int area_get_shape_count(RID p_area) const;
+	RID area_get_shape(RID p_area, int p_shape_idx) const;
+	Transform2D area_get_shape_transform(RID p_area, int p_shape_idx) const;
+
+	void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
+
+	void area_remove_shape(RID p_area, int p_shape_idx);
+	void area_clear_shapes(RID p_area);
+
+	void area_set_transform(RID p_area, const Transform2D& p_transform);
+
+	Transform2D area_get_transform(RID p_area) const;
+	void area_set_monitorable(RID p_area, bool p_monitorable);
+
+	void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	uint32_t area_get_collision_layer(RID p_area) const;
+
+	void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	uint32_t area_get_collision_mask(RID p_area) const;
+
+	void area_set_pickable(RID p_area, bool p_pickable);
+
+	/* BODY API */
+
+	RID body_create();
+
+	void body_set_space(RID p_body, RID p_space);
+	RID body_get_space(RID p_body) const;
+
+	void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
+	PS2DE::BodyMode body_get_mode(RID p_body) const;
+
+	void body_add_shape(RID p_body, RID p_shape,
+		const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	void body_set_shape_transform(
+		RID p_body, int p_shape_idx, const Transform2D& p_transform);
+
+	int body_get_shape_count(RID p_body) const;
+	RID body_get_shape(RID p_body, int p_shape_idx) const;
+	Transform2D body_get_shape_transform(RID p_body, int p_shape_idx) const;
+
+	void body_remove_shape(RID p_body, int p_shape_idx);
+	void body_clear_shapes(RID p_body);
+
+	void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
+	void body_set_shape_as_one_way_collision(RID p_body, int p_shape_idx, bool p_enable,
+		real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
+
+	void body_set_continuous_collision_detection_mode(
+		RID p_body, PS2DE::CCDMode p_mode);
+	PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body) const;
+
+	void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t body_get_collision_layer(RID p_body) const;
+
+	void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t body_get_collision_mask(RID p_body) const;
+
+	void body_set_collision_priority(RID p_body, real_t p_priority);
+	real_t body_get_collision_priority(RID p_body) const;
+
+	void body_reset_mass_properties(RID p_body);
+
+	void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
+	void body_apply_torque_impulse(RID p_body, real_t p_torque);
+	void body_apply_impulse(
+		RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
+
+	void body_apply_central_force(RID p_body, const Vector2& p_force);
+	void body_apply_force(
+		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_apply_torque(RID p_body, real_t p_torque);
+
+	void body_add_constant_central_force(RID p_body, const Vector2& p_force);
+	void body_add_constant_force(
+		RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_add_constant_torque(RID p_body, real_t p_torque);
+
+	void body_set_constant_force(RID p_body, const Vector2& p_force);
+	Vector2 body_get_constant_force(RID p_body) const;
+
+	void body_set_constant_torque(RID p_body, real_t p_torque);
+	real_t body_get_constant_torque(RID p_body) const;
+
+	void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
+
+	void body_add_collision_exception(RID p_body, RID p_body_b);
+	void body_remove_collision_exception(RID p_body, RID p_body_b);
+	void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+
+	void body_set_contacts_reported_depth_threshold(
+		RID p_body, real_t p_threshold);
+	real_t body_get_contacts_reported_depth_threshold(RID p_body) const;
+
+	void body_set_omit_force_integration(RID p_body, bool p_omit);
+	bool body_is_omitting_force_integration(RID p_body) const;
+
+	void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	int body_get_max_contacts_reported(RID p_body) const;
+
+	bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape,
+		const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results,
+		int p_result_max, int& r_result_count);
+
+	void body_set_pickable(RID p_body, bool p_pickable);
+
+	bool _body_test_motion(RID p_body, PhysicsTestMotionParameters2D* rp_parameters,
+		const Ref<PhysicsTestMotionResult2D>& p_result = Ref<PhysicsTestMotionResult2D>());
+	bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters,
+		PS2DT::MotionResult* r_result = nullptr);
+
+	// this function only works on physics process, errors and returns null otherwise
+	PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
+
+	/* JOINT API */
+
+	RID joint_create();
+
+	void joint_clear(RID p_joint);
+
+	void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
+	real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param) const;
+
+	void joint_disable_collisions_between_bodies(
+		RID p_joint, const bool p_disabled);
+	bool joint_is_disabled_collisions_between_bodies(RID p_joint) const;
+
+	void joint_make_pin(
+		RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
+	void joint_make_groove(RID p_joint, const Vector2& p_a_groove1,
+		const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
+	void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a,
+		const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
+
+	void pin_joint_set_flag(
+		RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
+	bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag) const;
+	void pin_joint_set_param(
+		RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
+	real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param) const;
+	void damped_spring_joint_set_param(
+		RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
+	real_t damped_spring_joint_get_param(
+		RID p_joint, PS2DE::DampedSpringParam p_param) const;
+
+	PS2DE::JointType joint_get_type(RID p_joint) const;
+
+	/* MISC */
+
+	void free_rid(RID p_rid);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
+
+	void set_active(bool p_active);
+	void init();
+	void step(real_t p_step);
+	void sync();
+	void flush_queries();
+	void end_sync();
+	void finish();
+
+	bool is_flushing_queries() const { return flushing_queries; }
+
+	int get_process_info(PS2DE::ProcessInfo p_info);
+
+	explicit GodotPhysicsServer2D(bool p_using_threads = false);
+
+	~GodotPhysicsServer2D()
+	{
+		finish();
+	}
+};
+// --- End modules/godot_physics_2d/godot_physics_server_2d.h ---
+
+// --- Folded from servers/navigation_2d/navigation_server_2d.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
+// --- Inlined/Folded from scene/resources/2d/navigation_mesh_source_geometry_data_2d.h ---
+#include "core/types.h"
+#include "core/os/mutex.h"
+
+class NavigationMeshSourceGeometryData2D : public Resource
+{
+	friend class NavMeshGenerator2D;
+
+	RWLock geometry_rwlock;
+
+	Vector<Vector<Vector2>> traversable_outlines;
+	Vector<Vector<Vector2>> obstruction_outlines;
+
+	Rect2 bounds;
+	bool bounds_dirty = true;
+
+public:
+	struct ProjectedObstruction;
+
+private:
+	Vector<ProjectedObstruction> _projected_obstructions;
+
+protected:
+
+public:
+	struct ProjectedObstruction
+	{
+		static inline uint32_t VERSION = 1; // Increase when format changes so we can detect
+											// outdated formats and provide compatibility.
+
+		Vector<float> vertices;
+		bool carve = false;
+	};
+
+	void _set_traversable_outlines(const Vector<Vector<Vector2>>& p_traversable_outlines);
+	const Vector<Vector<Vector2>>& _get_traversable_outlines() const;
+
+	void _set_obstruction_outlines(const Vector<Vector<Vector2>>& p_obstruction_outlines);
+	const Vector<Vector<Vector2>>& _get_obstruction_outlines() const;
+
+	void _add_traversable_outline(const Vector<Vector2>& p_shape_outline);
+	void _add_obstruction_outline(const Vector<Vector2>& p_shape_outline);
+
+	// kept root node transform here on the geometry data
+	// if we add this transform to all exposed functions we need to break comp on all functions
+	// later when navmesh changes from global transform to relative to navregion but if it stays
+	// here we can just remove it and change the internal functions only
+	Transform2D root_node_transform;
+
+	void add_traversable_outline(const PackedVector2Array& p_shape_outline);
+	void add_obstruction_outline(const PackedVector2Array& p_shape_outline);
+
+	bool has_data();
+	void clear();
+	void clear_projected_obstructions();
+
+	void add_projected_obstruction(const Vector<Vector2>& p_vertices, bool p_carve);
+	Vector<ProjectedObstruction> _get_projected_obstructions() const;
+
+	void merge(const Ref<NavigationMeshSourceGeometryData2D>& p_other_geometry);
+
+	void set_data(const Vector<Vector<Vector2>>& p_traversable_outlines,
+		const Vector<Vector<Vector2>>& p_obstruction_outlines,
+		Vector<ProjectedObstruction>& p_projected_obstructions);
+	void get_data(Vector<Vector<Vector2>>& r_traversable_outlines,
+		Vector<Vector<Vector2>>& r_obstruction_outlines,
+		Vector<ProjectedObstruction>& r_projected_obstructions);
+
+	Rect2 get_bounds();
+
+	~NavigationMeshSourceGeometryData2D() { clear(); }
+};
+// --- Inlined/Folded from scene/resources/2d/navigation_polygon.h ---
+
+
+class NavigationPolygon : public Resource
+{
+	RWLock rwlock;
+
+	Vector<Vector2> vertices;
+	Vector<Vector<int>> polygons;
+	Vector<Vector<Vector2>> outlines;
+
+	mutable Rect2 item_rect;
+	mutable bool rect_cache_dirty = true;
+
+	Mutex navigation_mesh_generation;
+	// Navigation mesh
+	Ref<NavigationMesh> navigation_mesh;
+
+	real_t cell_size = 1.0f;
+	real_t border_size = 0.0f;
+
+	Rect2 baking_rect;
+	Vector2 baking_rect_offset;
+
+protected:
+
+public:
+	NavigationPolygon();
+
+#ifdef DEBUG_ENABLED
+	Rect2 _edit_get_rect() const;
+	bool _edit_is_selected_on_click(const Point2& p_point, double p_tolerance) const;
+#endif // DEBUG_ENABLED
+
+	enum SamplePartitionType
+	{
+		SAMPLE_PARTITION_CONVEX_PARTITION = 0,
+		SAMPLE_PARTITION_TRIANGULATE,
+		SAMPLE_PARTITION_MAX
+	};
+
+	enum ParsedGeometryType
+	{
+		PARSED_GEOMETRY_MESH_INSTANCES = 0,
+		PARSED_GEOMETRY_STATIC_COLLIDERS,
+		PARSED_GEOMETRY_BOTH,
+		PARSED_GEOMETRY_MAX
+	};
+
+	enum SourceGeometryMode
+	{
+		SOURCE_GEOMETRY_ROOT_NODE_CHILDREN = 0,
+		SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN,
+		SOURCE_GEOMETRY_GROUPS_EXPLICIT,
+		SOURCE_GEOMETRY_MAX
+	};
+
+	real_t agent_radius = 10.0f;
+
+	SamplePartitionType partition_type = SAMPLE_PARTITION_CONVEX_PARTITION;
+	ParsedGeometryType parsed_geometry_type = PARSED_GEOMETRY_BOTH;
+	uint32_t parsed_collision_mask = 0xFFFFFFFF;
+
+	SourceGeometryMode source_geometry_mode = SOURCE_GEOMETRY_ROOT_NODE_CHILDREN;
+	String source_geometry_group_name = "navigation_polygon_source_geometry_group";
+
+	void set_vertices(const Vector<Vector2>& p_vertices);
+	const Vector<Vector2>& get_vertices() const _LIFETIME_BOUND_;
+
+	void add_polygon(const Vector<int>& p_polygon);
+	int get_polygon_count() const;
+
+	void add_outline(const Vector<Vector2>& p_outline);
+	void add_outline_at_index(const Vector<Vector2>& p_outline, int p_index);
+	void set_outline(int p_idx, const Vector<Vector2>& p_outline);
+	Vector<Vector2> get_outline(int p_idx) const;
+	void remove_outline(int p_idx);
+	int get_outline_count() const;
+	void set_outlines(const Vector<Vector<Vector2>>& p_outlines);
+	Vector<Vector<Vector2>> get_outlines() const;
+
+	void clear_outlines();
+#ifndef DISABLE_DEPRECATED
+	void make_polygons_from_outlines();
+#endif // DISABLE_DEPRECATED
+
+	void set_polygons(const Vector<Vector<int>>& p_polygons);
+	Vector<Vector<int>> get_polygons() const;
+	Vector<int> get_polygon(int p_idx);
+	void clear_polygons();
+
+	void set_sample_partition_type(SamplePartitionType p_value);
+	SamplePartitionType get_sample_partition_type() const;
+
+	void set_parsed_geometry_type(ParsedGeometryType p_geometry_type);
+	ParsedGeometryType get_parsed_geometry_type() const;
+
+	void set_parsed_collision_mask(uint32_t p_mask);
+	uint32_t get_parsed_collision_mask() const;
+
+	void set_parsed_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_parsed_collision_mask_value(int p_layer_number) const;
+
+	void set_source_geometry_mode(SourceGeometryMode p_geometry_mode);
+	SourceGeometryMode get_source_geometry_mode() const;
+
+	void set_source_geometry_group_name(const String& p_group_name);
+	String get_source_geometry_group_name() const;
+
+	void set_agent_radius(real_t p_value);
+	real_t get_agent_radius() const;
+
+	Ref<NavigationMesh> get_navigation_mesh();
+
+	void set_cell_size(real_t p_cell_size);
+	real_t get_cell_size() const;
+
+	void set_border_size(real_t p_value);
+	real_t get_border_size() const;
+
+	void set_baking_rect(const Rect2& p_rect);
+	Rect2 get_baking_rect() const;
+
+	void set_baking_rect_offset(const Vector2& p_rect_offset);
+	Vector2 get_baking_rect_offset() const;
+
+	void clear();
+
+	void set_data(const Vector<Vector2>& p_vertices, const Vector<Vector<int>>& p_polygons);
+	void set_data(const Vector<Vector2>& p_vertices, const Vector<Vector<int>>& p_polygons,
+		const Vector<Vector<Vector2>>& p_outlines);
+	void get_data(Vector<Vector2>& r_vertices, Vector<Vector<int>>& r_polygons);
+	void get_data(Vector<Vector2>& r_vertices, Vector<Vector<int>>& r_polygons,
+		Vector<Vector<Vector2>>& r_outlines);
+};
+
+namespace NavigationEnums2D {
+
+enum PathfindingAlgorithm {
+	PATHFINDING_ALGORITHM_ASTAR = 0,
+};
+
+enum PathPostProcessing {
+	PATH_POSTPROCESSING_CORRIDORFUNNEL = 0,
+	PATH_POSTPROCESSING_EDGECENTERED,
+	PATH_POSTPROCESSING_NONE,
+};
+
+enum PathSegmentType {
+	PATH_SEGMENT_TYPE_REGION = 0,
+	PATH_SEGMENT_TYPE_LINK
+};
+
+enum PathMetadataFlags {
+	PATH_INCLUDE_NONE = 0,
+	PATH_INCLUDE_TYPES = 1,
+	PATH_INCLUDE_RIDS = 2,
+	PATH_INCLUDE_OWNERS = 4,
+	PATH_INCLUDE_ALL = PATH_INCLUDE_TYPES | PATH_INCLUDE_RIDS | PATH_INCLUDE_OWNERS
+};
+
+} // namespace NavigationEnums2D
+
+namespace NavigationDefaults2D {
+
+// Rasterization.
+
+// Same as in 3D but larger since 1px is treated as 1m.
+constexpr float NAV_MESH_CELL_SIZE = 1.0f; // Must match ProjectSettings default 2D cell_size.
+constexpr float NAV_MESH_CELL_SIZE_MIN = 0.01f;
+constexpr const char *const NAV_MESH_CELL_SIZE_HINT = "0.001,100,0.001,or_greater";
+
+// Map.
+
+constexpr float EDGE_CONNECTION_MARGIN = 1.0f;
+constexpr float LINK_CONNECTION_RADIUS = 4.0f;
+constexpr int path_search_max_polygons = 4096;
+
+// Agent.
+
+constexpr float AVOIDANCE_AGENT_RADIUS = 10.0;
+constexpr float AVOIDANCE_AGENT_MAX_SPEED = 100.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_AGENTS = 1.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES = 0.0;
+constexpr int AVOIDANCE_AGENT_MAX_NEIGHBORS = 10;
+constexpr float AVOIDANCE_AGENT_NEIGHBOR_DISTANCE = 500.0;
+
+} // namespace NavigationDefaults2D
+
+class NavigationPathQueryParameters2D final : public RefCounted
+{
+public:
+	enum PathfindingAlgorithm
+	{
+		PATHFINDING_ALGORITHM_ASTAR = NavigationEnums2D::PATHFINDING_ALGORITHM_ASTAR,
+	};
+
+	enum PathPostProcessing
+	{
+		PATH_POSTPROCESSING_CORRIDORFUNNEL = NavigationEnums2D::PATH_POSTPROCESSING_CORRIDORFUNNEL,
+		PATH_POSTPROCESSING_EDGECENTERED = NavigationEnums2D::PATH_POSTPROCESSING_EDGECENTERED,
+		PATH_POSTPROCESSING_NONE = NavigationEnums2D::PATH_POSTPROCESSING_NONE,
+	};
+
+	enum PathMetadataFlags
+	{
+		PATH_METADATA_INCLUDE_NONE = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_NONE,
+		PATH_METADATA_INCLUDE_TYPES = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_TYPES,
+		PATH_METADATA_INCLUDE_RIDS = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_RIDS,
+		PATH_METADATA_INCLUDE_OWNERS = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_OWNERS,
+		PATH_METADATA_INCLUDE_ALL = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_ALL
+	};
+
+private:
+	PathfindingAlgorithm pathfinding_algorithm = PATHFINDING_ALGORITHM_ASTAR;
+	PathPostProcessing path_postprocessing = PATH_POSTPROCESSING_CORRIDORFUNNEL;
+	RID map;
+	Vector2 start_position;
+	Vector2 target_position;
+	uint32_t navigation_layers = 1;
+	uint32_t metadata_flags = PATH_METADATA_INCLUDE_ALL;
+	bool simplify_path = false;
+	real_t simplify_epsilon = 0.0;
+
+	LocalVector<RID> _excluded_regions;
+	LocalVector<RID> _included_regions;
+
+	float path_return_max_length = 0.0;
+	float path_return_max_radius = 0.0;
+	int path_search_max_polygons = NavigationDefaults2D::path_search_max_polygons;
+	float path_search_max_distance = 0.0;
+
+public:
+	void set_pathfinding_algorithm(const PathfindingAlgorithm p_pathfinding_algorithm);
+	PathfindingAlgorithm get_pathfinding_algorithm() const;
+
+	void set_path_postprocessing(const PathPostProcessing p_path_postprocessing);
+	PathPostProcessing get_path_postprocessing() const;
+
+	void set_map(RID p_map);
+	RID get_map() const;
+
+	void set_start_position(const Vector2 p_start_position);
+	Vector2 get_start_position() const;
+
+	void set_target_position(const Vector2 p_target_position);
+	Vector2 get_target_position() const;
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const;
+
+	void set_metadata_flags(uint32_t p_flags);
+	uint32_t get_metadata_flags() const;
+
+	void set_simplify_path(bool p_enabled);
+	bool get_simplify_path() const;
+
+	void set_simplify_epsilon(real_t p_epsilon);
+	real_t get_simplify_epsilon() const;
+
+	void set_path_return_max_length(float p_length);
+	float get_path_return_max_length() const;
+
+	void set_path_return_max_radius(float p_radius);
+	float get_path_return_max_radius() const;
+
+	void set_path_search_max_polygons(int p_max_polygons);
+	int get_path_search_max_polygons() const;
+
+	void set_path_search_max_distance(float p_distance);
+	float get_path_search_max_distance() const;
+};
+
+class NavigationPathQueryResult2D final : public RefCounted
+{
+	Vector<Vector2> path;
+	Vector<int32_t> path_types;
+	Vector<int64_t> path_owner_ids;
+	float path_length = 0.0;
+
+public:
+	enum PathSegmentType
+	{
+		PATH_SEGMENT_TYPE_REGION = NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_REGION,
+		PATH_SEGMENT_TYPE_LINK = NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK,
+	};
+
+	void set_path(const Vector<Vector2>& p_path);
+	const Vector<Vector2>& get_path() const;
+
+	void set_path_types(const Vector<int32_t>& p_path_types);
+	const Vector<int32_t>& get_path_types() const;
+
+	void set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids);
+	const Vector<int64_t>& get_path_owner_ids() const;
+
+	void set_path_length(float p_length);
+	float get_path_length() const;
+
+	void reset();
+
+	void set_data(const LocalVector<Vector2>& p_path, const LocalVector<int32_t>& p_path_types,
+		const LocalVector<RID>& p_path_rids, const LocalVector<int64_t>& p_path_owner_ids);
+};
+
+class NavigationServer2D final
+{
+	static inline BinaryMutex _thread_safe_mutex;
+
+public:
+	enum ProcessInfo
+	{
+		INFO_ACTIVE_MAPS,
+		INFO_REGION_COUNT,
+		INFO_AGENT_COUNT,
+		INFO_LINK_COUNT,
+		INFO_POLYGON_COUNT,
+		INFO_EDGE_COUNT,
+		INFO_EDGE_MERGE_COUNT,
+		INFO_EDGE_CONNECTION_COUNT,
+		INFO_EDGE_FREE_COUNT,
+		INFO_OBSTACLE_COUNT,
+	};
+
+private:
+	struct NavMap;
+	struct NavRegion;
+	struct NavLink;
+	struct NavAgent;
+	struct NavObstacle;
+
+	struct Data
+	{
+		bool active = true;
+		bool debug_enabled = false;
+
+		LocalVector<NavMap*> active_maps;
+		LocalVector<NavMap*> iteration_maps;
+
+		RID_Owner<NavMap> map_owner;
+		RID_Owner<NavRegion> region_owner;
+		RID_Owner<NavLink> link_owner;
+		RID_Owner<NavAgent> agent_owner;
+		RID_Owner<NavObstacle> obstacle_owner;
+
+#ifdef DEBUG_ENABLED
+		bool debug_navigation_enable_agent_radius;
+		bool debug_navigation_enable_obstacles;
+		bool debug_dirty = true;
+		bool debug_navigation_enabled = false;
+		bool navigation_debug_dirty = true;
+		bool debug_avoidance_enabled = false;
+		bool avoidance_debug_dirty = true;
+
+		Color debug_navigation_edge_connection_color = Color(1.0, 0.0, 1.0, 1.0);
+		Color debug_navigation_geometry_edge_color = Color(0.5, 1.0, 1.0, 1.0);
+		Color debug_navigation_geometry_face_color = Color(0.5, 1.0, 1.0, 0.4);
+		Color debug_navigation_geometry_edge_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_geometry_face_disabled_color = Color(0.5, 0.5, 0.5, 0.4);
+		Color debug_navigation_link_connection_color = Color(1.0, 0.5, 1.0, 1.0);
+		Color debug_navigation_link_connection_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_agent_path_color = Color(1.0, 0.0, 0.0, 1.0);
+
+		real_t debug_navigation_agent_path_point_size = 4.0;
+
+		Color debug_navigation_avoidance_agents_radius_color = Color(1.0, 1.0, 0.0, 0.25);
+		Color debug_navigation_avoidance_obstacles_radius_color = Color(1.0, 0.5, 0.0, 0.25);
+
+		Color debug_navigation_avoidance_static_obstacle_pushin_face_color =
+			Color(1.0, 0.0, 0.0, 0.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_face_color =
+			Color(1.0, 1.0, 0.0, 0.5);
+		Color debug_navigation_avoidance_static_obstacle_pushin_edge_color =
+			Color(1.0, 0.0, 0.0, 1.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_edge_color =
+			Color(1.0, 1.0, 0.0, 1.0);
+
+		bool debug_navigation_enable_edge_connections = true;
+		bool debug_navigation_enable_edge_lines = true;
+		bool debug_navigation_enable_geometry_face_random_color = true;
+		bool debug_navigation_enable_link_connections = true;
+		bool debug_navigation_enable_agent_paths = true;
+
+		bool debug_navigation_avoidance_enable_agents_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_static = true;
+#endif // DEBUG_ENABLED
+	};
+
+public:
+	static inline Data* data = nullptr;
+
+	/* SERVER LIFECYCLE */
+
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return data != nullptr; }
+
+	static void set_active(bool p_active);
+	static void sync();
+	static void process(double p_delta_time);
+	static void physics_process(double p_delta_time);
+	static void free_rid(RID p_rid);
+
+	static int get_process_info(ProcessInfo p_info);
+
+	/* MAP API */
+
+	static RID map_create();
+	static void map_set_active(RID p_map, bool p_active);
+	static bool map_is_active(RID p_map);
+
+	static void map_set_cell_size(RID p_map, real_t p_cell_size);
+	static real_t map_get_cell_size(RID p_map);
+
+	static void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
+	static float map_get_merge_rasterizer_cell_scale(RID p_map);
+
+	static void map_set_use_edge_connections(RID p_map, bool p_enabled);
+	static bool map_get_use_edge_connections(RID p_map);
+
+	static void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+	static real_t map_get_edge_connection_margin(RID p_map);
+
+	static void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
+	static real_t map_get_link_connection_radius(RID p_map);
+
+	static Vector<Vector2> map_get_path(RID p_map, Vector2 p_origin, Vector2 p_destination,
+		bool p_optimize, uint32_t p_navigation_layers = 1);
+	static Vector2 map_get_closest_point(RID p_map, const Vector2& p_point);
+	static RID map_get_closest_point_owner(RID p_map, const Vector2& p_point);
+
+	static void map_force_update(RID p_map);
+	static uint32_t map_get_iteration_id(RID p_map);
+
+	static void map_set_use_async_iterations(RID p_map, bool p_enabled);
+	static bool map_get_use_async_iterations(RID p_map);
+
+	static Vector2 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
+
+	/* REGION API */
+
+	static RID region_create();
+	static uint32_t region_get_iteration_id(RID p_region);
+
+	static void region_set_use_async_iterations(RID p_region, bool p_enabled);
+	static bool region_get_use_async_iterations(RID p_region);
+
+	static void region_set_enabled(RID p_region, bool p_enabled);
+	static bool region_get_enabled(RID p_region);
+
+	static void region_set_use_edge_connections(RID p_region, bool p_enabled);
+	static bool region_get_use_edge_connections(RID p_region);
+
+	static void region_set_enter_cost(RID p_region, real_t p_enter_cost);
+	static real_t region_get_enter_cost(RID p_region);
+
+	static void region_set_travel_cost(RID p_region, real_t p_travel_cost);
+	static real_t region_get_travel_cost(RID p_region);
+
+	static bool region_owns_point(RID p_region, const Vector2& p_point);
+
+	static void region_set_map(RID p_region, RID p_map);
+	static RID region_get_map(RID p_region);
+
+	static void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
+	static uint32_t region_get_navigation_layers(RID p_region);
+
+	static void region_set_transform(RID p_region, Transform2D p_transform);
+	static Transform2D region_get_transform(RID p_region);
+
+	static void region_set_navigation_polygon(
+		RID p_region, Ref<NavigationPolygon> p_navigation_polygon);
+
+	static int region_get_connections_count(RID p_region);
+	static Vector2 region_get_connection_pathway_start(RID p_region, int p_connection_id);
+	static Vector2 region_get_connection_pathway_end(RID p_region, int p_connection_id);
+
+	static Vector2 region_get_closest_point(RID p_region, const Vector2& p_point);
+	static Vector2 region_get_random_point(
+		RID p_region, uint32_t p_navigation_layers, bool p_uniformly);
+	static Rect2 region_get_bounds(RID p_region);
+
+	/* LINK API */
+
+	static RID link_create();
+	static uint32_t link_get_iteration_id(RID p_link);
+
+	static void link_set_map(RID p_link, RID p_map);
+	static RID link_get_map(RID p_link);
+
+	static void link_set_enabled(RID p_link, bool p_enabled);
+	static bool link_get_enabled(RID p_link);
+
+	static void link_set_bidirectional(RID p_link, bool p_bidirectional);
+	static bool link_is_bidirectional(RID p_link);
+
+	static void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
+	static uint32_t link_get_navigation_layers(RID p_link);
+
+	static void link_set_start_position(RID p_link, Vector2 p_position);
+	static Vector2 link_get_start_position(RID p_link);
+
+	static void link_set_end_position(RID p_link, Vector2 p_position);
+	static Vector2 link_get_end_position(RID p_link);
+
+	static void link_set_enter_cost(RID p_link, real_t p_enter_cost);
+	static real_t link_get_enter_cost(RID p_link);
+
+	static void link_set_travel_cost(RID p_link, real_t p_travel_cost);
+	static real_t link_get_travel_cost(RID p_link);
+
+	/* AGENT API */
+
+	static RID agent_create();
+
+	static void agent_set_map(RID p_agent, RID p_map);
+	static RID agent_get_map(RID p_agent);
+
+	static void agent_set_paused(RID p_agent, bool p_paused);
+	static bool agent_get_paused(RID p_agent);
+
+	static void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
+	static bool agent_get_avoidance_enabled(RID p_agent);
+
+	static void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
+	static real_t agent_get_neighbor_distance(RID p_agent);
+
+	static void agent_set_max_neighbors(RID p_agent, int p_count);
+	static int agent_get_max_neighbors(RID p_agent);
+
+	static void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_agents(RID p_agent);
+
+	static void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_obstacles(RID p_agent);
+
+	static void agent_set_radius(RID p_agent, real_t p_radius);
+	static real_t agent_get_radius(RID p_agent);
+
+	static void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+	static real_t agent_get_max_speed(RID p_agent);
+
+	static void agent_set_velocity_forced(RID p_agent, Vector2 p_velocity);
+	static void agent_set_velocity(RID p_agent, Vector2 p_velocity);
+	static Vector2 agent_get_velocity(RID p_agent);
+
+	static void agent_set_position(RID p_agent, Vector2 p_position);
+	static Vector2 agent_get_position(RID p_agent);
+
+	static bool agent_is_map_changed(RID p_agent);
+	static bool agent_has_avoidance_callback(RID p_agent);
+
+	static void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
+	static uint32_t agent_get_avoidance_layers(RID p_agent);
+
+	static void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
+	static uint32_t agent_get_avoidance_mask(RID p_agent);
+
+	static void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
+	static real_t agent_get_avoidance_priority(RID p_agent);
+
+	/* OBSTACLE API */
+
+	static RID obstacle_create();
+
+	static void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
+	static bool obstacle_get_avoidance_enabled(RID p_obstacle);
+
+	static void obstacle_set_map(RID p_obstacle, RID p_map);
+	static RID obstacle_get_map(RID p_obstacle);
+
+	static void obstacle_set_paused(RID p_obstacle, bool p_paused);
+	static bool obstacle_get_paused(RID p_obstacle);
+
+	static void obstacle_set_radius(RID p_obstacle, real_t p_radius);
+	static real_t obstacle_get_radius(RID p_obstacle);
+
+	static void obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity);
+	static Vector2 obstacle_get_velocity(RID p_obstacle);
+
+	static void obstacle_set_position(RID p_obstacle, Vector2 p_position);
+	static Vector2 obstacle_get_position(RID p_obstacle);
+
+	static void obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices);
+	static Vector<Vector2> obstacle_get_vertices(RID p_obstacle);
+
+	static void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
+	static uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
+
+	/* PATH QUERY & UTILITIES */
+
+	static void query_path(const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
+		Ref<NavigationPathQueryResult2D> p_query_result);
+	static Vector<Vector2> simplify_path(const Vector<Vector2>& p_path, real_t p_epsilon);
+
+	/* DEBUG API */
+
+	static void set_debug_enabled(bool p_enabled);
+	static bool get_debug_enabled();
+
+#ifdef DEBUG_ENABLED
+	static void set_debug_navigation_enabled(bool p_enabled);
+	static bool get_debug_navigation_enabled();
+
+	static void set_debug_avoidance_enabled(bool p_enabled);
+	static bool get_debug_avoidance_enabled();
+
+	static void set_debug_navigation_edge_connection_color(const Color& p_color);
+	static Color get_debug_navigation_edge_connection_color();
+
+	static void set_debug_navigation_geometry_face_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_color();
+
+	static void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_disabled_color();
+
+	static void set_debug_navigation_geometry_edge_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_color();
+
+	static void set_debug_navigation_enable_obstacles(bool p_enable);
+	static bool get_debug_navigation_enable_obstacles();
+
+	static void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_disabled_color();
+
+	static void set_debug_navigation_link_connection_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_color();
+
+	static void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_disabled_color();
+
+	static void set_debug_navigation_enable_edge_connections(bool p_value);
+	static bool get_debug_navigation_enable_edge_connections();
+
+	static void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
+	static bool get_debug_navigation_enable_geometry_face_random_color();
+
+	static void set_debug_navigation_enable_link_connections(bool p_enable);
+	static bool get_debug_navigation_enable_link_connections();
+
+	static void set_debug_navigation_enable_edge_lines(bool p_value);
+	static bool get_debug_navigation_enable_edge_lines();
+
+	static void set_debug_navigation_agent_path_color(const Color& p_color);
+	static Color get_debug_navigation_agent_path_color();
+
+	static void set_debug_navigation_enable_agent_radius(bool p_enable);
+	static bool get_debug_navigation_enable_agent_radius();
+
+	static void set_debug_navigation_enable_agent_paths(bool p_value);
+	static bool get_debug_navigation_enable_agent_paths();
+
+	static void set_debug_navigation_agent_path_point_size(real_t p_point_size);
+	static real_t get_debug_navigation_agent_path_point_size();
+
+	static void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_agents_radius();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_radius();
+
+	static void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_agents_radius_color();
+
+	static void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_obstacles_radius_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_static();
+#endif // DEBUG_ENABLED
+
+	/* LIFECYCLE DISALLOWANCE */
+
+	NavigationServer2D() = delete;
+	NavigationServer2D(const NavigationServer2D&) = delete;
+	NavigationServer2D& operator=(const NavigationServer2D&) = delete;
+	~NavigationServer2D() = delete;
+};
+
+// --- Folded from servers/nav_heap.h ---
+#include "core/string/ustring.h"
+
+// This file contains Heap which is used by both 2D and 3D navigation.
+
+template <typename T>
+struct NoopIndexer {
+	void operator()(const T &p_value, uint32_t p_index) {}
+};
+
+/**
+ * A max-heap implementation that notifies of element index changes.
+ */
+template <typename T, typename LessThan = Comparator<T>, typename Indexer = NoopIndexer<T>>
+class Heap {
+	LocalVector<T> _buffer;
+
+	LessThan _less_than;
+	Indexer _indexer;
+
+public:
+	static constexpr uint32_t INVALID_INDEX = UINT32_MAX;
+	void reserve(uint32_t p_size) {
+		_buffer.reserve(p_size);
+	}
+
+	uint32_t size() const {
+		return _buffer.size();
+	}
+
+	bool is_empty() const {
+		return _buffer.is_empty();
+	}
+
+	void push(const T &p_element) {
+		_buffer.push_back(p_element);
+		_indexer(p_element, _buffer.size() - 1);
+		_shift_up(_buffer.size() - 1);
+	}
+
+	T pop() {
+		ERR_FAIL_COND_V_MSG(_buffer.is_empty(), T(), "Can't pop an empty heap.");
+		T value = _buffer[0];
+		_indexer(value, INVALID_INDEX);
+		if (_buffer.size() > 1) {
+			_buffer[0] = _buffer[_buffer.size() - 1];
+			_indexer(_buffer[0], 0);
+			_buffer.remove_at(_buffer.size() - 1);
+			_shift_down(0);
+		} else {
+			_buffer.remove_at(_buffer.size() - 1);
+		}
+		return value;
+	}
+
+	/**
+	 * Update the position of the element in the heap if necessary.
+	 */
+	void shift(uint32_t p_index) {
+		ERR_FAIL_UNSIGNED_INDEX_MSG(p_index, _buffer.size(), "Heap element index is out of range.");
+		if (!_shift_up(p_index)) {
+			_shift_down(p_index);
+		}
+	}
+
+	void clear() {
+		for (const T &value : _buffer) {
+			_indexer(value, INVALID_INDEX);
+		}
+		_buffer.clear();
+	}
+
+	Heap() {}
+
+	Heap(const LessThan &p_less_than) :
+			_less_than(p_less_than) {}
+
+	Heap(const Indexer &p_indexer) :
+			_indexer(p_indexer) {}
+
+	Heap(const LessThan &p_less_than, const Indexer &p_indexer) :
+			_less_than(p_less_than), _indexer(p_indexer) {}
+
+private:
+	bool _shift_up(uint32_t p_index) {
+		T value = _buffer[p_index];
+		uint32_t current_index = p_index;
+		uint32_t parent_index = (current_index - 1) / 2;
+		while (current_index > 0 && _less_than(_buffer[parent_index], value)) {
+			_buffer[current_index] = _buffer[parent_index];
+			_indexer(_buffer[current_index], current_index);
+			current_index = parent_index;
+			parent_index = (current_index - 1) / 2;
+		}
+		if (current_index != p_index) {
+			_buffer[current_index] = value;
+			_indexer(value, current_index);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	bool _shift_down(uint32_t p_index) {
+		T value = _buffer[p_index];
+		uint32_t current_index = p_index;
+		uint32_t child_index = 2 * current_index + 1;
+		while (child_index < _buffer.size()) {
+			if (child_index + 1 < _buffer.size() &&
+					_less_than(_buffer[child_index], _buffer[child_index + 1])) {
+				child_index++;
+			}
+			if (_less_than(_buffer[child_index], value)) {
+				break;
+			}
+			_buffer[current_index] = _buffer[child_index];
+			_indexer(_buffer[current_index], current_index);
+			current_index = child_index;
+			child_index = 2 * current_index + 1;
+		}
+		if (current_index != p_index) {
+			_buffer[current_index] = value;
+			_indexer(value, current_index);
+			return true;
+		} else {
+			return false;
+		}
+	}
+};
+// --- End servers/nav_heap.h ---
+
+// --- Folded from modules/navigation_2d/nav_map_2d.h ---
+#include <cfloat>
+
+#include "core/typedefs.h"
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/os/mutex.h"
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
+
+
+
+#include "thirdparty/rvo2/rvo2_2d/Agent2d.h"
+#include "thirdparty/rvo2/rvo2_2d/KdTree2d.h"
+#include "thirdparty/rvo2/rvo2_2d/RVOSimulator2d.h"
+
+class NavIteration2D;
+class NavMap2D;
+class NavRegion2D;
+class NavLink2D;
+class NavAgent2D;
+class NavObstacle2D;
+struct NavMapIteration2D;
+struct NavMapIterationBuild2D;
+struct NavRegionIterationBuild2D;
+
+struct Triangle2
+{
+	Vector2 vertex[3];
+
+	real_t get_area() const
+	{
+		return Math::abs((vertex[0] - vertex[1]).cross(vertex[0] - vertex[2])) * 0.5f;
+	}
+
+	Vector2 get_random_point_inside() const;
+
+	Vector2 get_closest_point_to(const Vector2& p_point) const;
+
+	Triangle2() {}
+	Triangle2(const Vector2& p_v1, const Vector2& p_v2, const Vector2& p_v3)
+	{
+		vertex[0] = p_v1;
+		vertex[1] = p_v2;
+		vertex[2] = p_v3;
+	}
+};
+
+namespace Nav2D {
+
+struct Polygon;
+
+union PointKey {
+	struct {
+		int64_t x : 32;
+		int64_t y : 32;
+	};
+
+	uint64_t key = 0;
+};
+
+struct EdgeKey {
+	PointKey a;
+	PointKey b;
+
+	static uint32_t hash(const EdgeKey& p_val)
+	{
+		return hash_one_uint64(p_val.a.key) ^ hash_one_uint64(p_val.b.key);
+	}
+
+	bool operator==(const EdgeKey& p_key) const
+	{
+		return (a.key == p_key.a.key) && (b.key == p_key.b.key);
+	}
+
+	EdgeKey(const PointKey& p_a = PointKey(), const PointKey& p_b = PointKey()) : a(p_a), b(p_b)
+	{
+		if (a.key > b.key) {
+			SWAP(a, b);
+		}
+	}
+};
+
+struct ConnectableEdge {
+	EdgeKey ek;
+	uint32_t polygon_index;
+	int edge = -1;
+	Vector2 pathway_start;
+	Vector2 pathway_end;
+};
+
+struct Connection {
+	Polygon* polygon = nullptr;
+	int edge = -1;
+	Vector2 pathway_start;
+	Vector2 pathway_end;
+};
+
+struct Polygon {
+	uint32_t id = UINT32_MAX;
+	const NavIteration2D* owner = nullptr;
+	LocalVector<Vector2> vertices;
+	real_t surface_area = 0.0;
+};
+
+struct NavigationPoly {
+	const Polygon* poly = nullptr;
+	uint32_t traversable_poly_index = UINT32_MAX;
+
+	int back_navigation_poly_id = -1;
+	int back_navigation_edge = -1;
+	Vector2 back_navigation_edge_pathway_start;
+	Vector2 back_navigation_edge_pathway_end;
+
+	Vector2 entry;
+	real_t traveled_distance = 0.0;
+	real_t distance_to_destination = 0.0;
+
+	real_t total_travel_cost() const { return traveled_distance + distance_to_destination; }
+
+	bool operator==(const NavigationPoly& p_other) const { return poly == p_other.poly; }
+
+	bool operator!=(const NavigationPoly& p_other) const { return !(*this == p_other); }
+
+	void reset()
+	{
+		poly = nullptr;
+		traversable_poly_index = UINT32_MAX;
+		back_navigation_poly_id = -1;
+		back_navigation_edge = -1;
+		traveled_distance = FLT_MAX;
+		distance_to_destination = 0.0;
+	}
+};
+
+struct NavPolyTravelCostGreaterThan {
+	bool operator()(const NavigationPoly* p_poly_a, const NavigationPoly* p_poly_b) const
+	{
+		real_t f_cost_a = p_poly_a->total_travel_cost();
+		real_t h_cost_a = p_poly_a->distance_to_destination;
+		real_t f_cost_b = p_poly_b->total_travel_cost();
+		real_t h_cost_b = p_poly_b->distance_to_destination;
+
+		if (f_cost_a != f_cost_b) {
+			return f_cost_a > f_cost_b;
+		}
+		else {
+			return h_cost_a > h_cost_b;
+		}
+	}
+};
+
+struct NavPolyHeapIndexer {
+	void operator()(NavigationPoly* p_poly, uint32_t p_heap_index) const
+	{
+		p_poly->traversable_poly_index = p_heap_index;
+	}
+};
+
+struct ClosestPointQueryResult {
+	Vector2 point;
+	RID owner;
+};
+
+struct EdgeConnectionPair {
+	Connection connections[2];
+	int size = 0;
+};
+
+struct PerformanceData {
+	int pm_region_count = 0;
+	int pm_agent_count = 0;
+	int pm_link_count = 0;
+	int pm_polygon_count = 0;
+	int pm_edge_count = 0;
+	int pm_edge_merge_count = 0;
+	int pm_edge_connection_count = 0;
+	int pm_edge_free_count = 0;
+	int pm_obstacle_count = 0;
+
+	void reset()
+	{
+		pm_region_count = 0;
+		pm_agent_count = 0;
+		pm_link_count = 0;
+		pm_polygon_count = 0;
+		pm_edge_count = 0;
+		pm_edge_merge_count = 0;
+		pm_edge_connection_count = 0;
+		pm_edge_free_count = 0;
+		pm_obstacle_count = 0;
+	}
+};
+
+} // namespace Nav2D
+
+class NavIteration2D final : public RefCounted
+{
+public:
+	bool enabled = true;
+	uint32_t navigation_layers = 1;
+	real_t enter_cost = 0.0;
+	real_t travel_cost = 1.0;
+	NavigationEnums2D::PathSegmentType owner_type = NavigationEnums2D::PATH_SEGMENT_TYPE_REGION;
+	RID owner_rid;
+	bool owner_use_edge_connections = false;
+	LocalVector<Nav2D::Polygon> navmesh_polygons;
+	LocalVector<LocalVector<Nav2D::Connection>> internal_connections;
+
+	// Region iteration data.
+	Transform2D transform;
+	real_t surface_area = 0.0;
+	Rect2 bounds;
+	LocalVector<Nav2D::ConnectableEdge> external_edges;
+
+	// Link iteration data.
+	bool bidirectional = true;
+	Vector2 start_position;
+	Vector2 end_position;
+
+	bool get_enabled() const { return enabled; }
+	NavigationEnums2D::PathSegmentType get_type() const { return owner_type; }
+	RID get_self() const { return owner_rid; }
+	uint32_t get_navigation_layers() const { return navigation_layers; }
+	real_t get_enter_cost() const { return enter_cost; }
+	real_t get_travel_cost() const { return travel_cost; }
+	bool get_use_edge_connections() const { return owner_use_edge_connections; }
+
+	const LocalVector<Nav2D::Polygon>& get_navmesh_polygons() const { return navmesh_polygons; }
+	const LocalVector<LocalVector<Nav2D::Connection>>& get_internal_connections() const
+	{
+		return internal_connections;
+	}
+
+	const Transform2D& get_transform() const { return transform; }
+	real_t get_surface_area() const { return surface_area; }
+	Rect2 get_bounds() const { return bounds; }
+	const LocalVector<Nav2D::ConnectableEdge>& get_external_edges() const { return external_edges; }
+
+	Vector2 get_start_position() const { return start_position; }
+	Vector2 get_end_position() const { return end_position; }
+	bool is_bidirectional() const { return bidirectional; }
+
+	~NavIteration2D() override
+	{
+		external_edges.clear();
+		navmesh_polygons.clear();
+		internal_connections.clear();
+	}
+};
+
+struct NavRegionIterationBuild2D
+{
+	Nav2D::PerformanceData performance_data;
+
+	NavRegion2D* region = nullptr;
+
+	Vector2 map_cell_size;
+	Transform2D region_transform;
+
+	struct NavMeshData
+	{
+		Vector<Vector2> vertices;
+		Vector<Vector<int>> polygons;
+
+		void clear()
+		{
+			vertices.clear();
+			polygons.clear();
+		}
+	} navmesh_data;
+
+	Ref<NavIteration2D> region_iteration;
+
+	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey> iter_connection_pairs_map;
+
+	void reset()
+	{
+		performance_data.reset();
+
+		navmesh_data.clear();
+		region_iteration = Ref<NavIteration2D>();
+		iter_connection_pairs_map.clear();
+	}
+};
+
+class NavMeshQueries2D final
+{
+public:
+	struct PathQuerySlot
+	{
+		LocalVector<Nav2D::NavigationPoly> path_corridor;
+		Heap<Nav2D::NavigationPoly*, Nav2D::NavPolyTravelCostGreaterThan, Nav2D::NavPolyHeapIndexer>
+			traversable_polys;
+		bool in_use = false;
+		uint32_t slot_index = 0;
+		AHashMap<const Nav2D::Polygon*, uint32_t> poly_to_id;
+	};
+
+	struct NavMeshPathQueryTask2D
+	{
+		enum TaskStatus
+		{
+			QUERY_STARTED,
+			QUERY_FINISHED,
+			QUERY_FAILED,
+			CALLBACK_DISPATCHED,
+			CALLBACK_FAILED,
+		};
+
+		Vector2 start_position;
+		Vector2 target_position;
+		uint32_t navigation_layers;
+		uint32_t metadata_flags = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_ALL;
+		NavigationEnums2D::PathfindingAlgorithm pathfinding_algorithm =
+			NavigationEnums2D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
+		NavigationEnums2D::PathPostProcessing path_postprocessing =
+			NavigationEnums2D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
+		bool simplify_path = false;
+		real_t simplify_epsilon = 0.0;
+
+		bool exclude_regions = false;
+		bool include_regions = false;
+		LocalVector<RID> excluded_regions;
+		LocalVector<RID> included_regions;
+
+		float path_return_max_length = 0.0;
+		float path_return_max_radius = 0.0;
+		int path_search_max_polygons = NavigationDefaults2D::path_search_max_polygons;
+		float path_search_max_distance = 0.0;
+
+		Vector2 begin_position;
+		Vector2 end_position;
+		const Nav2D::Polygon* begin_polygon = nullptr;
+		const Nav2D::Polygon* end_polygon = nullptr;
+		uint32_t least_cost_id = 0;
+
+		NavMap2D* map = nullptr;
+		PathQuerySlot* path_query_slot = nullptr;
+
+		LocalVector<Vector2> path_points;
+		LocalVector<int32_t> path_meta_point_types;
+		LocalVector<RID> path_meta_point_rids;
+		LocalVector<int64_t> path_meta_point_owners;
+		float path_length = 0.0;
+
+		Ref<NavigationPathQueryParameters2D> query_parameters;
+		Ref<NavigationPathQueryResult2D> query_result;
+		NavMeshPathQueryTask2D::TaskStatus status =
+			NavMeshPathQueryTask2D::TaskStatus::QUERY_STARTED;
+
+		void path_clear()
+		{
+			path_points.clear();
+			path_meta_point_types.clear();
+			path_meta_point_rids.clear();
+			path_meta_point_owners.clear();
+		}
+
+		void path_reverse()
+		{
+			path_points.reverse();
+			path_meta_point_types.reverse();
+			path_meta_point_rids.reverse();
+			path_meta_point_owners.reverse();
+		}
+	};
+
+	static Vector2 polygons_get_random_point(const LocalVector<Nav2D::Polygon>& p_polygons,
+		uint32_t p_navigation_layers, bool p_uniformly);
+
+	static Vector2 polygons_get_closest_point(
+		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
+	static Nav2D::ClosestPointQueryResult polygons_get_closest_point_info(
+		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
+	static RID polygons_get_closest_point_owner(
+		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
+
+	static Vector2 map_iteration_get_closest_point(
+		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
+	static RID map_iteration_get_closest_point_owner(
+		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
+	static Nav2D::ClosestPointQueryResult map_iteration_get_closest_point_info(
+		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
+	static Vector2 map_iteration_get_random_point(
+		const NavMapIteration2D& p_map_iteration, uint32_t p_navigation_layers, bool p_uniformly);
+
+	static void query_task_map_iteration_get_path(
+		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
+	static void _query_task_push_back_point_with_metadata(NavMeshPathQueryTask2D& p_query_task,
+		const Vector2& p_point, const Nav2D::Polygon* p_point_polygon);
+	static void _query_task_find_start_end_positions(
+		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
+	static void _query_task_build_path_corridor(
+		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
+	static void _query_task_post_process_corridorfunnel(NavMeshPathQueryTask2D& p_query_task);
+	static void _query_task_post_process_edgecentered(NavMeshPathQueryTask2D& p_query_task);
+	static void _query_task_post_process_nopostprocessing(NavMeshPathQueryTask2D& p_query_task);
+	static void _query_task_clip_path(NavMeshPathQueryTask2D& p_query_task,
+		const Nav2D::NavigationPoly* p_from_poly, const Vector2& p_to_point,
+		const Nav2D::NavigationPoly* p_to_poly);
+	static void _query_task_simplified_path_points(NavMeshPathQueryTask2D& p_query_task);
+	static bool _query_task_is_connection_owner_usable(
+		const NavMeshPathQueryTask2D& p_query_task, const NavIteration2D* p_owner);
+	static void _query_task_process_path_result_limits(NavMeshPathQueryTask2D& p_query_task);
+
+	static void _query_task_search_polygon_connections(NavMeshPathQueryTask2D& p_query_task,
+		const Nav2D::Connection& p_connection, uint32_t p_least_cost_id,
+		const Nav2D::NavigationPoly& p_least_cost_poly, real_t p_poly_enter_cost,
+		const Vector2& p_end_point);
+
+	static void simplify_path_segment(int p_start_inx, int p_end_inx,
+		const LocalVector<Vector2>& p_points, real_t p_epsilon,
+		LocalVector<uint32_t>& r_simplified_path_indices);
+	static LocalVector<uint32_t> get_simplified_path_indices(
+		const LocalVector<Vector2>& p_path, real_t p_epsilon);
+
+	static float _calculate_path_length(
+		const LocalVector<Vector2>& p_path, uint32_t p_start_index, uint32_t p_end_index);
+};
+
+struct NavMapIterationBuild2D
+{
+	Vector2 merge_rasterizer_cell_size;
+	bool use_edge_connections = true;
+	real_t edge_connection_margin;
+	real_t link_connection_radius;
+	Nav2D::PerformanceData performance_data;
+	int polygon_count = 0;
+	int free_edge_count = 0;
+
+	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey> iter_connection_pairs_map;
+	LocalVector<Nav2D::Connection> iter_free_edges;
+
+	NavMapIteration2D* map_iteration = nullptr;
+
+	int navmesh_polygon_count = 0;
+
+	void reset()
+	{
+		performance_data.reset();
+
+		iter_connection_pairs_map.clear();
+		iter_free_edges.clear();
+		polygon_count = 0;
+		free_edge_count = 0;
+
+		navmesh_polygon_count = 0;
+	}
+};
+
+struct NavMapIteration2D
+{
+	mutable SafeNumeric<uint32_t> users;
+	RWLock rwlock;
+
+	LocalVector<Ref<NavIteration2D>> region_iterations;
+	LocalVector<Ref<NavIteration2D>> link_iterations;
+
+	int navmesh_polygon_count = 0;
+
+	HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>> external_region_connections;
+	HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>
+		navbases_polygons_external_connections;
+
+	LocalVector<Nav2D::Polygon> navlink_polygons;
+
+	HashMap<NavRegion2D*, Ref<NavIteration2D>> region_ptr_to_region_iteration;
+
+	LocalVector<NavMeshQueries2D::PathQuerySlot> path_query_slots;
+	Mutex path_query_slots_mutex;
+	Semaphore path_query_slots_semaphore;
+
+	void clear()
+	{
+		navmesh_polygon_count = 0;
+
+		region_iterations.clear();
+		link_iterations.clear();
+		external_region_connections.clear();
+		navbases_polygons_external_connections.clear();
+		navlink_polygons.clear();
+		region_ptr_to_region_iteration.clear();
+	}
+};
+
+class NavMapIterationRead2D final
+{
+	const NavMapIteration2D& map_iteration;
+
+public:
+	_ALWAYS_INLINE_ NavMapIterationRead2D(const NavMapIteration2D& p_iteration)
+		: map_iteration(p_iteration)
+	{
+		map_iteration.rwlock.read_lock();
+		map_iteration.users.increment();
+	}
+
+	_ALWAYS_INLINE_ ~NavMapIterationRead2D()
+	{
+		map_iteration.users.decrement();
+		map_iteration.rwlock.read_unlock();
+	}
+};
+
+class NavMapBuilder2D final
+{
+	static void _build_step_gather_region_polygons(NavMapIterationBuild2D& r_build);
+	static void _build_step_find_edge_connection_pairs(NavMapIterationBuild2D& r_build);
+	static void _build_step_merge_edge_connection_pairs(NavMapIterationBuild2D& r_build);
+	static void _build_step_edge_connection_margin_connections(NavMapIterationBuild2D& r_build);
+	static void _build_step_navlink_connections(NavMapIterationBuild2D& r_build);
+	static void _build_update_map_iteration(NavMapIterationBuild2D& r_build);
+
+public:
+	static Nav2D::PointKey get_point_key(const Vector2& p_pos, const Vector2& p_cell_size);
+
+	static void build_navmap_iteration(NavMapIterationBuild2D& r_build);
+};
+
+class NavRegionBuilder2D final
+{
+	static void _build_step_process_navmesh_data(NavRegionIterationBuild2D& r_build);
+	static void _build_step_find_edge_connection_pairs(NavRegionIterationBuild2D& r_build);
+	static void _build_step_merge_edge_connection_pairs(NavRegionIterationBuild2D& r_build);
+	static void _build_update_iteration(NavRegionIterationBuild2D& r_build);
+
+public:
+	static Nav2D::PointKey get_point_key(const Vector2& p_pos, const Vector2& p_cell_size);
+	static Nav2D::EdgeKey get_edge_key(
+		const Vector2& p_vertex1, const Vector2& p_vertex2, const Vector2& p_cell_size);
+
+	static void build_iteration(NavRegionIterationBuild2D& r_build);
+};
+
+class NavAgent2D final
+{
+	RID self;
+
+	Vector2 position;
+	Vector2 target_position;
+	Vector2 velocity;
+	Vector2 velocity_forced;
+	real_t radius = NavigationDefaults2D::AVOIDANCE_AGENT_RADIUS;
+	real_t max_speed = NavigationDefaults2D::AVOIDANCE_AGENT_MAX_SPEED;
+	real_t time_horizon_agents = NavigationDefaults2D::AVOIDANCE_AGENT_TIME_HORIZON_AGENTS;
+	real_t time_horizon_obstacles = NavigationDefaults2D::AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES;
+	int max_neighbors = NavigationDefaults2D::AVOIDANCE_AGENT_MAX_NEIGHBORS;
+	real_t neighbor_distance = NavigationDefaults2D::AVOIDANCE_AGENT_NEIGHBOR_DISTANCE;
+	Vector2 safe_velocity;
+	bool clamp_speed = true;
+
+	NavMap2D* map = nullptr;
+
+	RVO2D::Agent2D rvo_agent;
+	bool avoidance_enabled = false;
+
+	uint32_t avoidance_layers = 1;
+	uint32_t avoidance_mask = 1;
+	real_t avoidance_priority = 1.0;
+
+	bool agent_dirty = true;
+
+	uint32_t last_map_iteration_id = 0;
+	bool paused = false;
+
+	SelfList<NavAgent2D> sync_dirty_request_list_element;
+
+public:
+	NavAgent2D();
+	~NavAgent2D();
+
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	void set_avoidance_enabled(bool p_enabled);
+	bool is_avoidance_enabled() { return avoidance_enabled; }
+
+	void set_map(NavMap2D* p_map);
+	NavMap2D* get_map() { return map; }
+
+	bool is_map_changed();
+
+	RVO2D::Agent2D* get_rvo_agent() { return &rvo_agent; }
+
+	bool has_avoidance_callback() const;
+	void dispatch_avoidance_callback();
+
+	void set_neighbor_distance(real_t p_neighbor_distance);
+	real_t get_neighbor_distance() const { return neighbor_distance; }
+
+	void set_max_neighbors(int p_max_neighbors);
+	int get_max_neighbors() const { return max_neighbors; }
+
+	void set_time_horizon_agents(real_t p_time_horizon);
+	real_t get_time_horizon_agents() const { return time_horizon_agents; }
+
+	void set_time_horizon_obstacles(real_t p_time_horizon);
+	real_t get_time_horizon_obstacles() const { return time_horizon_obstacles; }
+
+	void set_radius(real_t p_radius);
+	real_t get_radius() const { return radius; }
+
+	void set_max_speed(real_t p_max_speed);
+	real_t get_max_speed() const { return max_speed; }
+
+	void set_position(const Vector2& p_position);
+	Vector2 get_position() const { return position; }
+
+	void set_target_position(const Vector2& p_target_position);
+	Vector2 get_target_position() const { return target_position; }
+
+	void set_velocity(const Vector2& p_velocity);
+	Vector2 get_velocity() const { return velocity; }
+
+	void set_velocity_forced(const Vector2& p_velocity);
+	Vector2 get_velocity_forced() const { return velocity_forced; }
+
+	void set_avoidance_layers(uint32_t p_layers);
+	uint32_t get_avoidance_layers() const { return avoidance_layers; }
+
+	void set_avoidance_mask(uint32_t p_mask);
+	uint32_t get_avoidance_mask() const { return avoidance_mask; }
+
+	void set_avoidance_priority(real_t p_priority);
+	real_t get_avoidance_priority() const { return avoidance_priority; }
+
+	void set_paused(bool p_paused);
+	bool get_paused() const;
+
+	bool is_dirty() const;
+	void sync();
+	void request_sync();
+	void cancel_sync_request();
+
+	void update();
+
+private:
+	void _update_rvo_agent_properties();
+};
+
+class NavObstacle2D final
+{
+	RID self;
+
+	NavAgent2D* agent = nullptr;
+	NavMap2D* map = nullptr;
+	Vector2 velocity;
+	Vector2 position;
+	Vector<Vector2> vertices;
+
+	real_t radius = 0.0;
+
+	bool avoidance_enabled = false;
+	uint32_t avoidance_layers = 1;
+
+	bool obstacle_dirty = true;
+
+	uint32_t last_map_iteration_id = 0;
+	bool paused = false;
+
+	SelfList<NavObstacle2D> sync_dirty_request_list_element;
+
+public:
+	NavObstacle2D();
+	~NavObstacle2D();
+
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	void set_avoidance_enabled(bool p_enabled);
+	bool is_avoidance_enabled() { return avoidance_enabled; }
+
+	void set_map(NavMap2D* p_map);
+	NavMap2D* get_map() { return map; }
+
+	void set_agent(NavAgent2D* p_agent);
+	NavAgent2D* get_agent() { return agent; }
+
+	void set_position(const Vector2& p_position);
+	Vector2 get_position() const { return position; }
+
+	void set_radius(real_t p_radius);
+	real_t get_radius() const { return radius; }
+
+	void set_velocity(const Vector2& p_velocity);
+	Vector2 get_velocity() const { return velocity; }
+
+	void set_vertices(const Vector<Vector2>& p_vertices);
+	const Vector<Vector2>& get_vertices() const { return vertices; }
+
+	bool is_map_changed();
+
+	void set_avoidance_layers(uint32_t p_layers);
+	uint32_t get_avoidance_layers() const { return avoidance_layers; }
+
+	void set_paused(bool p_paused);
+	bool get_paused() const;
+
+	bool is_dirty() const;
+	void sync();
+	void request_sync();
+	void cancel_sync_request();
+
+private:
+	void internal_update_agent();
+};
+
+class NavLink2D final
+{
+	RID self;
+
+	uint32_t navigation_layers = 1;
+	real_t enter_cost = 0.0;
+	real_t travel_cost = 1.0;
+
+	NavMap2D* map = nullptr;
+	bool bidirectional = true;
+	Vector2 start_position;
+	Vector2 end_position;
+	bool enabled = true;
+
+	SelfList<NavLink2D> sync_dirty_request_list_element;
+
+	uint32_t iteration_id = 0;
+
+	mutable RWLock iteration_rwlock;
+	Ref<NavIteration2D> iteration;
+
+	bool iteration_dirty = true;
+	bool iteration_building = false;
+	bool iteration_ready = false;
+
+	void _build_iteration();
+	void _sync_iteration();
+
+public:
+	NavLink2D();
+	~NavLink2D();
+
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	NavigationEnums2D::PathSegmentType get_type() const
+	{
+		return NavigationEnums2D::PATH_SEGMENT_TYPE_LINK;
+	}
+
+	uint32_t get_iteration_id() const { return iteration_id; }
+
+	void set_map(NavMap2D* p_map);
+	NavMap2D* get_map() const { return map; }
+
+	void set_enabled(bool p_enabled);
+	bool get_enabled() const { return enabled; }
+
+	void set_bidirectional(bool p_bidirectional);
+	bool is_bidirectional() const { return bidirectional; }
+
+	void set_start_position(Vector2 p_position);
+	Vector2 get_start_position() const { return start_position; }
+
+	void set_end_position(Vector2 p_position);
+	Vector2 get_end_position() const { return end_position; }
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const { return navigation_layers; }
+
+	void set_enter_cost(real_t p_enter_cost);
+	real_t get_enter_cost() const { return enter_cost; }
+
+	void set_travel_cost(real_t p_travel_cost);
+	real_t get_travel_cost() const { return travel_cost; }
+
+	bool sync();
+	void request_sync();
+	void cancel_sync_request();
+
+	Ref<NavIteration2D> get_iteration();
+};
+
+class NavRegion2D final
+{
+	RID self;
+
+	uint32_t navigation_layers = 1;
+	real_t enter_cost = 0.0;
+	real_t travel_cost = 1.0;
+
+	RWLock region_rwlock;
+
+	NavMap2D* map = nullptr;
+	Transform2D transform;
+	bool enabled = true;
+
+	bool use_edge_connections = true;
+
+	Rect2 bounds;
+
+	Ref<NavigationPolygon> navmesh;
+
+	Nav2D::PerformanceData performance_data;
+
+	uint32_t iteration_id = 0;
+
+	SelfList<NavRegion2D> sync_dirty_request_list_element;
+	mutable RWLock iteration_rwlock;
+	Ref<NavIteration2D> iteration;
+
+	NavRegionIterationBuild2D iteration_build;
+	bool use_async_iterations = true;
+	SelfList<NavRegion2D> async_list_element;
+	static void _build_iteration_threaded(void* p_arg);
+
+	bool iteration_dirty = true;
+	bool iteration_building = false;
+	bool iteration_ready = false;
+
+	void _build_iteration();
+	void _sync_iteration();
+
+public:
+	NavRegion2D();
+	~NavRegion2D();
+
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	NavigationEnums2D::PathSegmentType get_type() const
+	{
+		return NavigationEnums2D::PATH_SEGMENT_TYPE_REGION;
+	}
+
+	uint32_t get_iteration_id() const { return iteration_id; }
+
+	void scratch_polygons();
+
+	void set_enabled(bool p_enabled);
+	bool get_enabled() const { return enabled; }
+
+	void set_map(NavMap2D* p_map);
+	NavMap2D* get_map() const { return map; }
+
+	void set_use_edge_connections(bool p_enabled);
+	bool get_use_edge_connections() const { return use_edge_connections; }
+
+	void set_transform(Transform2D transform);
+	const Transform2D& get_transform() const { return transform; }
+
+	void set_navigation_mesh(Ref<NavigationPolygon> p_navigation_mesh);
+	Ref<NavigationPolygon> get_navigation_mesh() const { return navmesh; }
+
+	const LocalVector<Nav2D::Polygon>& get_polygons() const;
+
+	Nav2D::ClosestPointQueryResult get_closest_point_info(const Vector2& p_point) const;
+	Vector2 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
+
+	real_t get_surface_area() const;
+	Rect2 get_bounds() const;
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const { return navigation_layers; }
+
+	void set_enter_cost(real_t p_enter_cost);
+	real_t get_enter_cost() const { return enter_cost; }
+
+	void set_travel_cost(real_t p_travel_cost);
+	real_t get_travel_cost() const { return travel_cost; }
+
+	bool sync();
+	void request_sync();
+	void cancel_sync_request();
+
+	void sync_async_tasks();
+	void request_async_thread_join();
+	void cancel_async_thread_join();
+
+	Ref<NavIteration2D> get_iteration();
+
+	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
+	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
+	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
+
+	void set_use_async_iterations(bool p_enabled);
+	bool get_use_async_iterations() const;
+};
+
+class NavMap2D final
+{
+	RID self;
+
+	real_t cell_size = NavigationDefaults2D::NAV_MESH_CELL_SIZE;
+	Vector2 merge_rasterizer_cell_size = Vector2(cell_size, cell_size);
+	float merge_rasterizer_cell_scale = 0.1;
+
+	bool use_edge_connections = true;
+	real_t edge_connection_margin = NavigationDefaults2D::EDGE_CONNECTION_MARGIN;
+	real_t link_connection_radius = NavigationDefaults2D::LINK_CONNECTION_RADIUS;
+
+	bool map_settings_dirty = true;
+
+	LocalVector<NavRegion2D*> regions;
+	LocalVector<NavLink2D*> links;
+
+	RVO2D::RVOSimulator2D rvo_simulation;
+
+	LocalVector<NavAgent2D*> active_avoidance_agents;
+	bool agents_dirty = true;
+	LocalVector<NavAgent2D*> agents;
+
+	LocalVector<NavObstacle2D*> obstacles;
+	bool obstacles_dirty = true;
+
+	uint32_t iteration_id = 0;
+
+	bool use_threads = true;
+	bool avoidance_use_multiple_threads = true;
+	bool avoidance_use_high_priority_threads = true;
+
+	Nav2D::PerformanceData performance_data;
+
+	int path_query_slots_max = 4;
+
+	bool use_async_iterations = true;
+
+	uint32_t iteration_slot_index = 0;
+	LocalVector<NavMapIteration2D> iteration_slots;
+	mutable RWLock iteration_slot_rwlock;
+
+	NavMapIterationBuild2D iteration_build;
+	static void _build_iteration_threaded(void* p_arg);
+
+	bool iteration_dirty = true;
+	bool iteration_building = false;
+	bool iteration_ready = false;
+
+	void _build_iteration();
+	void _sync_iteration();
+
+public:
+	NavMap2D();
+	~NavMap2D();
+
+	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	uint32_t get_iteration_id() const { return iteration_id; }
+
+	void set_cell_size(real_t p_cell_size);
+	real_t get_cell_size() const { return cell_size; }
+
+	void set_merge_rasterizer_cell_scale(float p_value);
+	float get_merge_rasterizer_cell_scale() const { return merge_rasterizer_cell_scale; }
+
+	void set_use_edge_connections(bool p_enabled);
+	bool get_use_edge_connections() const { return use_edge_connections; }
+
+	void set_edge_connection_margin(real_t p_edge_connection_margin);
+	real_t get_edge_connection_margin() const { return edge_connection_margin; }
+
+	void set_link_connection_radius(real_t p_link_connection_radius);
+	real_t get_link_connection_radius() const { return link_connection_radius; }
+
+	Nav2D::PointKey get_point_key(const Vector2& p_pos) const;
+	const Vector2& get_merge_rasterizer_cell_size() const;
+
+	void query_path(NavMeshQueries2D::NavMeshPathQueryTask2D& p_query_task);
+
+	Vector2 get_closest_point(const Vector2& p_point) const;
+	Nav2D::ClosestPointQueryResult get_closest_point_info(const Vector2& p_point) const;
+	RID get_closest_point_owner(const Vector2& p_point) const;
+
+	void add_region(NavRegion2D* p_region);
+	void remove_region(NavRegion2D* p_region);
+	const LocalVector<NavRegion2D*>& get_regions() const { return regions; }
+
+	void add_link(NavLink2D* p_link);
+	void remove_link(NavLink2D* p_link);
+	const LocalVector<NavLink2D*>& get_links() const { return links; }
+
+	bool has_agent(NavAgent2D* p_agent) const;
+	void add_agent(NavAgent2D* p_agent);
+	void remove_agent(NavAgent2D* p_agent);
+	const LocalVector<NavAgent2D*>& get_agents() const { return agents; }
+
+	void set_agent_as_controlled(NavAgent2D* p_agent);
+	void remove_agent_as_controlled(NavAgent2D* p_agent);
+
+	bool has_obstacle(NavObstacle2D* p_obstacle) const;
+	void add_obstacle(NavObstacle2D* p_obstacle);
+	void remove_obstacle(NavObstacle2D* p_obstacle);
+	const LocalVector<NavObstacle2D*>& get_obstacles() const { return obstacles; }
+
+	Vector2 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
+
+	void sync();
+	void step(double p_delta_time);
+	void dispatch_callbacks();
+
+	int get_pm_region_count() const { return performance_data.pm_region_count; }
+	int get_pm_agent_count() const { return performance_data.pm_agent_count; }
+	int get_pm_link_count() const { return performance_data.pm_link_count; }
+	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
+	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
+	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
+	int get_pm_edge_connection_count() const { return performance_data.pm_edge_connection_count; }
+	int get_pm_edge_free_count() const { return performance_data.pm_edge_free_count; }
+	int get_pm_obstacle_count() const { return performance_data.pm_obstacle_count; }
+
+	int get_region_connections_count(NavRegion2D* p_region) const;
+	Vector2 get_region_connection_pathway_start(NavRegion2D* p_region, int p_connection_id) const;
+	Vector2 get_region_connection_pathway_end(NavRegion2D* p_region, int p_connection_id) const;
+
+	void set_use_async_iterations(bool p_enabled);
+	bool get_use_async_iterations() const;
+
+private:
+	void _sync_dirty_map_update_requests();
+	void _sync_dirty_avoidance_update_requests();
+	void _sync_async_tasks();
+
+	void compute_single_step(uint32_t p_index, NavAgent2D** p_agent);
+	void compute_single_avoidance_step(uint32_t p_index, NavAgent2D** p_agent);
+
+	void _sync_avoidance();
+	void _update_rvo_simulation();
+	void _update_rvo_obstacles_tree();
+	void _update_rvo_agents_tree();
+
+	void _update_merge_rasterizer_cell_dimensions();
+};
+
+#ifdef CLIPPER2_ENABLED
+
+class Node;
+
+struct NavMeshGeometryParser2D
+{
+	RID self;
+};
+
+class NavMeshGenerator2D final
+{
+	static inline bool _initialized = false;
+
+	static Mutex baking_navmesh_mutex;
+	static Mutex generator_task_mutex;
+
+	static RWLock generator_parsers_rwlock;
+	static LocalVector<NavMeshGeometryParser2D*> generator_parsers;
+
+	static bool use_threads;
+	static bool baking_use_multiple_threads;
+	static bool baking_use_high_priority_threads;
+
+	struct NavMeshGeneratorTask2D
+	{
+		enum TaskStatus
+		{
+			BAKING_STARTED,
+			BAKING_FINISHED,
+			BAKING_FAILED,
+			CALLBACK_DISPATCHED,
+			CALLBACK_FAILED,
+		};
+
+		Ref<NavigationPolygon> navigation_mesh;
+		Ref<NavigationMeshSourceGeometryData2D> source_geometry_data;
+		NavMeshGeneratorTask2D::TaskStatus status =
+			NavMeshGeneratorTask2D::TaskStatus::BAKING_STARTED;
+	};
+
+	static void generator_thread_bake(void* p_arg);
+
+	static HashSet<Ref<NavigationPolygon>> baking_navmeshes;
+
+	static void generator_parse_geometry_node(Ref<NavigationPolygon> p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_node,
+		bool p_recurse_children);
+	static void generator_parse_source_geometry_data(Ref<NavigationPolygon> p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data, Node* p_root_node);
+	static void generator_bake_from_source_geometry_data(Ref<NavigationPolygon> p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData2D> p_source_geometry_data);
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+
+	static void sync();
+	static void cleanup();
+	static void finish();
+
+	static void set_generator_parsers(const LocalVector<NavMeshGeometryParser2D*>& p_parsers);
+
+	static bool is_baking(Ref<NavigationPolygon> p_navigation_polygon);
+
+	NavMeshGenerator2D() = delete;
+	NavMeshGenerator2D(const NavMeshGenerator2D&) = delete;
+	NavMeshGenerator2D& operator=(const NavMeshGenerator2D&) = delete;
+	~NavMeshGenerator2D() = delete;
+};
+
+#endif // CLIPPER2_ENABLED
+// --- End modules/navigation_2d/nav_map_2d.h ---
+// --- End servers/navigation_2d/navigation_server_2d.h ---
+// --- End servers/physics_2d/physics_server_2d.h ---
 
 // Plain non-virtual composed component for 2D collision state (shared by PhysicsBody2D and Area2D).
 // Supports both inline ShapeSlots directly on the body/area and child CollisionShape2D/CollisionPolygon2D owners.
@@ -4659,7 +14169,7 @@ struct CollisionState2D {
 };
 
 // --- Folded from scene/2d/physics/area_2d.h ---
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 
 class Area2D : public Node2D {
@@ -4850,7 +14360,7 @@ public:
 
 // --- Folded from scene/2d/physics/kinematic_collision_2d.h ---
 #include "core/types.h"
-#include "servers/physics_2d/physics_server_2d.h"
+
 
 class PhysicsBody2D;
 
@@ -4880,8 +14390,8 @@ public:
 // --- Folded from scene/2d/physics/physics_body_2d.h ---
 
 
-#include "scene/resources/material.h"
-#include "servers/physics_2d/physics_server_2d.h"
+#include "servers/rendering/renderer.h"
+
 
 class Joint2D;
 class Skeleton2D;
@@ -5210,7 +14720,7 @@ public:
 // --- End scene/2d/physics/physics_body_2d.h ---
 
 // --- Folded from scene/2d/sprite_2d.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 class Sprite2D : public Node2D
 {
@@ -5436,7 +14946,7 @@ public:
 // --- Folded from scene/2d/skeleton_2d.h ---
 // --- Folded from scene/resources/2d/skeleton/skeleton_modification_2d.h ---
 // --- Folded from scene/resources/2d/skeleton/skeleton_modification_stack_2d.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 ///////////////////////////////////////
 // SkeletonModificationStack2D
@@ -5879,7 +15389,7 @@ public:
 
 // --- Folded from scene/2d/line_2d.h ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class Line2D : public Node2D
 {
@@ -6181,7 +15691,7 @@ public:
 
 // --- Folded from scene/2d/path_2d.h ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class Timer;
 
@@ -6264,7 +15774,7 @@ public:
 // --- Folded from scene/2d/navigation/navigation_2d.h ---
 
 #include "scene/main/node.h"
-#include "servers/physics_2d/physics_server_2d.h"
+
 
 class NavigationMeshSourceGeometryData2D;
 
@@ -6781,25 +16291,25 @@ private:
 };
 
 // --- Folded from scene/resources/2d/tile_set.h ---
-#include "core/io/resource.h"
-#include "core/templates/local_vector.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
 #include "core/templates/rb_set.h"
-#include "scene/gui/control.h"
-#include "scene/resources/material.h"
+
+#include "servers/rendering/renderer.h"
 #include "scene/main/node.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_2D_DISABLED
 
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef DISABLE_DEPRECATED
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 class ArrayMesh;
@@ -7835,7 +17345,7 @@ public:
 
 // --- Folded from scene/2d/tile_map_layer.h ---
 
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 #ifndef NAVIGATION_2D_DISABLED
 class NavigationMeshSourceGeometryData2D;
@@ -8503,12 +18013,9 @@ public:
 // --- Folded from scene/3d/node_3d.h ---
 #include "scene/main/node.h"
 // --- Inlined/Folded from scene/resources/3d/world_3d.h ---
-#include "core/io/resource.h"
-#include "scene/resources/material.h"
+#include "core/types.h"
+#include "servers/rendering/renderer.h"
 
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
-#endif // PHYSICS_3D_DISABLED
 
 class CameraAttributes;
 class Camera3D;
@@ -8567,8 +18074,8 @@ public:
 	World3D();
 	~World3D();
 };
-#include "scene/resources/material.h"
-#include "scene/resources/texture.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 struct CollisionState3D;
 
@@ -8938,8 +18445,2393 @@ public:
 
 // --- Folded from scene/3d/navigation/navigation_3d.h ---
 #include "scene/main/node.h"
-#include "scene/resources/mesh.h"
-#include "servers/physics_3d/physics_server_3d.h"
+
+// --- Folded from servers/physics_3d/physics_server_3d.h ---
+// --- Folded from servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
+// --- Folded from servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
+// --- Folded from servers/physics_3d/physics_server_3d_types.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+
+namespace PhysicsServer3DTypes
+{
+
+struct RayParameters
+{
+	Vector3 from;
+	Vector3 to;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+
+	bool hit_from_inside = false;
+	bool hit_back_faces = true;
+
+	bool pick_ray = false;
+};
+
+struct RayResult
+{
+	Vector3 position;
+	Vector3 normal;
+	RID rid;
+	int shape = 0;
+	int face_index = -1;
+};
+
+struct ShapeResult
+{
+	RID rid;
+	int shape = 0;
+};
+
+struct PointParameters
+{
+	Vector3 position;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeParameters
+{
+	RID shape_rid;
+	Transform3D transform;
+	Vector3 motion;
+	real_t margin = 0.0;
+	HashSet<RID> exclude;
+	uint32_t collision_mask = UINT32_MAX;
+
+	bool collide_with_bodies = true;
+	bool collide_with_areas = false;
+};
+
+struct ShapeRestInfo
+{
+	Vector3 point;
+	Vector3 normal;
+	RID rid;
+	int shape = 0;
+	Vector3 linear_velocity; // Velocity at contact point.
+};
+
+struct MotionParameters
+{
+	Transform3D from;
+	Vector3 motion;
+	real_t margin = 0.001;
+	int max_collisions = 1;
+	bool collide_separation_ray = false;
+	HashSet<RID> exclude_bodies;
+	bool recovery_as_collision = false;
+
+	MotionParameters() {}
+
+	MotionParameters(const Transform3D& p_from, const Vector3& p_motion, real_t p_margin = 0.001)
+		: from(p_from), motion(p_motion), margin(p_margin)
+	{
+	}
+};
+
+struct MotionCollision
+{
+	Vector3 position;
+	Vector3 normal;
+	Vector3 collider_velocity;
+	Vector3 collider_angular_velocity;
+	real_t depth = 0.0;
+	int local_shape = 0;
+	RID collider;
+	int collider_shape = 0;
+
+	real_t get_angle(Vector3 p_up_direction) const
+	{
+		return Math::acos(normal.dot(p_up_direction));
+	}
+};
+
+struct MotionResult
+{
+	Vector3 travel;
+	Vector3 remainder;
+	real_t collision_depth = 0.0;
+	real_t collision_safe_fraction = 0.0;
+	real_t collision_unsafe_fraction = 0.0;
+
+	static const int MAX_COLLISIONS = 32;
+	MotionCollision collisions[MAX_COLLISIONS];
+	int collision_count = 0;
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer3DTypes
+
+// Alias to make it easier to use.
+#define PS3DT PhysicsServer3DTypes
+
+
+
+// --- End servers/physics_3d/physics_server_3d_types.h ---
+// --- Folded from servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
+
+#include "core/types.h"
+
+class PhysicsPointQueryParameters3D : public RefCounted
+{
+	PS3DT::PointParameters parameters;
+
+public:
+	const PS3DT::PointParameters& get_parameters() const { return parameters; }
+
+	void set_position(const Vector3& p_position) { parameters.position = p_position; }
+
+	const Vector3& get_position() const { return parameters.position; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
+
+#include "core/types.h"
+
+class PhysicsRayQueryParameters3D : public RefCounted
+{
+	PS3DT::RayParameters parameters;
+
+public:
+	const PS3DT::RayParameters& get_parameters() const { return parameters; }
+
+	void set_from(const Vector3& p_from) { parameters.from = p_from; }
+
+	const Vector3& get_from() const { return parameters.from; }
+
+	void set_to(const Vector3& p_to) { parameters.to = p_to; }
+
+	const Vector3& get_to() const { return parameters.to; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+
+	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
+
+	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
+
+	void set_hit_back_faces(bool p_enable) { parameters.hit_back_faces = p_enable; }
+
+	bool is_hit_back_faces_enabled() const { return parameters.hit_back_faces; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
+#include "core/types.h"
+
+
+class Resource;
+
+class PhysicsShapeQueryParameters3D : public RefCounted
+{
+	PS3DT::ShapeParameters parameters;
+
+	Ref<Resource> shape_ref;
+
+protected:
+
+public:
+	const PS3DT::ShapeParameters& get_parameters() const { return parameters; }
+
+	void set_shape(const Ref<Resource>& p_shape_ref);
+	Ref<Resource> get_shape() const;
+
+	void set_shape_rid(const RID& p_shape);
+
+	RID get_shape_rid() const { return parameters.shape_rid; }
+
+	void set_transform(const Transform3D& p_transform) { parameters.transform = p_transform; }
+
+	const Transform3D& get_transform() const { return parameters.transform; }
+
+	void set_motion(const Vector3& p_motion) { parameters.motion = p_motion; }
+
+	const Vector3& get_motion() const { return parameters.motion; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
+
+	uint32_t get_collision_mask() const { return parameters.collision_mask; }
+
+	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
+
+	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
+
+	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
+
+	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
+
+class JoltBody3D;
+class JoltSpace3D;
+
+class PhysicsDirectSpaceState3D final
+{
+	JoltSpace3D* space = nullptr;
+
+	Vector<real_t> _cast_motion(PhysicsShapeQueryParameters3D* rp_shape_query);
+
+public:
+	PhysicsDirectSpaceState3D() = default;
+	explicit PhysicsDirectSpaceState3D(JoltSpace3D* p_space);
+
+	bool intersect_ray(
+		const PS3DT::RayParameters& p_parameters, PS3DT::RayResult& r_result);
+	int intersect_point(const PS3DT::PointParameters& p_parameters,
+		PS3DT::ShapeResult* r_results, int p_result_max);
+	int intersect_shape(const PS3DT::ShapeParameters& p_parameters,
+		PS3DT::ShapeResult* r_results, int p_result_max);
+	bool cast_motion(const PS3DT::ShapeParameters& p_parameters, real_t& r_closest_safe,
+		real_t& r_closest_unsafe, PS3DT::ShapeRestInfo* r_info = nullptr);
+	bool collide_shape(const PS3DT::ShapeParameters& p_parameters, Vector3* r_results,
+		int p_result_max, int& r_result_count);
+	bool rest_info(
+		const PS3DT::ShapeParameters& p_parameters, PS3DT::ShapeRestInfo* r_info);
+	Vector3 get_closest_point_to_object_volume(
+		RID p_object, Vector3 p_point) const;
+
+	bool body_test_motion(const JoltBody3D& p_body, const PS3DT::MotionParameters& p_parameters,
+		PS3DT::MotionResult* r_result) const;
+
+	JoltSpace3D& get_space() const { return *space; }
+};
+
+// --- End servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
+
+class JoltBody3D;
+
+class PhysicsDirectBodyState3D final
+{
+	JoltBody3D* body = nullptr;
+
+public:
+	PhysicsDirectBodyState3D() = default;
+	explicit PhysicsDirectBodyState3D(JoltBody3D* p_body);
+
+	Vector3 get_total_gravity() const;
+	real_t get_total_angular_damp() const;
+	real_t get_total_linear_damp() const;
+
+	Vector3 get_center_of_mass() const;
+	Vector3 get_center_of_mass_local() const;
+	Basis get_principal_inertia_axes() const;
+	real_t get_inverse_mass() const;
+	Vector3 get_inverse_inertia() const;
+	Basis get_inverse_inertia_tensor() const;
+
+	void set_linear_velocity(const Vector3& p_velocity);
+	Vector3 get_linear_velocity() const;
+
+	void set_angular_velocity(const Vector3& p_velocity);
+	Vector3 get_angular_velocity() const;
+
+	void set_transform(const Transform3D& p_transform);
+	Transform3D get_transform() const;
+
+	Vector3 get_velocity_at_local_position(const Vector3& p_position) const;
+
+	void apply_central_impulse(const Vector3& p_impulse);
+	void apply_impulse(const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	void apply_torque_impulse(const Vector3& p_impulse);
+
+	void apply_central_force(const Vector3& p_force);
+	void apply_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void apply_torque(const Vector3& p_torque);
+
+	void add_constant_central_force(const Vector3& p_force);
+	void add_constant_force(const Vector3& p_force, const Vector3& p_position = Vector3());
+	void add_constant_torque(const Vector3& p_torque);
+
+	void set_constant_force(const Vector3& p_force);
+	Vector3 get_constant_force() const;
+
+	void set_constant_torque(const Vector3& p_torque);
+	Vector3 get_constant_torque() const;
+
+	void set_sleep_state(bool p_sleep);
+	bool is_sleeping() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	int get_contact_count() const;
+
+	Vector3 get_contact_local_position(int p_contact_idx) const;
+	Vector3 get_contact_local_normal(int p_contact_idx) const;
+	Vector3 get_contact_impulse(int p_contact_idx) const;
+	int get_contact_local_shape(int p_contact_idx) const;
+	Vector3 get_contact_local_velocity_at_position(int p_contact_idx) const;
+
+	RID get_contact_collider(int p_contact_idx) const;
+	Vector3 get_contact_collider_position(int p_contact_idx) const;
+	int get_contact_collider_shape(int p_contact_idx) const;
+	Vector3 get_contact_collider_velocity_at_position(int p_contact_idx) const;
+
+	real_t get_step() const;
+	void integrate_forces();
+
+	PhysicsDirectSpaceState3D* get_space_state();
+};
+
+// --- End servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
+
+// --- Folded from servers/physics_3d/physics_server_3d_enums.h ---
+namespace PhysicsServer3DEnums
+{
+
+/* SHAPE API */
+
+enum ShapeType
+{
+	SHAPE_WORLD_BOUNDARY,  ///< plane:"plane"
+	SHAPE_SEPARATION_RAY,  ///< float:"length"
+	SHAPE_SPHERE,		   ///< float:"radius"
+	SHAPE_BOX,			   ///< vec3:"extents"
+	SHAPE_CAPSULE,		   ///< dict( float:"radius", float:"height"):capsule
+	SHAPE_CYLINDER,		   ///< dict( float:"radius", float:"height"):cylinder
+	SHAPE_CONVEX_POLYGON,  ///< array of planes:"planes"
+	SHAPE_CONCAVE_POLYGON, ///< vector3 array:"triangles" , or Dictionary with "indices" (int array)
+						   ///< and "triangles" (Vector3 array)
+	SHAPE_HEIGHTMAP, ///< dict( int:"width", int:"depth",float:"cell_size", float_array:"heights"
+	SHAPE_SOFT_BODY, ///< Used internally, can't be created from the physics server.
+	SHAPE_CUSTOM,	 ///< Server-Implementation based custom shape, calling shape_create() with this
+					 ///< value will result in an error
+};
+
+/* SPACE API */
+
+enum SpaceParameter
+{
+	SPACE_PARAM_CONTACT_RECYCLE_RADIUS,
+	SPACE_PARAM_CONTACT_MAX_SEPARATION,
+	SPACE_PARAM_CONTACT_MAX_ALLOWED_PENETRATION,
+	SPACE_PARAM_CONTACT_DEFAULT_BIAS,
+	SPACE_PARAM_BODY_LINEAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_ANGULAR_VELOCITY_SLEEP_THRESHOLD,
+	SPACE_PARAM_BODY_TIME_TO_SLEEP,
+	SPACE_PARAM_SOLVER_ITERATIONS,
+};
+
+/* AREA API */
+
+enum AreaParameter
+{
+	AREA_PARAM_GRAVITY_OVERRIDE_MODE,
+	AREA_PARAM_GRAVITY,
+	AREA_PARAM_GRAVITY_VECTOR,
+	AREA_PARAM_GRAVITY_IS_POINT,
+	AREA_PARAM_GRAVITY_POINT_UNIT_DISTANCE,
+	AREA_PARAM_LINEAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_LINEAR_DAMP,
+	AREA_PARAM_ANGULAR_DAMP_OVERRIDE_MODE,
+	AREA_PARAM_ANGULAR_DAMP,
+	AREA_PARAM_PRIORITY,
+	AREA_PARAM_WIND_FORCE_MAGNITUDE,
+	AREA_PARAM_WIND_SOURCE,
+	AREA_PARAM_WIND_DIRECTION,
+	AREA_PARAM_WIND_ATTENUATION_FACTOR,
+};
+
+enum AreaSpaceOverrideMode
+{
+	AREA_SPACE_OVERRIDE_DISABLED,
+	AREA_SPACE_OVERRIDE_COMBINE,
+	AREA_SPACE_OVERRIDE_COMBINE_REPLACE,
+	AREA_SPACE_OVERRIDE_REPLACE,
+	AREA_SPACE_OVERRIDE_REPLACE_COMBINE
+};
+
+/* BODY API */
+
+enum BodyMode
+{
+	BODY_MODE_STATIC,
+	BODY_MODE_KINEMATIC,
+	BODY_MODE_RIGID,
+	BODY_MODE_RIGID_LINEAR,
+};
+
+enum BodyDampMode
+{
+	BODY_DAMP_MODE_COMBINE,
+	BODY_DAMP_MODE_REPLACE,
+};
+
+enum BodyParameter
+{
+	BODY_PARAM_BOUNCE,
+	BODY_PARAM_FRICTION,
+	BODY_PARAM_MASS, ///< unused for static, always infinite
+	BODY_PARAM_INERTIA,
+	BODY_PARAM_CENTER_OF_MASS,
+	BODY_PARAM_GRAVITY_SCALE,
+	BODY_PARAM_LINEAR_DAMP_MODE,
+	BODY_PARAM_ANGULAR_DAMP_MODE,
+	BODY_PARAM_LINEAR_DAMP,
+	BODY_PARAM_ANGULAR_DAMP,
+	BODY_PARAM_MAX,
+};
+
+enum BodyState
+{
+	BODY_STATE_TRANSFORM,
+	BODY_STATE_LINEAR_VELOCITY,
+	BODY_STATE_ANGULAR_VELOCITY,
+	BODY_STATE_SLEEPING,
+	BODY_STATE_CAN_SLEEP
+};
+
+enum BodyAxis
+{
+	BODY_AXIS_LINEAR_X = 1 << 0,
+	BODY_AXIS_LINEAR_Y = 1 << 1,
+	BODY_AXIS_LINEAR_Z = 1 << 2,
+	BODY_AXIS_ANGULAR_X = 1 << 3,
+	BODY_AXIS_ANGULAR_Y = 1 << 4,
+	BODY_AXIS_ANGULAR_Z = 1 << 5
+};
+
+/* JOINT API */
+
+enum JointType
+{
+	JOINT_TYPE_PIN,
+	JOINT_TYPE_HINGE,
+	JOINT_TYPE_SLIDER,
+	JOINT_TYPE_CONE_TWIST,
+	JOINT_TYPE_6DOF,
+	JOINT_TYPE_MAX,
+
+};
+
+enum PinJointParam
+{
+	PIN_JOINT_BIAS,
+	PIN_JOINT_DAMPING,
+	PIN_JOINT_IMPULSE_CLAMP
+};
+
+enum HingeJointParam
+{
+	HINGE_JOINT_BIAS,
+	HINGE_JOINT_LIMIT_UPPER,
+	HINGE_JOINT_LIMIT_LOWER,
+	HINGE_JOINT_LIMIT_BIAS,
+	HINGE_JOINT_LIMIT_SOFTNESS,
+	HINGE_JOINT_LIMIT_RELAXATION,
+	HINGE_JOINT_MOTOR_TARGET_VELOCITY,
+	HINGE_JOINT_MOTOR_MAX_IMPULSE,
+	HINGE_JOINT_MAX
+};
+
+enum HingeJointFlag
+{
+	HINGE_JOINT_FLAG_USE_LIMIT,
+	HINGE_JOINT_FLAG_ENABLE_MOTOR,
+	HINGE_JOINT_FLAG_MAX
+};
+
+enum SliderJointParam
+{
+	SLIDER_JOINT_LINEAR_LIMIT_UPPER,
+	SLIDER_JOINT_LINEAR_LIMIT_LOWER,
+	SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS,
+	SLIDER_JOINT_LINEAR_LIMIT_RESTITUTION,
+	SLIDER_JOINT_LINEAR_LIMIT_DAMPING,
+	SLIDER_JOINT_LINEAR_MOTION_SOFTNESS,
+	SLIDER_JOINT_LINEAR_MOTION_RESTITUTION,
+	SLIDER_JOINT_LINEAR_MOTION_DAMPING,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_SOFTNESS,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_RESTITUTION,
+	SLIDER_JOINT_LINEAR_ORTHOGONAL_DAMPING,
+
+	SLIDER_JOINT_ANGULAR_LIMIT_UPPER,
+	SLIDER_JOINT_ANGULAR_LIMIT_LOWER,
+	SLIDER_JOINT_ANGULAR_LIMIT_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_LIMIT_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_LIMIT_DAMPING,
+	SLIDER_JOINT_ANGULAR_MOTION_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_MOTION_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_MOTION_DAMPING,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_SOFTNESS,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_RESTITUTION,
+	SLIDER_JOINT_ANGULAR_ORTHOGONAL_DAMPING,
+	SLIDER_JOINT_MAX
+};
+
+enum ConeTwistJointParam
+{
+	CONE_TWIST_JOINT_SWING_SPAN,
+	CONE_TWIST_JOINT_TWIST_SPAN,
+	CONE_TWIST_JOINT_BIAS,
+	CONE_TWIST_JOINT_SOFTNESS,
+	CONE_TWIST_JOINT_RELAXATION,
+	CONE_TWIST_MAX
+};
+
+enum G6DOFJointAxisParam
+{
+	G6DOF_JOINT_LINEAR_LOWER_LIMIT,
+	G6DOF_JOINT_LINEAR_UPPER_LIMIT,
+	G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS,
+	G6DOF_JOINT_LINEAR_RESTITUTION,
+	G6DOF_JOINT_LINEAR_DAMPING,
+	G6DOF_JOINT_LINEAR_MOTOR_TARGET_VELOCITY,
+	G6DOF_JOINT_LINEAR_MOTOR_FORCE_LIMIT,
+	G6DOF_JOINT_LINEAR_SPRING_STIFFNESS,
+	G6DOF_JOINT_LINEAR_SPRING_DAMPING,
+	G6DOF_JOINT_LINEAR_SPRING_EQUILIBRIUM_POINT,
+	G6DOF_JOINT_ANGULAR_LOWER_LIMIT,
+	G6DOF_JOINT_ANGULAR_UPPER_LIMIT,
+	G6DOF_JOINT_ANGULAR_LIMIT_SOFTNESS,
+	G6DOF_JOINT_ANGULAR_DAMPING,
+	G6DOF_JOINT_ANGULAR_RESTITUTION,
+	G6DOF_JOINT_ANGULAR_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_ERP,
+	G6DOF_JOINT_ANGULAR_MOTOR_TARGET_VELOCITY,
+	G6DOF_JOINT_ANGULAR_MOTOR_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_SPRING_STIFFNESS,
+	G6DOF_JOINT_ANGULAR_SPRING_DAMPING,
+	G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT,
+	G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT,
+	G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT,
+	G6DOF_JOINT_MAX
+};
+
+enum G6DOFJointAxisFlag
+{
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING,
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING,
+	G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR,
+#ifndef DISABLE_DEPRECATED
+	G6DOF_JOINT_FLAG_ENABLE_MOTOR = G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR,
+#endif // DISABLE_DEPRECATED
+	G6DOF_JOINT_FLAG_ENABLE_LINEAR_MOTOR,
+	G6DOF_JOINT_FLAG_MAX
+};
+
+/* QUERY API */
+
+enum AreaBodyStatus
+{
+	AREA_BODY_ADDED,
+	AREA_BODY_REMOVED
+};
+
+enum ProcessInfo
+{
+	INFO_ACTIVE_OBJECTS,
+	INFO_COLLISION_PAIRS,
+	INFO_ISLAND_COUNT
+};
+
+#ifndef DISABLE_DEPRECATED
+// Graveyard.
+#endif
+
+} // namespace PhysicsServer3DEnums
+
+// Alias to make it easier to use.
+#define PS3DE PhysicsServer3DEnums
+
+
+
+// --- End servers/physics_3d/physics_server_3d_enums.h ---
+// --- Folded from servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
+
+class PhysicsServer3DRenderingServerHandler final
+{
+	RID mesh;
+	int surface = 0;
+	Vector<uint8_t> buffer;
+	uint32_t stride = 0;
+	uint32_t normal_stride = 0;
+	uint32_t offset_vertices = 0;
+	uint32_t offset_normal = 0;
+
+	uint8_t* write_buffer = nullptr;
+
+public:
+	PhysicsServer3DRenderingServerHandler() = default;
+	~PhysicsServer3DRenderingServerHandler() = default;
+
+	bool is_ready(RID p_mesh_rid) const { return mesh.is_valid() && mesh == p_mesh_rid; }
+
+	void prepare(RID p_mesh_rid, int p_surface);
+	void clear();
+	void open();
+	void close();
+	void commit_changes();
+
+	void set_vertex(int p_vertex_id, const Vector3& p_vertex);
+	void set_normal(int p_vertex_id, const Vector3& p_normal);
+	void set_aabb(const AABB& p_aabb);
+};
+
+// --- End servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
+
+// --- Folded from servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
+#include "core/types.h"
+
+
+class PhysicsTestMotionParameters3D : public RefCounted
+{
+	PS3DT::MotionParameters parameters;
+
+public:
+	const PS3DT::MotionParameters& get_parameters() const { return parameters; }
+
+	const Transform3D& get_from() const { return parameters.from; }
+
+	void set_from(const Transform3D& p_from) { parameters.from = p_from; }
+
+	const Vector3& get_motion() const { return parameters.motion; }
+
+	void set_motion(const Vector3& p_motion) { parameters.motion = p_motion; }
+
+	real_t get_margin() const { return parameters.margin; }
+
+	void set_margin(real_t p_margin) { parameters.margin = p_margin; }
+
+	int get_max_collisions() const { return parameters.max_collisions; }
+
+	void set_max_collisions(int p_max_collisions) { parameters.max_collisions = p_max_collisions; }
+
+	bool is_collide_separation_ray_enabled() const { return parameters.collide_separation_ray; }
+
+	void set_collide_separation_ray_enabled(bool p_enabled)
+	{
+		parameters.collide_separation_ray = p_enabled;
+	}
+
+	bool is_recovery_as_collision_enabled() const { return parameters.recovery_as_collision; }
+
+	void set_recovery_as_collision_enabled(bool p_enabled)
+	{
+		parameters.recovery_as_collision = p_enabled;
+	}
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
+// --- Folded from servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
+#include "core/types.h"
+
+
+class PhysicsTestMotionResult3D : public RefCounted
+{
+	PS3DT::MotionResult result;
+
+protected:
+
+public:
+	PS3DT::MotionResult* get_result_ptr() { return &result; }
+
+	Vector3 get_travel() const;
+	Vector3 get_remainder() const;
+	real_t get_collision_safe_fraction() const;
+	real_t get_collision_unsafe_fraction() const;
+
+	int get_collision_count() const;
+
+	Vector3 get_collision_point(int p_collision_index = 0) const;
+	Vector3 get_collision_normal(int p_collision_index = 0) const;
+	Vector3 get_collider_velocity(int p_collision_index = 0) const;
+	RID get_collider_rid(int p_collision_index = 0) const;
+	int get_collider_shape(int p_collision_index = 0) const;
+	int get_collision_local_shape(int p_collision_index = 0) const;
+	real_t get_collision_depth(int p_collision_index = 0) const;
+};
+
+
+
+// --- End servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
+
+class JoltPhysicsServer3D;
+class PhysicsDirectSpaceState3D;
+template <typename T> class TypedArray;
+
+template <typename T> class Ref;
+
+class PhysicsTestMotionParameters3D;
+class PhysicsTestMotionResult3D;
+
+class PhysicsServer3D final
+{
+public:
+	struct Data
+	{
+		JoltPhysicsServer3D* server = nullptr;
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize(bool p_on_separate_thread = false);
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized()
+	{
+		return data != nullptr && data->server != nullptr;
+	}
+	_FORCE_INLINE_ static JoltPhysicsServer3D* get_driver() { return data ? data->server : nullptr; }
+
+	static void soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler);
+	static RID shape_create(PS3DE::ShapeType p_shape);
+	static RID world_boundary_shape_create();
+	static RID separation_ray_shape_create();
+	static RID sphere_shape_create();
+	static RID box_shape_create();
+	static RID capsule_shape_create();
+	static RID cylinder_shape_create();
+	static RID convex_polygon_shape_create();
+	static RID concave_polygon_shape_create();
+	static RID heightmap_shape_create();
+	static RID custom_shape_create();
+	static void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+	static PS3DE::ShapeType shape_get_type(RID p_shape);
+	static void shape_set_margin(RID p_shape, real_t p_margin);
+	static real_t shape_get_margin(RID p_shape);
+	static real_t shape_get_custom_solver_bias(RID p_shape);
+	static RID space_create();
+	static void space_set_active(RID p_space, bool p_active);
+	static bool space_is_active(RID p_space);
+	static void space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value);
+	static real_t space_get_param(RID p_space, PS3DE::SpaceParameter p_param);
+	static PhysicsDirectSpaceState3D* space_get_direct_state(RID p_space);
+	static void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	static Vector<Vector3> space_get_contacts(RID p_space);
+	static int space_get_contact_count(RID p_space);
+	static RID area_create();
+	static void area_set_space(RID p_area, RID p_space);
+	static RID area_get_space(RID p_area);
+	static void area_add_shape(RID p_area, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+	static void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	static void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform);
+	static int area_get_shape_count(RID p_area);
+	static RID area_get_shape(RID p_area, int p_shape_idx);
+	static Transform3D area_get_shape_transform(RID p_area, int p_shape_idx);
+	static void area_remove_shape(RID p_area, int p_shape_idx);
+	static void area_clear_shapes(RID p_area);
+	static void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled);
+	static void area_set_transform(RID p_area, const Transform3D& p_transform);
+	static Transform3D area_get_transform(RID p_area);
+	static void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	static uint32_t area_get_collision_layer(RID p_area);
+	static void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	static uint32_t area_get_collision_mask(RID p_area);
+	static void area_set_monitorable(RID p_area, bool p_monitorable);
+	static void area_set_ray_pickable(RID p_area, bool p_enable);
+	static RID body_create();
+	static void body_set_space(RID p_body, RID p_space);
+	static RID body_get_space(RID p_body);
+	static void body_set_mode(RID p_body, PS3DE::BodyMode p_mode);
+	static PS3DE::BodyMode body_get_mode(RID p_body);
+	static void body_add_shape(RID p_body, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+	static void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	static void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform);
+	static int body_get_shape_count(RID p_body);
+	static RID body_get_shape(RID p_body, int p_shape_idx);
+	static Transform3D body_get_shape_transform(RID p_body, int p_shape_idx);
+	static void body_remove_shape(RID p_body, int p_shape_idx);
+	static void body_clear_shapes(RID p_body);
+	static void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
+	static void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable);
+	static bool body_is_continuous_collision_detection_enabled(RID p_body);
+	static void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	static uint32_t body_get_collision_layer(RID p_body);
+	static void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	static uint32_t body_get_collision_mask(RID p_body);
+	static void body_set_collision_priority(RID p_body, real_t p_priority);
+	static real_t body_get_collision_priority(RID p_body);
+	static void body_set_user_flags(RID p_body, uint32_t p_flags);
+	static uint32_t body_get_user_flags(RID p_body);
+	static void body_reset_mass_properties(RID p_body);
+	static void body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	static void body_apply_impulse(RID p_body, const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	static void body_apply_torque_impulse(RID p_body, const Vector3& p_impulse);
+	static void body_apply_central_force(RID p_body, const Vector3& p_force);
+	static void body_apply_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	static void body_apply_torque(RID p_body, const Vector3& p_torque);
+	static void body_add_constant_central_force(RID p_body, const Vector3& p_force);
+	static void body_add_constant_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	static void body_add_constant_torque(RID p_body, const Vector3& p_torque);
+	static void body_set_constant_force(RID p_body, const Vector3& p_force);
+	static Vector3 body_get_constant_force(RID p_body);
+	static void body_set_constant_torque(RID p_body, const Vector3& p_torque);
+	static Vector3 body_get_constant_torque(RID p_body);
+	static void body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity);
+	static void body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock);
+	static bool body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis);
+	static void body_add_collision_exception(RID p_body, RID p_body_b);
+	static void body_remove_collision_exception(RID p_body, RID p_body_b);
+	static void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	static void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	static int body_get_max_contacts_reported(RID p_body);
+	static void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	static real_t body_get_contacts_reported_depth_threshold(RID p_body);
+	static void body_set_omit_force_integration(RID p_body, bool p_omit);
+	static bool body_is_omitting_force_integration(RID p_body);
+	static void body_set_ray_pickable(RID p_body, bool p_enable);
+	static PhysicsDirectBodyState3D* body_get_direct_state(RID p_body);
+	static bool body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result = nullptr);
+	static RID soft_body_create();
+	static void soft_body_set_space(RID p_body, RID p_space);
+	static RID soft_body_get_space(RID p_body);
+	static void soft_body_set_mesh(RID p_body, RID p_mesh);
+	static AABB soft_body_get_bounds(RID p_body);
+	static void soft_body_set_collision_layer(RID p_body, uint32_t p_layer);
+	static uint32_t soft_body_get_collision_layer(RID p_body);
+	static void soft_body_set_collision_mask(RID p_body, uint32_t p_mask);
+	static uint32_t soft_body_get_collision_mask(RID p_body);
+	static void soft_body_add_collision_exception(RID p_body, RID p_body_b);
+	static void soft_body_remove_collision_exception(RID p_body, RID p_body_b);
+	static void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	static void soft_body_set_transform(RID p_body, const Transform3D& p_transform);
+	static void soft_body_set_ray_pickable(RID p_body, bool p_enable);
+	static void soft_body_set_simulation_precision(RID p_body, int p_simulation_precision);
+	static int soft_body_get_simulation_precision(RID p_body);
+	static void soft_body_set_total_mass(RID p_body, real_t p_total_mass);
+	static real_t soft_body_get_total_mass(RID p_body);
+	static void soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness);
+	static real_t soft_body_get_linear_stiffness(RID p_body);
+	static void soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor);
+	static real_t soft_body_get_shrinking_factor(RID p_body);
+	static void soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient);
+	static real_t soft_body_get_pressure_coefficient(RID p_body);
+	static void soft_body_set_damping_coefficient(RID p_body, real_t p_damping_coefficient);
+	static real_t soft_body_get_damping_coefficient(RID p_body);
+	static void soft_body_set_drag_coefficient(RID p_body, real_t p_drag_coefficient);
+	static real_t soft_body_get_drag_coefficient(RID p_body);
+	static void soft_body_move_point(RID p_body, int p_point_index, const Vector3& p_global_position);
+	static Vector3 soft_body_get_point_global_position(RID p_body, int p_point_index);
+	static void soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3& p_impulse);
+	static void soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3& p_force);
+	static void soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	static void soft_body_apply_central_force(RID p_body, const Vector3& p_force);
+	static void soft_body_remove_all_pinned_points(RID p_body);
+	static void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin);
+	static bool soft_body_is_point_pinned(RID p_body, int p_point_index);
+	static RID joint_create();
+	static void joint_clear(RID p_joint);
+	static PS3DE::JointType joint_get_type(RID p_joint);
+	static void joint_set_solver_priority(RID p_joint, int p_priority);
+	static int joint_get_solver_priority(RID p_joint);
+	static void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable);
+	static bool joint_is_disabled_collisions_between_bodies(RID p_joint);
+	static void joint_make_pin(RID p_joint, RID p_body_A, const Vector3& p_local_A, RID p_body_B, const Vector3& p_local_B);
+	static void pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value);
+	static real_t pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param);
+	static void pin_joint_set_local_a(RID p_joint, const Vector3& p_A);
+	static Vector3 pin_joint_get_local_a(RID p_joint);
+	static void pin_joint_set_local_b(RID p_joint, const Vector3& p_B);
+	static Vector3 pin_joint_get_local_b(RID p_joint);
+	static void joint_make_hinge(RID p_joint, RID p_body_A, const Transform3D& p_hinge_A, RID p_body_B, const Transform3D& p_hinge_B);
+	static void joint_make_hinge_simple(RID p_joint, RID p_body_A, const Vector3& p_pivot_A, const Vector3& p_axis_A, RID p_body_B, const Vector3& p_pivot_B, const Vector3& p_axis_B);
+	static void hinge_joint_set_param(RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value);
+	static real_t hinge_joint_get_param(RID p_joint, PS3DE::HingeJointParam p_param);
+	static void hinge_joint_set_flag(RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled);
+	static bool hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag);
+	static void joint_make_slider(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	static void slider_joint_set_param(RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value);
+	static real_t slider_joint_get_param(RID p_joint, PS3DE::SliderJointParam p_param);
+	static void joint_make_cone_twist(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	static void cone_twist_joint_set_param(RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value);
+	static real_t cone_twist_joint_get_param(RID p_joint, PS3DE::ConeTwistJointParam p_param);
+	static void joint_make_generic_6dof(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	static void generic_6dof_joint_set_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param, real_t p_value);
+	static real_t generic_6dof_joint_get_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param);
+	static void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable);
+	static bool generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag);
+	static void generic_6dof_joint_set_angular_target_rotation(RID p_joint, const Quaternion& p_target_rotation);
+	static Quaternion generic_6dof_joint_get_angular_target_rotation(RID p_joint);
+	static void free_rid(RID p_rid);
+	static void set_active(bool p_active);
+	static void init();
+	static void step(real_t p_step);
+	static void sync();
+	static void flush_queries();
+	static void end_sync();
+	static void finish();
+	static bool is_flushing_queries();
+	static int get_process_info(PS3DE::ProcessInfo p_info);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] static void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
+
+	PhysicsServer3D() = delete;
+	PhysicsServer3D(const PhysicsServer3D&) = delete;
+	PhysicsServer3D& operator=(const PhysicsServer3D&) = delete;
+	~PhysicsServer3D() = delete;
+};
+
+// --- Folded from servers/physics_3d/physics_server_3d_constants.h ---
+namespace PhysicsServer3DConstants {
+
+constexpr int MAX_CONTACTS_REPORTED_3D_MAX = 4096;
+
+} // namespace PhysicsServer3DConstants
+
+// Alias to make it easier to use.
+#define PS3DC PhysicsServer3DConstants
+
+// --- End servers/physics_3d/physics_server_3d_constants.h ---
+
+// --- Folded from modules/jolt_physics/jolt_physics_server_3d.h ---
+#include "core/types.h"
+
+
+class JoltArea3D;
+class JoltBody3D;
+class JoltJobSystem;
+class JoltJoint3D;
+class JoltShape3D;
+class JoltSoftBody3D;
+class JoltSpace3D;
+class JoltTempAllocator;
+
+class JoltPhysicsServer3D final
+{
+	mutable RID_PtrOwner<JoltSpace3D, true> space_owner;
+	mutable RID_PtrOwner<JoltArea3D, true> area_owner;
+	mutable RID_PtrOwner<JoltBody3D, true> body_owner{65536, 1048576};
+	mutable RID_PtrOwner<JoltSoftBody3D, true> soft_body_owner;
+	mutable RID_PtrOwner<JoltShape3D, true> shape_owner;
+	mutable RID_PtrOwner<JoltJoint3D, true> joint_owner;
+
+	HashSet<JoltSpace3D*> active_spaces;
+
+	JoltJobSystem* job_system = nullptr;
+	JoltTempAllocator* temp_allocator = nullptr;
+
+	bool on_separate_thread = false;
+	bool active = true;
+	bool flushing_queries = false;
+	bool doing_sync = false;
+
+public:
+	enum HingeJointParamJolt
+	{
+		HINGE_JOINT_LIMIT_SPRING_FREQUENCY = 100,
+		HINGE_JOINT_LIMIT_SPRING_DAMPING,
+		HINGE_JOINT_MOTOR_MAX_TORQUE,
+	};
+
+	enum HingeJointFlagJolt
+	{
+		HINGE_JOINT_FLAG_USE_LIMIT_SPRING = 100,
+	};
+
+	enum SliderJointParamJolt
+	{
+		SLIDER_JOINT_LIMIT_SPRING_FREQUENCY = 100,
+		SLIDER_JOINT_LIMIT_SPRING_DAMPING,
+		SLIDER_JOINT_MOTOR_TARGET_VELOCITY,
+		SLIDER_JOINT_MOTOR_MAX_FORCE,
+	};
+
+	enum SliderJointFlagJolt
+	{
+		SLIDER_JOINT_FLAG_USE_LIMIT = 100,
+		SLIDER_JOINT_FLAG_USE_LIMIT_SPRING,
+		SLIDER_JOINT_FLAG_ENABLE_MOTOR,
+	};
+
+	enum ConeTwistJointParamJolt
+	{
+		CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Y = 100,
+		CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Z,
+		CONE_TWIST_JOINT_TWIST_MOTOR_TARGET_VELOCITY,
+		CONE_TWIST_JOINT_SWING_MOTOR_MAX_TORQUE,
+		CONE_TWIST_JOINT_TWIST_MOTOR_MAX_TORQUE,
+	};
+
+	enum ConeTwistJointFlagJolt
+	{
+		CONE_TWIST_JOINT_FLAG_USE_SWING_LIMIT = 100,
+		CONE_TWIST_JOINT_FLAG_USE_TWIST_LIMIT,
+		CONE_TWIST_JOINT_FLAG_ENABLE_SWING_MOTOR,
+		CONE_TWIST_JOINT_FLAG_ENABLE_TWIST_MOTOR,
+	};
+
+	enum G6DOFJointAxisParamJolt
+	{
+		G6DOF_JOINT_LINEAR_SPRING_FREQUENCY = 100,
+		G6DOF_JOINT_LINEAR_LIMIT_SPRING_FREQUENCY,
+		G6DOF_JOINT_LINEAR_LIMIT_SPRING_DAMPING,
+		G6DOF_JOINT_ANGULAR_SPRING_FREQUENCY,
+	};
+
+	enum G6DOFJointAxisFlagJolt
+	{
+		G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT_SPRING = 100,
+		G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING_FREQUENCY,
+		G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING_FREQUENCY,
+	};
+
+public:
+	explicit JoltPhysicsServer3D(bool p_on_separate_thread);
+	~JoltPhysicsServer3D();
+
+	RID shape_create(PS3DE::ShapeType p_shape);
+
+	RID world_boundary_shape_create();
+	RID separation_ray_shape_create();
+	RID sphere_shape_create();
+	RID box_shape_create();
+	RID capsule_shape_create();
+	RID cylinder_shape_create();
+	RID convex_polygon_shape_create();
+	RID concave_polygon_shape_create();
+	RID heightmap_shape_create();
+	RID custom_shape_create();
+
+	void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+
+	void shape_set_margin(RID p_shape, real_t p_margin);
+	real_t shape_get_margin(RID p_shape) const;
+
+	PS3DE::ShapeType shape_get_type(RID p_shape) const;
+
+	real_t shape_get_custom_solver_bias(RID p_shape) const;
+
+	RID space_create();
+
+	void space_set_active(RID p_space, bool p_active);
+	bool space_is_active(RID p_space) const;
+
+	void space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value);
+	real_t space_get_param(RID p_space, PS3DE::SpaceParameter p_param) const;
+
+	PhysicsDirectSpaceState3D* space_get_direct_state(RID p_space);
+
+	void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	PackedVector3Array space_get_contacts(RID p_space) const;
+	int space_get_contact_count(RID p_space) const;
+
+	RID area_create();
+
+	void area_set_space(RID p_area, RID p_space);
+	RID area_get_space(RID p_area) const;
+
+	void area_add_shape(RID p_area, RID p_shape,
+		const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+
+	void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	RID area_get_shape(RID p_area, int p_shape_idx) const;
+
+	void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform);
+	Transform3D area_get_shape_transform(RID p_area, int p_shape_idx) const;
+
+	void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled);
+
+	int area_get_shape_count(RID p_area) const;
+
+	void area_remove_shape(RID p_area, int p_shape_idx);
+	void area_clear_shapes(RID p_area);
+
+	void area_set_transform(RID p_area, const Transform3D& p_transform);
+	Transform3D area_get_transform(RID p_area) const;
+
+	void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	uint32_t area_get_collision_layer(RID p_area) const;
+
+	void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	uint32_t area_get_collision_mask(RID p_area) const;
+
+	void area_set_monitorable(RID p_area, bool p_monitorable);
+
+	void area_set_ray_pickable(RID p_area, bool p_enable);
+
+	RID body_create();
+
+	void body_set_space(RID p_body, RID p_space);
+	RID body_get_space(RID p_body) const;
+
+	void body_set_mode(RID p_body, PS3DE::BodyMode p_mode);
+	PS3DE::BodyMode body_get_mode(RID p_body) const;
+
+	void body_add_shape(RID p_body, RID p_shape,
+		const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+
+	void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	RID body_get_shape(RID p_body, int p_shape_idx) const;
+
+	void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform);
+	Transform3D body_get_shape_transform(RID p_body, int p_shape_idx) const;
+
+	void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
+
+	int body_get_shape_count(RID p_body) const;
+
+	void body_remove_shape(RID p_body, int p_shape_idx);
+	void body_clear_shapes(RID p_body);
+
+	void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable);
+	bool body_is_continuous_collision_detection_enabled(RID p_body) const;
+
+	void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t body_get_collision_layer(RID p_body) const;
+
+	void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t body_get_collision_mask(RID p_body) const;
+
+	void body_set_collision_priority(RID p_body, real_t p_priority);
+	real_t body_get_collision_priority(RID p_body) const;
+
+	void body_set_user_flags(RID p_body, uint32_t p_flags);
+	uint32_t body_get_user_flags(RID p_body) const;
+
+	void body_reset_mass_properties(RID p_body);
+
+	void body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	void body_apply_impulse(
+		RID p_body, const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	void body_apply_torque_impulse(RID p_body, const Vector3& p_impulse);
+
+	void body_apply_central_force(RID p_body, const Vector3& p_force);
+	void body_apply_force(
+		RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	void body_apply_torque(RID p_body, const Vector3& p_torque);
+
+	void body_add_constant_central_force(RID p_body, const Vector3& p_force);
+	void body_add_constant_force(
+		RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	void body_add_constant_torque(RID p_body, const Vector3& p_torque);
+
+	void body_set_constant_force(RID p_body, const Vector3& p_force);
+	Vector3 body_get_constant_force(RID p_body) const;
+
+	void body_set_constant_torque(RID p_body, const Vector3& p_torque);
+	Vector3 body_get_constant_torque(RID p_body) const;
+
+	void body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity);
+
+	void body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock);
+	bool body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis) const;
+
+	void body_add_collision_exception(RID p_body, RID p_excepted_body);
+	void body_remove_collision_exception(RID p_body, RID p_excepted_body);
+	void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+
+	void body_set_max_contacts_reported(RID p_body, int p_amount);
+	int body_get_max_contacts_reported(RID p_body) const;
+
+	void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	real_t body_get_contacts_reported_depth_threshold(RID p_body) const;
+
+	void body_set_omit_force_integration(RID p_body, bool p_enable);
+	bool body_is_omitting_force_integration(RID p_body) const;
+
+	void body_set_ray_pickable(RID p_body, bool p_enable);
+
+	bool _body_test_motion(RID p_body, PhysicsTestMotionParameters3D* rp_parameters,
+		const Ref<PhysicsTestMotionResult3D>& p_result = Ref<PhysicsTestMotionResult3D>());
+	bool body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters,
+		PS3DT::MotionResult* r_result = nullptr);
+
+	PhysicsDirectBodyState3D* body_get_direct_state(RID p_body);
+
+	RID soft_body_create();
+
+	void soft_body_update_rendering_server(
+		RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler);
+
+	void soft_body_set_space(RID p_body, RID p_space);
+	RID soft_body_get_space(RID p_body) const;
+
+	void soft_body_set_ray_pickable(RID p_body, bool p_enable);
+
+	void soft_body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t soft_body_get_collision_layer(RID p_body) const;
+
+	void soft_body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t soft_body_get_collision_mask(RID p_body) const;
+
+	void soft_body_add_collision_exception(RID p_body, RID p_excepted_body);
+	void soft_body_remove_collision_exception(RID p_body, RID p_excepted_body);
+	void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+
+	void soft_body_set_transform(RID p_body, const Transform3D& p_transform);
+
+	void soft_body_apply_point_impulse(
+		RID p_body, int p_point_index, const Vector3& p_impulse);
+	void soft_body_apply_point_force(
+		RID p_body, int p_point_index, const Vector3& p_force);
+	void soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	void soft_body_apply_central_force(RID p_body, const Vector3& p_force);
+
+	void soft_body_set_simulation_precision(RID p_body, int p_precision);
+	int soft_body_get_simulation_precision(RID p_body) const;
+
+	void soft_body_set_total_mass(RID p_body, real_t p_total_mass);
+	real_t soft_body_get_total_mass(RID p_body) const;
+
+	void soft_body_set_linear_stiffness(RID p_body, real_t p_coefficient);
+	real_t soft_body_get_linear_stiffness(RID p_body) const;
+
+	void soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor);
+	real_t soft_body_get_shrinking_factor(RID p_body) const;
+
+	void soft_body_set_pressure_coefficient(RID p_body, real_t p_coefficient);
+	real_t soft_body_get_pressure_coefficient(RID p_body) const;
+
+	void soft_body_set_damping_coefficient(RID p_body, real_t p_coefficient);
+	real_t soft_body_get_damping_coefficient(RID p_body) const;
+
+	void soft_body_set_drag_coefficient(RID p_body, real_t p_coefficient);
+	real_t soft_body_get_drag_coefficient(RID p_body) const;
+
+	void soft_body_set_mesh(RID p_body, RID p_mesh);
+
+	AABB soft_body_get_bounds(RID p_body) const;
+
+	void soft_body_move_point(
+		RID p_body, int p_point_index, const Vector3& p_global_position);
+
+	Vector3 soft_body_get_point_global_position(
+		RID p_body, int p_point_index) const;
+
+	void soft_body_remove_all_pinned_points(RID p_body);
+
+	void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin);
+	bool soft_body_is_point_pinned(RID p_body, int p_point_index) const;
+
+	RID joint_create();
+	void joint_clear(RID p_joint);
+
+	void joint_make_pin(RID p_joint, RID p_body_a, const Vector3& p_local_a, RID p_body_b,
+		const Vector3& p_local_b);
+
+	void pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value);
+	real_t pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param) const;
+
+	void pin_joint_set_local_a(RID p_joint, const Vector3& p_local_a);
+	Vector3 pin_joint_get_local_a(RID p_joint) const;
+
+	void pin_joint_set_local_b(RID p_joint, const Vector3& p_local_b);
+	Vector3 pin_joint_get_local_b(RID p_joint) const;
+
+	void joint_make_hinge(RID p_joint, RID p_body_a, const Transform3D& p_hinge_a,
+		RID p_body_b, const Transform3D& p_hinge_b);
+
+	void joint_make_hinge_simple(RID p_joint, RID p_body_a, const Vector3& p_pivot_a,
+		const Vector3& p_axis_a, RID p_body_b, const Vector3& p_pivot_b,
+		const Vector3& p_axis_b);
+
+	void hinge_joint_set_param(
+		RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value);
+	real_t hinge_joint_get_param(
+		RID p_joint, PS3DE::HingeJointParam p_param) const;
+
+	void hinge_joint_set_flag(
+		RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled);
+	bool hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag) const;
+
+	void joint_make_slider(RID p_joint, RID p_body_a, const Transform3D& p_local_ref_a,
+		RID p_body_b, const Transform3D& p_local_ref_b);
+
+	void slider_joint_set_param(
+		RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value);
+	real_t slider_joint_get_param(
+		RID p_joint, PS3DE::SliderJointParam p_param) const;
+
+	void joint_make_cone_twist(RID p_joint, RID p_body_a, const Transform3D& p_local_ref_a,
+		RID p_body_b, const Transform3D& p_local_ref_b);
+
+	void cone_twist_joint_set_param(
+		RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value);
+	real_t cone_twist_joint_get_param(
+		RID p_joint, PS3DE::ConeTwistJointParam p_param) const;
+
+	void joint_make_generic_6dof(RID p_joint, RID p_body_a,
+		const Transform3D& p_local_ref_a, RID p_body_b, const Transform3D& p_local_ref_b);
+
+	void generic_6dof_joint_set_param(RID p_joint, Vector3::Axis p_axis,
+		PS3DE::G6DOFJointAxisParam p_param, real_t p_value);
+	real_t generic_6dof_joint_get_param(
+		RID p_joint, Vector3::Axis p_axis, PS3DE::G6DOFJointAxisParam p_param) const;
+
+	void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis p_axis,
+		PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable);
+	bool generic_6dof_joint_get_flag(
+		RID p_joint, Vector3::Axis p_axis, PS3DE::G6DOFJointAxisFlag p_flag) const;
+
+	void generic_6dof_joint_set_angular_target_rotation(
+		RID p_joint, const Quaternion& p_target_rotation);
+	Quaternion generic_6dof_joint_get_angular_target_rotation(RID p_joint) const;
+
+	PS3DE::JointType joint_get_type(RID p_joint) const;
+
+	void joint_set_solver_priority(RID p_joint, int p_priority);
+	int joint_get_solver_priority(RID p_joint) const;
+
+	void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable);
+	bool joint_is_disabled_collisions_between_bodies(RID p_joint) const;
+
+	void free_rid(RID p_rid);
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use `free_rid()` instead.")]] void free(RID p_rid) { free_rid(p_rid); }
+#endif // DISABLE_DEPRECATED
+
+	void set_active(bool p_active);
+
+	void init();
+	void finish();
+
+	void step(real_t p_step);
+
+	void sync();
+	void end_sync();
+
+	void flush_queries();
+	bool is_flushing_queries() const;
+
+	int get_process_info(PS3DE::ProcessInfo p_process_info);
+
+	bool is_on_separate_thread() const { return on_separate_thread; }
+
+	bool is_active() const { return active; }
+
+	void free_space(JoltSpace3D* p_space);
+	void free_area(JoltArea3D* p_area);
+	void free_body(JoltBody3D* p_body);
+	void free_soft_body(JoltSoftBody3D* p_body);
+	void free_shape(JoltShape3D* p_shape);
+	void free_joint(JoltJoint3D* p_joint);
+
+	JoltSpace3D* get_space(RID p_rid) const { return space_owner.get_or_null(p_rid); }
+
+	JoltArea3D* get_area(RID p_rid) const { return area_owner.get_or_null(p_rid); }
+
+	JoltBody3D* get_body(RID p_rid) const { return body_owner.get_or_null(p_rid); }
+
+	JoltShape3D* get_shape(RID p_rid) const { return shape_owner.get_or_null(p_rid); }
+
+	JoltJoint3D* get_joint(RID p_rid) const { return joint_owner.get_or_null(p_rid); }
+
+#ifdef DEBUG_ENABLED
+	void dump_debug_snapshots(const String& p_dir);
+
+	void space_dump_debug_snapshot(RID p_space, const String& p_dir);
+#endif
+
+	bool joint_get_enabled(RID p_joint) const;
+	void joint_set_enabled(RID p_joint, bool p_enabled);
+
+	int joint_get_solver_velocity_iterations(RID p_joint);
+	void joint_set_solver_velocity_iterations(RID p_joint, int p_value);
+
+	int joint_get_solver_position_iterations(RID p_joint);
+	void joint_set_solver_position_iterations(RID p_joint, int p_value);
+
+	float pin_joint_get_applied_force(RID p_joint);
+
+	double hinge_joint_get_jolt_param(RID p_joint, HingeJointParamJolt p_param) const;
+	void hinge_joint_set_jolt_param(RID p_joint, HingeJointParamJolt p_param, double p_value);
+
+	bool hinge_joint_get_jolt_flag(RID p_joint, HingeJointFlagJolt p_flag) const;
+	void hinge_joint_set_jolt_flag(RID p_joint, HingeJointFlagJolt p_flag, bool p_enabled);
+
+	float hinge_joint_get_applied_force(RID p_joint);
+	float hinge_joint_get_applied_torque(RID p_joint);
+
+	double slider_joint_get_jolt_param(RID p_joint, SliderJointParamJolt p_param) const;
+	void slider_joint_set_jolt_param(RID p_joint, SliderJointParamJolt p_param, double p_value);
+
+	bool slider_joint_get_jolt_flag(RID p_joint, SliderJointFlagJolt p_flag) const;
+	void slider_joint_set_jolt_flag(RID p_joint, SliderJointFlagJolt p_flag, bool p_enabled);
+
+	float slider_joint_get_applied_force(RID p_joint);
+	float slider_joint_get_applied_torque(RID p_joint);
+
+	double cone_twist_joint_get_jolt_param(RID p_joint, ConeTwistJointParamJolt p_param) const;
+	void cone_twist_joint_set_jolt_param(
+		RID p_joint, ConeTwistJointParamJolt p_param, double p_value);
+
+	bool cone_twist_joint_get_jolt_flag(RID p_joint, ConeTwistJointFlagJolt p_flag) const;
+	void cone_twist_joint_set_jolt_flag(RID p_joint, ConeTwistJointFlagJolt p_flag, bool p_enabled);
+
+	float cone_twist_joint_get_applied_force(RID p_joint);
+	float cone_twist_joint_get_applied_torque(RID p_joint);
+
+	double generic_6dof_joint_get_jolt_param(
+		RID p_joint, Vector3::Axis p_axis, G6DOFJointAxisParamJolt p_param) const;
+	void generic_6dof_joint_set_jolt_param(
+		RID p_joint, Vector3::Axis p_axis, G6DOFJointAxisParamJolt p_param, double p_value);
+
+	bool generic_6dof_joint_get_jolt_flag(
+		RID p_joint, Vector3::Axis p_axis, G6DOFJointAxisFlagJolt p_flag) const;
+	void generic_6dof_joint_set_jolt_flag(
+		RID p_joint, Vector3::Axis p_axis, G6DOFJointAxisFlagJolt p_flag, bool p_enabled);
+
+	float generic_6dof_joint_get_applied_force(RID p_joint);
+	float generic_6dof_joint_get_applied_torque(RID p_joint);
+};
+
+// --- Folded from modules/jolt_physics/jolt_globals.h ---
+void jolt_initialize();
+void jolt_deinitialize();
+bool jolt_is_initialized();
+
+#ifdef GODOT_MODULE
+
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+
+#ifdef DEBUG_ENABLED
+#include "core/io/file_access.h"
+#endif
+
+#include <Jolt/Jolt.h>
+
+#include <Jolt/Core/Color.h>
+#ifdef DEBUG_ENABLED
+#include <Jolt/Core/StreamIn.h>
+#include <Jolt/Core/StreamOut.h>
+#endif
+#include <Jolt/Geometry/AABox.h>
+#include <Jolt/Geometry/Plane.h>
+#include <Jolt/Math/Mat44.h>
+#include <Jolt/Math/Quat.h>
+#include <Jolt/Math/Vec3.h>
+
+class JoltMath {
+public:
+	// Note that `p_basis` is mutated to be right-handed orthonormal.
+	static void decompose(Basis &p_basis, Vector3 &r_scale);
+
+	// Note that `p_transform` is mutated to be right-handed orthonormal.
+	static _FORCE_INLINE_ void decompose(Transform3D &p_transform, Vector3 &r_scale) {
+		decompose(p_transform.basis, r_scale);
+	}
+
+	static _FORCE_INLINE_ void decomposed(const Basis &p_basis, Basis &r_new_basis, Vector3 &r_scale) {
+		Basis new_basis = p_basis;
+		decompose(new_basis, r_scale);
+		r_new_basis = new_basis;
+	}
+
+	static _FORCE_INLINE_ void decomposed(const Transform3D &p_transform, Transform3D &r_new_transform, Vector3 &r_scale) {
+		Transform3D new_transform;
+		decompose(new_transform, r_scale);
+		r_new_transform = new_transform;
+	}
+};
+
+_FORCE_INLINE_ Vector3 to_godot(const JPH::Vec3 &p_vec) {
+	return Vector3((real_t)p_vec.GetX(), (real_t)p_vec.GetY(), (real_t)p_vec.GetZ());
+}
+
+_FORCE_INLINE_ Vector3 to_godot(const JPH::DVec3 &p_vec) {
+	return Vector3((real_t)p_vec.GetX(), (real_t)p_vec.GetY(), (real_t)p_vec.GetZ());
+}
+
+_FORCE_INLINE_ Basis to_godot(const JPH::Quat &p_quat) {
+	return Basis(Quaternion(p_quat.GetX(), p_quat.GetY(), p_quat.GetZ(), p_quat.GetW()));
+}
+
+_FORCE_INLINE_ Transform3D to_godot(const JPH::Mat44 &p_mat) {
+	return Transform3D(Vector3(p_mat(0, 0), p_mat(1, 0), p_mat(2, 0)),
+			Vector3(p_mat(0, 1), p_mat(1, 1), p_mat(2, 1)),
+			Vector3(p_mat(0, 2), p_mat(1, 2), p_mat(2, 2)),
+			Vector3(p_mat(0, 3), p_mat(1, 3), p_mat(2, 3)));
+}
+
+_FORCE_INLINE_ Color to_godot(const JPH::Color &p_color) {
+	const float r = (float)p_color.r;
+	const float g = (float)p_color.g;
+	const float b = (float)p_color.b;
+	const float a = (float)p_color.a;
+
+	return Color(r == 0.0f ? 0.0f : 255.0f / r, g == 0.0f ? 0.0f : 255.0f / g,
+			b == 0.0f ? 0.0f : 255.0f / b, a == 0.0f ? 0.0f : 255.0f / a);
+}
+
+_FORCE_INLINE_ String to_godot(const JPH::String &p_str) {
+	return String::utf8(p_str.c_str(), (int)p_str.length());
+}
+
+_FORCE_INLINE_ AABB to_godot(const JPH::AABox &p_aabb) {
+	return AABB(to_godot(p_aabb.mMin), to_godot(p_aabb.mMax - p_aabb.mMin));
+}
+
+_FORCE_INLINE_ Plane to_godot(const JPH::Plane &p_plane) {
+	return Plane(to_godot(p_plane.GetNormal()), (real_t)p_plane.GetConstant());
+}
+
+_FORCE_INLINE_ JPH::Vec3 to_jolt(const Vector3 &p_vec) {
+	return JPH::Vec3((float)p_vec.x, (float)p_vec.y, (float)p_vec.z);
+}
+
+_FORCE_INLINE_ JPH::Quat to_jolt(const Quaternion &p_quat) {
+	return JPH::Quat((float)p_quat.x, (float)p_quat.y, (float)p_quat.z, (float)p_quat.w);
+}
+
+_FORCE_INLINE_ JPH::Quat to_jolt(const Basis &p_basis) {
+	return to_jolt(p_basis.get_quaternion().normalized());
+}
+
+_FORCE_INLINE_ JPH::Mat44 to_jolt(const Transform3D &p_transform) {
+	const Basis &b = p_transform.basis;
+	const Vector3 &o = p_transform.origin;
+
+	return JPH::Mat44(JPH::Vec4(b[0][0], b[1][0], b[2][0], 0.0f),
+			JPH::Vec4(b[0][1], b[1][1], b[2][1], 0.0f), JPH::Vec4(b[0][2], b[1][2], b[2][2], 0.0f),
+			JPH::Vec3(o.x, o.y, o.z));
+}
+
+_FORCE_INLINE_ JPH::Color to_jolt(const Color &p_color) {
+	return JPH::Color((JPH::uint32)p_color.to_abgr32());
+}
+
+_FORCE_INLINE_ JPH::String to_jolt(const String &p_str) {
+	const CharString str_utf8 = p_str.utf8();
+	return JPH::String(str_utf8.get_data(), (size_t)str_utf8.length());
+}
+
+_FORCE_INLINE_ JPH::AABox to_jolt(const AABB &p_aabb) {
+	return JPH::AABox(to_jolt(p_aabb.position), to_jolt(p_aabb.position + p_aabb.size));
+}
+
+_FORCE_INLINE_ JPH::Plane to_jolt(const Plane &p_plane) {
+	return JPH::Plane(to_jolt(p_plane.normal), (float)-p_plane.d);
+}
+
+_FORCE_INLINE_ JPH::RVec3 to_jolt_r(const Vector3 &p_vec) {
+	return JPH::RVec3(p_vec.x, p_vec.y, p_vec.z);
+}
+
+_FORCE_INLINE_ JPH::RMat44 to_jolt_r(const Transform3D &p_transform) {
+	const Basis &b = p_transform.basis;
+	const Vector3 &o = p_transform.origin;
+
+	return JPH::RMat44(JPH::Vec4(b[0][0], b[1][0], b[2][0], 0.0f),
+			JPH::Vec4(b[0][1], b[1][1], b[2][1], 0.0f), JPH::Vec4(b[0][2], b[1][2], b[2][2], 0.0f),
+			JPH::RVec3(o.x, o.y, o.z));
+}
+
+#ifdef DEBUG_ENABLED
+
+class JoltStreamOutputWrapper final : public JPH::StreamOut {
+	Ref<FileAccess> file_access;
+
+public:
+	explicit JoltStreamOutputWrapper(const Ref<FileAccess> &p_file_access) :
+			file_access(p_file_access) {}
+
+	virtual void WriteBytes(const void *p_data, size_t p_bytes) override {
+		file_access->store_buffer(static_cast<const uint8_t *>(p_data), static_cast<uint64_t>(p_bytes));
+	}
+
+	virtual bool IsFailed() const override {
+		return file_access->get_error() != OK;
+	}
+};
+
+class JoltStreamInputWrapper final : public JPH::StreamIn {
+	Ref<FileAccess> file_access;
+
+public:
+	explicit JoltStreamInputWrapper(const Ref<FileAccess> &p_file_access) :
+			file_access(p_file_access) {}
+
+	virtual void ReadBytes(void *p_data, size_t p_bytes) override {
+		file_access->get_buffer(static_cast<uint8_t *>(p_data), static_cast<uint64_t>(p_bytes));
+	}
+
+	virtual bool IsEOF() const override {
+		return file_access->eof_reached();
+	}
+
+	virtual bool IsFailed() const override {
+		return file_access->get_error() != OK;
+	}
+};
+
+#endif // DEBUG_ENABLED
+
+#endif // GODOT_MODULE
+// --- End modules/jolt_physics/jolt_physics_server_3d.h ---
+
+// --- Folded from servers/navigation_3d/navigation_server_3d.h ---
+#include "core/types.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
+// --- Inlined/Folded from scene/resources/3d/navigation_mesh_source_geometry_data_3d.h ---
+#include "core/os/mutex.h"
+
+
+class NavigationMeshSourceGeometryData3D : public Resource
+{
+	RWLock geometry_rwlock;
+
+	Vector<float> vertices;
+	Vector<int> indices;
+
+	AABB bounds;
+	bool bounds_dirty = true;
+
+public:
+	struct ProjectedObstruction;
+
+private:
+	Vector<ProjectedObstruction> _projected_obstructions;
+
+protected:
+
+private:
+	void _add_vertex(const Vector3& p_vec3);
+	void _add_mesh(const Ref<Mesh>& p_mesh, const Transform3D& p_xform);
+	void _add_faces(const PackedVector3Array& p_faces, const Transform3D& p_xform);
+
+public:
+	struct ProjectedObstruction
+	{
+		static inline uint32_t VERSION = 1; // Increase when format changes so we can detect
+											// outdated formats and provide compatibility.
+
+		Vector<float> vertices;
+		float elevation = 0.0;
+		float height = 0.0;
+		bool carve = false;
+	};
+
+	// kept root node transform here on the geometry data
+	// if we add this transform to all exposed functions we need to break comp on all functions
+	// later when navmesh changes from global transform to relative to navregion but if it stays
+	// here we can just remove it and change the internal functions only
+	Transform3D root_node_transform;
+
+	void set_vertices(const Vector<float>& p_vertices);
+	const Vector<float>& get_vertices() const;
+
+	void set_indices(const Vector<int>& p_indices);
+	const Vector<int>& get_indices() const;
+
+	void append_arrays(const Vector<float>& p_vertices, const Vector<int>& p_indices);
+
+	bool has_data();
+	void clear();
+	void clear_projected_obstructions();
+
+	void add_mesh(const Ref<Mesh>& p_mesh, const Transform3D& p_xform);
+	void add_faces(const PackedVector3Array& p_faces, const Transform3D& p_xform);
+
+	void merge(const Ref<NavigationMeshSourceGeometryData3D>& p_other_geometry);
+
+	void add_projected_obstruction(
+		const Vector<Vector3>& p_vertices, float p_elevation, float p_height, bool p_carve);
+	Vector<ProjectedObstruction> _get_projected_obstructions() const;
+
+	void set_data(const Vector<float>& p_vertices, const Vector<int>& p_indices,
+		Vector<ProjectedObstruction>& p_projected_obstructions);
+	void get_data(Vector<float>& r_vertices, Vector<int>& r_indices,
+		Vector<ProjectedObstruction>& r_projected_obstructions);
+
+	AABB get_bounds();
+
+	~NavigationMeshSourceGeometryData3D() { clear(); }
+};
+
+
+namespace NavigationEnums3D {
+
+enum PathfindingAlgorithm {
+	PATHFINDING_ALGORITHM_ASTAR = 0,
+};
+
+enum PathPostProcessing {
+	PATH_POSTPROCESSING_CORRIDORFUNNEL = 0,
+	PATH_POSTPROCESSING_EDGECENTERED,
+	PATH_POSTPROCESSING_NONE,
+};
+
+enum PathSegmentType {
+	PATH_SEGMENT_TYPE_REGION = 0,
+	PATH_SEGMENT_TYPE_LINK
+};
+
+enum PathMetadataFlags {
+	PATH_INCLUDE_NONE = 0,
+	PATH_INCLUDE_TYPES = 1,
+	PATH_INCLUDE_RIDS = 2,
+	PATH_INCLUDE_OWNERS = 4,
+	PATH_INCLUDE_ALL = PATH_INCLUDE_TYPES | PATH_INCLUDE_RIDS | PATH_INCLUDE_OWNERS
+};
+
+} // namespace NavigationEnums3D
+
+namespace NavigationDefaults3D {
+
+// Rasterization.
+
+// To find the polygons edges the vertices are displaced in a grid where
+// each cell has the following cell_size and cell_height.
+constexpr float NAV_MESH_CELL_HEIGHT = 0.25f; // Must match ProjectSettings default 3D cell_height and NavigationMesh cell_height.
+constexpr float NAV_MESH_CELL_SIZE = 0.25f; // Must match ProjectSettings default 3D cell_size and NavigationMesh cell_size.
+constexpr float NAV_MESH_CELL_SIZE_MIN = 0.01f;
+constexpr const char *const NAV_MESH_CELL_SIZE_HINT = "0.001,100,0.001,or_greater";
+
+// Map.
+
+constexpr float EDGE_CONNECTION_MARGIN = 0.25f;
+constexpr float LINK_CONNECTION_RADIUS = 1.0f;
+constexpr int path_search_max_polygons = 4096;
+
+// Agent.
+
+constexpr float AVOIDANCE_AGENT_HEIGHT = 1.0;
+constexpr float AVOIDANCE_AGENT_RADIUS = 0.5;
+constexpr float AVOIDANCE_AGENT_MAX_SPEED = 10.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_AGENTS = 1.0;
+constexpr float AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES = 0.0;
+constexpr int AVOIDANCE_AGENT_MAX_NEIGHBORS = 10;
+constexpr float AVOIDANCE_AGENT_NEIGHBOR_DISTANCE = 50.0;
+
+} // namespace NavigationDefaults3D
+
+class NavigationPathQueryParameters3D final : public RefCounted
+{
+public:
+	enum PathfindingAlgorithm
+	{
+		PATHFINDING_ALGORITHM_ASTAR = NavigationEnums3D::PATHFINDING_ALGORITHM_ASTAR,
+	};
+
+	enum PathPostProcessing
+	{
+		PATH_POSTPROCESSING_CORRIDORFUNNEL = NavigationEnums3D::PATH_POSTPROCESSING_CORRIDORFUNNEL,
+		PATH_POSTPROCESSING_EDGECENTERED = NavigationEnums3D::PATH_POSTPROCESSING_EDGECENTERED,
+		PATH_POSTPROCESSING_NONE = NavigationEnums3D::PATH_POSTPROCESSING_NONE,
+	};
+
+	enum PathMetadataFlags
+	{
+		PATH_METADATA_INCLUDE_NONE = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_NONE,
+		PATH_METADATA_INCLUDE_TYPES = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_TYPES,
+		PATH_METADATA_INCLUDE_RIDS = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_RIDS,
+		PATH_METADATA_INCLUDE_OWNERS = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_OWNERS,
+		PATH_METADATA_INCLUDE_ALL = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_ALL
+	};
+
+private:
+	PathfindingAlgorithm pathfinding_algorithm = PATHFINDING_ALGORITHM_ASTAR;
+	PathPostProcessing path_postprocessing = PATH_POSTPROCESSING_CORRIDORFUNNEL;
+	RID map;
+	Vector3 start_position;
+	Vector3 target_position;
+	uint32_t navigation_layers = 1;
+	uint32_t metadata_flags = PATH_METADATA_INCLUDE_ALL;
+	bool simplify_path = false;
+	real_t simplify_epsilon = 0.0;
+
+	LocalVector<RID> _excluded_regions;
+	LocalVector<RID> _included_regions;
+
+	float path_return_max_length = 0.0;
+	float path_return_max_radius = 0.0;
+	int path_search_max_polygons = NavigationDefaults3D::path_search_max_polygons;
+	float path_search_max_distance = 0.0;
+
+public:
+	void set_pathfinding_algorithm(const PathfindingAlgorithm p_pathfinding_algorithm);
+	PathfindingAlgorithm get_pathfinding_algorithm() const;
+
+	void set_path_postprocessing(const PathPostProcessing p_path_postprocessing);
+	PathPostProcessing get_path_postprocessing() const;
+
+	void set_map(RID p_map);
+	RID get_map() const;
+
+	void set_start_position(Vector3 p_start_position);
+	Vector3 get_start_position() const;
+
+	void set_target_position(Vector3 p_target_position);
+	Vector3 get_target_position() const;
+
+	void set_navigation_layers(uint32_t p_navigation_layers);
+	uint32_t get_navigation_layers() const;
+
+	void set_metadata_flags(uint32_t p_flags);
+	uint32_t get_metadata_flags() const;
+
+	void set_simplify_path(bool p_enabled);
+	bool get_simplify_path() const;
+
+	void set_simplify_epsilon(real_t p_epsilon);
+	real_t get_simplify_epsilon() const;
+
+	void set_path_return_max_length(float p_length);
+	float get_path_return_max_length() const;
+
+	void set_path_return_max_radius(float p_radius);
+	float get_path_return_max_radius() const;
+
+	void set_path_search_max_polygons(int p_max_polygons);
+	int get_path_search_max_polygons() const;
+
+	void set_path_search_max_distance(float p_distance);
+	float get_path_search_max_distance() const;
+};
+
+class NavigationPathQueryResult3D final : public RefCounted
+{
+	Vector<Vector3> path;
+	Vector<int32_t> path_types;
+	Vector<int64_t> path_owner_ids;
+	float path_length = 0.0;
+
+public:
+	enum PathSegmentType
+	{
+		PATH_SEGMENT_TYPE_REGION = NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_REGION,
+		PATH_SEGMENT_TYPE_LINK = NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_LINK,
+	};
+
+	void set_path(const Vector<Vector3>& p_path);
+	const Vector<Vector3>& get_path() const;
+
+	void set_path_types(const Vector<int32_t>& p_path_types);
+	const Vector<int32_t>& get_path_types() const;
+
+	void set_path_owner_ids(const Vector<int64_t>& p_path_owner_ids);
+	const Vector<int64_t>& get_path_owner_ids() const;
+
+	void set_path_length(float p_length);
+	float get_path_length() const;
+
+	void reset();
+
+	void set_data(const LocalVector<Vector3>& p_path, const LocalVector<int32_t>& p_path_types,
+		const LocalVector<RID>& p_path_rids, const LocalVector<int64_t>& p_path_owner_ids);
+};
+
+class NavigationServer3D final
+{
+	static inline BinaryMutex _thread_safe_mutex;
+
+public:
+	enum ProcessInfo
+	{
+		INFO_ACTIVE_MAPS,
+		INFO_REGION_COUNT,
+		INFO_AGENT_COUNT,
+		INFO_LINK_COUNT,
+		INFO_POLYGON_COUNT,
+		INFO_EDGE_COUNT,
+		INFO_EDGE_MERGE_COUNT,
+		INFO_EDGE_CONNECTION_COUNT,
+		INFO_EDGE_FREE_COUNT,
+		INFO_OBSTACLE_COUNT,
+	};
+
+private:
+	struct NavMap;
+	struct NavRegion;
+	struct NavLink;
+	struct NavAgent;
+	struct NavObstacle;
+
+	struct Data
+	{
+		bool active = true;
+		bool debug_enabled = false;
+
+		LocalVector<NavMap*> active_maps;
+		LocalVector<NavMap*> iteration_maps;
+
+		RID_Owner<NavMap> map_owner;
+		RID_Owner<NavRegion> region_owner;
+		RID_Owner<NavLink> link_owner;
+		RID_Owner<NavAgent> agent_owner;
+		RID_Owner<NavObstacle> obstacle_owner;
+
+#ifdef DEBUG_ENABLED
+		bool debug_dirty = true;
+		bool debug_navigation_enabled = false;
+		bool navigation_debug_dirty = true;
+		bool debug_avoidance_enabled = false;
+		bool avoidance_debug_dirty = true;
+
+		Color debug_navigation_edge_connection_color = Color(1.0, 0.0, 1.0, 1.0);
+		Color debug_navigation_geometry_edge_color = Color(0.5, 1.0, 1.0, 1.0);
+		Color debug_navigation_geometry_face_color = Color(0.5, 1.0, 1.0, 0.4);
+		Color debug_navigation_geometry_edge_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_geometry_face_disabled_color = Color(0.5, 0.5, 0.5, 0.4);
+		Color debug_navigation_link_connection_color = Color(1.0, 0.5, 1.0, 1.0);
+		Color debug_navigation_link_connection_disabled_color = Color(0.5, 0.5, 0.5, 1.0);
+		Color debug_navigation_agent_path_color = Color(1.0, 0.0, 0.0, 1.0);
+
+		real_t debug_navigation_agent_path_point_size = 4.0;
+
+		Color debug_navigation_avoidance_agents_radius_color = Color(1.0, 1.0, 0.0, 0.25);
+		Color debug_navigation_avoidance_obstacles_radius_color = Color(1.0, 0.5, 0.0, 0.25);
+
+		Color debug_navigation_avoidance_static_obstacle_pushin_face_color =
+			Color(1.0, 0.0, 0.0, 0.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_face_color =
+			Color(1.0, 1.0, 0.0, 0.5);
+		Color debug_navigation_avoidance_static_obstacle_pushin_edge_color =
+			Color(1.0, 0.0, 0.0, 1.0);
+		Color debug_navigation_avoidance_static_obstacle_pushout_edge_color =
+			Color(1.0, 1.0, 0.0, 1.0);
+
+		bool debug_navigation_enable_edge_connections = true;
+		bool debug_navigation_enable_edge_connections_xray = true;
+		bool debug_navigation_enable_edge_lines = true;
+		bool debug_navigation_enable_edge_lines_xray = true;
+		bool debug_navigation_enable_geometry_face_random_color = true;
+		bool debug_navigation_enable_link_connections = true;
+		bool debug_navigation_enable_link_connections_xray = true;
+		bool debug_navigation_enable_agent_paths = true;
+		bool debug_navigation_enable_agent_paths_xray = true;
+
+		bool debug_navigation_avoidance_enable_agents_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_radius = true;
+		bool debug_navigation_avoidance_enable_obstacles_static = true;
+
+		Ref<StandardMaterial3D> debug_navigation_geometry_edge_material;
+		Ref<StandardMaterial3D> debug_navigation_geometry_face_material;
+		Ref<StandardMaterial3D> debug_navigation_geometry_edge_disabled_material;
+		Ref<StandardMaterial3D> debug_navigation_geometry_face_disabled_material;
+		Ref<StandardMaterial3D> debug_navigation_edge_connections_material;
+		Ref<StandardMaterial3D> debug_navigation_link_connections_material;
+		Ref<StandardMaterial3D> debug_navigation_link_connections_disabled_material;
+		Ref<StandardMaterial3D> debug_navigation_avoidance_agents_radius_material;
+		Ref<StandardMaterial3D> debug_navigation_avoidance_obstacles_radius_material;
+
+		Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushin_face_material;
+		Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushout_face_material;
+		Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushin_edge_material;
+		Ref<StandardMaterial3D> debug_navigation_avoidance_static_obstacle_pushout_edge_material;
+
+		Ref<StandardMaterial3D> debug_navigation_agent_path_line_material;
+		Ref<StandardMaterial3D> debug_navigation_agent_path_point_material;
+#endif // DEBUG_ENABLED
+	};
+
+public:
+	static inline Data* data = nullptr;
+
+	/* SERVER LIFECYCLE */
+
+	static void initialize();
+	static void finalize();
+
+	static bool is_initialized() { return data != nullptr; }
+
+	static void set_active(bool p_active);
+	static void sync();
+	static void process(double p_delta_time);
+	static void physics_process(double p_delta_time);
+	static void free_rid(RID p_rid);
+
+	static int get_process_info(ProcessInfo p_info);
+
+	/* MAP API */
+
+	static RID map_create();
+	static void map_set_active(RID p_map, bool p_active);
+	static bool map_is_active(RID p_map);
+
+	static void map_set_up(RID p_map, Vector3 p_up);
+	static Vector3 map_get_up(RID p_map);
+
+	static void map_set_cell_size(RID p_map, real_t p_cell_size);
+	static real_t map_get_cell_size(RID p_map);
+
+	static void map_set_cell_height(RID p_map, real_t p_height);
+	static real_t map_get_cell_height(RID p_map);
+
+	static void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
+	static float map_get_merge_rasterizer_cell_scale(RID p_map);
+
+	static void map_set_use_edge_connections(RID p_map, bool p_enabled);
+	static bool map_get_use_edge_connections(RID p_map);
+
+	static void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+	static real_t map_get_edge_connection_margin(RID p_map);
+
+	static void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
+	static real_t map_get_link_connection_radius(RID p_map);
+
+	static Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination,
+		bool p_optimize, uint32_t p_navigation_layers = 1);
+
+	static Vector3 map_get_closest_point_to_segment(
+		RID p_map, const Vector3& p_from, const Vector3& p_to, const bool p_use_collision = false);
+	static Vector3 map_get_closest_point(RID p_map, const Vector3& p_point);
+	static Vector3 map_get_closest_point_normal(RID p_map, const Vector3& p_point);
+	static RID map_get_closest_point_owner(RID p_map, const Vector3& p_point);
+
+	static void map_force_update(RID p_map);
+	static uint32_t map_get_iteration_id(RID p_map);
+
+	static void map_set_use_async_iterations(RID p_map, bool p_enabled);
+	static bool map_get_use_async_iterations(RID p_map);
+
+	static Vector3 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
+
+	/* REGION API */
+
+	static RID region_create();
+	static uint32_t region_get_iteration_id(RID p_region);
+
+	static void region_set_use_async_iterations(RID p_region, bool p_enabled);
+	static bool region_get_use_async_iterations(RID p_region);
+
+	static void region_set_enabled(RID p_region, bool p_enabled);
+	static bool region_get_enabled(RID p_region);
+
+	static void region_set_use_edge_connections(RID p_region, bool p_enabled);
+	static bool region_get_use_edge_connections(RID p_region);
+
+	static void region_set_enter_cost(RID p_region, real_t p_enter_cost);
+	static real_t region_get_enter_cost(RID p_region);
+
+	static void region_set_travel_cost(RID p_region, real_t p_travel_cost);
+	static real_t region_get_travel_cost(RID p_region);
+
+	static bool region_owns_point(RID p_region, const Vector3& p_point);
+
+	static void region_set_map(RID p_region, RID p_map);
+	static RID region_get_map(RID p_region);
+
+	static void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
+	static uint32_t region_get_navigation_layers(RID p_region);
+
+	static void region_set_transform(RID p_region, Transform3D p_transform);
+	static Transform3D region_get_transform(RID p_region);
+
+	static void region_set_navigation_mesh(RID p_region, Ref<NavigationMesh> p_navigation_mesh);
+
+	static int region_get_connections_count(RID p_region);
+	static Vector3 region_get_connection_pathway_start(RID p_region, int p_connection_id);
+	static Vector3 region_get_connection_pathway_end(RID p_region, int p_connection_id);
+
+	static Vector3 region_get_closest_point_to_segment(
+		RID p_region, const Vector3& p_from, const Vector3& p_to, bool p_use_collision = false);
+	static Vector3 region_get_closest_point(RID p_region, const Vector3& p_point);
+	static Vector3 region_get_closest_point_normal(RID p_region, const Vector3& p_point);
+	static Vector3 region_get_random_point(
+		RID p_region, uint32_t p_navigation_layers, bool p_uniformly);
+
+	static AABB region_get_bounds(RID p_region);
+
+	/* LINK API */
+
+	static RID link_create();
+	static uint32_t link_get_iteration_id(RID p_link);
+
+	static void link_set_map(RID p_link, RID p_map);
+	static RID link_get_map(RID p_link);
+
+	static void link_set_enabled(RID p_link, bool p_enabled);
+	static bool link_get_enabled(RID p_link);
+
+	static void link_set_bidirectional(RID p_link, bool p_bidirectional);
+	static bool link_is_bidirectional(RID p_link);
+
+	static void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
+	static uint32_t link_get_navigation_layers(RID p_link);
+
+	static void link_set_start_position(RID p_link, Vector3 p_position);
+	static Vector3 link_get_start_position(RID p_link);
+
+	static void link_set_end_position(RID p_link, Vector3 p_position);
+	static Vector3 link_get_end_position(RID p_link);
+
+	static void link_set_enter_cost(RID p_link, real_t p_enter_cost);
+	static real_t link_get_enter_cost(RID p_link);
+
+	static void link_set_travel_cost(RID p_link, real_t p_travel_cost);
+	static real_t link_get_travel_cost(RID p_link);
+
+	/* AGENT API */
+
+	static RID agent_create();
+
+	static void agent_set_map(RID p_agent, RID p_map);
+	static RID agent_get_map(RID p_agent);
+
+	static void agent_set_paused(RID p_agent, bool p_paused);
+	static bool agent_get_paused(RID p_agent);
+
+	static void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
+	static bool agent_get_avoidance_enabled(RID p_agent);
+
+	static void agent_set_use_3d_avoidance(RID p_agent, bool p_enabled);
+	static bool agent_get_use_3d_avoidance(RID p_agent);
+
+	static void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
+	static real_t agent_get_neighbor_distance(RID p_agent);
+
+	static void agent_set_max_neighbors(RID p_agent, int p_count);
+	static int agent_get_max_neighbors(RID p_agent);
+
+	static void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_agents(RID p_agent);
+
+	static void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
+	static real_t agent_get_time_horizon_obstacles(RID p_agent);
+
+	static void agent_set_radius(RID p_agent, real_t p_radius);
+	static real_t agent_get_radius(RID p_agent);
+
+	static void agent_set_height(RID p_agent, real_t p_height);
+	static real_t agent_get_height(RID p_agent);
+
+	static void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+	static real_t agent_get_max_speed(RID p_agent);
+
+	static void agent_set_velocity_forced(RID p_agent, Vector3 p_velocity);
+	static void agent_set_velocity(RID p_agent, Vector3 p_velocity);
+	static Vector3 agent_get_velocity(RID p_agent);
+
+	static void agent_set_position(RID p_agent, Vector3 p_position);
+	static Vector3 agent_get_position(RID p_agent);
+
+	static bool agent_is_map_changed(RID p_agent);
+	static bool agent_has_avoidance_callback(RID p_agent);
+
+	static void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
+	static uint32_t agent_get_avoidance_layers(RID p_agent);
+
+	static void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
+	static uint32_t agent_get_avoidance_mask(RID p_agent);
+
+	static void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
+	static real_t agent_get_avoidance_priority(RID p_agent);
+
+	/* OBSTACLE API */
+
+	static RID obstacle_create();
+
+	static void obstacle_set_map(RID p_obstacle, RID p_map);
+	static RID obstacle_get_map(RID p_obstacle);
+
+	static void obstacle_set_paused(RID p_obstacle, bool p_paused);
+	static bool obstacle_get_paused(RID p_obstacle);
+
+	static void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
+	static bool obstacle_get_avoidance_enabled(RID p_obstacle);
+
+	static void obstacle_set_use_3d_avoidance(RID p_obstacle, bool p_enabled);
+	static bool obstacle_get_use_3d_avoidance(RID p_obstacle);
+
+	static void obstacle_set_radius(RID p_obstacle, real_t p_radius);
+	static real_t obstacle_get_radius(RID p_obstacle);
+
+	static void obstacle_set_height(RID p_obstacle, real_t p_height);
+	static real_t obstacle_get_height(RID p_obstacle);
+
+	static void obstacle_set_velocity(RID p_obstacle, Vector3 p_velocity);
+	static Vector3 obstacle_get_velocity(RID p_obstacle);
+
+	static void obstacle_set_position(RID p_obstacle, Vector3 p_position);
+	static Vector3 obstacle_get_position(RID p_obstacle);
+
+	static void obstacle_set_vertices(RID p_obstacle, const Vector<Vector3>& p_vertices);
+	static Vector<Vector3> obstacle_get_vertices(RID p_obstacle);
+
+	static void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
+	static uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
+
+	/* PATH QUERY & UTILITIES */
+
+	static void query_path(const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
+		Ref<NavigationPathQueryResult3D> p_query_result);
+	static Vector<Vector3> simplify_path(const Vector<Vector3>& p_path, real_t p_epsilon);
+
+	/* DEBUG API */
+
+	static void set_debug_enabled(bool p_enabled);
+	static bool get_debug_enabled();
+
+#ifdef DEBUG_ENABLED
+	static void set_debug_navigation_enabled(bool p_enabled);
+	static bool get_debug_navigation_enabled();
+
+	static void set_debug_avoidance_enabled(bool p_enabled);
+	static bool get_debug_avoidance_enabled();
+
+	static void set_debug_navigation_edge_connection_color(const Color& p_color);
+	static Color get_debug_navigation_edge_connection_color();
+
+	static void set_debug_navigation_geometry_edge_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_color();
+
+	static void set_debug_navigation_geometry_face_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_color();
+
+	static void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_edge_disabled_color();
+
+	static void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_geometry_face_disabled_color();
+
+	static void set_debug_navigation_link_connection_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_color();
+
+	static void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
+	static Color get_debug_navigation_link_connection_disabled_color();
+
+	static void set_debug_navigation_agent_path_color(const Color& p_color);
+	static Color get_debug_navigation_agent_path_color();
+
+	static void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_agents_radius_color();
+
+	static void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
+	static Color get_debug_navigation_avoidance_obstacles_radius_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
+
+	static void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+		const Color& p_color);
+	static Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
+
+	static void set_debug_navigation_enable_edge_connections(bool p_value);
+	static bool get_debug_navigation_enable_edge_connections();
+
+	static void set_debug_navigation_enable_edge_connections_xray(bool p_value);
+	static bool get_debug_navigation_enable_edge_connections_xray();
+
+	static void set_debug_navigation_enable_edge_lines(bool p_value);
+	static bool get_debug_navigation_enable_edge_lines();
+
+	static void set_debug_navigation_enable_edge_lines_xray(bool p_value);
+	static bool get_debug_navigation_enable_edge_lines_xray();
+
+	static void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
+	static bool get_debug_navigation_enable_geometry_face_random_color();
+
+	static void set_debug_navigation_enable_link_connections(bool p_value);
+	static bool get_debug_navigation_enable_link_connections();
+
+	static void set_debug_navigation_enable_link_connections_xray(bool p_value);
+	static bool get_debug_navigation_enable_link_connections_xray();
+
+	static void set_debug_navigation_enable_agent_paths(bool p_value);
+	static bool get_debug_navigation_enable_agent_paths();
+
+	static void set_debug_navigation_enable_agent_paths_xray(bool p_value);
+	static bool get_debug_navigation_enable_agent_paths_xray();
+
+	static void set_debug_navigation_agent_path_point_size(real_t p_point_size);
+	static real_t get_debug_navigation_agent_path_point_size();
+
+	static void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_agents_radius();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_radius();
+
+	static void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
+	static bool get_debug_navigation_avoidance_enable_obstacles_static();
+
+	static Ref<StandardMaterial3D> get_debug_navigation_geometry_face_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_geometry_face_disabled_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_disabled_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_edge_connections_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_link_connections_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_link_connections_disabled_material();
+
+	static Ref<StandardMaterial3D> get_debug_navigation_agent_path_line_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_agent_path_point_material();
+
+	static Ref<StandardMaterial3D> get_debug_navigation_avoidance_agents_radius_material();
+	static Ref<StandardMaterial3D> get_debug_navigation_avoidance_obstacles_radius_material();
+
+	static Ref<StandardMaterial3D>
+	get_debug_navigation_avoidance_static_obstacle_pushin_face_material();
+	static Ref<StandardMaterial3D>
+	get_debug_navigation_avoidance_static_obstacle_pushout_face_material();
+	static Ref<StandardMaterial3D>
+	get_debug_navigation_avoidance_static_obstacle_pushin_edge_material();
+	static Ref<StandardMaterial3D>
+	get_debug_navigation_avoidance_static_obstacle_pushout_edge_material();
+#endif // DEBUG_ENABLED
+
+	/* LIFECYCLE DISALLOWANCE */
+
+	NavigationServer3D() = delete;
+	NavigationServer3D(const NavigationServer3D&) = delete;
+	NavigationServer3D& operator=(const NavigationServer3D&) = delete;
+	~NavigationServer3D() = delete;
+};
+// --- End servers/navigation_3d/navigation_server_3d.h ---
+// --- End servers/physics_3d/physics_server_3d.h ---
 
 class ArrayMesh;
 class NavigationMeshSourceGeometryData3D;
@@ -9468,7 +21360,7 @@ private:
 };
 
 // --- Folded from scene/3d/path_3d.h ---
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class ArrayMesh;
 
@@ -9677,8 +21569,8 @@ public:
 
 // --- Folded from scene/3d/visual_instance_3d.h ---
 
-#include "scene/resources/material.h"
-#include "scene/resources/texture.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class TriangleMesh;
 
@@ -9901,7 +21793,7 @@ public:
 // --- Folded from scene/3d/label_3d.h ---
 
 #include "scene/resources/theme.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 
 class Label3D : public Node3D
@@ -10281,9 +22173,9 @@ public:
 
 // --- Folded from scene/3d/sprite_3d.h ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 // --- Folded from scene/resources/sprite_frames.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 static const float SPRITE_FRAME_MINIMUM_DURATION = 0.01;
 
@@ -10802,8 +22694,7 @@ public:
 // --- End scene/3d/light_3d.h ---
 
 // --- Folded from scene/3d/lightmapper.h ---
-#include "core/io/image.h"
-#include "core/templates/hash_set.h"
+#include "core/io/resource_loader.h"
 #include "core/types.h"
 
 class Image;
@@ -10990,8 +22881,8 @@ public:
 // --- Folded from scene/3d/multimesh_instance_3d.h ---
 
 // --- Inlined/Folded from scene/resources/multimesh.h ---
-#include "scene/resources/mesh.h"
-#include "scene/resources/texture.h"
+
+#include "servers/display/display_server.h"
 
 class MultiMesh : public Resource
 {
@@ -11263,7 +23154,6 @@ public:
 
 
 // --- End scene/3d/velocity_tracker_3d.h ---
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 class Camera3D : public Node3D
@@ -11489,7 +23379,7 @@ protected:
 // --- End scene/3d/audio_listener_3d.h ---
 
 // --- Folded from scene/3d/audio_stream_player_3d.h ---
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include "servers/display/display_server.h"
 
@@ -11681,7 +23571,7 @@ public:
 
 // --- Folded from scene/3d/world_environment.h ---
 #include "scene/main/node.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class WorldEnvironment : public Node
 {
@@ -11718,7 +23608,7 @@ public:
 #include "core/types.h"
 
 // --- Inlined/Folded from scene/resources/3d/skin.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 class Skin : public Resource
 {
@@ -12187,7 +24077,7 @@ public:
 
 // --- Folded from scene/3d/bone_constraint_3d.h ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class BoneConstraint3D : public SkeletonModifier3D {
 public:
@@ -12507,10 +24397,10 @@ public:
 // --- End scene/3d/bone_constraint_3d.h ---
 
 // --- Folded from scene/resources/3d/joint_limitation_3d.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 #ifdef TOOLS_ENABLED
-#include "scene/resources/mesh.h"
+
 #endif // TOOLS_ENABLED
 
 class JointLimitation3D : public Resource
@@ -12538,11 +24428,11 @@ public:
 // --- End scene/resources/3d/joint_limitation_3d.h ---
 
 // --- Folded from scene/3d/physics/collision_object_3d.h ---
-#include "core/templates/local_vector.h"
-#include "core/templates/hash_map.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
 
-#include "scene/resources/mesh.h"
-#include "servers/physics_3d/physics_server_3d.h"
+
+
 
 // Plain non-virtual composed component for 3D collision state (shared by PhysicsBody3D and Area3D).
 // Supports both inline ShapeSlots directly on the body/area and child CollisionShape3D/CollisionPolygon3D owners.
@@ -12657,7 +24547,7 @@ struct CollisionState3D {
 };
 
 // --- Folded from scene/3d/physics/kinematic_collision_3d.h ---
-#include "servers/physics_3d/physics_server_3d.h"
+
 
 class KinematicCollision3D : public RefCounted
 {
@@ -12687,8 +24577,8 @@ public:
 // --- Folded from scene/3d/physics/physics_body_3d.h ---
 
 
-#include "scene/resources/material.h"
-#include "servers/physics_3d/physics_server_3d.h"
+#include "servers/rendering/renderer.h"
+
 
 class PhysicsBody3D;
 class PhysicalBoneSimulator3D;
@@ -13378,7 +25268,7 @@ public:
 // --- End scene/3d/physics/physical_bone_simulator_3d.h ---
 
 // --- Folded from scene/3d/physics/area_3d.h ---
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 
 class Area3D : public Node3D {
@@ -13544,7 +25434,7 @@ public:
 
 // --- Folded from scene/3d/physics/collision_shape_3d.h ---
 
-#include "scene/resources/mesh.h"
+
 
 class CollisionShape3D : public Node3D {
 	Ref<Shape3D> shape;
@@ -13700,11 +25590,11 @@ public:
 };
 
 // --- Folded from scene/3d/mesh_instance_3d.h ---
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+
 
 #ifndef NAVIGATION_3D_DISABLED
 class NavigationMesh;
@@ -13830,3 +25720,15000 @@ public:
 // --- End scene/3d/mesh_instance_3d.h ---
 // --- End scene/3d/skeleton_3d.h ---
 // --- End scene/3d/node_3d.h ---
+
+// --- Folded from scene/main/window.h ---
+// --- Folded from scene/main/viewport.h ---
+#include "scene/main/node.h"
+#include "servers/display/display_server.h"
+
+class AudioListener2D;
+class Camera2D;
+class CanvasItem;
+class CanvasLayer;
+class Control;
+class Label;
+class SceneTreeTimer;
+class Viewport;
+class Window;
+class World2D;
+
+#ifndef _3D_DISABLED
+class AudioListener3D;
+class Camera3D;
+class Node3D;
+class World3D;
+#endif // _3D_DISABLED
+
+class ViewportTexture final : public Texture2D
+{
+	NodePath path;
+
+	friend class Viewport;
+	Viewport* vp = nullptr;
+	bool vp_pending = false;
+	bool vp_changed = false;
+
+	void _setup_local_to_scene(const Node* p_loc_scene);
+	void _err_print_viewport_not_set() const;
+
+	mutable RID proxy_ph;
+	mutable RID proxy;
+
+protected:
+
+	virtual void reset_local_to_scene() override;
+
+public:
+	void set_viewport_path_in_scene(const NodePath& p_path);
+	NodePath get_viewport_path_in_scene() const;
+
+	virtual void setup_local_to_scene() override;
+
+	virtual int get_width() const override;
+	virtual int get_height() const override;
+	virtual Size2 get_size() const override;
+	virtual RID get_rid() const override;
+
+	virtual bool has_alpha() const override;
+
+	virtual Ref<Image> get_image() const override;
+
+	ViewportTexture();
+	~ViewportTexture();
+};
+
+class Viewport : public Node
+{
+public:
+	enum Scaling3DMode
+	{
+		SCALING_3D_MODE_BILINEAR,
+		SCALING_3D_MODE_FSR,
+		SCALING_3D_MODE_FSR2,
+		SCALING_3D_MODE_METALFX_SPATIAL,
+		SCALING_3D_MODE_METALFX_TEMPORAL,
+		SCALING_3D_MODE_NEAREST,
+		SCALING_3D_MODE_MAX
+	};
+
+	enum PositionalShadowAtlasQuadrantSubdiv
+	{
+		SHADOW_ATLAS_QUADRANT_SUBDIV_DISABLED,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_1,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_4,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_16,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_64,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_256,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_1024,
+		SHADOW_ATLAS_QUADRANT_SUBDIV_MAX,
+	};
+
+	enum MSAA
+	{
+		MSAA_DISABLED,
+		MSAA_2X,
+		MSAA_4X,
+		MSAA_8X,
+		// 16x MSAA is not supported due to its high cost and driver bugs.
+		MSAA_MAX
+	};
+
+	enum AnisotropicFiltering
+	{
+		ANISOTROPY_DISABLED,
+		ANISOTROPY_2X,
+		ANISOTROPY_4X,
+		ANISOTROPY_8X,
+		ANISOTROPY_16X,
+		ANISOTROPY_MAX
+	};
+
+	enum ScreenSpaceAA
+	{
+		SCREEN_SPACE_AA_DISABLED,
+		SCREEN_SPACE_AA_FXAA,
+		SCREEN_SPACE_AA_SMAA,
+		SCREEN_SPACE_AA_MAX
+	};
+
+	enum RenderInfo
+	{
+		RENDER_INFO_OBJECTS_IN_FRAME,
+		RENDER_INFO_PRIMITIVES_IN_FRAME,
+		RENDER_INFO_DRAW_CALLS_IN_FRAME,
+		RENDER_INFO_MAX
+	};
+
+	enum RenderInfoType
+	{
+		RENDER_INFO_TYPE_VISIBLE,
+		RENDER_INFO_TYPE_SHADOW,
+		RENDER_INFO_TYPE_CANVAS,
+		RENDER_INFO_TYPE_MAX
+	};
+
+	enum DebugDraw
+	{
+		DEBUG_DRAW_DISABLED,
+		DEBUG_DRAW_UNSHADED,
+		DEBUG_DRAW_LIGHTING,
+		DEBUG_DRAW_OVERDRAW,
+		DEBUG_DRAW_WIREFRAME,
+		DEBUG_DRAW_NORMAL_BUFFER,
+		DEBUG_DRAW_VOXEL_GI_ALBEDO,
+		DEBUG_DRAW_VOXEL_GI_LIGHTING,
+		DEBUG_DRAW_VOXEL_GI_EMISSION,
+		DEBUG_DRAW_SHADOW_ATLAS,
+		DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS,
+		DEBUG_DRAW_SCENE_LUMINANCE,
+		DEBUG_DRAW_SSAO,
+		DEBUG_DRAW_SSIL,
+		DEBUG_DRAW_PSSM_SPLITS,
+		DEBUG_DRAW_DECAL_ATLAS,
+		DEBUG_DRAW_SDFGI,
+		DEBUG_DRAW_SDFGI_PROBES,
+		DEBUG_DRAW_GI_BUFFER,
+		DEBUG_DRAW_DISABLE_LOD,
+		DEBUG_DRAW_CLUSTER_OMNI_LIGHTS,
+		DEBUG_DRAW_CLUSTER_SPOT_LIGHTS,
+		DEBUG_DRAW_CLUSTER_DECALS,
+		DEBUG_DRAW_CLUSTER_REFLECTION_PROBES,
+		DEBUG_DRAW_OCCLUDERS,
+		DEBUG_DRAW_MOTION_VECTORS,
+		DEBUG_DRAW_INTERNAL_BUFFER,
+		DEBUG_DRAW_CLUSTER_AREA_LIGHTS,
+		DEBUG_DRAW_AREA_LIGHT_ATLAS,
+	};
+
+	enum DefaultCanvasItemTextureFilter
+	{
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR,
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_PARENT_NODE,
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_MAX
+	};
+
+	enum DefaultCanvasItemTextureRepeat
+	{
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_DISABLED,
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_ENABLED,
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_MIRROR,
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_PARENT_NODE,
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_MAX,
+	};
+
+	enum SDFOversize
+	{
+		SDF_OVERSIZE_100_PERCENT,
+		SDF_OVERSIZE_120_PERCENT,
+		SDF_OVERSIZE_150_PERCENT,
+		SDF_OVERSIZE_200_PERCENT,
+		SDF_OVERSIZE_MAX
+	};
+
+	enum SDFScale
+	{
+		SDF_SCALE_100_PERCENT,
+		SDF_SCALE_50_PERCENT,
+		SDF_SCALE_25_PERCENT,
+		SDF_SCALE_MAX
+	};
+
+	enum
+	{
+		SUBWINDOW_CANVAS_LAYER = 1024
+	};
+
+	enum VRSMode
+	{
+		VRS_DISABLED,
+		VRS_TEXTURE,
+		VRS_XR,
+		VRS_MAX
+	};
+
+	enum VRSUpdateMode
+	{
+		VRS_UPDATE_DISABLED,
+		VRS_UPDATE_ONCE,
+		VRS_UPDATE_ALWAYS,
+		VRS_UPDATE_MAX
+	};
+
+private:
+	friend class ViewportTexture;
+
+	Viewport* parent = nullptr;
+	Viewport* gui_parent = nullptr; // Whose gui.tooltip_popup it is.
+
+	HashSet<CanvasLayer*> canvas_layers;
+
+	bool use_font_oversampling = true;
+	float font_oversampling = 1.0;
+	float font_oversampling_override = 0.0;
+
+	RID viewport;
+	RID current_canvas;
+	RID subwindow_canvas;
+
+	Transform2D canvas_transform;
+	Transform2D global_canvas_transform;
+	Transform2D stretch_transform;
+
+	Size2i size = Size2i(512, 512);
+	int view_count = 1;
+	Size2 size_2d_override;
+	bool size_allocated = false;
+
+	RID contact_2d_debug;
+	RID contact_3d_debug_multimesh;
+	RID contact_3d_debug_instance;
+
+	bool transparent_bg = false;
+	bool use_hdr_2d = false;
+
+	bool snap_controls_to_pixels = true;
+	bool snap_2d_transforms_to_pixel = false;
+	bool snap_2d_vertices_to_pixel = false;
+
+#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+	bool physics_object_picking = false;
+	bool physics_object_picking_sort = false;
+	bool physics_object_picking_first_only = false;
+	List<InputEvent> physics_picking_events;
+	Transform3D physics_last_object_transform;
+	Transform3D physics_last_camera_transform;
+#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+
+	bool handle_input_locally = true;
+	bool local_input_handled = false;
+	bool propagate_shortcuts_to_parent = false;
+	bool shortcut_use_focus_owner = true;
+
+	Ref<World2D> world_2d;
+
+	String input_group;
+	String shortcut_input_group;
+	String unhandled_input_group;
+	String unhandled_key_input_group;
+
+	void _update_audio_listener_2d();
+
+	bool disable_3d = false;
+
+	static void _propagate_drag_notification(Node* p_node, int p_what);
+
+	void _update_global_transform();
+
+	RID texture_rid;
+
+	DebugDraw debug_draw = DEBUG_DRAW_DISABLED;
+
+	int positional_shadow_atlas_size = 2048;
+	bool positional_shadow_atlas_16_bits = true;
+	PositionalShadowAtlasQuadrantSubdiv positional_shadow_atlas_quadrant_subdiv[4];
+
+	MSAA msaa_2d = MSAA_DISABLED;
+	MSAA msaa_3d = MSAA_DISABLED;
+	ScreenSpaceAA screen_space_aa = SCREEN_SPACE_AA_DISABLED;
+	bool use_taa = false;
+
+	Scaling3DMode scaling_3d_mode = SCALING_3D_MODE_BILINEAR;
+	float scaling_3d_scale = 1.0;
+	float fsr_sharpness = 0.2f;
+	float texture_mipmap_bias = 0.0f;
+	AnisotropicFiltering anisotropic_filtering_level = ANISOTROPY_4X;
+	bool use_debanding = false;
+	float mesh_lod_threshold = 1.0;
+	bool use_occlusion_culling = false;
+
+	Ref<ViewportTexture> default_texture;
+	HashSet<ViewportTexture*> viewport_textures;
+
+	void _update_viewport_path();
+
+	bool _can_hide_focus_state();
+	void _on_settings_changed();
+
+	SDFOversize sdf_oversize = SDF_OVERSIZE_120_PERCENT;
+	SDFScale sdf_scale = SDF_SCALE_50_PERCENT;
+
+	uint32_t canvas_cull_mask = 0xffffffff; // by default show everything
+
+	enum SubWindowDrag
+	{
+		SUB_WINDOW_DRAG_DISABLED,
+		SUB_WINDOW_DRAG_MOVE,
+		SUB_WINDOW_DRAG_CLOSE,
+		SUB_WINDOW_DRAG_RESIZE,
+	};
+
+	enum SubWindowResize
+	{
+		SUB_WINDOW_RESIZE_DISABLED,
+		SUB_WINDOW_RESIZE_TOP_LEFT,
+		SUB_WINDOW_RESIZE_TOP,
+		SUB_WINDOW_RESIZE_TOP_RIGHT,
+		SUB_WINDOW_RESIZE_LEFT,
+		SUB_WINDOW_RESIZE_RIGHT,
+		SUB_WINDOW_RESIZE_BOTTOM_LEFT,
+		SUB_WINDOW_RESIZE_BOTTOM,
+		SUB_WINDOW_RESIZE_BOTTOM_RIGHT,
+		SUB_WINDOW_RESIZE_MAX
+	};
+
+	struct SubWindow
+	{
+		Window* window = nullptr;
+		RID canvas_item;
+		Rect2i parent_safe_rect;
+		bool pending_window_update = false;
+	};
+
+	// VRS
+	VRSMode vrs_mode = VRS_DISABLED;
+	VRSUpdateMode vrs_update_mode = VRS_UPDATE_ONCE;
+	Ref<Texture2D> vrs_texture;
+
+	struct GUI
+	{
+		bool mouse_in_viewport = false;
+		Control* mouse_focus = nullptr;
+		Control* mouse_click_grabber = nullptr;
+		uint32_t mouse_focus_mask = 0;
+		Control* key_focus = nullptr;
+		bool hide_focus = false;
+		bool sending_mouse_enter_exit_notifications = false;
+		Window* subwindow_over = nullptr; // mouse_over and subwindow_over are mutually exclusive.
+										  // At all times at least one of them is nullptr.
+		Window* windowmanager_window_over = nullptr; // Only used in root Viewport.
+		Control* drag_mouse_over = nullptr;
+		Control* tooltip_control = nullptr;
+		Window* tooltip_popup = nullptr;
+		Label* tooltip_label = nullptr;
+		String tooltip_text;
+		Point2 tooltip_pos;
+		Point2 last_mouse_pos;
+		Point2 drag_accum;
+		bool drag_attempted = false;
+		// a SubViewportContainer.
+		String drag_description;
+		Ref<SceneTreeTimer> tooltip_timer;
+		double tooltip_delay = 0.0;
+		bool roots_order_dirty = false;
+		List<Control*> roots;
+		int canvas_sort_index = 0; // for sorting items with canvas as root
+		bool dragging =
+			false; // Is true in the viewport in which dragging started while dragging is active.
+		bool global_dragging =
+			false; // Is true while dragging is active. Only used in root-Viewport and SubViewports
+				   // that are not children of a SubViewportContainer.
+		bool drag_successful = false;
+		Control* target_control = nullptr; // Control that the mouse is over in the innermost nested
+										   // Viewport. Only used in root-Viewport and SubViewports,
+										   // that are not children of a SubViewportContainer.
+		bool embed_subwindows_hint = false;
+		int drag_threshold = 10;
+
+		Window* subwindow_focused = nullptr;
+		Window* currently_dragged_subwindow = nullptr;
+		SubWindowDrag subwindow_drag = SUB_WINDOW_DRAG_DISABLED;
+		Vector2 subwindow_drag_from;
+		Vector2 subwindow_drag_pos;
+		Rect2i subwindow_drag_close_rect;
+		bool subwindow_drag_close_inside = false;
+		SubWindowResize subwindow_resize_mode;
+		Rect2i subwindow_resize_from_rect;
+
+		Vector<SubWindow> sub_windows; // Don't obtain references or pointers to the elements, as
+									   // their location can change.
+	} gui;
+
+	DefaultCanvasItemTextureFilter default_canvas_item_texture_filter =
+		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
+	mutable RenderingServerEnums::CanvasItemTextureFilter default_canvas_item_texture_filter_cache =
+		RenderingServerEnums::CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
+	void _refresh_texture_filter_cache() const;
+
+	DefaultCanvasItemTextureRepeat default_canvas_item_texture_repeat =
+		DEFAULT_CANVAS_ITEM_TEXTURE_REPEAT_DISABLED;
+	mutable RenderingServerEnums::CanvasItemTextureRepeat default_canvas_item_texture_repeat_cache =
+		RenderingServerEnums::CANVAS_ITEM_TEXTURE_REPEAT_DISABLED;
+	void _refresh_texture_repeat_cache() const;
+
+	bool disable_input = false;
+	bool disable_input_override = false;
+
+	void _gui_call_input(Control* p_control, const InputEvent& p_input);
+	void _gui_call_notification(Control* p_control, int p_what);
+
+	void _gui_sort_roots();
+	Control* _gui_find_control_at_pos(
+		CanvasItem* p_node, const Point2& p_global, const Transform2D& p_xform);
+
+	void _gui_input_event(InputEvent p_event);
+	void _perform_drop(Control* p_control = nullptr);
+	void _gui_cleanup_internal_state(InputEvent p_event);
+
+	void _push_shortcut_input_internal(const InputEvent& p_event);
+	void _push_unhandled_input_internal(const InputEvent& p_event);
+
+	InputEvent _make_input_local(const InputEvent& ev);
+
+	friend class Control;
+
+	List<Control*>::Element* _gui_add_root_control(Control* p_control);
+
+	void _gui_remove_root_control(List<Control*>::Element* RI);
+
+	String _gui_get_tooltip(
+		Control* p_control, const Vector2& p_pos, Control** r_tooltip_owner = nullptr);
+	void _gui_cancel_tooltip();
+	void _gui_show_tooltip();
+	void _gui_show_tooltip_at(const Point2i& p_pos);
+
+	void _gui_remove_control(Control* p_control);
+	void _gui_hide_control(Control* p_control);
+	void _gui_update_mouse_over();
+
+	void _gui_force_drag_start();
+	void _gui_force_drag_cancel();
+	void _gui_set_drag_preview(Control* p_base, Control* p_control);
+	Control* _gui_get_drag_preview();
+
+	void _gui_remove_focus_for_window(Node* p_window);
+	void _gui_unfocus_control(Control* p_control);
+	bool _gui_control_has_focus(const Control* p_control, bool p_ignore_hidden_focus = false);
+	void _gui_control_grab_focus(Control* p_control, bool p_hide_focus = false);
+	void _gui_grab_click_focus(Control* p_control);
+	void _post_gui_grab_click_focus();
+	void _gui_accept_event();
+
+	bool _gui_drop(Control* p_at_control, Point2 p_at_pos, bool p_just_check);
+
+	friend class CanvasLayer;
+	void _canvas_layer_add(CanvasLayer* p_canvas_layer);
+	void _canvas_layer_remove(CanvasLayer* p_canvas_layer);
+
+	void _drop_mouse_over(Control* p_until_control = nullptr);
+	void _drop_mouse_focus();
+	void _drop_physics_mouseover(bool p_paused_only = false);
+
+	void _update_canvas_items(Node* p_node);
+
+	friend class Window;
+
+	void _sub_window_update_order();
+	void _sub_window_register(Window* p_window);
+	void _sub_window_update(Window* p_window);
+	void _sub_window_grab_focus(Window* p_window);
+	void _sub_window_remove(Window* p_window);
+	int _sub_window_find(Window* p_window) const;
+	bool _sub_windows_forward_input(const InputEvent& p_event);
+	SubWindowResize _sub_window_get_resize_margin(Window* p_subwindow, const Point2& p_point);
+
+	void _update_mouse_over(const InputEvent& p_mm);
+	virtual void _update_mouse_over(Vector2 p_pos);
+	virtual void _mouse_leave_viewport();
+
+	virtual bool _can_consume_input_events() const { return true; }
+
+	uint64_t event_count = 0;
+
+	void _process_dirty_canvas_parent_orders();
+	void _propagate_world_2d_changed(Node* p_node);
+
+	void _window_start_drag(Window* p_window);
+	void _window_start_resize(SubWindowResize p_edge, Window* p_window);
+
+protected:
+	bool _set_size(const Size2i& p_size, const int p_view_count, const Size2& p_size_2d_override,
+		bool p_allocated);
+	void _check_xr_size();
+
+	Size2i _get_size() const;
+	Size2 _get_size_2d_override() const;
+	int _get_view_count() const;
+	bool _is_size_allocated() const;
+
+	void _notification(int p_what);
+#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+	void _process_picking();
+#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+#ifndef DISABLE_DEPRECATED
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	void canvas_parent_mark_dirty(Node* p_node);
+	void canvas_item_top_level_changed();
+
+	uint64_t get_processed_events_count() const { return event_count; }
+
+	void cancel_tooltip();
+	void show_tooltip(Control* p_control);
+
+	void update_canvas_items();
+
+	Rect2 get_visible_rect() const;
+	RID get_viewport_rid() const;
+
+	void set_world_2d(const Ref<World2D>& p_world_2d);
+	Ref<World2D> get_world_2d() const;
+	Ref<World2D> find_world_2d() const;
+
+	void set_canvas_transform(const Transform2D& p_transform);
+	Transform2D get_canvas_transform() const;
+
+	void set_global_canvas_transform(const Transform2D& p_transform);
+	Transform2D get_global_canvas_transform() const;
+
+	Transform2D get_stretch_transform() const;
+	virtual Transform2D get_final_transform() const;
+
+	void gui_set_root_order_dirty();
+
+	void set_transparent_background(bool p_enable);
+	bool has_transparent_background() const;
+
+	void set_use_hdr_2d(bool p_enable);
+	bool is_using_hdr_2d() const;
+
+	Ref<ViewportTexture> get_texture() const;
+
+	void set_positional_shadow_atlas_size(int p_size);
+	int get_positional_shadow_atlas_size() const;
+
+	void set_positional_shadow_atlas_16_bits(bool p_16_bits);
+	bool get_positional_shadow_atlas_16_bits() const;
+
+	void set_positional_shadow_atlas_quadrant_subdiv(
+		int p_quadrant, PositionalShadowAtlasQuadrantSubdiv p_subdiv);
+	PositionalShadowAtlasQuadrantSubdiv get_positional_shadow_atlas_quadrant_subdiv(
+		int p_quadrant) const;
+
+	void set_msaa_2d(MSAA p_msaa);
+	MSAA get_msaa_2d() const;
+
+	void set_msaa_3d(MSAA p_msaa);
+	MSAA get_msaa_3d() const;
+
+	void set_screen_space_aa(ScreenSpaceAA p_screen_space_aa);
+	ScreenSpaceAA get_screen_space_aa() const;
+
+	void set_use_taa(bool p_use_taa);
+	bool is_using_taa() const;
+
+	void set_use_oversampling(bool p_oversampling);
+	bool is_using_oversampling() const;
+
+	void set_oversampling_override(float p_oversampling);
+	float get_oversampling_override() const;
+
+	float get_oversampling() const { return font_oversampling; }
+
+	void set_scaling_3d_mode(Scaling3DMode p_scaling_3d_mode);
+	Scaling3DMode get_scaling_3d_mode() const;
+
+	void set_scaling_3d_scale(float p_scaling_3d_scale);
+	float get_scaling_3d_scale() const;
+
+	void set_fsr_sharpness(float p_fsr_sharpness);
+	float get_fsr_sharpness() const;
+
+	void set_texture_mipmap_bias(float p_texture_mipmap_bias);
+	float get_texture_mipmap_bias() const;
+
+	void set_anisotropic_filtering_level(AnisotropicFiltering p_anisotropic_filtering_level);
+	AnisotropicFiltering get_anisotropic_filtering_level() const;
+
+	void set_use_debanding(bool p_use_debanding);
+	bool is_using_debanding() const;
+
+	void set_mesh_lod_threshold(float p_pixels);
+	float get_mesh_lod_threshold() const;
+
+	void set_use_occlusion_culling(bool p_us_occlusion_culling);
+	bool is_using_occlusion_culling() const;
+
+	Vector2 get_camera_coords(const Vector2& p_viewport_coords) const;
+	Vector2 get_camera_rect_size() const;
+
+	void _push_text_input(const String& p_text, bool p_emit_text_changed_signal = false);
+	void push_text_input(const String& p_text);
+	void push_input(const InputEvent& p_event, bool p_local_coords = false);
+#ifndef DISABLE_DEPRECATED
+	void push_unhandled_input(const InputEvent& p_event, bool p_local_coords = false);
+#endif // DISABLE_DEPRECATED
+	void notify_mouse_entered();
+	void notify_mouse_exited();
+
+	void set_disable_input(bool p_disable);
+	bool is_input_disabled() const;
+
+	void set_disable_input_override(bool p_disable);
+
+	Vector2 get_mouse_position() const;
+	void warp_mouse(const Vector2& p_position);
+	Point2 wrap_mouse_in_rect(const Vector2& p_relative, const Rect2& p_rect);
+	virtual void update_mouse_cursor_state();
+
+#if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+	void set_physics_object_picking(bool p_enable);
+	bool get_physics_object_picking();
+	void set_physics_object_picking_sort(bool p_enable);
+	bool get_physics_object_picking_sort();
+	void set_physics_object_picking_first_only(bool p_enable);
+	bool get_physics_object_picking_first_only();
+#endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
+
+	String gui_get_drag_description() const;
+	void gui_set_drag_description(const String& p_description);
+
+	void gui_reset_canvas_sort_index();
+	int gui_get_canvas_sort_index();
+
+	void gui_release_focus();
+	Control* gui_get_focus_owner() const;
+	Control* gui_get_hovered_control() const;
+
+	Window* get_focused_subwindow() const { return gui.subwindow_focused; }
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	void set_debug_draw(DebugDraw p_debug_draw);
+	DebugDraw get_debug_draw() const;
+
+	int get_render_info(RenderInfoType p_type, RenderInfo p_info);
+
+	void set_snap_controls_to_pixels(bool p_enable);
+	bool is_snap_controls_to_pixels_enabled() const;
+
+	void set_snap_2d_transforms_to_pixel(bool p_enable);
+	bool is_snap_2d_transforms_to_pixel_enabled() const;
+
+	void set_snap_2d_vertices_to_pixel(bool p_enable);
+	bool is_snap_2d_vertices_to_pixel_enabled() const;
+
+	void set_input_as_handled();
+	bool is_input_handled() const;
+
+	void set_handle_input_locally(bool p_enable);
+	bool is_handling_input_locally() const;
+
+	void set_propagate_shortcuts_to_parent(bool p_enable);
+	bool gui_shortcut_use_focus_owner() const;
+
+	bool gui_is_dragging() const;
+	bool gui_is_drag_successful() const;
+	void gui_cancel_drag();
+	void gui_perform_drop_at(const Point2& p_pos, Control* p_control = nullptr);
+
+	Control* gui_find_control(const Point2& p_global);
+
+	void set_sdf_oversize(SDFOversize p_sdf_oversize);
+	SDFOversize get_sdf_oversize() const;
+
+	void set_sdf_scale(SDFScale p_sdf_scale);
+	SDFScale get_sdf_scale() const;
+
+	void set_default_canvas_item_texture_filter(DefaultCanvasItemTextureFilter p_filter);
+	DefaultCanvasItemTextureFilter get_default_canvas_item_texture_filter() const;
+
+	void _update_texture_filter_changed(bool p_propagate);
+	RenderingServerEnums::CanvasItemTextureFilter get_texture_filter_in_tree() const;
+
+	void set_default_canvas_item_texture_repeat(DefaultCanvasItemTextureRepeat p_repeat);
+	DefaultCanvasItemTextureRepeat get_default_canvas_item_texture_repeat() const;
+
+	void _update_texture_repeat_changed(bool p_propagate);
+	RenderingServerEnums::CanvasItemTextureRepeat get_texture_repeat_in_tree() const;
+
+	// VRS
+
+	void set_vrs_mode(VRSMode p_vrs_mode);
+	VRSMode get_vrs_mode() const;
+
+	void set_vrs_update_mode(VRSUpdateMode p_vrs_update_mode);
+	VRSUpdateMode get_vrs_update_mode() const;
+
+	void set_vrs_texture(Ref<Texture2D> p_texture);
+	Ref<Texture2D> get_vrs_texture() const;
+
+	virtual DisplayServerEnums::WindowID get_window_id() const = 0;
+
+	void set_embedding_subwindows(bool p_embed);
+	bool is_embedding_subwindows() const;
+	void subwindow_set_popup_safe_rect(Window* p_window, const Rect2i& p_rect);
+	Rect2i subwindow_get_popup_safe_rect(Window* p_window) const;
+
+	void set_drag_threshold(int p_threshold);
+	int get_drag_threshold() const;
+
+	Viewport* get_parent_viewport() const;
+	Window* get_base_window();
+
+	void set_canvas_cull_mask(uint32_t p_layers);
+	uint32_t get_canvas_cull_mask() const;
+
+	void set_canvas_cull_mask_bit(uint32_t p_layer, bool p_enable);
+	bool get_canvas_cull_mask_bit(uint32_t p_layer) const;
+
+#ifdef TOOLS_ENABLED
+	bool is_visible_subviewport() const;
+#endif // TOOLS_ENABLED
+
+	virtual bool is_size_2d_override_stretch_enabled() const { return true; }
+
+	Transform2D get_screen_transform() const;
+	virtual Transform2D get_screen_transform_internal(bool p_absolute_position = false) const;
+
+	virtual Transform2D get_popup_base_transform_native() const { return Transform2D(); }
+
+	virtual Transform2D get_popup_base_transform() const { return Transform2D(); }
+
+	virtual Viewport* get_section_root_viewport() const { return nullptr; }
+
+	virtual bool is_attached_in_viewport() const { return false; }
+
+	virtual bool is_sub_viewport() const { return false; }
+
+private:
+#if DEBUG_ENABLED
+	template <class T> class CameraOverride
+	{
+	private:
+		bool enabled = false;
+
+	public:
+		bool is_enabled() const;
+		void enable(Viewport* p_viewport, const T* p_current_camera);
+		void disable(T* p_current_camera);
+
+		void set_overridden_camera(const T* p_camera);
+		T* get_overridden_camera() const;
+	};
+#endif // DEBUG_ENABLED
+
+	// 2D audio, camera, and physics. (don't put World2D here because World2D is needed for Control
+	// nodes).
+	friend class AudioListener2D; // Needs _audio_listener_2d_set and _audio_listener_2d_remove
+	AudioListener2D* audio_listener_2d = nullptr;
+	void _audio_listener_2d_set(AudioListener2D* p_audio_listener);
+	void _audio_listener_2d_remove(AudioListener2D* p_audio_listener);
+	bool is_audio_listener_2d_enabled = false;
+	RID internal_audio_listener_2d;
+
+	friend class Camera2D; // Needs _camera_2d_set
+	Camera2D* camera_2d = nullptr;
+	void _camera_2d_set(Camera2D* p_camera_2d);
+#if DEBUG_ENABLED
+	CameraOverride<Camera2D> camera_2d_override;
+
+public:
+	void enable_camera_2d_override(bool p_enable);
+	bool is_camera_2d_override_enabled() const;
+	Camera2D* get_overridden_camera_2d() const;
+	Camera2D* get_override_camera_2d() const;
+#endif // DEBUG_ENABLED
+
+private:
+#ifndef PHYSICS_2D_DISABLED
+	// Collider to frame
+	// Collider & shape to frame
+	// Cleans up colliders corresponding to old frames or all of them.
+	void _cleanup_mouseover_colliders(
+		bool p_clean_all_frames, bool p_paused_only, uint64_t p_frame_reference = 0);
+#endif // PHYSICS_2D_DISABLED
+
+public:
+	AudioListener2D* get_audio_listener_2d() const;
+	void set_as_audio_listener_2d(bool p_enable);
+	bool is_audio_listener_2d() const;
+
+	Camera2D* get_camera_2d() const;
+	void assign_next_enabled_camera_2d(const String& p_camera_group);
+
+#ifndef _3D_DISABLED
+private:
+	// 3D audio, camera, physics, and world.
+#ifndef XR_DISABLED
+	bool use_xr = false;
+#endif // XR_DISABLED
+	friend class AudioListener3D;
+	AudioListener3D* audio_listener_3d = nullptr;
+	HashSet<AudioListener3D*> audio_listener_3d_set;
+	bool is_audio_listener_3d_enabled = false;
+	RID internal_audio_listener_3d;
+	void _update_audio_listener_3d();
+	void _listener_transform_3d_changed_notify();
+	void _audio_listener_3d_set(AudioListener3D* p_listener);
+	bool _audio_listener_3d_add(AudioListener3D* p_listener); // true if first
+	void _audio_listener_3d_remove(AudioListener3D* p_listener);
+	void _audio_listener_3d_make_next_current(AudioListener3D* p_exclude);
+
+#ifndef PHYSICS_3D_DISABLED
+	void _collision_object_3d_input_event(Node3D* p_object, Camera3D* p_camera,
+		const InputEvent& p_input_event, const Vector3& p_pos, const Vector3& p_normal,
+		int p_shape);
+#endif // PHYSICS_3D_DISABLED
+
+	friend class Camera3D;
+	Camera3D* camera_3d = nullptr;
+#if DEBUG_ENABLED
+	CameraOverride<Camera3D> camera_3d_override;
+#endif // DEBUG_ENABLED
+	HashSet<Camera3D*> camera_3d_set;
+	void _camera_3d_transform_changed_notify();
+	void _camera_3d_set(Camera3D* p_camera);
+	bool _camera_3d_add(Camera3D* p_camera); // true if first
+	void _camera_3d_remove(Camera3D* p_camera);
+	void _camera_3d_make_next_current(Camera3D* p_exclude);
+
+	Ref<World3D> world_3d;
+	Ref<World3D> own_world_3d;
+	void _own_world_3d_changed();
+	void _propagate_enter_world_3d(Node* p_node);
+	void _propagate_exit_world_3d(Node* p_node);
+
+public:
+	AudioListener3D* get_audio_listener_3d() const;
+	void set_as_audio_listener_3d(bool p_enable);
+	bool is_audio_listener_3d() const;
+
+	Camera3D* get_camera_3d() const;
+
+#if DEBUG_ENABLED
+	void enable_camera_3d_override(bool p_enable);
+	bool is_camera_3d_override_enabled() const;
+	Camera3D* get_overridden_camera_3d() const;
+	Camera3D* get_override_camera_3d() const;
+#endif // DEBUG_ENABLED
+
+	void set_disable_3d(bool p_disable);
+	bool is_3d_disabled() const;
+
+	void set_world_3d(const Ref<World3D>& p_world_3d);
+	Ref<World3D> get_world_3d() const;
+	Ref<World3D> find_world_3d() const;
+	void set_use_own_world_3d(bool p_use_own_world_3d);
+	bool is_using_own_world_3d() const;
+
+#ifndef XR_DISABLED
+	void set_use_xr(bool p_use_xr);
+	bool is_using_xr() const;
+
+#ifndef DISABLE_DEPRECATED
+	bool _is_using_xr_115799();
+#endif
+#endif // XR_DISABLED
+#endif // _3D_DISABLED
+
+	Viewport();
+	~Viewport();
+};
+
+class SubViewport : public Viewport
+{
+public:
+	enum ClearMode
+	{
+		CLEAR_MODE_ALWAYS,
+		CLEAR_MODE_NEVER,
+		CLEAR_MODE_ONCE
+	};
+
+	enum UpdateMode
+	{
+		UPDATE_DISABLED,
+		UPDATE_ONCE,		 // then goes to disabled
+		UPDATE_WHEN_VISIBLE, // default
+		UPDATE_WHEN_PARENT_VISIBLE,
+		UPDATE_ALWAYS
+	};
+
+private:
+	UpdateMode update_mode = UPDATE_WHEN_VISIBLE;
+	ClearMode clear_mode = CLEAR_MODE_ALWAYS;
+	bool size_2d_override_stretch = false;
+
+	void _internal_set_size(const Size2i& p_size, const int p_view_count = 1, bool p_force = false);
+
+protected:
+	virtual DisplayServerEnums::WindowID get_window_id() const override;
+	void _notification(int p_what);
+
+public:
+	void set_size(const Size2i& p_size);
+	Size2i get_size() const;
+	void set_size_force(const Size2i& p_size);
+
+	void set_view_count(const int p_view_count);
+	int get_view_count() const;
+
+	void set_size_2d_override(const Size2i& p_size);
+	Size2i get_size_2d_override() const;
+
+	void set_size_2d_override_stretch(bool p_enable);
+	bool is_size_2d_override_stretch_enabled() const override;
+
+	void set_update_mode(UpdateMode p_mode);
+	UpdateMode get_update_mode() const;
+
+	void set_clear_mode(ClearMode p_mode);
+	ClearMode get_clear_mode() const;
+
+	virtual Transform2D get_screen_transform_internal(
+		bool p_absolute_position = false) const override;
+	virtual Transform2D get_popup_base_transform() const override;
+	virtual Viewport* get_section_root_viewport() const override;
+	virtual bool is_attached_in_viewport() const override;
+
+	virtual bool is_sub_viewport() const override { return true; }
+
+	SubViewport();
+};
+
+// --- Folded from scene/resources/world_2d.h ---
+#include "core/types.h"
+
+#ifndef PHYSICS_2D_DISABLED
+
+#endif // PHYSICS_2D_DISABLED
+
+class VisibleOnScreenNotifier2D;
+class Viewport;
+struct SpatialIndexer2D;
+
+class World2D : public Resource
+{
+	RID canvas;
+#ifndef NAVIGATION_2D_DISABLED
+	mutable RID navigation_map;
+#endif // NAVIGATION_2D_DISABLED
+#ifndef PHYSICS_2D_DISABLED
+	mutable RID space;
+#endif // PHYSICS_2D_DISABLED
+
+	HashSet<Viewport*> viewports;
+
+protected:
+	friend class Viewport;
+
+public:
+	RID get_canvas() const;
+#ifndef NAVIGATION_2D_DISABLED
+	RID get_navigation_map() const;
+#endif // NAVIGATION_2D_DISABLED
+
+#ifndef PHYSICS_2D_DISABLED
+	RID get_space() const;
+	PhysicsDirectSpaceState2D* get_direct_space_state();
+#endif // PHYSICS_2D_DISABLED
+
+	void register_viewport(Viewport* p_viewport);
+	void remove_viewport(Viewport* p_viewport);
+
+	_FORCE_INLINE_ const HashSet<Viewport*>& get_viewports() { return viewports; }
+
+	World2D();
+	~World2D();
+};
+// --- End scene/main/viewport.h ---
+#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
+
+class Font;
+class StyleBox;
+class ThemeOwner;
+class ThemeContext;
+
+class Window : public Viewport
+{
+public:
+	// Keep synced with enum hint for `mode` property.
+	enum Mode
+	{
+		MODE_WINDOWED = DisplayServerEnums::WINDOW_MODE_WINDOWED,
+		MODE_MINIMIZED = DisplayServerEnums::WINDOW_MODE_MINIMIZED,
+		MODE_MAXIMIZED = DisplayServerEnums::WINDOW_MODE_MAXIMIZED,
+		MODE_FULLSCREEN = DisplayServerEnums::WINDOW_MODE_FULLSCREEN,
+		MODE_EXCLUSIVE_FULLSCREEN = DisplayServerEnums::WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
+	};
+
+	enum Flags
+	{
+		FLAG_RESIZE_DISABLED = DisplayServerEnums::WINDOW_FLAG_RESIZE_DISABLED,
+		FLAG_BORDERLESS = DisplayServerEnums::WINDOW_FLAG_BORDERLESS,
+		FLAG_ALWAYS_ON_TOP = DisplayServerEnums::WINDOW_FLAG_ALWAYS_ON_TOP,
+		FLAG_TRANSPARENT = DisplayServerEnums::WINDOW_FLAG_TRANSPARENT,
+		FLAG_NO_FOCUS = DisplayServerEnums::WINDOW_FLAG_NO_FOCUS,
+		FLAG_POPUP = DisplayServerEnums::WINDOW_FLAG_POPUP,
+		FLAG_EXTEND_TO_TITLE = DisplayServerEnums::WINDOW_FLAG_EXTEND_TO_TITLE,
+		FLAG_MOUSE_PASSTHROUGH = DisplayServerEnums::WINDOW_FLAG_MOUSE_PASSTHROUGH,
+		FLAG_SHARP_CORNERS = DisplayServerEnums::WINDOW_FLAG_SHARP_CORNERS,
+		FLAG_EXCLUDE_FROM_CAPTURE = DisplayServerEnums::WINDOW_FLAG_EXCLUDE_FROM_CAPTURE,
+		FLAG_POPUP_WM_HINT = DisplayServerEnums::WINDOW_FLAG_POPUP_WM_HINT,
+		FLAG_MINIMIZE_DISABLED = DisplayServerEnums::WINDOW_FLAG_MINIMIZE_DISABLED,
+		FLAG_MAXIMIZE_DISABLED = DisplayServerEnums::WINDOW_FLAG_MAXIMIZE_DISABLED,
+		FLAG_MAX = DisplayServerEnums::WINDOW_FLAG_MAX,
+	};
+
+	enum ContentScaleMode
+	{
+		CONTENT_SCALE_MODE_DISABLED,
+		CONTENT_SCALE_MODE_CANVAS_ITEMS,
+		CONTENT_SCALE_MODE_VIEWPORT,
+	};
+
+	enum ContentScaleAspect
+	{
+		CONTENT_SCALE_ASPECT_IGNORE,
+		CONTENT_SCALE_ASPECT_KEEP,
+		CONTENT_SCALE_ASPECT_KEEP_WIDTH,
+		CONTENT_SCALE_ASPECT_KEEP_HEIGHT,
+		CONTENT_SCALE_ASPECT_EXPAND,
+	};
+
+	enum ContentScaleStretch
+	{
+		CONTENT_SCALE_STRETCH_FRACTIONAL,
+		CONTENT_SCALE_STRETCH_INTEGER,
+	};
+
+	enum LayoutDirection
+	{
+		LAYOUT_DIRECTION_INHERITED,
+		LAYOUT_DIRECTION_APPLICATION_LOCALE,
+		LAYOUT_DIRECTION_LTR,
+		LAYOUT_DIRECTION_RTL,
+		LAYOUT_DIRECTION_SYSTEM_LOCALE,
+		LAYOUT_DIRECTION_MAX,
+#ifndef DISABLE_DEPRECATED
+		LAYOUT_DIRECTION_LOCALE = LAYOUT_DIRECTION_APPLICATION_LOCALE,
+#endif // DISABLE_DEPRECATED
+	};
+
+	enum
+	{
+		DEFAULT_WINDOW_SIZE = 100,
+	};
+
+	// Keep synced with enum hint for `initial_position` property and
+	// `display/window/size/initial_position_type` project setting.
+	enum WindowInitialPosition
+	{
+		WINDOW_INITIAL_POSITION_ABSOLUTE,
+		WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN,
+		WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN,
+		WINDOW_INITIAL_POSITION_CENTER_OTHER_SCREEN,
+		WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_MOUSE_FOCUS,
+		WINDOW_INITIAL_POSITION_CENTER_SCREEN_WITH_KEYBOARD_FOCUS,
+	};
+
+private:
+	DisplayServerEnums::WindowID window_id = DisplayServerEnums::INVALID_WINDOW_ID;
+	bool initialized = false;
+
+	String title;
+	String displayed_title;
+	mutable int current_screen = 0;
+	mutable Point2i position;
+	mutable Size2i size = Size2i(DEFAULT_WINDOW_SIZE, DEFAULT_WINDOW_SIZE);
+	mutable Size2i min_size;
+	mutable Size2i max_size;
+	mutable Vector<Vector2> mpath;
+	mutable Mode mode = MODE_WINDOWED;
+	mutable Mode toggle_fullscreen_previous_mode = mode;
+	mutable bool flags[FLAG_MAX] = {};
+	bool visible = true;
+	bool focused = false;
+	WindowInitialPosition initial_position = WINDOW_INITIAL_POSITION_ABSOLUTE;
+	bool force_native = false;
+
+	mutable bool hdr_output_requested = false;
+
+	void _update_viewport_for_hdr_output();
+
+	bool fullscreen_shortcut_enabled = false;
+	bool transient = false;
+	bool transient_to_focused = false;
+	bool exclusive = false;
+	bool wrap_controls = false;
+	bool updating_child_controls = false;
+	bool updating_embedded_window = false;
+	bool clamp_to_embedder = false;
+	bool unparent_when_invisible = false;
+	bool keep_title_visible = false;
+
+	LayoutDirection layout_dir = LAYOUT_DIRECTION_INHERITED;
+
+	void _update_child_controls();
+	void _update_embedded_window();
+
+	Size2i content_scale_size;
+	ContentScaleMode content_scale_mode = CONTENT_SCALE_MODE_DISABLED;
+	ContentScaleAspect content_scale_aspect = CONTENT_SCALE_ASPECT_IGNORE;
+	ContentScaleStretch content_scale_stretch = CONTENT_SCALE_STRETCH_FRACTIONAL;
+	real_t content_scale_factor = 1.0;
+
+	RID accessibility_title_element;
+	RID accessibility_announcement_element;
+	String announcement;
+	String accessibility_name;
+	String accessibility_description;
+
+	void _make_window();
+	void _clear_window();
+	void _update_from_window();
+	void _accessibility_notify_enter(Node* p_node);
+	void _accessibility_notify_exit(Node* p_node);
+
+	void _accessibility_activate();
+	void _accessibility_deactivate();
+
+	bool _try_parent_dialog(Node* p_from_node);
+
+	Size2i max_size_used;
+
+	Rect2i nonclient_area;
+
+	Size2i _clamp_limit_size(const Size2i& p_limit_size);
+	Size2i _clamp_window_size(const Size2i& p_size);
+	void _validate_limit_size();
+	void _update_viewport_size();
+	void _update_window_size();
+
+	void _propagate_window_notification(Node* p_node, int p_notification);
+
+	void _update_window_callbacks();
+
+	Window* transient_parent = nullptr;
+	Window* exclusive_child = nullptr;
+	HashSet<Window*> transient_children;
+
+	void _clear_transient();
+	void _make_transient();
+	void _set_transient_exclusive_child(bool p_clear_invalid = false);
+
+	static Window* focused_window;
+
+	ThemeOwner* theme_owner = nullptr;
+	Ref<Theme> theme;
+	String theme_type_variation;
+
+	bool bulk_theme_override = false;
+	Theme::ThemeIconMap theme_icon_override;
+	Theme::ThemeStyleMap theme_style_override;
+	Theme::ThemeFontMap theme_font_override;
+	Theme::ThemeFontSizeMap theme_font_size_override;
+	Theme::ThemeColorMap theme_color_override;
+	Theme::ThemeConstantMap theme_constant_override;
+
+	mutable HashMap<String, Theme::ThemeIconMap> theme_icon_cache;
+	mutable HashMap<String, Theme::ThemeStyleMap> theme_style_cache;
+	mutable HashMap<String, Theme::ThemeFontMap> theme_font_cache;
+	mutable HashMap<String, Theme::ThemeFontSizeMap> theme_font_size_cache;
+	mutable HashMap<String, Theme::ThemeColorMap> theme_color_cache;
+	mutable HashMap<String, Theme::ThemeConstantMap> theme_constant_cache;
+
+	void _theme_changed();
+	void _notify_theme_override_changed();
+	void _invalidate_theme_cache();
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> embedded_border;
+		Ref<StyleBox> embedded_unfocused_border;
+
+		Ref<Font> title_font;
+		int title_font_size = 0;
+		Color title_color;
+		int title_height = 0;
+		Color title_outline_modulate;
+		int title_outline_size = 0;
+
+		Ref<Texture2D> close;
+		Ref<Texture2D> close_pressed;
+		int close_h_offset = 0;
+		int close_v_offset = 0;
+
+		int resize_margin = 0;
+	} theme_cache;
+
+	void _settings_changed();
+
+	Viewport* embedder = nullptr;
+
+	Transform2D window_transform;
+
+	friend class Viewport; // friend back, can call the methods below
+
+	void _window_input(const InputEvent& p_ev);
+	void _window_input_text(const String& p_text, bool p_emit_signal = false);
+	void _window_drop_files(const Vector<String>& p_files);
+	void _rect_changed_callback(const Rect2i& p_callback);
+	void _event_callback(DisplayServerEnums::WindowEvent p_event);
+	virtual bool _can_consume_input_events() const override;
+
+	bool mouse_in_window = false;
+	void _update_mouse_over(Vector2 p_pos) override;
+	void _mouse_leave_viewport() override;
+
+	void _update_displayed_title();
+
+	static int root_layout_direction;
+
+protected:
+	virtual void _popup_base(const Rect2i& p_screen_rect = Rect2i());
+
+	virtual void _pre_popup(const Size2i& p_size) {
+	} // Called after "about_to_popup", but before window is shown.
+
+	virtual Rect2i _popup_adjust_rect() const { return Rect2i(); }
+
+	virtual void _post_popup() {}
+
+	virtual void _update_theme_item_cache();
+
+	virtual void _input_from_window(const InputEvent& p_event) {}
+
+	void _notification(int p_what);
+	static void _bind_methods();
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+	virtual String _get_accessibility_name() const;
+
+public:
+	enum
+	{
+		NOTIFICATION_VISIBILITY_CHANGED = 30,
+		NOTIFICATION_POST_POPUP = 31,
+		NOTIFICATION_THEME_CHANGED = 32
+	};
+
+	PackedStringArray get_accessibility_configuration_warnings() const;
+
+	static void set_root_layout_direction(int p_root_dir);
+	static Window* get_from_id(DisplayServerEnums::WindowID p_window_id);
+
+	RID get_accessibility_element() const override;
+	virtual RID get_focused_accessibility_element() const override;
+
+	void set_title(const String& p_title);
+	String get_title() const;
+	String get_displayed_title() const;
+
+	void set_initial_position(WindowInitialPosition p_initial_position);
+	WindowInitialPosition get_initial_position() const;
+
+	void set_force_native(bool p_force_native);
+	bool get_force_native() const;
+
+	void set_current_screen(int p_screen);
+	int get_current_screen() const;
+
+	void set_position(const Point2i& p_position);
+	Point2i get_position() const;
+	void move_to_center();
+
+	void set_size(const Size2i& p_size);
+	Size2i get_size() const;
+	void reset_size();
+
+	Point2i get_position_with_decorations() const;
+	Size2i get_size_with_decorations() const;
+
+	void set_max_size(const Size2i& p_max_size);
+	Size2i get_max_size() const;
+
+	void set_min_size(const Size2i& p_min_size);
+	Size2i get_min_size() const;
+
+	void set_mode(Mode p_mode);
+	Mode get_mode() const;
+
+	void set_fullscreen_shortcut_enabled(bool p_enabled);
+	bool is_fullscreen_shortcut_enabled() const;
+
+	void set_flag(Flags p_flag, bool p_enabled);
+	bool get_flag(Flags p_flag) const;
+
+	bool is_popup() const;
+
+	void set_hdr_output_requested(bool p_enabled);
+	bool is_hdr_output_requested() const;
+	float get_output_max_linear_value() const;
+
+	bool is_maximize_allowed() const;
+
+	void request_attention();
+	void set_taskbar_progress_value(float p_value);
+	void set_taskbar_progress_state(DisplayServerEnums::ProgressState p_state);
+#ifndef DISABLE_DEPRECATED
+	void move_to_foreground();
+#endif // DISABLE_DEPRECATED
+
+	virtual void set_visible(bool p_visible);
+	bool is_visible() const;
+
+	void update_mouse_cursor_state() override;
+
+	void show();
+	void hide();
+
+	void set_transient(bool p_transient);
+	bool is_transient() const;
+
+	void set_transient_to_focused(bool p_transient_to_focused);
+	bool is_transient_to_focused() const;
+
+	void set_exclusive(bool p_exclusive);
+	bool is_exclusive() const;
+
+	void set_clamp_to_embedder(bool p_enable);
+	bool is_clamped_to_embedder() const;
+
+	void set_unparent_when_invisible(bool p_unparent);
+
+	bool is_in_edited_scene_root() const;
+
+	bool can_draw() const;
+
+	void set_ime_active(bool p_active);
+	void set_ime_position(const Point2i& p_pos);
+
+	bool is_embedded() const;
+	Viewport* get_embedder() const;
+
+	void set_content_scale_size(const Size2i& p_size);
+	Size2i get_content_scale_size() const;
+
+	void set_content_scale_mode(ContentScaleMode p_mode);
+	ContentScaleMode get_content_scale_mode() const;
+
+	void set_content_scale_aspect(ContentScaleAspect p_aspect);
+	ContentScaleAspect get_content_scale_aspect() const;
+
+	void set_content_scale_stretch(ContentScaleStretch p_stretch);
+	ContentScaleStretch get_content_scale_stretch() const;
+
+	void set_keep_title_visible(bool p_title_visible);
+	bool get_keep_title_visible() const;
+
+	void set_content_scale_factor(real_t p_factor);
+	real_t get_content_scale_factor() const;
+
+	void set_nonclient_area(const Rect2i& p_rect);
+	Rect2i get_nonclient_area() const;
+
+	void set_mouse_passthrough_polygon(const Vector<Vector2>& p_region);
+	Vector<Vector2> get_mouse_passthrough_polygon() const;
+
+	void set_wrap_controls(bool p_enable);
+	bool is_wrapping_controls() const;
+	void child_controls_changed();
+
+	Window* get_exclusive_child() const { return exclusive_child; }
+
+	const HashSet<Window*>& get_transient_children() const { return transient_children; }
+
+	Window* get_parent_visible_window() const;
+	Window* get_non_popup_window() const;
+	Viewport* get_parent_viewport() const;
+
+	void popup(const Rect2i& p_screen_rect = Rect2i());
+	void popup_on_parent(const Rect2i& p_parent_rect);
+	void popup_centered(const Size2i& p_minsize = Size2i());
+	void popup_centered_ratio(float p_ratio = 0.8);
+	void popup_centered_clamped(const Size2i& p_size = Size2i(), float p_fallback_ratio = 0.75);
+
+	void popup_exclusive(Node* p_from_node, const Rect2i& p_screen_rect = Rect2i());
+	void popup_exclusive_on_parent(Node* p_from_node, const Rect2i& p_parent_rect);
+	void popup_exclusive_centered(Node* p_from_node, const Size2i& p_minsize = Size2i());
+	void popup_exclusive_centered_ratio(Node* p_from_node, float p_ratio = 0.8);
+	void popup_exclusive_centered_clamped(
+		Node* p_from_node, const Size2i& p_size = Size2i(), float p_fallback_ratio = 0.75);
+
+	Rect2i fit_rect_in_parent(Rect2i p_rect, const Rect2i& p_parent_rect) const;
+	Size2 get_contents_minimum_size() const;
+	Size2 get_clamped_minimum_size() const;
+
+	void grab_focus();
+	bool has_focus() const;
+	bool has_focus_or_active_popup() const;
+
+	void start_drag();
+	void start_resize(DisplayServerEnums::WindowResizeEdge p_edge);
+
+	Rect2i get_usable_parent_rect() const;
+
+	void set_accessibility_name(const String& p_name);
+	String get_accessibility_name() const;
+
+	void set_accessibility_description(const String& p_description);
+	String get_accessibility_description() const;
+
+	void accessibility_announcement(const String& p_announcement);
+
+	virtual Transform2D get_accessibility_transform() const override;
+
+	// Internationalization.
+
+	void set_layout_direction(LayoutDirection p_direction);
+	LayoutDirection get_layout_direction() const;
+	bool is_layout_rtl() const;
+
+#ifndef DISABLE_DEPRECATED
+	void set_use_font_oversampling(bool p_oversampling);
+	bool is_using_font_oversampling() const;
+
+	void set_auto_translate(bool p_enable);
+	bool is_auto_translating() const;
+#endif
+
+	// Theming.
+
+	void set_theme_owner_node(Node* p_node);
+	Node* get_theme_owner_node() const;
+	bool has_theme_owner_node() const;
+
+	void set_theme_context(ThemeContext* p_context, bool p_propagate = true);
+
+	void set_theme(const Ref<Theme>& p_theme);
+	Ref<Theme> get_theme() const;
+
+	void set_theme_type_variation(const String& p_theme_type);
+	String get_theme_type_variation() const;
+
+	void begin_bulk_theme_override();
+	void end_bulk_theme_override();
+
+	void add_theme_icon_override(const String& p_name, const Ref<Texture2D>& p_icon);
+	void add_theme_style_override(const String& p_name, const Ref<StyleBox>& p_style);
+	void add_theme_font_override(const String& p_name, const Ref<Font>& p_font);
+	void add_theme_font_size_override(const String& p_name, int p_font_size);
+	void add_theme_color_override(const String& p_name, const Color& p_color);
+	void add_theme_constant_override(const String& p_name, int p_constant);
+
+	void remove_theme_icon_override(const String& p_name);
+	void remove_theme_style_override(const String& p_name);
+	void remove_theme_font_override(const String& p_name);
+	void remove_theme_font_size_override(const String& p_name);
+	void remove_theme_color_override(const String& p_name);
+	void remove_theme_constant_override(const String& p_name);
+
+	Ref<Texture2D> get_theme_icon(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Ref<StyleBox> get_theme_stylebox(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Ref<Font> get_theme_font(
+		const String& p_name, const String& p_theme_type = String()) const;
+	int get_theme_font_size(
+		const String& p_name, const String& p_theme_type = String()) const;
+	Color get_theme_color(
+		const String& p_name, const String& p_theme_type = String()) const;
+	int get_theme_constant(
+		const String& p_name, const String& p_theme_type = String()) const;
+#ifdef TOOLS_ENABLED
+	Ref<Texture2D> get_editor_theme_icon(const String& p_name) const;
+#endif
+
+	bool has_theme_icon_override(const String& p_name) const;
+	bool has_theme_stylebox_override(const String& p_name) const;
+	bool has_theme_font_override(const String& p_name) const;
+	bool has_theme_font_size_override(const String& p_name) const;
+	bool has_theme_color_override(const String& p_name) const;
+	bool has_theme_constant_override(const String& p_name) const;
+
+	bool has_theme_icon(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_stylebox(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_font(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_font_size(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_color(
+		const String& p_name, const String& p_theme_type = String()) const;
+	bool has_theme_constant(
+		const String& p_name, const String& p_theme_type = String()) const;
+
+	float get_theme_default_base_scale() const;
+	Ref<Font> get_theme_default_font() const;
+	int get_theme_default_font_size() const;
+
+	virtual Transform2D get_final_transform() const override;
+	virtual Transform2D get_screen_transform_internal(
+		bool p_absolute_position = false) const override;
+	virtual Transform2D get_popup_base_transform() const override;
+	virtual Transform2D get_popup_base_transform_native() const override;
+	virtual Viewport* get_section_root_viewport() const override;
+	virtual bool is_attached_in_viewport() const override;
+
+	Rect2i get_parent_rect() const;
+	virtual DisplayServerEnums::WindowID get_window_id() const override;
+
+	static Window* get_focused_window() { return focused_window; }
+
+	virtual Size2 _get_contents_minimum_size() const;
+
+	Window();
+	~Window() = default;
+};
+// --- End scene/main/window.h ---
+
+// --- Folded from scene/gui/dialogs.h ---
+// --- Inlined/Folded from scene/gui/button.h ---
+#include "core/os/os.h"
+
+#include "servers/rendering/renderer.h"
+#include "scene/resources/theme.h"
+
+class Button;
+class ButtonGroup;
+
+struct ButtonBehavior
+{
+	enum ActionMode
+	{
+		ACTION_MODE_BUTTON_PRESS,
+		ACTION_MODE_BUTTON_RELEASE,
+	};
+
+	enum DrawMode
+	{
+		DRAW_NORMAL,
+		DRAW_PRESSED,
+		DRAW_HOVER,
+		DRAW_DISABLED,
+		DRAW_HOVER_PRESSED,
+	};
+
+	uint32_t button_mask = 0;
+	int click_margin = 0;
+	int touch_index = -1;
+	ActionMode action_mode = ACTION_MODE_BUTTON_RELEASE;
+
+	bool toggle_mode = false;
+	bool shortcut_in_tooltip = true;
+	bool was_mouse_pressed = false;
+	bool keep_pressed_outside = false;
+	bool shortcut_feedback = true;
+	bool in_shortcut_feedback = false;
+
+	bool pressed = false;
+	bool hovering = false;
+	bool press_attempt = false;
+	bool pressing_inside = false;
+	bool pressed_down_with_focus = false;
+	bool disabled = false;
+
+	Ref<Shortcut> shortcut;
+	Ref<ButtonGroup> button_group;
+
+	bool is_disabled() const { return disabled; }
+	bool is_pressing() const { return press_attempt; }
+	bool is_pressed() const { return toggle_mode ? pressed : press_attempt; }
+	bool is_hovered() const { return hovering; }
+
+	DrawMode get_draw_mode() const;
+};
+
+class Button : public Control
+{
+public:
+	using ActionMode = ButtonBehavior::ActionMode;
+	using DrawMode = ButtonBehavior::DrawMode;
+
+	static constexpr ActionMode ACTION_MODE_BUTTON_PRESS = ButtonBehavior::ACTION_MODE_BUTTON_PRESS;
+	static constexpr ActionMode ACTION_MODE_BUTTON_RELEASE = ButtonBehavior::ACTION_MODE_BUTTON_RELEASE;
+
+	static constexpr DrawMode DRAW_NORMAL = ButtonBehavior::DRAW_NORMAL;
+	static constexpr DrawMode DRAW_PRESSED = ButtonBehavior::DRAW_PRESSED;
+	static constexpr DrawMode DRAW_HOVER = ButtonBehavior::DRAW_HOVER;
+	static constexpr DrawMode DRAW_DISABLED = ButtonBehavior::DRAW_DISABLED;
+	static constexpr DrawMode DRAW_HOVER_PRESSED = ButtonBehavior::DRAW_HOVER_PRESSED;
+
+	enum Style
+	{
+		STYLE_STANDARD,
+		STYLE_CHECK_BOX,
+		STYLE_CHECK_BUTTON,
+		STYLE_LINK,
+		STYLE_TEXTURE,
+		STYLE_COLOR_SWATCH,
+	};
+
+	enum UnderlineMode
+	{
+		UNDERLINE_MODE_ALWAYS,
+		UNDERLINE_MODE_ON_HOVER,
+		UNDERLINE_MODE_NEVER,
+	};
+
+	enum StretchMode
+	{
+		STRETCH_SCALE,
+		STRETCH_TILE,
+		STRETCH_KEEP,
+		STRETCH_KEEP_CENTERED,
+		STRETCH_KEEP_ASPECT,
+		STRETCH_KEEP_ASPECT_CENTERED,
+		STRETCH_KEEP_ASPECT_COVERED,
+	};
+
+	struct TextureSet
+	{
+		Ref<Texture2D> normal;
+		Ref<Texture2D> pressed;
+		Ref<Texture2D> hover;
+		Ref<Texture2D> disabled;
+		Ref<Texture2D> focused;
+		Ref<BitMap> click_mask;
+		StretchMode stretch_mode = STRETCH_KEEP;
+		Rect2 texture_region;
+		Rect2 position_rect;
+		bool ignore_texture_size = false;
+		bool tile = false;
+		bool hflip = false;
+		bool vflip = false;
+	};
+
+	ButtonBehavior behavior;
+	TextureSet textures;
+
+private:
+	Style style = STYLE_STANDARD;
+	bool flat = false;
+	String text;
+	String xl_text;
+	Ref<TextParagraph> text_buf;
+	Ref<TextLine> link_text_buf;
+
+	UnderlineMode underline_mode = UNDERLINE_MODE_ALWAYS;
+	String uri;
+	Color swatch_color;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+	uint32_t autowrap_flags_trim = TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+
+	Ref<Texture2D> icon;
+	bool expand_icon = false;
+	bool clip_text = false;
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_CENTER;
+	HorizontalAlignment horizontal_icon_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	VerticalAlignment vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER;
+	float _internal_margin[4] = {};
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> normal_mirrored;
+		Ref<StyleBox> pressed;
+		Ref<StyleBox> pressed_mirrored;
+		Ref<StyleBox> hover;
+		Ref<StyleBox> hover_mirrored;
+		Ref<StyleBox> hover_pressed;
+		Ref<StyleBox> hover_pressed_mirrored;
+		Ref<StyleBox> disabled;
+		Ref<StyleBox> disabled_mirrored;
+		Ref<StyleBox> focus;
+
+		Size2 max_style_size;
+		float style_margin_left = 0;
+		float style_margin_right = 0;
+		float style_margin_top = 0;
+		float style_margin_bottom = 0;
+
+		bool align_to_largest_stylebox = false;
+
+		Color font_color;
+		Color font_focus_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_disabled_color;
+
+		Ref<Font> font;
+		int font_size = 0;
+		int outline_size = 0;
+		Color font_outline_color;
+
+		Color icon_normal_color;
+		Color icon_focus_color;
+		Color icon_pressed_color;
+		Color icon_hover_color;
+		Color icon_hover_pressed_color;
+		Color icon_disabled_color;
+
+		Ref<Texture2D> icon;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> checked_mirrored;
+		Ref<Texture2D> unchecked_mirrored;
+		Ref<Texture2D> checked_disabled_mirrored;
+		Ref<Texture2D> unchecked_disabled_mirrored;
+		Ref<Texture2D> radio_checked;
+		Ref<Texture2D> radio_unchecked;
+		Ref<Texture2D> radio_checked_disabled;
+		Ref<Texture2D> radio_unchecked_disabled;
+
+		Color check_checked_color = Color(1, 1, 1);
+		Color check_unchecked_color = Color(1, 1, 1);
+
+		int h_separation = 0;
+		int check_v_offset = 0;
+		int underline_spacing = 0;
+		int icon_max_width = 0;
+		int line_spacing = 0;
+	} theme_cache;
+
+	void _shape(Ref<TextParagraph> p_paragraph = Ref<TextParagraph>(), String p_text = "") const;
+	void _update_style_margins(const Ref<StyleBox>& p_stylebox);
+	Size2 _get_check_icon_size() const;
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	void _set_internal_margin(Side p_side, float p_value);
+	virtual void _queue_update_size_cache();
+	virtual String _get_translated_text(const String& p_text) const;
+
+	Size2 _fit_icon_size(const Size2& p_size) const;
+	Ref<StyleBox> _get_current_stylebox() const;
+	Size2 _get_largest_stylebox_size() const;
+	void _notification(int p_what);
+
+	virtual String _get_accessibility_name() const override;
+
+public:
+	Style get_style() const { return style; }
+	void set_style(Style p_style);
+
+	DrawMode get_draw_mode() const { return behavior.get_draw_mode(); }
+	bool is_pressed() const { return behavior.is_pressed(); }
+	bool is_pressing() const { return behavior.is_pressing(); }
+	bool is_hovered() const { return behavior.is_hovered(); }
+	bool is_disabled() const { return behavior.is_disabled(); }
+	bool is_radio() const { return behavior.button_group.is_valid(); }
+
+	void set_pressed(bool p_pressed);
+	void set_pressed_no_signal(bool p_pressed);
+	void set_toggle_mode(bool p_on);
+	bool is_toggle_mode() const { return behavior.toggle_mode; }
+	void set_disabled(bool p_disabled);
+
+	void set_shortcut_in_tooltip(bool p_on);
+	bool is_shortcut_in_tooltip_enabled() const { return behavior.shortcut_in_tooltip; }
+
+	void set_action_mode(ActionMode p_mode) { behavior.action_mode = p_mode; }
+	ActionMode get_action_mode() const { return behavior.action_mode; }
+
+	void set_keep_pressed_outside(bool p_on) { behavior.keep_pressed_outside = p_on; }
+	bool is_keep_pressed_outside() const { return behavior.keep_pressed_outside; }
+
+	void set_shortcut_feedback(bool p_enable) { behavior.shortcut_feedback = p_enable; }
+	bool is_shortcut_feedback() const { return behavior.shortcut_feedback; }
+
+	void set_button_mask(uint32_t p_mask) { behavior.button_mask = p_mask; }
+	uint32_t get_button_mask() const { return behavior.button_mask; }
+
+	void set_shortcut(const Ref<Shortcut>& p_shortcut);
+	Ref<Shortcut> get_shortcut() const { return behavior.shortcut; }
+
+	void set_button_group(const Ref<ButtonGroup>& p_group);
+	Ref<ButtonGroup> get_button_group() const { return behavior.button_group; }
+
+	virtual void pressed();
+	virtual void toggled(bool p_pressed);
+
+	virtual bool has_point(const Point2& p_point) const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2()) const override;
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override;
+
+	Size2 get_minimum_size_for_text_and_icon(const String& p_text, Ref<Texture2D> p_icon) const;
+
+	void set_text(const String& p_text);
+	String get_text() const;
+
+	void set_uri(const String& p_uri);
+	String get_uri() const { return uri; }
+	void set_underline_mode(UnderlineMode p_mode) { underline_mode = p_mode; }
+	UnderlineMode get_underline_mode() const { return underline_mode; }
+
+	void set_swatch_color(const Color& p_color);
+	Color get_swatch_color() const { return swatch_color; }
+
+	void set_texture_normal(const Ref<Texture2D>& p_normal) { textures.normal = p_normal; }
+	void set_texture_pressed(const Ref<Texture2D>& p_pressed) { textures.pressed = p_pressed; }
+	void set_texture_hover(const Ref<Texture2D>& p_hover) { textures.hover = p_hover; }
+	void set_texture_disabled(const Ref<Texture2D>& p_disabled) { textures.disabled = p_disabled; }
+	void set_texture_focused(const Ref<Texture2D>& p_focused) { textures.focused = p_focused; }
+	void set_click_mask(const Ref<BitMap>& p_click_mask) { textures.click_mask = p_click_mask; }
+
+	Ref<Texture2D> get_texture_normal() const { return textures.normal; }
+	Ref<Texture2D> get_texture_pressed() const { return textures.pressed; }
+	Ref<Texture2D> get_texture_hover() const { return textures.hover; }
+	Ref<Texture2D> get_texture_disabled() const { return textures.disabled; }
+	Ref<Texture2D> get_texture_focused() const { return textures.focused; }
+	Ref<BitMap> get_click_mask() const { return textures.click_mask; }
+
+	void set_ignore_texture_size(bool p_ignore) { textures.ignore_texture_size = p_ignore; }
+	bool get_ignore_texture_size() const { return textures.ignore_texture_size; }
+	void set_stretch_mode(StretchMode p_mode) { textures.stretch_mode = p_mode; }
+	StretchMode get_stretch_mode() const { return textures.stretch_mode; }
+	void set_flip_h(bool p_flip) { textures.hflip = p_flip; }
+	bool is_flipped_h() const { return textures.hflip; }
+	void set_flip_v(bool p_flip) { textures.vflip = p_flip; }
+	bool is_flipped_v() const { return textures.vflip; }
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_button_icon(const Ref<Texture2D>& p_icon) { icon = p_icon; }
+	Ref<Texture2D> get_button_icon() const;
+
+	void set_expand_icon(bool p_enabled);
+	bool is_expand_icon() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_clip_text(bool p_enabled);
+	bool get_clip_text() const;
+
+	void set_text_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_text_alignment() const;
+
+	void set_icon_alignment(HorizontalAlignment p_alignment);
+	void set_vertical_icon_alignment(VerticalAlignment p_alignment);
+	HorizontalAlignment get_icon_alignment() const;
+	VerticalAlignment get_vertical_icon_alignment() const;
+
+	Button(const String& p_text = String(), Style p_style = STYLE_STANDARD);
+	~Button();
+};
+
+class ButtonGroup : public Resource
+{
+	friend class Button;
+	HashSet<Button*> buttons;
+	bool allow_unpress = false;
+
+public:
+	Button* get_pressed_button();
+	void get_buttons(List<Button*>* r_buttons);
+	void set_allow_unpress(bool p_enabled) { allow_unpress = p_enabled; }
+	bool is_allow_unpress() const { return allow_unpress; }
+	ButtonGroup();
+};
+
+// --- Folded from scene/gui/menu_bar.h ---
+// --- Inlined/Folded from scene/gui/popup_menu.h ---
+#include "core/os/os.h"
+// --- Inlined/Folded from scene/gui/popup.h ---
+#include "core/string/ustring.h"
+
+
+class Panel;
+
+struct PopupTracker
+{
+	enum HideReason
+	{
+		HIDE_REASON_NONE,
+		HIDE_REASON_CANCELED,  // E.g., because of rupture of UI flow (app unfocused). Includes
+							   // closed programmatically.
+		HIDE_REASON_UNFOCUSED, // E.g., user clicked outside.
+	};
+
+	LocalVector<Window*> visible_parents;
+	bool popped_up = false;
+	HideReason hide_reason = HIDE_REASON_NONE;
+
+	void configure_window(Window* p_window);
+	void initialize_visible_parents(Window* p_window);
+	void deinitialize_visible_parents(Window* p_window);
+	void post_popup();
+	bool handle_cancel_input(const Window* p_window, const InputEvent& p_event);
+	bool handle_parent_focused(const Window* p_window);
+	void close_pressed(Window* p_window);
+	static Rect2i adjust_popup_rect(const Window* p_window);
+};
+
+class Popup : public Window
+{
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
+	bool is_panel = false;
+	Panel* panel = nullptr;
+	bool close_on_accept = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+	} theme_cache;
+
+	mutable Rect2i pre_popup_rect;
+
+	void _update_shadow_offsets() const;
+	void _update_child_rects() const;
+
+protected:
+	void _close_pressed();
+	void _parent_focused();
+	virtual Rect2i _popup_adjust_rect() const override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual void _post_popup() override;
+	virtual Size2 _get_contents_minimum_size() const override;
+
+	void _notification(int p_what);
+
+public:
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void set_panel_enabled(bool p_enabled);
+	bool is_panel_enabled() const { return is_panel; }
+	Panel* get_panel() const { return panel; }
+
+	void set_close_on_accept(bool p_enable) { close_on_accept = p_enable; }
+	bool is_closing_on_accept() const { return close_on_accept; }
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	Popup(bool p_panel = false);
+	~Popup();
+};
+// --- Folded from scene/gui/scroll_container.h ---
+
+// --- Inlined/Folded from scene/gui/scroll_bar.h ---
+
+// --- Inlined/Folded from scene/gui/range.h ---
+#include "core/types.h"
+
+struct NumericRange
+{
+	double value = 0.0;
+	double min = 0.0;
+	double max = 100.0;
+	double step = 1.0;
+	double page = 0.0;
+	bool exp_ratio = false;
+	bool allow_greater = false;
+	bool allow_lesser = false;
+	bool rounded_values = false;
+
+	static double snapped_r128(double p_value, double p_step);
+	double calc_value(double p_val, double p_step) const;
+
+	bool set_value(double p_val);
+	bool set_min(double p_min);
+	bool set_max(double p_max);
+	bool set_step(double p_step);
+	bool set_page(double p_page);
+	bool set_as_ratio(double p_ratio);
+	double get_as_ratio() const;
+
+	void append_configuration_warnings(PackedStringArray& r_warnings) const;
+};
+
+// --- Folded from scene/gui/slider.h ---
+
+
+
+class Slider : public Control
+{
+public:
+	enum TickPosition
+	{
+		TICK_POSITION_BOTTOM_RIGHT,
+		TICK_POSITION_TOP_LEFT,
+		TICK_POSITION_BOTH,
+		TICK_POSITION_CENTER,
+	};
+
+private:
+	struct Grab
+	{
+		int pos = 0;
+		double uvalue = 0.0;
+		double value_before_dragging = 0.0;
+		bool active = false;
+	} grab;
+
+	int ticks = 0;
+	TickPosition ticks_position = TICK_POSITION_BOTTOM_RIGHT;
+
+	bool mouse_inside = false;
+	Orientation orientation;
+	double custom_step = -1.0;
+	bool editable = true;
+	bool scrollable = true;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 0.5;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> slider_style;
+		Ref<StyleBox> grabber_area_style;
+		Ref<StyleBox> grabber_area_hl_style;
+
+		Ref<Texture2D> grabber_icon;
+		Ref<Texture2D> grabber_hl_icon;
+		Ref<Texture2D> grabber_disabled_icon;
+		Ref<Texture2D> tick_icon;
+
+		bool center_grabber = false;
+		int grabber_offset = 0;
+		int tick_offset = 0;
+	} theme_cache;
+
+protected:
+	bool ticks_on_borders = false;
+
+	void _notification(int p_what);
+
+public:
+	NumericRange range;
+
+	Orientation get_orientation() const { return orientation; }
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
+	void set_custom_step(double p_custom_step);
+	double get_custom_step() const;
+
+	void set_ticks(int p_count);
+	int get_ticks() const;
+
+	void set_ticks_on_borders(bool);
+	bool get_ticks_on_borders() const;
+
+	void set_ticks_position(TickPosition p_ticks_position);
+	TickPosition get_ticks_position() const;
+
+	void set_editable(bool p_editable);
+	bool is_editable() const;
+
+	void set_scrollable(bool p_scrollable);
+	bool is_scrollable() const;
+
+	Slider(Orientation p_orientation = HORIZONTAL);
+};
+
+// --- Folded from scene/gui/texture_progress_bar.h ---
+
+
+
+class TextureProgressBar : public Control
+{
+	Ref<Texture2D> under;
+	Ref<Texture2D> progress;
+	Ref<Texture2D> over;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	enum FillMode
+	{
+		FILL_LEFT_TO_RIGHT = 0,
+		FILL_RIGHT_TO_LEFT,
+		FILL_TOP_TO_BOTTOM,
+		FILL_BOTTOM_TO_TOP,
+		FILL_CLOCKWISE,
+		FILL_COUNTER_CLOCKWISE,
+		FILL_BILINEAR_LEFT_AND_RIGHT,
+		FILL_BILINEAR_TOP_AND_BOTTOM,
+		FILL_CLOCKWISE_AND_COUNTER_CLOCKWISE,
+		FILL_MODE_MAX,
+	};
+
+	NumericRange range;
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_fill_mode(int p_fill);
+	int get_fill_mode();
+
+	void set_progress_offset(Point2 p_offset);
+	Point2 get_progress_offset() const;
+
+	void set_radial_initial_angle(float p_angle);
+	float get_radial_initial_angle();
+
+	void set_fill_degrees(float p_angle);
+	float get_fill_degrees();
+
+	void set_radial_center_offset(const Point2& p_off);
+	Point2 get_radial_center_offset();
+
+	void set_under_texture(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_under_texture() const;
+
+	void set_progress_texture(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_progress_texture() const;
+
+	void set_over_texture(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_over_texture() const;
+
+	void set_stretch_margin(Side p_side, int p_size);
+	int get_stretch_margin(Side p_side) const;
+
+	void set_nine_patch_stretch(bool p_stretch);
+	bool get_nine_patch_stretch() const;
+
+	void set_tint_under(const Color& p_tint);
+	Color get_tint_under() const;
+
+	void set_tint_progress(const Color& p_tint);
+	Color get_tint_progress() const;
+
+	void set_tint_over(const Color& p_tint);
+	Color get_tint_over() const;
+
+	Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
+	TextureProgressBar();
+
+private:
+	FillMode mode = FILL_LEFT_TO_RIGHT;
+	Point2 progress_offset;
+	float rad_init_angle = 0.0;
+	float rad_max_degrees = 360.0;
+	Point2 rad_center_off;
+	bool nine_patch_stretch = false;
+	int stretch_margin[4] = {};
+	Color tint_under = Color(1, 1, 1);
+	Color tint_progress = Color(1, 1, 1);
+	Color tint_over = Color(1, 1, 1);
+
+	void _set_texture(Ref<Texture2D>* p_destination, const Ref<Texture2D>& p_texture);
+	void _texture_changed();
+	Point2 unit_val_to_uv(float val);
+	Point2 get_relative_center();
+	void draw_nine_patch_stretched(
+		const Ref<Texture2D>& p_texture, FillMode p_mode, double p_ratio, const Color& p_modulate);
+};
+
+// --- End scene/gui/texture_progress_bar.h ---
+
+// --- End scene/gui/slider.h ---
+
+class ScrollBar : public Control
+{
+	enum HighlightStatus
+	{
+		HIGHLIGHT_NONE,
+		HIGHLIGHT_DECR,
+		HIGHLIGHT_RANGE,
+		HIGHLIGHT_INCR,
+	};
+
+	static bool focus_by_default;
+
+	Orientation orientation;
+	Size2 size;
+	float custom_step = -1.0;
+
+	HighlightStatus highlight = HIGHLIGHT_NONE;
+
+	bool incr_active = false;
+	bool decr_active = false;
+
+	struct Drag
+	{
+		bool active = false;
+		float pos_at_click = 0.0;
+		float value_at_click = 0.0;
+	} drag;
+
+	double get_grabber_size() const;
+	double get_grabber_min_size() const;
+	double get_area_size() const;
+	double get_grabber_offset() const;
+
+	static void set_can_focus_by_default(bool p_can_focus);
+
+	Node* drag_node = nullptr;
+	NodePath drag_node_path;
+	bool drag_node_enabled = true;
+
+	Vector2 drag_node_speed;
+	Vector2 drag_node_accum;
+	Vector2 drag_node_from;
+	Vector2 last_drag_node_accum;
+	float time_since_motion = 0.0;
+	bool drag_node_touching = false;
+	bool drag_node_touching_deaccel = false;
+
+	bool scrolling = false;
+	double target_scroll = 0.0;
+	bool smooth_scroll_enabled = false;
+
+	void _drag_node_exit();
+	void _drag_node_input(const InputEvent& p_input);
+
+protected:
+	struct ThemeCache
+	{
+		Ref<StyleBox> scroll_style;
+		Ref<StyleBox> scroll_focus_style;
+		Ref<StyleBox> scroll_offset_style;
+		Ref<StyleBox> grabber_style;
+		Ref<StyleBox> grabber_hl_style;
+		Ref<StyleBox> grabber_pressed_style;
+
+		Ref<Texture2D> increment_icon;
+		Ref<Texture2D> increment_hl_icon;
+		Ref<Texture2D> increment_pressed_icon;
+		Ref<Texture2D> decrement_icon;
+		Ref<Texture2D> decrement_hl_icon;
+		Ref<Texture2D> decrement_pressed_icon;
+
+		int padding_left = 0;
+		int padding_top = 0;
+		int padding_right = 0;
+		int padding_bottom = 0;
+	} theme_cache;
+
+	void _notification(int p_what);
+
+public:
+	static inline const int PAGE_DIVISOR = 8;
+
+	NumericRange range;
+
+	Orientation get_orientation() const { return orientation; }
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
+	void scroll(double p_amount);
+	void scroll_to(double p_position);
+
+	void set_custom_step(float p_custom_step);
+	float get_custom_step() const;
+
+	void set_drag_node(const NodePath& p_path);
+	NodePath get_drag_node() const;
+	void set_drag_node_enabled(bool p_enable);
+
+	void set_smooth_scroll_enabled(bool p_enable);
+	bool is_smooth_scroll_enabled() const;
+
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
+	ScrollBar(Orientation p_orientation = VERTICAL);
+	~ScrollBar();
+};
+
+class Panel;
+class TextureRect;
+
+class ScrollContainer : public Control
+{
+public:
+	enum ScrollMode
+	{
+		SCROLL_MODE_DISABLED = 0,
+		SCROLL_MODE_AUTO,
+		SCROLL_MODE_SHOW_ALWAYS,
+		SCROLL_MODE_SHOW_NEVER,
+		SCROLL_MODE_RESERVE,
+		SCROLL_MODE_MAXIMIZE_FIRST,
+	};
+
+	enum ScrollHintMode
+	{
+		SCROLL_HINT_MODE_DISABLED,
+		SCROLL_HINT_MODE_ALL,
+		SCROLL_HINT_MODE_TOP_AND_LEFT,
+		SCROLL_HINT_MODE_BOTTOM_AND_RIGHT,
+	};
+
+private:
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+	Panel* focus_panel = nullptr;
+
+	mutable Size2 largest_child_min_size; // The largest one among the min sizes of all available
+										  // child controls.
+
+	void _update_scrollbars();
+
+	Vector2 drag_speed;
+	Vector2 drag_accum;
+	Vector2 drag_from;
+	Vector2 last_drag_accum;
+	float time_since_motion = 0.0f;
+	bool drag_touching = false;
+	bool drag_touching_deaccel = false;
+	bool beyond_deadzone = false;
+	bool scroll_on_drag_hover = false;
+
+	TextureRect* scroll_hint_top_left = nullptr;
+	TextureRect* scroll_hint_bottom_right = nullptr;
+
+	ScrollMode horizontal_scroll_mode = SCROLL_MODE_AUTO;
+	ScrollMode vertical_scroll_mode = SCROLL_MODE_AUTO;
+
+	int deadzone = 0;
+	bool follow_focus = false;
+	int scroll_border = 20;
+	int scroll_speed = 12;
+	bool scroll_horizontal_by_default = false;
+
+	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
+	bool tile_scroll_hint = false;
+
+	bool following = false;
+	Vector2 scroll_diff;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Ref<Texture2D> scroll_hint_vertical;
+		Ref<Texture2D> scroll_hint_horizontal;
+
+		Color scroll_hint_vertical_color;
+		Color scroll_hint_horizontal_color;
+
+		int scrollbar_h_separation = 0;
+		int scrollbar_v_separation = 0;
+	} theme_cache;
+
+	void _cancel_drag();
+
+	bool _is_h_scroll_visible() const;
+	bool _is_v_scroll_visible() const;
+
+	Rect2 _get_margins() const;
+
+	bool draw_focus_border = false;
+	bool focus_border_is_drawn = false;
+	bool child_has_focus();
+
+	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
+
+	Rect2 _get_local_visible_rect() const;
+
+protected:
+	Size2 get_minimum_size() const override;
+	Size2 get_desired_size() const override;
+	Size2 get_inner_combined_maximum_size() const override;
+
+	void _gui_focus_changed(Control* p_control);
+	void _reposition_children();
+
+	void _notification(int p_what);
+
+	bool _updating_scrollbars = false;
+	void _update_scrollbar_position();
+	void _scroll_moved(float);
+
+public:
+	void set_h_scroll(int p_pos);
+	int get_h_scroll() const;
+
+	void set_v_scroll(int p_pos);
+	int get_v_scroll() const;
+
+	void set_horizontal_custom_step(float p_custom_step);
+	float get_horizontal_custom_step() const;
+
+	void set_vertical_custom_step(float p_custom_step);
+	float get_vertical_custom_step() const;
+
+	void set_horizontal_scroll_mode(ScrollMode p_mode);
+	ScrollMode get_horizontal_scroll_mode() const;
+
+	void set_vertical_scroll_mode(ScrollMode p_mode);
+	ScrollMode get_vertical_scroll_mode() const;
+
+	void set_scroll_horizontal_by_default(bool p_enable);
+	bool is_scroll_horizontal_by_default() const;
+
+	void set_deadzone(int p_deadzone);
+	int get_deadzone() const;
+
+	ScrollHintMode get_scroll_hint_mode() const;
+
+	void set_tile_scroll_hint(bool p_enable);
+	bool is_scroll_hint_tiled();
+
+	bool is_following_focus() const;
+	void set_follow_focus(bool p_follow);
+
+	void set_scroll_on_drag_hover(bool p_scroll);
+
+	ScrollBar* get_h_scroll_bar();
+	ScrollBar* get_v_scroll_bar();
+	void ensure_control_visible(Control* p_control);
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	void set_draw_focus_border(bool p_draw);
+	bool get_draw_focus_border();
+
+	ScrollContainer() = default;
+};
+
+// --- Folded from scene/gui/foldable_container.h ---
+
+
+class FoldableGroup;
+class TextLine;
+
+class FoldableContainer : public Control
+{
+public:
+	enum TitlePosition
+	{
+		POSITION_TOP,
+		POSITION_BOTTOM,
+		POSITION_MAX
+	};
+
+private:
+	bool folded = false;
+	String title;
+	Ref<FoldableGroup> foldable_group;
+	String language;
+	TextDirection title_text_direction = TEXT_DIRECTION_AUTO;
+	HorizontalAlignment title_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+	TitlePosition title_position = POSITION_TOP;
+
+	Ref<TextLine> text_buf;
+	bool changing_group = false;
+	bool is_hovering = false;
+	mutable Vector2 title_minimum_size;
+
+	LocalVector<Control*> title_controls;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> title_style;
+		Ref<StyleBox> title_hover_style;
+		Ref<StyleBox> title_collapsed_style;
+		Ref<StyleBox> title_collapsed_hover_style;
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Color title_font_color;
+		Color title_hovered_font_color;
+		Color title_collapsed_font_color;
+		Color title_font_outline_color;
+
+		Ref<Font> title_font;
+		int title_font_size = 0;
+		int title_font_outline_size = 0;
+
+		Ref<Texture2D> expanded_arrow;
+		Ref<Texture2D> expanded_arrow_mirrored;
+		Ref<Texture2D> folded_arrow;
+		Ref<Texture2D> folded_arrow_mirrored;
+
+		int h_separation = 0;
+	} theme_cache;
+
+	Ref<StyleBox> _get_title_style() const;
+	Ref<Texture2D> _get_title_icon() const;
+	Rect2 _get_title_rect() const;
+
+	int _get_h_separation() const { return MAX(theme_cache.h_separation, 0); }
+
+	real_t _get_title_controls_width() const;
+
+	void _update_title_min_size() const;
+	void _shape();
+	HorizontalAlignment _get_actual_alignment() const;
+	void _update_group();
+	void _draw_flippable_stylebox(const Ref<StyleBox> p_stylebox, const Rect2& p_rect);
+
+protected:
+	virtual bool has_point(const Point2& p_point) const override;
+	virtual void gui_input(const InputEvent& p_event);
+	virtual String get_tooltip(const Point2& p_pos) const;
+	void _notification(int p_what);
+
+public:
+	void fold();
+	void expand();
+
+	void set_folded(bool p_folded);
+	bool is_folded() const;
+
+	void set_foldable_group(const Ref<FoldableGroup>& p_group);
+	Ref<FoldableGroup> get_foldable_group() const;
+
+	void set_title(const String& p_text);
+	String get_title() const;
+
+	void set_title_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_title_alignment() const;
+
+	void set_title_text_direction(TextDirection p_text_direction);
+	TextDirection get_title_text_direction() const;
+
+	void set_title_text_overrun_behavior(TextServer::OverrunBehavior p_overrun_behavior);
+	TextServer::OverrunBehavior get_title_text_overrun_behavior() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_title_position(TitlePosition p_title_position);
+	TitlePosition get_title_position() const;
+
+	void add_title_bar_control(Control* p_control);
+	void remove_title_bar_control(Control* p_control);
+
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_desired_size() const override;
+	virtual Size2 get_inner_combined_maximum_size() const override;
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const override
+	{
+		return {SIZE_FILL, SIZE_SHRINK_BEGIN, SIZE_SHRINK_CENTER, SIZE_SHRINK_END};
+	}
+
+	virtual Vector<int> get_allowed_size_flags_vertical() const override
+	{
+		return {SIZE_FILL, SIZE_SHRINK_BEGIN, SIZE_SHRINK_CENTER, SIZE_SHRINK_END};
+	}
+
+	FoldableContainer(const String& p_text = String());
+	~FoldableContainer();
+};
+
+class FoldableGroup : public Resource
+{
+	friend class FoldableContainer;
+
+	HashSet<FoldableContainer*> containers;
+	bool allow_folding_all = false;
+	bool updating_group = false;
+
+protected:
+
+public:
+	FoldableContainer* get_expanded_container() const;
+
+	void get_containers(List<FoldableContainer*>* r_containers) const;
+
+	void set_allow_folding_all(bool p_enabled);
+	bool is_allow_folding_all() const;
+
+	FoldableGroup();
+};
+
+
+
+// --- End scene/gui/foldable_container.h ---
+
+// --- Folded from scene/gui/separator.h ---
+
+
+class Separator : public Control
+{
+	struct ThemeCache
+	{
+		int separation = 0;
+		Ref<StyleBox> separator_style;
+	} theme_cache;
+
+protected:
+	Orientation orientation = Orientation::HORIZONTAL;
+
+	void _notification(int p_what);
+
+public:
+	Orientation get_orientation() const { return orientation; }
+	void set_orientation(Orientation p_orientation)
+	{
+		if (orientation != p_orientation) {
+			orientation = p_orientation;
+			update_minimum_size();
+			queue_redraw();
+		}
+	}
+
+	virtual Size2 get_minimum_size() const override;
+
+	Separator(Orientation p_orientation = HORIZONTAL);
+	~Separator();
+};
+
+// --- End scene/gui/separator.h ---
+
+// --- Folded from scene/gui/split_container.h ---
+
+
+class TextureRect;
+class SplitContainer;
+
+class SplitContainerMultiDragger : public Control
+{
+	bool dragging = false;
+	int drag_from = 0;
+	int start_drag_split_offset = 0;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	int dragger_index = -1;
+	SplitContainer* split_container = nullptr;
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	void update_position();
+	void stop_dragging();
+
+	SplitContainerMultiDragger();
+};
+
+class SplitContainerDragger : public Control
+{
+	friend class SplitContainer;
+
+	bool dragging = false;
+	int drag_from = 0;
+	int start_drag_split_offset = 0;
+	bool mouse_inside = false;
+
+	Rect2 split_bar_rect;
+	TextureRect* touch_dragger = nullptr;
+
+	void _touch_dragger_mouse_exited();
+	void _touch_dragger_gui_input(const InputEvent& p_event);
+
+protected:
+	void _notification(int p_what);
+	virtual String _get_accessibility_name() const override;
+
+public:
+	int dragger_index = -1;
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	void set_touch_dragger_enabled(bool p_enabled);
+	void update_touch_dragger();
+	void stop_dragging();
+
+	SplitContainerDragger();
+};
+
+class SplitContainer : public Control
+{
+	friend class SplitContainerDragger;
+	friend class SplitContainerMultiDragger;
+
+public:
+	enum DraggerVisibility
+	{
+		DRAGGER_VISIBLE,
+		DRAGGER_HIDDEN,
+		DRAGGER_HIDDEN_COLLAPSED
+	};
+
+private:
+	bool show_drag_area = false;
+	int drag_area_margin_begin = 0;
+	int drag_area_margin_end = 0;
+	int drag_area_offset = 0;
+
+	PackedInt32Array split_offsets;
+	LocalVector<int> default_dragger_positions;
+	LocalVector<int> dragger_positions;
+	LocalVector<Control*> valid_children;
+	LocalVector<SplitContainerDragger*> dragging_area_controls;
+
+	bool vertical = false;
+	bool collapsed = false;
+	DraggerVisibility dragger_visibility = DRAGGER_VISIBLE;
+	bool dragging_enabled = true;
+	bool split_offset_pending = false;
+	bool can_use_desired_sizes = false;
+	bool initialized = false;
+
+	bool touch_dragger_enabled = false;
+	bool drag_nested_intersections = false;
+	int force_show_grabber_icon = -1;
+
+	struct ThemeCache
+	{
+		Color touch_dragger_color;
+		Color touch_dragger_pressed_color;
+		Color touch_dragger_hover_color;
+		int separation = 0;
+		int minimum_grab_thickness = 0;
+		bool autohide = false;
+		Ref<Texture2D> touch_dragger_icon;
+		Ref<Texture2D> touch_dragger_icon_h;
+		Ref<Texture2D> touch_dragger_icon_v;
+		Ref<Texture2D> grabber_icon;
+		Ref<Texture2D> grabber_icon_h;
+		Ref<Texture2D> grabber_icon_v;
+		float base_scale = 1.0;
+		Ref<StyleBox> split_bar_background;
+	} theme_cache;
+
+	Ref<Texture2D> _get_grabber_icon() const;
+	Ref<Texture2D> _get_touch_dragger_icon() const;
+	Point2i _get_valid_range(int p_dragger_index) const;
+
+	PackedInt32Array _get_desired_sizes() const;
+	void _set_desired_sizes(const PackedInt32Array& p_desired_sizes, int p_priority_index = -1);
+
+	void _update_default_dragger_positions();
+	void _update_dragger_positions(int p_clamp_index = -1);
+	int _get_separation() const;
+	void _resort();
+	void _update_draggers();
+	void _on_child_visibility_changed(Control* p_control);
+	void _add_valid_child(Control* p_control);
+	void _remove_valid_child(Control* p_control);
+
+	void _remove_nested_descendent(SplitContainer* p_nested_sc);
+	void _update_nested_descendent(SplitContainer* p_nested_sc, Control* p_direct_child);
+	void _update_nested_ancestors(bool p_remove = false);
+	void _update_all_nested_descendents(Control* p_control, Control* p_first_child = nullptr);
+
+	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
+
+protected:
+	bool is_fixed = false;
+
+	void _notification(int p_what);
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+
+#ifndef DISABLE_DEPRECATED
+	void _clamp_split_offset_bind_compat_90411();
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+public:
+	void set_split_offset(int p_offset, int p_index = 0);
+	int get_split_offset(int p_index = 0) const;
+
+	void set_split_offsets(const PackedInt32Array& p_offsets);
+	PackedInt32Array get_split_offsets() const;
+
+	void clamp_split_offset(int p_priority_index = 0);
+
+	void set_collapsed(bool p_collapsed);
+	bool is_collapsed() const;
+
+	void set_dragger_visibility(DraggerVisibility p_visibility);
+	DraggerVisibility get_dragger_visibility() const;
+
+	void set_vertical(bool p_vertical);
+	bool is_vertical() const;
+
+	void set_dragging_enabled(bool p_enabled);
+	bool is_dragging_enabled() const;
+
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_desired_size() const override;
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
+	virtual Vector<int> get_allowed_size_flags_vertical() const override;
+
+	void set_drag_area_margin_begin(int p_margin);
+	int get_drag_area_margin_begin() const;
+
+	void set_drag_area_margin_end(int p_margin);
+	int get_drag_area_margin_end() const;
+
+	void set_drag_area_offset(int p_offset);
+	int get_drag_area_offset() const;
+
+	void set_show_drag_area_enabled(bool p_enabled);
+	bool is_show_drag_area_enabled() const;
+
+	void set_touch_dragger_enabled(bool p_enabled);
+	bool is_touch_dragger_enabled() const;
+
+	void show_grabber_icon(int p_index);
+
+	void set_drag_nested_intersections(bool p_enabled);
+	bool is_dragging_nested_intersections() const;
+
+#ifndef DISABLE_DEPRECATED
+	Control* get_drag_area_control() { return dragging_area_controls[0]; }
+
+	void _set_split_offset_first(int p_offset) { set_split_offset(p_offset); }
+
+	int _get_split_offset_first() const { return get_split_offset(); }
+#endif
+
+	SplitContainer(bool p_vertical = false);
+};
+
+
+
+// --- End scene/gui/split_container.h ---
+
+// --- Folded from scene/gui/subviewport_container.h ---
+
+
+class SubViewportContainer : public Control
+{
+	bool stretch = false;
+	int shrink = 1;
+	bool mouse_target = false;
+
+	void _notify_viewports(int p_notification);
+	bool _is_propagated_in_gui_input(const InputEvent& p_event);
+	void _send_event_to_viewports(const InputEvent& p_event);
+	void _propagate_nonpositional_event(const InputEvent& p_event);
+
+protected:
+	void _notification(int p_what);
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	void set_stretch(bool p_enable);
+	bool is_stretch_enabled() const;
+
+	virtual void input(const InputEvent& p_event) override;
+	virtual void unhandled_input(const InputEvent& p_event) override;
+	virtual void gui_input(const InputEvent& p_event);
+	void set_stretch_shrink(int p_shrink);
+	int get_stretch_shrink() const;
+	void recalc_force_viewport_sizes();
+
+	void set_mouse_target(bool p_enable);
+	bool is_mouse_target_enabled();
+
+	virtual Size2 get_minimum_size() const override;
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
+	virtual Vector<int> get_allowed_size_flags_vertical() const override;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	SubViewportContainer();
+};
+
+
+
+// --- End scene/gui/subviewport_container.h ---
+
+// --- Folded from scene/gui/tab_bar.h ---
+
+#include "scene/main/node.h"
+#include "scene/resources/theme.h"
+
+class Timer;
+
+class TabBar : public Control
+{
+public:
+	enum AlignmentMode
+	{
+		ALIGNMENT_LEFT,
+		ALIGNMENT_CENTER,
+		ALIGNMENT_RIGHT,
+		ALIGNMENT_MAX,
+	};
+
+	enum CloseButtonDisplayPolicy
+	{
+		CLOSE_BUTTON_SHOW_NEVER,
+		CLOSE_BUTTON_SHOW_ACTIVE_ONLY,
+		CLOSE_BUTTON_SHOW_ALWAYS,
+		CLOSE_BUTTON_MAX
+	};
+
+	enum DrawMode
+	{
+		DRAW_NORMAL,
+		DRAW_PRESSED,
+		DRAW_HOVER,
+		DRAW_DISABLED,
+		DRAW_MAX,
+	};
+
+private:
+	struct Tab
+	{
+		mutable RID accessibility_item_element;
+		mutable bool accessibility_item_dirty = true;
+
+		// Corresponds to color overrides for the DrawMode enum
+		Color font_color_overrides[DrawMode::DRAW_MAX] = {
+			Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0)};
+
+		String text;
+		String tooltip;
+
+		String language;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
+
+		Ref<TextLine> text_buf;
+		Ref<Texture2D> icon;
+		int icon_max_width = 0;
+
+		bool disabled = false;
+		bool hidden = false;
+		bool truncated = false;
+
+		int ofs_cache = 0;
+		int size_cache = 0;
+		int size_text = 0;
+
+		Ref<Texture2D> right_button;
+		Rect2 rb_rect;
+		Rect2 cb_rect;
+
+		Tab() { text_buf.instantiate(); }
+
+		Tab(bool p_dummy) {}
+	};
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	int offset = 0;
+	int max_drawn_tab = 0;
+	int highlight_arrow = -1;
+	bool buttons_visible = false;
+	bool missing_right = false;
+	Vector<Tab> tabs;
+	int current = -1;
+	int previous = -1;
+	AlignmentMode tab_alignment = ALIGNMENT_LEFT;
+	bool clip_tabs = true;
+	int rb_hover = -1;
+	bool rb_pressing = false;
+	bool tab_style_v_flip = false;
+
+	bool select_with_rmb = false;
+	bool deselect_enabled = false;
+	bool switch_on_release = false;
+
+	int cb_hover = -1;
+	bool cb_pressing = false;
+	CloseButtonDisplayPolicy cb_displaypolicy = CLOSE_BUTTON_SHOW_NEVER;
+	bool close_with_middle_mouse = true;
+
+	int hover = -1; // Hovered tab.
+	int max_width = 0;
+	bool scrolling_enabled = true;
+	bool drag_to_rearrange_enabled = false;
+	bool dragging_valid_tab = false;
+	bool scroll_to_selected = true;
+	int tabs_rearrange_group = -1;
+	bool switch_on_drag_hover = true;
+
+	static const int CURRENT_TAB_UNINITIALIZED = -2;
+	bool initialized = false;
+	int queued_current = CURRENT_TAB_UNINITIALIZED;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 0.5;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
+
+	struct ThemeCache
+	{
+		int h_separation = 0;
+		int tab_separation = 0;
+		int icon_max_width = 0;
+		int hover_switch_wait_msec = 500;
+
+		Ref<StyleBox> tab_unselected_style;
+		Ref<StyleBox> tab_hovered_style;
+		Ref<StyleBox> tab_selected_style;
+		Ref<StyleBox> tab_disabled_style;
+		Ref<StyleBox> tab_focus_style;
+
+		Ref<Texture2D> increment_icon;
+		Ref<Texture2D> increment_hl_icon;
+		Ref<Texture2D> decrement_icon;
+		Ref<Texture2D> decrement_hl_icon;
+		Ref<Texture2D> drop_mark_icon;
+		Color drop_mark_color;
+
+		Ref<Font> font;
+		int font_size;
+		int outline_size = 0;
+
+		Color font_selected_color;
+		Color font_hovered_color;
+		Color font_unselected_color;
+		Color font_disabled_color;
+		Color font_outline_color;
+
+		Color icon_selected_color;
+		Color icon_hovered_color;
+		Color icon_unselected_color;
+		Color icon_disabled_color;
+
+		Ref<Texture2D> close_icon;
+		Ref<StyleBox> button_pressed_style;
+		Ref<StyleBox> button_hl_style;
+	} theme_cache;
+
+	Timer* hover_switch_delay = nullptr;
+
+	int get_tab_width(int p_idx) const;
+	Size2 _get_tab_icon_size(int p_idx) const;
+	void _ensure_no_over_offset();
+	bool _can_deselect() const;
+
+	void _update_hover();
+	void _update_cache(bool p_update_hover = true);
+	void _hover_switch_timeout();
+
+	void _on_mouse_exited();
+
+	void _shape(int p_tab);
+	void _draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color, const Color& p_icon_color,
+		int p_index, float p_x, bool p_focus);
+
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+
+	void _notification(int p_what);
+
+	void _move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
+
+public:
+	RID get_tab_accessibility_element(int p_tab) const;
+	virtual RID get_focused_accessibility_element() const override;
+
+	void _draw_tab_drop(RID p_canvas_item);
+
+	void add_tab(const String& p_str = "", const Ref<Texture2D>& p_icon = Ref<Texture2D>());
+
+	void set_tab_title(int p_tab, const String& p_title);
+	String get_tab_title(int p_tab) const;
+
+	void set_tab_tooltip(int p_tab, const String& p_tooltip);
+	String get_tab_tooltip(int p_tab) const;
+
+	void set_tab_text_direction(int p_tab, TextDirection p_text_direction);
+	TextDirection get_tab_text_direction(int p_tab) const;
+
+	void set_tab_language(int p_tab, const String& p_language);
+	String get_tab_language(int p_tab) const;
+
+	void set_tab_icon(int p_tab, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_tab_icon(int p_tab) const;
+
+	void set_tab_icon_max_width(int p_tab, int p_width);
+	int get_tab_icon_max_width(int p_tab) const;
+
+	void set_font_color_override_all(int p_tab, const Color& p_color);
+	void set_font_color_override(int p_tab, DrawMode p_draw_mode, const Color& p_color);
+	Color get_font_color_override(int p_tab, DrawMode p_draw_mode) const;
+
+	void set_tab_disabled(int p_tab, bool p_disabled);
+	bool is_tab_disabled(int p_tab) const;
+
+	void set_tab_hidden(int p_tab, bool p_hidden);
+	bool is_tab_hidden(int p_tab) const;
+
+	void set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_tab_button_icon(int p_tab) const;
+
+	int get_tab_idx_at_point(const Point2& p_point) const;
+	int get_closest_tab_idx_to_point(const Point2& p_point) const;
+
+	void set_tab_alignment(AlignmentMode p_alignment);
+	AlignmentMode get_tab_alignment() const;
+
+	void set_clip_tabs(bool p_clip_tabs);
+	bool get_clip_tabs() const;
+
+	void set_tab_style_v_flip(bool p_tab_style_v_flip);
+
+	void move_tab(int p_from, int p_to);
+
+	void set_tab_close_display_policy(CloseButtonDisplayPolicy p_policy);
+	CloseButtonDisplayPolicy get_tab_close_display_policy() const;
+
+	void set_close_with_middle_mouse(bool p_scroll_close);
+	bool get_close_with_middle_mouse() const;
+
+	void set_tab_count(int p_count);
+	int get_tab_count() const;
+
+	void set_current_tab(int p_current);
+	int get_current_tab() const;
+	int get_previous_tab() const;
+	int get_hovered_tab() const;
+
+	int get_previous_available(int p_idx = -1) const;
+	int get_next_available(int p_idx = -1) const;
+
+	bool select_previous_available();
+	bool select_next_available();
+
+	void set_tab_offset(int p_offset);
+	int get_tab_offset() const;
+	bool get_offset_buttons_visible() const;
+
+	void remove_tab(int p_idx);
+
+	void clear_tabs();
+
+	void set_scrolling_enabled(bool p_enabled);
+	bool get_scrolling_enabled() const;
+
+	void set_drag_to_rearrange_enabled(bool p_enabled);
+	bool get_drag_to_rearrange_enabled() const;
+	void set_tabs_rearrange_group(int p_group_id);
+	int get_tabs_rearrange_group() const;
+
+	void set_scroll_to_selected(bool p_enabled);
+	bool get_scroll_to_selected() const;
+
+	void set_switch_on_drag_hover(bool p_enabled);
+	bool get_switch_on_drag_hover() const;
+
+	void set_select_with_rmb(bool p_enabled);
+	bool get_select_with_rmb() const;
+
+	void set_deselect_enabled(bool p_enabled);
+	bool get_deselect_enabled() const;
+
+	void ensure_tab_visible(int p_idx);
+
+	void set_max_tab_width(int p_width);
+	int get_max_tab_width() const;
+
+	void set_switch_on_release(bool p_switch) { switch_on_release = p_switch; }
+
+	Rect2 get_tab_rect(int p_tab) const;
+	Size2 get_minimum_size() const override;
+	Size2 get_desired_size() const override;
+
+	TabBar();
+};
+
+
+
+// --- End scene/gui/tab_bar.h ---
+
+// --- Folded from scene/gui/tab_container.h ---
+
+
+#include "scene/main/node.h"
+
+class Button;
+class Popup;
+
+class TabContainer : public Control
+{
+public:
+	enum TabPosition
+	{
+		POSITION_TOP,
+		POSITION_BOTTOM,
+		POSITION_MAX,
+	};
+
+private:
+	Control* internal_container = nullptr;
+	TabBar* tab_bar = nullptr;
+	Button* popup_button = nullptr;
+
+	bool tabs_visible = true;
+	TabPosition tabs_position = POSITION_TOP;
+	bool use_hidden_tabs_for_min_size = false;
+	bool theme_changing = false;
+	Vector<Control*> children_removing;
+	bool drag_to_rearrange_enabled = false;
+	// Set the default setup current tab to be an invalid index.
+	int setup_current_tab = -2;
+	bool updating_visibility = false;
+
+	struct ThemeCache
+	{
+		int side_margin = 0;
+
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> tabbar_style;
+
+		Ref<Texture2D> menu_icon;
+		Ref<Texture2D> menu_hl_icon;
+
+		// TabBar overrides.
+		int icon_separation = 0;
+		int tab_separation = 0;
+		int icon_max_width = 0;
+		int outline_size = 0;
+
+		Ref<StyleBox> tab_unselected_style;
+		Ref<StyleBox> tab_hovered_style;
+		Ref<StyleBox> tab_selected_style;
+		Ref<StyleBox> tab_disabled_style;
+		Ref<StyleBox> tab_focus_style;
+
+		Ref<Texture2D> increment_icon;
+		Ref<Texture2D> increment_hl_icon;
+		Ref<Texture2D> decrement_icon;
+		Ref<Texture2D> decrement_hl_icon;
+		Ref<Texture2D> drop_mark_icon;
+		Color drop_mark_color;
+
+		Color font_selected_color;
+		Color font_hovered_color;
+		Color font_unselected_color;
+		Color font_disabled_color;
+		Color font_outline_color;
+
+		Color icon_selected_color;
+		Color icon_hovered_color;
+		Color icon_unselected_color;
+		Color icon_disabled_color;
+
+		Ref<Font> tab_font;
+		int tab_font_size;
+	} theme_cache;
+
+	struct CachedTab
+	{
+		bool has_title = false;
+		String title;
+		Ref<Texture2D> icon;
+		bool disabled = false;
+		bool hidden = false;
+	};
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	mutable Vector<CachedTab> pending_tabs;
+	CachedTab* get_pending_tab(int p_idx) const;
+
+	HashMap<Node*, RID> tab_panels;
+
+	int _get_tab_height() const;
+	Control* _as_tab_control(Node* p_child) const;
+	Vector<Control*> _get_tab_controls() const;
+	void _on_theme_changed();
+	void _repaint_call_deferred();
+	void _repaint();
+	void _repaint_internal();
+	void _refresh_tab_indices();
+	void _refresh_tab_names();
+	void _update_margins();
+	void _on_tab_changed(int p_tab);
+	void _on_tab_clicked(int p_tab);
+	void _on_tab_hovered(int p_tab);
+	void _on_tab_selected(int p_tab);
+	void _on_tab_button_pressed(int p_tab);
+	void _on_active_tab_rearranged(int p_tab);
+
+	void _drag_move_tab(int p_from_index, int p_to_index);
+	void _drag_move_tab_from(TabBar* p_from_tabbar, int p_from_index, int p_to_index);
+
+	void _popup_button_hovered(bool p_hover);
+	void _popup_button_pressed();
+
+	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
+
+protected:
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	void _notification(int p_what);
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	virtual bool accessibility_override_tree_hierarchy() const override { return true; }
+
+	Control* get_internal_container() { return internal_container; }
+
+	TabBar* get_tab_bar() const;
+
+	int get_tab_idx_at_point(const Point2& p_point) const;
+	int get_tab_idx_from_control(Control* p_child) const;
+
+	void set_tab_alignment(TabBar::AlignmentMode p_alignment);
+	TabBar::AlignmentMode get_tab_alignment() const;
+
+	void set_tabs_position(TabPosition p_tab_position);
+	TabPosition get_tabs_position() const;
+
+	void set_tab_focus_mode(FocusMode p_focus_mode);
+	FocusMode get_tab_focus_mode() const;
+
+	void set_clip_tabs(bool p_clip_tabs);
+	bool get_clip_tabs() const;
+
+	void set_tabs_visible(bool p_visible);
+	bool are_tabs_visible() const;
+
+#ifndef DISABLE_DEPRECATED
+	void set_all_tabs_in_front(bool p_is_front);
+	bool is_all_tabs_in_front() const;
+#endif
+
+	void set_tab_title(int p_tab, const String& p_title);
+	String get_tab_title(int p_tab) const;
+
+	void set_tab_tooltip(int p_tab, const String& p_tooltip);
+	String get_tab_tooltip(int p_tab) const;
+
+	void set_tab_icon(int p_tab, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_tab_icon(int p_tab) const;
+
+	void set_tab_icon_max_width(int p_tab, int p_width);
+	int get_tab_icon_max_width(int p_tab) const;
+
+	void set_tab_disabled(int p_tab, bool p_disabled);
+	bool is_tab_disabled(int p_tab) const;
+
+	void set_tab_hidden(int p_tab, bool p_hidden);
+	bool is_tab_hidden(int p_tab) const;
+
+
+	void set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_tab_button_icon(int p_tab) const;
+
+	int get_tab_count() const;
+	void set_current_tab(int p_current);
+	int get_current_tab() const;
+	int get_previous_tab() const;
+
+	bool select_previous_available();
+	bool select_next_available();
+
+	void set_deselect_enabled(bool p_enabled);
+	bool get_deselect_enabled() const;
+
+	Control* get_tab_control(int p_idx) const;
+	Control* get_current_tab_control() const;
+
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_inner_combined_maximum_size() const override;
+	virtual Size2 get_desired_size() const override;
+
+	void set_popup(Node* p_popup);
+	Popup* get_popup() const;
+
+	void move_tab_from_tab_container(TabContainer* p_from, int p_from_index, int p_to_index = -1);
+
+	void set_switch_on_drag_hover(bool p_enabled);
+	bool get_switch_on_drag_hover() const;
+	void set_drag_to_rearrange_enabled(bool p_enabled);
+	bool get_drag_to_rearrange_enabled() const;
+	void set_tabs_rearrange_group(int p_group_id);
+	int get_tabs_rearrange_group() const;
+	void set_use_hidden_tabs_for_min_size(bool p_use_hidden_tabs);
+	bool get_use_hidden_tabs_for_min_size() const;
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
+	virtual Vector<int> get_allowed_size_flags_vertical() const override;
+
+	TabContainer();
+};
+
+
+
+// --- End scene/gui/tab_container.h ---
+// --- End scene/gui/scroll_container.h ---
+#include "scene/main/node.h"
+#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
+
+class Panel;
+class LineEdit;
+class Timer;
+class PopupMenuItems;
+
+class PopupMenu : public Window
+{
+	friend class PopupMenuItems;
+
+public:
+	using HideReason = PopupTracker::HideReason;
+	static constexpr HideReason HIDE_REASON_NONE = PopupTracker::HIDE_REASON_NONE;
+	static constexpr HideReason HIDE_REASON_CANCELED = PopupTracker::HIDE_REASON_CANCELED;
+	static constexpr HideReason HIDE_REASON_UNFOCUSED = PopupTracker::HIDE_REASON_UNFOCUSED;
+
+private:
+	PopupTracker tracker;
+
+	static HashMap<NativeMenu::SystemMenus, PopupMenu*> system_menus;
+
+	struct Item
+	{
+		mutable RID accessibility_item_element;
+		mutable bool accessibility_item_dirty = true;
+
+		Ref<Texture2D> icon;
+		int icon_max_width = 0;
+		Color icon_modulate = Color(1, 1, 1, 1);
+		String text;
+		String xl_text;
+		Ref<TextLine> text_buf;
+		Ref<TextLine> accel_text_buf;
+
+		String language;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_AUTO;
+		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+
+		bool checked = false;
+		bool visible = true;
+
+		enum
+		{
+			CHECKABLE_TYPE_NONE,
+			CHECKABLE_TYPE_CHECK_BOX,
+			CHECKABLE_TYPE_RADIO_BUTTON,
+		} checkable_type = CHECKABLE_TYPE_NONE;
+
+		int max_states = 0;
+		int state = 0;
+		bool separator = false;
+		bool disabled = false;
+		bool indeterminate = false;
+		bool dirty = true;
+		int id = 0;
+		String submenu_name; // Compatibility.
+		PopupMenu* submenu = nullptr;
+		String tooltip;
+		Key accel = Key::NONE;
+		int _ofs_cache = 0;
+		int _height_cache = 0;
+		int indent = 0;
+		Ref<Shortcut> shortcut;
+		bool shortcut_is_global = false;
+		bool shortcut_is_disabled = false;
+		bool allow_echo = false;
+		bool submenu_bound = false;
+
+		// Returns (0,0) if icon is null.
+		Size2 get_icon_size() const { return icon.is_null() ? Size2() : icon->get_size(); }
+
+		Item()
+		{
+			text_buf.instantiate();
+			accel_text_buf.instantiate();
+			checkable_type = CHECKABLE_TYPE_NONE;
+		}
+
+		Item(bool p_dummy) {}
+	};
+
+	RID accessibility_scroll_element;
+
+	mutable Rect2i pre_popup_rect;
+	void _update_shadow_offsets() const;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	// To make Item available.
+	friend class OptionButton;
+	friend class MenuButton;
+
+	RID global_menu;
+	RID system_menu;
+	NativeMenu::SystemMenus system_menu_id = NativeMenu::INVALID_MENU_ID;
+	bool prefer_native = false;
+
+	bool activated_by_keyboard = false;
+
+	Timer* close_suspended_timer = nullptr;
+	bool close_was_suspended = false;
+	Timer* submenu_timer = nullptr;
+	List<Rect2> autohide_areas;
+	mutable Vector<Item> items;
+	uint32_t initial_button_mask = 0;
+	bool during_grabbed_click = false;
+	bool is_scrolling = false;
+	int mouse_over = -1;
+	int prev_mouse_over = -1;
+	int submenu_over = -1;
+	int this_submenu_index =
+		-1; // Always -1 for the parent popup, and always a positive int for every open submenu.
+	int active_submenu_index = -1; // A positive int for the parent popup if any submenu is open.
+	bool is_active_submenu_left = false;
+	Vector<Point2> active_submenu_target_line;
+	Point2 last_submenu_mouse_position;
+	int submenu_mouse_exited_ticks_msec = -1;
+	bool mouse_movement_was_tested = false;
+	Point2 panel_offset_start;
+	float submenu_timer_popup_delay = 0.2;
+	const float CLOSE_SUSPENDED_TIMER_DELAY = 0.5;
+	String _get_accel_text(const Item& p_item) const;
+	int _get_mouse_over(const Point2& p_over) const;
+	void _mouse_over_update(const Point2& p_over);
+	virtual Size2 _get_contents_minimum_size() const override;
+
+	int _get_item_height(int p_idx) const;
+	int _get_items_total_height() const;
+	Size2 _get_item_icon_size(int p_idx) const;
+
+	void _shape_item(int p_idx) const;
+
+	void _activate_submenu(int p_over, bool p_by_keyboard = false);
+	void _submenu_timeout();
+	bool _is_mouse_moving_toward_submenu(const Vector2& p_relative, bool p_is_submenu_left,
+		const Vector2& p_mouse_position, const Vector<Point2>& p_active_submenu_target_line) const;
+	void _close_or_suspend();
+	void _close_suspended_timeout();
+
+	uint64_t popup_time_msec = 0;
+	bool hide_on_item_selection = true;
+	bool hide_on_checkable_item_selection = true;
+	bool hide_on_multistate_item_selection = false;
+	Vector2 moved;
+
+	HashMap<Ref<Shortcut>, int> shortcut_refcount;
+
+	void _ref_shortcut(Ref<Shortcut> p_sc);
+	void _unref_shortcut(Ref<Shortcut> p_sc);
+
+	void _shortcut_changed();
+
+	bool allow_search = true;
+	uint64_t search_time_msec = 0;
+	String search_string = "";
+
+	bool search_bar_enabled = false;
+	int search_bar_min_item_count = 0;
+	bool search_bar_fuzzy_search_enabled = true;
+	int search_bar_fuzzy_search_max_misses = 2;
+	Panel* panel = nullptr;
+	Control* vbox_container = nullptr;
+	LineEdit* search_bar = nullptr;
+	ScrollContainer* scroll_container = nullptr;
+	PopupMenuItems* control = nullptr;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 0.5;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
+	bool joypad_event_process = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> hover_style;
+
+		Ref<StyleBox> separator_style;
+		Ref<StyleBox> labeled_separator_left;
+		Ref<StyleBox> labeled_separator_right;
+
+		int v_separation = 0;
+		int h_separation = 0;
+		int search_bar_separation = 0;
+		int indent = 0;
+		int item_start_padding = 0;
+		int item_end_padding = 0;
+		int icon_max_width = 0;
+		int gutter_compact = 0;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> indeterminate;
+		Ref<Texture2D> indeterminate_disabled;
+		Ref<Texture2D> radio_checked;
+		Ref<Texture2D> radio_checked_disabled;
+		Ref<Texture2D> radio_unchecked;
+		Ref<Texture2D> radio_unchecked_disabled;
+
+		Ref<Texture2D> search;
+		Ref<Texture2D> submenu;
+		Ref<Texture2D> submenu_mirrored;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Ref<Font> font_separator;
+		int font_separator_size = 0;
+
+		Color font_color;
+		Color font_hover_color;
+		Color font_disabled_color;
+		Color font_accelerator_color;
+		int font_outline_size = 0;
+		Color font_outline_color;
+
+		Color font_separator_color;
+		int font_separator_outline_size = 0;
+		Color font_separator_outline_color;
+	} theme_cache;
+
+	void _draw_items();
+	void _update_search_bar_visibility();
+	void _items_focus_entered();
+	void _search_bar_text_changed(const String& p_new_text);
+	void _search_bar_focus_entered();
+	void _filter_items(const String& p_query);
+
+	void _close_pressed();
+	void _menu_changed();
+	void _input_from_window_internal(const InputEvent& p_event);
+	bool _set_item_accelerator(int p_index, const InputEvent& p_ie);
+	void _set_item_checkable_type(int p_index, int p_checkable_type);
+	int _get_item_checkable_type(int p_index) const;
+	void _native_popup(const Rect2i& p_rect);
+	String _atr(int p_idx, const String& p_text) const;
+	void _submenu_hidden();
+
+	bool shrink_height = true;
+	bool shrink_width = true;
+
+protected:
+	virtual void _pre_popup(const Size2i& p_size) override;
+	virtual void _post_popup() override;
+	virtual Rect2i _popup_adjust_rect() const override;
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+	virtual void _input_from_window(const InputEvent& p_event) override;
+
+	virtual void _popup_base(const Rect2i& p_bounds = Rect2i()) override;
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+	virtual String _get_accessibility_name() const override;
+
+#ifndef DISABLE_DEPRECATED
+	void _add_shortcut_bind_compat_36493(
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void _add_icon_shortcut_bind_compat_36493(const Ref<Texture2D>& p_icon,
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void _clear_bind_compat_79965();
+
+	void _set_system_menu_root_bind_compat_87452(const String& p_special);
+	String _get_system_menu_root_bind_compat_87452() const;
+
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	// ATTENTION: This is used by the POT generator's scene parser. If the number of properties
+	// returned by `_get_items()` ever changes, this value should be updated to reflect the new
+	// size.
+	static const int ITEM_PROPERTY_SIZE = 10;
+
+	virtual RID get_focused_accessibility_element() const override;
+
+	HideReason get_hide_reason() const { return tracker.hide_reason; }
+
+	void _parent_focused();
+
+	RID bind_global_menu();
+	void unbind_global_menu();
+	bool is_system_menu() const;
+
+	void set_system_menu(NativeMenu::SystemMenus p_system_menu_id);
+	NativeMenu::SystemMenus get_system_menu() const;
+
+	void add_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
+		Key p_accel = Key::NONE);
+	void add_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_check_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1,
+		Key p_accel = Key::NONE);
+	void add_radio_check_item(const String& p_label, int p_id = -1, Key p_accel = Key::NONE);
+	void add_icon_radio_check_item(const Ref<Texture2D>& p_icon, const String& p_label,
+		int p_id = -1, Key p_accel = Key::NONE);
+
+	void add_multistate_item(const String& p_label, int p_max_states, int p_default_state = 0,
+		int p_id = -1, Key p_accel = Key::NONE);
+
+	void add_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false,
+		bool p_allow_echo = false);
+	void add_icon_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
+		int p_id = -1, bool p_global = false, bool p_allow_echo = false);
+	void add_check_shortcut(const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void add_icon_check_shortcut(const Ref<Texture2D>& p_icon, const Ref<Shortcut>& p_shortcut,
+		int p_id = -1, bool p_global = false);
+	void add_radio_check_shortcut(
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+	void add_icon_radio_check_shortcut(const Ref<Texture2D>& p_icon,
+		const Ref<Shortcut>& p_shortcut, int p_id = -1, bool p_global = false);
+
+	void add_submenu_item(const String& p_label, const String& p_submenu, int p_id = -1);
+	void add_submenu_node_item(const String& p_label, PopupMenu* p_submenu, int p_id = -1);
+
+	void set_item_text(int p_idx, const String& p_text);
+
+	void set_item_text_direction(int p_idx, Control::TextDirection p_text_direction);
+	void set_item_language(int p_idx, const String& p_language);
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	void set_item_icon_max_width(int p_idx, int p_width);
+	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
+	void set_item_checked(int p_idx, bool p_checked);
+	void set_item_indeterminate(int p_idx, bool p_indeterminate);
+	void set_item_id(int p_idx, int p_id);
+	void set_item_accelerator(int p_idx, Key p_accel);
+	void set_item_disabled(int p_idx, bool p_disabled);
+	void set_item_submenu(int p_idx, const String& p_submenu);
+	void set_item_submenu_node(int p_idx, PopupMenu* p_submenu);
+	void set_item_as_separator(int p_idx, bool p_separator);
+	void set_item_as_checkable(int p_idx, bool p_checkable);
+	void set_item_as_radio_checkable(int p_idx, bool p_radio_checkable);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	void set_item_shortcut(int p_idx, const Ref<Shortcut>& p_shortcut, bool p_global = false);
+	void set_item_indent(int p_idx, int p_indent);
+	void set_item_max_states(int p_idx, int p_max_states);
+	void set_item_multistate(int p_idx, int p_state);
+	void toggle_item_multistate(int p_idx);
+	void set_item_shortcut_disabled(int p_idx, bool p_disabled);
+	void set_item_index(int p_idx, int p_target_idx);
+
+	void toggle_item_checked(int p_idx);
+
+	String get_item_text(int p_idx) const;
+	String get_item_xl_text(int p_idx) const;
+	Control::TextDirection get_item_text_direction(int p_idx) const;
+	String get_item_language(int p_idx) const;
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+	int get_item_idx_from_text(const String& text) const;
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+	int get_item_icon_max_width(int p_idx) const;
+	Color get_item_icon_modulate(int p_idx) const;
+	bool is_item_checked(int p_idx) const;
+	bool is_item_indeterminate(int p_idx) const;
+	int get_item_id(int p_idx) const;
+	int get_item_index(int p_id) const;
+	Key get_item_accelerator(int p_idx) const;
+	bool is_item_disabled(int p_idx) const;
+	String get_item_submenu(int p_idx) const;
+	PopupMenu* get_item_submenu_node(int p_idx) const;
+	bool is_item_separator(int p_idx) const;
+	bool is_item_checkable(int p_idx) const;
+	bool is_item_radio_checkable(int p_idx) const;
+	bool is_item_shortcut_disabled(int p_idx) const;
+	bool is_item_shortcut_global(int p_idx) const;
+	String get_item_tooltip(int p_idx) const;
+	Ref<Shortcut> get_item_shortcut(int p_idx) const;
+	int get_item_indent(int p_idx) const;
+	int get_item_max_states(int p_idx) const;
+	int get_item_state(int p_idx) const;
+
+	void set_focused_item(int p_idx);
+	int get_focused_item() const;
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+
+	void set_prefer_native_menu(bool p_enabled);
+	bool is_prefer_native_menu() const;
+
+	void set_search_bar_enabled(bool p_enabled);
+	bool is_search_bar_enabled() const;
+
+	void set_search_bar_min_item_count(int p_count);
+	int get_search_bar_min_item_count() const;
+
+	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
+	bool is_search_bar_fuzzy_search_enabled() const;
+
+	void set_search_bar_fuzzy_search_max_misses(int p_max_misses);
+	int get_search_bar_fuzzy_search_max_misses() const;
+
+	bool is_native_menu() const;
+
+	void scroll_to_item(int p_idx);
+
+	bool activate_item_by_event(const InputEvent& p_event, bool p_for_global_only = false);
+	void activate_item(int p_idx);
+
+	void _about_to_popup();
+	void _about_to_close();
+
+	void remove_item(int p_idx);
+
+	void add_separator(const String& p_text = String(), int p_id = -1);
+
+	void clear(bool p_free_submenus = true);
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	void add_autohide_area(const Rect2& p_area);
+	void clear_autohide_areas();
+
+	void set_hide_on_item_selection(bool p_enabled);
+	bool is_hide_on_item_selection() const;
+
+	void set_hide_on_checkable_item_selection(bool p_enabled);
+	bool is_hide_on_checkable_item_selection() const;
+
+	void set_hide_on_multistate_item_selection(bool p_enabled);
+	bool is_hide_on_multistate_item_selection() const;
+
+	void set_submenu_popup_delay(float p_time);
+	float get_submenu_popup_delay() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void set_shrink_height(bool p_shrink);
+	bool get_shrink_height() const;
+
+	void set_shrink_width(bool p_shrink);
+	bool get_shrink_width() const;
+
+	virtual void set_visible(bool p_visible) override;
+
+	PopupMenu();
+	~PopupMenu();
+};
+
+class PopupMenuItems : public Control
+{
+	PopupMenu* popup = nullptr;
+
+public:
+	PopupMenuItems(PopupMenu* p_popup) : popup(p_popup) {}
+
+	virtual RID get_focused_accessibility_element() const override;
+};
+
+class MenuBar : public Control
+{
+	Mutex mutex;
+
+	bool switch_on_hover = true;
+	bool disable_shortcuts = false;
+	bool prefer_native = true;
+	bool flat = false;
+	int start_index = -1;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+
+	struct Menu
+	{
+		String name;
+		String tooltip;
+
+		Ref<TextLine> text_buf;
+		bool hidden = false;
+		bool disabled = false;
+		RID submenu_rid;
+		NativeMenu::SystemMenus sysmenu_id = NativeMenu::INVALID_MENU_ID;
+
+		Menu(const String& p_name)
+		{
+			name = p_name;
+			text_buf.instantiate();
+		}
+
+		Menu() { text_buf.instantiate(); }
+	};
+
+	Vector<Menu> menu_cache;
+
+	int focused_menu = -1;
+	int selected_menu = -1;
+	int active_menu = -1;
+
+	Vector2i old_mouse_pos;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> normal_mirrored;
+		Ref<StyleBox> disabled;
+		Ref<StyleBox> disabled_mirrored;
+		Ref<StyleBox> pressed;
+		Ref<StyleBox> pressed_mirrored;
+		Ref<StyleBox> hover;
+		Ref<StyleBox> hover_mirrored;
+		Ref<StyleBox> hover_pressed;
+		Ref<StyleBox> hover_pressed_mirrored;
+
+		Ref<Font> font;
+		int font_size = 0;
+		int outline_size = 0;
+		Color font_outline_color;
+
+		Color font_color;
+		Color font_disabled_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_focus_color;
+
+		int h_separation = 0;
+	} theme_cache;
+
+	int _get_index_at_point(const Point2& p_point) const;
+	Rect2 _get_menu_item_rect(int p_index) const;
+	void _draw_menu_item(int p_index);
+
+	void shape(Menu& p_menu);
+	void _refresh_menu_names();
+	Vector<PopupMenu*> _get_popups() const;
+	int get_menu_idx_from_control(PopupMenu* p_child) const;
+
+	void _open_popup(int p_index, bool p_focus_item = false);
+	void _popup_visibility_changed(bool p_visible);
+
+	String global_menu_tag;
+
+	void bind_global_menu();
+	void unbind_global_menu();
+
+protected:
+	void _notification(int p_what);
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void move_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+public:
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_prefer_global_menu(bool p_enabled);
+	bool is_prefer_global_menu() const;
+
+	bool is_native_menu() const;
+
+	virtual Size2 get_minimum_size() const override;
+
+	int get_menu_count() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_start_index(int p_index);
+	int get_start_index() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_menu_title(int p_menu, const String& p_title);
+	String get_menu_title(int p_menu) const;
+
+	void set_menu_tooltip(int p_menu, const String& p_tooltip);
+	String get_menu_tooltip(int p_menu) const;
+
+	void set_menu_disabled(int p_menu, bool p_disabled);
+	bool is_menu_disabled(int p_menu) const;
+
+	void set_menu_hidden(int p_menu, bool p_hidden);
+	bool is_menu_hidden(int p_menu) const;
+
+	PopupMenu* get_menu_popup(int p_menu) const;
+
+	virtual String get_tooltip(const Point2& p_pos) const;
+
+	MenuBar();
+	~MenuBar() = default;
+};
+
+
+
+// --- End scene/gui/menu_bar.h ---
+
+// --- Folded from scene/gui/menu_button.h ---
+
+
+
+#include "scene/main/node.h"
+
+class MenuButton : public Control
+{
+	bool switch_on_hover = false;
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+protected:
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	void pressed();
+
+	Button* get_button() const { return button; }
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_flat(bool p_flat)
+	{
+		if (button) {
+			button->set_flat(p_flat);
+		}
+	}
+	bool is_flat() const { return button ? button->is_flat() : true; }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void set_switch_on_hover(bool p_enabled);
+	bool is_switch_on_hover();
+	void set_disable_shortcuts(bool p_disabled);
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	MenuButton(const String& p_text = String());
+	~MenuButton();
+};
+
+// --- End scene/gui/menu_button.h ---
+
+// --- Folded from scene/gui/option_button.h ---
+
+
+
+#include "scene/main/node.h"
+
+class OptionButton : public Control
+{
+	bool disable_shortcuts = false;
+	Button* button = nullptr;
+	PopupMenu* popup = nullptr;
+	int current = -1;
+	bool fit_to_longest_item = true;
+	Vector2 _cached_size;
+	bool cache_refresh_pending = false;
+	bool allow_reselect = false;
+	bool initialized = false;
+	int queued_current = -1;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+
+		Color font_color;
+		Color font_focus_color;
+		Color font_pressed_color;
+		Color font_hover_color;
+		Color font_hover_pressed_color;
+		Color font_disabled_color;
+
+		int h_separation = 0;
+
+		Ref<Texture2D> arrow_icon;
+		int arrow_margin = 0;
+		int modulate_arrow = 0;
+	};
+
+	ThemeCache theme_cache;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	void _focused(int p_which);
+	void _selected(int p_which);
+	void _select(int p_which, bool p_emit = false);
+	void _select_int(int p_which);
+	void _refresh_size_cache();
+
+	void _dummy_setter() {}
+
+	void pressed();
+
+protected:
+	Size2 get_minimum_size() const override;
+	void _queue_update_size_cache();
+	String _get_translated_text(const String& p_text) const;
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	static const int ITEM_PROPERTY_SIZE = 5;
+
+	Button* get_button() const { return button; }
+	void set_text(const String& p_text)
+	{
+		if (button) {
+			button->set_text(p_text);
+		}
+	}
+	String get_text() const { return button ? button->get_text() : String(); }
+	void set_disabled(bool p_disabled)
+	{
+		if (button) {
+			button->set_disabled(p_disabled);
+		}
+	}
+	bool is_disabled() const { return button ? button->is_disabled() : false; }
+
+	void add_icon_item(const Ref<Texture2D>& p_icon, const String& p_label, int p_id = -1);
+	void add_item(const String& p_label, int p_id = -1);
+
+	void set_item_text(int p_idx, const String& p_text);
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	void set_item_id(int p_idx, int p_id);
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+
+	String get_item_text(int p_idx) const;
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+	int get_item_id(int p_idx) const;
+	int get_item_index(int p_id) const;
+	bool is_item_disabled(int p_idx) const;
+	bool is_item_separator(int p_idx) const;
+	String get_item_tooltip(int p_idx) const;
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+
+	bool is_search_bar_enabled() const;
+
+	int get_search_bar_min_item_count() const;
+
+	void set_search_bar_fuzzy_search_enabled(bool p_enabled);
+	bool is_search_bar_fuzzy_search_enabled() const;
+
+	void set_search_bar_fuzzy_search_max_misses(int p_max_misses);
+	int get_search_bar_fuzzy_search_max_misses() const;
+
+	bool has_selectable_items() const;
+	int get_selectable_item(bool p_from_last = false) const;
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+	void set_fit_to_longest_item(bool p_fit);
+	bool is_fit_to_longest_item() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void add_separator(const String& p_text = "");
+
+	void clear();
+
+	void select(int p_idx);
+	int get_selected() const;
+	int get_selected_id() const;
+
+	void remove_item(int p_idx);
+
+	PopupMenu* get_popup() const;
+	void show_popup();
+
+	void set_disable_shortcuts(bool p_disabled);
+
+#ifdef TOOLS_ENABLED
+	PackedStringArray get_configuration_warnings() const override;
+#endif
+
+	OptionButton(const String& p_text = String());
+	~OptionButton();
+};
+
+// --- End scene/gui/option_button.h ---
+
+// --- Folded from scene/gui/texture_rect.h ---
+
+
+class TextureRect : public Control
+{
+public:
+	enum ExpandMode
+	{
+		EXPAND_KEEP_SIZE,
+		EXPAND_IGNORE_SIZE,
+		EXPAND_FIT_WIDTH,
+		EXPAND_FIT_WIDTH_PROPORTIONAL,
+		EXPAND_FIT_HEIGHT,
+		EXPAND_FIT_HEIGHT_PROPORTIONAL,
+	};
+
+	enum StretchMode
+	{
+		STRETCH_SCALE,
+		STRETCH_TILE,
+		STRETCH_KEEP,
+		STRETCH_KEEP_CENTERED,
+		STRETCH_KEEP_ASPECT,
+		STRETCH_KEEP_ASPECT_CENTERED,
+		STRETCH_KEEP_ASPECT_COVERED,
+	};
+
+private:
+	bool hflip = false;
+	bool vflip = false;
+	Ref<Texture2D> texture;
+	ExpandMode expand_mode = EXPAND_KEEP_SIZE;
+	StretchMode stretch_mode = STRETCH_SCALE;
+
+	void _texture_changed();
+
+protected:
+	void _notification(int p_what);
+	virtual Size2 get_minimum_size() const override;
+
+public:
+	void set_texture(const Ref<Texture2D>& p_tex);
+	Ref<Texture2D> get_texture() const;
+
+	void set_expand_mode(ExpandMode p_mode);
+	ExpandMode get_expand_mode() const;
+
+	void set_stretch_mode(StretchMode p_mode);
+	StretchMode get_stretch_mode() const;
+
+	void set_flip_h(bool p_flip);
+	bool is_flipped_h() const;
+
+	void set_flip_v(bool p_flip);
+	bool is_flipped_v() const;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	TextureRect();
+	~TextureRect();
+};
+
+
+
+// --- End scene/gui/texture_rect.h ---
+
+// --- Inlined/Folded from scene/gui/label.h ---
+
+// --- Folded from scene/resources/label_settings.h ---
+#include "core/types.h"
+#include "scene/main/node.h"
+#include "scene/resources/theme.h"
+
+/*************************************************************************/
+
+class LabelSettings : public Resource
+{
+public:
+	struct StackedOutlineData
+	{
+		int32_t size = 0;
+		Color color;
+	};
+
+	struct StackedShadowData
+	{
+		Vector2 offset = Vector2(1, 1);
+		Color color;
+		int32_t outline_size = 0;
+	};
+
+private:
+	real_t line_spacing = 3;
+	real_t paragraph_spacing = 0;
+
+	Ref<Font> font;
+	int font_size = Font::DEFAULT_FONT_SIZE;
+	Color font_color = Color(1, 1, 1);
+
+	int outline_size = 0;
+	Color outline_color = Color(1, 1, 1);
+
+	int shadow_size = 1;
+	Color shadow_color = Color(0, 0, 0, 0);
+	Vector2 shadow_offset = Vector2(1, 1);
+
+	Vector<StackedOutlineData> stacked_outline_data;
+	Vector<StackedShadowData> stacked_shadow_data;
+
+	static inline PropertyListHelper stacked_outline_base_property_helper;
+	static inline PropertyListHelper stacked_shadow_base_property_helper;
+	PropertyListHelper stacked_outline_property_helper;
+	PropertyListHelper stacked_shadow_property_helper;
+
+	void _font_changed();
+
+protected:
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return stacked_outline_property_helper.property_can_revert(p_name) ||
+			   stacked_shadow_property_helper.property_can_revert(p_name);
+	}
+
+public:
+	void set_line_spacing(real_t p_spacing);
+	real_t get_line_spacing() const;
+
+	void set_paragraph_spacing(real_t p_spacing);
+	real_t get_paragraph_spacing() const;
+
+	void set_font(const Ref<Font>& p_font);
+	Ref<Font> get_font() const;
+
+	void set_font_size(int p_size);
+	int get_font_size() const;
+
+	void set_font_color(const Color& p_color);
+	Color get_font_color() const;
+
+	void set_outline_size(int p_size);
+	int get_outline_size() const;
+
+	void set_outline_color(const Color& p_color);
+	Color get_outline_color() const;
+
+	void set_shadow_size(int p_size);
+	int get_shadow_size() const;
+
+	void set_shadow_color(const Color& p_color);
+	Color get_shadow_color() const;
+
+	void set_shadow_offset(const Vector2& p_offset);
+	Vector2 get_shadow_offset() const;
+
+	Vector<StackedOutlineData> get_stacked_outline_data() const;
+	int get_stacked_outline_count() const;
+	void set_stacked_outline_count(int p_count);
+	void add_stacked_outline(int p_index = -1);
+	void move_stacked_outline(int p_from_index, int p_to_position);
+	void remove_stacked_outline(int p_index);
+	void set_stacked_outline_size(int p_index, int p_size);
+	int get_stacked_outline_size(int p_index) const;
+	void set_stacked_outline_color(int p_index, const Color& p_color);
+	Color get_stacked_outline_color(int p_index) const;
+
+	Vector<StackedShadowData> get_stacked_shadow_data() const;
+	int get_stacked_shadow_count() const;
+	void set_stacked_shadow_count(int p_count);
+	void add_stacked_shadow(int p_index = -1);
+	void move_stacked_shadow(int p_from_index, int p_to_position);
+	void remove_stacked_shadow(int p_index);
+	void set_stacked_shadow_offset(int p_index, const Vector2& p_offset);
+	Vector2 get_stacked_shadow_offset(int p_index) const;
+	void set_stacked_shadow_color(int p_index, const Color& p_color);
+	Color get_stacked_shadow_color(int p_index) const;
+	void set_stacked_shadow_outline_size(int p_index, int p_size);
+	int get_stacked_shadow_outline_size(int p_index) const;
+
+	LabelSettings() {}
+};
+
+
+
+// --- End scene/resources/label_settings.h ---
+
+class Label : public Control
+{
+private:
+	HorizontalAlignment horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_TOP;
+	String text;
+	String xl_text;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+	uint32_t autowrap_flags_trim =
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+	uint32_t jst_flags =
+		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	bool clip = false;
+	String el_char = U"…";
+	TextServer::OverrunBehavior overrun_behavior = TextServer::OVERRUN_NO_TRIMMING;
+	mutable Size2 minsize;
+	bool uppercase = false;
+
+	struct Paragraph
+	{
+		bool lines_dirty = true;
+		bool dirty = true;
+		int start = 0;
+
+		String text;
+		RID text_rid;
+		Vector<RID> lines_rid;
+	};
+
+	mutable bool dirty = true;
+	mutable bool font_dirty = true;
+	mutable bool text_dirty = true;
+	mutable Vector<Paragraph> paragraphs;
+	mutable int total_line_count = 0;
+	String paragraph_separator = "\\n";
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+	TextServer::VisibleCharactersBehavior visible_chars_behavior =
+		TextServer::VC_CHARS_BEFORE_SHAPING;
+	int visible_chars = -1;
+	float visible_ratio = 1.0;
+	int lines_skipped = 0;
+	int max_lines_visible = -1;
+	PackedFloat32Array tab_stops;
+
+	Ref<LabelSettings> settings;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal_style;
+		Ref<StyleBox> focus_style;
+		Ref<Font> font;
+
+		int font_size = 0;
+		int line_spacing = 0;
+		int paragraph_spacing = 0;
+		Color font_color;
+		Color font_shadow_color;
+		Point2 font_shadow_offset;
+		Color font_outline_color;
+		int font_outline_size;
+		int font_shadow_outline_size;
+	};
+
+	ThemeCache theme_cache;
+
+	Rect2 _get_line_rect(int p_para, int p_line) const;
+	void _ensure_shaped() const;
+	void _update_visible() const;
+	void _shape() const;
+	void _invalidate();
+	void _maximum_size_changed();
+
+protected:
+	RID get_line_rid(int p_line) const;
+	Rect2 get_line_rect(int p_line) const;
+	int get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spacing) const;
+
+	void _notification(int p_what);
+
+public:
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_desired_size() const override;
+	virtual PackedStringArray get_configuration_warnings() const override;
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_vertical_alignment(VerticalAlignment p_alignment);
+	VerticalAlignment get_vertical_alignment() const;
+
+	void set_text(const String& p_string);
+	String get_text() const;
+
+	void set_label_settings(const Ref<LabelSettings>& p_settings);
+	Ref<LabelSettings> get_label_settings() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_paragraph_separator(const String& p_paragraph_separator);
+	String get_paragraph_separator() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
+
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
+
+	void set_uppercase(bool p_uppercase);
+	bool is_uppercase() const;
+
+	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
+	TextServer::VisibleCharactersBehavior get_visible_characters_behavior() const;
+
+	void set_visible_characters(int p_amount);
+	int get_visible_characters() const;
+	int get_total_character_count() const;
+
+	void set_visible_ratio(float p_ratio);
+	float get_visible_ratio() const;
+
+	void set_clip_text(bool p_clip);
+	bool is_clipping_text() const;
+
+	void set_tab_stops(const PackedFloat32Array& p_tab_stops);
+	PackedFloat32Array get_tab_stops() const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void set_ellipsis_char(const String& p_char);
+	String get_ellipsis_char() const;
+
+	void set_lines_skipped(int p_lines);
+	int get_lines_skipped() const;
+
+	void set_max_lines_visible(int p_lines);
+	int get_max_lines_visible() const;
+
+	int get_line_height(int p_line = -1) const;
+	int get_line_count() const;
+	int get_visible_line_count() const;
+
+	Rect2 get_character_bounds(int p_pos) const;
+
+	Label(const String& p_text = String()) : text(p_text) {}
+	~Label();
+
+	template <typename... VarArgsFunc, typename... VarArgs>
+	void draw_text(bool p_rtl, int p_ellipsis_pos, int p_ellipsis_gl_size,
+		const Glyph* p_ellipsis_glyphs, bool p_trim_chars, int p_para_start, int p_visible_chars,
+		bool p_trim_glyphs_ltr, int& p_processed_glyphs_step, int p_processed_glyphs,
+		int p_visible_glyphs, bool p_trim_glyphs_rtl, int p_total_glyphs, const RID& p_ci,
+		const Vector2& p_ofs, int p_gl_size, int p_trim_pos, const Glyph* p_glyphs,
+		const Color& p_color,
+		void (*p_draw_func)(const Glyph& p_gl, const RID& p_canvas,
+			const Color& p_font_outline_color, const Vector2& p_ofs, VarArgsFunc... p_args),
+		VarArgs&&... p_args)
+	{
+		p_processed_glyphs_step = p_processed_glyphs;
+		Vector2 offset_step = p_ofs; /* Draw RTL ellipsis string when necessary. */
+		if (p_rtl && p_ellipsis_pos >= 0) {
+			for (int gl_idx = p_ellipsis_gl_size - 1; gl_idx >= 0; gl_idx--) {
+				for (int j = 0; j < p_ellipsis_glyphs[gl_idx].repeat; j++) {
+					bool skip =
+						(p_trim_chars &&
+							p_ellipsis_glyphs[gl_idx].end + p_para_start > p_visible_chars) ||
+						(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+						(p_trim_glyphs_rtl &&
+							(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+					if (!skip) {
+						p_draw_func(p_ellipsis_glyphs[gl_idx], p_ci, p_color, offset_step,
+							std::forward<VarArgs>(p_args)...);
+					}
+					p_processed_glyphs_step++;
+					offset_step.x += p_ellipsis_glyphs[gl_idx].advance;
+				}
+			}
+		}									  /* Draw main text. */
+		for (int j = 0; j < p_gl_size; j++) { /* Trim when necessary. */
+			if (p_trim_pos >= 0) {
+				if (p_rtl) {
+					if (j < p_trim_pos) {
+						continue;
+					}
+				}
+				else {
+					if (j >= p_trim_pos) {
+						break;
+					}
+				}
+			}
+			for (int k = 0; k < p_glyphs[j].repeat; k++) {
+				bool skip = (p_trim_chars && p_glyphs[j].end + p_para_start > p_visible_chars) ||
+							(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+							(p_trim_glyphs_rtl &&
+								(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+				if (!skip) {
+					p_draw_func(
+						p_glyphs[j], p_ci, p_color, offset_step, std::forward<VarArgs>(p_args)...);
+				}
+				p_processed_glyphs_step++;
+				offset_step.x += p_glyphs[j].advance;
+			}
+		} /* Draw LTR ellipsis string when necessary. */
+		if (!p_rtl && p_ellipsis_pos >= 0) {
+			for (int gl_idx = 0; gl_idx < p_ellipsis_gl_size; gl_idx++) {
+				for (int j = 0; j < p_ellipsis_glyphs[gl_idx].repeat; j++) {
+					bool skip =
+						(p_trim_chars &&
+							p_ellipsis_glyphs[gl_idx].end + p_para_start > p_visible_chars) ||
+						(p_trim_glyphs_ltr && (p_processed_glyphs_step >= p_visible_glyphs)) ||
+						(p_trim_glyphs_rtl &&
+							(p_processed_glyphs_step < p_total_glyphs - p_visible_glyphs));
+					if (!skip) {
+						p_draw_func(p_ellipsis_glyphs[gl_idx], p_ci, p_color, offset_step,
+							std::forward<VarArgs>(p_args)...);
+					}
+					p_processed_glyphs_step++;
+					offset_step.x += p_ellipsis_glyphs[gl_idx].advance;
+				}
+			}
+		}
+	}
+};
+
+// --- Folded from scene/gui/item_list.h ---
+
+
+#include "scene/main/node.h"
+#include "scene/resources/theme.h"
+
+class ItemList : public Control
+{
+public:
+	enum IconMode
+	{
+		ICON_MODE_TOP,
+		ICON_MODE_LEFT
+	};
+
+	enum SelectMode
+	{
+		SELECT_SINGLE,
+		SELECT_MULTI,
+		SELECT_TOGGLE,
+	};
+
+	enum ScrollHintMode
+	{
+		SCROLL_HINT_MODE_DISABLED,
+		SCROLL_HINT_MODE_BOTH,
+		SCROLL_HINT_MODE_TOP,
+		SCROLL_HINT_MODE_BOTTOM,
+	};
+
+private:
+	struct Item
+	{
+		mutable RID accessibility_item_element;
+		mutable bool accessibility_item_dirty = true;
+
+		Ref<Texture2D> icon;
+		bool icon_transposed = false;
+		Rect2i icon_region;
+		Color icon_modulate = Color(1, 1, 1, 1);
+		Ref<Texture2D> tag_icon;
+		String text;
+		String xl_text;
+		Ref<TextParagraph> text_buf;
+		String language;
+		TextDirection text_direction = TEXT_DIRECTION_AUTO;
+		AutoTranslateMode auto_translate_mode = AUTO_TRANSLATE_MODE_INHERIT;
+
+		bool selectable = true;
+		bool selected = false;
+		bool disabled = false;
+		bool tooltip_enabled = true;
+		String tooltip;
+		Color custom_fg;
+		Color custom_bg = Color(0.0, 0.0, 0.0, 0.0);
+
+		int column = 0;
+		Rect2 rect_cache;
+		Rect2 min_rect_cache;
+
+		Size2 get_icon_size() const;
+
+		bool operator<(const Item& p_another) const { return text < p_another.text; }
+
+		Item() { text_buf.instantiate(); }
+
+		Item(bool p_dummy) {}
+	};
+
+	RID accessibility_scroll_element;
+
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	int current = -1;
+	int hovered = -1;
+	int prev_hovered = -1;
+	int shift_anchor = -1;
+
+	bool shape_changed = true;
+
+	bool ensure_selected_visible = false;
+	bool same_column_width = false;
+	bool allow_search = true;
+
+	bool auto_width = false;
+	float auto_width_value = 0.0;
+
+	bool auto_height = false;
+	float auto_height_value = 0.0;
+
+	bool wraparound_items = true;
+
+	Vector<Item> items;
+	Vector<int> separators;
+
+	SelectMode select_mode = SELECT_SINGLE;
+	IconMode icon_mode = ICON_MODE_LEFT;
+	ScrollBar* scroll_bar_v = nullptr;
+	ScrollBar* scroll_bar_h = nullptr;
+	TextServer::OverrunBehavior text_overrun_behavior = TextServer::OVERRUN_TRIM_ELLIPSIS;
+
+	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
+	bool tile_scroll_hint = false;
+
+	uint64_t search_time_msec = 0;
+	String search_string;
+
+	int current_columns = 1;
+	int fixed_column_width = 0;
+	int max_text_lines = 1;
+	int max_columns = 1;
+
+	Size2 fixed_icon_size;
+	Size2 fixed_tag_icon_size;
+
+	int defer_select_single = -1;
+	bool allow_rmb_select = false;
+	bool allow_reselect = false;
+
+	real_t icon_scale = 1.0;
+
+	bool do_autoscroll_to_bottom = false;
+
+	void _scroll_changed(double);
+	void _mouse_exited();
+	void _shift_range_select(int p_from, int p_to);
+
+protected:
+	struct ThemeCache
+	{
+		int h_separation = 0;
+		int v_separation = 0;
+		int scroll_bar_h_separation = 0;
+
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Color font_color;
+		Color font_hovered_color;
+		Color font_hovered_selected_color;
+		Color font_selected_color;
+		int font_outline_size = 0;
+		Color font_outline_color;
+		Color font_disabled_color;
+		Color font_disabled_hovered_color;
+
+		int line_separation = 0;
+		int icon_margin = 0;
+		Ref<StyleBox> hovered_style;
+		Ref<StyleBox> hovered_selected_style;
+		Ref<StyleBox> hovered_selected_focus_style;
+		Ref<StyleBox> selected_style;
+		Ref<StyleBox> selected_focus_style;
+		Ref<StyleBox> cursor_style;
+		Ref<StyleBox> cursor_focus_style;
+		Ref<StyleBox> disabled_style;
+		Ref<StyleBox> disabled_hovered_style;
+		Color guide_color;
+
+		Ref<Texture2D> scroll_hint;
+		Color scroll_hint_color;
+	} theme_cache;
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+public:
+	virtual RID get_focused_accessibility_element() const override;
+
+	int add_item(const String& p_item, const Ref<Texture2D>& p_texture = Ref<Texture2D>(),
+		bool p_selectable = true);
+	int add_icon_item(const Ref<Texture2D>& p_item, bool p_selectable = true);
+
+	void set_item_text(int p_idx, const String& p_text);
+	String get_item_text(int p_idx) const;
+
+	void set_item_text_direction(int p_idx, TextDirection p_text_direction);
+	TextDirection get_item_text_direction(int p_idx) const;
+
+	void set_item_language(int p_idx, const String& p_language);
+	String get_item_language(int p_idx) const;
+
+	void set_item_auto_translate_mode(int p_idx, AutoTranslateMode p_mode);
+	AutoTranslateMode get_item_auto_translate_mode(int p_idx) const;
+
+	void set_item_icon(int p_idx, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_item_icon(int p_idx) const;
+
+	void set_item_icon_transposed(int p_idx, const bool transposed);
+	bool is_item_icon_transposed(int p_idx) const;
+
+	void set_item_icon_region(int p_idx, const Rect2& p_region);
+	Rect2 get_item_icon_region(int p_idx) const;
+
+	void set_item_icon_modulate(int p_idx, const Color& p_modulate);
+	Color get_item_icon_modulate(int p_idx) const;
+
+	void set_item_selectable(int p_idx, bool p_selectable);
+	bool is_item_selectable(int p_idx) const;
+
+	void set_item_disabled(int p_idx, bool p_disabled);
+	bool is_item_disabled(int p_idx) const;
+
+	void set_item_tag_icon(int p_idx, const Ref<Texture2D>& p_tag_icon);
+
+	void set_item_tooltip_enabled(int p_idx, const bool p_enabled);
+	bool is_item_tooltip_enabled(int p_idx) const;
+
+	void set_item_tooltip(int p_idx, const String& p_tooltip);
+	String get_item_tooltip(int p_idx) const;
+
+	void set_item_custom_bg_color(int p_idx, const Color& p_custom_bg_color);
+	Color get_item_custom_bg_color(int p_idx) const;
+
+	void set_item_custom_fg_color(int p_idx, const Color& p_custom_fg_color);
+	Color get_item_custom_fg_color(int p_idx) const;
+
+	Rect2 get_item_rect(int p_idx, bool p_expand = true) const;
+
+	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior() const;
+
+	void select(int p_idx, bool p_single = true);
+	void deselect(int p_idx);
+	void deselect_all();
+	bool is_selected(int p_idx) const;
+	Vector<int> get_selected_items();
+	bool is_anything_selected();
+
+	void set_current(int p_current);
+	int get_current() const;
+
+	void move_item(int p_from_idx, int p_to_idx);
+
+	void set_item_count(int p_count);
+	int get_item_count() const;
+	void remove_item(int p_idx);
+
+	void clear();
+
+	void set_fixed_column_width(int p_size);
+	int get_fixed_column_width() const;
+
+	void set_same_column_width(bool p_enable);
+	bool is_same_column_width() const;
+
+	void set_max_text_lines(int p_lines);
+	int get_max_text_lines() const;
+
+	void set_max_columns(int p_amount);
+	int get_max_columns() const;
+
+	void set_select_mode(SelectMode p_mode);
+	SelectMode get_select_mode() const;
+
+	void set_icon_mode(IconMode p_mode);
+	IconMode get_icon_mode() const;
+
+	void set_fixed_icon_size(const Size2i& p_size);
+	Size2i get_fixed_icon_size() const;
+
+	void set_fixed_tag_icon_size(const Size2i& p_size);
+
+	void set_allow_rmb_select(bool p_allow);
+	bool get_allow_rmb_select() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void ensure_current_is_visible();
+	void center_on_current(bool p_center_verically = true, bool p_center_horizontally = true);
+
+	void sort_items_by_text();
+
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
+	int get_item_at_position(const Point2& p_pos, bool p_exact = false) const;
+	bool is_pos_at_end_of_items(const Point2& p_pos) const;
+
+	void set_icon_scale(real_t p_scale);
+	real_t get_icon_scale() const;
+
+	void set_auto_width(bool p_enable);
+	bool has_auto_width() const;
+
+	void set_auto_height(bool p_enable);
+	bool has_auto_height() const;
+
+	void set_wraparound_items(bool p_enable);
+	bool has_wraparound_items() const;
+
+	Size2 get_minimum_size() const override;
+
+	void set_autoscroll_to_bottom(const bool p_enable);
+
+	void force_update_list_size();
+
+	ScrollBar* get_v_scroll_bar() { return scroll_bar_v; }
+
+	ScrollBar* get_h_scroll_bar() { return scroll_bar_h; }
+
+	void set_scroll_hint_mode(ScrollHintMode p_mode);
+	ScrollHintMode get_scroll_hint_mode() const;
+
+	void set_tile_scroll_hint(bool p_enable);
+	bool is_scroll_hint_tiled();
+
+	ItemList();
+	~ItemList();
+};
+
+
+
+// --- End scene/gui/item_list.h ---
+
+// --- Folded from scene/gui/nine_patch_rect.h ---
+
+
+class NinePatchRect : public Control
+{
+public:
+	enum AxisStretchMode
+	{
+		AXIS_STRETCH_MODE_STRETCH,
+		AXIS_STRETCH_MODE_TILE,
+		AXIS_STRETCH_MODE_TILE_FIT,
+	};
+
+	bool draw_center = true;
+	int margin[4] = {};
+	Rect2 region_rect;
+	Ref<Texture2D> texture;
+
+	AxisStretchMode axis_h = AXIS_STRETCH_MODE_STRETCH;
+	AxisStretchMode axis_v = AXIS_STRETCH_MODE_STRETCH;
+
+	void _texture_changed();
+
+protected:
+	void _notification(int p_what);
+	virtual Size2 get_minimum_size() const override;
+
+public:
+	void set_texture(const Ref<Texture2D>& p_tex);
+	Ref<Texture2D> get_texture() const;
+
+	void set_patch_margin(Side p_side, int p_size);
+	int get_patch_margin(Side p_side) const;
+
+	void set_region_rect(const Rect2& p_region_rect);
+	Rect2 get_region_rect() const;
+
+	void set_draw_center(bool p_enabled);
+	bool is_draw_center_enabled() const;
+
+	void set_h_axis_stretch_mode(AxisStretchMode p_mode);
+	AxisStretchMode get_h_axis_stretch_mode() const;
+
+	void set_v_axis_stretch_mode(AxisStretchMode p_mode);
+	AxisStretchMode get_v_axis_stretch_mode() const;
+
+	NinePatchRect();
+	~NinePatchRect();
+};
+
+
+
+// --- End scene/gui/nine_patch_rect.h ---
+
+// --- Folded from scene/gui/reference_rect.h ---
+
+
+class ReferenceRect : public Control {
+
+	Color border_color = Color(1, 0, 0);
+	float border_width = 1.0;
+	bool editor_only = true;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	void set_border_color(const Color &p_color);
+	Color get_border_color() const;
+
+	void set_border_width(float p_width);
+	float get_border_width() const;
+
+	void set_editor_only(const bool &p_enabled);
+	bool get_editor_only() const;
+};
+
+// --- End scene/gui/reference_rect.h ---
+// --- Folded from scene/gui/panel.h ---
+
+
+class Panel : public Control
+{
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+	} theme_cache;
+
+	bool fit_children = false;
+
+protected:
+	void _notification(int p_what);
+
+public:
+	void set_fit_children(bool p_fit) { fit_children = p_fit; }
+	bool is_fitting_children() const { return fit_children; }
+
+	virtual Size2 get_inner_combined_maximum_size() const override;
+
+	Panel(bool p_fit_children = false);
+};
+
+// --- End scene/gui/panel.h ---
+
+
+class LineEdit;
+
+struct DialogChrome
+{
+	Window* parent_visible = nullptr;
+
+	Panel* bg_panel = nullptr;
+	Label* message_label = nullptr;
+	Control* buttons_hbox = nullptr;
+	Button* ok_button = nullptr;
+	Button* cancel = nullptr;
+
+	bool has_cancel_button = false;
+	bool popped_up = false;
+	String ok_text;
+	String default_ok_text = "OK";
+
+	bool hide_on_ok = true;
+	bool close_on_escape = true;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		int buttons_separation = 0;
+		int buttons_min_width = 0;
+		int buttons_min_height = 0;
+	} theme_cache;
+
+	inline static bool swap_cancel_ok = false;
+
+	DialogChrome(bool p_with_cancel = false) : has_cancel_button(p_with_cancel) {}
+
+	void init_controls(Window* p_owner);
+	bool handle_escape_input(const InputEvent& p_event) const;
+	bool should_cancel_on_parent_focus(const Window* p_owner) const;
+	void post_popup() { popped_up = true; }
+	void update_child_rects(Window* p_owner);
+	void update_ok_text(Window* p_owner);
+	void set_default_ok_text(Window* p_owner, const String& p_text);
+
+	Label* get_label() const { return message_label; }
+	Button* get_ok_button() const { return ok_button; }
+	Button* get_cancel_button() const { return cancel; }
+
+	void set_cancel_button_enabled(bool p_enabled) { has_cancel_button = p_enabled; }
+	bool is_cancel_button_enabled() const { return has_cancel_button; }
+
+	void set_cancel_button_text(const String& p_cancel_button_text);
+	String get_cancel_button_text() const;
+
+	void set_hide_on_ok(bool p_hide) { hide_on_ok = p_hide; }
+	bool get_hide_on_ok() const { return hide_on_ok; }
+
+	void set_close_on_escape(bool p_enable) { close_on_escape = p_enable; }
+	bool get_close_on_escape() const { return close_on_escape; }
+
+	void set_text(Window* p_owner, const String& p_text);
+	String get_text() const;
+
+	void set_autowrap(bool p_autowrap);
+	bool has_autowrap() const;
+
+	void set_ok_button_text(Window* p_owner, const String& p_ok_button_text);
+	String get_ok_button_text() const { return ok_text; }
+};
+
+class Dialog : public Window
+{
+	DialogChrome chrome;
+
+	void _parent_focused();
+	void _text_submitted(const String& p_text);
+	void _ok_pressed();
+	void _cancel_pressed();
+	void _update_child_rects() { chrome.update_child_rects(this); }
+
+protected:
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual Size2 _get_contents_minimum_size() const override;
+	virtual void _post_popup() override;
+
+	void _notification(int p_what);
+
+public:
+	Label* get_label() { return chrome.get_label(); }
+
+	Button* get_ok_button() { return chrome.get_ok_button(); }
+	Button* get_cancel_button() { return chrome.get_cancel_button(); }
+
+	void set_cancel_button_enabled(bool p_enabled) { chrome.set_cancel_button_enabled(p_enabled); }
+	bool is_cancel_button_enabled() const { return chrome.is_cancel_button_enabled(); }
+
+	void set_cancel_button_text(String p_cancel_button_text)
+	{
+		chrome.set_cancel_button_text(p_cancel_button_text);
+	}
+	String get_cancel_button_text() const { return chrome.get_cancel_button_text(); }
+
+	static void set_swap_cancel_ok(bool p_swap);
+
+	void set_hide_on_ok(bool p_hide) { chrome.set_hide_on_ok(p_hide); }
+	bool get_hide_on_ok() const { return chrome.get_hide_on_ok(); }
+
+	void set_close_on_escape(bool p_enable) { chrome.set_close_on_escape(p_enable); }
+	bool get_close_on_escape() const { return chrome.get_close_on_escape(); }
+
+	void set_text(String p_text) { chrome.set_text(this, p_text); }
+	String get_text() const { return chrome.get_text(); }
+
+	void set_autowrap(bool p_autowrap) { chrome.set_autowrap(p_autowrap); }
+	bool has_autowrap() const { return chrome.has_autowrap(); }
+
+	void set_ok_button_text(String p_ok_button_text)
+	{
+		chrome.set_ok_button_text(this, p_ok_button_text);
+	}
+	String get_ok_button_text() const { return chrome.get_ok_button_text(); }
+
+	Dialog(bool p_with_cancel = false);
+	~Dialog() = default;
+};
+
+// --- Folded from scene/gui/file_dialog.h ---
+#include "core/io/net_socket.h"
+
+#include "scene/main/node.h"
+
+class DirAccess;
+class ItemList;
+class LineEdit;
+class MenuButton;
+class OptionButton;
+class PopupMenu;
+class Separator;
+
+class FileDialog : public Window
+{
+	inline static constexpr int MAX_RECENTS = 20;
+
+	DialogChrome chrome{true};
+
+	struct Option
+	{
+		String name;
+		Vector<String> values;
+		int default_idx = 0;
+	};
+
+	struct DirInfo
+	{
+		String name;
+		uint64_t modified_time = 0;
+		bool bundle = false;
+
+		struct NameComparator
+		{
+			bool operator()(const DirInfo& p_a, const DirInfo& p_b) const
+			{
+				return FileNoCaseComparator()(p_a.name, p_b.name);
+			}
+		};
+
+		struct TimeComparator
+		{
+			bool operator()(const DirInfo& p_a, const DirInfo& p_b) const
+			{
+				return p_a.modified_time > p_b.modified_time;
+			}
+		};
+	};
+
+	struct FileInfo
+	{
+		String name;
+		String match_string;
+		String type_sort;
+		uint64_t modified_time = 0;
+
+		struct NameComparator
+		{
+			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
+			{
+				return FileNoCaseComparator()(p_a.name, p_b.name);
+			}
+		};
+
+		struct TypeComparator
+		{
+			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
+			{
+				return FileNoCaseComparator()(p_a.type_sort, p_b.type_sort);
+			}
+		};
+
+		struct TimeComparator
+		{
+			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
+			{
+				return p_a.modified_time > p_b.modified_time;
+			}
+		};
+	};
+
+	enum class FileSortOption
+	{
+		NAME,
+		NAME_REVERSE,
+		TYPE,
+		TYPE_REVERSE,
+		MODIFIED_TIME,
+		MODIFIED_TIME_REVERSE,
+		MAX
+	};
+
+public:
+	enum Access
+	{
+		ACCESS_RESOURCES,
+		ACCESS_USERDATA,
+		ACCESS_FILESYSTEM,
+	};
+
+	enum FileMode
+	{
+		FILE_MODE_OPEN_FILE,
+		FILE_MODE_OPEN_FILES,
+		FILE_MODE_OPEN_DIR,
+		FILE_MODE_OPEN_ANY,
+		FILE_MODE_SAVE_FILE,
+	};
+
+	enum DisplayMode
+	{
+		DISPLAY_THUMBNAILS,
+		DISPLAY_LIST,
+		DISPLAY_MAX
+	};
+
+	enum ItemMenu
+	{
+		ITEM_MENU_COPY_PATH,
+		ITEM_MENU_DELETE,
+		ITEM_MENU_REFRESH,
+		ITEM_MENU_NEW_FOLDER,
+		ITEM_MENU_SHOW_IN_EXPLORER,
+		ITEM_MENU_SHOW_BUNDLE_CONTENT,
+		// Not in the menu, only for shortcuts.
+		ITEM_MENU_GO_UP,
+		ITEM_MENU_TOGGLE_HIDDEN,
+		ITEM_MENU_FIND,
+		ITEM_MENU_FOCUS_PATH,
+	};
+
+	enum Customization
+	{
+		CUSTOMIZATION_HIDDEN_FILES,
+		CUSTOMIZATION_CREATE_FOLDER,
+		CUSTOMIZATION_FILE_FILTER,
+		CUSTOMIZATION_FILE_SORT,
+		CUSTOMIZATION_FAVORITES,
+		CUSTOMIZATION_RECENT,
+		CUSTOMIZATION_LAYOUT,
+		CUSTOMIZATION_OVERWRITE_WARNING,
+		CUSTOMIZATION_DELETE,
+		CUSTOMIZATION_MAX
+	};
+
+	typedef void (*RegisterFunc)(FileDialog*);
+
+	inline static RegisterFunc register_func = nullptr;
+	inline static RegisterFunc unregister_func = nullptr;
+
+private:
+	static inline PropertyListHelper base_property_helper;
+	PropertyListHelper property_helper;
+
+	inline static bool default_show_hidden_files = false;
+	static inline DisplayMode default_display_mode = DISPLAY_THUMBNAILS;
+	bool show_hidden_files = false;
+	bool use_native_dialog = false;
+	bool can_create_folders = true;
+	bool customization_flags[CUSTOMIZATION_MAX]; // Initialized to true in the constructor.
+
+	HashMap<ItemMenu, Ref<Shortcut>> action_shortcuts;
+
+	inline static LocalVector<String> global_favorites;
+	inline static LocalVector<String> global_recents;
+
+	Access access = ACCESS_RESOURCES;
+	FileMode mode = FILE_MODE_SAVE_FILE;
+	DisplayMode display_mode = DISPLAY_THUMBNAILS;
+	FileSortOption file_sort = FileSortOption::NAME;
+
+	Vector<String> filters;
+	Vector<String> processed_filters;
+
+	Vector<Option> options;
+	bool options_dirty = false;
+
+	String file_name_filter;
+	bool show_filename_filter = false;
+
+	Vector<String> local_history;
+	int local_history_pos = 0;
+
+	bool mode_overrides_title = true;
+	String root_subfolder;
+	String root_prefix;
+	String full_dir;
+
+	bool is_invalidating = false;
+	bool ensure_visible_after_invalidating = false;
+
+	Control* main_vbox = nullptr;
+
+	Button* dir_prev = nullptr;
+	Button* dir_next = nullptr;
+	Button* dir_up = nullptr;
+
+	Control* drives_container = nullptr;
+	MenuButton* drives = nullptr;
+	int selected_drive = 0;
+	LineEdit* directory_edit = nullptr;
+	Control* shortcuts_container = nullptr;
+
+	Button* refresh_button = nullptr;
+	Button* favorite_button = nullptr;
+	Control* make_dir_container = nullptr;
+	Button* make_dir_button = nullptr;
+
+	Button* show_hidden = nullptr;
+	Separator* show_hidden_separator = nullptr;
+	Control* layout_container = nullptr;
+	Separator* layout_separator = nullptr;
+	Button* thumbnail_mode_button = nullptr;
+	Button* list_mode_button = nullptr;
+	Button* show_filename_filter_button = nullptr;
+	MenuButton* file_sort_button = nullptr;
+
+	Control* favorite_vbox = nullptr;
+	Button* fav_up_button = nullptr;
+	Button* fav_down_button = nullptr;
+	ItemList* favorite_list = nullptr;
+	Control* recent_vbox = nullptr;
+	ItemList* recent_list = nullptr;
+
+	ItemList* file_list = nullptr;
+	Label* message = nullptr;
+	PopupMenu* item_menu = nullptr;
+
+	Control* filename_filter_box = nullptr;
+	LineEdit* filename_filter = nullptr;
+
+	Control* file_box = nullptr;
+	LineEdit* filename_edit = nullptr;
+	OptionButton* filter = nullptr;
+
+	Control* flow_checkbox_options = nullptr;
+	Control* grid_select_options = nullptr;
+
+	Dialog* delete_dialog = nullptr;
+	Dialog* make_dir_dialog = nullptr;
+	LineEdit* new_dir_name = nullptr;
+	Dialog* mkdirerr = nullptr;
+	Dialog* exterr = nullptr;
+	Dialog* confirm_save = nullptr;
+
+	struct ThemeCache
+	{
+		int thumbnail_size = 64;
+
+		Ref<Texture2D> parent_folder;
+		Ref<Texture2D> forward_folder;
+		Ref<Texture2D> back_folder;
+		Ref<Texture2D> reload;
+		Ref<Texture2D> toggle_hidden;
+		Ref<Texture2D> toggle_filename_filter;
+		Ref<Texture2D> thumbnail_mode;
+		Ref<Texture2D> list_mode;
+		Ref<Texture2D> folder;
+		Ref<Texture2D> file;
+		Ref<Texture2D> create_folder;
+		Ref<Texture2D> sort;
+		Ref<Texture2D> favorite;
+		Ref<Texture2D> favorite_up;
+		Ref<Texture2D> favorite_down;
+		Ref<Texture2D> file_thumbnail;
+		Ref<Texture2D> folder_thumbnail;
+
+		Ref<Texture2D> menu_copy_path;
+		Ref<Texture2D> menu_delete;
+		Ref<Texture2D> menu_refresh;
+		Ref<Texture2D> menu_new_folder;
+		Ref<Texture2D> menu_show_in_file_manager;
+		Ref<Texture2D> menu_open_bundle;
+
+		Color folder_icon_color;
+		Color file_icon_color;
+		Color file_disabled_color;
+
+		Color icon_normal_color;
+		Color icon_hover_color;
+		Color icon_focus_color;
+		Color icon_pressed_color;
+	};
+
+	ThemeCache theme_cache;
+
+	void update_dir();
+	void update_file_name();
+	void update_file_list();
+	void update_filename_filter();
+	void update_filters();
+
+	void _empty_clicked(const Vector2& p_pos, MouseButton p_button);
+	void _item_clicked(int p_item, const Vector2& p_pos, MouseButton p_button);
+	void _popup_menu(const Vector2& p_pos, int p_for_item);
+
+	void _focus_file_text();
+
+	int _get_selected_file_idx();
+	String _get_item_path(int p_idx) const;
+	void _file_list_multi_selected(int p_item, bool p_selected);
+	void _file_list_selected(int p_item);
+	void _file_list_item_activated(int p_item);
+
+	void _select_drive(int p_idx);
+	void _dir_submitted(String p_dir);
+	void _action_pressed();
+	void _save_confirm_pressed();
+	void _cancel_pressed();
+	void _filter_selected(int);
+	void _filename_filter_changed();
+	void _filename_filter_selected();
+	void _file_list_select_first();
+	void _delete_confirm();
+	void _make_dir_confirm();
+	void _go_up();
+	void _go_back();
+	void _go_forward();
+	void _push_history();
+
+	void _change_dir(const String& p_new_dir);
+	void _update_drives(bool p_select = true);
+
+	void _favorite_selected(int p_item);
+	void _favorite_pressed();
+	void _favorite_move_up();
+	void _favorite_move_down();
+	void _update_favorite_list();
+	void _update_fav_buttons();
+
+	void _recent_selected(int p_item);
+	void _save_to_recent();
+	void _update_recent_list();
+	bool _path_matches_access(const String& p_path) const;
+
+	void _invalidate();
+	void _setup_button(Button* p_button, const Ref<Texture2D>& p_icon);
+
+	void _native_popup();
+	void _native_dialog_cb(bool p_ok, const Vector<String>& p_files, int p_filter);
+
+	bool _is_open_should_be_disabled();
+	void _thumbnail_callback(const Ref<Texture2D>& p_texture, const String& p_path);
+
+	void _update_option_controls();
+	void _option_changed_checkbox_toggled(bool p_pressed, const String& p_name);
+	void _option_changed_item_selected(int p_idx, const String& p_name);
+
+protected:
+	Ref<DirAccess> dir_access;
+
+	bool favorites_changed = false;
+	bool recents_changed = false;
+
+	bool _can_use_native_popup() const;
+	virtual bool _should_use_native_popup() const;
+
+	virtual void _item_menu_id_pressed(int p_option);
+
+	virtual void _dir_contents_changed() {}
+
+	virtual bool _should_hide_file(const String& p_file) const { return false; }
+
+	virtual Color _get_folder_color(const String& p_path) const
+	{
+		return theme_cache.folder_icon_color;
+	}
+
+	Vector2i _get_list_mode_icon_size() const;
+
+	virtual void _input_from_window(const InputEvent& p_event) override;
+	virtual void _post_popup() override;
+	virtual void _popup_base(const Rect2i& p_screen_rect = Rect2i()) override;
+	void _clear_changed_status();
+
+	void _notification(int p_what);
+
+	bool _property_can_revert(const String& p_name) const
+	{
+		return property_helper.property_can_revert(p_name);
+	}
+
+#ifndef DISABLE_DEPRECATED
+	void _add_filter_bind_compat_111439(const String& p_filter, const String& p_description = "");
+
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	Label* get_label() { return chrome.get_label(); }
+	Button* get_ok_button() { return chrome.get_ok_button(); }
+	Button* get_cancel_button() { return chrome.get_cancel_button(); }
+
+	void set_ok_button_text(String p_ok_button_text)
+	{
+		chrome.set_ok_button_text(this, p_ok_button_text);
+	}
+	String get_ok_button_text() const { return chrome.get_ok_button_text(); }
+
+	void set_cancel_button_text(String p_cancel_button_text)
+	{
+		chrome.set_cancel_button_text(p_cancel_button_text);
+	}
+	String get_cancel_button_text() const { return chrome.get_cancel_button_text(); }
+
+	void set_hide_on_ok(bool p_hide) { chrome.set_hide_on_ok(p_hide); }
+	bool get_hide_on_ok() const { return chrome.get_hide_on_ok(); }
+
+	void set_close_on_escape(bool p_enable) { chrome.set_close_on_escape(p_enable); }
+	bool get_close_on_escape() const { return chrome.get_close_on_escape(); }
+
+	void set_text(String p_text) { chrome.set_text(this, p_text); }
+	String get_text() const { return chrome.get_text(); }
+
+	void set_autowrap(bool p_autowrap) { chrome.set_autowrap(p_autowrap); }
+	bool has_autowrap() const { return chrome.has_autowrap(); }
+
+	virtual void set_visible(bool p_visible) override;
+
+	void popup_file_dialog();
+	void clear_filters();
+	void add_filter(
+		const String& p_filter, const String& p_description = "", const String& p_mime = "");
+	void set_filters(const Vector<String>& p_filters);
+	Vector<String> get_filters() const;
+	void set_filename_filter(const String& p_filename_filter);
+	String get_filename_filter() const;
+
+	Vector<String> get_selected_files() const;
+
+	String get_current_dir() const;
+	String get_current_file() const;
+	String get_current_path() const;
+	void set_current_dir(const String& p_dir);
+	void set_current_file(const String& p_file);
+	void set_current_path(const String& p_path);
+
+	String get_option_name(int p_option) const;
+	Vector<String> get_option_values(int p_option) const;
+	int get_option_default(int p_option) const;
+	void set_option_name(int p_option, const String& p_name);
+	void set_option_values(int p_option, const Vector<String>& p_values);
+	void set_option_default(int p_option, int p_index);
+
+	void add_option(const String& p_name, const Vector<String>& p_values, int p_index);
+
+	void set_option_count(int p_count);
+	int get_option_count() const;
+
+	void set_root_subfolder(const String& p_root);
+	String get_root_subfolder() const;
+
+	void set_mode_overrides_title(bool p_override);
+	bool is_mode_overriding_title() const;
+
+	void set_use_native_dialog(bool p_native);
+	bool get_use_native_dialog() const;
+
+	void set_file_mode(FileMode p_mode);
+	FileMode get_file_mode() const;
+
+	DisplayMode get_display_mode() const;
+
+	static void set_favorite_list(const PackedStringArray& p_favorites);
+	static PackedStringArray get_favorite_list();
+
+	static void set_recent_list(const PackedStringArray& p_recents);
+	static PackedStringArray get_recent_list();
+
+	bool is_customization_flag_enabled(Customization p_flag) const;
+
+	Control* get_vbox() { return main_vbox; }
+
+	LineEdit* get_line_edit() { return filename_edit; }
+
+	ItemList* get_file_item_list() { return file_list; }
+
+	void set_access(Access p_access);
+	Access get_access() const;
+
+	bool is_showing_hidden_files() const;
+	void set_show_filename_filter(bool p_show);
+	bool get_show_filename_filter() const;
+
+	static void set_default_show_hidden_files(bool p_show);
+	static void set_default_display_mode(DisplayMode p_mode);
+
+	void invalidate();
+
+	void deselect_all();
+
+	FileDialog();
+	~FileDialog();
+};
+
+
+
+// --- End scene/gui/file_dialog.h ---
+
+// --- Folded from scene/gui/graph_edit.h ---
+#include "core/types.h"
+
+// --- Folded from scene/gui/graph_node.h ---
+
+
+class Label;
+
+class GraphNode : public Control
+{
+	friend class GraphEdit;
+
+public:
+	enum Mode
+	{
+		MODE_ELEMENT,
+		MODE_NODE,
+		MODE_FRAME,
+	};
+
+private:
+	struct Slot
+	{
+		bool enable_left = false;
+		int type_left = 0;
+		Color color_left = Color(1, 1, 1, 1);
+		Ref<Texture2D> custom_port_icon_left;
+
+		bool enable_right = false;
+		int type_right = 0;
+		Color color_right = Color(1, 1, 1, 1);
+		Ref<Texture2D> custom_port_icon_right;
+
+		bool draw_stylebox = true;
+	};
+
+	struct PortCache
+	{
+		Vector2 pos;
+		int slot_index = 0;
+		int type = 0;
+		Color color;
+	};
+
+	struct _MinSizeCache
+	{
+		int min_size = 0;
+		int max_size = -1;
+		bool will_stretch = false;
+		int final_size = 0;
+	};
+
+	enum CustomAccessibilityAction
+	{
+		ACTION_CONNECT_INPUT,
+		ACTION_CONNECT_OUTPUT,
+		ACTION_FOLLOW_INPUT,
+		ACTION_FOLLOW_OUTPUT,
+	};
+
+	Mode mode = MODE_NODE;
+
+	// Shared graph element state.
+	bool selected = false;
+	bool resizable = false;
+	bool resizing = false;
+	bool draggable = true;
+	bool selectable = true;
+
+	Vector2 drag_from;
+	Vector2 resizing_from;
+	Vector2 resizing_from_size;
+	Vector2 position_offset;
+
+	bool scaling_menus = false;
+
+	// Shared titlebar state (used in MODE_NODE and MODE_FRAME).
+	Control* titlebar_hbox = nullptr;
+	Label* title_label = nullptr;
+	String title;
+
+	// Slot/port state (active in MODE_NODE).
+	Vector<PortCache> left_port_cache;
+	Vector<PortCache> right_port_cache;
+	HashMap<int, Slot> slot_table;
+	Vector<int> slot_y_cache;
+
+	Control::FocusMode slots_focus_mode = Control::FOCUS_ACCESSIBILITY;
+	int slot_count = 0;
+	int selected_slot = -1;
+	bool port_pos_dirty = true;
+	bool ignore_invalid_connection_type = false;
+
+	// Frame autoshrink/tint state (active in MODE_FRAME).
+	bool autoshrink_enabled = true;
+	int autoshrink_margin = 40;
+	int drag_margin = 16;
+	bool tint_color_enabled = false;
+	Color tint_color = Color(0.3, 0.3, 0.3, 0.75);
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel;
+		Ref<StyleBox> panel_selected;
+		Ref<StyleBox> panel_focus;
+		Ref<StyleBox> titlebar;
+		Ref<StyleBox> titlebar_selected;
+		Ref<StyleBox> slot;
+		Ref<StyleBox> slot_selected;
+
+		int separation = 0;
+		int port_h_offset = 0;
+
+		Ref<Texture2D> port;
+		Ref<Texture2D> resizer;
+		Color resizer_color;
+	} theme_cache;
+
+#ifdef TOOLS_ENABLED
+	void _edit_set_position(const Point2& p_position) override;
+#endif
+
+	void _port_pos_update();
+	Size2 _get_minimum_size(bool p_use_desired_sizes) const;
+
+protected:
+	void _notification(int p_what);
+	void draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Color& p_color);
+	void _resort();
+
+	virtual String _get_accessibility_name() const override;
+
+public:
+	Mode get_mode() const { return mode; }
+	void set_mode(Mode p_mode);
+	bool is_frame() const { return mode == MODE_FRAME; }
+	bool is_node() const { return mode == MODE_NODE; }
+	bool is_element_only() const { return mode == MODE_ELEMENT; }
+
+	// GraphElement API.
+	void set_position_offset(const Vector2& p_offset);
+	Vector2 get_position_offset() const { return position_offset; }
+
+	void set_selected(bool p_selected);
+	bool is_selected() const { return selected; }
+
+	void set_drag(bool p_drag);
+	Vector2 get_drag_from() const { return drag_from; }
+
+	void set_resizable(bool p_enable);
+	bool is_resizable() const { return resizable; }
+
+	void set_draggable(bool p_draggable) { draggable = p_draggable; }
+	bool is_draggable() const { return draggable; }
+
+	void set_selectable(bool p_selectable);
+	bool is_selectable() const { return selectable; }
+
+	void set_scaling_menus(bool p_scaling_menus) { scaling_menus = p_scaling_menus; }
+	bool is_scaling_menus() const { return scaling_menus; }
+
+	bool is_resizing() const { return resizing; }
+
+	// Shared titlebar API.
+	void set_title(const String& p_title);
+	String get_title() const { return title; }
+
+	Control* get_titlebar_hbox() { return titlebar_hbox; }
+	Size2 get_titlebar_size() const;
+
+	// MODE_FRAME API.
+	void set_autoshrink_enabled(bool p_enable);
+	bool is_autoshrink_enabled() const { return autoshrink_enabled; }
+
+	void set_autoshrink_margin(const int& p_margin);
+	int get_autoshrink_margin() const { return autoshrink_margin; }
+
+	void set_drag_margin(int p_margin) { drag_margin = p_margin; }
+	int get_drag_margin() const { return drag_margin; }
+
+	void set_tint_color_enabled(bool p_enable);
+	bool is_tint_color_enabled() const { return tint_color_enabled; }
+
+	void set_tint_color(const Color& p_tint_color);
+	Color get_tint_color() const { return tint_color; }
+
+	// MODE_NODE slot/port API.
+	virtual String get_accessibility_container_name(const Node* p_node) const override;
+
+	void set_slot(int p_slot_index, bool p_enable_left, int p_type_left, const Color& p_color_left,
+		bool p_enable_right, int p_type_right, const Color& p_color_right,
+		const Ref<Texture2D>& p_custom_left = Ref<Texture2D>(),
+		const Ref<Texture2D>& p_custom_right = Ref<Texture2D>(), bool p_draw_stylebox = true);
+	void clear_slot(int p_slot_index);
+	void clear_all_slots();
+
+	bool is_slot_enabled_left(int p_slot_index) const;
+	void set_slot_enabled_left(int p_slot_index, bool p_enable);
+
+	void set_slot_type_left(int p_slot_index, int p_type);
+	int get_slot_type_left(int p_slot_index) const;
+
+	void set_slot_color_left(int p_slot_index, const Color& p_color);
+	Color get_slot_color_left(int p_slot_index) const;
+
+	void set_slot_custom_icon_left(int p_slot_index, const Ref<Texture2D>& p_custom_icon);
+	Ref<Texture2D> get_slot_custom_icon_left(int p_slot_index) const;
+
+	bool is_slot_enabled_right(int p_slot_index) const;
+	void set_slot_enabled_right(int p_slot_index, bool p_enable);
+
+	void set_slot_type_right(int p_slot_index, int p_type);
+	int get_slot_type_right(int p_slot_index) const;
+
+	void set_slot_color_right(int p_slot_index, const Color& p_color);
+	Color get_slot_color_right(int p_slot_index) const;
+
+	void set_slot_custom_icon_right(int p_slot_index, const Ref<Texture2D>& p_custom_icon);
+	Ref<Texture2D> get_slot_custom_icon_right(int p_slot_index) const;
+
+	bool is_slot_draw_stylebox(int p_slot_index) const;
+	void set_slot_draw_stylebox(int p_slot_index, bool p_enable);
+
+	void set_ignore_invalid_connection_type(bool p_ignore);
+	bool is_ignoring_valid_connection_type() const;
+
+	int get_input_port_count();
+	Vector2 get_input_port_position(int p_port_idx);
+	int get_input_port_type(int p_port_idx);
+	Color get_input_port_color(int p_port_idx);
+	int get_input_port_slot(int p_port_idx);
+
+	int get_output_port_count();
+	Vector2 get_output_port_position(int p_port_idx);
+	int get_output_port_type(int p_port_idx);
+	Color get_output_port_color(int p_port_idx);
+	int get_output_port_slot(int p_port_idx);
+
+	void set_slots_focus_mode(Control::FocusMode p_focus_mode);
+	Control::FocusMode get_slots_focus_mode() const;
+
+	virtual bool has_point(const Point2& p_point) const override;
+	virtual Size2 get_minimum_size() const override;
+	virtual Size2 get_desired_size() const override;
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
+	virtual Vector<int> get_allowed_size_flags_vertical() const override;
+
+	GraphNode(Mode p_mode = MODE_NODE);
+};
+
+// --- End scene/gui/graph_node.h ---
+#include "servers/rendering/renderer.h"
+
+class Button;
+class GraphEdit;
+class Label;
+class Line2D;
+class Panel;
+class ScrollBar;
+class Shortcut;
+class SpinBox;
+
+class ViewPanner final : public RefCounted
+{
+public:
+	enum ControlScheme
+	{
+		SCROLL_ZOOMS,
+		SCROLL_PANS,
+	};
+
+	enum PanAxis
+	{
+		PAN_AXIS_BOTH,
+		PAN_AXIS_HORIZONTAL,
+		PAN_AXIS_VERTICAL,
+	};
+
+	enum DragType
+	{
+		DRAG_TYPE_NONE,
+		DRAG_TYPE_PAN,
+		DRAG_TYPE_ZOOM,
+	};
+
+	enum ZoomStyle
+	{
+		ZOOM_VERTICAL,
+		ZOOM_HORIZONTAL,
+	};
+
+private:
+	int scroll_speed = 32;
+	float scroll_zoom_factor = 1.1;
+	PanAxis pan_axis = PAN_AXIS_BOTH;
+
+	bool pan_key_pressed = false;
+	bool force_drag = false;
+
+	DragType drag_type = DragType::DRAG_TYPE_NONE;
+
+	ZoomStyle zoom_style = ZoomStyle::ZOOM_VERTICAL;
+
+	Vector2 drag_zoom_position;
+	float drag_zoom_sensitivity_factor = -0.01f;
+
+	bool enable_rmb = false;
+	bool simple_panning_enabled = false;
+
+	Ref<Shortcut> pan_view_shortcut;
+
+	ControlScheme control_scheme = SCROLL_ZOOMS;
+	Node* warped_panning_owner = nullptr;
+
+public:
+	void set_control_scheme(ControlScheme p_scheme);
+	void set_enable_rmb(bool p_enable);
+	void set_pan_shortcut(Ref<Shortcut> p_shortcut);
+	void set_simple_panning_enabled(bool p_enabled);
+	void set_scroll_speed(int p_scroll_speed);
+	void set_scroll_zoom_factor(float p_scroll_zoom_factor);
+	void set_pan_axis(PanAxis p_pan_axis);
+	void set_zoom_style(ZoomStyle p_zoom_style);
+
+	void setup(ControlScheme p_scheme, Ref<Shortcut> p_shortcut, bool p_simple_panning);
+	void setup_warped_panning(Node* p_owner, bool p_allowed);
+
+	bool is_panning() const;
+	void set_force_drag(bool p_force);
+
+	bool gui_input(const InputEvent& p_ev, Rect2 p_canvas_rect = Rect2());
+	void release_pan_key();
+
+	ViewPanner() = default;
+};
+
+class GraphEditArranger final : public RefCounted
+{
+	enum SET_OPERATIONS
+	{
+		IS_EQUAL,
+		IS_SUBSET,
+		DIFFERENCE,
+		UNION,
+	};
+
+	GraphEdit* graph_edit = nullptr;
+	bool arranging_graph = false;
+
+	int _set_operations(
+		SET_OPERATIONS p_operation, HashSet<String>& r_u, const HashSet<String>& r_v);
+	HashMap<int, Vector<String>> _layering(const HashSet<String>& r_selected_nodes,
+		const HashMap<String, HashSet<String>>& r_upper_neighbours);
+	void _crossing_minimisation(HashMap<int, Vector<String>>& r_layers,
+		const HashMap<String, HashSet<String>>& r_upper_neighbours);
+
+public:
+	void arrange_nodes();
+
+	GraphEditArranger(GraphEdit* p_graph_edit) : graph_edit(p_graph_edit) {}
+};
+
+class GraphEditFilter : public Control
+{
+	friend class GraphEdit;
+	friend class GraphEditMinimap;
+
+	GraphEdit* ge = nullptr;
+
+	virtual bool has_point(const Point2& p_point) const override;
+
+public:
+	GraphEditFilter(GraphEdit* p_edit);
+};
+
+class GraphEditMinimap : public Control
+{
+	friend class GraphEdit;
+	friend class GraphEditFilter;
+
+	GraphEdit* ge = nullptr;
+
+	Vector2 minimap_padding;
+	Vector2 minimap_offset;
+	Vector2 graph_proportions = Vector2(1, 1);
+	Vector2 graph_padding = Vector2(0, 0);
+	Vector2 camera_position = Vector2(100, 50);
+	Vector2 camera_size = Vector2(200, 200);
+
+	bool is_pressing = false;
+	bool is_resizing = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel;
+		Ref<StyleBox> node_style;
+		Ref<StyleBox> camera_style;
+
+		Ref<Texture2D> resizer;
+		Color resizer_color;
+	} theme_cache;
+
+	Vector2 _get_render_size();
+	Vector2 _get_graph_offset();
+	Vector2 _get_graph_size();
+
+	Vector2 _convert_from_graph_position(const Vector2& p_position);
+	Vector2 _convert_to_graph_position(const Vector2& p_position);
+
+	void _adjust_graph_scroll(const Vector2& p_offset);
+
+protected:
+
+public:
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	void update_minimap();
+	Rect2 get_camera_rect();
+
+	GraphEditMinimap(GraphEdit* p_edit);
+};
+
+class GraphEdit : public Control
+{
+public:
+	struct Connection : RefCounted
+	{
+		String from_node;
+		String to_node;
+		int from_port = 0;
+		int to_port = 0;
+		float activity = 0.0;
+		bool keep_alive = true;
+
+	private:
+		struct Cache
+		{
+			bool dirty = true;
+			Vector2 from_pos; // In graph space.
+			Vector2 to_pos;	  // In graph space.
+			Color from_color;
+			Color to_color;
+			Rect2 aabb;				// In local screen space.
+			Line2D* line = nullptr; // In local screen space.
+		} _cache;
+
+		friend class GraphEdit;
+	};
+
+	// Should be in sync with ControlScheme in ViewPanner.
+	enum PanningScheme
+	{
+		SCROLL_ZOOMS,
+		SCROLL_PANS,
+	};
+
+	enum GridPattern
+	{
+		GRID_PATTERN_LINES,
+		GRID_PATTERN_DOTS
+	};
+
+private:
+	struct ConnectionType
+	{
+		union
+		{
+			uint64_t key = 0;
+
+			struct
+			{
+				uint32_t type_a;
+				uint32_t type_b;
+			};
+		};
+
+		static uint32_t hash(const ConnectionType& p_conn) { return hash_one_uint64(p_conn.key); }
+
+		bool operator==(const ConnectionType& p_type) const { return key == p_type.key; }
+
+		ConnectionType(uint32_t a = 0, uint32_t b = 0)
+		{
+			type_a = a;
+			type_b = b;
+		}
+	};
+
+	Label* zoom_label = nullptr;
+	Button* zoom_minus_button = nullptr;
+	Button* zoom_reset_button = nullptr;
+	Button* zoom_plus_button = nullptr;
+
+	Button* toggle_snapping_button = nullptr;
+	SpinBox* snapping_distance_spinbox = nullptr;
+	Button* toggle_grid_button = nullptr;
+	Button* minimap_button = nullptr;
+	Button* arrange_button = nullptr;
+
+	ScrollBar* h_scrollbar = nullptr;
+	ScrollBar* v_scrollbar = nullptr;
+
+	Ref<ViewPanner> panner;
+	bool warped_panning = true;
+
+	bool show_menu = true;
+	bool show_zoom_label = false;
+	bool show_grid_buttons = true;
+	bool show_zoom_buttons = true;
+	bool show_minimap_button = true;
+	bool show_arrange_button = true;
+
+	bool snapping_enabled = true;
+	int snapping_distance = 20;
+	bool show_grid = true;
+	GridPattern grid_pattern = GRID_PATTERN_LINES;
+
+	bool keyboard_connecting = false;
+	bool connecting = false;
+	String connecting_from_node;
+	bool connecting_from_output = false;
+	int connecting_type = 0;
+	Color connecting_color;
+	Vector2 connecting_to_point; // In local screen space.
+	bool connecting_target_valid = false;
+	String connecting_target_node;
+	int connecting_from_port_index = 0;
+	int connecting_target_port_index = 0;
+
+	bool just_disconnected = false;
+	bool connecting_valid = false;
+
+	Vector2 click_pos;
+
+	PanningScheme panning_scheme = SCROLL_ZOOMS;
+	bool dragging = false;
+	bool just_selected = false;
+	bool moving_selection = false;
+	Vector2 drag_accum;
+
+	float zoom = 1.0;
+	float zoom_step = 1.2;
+	// Proper values set in constructor.
+	float zoom_min = 0.0;
+	float zoom_max = 0.0;
+
+	Vector2 min_scroll_offset;
+	Vector2 max_scroll_offset;
+	Vector2 scroll_offset;
+
+	bool box_selecting = false;
+	bool box_selection_mode_additive = false;
+	Point2 box_selecting_from;
+	Point2 box_selecting_to;
+	Rect2 box_selecting_rect;
+	List<GraphNode*> prev_selected;
+
+	bool setting_scroll_offset = false;
+	bool right_disconnects = false;
+	bool updating = false;
+	bool awaiting_scroll_offset_update = false;
+
+	Vector<Ref<Connection>> connections;
+	HashMap<String, List<Ref<Connection>>> connection_map;
+	Ref<Connection> hovered_connection;
+
+	float lines_thickness = 4.0f;
+	float lines_curvature = 0.5f;
+	bool lines_antialiased = true;
+
+	Panel* menu_panel = nullptr;
+	Control* menu_hbox = nullptr;
+	Control* connections_layer = nullptr;
+
+	GraphEditFilter* top_connection_layer =
+		nullptr; // Draws a dragged connection. Necessary since the connection line shader can't be
+				 // applied to the whole top layer.
+	Line2D* dragged_connection_line = nullptr;
+	Control* top_layer = nullptr; // Used for drawing the box selection rect. Contains the minimap,
+								  // menu panel and the scrollbars.
+
+	GraphEditMinimap* minimap = nullptr;
+
+	static Ref<Shader> default_connections_shader;
+	Ref<Shader> connections_shader;
+
+	Ref<GraphEditArranger> arranger;
+
+	HashSet<ConnectionType, ConnectionType> valid_connection_types;
+	HashSet<int> valid_left_disconnect_types;
+	HashSet<int> valid_right_disconnect_types;
+
+	struct ThemeCache
+	{
+		float base_scale = 1.0;
+
+		Ref<StyleBox> panel;
+		Ref<StyleBox> panel_focus;
+		Color grid_major;
+		Color grid_minor;
+
+		Color activity_color;
+		Color connection_hover_tint_color;
+		int connection_hover_thickness;
+		Color connection_valid_target_tint_color;
+		Color connection_rim_color;
+
+		Color selection_fill;
+		Color selection_stroke;
+
+		Ref<StyleBox> menu_panel;
+
+		Ref<Texture2D> zoom_in;
+		Ref<Texture2D> zoom_out;
+		Ref<Texture2D> zoom_reset;
+
+		Ref<Texture2D> snapping_toggle;
+		Ref<Texture2D> grid_toggle;
+		Ref<Texture2D> minimap_toggle;
+		Ref<Texture2D> layout;
+
+		float port_hotzone_inner_extent = 0.0;
+		float port_hotzone_outer_extent = 0.0;
+	} theme_cache;
+
+	// This separates the children in two layers to ensure the order
+	// of both background nodes (e.g frame nodes) and foreground nodes (connectable nodes).
+	int background_nodes_separator_idx = 0;
+
+	HashMap<String, HashSet<String>> frame_attached_nodes;
+	HashMap<String, String> linked_parent_map;
+
+	void _pan_callback(Vector2 p_scroll_vec, const InputEvent& p_event);
+	void _zoom_callback(float p_zoom_factor, Vector2 p_origin, const InputEvent& p_event);
+
+	void _zoom_minus();
+	void _zoom_reset();
+	void _zoom_plus();
+	void _update_zoom_label();
+
+	void _graph_element_selected(Node* p_node);
+	void _graph_element_deselected(Node* p_node);
+	void _graph_element_visibility_changed(GraphNode* p_graph_element);
+	void _graph_element_resize_request(const Vector2& p_new_minsize, Node* p_node);
+	void _graph_frame_autoshrink_changed(const Vector2& p_new_minsize, GraphNode* p_frame);
+	void _graph_element_moved(Node* p_node);
+	void _graph_node_slot_updated(int p_index, Node* p_node);
+	void _graph_node_rect_changed(GraphNode* p_node);
+
+	void _ensure_node_order_from_root(const String& p_node);
+	void _ensure_node_order_from(Node* p_node);
+
+	void _update_scrollbars();
+	void _update_scroll_offset();
+	void _scrollbar_moved(double);
+	void _top_connection_layer_input(const InputEvent& p_ev);
+
+	float _get_shader_line_width();
+	void _draw_minimap_connection_line(const Vector2& p_from_graph_position,
+		const Vector2& p_to_graph_position, const Color& p_from_color, const Color& p_to_color);
+	void _invalidate_connection_line_cache();
+	void _update_top_connection_layer();
+	void _update_connections();
+
+	void _top_layer_draw();
+	void _minimap_draw();
+	void _draw_grid();
+
+	bool is_in_port_hotzone(
+		const Vector2& p_pos, const Vector2& p_mouse_pos, const Vector2i& p_port_size, bool p_left);
+
+	Rect2 _compute_shrinked_frame_rect(const GraphNode* p_frame);
+	void _set_drag_frame_attached_nodes(GraphNode* p_frame, bool p_drag);
+	void _set_position_of_frame_attached_nodes(GraphNode* p_frame, const Vector2& p_pos);
+
+	friend class GraphEditFilter;
+	bool _filter_input(const Point2& p_point);
+	void _snapping_toggled();
+	void _snapping_distance_changed(double);
+	void _show_grid_toggled();
+
+	friend class GraphEditMinimap;
+	void _minimap_toggled();
+
+	bool _check_clickable_control(
+		Control* p_control, const Vector2& r_mouse_pos, const Vector2& p_offset);
+
+#ifndef DISABLE_DEPRECATED
+	bool _is_arrange_nodes_button_hidden_bind_compat_81582() const;
+	PackedVector2Array _get_connection_line_bind_compat_86158(
+		const Vector2& p_from, const Vector2& p_to);
+	Error _connect_node_bind_compat_97449(
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
+#endif
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	virtual void add_child_notify(Node* p_child) override;
+	virtual void remove_child_notify(Node* p_child) override;
+
+	void _notification(int p_what);
+#ifndef DISABLE_DEPRECATED
+	static void _bind_compatibility_methods();
+#endif
+
+	virtual bool is_in_input_hotzone(GraphNode* p_graph_node, int p_port_idx,
+		const Vector2& p_mouse_pos, const Vector2i& p_port_size);
+	virtual bool is_in_output_hotzone(GraphNode* p_graph_node, int p_port_idx,
+		const Vector2& p_mouse_pos, const Vector2i& p_port_size);
+
+public:
+	static void init_shaders();
+	static void finish_shaders();
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	void key_input(const InputEvent& p_ev);
+
+	// This method has to be public (for undo redo).
+	// TODO: Find a better way to do this.
+	void _update_graph_frame(GraphNode* p_frame);
+
+	// Connection related methods.
+	Error connect_node(const String& p_from, int p_from_port, const String& p_to,
+		int p_to_port, bool keep_alive = false);
+	bool is_node_connected(
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
+	int get_connection_count(const String& p_node, int p_port);
+	GraphNode* get_input_connection_target(const String& p_node, int p_port);
+	GraphNode* get_output_connection_target(const String& p_node, int p_port);
+	String get_connections_description(const String& p_node, int p_port);
+	void disconnect_node(
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
+
+	void force_connection_drag_end();
+	const Vector<Ref<Connection>>& get_connections() const;
+	void clear_connections();
+	virtual PackedVector2Array get_connection_line(
+		const Vector2& p_from, const Vector2& p_to) const;
+	Ref<Connection> get_closest_connection_at_point(
+		const Vector2& p_point, float p_max_distance = 4.0) const;
+	List<Ref<Connection>> get_connections_intersecting_with_rect(const Rect2& p_rect) const;
+
+	bool is_keyboard_connecting() const { return keyboard_connecting; }
+
+	void start_keyboard_connecting(GraphNode* p_node, int p_in_port, int p_out_port);
+	void end_keyboard_connecting(GraphNode* p_node, int p_in_port, int p_out_port);
+
+	virtual bool is_node_hover_valid(
+		const String& p_from, int p_from_port, const String& p_to, int p_to_port);
+
+	void set_connection_activity(const String& p_from, int p_from_port, const String& p_to,
+		int p_to_port, float p_activity);
+	void reset_all_connection_activity();
+
+	void add_valid_connection_type(int p_type, int p_with_type);
+	void remove_valid_connection_type(int p_type, int p_with_type);
+	bool is_valid_connection_type(int p_type, int p_with_type) const;
+
+	// Frame related methods (GraphNode in MODE_FRAME).
+	void attach_graph_element_to_frame(
+		const String& p_graph_element, const String& p_parent_frame);
+	void detach_graph_element_from_frame(const String& p_graph_element);
+	GraphNode* get_element_frame(const String& p_attached_graph_element);
+	Vector<String> get_attached_nodes_of_frame(const String& p_graph_frame) const;
+
+	void set_panning_scheme(PanningScheme p_scheme);
+	PanningScheme get_panning_scheme() const;
+
+	void set_zoom(float p_zoom);
+	void set_zoom_custom(float p_zoom, const Vector2& p_center);
+	float get_zoom() const;
+
+	void set_zoom_min(float p_zoom_min);
+	float get_zoom_min() const;
+
+	void set_zoom_max(float p_zoom_max);
+	float get_zoom_max() const;
+
+	void set_zoom_step(float p_zoom_step);
+	float get_zoom_step() const;
+
+	void set_minimap_size(Vector2 p_size);
+	Vector2 get_minimap_size() const;
+	void set_minimap_opacity(float p_opacity);
+	float get_minimap_opacity() const;
+
+	void set_minimap_enabled(bool p_enable);
+	bool is_minimap_enabled() const;
+
+	bool is_showing_menu() const;
+	bool is_showing_zoom_label() const;
+	bool is_showing_grid_buttons() const;
+	bool is_showing_zoom_buttons() const;
+	bool is_showing_minimap_button() const;
+	bool is_showing_arrange_button() const;
+
+	Control* get_top_layer() const { return top_layer; }
+
+	GraphEditMinimap* get_minimap() const { return minimap; }
+
+	void override_connections_shader(const Ref<Shader>& p_shader);
+
+	void set_right_disconnects(bool p_enable);
+	bool is_right_disconnects_enabled() const;
+
+	void add_valid_right_disconnect_type(int p_type);
+	void remove_valid_right_disconnect_type(int p_type);
+
+	void add_valid_left_disconnect_type(int p_type);
+	void remove_valid_left_disconnect_type(int p_type);
+
+	void set_scroll_offset(const Vector2& p_ofs);
+	Vector2 get_scroll_offset() const;
+
+	void set_selected(Node* p_child);
+
+	void set_snapping_enabled(bool p_enable);
+	bool is_snapping_enabled() const;
+
+	void set_snapping_distance(int p_snapping_distance);
+	int get_snapping_distance() const;
+
+	void set_show_grid(bool p_enable);
+	bool is_showing_grid() const;
+
+	void set_grid_pattern(GridPattern p_pattern);
+	GridPattern get_grid_pattern() const;
+
+	void set_connection_lines_curvature(float p_curvature);
+	float get_connection_lines_curvature() const;
+
+	void set_connection_lines_thickness(float p_thickness);
+	float get_connection_lines_thickness() const;
+
+	void set_connection_lines_antialiased(bool p_antialiased);
+	bool is_connection_lines_antialiased() const;
+
+	Control* get_menu_hbox();
+	Ref<ViewPanner> get_panner();
+	void set_warped_panning(bool p_warped);
+	void update_warped_panning();
+
+	void arrange_nodes();
+
+	GraphEdit();
+};
+
+
+
+// --- End scene/gui/graph_edit.h ---
+
+// --- Folded from scene/gui/color_picker.h ---
+
+
+
+#include "servers/rendering/renderer.h"
+
+class ColorMode;
+class ColorPickerShape;
+class FileDialog;
+class Label;
+class LineEdit;
+class MenuButton;
+class OptionButton;
+class PopupMenu;
+class Slider;
+class SpinBox;
+class TextureRect;
+
+class ColorPicker : public Control
+{
+	friend class ColorPickerShape;
+	friend class ColorMode;
+
+public:
+	enum ColorModeType
+	{
+		MODE_RGB,
+		MODE_HSV,
+#ifndef DISABLE_DEPRECATED
+		MODE_RAW = 2,
+#endif
+		MODE_LINEAR = 2,
+		MODE_OKHSL,
+
+		MODE_MAX
+	};
+
+	enum PickerShapeType
+	{
+		SHAPE_HSV_RECTANGLE,
+		SHAPE_HSV_WHEEL,
+		SHAPE_VHS_CIRCLE,
+		SHAPE_OKHSL_CIRCLE,
+		SHAPE_NONE,
+		SHAPE_OK_HS_RECTANGLE,
+		SHAPE_OK_HL_RECTANGLE,
+
+		SHAPE_MAX
+	};
+
+private:
+	inline int get_current_shape_index() { return shape_to_index(current_shape); }
+
+	static inline int shape_to_index(PickerShapeType p_shape)
+	{
+		if (p_shape == SHAPE_NONE) {
+			return -1;
+		}
+		if (p_shape > SHAPE_NONE) {
+			return p_shape - 1;
+		}
+		return p_shape;
+	}
+
+	static inline PickerShapeType index_to_shape(int p_index)
+	{
+		if (p_index == -1) {
+			return SHAPE_NONE;
+		}
+		if (p_index >= SHAPE_NONE) {
+			return (PickerShapeType)(p_index + 1);
+		}
+		return (PickerShapeType)p_index;
+	}
+
+public:
+	static const int MODE_SLIDER_COUNT = 3;
+
+	enum SLIDER_EXTRA
+	{
+		SLIDER_INTENSITY = MODE_SLIDER_COUNT,
+		SLIDER_ALPHA,
+
+		SLIDER_MAX
+	};
+
+	enum class MenuOption
+	{
+		MENU_SAVE,
+		MENU_SAVE_AS,
+		MENU_LOAD,
+		MENU_QUICKLOAD,
+		MENU_CLEAR,
+	};
+
+private:
+	static inline List<Color> preset_cache;
+	static inline List<Color> recent_preset_cache;
+
+	int current_slider_count = MODE_SLIDER_COUNT;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 1.0 / 2;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 30;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
+
+	static constexpr int MODE_BUTTON_COUNT = 3;
+
+	bool slider_theme_modified = true;
+
+	LocalVector<ColorMode*> modes;
+	LocalVector<ColorPickerShape*> shapes;
+
+	Popup* picker_window = nullptr;
+	TextureRect* picker_texture_zoom = nullptr;
+	Panel* picker_preview = nullptr;
+	Panel* picker_preview_color = nullptr;
+	Ref<StyleBox> picker_preview_style_box;
+	Ref<StyleBox> picker_preview_style_box_color;
+
+	TextureRect* picker_texture_rect = nullptr;
+	Color picker_color;
+	FileDialog* file_dialog = nullptr;
+	MenuButton* menu_btn = nullptr;
+	PopupMenu* options_menu = nullptr;
+
+	Control* internal_margin = nullptr;
+	Control* shape_container = nullptr;
+	TextureRect* sample = nullptr;
+	Control* swatches_vbc = nullptr;
+	Control* preset_container = nullptr;
+	Control* recent_preset_hbc = nullptr;
+	Button* btn_add_preset = nullptr;
+	Button* btn_pick = nullptr;
+	Label* palette_name = nullptr;
+	String palette_path;
+	bool presets_just_loaded = false;
+	Button* btn_preset = nullptr;
+	Button* btn_recent_preset = nullptr;
+	PopupMenu* shape_popup = nullptr;
+	PopupMenu* mode_popup = nullptr;
+	MenuButton* btn_shape = nullptr;
+	Control* mode_hbc = nullptr;
+	Control* sample_hbc = nullptr;
+	Control* slider_gc = nullptr;
+	Control* hex_hbc = nullptr;
+	Label* hex_label = nullptr;
+	MenuButton* btn_mode = nullptr;
+	Button* mode_btns[MODE_BUTTON_COUNT];
+	Ref<ButtonGroup> mode_group;
+	Button* selected_recent_preset = nullptr;
+	Ref<ButtonGroup> preset_group;
+	Ref<ButtonGroup> recent_preset_group;
+
+	Control* perm_hb = nullptr;
+	void _req_permission();
+
+	OptionButton* mode_option_button = nullptr;
+
+	Slider* sliders[SLIDER_MAX];
+	SpinBox* values[SLIDER_MAX];
+	Label* labels[SLIDER_MAX];
+
+	Button* text_type = nullptr;
+	LineEdit* c_text = nullptr;
+	Button* text_copy = nullptr;
+
+	Slider* alpha_slider = nullptr;
+	SpinBox* alpha_value = nullptr;
+	Label* alpha_label = nullptr;
+
+	bool edit_alpha = true;
+
+	Slider* intensity_slider = nullptr;
+	SpinBox* intensity_value = nullptr;
+	Label* intensity_label = nullptr;
+
+	bool edit_intensity = true;
+
+	Size2i ms;
+	bool text_is_constructor = false;
+	PickerShapeType current_shape = SHAPE_HSV_RECTANGLE;
+	ColorModeType current_mode = MODE_RGB;
+	bool colorize_sliders = true;
+
+	const int PRESET_COLUMN_COUNT = 9;
+	int prev_preset_size = 0;
+	int prev_rencet_preset_size = 0;
+	List<Color> presets;
+	List<Color> recent_presets;
+
+	Color color;
+	Color color_normalized;
+	Color old_color;
+	Color pre_picking_color;
+	bool is_picking_color = false;
+
+	bool display_old_color = false;
+	bool deferred_mode_enabled = false;
+	bool updating = true;
+	bool changing_color = false;
+	bool spinning = false;
+	bool can_add_swatches = true;
+	bool presets_visible = true;
+	bool color_modes_visible = true;
+	bool sampler_visible = true;
+	bool sliders_visible = true;
+	bool hex_visible = true;
+	bool line_edit_mouse_release = false;
+	bool text_changed = false;
+	bool currently_dragging = false;
+
+	float h = 0.0;
+	float s = 0.0;
+	float v = 0.0;
+
+	float ok_hsl_h = 0.0;
+	float ok_hsl_s = 0.0;
+	float ok_hsl_l = 0.0;
+
+	bool hsv_cached = false;
+	bool okhsl_cached = false;
+
+	float intensity = 0.0;
+
+	struct ThemeCache
+	{
+		float base_scale = 1.0;
+
+		int content_margin = 0;
+		int label_width = 0;
+
+		int sv_height = 0;
+		int sv_width = 0;
+		int h_width = 0;
+
+		bool center_slider_grabbers = true;
+
+		Ref<StyleBox> picker_focus_rectangle;
+		Ref<StyleBox> picker_focus_circle;
+		Color focused_not_editing_cursor_color;
+		Ref<Texture2D> menu_option;
+		Ref<Texture2D> screen_picker;
+		Ref<Texture2D> expanded_arrow;
+		Ref<Texture2D> folded_arrow;
+		Ref<Texture2D> add_preset;
+
+		Ref<Texture2D> shape_rect;
+		Ref<Texture2D> shape_rect_wheel;
+		Ref<Texture2D> shape_circle;
+
+		Ref<Texture2D> bar_arrow;
+		Ref<Texture2D> sample_bg;
+		Ref<Texture2D> sample_revert;
+		Ref<StyleBox> sample_focus;
+		Ref<Texture2D> overbright_indicator;
+		Ref<Texture2D> picker_cursor;
+		Ref<Texture2D> picker_cursor_bg;
+		Ref<Texture2D> color_hue;
+
+		Ref<Texture2D> color_script;
+		Ref<Texture2D> color_copy;
+
+		Ref<StyleBox> mode_button_normal;
+		Ref<StyleBox> mode_button_pressed;
+		Ref<StyleBox> mode_button_hover;
+		Ref<StyleBox> mode_button_hover_pressed;
+	};
+
+	ThemeCache theme_cache;
+
+	void _copy_normalized_to_hsv_okhsl();
+	void _copy_hsv_okhsl_to_normalized();
+
+	Color _color_apply_intensity(const Color& col) const;
+	void _normalized_apply_intensity_to_color();
+	void _copy_color_to_normalized_and_intensity();
+
+	void _reset_sliders_theme();
+	void _slider_drag_started();
+	void _text_copy_pressed();
+	void _sample_draw();
+	void _slider_draw(int p_which);
+	void _alpha_slider_draw();
+
+	void _line_edit_input(const InputEvent& p_event);
+	void _text_changed(const String& p_new_text);
+	void _block_input_on_popup_show();
+	void _enable_input_on_popup_hide();
+
+	inline int _get_preset_size();
+	void _load_palette();
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+public:
+	Control* get_slider_container();
+	Slider* get_slider(int idx);
+	Vector<float> get_active_slider_values();
+
+	void add_mode(ColorMode* p_mode);
+	void add_shape(ColorPickerShape* p_shape);
+
+	bool is_editing_alpha() const;
+
+	bool is_editing_intensity() const;
+
+	Color get_pick_color() const;
+	void set_old_color(const Color& p_color);
+
+	Color get_old_color() const;
+
+	void set_display_old_color(bool p_enabled);
+	bool is_displaying_old_color() const;
+
+	PickerShapeType get_picker_shape() const;
+
+	PackedColorArray get_presets() const;
+	PackedColorArray get_recent_presets() const;
+
+	ColorModeType get_color_mode() const;
+
+	void set_colorize_sliders(bool p_colorize_sliders);
+	bool is_colorizing_sliders() const;
+
+	void set_deferred_mode(bool p_enabled);
+	bool is_deferred_mode() const;
+
+	bool are_swatches_enabled() const;
+
+	bool are_presets_visible() const;
+
+	bool are_modes_visible() const;
+
+	bool is_sampler_visible() const;
+
+	bool are_sliders_visible() const;
+
+	bool is_hex_visible() const;
+
+	void set_focus_on_picker_shape();
+
+	ColorPicker();
+	~ColorPicker();
+};
+
+class ColorPickerButton : public Control
+{
+	Button* button = nullptr;
+	Popup* popup = nullptr;
+	ColorPicker* picker = nullptr;
+	Color color;
+	bool edit_alpha = true;
+	bool edit_intensity = true;
+	bool popup_was_open = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal_style;
+		Ref<Texture2D> background_icon;
+		Ref<Texture2D> overbright_indicator;
+	};
+
+	ThemeCache theme_cache;
+
+	void _update_picker();
+
+protected:
+	void _notification(int);
+
+public:
+	Button* get_button() const { return button; }
+	Popup* get_popup();
+	ColorPicker* get_picker();
+
+	Color get_pick_color() const;
+
+	bool is_editing_alpha() const;
+
+	bool is_editing_intensity() const;
+
+	virtual Size2 get_minimum_size() const override
+	{
+		return button ? button->get_minimum_size() : Size2();
+	}
+
+	ColorPickerButton(const String& p_text = String());
+};
+
+// --- Folded from scene/gui/color_rect.h ---
+
+
+class ColorRect : public Control
+{
+	Color color = Color(1, 1, 1);
+
+protected:
+	void _notification(int p_what);
+
+public:
+	static void _color_rect_draw_static(CanvasItem* p_item)
+	{
+		ColorRect* rect = static_cast<ColorRect*>(p_item);
+		rect->_notification(CanvasItem::NOTIFICATION_DRAW);
+	}
+
+	ColorRect() { draw_callback = &_color_rect_draw_static; }
+
+	void notification(int p_what);
+	void set_color(const Color& p_color);
+	Color get_color() const;
+	void queue_redraw();
+};
+
+
+
+// --- End scene/gui/color_rect.h ---
+
+// --- Folded from scene/resources/color_palette.h ---
+#include "core/types.h"
+
+class ColorPalette : public Resource
+{
+private:
+	PackedColorArray colors;
+
+protected:
+
+public:
+	void set_colors(const PackedColorArray& p_colors);
+	PackedColorArray get_colors() const;
+};
+
+
+
+// --- End scene/resources/color_palette.h ---
+
+// --- End scene/gui/color_picker.h ---
+
+// --- Folded from scene/gui/rich_text_label.h ---
+#include "core/types.h"
+
+#include "scene/resources/theme.h"
+
+#ifdef TOOLS_ENABLED
+// --- Folded from editor/settings/editor_settings.h ---
+#include "core/os/os.h"
+#include "core/io/resource_loader.h"
+#include "core/types.h"
+#include "core/os/os.h"
+
+class EditorSettings final
+{
+	static inline BinaryMutex _thread_safe_mutex;
+
+public:
+	struct Plugin
+	{
+		String path;
+		String name;
+		String author;
+		String version;
+		String description;
+		bool installs = false;
+		String script;
+		Vector<String> install_files;
+	};
+
+	enum NetworkMode
+	{
+		NETWORK_OFFLINE,
+		NETWORK_ONLINE,
+	};
+
+	// Keep values synced with DisplayServerEnums constants.
+	enum InitialScreen
+	{
+		INITIAL_SCREEN_AUTO = -5, // Remembers last screen position.
+		INITIAL_SCREEN_WITH_MOUSE_FOCUS = -4,
+		INITIAL_SCREEN_WITH_KEYBOARD_FOCUS = -3,
+		INITIAL_SCREEN_PRIMARY = -2,
+	};
+
+private:
+	struct Data
+	{
+		HashSet<String> changed_settings;
+		String auto_language;
+
+		Ref<ConfigFile> project_metadata;
+		bool project_metadata_dirty = false;
+		int last_order = 0;
+
+		Ref<Resource> clipboard;
+		HashMap<String, Ref<Shortcut>> shortcuts;
+		HashMap<String, List<InputEvent>> builtin_action_overrides;
+
+		Vector<String> favorites;
+		HashMap<String, PackedStringArray> favorite_properties;
+		Vector<String> recent_dirs;
+
+		bool save_changed_setting = true;
+		bool optimize_save = true;
+		bool initialized = false;
+#ifndef DISABLE_DEPRECATED
+		HashMap<String, String> compat_map;
+#endif
+	};
+
+	static bool _property_can_revert(const String& p_name);
+
+	static void _set_initialized();
+	static void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
+	static void _load_default_visual_shader_editor_theme();
+	static String _guess_exec_args_for_extenal_editor(const String& p_value);
+	static String _get_project_metadata_path();
+#ifndef DISABLE_DEPRECATED
+	static void _handle_setting_compatibility();
+	static void _rename_setting(const String& p_old_name, const String& p_new_name);
+	static void _rename_shortcut(const String& p_old_path, const String& p_new_path);
+#endif
+
+	// Bind helpers.
+	static Vector<String> _get_shortcut_list();
+
+public:
+	enum
+	{
+		NOTIFICATION_EDITOR_SETTINGS_CHANGED = 10000
+	};
+
+	static inline Data* data = nullptr;
+
+	static void initialize();
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+
+	static String get_existing_settings_path();
+	static String get_newest_settings_path();
+
+	static void init_shortcuts();
+	static void setup_language(bool p_initial_setup);
+	static void setup_network();
+	static void save();
+	static void set_optimize_save(bool p_optimize);
+
+	static bool has_default_value(const String& p_setting);
+	static bool has_setting(const String& p_setting);
+	static void erase(const String& p_setting);
+	static void raise_order(const String& p_setting);
+	static void set_restart_if_changed(const String& p_setting, bool p_restart);
+	static void set_basic(const String& p_setting, bool p_basic);
+
+	static PackedStringArray get_changed_settings();
+	static bool check_changed_settings_in_group(const String& p_setting_prefix);
+	static void mark_setting_changed(const String& p_setting);
+
+	static void set_resource_clipboard(const Ref<Resource>& p_resource)
+	{
+		if (data) {
+			data->clipboard = p_resource;
+		}
+	}
+
+	static Ref<Resource> get_resource_clipboard()
+	{
+		return data ? data->clipboard : Ref<Resource>();
+	}
+
+	static void save_project_metadata();
+
+	static void set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog = true);
+	static void set_favorites_bind(const Vector<String>& p_favorites);
+	static Vector<String> get_favorites();
+	static Vector<String> get_favorite_folders();
+	static void set_favorite_properties(
+		const HashMap<String, PackedStringArray>& p_favorite_properties);
+	static HashMap<String, PackedStringArray> get_favorite_properties();
+	static void set_recent_dirs(
+		const Vector<String>& p_recent_dirs, bool p_update_file_dialog = true);
+	static void set_recent_dirs_bind(const Vector<String>& p_recent_dirs);
+	static Vector<String> get_recent_dirs();
+	static void load_favorites_and_recent_dirs();
+
+	static HashMap<String, Color> get_godot2_text_editor_theme();
+	static bool is_default_text_editor_theme(const String& p_theme_name);
+	static void update_text_editor_themes_list();
+
+	static Vector<String> get_script_templates(
+		const String& p_extension, const String& p_custom_path = String());
+	static String get_editor_layouts_config();
+	static float get_auto_display_scale();
+	static String get_language();
+
+	static void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	static void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	static void remove_shortcut(const String& p_path);
+	static bool is_shortcut(const String& p_path, const InputEvent& p_event);
+	static bool has_shortcut(const String& p_path);
+	static Ref<Shortcut> get_shortcut(const String& p_path);
+	static void get_shortcut_list(List<String>* r_shortcuts);
+
+	static void notify_changes();
+
+#ifdef TOOLS_ENABLED
+	static void get_argument_options(
+		const String& p_function, int p_idx, List<String>* r_options);
+#endif
+
+	EditorSettings() = delete;
+	~EditorSettings() = delete;
+};
+
+#define EDITOR_DEF(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val))
+#define EDITOR_DEF_RST(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), true)
+#define EDITOR_DEF_BASIC(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), false, true)
+#define ED_IS_SHORTCUT(p_name, p_ev) (EditorSettings::is_shortcut(p_name, p_ev))
+Ref<Shortcut> ED_SHORTCUT(
+	const String& p_path, const String& p_name, Key p_keycode = Key::NONE, bool p_physical = false);
+Ref<Shortcut> ED_SHORTCUT_ARRAY(const String& p_path, const String& p_name,
+	const PackedInt32Array& p_keycodes, bool p_physical = false);
+void ED_SHORTCUT_OVERRIDE(const String& p_path, const String& p_feature, Key p_keycode = Key::NONE,
+	bool p_physical = false);
+void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
+	const PackedInt32Array& p_keycodes, bool p_physical = false);
+Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path);
+
+// --- Folded from editor/translations/editor_translation.h ---
+#include "core/string/ustring.h"
+
+Vector<String> get_editor_locales();
+void load_editor_translations(const String &p_locale);
+void load_doc_translations(const String &p_locale);
+Vector<Vector<String>> get_extractable_message_list();
+
+// --- End editor/translations/editor_translation.h ---
+
+// --- Folded from editor/file_system/editor_paths.h ---
+#include "core/string/ustring.h"
+
+class EditorPaths final
+{
+	struct Data
+	{
+		bool paths_valid = false; // If any of the paths can't be created, this is false.
+		String data_dir;		  // Editor data (templates, shader cache, etc.).
+		String config_dir;		  // Editor config (settings, profiles, themes, etc.).
+		String cache_dir;		  // Editor cache (thumbnails, tmp generated files).
+		String temp_dir;		  // Editor temporary directory.
+		String project_data_dir;  // Project-specific data (metadata, shader cache, etc.).
+		bool self_contained = false; // Self-contained means everything goes to `editor_data` dir.
+		String self_contained_file;  // Self-contained file with configuration.
+		String export_templates_folder = "export_templates";
+		String text_editor_themes_folder = "text_editor_themes";
+		String script_templates_folder = "script_templates";
+		String feature_profiles_folder = "feature_profiles";
+	};
+
+	static inline Data* data = nullptr;
+
+public:
+	static void initialize();
+	static void finalize();
+	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
+	static bool are_paths_valid();
+
+	static String get_data_dir();
+	static String get_config_dir();
+	static String get_cache_dir();
+	static String get_temp_dir();
+	static String get_project_data_dir();
+	static String get_export_templates_dir();
+	static String get_debug_keystore_path();
+	static String get_project_settings_dir();
+	static String get_text_editor_themes_dir();
+	static String get_script_templates_dir();
+	static String get_project_script_templates_dir();
+	static String get_feature_profiles_dir();
+
+	static bool is_self_contained();
+	static String get_self_contained_file();
+
+	EditorPaths() = delete;
+	EditorPaths(const EditorPaths&) = delete;
+	EditorPaths& operator=(const EditorPaths&) = delete;
+	~EditorPaths() = delete;
+};
+
+// --- Folded from editor/file_system/editor_file_system.h ---
+#include "core/io/net_socket.h"
+#include "core/io/resource_loader.h"
+#include "core/os/mutex.h"
+#include "core/os/os.h"
+#include "core/types.h"
+#include "core/os/memory.h"
+#include "scene/main/node.h"
+
+class ResourceFormatImporter;
+class FileAccess;
+
+class EditorFileSystemDirectory
+{
+	String name;
+	uint64_t modified_time;
+	bool verified = false; // used for checking changes
+
+	EditorFileSystemDirectory* parent = nullptr;
+	Vector<EditorFileSystemDirectory*> subdirs;
+
+	struct FileInfo
+	{
+		String file;
+		String type;
+		String resource_script_class; // If any resource has script with a global class name,
+										  // its found here.
+		ResourceUID::ID uid = ResourceUID::INVALID_ID;
+		uint64_t modified_time = 0;
+		uint64_t import_modified_time = 0;
+		String import_md5;
+		Vector<String> import_dest_paths;
+		bool import_valid = false;
+		String import_group_file;
+		Vector<String> deps;
+		bool verified = false; // used for checking changes
+
+		// This is for script resources only.
+		struct ScriptClassInfo
+		{
+			String name;
+			String extends;
+			String icon_path;
+			bool is_abstract = false;
+			bool is_tool = false;
+		};
+
+		ScriptClassInfo class_info;
+	};
+
+	Vector<FileInfo*> files;
+
+
+	friend class EditorFileSystem;
+
+public:
+	String get_name();
+	String get_path() const;
+
+	int get_subdir_count() const;
+	EditorFileSystemDirectory* get_subdir(int p_idx);
+	int get_file_count() const;
+	String get_file(int p_idx) const;
+	String get_file_path(int p_idx) const;
+	ResourceUID::ID get_file_uid(int p_idx) const;
+	String get_file_type(int p_idx) const;
+	String get_file_resource_script_class(int p_idx) const;
+	Vector<String> get_file_deps(int p_idx) const;
+	bool get_file_import_is_valid(int p_idx) const;
+	uint64_t get_file_modified_time(int p_idx) const;
+	uint64_t get_file_import_modified_time(int p_idx) const;
+	String get_file_script_class_name(int p_idx) const;		 // used for scripts
+	String get_file_script_class_extends(int p_idx) const;	 // used for scripts
+	String get_file_script_class_icon_path(int p_idx) const; // used for scripts
+	String get_file_icon_path(int p_idx) const;				 // used for FileSystemDock
+
+	EditorFileSystemDirectory* get_parent();
+
+	int find_file_index(const String& p_file) const;
+	int find_dir_index(const String& p_dir) const;
+
+	void force_update();
+
+	EditorFileSystemDirectory();
+	~EditorFileSystemDirectory();
+};
+
+class EditorFileSystem : public Node
+{
+	_THREAD_SAFE_CLASS_
+
+	struct ItemAction
+	{
+		enum Action
+		{
+			ACTION_NONE,
+			ACTION_DIR_ADD,
+			ACTION_DIR_REMOVE,
+			ACTION_FILE_ADD,
+			ACTION_FILE_REMOVE,
+			ACTION_FILE_TEST_REIMPORT,
+			ACTION_FILE_RELOAD
+		};
+
+		Action action = ACTION_NONE;
+		EditorFileSystemDirectory* dir = nullptr;
+		String file;
+		EditorFileSystemDirectory* new_dir = nullptr;
+		EditorFileSystemDirectory::FileInfo* new_file = nullptr;
+	};
+
+	struct ScannedDirectory
+	{
+		String name;
+		String full_path;
+		Vector<ScannedDirectory*> subdirs;
+		List<String> files;
+
+		~ScannedDirectory();
+	};
+
+	bool is_case_sensitive = true;
+	bool use_threads = false;
+	Thread thread;
+
+	EditorFileSystemDirectory* new_filesystem = nullptr;
+	static ScannedDirectory* first_scan_root_dir;
+
+	SafeFlag filesystem_changed_queued;
+	bool scanning = false;
+	bool importing = false;
+	bool first_scan = true;
+	bool scan_changes_pending = false;
+	float scan_total;
+	String filesystem_settings_version_for_import;
+	bool revalidate_import_files = false;
+	static int nb_files_total;
+
+	static void _scan_for_uid_directory(
+		const ScannedDirectory* p_scan_dir, const HashSet<String>& p_import_extensions);
+
+	static void _load_first_scan_root_dir();
+
+	HashSet<String> late_update_files;
+
+	void _save_late_updated_files();
+
+	EditorFileSystemDirectory* filesystem = nullptr;
+
+
+
+	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
+
+	/* Used for reading the filesystem cache file */
+	struct FileCache
+	{
+		String type;
+		String resource_script_class;
+		ResourceUID::ID uid = ResourceUID::INVALID_ID;
+		uint64_t modification_time = 0;
+		uint64_t import_modification_time = 0;
+		String import_md5;
+		Vector<String> import_dest_paths;
+		Vector<String> deps;
+		bool import_valid = false;
+		String import_group_file;
+		ScriptClassInfo class_info;
+	};
+
+	HashMap<String, FileCache> file_cache;
+	HashSet<String> dep_update_list;
+
+	struct ScanProgress
+	{
+		float hi = 0;
+		int current = 0;
+		void increment();
+	};
+
+	struct DirectoryComparator
+	{
+		bool operator()(
+			const EditorFileSystemDirectory* p_a, const EditorFileSystemDirectory* p_b) const
+		{
+			return p_a->name.filenocasecmp_to(p_b->name) < 0;
+		}
+	};
+
+	void _save_filesystem_cache();
+	void _save_filesystem_cache(EditorFileSystemDirectory* p_dir, Ref<FileAccess> p_file);
+
+	bool _find_file(const String& p_file, EditorFileSystemDirectory** r_d, int& r_file_pos) const;
+
+	void _delete_internal_files(const String& p_file);
+	int _insert_actions_delete_files_directory(EditorFileSystemDirectory* p_dir);
+
+	HashSet<String> textfile_extensions;
+	HashSet<String> other_file_extensions;
+	HashSet<String> valid_extensions;
+	HashSet<String> import_extensions;
+
+	static int _scan_new_dir(ScannedDirectory* p_dir, Ref<DirAccess>& da);
+
+	Thread thread_sources;
+	bool scanning_changes = false;
+	SafeFlag scanning_changes_done;
+
+	List<String> sources_changed;
+	List<ItemAction> scan_actions;
+
+	bool _is_test_for_reimport_needed(const String& p_path, uint64_t p_last_modification_time,
+		uint64_t p_modification_time, uint64_t p_last_import_modification_time,
+		uint64_t p_import_modification_time, const Vector<String>& p_import_dest_paths);
+	bool _can_import_file(const String& p_path);
+
+	bool reimport_on_missing_imported_files;
+
+	Vector<String> _get_dependencies(const String& p_path);
+
+	struct ImportFile
+	{
+		String path;
+		String importer;
+		bool threaded = false;
+		int order = 0;
+
+		bool operator<(const ImportFile& p_if) const
+		{
+			return order == p_if.order ? (importer < p_if.importer) : (order < p_if.order);
+		}
+	};
+
+	struct ScriptClassInfoUpdate
+	{
+		ScriptClassInfo class_info;
+		String type;
+		ScriptClassInfoUpdate() = default;
+
+		explicit ScriptClassInfoUpdate(const ScriptClassInfo& p_info) : class_info(p_info) {}
+
+		static ScriptClassInfoUpdate from_file_info(const EditorFileSystemDirectory::FileInfo* p_fi)
+		{
+			ScriptClassInfoUpdate update(p_fi->class_info);
+			update.type = p_fi->type;
+			return update;
+		}
+	};
+
+	Mutex update_script_mutex;
+	HashMap<String, ScriptClassInfoUpdate> update_script_paths;
+	HashSet<String> update_script_paths_documentation;
+	void _queue_update_script_class(
+		const String& p_path, const ScriptClassInfoUpdate& p_script_update);
+	void _process_removed_files(const HashSet<String>& p_processed_files);
+
+	Mutex update_scene_mutex;
+	HashSet<String> update_scene_paths;
+	void _queue_update_scene_groups(const String& p_path);
+	void _get_all_scenes(EditorFileSystemDirectory* p_dir, HashSet<String>& r_list);
+
+	bool using_fat32_or_exfat; // Workaround for projects in FAT32 or exFAT filesystem (pendrives,
+							   // most of the time)
+
+	void _find_group_files(EditorFileSystemDirectory* efd,
+		HashMap<String, Vector<String>>& group_files, HashSet<String>& groups_to_reimport);
+
+	HashSet<String> group_file_cache;
+	HashMap<String, String> file_icon_cache;
+
+	bool refresh_queued = false;
+
+	struct ImportThreadData
+	{
+		const ImportFile* reimport_files;
+		int reimport_from;
+		Semaphore* imported_sem = nullptr;
+	};
+
+	static ResourceUID::ID _resource_saver_get_resource_id_for_path(
+		const String& p_path, bool p_generate);
+
+	bool _scan_extensions();
+
+	String _get_file_by_class_name(EditorFileSystemDirectory* p_dir, const String& p_class_name,
+		EditorFileSystemDirectory::FileInfo*& r_file_info);
+
+public:
+	static inline EditorFileSystem* instance = nullptr;
+	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
+
+	EditorFileSystemDirectory* _impl_get_filesystem();
+	static EditorFileSystemDirectory* get_filesystem();
+	bool _impl_is_scanning() const;
+	static bool is_scanning();
+
+	bool is_importing() const { return importing; }
+
+	bool _impl_doing_first_scan() const { return first_scan; }
+	static bool doing_first_scan() { return instance->_impl_doing_first_scan(); }
+
+	float get_scanning_progress() const;
+	HashSet<String> get_valid_extensions() const;
+
+	EditorFileSystemDirectory* _impl_get_filesystem_path(const String& p_path);
+	static EditorFileSystemDirectory* get_filesystem_path(const String& p_path);
+	String _impl_get_file_type(const String& p_file) const;
+	static String get_file_type(const String& p_file);
+	EditorFileSystemDirectory* _impl_find_file(const String& p_file, int* r_index) const;
+	static EditorFileSystemDirectory* find_file(const String& p_file, int* r_index);
+	ResourceUID::ID _impl_get_file_uid(const String& p_path) const;
+	static ResourceUID::ID get_file_uid(const String& p_path);
+
+	bool is_group_file(const String& p_path) const;
+
+	static bool _should_skip_directory(const String& p_path);
+
+	static void scan_for_uid();
+
+	EditorFileSystem() = default;
+	~EditorFileSystem();
+};
+
+// --- Folded from editor/themes/editor_scale.h ---
+class EditorScale {
+	static float _scale;
+
+public:
+	static void set_scale(float p_scale);
+	static float get_scale();
+};
+
+#define EDSCALE (EditorScale::get_scale())
+// --- End editor/file_system/editor_paths.h ---
+// --- End editor/settings/editor_settings.h ---
+#endif
+
+class PopupMenu;
+class ScrollBar;
+class Texture2D;
+class Timer;
+
+class CharFXTransform;
+class RichTextEffect;
+
+class RichTextLabel : public Control
+{
+	enum RTLDrawStep
+	{
+		DRAW_STEP_BACKGROUND,
+		DRAW_STEP_SHADOW_OUTLINE,
+		DRAW_STEP_SHADOW,
+		DRAW_STEP_OUTLINE,
+		DRAW_STEP_TEXT,
+		DRAW_STEP_FOREGROUND,
+		DRAW_STEP_MAX,
+	};
+
+public:
+	enum ListType
+	{
+		LIST_NUMBERS,
+		LIST_LETTERS,
+		LIST_ROMAN,
+		LIST_DOTS
+	};
+
+	enum MetaUnderline
+	{
+		META_UNDERLINE_NEVER,
+		META_UNDERLINE_ALWAYS,
+		META_UNDERLINE_ON_HOVER,
+	};
+
+	enum ItemType
+	{
+		ITEM_FRAME,
+		ITEM_TEXT,
+		ITEM_IMAGE,
+		ITEM_NEWLINE,
+		ITEM_FONT,
+		ITEM_FONT_SIZE,
+		ITEM_FONT_FEATURES,
+		ITEM_COLOR,
+		ITEM_OUTLINE_SIZE,
+		ITEM_OUTLINE_COLOR,
+		ITEM_UNDERLINE,
+		ITEM_STRIKETHROUGH,
+		ITEM_PARAGRAPH,
+		ITEM_INDENT,
+		ITEM_LIST,
+		ITEM_TABLE,
+		ITEM_FADE,
+		ITEM_SHAKE,
+		ITEM_WAVE,
+		ITEM_TORNADO,
+		ITEM_RAINBOW,
+		ITEM_PULSE,
+		ITEM_BGCOLOR,
+		ITEM_FGCOLOR,
+		ITEM_META,
+		ITEM_HINT,
+		ITEM_DROPCAP,
+		ITEM_CUSTOMFX,
+		ITEM_CONTEXT,
+		ITEM_LANGUAGE,
+	};
+
+	enum MenuItems
+	{
+		MENU_COPY,
+		MENU_SELECT_ALL,
+		MENU_MAX
+	};
+
+	enum DefaultFont
+	{
+		RTL_NORMAL_FONT,
+		RTL_BOLD_FONT,
+		RTL_ITALICS_FONT,
+		RTL_BOLD_ITALICS_FONT,
+		RTL_MONO_FONT,
+		RTL_CUSTOM_FONT,
+	};
+
+	enum ImageUpdateMask
+	{
+		UPDATE_TEXTURE = 1 << 0,
+		UPDATE_SIZE = 1 << 1,
+		UPDATE_COLOR = 1 << 2,
+		UPDATE_ALIGNMENT = 1 << 3,
+		UPDATE_REGION = 1 << 4,
+		UPDATE_PAD = 1 << 5,
+		UPDATE_TOOLTIP = 1 << 6,
+		UPDATE_WIDTH_UNIT = 1 << 7,
+	};
+
+	enum ImageUnit
+	{
+		IMAGE_UNIT_PIXEL,
+		IMAGE_UNIT_PERCENT,
+		IMAGE_UNIT_EM,
+	};
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	void _notification(int p_what);
+
+#ifndef DISABLE_DEPRECATED
+	void _push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size);
+#endif
+
+private:
+	struct Item;
+
+	struct Line
+	{						  // Line is a paragraph.
+		Item* from = nullptr; // `from` is main if this Line is the first Line in the doc, otherwise
+							  // `from` is the previous Item in the doc of any type.
+
+		Ref<TextLine> text_prefix;
+		Color prefix_color = Color(0, 0, 0, 0);
+		int prefix_outline_size = -1;
+		Color prefix_outline_color = Color(0, 0, 0, 0);
+		float prefix_width = 0;
+		Ref<TextParagraph> text_buf;
+		Ref<TextParagraph> text_buf_disp;
+
+		RID accessibility_line_element;
+		RID accessibility_text_element;
+
+		Item* dc_item = nullptr;
+		Color dc_color;
+		int dc_ol_size = 0;
+		Color dc_ol_color;
+
+		Vector2 offset;
+		float indent = 0.0;
+		int char_offset = 0;
+		int char_count = 0;
+
+		Line() { text_buf.instantiate(); }
+
+		~Line();
+
+		_FORCE_INLINE_ float get_height(float p_line_separation, float p_paragraph_separation) const
+		{
+			return offset.y + text_buf->get_size().y +
+				   text_buf->get_line_count() * p_line_separation + p_paragraph_separation;
+		}
+	};
+
+	struct FrameData
+	{
+		bool cell = false;
+
+		LocalVector<Line> lines;
+		std::atomic<int> first_invalid_line;
+		std::atomic<int> first_invalid_font_line;
+		std::atomic<int> first_resized_line;
+
+		Item* parent_frame = nullptr;
+
+		Color odd_row_bg = Color(0, 0, 0, 0);
+		Color even_row_bg = Color(0, 0, 0, 0);
+		Color border = Color(0, 0, 0, 0);
+		Size2 min_size_over = Size2(-1, -1);
+		Size2 max_size_over = Size2(-1, -1);
+		Rect2 padding;
+
+		FrameData()
+		{
+			first_invalid_line.store(0);
+			first_invalid_font_line.store(0);
+			first_resized_line.store(0);
+		}
+	};
+
+	struct DropcapData
+	{
+		String text;
+		Ref<Font> font;
+		int font_size = 0;
+		Color color;
+		int ol_size = 0;
+		Color ol_color;
+		Rect2 dropcap_margins;
+	};
+
+	struct ImageData
+	{
+		Ref<Texture2D> image;
+		String alt_text;
+		InlineAlignment inline_align = INLINE_ALIGNMENT_CENTER;
+		bool pad = false;
+		ImageUnit width_unit = IMAGE_UNIT_PIXEL;
+		ImageUnit height_unit = IMAGE_UNIT_PIXEL;
+		Rect2 region;
+		Size2 size;
+		Size2 rq_size;
+		Color color;
+		String tooltip;
+
+		~ImageData();
+	};
+
+	struct ParagraphData
+	{
+		HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
+		String language;
+		Control::TextDirection direction = Control::TEXT_DIRECTION_AUTO;
+		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+		uint32_t jst_flags =
+			TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+			TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+			TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+		PackedFloat32Array tab_stops;
+	};
+
+	struct TableData
+	{
+		struct Column
+		{
+			String name;
+			bool expand = false;
+			bool shrink = true;
+			int expand_ratio = 0;
+			int min_width = 0;
+			int max_width = 0;
+			int width = 0;
+		};
+
+		LocalVector<Column> columns;
+		LocalVector<float> rows;
+		LocalVector<float> rows_baseline;
+		String name;
+
+		int align_to_row = -1;
+		int total_width = 0;
+		int total_height = 0;
+		int char_count = 0;
+		InlineAlignment inline_align = INLINE_ALIGNMENT_TOP;
+	};
+
+	struct FXData
+	{
+		double elapsed_time = 0.0;
+		bool connected = true;
+
+		int strength = 0;
+		float rate = 0.0f;
+		uint64_t _current_rng = 0;
+		uint64_t _previous_rng = 0;
+		Vector2 prev_off;
+
+		float frequency = 1.0f;
+		float amplitude = 1.0f;
+		float radius = 1.0f;
+		float saturation = 0.9f;
+		float value = 1.0f;
+		float speed = 1.0f;
+		Color color = Color(1.0, 1.0, 1.0, 0.25);
+		float ease = -2.0f;
+
+		Ref<CharFXTransform> char_fx_transform;
+		Ref<RichTextEffect> custom_effect;
+
+		explicit FXData(ItemType p_type);
+		~FXData();
+
+		void reroll_random()
+		{
+			_previous_rng = _current_rng;
+			_current_rng = Math::rand();
+		}
+
+		uint64_t offset_random(int p_index)
+		{
+			return (_current_rng >> (p_index % 64)) | (_current_rng << (64 - (p_index % 64)));
+		}
+
+		uint64_t offset_previous_random(int p_index)
+		{
+			return (_previous_rng >> (p_index % 64)) | (_previous_rng << (64 - (p_index % 64)));
+		}
+	};
+
+	struct Item
+	{
+		int index = 0;
+		int char_ofs = 0;
+		Item* parent = nullptr; // "parent" means "enclosing item tag", if any. It is an interval
+								// predecessor, not a hierarchical parent.
+		ItemType type = ITEM_FRAME;
+		int line = 0; // `line` is the index number of the paragraph (Line) this item is inside of
+					  // (zero if the first paragraph).
+		List<Item*> subitems;
+		List<Item*>::Element* E = nullptr;
+		RID rid;
+		RID accessibility_item_element;
+
+		union
+		{
+			void* extra = nullptr;
+			FrameData* frame;
+			DropcapData* dropcap;
+			ImageData* image;
+			ParagraphData* paragraph;
+			TableData* table;
+			FXData* fx;
+		};
+
+		// Lightweight inline fields for frequent leaf/style tags:
+		// `text` holds text (ITEM_TEXT), tooltip (ITEM_META), description (ITEM_HINT),
+		// language (ITEM_LANGUAGE), or bullet (ITEM_LIST).
+		String text;
+		Ref<Font> font;
+		Color color;
+
+		int font_size = 0;
+		int outline_size = 0;
+		int level = 0;
+		float max_width = 0.0f;
+		int starting_index = 0;
+		int fade_length = 0;
+
+		DefaultFont def_font = RTL_CUSTOM_FONT;
+		MetaUnderline meta_underline = META_UNDERLINE_ALWAYS;
+		ListType list_type = LIST_DOTS;
+		bool variation = false;
+		bool def_size = false;
+		bool capitalize = false;
+
+		_FORCE_INLINE_ bool is_fx() const
+		{
+			return type == ITEM_CUSTOMFX || type == ITEM_SHAKE || type == ITEM_WAVE ||
+				   type == ITEM_TORNADO || type == ITEM_RAINBOW || type == ITEM_PULSE;
+		}
+
+		void _clear_children();
+
+		explicit Item(ItemType p_type = ITEM_FRAME);
+		~Item();
+
+		Item(const Item&) = delete;
+		Item& operator=(const Item&) = delete;
+	};
+
+	Item* main = nullptr;
+	Item* current = nullptr;
+	Item* current_frame = nullptr;
+
+	Mutex data_mutex;
+	bool threaded = false;
+	std::atomic<bool> stop_thread;
+	std::atomic<bool> updating;
+	std::atomic<bool> validating;
+	std::atomic<double> loaded;
+	std::atomic<bool> parsing_bbcode;
+
+	uint64_t loading_started = 0;
+	int progress_delay = 1000;
+
+	ScrollBar* vscroll = nullptr;
+
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
+	uint32_t autowrap_flags_trim =
+		TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+
+	bool scroll_visible = false;
+	bool scroll_follow = false;
+	bool scroll_follow_visible_characters = false;
+	int follow_vc_pos = 0;
+	bool scroll_following = false;
+	bool scroll_active = true;
+	int scroll_w = 0;
+	bool scroll_updated = false;
+	bool updating_scroll = false;
+	int current_idx = 1;
+	int current_char_ofs = 0;
+	int visible_paragraph_count = 0;
+	int visible_line_count = 0;
+	Rect2i visible_rect;
+
+	int tab_size = 4;
+	bool underline_meta = true;
+	bool underline_hint = true;
+	bool use_selected_font_color = false;
+
+	HorizontalAlignment default_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_TOP;
+	uint32_t default_jst_flags =
+		TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA |
+		TextServer::JUSTIFICATION_SKIP_LAST_LINE |
+		TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE;
+	PackedFloat32Array default_tab_stops;
+
+	Item* meta_hovering = nullptr;
+
+	HashMap<RID, Rect2> ac_element_bounds_cache;
+
+	void _update_follow_vc();
+	void _invalidate_accessibility();
+	void _invalidate_current_line(Item* p_frame);
+
+	void _prepare_scroll_anchor();
+
+	void _thread_function(void* p_userdata);
+	void _thread_end();
+	bool _validate_line_caches();
+	void _process_line_caches();
+
+	void _add_item(Item* p_item, bool p_enter = false, bool p_ensure_newline = false);
+	void _remove_frame(HashSet<Item*>& r_erase_list, Item* p_frame, int p_line, bool p_erase,
+		int p_char_offset, int p_line_offset);
+
+	void _texture_changed(RID p_item);
+
+	static inline RID_PtrOwner<Item, true> items{65536, 1048576};
+	List<String> tag_stack;
+	HashSet<RID> hr_list;
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+	struct Selection
+	{
+		Item* click_frame = nullptr;
+		int click_line = 0;
+		Item* click_item = nullptr;
+		int click_char = 0;
+
+		Item* from_frame = nullptr;
+		int from_line = 0;
+		Item* from_item = nullptr;
+		int from_char = 0;
+		mutable bool from_line_found = false;
+
+		Item* to_frame = nullptr;
+		int to_line = 0;
+		Item* to_item = nullptr;
+		int to_char = 0;
+		mutable bool to_line_found = false;
+
+		enum SelectionMode
+		{
+			SINGLE_CLICK,
+			DOUBLE_CLICK,
+			TRIPLE_CLICK,
+		};
+
+		SelectionMode selection_mode = SINGLE_CLICK;
+		bool active = false;  // anything selected? i.e. from, to, etc. valid?
+		bool enabled = false; // allow selections?
+		bool drag_attempt = false;
+	};
+
+	Selection selection;
+	uint64_t last_double_click = 0;
+	Vector2 last_double_click_pos;
+	bool deselect_on_focus_loss_enabled = true;
+	bool drag_and_drop_selection_enabled = true;
+
+	Item* keyboard_focus_frame = nullptr;
+	int keyboard_focus_line = 0;
+	Item* keyboard_focus_item = nullptr;
+	bool keyboard_focus_on_text = true;
+
+	bool context_menu_enabled = false;
+	bool shortcut_keys_enabled = true;
+
+	// Context menu.
+	PopupMenu* menu = nullptr;
+	void _generate_context_menu();
+	Key _get_menu_action_accelerator(const String& p_action);
+
+	int visible_characters = -1;
+	float visible_ratio = 1.0;
+	TextServer::VisibleCharactersBehavior visible_chars_behavior =
+		TextServer::VC_CHARS_BEFORE_SHAPING;
+
+	bool _is_click_inside_selection() const;
+	void _find_click(Item* p_frame, const Point2i& p_click,
+		Item** r_click_frame = nullptr, int* r_click_line = nullptr,
+		Item** r_click_item = nullptr, int* r_click_char = nullptr, bool* r_outside = nullptr,
+		bool p_meta = false);
+
+	String _get_line_text(Item* p_frame, int p_line) const;
+	bool _search_table_cell(Item* p_table, List<Item*>::Element* p_cell,
+		const String& p_string, bool p_reverse_search, int p_from_line);
+	bool _search_table(Item* p_table, List<Item*>::Element* p_from, const String& p_string,
+		bool p_reverse_search);
+	bool _search_line(Item* p_frame, int p_line, const String& p_string, int p_char_idx,
+		bool p_reverse_search);
+
+	float _shape_line(Item* p_frame, int p_line, const Ref<Font>& p_base_font,
+		int p_base_font_size, int p_width, float p_h, int* r_char_offset);
+	float _resize_line(Item* p_frame, int p_line, const Ref<Font>& p_base_font,
+		int p_base_font_size, int p_width, float p_h);
+
+	int _get_line_max_width(Item* p_frame, int p_line) const;
+	void _update_table_column_width(Item* p_table, int p_available_width);
+	void _update_table_size(Item* p_table);
+
+	void _update_line_font(
+		Item* p_frame, int p_line, const Ref<Font>& p_base_font, int p_base_font_size);
+	int _draw_line(Item* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep,
+		const Color& p_base_color, int p_outline_size, const Color& p_outline_color,
+		const Color& p_font_shadow_color, int p_shadow_outline_size, const Point2& p_shadow_ofs,
+		int& r_processed_glyphs);
+	float _find_click_in_line(Item* p_frame, int p_line, const Vector2& p_ofs, int p_width,
+		float p_vsep, const Point2i& p_click, Item** r_click_frame = nullptr,
+		int* r_click_line = nullptr, Item** r_click_item = nullptr, int* r_click_char = nullptr,
+		bool p_table = false, bool p_meta = false);
+	void _accessibility_update_line(
+		RID p_id, Item* p_frame, int p_line, const Vector2& p_ofs, int p_width, float p_vsep);
+
+	String _roman(int p_num, bool p_capitalize) const;
+	String _letters(int p_num, bool p_capitalize) const;
+
+	Item* _find_indentable(Item* p_item);
+	Item* _get_item_at_pos(Item* p_item_from, Item* p_item_to, int p_position);
+	void _find_frame(Item* p_item, Item** r_frame, int* r_line);
+	Item* _find_font_size(Item* p_item);
+	Item* _find_font(Item* p_item);
+	int _find_outline_size(Item* p_item, int p_default);
+	Item* _find_list_item(Item* p_item);
+	Item* _find_dc_item(Item* p_item);
+	int _find_list(
+		Item* p_item, Vector<int>& r_index, Vector<int>& r_count, Vector<Item*>& r_list);
+	int _find_margin(Item* p_item, const Ref<Font>& p_base_font, int p_base_font_size);
+	PackedFloat32Array _find_tab_stops(Item* p_item);
+	HorizontalAlignment _find_alignment(Item* p_item);
+	uint32_t _find_jst_flags(Item* p_item);
+	TextServer::Direction _find_direction(Item* p_item);
+	TextServer::StructuredTextParser _find_stt(Item* p_item);
+	String _find_language(Item* p_item);
+	Color _find_color(Item* p_item, const Color& p_default_color);
+	Color _find_outline_color(Item* p_item, const Color& p_default_color);
+	bool _find_underline(Item* p_item, Color* r_color = nullptr);
+	bool _find_strikethrough(Item* p_item, Color* r_color = nullptr);
+	bool _find_hint(Item* p_item, String* r_description);
+	Color _find_bgcolor(Item* p_item);
+	Color _find_fgcolor(Item* p_item);
+	bool _find_layout_subitem(Item* from, Item* to);
+	void _fetch_item_fx_stack(Item* p_item, Vector<Item*>& r_stack);
+	void _normalize_subtags(Vector<String>& subtags);
+
+	void _update_fx(Item* p_frame, double p_delta_time);
+	void _scroll_changed(double);
+	int _find_first_line(int p_from, int p_to, int p_vofs) const;
+
+#ifdef TOOLS_ENABLED
+	const real_t auto_scroll_speed = EDSCALE * 2.0f;
+#else
+	const real_t auto_scroll_speed = 2.0f;
+#endif
+	Vector2 last_clamped_mouse_pos;
+	Timer* click_select_held = nullptr;
+	Vector2 local_mouse_pos;
+	bool is_selecting_text = false;
+	void _update_selection();
+
+	_FORCE_INLINE_ float _calculate_line_vertical_offset(const Line& line) const;
+
+	Item* _get_next_item(Item* p_item, bool p_free = false) const;
+	Item* _get_prev_item(Item* p_item, bool p_free = false) const;
+
+	Rect2 _get_text_rect();
+	int _get_wrap_width(const Rect2& p_text_rect) const;
+
+	void _maximum_size_changed();
+
+	Ref<RichTextEffect> _get_custom_effect_by_code(String p_bbcode_identifier);
+
+	void _invalidate_fonts();
+
+	Size2 _get_image_size(const Ref<Texture2D>& p_image, float p_width = 0, float p_height = 0,
+		const Rect2& p_region = Rect2());
+	Size2 _get_item_image_final_size(Item* p_img, float p_orig_width, float p_base_font_size);
+
+	String _get_prefix(
+		Item* p_item, const Vector<int>& p_list_index, const Vector<Item*>& p_list_items);
+	void _add_list_prefixes(Item* p_frame, int p_line, Line& r_l);
+
+	static int _find_unquoted(const String& p_src, char32_t p_chr, int p_from);
+	static Vector<String> _split_unquoted(const String& p_src, char32_t p_splitter);
+	static String _get_tag_value(const String& p_tag);
+
+	bool use_bbcode = false;
+	String text;
+	void _apply_translation();
+
+	bool internal_stack_editing = false;
+	bool stack_externally_modified = false;
+
+	RID accessibility_scroll_element;
+
+	bool fit_content = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal_style;
+		Ref<StyleBox> focus_style;
+		Ref<StyleBox> progress_bg_style;
+		Ref<StyleBox> progress_fg_style;
+
+		Ref<Texture2D> horizontal_rule;
+
+		int line_separation;
+		int paragraph_separation;
+
+		Ref<Font> normal_font;
+		int normal_font_size;
+
+		Color default_color;
+		Color font_selected_color;
+		Color selection_color;
+		Color font_outline_color;
+		Color font_shadow_color;
+		int shadow_outline_size;
+		int shadow_offset_x;
+		int shadow_offset_y;
+		int outline_size;
+		Color outline_color;
+
+		Ref<Font> bold_font;
+		int bold_font_size;
+		Ref<Font> bold_italics_font;
+		int bold_italics_font_size;
+		Ref<Font> italics_font;
+		int italics_font_size;
+		Ref<Font> mono_font;
+		int mono_font_size;
+
+		int text_highlight_h_padding;
+		int text_highlight_v_padding;
+
+		int underline_alpha;
+		int strikethrough_alpha;
+
+		int table_h_separation;
+		int table_v_separation;
+		Color table_odd_row_bg;
+		Color table_even_row_bg;
+		Color table_border;
+
+		float base_scale = 1.0;
+	} theme_cache;
+
+public:
+	virtual RID get_focused_accessibility_element() const override;
+	PackedStringArray get_accessibility_configuration_warnings() const;
+
+	String get_parsed_text() const;
+	void add_text(const String& p_text);
+	void add_hr(int p_width = 90, int p_height = 2, const Color& p_color = Color(1.0, 1.0, 1.0),
+		HorizontalAlignment p_alignment = HORIZONTAL_ALIGNMENT_LEFT, bool p_width_in_percent = true,
+		bool p_height_in_percent = false);
+	void add_newline();
+	bool remove_paragraph(int p_paragraph, bool p_no_invalidate = false);
+	bool invalidate_paragraph(int p_paragraph);
+	void push_dropcap(const String& p_string, const Ref<Font>& p_font, int p_size,
+		const Rect2& p_dropcap_margins = Rect2(), const Color& p_color = Color(1, 1, 1),
+		int p_ol_size = 0, const Color& p_ol_color = Color(0, 0, 0, 0));
+	void _push_def_font(DefaultFont p_def_font);
+	void _push_def_font_var(DefaultFont p_def_font, const Ref<Font>& p_font, int p_size = -1);
+	void push_font(const Ref<Font>& p_font, int p_size = 0);
+	void push_normal();
+	void push_bold();
+	void push_bold_italics();
+	void push_italics();
+	void push_mono();
+	int get_current_table_column() const;
+
+	void clear();
+
+	void set_offset(int p_pixel);
+
+	void set_meta_underline(bool p_underline);
+	bool is_meta_underlined() const;
+
+	void set_hint_underline(bool p_underline);
+	bool is_hint_underlined() const;
+
+	void set_scroll_active(bool p_active);
+	bool is_scroll_active() const;
+
+	void set_scroll_follow(bool p_follow);
+	bool is_scroll_following() const;
+
+	void set_scroll_follow_visible_characters(bool p_follow);
+	bool is_scroll_following_visible_characters() const;
+
+	void set_tab_size(int p_spaces);
+	int get_tab_size() const;
+
+	void set_context_menu_enabled(bool p_enabled);
+	bool is_context_menu_enabled() const;
+
+	void set_shortcut_keys_enabled(bool p_enabled);
+	bool is_shortcut_keys_enabled() const;
+
+	void set_fit_content(bool p_enabled);
+	bool is_fit_content_enabled() const;
+
+	bool search(
+		const String& p_string, bool p_from_selection = false, bool p_search_previous = false);
+
+	void scroll_to_paragraph(int p_paragraph);
+	int get_paragraph_count() const;
+	int get_visible_paragraph_count() const;
+
+	float get_line_offset(int p_line);
+	float get_paragraph_offset(int p_paragraph);
+
+	void scroll_to_line(int p_line);
+	int get_line_count() const;
+	Vector2i get_line_range(int p_line);
+	int get_visible_line_count() const;
+
+	int get_content_height() const;
+	int get_content_width() const;
+
+	int get_line_height(int p_line) const;
+	int get_line_width(int p_line) const;
+
+	Rect2i get_visible_content_rect() const;
+
+	void scroll_to_selection();
+
+	ScrollBar* get_v_scroll_bar() { return vscroll; }
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
+
+	void set_selection_enabled(bool p_enabled);
+	bool is_selection_enabled() const;
+	int get_selection_from() const;
+	int get_selection_to() const;
+	float get_selection_line_offset() const;
+	String get_selected_text() const;
+	void select_all();
+
+	void set_deselect_on_focus_loss_enabled(const bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
+
+	void set_drag_and_drop_selection_enabled(const bool p_enabled);
+	bool is_drag_and_drop_selection_enabled() const;
+
+	void deselect();
+
+	int get_pending_paragraphs() const;
+	bool is_finished() const;
+	bool is_updating() const;
+
+	void set_threaded(bool p_threaded);
+	bool is_threaded() const;
+
+	void set_progress_bar_delay(int p_delay_ms);
+	int get_progress_bar_delay() const;
+
+	// Context menu.
+	PopupMenu* get_menu() const;
+	bool is_menu_visible() const;
+	void menu_option(int p_option);
+
+	void parse_bbcode(const String& p_bbcode);
+	void append_text(const String& p_bbcode);
+
+	void set_use_bbcode(bool p_enable);
+	bool is_using_bbcode() const;
+
+	void set_text(const String& p_bbcode);
+	String get_text() const;
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_vertical_alignment(VerticalAlignment p_alignment);
+	VerticalAlignment get_vertical_alignment() const;
+
+	void set_justification_flags(uint32_t p_flags);
+	uint32_t get_justification_flags() const;
+
+	void set_tab_stops(const PackedFloat32Array& p_tab_stops);
+	PackedFloat32Array get_tab_stops() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	void set_autowrap_trim_flags(uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_visible_characters(int p_visible);
+	int get_visible_characters() const;
+	int get_character_line(int p_char);
+	int get_character_paragraph(int p_char);
+	int get_total_character_count() const;
+	int get_total_glyph_count() const;
+
+	void set_visible_ratio(float p_ratio);
+	float get_visible_ratio() const;
+
+	TextServer::VisibleCharactersBehavior get_visible_characters_behavior() const;
+	void set_visible_characters_behavior(TextServer::VisibleCharactersBehavior p_behavior);
+
+	void reload_effects();
+	void wait_until_finished();
+
+	virtual Size2 get_minimum_size() const override;
+
+	RichTextLabel(const String& p_text = String());
+	~RichTextLabel() = default;
+};
+
+
+
+// --- End scene/gui/rich_text_label.h ---
+
+// --- Folded from scene/gui/line_edit.h ---
+
+
+
+class LineEdit : public Control
+{
+public:
+	enum MenuItems
+	{
+		MENU_CUT,
+		MENU_COPY,
+		MENU_PASTE,
+		MENU_CLEAR,
+		MENU_SELECT_ALL,
+		MENU_UNDO,
+		MENU_REDO,
+		MENU_SUBMENU_TEXT_DIR,
+		MENU_DIR_INHERITED,
+		MENU_DIR_AUTO,
+		MENU_DIR_LTR,
+		MENU_DIR_RTL,
+		MENU_DISPLAY_UCC,
+		MENU_SUBMENU_INSERT_UCC,
+		MENU_INSERT_LRM,
+		MENU_INSERT_RLM,
+		MENU_INSERT_LRE,
+		MENU_INSERT_RLE,
+		MENU_INSERT_LRO,
+		MENU_INSERT_RLO,
+		MENU_INSERT_PDF,
+		MENU_INSERT_ALM,
+		MENU_INSERT_LRI,
+		MENU_INSERT_RLI,
+		MENU_INSERT_FSI,
+		MENU_INSERT_PDI,
+		MENU_INSERT_ZWJ,
+		MENU_INSERT_ZWNJ,
+		MENU_INSERT_WJ,
+		MENU_INSERT_SHY,
+		MENU_EMOJI_AND_SYMBOL,
+		MENU_MAX
+	};
+
+	// Keep synced with DisplayServerEnums::VirtualKeyboardType enum.
+	enum VirtualKeyboardType
+	{
+		KEYBOARD_TYPE_DEFAULT,
+		KEYBOARD_TYPE_MULTILINE,
+		KEYBOARD_TYPE_NUMBER,
+		KEYBOARD_TYPE_NUMBER_DECIMAL,
+		KEYBOARD_TYPE_PHONE,
+		KEYBOARD_TYPE_EMAIL_ADDRESS,
+		KEYBOARD_TYPE_PASSWORD,
+		KEYBOARD_TYPE_URL
+	};
+
+	enum ExpandMode
+	{
+		EXPAND_MODE_ORIGINAL_SIZE,
+		EXPAND_MODE_FIT_TO_TEXT,
+		EXPAND_MODE_FIT_TO_LINE_EDIT,
+	};
+
+private:
+	HorizontalAlignment alignment = HORIZONTAL_ALIGNMENT_LEFT;
+
+	bool editing = false;
+	bool keep_editing_on_text_submit = false;
+	bool editable = false;
+	bool pass = false;
+	bool text_changed_dirty = false;
+	ExpandMode icon_expand_mode = EXPAND_MODE_ORIGINAL_SIZE;
+
+	enum AltInputMode
+	{
+		ALT_INPUT_NONE,
+		ALT_INPUT_UNICODE,
+		ALT_INPUT_OEM,
+		ALT_INPUT_WIN,
+	};
+
+	AltInputMode alt_mode = ALT_INPUT_NONE;
+	bool alt_start = false;
+	bool alt_start_no_hold = false;
+	uint32_t alt_code = 0;
+
+	String undo_text;
+	String text;
+	String placeholder;
+	String placeholder_translated;
+	String secret_character = U"•";
+	String ime_text;
+	Point2 ime_selection;
+
+	RID text_rid;
+	RID accessibility_text_root_element;
+	float full_width = 0.0;
+
+	bool selecting_enabled = true;
+	bool deselect_on_focus_loss_enabled = true;
+	bool drag_and_drop_selection_enabled = true;
+
+	bool context_menu_enabled = true;
+	bool emoji_menu_enabled = true;
+	bool backspace_deletes_composite_character_enabled = false;
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
+
+	bool caret_mid_grapheme_enabled = false;
+
+	int caret_column = 0;
+	float scroll_offset = 0.0;
+	int max_length = 0; // 0 for no maximum.
+
+	String language;
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextDirection input_direction = TEXT_DIRECTION_LTR;
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+	bool draw_control_chars = false;
+
+	bool expand_to_text_length = false;
+	bool window_has_focus = true;
+
+	bool clear_button_enabled = false;
+
+	bool shortcut_keys_enabled = true;
+
+	bool virtual_keyboard_enabled = true;
+	bool virtual_keyboard_show_on_focus = true;
+	VirtualKeyboardType virtual_keyboard_type = KEYBOARD_TYPE_DEFAULT;
+
+	bool middle_mouse_paste_enabled = true;
+
+	bool drag_action = false;
+	bool drag_caret_force_displayed = false;
+
+	Ref<Texture2D> right_icon;
+	bool flat = false;
+	bool spin_box_mode = false;
+	float right_icon_scale = 1.0;
+
+	struct Selection
+	{
+		int begin = 0;
+		int end = 0;
+		int start_column = 0;
+		bool enabled = false;
+		bool creating = false;
+		bool double_click = false;
+		bool drag_attempt = false;
+	};
+
+	Selection selection;
+
+	struct TextOperation
+	{
+		int caret_column = 0;
+		float scroll_offset = 0.0;
+		String text;
+	};
+
+	List<TextOperation> undo_stack;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
+
+	struct ClearButtonStatus
+	{
+		bool press_attempt = false;
+		bool pressing_inside = false;
+	} clear_button_status;
+
+	uint64_t last_dblclk = 0;
+	Vector2 last_dblclk_pos;
+
+	bool caret_blink_enabled = false;
+	bool caret_force_displayed = false;
+	bool draw_caret = true;
+	float caret_blink_interval = 0.65;
+	double caret_blink_timer = 0.0;
+	bool caret_can_draw = false;
+
+	bool pending_select_all_on_focus = false;
+	bool select_all_on_focus = false;
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> normal;
+		Ref<StyleBox> read_only;
+		Ref<StyleBox> focus;
+
+		Ref<Font> font;
+		int font_size = 0;
+		Color font_color;
+		Color font_uneditable_color;
+		Color font_selected_color;
+		int font_outline_size;
+		Color font_outline_color;
+		Color font_placeholder_color;
+		int caret_width = 0;
+		Color caret_color;
+		int minimum_character_width = 0;
+		Color selection_color;
+
+		Ref<Texture2D> clear_icon;
+		Color clear_button_color;
+		Color clear_button_color_pressed;
+
+		float base_scale = 1.0;
+	};
+
+	ThemeCache theme_cache;
+
+	void _close_ime_window();
+	void _update_ime_window_position();
+
+	void _clear_undo_stack();
+	void _clear_redo();
+	void _create_undo_state();
+
+	Key _get_menu_action_accelerator(const String& p_action);
+	void _generate_context_menu();
+	void _update_context_menu();
+
+	void _shape();
+	void _fit_to_width();
+	void _text_changed();
+	void _emit_text_change();
+
+	void shift_selection_check_pre(bool);
+	void shift_selection_check_post(bool);
+
+	void selection_fill_at_caret();
+	void set_scroll_offset(float p_pos);
+	float get_scroll_offset() const;
+
+	void set_caret_at_pixel_pos(int p_x);
+	Vector2 get_caret_pixel_pos();
+
+	void _reset_caret_blink_timer();
+	void _toggle_draw_caret();
+	void _validate_caret_can_draw();
+
+	void clear_internal();
+
+	void _editor_settings_changed();
+
+	void _swap_current_input_direction();
+	void _move_caret_left(bool p_select, bool p_move_by_word = false);
+	void _move_caret_right(bool p_select, bool p_move_by_word = false);
+	void _move_caret_start(bool p_select);
+	void _move_caret_end(bool p_select);
+	void _backspace(bool p_word = false, bool p_all_to_left = false);
+	void _delete(bool p_word = false, bool p_all_to_right = false);
+	void _texture_changed();
+
+	void _edit(bool p_show_virtual_keyboard = true, bool p_hide_focus = false);
+	Point2 _get_right_icon_size(Ref<Texture2D> p_right_icon) const;
+
+protected:
+	bool _is_over_clear_button(const Point2& p_pos) const;
+
+	virtual void _update_theme_item_cache() override;
+
+	void _notification(int p_what);
+	static void _bind_methods();
+
+#ifndef DISABLE_DEPRECATED
+	void _edit_bind_compat_111117();
+	static void _bind_compatibility_methods();
+#endif
+
+	virtual void unhandled_key_input(const InputEvent& p_event) override;
+	virtual String _get_accessibility_name() const override;
+
+public:
+	void edit(bool p_hide_focus = false);
+	void unedit();
+	bool is_editing() const;
+	void set_keep_editing_on_text_submit(bool p_enabled);
+	bool is_editing_kept_on_text_submit() const;
+
+	bool has_ime_text() const;
+	void cancel_ime();
+	void apply_ime();
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	virtual CursorShape get_cursor_shape(const Point2& p_pos) const override;
+
+	void menu_option(int p_option);
+	void set_context_menu_enabled(bool p_enable);
+	bool is_context_menu_enabled();
+	PopupMenu* get_menu() const;
+	bool is_menu_visible() const;
+
+	void show_emoji_and_symbol_picker();
+
+	void set_emoji_menu_enabled(bool p_enabled);
+	bool is_emoji_menu_enabled() const;
+
+	void set_backspace_deletes_composite_character_enabled(bool p_enabled);
+	bool is_backspace_deletes_composite_character_enabled() const;
+
+	void select(int p_from = 0, int p_to = -1);
+	void select_all();
+	void selection_delete();
+	void deselect();
+	bool has_selection() const;
+	String get_selected_text();
+	int get_selection_from_column() const;
+	int get_selection_to_column() const;
+
+	void delete_char();
+	void delete_text(int p_from_column, int p_to_column);
+
+	void _set_text(String p_text, bool p_emit_signal = false);
+	void set_text(String p_text);
+	String get_text() const;
+	void set_text_with_selection(const String& p_text); // Set text, while preserving selection.
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_draw_control_chars(bool p_draw_control_chars);
+	bool get_draw_control_chars() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_placeholder(String p_text);
+	String get_placeholder() const;
+
+	void set_caret_column(int p_column);
+	int get_caret_column() const;
+	int get_next_composite_character_column(int p_column) const;
+	int get_previous_composite_character_column(int p_column) const;
+
+	void set_max_length(int p_max_length);
+	int get_max_length() const;
+
+	void insert_text_at_caret(String p_text);
+	void clear();
+
+	void set_caret_mid_grapheme_enabled(const bool p_enabled);
+	bool is_caret_mid_grapheme_enabled() const;
+
+	bool is_caret_blink_enabled() const;
+	void set_caret_blink_enabled(const bool p_enabled);
+
+	float get_caret_blink_interval() const;
+	void set_caret_blink_interval(const float p_interval);
+
+	void set_caret_force_displayed(const bool p_enabled);
+	bool is_caret_force_displayed() const;
+
+	void copy_text();
+	void cut_text();
+	void paste_text();
+	bool has_undo() const;
+	bool has_redo() const;
+	void undo();
+	void redo();
+
+	void set_editable(bool p_editable);
+	bool is_editable() const;
+
+	void set_secret(bool p_secret);
+	bool is_secret() const;
+
+	void set_secret_character(const String& p_string);
+	String get_secret_character() const;
+
+	virtual Size2 get_minimum_size() const override;
+
+	void set_expand_to_text_length_enabled(bool p_enabled);
+	bool is_expand_to_text_length_enabled() const;
+
+	void set_clear_button_enabled(bool p_enabled);
+	bool is_clear_button_enabled() const;
+
+	void set_shortcut_keys_enabled(bool p_enabled);
+	bool is_shortcut_keys_enabled() const;
+
+	void set_virtual_keyboard_enabled(bool p_enable);
+	bool is_virtual_keyboard_enabled() const;
+
+	void set_virtual_keyboard_show_on_focus(bool p_show_on_focus);
+	bool get_virtual_keyboard_show_on_focus() const;
+
+	void set_virtual_keyboard_type(VirtualKeyboardType p_type);
+	VirtualKeyboardType get_virtual_keyboard_type() const;
+
+	void set_middle_mouse_paste_enabled(bool p_enabled);
+	bool is_middle_mouse_paste_enabled() const;
+
+	void set_selecting_enabled(bool p_enabled);
+	bool is_selecting_enabled() const;
+
+	void set_deselect_on_focus_loss_enabled(const bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
+
+	void set_drag_and_drop_selection_enabled(const bool p_enabled);
+	bool is_drag_and_drop_selection_enabled() const;
+
+	void set_right_icon(const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_right_icon();
+
+	void set_icon_expand_mode(ExpandMode p_mode);
+	ExpandMode get_icon_expand_mode() const;
+
+	void set_right_icon_scale(float p_scale);
+	float get_right_icon_scale() const;
+
+	void set_flat(bool p_enabled);
+	bool is_flat() const;
+
+	void set_spin_box_mode(bool p_enabled) { spin_box_mode = p_enabled; }
+	bool is_spin_box_mode() const { return spin_box_mode; }
+
+	void set_select_all_on_focus(bool p_enabled);
+	bool is_select_all_on_focus() const;
+	void clear_pending_select_all_on_focus(); // For other controls, e.g. SpinBox.
+
+	virtual bool is_text_field() const override;
+
+	PackedStringArray get_configuration_warnings() const override;
+
+	void show_virtual_keyboard();
+
+	LineEdit(const String& p_placeholder = String());
+	~LineEdit();
+};
+
+// --- Folded from scene/gui/spin_box.h ---
+
+
+
+
+
+class SpinBox : public Control
+{
+	LineEdit* line_edit = nullptr;
+	bool update_on_text_changed = false;
+	bool accepted = true;
+
+	struct SizingCache
+	{
+		int buttons_block_width = 0;
+		int buttons_width = 0;
+		int buttons_vertical_separation = 0;
+		int buttons_left = 0;
+		int button_up_height = 0;
+		int button_down_height = 0;
+		int second_button_top = 0;
+		int buttons_separator_top = 0;
+		int field_and_buttons_separator_left = 0;
+		int field_and_buttons_separator_width = 0;
+	} sizing_cache;
+
+	Timer* range_click_timer = nullptr;
+	void _release_mouse_from_drag_mode();
+	void _arrow_clicked(bool p_up);
+
+	void _update_text(bool p_only_update_if_value_changed = false);
+	void _text_submitted(const String& p_string);
+	void _text_changed(const String& p_string);
+
+	String prefix;
+	String suffix;
+	String last_text_value;
+	double custom_arrow_step = 0.0;
+	bool custom_arrow_round = false;
+
+	void _line_edit_input(const InputEvent& p_event);
+
+	struct Drag
+	{
+		double base_val = 0.0;
+		bool allowed = false;
+		bool enabled = false;
+		Vector2 capture_pos;
+		double diff_y = 0.0;
+	} drag;
+
+	struct StateCache
+	{
+		bool up_button_hovered = false;
+		bool up_button_pressed = false;
+		bool up_button_disabled = false;
+		bool down_button_hovered = false;
+		bool down_button_pressed = false;
+		bool down_button_disabled = false;
+	} state_cache;
+
+	void _line_edit_editing_toggled(bool p_toggled_on);
+
+	inline void _compute_sizes();
+	inline int _get_widest_button_icon_width();
+
+	struct ThemeCache
+	{
+		Ref<Texture2D> up_icon;
+		Ref<Texture2D> up_hover_icon;
+		Ref<Texture2D> up_pressed_icon;
+		Ref<Texture2D> up_disabled_icon;
+		Ref<Texture2D> down_icon;
+		Ref<Texture2D> down_hover_icon;
+		Ref<Texture2D> down_pressed_icon;
+		Ref<Texture2D> down_disabled_icon;
+
+		Ref<StyleBox> up_base_stylebox;
+		Ref<StyleBox> up_hover_stylebox;
+		Ref<StyleBox> up_pressed_stylebox;
+		Ref<StyleBox> up_disabled_stylebox;
+		Ref<StyleBox> down_base_stylebox;
+		Ref<StyleBox> down_hover_stylebox;
+		Ref<StyleBox> down_pressed_stylebox;
+		Ref<StyleBox> down_disabled_stylebox;
+
+		Color up_icon_modulate;
+		Color up_hover_icon_modulate;
+		Color up_pressed_icon_modulate;
+		Color up_disabled_icon_modulate;
+		Color down_icon_modulate;
+		Color down_hover_icon_modulate;
+		Color down_pressed_icon_modulate;
+		Color down_disabled_icon_modulate;
+
+		Ref<StyleBox> field_and_buttons_separator;
+		Ref<StyleBox> up_down_buttons_separator;
+
+		int buttons_vertical_separation = 0;
+		int field_and_buttons_separation = 0;
+		int buttons_width = 0;
+#ifndef DISABLE_DEPRECATED
+		Ref<Texture2D> updown_icon;
+		bool is_updown_assigned = false;
+		bool set_min_buttons_width_from_icons = false;
+#endif
+	} theme_cache;
+
+	void _mouse_exited();
+	void _update_buttons_state_for_current_value();
+
+protected:
+	void _value_changed(double p_value);
+
+	void _notification(int p_what);
+
+public:
+	NumericRange range;
+
+	double get_value() const { return range.value; }
+	double get_min() const { return range.min; }
+	double get_max() const { return range.max; }
+	double get_step() const { return range.step; }
+	double get_page() const { return range.page; }
+	double get_as_ratio() const { return range.get_as_ratio(); }
+
+	void set_value(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_value_no_signal(double p_val)
+	{
+		if (range.set_value(p_val)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+	}
+
+	void set_min(double p_min)
+	{
+		if (range.set_min(p_min)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_max(double p_max)
+	{
+		if (range.set_max(p_max)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_step(double p_step)
+	{
+		if (range.set_step(p_step)) {
+			queue_accessibility_update();
+		}
+	}
+
+	void set_page(double p_page)
+	{
+		if (range.set_page(p_page)) {
+			_value_changed(range.value);
+			queue_redraw();
+			queue_accessibility_update();
+		}
+	}
+
+	void set_as_ratio(double p_value)
+	{
+		if (range.set_as_ratio(p_value)) {
+			_value_changed(range.value);
+			queue_redraw();
+		}
+		queue_accessibility_update();
+	}
+
+	void set_allow_greater(bool p_allow) { range.allow_greater = p_allow; }
+	bool is_greater_allowed() const { return range.allow_greater; }
+	void set_allow_lesser(bool p_allow) { range.allow_lesser = p_allow; }
+	bool is_lesser_allowed() const { return range.allow_lesser; }
+	void set_use_rounded_values(bool p_enable) { range.rounded_values = p_enable; }
+	bool is_using_rounded_values() const { return range.rounded_values; }
+	bool is_ratio_exp() const { return range.exp_ratio; }
+
+	LineEdit* get_line_edit();
+
+	virtual Size2 get_minimum_size() const override;
+	PackedStringArray get_configuration_warnings() const override
+	{
+		PackedStringArray warnings = Control::get_configuration_warnings();
+		range.append_configuration_warnings(warnings);
+		return warnings;
+	}
+
+	void set_horizontal_alignment(HorizontalAlignment p_alignment);
+	HorizontalAlignment get_horizontal_alignment() const;
+
+	void set_editable(bool p_enabled);
+	bool is_editable() const;
+
+	void set_suffix(const String& p_suffix);
+	String get_suffix() const;
+
+	void set_prefix(const String& p_prefix);
+	String get_prefix() const;
+
+	void set_update_on_text_changed(bool p_enabled);
+	bool get_update_on_text_changed() const;
+
+	void set_select_all_on_focus(bool p_enabled);
+	bool is_select_all_on_focus() const;
+
+	void apply();
+	void set_custom_arrow_step(const double p_custom_arrow_step);
+	double get_custom_arrow_step() const;
+
+	void set_custom_arrow_round(bool p_round);
+	bool is_custom_arrow_rounding() const;
+
+	SpinBox();
+};
+
+// --- End scene/gui/spin_box.h ---
+
+// --- Folded from scene/gui/text_edit.h ---
+#include <type_traits>
+
+
+
+
+
+// --- Folded from scene/resources/syntax_highlighter.h ---
+#include "core/types.h"
+
+class TextEdit;
+
+class CodeHighlighter : public Resource
+{
+private:
+	struct ColorRegion
+	{
+		Color color;
+		String start_key;
+		String end_key;
+		bool line_only = false;
+	};
+
+	TextEdit* text_edit = nullptr;
+
+	Vector<ColorRegion> color_regions;
+	HashMap<int, int> color_region_cache;
+
+	Color font_color;
+	Color member_color;
+	Color function_color;
+	Color symbol_color;
+	Color number_color;
+
+	bool uint_suffix_enabled = false;
+
+	void _lines_edited_from(int p_from_line, int p_to_line);
+
+public:
+	void clear_highlighting_cache();
+	void _clear_highlighting_cache();
+
+	void update_cache();
+	void _update_cache();
+
+	void set_text_edit(TextEdit* p_text_edit);
+	TextEdit* get_text_edit() const;
+
+	void add_keyword_color(const String& p_keyword, const Color& p_color);
+	void remove_keyword_color(const String& p_keyword);
+	bool has_keyword_color(const String& p_keyword) const;
+	Color get_keyword_color(const String& p_keyword) const;
+
+	void clear_keyword_colors();
+
+	void add_member_keyword_color(const String& p_member_keyword, const Color& p_color);
+	void remove_member_keyword_color(const String& p_member_keyword);
+	bool has_member_keyword_color(const String& p_member_keyword) const;
+	Color get_member_keyword_color(const String& p_member_keyword) const;
+
+	void clear_member_keyword_colors();
+
+	void add_color_region(const String& p_start_key, const String& p_end_key, const Color& p_color,
+		bool p_line_only = false);
+	void remove_color_region(const String& p_start_key);
+	bool has_color_region(const String& p_start_key) const;
+
+	void clear_color_regions();
+
+	void set_number_color(Color p_color);
+	Color get_number_color() const;
+
+	void set_symbol_color(Color p_color);
+	Color get_symbol_color() const;
+
+	void set_function_color(Color p_color);
+	Color get_function_color() const;
+
+	void set_member_variable_color(Color p_color);
+	Color get_member_variable_color() const;
+
+	void set_uint_suffix_enabled(bool p_enabled);
+};
+
+// --- End scene/resources/syntax_highlighter.h ---
+#include "scene/resources/theme.h"
+
+class TextEdit : public Control
+{
+public:
+	/* Edit Actions. */
+	enum EditAction
+	{
+		ACTION_NONE,
+		ACTION_TYPING,
+		ACTION_BACKSPACE,
+		ACTION_DELETE,
+	};
+
+	/* Caret. */
+	enum CaretType
+	{
+		CARET_TYPE_LINE,
+		CARET_TYPE_BLOCK
+	};
+
+	/* Selection */
+	enum SelectionMode
+	{
+		SELECTION_MODE_NONE,
+		SELECTION_MODE_SHIFT,
+		SELECTION_MODE_POINTER,
+		SELECTION_MODE_WORD,
+		SELECTION_MODE_LINE
+	};
+
+	/* Line Wrapping.*/
+	enum LineWrappingMode
+	{
+		LINE_WRAPPING_NONE,
+		LINE_WRAPPING_BOUNDARY
+	};
+
+	/* Gutters. */
+	enum GutterType
+	{
+		GUTTER_TYPE_STRING,
+		GUTTER_TYPE_ICON,
+		GUTTER_TYPE_CUSTOM
+	};
+
+	/* Context Menu. */
+	enum MenuItems
+	{
+		MENU_CUT,
+		MENU_COPY,
+		MENU_PASTE,
+		MENU_CLEAR,
+		MENU_SELECT_ALL,
+		MENU_UNDO,
+		MENU_REDO,
+		MENU_SUBMENU_TEXT_DIR,
+		MENU_DIR_INHERITED,
+		MENU_DIR_AUTO,
+		MENU_DIR_LTR,
+		MENU_DIR_RTL,
+		MENU_DISPLAY_UCC,
+		MENU_SUBMENU_INSERT_UCC,
+		MENU_INSERT_LRM,
+		MENU_INSERT_RLM,
+		MENU_INSERT_LRE,
+		MENU_INSERT_RLE,
+		MENU_INSERT_LRO,
+		MENU_INSERT_RLO,
+		MENU_INSERT_PDF,
+		MENU_INSERT_ALM,
+		MENU_INSERT_LRI,
+		MENU_INSERT_RLI,
+		MENU_INSERT_FSI,
+		MENU_INSERT_PDI,
+		MENU_INSERT_ZWJ,
+		MENU_INSERT_ZWNJ,
+		MENU_INSERT_WJ,
+		MENU_INSERT_SHY,
+		MENU_EMOJI_AND_SYMBOL,
+		MENU_MAX
+
+	};
+
+	/* Search. */
+	enum SearchFlags
+	{
+		SEARCH_MATCH_CASE = 1,
+		SEARCH_WHOLE_WORDS = 2,
+		SEARCH_BACKWARDS = 4
+	};
+
+	/* Code Completion. */
+	enum CodeCompletionKind
+	{
+		KIND_CLASS,
+		KIND_FUNCTION,
+		KIND_SIGNAL,
+		KIND_VARIABLE,
+		KIND_MEMBER,
+		KIND_ENUM,
+		KIND_CONSTANT,
+		KIND_NODE_PATH,
+		KIND_FILE_PATH,
+		KIND_PLAIN_TEXT,
+		KIND_KEYWORD,
+	};
+
+	enum CodeCompletionLocation
+	{
+		LOCATION_LOCAL = 0,
+		LOCATION_PARENT_MASK = 1 << 8,
+		LOCATION_OTHER_USER_CODE = 1 << 9,
+		LOCATION_OTHER = 1 << 10,
+	};
+
+private:
+	struct GutterInfo
+	{
+		GutterType type = GutterType::GUTTER_TYPE_STRING;
+		String name = "";
+		int width = 24;
+		bool draw = true;
+		bool clickable = false;
+		bool overwritable = false;
+	};
+
+	class Text
+	{
+	public:
+		struct Gutter
+		{
+			bool clickable = false;
+
+			Ref<Texture2D> icon;
+			String text = "";
+			Color color = Color(1, 1, 1);
+		};
+
+		struct Line
+		{
+			Vector<Gutter> gutters;
+
+			String data;
+			Ref<TextParagraph> data_buf;
+			Vector<RID> accessibility_text_root_element;
+
+			String ime_data;
+
+			Color background_color = Color(0, 0, 0, 0);
+			bool hidden = false;
+			int line_count = 0;
+			int height = 0;
+			int width = 0;
+			float indent_ofs = -1.0;
+
+			Line() { data_buf.instantiate(); }
+		};
+
+	private:
+		bool is_dirty = false;
+		bool tab_size_dirty = false;
+
+		mutable Vector<Line> text;
+		Ref<Font> font;
+		int font_size = -1;
+		int font_height = 0;
+
+		String language;
+		TextServer::Direction direction = TextServer::DIRECTION_AUTO;
+		uint32_t brk_flags = TextServer::BREAK_MANDATORY;
+		bool draw_control_chars = false;
+		String custom_word_separators;
+		bool use_default_word_separators = true;
+		bool use_custom_word_separators = false;
+
+		mutable bool max_line_width_dirty = true;
+		mutable bool max_line_height_dirty = true;
+		mutable int max_line_width = 0;
+		mutable int max_line_height = 0;
+		mutable int total_visible_line_count = 0;
+		int width = -1;
+
+		int tab_size = 4;
+		int gutter_count = 0;
+		bool indent_wrapped_lines = false;
+
+	public:
+		void set_tab_size(int p_tab_size);
+		int get_tab_size() const;
+		void set_indent_wrapped_lines(bool p_enabled);
+		bool is_indent_wrapped_lines() const;
+
+		void set_font(const Ref<Font>& p_font);
+		void set_font_size(int p_font_size);
+		void set_direction_and_language(
+			TextServer::Direction p_direction, const String& p_language);
+		void set_draw_control_chars(bool p_enabled);
+
+		int get_line_height() const;
+		int get_line_width(int p_line, int p_wrap_index = -1) const;
+		int get_max_width() const;
+		int get_total_visible_line_count() const;
+
+		void set_use_default_word_separators(bool p_enabled);
+		bool is_default_word_separators_enabled() const;
+
+		void set_use_custom_word_separators(bool p_enabled);
+		bool is_custom_word_separators_enabled() const;
+
+		void set_custom_word_separators(const String& p_separators);
+		String get_enabled_word_separators() const;
+		String get_custom_word_separators() const;
+		String get_default_word_separators() const;
+
+		void set_width(float p_width);
+		float get_width() const;
+		void set_brk_flags(uint32_t p_flags);
+		uint32_t get_brk_flags() const;
+		int get_line_wrap_amount(int p_line) const;
+
+		const Vector<RID> get_accessibility_elements(int p_line);
+		void update_accessibility(int p_line, RID p_root);
+
+		void clear_accessibility()
+		{
+			for (int i = 0; i < text.size(); i++) {
+				text.write[i].accessibility_text_root_element.clear();
+			}
+		}
+
+		Vector<Vector2i> get_line_wrap_ranges(int p_line) const;
+		const Ref<TextParagraph> get_line_data(int p_line) const;
+		float get_indent_offset(int p_line, bool p_rtl) const;
+
+		void set_hidden(int p_line, bool p_hidden);
+		bool is_hidden(int p_line) const;
+		void remove_range(int p_from_line, int p_to_line);
+
+		int size() const { return text.size(); }
+
+		void clear();
+
+		void invalidate_cache(int p_line, bool p_text_changed = false);
+		void invalidate_font();
+		void invalidate_all();
+		void invalidate_all_lines();
+
+		_FORCE_INLINE_ const String& operator[](int p_line) const;
+		_FORCE_INLINE_ const String& get_text_with_ime(int p_line) const;
+
+		/* Gutters. */
+		void add_gutter(int p_at);
+		void remove_gutter(int p_gutter);
+		void move_gutters(int p_from_line, int p_to_line);
+
+		void set_line_gutter_text(int p_line, int p_gutter, const String& p_text)
+		{
+			text.write[p_line].gutters.write[p_gutter].text = p_text;
+		}
+
+		const String& get_line_gutter_text(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].text;
+		}
+
+		void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon)
+		{
+			text.write[p_line].gutters.write[p_gutter].icon = p_icon;
+		}
+
+		const Ref<Texture2D>& get_line_gutter_icon(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].icon;
+		}
+
+		void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color)
+		{
+			text.write[p_line].gutters.write[p_gutter].color = p_color;
+		}
+
+		const Color& get_line_gutter_item_color(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].color;
+		}
+
+		void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable)
+		{
+			text.write[p_line].gutters.write[p_gutter].clickable = p_clickable;
+		}
+
+		bool is_line_gutter_clickable(int p_line, int p_gutter) const
+		{
+			return text[p_line].gutters[p_gutter].clickable;
+		}
+
+		/* Line style. */
+		void set_line_background_color(int p_line, const Color& p_color)
+		{
+			text.write[p_line].background_color = p_color;
+		}
+
+		const Color get_line_background_color(int p_line) const
+		{
+			return text[p_line].background_color;
+		}
+	};
+
+	/* Text */
+	Text text;
+	RID text_ci;
+	bool setting_text = false;
+
+	enum AltInputMode
+	{
+		ALT_INPUT_NONE,
+		ALT_INPUT_UNICODE,
+		ALT_INPUT_OEM,
+		ALT_INPUT_WIN,
+	};
+
+	AltInputMode alt_mode = ALT_INPUT_NONE;
+	bool alt_start = false;
+	bool alt_start_no_hold = false;
+	uint32_t alt_code = 0;
+
+	bool tab_input_mode = true;
+
+	// Text properties.
+	String ime_text = "";
+	Point2 ime_selection;
+
+	// Placeholder
+	String placeholder_text = "";
+	Ref<TextParagraph> placeholder_data_buf;
+	int placeholder_line_height = -1;
+	int placeholder_max_width = -1;
+
+	Vector<String> placeholder_wrapped_rows;
+
+	void _update_placeholder();
+	bool _using_placeholder() const;
+
+	/* Initialize to opposite first, so we get past the early-out in set_editable. */
+	bool editable = false;
+
+	TextDirection text_direction = TEXT_DIRECTION_AUTO;
+	TextDirection input_direction = TEXT_DIRECTION_LTR;
+
+	String language = "";
+
+	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+
+	void _clear();
+	void _update_caches(bool p_invalidate_all = false);
+
+	void _close_ime_window();
+	void _update_ime_window_position();
+	void _update_ime_text();
+
+	// User control.
+	bool overtype_mode = false;
+	bool context_menu_enabled = true;
+	bool emoji_menu_enabled = true;
+	bool backspace_deletes_composite_character_enabled = false;
+	bool shortcut_keys_enabled = true;
+	bool virtual_keyboard_enabled = true;
+	bool virtual_keyboard_show_on_focus = true;
+	bool middle_mouse_paste_enabled = true;
+	bool empty_selection_clipboard_enabled = true;
+
+	// Overridable actions.
+	String cut_copy_line = "";
+
+	// Context menu.
+	PopupMenu* menu = nullptr;
+	PopupMenu* menu_dir = nullptr;
+	PopupMenu* menu_ctl = nullptr;
+
+	Key _get_menu_action_accelerator(const String& p_action);
+	void _generate_context_menu();
+
+	/* Versioning */
+	struct Caret;
+
+	struct TextOperation
+	{
+		enum Type
+		{
+			TYPE_NONE,
+			TYPE_INSERT,
+			TYPE_REMOVE
+		};
+
+		Vector<Caret> start_carets;
+		Vector<Caret> end_carets;
+
+		Type type = TYPE_NONE;
+		int from_line = 0;
+		int from_column = 0;
+		int to_line = 0;
+		int to_column = 0;
+		String text;
+		uint32_t prev_version = 0;
+		uint32_t version = 0;
+		bool chain_forward = false;
+		bool chain_backward = false;
+	};
+
+	bool undo_enabled = true;
+	int undo_stack_max_size = 50;
+
+	EditAction current_action = EditAction::ACTION_NONE;
+	bool pending_action_end = false;
+	bool in_action = false;
+
+	int complex_operation_count = 0;
+	bool next_operation_is_complex = false;
+
+	TextOperation current_op;
+	List<TextOperation> undo_stack;
+	List<TextOperation>::Element* undo_stack_pos = nullptr;
+
+	Timer* idle_detect = nullptr;
+
+	uint32_t version = 0;
+	uint32_t saved_version = 0;
+
+	void _push_current_op();
+	void _do_text_op(const TextOperation& p_op, bool p_reverse);
+	void _clear_redo();
+
+	/* Search */
+	String search_text = "";
+	uint32_t search_flags = 0;
+
+	int _get_column_pos_of_word(const String& p_key, const String& p_search,
+		uint32_t p_search_flags, int p_from_column) const;
+
+	/* Mouse */
+	struct LineDrawingCache
+	{
+		int y_offset = 0;
+		Vector<int> first_visible_chars;
+		Vector<int> last_visible_chars;
+	};
+
+	HashMap<int, LineDrawingCache> line_drawing_cache;
+
+	int _get_char_pos_for_line(int p_px, int p_line, int p_wrap_index = 0) const;
+
+	/* Caret. */
+	struct Selection
+	{
+		bool active = false;
+
+		int origin_line = 0;
+		int origin_column = 0;
+		int origin_last_fit_x = 0;
+		int word_begin_column = 0;
+		int word_end_column = 0;
+	};
+
+	struct Caret
+	{
+		Selection selection;
+
+		Point2 draw_pos;
+		bool visible = false;
+		int last_fit_x = 0;
+		int line = 0;
+		int column = 0;
+	};
+
+	// Vector containing all the carets, index '0' is the "main caret" and should never be removed.
+	Vector<Caret> carets;
+
+	bool setting_caret_line = false;
+	bool caret_pos_dirty = false;
+	void _set_caret_pos_dirty(bool p_dirty);
+
+	int multicaret_edit_count = 0;
+	bool multicaret_edit_merge_queued = false;
+	HashSet<int> multicaret_edit_ignore_carets;
+
+	CaretType caret_type = CaretType::CARET_TYPE_LINE;
+
+	bool draw_caret = true;
+	bool draw_caret_when_editable_disabled = false;
+
+	bool caret_blink_enabled = false;
+	Timer* caret_blink_timer = nullptr;
+
+	bool move_caret_on_right_click = true;
+
+	bool caret_mid_grapheme_enabled = false;
+
+	bool multi_carets_enabled = true;
+
+	bool drag_action = false;
+	bool drag_caret_force_displayed = false;
+
+	void _caret_changed(int p_caret = -1);
+	void _emit_caret_changed();
+
+	void _show_virtual_keyboard();
+	void _reset_caret_blink_timer();
+	void _toggle_draw_caret();
+
+	int _get_column_x_offset_for_line(int p_char, int p_line, int p_column) const;
+	bool _is_line_col_in_range(int p_line, int p_column, int p_from_line, int p_from_column,
+		int p_to_line, int p_to_column, bool p_include_edges = true) const;
+
+	void _offset_carets_after(int p_old_line, int p_old_column, int p_new_line, int p_new_column,
+		bool p_include_selection_begin = true, bool p_include_selection_end = true);
+
+	void _cancel_drag_and_drop_text();
+
+	/* Selection. */
+	SelectionMode selecting_mode = SelectionMode::SELECTION_MODE_NONE;
+
+	bool selecting_enabled = true;
+	bool deselect_on_focus_loss_enabled = true;
+	bool drag_and_drop_selection_enabled = true;
+
+	bool use_selected_font_color = false;
+
+	bool selection_drag_attempt = false;
+	bool dragging_selection = false;
+	int drag_and_drop_origin_caret_index = -1;
+	int drag_caret_index = -1;
+
+	Timer* click_select_held = nullptr;
+	uint64_t last_dblclk = 0;
+	Vector2 last_dblclk_pos;
+
+	bool touch_dragging_starting = false;
+	bool touch_dragging_in_progress = false;
+	bool touch_dragging_deaccel = false;
+	Vector2 drag_accum;
+	Vector2 drag_from;
+	Vector2 drag_speed;
+	Vector2 last_drag_accum;
+	double time_since_motion = 0.0;
+	bool pan_gesture_performed = false;
+
+	enum SelectionHandleDragType
+	{
+		SELECTION_HANDLE_NONE,
+		SELECTION_HANDLE_START,
+		SELECTION_HANDLE_END,
+	};
+
+	SelectionHandleDragType selection_handle_drag_type = SELECTION_HANDLE_NONE;
+	float selection_handle_radius;
+	int dragging_caret_index = -1;
+	Vector2 selection_handle_drag_offset;
+	bool show_selection_handle = false;
+	bool selection_handle_enabled = true;
+	Vector<Point2i> _get_selection_handles_pos(int p_cursor) const;
+	bool _is_first_column(int p_line, int p_column) const;
+	void _draw_selection_handle(Vector2 p_pos) const;
+
+	void _cancel_inertial_scroll();
+
+	void _on_drag_or_mouse_motion_event(Vector2i p_event_position, bool p_is_left_click_or_drag);
+
+	void _selection_changed(int p_caret = -1);
+	void _click_selection_held();
+
+	void _pre_shift_selection(int p_caret);
+
+	bool _selection_contains(int p_caret, int p_line, int p_column, bool p_include_edges = true,
+		bool p_only_selections = true) const;
+
+	/* Line wrapping. */
+	LineWrappingMode line_wrapping_mode = LineWrappingMode::LINE_WRAPPING_NONE;
+	TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_WORD_SMART;
+
+	int wrap_at_column = 0;
+
+	void _update_wrap_at_column(bool p_force = false);
+
+	/* Viewport. */
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+
+	Vector2i content_size_cache;
+	bool fit_content_height = false;
+	bool fit_content_width = false;
+	bool scroll_past_end_of_file_enabled = false;
+
+	// Smooth scrolling.
+	bool smooth_scroll_enabled = false;
+	float target_v_scroll = 0.0;
+	float v_scroll_speed = 80.0;
+
+	// Scrolling.
+	int first_visible_line = 0;
+	int first_visible_line_wrap_ofs = 0;
+	int first_visible_col = 0;
+
+	bool scrolling = false;
+	bool updating_scrolls = false;
+
+	void _update_scrollbars();
+	int _get_control_height() const;
+
+	void _v_scroll_input();
+	void _scroll_moved(double p_to_val);
+
+	double _get_visible_lines_offset() const;
+	double _get_v_scroll_offset() const;
+
+	void _scroll_up(real_t p_delta, bool p_animate);
+	void _scroll_down(real_t p_delta, bool p_animate);
+
+	void _scroll_lines_up();
+	void _scroll_lines_down();
+
+	void _adjust_viewport_to_caret_horizontally(int p_caret = 0, bool p_maximize_selection = true);
+
+	// Minimap.
+	bool draw_minimap = false;
+
+	int minimap_width = 80;
+	Point2 minimap_char_size = Point2(1, 2);
+	int minimap_line_spacing = 1;
+
+	// Minimap scroll.
+	bool minimap_clicked = false;
+	bool hovering_minimap = false;
+	bool dragging_minimap = false;
+	bool can_drag_minimap = false;
+
+	double minimap_scroll_ratio = 0.0;
+	double minimap_scroll_click_pos = 0.0;
+
+	void _update_minimap_hover();
+	void _update_minimap_click();
+	void _update_minimap_drag();
+
+	/* Gutters. */
+	Vector<GutterInfo> gutters;
+	int gutters_width = 0;
+	int gutter_padding = 0;
+	Vector2i hovered_gutter = Vector2i(-1, -1); // X = gutter index, Y = row.
+
+	void _update_gutter_width();
+	Vector2i _get_hovered_gutter(const Point2& p_mouse_pos) const;
+
+	/* Syntax highlighting. */
+	Ref<CodeHighlighter> syntax_highlighter;
+	HashMap<int, Vector<Pair<int64_t, Color>>> syntax_highlighting_cache;
+
+	Vector<Pair<int64_t, Color>> _get_line_syntax_highlighting(int p_line);
+	void _clear_syntax_highlighting_cache();
+	void _syntax_highlighter_changed();
+
+	/* Code editing features (composed). */
+	enum MainGutterType
+	{
+		MAIN_GUTTER_BREAKPOINT = 0x01,
+		MAIN_GUTTER_BOOKMARK = 0x02,
+		MAIN_GUTTER_EXECUTING = 0x04
+	};
+
+	enum DelimiterType
+	{
+		TYPE_STRING,
+		TYPE_COMMENT,
+	};
+
+	struct BracePair
+	{
+		String open_key = "";
+		String close_key = "";
+	};
+
+	struct Delimiter
+	{
+		DelimiterType type;
+		String start_key = "";
+		String end_key = "";
+		bool line_only = true;
+	};
+
+	struct CodeFeatures
+	{
+		/* Indent management */
+		int indent_size = 4;
+		String indent_text = "\t";
+		bool auto_indent = false;
+		HashSet<char32_t> auto_indent_prefixes;
+		bool indent_using_spaces = false;
+
+		/* Auto brace completion */
+		bool auto_brace_completion_enabled = false;
+		Vector<BracePair> auto_brace_completion_pairs;
+
+		/* Main Gutter */
+		int main_gutter = -1;
+		HashMap<int, bool> breakpointed_lines;
+		HashMap<int, bool> bookmarked_lines;
+		HashMap<int, bool> executing_lines;
+		bool draw_breakpoints = false;
+		bool draw_bookmarks = false;
+		bool draw_executing_lines = false;
+
+		/* Line numbers */
+		int line_number_gutter = -1;
+		int line_number_digits = 1;
+		int line_numbers_min_digits = 3;
+		String line_number_padding = " ";
+		HashMap<int, RID> line_number_text_cache;
+
+		/* Fold Gutter */
+		int fold_gutter = -1;
+		bool draw_fold_gutter = false;
+
+		/* Line Folding */
+		bool line_folding_enabled = false;
+		String code_region_start_string;
+		String code_region_end_string;
+		String code_region_start_tag = "region";
+		String code_region_end_tag = "endregion";
+
+		/* Delimiters */
+		bool setting_delimiters = false;
+		Vector<Delimiter> delimiters;
+		Vector<RBMap<int, int>> delimiter_cache;
+
+		/* Code Hint */
+		String code_hint = "";
+		bool code_hint_draw_below = true;
+		int code_hint_xpos = -0xFFFF;
+
+		/* Code Completion */
+		bool code_completion_enabled = false;
+		bool code_completion_forced = false;
+		Vector2 completion_touch_drag_accum;
+		bool code_completion_active = false;
+		bool is_code_completion_scroll_hovered = false;
+		bool is_code_completion_scroll_pressed = false;
+		bool is_code_completion_drag_started = false;
+		Vector<RID> code_completion_ac_items;
+		RID code_completion_ac_scroll_element;
+		RID code_completion_ac_root_element;
+		int code_completion_line_ofs = 0;
+		int code_completion_current_selected = 0;
+		int code_completion_force_item_center = -1;
+		int code_completion_longest_line = 0;
+		Rect2i code_completion_rect;
+		Rect2i code_completion_scroll_rect;
+		float code_completion_pan_offset = 0.0f;
+		HashSet<char32_t> code_completion_prefixes;
+		String code_completion_base;
+		String code_completion_line;
+		int code_completion_caret_line = 0;
+		int code_completion_caret_column = 0;
+
+		/* Line length guidelines */
+		Vector<int> line_length_guideline_columns;
+
+		/* Symbol lookup */
+		bool symbol_lookup_on_click_enabled = false;
+		Point2i symbol_lookup_pos;
+		String symbol_lookup_new_word;
+		String symbol_lookup_word;
+
+		/* Symbol tooltip */
+		bool symbol_tooltip_on_hover_enabled = false;
+		Point2i symbol_tooltip_pos;
+		String symbol_tooltip_word;
+		Timer* symbol_tooltip_timer = nullptr;
+
+		/* Callbacks */
+		int lines_edited_changed = 0;
+		int lines_edited_from = -1;
+		int lines_edited_to = -1;
+	};
+
+	bool code_mode = false;
+	CodeFeatures code;
+
+	int _calculate_spaces_till_next_left_indent(int p_column) const;
+	int _calculate_spaces_till_next_right_indent(int p_column) const;
+	int _get_auto_brace_pair_open_at_pos(int p_line, int p_col);
+	int _get_auto_brace_pair_close_at_pos(int p_line, int p_col);
+
+	_FORCE_INLINE_ bool _is_bookmark_only() const
+	{
+		return code.draw_bookmarks && !code.draw_executing_lines && !code.draw_breakpoints;
+	}
+
+	void _ensure_code_gutters();
+	void _update_draw_main_gutter();
+	void _main_gutter_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _clear_line_number_text_cache();
+	void _update_line_number_gutter_width();
+	void _line_number_draw_callback(int p_line, int p_gutter, const Rect2& p_region);
+	void _fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_region);
+	void _gutter_clicked(int p_line, int p_gutter);
+	void _update_gutter_indexes();
+	void _update_code_region_tags();
+	bool _fold_line(int p_line);
+	bool _unfold_line(int p_line);
+
+	void _update_delimiter_cache(int p_from_line = 0, int p_to_line = -1);
+	int _is_in_delimiter(int p_line, int p_column, DelimiterType p_type) const;
+	void _add_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only, DelimiterType p_type);
+	void _remove_delimiter(const String& p_start_key, DelimiterType p_type);
+	bool _has_delimiter(const String& p_start_key, DelimiterType p_type) const;
+	void _set_delimiters(const Vector<String>& p_delimiters, DelimiterType p_type);
+	void _clear_delimiters(DelimiterType p_type);
+	Vector<String> _get_delimiters(DelimiterType p_type) const;
+
+	void _update_scroll_selected_line(float p_mouse_y);
+	void _filter_code_completion_candidates_impl();
+	void _on_symbol_tooltip_timer_timeout();
+
+	void _code_lines_edited_from(int p_from_line, int p_to_line);
+	void _code_text_set();
+	void _code_line_col_changed();
+	void _code_text_changed();
+
+	/* Visual. */
+	struct ThemeCache
+	{
+		float base_scale = 1.0;
+
+		/* Search */
+		Color search_result_color = Color(1, 1, 1);
+		Color search_result_border_color = Color(1, 1, 1);
+
+		/* Caret */
+		int caret_width = 1;
+		Color caret_color = Color(1, 1, 1);
+		Color caret_background_color = Color(0, 0, 0);
+
+		/* Selection */
+		Color font_selected_color = Color(0, 0, 0, 0);
+		Color selection_color = Color(1, 1, 1);
+
+		/* Other visuals */
+		Ref<StyleBox> style_normal;
+		Ref<StyleBox> style_focus;
+		Ref<StyleBox> style_readonly;
+
+		Ref<Texture2D> tab_icon;
+		Ref<Texture2D> space_icon;
+
+		Ref<Font> font;
+		int font_size = 16;
+		Color font_color = Color(1, 1, 1);
+		Color font_readonly_color = Color(1, 1, 1);
+		Color font_placeholder_color = Color(1, 1, 1, 0.6);
+
+		int outline_size = 0;
+		Color outline_color = Color(1, 1, 1);
+
+		int line_spacing = 1;
+		int wrap_offset = 10;
+
+		Color current_line_color = Color(1, 1, 1);
+		Color word_highlighted_color = Color(1, 1, 1);
+
+		/* Code mode gutters */
+		Color code_folding_color = Color(1, 1, 1);
+		Color folded_code_region_color = Color(1, 1, 1);
+		Ref<Texture2D> can_fold_icon;
+		Ref<Texture2D> folded_icon;
+		Ref<Texture2D> can_fold_code_region_icon;
+		Ref<Texture2D> folded_code_region_icon;
+		Ref<Texture2D> folded_eol_icon;
+		Ref<Texture2D> completion_color_bg;
+
+		Color breakpoint_color = Color(1, 1, 1);
+		Ref<Texture2D> breakpoint_icon;
+
+		Color bookmark_color = Color(1, 1, 1);
+		Ref<Texture2D> bookmark_icon;
+
+		Color executing_line_color = Color(1, 1, 1);
+		Ref<Texture2D> executing_line_icon;
+
+		Color line_number_color = Color(1, 1, 1);
+
+		/* Code Completion */
+		Ref<StyleBox> code_completion_style;
+		int code_completion_icon_separation = 0;
+
+		int code_completion_max_width = 0;
+		int code_completion_max_lines = 7;
+		int code_completion_scroll_width = 0;
+		Color code_completion_scroll_color = Color(0, 0, 0, 0);
+		Color code_completion_scroll_hovered_color = Color(0, 0, 0, 0);
+		Color code_completion_background_color = Color(0, 0, 0, 0);
+		Color code_completion_selected_color = Color(0, 0, 0, 0);
+		Color code_completion_existing_color = Color(0, 0, 0, 0);
+
+		/* Code hint */
+		Ref<StyleBox> code_hint_style;
+		Color code_hint_color;
+
+		/* Line length guideline & brace mismatch */
+		Color line_length_guideline_color;
+		Color brace_mismatch_color;
+
+#ifndef DISABLE_DEPRECATED
+		Color background_color = Color(1, 1, 1);
+#endif // DISABLE_DEPRECATED
+	} theme_cache;
+
+	bool window_has_focus = true;
+	bool first_draw = true;
+
+	bool highlight_current_line = false;
+	bool highlight_all_occurrences = false;
+	bool draw_control_chars = false;
+	bool draw_tabs = false;
+	bool draw_spaces = false;
+
+	// FIXME: Helper method to draw unfilled rects, should be moved to Renderer.
+	void _draw_rect_unfilled(RID p_canvas_item, const Rect2& p_rect, const Color& p_color,
+		real_t p_width = -1.0, bool p_antialiased = false) const;
+
+	/* Theme. */
+	Ref<StyleBox> _get_current_stylebox() const;
+
+	/*** Super internal Core API. Everything builds on it. ***/
+	bool text_changed_dirty = false;
+	void _text_changed();
+	void _emit_text_changed();
+
+	void _base_insert_text(
+		int p_line, int p_char, const String& p_text, int& r_end_line, int& r_end_column);
+	String _base_get_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column) const;
+	void _base_remove_text(int p_from_line, int p_from_column, int p_to_line, int p_to_column);
+
+	/* Input actions. */
+	void _swap_current_input_direction();
+	void _move_caret_left(bool p_select, bool p_move_by_word = false);
+	void _move_caret_right(bool p_select, bool p_move_by_word = false);
+	void _move_caret_up(bool p_select);
+	void _move_caret_down(bool p_select);
+	void _move_caret_to_line_start(bool p_select);
+	void _move_caret_to_line_end(bool p_select);
+	void _move_caret_page_up(bool p_select);
+	void _move_caret_page_down(bool p_select);
+	void _move_caret_document_start(bool p_select);
+	void _move_caret_document_end(bool p_select);
+	bool _clear_carets_and_selection();
+
+protected:
+	void _notification(int p_what);
+
+#ifndef DISABLE_DEPRECATED
+	void _set_selection_mode_bind_compat_86978(
+		SelectionMode p_mode, int p_line = -1, int p_column = -1, int p_caret = 0);
+	Point2i _get_line_column_at_pos_bind_compat_100913(
+		const Point2i& p_pos, bool p_allow_out_of_bounds = true) const;
+	static void _bind_compatibility_methods();
+#endif // DISABLE_DEPRECATED
+
+	void _draw_guidelines();
+
+	virtual void _update_theme_item_cache() override;
+
+	virtual String _get_accessibility_name() const override;
+
+	// Brace matching.
+	struct BraceMatchingData
+	{
+		int open_match_line = -1;
+		int open_match_column = -1;
+		bool open_matching = false;
+		bool open_mismatch = false;
+		int close_match_line = -1;
+		int close_match_column = -1;
+		bool close_matching = false;
+		bool close_mismatch = false;
+	};
+
+	bool highlight_matching_braces_enabled = false;
+
+	// Line hiding.
+	bool hiding_enabled = false;
+
+	void _set_hiding_enabled(bool p_enabled);
+	bool _is_hiding_enabled() const;
+
+	void _set_line_as_hidden(int p_line, bool p_hidden);
+	bool _is_line_hidden(int p_line) const;
+
+	void _unhide_all_lines();
+	void _unhide_carets();
+
+	int _get_wrapped_indent_level(int p_line, int& r_first_wrap) const;
+	float _get_wrap_indent_offset(int p_line, int p_wrap_index, bool p_rtl) const;
+
+	// Symbol lookup.
+	String lookup_symbol_word;
+	void _set_symbol_lookup_word(const String& p_symbol);
+
+	/* Text manipulation */
+	void _copy_internal(int p_caret);
+
+public:
+	/* General overrides. */
+	virtual Size2 get_minimum_size() const override;
+	virtual bool is_text_field() const override;
+	virtual CursorShape get_cursor_shape(const Point2& p_pos = Point2i()) const override;
+
+	/* Text */
+	// Text properties.
+	RID get_text_canvas_item() const;
+
+	bool has_ime_text() const;
+	void cancel_ime();
+
+	void set_editable(bool p_editable);
+	bool is_editable() const;
+
+	void set_text_direction(TextDirection p_text_direction);
+	TextDirection get_text_direction() const;
+
+	void set_language(const String& p_language);
+	String get_language() const;
+
+	void set_structured_text_bidi_override(TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override() const;
+
+	void set_tab_size(const int p_size);
+	int get_tab_size() const;
+
+	void set_indent_wrapped_lines(bool p_enabled);
+	bool is_indent_wrapped_lines() const;
+
+	void set_tab_input_mode(bool p_enabled);
+	bool get_tab_input_mode() const;
+
+	// User controls
+	void set_overtype_mode_enabled(bool p_enabled);
+	bool is_overtype_mode_enabled() const;
+
+	void set_context_menu_enabled(bool p_enabled);
+	bool is_context_menu_enabled() const;
+
+	void show_emoji_and_symbol_picker();
+
+	void set_emoji_menu_enabled(bool p_enabled);
+	bool is_emoji_menu_enabled() const;
+
+	void set_backspace_deletes_composite_character_enabled(bool p_enabled);
+	bool is_backspace_deletes_composite_character_enabled() const;
+
+	void set_shortcut_keys_enabled(bool p_enabled);
+	bool is_shortcut_keys_enabled() const;
+
+	void set_virtual_keyboard_enabled(bool p_enabled);
+	bool is_virtual_keyboard_enabled() const;
+
+	void set_virtual_keyboard_show_on_focus(bool p_show_on_focus);
+	bool get_virtual_keyboard_show_on_focus() const;
+
+	void set_middle_mouse_paste_enabled(bool p_enabled);
+	bool is_middle_mouse_paste_enabled() const;
+
+	void set_empty_selection_clipboard_enabled(bool p_enabled);
+	bool is_empty_selection_clipboard_enabled() const;
+
+	// Text manipulation
+	void clear();
+
+	void _set_text(const String& p_text, bool p_emit_signal = false);
+	void set_text(const String& p_text);
+	String get_text() const;
+
+	int get_line_count() const;
+
+	void set_placeholder(const String& p_text);
+	String get_placeholder() const;
+
+	String get_line(int p_line) const;
+	String get_line_with_ime(int p_line) const;
+
+	int get_line_width(int p_line, int p_wrap_index = -1) const;
+	int get_line_height() const;
+
+	int get_indent_level(int p_line) const;
+	int get_first_non_whitespace_column(int p_line) const;
+
+	void remove_line_at(int p_line, bool p_move_carets_down = true);
+
+	int get_last_unhidden_line() const;
+	int get_next_visible_line_offset_from(int p_line_from, int p_visible_amount) const;
+	Point2i get_next_visible_line_index_offset_from(
+		int p_line_from, int p_wrap_index_from, int p_visible_amount) const;
+
+	// Overridable actions
+	void copy(int p_caret = -1);
+
+	// Context menu.
+	PopupMenu* get_menu() const;
+	bool is_menu_visible() const;
+	void menu_option(int p_option);
+
+	/* Versioning */
+	void start_action(EditAction p_action);
+	void end_action();
+	EditAction get_current_action() const;
+
+	void begin_complex_operation();
+	void end_complex_operation();
+
+	bool has_undo() const;
+	bool has_redo() const;
+	void undo();
+	void redo();
+	void clear_undo_history();
+
+	bool is_insert_text_operation() const;
+
+	void tag_saved_version();
+
+	uint32_t get_version() const;
+	uint32_t get_saved_version() const;
+
+	/* Search */
+	void set_search_text(const String& p_search_text);
+	void set_search_flags(uint32_t p_flags);
+
+	Point2i search(
+		const String& p_key, uint32_t p_search_flags, int p_from_line, int p_from_column) const;
+
+	/* Mouse */
+	Point2 get_local_mouse_pos() const;
+
+	String get_word_at_pos(const Vector2& p_pos) const;
+	String get_word(int p_line, int p_column) const;
+
+	Point2i get_line_column_at_pos(
+		const Point2i& p_pos, bool p_clamp_line = true, bool p_clamp_column = true) const;
+	Point2i get_pos_at_line_column(int p_line, int p_column) const;
+	Rect2i get_rect_at_line_column(int p_line, int p_column) const;
+	int get_line_start_margin() const;
+
+	int get_minimap_line_at_pos(const Point2i& p_pos) const;
+
+	bool is_dragging_cursor() const;
+	bool is_mouse_over_selection(bool p_edges = true, int p_caret = -1) const;
+
+	/* Caret */
+	void set_caret_type(CaretType p_type);
+	CaretType get_caret_type() const;
+
+	bool is_caret_blink_enabled() const;
+
+	float get_caret_blink_interval() const;
+
+	void set_draw_caret_when_editable_disabled(bool p_enable);
+	bool is_drawing_caret_when_editable_disabled() const;
+
+	void set_move_caret_on_right_click_enabled(bool p_enabled);
+	bool is_move_caret_on_right_click_enabled() const;
+
+	void set_caret_mid_grapheme_enabled(bool p_enabled);
+	bool is_caret_mid_grapheme_enabled() const;
+
+	void set_multiple_carets_enabled(bool p_enabled);
+	bool is_multiple_carets_enabled() const;
+
+	int add_caret(int p_line, int p_column);
+	void remove_caret(int p_caret);
+	void remove_drag_caret();
+	void remove_secondary_carets();
+	int get_caret_count() const;
+	void add_caret_at_carets(bool p_below);
+
+	Vector<int> get_sorted_carets(bool p_include_ignored_carets = false) const;
+	void collapse_carets(int p_from_line, int p_from_column, int p_to_line, int p_to_column,
+		bool p_inclusive = false);
+
+	void merge_overlapping_carets();
+	void begin_multicaret_edit();
+	void end_multicaret_edit();
+	bool is_in_mulitcaret_edit() const;
+	bool multicaret_edit_ignore_caret(int p_caret) const;
+
+	bool is_caret_visible(int p_caret = 0) const;
+	Point2 get_caret_draw_pos(int p_caret = 0) const;
+
+	void set_caret_line(int p_line, bool p_adjust_viewport = true, bool p_can_be_hidden = true,
+		int p_wrap_index = 0, int p_caret = 0);
+	int get_caret_line(int p_caret = 0) const;
+
+	void set_caret_column(int p_column, bool p_adjust_viewport = true, int p_caret = 0);
+	int get_caret_column(int p_caret = 0) const;
+	int get_next_composite_character_column(int p_line, int p_column) const;
+	int get_previous_composite_character_column(int p_line, int p_column) const;
+
+	int get_caret_wrap_index(int p_caret = 0) const;
+
+	String get_word_under_caret(int p_caret = -1) const;
+
+	/* Selection. */
+	void set_selecting_enabled(bool p_enabled);
+	bool is_selecting_enabled() const;
+
+	void set_deselect_on_focus_loss_enabled(bool p_enabled);
+	bool is_deselect_on_focus_loss_enabled() const;
+
+	void set_drag_and_drop_selection_enabled(bool p_enabled);
+	bool is_drag_and_drop_selection_enabled() const;
+
+	void set_selection_mode(SelectionMode p_mode);
+	SelectionMode get_selection_mode() const;
+
+	void select_all();
+	void select_word_under_caret(int p_caret = -1);
+	void add_selection_for_next_occurrence();
+	void skip_selection_for_next_occurrence();
+	void select(int p_origin_line, int p_origin_column, int p_caret_line, int p_caret_column,
+		int p_caret = 0);
+
+	bool has_selection(int p_caret = -1) const;
+
+	String get_selected_text(int p_caret = -1);
+	int get_selection_at_line_column(
+		int p_line, int p_column, bool p_include_edges = true, bool p_only_selections = true) const;
+	Vector<Point2i> get_line_ranges_from_carets(
+		bool p_only_selections = false, bool p_merge_adjacent = true) const;
+
+	void set_selection_origin_line(
+		int p_line, bool p_can_be_hidden = true, int p_wrap_index = -1, int p_caret = 0);
+	void set_selection_origin_column(int p_column, int p_caret = 0);
+	int get_selection_origin_line(int p_caret = 0) const;
+	int get_selection_origin_column(int p_caret = 0) const;
+
+	int get_selection_from_line(int p_caret = 0) const;
+	int get_selection_from_column(int p_caret = 0) const;
+	int get_selection_to_line(int p_caret = 0) const;
+	int get_selection_to_column(int p_caret = 0) const;
+
+	bool is_caret_after_selection_origin(int p_caret = 0) const;
+
+	void deselect(int p_caret = -1);
+
+	void set_selection_handle_enabled(bool p_enabled);
+	bool is_selection_handle_enabled() const;
+
+	/* Line wrapping. */
+	void set_line_wrapping_mode(LineWrappingMode p_wrapping_mode);
+	LineWrappingMode get_line_wrapping_mode() const;
+
+	void set_autowrap_mode(TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode() const;
+
+	bool is_line_wrapped(int p_line) const;
+	int get_line_wrap_count(int p_line) const;
+	int get_line_wrap_index_at_column(int p_line, int p_column) const;
+
+	Vector<String> get_line_wrapped_text(int p_line) const;
+
+	/* Viewport. */
+	// Scrolling.
+	void set_smooth_scroll_enabled(bool p_enabled);
+	bool is_smooth_scroll_enabled() const;
+
+	void set_scroll_past_end_of_file_enabled(bool p_enabled);
+	bool is_scroll_past_end_of_file_enabled() const;
+
+	ScrollBar* get_v_scroll_bar() const;
+	ScrollBar* get_h_scroll_bar() const;
+
+	void set_v_scroll(double p_scroll);
+	double get_v_scroll() const;
+
+	void set_h_scroll(int p_scroll);
+	int get_h_scroll() const;
+
+	void set_v_scroll_speed(float p_speed);
+	float get_v_scroll_speed() const;
+
+	void set_fit_content_height_enabled(bool p_enabled);
+	bool is_fit_content_height_enabled() const;
+
+	void set_fit_content_width_enabled(bool p_enabled);
+	bool is_fit_content_width_enabled() const;
+
+	double get_scroll_pos_for_line(int p_line, int p_wrap_index = 0) const;
+
+	// Visible lines.
+	void set_line_as_first_visible(int p_line, int p_wrap_index = 0);
+	int get_first_visible_line() const;
+
+	void set_line_as_center_visible(int p_line, int p_wrap_index = 0);
+
+	void set_line_as_last_visible(int p_line, int p_wrap_index = 0);
+	int get_last_full_visible_line() const;
+	int get_last_full_visible_line_wrap_index() const;
+
+	int get_visible_line_count() const;
+	int get_visible_line_count_in_range(int p_from, int p_to) const;
+	int get_total_visible_line_count() const;
+
+	// Auto Adjust
+	bool is_line_in_viewport(int p_line) const;
+	void adjust_viewport_to_caret(int p_caret = 0);
+	void center_viewport_to_caret(int p_caret = 0);
+
+	// Minimap
+	void set_draw_minimap(bool p_enabled);
+	bool is_drawing_minimap() const;
+
+	void set_minimap_width(int p_minimap_width);
+	int get_minimap_width() const;
+
+	int get_minimap_visible_lines() const;
+
+	/* Gutters. */
+	void add_gutter(int p_at = -1);
+	void remove_gutter(int p_gutter);
+	int get_gutter_count() const;
+
+	Vector2i get_hovered_gutter() const { return hovered_gutter; }
+
+	void set_gutter_name(int p_gutter, const String& p_name);
+	String get_gutter_name(int p_gutter) const;
+
+	void set_gutter_type(int p_gutter, GutterType p_type);
+	GutterType get_gutter_type(int p_gutter) const;
+
+	void set_gutter_width(int p_gutter, int p_width);
+	int get_gutter_width(int p_gutter) const;
+	int get_total_gutter_width() const;
+
+	void set_gutter_draw(int p_gutter, bool p_draw);
+	bool is_gutter_drawn(int p_gutter) const;
+
+	void set_gutter_clickable(int p_gutter, bool p_clickable);
+	bool is_gutter_clickable(int p_gutter) const;
+
+	void set_gutter_overwritable(int p_gutter, bool p_overwritable);
+	bool is_gutter_overwritable(int p_gutter) const;
+
+	void merge_gutters(int p_from_line, int p_to_line);
+
+	void set_line_gutter_text(int p_line, int p_gutter, const String& p_text);
+	String get_line_gutter_text(int p_line, int p_gutter) const;
+
+	void set_line_gutter_icon(int p_line, int p_gutter, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_line_gutter_icon(int p_line, int p_gutter) const;
+
+	void set_line_gutter_item_color(int p_line, int p_gutter, const Color& p_color);
+	Color get_line_gutter_item_color(int p_line, int p_gutter) const;
+
+	void set_line_gutter_clickable(int p_line, int p_gutter, bool p_clickable);
+	bool is_line_gutter_clickable(int p_line, int p_gutter) const;
+
+	// Line style
+	void set_line_background_color(int p_line, const Color& p_color);
+	Color get_line_background_color(int p_line) const;
+
+	/* Syntax Highlighting. */
+	void set_syntax_highlighter(Ref<CodeHighlighter> p_syntax_highlighter);
+	Ref<CodeHighlighter> get_syntax_highlighter() const;
+
+	/* Code Mode & Code Features. */
+	void set_code_mode(bool p_enabled);
+	bool is_code_mode() const { return code_mode; }
+
+	// Indent management
+	void set_indent_size(const int p_size);
+	int get_indent_size() const;
+
+	void set_indent_using_spaces(const bool p_use_spaces);
+	bool is_indent_using_spaces() const;
+
+	void set_auto_indent_enabled(bool p_enabled);
+	bool is_auto_indent_enabled() const;
+
+	void set_auto_indent_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_auto_indent_prefixes() const;
+
+	// Auto brace completion
+	void set_auto_brace_completion_enabled(bool p_enabled);
+	bool is_auto_brace_completion_enabled() const;
+
+	void set_highlight_matching_braces_enabled(bool p_enabled);
+	bool is_highlight_matching_braces_enabled() const;
+
+	void add_auto_brace_completion_pair(const String& p_open_key, const String& p_close_key);
+
+	bool has_auto_brace_completion_open_key(const String& p_open_key) const;
+	bool has_auto_brace_completion_close_key(const String& p_close_key) const;
+
+	String get_auto_brace_completion_close_key(const String& p_open_key) const;
+
+	// Main Gutter
+	void set_draw_breakpoints_gutter(bool p_draw);
+	bool is_drawing_breakpoints_gutter() const;
+
+	void set_draw_bookmarks_gutter(bool p_draw);
+	bool is_drawing_bookmarks_gutter() const;
+
+	void set_draw_executing_lines_gutter(bool p_draw);
+	bool is_drawing_executing_lines_gutter() const;
+
+	void set_line_as_breakpoint(int p_line, bool p_breakpointed);
+	bool is_line_breakpointed(int p_line) const;
+	void clear_breakpointed_lines();
+	PackedInt32Array get_breakpointed_lines() const;
+
+	void set_line_as_bookmarked(int p_line, bool p_bookmarked);
+	bool is_line_bookmarked(int p_line) const;
+	void clear_bookmarked_lines();
+	PackedInt32Array get_bookmarked_lines() const;
+
+	void set_line_as_executing(int p_line, bool p_executing);
+	bool is_line_executing(int p_line) const;
+	void clear_executing_lines();
+	PackedInt32Array get_executing_lines() const;
+
+	// Line numbers
+	void set_draw_line_numbers(bool p_draw);
+	bool is_draw_line_numbers_enabled() const;
+	void set_line_numbers_zero_padded(bool p_zero_padded);
+	bool is_line_numbers_zero_padded() const;
+	void set_line_numbers_min_digits(int p_count);
+	int get_line_numbers_min_digits() const;
+
+	// Fold gutter
+	void set_draw_fold_gutter(bool p_draw);
+	bool is_drawing_fold_gutter() const;
+
+	// Line Folding
+	void set_line_folding_enabled(bool p_enabled);
+	bool is_line_folding_enabled() const;
+
+	bool can_fold_line(int p_line) const;
+
+	void fold_line(int p_line);
+	void unfold_line(int p_line);
+	void fold_all_lines();
+	void unfold_all_lines();
+	void toggle_foldable_line(int p_line);
+	void toggle_foldable_lines_at_carets();
+
+	int get_folded_line_header(int p_line) const;
+	bool is_line_folded(int p_line) const;
+	Vector<int> get_folded_lines_bind() const;
+	PackedInt32Array get_folded_lines() const;
+
+	// Code region
+	void create_code_region();
+	String get_code_region_start_tag() const;
+	String get_code_region_end_tag() const;
+	void set_code_region_tags(const String& p_start = "region", const String& p_end = "endregion");
+	bool is_line_code_region_start(int p_line) const;
+	bool is_line_code_region_end(int p_line) const;
+
+	// Delimiters
+	void add_string_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_string_delimiter(const String& p_start_key);
+	bool has_string_delimiter(const String& p_start_key) const;
+
+	void set_string_delimiters(const Vector<String>& p_string_delimiters);
+	void clear_string_delimiters();
+	Vector<String> get_string_delimiters() const;
+
+	int is_in_string(int p_line, int p_column = -1) const;
+
+	void add_comment_delimiter(
+		const String& p_start_key, const String& p_end_key, bool p_line_only = false);
+	void remove_comment_delimiter(const String& p_start_key);
+	bool has_comment_delimiter(const String& p_start_key) const;
+
+	void set_comment_delimiters(const Vector<String>& p_comment_delimiters);
+	void clear_comment_delimiters();
+	Vector<String> get_comment_delimiters() const;
+
+	int is_in_comment(int p_line, int p_column = -1) const;
+
+	String get_delimiter_start_key(int p_delimiter_idx) const;
+	String get_delimiter_end_key(int p_delimiter_idx) const;
+
+	Point2 get_delimiter_start_position(int p_line, int p_column) const;
+	Point2 get_delimiter_end_position(int p_line, int p_column) const;
+
+	// Code hint
+	void set_code_hint(const String& p_hint);
+	void set_code_hint_draw_below(bool p_below);
+
+	// Code Completion
+	void set_code_completion_enabled(bool p_enable);
+	bool is_code_completion_enabled() const;
+
+	void set_code_completion_prefixes(const Vector<String>& p_prefixes);
+	Vector<String> get_code_completion_prefixes() const;
+
+	String get_text_for_code_completion() const;
+
+	void request_code_completion(bool p_force = false);
+	void update_code_completion_options(bool p_forced = false);
+
+	int get_code_completion_selected_index() const;
+	void set_code_completion_selected_index(int p_index);
+
+	void confirm_code_completion(bool p_replace = false);
+	void cancel_code_completion();
+
+	// Line length guidelines
+	void set_line_length_guidelines(Vector<int> p_guideline_columns);
+	Vector<int> get_line_length_guidelines() const;
+
+	// Symbol lookup
+	void set_symbol_lookup_on_click_enabled(bool p_enabled);
+	bool is_symbol_lookup_on_click_enabled() const;
+
+	String get_text_for_symbol_lookup() const;
+	String get_text_with_cursor_char(int p_line, int p_column) const;
+	String get_lookup_word(int p_line, int p_column) const;
+
+	void set_symbol_lookup_word_as_valid(bool p_valid);
+
+	// Symbol tooltip
+	void set_symbol_tooltip_on_hover_enabled(bool p_enabled);
+	bool is_symbol_tooltip_on_hover_enabled() const;
+
+	/* Visual. */
+	void set_highlight_current_line(bool p_enabled);
+	bool is_highlight_current_line_enabled() const;
+
+	void set_highlight_all_occurrences(bool p_enabled);
+	bool is_highlight_all_occurrences_enabled() const;
+
+	void set_draw_control_chars(bool p_enabled);
+	bool get_draw_control_chars() const;
+
+	void set_draw_tabs(bool p_enabled);
+	bool is_drawing_tabs() const;
+
+	void set_draw_spaces(bool p_enabled);
+	bool is_drawing_spaces() const;
+
+	Color get_font_color() const;
+
+	/* Behavior */
+
+	String get_default_word_separators() const;
+
+	void set_use_default_word_separators(bool p_enabled);
+	bool is_default_word_separators_enabled() const;
+
+	void set_custom_word_separators(const String& p_separators);
+	void set_use_custom_word_separators(bool p_enabled);
+	bool is_custom_word_separators_enabled() const;
+
+	String get_custom_word_separators() const;
+
+	/* Deprecated. */
+#ifndef DISABLE_DEPRECATED
+	Vector<int> get_caret_index_edit_order();
+	void adjust_carets_after_edit(
+		int p_caret, int p_from_line, int p_from_col, int p_to_line, int p_to_col);
+
+	int get_selection_line(int p_caret = 0) const;
+	int get_selection_column(int p_caret = 0) const;
+#endif
+
+	TextEdit(const String& p_placeholder = String());
+	template <typename T, typename = std::enable_if_t<std::is_same_v<T, bool>>>
+	explicit TextEdit(T p_code_mode) : TextEdit(String())
+	{
+		if (p_code_mode) {
+			set_code_mode(true);
+		}
+	}
+	~TextEdit();
+};
+
+// --- Folded from scene/gui/tree.h ---
+
+#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
+
+class LineEdit;
+class Popup;
+class PopupMenu;
+class ScrollBar;
+class Slider;
+class TextEdit;
+class Timer;
+class Tree;
+
+class TreeItem
+{
+public:
+	enum TreeCellMode
+	{
+		CELL_MODE_STRING,
+		CELL_MODE_CHECK,
+		CELL_MODE_RANGE,
+		CELL_MODE_ICON,
+		CELL_MODE_CUSTOM,
+	};
+
+private:
+	friend class Tree;
+
+	struct Cell
+	{
+		mutable RID accessibility_cell_element;
+		TreeCellMode mode = TreeItem::CELL_MODE_STRING;
+
+		Ref<Texture2D> icon;
+		Ref<Texture2D> icon_overlay;
+		Rect2i icon_region;
+		String text;
+		String xl_text;
+		Node::AutoTranslateMode auto_translate_mode = Node::AUTO_TRANSLATE_MODE_INHERIT;
+		String description;
+		bool edit_multiline = false;
+		String suffix;
+		Ref<TextParagraph> text_buf;
+		String language;
+		TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
+		TextServer::AutowrapMode autowrap_mode = TextServer::AUTOWRAP_OFF;
+		uint32_t autowrap_trim_flags =
+			TextServer::BREAK_TRIM_START_EDGE_SPACES | TextServer::BREAK_TRIM_END_EDGE_SPACES;
+		bool dirty = true;
+		double min = 0.0;
+		double max = 100.0;
+		double step = 1.0;
+		double val = 0.0;
+		int icon_max_w = 0;
+		bool expr = false;
+		bool checked = false;
+		bool indeterminate = false;
+		bool editable = false;
+		bool selected = false;
+		bool selectable = true;
+		bool custom_color = false;
+		Color color;
+		bool custom_bg_color = false;
+		bool custom_bg_outline = false;
+		Color bg_color;
+		bool custom_button = false;
+		bool expand_right = false;
+		Color icon_color = Color(1, 1, 1);
+		Ref<StyleBox> custom_stylebox;
+
+		Rect2 focus_rect;
+		Size2i cached_minimum_size;
+		bool cached_minimum_size_dirty = true;
+
+		HorizontalAlignment text_alignment = HORIZONTAL_ALIGNMENT_LEFT;
+
+		String tooltip;
+
+		struct Button
+		{
+			mutable RID accessibility_button_element;
+			int id = 0;
+			bool disabled = false;
+			Ref<Texture2D> texture;
+			Color color = Color(1, 1, 1, 1);
+			String tooltip;
+			String description;
+		};
+
+		Vector<Button> buttons;
+
+		Ref<Font> custom_font;
+		int custom_font_size = -1;
+
+		Cell()
+		{
+			text_buf.instantiate();
+			text_buf->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+		}
+
+		Size2 get_icon_size() const;
+		void draw_icon(const RID& p_where, const Point2& p_pos, const Size2& p_size = Size2(),
+			const Rect2i& p_region = Rect2i(), const Color& p_color = Color()) const;
+	};
+
+	mutable RID accessibility_row_element;
+	mutable bool accessibility_row_dirty = true;
+
+	Vector<Cell> cells;
+
+	Rect2 focus_rect;
+	bool collapsed = false; // Won't show children.
+	bool visible = true;
+	bool parent_visible_in_tree = true;
+	bool disable_folding = false;
+	bool accepts_children = true;
+	int custom_min_height = 0;
+
+	TreeItem* parent = nullptr; // Parent item.
+	TreeItem* prev = nullptr;	// Previous in list.
+	TreeItem* next = nullptr;	// Next in list.
+	TreeItem* first_child = nullptr;
+	TreeItem* last_child = nullptr;
+
+	int cached_start = 0;
+	int cached_label_height = 0;
+	int cached_total_end = 0;
+	Point2 sticky_offset;
+
+	LocalVector<TreeItem*> children_cache;
+	bool is_root = false; // For tree root.
+	Tree* tree = nullptr; // Tree (for reference).
+
+	void _changed_notify(int p_cell);
+	void _changed_notify();
+	void _cell_selected(int p_cell, bool p_set_as_cursor);
+	void _cell_deselected(int p_cell);
+	void _handle_visibility_changed(bool p_visible);
+	void _propagate_visibility_changed(bool p_parent_visible_in_tree);
+
+	void _change_tree(Tree* p_tree);
+
+	_FORCE_INLINE_ void _create_children_cache()
+	{
+		if (children_cache.is_empty()) {
+			TreeItem* c = first_child;
+			while (c) {
+				children_cache.push_back(c);
+				c = c->next;
+			}
+		}
+	}
+
+	_FORCE_INLINE_ void _unlink_from_tree()
+	{
+		if (accessibility_row_element.is_valid()) {
+			AccessibilityServer::free_element(accessibility_row_element);
+			accessibility_row_element = RID();
+		}
+		for (Cell& cell : cells) {
+			if (cell.accessibility_cell_element.is_valid()) {
+				AccessibilityServer::free_element(cell.accessibility_cell_element);
+				cell.accessibility_cell_element = RID();
+			}
+			for (Cell::Button& btn : cell.buttons) {
+				if (btn.accessibility_button_element.is_valid()) {
+					AccessibilityServer::free_element(
+						btn.accessibility_button_element);
+					btn.accessibility_button_element = RID();
+				}
+			}
+		}
+		TreeItem* p = get_prev();
+		if (p) {
+			p->next = next;
+		}
+		if (next) {
+			next->prev = p;
+		}
+		if (parent) {
+			if (!parent->children_cache.is_empty()) {
+				parent->children_cache.erase(this);
+			}
+			if (parent->first_child == this) {
+				parent->first_child = next;
+			}
+			if (parent->last_child == this) {
+				parent->last_child = prev;
+			}
+		}
+	}
+
+	bool _is_any_collapsed(bool p_only_visible);
+
+protected:
+#ifndef DISABLE_DEPRECATED
+	void _select_bind_compat_119367(int p_column);
+	static void _bind_compatibility_methods();
+#endif
+
+public:
+	TreeItem(Tree* p_tree);
+	// Cell mode.
+	void set_cell_mode(int p_column, TreeCellMode p_mode);
+	TreeCellMode get_cell_mode(int p_column) const;
+
+	// Auto translate mode.
+	void set_auto_translate_mode(int p_column, Node::AutoTranslateMode p_mode);
+	Node::AutoTranslateMode get_auto_translate_mode(int p_column) const;
+
+	// Multiline editable.
+	void set_edit_multiline(int p_column, bool p_multiline);
+	bool is_edit_multiline(int p_column) const;
+
+	// Check mode.
+	void set_checked(int p_column, bool p_checked);
+	void set_indeterminate(int p_column, bool p_indeterminate);
+	bool is_checked(int p_column) const;
+	bool is_indeterminate(int p_column) const;
+
+	void propagate_check(int p_column, bool p_emit_signal = true);
+
+	String atr(int p_column, const String& p_text) const;
+
+private:
+	// Check helpers.
+	void _propagate_check_through_children(int p_column, bool p_checked, bool p_emit_signal);
+	void _propagate_check_through_parents(int p_column, bool p_emit_signal);
+
+	TreeItem* _get_prev_in_tree(bool p_wrap = false, bool p_include_invisible = false);
+	TreeItem* _get_next_in_tree(bool p_wrap = false, bool p_include_invisible = false);
+
+public:
+	String get_text(int p_column) const;
+
+	String get_description(int p_column) const;
+
+	void set_text_direction(int p_column, Control::TextDirection p_text_direction);
+	Control::TextDirection get_text_direction(int p_column) const;
+
+	void set_autowrap_mode(int p_column, TextServer::AutowrapMode p_mode);
+	TextServer::AutowrapMode get_autowrap_mode(int p_column) const;
+
+	void set_autowrap_trim_flags(int p_column, uint32_t p_flags);
+	uint32_t get_autowrap_trim_flags(int p_column) const;
+
+	void set_text_overrun_behavior(int p_column, TextServer::OverrunBehavior p_behavior);
+	TextServer::OverrunBehavior get_text_overrun_behavior(int p_column) const;
+
+	void set_structured_text_bidi_override(int p_column, TextServer::StructuredTextParser p_parser);
+	TextServer::StructuredTextParser get_structured_text_bidi_override(int p_column) const;
+
+	void set_language(int p_column, const String& p_language);
+	String get_language(int p_column) const;
+
+	void set_suffix(int p_column, String p_suffix);
+	String get_suffix(int p_column) const;
+
+	void set_icon(int p_column, const Ref<Texture2D>& p_icon);
+	Ref<Texture2D> get_icon(int p_column) const;
+
+	void set_icon_overlay(int p_column, const Ref<Texture2D>& p_icon_overlay);
+	Ref<Texture2D> get_icon_overlay(int p_column) const;
+
+	void set_icon_region(int p_column, const Rect2& p_icon_region);
+	Rect2 get_icon_region(int p_column) const;
+
+	void set_icon_modulate(int p_column, const Color& p_modulate);
+	Color get_icon_modulate(int p_column) const;
+
+	void set_icon_max_width(int p_column, int p_max);
+	int get_icon_max_width(int p_column) const;
+
+	void clear_buttons();
+	int get_button_count(int p_column) const;
+	String get_button_tooltip_text(int p_column, int p_index) const;
+	Ref<Texture2D> get_button(int p_column, int p_index) const;
+	int get_button_id(int p_column, int p_index) const;
+	int get_button_by_id(int p_column, int p_id) const;
+	Color get_button_color(int p_column, int p_index) const;
+	void set_button_tooltip_text(int p_column, int p_index, const String& p_tooltip);
+	void set_button(int p_column, int p_index, const Ref<Texture2D>& p_button);
+	void set_button_color(int p_column, int p_index, const Color& p_color);
+	void set_button_disabled(int p_column, int p_index, bool p_disabled);
+	bool is_button_disabled(int p_column, int p_index) const;
+
+	// Range works for mode number or mode combo.
+	void set_range(int p_column, double p_value);
+	double get_range(int p_column) const;
+
+	void set_range_config(
+		int p_column, double p_min, double p_max, double p_step, bool p_exp = false);
+	void get_range_config(int p_column, double& r_min, double& r_max, double& r_step) const;
+	bool is_range_exponential(int p_column) const;
+
+	void set_collapsed(bool p_collapsed);
+	bool is_collapsed();
+
+	void set_collapsed_recursive(bool p_collapsed);
+	bool is_any_collapsed(bool p_only_visible = false);
+
+	void set_visible(bool p_visible);
+	bool is_visible();
+	bool is_visible_in_tree() const;
+
+	void uncollapse_tree();
+
+	void set_custom_minimum_height(int p_height);
+	int get_custom_minimum_height() const;
+
+	void set_custom_stylebox(int p_column, const Ref<StyleBox>& p_stylebox);
+	Ref<StyleBox> get_custom_stylebox(int p_column) const;
+
+	void set_selectable(int p_column, bool p_selectable);
+	bool is_selectable(int p_column) const;
+
+	bool is_selected(int p_column);
+	bool is_any_column_selected() const;
+	void select(int p_column, bool p_set_as_cursor = true);
+	void deselect(int p_column);
+	void set_as_cursor(int p_column);
+
+	void set_editable(int p_column, bool p_editable);
+	bool is_editable(int p_column);
+
+	void set_custom_color(int p_column, const Color& p_color);
+	Color get_custom_color(int p_column) const;
+	void clear_custom_color(int p_column);
+
+	void set_custom_font(int p_column, const Ref<Font>& p_font);
+	Ref<Font> get_custom_font(int p_column) const;
+
+	void set_custom_font_size(int p_column, int p_font_size);
+	int get_custom_font_size(int p_column) const;
+
+	void set_custom_bg_color(int p_column, const Color& p_color, bool p_bg_outline = false);
+	void clear_custom_bg_color(int p_column);
+	Color get_custom_bg_color(int p_column) const;
+
+	void set_custom_as_button(int p_column, bool p_button);
+	bool is_custom_set_as_button(int p_column) const;
+
+	void set_tooltip_text(int p_column, const String& p_tooltip);
+	String get_tooltip_text(int p_column) const;
+
+	void set_text_alignment(int p_column, HorizontalAlignment p_alignment);
+	HorizontalAlignment get_text_alignment(int p_column) const;
+
+	void set_expand_right(int p_column, bool p_enable);
+	bool get_expand_right(int p_column) const;
+
+	void set_disable_folding(bool p_disable);
+	bool is_folding_disabled() const;
+
+	void set_accept_children(bool p_allowed);
+	bool is_accepting_children() const;
+
+	Size2 get_minimum_size(int p_column);
+
+	// Item manipulation.
+	TreeItem* create_child(int p_index = -1);
+	void add_child(TreeItem* p_item);
+	void remove_child(TreeItem* p_item);
+
+	Tree* get_tree() const;
+
+	TreeItem* get_prev();
+	TreeItem* get_next() const;
+	TreeItem* get_parent() const;
+	TreeItem* get_first_child() const;
+	TreeItem* get_last_child() const;
+
+	TreeItem* get_prev_in_tree(bool p_wrap = false);
+	TreeItem* get_next_in_tree(bool p_wrap = false);
+
+	TreeItem* get_prev_visible(bool p_wrap = false);
+	TreeItem* get_next_visible(bool p_wrap = false);
+
+	TreeItem* get_child(int p_index);
+	int get_visible_child_count();
+	int get_child_count();
+	Vector<TreeItem*> get_children();
+	void clear_children();
+	int get_index();
+
+#ifdef DEV_ENABLED
+	// This debugging code can be removed once the current refactoring of this class is complete.
+	void validate_cache() const;
+#else
+	void validate_cache() const {}
+#endif
+
+	void move_before(TreeItem* p_item);
+	void move_after(TreeItem* p_item);
+
+	~TreeItem();
+};
+
+class Tree : public Control
+{
+public:
+	enum SelectMode
+	{
+		SELECT_SINGLE,
+		SELECT_ROW,
+		SELECT_MULTI
+	};
+
+	enum DropModeFlags
+	{
+		DROP_MODE_DISABLED = 0,
+		DROP_MODE_ON_ITEM = 1,
+		DROP_MODE_INBETWEEN = 2
+	};
+
+	enum ScrollHintMode
+	{
+		SCROLL_HINT_MODE_DISABLED,
+		SCROLL_HINT_MODE_BOTH,
+		SCROLL_HINT_MODE_TOP,
+		SCROLL_HINT_MODE_BOTTOM,
+	};
+
+private:
+	friend class TreeItem;
+
+	TreeItem* root = nullptr;
+	TreeItem* popup_edited_item = nullptr;
+	TreeItem* selected_item = nullptr;
+	TreeItem* edited_item = nullptr;
+	TreeItem* shift_anchor = nullptr;
+
+	TreeItem* popup_pressing_edited_item = nullptr; // Candidate.
+	int popup_pressing_edited_item_column = -1;
+
+	TreeItem* drop_mode_over = nullptr;
+	int drop_mode_section = 0;
+	bool drop_mode_unchanged = false;
+	bool dragging_within_self = false;
+
+	TreeItem* single_select_defer = nullptr;
+	int single_select_defer_column = 0;
+
+	int pressed_button = -1;
+	bool pressing_for_editor = false;
+	Vector2 pressing_pos;
+
+	Vector2 hovered_pos = Vector2(-1.0, -1.0);
+	bool is_mouse_hovering = false;
+
+	float range_drag_base = 0.0;
+	bool range_drag_enabled = false;
+	Vector2 range_drag_capture_pos;
+
+	bool propagate_mouse_activated = false;
+	float content_scale_factor = 0.0;
+
+	int sticky_stack_end = 0;
+	LocalVector<TreeItem*> sticky_candidates;
+	LocalVector<TreeItem*> sticky_list;
+
+	Rect2 custom_popup_rect;
+	int edited_col = -1;
+	int selected_col = -1;
+	int selected_button = -1;
+	int popup_edited_item_col = -1;
+	bool hide_root = false;
+	SelectMode select_mode = SELECT_SINGLE;
+
+	int blocked = 0;
+
+	int drop_mode_flags = 0;
+	static constexpr int COLUMN_NOT_FOUND = -100;
+
+	struct ColumnInfo
+	{
+		mutable RID accessibility_col_element;
+		int custom_min_width = 0;
+		int expand_ratio = 1;
+		bool expand = true;
+		bool clip_content = false;
+		String title_tooltip;
+		String title;
+		String xl_title;
+		HorizontalAlignment title_alignment = HORIZONTAL_ALIGNMENT_CENTER;
+		Ref<TextParagraph> text_buf;
+		String language;
+		Control::TextDirection text_direction = Control::TEXT_DIRECTION_INHERITED;
+
+		mutable int cached_minimum_width = 0;
+		mutable bool cached_minimum_width_dirty = true;
+
+		ColumnInfo() { text_buf.instantiate(); }
+	};
+
+	bool show_column_titles = false;
+
+	bool popup_edit_committed = true;
+	int scroll_pending = 0;
+	RID accessibility_scroll_element;
+	RID stylebox_ci;	// Separate canvas item for drawing native styleboxes.
+	RID custom_ci;		// Separate canvas item for drawing custom content.
+	RID header_ci;		// Separate canvas item for drawing column headers.
+	RID content_ci;		// Separate canvas item for drawing tree rows.
+	RID last_sticky_ci; // Separate canvas item for drawing the last sticky item, which can
+						// partially hide underneath other sticky items.
+	RID drop_indicator_ci;
+
+	Control* popup_editor_vb = nullptr;
+	Popup* popup_editor = nullptr;
+	LineEdit* line_editor = nullptr;
+	TextEdit* text_editor = nullptr;
+	Slider* value_editor = nullptr;
+	bool updating_value_editor = false;
+	uint64_t focus_in_id = 0;
+	PopupMenu* popup_menu = nullptr;
+
+	Vector<ColumnInfo> columns;
+
+	Timer* range_click_timer = nullptr;
+	TreeItem* range_item_last = nullptr;
+	bool range_up_last = false;
+	void _range_click_timeout();
+
+	int compute_item_height(TreeItem* p_item) const;
+	int get_item_height(TreeItem* p_item) const;
+	Point2i convert_rtl_position(const Point2i& p_pos, int p_width = 0) const;
+	Point2 convert_rtl_position(const Point2& p_pos, int p_width = 0) const;
+	Rect2i convert_rtl_rect(const Rect2i& p_rect) const;
+	void _update_all();
+	void update_column(int p_col);
+	void update_item_cell(TreeItem* p_item, int p_col) const;
+	void update_item_cache(TreeItem* p_item) const;
+	void draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, const Color& p_color,
+		const Color& p_icon_color, int p_ol_size, const Color& p_ol_color, const RID& p_ci) const;
+	int draw_item(const Point2i& p_pos, const Point2& p_draw_ofs, const Size2& p_draw_size,
+		TreeItem* p_item, int& r_self_height, const RID& p_ci);
+	void select_single_item(TreeItem* p_selected, TreeItem* p_current, int p_col,
+		TreeItem* p_prev = nullptr, bool* r_in_range = nullptr, bool p_force_deselect = false);
+	int propagate_mouse_event(const Point2i& p_pos, int x_ofs, int y_ofs, int x_limit,
+		bool p_double_click, TreeItem* p_item, MouseButton p_button, const InputEvent& p_mod,
+		bool p_first_call = true, bool p_skip_children = false);
+	void _line_editor_submit(String p_text);
+	void _apply_multiline_edit(bool p_hide_focus = false);
+	void _text_editor_popup_modal_close();
+	void _text_editor_gui_input(const InputEvent& p_event);
+	void value_editor_changed(double p_value);
+	void _update_popup_menu(const TreeItem::Cell& p_cell);
+
+	void popup_select(int p_option);
+
+	void item_edited(
+		int p_column, TreeItem* p_item, MouseButton p_custom_mouse_index = MouseButton::NONE);
+	void item_changed(int p_column, TreeItem* p_item);
+	void item_selected(int p_column, TreeItem* p_item, bool p_set_as_cursor);
+	void item_deselected(int p_column, TreeItem* p_item);
+	void update_min_size_for_item_change();
+
+	void propagate_set_columns(TreeItem* p_item);
+
+	struct ThemeCache
+	{
+		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
+
+		Ref<Font> font;
+		Ref<Font> tb_font;
+		int font_size = 0;
+		int tb_font_size = 0;
+
+		Ref<StyleBox> hovered;
+		Ref<StyleBox> hovered_dimmed;
+		Ref<StyleBox> hovered_selected;
+		Ref<StyleBox> hovered_selected_focus;
+		Ref<StyleBox> selected;
+		Ref<StyleBox> selected_focus;
+		Ref<StyleBox> cursor;
+		Ref<StyleBox> cursor_unfocus;
+		Ref<StyleBox> button_hover;
+		Ref<StyleBox> button_pressed;
+		Ref<StyleBox> title_button;
+		Ref<StyleBox> title_button_hover;
+		Ref<StyleBox> title_button_pressed;
+		Ref<StyleBox> custom_button;
+		Ref<StyleBox> custom_button_hover;
+		Ref<StyleBox> custom_button_pressed;
+
+		Color title_button_color;
+
+		Ref<Texture2D> checked;
+		Ref<Texture2D> unchecked;
+		Ref<Texture2D> checked_disabled;
+		Ref<Texture2D> unchecked_disabled;
+		Ref<Texture2D> indeterminate;
+		Ref<Texture2D> indeterminate_disabled;
+		Ref<Texture2D> arrow;
+		Ref<Texture2D> arrow_collapsed;
+		Ref<Texture2D> arrow_collapsed_mirrored;
+		Ref<Texture2D> select_arrow;
+		Ref<Texture2D> updown;
+		Ref<Texture2D> scroll_hint;
+
+		Color font_color;
+		Color font_hovered_color;
+		Color font_hovered_dimmed_color;
+		Color font_hovered_selected_color;
+		Color font_selected_color;
+		Color font_disabled_color;
+		Color guide_color;
+		Color drop_on_item_color;
+		Color drop_position_color;
+		Color relationship_line_color;
+		Color parent_hl_line_color;
+		Color children_hl_line_color;
+		Color custom_button_font_highlight;
+		Color font_outline_color;
+		Color scroll_hint_color;
+
+		float base_scale = 1.0;
+		int font_outline_size = 0;
+
+		int h_separation = 0;
+		int v_separation = 0;
+		int inner_item_margin_bottom = 0;
+		int inner_item_margin_left = 0;
+		int inner_item_margin_right = 0;
+		int inner_item_margin_top = 0;
+		int item_margin = 0;
+		int check_h_separation = 0;
+		int icon_h_separation = 0;
+		int button_margin = 0;
+		int icon_max_width = 0;
+		Point2 offset;
+
+		int draw_relationship_lines = 0;
+		int relationship_line_width = 0;
+		int parent_hl_line_width = 0;
+		int children_hl_line_width = 0;
+		int parent_hl_line_margin = 0;
+		int draw_guides = 0;
+
+		int dragging_unfold_wait_msec = 500;
+
+		int scroll_border = 0;
+		int scroll_speed = 0;
+		int scroll_max_sticky_items = 5;
+
+		int scrollbar_margin_top = -1;
+		int scrollbar_margin_right = -1;
+		int scrollbar_margin_bottom = -1;
+		int scrollbar_margin_left = -1;
+		int scrollbar_h_separation = 0;
+		int scrollbar_v_separation = 0;
+	} theme_cache;
+
+	struct Cache
+	{
+		enum ClickType
+		{
+			CLICK_NONE,
+			CLICK_TITLE,
+			CLICK_BUTTON,
+		};
+
+		ClickType click_type = Cache::CLICK_NONE;
+		int click_index = -1;
+		int click_id = -1;
+		TreeItem* click_item = nullptr;
+		int click_column = 0;
+		int hover_header_column = -1;
+		bool hover_header_row = false;
+		Point2 click_pos;
+
+		TreeItem* hover_item = nullptr;
+		int hover_column = -1;
+		int hover_button_index_in_column = -1;
+
+		bool rtl = false;
+		int font_height = -1;
+	} cache;
+
+	int _get_title_button_height() const;
+	Size2 _get_cell_icon_size(const TreeItem::Cell& p_cell) const;
+
+	void _scroll_moved(float p_value);
+	ScrollBar* h_scroll = nullptr;
+	ScrollBar* v_scroll = nullptr;
+
+	bool h_scroll_enabled = true;
+	bool v_scroll_enabled = true;
+
+	Size2 get_internal_min_size() const;
+
+	Rect2 search_item_rect(TreeItem* p_from, TreeItem* p_item);
+	uint64_t last_keypress = 0;
+	String incr_search;
+	bool cursor_can_exit_tree = true;
+	void _do_incr_search(const String& p_add);
+	void _incr_search_as_needed(const InputEvent& p_event_key);
+
+	TreeItem* _search_item_text(TreeItem* p_at, const String& p_find, int* r_col, bool p_selectable,
+		bool p_backwards = false);
+
+	TreeItem* _find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_column, int& r_height,
+		int& r_section, bool p_sticky_check = true) const;
+
+	void _find_button_at_pos(
+		const Point2& p_pos, TreeItem*& r_item, int& r_column, int& r_index, int& r_section) const;
+
+	struct FindColumnButtonResult
+	{
+		int column_index = -1;
+		int button_index = -1;
+		int column_width = -1;
+		int column_offset = -1;
+		int pos_x = -1;
+	};
+
+	FindColumnButtonResult _find_column_and_button_at_pos(
+		int p_x, const TreeItem* p_item, int p_x_ofs, int p_x_limit) const;
+
+	float drag_speed = 0.0;
+	float drag_from = 0.0;
+	float drag_accum = 0.0;
+	bool drag_touching = false;
+	bool drag_touching_deaccel = false;
+	bool click_handled = false;
+	bool allow_rmb_select = false;
+	bool scrolling = false;
+	bool using_native_touch = true;
+
+	ScrollHintMode scroll_hint_mode = SCROLL_HINT_MODE_DISABLED;
+	bool tile_scroll_hint = false;
+
+	bool allow_reselect = false;
+	bool allow_search = true;
+
+	bool force_edit_checkbox_only_on_checkbox = false;
+
+	bool hide_folding = false;
+
+	bool enable_recursive_folding = true;
+
+	bool enable_drag_unfolding = true;
+	Timer* dropping_unfold_timer = nullptr;
+	void _on_dropping_unfold_timer_timeout();
+	void _reset_drop_mode_over();
+
+	bool enable_auto_tooltip = true;
+
+	bool hovered_update_queued = false;
+	void _determine_hovered_item();
+	void _queue_update_hovered_item();
+
+	int _count_selected_items(TreeItem* p_from) const;
+	bool _is_branch_selected(TreeItem* p_from) const;
+	bool _is_sibling_branch_selected(TreeItem* p_from) const;
+	void _go_left();
+	void _go_right();
+	void _go_down();
+	void _go_up();
+	void _shift_select_range(TreeItem* new_item);
+
+	bool _scroll(bool p_horizontal, float p_pages);
+
+	Rect2 _get_scrollbar_layout_rect() const;
+	Rect2 _get_content_rect() const; // Considering the background stylebox and scrollbars.
+	Rect2 _get_item_focus_rect(const TreeItem* p_item) const;
+
+	void _check_item_accessibility(
+		TreeItem* p_item, PackedStringArray& r_warnings, int& r_row) const;
+
+	void _accessibility_clean_info(TreeItem* p_item);
+	void _accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_row, int p_level);
+
+protected:
+	virtual void _update_theme_item_cache() override;
+
+	void _notification(int p_what);
+
+public:
+	PackedStringArray get_accessibility_configuration_warnings() const;
+	virtual RID get_focused_accessibility_element() const override;
+
+	virtual void set_self_modulate(const Color& p_self_modulate) override;
+
+	virtual AutoTranslateMode get_tooltip_auto_translate_mode_at(const Point2& p_at) const override;
+
+	TreeItem* get_item_at_position(const Point2& p_pos) const;
+	int get_column_at_position(const Point2& p_pos) const;
+	int get_drop_section_at_position(const Point2& p_pos) const;
+	int get_button_id_at_position(const Point2& p_pos) const;
+
+	void clear();
+
+	TreeItem* create_item(TreeItem* p_parent = nullptr, int p_index = -1);
+	TreeItem* get_root() const;
+	TreeItem* get_last_item() const;
+
+	void set_column_custom_minimum_width(int p_column, int p_min_width);
+	void set_column_expand(int p_column, bool p_expand);
+	void set_column_expand_ratio(int p_column, int p_ratio);
+	void set_column_clip_content(int p_column, bool p_fit);
+	int get_column_minimum_width(int p_column) const;
+	int get_column_width(int p_column) const;
+	int get_column_expand_ratio(int p_column) const;
+
+	bool is_column_expanding(int p_column) const;
+	bool is_column_clipping_content(int p_column) const;
+
+	void set_hide_root(bool p_enabled);
+	bool is_root_hidden() const;
+	TreeItem* get_next_selected(TreeItem* p_item);
+	TreeItem* get_selected() const;
+	void set_selected(TreeItem* p_item, int p_column = 0);
+	int get_selected_column() const;
+	int get_pressed_button() const;
+	void set_select_mode(SelectMode p_mode);
+	SelectMode get_select_mode() const;
+	void deselect_all();
+	bool is_anything_selected();
+
+	void set_columns(int p_columns);
+	int get_columns() const;
+
+	void set_column_title(int p_column, const String& p_title);
+	String get_column_title(int p_column) const;
+
+	void set_column_title_tooltip_text(int p_column, const String& p_tooltip);
+	String get_column_title_tooltip_text(int p_column) const;
+
+	void set_column_title_alignment(int p_column, HorizontalAlignment p_alignment);
+	HorizontalAlignment get_column_title_alignment(int p_column) const;
+
+	void set_column_title_direction(int p_column, Control::TextDirection p_text_direction);
+	Control::TextDirection get_column_title_direction(int p_column) const;
+
+	void set_column_title_language(int p_column, const String& p_language);
+	String get_column_title_language(int p_column) const;
+
+	void set_column_titles_visible(bool p_show);
+	bool are_column_titles_visible() const;
+
+	RID get_custom_drawing_canvas_item() const { return custom_ci; }
+
+	TreeItem* get_edited() const;
+	int get_edited_column() const;
+
+	void ensure_cursor_is_visible();
+
+	Rect2 get_custom_popup_rect() const;
+
+	int get_item_offset(TreeItem* p_item) const;
+	Rect2 get_item_rect(TreeItem* p_item, int p_column = -1, int p_button = -1) const;
+	bool edit_selected(bool p_force_edit = false);
+	bool is_editing();
+	void set_editor_selection(int p_from_line, int p_to_line, int p_from_column = -1,
+		int p_to_column = -1, int p_caret = 0);
+
+	// First item that starts with the text, from the current focused item down and wraps around.
+	TreeItem* search_item_text(
+		const String& p_find, int* r_col = nullptr, bool p_selectable = false);
+	// First item that matches the whole text, from the first item down.
+	TreeItem* get_item_with_text(const String& p_find) const;
+
+	Point2 get_scroll() const;
+	void set_h_scroll_enabled(bool p_enable);
+	bool is_h_scroll_enabled() const;
+	void set_v_scroll_enabled(bool p_enable);
+	bool is_v_scroll_enabled() const;
+
+	void set_scroll_hint_mode(ScrollHintMode p_mode);
+	ScrollHintMode get_scroll_hint_mode() const;
+
+	void set_tile_scroll_hint(bool p_enable);
+	bool is_scroll_hint_tiled();
+
+	void set_cursor_can_exit_tree(bool p_enable);
+
+	ScrollBar* get_vscroll_bar() { return v_scroll; }
+
+	void set_hide_folding(bool p_hide);
+	bool is_folding_hidden() const;
+
+	void set_enable_recursive_folding(bool p_enable);
+	bool is_recursive_folding_enabled() const;
+
+	void set_enable_drag_unfolding(bool p_enable);
+	bool is_drag_unfolding_enabled() const;
+
+	void set_drop_mode_flags(int p_flags);
+	int get_drop_mode_flags() const;
+
+	void set_edit_checkbox_cell_only_when_checkbox_is_pressed(bool p_enable);
+	bool get_edit_checkbox_cell_only_when_checkbox_is_pressed() const;
+
+	void set_allow_rmb_select(bool p_allow);
+	bool get_allow_rmb_select() const;
+
+	void set_allow_reselect(bool p_allow);
+	bool get_allow_reselect() const;
+
+	void set_allow_search(bool p_allow);
+	bool get_allow_search() const;
+
+	void set_auto_tooltip(bool p_enable);
+	bool is_auto_tooltip_enabled() const;
+
+	Size2 get_minimum_size() const override;
+
+	Tree() = default;
+	~Tree();
+};
+// --- End scene/gui/dialogs.h ---
+
+// --- Folded from modules/gltf/gltf_document.h ---
+// --- Inlined/Folded from modules/gltf/gltf_state.h ---
+// --- Inlined/Folded from modules/gltf/gltf_extensions.h ---
+#include "core/io/resource_loader.h"
+#include "core/types.h"
+
+// --- Inlined/Folded from modules/gltf/gltf_structures.h ---
+#include "core/types.h"
+// --- Inlined/Folded from modules/gltf/gltf_defines.h ---
+// This file should only be included by other headers.
+
+// GLTF classes.
+class GLTFAccessor;
+class GLTFAnimation;
+class GLTFBufferView;
+class GLTFCamera;
+class GLTFDocument;
+class GLTFDocumentExtension;
+class GLTFLight;
+class GLTFMesh;
+class GLTFNode;
+class GLTFObjectModelProperty;
+class GLTFSkeleton;
+class GLTFSkin;
+class GLTFSpecGloss;
+class GLTFState;
+class GLTFTexture;
+class GLTFTextureSampler;
+
+// GLTF index aliases.
+using GLTFAccessorIndex = int;
+using GLTFAnimationIndex = int;
+using GLTFBufferIndex = int;
+using GLTFBufferViewIndex = int;
+using GLTFCameraIndex = int;
+using GLTFImageIndex = int;
+using GLTFLightIndex = int;
+using GLTFMaterialIndex = int;
+using GLTFMeshIndex = int;
+using GLTFNodeIndex = int;
+using GLTFSkeletonIndex = int;
+using GLTFSkinIndex = int;
+using GLTFTextureIndex = int;
+using GLTFTextureSamplerIndex = int;
+
+class Camera3D;
+template <typename T> class TypedArray;
+
+
+
+
+#include "servers/rendering/renderer.h"
+
+class GLTFTextureSampler final : public Resource
+{
+public:
+	enum FilterMode
+	{
+		NEAREST = 9728,
+		LINEAR = 9729,
+		NEAREST_MIPMAP_NEAREST = 9984,
+		LINEAR_MIPMAP_NEAREST = 9985,
+		NEAREST_MIPMAP_LINEAR = 9986,
+		LINEAR_MIPMAP_LINEAR = 9987
+	};
+
+	enum WrapMode
+	{
+		CLAMP_TO_EDGE = 33071,
+		MIRRORED_REPEAT = 33648,
+		REPEAT = 10497,
+		DEFAULT = REPEAT
+	};
+
+	int get_mag_filter() const { return mag_filter; }
+
+	void set_mag_filter(const int filter_mode) { mag_filter = (FilterMode)filter_mode; }
+
+	int get_min_filter() const { return min_filter; }
+
+	void set_min_filter(const int filter_mode) { min_filter = (FilterMode)filter_mode; }
+
+	int get_wrap_s() const { return wrap_s; }
+
+	void set_wrap_s(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
+
+	int get_wrap_t() const { return wrap_t; }
+
+	void set_wrap_t(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
+
+	StandardMaterial3D::TextureFilter get_filter_mode() const
+	{
+		using TextureFilter = StandardMaterial3D::TextureFilter;
+
+		switch (min_filter) {
+		case NEAREST:
+			return TextureFilter::TEXTURE_FILTER_NEAREST;
+		case LINEAR:
+			return TextureFilter::TEXTURE_FILTER_LINEAR;
+		case NEAREST_MIPMAP_NEAREST:
+		case NEAREST_MIPMAP_LINEAR:
+			return TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
+		case LINEAR_MIPMAP_NEAREST:
+		case LINEAR_MIPMAP_LINEAR:
+		default:
+			return TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
+		}
+	}
+
+	void set_filter_mode(StandardMaterial3D::TextureFilter mode)
+	{
+		using TextureFilter = StandardMaterial3D::TextureFilter;
+
+		switch (mode) {
+		case TextureFilter::TEXTURE_FILTER_NEAREST:
+			min_filter = FilterMode::NEAREST;
+			mag_filter = FilterMode::NEAREST;
+			break;
+		case TextureFilter::TEXTURE_FILTER_LINEAR:
+			min_filter = FilterMode::LINEAR;
+			mag_filter = FilterMode::LINEAR;
+			break;
+		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
+		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
+			min_filter = FilterMode::NEAREST_MIPMAP_LINEAR;
+			mag_filter = FilterMode::NEAREST;
+			break;
+		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
+		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
+		default:
+			min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
+			mag_filter = FilterMode::LINEAR;
+			break;
+		}
+	}
+
+	bool get_wrap_mode() const
+	{
+		// StandardMaterial3D presents wrapping as a boolean property. Either the texture is repeated
+		// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
+		// when people import models having other wrapping mode combinations.
+		return (wrap_s == WrapMode::REPEAT) && (wrap_t == WrapMode::REPEAT);
+	}
+
+	void set_wrap_mode(bool mat_repeats)
+	{
+		if (mat_repeats) {
+			wrap_s = WrapMode::REPEAT;
+			wrap_t = WrapMode::REPEAT;
+		}
+		else {
+			wrap_s = WrapMode::CLAMP_TO_EDGE;
+			wrap_t = WrapMode::CLAMP_TO_EDGE;
+		}
+	}
+
+private:
+	FilterMode mag_filter = FilterMode::LINEAR;
+	FilterMode min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
+	WrapMode wrap_s = WrapMode::REPEAT;
+	WrapMode wrap_t = WrapMode::REPEAT;
+};
+
+class GLTFTexture final : public Resource
+{
+private:
+	GLTFImageIndex src_image = -1;
+	GLTFTextureSamplerIndex sampler = -1;
+
+public:
+	GLTFImageIndex get_src_image() const;
+	void set_src_image(GLTFImageIndex val);
+	GLTFTextureSamplerIndex get_sampler() const;
+	void set_sampler(GLTFTextureSamplerIndex val);
+};
+
+class GLTFBufferView final : public Resource
+{
+	friend class GLTFDocument;
+
+public:
+	// When a buffer view is used by vertex indices or attribute accessors it SHOULD specify
+	// "target" with a value of ELEMENT_ARRAY_BUFFER (34963) or ARRAY_BUFFER (34962) respectively.
+	// This is only used for mesh data. For non-mesh buffer views, the target should be left blank.
+	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#buffers-and-buffer-views-overview
+	enum ArrayBufferTarget
+	{
+		TARGET_NONE = 0,
+		TARGET_ARRAY_BUFFER = 34962,
+		TARGET_ELEMENT_ARRAY_BUFFER = 34963,
+	};
+
+private:
+	GLTFBufferIndex buffer = -1;
+	int64_t byte_offset = 0;
+	int64_t byte_length = 0;
+	int64_t byte_stride = -1;
+	bool indices = false;			// True for TARGET_ELEMENT_ARRAY_BUFFER.
+	bool vertex_attributes = false; // True for TARGET_ARRAY_BUFFER.
+
+public:
+	GLTFBufferIndex get_buffer() const;
+	void set_buffer(GLTFBufferIndex p_buffer);
+
+	int64_t get_byte_offset() const;
+	void set_byte_offset(int64_t p_byte_offset);
+
+	int64_t get_byte_length() const;
+	void set_byte_length(int64_t p_byte_length);
+
+	int64_t get_byte_stride() const;
+	void set_byte_stride(int64_t p_byte_stride);
+
+	bool get_indices() const;
+	void set_indices(bool p_indices);
+
+	bool get_vertex_attributes() const;
+	void set_vertex_attributes(bool p_attributes);
+
+	Vector<uint8_t> load_buffer_view_data(const Ref<GLTFState> p_gltf_state) const;
+	static GLTFBufferViewIndex write_new_buffer_view_into_state(const Ref<GLTFState>& p_gltf_state,
+		const PackedByteArray& p_input_data, const int64_t p_alignment = 1,
+		const ArrayBufferTarget p_target = TARGET_NONE, const int64_t p_byte_stride = -1,
+		const GLTFBufferIndex p_buffer_index = 0, const bool p_deduplicate = true);
+};
+
+class GLTFAccessor final : public Resource
+{
+	friend class GLTFDocument;
+
+public:
+	enum GLTFAccessorType
+	{
+		TYPE_SCALAR,
+		TYPE_VEC2,
+		TYPE_VEC3,
+		TYPE_VEC4,
+		TYPE_MAT2,
+		TYPE_MAT3,
+		TYPE_MAT4,
+	};
+
+	enum GLTFComponentType
+	{
+		COMPONENT_TYPE_NONE = 0,
+		COMPONENT_TYPE_SIGNED_BYTE = 5120,
+		COMPONENT_TYPE_UNSIGNED_BYTE = 5121,
+		COMPONENT_TYPE_SIGNED_SHORT = 5122,
+		COMPONENT_TYPE_UNSIGNED_SHORT = 5123,
+		COMPONENT_TYPE_SIGNED_INT = 5124,
+		COMPONENT_TYPE_UNSIGNED_INT = 5125,
+		COMPONENT_TYPE_SINGLE_FLOAT = 5126,
+		COMPONENT_TYPE_DOUBLE_FLOAT = 5130,
+		COMPONENT_TYPE_HALF_FLOAT = 5131,
+		COMPONENT_TYPE_SIGNED_LONG = 5134,
+		COMPONENT_TYPE_UNSIGNED_LONG = 5135,
+	};
+
+private:
+	GLTFBufferViewIndex buffer_view = -1;
+	int64_t byte_offset = 0;
+	GLTFComponentType component_type = COMPONENT_TYPE_NONE;
+	bool normalized = false;
+	int64_t count = 0;
+	GLTFAccessorType accessor_type = GLTFAccessorType::TYPE_SCALAR;
+	Vector<double> min;
+	Vector<double> max;
+	int64_t sparse_count = 0;
+	GLTFBufferViewIndex sparse_indices_buffer_view = 0;
+	int64_t sparse_indices_byte_offset = 0;
+	GLTFComponentType sparse_indices_component_type = COMPONENT_TYPE_NONE;
+	GLTFBufferViewIndex sparse_values_buffer_view = 0;
+	int64_t sparse_values_byte_offset = 0;
+
+	// Trivial helper functions.
+	void _calculate_min_and_max(const PackedFloat64Array& p_numbers);
+	void _determine_pad_skip(int64_t& r_skip_every, int64_t& r_skip_bytes) const;
+	int64_t _determine_padded_byte_count(int64_t p_raw_byte_size) const;
+	PackedFloat64Array _filter_numbers(const PackedFloat64Array& p_numbers) const;
+	static String _get_component_type_name(const GLTFComponentType p_component);
+	static GLTFComponentType _get_indices_component_type_for_size(const int64_t p_size);
+	static GLTFAccessorType _get_accessor_type_from_str(const String& p_string);
+	String _get_accessor_type_name() const;
+	int64_t _get_vector_size() const;
+	static int64_t _get_bytes_per_component(const GLTFComponentType p_component_type);
+	int64_t _get_bytes_per_vector() const;
+
+	// Private decode functions.
+	PackedInt64Array _decode_sparse_indices(const Ref<GLTFState>& p_gltf_state,
+		const Vector<Ref<GLTFBufferView>>& p_buffer_views) const;
+	template <typename T>
+	Vector<T> _decode_raw_numbers(const Ref<GLTFState>& p_gltf_state,
+		const Vector<Ref<GLTFBufferView>>& p_buffer_views, bool p_sparse_values) const;
+	template <typename T> Vector<T> _decode_as_numbers(const Ref<GLTFState>& p_gltf_state) const;
+
+	void _store_sparse_indices_into_state(const Ref<GLTFState>& p_gltf_state,
+		const PackedInt64Array& p_sparse_indices, const bool p_deduplicate = true);
+
+public:
+	// Property getters and setters.
+	GLTFBufferViewIndex get_buffer_view() const;
+	void set_buffer_view(GLTFBufferViewIndex p_buffer_view);
+
+	int64_t get_byte_offset() const;
+	void set_byte_offset(int64_t p_byte_offset);
+
+	GLTFComponentType get_component_type() const;
+	void set_component_type(GLTFComponentType p_component_type);
+
+	bool get_normalized() const;
+	void set_normalized(bool p_normalized);
+
+	int64_t get_count() const;
+	void set_count(int64_t p_count);
+
+	GLTFAccessorType get_accessor_type() const;
+	void set_accessor_type(GLTFAccessorType p_accessor_type);
+
+	int get_type() const;
+	void set_type(int p_accessor_type);
+
+	Vector<double> get_min() const;
+	void set_min(const Vector<double>& p_min);
+
+	Vector<double> get_max() const;
+	void set_max(const Vector<double>& p_max);
+
+	int64_t get_sparse_count() const;
+	void set_sparse_count(int64_t p_sparse_count);
+
+	GLTFBufferViewIndex get_sparse_indices_buffer_view() const;
+	void set_sparse_indices_buffer_view(GLTFBufferViewIndex p_sparse_indices_buffer_view);
+
+	int64_t get_sparse_indices_byte_offset() const;
+	void set_sparse_indices_byte_offset(int64_t p_sparse_indices_byte_offset);
+
+	GLTFComponentType get_sparse_indices_component_type() const;
+	void set_sparse_indices_component_type(GLTFComponentType p_sparse_indices_component_type);
+
+	GLTFBufferViewIndex get_sparse_values_buffer_view() const;
+	void set_sparse_values_buffer_view(GLTFBufferViewIndex p_sparse_values_buffer_view);
+
+	int64_t get_sparse_values_byte_offset() const;
+	void set_sparse_values_byte_offset(int64_t p_sparse_values_byte_offset);
+
+	bool is_equal_exact(const Ref<GLTFAccessor>& p_other) const;
+
+	// High-level decode functions.
+	PackedColorArray decode_as_colors(const Ref<GLTFState>& p_gltf_state) const;
+	PackedFloat32Array decode_as_float32s(const Ref<GLTFState>& p_gltf_state) const;
+	PackedFloat64Array decode_as_float64s(const Ref<GLTFState>& p_gltf_state) const;
+	PackedInt32Array decode_as_int32s(const Ref<GLTFState>& p_gltf_state) const;
+	PackedInt64Array decode_as_int64s(const Ref<GLTFState>& p_gltf_state) const;
+	Vector<Quaternion> decode_as_quaternions(const Ref<GLTFState>& p_gltf_state) const;
+	PackedVector2Array decode_as_vector2s(const Ref<GLTFState>& p_gltf_state) const;
+	PackedVector3Array decode_as_vector3s(const Ref<GLTFState>& p_gltf_state) const;
+	PackedVector4Array decode_as_vector4s(const Ref<GLTFState>& p_gltf_state) const;
+
+	// Low-level encode functions.
+	static GLTFComponentType get_minimal_integer_component_type_from_ints(
+		const PackedInt64Array& p_numbers);
+	PackedByteArray encode_floats_as_bytes(const PackedFloat64Array& p_input_numbers);
+	PackedByteArray encode_ints_as_bytes(const PackedInt64Array& p_input_numbers);
+
+	GLTFAccessorIndex store_accessor_data_into_state(const Ref<GLTFState>& p_gltf_state,
+		const PackedByteArray& p_data_bytes,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const GLTFBufferIndex p_buffer_index = 0, const bool p_deduplicate = true);
+	static Ref<GLTFAccessor> make_new_accessor_without_data(
+		GLTFAccessorType p_accessor_type = TYPE_SCALAR,
+		GLTFComponentType p_component_type = COMPONENT_TYPE_SINGLE_FLOAT);
+
+	// High-level encode functions.
+	static GLTFAccessorIndex encode_new_accessor_from_colors(const Ref<GLTFState>& p_gltf_state,
+		const PackedColorArray& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_float64s(const Ref<GLTFState>& p_gltf_state,
+		const PackedFloat64Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_int32s(const Ref<GLTFState>& p_gltf_state,
+		const PackedInt32Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_int64s(const Ref<GLTFState>& p_gltf_state,
+		const PackedInt64Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_quaternions(
+		const Ref<GLTFState>& p_gltf_state, const Vector<Quaternion>& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_vector2s(const Ref<GLTFState>& p_gltf_state,
+		const PackedVector2Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_vector3s(const Ref<GLTFState>& p_gltf_state,
+		const PackedVector3Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_vector4s(const Ref<GLTFState>& p_gltf_state,
+		const PackedVector4Array& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_accessor_from_vector4is(const Ref<GLTFState>& p_gltf_state,
+		const Vector<Vector4i>& p_input_data,
+		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+	static GLTFAccessorIndex encode_new_sparse_accessor_from_vec3s(
+		const Ref<GLTFState>& p_gltf_state, const PackedVector3Array& p_input_data,
+		const PackedVector3Array& p_base_reference_data, const double p_tolerance_multiplier = 1.0,
+		const GLTFBufferView::ArrayBufferTarget p_main_buffer_view_target =
+			GLTFBufferView::TARGET_NONE,
+		const bool p_deduplicate = true);
+};
+
+class GLTFNode final : public Resource
+{
+	friend class GLTFDocument;
+	friend class SkinTool;
+	friend class FBXDocument;
+
+private:
+	String original_name;
+	GLTFNodeIndex parent = -1;
+	int height = -1;
+	Transform3D transform;
+	GLTFMeshIndex mesh = -1;
+	GLTFCameraIndex camera = -1;
+	GLTFSkinIndex skin = -1;
+	GLTFSkeletonIndex skeleton = -1;
+	bool joint = false;
+	bool visible = true;
+	Vector<int> children;
+	GLTFLightIndex light = -1;
+
+public:
+	String get_original_name();
+	void set_original_name(const String& p_name);
+
+	GLTFNodeIndex get_parent();
+	void set_parent(GLTFNodeIndex p_parent);
+
+	int get_height();
+	void set_height(int p_height);
+
+	Transform3D get_xform();
+	void set_xform(const Transform3D& p_xform);
+
+	Transform3D get_rest_xform();
+	void set_rest_xform(const Transform3D& p_rest_xform);
+
+	GLTFMeshIndex get_mesh();
+	void set_mesh(GLTFMeshIndex p_mesh);
+
+	GLTFCameraIndex get_camera();
+	void set_camera(GLTFCameraIndex p_camera);
+
+	GLTFSkinIndex get_skin();
+	void set_skin(GLTFSkinIndex p_skin);
+
+	GLTFSkeletonIndex get_skeleton();
+	void set_skeleton(GLTFSkeletonIndex p_skeleton);
+
+	Vector3 get_position();
+	void set_position(const Vector3& p_position);
+
+	Quaternion get_rotation();
+	void set_rotation(const Quaternion& p_rotation);
+
+	Vector3 get_scale();
+	void set_scale(const Vector3& p_scale);
+
+	Vector<int> get_children();
+	void set_children(const Vector<int>& p_children);
+	void append_child_index(int p_child_index);
+
+	GLTFLightIndex get_light();
+	void set_light(GLTFLightIndex p_light);
+
+	bool get_visible();
+	void set_visible(bool p_visible);
+
+	bool has_additional_data(const String& p_extension_name);
+
+	NodePath get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_skeletons = true);
+};
+
+class GLTFSkeleton final : public Resource
+{
+	friend class GLTFDocument;
+	friend class SkinTool;
+	friend class FBXDocument;
+
+private:
+	// The *synthesized* skeletons joints
+	Vector<GLTFNodeIndex> joints;
+
+	// The roots of the skeleton. If there are multiple, each root must have the
+	// same parent (ie roots are siblings)
+	Vector<GLTFNodeIndex> roots;
+
+	// The created Skeleton3D for the scene
+	Skeleton3D* godot_skeleton = nullptr;
+
+	// Set of unique bone names for the skeleton
+	HashSet<String> unique_names;
+
+	HashMap<int32_t, GLTFNodeIndex> godot_bone_node;
+
+	Vector<BoneAttachment3D*> bone_attachments;
+
+public:
+	Vector<GLTFNodeIndex> get_joints();
+	void set_joints(const Vector<GLTFNodeIndex>& p_joints);
+
+	Vector<GLTFNodeIndex> get_roots();
+	void set_roots(const Vector<GLTFNodeIndex>& p_roots);
+
+	Skeleton3D* get_godot_skeleton();
+
+	TypedArray<String> get_unique_names();
+	void set_unique_names(const TypedArray<String>& p_unique_names);
+
+	BoneAttachment3D* get_bone_attachment(int idx);
+	int32_t get_bone_attachment_count();
+};
+
+class GLTFSkin final : public Resource
+{
+	friend class GLTFDocument;
+	friend class SkinTool;
+	friend class FBXDocument;
+
+private:
+	// The "skeleton" property defined in the gltf spec. -1 = Scene Root
+	GLTFNodeIndex skin_root = -1;
+
+	Vector<GLTFNodeIndex> joints_original;
+	Vector<Transform3D> inverse_binds;
+
+	// Note: joints + non_joints should form a complete subtree, or subtrees
+	// with a common parent
+
+	// All nodes that are skins that are caught in-between the original joints
+	// (inclusive of joints_original)
+	Vector<GLTFNodeIndex> joints;
+
+	// All Nodes that are caught in-between skin joint nodes, and are not
+	// defined as joints by any skin
+	Vector<GLTFNodeIndex> non_joints;
+
+	// The roots of the skin. In the case of multiple roots, their parent *must*
+	// be the same (the roots must be siblings)
+	Vector<GLTFNodeIndex> roots;
+
+	// The GLTF Skeleton this Skin points to (after we determine skeletons)
+	GLTFSkeletonIndex skeleton = -1;
+
+	// A mapping from the joint indices (in the order of joints_original) to the
+	// Godot Skeleton's bone_indices
+	HashMap<int, int> joint_i_to_bone_i;
+	HashMap<int, String> joint_i_to_name;
+
+	// The Actual Skin that will be created as a mapping between the IBM's of
+	// this skin to the generated skeleton for the mesh instances.
+	Ref<Skin> godot_skin;
+
+public:
+	GLTFNodeIndex get_skin_root();
+	void set_skin_root(GLTFNodeIndex p_skin_root);
+
+	Vector<GLTFNodeIndex> get_joints_original();
+	void set_joints_original(const Vector<GLTFNodeIndex>& p_joints_original);
+
+	TypedArray<Transform3D> get_inverse_binds();
+	void set_inverse_binds(const TypedArray<Transform3D>& p_inverse_binds);
+
+	Vector<GLTFNodeIndex> get_joints();
+	void set_joints(const Vector<GLTFNodeIndex>& p_joints);
+
+	Vector<GLTFNodeIndex> get_non_joints();
+	void set_non_joints(const Vector<GLTFNodeIndex>& p_non_joints);
+
+	Vector<GLTFNodeIndex> get_roots();
+	void set_roots(const Vector<GLTFNodeIndex>& p_roots);
+
+	int get_skeleton();
+	void set_skeleton(int p_skeleton);
+
+	Ref<Skin> get_godot_skin();
+	void set_godot_skin(const Ref<Skin>& p_godot_skin);
+};
+
+class GLTFMesh final : public Resource
+{
+private:
+	String original_name;
+	Ref<ImporterMesh> mesh;
+	Vector<float> blend_weights;
+
+public:
+	String get_original_name();
+	void set_original_name(const String& p_name);
+	Ref<ImporterMesh> get_mesh();
+	void set_mesh(const Ref<ImporterMesh>& p_mesh);
+	Vector<float> get_blend_weights();
+	void set_blend_weights(const Vector<float>& p_blend_weights);
+};
+
+// Reference and test file:
+// https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_015_SimpleCameras.md
+
+class GLTFCamera final : public Resource
+{
+private:
+	// glTF has no default camera values, they should always be specified in
+	// the glTF file. Here we default to Godot's default camera settings.
+	bool perspective = true;
+	real_t fov = Math::deg_to_rad(75.0);
+	real_t size_mag = 0.5;
+	real_t depth_far = 4000.0;
+	real_t depth_near = 0.05;
+
+public:
+	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop);
+
+	bool get_perspective() const { return perspective; }
+	void set_perspective(bool p_val) { perspective = p_val; }
+
+	real_t get_fov() const { return fov; }
+	void set_fov(real_t p_val) { fov = p_val; }
+
+	real_t get_size_mag() const { return size_mag; }
+	void set_size_mag(real_t p_val) { size_mag = p_val; }
+
+	real_t get_depth_far() const { return depth_far; }
+	void set_depth_far(real_t p_val) { depth_far = p_val; }
+
+	real_t get_depth_near() const { return depth_near; }
+	void set_depth_near(real_t p_val) { depth_near = p_val; }
+
+	static Ref<GLTFCamera> from_node(const Camera3D* p_camera);
+};
+
+class GLTFAnimation final : public Resource
+{
+public:
+	enum Interpolation
+	{
+		INTERP_LINEAR,
+		INTERP_STEP,
+		INTERP_CATMULLROMSPLINE,
+		INTERP_CUBIC_SPLINE,
+	};
+
+	template <typename T> struct Channel
+	{
+		Interpolation interpolation = INTERP_LINEAR;
+		Vector<double> times;
+		Vector<T> values;
+	};
+
+	struct NodeTrack
+	{
+		Channel<Vector3> position_track;
+		Channel<Quaternion> rotation_track;
+		Channel<Vector3> scale_track;
+		Vector<Channel<real_t>> weight_tracks;
+	};
+
+	String original_name;
+	bool loop = false;
+	HashMap<int, NodeTrack> node_tracks;
+
+public:
+	static Interpolation godot_to_gltf_interpolation(
+		const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index);
+	static Animation::InterpolationType gltf_to_godot_interpolation(
+		Interpolation p_gltf_interpolation);
+
+	String get_original_name();
+	void set_original_name(const String& p_name);
+
+	bool get_loop() const;
+	void set_loop(bool p_val);
+
+	HashMap<int, GLTFAnimation::NodeTrack>& get_node_tracks();
+	bool is_empty_of_tracks() const;
+
+	GLTFAnimation();
+};
+
+// Object model: https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/ObjectModel.adoc
+// KHR_animation_pointer:
+// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_animation_pointer
+
+class GLTFObjectModelProperty final : public RefCounted
+{
+public:
+	enum GLTFObjectModelType
+	{
+		GLTF_OBJECT_MODEL_TYPE_UNKNOWN,
+		GLTF_OBJECT_MODEL_TYPE_BOOL,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT_ARRAY,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT2,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT3,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT4,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT2X2,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT3X3,
+		GLTF_OBJECT_MODEL_TYPE_FLOAT4X4,
+		GLTF_OBJECT_MODEL_TYPE_INT,
+	};
+
+private:
+	Ref<Expression> gltf_to_godot_expr;
+	Ref<Expression> godot_to_gltf_expr;
+	GLTFObjectModelType object_model_type = GLTF_OBJECT_MODEL_TYPE_UNKNOWN;
+	Vector<PackedStringArray> json_pointers;
+
+public:
+	void append_node_path(const NodePath& p_node_path);
+	void append_path_to_property(const NodePath& p_node_path, const String& p_prop_name);
+
+	GLTFAccessor::GLTFAccessorType get_accessor_type() const;
+
+	Ref<Expression> get_gltf_to_godot_expression() const;
+	void set_gltf_to_godot_expression(const Ref<Expression>& p_gltf_to_godot_expr);
+
+	Ref<Expression> get_godot_to_gltf_expression() const;
+	void set_godot_to_gltf_expression(const Ref<Expression>& p_godot_to_gltf_expr);
+
+	bool has_node_paths() const;
+
+	GLTFObjectModelType get_object_model_type() const;
+	void set_object_model_type(GLTFObjectModelType p_type);
+
+	Vector<PackedStringArray> get_json_pointers() const;
+	bool has_json_pointers() const;
+	void set_json_pointers(const Vector<PackedStringArray>& p_json_pointers);
+};
+
+
+class Light3D;
+
+// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual
+
+class GLTFLight final : public Resource
+{
+	friend class GLTFDocument;
+
+private:
+	Color color = Color(1.0f, 1.0f, 1.0f);
+	float intensity = 1.0f;
+	String light_type;
+	float range = Math::INF;
+	float inner_cone_angle = 0.0f;
+	float outer_cone_angle = Math::TAU / 8.0f;
+
+public:
+	static void set_cone_inner_attenuation_conversion_expressions(
+		Ref<GLTFObjectModelProperty>& r_obj_model_prop);
+
+	Color get_color();
+	void set_color(Color p_color);
+
+	float get_intensity();
+	void set_intensity(float p_intensity);
+
+	String get_light_type();
+	void set_light_type(String p_light_type);
+
+	float get_range();
+	void set_range(float p_range);
+
+	float get_inner_cone_angle();
+	void set_inner_cone_angle(float p_inner_cone_angle);
+
+	float get_outer_cone_angle();
+	void set_outer_cone_angle(float p_outer_cone_angle);
+
+	static Ref<GLTFLight> from_node(const Light3D* p_light);
+};
+
+// KHR_materials_pbrSpecularGlossiness is an archived GLTF extension.
+// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
+
+class GLTFSpecGloss final : public Resource
+{
+	friend class GLTFDocument;
+
+private:
+	Ref<Image> diffuse_img = nullptr;
+	Color diffuse_factor = Color(1.0f, 1.0f, 1.0f);
+	float gloss_factor = 1.0f;
+	Color specular_factor = Color(1.0f, 1.0f, 1.0f);
+	Ref<Image> spec_gloss_img = nullptr;
+
+public:
+	Ref<Image> get_diffuse_img();
+	void set_diffuse_img(Ref<Image> p_diffuse_img);
+
+	Color get_diffuse_factor();
+	void set_diffuse_factor(Color p_diffuse_factor);
+
+	float get_gloss_factor();
+	void set_gloss_factor(float p_gloss_factor);
+
+	Color get_specular_factor();
+	void set_specular_factor(Color p_specular_factor);
+
+	Ref<Image> get_spec_gloss_img();
+	void set_spec_gloss_img(Ref<Image> p_spec_gloss_img);
+};
+
+
+
+class GLTFDocumentExtension : public Resource
+{
+public:
+	// Import process.
+	virtual Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions);
+	virtual Vector<String> get_supported_extensions();
+	virtual Error parse_image_data(Ref<GLTFState> p_state, const PackedByteArray& p_image_data,
+		const String& p_mime_type, Ref<Image> r_image);
+	virtual String get_image_file_extension();
+	virtual Ref<GLTFObjectModelProperty> import_object_model_property(Ref<GLTFState> p_state,
+		const PackedStringArray& p_split_json_pointer, const TypedArray<NodePath>& p_partial_paths);
+	virtual Error import_post_parse(Ref<GLTFState> p_state);
+	virtual Error import_pre_generate(Ref<GLTFState> p_state);
+	virtual Node3D* generate_scene_node(
+		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_parent);
+	virtual Error import_post(Ref<GLTFState> p_state, Node* p_node);
+	// Export process.
+	virtual Error export_preflight(Ref<GLTFState> p_state, Node* p_root);
+	virtual void convert_scene_node(
+		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_node);
+	virtual Error export_post_convert(Ref<GLTFState> p_state, Node* p_root);
+	virtual Error export_preserialize(Ref<GLTFState> p_state);
+	virtual Vector<String> get_saveable_image_formats();
+	virtual Error save_image_at_path(Ref<GLTFState> p_state, Ref<Image> p_image,
+		const String& p_file_path, const String& p_image_format, float p_lossy_quality);
+	virtual Error export_post(Ref<GLTFState> p_state);
+};
+
+class GLTFDocumentExtensionTexture final : public GLTFDocumentExtension
+{
+public:
+	enum Format
+	{
+		FORMAT_KTX,
+		FORMAT_WEBP,
+	};
+
+private:
+	Format format = FORMAT_KTX;
+
+public:
+	explicit GLTFDocumentExtensionTexture(Format p_format = FORMAT_KTX) : format(p_format) {}
+
+	Format get_format() const { return format; }
+
+	// Import process.
+	Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions) override;
+	Vector<String> get_supported_extensions() override;
+	Error parse_image_data(Ref<GLTFState> p_state, const PackedByteArray& p_image_data,
+		const String& p_mime_type, Ref<Image> r_image) override;
+	String get_image_file_extension() override;
+	// Export process.
+	Vector<String> get_saveable_image_formats() override;
+	Error save_image_at_path(Ref<GLTFState> p_state, Ref<Image> p_image, const String& p_file_path,
+		const String& p_image_format, float p_lossy_quality) override;
+};
+
+#ifndef PHYSICS_3D_DISABLED
+
+
+// GLTFPhysicsBody is an intermediary between Godot's physics body nodes
+// and the OMI_physics_body extension.
+// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_body
+
+class GLTFPhysicsBody final : public Resource
+{
+public:
+	enum class PhysicsBodyType
+	{
+		STATIC,
+		ANIMATABLE,
+		CHARACTER,
+		RIGID,
+		VEHICLE,
+		TRIGGER,
+	};
+
+private:
+	PhysicsBodyType body_type = PhysicsBodyType::RIGID;
+	real_t mass = 1.0;
+	Vector3 linear_velocity;
+	Vector3 angular_velocity;
+	Vector3 center_of_mass;
+	Vector3 inertia_diagonal;
+	Quaternion inertia_orientation;
+
+public:
+	String get_body_type() const;
+	void set_body_type(const String& p_body_type);
+
+	PhysicsBodyType get_physics_body_type() const;
+	void set_physics_body_type(PhysicsBodyType p_body_type);
+
+	real_t get_mass() const;
+	void set_mass(real_t p_mass);
+
+	Vector3 get_linear_velocity() const;
+	void set_linear_velocity(const Vector3& p_linear_velocity);
+
+	Vector3 get_angular_velocity() const;
+	void set_angular_velocity(const Vector3& p_angular_velocity);
+
+	Vector3 get_center_of_mass() const;
+	void set_center_of_mass(const Vector3& p_center_of_mass);
+
+	Vector3 get_inertia_diagonal() const;
+	void set_inertia_diagonal(const Vector3& p_inertia_diagonal);
+
+	Quaternion get_inertia_orientation() const;
+	void set_inertia_orientation(const Quaternion& p_inertia_orientation);
+
+#ifndef DISABLE_DEPRECATED
+	Basis get_inertia_tensor() const;
+	void set_inertia_tensor(const Basis& p_inertia_tensor);
+#endif // DISABLE_DEPRECATED
+
+	static Ref<GLTFPhysicsBody> from_node(const Node3D* p_body_node);
+	Node3D* to_node() const;
+};
+
+// GLTFPhysicsShape is an intermediary between Godot's collision shape nodes
+// and the OMI_physics_shape extension.
+// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_shape
+
+class GLTFPhysicsShape final : public Resource
+{
+private:
+	String shape_type;
+	Vector3 size = Vector3(1.0, 1.0, 1.0);
+	real_t radius = 0.5;
+	real_t height = 2.0;
+	bool is_trigger = false;
+	GLTFMeshIndex mesh_index = -1;
+	Ref<ImporterMesh> importer_mesh = nullptr;
+	// Internal only, for caching Godot shape resources. Used in `to_resource` and `to_node`.
+	Ref<Shape3D> _shape_cache = nullptr;
+
+public:
+	String get_shape_type() const;
+	void set_shape_type(const String& p_shape_type);
+
+	Vector3 get_size() const;
+	void set_size(const Vector3& p_size);
+
+	real_t get_radius() const;
+	void set_radius(real_t p_radius);
+
+	real_t get_height() const;
+	void set_height(real_t p_height);
+
+	bool get_is_trigger() const;
+	void set_is_trigger(bool p_is_trigger);
+
+	GLTFMeshIndex get_mesh_index() const;
+	void set_mesh_index(GLTFMeshIndex p_mesh_index);
+
+	Ref<ImporterMesh> get_importer_mesh() const;
+	void set_importer_mesh(const Ref<ImporterMesh>& p_importer_mesh);
+
+	static Ref<GLTFPhysicsShape> from_node(const CollisionShape3D* p_shape_node);
+	CollisionShape3D* to_node(bool p_cache_shapes = false);
+
+	static Ref<GLTFPhysicsShape> from_resource(const Ref<Shape3D>& p_shape_resource);
+	Ref<Shape3D> to_resource(bool p_cache_shapes = false);
+};
+
+class GLTFDocumentExtensionPhysics final : public GLTFDocumentExtension
+{
+public:
+	// Import process.
+	Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions) override;
+	Vector<String> get_supported_extensions() override;
+	Ref<GLTFObjectModelProperty> import_object_model_property(Ref<GLTFState> p_state,
+		const PackedStringArray& p_split_json_pointer,
+		const TypedArray<NodePath>& p_partial_paths) override;
+	Node3D* generate_scene_node(
+		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_parent) override;
+	// Export process.
+	void convert_scene_node(
+		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_node) override;
+	Error export_preserialize(Ref<GLTFState> p_state) override;
+};
+#endif // PHYSICS_3D_DISABLED
+
+
+
+class GLTFState final : public Resource
+{
+	friend class GLTFDocument;
+	friend class GLTFNode;
+	friend class FBXDocument;
+	friend class FBXState;
+
+public:
+	enum HandleBinaryImageMode
+	{
+		HANDLE_BINARY_IMAGE_MODE_DISCARD_TEXTURES = 0,
+		HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES,
+		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_BASISU,
+		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
+														// ResourceImporterScene::pre_import must be
+														// changed as well.
+	};
+
+protected:
+	String base_path;
+	String extract_path;
+	String extract_prefix;
+	String filename;
+	int major_version = 0;
+	int minor_version = 0;
+	String copyright;
+	Vector<uint8_t> glb_data;
+	double bake_fps = 30.0;
+
+	bool use_named_skin_binds = false;
+	bool use_khr_texture_transform = false;
+	bool discard_meshes_and_materials = false;
+	bool force_generate_tangents = false;
+	bool create_animations = true;
+	bool force_disable_compression = false;
+	bool import_as_skeleton_bones = false;
+
+	HandleBinaryImageMode handle_binary_image_mode = HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES;
+
+	Vector<Ref<GLTFNode>> nodes;
+	Vector<Vector<uint8_t>> buffers;
+	Vector<Ref<GLTFBufferView>> buffer_views;
+	Vector<Ref<GLTFAccessor>> accessors;
+
+	Vector<Ref<GLTFMesh>> meshes; // Meshes are loaded directly, no reason not to.
+
+	Vector<AnimationPlayer*> animation_players;
+	HashMap<Ref<Material>, GLTFMaterialIndex> material_cache;
+	Vector<Ref<Material>> materials;
+
+	String scene_name;
+	Vector<int> root_nodes;
+	Vector<Ref<GLTFTexture>> textures;
+	Vector<Ref<GLTFTextureSampler>> texture_samplers;
+	Ref<GLTFTextureSampler> default_texture_sampler;
+	Vector<Ref<Texture2D>> images;
+	Vector<String> extensions_used;
+	Vector<String> extensions_required;
+	Vector<Ref<Image>> source_images;
+
+	Vector<Ref<GLTFSkin>> skins;
+	Vector<Ref<GLTFCamera>> cameras;
+	Vector<Ref<GLTFLight>> lights;
+	HashSet<String> unique_names;
+	HashSet<String> unique_animation_names;
+
+	Vector<Ref<GLTFSkeleton>> skeletons;
+	Vector<Ref<GLTFAnimation>> animations;
+	HashMap<GLTFNodeIndex, Node*> scene_nodes;
+	HashMap<GLTFNodeIndex, ImporterMeshInstance3D*> scene_mesh_instances;
+	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
+
+public:
+	double get_bake_fps() const { return bake_fps; }
+
+	void set_bake_fps(double value) { bake_fps = value; }
+
+	void add_used_extension(const String& p_extension, bool p_required = false);
+	GLTFBufferViewIndex append_data_to_buffers(
+		const Vector<uint8_t>& p_data, const bool p_deduplication);
+	GLTFNodeIndex append_gltf_node(
+		Ref<GLTFNode> p_gltf_node, Node* p_godot_scene_node, GLTFNodeIndex p_parent_node_index);
+
+	// Deprecated, use HandleBinaryImageMode instead.
+	enum GLTFHandleBinary
+	{
+		HANDLE_BINARY_DISCARD_TEXTURES = 0,
+		HANDLE_BINARY_EXTRACT_TEXTURES,
+		HANDLE_BINARY_EMBED_AS_BASISU,
+		HANDLE_BINARY_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
+											 // ResourceImporterScene::pre_import must be changed as
+											 // well.
+	};
+
+	int32_t get_handle_binary_image() const { return handle_binary_image_mode; }
+
+	void set_handle_binary_image(int32_t p_handle_binary_image)
+	{
+		handle_binary_image_mode = (HandleBinaryImageMode)p_handle_binary_image;
+	}
+
+	HandleBinaryImageMode get_handle_binary_image_mode() const { return handle_binary_image_mode; }
+
+	void set_handle_binary_image_mode(HandleBinaryImageMode p_handle_binary_image)
+	{
+		handle_binary_image_mode = p_handle_binary_image;
+	}
+
+	int get_major_version() const;
+	void set_major_version(int p_major_version);
+
+	int get_minor_version() const;
+	void set_minor_version(int p_minor_version);
+
+	String get_copyright() const;
+	void set_copyright(const String& p_copyright);
+
+	Vector<uint8_t> get_glb_data() const;
+	void set_glb_data(const Vector<uint8_t>& p_glb_data);
+
+	bool get_use_named_skin_binds() const;
+	void set_use_named_skin_binds(bool p_use_named_skin_binds);
+
+	bool get_discard_meshes_and_materials() const;
+	void set_discard_meshes_and_materials(bool p_discard_meshes_and_materials);
+
+	const Vector<Ref<GLTFNode>>& get_nodes() const { return nodes; }
+
+	void set_nodes(const Vector<Ref<GLTFNode>>& p_nodes) { nodes = p_nodes; }
+
+	const Vector<PackedByteArray>& get_buffers() const { return buffers; }
+
+	void set_buffers(const Vector<PackedByteArray>& p_buffers) { buffers = p_buffers; }
+
+	const Vector<Ref<GLTFBufferView>>& get_buffer_views() const { return buffer_views; }
+
+	void set_buffer_views(const Vector<Ref<GLTFBufferView>>& p_buffer_views)
+	{
+		buffer_views = p_buffer_views;
+	}
+
+	const Vector<Ref<GLTFAccessor>>& get_accessors() const { return accessors; }
+
+	void set_accessors(const Vector<Ref<GLTFAccessor>>& p_accessors) { accessors = p_accessors; }
+
+	const Vector<Ref<GLTFMesh>>& get_meshes() const { return meshes; }
+
+	void set_meshes(const Vector<Ref<GLTFMesh>>& p_meshes) { meshes = p_meshes; }
+
+	const Vector<Ref<Material>>& get_materials() const { return materials; }
+
+	void set_materials(const Vector<Ref<Material>>& p_materials) { materials = p_materials; }
+
+	String get_scene_name() const;
+	void set_scene_name(const String& p_scene_name);
+
+	String get_base_path() const;
+	void set_base_path(const String& p_base_path);
+
+	String get_extract_path() const;
+	void set_extract_path(const String& p_extract_path);
+
+	String get_extract_prefix() const;
+	void set_extract_prefix(const String& p_extract_prefix);
+
+	String get_filename() const;
+	void set_filename(const String& p_filename);
+
+	PackedInt32Array get_root_nodes() const;
+	void set_root_nodes(const PackedInt32Array& p_root_nodes);
+
+	const Vector<Ref<GLTFTexture>>& get_textures() const { return textures; }
+
+	void set_textures(const Vector<Ref<GLTFTexture>>& p_textures) { textures = p_textures; }
+
+	const Vector<Ref<GLTFTextureSampler>>& get_texture_samplers() const { return texture_samplers; }
+
+	void set_texture_samplers(const Vector<Ref<GLTFTextureSampler>>& p_texture_samplers)
+	{
+		texture_samplers = p_texture_samplers;
+	}
+
+	const Vector<Ref<Texture2D>>& get_images() const { return images; }
+
+	void set_images(const Vector<Ref<Texture2D>>& p_images) { images = p_images; }
+
+	const Vector<Ref<GLTFSkin>>& get_skins() const { return skins; }
+
+	void set_skins(const Vector<Ref<GLTFSkin>>& p_skins) { skins = p_skins; }
+
+	const Vector<Ref<GLTFCamera>>& get_cameras() const { return cameras; }
+
+	void set_cameras(const Vector<Ref<GLTFCamera>>& p_cameras) { cameras = p_cameras; }
+
+	const Vector<Ref<GLTFLight>>& get_lights() const { return lights; }
+
+	void set_lights(const Vector<Ref<GLTFLight>>& p_lights) { lights = p_lights; }
+
+	const HashSet<String>& get_unique_names() const { return unique_names; }
+
+	void set_unique_names(const HashSet<String>& p_unique_names) { unique_names = p_unique_names; }
+
+	const HashSet<String>& get_unique_animation_names() const { return unique_animation_names; }
+
+	void set_unique_animation_names(const HashSet<String>& p_unique_animation_names)
+	{
+		unique_animation_names = p_unique_animation_names;
+	}
+
+	const Vector<Ref<GLTFSkeleton>>& get_skeletons() const { return skeletons; }
+
+	void set_skeletons(const Vector<Ref<GLTFSkeleton>>& p_skeletons) { skeletons = p_skeletons; }
+
+	bool get_create_animations() const;
+	void set_create_animations(bool p_create_animations);
+
+	bool get_import_as_skeleton_bones() const;
+	void set_import_as_skeleton_bones(bool p_import_as_skeleton_bones);
+
+	const Vector<Ref<GLTFAnimation>>& get_animations() const { return animations; }
+
+	void set_animations(const Vector<Ref<GLTFAnimation>>& p_animations)
+	{
+		animations = p_animations;
+	}
+
+	Node* get_scene_node(GLTFNodeIndex p_gltf_node_index) const;
+	GLTFNodeIndex get_node_index(Node* p_node) const;
+
+	int get_animation_players_count(int p_anim_player_index) const;
+
+	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
+};
+
+
+
+
+class CSGShape3D;
+class GridMap;
+
+class GLTFDocument final : public Resource
+{
+	friend class FBXDocument;
+
+public:
+	const int32_t JOINT_GROUP_SIZE = 4;
+
+	enum
+	{
+		TEXTURE_TYPE_GENERIC = 0,
+		TEXTURE_TYPE_NORMAL = 1,
+	};
+
+	enum RootNodeMode
+	{
+		ROOT_NODE_MODE_SINGLE_ROOT,
+		ROOT_NODE_MODE_KEEP_ROOT,
+		ROOT_NODE_MODE_MULTI_ROOT,
+	};
+
+	enum TextureMapMode
+	{
+		TEXTURE_MAP_MODE_DO_NOT_REMAP,
+		TEXTURE_MAP_MODE_REMAP_TO_STANDARD_MATERIAL,
+	};
+
+	enum VisibilityMode
+	{
+		VISIBILITY_MODE_INCLUDE_REQUIRED,
+		VISIBILITY_MODE_INCLUDE_OPTIONAL,
+		VISIBILITY_MODE_EXCLUDE,
+	};
+
+	enum ImportFlags
+	{
+		IMPORT_FLAG_GENERATE_TANGENT_ARRAYS = 8,
+		IMPORT_FLAG_USE_NAMED_SKIN_BINDS = 16,
+		IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS = 32,
+		IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION = 64,
+	};
+
+private:
+	int _naming_version = 2;
+	String _image_format = "PNG";
+	float _lossy_quality = 0.75f;
+	String _fallback_image_format = "None";
+	float _fallback_image_quality = 0.25f;
+	Ref<GLTFDocumentExtension> _image_save_extension;
+	RootNodeMode _root_node_mode = RootNodeMode::ROOT_NODE_MODE_SINGLE_ROOT;
+	TextureMapMode _texture_map_mode = TextureMapMode::TEXTURE_MAP_MODE_REMAP_TO_STANDARD_MATERIAL;
+	VisibilityMode _visibility_mode = VisibilityMode::VISIBILITY_MODE_INCLUDE_REQUIRED;
+
+protected:
+	String _gen_unique_name(Ref<GLTFState> p_state, const String& p_name);
+	static Vector<Ref<GLTFDocumentExtension>> all_document_extensions;
+	static Mutex all_document_extensions_mutex;
+	Vector<Ref<GLTFDocumentExtension>> document_extensions;
+
+public:
+	static void register_gltf_document_extension(
+		Ref<GLTFDocumentExtension> p_extension, bool p_first_priority = false);
+	static void unregister_gltf_document_extension(Ref<GLTFDocumentExtension> p_extension);
+	static void unregister_all_gltf_document_extensions();
+	static Vector<Ref<GLTFDocumentExtension>> get_all_gltf_document_extensions();
+	static Vector<String> get_supported_gltf_extensions();
+	static HashSet<String> get_supported_gltf_extensions_hashset();
+
+	static NodePath _find_material_node_path(
+		Ref<GLTFState> p_state, const Ref<Material>& p_material);
+	static Ref<GLTFObjectModelProperty> import_object_model_property(
+		Ref<GLTFState> p_state, const String& p_json_pointer);
+	static Ref<GLTFObjectModelProperty> export_object_model_property(Ref<GLTFState> p_state,
+		const NodePath& p_node_path, const Node* p_godot_node, GLTFNodeIndex p_gltf_node_index);
+
+	void set_naming_version(int p_version);
+	int get_naming_version() const;
+	void set_image_format(const String& p_image_format);
+	String get_image_format() const;
+	void set_lossy_quality(float p_lossy_quality);
+	float get_lossy_quality() const;
+	void set_fallback_image_format(const String& p_fallback_image_format);
+	String get_fallback_image_format() const;
+	void set_fallback_image_quality(float p_fallback_image_quality);
+	float get_fallback_image_quality() const;
+	void set_root_node_mode(RootNodeMode p_root_node_mode);
+	RootNodeMode get_root_node_mode() const;
+	void set_texture_map_mode(TextureMapMode p_texture_map_mode);
+
+	TextureMapMode get_texture_map_mode() const { return _texture_map_mode; }
+
+	void set_visibility_mode(VisibilityMode p_visibility_mode);
+	VisibilityMode get_visibility_mode() const;
+	static String _gen_unique_name_static(HashSet<String>& r_unique_names, const String& p_name);
+
+private:
+	static void _append_khr_texture_transform_ext_json_pointer(
+		PackedStringArray& p_split_json_pointer, const String& p_texture_name,
+		const bool p_is_offset);
+	void _build_parent_hierarchy(Ref<GLTFState> p_state);
+	Error _parse_scenes(Ref<GLTFState> p_state);
+	Error _parse_nodes(Ref<GLTFState> p_state);
+	String _sanitize_animation_name(const String& p_name);
+	String _gen_unique_animation_name(Ref<GLTFState> p_state, const String& p_name);
+	String _sanitize_bone_name(const String& p_name);
+	String _gen_unique_bone_name(
+		Ref<GLTFState> p_state, const GLTFSkeletonIndex p_skel_i, const String& p_name);
+	GLTFTextureIndex _set_texture(Ref<GLTFState> p_state, Ref<Texture2D> p_texture,
+		StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
+	GLTFTextureSamplerIndex _set_sampler_for_mode(
+		Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
+	Ref<GLTFTextureSampler> _get_sampler_for_texture(
+		Ref<GLTFState> p_state, const GLTFTextureIndex p_texture);
+	Error _parse_json(const String& p_path, Ref<GLTFState> p_state);
+	Error _parse_glb(Ref<FileAccess> p_file, Ref<GLTFState> p_state);
+	void _compute_node_heights(Ref<GLTFState> p_state);
+	Error _parse_buffers(Ref<GLTFState> p_state, const String& p_base_path);
+	Error _parse_buffer_views(Ref<GLTFState> p_state);
+	Error _parse_accessors(Ref<GLTFState> p_state);
+	template <typename T>
+	static T _decode_unpack_indexed_data(const T& p_source, const PackedInt32Array& p_indices);
+	PackedFloat32Array _decode_accessor_as_float32s(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedFloat64Array _decode_accessor_as_float64s(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedInt32Array _decode_accessor_as_int32s(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedVector2Array _decode_accessor_as_vec2(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedVector3Array _decode_accessor_as_vec3(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedVector4Array _decode_accessor_as_vec4(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	PackedColorArray _decode_accessor_as_color(const Ref<GLTFState> p_gltf_state,
+		GLTFAccessorIndex p_accessor_index,
+		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
+	Vector<Quaternion> _decode_accessor_as_quaternion(
+		const Ref<GLTFState> p_gltf_state, GLTFAccessorIndex p_accessor_index);
+	Error _parse_meshes(Ref<GLTFState> p_state);
+	Error _serialize_textures(Ref<GLTFState> p_state);
+	Error _serialize_texture_samplers(Ref<GLTFState> p_state);
+	Error _serialize_images(Ref<GLTFState> p_state);
+	Error _serialize_lights(Ref<GLTFState> p_state);
+	Ref<Image> _parse_image_bytes_into_image(Ref<GLTFState> p_state, const Vector<uint8_t>& p_bytes,
+		const String& p_mime_type, int p_index, String& r_file_extension);
+	void _parse_image_save_image(Ref<GLTFState> p_state, const Vector<uint8_t>& p_bytes,
+		const String& p_resource_uri, const String& p_file_extension, int p_index,
+		Ref<Image> p_image);
+	Error _parse_images(Ref<GLTFState> p_state, const String& p_base_path);
+	Error _parse_textures(Ref<GLTFState> p_state);
+	Error _parse_texture_samplers(Ref<GLTFState> p_state);
+	Error _parse_materials(Ref<GLTFState> p_state);
+	void spec_gloss_to_rough_metal(Ref<GLTFSpecGloss> r_spec_gloss, Ref<StandardMaterial3D> p_material);
+	static void spec_gloss_to_metal_base_color(const Color& p_specular_factor,
+		const Color& p_diffuse, Color& r_base_color, float& r_metallic);
+	Error _parse_skins(Ref<GLTFState> p_state);
+	Error _serialize_skins(Ref<GLTFState> p_state);
+	Error _create_skins(Ref<GLTFState> p_state);
+	bool _skins_are_same(const Ref<Skin>& p_skin_a, const Ref<Skin>& p_skin_b);
+	void _remove_duplicate_skins(Ref<GLTFState> p_state);
+	Error _serialize_cameras(Ref<GLTFState> p_state);
+	Error _parse_cameras(Ref<GLTFState> p_state);
+	Error _parse_lights(Ref<GLTFState> p_state);
+	Error _parse_animations(Ref<GLTFState> p_state);
+	void _parse_animation_pointer(Ref<GLTFState> p_state, const String& p_animation_json_pointer,
+		const Ref<GLTFAnimation> p_gltf_animation, const GLTFAnimation::Interpolation p_interp,
+		const Vector<double>& p_times, const int p_output_value_accessor_index);
+	Error _serialize_animations(Ref<GLTFState> p_state);
+	bool _does_skinned_mesh_require_placeholder_node(
+		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
+	BoneAttachment3D* _generate_bone_attachment(
+		Skeleton3D* p_godot_skeleton, const Ref<GLTFNode>& p_bone_node);
+	BoneAttachment3D* _generate_bone_attachment_compat_4pt4(Ref<GLTFState> p_state,
+		Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index);
+	ImporterMeshInstance3D* _generate_mesh_instance(
+		Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
+	Node3D* _generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
+	void _assign_node_names(Ref<GLTFState> p_state);
+	template <typename T>
+	T _interpolate_track(const Vector<double>& p_times, const Vector<T>& p_values,
+		const float p_time, const GLTFAnimation::Interpolation p_interp);
+
+	Error _encode_accessors(Ref<GLTFState> p_state);
+	Error _encode_buffer_views(Ref<GLTFState> p_state);
+	Error _serialize_materials(Ref<GLTFState> p_state);
+	Error _serialize_meshes(Ref<GLTFState> p_state);
+	Error _serialize_nodes(Ref<GLTFState> p_state);
+	Error _serialize_scenes(Ref<GLTFState> p_state);
+	String interpolation_to_string(const GLTFAnimation::Interpolation p_interp);
+	Error _encode_buffer_bins(Ref<GLTFState> p_state, const String& p_path);
+	Error _encode_buffer_glb(Ref<GLTFState> p_state, const String& p_path);
+	PackedByteArray _serialize_glb_buffer(Ref<GLTFState> p_state, Error* r_err);
+	Error _serialize_asset_header(Ref<GLTFState> p_state);
+	Error _serialize_file(Ref<GLTFState> p_state, const String p_path);
+	Error _serialize_gltf_extensions(Ref<GLTFState> p_state) const;
+
+public:
+	// https://www.itu.int/rec/R-REC-BT.601
+	// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.601-7-201103-I!!PDF-E.pdf
+	static constexpr float R_BRIGHTNESS_COEFF = 0.299f;
+	static constexpr float G_BRIGHTNESS_COEFF = 0.587f;
+	static constexpr float B_BRIGHTNESS_COEFF = 0.114f;
+
+private:
+	// https://github.com/microsoft/glTF-SDK/blob/master/GLTFSDK/Source/PBRUtils.cpp#L9
+	// https://bghgary.github.io/glTF/convert-between-workflows-bjs/js/babylon.pbrUtilities.js
+	static float solve_metallic(float p_dielectric_specular, float p_diffuse, float p_specular,
+		float p_one_minus_specular_strength);
+	static float get_perceived_brightness(const Color p_color);
+	static float get_max_component(const Color& p_color);
+
+public:
+	Error append_from_file(const String& p_path, Ref<GLTFState> p_state,
+		uint32_t p_flags = 0, const String& p_base_path = String());
+	Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
+		Ref<GLTFState> p_state, uint32_t p_flags = 0);
+	Error append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags = 0);
+
+	Node* generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f,
+		bool p_trimming = false, bool p_remove_immutable_tracks = true);
+	PackedByteArray generate_buffer(Ref<GLTFState> p_state);
+	Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path);
+
+public:
+	Error _parse_gltf_state(Ref<GLTFState> p_state, const String& p_search_path);
+	Error _parse_asset_header(Ref<GLTFState> p_state);
+	Error _parse_gltf_extensions(Ref<GLTFState> p_state);
+	void _process_mesh_instances(Ref<GLTFState> p_state, Node* p_scene_root);
+	Node* _generate_scene_node_tree(Ref<GLTFState> p_state);
+	void _generate_scene_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
+		Node* p_scene_parent, Node* p_scene_root);
+	void _generate_skeleton_bone_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
+		Node3D* p_current_node, Node* p_scene_parent, Node* p_scene_root);
+	void _attach_node_to_skeleton(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
+		Node3D* p_current_node, Skeleton3D* p_godot_skeleton, Node* p_scene_root,
+		GLTFNodeIndex p_bone_node_index = -1);
+	void _generate_scene_node_compat_4pt4(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
+		Node* p_scene_parent, Node* p_scene_root);
+	void _generate_skeleton_bone_node_compat_4pt4(Ref<GLTFState> p_state,
+		const GLTFNodeIndex p_node_index, Node* p_scene_parent, Node* p_scene_root);
+	void _import_animation(Ref<GLTFState> p_state, AnimationPlayer* p_animation_player,
+		const GLTFAnimationIndex p_index, const bool p_trimming,
+		const bool p_remove_immutable_tracks);
+	void _convert_mesh_instances(Ref<GLTFState> p_state);
+	GLTFCameraIndex _convert_camera(Ref<GLTFState> p_state, Camera3D* p_camera);
+	void _convert_light_to_gltf(
+		Light3D* p_light, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
+	GLTFLightIndex _convert_light(Ref<GLTFState> p_state, Light3D* p_light);
+	void _convert_spatial(Ref<GLTFState> p_state, Node3D* p_spatial, Ref<GLTFNode> p_node);
+	void _convert_scene_node(Ref<GLTFState> p_state, Node* p_current,
+		const GLTFNodeIndex p_gltf_current, const GLTFNodeIndex p_gltf_root);
+
+	void _convert_csg_shape_to_gltf(CSGShape3D* p_current, GLTFNodeIndex p_gltf_parent,
+		Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
+
+	void _check_visibility(Node* p_node, bool& r_retflag);
+	void _convert_camera_to_gltf(
+		Camera3D* p_camera, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
+	void _convert_grid_map_to_gltf(GridMap* p_grid_map, GLTFNodeIndex p_parent_node_index,
+		GLTFNodeIndex p_root_node_index, Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
+	void _convert_multi_mesh_instance_to_gltf(MultiMeshInstance3D* p_multi_mesh_instance,
+		GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
+		Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
+	void _convert_skeleton_to_gltf(Skeleton3D* p_scene_parent, Ref<GLTFState> p_state,
+		GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
+		Ref<GLTFNode> p_gltf_node);
+	void _convert_bone_attachment_to_gltf(BoneAttachment3D* p_bone_attachment,
+		Ref<GLTFState> p_state, GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
+		Ref<GLTFNode> p_gltf_node);
+	void _convert_mesh_instance_to_gltf(
+		MeshInstance3D* p_mesh_instance, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
+	GLTFMeshIndex _convert_mesh_to_gltf(Ref<GLTFState> p_state, MeshInstance3D* p_mesh_instance);
+
+	GLTFNodeIndex _node_and_or_bone_to_gltf_node_index(
+		Ref<GLTFState> p_state, const Vector<String>& p_node_subpath, const Node* p_godot_node);
+	bool _convert_animation_node_track(Ref<GLTFState> p_state,
+		GLTFAnimation::NodeTrack& p_gltf_node_track, const Ref<Animation>& p_godot_animation,
+		int32_t p_godot_anim_track_index, Vector<double>& p_times);
+	void _convert_animation(Ref<GLTFState> p_state, AnimationPlayer* p_animation_player,
+		const String& p_animation_track_name);
+
+	Error _serialize(Ref<GLTFState> p_state);
+	Error _parse(Ref<GLTFState> p_state, const String& p_path, Ref<FileAccess> p_file);
+};
+
+#include "core/templates/rb_set.h"
+
+using SkinNodeIndex = int;
+using SkinSkeletonIndex = int;
+
+class SkinTool final {
+public:
+	static String _sanitize_bone_name(const String &p_name);
+	static String _gen_unique_bone_name(HashSet<String> &r_unique_names, const String &p_name);
+	static SkinNodeIndex _find_highest_node(Vector<Ref<GLTFNode>> &r_nodes, const Vector<SkinNodeIndex> &p_subset);
+	static bool _capture_nodes_in_skin(const Vector<Ref<GLTFNode>> &p_nodes, Ref<GLTFSkin> p_skin, const SkinNodeIndex p_node_index);
+	static void _capture_nodes_for_multirooted_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static void _recurse_children(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			const SkinNodeIndex p_node_index,
+			RBSet<SkinNodeIndex> &r_all_skin_nodes,
+			HashSet<SkinNodeIndex> &r_child_visited_set);
+	static Error _reparent_non_joint_skeleton_subtrees(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Ref<GLTFSkeleton> p_skeleton,
+			const Vector<SkinNodeIndex> &p_non_joints);
+	static Error _determine_skeleton_roots(
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			const SkinSkeletonIndex p_skel_i);
+	static Error _map_skin_joints_indices_to_skeleton_bone_indices(
+			Vector<Ref<GLTFSkin>> &r_skins,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			Vector<Ref<GLTFNode>> &r_nodes);
+	static String _gen_unique_name(HashSet<String> &unique_names, const String &p_name);
+	static bool _skins_are_same(const Ref<Skin> p_skin_a, const Ref<Skin> p_skin_b);
+	static void _remove_duplicate_skins(Vector<Ref<GLTFSkin>> &r_skins);
+	static void _check_if_parent_needs_to_become_joint(
+			const Vector<Ref<GLTFNode>> &p_all_nodes,
+			const Vector<GLTFNodeIndex> &p_skeleton_node_indices,
+			const Ref<GLTFNode> &p_gltf_node,
+			Vector<GLTFNodeIndex> &r_non_joint_indices);
+
+public:
+	static Error _expand_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static Error _verify_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
+	static Error _asset_parse_skins(
+			const Vector<SkinNodeIndex> &p_input_skin_indices,
+			const Vector<Ref<GLTFSkin>> &p_input_skins,
+			const Vector<Ref<GLTFNode>> &p_input_nodes,
+			Vector<SkinNodeIndex> &r_output_skin_indices,
+			Vector<Ref<GLTFSkin>> &r_output_skins,
+			HashMap<GLTFNodeIndex, bool> &r_joint_mapping);
+	static Error _determine_skeletons(
+			Vector<Ref<GLTFSkin>> &r_skins,
+			Vector<Ref<GLTFNode>> &r_nodes,
+			Vector<Ref<GLTFSkeleton>> &r_skeletons,
+			const Vector<GLTFNodeIndex> &p_single_skeleton_root,
+			bool p_turn_non_joint_descendants_into_bones);
+	static Error _create_skins(Vector<Ref<GLTFSkin>> &skins, Vector<Ref<GLTFNode>> &nodes, bool use_named_skin_binds, HashSet<String> &unique_names);
+};
+
+#ifdef TOOLS_ENABLED
+// --- Folded from editor/import/3d/resource_importer_scene.h ---
+#include "core/typedefs.h"
+#include "core/io/resource_loader.h"
+
+
+
+
+
+class AnimationPlayer;
+class ImporterMesh;
+class Material;
+
+class EditorSceneFormatImporter : public RefCounted
+{
+	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
+
+public:
+	enum ImportFlags
+	{
+		IMPORT_SCENE = 1,
+		IMPORT_ANIMATION = 2,
+		IMPORT_FAIL_ON_MISSING_DEPENDENCIES = 4,
+		IMPORT_GENERATE_TANGENT_ARRAYS = 8,
+		IMPORT_USE_NAMED_SKIN_BINDS = 16,
+		IMPORT_DISCARD_MESHES_AND_MATERIALS = 32, // used for optimizing animation import
+		IMPORT_FORCE_DISABLE_MESH_COMPRESSION = 64,
+	};
+
+	virtual void get_extensions(List<String>* r_extensions) const;
+	virtual void get_import_options(
+		const String& p_path, List<ResourceImporter::ImportOption>* r_options);
+};
+
+class EditorScenePostImport : public RefCounted
+{
+	String source_file;
+
+protected:
+
+public:
+	String get_source_file() const;
+	virtual Node* post_import(Node* p_scene);
+	virtual void init(const String& p_source_file);
+};
+
+class EditorScenePostImportPlugin : public RefCounted
+{
+public:
+	enum InternalImportCategory
+	{
+		INTERNAL_IMPORT_CATEGORY_NODE,
+		INTERNAL_IMPORT_CATEGORY_MESH_3D_NODE,
+		INTERNAL_IMPORT_CATEGORY_MESH,
+		INTERNAL_IMPORT_CATEGORY_MATERIAL,
+		INTERNAL_IMPORT_CATEGORY_ANIMATION,
+		INTERNAL_IMPORT_CATEGORY_ANIMATION_NODE,
+		INTERNAL_IMPORT_CATEGORY_SKELETON_3D_NODE,
+		INTERNAL_IMPORT_CATEGORY_MAX
+	};
+
+private:
+	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
+
+protected:
+
+public:
+	virtual void get_internal_import_options(
+		InternalImportCategory p_category, List<ResourceImporter::ImportOption>* r_options);
+
+	virtual void get_import_options(
+		const String& p_path, List<ResourceImporter::ImportOption>* r_options);
+};
+
+class ResourceImporterScene : public ResourceImporter
+{
+	static Vector<Ref<EditorSceneFormatImporter>> scene_importers;
+	static Vector<Ref<EditorScenePostImportPlugin>> post_importer_plugins;
+
+	enum LightBakeMode
+	{
+		LIGHT_BAKE_DISABLED,
+		LIGHT_BAKE_STATIC,
+		LIGHT_BAKE_STATIC_LIGHTMAPS,
+		LIGHT_BAKE_DYNAMIC,
+	};
+
+	enum MeshPhysicsMode
+	{
+		MESH_PHYSICS_DISABLED,
+		MESH_PHYSICS_MESH_AND_STATIC_COLLIDER,
+		MESH_PHYSICS_RIGID_BODY_AND_MESH,
+		MESH_PHYSICS_STATIC_COLLIDER_ONLY,
+		MESH_PHYSICS_AREA_ONLY,
+	};
+
+	enum NavMeshMode
+	{
+		NAVMESH_DISABLED,
+		NAVMESH_MESH_AND_NAVMESH,
+		NAVMESH_NAVMESH_ONLY,
+	};
+
+	enum OccluderMode
+	{
+		OCCLUDER_DISABLED,
+		OCCLUDER_MESH_AND_OCCLUDER,
+		OCCLUDER_OCCLUDER_ONLY,
+	};
+
+	enum MeshOverride
+	{
+		MESH_OVERRIDE_DEFAULT,
+		MESH_OVERRIDE_ENABLE,
+		MESH_OVERRIDE_DISABLE,
+	};
+
+	enum BodyType
+	{
+		BODY_TYPE_STATIC,
+		BODY_TYPE_DYNAMIC,
+		BODY_TYPE_AREA
+	};
+
+	enum ShapeType
+	{
+		SHAPE_TYPE_DECOMPOSE_CONVEX,
+		SHAPE_TYPE_SIMPLE_CONVEX,
+		SHAPE_TYPE_TRIMESH,
+		SHAPE_TYPE_BOX,
+		SHAPE_TYPE_SPHERE,
+		SHAPE_TYPE_CYLINDER,
+		SHAPE_TYPE_CAPSULE,
+		SHAPE_TYPE_AUTOMATIC,
+	};
+
+	void _replace_owner(Node* p_node, Node* p_scene, Node* p_new_owner);
+	void _add_shapes(Node* p_node, const Vector<Ref<Shape3D>>& p_shapes);
+
+	enum AnimationImportTracks
+	{
+		ANIMATION_IMPORT_TRACKS_IF_PRESENT,
+		ANIMATION_IMPORT_TRACKS_IF_PRESENT_FOR_ALL,
+		ANIMATION_IMPORT_TRACKS_NEVER,
+	};
+
+	enum TrackChannel
+	{
+		TRACK_CHANNEL_POSITION,
+		TRACK_CHANNEL_ROTATION,
+		TRACK_CHANNEL_SCALE,
+		TRACK_CHANNEL_BLEND_SHAPE,
+		TRACK_CHANNEL_MAX
+	};
+
+	void _optimize_track_usage(AnimationPlayer* p_player, AnimationImportTracks* p_track_actions);
+
+	String _scene_import_type = "PackedScene";
+
+public:
+	static const String material_extension[3];
+
+	static void add_post_importer_plugin(
+		const Ref<EditorScenePostImportPlugin>& p_plugin, bool p_first_priority = false);
+	static void remove_post_importer_plugin(const Ref<EditorScenePostImportPlugin>& p_plugin);
+
+	const Vector<Ref<EditorSceneFormatImporter>>& get_scene_importers() const
+	{
+		return scene_importers;
+	}
+
+	static void add_scene_importer(
+		Ref<EditorSceneFormatImporter> p_importer, bool p_first_priority = false);
+	static void remove_scene_importer(Ref<EditorSceneFormatImporter> p_importer);
+	static void get_scene_importer_extensions(List<String>* p_extensions);
+
+	static void clean_up_importer_plugins();
+
+	String get_scene_import_type() const { return _scene_import_type; }
+
+	void set_scene_import_type(const String& p_type) { _scene_import_type = p_type; }
+
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual int get_format_version() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	enum InternalImportCategory
+	{
+		INTERNAL_IMPORT_CATEGORY_NODE = EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_NODE,
+		INTERNAL_IMPORT_CATEGORY_MESH_3D_NODE =
+			EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MESH_3D_NODE,
+		INTERNAL_IMPORT_CATEGORY_MESH = EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MESH,
+		INTERNAL_IMPORT_CATEGORY_MATERIAL =
+			EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MATERIAL,
+		INTERNAL_IMPORT_CATEGORY_ANIMATION =
+			EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_ANIMATION,
+		INTERNAL_IMPORT_CATEGORY_ANIMATION_NODE =
+			EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_ANIMATION_NODE,
+		INTERNAL_IMPORT_CATEGORY_SKELETON_3D_NODE =
+			EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_SKELETON_3D_NODE,
+		INTERNAL_IMPORT_CATEGORY_MAX = EditorScenePostImportPlugin::INTERNAL_IMPORT_CATEGORY_MAX
+	};
+
+	void get_internal_import_options(
+		InternalImportCategory p_category, List<ImportOption>* r_options) const;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+
+	// Import scenes *after* everything else (such as textures).
+	virtual int get_import_order() const override { return ResourceImporter::IMPORT_ORDER_SCENE; }
+
+	Ref<Animation> _save_animation_to_file(Ref<Animation> anim, bool p_save_to_file,
+		const String& p_save_to_path, bool p_keep_custom_tracks);
+	void _optimize_animations(
+		AnimationPlayer* anim, float p_max_vel_error, float p_max_ang_error, int p_prc_error);
+	void _compress_animations(AnimationPlayer* anim, int p_page_size_kb);
+
+	virtual bool has_advanced_options() const override;
+	virtual void show_advanced_options(const String& p_path) override;
+
+	ResourceImporterScene(const String& p_scene_import_type = "PackedScene");
+
+	template <typename M>
+	static Vector<Ref<Shape3D>> get_collision_shapes(
+		const Ref<ImporterMesh>& p_mesh, const M& p_options, float p_applied_root_scale);
+
+	template <typename M> static Transform3D get_collision_shapes_transform(const M& p_options);
+};
+
+class EditorSceneFormatImporterESCN : public EditorSceneFormatImporter
+{
+public:
+	virtual void get_extensions(List<String>* r_extensions) const override;
+};
+
+template <typename M>
+Vector<Ref<Shape3D>> ResourceImporterScene::get_collision_shapes(
+	const Ref<ImporterMesh>& p_mesh, const M& p_options, float p_applied_root_scale)
+{
+	ERR_FAIL_COND_V(p_mesh.is_null(), Vector<Ref<Shape3D>>());
+
+	ShapeType generate_shape_type = SHAPE_TYPE_AUTOMATIC;
+	if (p_options.has(SNAME("physics/shape_type"))) {
+		generate_shape_type = (ShapeType)p_options[SNAME("physics/shape_type")].operator int();
+	}
+
+	if (generate_shape_type == SHAPE_TYPE_AUTOMATIC) {
+		BodyType body_type = BODY_TYPE_STATIC;
+		if (p_options.has(SNAME("physics/body_type"))) {
+			body_type = (BodyType)p_options[SNAME("physics/body_type")].operator int();
+		}
+
+		generate_shape_type =
+			body_type == BODY_TYPE_DYNAMIC ? SHAPE_TYPE_DECOMPOSE_CONVEX : SHAPE_TYPE_TRIMESH;
+	}
+
+	if (generate_shape_type == SHAPE_TYPE_DECOMPOSE_CONVEX) {
+		Ref<MeshConvexDecompositionSettings> decomposition_settings =
+			Ref<MeshConvexDecompositionSettings>();
+		decomposition_settings.instantiate();
+		bool advanced = false;
+		if (p_options.has(SNAME("decomposition/advanced"))) {
+			advanced = p_options[SNAME("decomposition/advanced")];
+		}
+
+		if (advanced) {
+			if (p_options.has(SNAME("decomposition/max_concavity"))) {
+				decomposition_settings->set_max_concavity(
+					p_options[SNAME("decomposition/max_concavity")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/symmetry_planes_clipping_bias"))) {
+				decomposition_settings->set_symmetry_planes_clipping_bias(
+					p_options[SNAME("decomposition/symmetry_planes_clipping_bias")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/revolution_axes_clipping_bias"))) {
+				decomposition_settings->set_revolution_axes_clipping_bias(
+					p_options[SNAME("decomposition/revolution_axes_clipping_bias")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/min_volume_per_convex_hull"))) {
+				decomposition_settings->set_min_volume_per_convex_hull(
+					p_options[SNAME("decomposition/min_volume_per_convex_hull")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/resolution"))) {
+				decomposition_settings->set_resolution(
+					p_options[SNAME("decomposition/resolution")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/max_num_vertices_per_convex_hull"))) {
+				decomposition_settings->set_max_num_vertices_per_convex_hull(
+					p_options[SNAME("decomposition/max_num_vertices_per_convex_hull")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/plane_downsampling"))) {
+				decomposition_settings->set_plane_downsampling(
+					p_options[SNAME("decomposition/plane_downsampling")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/convexhull_downsampling"))) {
+				decomposition_settings->set_convex_hull_downsampling(
+					p_options[SNAME("decomposition/convexhull_downsampling")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/normalize_mesh"))) {
+				decomposition_settings->set_normalize_mesh(
+					p_options[SNAME("decomposition/normalize_mesh")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/mode"))) {
+				decomposition_settings->set_mode(
+					(MeshConvexDecompositionSettings::Mode)p_options[SNAME("decomposition/mode")].
+					operator int());
+			}
+
+			if (p_options.has(SNAME("decomposition/convexhull_approximation"))) {
+				decomposition_settings->set_convex_hull_approximation(
+					p_options[SNAME("decomposition/convexhull_approximation")]);
+			}
+
+			if (p_options.has(SNAME("decomposition/max_convex_hulls"))) {
+				decomposition_settings->set_max_convex_hulls(
+					MAX(1, (int)p_options[SNAME("decomposition/max_convex_hulls")]));
+			}
+
+			if (p_options.has(SNAME("decomposition/project_hull_vertices"))) {
+				decomposition_settings->set_project_hull_vertices(
+					p_options[SNAME("decomposition/project_hull_vertices")]);
+			}
+		}
+		else {
+			int precision_level = 5;
+			if (p_options.has(SNAME("decomposition/precision"))) {
+				precision_level = p_options[SNAME("decomposition/precision")];
+			}
+
+			const real_t precision = real_t(precision_level - 1) / 9.0;
+
+			decomposition_settings->set_max_concavity(
+				Math::lerp(real_t(1.0), real_t(0.001), precision));
+			decomposition_settings->set_min_volume_per_convex_hull(
+				Math::lerp(real_t(0.01), real_t(0.0001), precision));
+			decomposition_settings->set_resolution(Math::lerp(10'000, 100'000, precision));
+			decomposition_settings->set_max_num_vertices_per_convex_hull(
+				Math::lerp(32, 64, precision));
+			decomposition_settings->set_plane_downsampling(Math::lerp(3, 16, precision));
+			decomposition_settings->set_convex_hull_downsampling(Math::lerp(3, 16, precision));
+			decomposition_settings->set_max_convex_hulls(Math::lerp(1, 32, precision));
+		}
+
+		return p_mesh->convex_decompose(decomposition_settings);
+	}
+	else if (generate_shape_type == SHAPE_TYPE_SIMPLE_CONVEX) {
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(p_mesh->create_convex_shape(true,
+			/*Passing false, otherwise VHACD will be used to simplify (Decompose) the Mesh.*/
+			false));
+		return shapes;
+	}
+	else if (generate_shape_type == SHAPE_TYPE_TRIMESH) {
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(p_mesh->create_trimesh_shape());
+		return shapes;
+	}
+	else if (generate_shape_type == SHAPE_TYPE_BOX) {
+		Ref<Shape3D> box = memnew(Shape3D(Shape3D::SHAPE_BOX));
+		if (p_options.has(SNAME("primitive/size"))) {
+			box->set_size(
+				p_options[SNAME("primitive/size")].operator Vector3() * p_applied_root_scale);
+		}
+		else {
+			box->set_size(Vector3(2, 2, 2) * p_applied_root_scale);
+		}
+
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(box);
+		return shapes;
+
+	}
+	else if (generate_shape_type == SHAPE_TYPE_SPHERE) {
+		Ref<Shape3D> sphere = memnew(Shape3D(Shape3D::SHAPE_SPHERE));
+		if (p_options.has(SNAME("primitive/radius"))) {
+			sphere->set_radius(
+				p_options[SNAME("primitive/radius")].operator float() * p_applied_root_scale);
+		}
+		else {
+			sphere->set_radius(1.0f * p_applied_root_scale);
+		}
+
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(sphere);
+		return shapes;
+	}
+	else if (generate_shape_type == SHAPE_TYPE_CYLINDER) {
+		Ref<Shape3D> cylinder = memnew(Shape3D(Shape3D::SHAPE_CYLINDER));
+		if (p_options.has(SNAME("primitive/height"))) {
+			cylinder->set_height(
+				p_options[SNAME("primitive/height")].operator float() * p_applied_root_scale);
+		}
+		else {
+			cylinder->set_height(1.0f * p_applied_root_scale);
+		}
+		if (p_options.has(SNAME("primitive/radius"))) {
+			cylinder->set_radius(
+				p_options[SNAME("primitive/radius")].operator float() * p_applied_root_scale);
+		}
+		else {
+			cylinder->set_radius(1.0f * p_applied_root_scale);
+		}
+
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(cylinder);
+		return shapes;
+	}
+	else if (generate_shape_type == SHAPE_TYPE_CAPSULE) {
+		Ref<Shape3D> capsule = memnew(Shape3D(Shape3D::SHAPE_CAPSULE));
+		if (p_options.has(SNAME("primitive/height"))) {
+			capsule->set_height(
+				p_options[SNAME("primitive/height")].operator float() * p_applied_root_scale);
+		}
+		else {
+			capsule->set_height(1.0f * p_applied_root_scale);
+		}
+		if (p_options.has(SNAME("primitive/radius"))) {
+			capsule->set_radius(
+				p_options[SNAME("primitive/radius")].operator float() * p_applied_root_scale);
+		}
+		else {
+			capsule->set_radius(1.0f * p_applied_root_scale);
+		}
+
+		Vector<Ref<Shape3D>> shapes;
+		shapes.push_back(capsule);
+		return shapes;
+	}
+	return Vector<Ref<Shape3D>>();
+}
+
+template <typename M>
+Transform3D ResourceImporterScene::get_collision_shapes_transform(const M& p_options)
+{
+	Transform3D transform;
+
+	ShapeType generate_shape_type = SHAPE_TYPE_AUTOMATIC;
+	if (p_options.has(SNAME("physics/shape_type"))) {
+		generate_shape_type = (ShapeType)p_options[SNAME("physics/shape_type")].operator int();
+	}
+
+	if (generate_shape_type == SHAPE_TYPE_AUTOMATIC) {
+		BodyType body_type = BODY_TYPE_STATIC;
+		if (p_options.has(SNAME("physics/body_type"))) {
+			body_type = (BodyType)p_options[SNAME("physics/body_type")].operator int();
+		}
+
+		generate_shape_type =
+			body_type == BODY_TYPE_DYNAMIC ? SHAPE_TYPE_DECOMPOSE_CONVEX : SHAPE_TYPE_TRIMESH;
+	}
+
+	if (generate_shape_type == SHAPE_TYPE_BOX || generate_shape_type == SHAPE_TYPE_SPHERE ||
+		generate_shape_type == SHAPE_TYPE_CYLINDER || generate_shape_type == SHAPE_TYPE_CAPSULE) {
+		if (p_options.has(SNAME("primitive/position"))) {
+			transform.origin = p_options[SNAME("primitive/position")];
+		}
+
+		if (p_options.has(SNAME("primitive/rotation"))) {
+			transform.basis = Basis::from_euler(
+				p_options[SNAME("primitive/rotation")].operator Vector3() * (Math::PI / 180.0));
+		}
+	}
+	return transform;
+}
+
+// --- Folded from editor/import/editor_import_plugin.h ---
+#include "core/io/resource_loader.h"
+
+class EditorImportPlugin : public ResourceImporter
+{
+protected:
+
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_preset_name(int p_idx) const override;
+	virtual int get_preset_count() const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual float get_priority() const override;
+	virtual int get_import_order() const override;
+	virtual int get_format_version() const override;
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset) const override;
+	virtual bool can_import_threaded() const override;
+};
+
+// --- Folded from editor/import/resource_importer_csv_translation.h ---
+#include "core/io/resource_loader.h"
+
+class ResourceImporterCSVTranslation : public ResourceImporter
+{
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+
+	virtual bool can_import_threaded() const override { return true; }
+};
+
+
+
+// --- End editor/import/resource_importer_csv_translation.h ---
+
+// --- Folded from editor/import/resource_importer_texture.h ---
+#include "core/io/file_access.h"
+#include "core/io/resource_loader.h"
+#include "servers/display/display_server.h"
+
+class CompressedTexture2D;
+
+class LayeredTextureImport final : public RefCounted
+{
+public:
+	Image::CompressSource* csource = nullptr;
+	String save_path;
+	List<String>* platform_variants = nullptr;
+	Ref<Image> image = nullptr;
+	Vector<Ref<Image>>* slices = nullptr;
+	int compress_mode = 0;
+	float lossy = 1.0;
+
+	Image::BasisUniversalPackerParams basisu_params;
+
+	int hdr_compression = 0;
+	bool mipmaps = true;
+	bool high_quality = false;
+	Image::CompressProfile compression_profile = Image::COMPRESS_PROFILE_AUTOMATIC;
+	Image::UsedChannels used_channels = Image::USED_CHANNELS_RGBA;
+};
+
+class ResourceImporterTexture final : public ResourceImporter
+{
+public:
+	enum ImportTarget
+	{
+		TARGET_TEXTURE_2D,
+		TARGET_LAYERED_2D_ARRAY,
+		TARGET_CUBEMAP,
+		TARGET_CUBEMAP_ARRAY,
+		TARGET_TEXTURE_3D,
+		TARGET_TEXTURE_ATLAS,
+		TARGET_IMAGE,
+		TARGET_BITMAP,
+		TARGET_SVG,
+	};
+
+	enum Mode
+	{
+		MODE_2D_ARRAY,
+		MODE_CUBEMAP,
+		MODE_CUBEMAP_ARRAY,
+		MODE_3D,
+	};
+
+	enum CubemapFormat
+	{
+		CUBEMAP_FORMAT_1X6,
+		CUBEMAP_FORMAT_2X3,
+		CUBEMAP_FORMAT_3X2,
+		CUBEMAP_FORMAT_6X1,
+	};
+
+	enum TextureFlags
+	{
+		TEXTURE_FLAGS_MIPMAPS = 1
+	};
+
+	enum ImportMode
+	{
+		IMPORT_MODE_REGION,
+		IMPORT_MODE_2D_MESH
+	};
+
+	enum CompressMode
+	{
+		COMPRESS_LOSSLESS,
+		COMPRESS_LOSSY,
+		COMPRESS_VRAM_COMPRESSED,
+		COMPRESS_VRAM_UNCOMPRESSED,
+		COMPRESS_BASIS_UNIVERSAL
+	};
+
+	enum ChannelRemap
+	{
+		REMAP_R,
+		REMAP_G,
+		REMAP_B,
+		REMAP_A,
+		REMAP_INV_R,
+		REMAP_INV_G,
+		REMAP_INV_B,
+		REMAP_INV_A,
+		REMAP_UNUSED,
+		REMAP_0,
+		REMAP_1,
+	};
+
+	enum Preset
+	{
+		PRESET_DETECT,
+		PRESET_2D,
+		PRESET_3D,
+	};
+
+	static inline ResourceImporterTexture* singleton = nullptr;
+
+private:
+	struct PackData
+	{
+		Rect2 region;
+		bool is_cropped = false;
+		bool is_mesh = false;
+		Vector<int> chart_pieces;				// one for region, many for mesh
+		Vector<Vector<Vector2>> chart_vertices; // for mesh
+		Ref<Image> image;
+	};
+
+	enum
+	{
+		MAKE_3D_FLAG = 1,
+		MAKE_ROUGHNESS_FLAG = 2,
+		MAKE_NORMAL_FLAG = 4
+	};
+
+	ImportTarget target = TARGET_TEXTURE_2D;
+
+	static inline Mutex mutex;
+
+	struct MakeInfo
+	{
+		int flags = 0;
+		String normal_path_for_roughness;
+		RSE::TextureDetectRoughnessChannel channel_for_roughness = RSE::TEXTURE_DETECT_ROUGHNESS_R;
+	};
+
+	static inline HashMap<String, MakeInfo> make_flags;
+
+	static void _texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
+		const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel);
+	static void _texture_reimport_3d(const Ref<CompressedTexture2D>& p_tex);
+	static void _texture_reimport_normal(const Ref<CompressedTexture2D>& p_tex);
+
+	static const char* compression_formats[];
+
+	static inline void _remap_channels(Ref<Image>& r_image, ChannelRemap p_options[4]);
+	static inline void _clamp_hdr_exposure(Ref<Image>& r_image);
+	static inline void _invert_y_channel(Ref<Image>& r_image);
+
+	Mode _get_layered_mode() const;
+
+public:
+	static void save_to_ctex_format(Ref<FileAccess> f, const Ref<Image>& p_image,
+		CompressMode p_compress_mode, Image::UsedChannels p_channels,
+		Image::CompressMode p_compress_format, Image::CompressProfile p_compress_profile,
+		float p_lossy_quality, const Image::BasisUniversalPackerParams& p_basisu_params,
+		Image::BPTCFormat p_bptc_format);
+
+	void _check_compress_ctex(
+		const String& p_source_file, Ref<LayeredTextureImport> r_texture_import);
+
+	void _save_tex(Vector<Ref<Image>> p_images, const String& p_to_path, int p_compress_mode,
+		float p_lossy, const Image::BasisUniversalPackerParams& p_basisu_params,
+		Image::CompressMode p_vram_compression, Image::CompressProfile p_vram_compression_profile,
+		Image::CompressSource p_csource, Image::UsedChannels used_channels, bool p_mipmaps,
+		bool p_force_po2, Image::BPTCFormat p_bptc_format);
+
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+
+	virtual void get_import_options(
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
+	virtual String get_option_group_file() const override;
+
+	virtual bool can_import_threaded() const override { return true; }
+
+	void update_imports();
+
+	virtual String get_import_settings_string() const override;
+
+	ImportTarget get_target() const { return target; }
+	void set_target(ImportTarget p_target) { target = p_target; }
+	void set_mode(Mode p_mode);
+
+	ResourceImporterTexture(bool p_singleton = false);
+	ResourceImporterTexture(ImportTarget p_target, bool p_singleton = false);
+	~ResourceImporterTexture();
+};
+
+// --- End editor/import/resource_importer_texture.h ---
+// --- End editor/import/3d/resource_importer_scene.h ---
+
+class Animation;
+class Node;
+
+class EditorSceneFormatImporterGLTF final : public EditorSceneFormatImporter
+{
+public:
+	virtual void get_extensions(List<String>* r_extensions) const override;
+	virtual void get_import_options(
+		const String& p_path, List<ResourceImporter::ImportOption>* r_options) override;
+};
+#endif // TOOLS_ENABLED
+
+// --- Folded from modules/csg/csg_shape.h ---
+#include "core/types.h"
+#include "core/math/vector2.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "servers/rendering/renderer.h"
+
+struct CSGBrush
+{
+	struct Face
+	{
+		Vector3 vertices[3];
+		Vector2 uvs[3];
+		AABB aabb;
+		bool smooth = false;
+		bool invert = false;
+		int material = 0;
+	};
+
+	Vector<Face> faces;
+	Vector<Ref<Material>> materials;
+
+	inline void _regen_face_aabbs()
+	{
+		for (int i = 0; i < faces.size(); i++) {
+			faces.write[i].aabb = AABB();
+			faces.write[i].aabb.position = faces[i].vertices[0];
+			faces.write[i].aabb.expand_to(faces[i].vertices[1]);
+			faces.write[i].aabb.expand_to(faces[i].vertices[2]);
+		}
+	}
+
+	// Create a brush from faces.
+	void build_from_faces(const Vector<Vector3>& p_vertices, const Vector<Vector2>& p_uvs,
+		const Vector<bool>& p_smooth, const Vector<Ref<Material>>& p_materials,
+		const Vector<bool>& p_invert_faces);
+	void copy_from(const CSGBrush& p_brush, const Transform3D& p_xform);
+};
+
+
+
+#ifndef PHYSICS_3D_DISABLED
+
+#endif // PHYSICS_3D_DISABLED
+
+class NavigationMesh;
+class NavigationMeshSourceGeometryData3D;
+
+class CSGShape3D : public Node3D
+{
+public:
+	enum ShapeType
+	{
+		SHAPE_COMBINER,
+		SHAPE_BOX,
+		SHAPE_SPHERE,
+		SHAPE_CYLINDER,
+		SHAPE_TORUS,
+		SHAPE_MESH,
+		SHAPE_POLYGON,
+	};
+
+	enum Operation
+	{
+		OPERATION_UNION,
+		OPERATION_INTERSECTION,
+		OPERATION_SUBTRACTION,
+	};
+
+	enum PolygonMode
+	{
+		POLYGON_MODE_DEPTH,
+		POLYGON_MODE_SPIN,
+		POLYGON_MODE_PATH,
+	};
+
+	enum PathIntervalType
+	{
+		PATH_INTERVAL_DISTANCE,
+		PATH_INTERVAL_SUBDIVIDE,
+	};
+
+	enum PathRotation
+	{
+		PATH_ROTATION_POLYGON,
+		PATH_ROTATION_PATH,
+		PATH_ROTATION_PATH_FOLLOW,
+	};
+
+	RenderInstance3D render_instance;
+
+private:
+	ShapeType shape_type = SHAPE_BOX;
+	Operation operation = OPERATION_UNION;
+	CSGShape3D* parent_shape = nullptr;
+
+	CSGBrush* brush = nullptr;
+	AABB node_aabb;
+
+	bool dirty = false;
+	bool last_visible = false;
+	float snap = 0.001f;
+
+	bool autosmooth = false;
+	float smoothing_angle = 50.0f;
+
+#ifndef PHYSICS_3D_DISABLED
+	bool use_collision = false;
+	uint32_t collision_layer = 1;
+	uint32_t collision_mask = 1;
+	real_t collision_priority = 1.0;
+	Ref<Shape3D> root_collision_shape;
+	RID root_collision_body;
+	RID root_collision_debug_instance;
+	Transform3D debug_shape_old_transform;
+#endif // PHYSICS_3D_DISABLED
+
+	bool calculate_tangents = true;
+	Ref<ArrayMesh> root_mesh;
+
+	// Shared primitive fields
+	bool flip_faces = false;
+	bool smooth_faces = true;
+	Ref<Material> material;
+
+	// Box / Cylinder / Sphere / Torus parameters
+	Vector3 size = Vector3(1, 1, 1);
+	float radius = 0.5f;
+	float height = 2.0f;
+	float inner_radius = 0.5f;
+	float outer_radius = 1.0f;
+	int radial_segments = 12;
+	int rings = 6;
+	int sides = 8;
+	int ring_sides = 6;
+	bool cone = false;
+
+	// Mesh parameters
+	Ref<Mesh> mesh;
+
+	// Polygon parameters
+	Vector<Vector2> polygon;
+	PolygonMode polygon_mode = POLYGON_MODE_DEPTH;
+	float depth = 1.0f;
+	float spin_degrees = 360.0f;
+	int spin_sides = 8;
+	NodePath path_node;
+	PathIntervalType path_interval_type = PATH_INTERVAL_DISTANCE;
+	float path_interval = 1.0f;
+	float path_simplify_angle = 0.0f;
+	PathRotation path_rotation = PATH_ROTATION_PATH_FOLLOW;
+	bool path_rotation_accurate = false;
+	bool path_local = false;
+	Path3D* path = nullptr;
+	bool path_continuous_u = true;
+	real_t path_u_distance = 1.0;
+	bool path_joined = false;
+
+	struct ShapeUpdateSurface
+	{
+		Vector<Vector3> vertices;
+		Vector<Vector3> normals;
+		Vector<Vector2> uvs;
+		Vector<float> tans;
+		Ref<Material> material;
+		int last_added = 0;
+
+		Vector3* verticesw = nullptr;
+		Vector3* normalsw = nullptr;
+		Vector2* uvsw = nullptr;
+		float* tansw = nullptr;
+	};
+
+#ifndef PHYSICS_3D_DISABLED
+	void _update_collision_faces();
+	bool _is_debug_collision_shape_visible();
+	void _update_debug_collision_shape();
+	void _clear_debug_collision_shape();
+	void _on_transform_changed();
+	Vector<Vector3> _get_brush_collision_faces();
+#endif // PHYSICS_3D_DISABLED
+
+	void _build_surfaces_smoothed(
+		CSGBrush* p_brush, Vector<ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count);
+	void _build_surfaces_default(
+		CSGBrush* p_brush, Vector<ShapeUpdateSurface>& r_surfaces, Vector<int>& r_face_count);
+
+	CSGBrush* _create_brush_from_arrays(const Vector<Vector3>& p_vertices,
+		const Vector<Vector2>& p_uv, const Vector<bool>& p_smooth,
+		const Vector<Ref<Material>>& p_materials);
+	CSGBrush* _build_brush();
+	CSGBrush* _build_box_brush();
+	CSGBrush* _build_sphere_brush();
+	CSGBrush* _build_cylinder_brush();
+	CSGBrush* _build_torus_brush();
+	CSGBrush* _build_mesh_brush();
+	CSGBrush* _build_polygon_brush();
+	CSGBrush* _get_brush();
+
+	void _make_dirty(bool p_parent_removing = false);
+	void _path_exited();
+	bool _is_editable_3d_polygon() const;
+	bool _has_editable_3d_polygon_no_depth() const;
+
+protected:
+	void _notification(int p_what);
+	virtual void fti_update_servers_xform() override;
+	PackedStringArray get_configuration_warnings() const override;
+
+public:
+	virtual bool has_render_instance() const override { return true; }
+	RID get_instance() const { return render_instance.get_instance(); }
+	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
+	RID get_base() const { return render_instance.get_base(); }
+
+	void set_shape_type(ShapeType p_type);
+	ShapeType get_shape_type() const { return shape_type; }
+
+	void update_shape();
+
+	void set_operation(Operation p_operation);
+	Operation get_operation() const;
+
+	Vector<Vector3> get_brush_faces();
+	AABB get_aabb() const;
+
+#ifndef PHYSICS_3D_DISABLED
+	void set_use_collision(bool p_enable);
+	bool is_using_collision() const;
+
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_layer_value(int p_layer_number, bool p_value);
+	bool get_collision_layer_value(int p_layer_number) const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	RID _get_root_collision_instance() const;
+
+	void set_collision_priority(real_t p_priority);
+	real_t get_collision_priority() const;
+
+	void set_autosmooth(bool p_smooth);
+	bool is_autosmooth() const;
+
+	void set_smoothing_angle(const float p_angle);
+	float get_smoothing_angle() const;
+#endif // PHYSICS_3D_DISABLED
+
+#ifndef DISABLE_DEPRECATED
+	void set_snap(float p_snap);
+	float get_snap() const;
+#endif // DISABLE_DEPRECATED
+
+	void set_calculate_tangents(bool p_calculate_tangents);
+	bool is_calculating_tangents() const;
+
+	bool is_root_shape() const;
+
+	Ref<ArrayMesh> bake_static_mesh();
+#ifndef PHYSICS_3D_DISABLED
+	Ref<Shape3D> bake_collision_shape();
+#endif // PHYSICS_3D_DISABLED
+
+	Ref<TriangleMesh> generate_triangle_mesh() const;
+
+	// Primitive / Shape parameters
+	void set_flip_faces(bool p_invert);
+	bool get_flip_faces() const;
+
+	void set_smooth_faces(bool p_smooth_faces);
+	bool get_smooth_faces() const;
+
+	void set_material(const Ref<Material>& p_material);
+	Ref<Material> get_material() const;
+
+	void set_size(const Vector3& p_size);
+	Vector3 get_size() const { return size; }
+
+	void set_radius(float p_radius);
+	float get_radius() const { return radius; }
+
+	void set_height(float p_height);
+	float get_height() const { return height; }
+
+	void set_inner_radius(float p_radius);
+	float get_inner_radius() const { return inner_radius; }
+
+	void set_outer_radius(float p_radius);
+	float get_outer_radius() const { return outer_radius; }
+
+	void set_radial_segments(int p_segments);
+	int get_radial_segments() const { return radial_segments; }
+
+	void set_rings(int p_rings);
+	int get_rings() const { return rings; }
+
+	void set_sides(int p_sides);
+	int get_sides() const { return sides; }
+
+	void set_ring_sides(int p_ring_sides);
+	int get_ring_sides() const { return ring_sides; }
+
+	void set_cone(bool p_cone);
+	bool is_cone() const { return cone; }
+
+	void set_mesh(const Ref<Mesh>& p_mesh);
+	Ref<Mesh> get_mesh() const { return mesh; }
+
+	void set_polygon(const Vector<Vector2>& p_polygon);
+	Vector<Vector2> get_polygon() const { return polygon; }
+
+	void set_polygon_mode(PolygonMode p_mode);
+	PolygonMode get_polygon_mode() const { return polygon_mode; }
+
+	void set_depth(float p_depth);
+	float get_depth() const { return depth; }
+
+	void set_spin_degrees(float p_degrees);
+	float get_spin_degrees() const { return spin_degrees; }
+
+	void set_spin_sides(int p_sides);
+	int get_spin_sides() const { return spin_sides; }
+
+	void set_path_node(const NodePath& p_path);
+	NodePath get_path_node() const { return path_node; }
+
+	void set_path_interval_type(PathIntervalType p_type);
+	PathIntervalType get_path_interval_type() const { return path_interval_type; }
+
+	void set_path_interval(float p_interval);
+	float get_path_interval() const { return path_interval; }
+
+	void set_path_simplify_angle(float p_angle);
+	float get_path_simplify_angle() const { return path_simplify_angle; }
+
+	void set_path_rotation(PathRotation p_rotation);
+	PathRotation get_path_rotation() const { return path_rotation; }
+
+	void set_path_rotation_accurate(bool p_accurate);
+	bool get_path_rotation_accurate() const { return path_rotation_accurate; }
+
+	void set_path_local(bool p_local);
+	bool is_path_local() const { return path_local; }
+
+	void set_path_continuous_u(bool p_enable);
+	bool is_path_continuous_u() const { return path_continuous_u; }
+
+	void set_path_u_distance(real_t p_distance);
+	real_t get_path_u_distance() const { return path_u_distance; }
+
+	void set_path_joined(bool p_joined);
+	bool is_path_joined() const { return path_joined; }
+
+#ifndef NAVIGATION_3D_DISABLED
+private:
+	static RID _navmesh_source_geometry_parser;
+
+public:
+	static void navmesh_parse_init();
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
+#endif // NAVIGATION_3D_DISABLED
+
+	CSGShape3D(ShapeType p_type = SHAPE_BOX);
+	~CSGShape3D();
+};
+
+// --- Folded from modules/gridmap/grid_map.h ---
+
+
+
+class NavigationMesh;
+class NavigationMeshSourceGeometryData3D;
+#ifndef PHYSICS_3D_DISABLED
+class PhysicsMaterial;
+#endif // PHYSICS_3D_DISABLED
+
+class GridMap : public Node3D
+{
+	enum DebugVisibilityMode
+	{
+		DEBUG_VISIBILITY_MODE_DEFAULT,
+		DEBUG_VISIBILITY_MODE_FORCE_SHOW,
+		DEBUG_VISIBILITY_MODE_FORCE_HIDE,
+	};
+
+	enum
+	{
+		MAP_DIRTY_TRANSFORMS = 1,
+		MAP_DIRTY_INSTANCES = 2,
+	};
+
+	union IndexKey
+	{
+		struct
+		{
+			int16_t x;
+			int16_t y;
+			int16_t z;
+		};
+
+		uint64_t key = 0;
+
+		static uint32_t hash(const IndexKey& p_key) { return hash_one_uint64(p_key.key); }
+
+		_FORCE_INLINE_ bool operator<(const IndexKey& p_key) const { return key < p_key.key; }
+
+		_FORCE_INLINE_ bool operator==(const IndexKey& p_key) const { return key == p_key.key; }
+
+		_FORCE_INLINE_ operator Vector3i() const { return Vector3i(x, y, z); }
+
+		uint32_t hash() const { return operator Vector3i().hash(); }
+
+		IndexKey(Vector3i p_vector)
+		{
+			x = (int16_t)p_vector.x;
+			y = (int16_t)p_vector.y;
+			z = (int16_t)p_vector.z;
+		}
+
+		IndexKey() {}
+	};
+
+	/**
+	 * @brief A Cell is a single cell in the cube map space; it is defined by its coordinates and
+	 * the populating Item, identified by int id.
+	 */
+	union Cell
+	{
+		struct
+		{
+			unsigned int item : 16;
+			unsigned int rot : 5;
+			unsigned int layer : 8;
+		};
+
+		uint32_t cell = 0;
+	};
+
+	/**
+	 * @brief An Octant is a prism containing Cells, and possibly belonging to an Area.
+	 * A GridMap can have multiple Octants.
+	 */
+	struct Octant
+	{
+		struct NavigationCell
+		{
+			RID region;
+			Transform3D xform;
+			RID navigation_mesh_debug_instance;
+			uint32_t navigation_layers = 1;
+		};
+
+		struct MultimeshInstance
+		{
+			RID instance;
+			RID multimesh;
+
+			struct Item
+			{
+				int index = 0;
+				Transform3D transform;
+				IndexKey key;
+			};
+
+			Vector<Item> items; // tools only, for changing visibility
+		};
+
+		Vector<MultimeshInstance> multimesh_instances;
+		HashSet<IndexKey> cells;
+		RID collision_debug;
+		RID collision_debug_instance;
+#ifdef DEBUG_ENABLED
+		RID navigation_debug_edge_connections_instance;
+		Ref<ArrayMesh> navigation_debug_edge_connections_mesh;
+#endif // DEBUG_ENABLED
+
+		bool dirty = false;
+		RID static_body;
+		HashMap<IndexKey, NavigationCell> navigation_cell_ids;
+	};
+
+	union OctantKey
+	{
+		struct
+		{
+			int16_t x;
+			int16_t y;
+			int16_t z;
+			int16_t empty;
+		};
+
+		uint64_t key = 0;
+
+		static uint32_t hash(const OctantKey& p_key) { return hash_one_uint64(p_key.key); }
+
+		_FORCE_INLINE_ bool operator==(const OctantKey& p_key) const { return key == p_key.key; }
+
+		// OctantKey(const IndexKey& p_k, int p_item) { indexkey=p_k.key; item=p_item; }
+		OctantKey() {}
+	};
+
+	OctantKey get_octant_key_from_index_key(const IndexKey& p_index_key) const;
+	OctantKey get_octant_key_from_cell_coords(const Vector3i& p_cell_coords) const;
+
+#ifndef PHYSICS_3D_DISABLED
+	uint32_t collision_layer = 1;
+	uint32_t collision_mask = 1;
+	real_t collision_priority = 1.0;
+	DebugVisibilityMode collision_visibility_mode = DEBUG_VISIBILITY_MODE_DEFAULT;
+	Ref<PhysicsMaterial> physics_material;
+#endif // PHYSICS_3D_DISABLED
+	bool bake_navigation = false;
+	RID map_override;
+
+	Transform3D last_transform;
+
+	bool _in_tree = false;
+	Vector3 cell_size = Vector3(2, 2, 2);
+	int octant_size = 8;
+	bool center_x = true;
+	bool center_y = true;
+	bool center_z = true;
+	float cell_scale = 1.0;
+
+	bool recreating_octants = false;
+
+	Ref<MeshLibrary> mesh_library;
+
+	HashMap<OctantKey, Octant*, OctantKey> octant_map;
+	HashMap<IndexKey, Cell, IndexKey> cell_map;
+
+	void _recreate_octant_data();
+
+	struct BakeLight
+	{
+		RSE::LightType type = RSE::LightType::LIGHT_DIRECTIONAL;
+		Vector3 pos;
+		Vector3 dir;
+		float param[RSE::LIGHT_PARAM_MAX] = {};
+	};
+
+	_FORCE_INLINE_ Vector3 _octant_get_offset(const OctantKey& p_key) const
+	{
+		return Vector3(p_key.x, p_key.y, p_key.z) * cell_size * octant_size;
+	}
+
+#ifndef PHYSICS_3D_DISABLED
+	void _update_physics_bodies_collision_properties();
+	void _update_physics_bodies_characteristics();
+#endif // PHYSICS_3D_DISABLED
+	void _octant_enter_world(const OctantKey& p_key);
+	void _octant_exit_world(const OctantKey& p_key);
+	bool _octant_update(const OctantKey& p_key);
+	void _octant_clean_up(const OctantKey& p_key);
+	void _octant_transform(const OctantKey& p_key);
+#if defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
+	void _update_octant_navigation_debug_edge_connections_mesh(const OctantKey& p_key);
+	void _navigation_map_changed(RID p_map);
+	void _update_navigation_debug_edge_connections();
+#endif // defined(DEBUG_ENABLED) && !defined(NAVIGATION_3D_DISABLED)
+	bool awaiting_update = false;
+
+	void _queue_octants_dirty();
+	void _update_octants_callback();
+
+#ifndef DISABLE_DEPRECATED
+	void resource_changed(const Ref<Resource>& p_res);
+#endif
+
+	void _clear_internal();
+
+	Vector3 _get_offset() const;
+
+	struct BakedMesh
+	{
+		Ref<Mesh> mesh;
+		RID instance;
+	};
+
+	Vector<BakedMesh> baked_meshes;
+
+	bool debug_show_octants = false;
+	Color debug_octant_color = Color(1.0, 1.0, 1.0, 1.0);
+#ifdef DEBUG_ENABLED
+	bool debug_dirty = false;
+	Ref<StandardMaterial3D> debug_octant_line_material;
+
+	void _debug_update();
+	void _debug_update_octants();
+	void _debug_clear_octants();
+
+	RID debug_octant_line_mesh_rid;
+
+	struct OctantDebug
+	{
+		RID debug_line_mesh_rid;
+		RID debug_line_instance_rid;
+	};
+
+	HashMap<OctantKey, OctantDebug*, OctantKey> debug_octant_map;
+
+#endif // DEBUG_ENABLED
+
+protected:
+	void _notification(int p_what);
+	void _update_visibility();
+
+public:
+	enum
+	{
+		INVALID_CELL_ITEM = -1
+	};
+
+#ifndef PHYSICS_3D_DISABLED
+	void set_collision_layer(uint32_t p_layer);
+	uint32_t get_collision_layer() const;
+
+	void set_collision_mask(uint32_t p_mask);
+	uint32_t get_collision_mask() const;
+
+	void set_collision_layer_value(int p_layer_number, bool p_value);
+	bool get_collision_layer_value(int p_layer_number) const;
+
+	void set_collision_mask_value(int p_layer_number, bool p_value);
+	bool get_collision_mask_value(int p_layer_number) const;
+
+	void set_collision_priority(real_t p_priority);
+	real_t get_collision_priority() const;
+
+	void set_collision_visibility_mode(DebugVisibilityMode p_visibility_mode);
+	DebugVisibilityMode get_collision_visibility_mode() const;
+
+	void set_physics_material(Ref<PhysicsMaterial> p_material);
+	Ref<PhysicsMaterial> get_physics_material() const;
+
+#endif // PHYSICS_3D_DISABLED
+
+	void set_bake_navigation(bool p_bake_navigation);
+	bool is_baking_navigation();
+
+#ifndef NAVIGATION_3D_DISABLED
+	void set_navigation_map(RID p_navigation_map);
+	RID get_navigation_map() const;
+#endif // NAVIGATION_3D_DISABLED
+
+	void set_mesh_library(const Ref<MeshLibrary>& p_mesh_library);
+	Ref<MeshLibrary> get_mesh_library() const;
+
+	void set_cell_size(const Vector3& p_size);
+	Vector3 get_cell_size() const;
+
+	void set_octant_size(int p_size);
+	int get_octant_size() const;
+
+	void set_center_x(bool p_enable);
+	bool get_center_x() const;
+	void set_center_y(bool p_enable);
+	bool get_center_y() const;
+	void set_center_z(bool p_enable);
+	bool get_center_z() const;
+
+	void set_cell_item(const Vector3i& p_position, int p_item, int p_rot = 0);
+	int get_cell_item(const Vector3i& p_position) const;
+	int get_cell_item_orientation(const Vector3i& p_position) const;
+	Basis get_cell_item_basis(const Vector3i& p_position) const;
+	Basis get_basis_with_orthogonal_index(int p_index) const;
+	int get_orthogonal_index_from_basis(const Basis& p_basis) const;
+
+	Vector3i local_to_map(const Vector3& p_local_position) const;
+	Vector3 map_to_local(const Vector3i& p_map_position) const;
+
+	void set_cell_scale(float p_scale);
+	float get_cell_scale() const;
+
+	TypedArray<Vector3i> get_used_cells() const;
+	TypedArray<Vector3i> get_used_cells_by_item(int p_item) const;
+
+	TypedArray<Vector3i> get_used_octants() const;
+	TypedArray<Vector3i> get_used_octants_by_item(int p_item) const;
+
+	TypedArray<Vector3i> get_used_cells_in_octant(const Vector3i& p_octant_coords) const;
+	TypedArray<Vector3i> get_used_cells_in_octant_by_item(
+		const Vector3i& p_octant_coords, int p_item) const;
+
+	// Fastpath functions for native modules that do not use Variant/TypedArray.
+	LocalVector<IndexKey> get_index_keys_in_bounds(
+		const AABB& p_bounds, bool p_used_only = true) const;
+	LocalVector<OctantKey> get_octant_keys_in_bounds(
+		const AABB& p_bounds, bool p_used_only = true) const;
+
+	TypedArray<Vector3i> get_octants_in_bounds(const AABB& p_bounds) const;
+	TypedArray<Vector3i> get_used_octants_in_bounds(const AABB& p_bounds) const;
+
+	Vector3i get_octant_coords_from_cell_coords(const Vector3i& p_cell_coords) const;
+
+#ifndef PHYSICS_3D_DISABLED
+	RID get_physics_body_from_octant_coord(const Vector3i& p_octant_coords) const;
+#endif
+
+	void clear_baked_meshes();
+	void make_baked_meshes(bool p_gen_lightmap_uv = false, float p_lightmap_uv_texel_size = 0.1);
+
+	void clear();
+
+	RID get_bake_mesh_instance(int p_idx);
+
+	void set_debug_show_octants(bool p_enable);
+	bool get_debug_show_octants() const;
+
+	void set_debug_octant_color(const Color& p_color);
+	Color get_debug_octant_color() const;
+
+#ifndef NAVIGATION_3D_DISABLED
+private:
+	static RID _navmesh_source_geometry_parser;
+#endif // NAVIGATION_3D_DISABLED
+
+public:
+#ifndef NAVIGATION_3D_DISABLED
+	static void navmesh_parse_init();
+	static void navmesh_parse_source_geometry(const Ref<NavigationMesh>& p_navigation_mesh,
+		Ref<NavigationMeshSourceGeometryData3D> p_source_geometry_data, Node* p_node);
+#endif // NAVIGATION_3D_DISABLED
+
+	GridMap();
+	~GridMap();
+};
+// --- End modules/gridmap/grid_map.h ---
+// --- End modules/csg/csg_shape.h ---
+// --- End modules/gltf/gltf_document.h ---

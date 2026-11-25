@@ -36,7 +36,7 @@
 
 #ifndef _3D_DISABLED
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 namespace TestArrayMesh {
@@ -487,7 +487,6 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestCamera2D {
 
@@ -806,7 +805,6 @@ TEST_CASE("[SceneTree][Camera2D] Transforms") {
 #ifndef _3D_DISABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestCamera3D {
 
@@ -1184,7 +1182,6 @@ TEST_CASE("[SceneTree][Camera3D] Project ray") {
 
 #include "core/types.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestConvertTransformModifier3D {
 
@@ -1449,7 +1446,6 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 
 #include "core/types.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestCopyTransformModifier3D {
 
@@ -2124,7 +2120,7 @@ TEST_CASE("[SceneTree][Decal] Getters/Setters") {
 #ifndef PHYSICS_3D_DISABLED
 
 #include "scene/3d/physics/joints/generic_6dof_joint_3d.h"
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 
 #include <cfloat>
 
@@ -2366,7 +2362,7 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Default joint configuration does not 
 
 #include "tests/test_macros.h"
 
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestGLTFDocument {
 
@@ -2619,8 +2615,8 @@ TEST_CASE("[SceneTree][GLTFDocument] Load suzanne.glb") {
 
 #ifndef PHYSICS_3D_DISABLED
 
-#include "core/io/image.h"
-#include "scene/resources/mesh.h"
+#include "core/io/resource_loader.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestHeightMapShape3D {
 
@@ -2741,10 +2737,9 @@ TEST_CASE("[SceneTree][HeightMapShape3D] update_map_data_from_image") {
 
 
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/main/node.h"
 #include "tests/test_macros.h"
 
@@ -3284,7 +3279,6 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instance a PackedScene containing an
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestNavigationAgent2D {
 
@@ -3359,7 +3353,6 @@ TEST_SUITE("[Navigation2D]") {
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestNavigationAgent3D {
 
@@ -3434,7 +3427,6 @@ TEST_SUITE("[Navigation3D]") {
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestNavigationObstacle2D {
 
@@ -3508,7 +3500,6 @@ TEST_SUITE("[Navigation2D]") {
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestNavigationObstacle3D {
 
@@ -3637,8 +3628,6 @@ TEST_SUITE("[Navigation2D]") {
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
 
 namespace TestNavigationRegion3D {
 
@@ -3724,7 +3713,6 @@ TEST_SUITE("[Navigation3D]") {
 #include "core/io/resource_loader.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/main/node.h"
 #include "tests/test_macros.h"
 
@@ -4642,7 +4630,6 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestNode2D {
 
@@ -5183,7 +5170,6 @@ TEST_CASE("[Path3D] Curve setter and getter") {
 
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestPathFollow2D {
 
@@ -5443,7 +5429,6 @@ TEST_CASE("[SceneTree][PathFollow2D] Progress out of range") {
 #ifndef _3D_DISABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestPathFollow3D {
 
@@ -5788,7 +5773,7 @@ TEST_CASE("[SceneTree][PathFollow3D] Calculate forward vector with degenerate cu
 
 #ifndef PHYSICS_3D_DISABLED
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestPhysicsMaterial {
 
@@ -5899,7 +5884,7 @@ TEST_CASE("[Physics_material] Absorbent") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestPrimitives {
 
@@ -6478,9 +6463,7 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 
 
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 namespace TestReferenceRect {
 
@@ -7212,7 +7195,6 @@ TEST_CASE("[SpriteFrames] Frame addition, removal, and retrieval") {
 
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestTimer {
@@ -7420,16 +7402,10 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 
 #include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
-#include "scene/gui/dialogs.h"
-#include "scene/gui/control.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 #ifndef PHYSICS_2D_DISABLED
 #include "scene/main/scene_tree.h"
-#include "servers/physics_2d/physics_server_2d.h"
 #endif // PHYSICS_2D_DISABLED
 
 namespace TestViewport {
@@ -9413,9 +9389,7 @@ TEST_CASE("[SceneTree][Viewport] Embedded Windows") {
 
 
 #include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_MOUSE_MOTION_EVENT` macro.
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestWindow {

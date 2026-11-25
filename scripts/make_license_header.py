@@ -1,9 +1,66 @@
 #!/usr/bin/env python3
 
+import os
 from collections import OrderedDict
 from io import TextIOWrapper
 
 import methods
+
+
+def _write_ltc_dds_bytes(file, source_path):
+    with open(source_path, mode="rb") as binary:
+        buffer = binary.read()[148:]  # skip .dds header
+        file.write("0x{:02x}".format(buffer[0]))
+        for byte in range(1, len(buffer)):
+            file.write(",0x{:02x}".format(buffer[byte]))
+
+
+def _write_controller_mappings(file, mapping_sources):
+    platform_variables = {
+        "Linux": "LINUXBSD",
+        "Windows": "WINDOWS",
+        "Mac OS X": "MACOS",
+        "Android": "ANDROID",
+        "iOS": "APPLE_EMBEDDED",
+        "Web": "WEB",
+    }
+    platform_mappings = OrderedDict()
+    for src_path in mapping_sources:
+        with open(src_path, "r", encoding="utf-8") as f:
+            mapping_file_lines = f.readlines()
+
+        current_platform = None
+        for line in mapping_file_lines:
+            line = line.strip()
+            if not line:
+                continue
+            if line[0] == "#":
+                platform_or_header = line[1:].strip()
+                if platform_or_header not in platform_variables:
+                    continue
+                current_platform = platform_or_header
+                if current_platform not in platform_mappings:
+                    platform_mappings[current_platform] = {}
+            elif current_platform:
+                guid = line.split(",")[0]
+                if guid in platform_mappings[current_platform]:
+                    file.write(
+                        "// WARNING: DATABASE {} OVERWROTE PRIOR MAPPING: {} {}\n".format(
+                            src_path,
+                            current_platform,
+                            platform_mappings[current_platform][guid],
+                        )
+                    )
+                platform_mappings[current_platform][guid] = line
+
+    file.write("const char *DefaultControllerMappings::mappings[] = {\n")
+    for platform, mappings in platform_mappings.items():
+        variable = platform_variables[platform]
+        file.write(f"#ifdef {variable}_ENABLED\n")
+        for mapping in mappings.values():
+            file.write(f'\t"{mapping}",\n')
+        file.write(f"#endif // {variable}_ENABLED\n")
+    file.write("\tnullptr\n};\n")
 
 
 def make_license_header(target, source):
@@ -45,13 +102,10 @@ def make_license_header(target, source):
             if tag in ("Files", "Copyright", "License"):
                 part[tag] = content[:]
             elif tag == "Comment" and part:
-                # attach non-empty part to named project
                 projects[content[0]] = projects.get(content[0], []) + [part]
 
             if not tag or not reader.current:
-                # end of a paragraph start a new part
                 if "License" in part and "Files" not in part:
-                    # no Files tag in this one, so assume standalone license
                     license_list.append(part["License"])
                 part = {}
                 reader.next_line()
@@ -104,8 +158,18 @@ def make_license_header(target, source):
     certs_buf = methods.get_buffer("thirdparty/certs/ca-bundle.crt")
     certs_decomp_size = len(certs_buf)
     certs_comp = methods.compress_buffer(certs_buf)
+    area_buf = methods.get_buffer("thirdparty/smaa/AreaTex.png")
+    search_buf = methods.get_buffer("thirdparty/smaa/SearchTex.png")
 
-    with methods.generated_wrapper(str(target[0])) as file:
+    enc_hex = os.environ.get("SCRIPT_AES256_ENCRYPTION_KEY") or ("0" * 64)
+    enc_buf = bytes.fromhex(enc_hex)
+    if len(enc_buf) != 32:
+        raise ValueError("Invalid SCRIPT_AES256_ENCRYPTION_KEY length")
+
+    with open(str(target[0]), "w", encoding="utf-8", newline="\n") as file:
+        file.write("/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
+        file.write("#ifndef CORE_LICENSE_GEN_H\n#define CORE_LICENSE_GEN_H\n\n")
+        file.write("#include <cstdint>\n\n")
         file.write('#define _SYSTEM_CERTS_PATH ""\n#define BUILTIN_CERTS_ENABLED\n\n')
         file.write(f"inline constexpr int _certs_compressed_size = {len(certs_comp)};\n")
         file.write(f"inline constexpr int _certs_uncompressed_size = {certs_decomp_size};\n")
@@ -138,9 +202,7 @@ struct ComponentCopyright {{
             file.write(f'\t"{methods.to_escaped_cstring(line)}",\n')
         file.write("};\n\n")
 
-        file.write(
-            "inline constexpr ComponentCopyrightPart COPYRIGHT_PROJECT_PARTS[] = {\n"
-        )
+        file.write("inline constexpr ComponentCopyrightPart COPYRIGHT_PROJECT_PARTS[] = {\n")
         part_index = 0
         part_indexes = {}
         for project_name, project in iter(projects.items()):
@@ -156,7 +218,6 @@ struct ComponentCopyright {{
         file.write("};\n\n")
 
         file.write(f"inline constexpr int COPYRIGHT_INFO_COUNT = {len(projects)};\n")
-
         file.write("inline constexpr ComponentCopyright COPYRIGHT_INFO[] = {\n")
         for project_name, project in iter(projects.items()):
             file.write(
@@ -167,7 +228,6 @@ struct ComponentCopyright {{
         file.write("};\n\n")
 
         file.write(f"inline constexpr int LICENSE_COUNT = {len(license_list)};\n")
-
         file.write("inline constexpr const char *LICENSE_NAMES[] = {\n")
         for license in license_list:
             file.write(f'\t"{methods.to_escaped_cstring(license[0])}",\n')
@@ -175,14 +235,57 @@ struct ComponentCopyright {{
 
         file.write("inline constexpr const char *LICENSE_BODIES[] = {\n\n")
         for license in license_list:
-            to_raw = []
-            for line in license[1:]:
-                if line == ".":
-                    to_raw += [""]
-                else:
-                    to_raw += [line]
+            to_raw = ["" if line == "." else line for line in license[1:]]
             file.write(f"{methods.to_raw_cstring(to_raw)},\n\n")
         file.write("};\n\n")
 
+        file.write("inline constexpr int LTC_LUT_DIMENSIONS = 64;\n")
+        file.write("inline constexpr uint8_t LTC_LUT1[] = {")
+        _write_ltc_dds_bytes(file, "servers/rendering/storage/ltc/ltc_lut1.dds")
+        file.write("};\n\n")
+        file.write("inline constexpr uint8_t LTC_LUT2[] = {")
+        _write_ltc_dds_bytes(file, "servers/rendering/storage/ltc/ltc_lut2.dds")
+        file.write("};\n\n")
+        file.write(f"""\
+#define AREATEX_WIDTH 160
+#define AREATEX_HEIGHT 560
+#define AREATEX_PITCH (AREATEX_WIDTH * 2)
+#define AREATEX_SIZE (AREATEX_HEIGHT * AREATEX_PITCH)
 
-make_license_header(["core/license.gen.h"], ["COPYRIGHT.txt", "LICENSE.txt"])
+inline constexpr const unsigned char area_tex_png[] = {{
+{methods.format_buffer(area_buf, 1)}
+}};
+
+#define SEARCHTEX_WIDTH 64
+#define SEARCHTEX_HEIGHT 16
+#define SEARCHTEX_PITCH SEARCHTEX_WIDTH
+#define SEARCHTEX_SIZE (SEARCHTEX_HEIGHT * SEARCHTEX_PITCH)
+
+inline constexpr const unsigned char search_tex_png[] = {{
+{methods.format_buffer(search_buf, 1)}
+}};
+
+#endif // CORE_LICENSE_GEN_H
+
+#ifdef DEFINE_CORE_GENERATED_GLOBALS
+#undef DEFINE_CORE_GENERATED_GLOBALS
+
+extern const char *const VLTR_VERSION_HASH;
+extern const unsigned long long VLTR_VERSION_TIMESTAMP;
+const char *const VLTR_VERSION_HASH = "9c2e8974959335fb84c88681cc92f90475684411";
+const unsigned long long VLTR_VERSION_TIMESTAMP = 1785356176;
+
+uint8_t script_encryption_key[32] = {{
+{methods.format_buffer(enc_buf, 1)}
+}};
+
+""")
+        _write_controller_mappings(
+            file,
+            ["core/input/gamecontrollerdb.txt", "core/input/godotcontrollerdb.txt"],
+        )
+        file.write("\n#endif // DEFINE_CORE_GENERATED_GLOBALS\n")
+
+
+if __name__ == "__main__":
+    make_license_header(["core/license.gen.h"], ["COPYRIGHT.txt", "LICENSE.txt"])

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+from collections import OrderedDict
 from pathlib import Path
 
 import methods
@@ -74,9 +75,25 @@ def make_splash_and_icons(target, splash_src, icon_src):
     icons_names_str = ",\n\t".join(icons_names)
     icons_raw_str = ",\n\t".join(icons_raw)
 
-    with methods.generated_wrapper(str(target)) as out:
+    platforms = ["android", "ios", "visionos", "web"]
+    api_reg = "\n\t".join([f"register_{p}_api();" for p in platforms])
+    api_unreg = "\n\t".join([f"unregister_{p}_api();" for p in platforms])
+
+    modules = OrderedDict(methods.detect_modules("modules", recursive=False).items())
+    decls = []
+    for key in modules.keys():
+        if key not in ("freetype", "msdfgen"):
+            decls.append(f"void initialize_{key}_module(ModuleInitializationLevel p_level);")
+            decls.append(f"void uninitialize_{key}_module(ModuleInitializationLevel p_level);")
+    mod_inc = "\n".join(decls)
+    mod_init = "\n".join([f"#ifdef MODULE_{key.upper()}_ENABLED\n\tinitialize_{key}_module(p_level);\n#endif" for key in modules.keys()])
+    mod_uninit = "\n".join([f"#ifdef MODULE_{key.upper()}_ENABLED\n\tuninitialize_{key}_module(p_level);\n#endif" for key in modules.keys()])
+
+    with open(str(target), "w", encoding="utf-8", newline="\n") as out:
+        out.write("/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
+        out.write("#ifndef MAIN_SPLASH_GEN_H\n#define MAIN_SPLASH_GEN_H\n\n")
         out.write(f"""\
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 inline const Color boot_splash_bg_color = Color(0.14, 0.14, 0.14);
 inline constexpr const unsigned char boot_splash_png[] = {{
@@ -112,6 +129,35 @@ inline constexpr const char *default_theme_icons_names[] = {{
             with open(src, "r", encoding="utf-8") as f:
                 svg = f.read()
             out.write(f"inline constexpr const char *_{platform}_{src_name}_svg = {methods.to_raw_cstring(svg)};\n")
+
+        out.write(f"""
+#endif // MAIN_SPLASH_GEN_H
+
+#ifdef DEFINE_MAIN_GENERATED_REGISTRIES
+#undef DEFINE_MAIN_GENERATED_REGISTRIES
+
+#include "modules/modules_enabled.gen.h"
+
+void register_platform_apis() {{
+	{api_reg}
+}}
+
+void unregister_platform_apis() {{
+	{api_unreg}
+}}
+
+{mod_inc}
+
+void initialize_modules(ModuleInitializationLevel p_level) {{
+{mod_init}
+}}
+
+void uninitialize_modules(ModuleInitializationLevel p_level) {{
+{mod_uninit}
+}}
+
+#endif // DEFINE_MAIN_GENERATED_REGISTRIES
+""")
 
 
 if __name__ == "__main__":

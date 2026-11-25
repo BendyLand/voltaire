@@ -29,35 +29,33 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "tests/test_macros.h"
 
 #ifdef TOOLS_ENABLED
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #endif // TOOLS_ENABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_3D_DISABLED
 
 
@@ -390,7 +388,6 @@ REGISTER_LISTENER("GodotTestCaseListener", 1, GodotTestCaseListener);
 #include "tests/test_macros.h"
 
 #include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "servers/rendering/renderer.h"
 
 Vector<String> DisplayServerMock::get_rendering_drivers_func() {
@@ -703,8 +700,8 @@ int register_test_command(String p_command, TestFunc p_function) {
 
 #include "tests/test_macros.h"
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 
 String TestUtils::get_data_path(const String &p_file) {

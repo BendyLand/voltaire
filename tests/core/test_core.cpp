@@ -34,8 +34,9 @@
 
 
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/packet_peer_udp.h"
+#include "core/io/net_socket.h"
 #include "tests/test_macros.h"
 
 namespace TestProjectSettings {
@@ -797,7 +798,6 @@ TEST_CASE("[HashingContext] Invalid use of finish") {
 
 
 
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "core/types.h"
 #include "tests/test_macros.h"
@@ -912,7 +912,7 @@ TEST_CASE("[InputEvent] Test xformed_by") {
 
 
 
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 namespace TestInputEventKey {
 
@@ -1289,7 +1289,7 @@ TEST_CASE("[IsMatch] Keys are correctly matched") {
 
 
 
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 namespace TestInputEventMouse {
 
@@ -1371,7 +1371,7 @@ TEST_CASE("[InputEventMouse] Setting the global mouse position works correctly")
 
 
 
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 namespace TestShortcut {
 
@@ -1588,7 +1588,6 @@ TEST_CASE("[Shortcut] Equal arrays should be recognized as such.") {
 
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 
 namespace TestClassDB {
 
@@ -3033,7 +3032,7 @@ TEST_CASE("[OS] Execute") {
 
 
 #include "core/io/file_access.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "tests/test_macros.h"
 
 namespace TestFuzzySearch {
@@ -5601,10 +5600,10 @@ TEST_CASE("[String][URL] Parse URL") {
 
 
 #include "core/io/resource_loader.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 #ifdef TOOLS_ENABLED
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #include "tests/test_macros.h"
@@ -5867,7 +5866,7 @@ TEST_CASE("[TranslationCSV] CSV import") {
 
 
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 namespace TestTranslationServer {
 
@@ -6108,7 +6107,7 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 
 
 
-#include "core/os/time.h"
+#include "core/os/os.h"
 
 namespace TestTime {
 

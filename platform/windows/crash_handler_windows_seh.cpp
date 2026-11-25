@@ -31,10 +31,9 @@
 
 #include "platform/windows/os_windows.h"
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
-#include "core/version.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
 
 #ifdef CRASH_HANDLER_EXCEPTION
 

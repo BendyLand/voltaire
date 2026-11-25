@@ -157,9 +157,2051 @@ constexpr bool is_hyphen(char32_t p_char) {
 }
 
 // --- End core/string/char_utils.h ---
-#include "core/templates/vector.h"
-#include "core/templates/hashfuncs.h"
-#include "core/templates/vector.h"
+// --- Folded from core/templates/vector.h ---
+/**
+ * @class Vector
+ * Vector container. Simple copy-on-write container.
+ *
+ * LocalVector is an alternative available for internal use when COW is not
+ * required.
+ */
+
+#include <initializer_list>
+#include "core/typedefs.h"
+// --- Inlined/Folded from core/templates/cowdata.h ---
+#include "core/typedefs.h"
+#include "core/os/memory.h"
+// --- Folded from core/templates/span.h ---
+#include "core/typedefs.h"
+
+template <typename LHS, typename RHS>
+bool are_spans_equal(const LHS *p_lhs, const RHS *p_rhs, size_t p_size) {
+	if constexpr (std::is_same_v<LHS, RHS> && std::is_fundamental_v<LHS>) {
+		// Optimize trivial type comparison.
+		// is_trivially_equality_comparable would help, but it doesn't exist.
+		// memcmp requires pointer argument to be valid even on size = 0 (C11 §7.24.1(2)).
+		// Span allows ptr arguments to be invalid as long as size = 0, so only call when p_size > 0.
+		return p_size == 0 || memcmp(p_lhs, p_rhs, p_size * sizeof(LHS)) == 0;
+	} else {
+		// Normal case: Need to iterate the array manually.
+		for (size_t j = 0; j < p_size; j++) {
+			if (p_lhs[j] != p_rhs[j]) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+}
+
+// Equivalent of std::span.
+// Represents a view into a contiguous memory space.
+// DISCLAIMER: This data type does not own the underlying buffer. DO NOT STORE IT.
+//  Additionally, for the lifetime of the Span, do not resize the buffer, and do not insert or remove elements from it.
+//  Failure to respect this may lead to crashes or undefined behavior.
+template <typename T>
+class Span {
+	const T *_ptr = nullptr;
+	uint64_t _len = 0;
+
+public:
+	static constexpr bool is_string = std::disjunction_v<
+			std::is_same<T, char>,
+			std::is_same<T, char16_t>,
+			std::is_same<T, char32_t>,
+			std::is_same<T, wchar_t>>;
+
+	_FORCE_INLINE_ constexpr Span() = default;
+
+	_FORCE_INLINE_ Span(const T *p_ptr, uint64_t p_len) :
+			_ptr(p_ptr), _len(p_len) {
+#ifdef DEBUG_ENABLED
+		// TODO In c++20, make this check run only in non-consteval, and make this constructor constexpr.
+		if (_ptr == nullptr && _len > 0) {
+			ERR_PRINT("Internal bug, please report: Span was created from nullptr with size > 0. Recovering by using size = 0.");
+			_len = 0;
+		}
+#endif
+	}
+
+	// Allows creating Span directly from C arrays and string literals.
+	template <size_t N>
+	_FORCE_INLINE_ constexpr Span(const T (&p_array)[N]) :
+			_ptr(p_array), _len(N) {
+		if constexpr (is_string) {
+			// Cut off the \0 terminator implicitly added to string literals.
+			if (N > 0 && p_array[N - 1] == '\0') {
+				_len--;
+			}
+		}
+	}
+
+	_FORCE_INLINE_ constexpr uint64_t size() const { return _len; }
+	_FORCE_INLINE_ constexpr bool is_empty() const { return _len == 0; }
+
+	_FORCE_INLINE_ constexpr const T *ptr() const { return _ptr; }
+
+	// NOTE: Span subscripts sanity check the bounds to avoid undefined behavior.
+	//       This is slower than direct buffer access and can prevent autovectorization.
+	//       If the bounds are known, use ptr() subscript instead.
+	_FORCE_INLINE_ constexpr const T &operator[](uint64_t p_idx) const {
+		CRASH_COND(p_idx >= _len);
+		return _ptr[p_idx];
+	}
+
+	_FORCE_INLINE_ constexpr const T *begin() const { return _ptr; }
+	_FORCE_INLINE_ constexpr const T *end() const { return _ptr + _len; }
+
+	template <typename T1>
+	_FORCE_INLINE_ constexpr Span<T1> reinterpret() const {
+		return Span<T1>(reinterpret_cast<const T1 *>(_ptr), _len * sizeof(T) / sizeof(T1));
+	}
+
+	// Algorithms.
+	constexpr int64_t find(const T &p_val, uint64_t p_from = 0) const;
+	template <typename T1 = T>
+	constexpr int64_t find_sequence(const Span<T1> &p_span, uint64_t p_from = 0) const;
+	constexpr int64_t rfind(const T &p_val, uint64_t p_from) const;
+	_FORCE_INLINE_ constexpr int64_t rfind(const T &p_val) const { return rfind(p_val, size() - 1); }
+	template <typename T1 = T>
+	constexpr int64_t rfind_sequence(const Span<T1> &p_span, uint64_t p_from) const;
+	template <typename T1 = T>
+	_FORCE_INLINE_ constexpr int64_t rfind_sequence(const Span<T1> &p_span) const { return rfind_sequence(p_span, size() - p_span.size()); }
+	constexpr uint64_t count(const T &p_val) const;
+	/// Find the index of the given value using binary search.
+	/// Note: Assumes that elements in the span are sorted. Otherwise, use find() instead.
+	template <typename Comparator = Comparator<T>>
+	constexpr uint64_t bisect(const T &p_value, bool p_before, Comparator p_compare = Comparator()) const;
+
+	/// The caller is responsible to ensure size() > 0.
+	constexpr T max() const;
+};
+
+template <typename T>
+constexpr int64_t Span<T>::find(const T &p_val, uint64_t p_from) const {
+	for (uint64_t i = p_from; i < size(); i++) {
+		if (ptr()[i] == p_val) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+template <typename T>
+template <typename T1>
+constexpr int64_t Span<T>::find_sequence(const Span<T1> &p_span, uint64_t p_from) const {
+	for (uint64_t i = p_from; i <= size() - p_span.size(); i++) {
+		if (are_spans_equal(ptr() + i, p_span.ptr(), p_span.size())) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+template <typename T>
+constexpr int64_t Span<T>::rfind(const T &p_val, uint64_t p_from) const {
+	DEV_ASSERT(p_from < size());
+	for (int64_t i = p_from; i >= 0; i--) {
+		if (ptr()[i] == p_val) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+template <typename T>
+template <typename T1>
+constexpr int64_t Span<T>::rfind_sequence(const Span<T1> &p_span, uint64_t p_from) const {
+	DEV_ASSERT(p_from + p_span.size() <= size());
+	for (int64_t i = p_from; i >= 0; i--) {
+		if (are_spans_equal(ptr() + i, p_span.ptr(), p_span.size())) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+template <typename T>
+constexpr uint64_t Span<T>::count(const T &p_val) const {
+	uint64_t amount = 0;
+	for (uint64_t i = 0; i < size(); i++) {
+		if (ptr()[i] == p_val) {
+			amount++;
+		}
+	}
+	return amount;
+}
+
+template <typename T>
+template <typename Comparator>
+constexpr uint64_t Span<T>::bisect(const T &p_value, bool p_before, Comparator p_compare) const {
+	uint64_t lo = 0;
+	uint64_t hi = size();
+	if (p_before) {
+		while (lo < hi) {
+			const uint64_t mid = (lo + hi) / 2;
+			if (p_compare(ptr()[mid], p_value)) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+	} else {
+		while (lo < hi) {
+			const uint64_t mid = (lo + hi) / 2;
+			if (p_compare(p_value, ptr()[mid])) {
+				hi = mid;
+			} else {
+				lo = mid + 1;
+			}
+		}
+	}
+	return lo;
+}
+
+template <typename T>
+constexpr T Span<T>::max() const {
+	DEV_ASSERT(size() > 0);
+	T max_val = _ptr[0];
+	for (size_t i = 1; i < _len; ++i) {
+		if (_ptr[i] > max_val) {
+			max_val = _ptr[i];
+		}
+	}
+	return max_val;
+}
+
+template <typename LHS, typename RHS>
+bool operator==(const Span<LHS> &p_lhs, const Span<RHS> &p_rhs) {
+	return p_lhs.size() == p_rhs.size() && are_spans_equal(p_lhs.ptr(), p_rhs.ptr(), p_lhs.size());
+}
+
+template <typename LHS, typename RHS>
+_FORCE_INLINE_ bool operator!=(const Span<LHS> &p_lhs, const Span<RHS> &p_rhs) {
+	return !(p_lhs == p_rhs);
+}
+
+// Zero-constructing Span initializes _ptr and _len to 0 (and thus empty).
+template <typename T>
+struct is_zero_constructible<Span<T>> : std::true_type {};
+
+// --- Folded from core/templates/fixed_vector.h ---
+#include "core/os/memory.h"
+
+VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
+
+/**
+ * A high performance Vector of fixed capacity.
+ * Especially useful if you need to create an array on the stack, to
+ *  prevent dynamic allocations (especially in bottleneck code).
+ *
+ * Choose CAPACITY such that it is enough for all elements that could be added through all branches.
+ *
+ */
+template <class T, uint32_t CAPACITY>
+class _WARN_UNUSED_ FixedVector {
+	// This declaration allows us to access other FixedVector's private members.
+	template <class T_, uint32_t CAPACITY_>
+	friend class FixedVector;
+
+	uint32_t _size = 0;
+	alignas(T) uint8_t _data[CAPACITY * sizeof(T)];
+
+	constexpr static uint32_t DATA_PADDING = MAX(alignof(T), alignof(uint32_t)) - alignof(uint32_t);
+
+public:
+	_FORCE_INLINE_ constexpr FixedVector() = default;
+
+	constexpr FixedVector(std::initializer_list<T> p_init) {
+		ERR_FAIL_COND(p_init.size() > CAPACITY);
+		for (const T &element : p_init) {
+			memnew_placement(ptr() + _size++, T(element));
+		}
+	}
+
+	constexpr FixedVector(const FixedVector &p_from) {
+		if constexpr (std::is_trivially_copyable_v<T>) {
+			// Copy size and all provided elements at once.
+			memcpy((void *)&_size, (void *)&p_from._size, sizeof(_size) + DATA_PADDING + p_from.size() * sizeof(T));
+		} else {
+			for (const T &element : p_from) {
+				memnew_placement(ptr() + _size++, T(element));
+			}
+		}
+	}
+
+	constexpr FixedVector(FixedVector &&p_from) {
+		// Copy size and all provided elements at once.
+		// Note: Assumes trivial relocatability.
+		memcpy((void *)&_size, (void *)&p_from._size, sizeof(_size) + DATA_PADDING + p_from.size() * sizeof(T));
+		p_from._size = 0;
+	}
+
+	constexpr FixedVector &operator=(const FixedVector &p_from) {
+		if constexpr (std::is_trivially_copyable_v<T>) {
+			// Copy size and all provided elements at once.
+			memcpy((void *)&_size, (void *)&p_from._size, sizeof(_size) + DATA_PADDING + p_from.size() * sizeof(T));
+		} else {
+			// Destruct extraneous elements.
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				for (uint32_t i = p_from.size(); i < _size; i++) {
+					ptr()[i].~T();
+				}
+			}
+
+			_size = 0; // Loop-assign the rest.
+			for (const T &element : p_from) {
+				ptr()[_size++] = element;
+			}
+		}
+		return *this;
+	}
+
+	constexpr FixedVector &operator=(FixedVector &&p_from) {
+		// Destruct extraneous elements.
+		if constexpr (!std::is_trivially_destructible_v<T>) {
+			for (uint32_t i = p_from.size(); i < _size; i++) {
+				ptr()[i].~T();
+			}
+		}
+
+		// Relocate elements (and size) into our buffer.
+		memcpy((void *)&_size, (void *)&p_from._size, sizeof(_size) + DATA_PADDING + p_from.size() * sizeof(T));
+		p_from._size = 0;
+
+		return *this;
+	}
+
+	~FixedVector() {
+		if constexpr (!std::is_trivially_destructible_v<T>) {
+			for (uint32_t i = 0; i < _size; i++) {
+				ptr()[i].~T();
+			}
+		}
+	}
+
+	_FORCE_INLINE_ constexpr T *ptr() _LIFETIME_BOUND_ { return (T *)(_data); }
+	_FORCE_INLINE_ constexpr const T *ptr() const _LIFETIME_BOUND_ { return (const T *)(_data); }
+
+	_FORCE_INLINE_ constexpr operator Span<T>() const _LIFETIME_BOUND_ { return Span<T>(ptr(), size()); }
+	_FORCE_INLINE_ constexpr Span<T> span() const _LIFETIME_BOUND_ { return operator Span<T>(); }
+
+	_FORCE_INLINE_ constexpr uint32_t size() const { return _size; }
+	_FORCE_INLINE_ constexpr bool is_empty() const { return !_size; }
+	_FORCE_INLINE_ constexpr bool is_full() const { return _size == CAPACITY; }
+	_FORCE_INLINE_ constexpr uint32_t capacity() const { return CAPACITY; }
+
+	_FORCE_INLINE_ constexpr void clear() { resize_initialized(0); }
+
+	/// Changes the size of the vector.
+	/// If p_size > size(), constructs new elements.
+	/// If p_size < size(), destructs new elements.
+	constexpr Error resize_initialized(uint32_t p_size) {
+		if (p_size > _size) {
+			ERR_FAIL_COND_V(p_size > CAPACITY, ERR_OUT_OF_MEMORY);
+			memnew_arr_placement(ptr() + _size, p_size - _size);
+		} else if (p_size < _size) {
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				for (uint32_t i = p_size; i < _size; i++) {
+					ptr()[i].~T();
+				}
+			}
+		}
+
+		_size = p_size;
+		return OK;
+	}
+
+	/// Changes the size of the vector.
+	/// The initializer of new elements is skipped, making this function faster than resize_initialized.
+	/// The caller is required to initialize the new values.
+	constexpr Error resize_uninitialized(uint32_t p_size) {
+		static_assert(std::is_trivially_destructible_v<T>, "resize_uninitialized is unsafe to call if T is not trivially destructible.");
+		ERR_FAIL_COND_V(p_size > CAPACITY, ERR_OUT_OF_MEMORY);
+		_size = p_size;
+		return OK;
+	}
+
+	constexpr void push_back(const T &p_val) {
+		ERR_FAIL_COND(_size >= CAPACITY);
+		memnew_placement(ptr() + _size, T(p_val));
+		_size++;
+	}
+
+	constexpr void push_back(T &&p_val) {
+		ERR_FAIL_COND(_size >= CAPACITY);
+		memnew_placement(ptr() + _size, T(std::move(p_val)));
+		_size++;
+	}
+
+	constexpr void pop_back() {
+		ERR_FAIL_COND(_size == 0);
+		_size--;
+		ptr()[_size].~T();
+	}
+
+	// NOTE: Subscripts sanity check the bounds to avoid undefined behavior.
+	//       This is slower than direct buffer access and can prevent autovectorization.
+	//       If the bounds are known, use ptr() subscript instead.
+	constexpr const T &operator[](uint32_t p_index) const _LIFETIME_BOUND_ {
+		CRASH_COND(p_index >= _size);
+		return ptr()[p_index];
+	}
+
+	constexpr T &operator[](uint32_t p_index) _LIFETIME_BOUND_ {
+		CRASH_COND(p_index >= _size);
+		return ptr()[p_index];
+	}
+
+	_FORCE_INLINE_ constexpr T *begin() _LIFETIME_BOUND_ { return ptr(); }
+	_FORCE_INLINE_ constexpr T *end() _LIFETIME_BOUND_ { return ptr() + _size; }
+
+	_FORCE_INLINE_ constexpr const T *begin() const _LIFETIME_BOUND_ { return ptr(); }
+	_FORCE_INLINE_ constexpr const T *end() const _LIFETIME_BOUND_ { return ptr() + _size; }
+};
+
+VLTR_GCC_WARNING_POP
+
+// --- Folded from core/string/print_string.h ---
+#include <cstddef>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+
+class String;
+
+extern void (*_print_func)(String);
+
+using PrintHandlerFunc = void (*)(
+	void* p_userdata, const String& p_string, bool p_error, bool p_rich);
+
+struct PrintHandlerList
+{
+	PrintHandlerFunc printfunc = nullptr;
+	void* userdata = nullptr;
+	PrintHandlerList* next = nullptr;
+};
+
+void add_print_handler(PrintHandlerList* p_handler);
+void remove_print_handler(const PrintHandlerList* p_handler);
+
+extern void __print_line(const String& p_string);
+extern void __print_line_rich(const String& p_string);
+extern void print_raw(const String& p_string);
+extern void print_error(const String& p_string);
+extern bool is_print_verbose_enabled();
+
+namespace dbg
+{
+
+// Forward declaration so recursion can see it. The default depth lives here only.
+template <typename T> std::string to_string(const T& p_val, int p_depth = 2);
+
+// ---------------------------------------------------------------------------
+// Detection traits
+// ---------------------------------------------------------------------------
+
+// Detection: has .position and .size (Rect2, Rect2i)
+template <typename T, typename = void> struct has_pos_size : std::false_type
+{
+};
+
+template <typename T>
+struct has_pos_size<T,
+	std::void_t<decltype(std::declval<T>().position), decltype(std::declval<T>().size)>>
+	: std::true_type
+{
+};
+
+template <typename T> inline constexpr bool has_pos_size_v = has_pos_size<T>::value;
+
+// Detection: has .x and .y (Vector2, Vector2i, Point2, Size2)
+template <typename T, typename = void> struct has_xy : std::false_type
+{
+};
+
+template <typename T>
+struct has_xy<T, std::void_t<decltype(std::declval<T>().x), decltype(std::declval<T>().y)>>
+	: std::true_type
+{
+};
+
+template <typename T> inline constexpr bool has_xy_v = has_xy<T>::value;
+
+// Detection: supports std::ostream << val
+template <typename T, typename = void> struct is_streamable : std::false_type
+{
+};
+
+template <typename T>
+struct is_streamable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>>
+	: std::true_type
+{
+};
+
+template <typename T> inline constexpr bool is_streamable_v = is_streamable<T>::value;
+
+// ---------------------------------------------------------------------------
+// Aggregate field walking (values only, no reflection needed)
+// ---------------------------------------------------------------------------
+
+constexpr std::size_t k_max_fields = 10;
+
+// Converts to anything, used to probe how many initializers a struct accepts.
+struct any_t
+{
+	template <typename U> constexpr operator U() const noexcept;
+};
+
+template <typename T, typename Seq, typename = void> struct brace_ok : std::false_type
+{
+};
+
+template <typename T, std::size_t... I>
+struct brace_ok<T, std::index_sequence<I...>, std::void_t<decltype(T{(void(I), any_t{})...})>>
+	: std::true_type
+{
+};
+
+template <typename T, std::size_t N = 0> constexpr std::size_t count_fields()
+{
+	if constexpr (N < 16 && brace_ok<T, std::make_index_sequence<N + 1>>::value) {
+		return count_fields<T, N + 1>();
+	}
+	else {
+		return N;
+	}
+}
+
+template <typename T> constexpr bool dumpable_check()
+{
+	if constexpr (std::is_aggregate_v<T> && !std::is_array_v<T> && !std::is_union_v<T>) {
+		constexpr std::size_t n = count_fields<T>();
+		return n >= 1 && n <= k_max_fields;
+	}
+	else {
+		return false;
+	}
+}
+
+// Only complete types qualify (incomplete ones like VkCommandBuffer_T SFINAE out).
+template <typename T, typename = void> struct is_dumpable : std::false_type
+{
+};
+
+template <typename T>
+struct is_dumpable<T, std::void_t<decltype(sizeof(T))>> : std::bool_constant<dumpable_check<T>()>
+{
+};
+
+template <typename T> inline constexpr bool is_dumpable_v = is_dumpable<T>::value;
+
+template <typename T, typename F> void for_each_field(const T& p_val, F&& p_fn)
+{
+	constexpr std::size_t N = count_fields<T>();
+
+	if constexpr (N == 1) {
+		const auto& [a0] = p_val;
+		p_fn(a0);
+	}
+	else if constexpr (N == 2) {
+		const auto& [a0, a1] = p_val;
+		p_fn(a0); p_fn(a1);
+	}
+	else if constexpr (N == 3) {
+		const auto& [a0, a1, a2] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2);
+	}
+	else if constexpr (N == 4) {
+		const auto& [a0, a1, a2, a3] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3);
+	}
+	else if constexpr (N == 5) {
+		const auto& [a0, a1, a2, a3, a4] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4);
+	}
+	else if constexpr (N == 6) {
+		const auto& [a0, a1, a2, a3, a4, a5] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5);
+	}
+	else if constexpr (N == 7) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6);
+	}
+	else if constexpr (N == 8) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+	}
+	else if constexpr (N == 9) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+		p_fn(a8);
+	}
+	else if constexpr (N == 10) {
+		const auto& [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9] = p_val;
+		p_fn(a0); p_fn(a1); p_fn(a2); p_fn(a3); p_fn(a4); p_fn(a5); p_fn(a6); p_fn(a7);
+		p_fn(a8); p_fn(a9);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Value formatting
+// ---------------------------------------------------------------------------
+
+template <typename T> std::string to_string(const T& p_val, int p_depth)
+{
+	using Decayed = std::decay_t<T>;
+
+	if constexpr (std::is_null_pointer_v<Decayed>) {
+		return "nullptr";
+	}
+	else if constexpr (std::is_same_v<Decayed, bool>) {
+		return p_val ? "true" : "false";
+	}
+	else if constexpr (std::is_same_v<Decayed, char>) {
+		return std::string("'") + p_val + "'";
+	}
+	else if constexpr (std::is_same_v<Decayed, const char*> || std::is_same_v<Decayed, char*>) {
+		return p_val ? std::string("\"") + p_val + "\"" : "nullptr";
+	}
+	else if constexpr (std::is_same_v<Decayed, std::string>) {
+		return "\"" + p_val + "\"";
+	}
+	else if constexpr (std::is_same_v<Decayed, std::string_view>) {
+		return "\"" + std::string(p_val) + "\"";
+	}
+	else if constexpr (std::is_pointer_v<Decayed>) {
+		if (!p_val) {
+			return "nullptr";
+		}
+		std::ostringstream oss;
+		oss << static_cast<const void*>(p_val);
+
+		using Pointee = std::remove_cv_t<std::remove_pointer_t<Decayed>>;
+		if constexpr (is_dumpable_v<Pointee>) {
+			if (p_depth > 0) {
+				oss << " -> " << to_string(*p_val, p_depth - 1);
+			}
+		}
+		return oss.str();
+	}
+	else if constexpr (has_pos_size_v<Decayed>) {
+		std::ostringstream oss;
+		oss << "[pos: (" << p_val.position.x << ", " << p_val.position.y << "), "
+			<< "size: (" << p_val.size.x << ", " << p_val.size.y << ")]";
+		return oss.str();
+	}
+	else if constexpr (has_xy_v<Decayed>) {
+		std::ostringstream oss;
+		oss << "(" << p_val.x << ", " << p_val.y << ")";
+		return oss.str();
+	}
+	else if constexpr (std::is_arithmetic_v<Decayed>) {
+		std::ostringstream oss;
+		if constexpr (sizeof(Decayed) == 1) {
+			// int8_t / uint8_t: print the number, not the raw character.
+			oss << static_cast<int>(p_val);
+		}
+		else {
+			oss << p_val;
+		}
+		return oss.str();
+	}
+	else if constexpr (is_streamable_v<Decayed>) {
+		std::ostringstream oss;
+		oss << p_val;
+		return oss.str();
+	}
+	else if constexpr (is_dumpable_v<Decayed>) {
+		std::string out = "{";
+		bool first = true;
+		for_each_field(p_val, [&](const auto& p_field) {
+			if (!first) {
+				out += ", ";
+			}
+			first = false;
+			out += to_string(p_field, p_depth);
+		});
+		out += "}";
+		return out;
+	}
+	else {
+		// Raw POD fallback
+		std::ostringstream oss;
+		oss << "[raw " << sizeof(Decayed) << "B: ";
+		const auto* bytes = reinterpret_cast<const uint8_t*>(&p_val);
+		for (size_t i = 0; i < sizeof(Decayed); ++i) {
+			oss << std::hex << std::uppercase << std::setw(2) << std::setfill('0')
+				<< static_cast<uint32_t>(bytes[i]) << " ";
+		}
+		oss << "]";
+		return oss.str();
+	}
+}
+
+// ---------------------------------------------------------------------------
+// DUMP support
+// ---------------------------------------------------------------------------
+
+inline void print_unpacked(std::string_view) { std::cout << std::endl; }
+
+template <typename First, typename... Rest>
+void print_unpacked(std::string_view p_names, const First& p_first, const Rest&... p_rest)
+{
+	size_t comma_pos = p_names.find(',');
+	std::string_view raw_name = p_names.substr(0, comma_pos);
+
+	size_t start = raw_name.find_first_not_of(" \t");
+	size_t end = raw_name.find_last_not_of(" \t");
+	std::string_view trimmed_name =
+		(start == std::string_view::npos) ? "" : raw_name.substr(start, end - start + 1);
+
+	std::cout << trimmed_name << " = " << to_string(p_first);
+
+	if (comma_pos != std::string_view::npos) {
+		std::cout << " | ";
+		std::string_view remaining = p_names.substr(comma_pos + 1);
+		print_unpacked(remaining, p_rest...);
+	}
+	else {
+		std::cout << std::endl;
+	}
+}
+
+} // namespace dbg
+
+#define DUMP(...) dbg::print_unpacked(#__VA_ARGS__, __VA_ARGS__)
+
+#define print_verbose(m_text)                                                                      \
+	{                                                                                              \
+		if (is_print_verbose_enabled()) {                                                          \
+			__print_line(m_text);                                                                  \
+		}                                                                                          \
+	}
+// --- End core/string/print_string.h ---
+
+// --- Folded from core/templates/sort_array.h ---
+#include "core/typedefs.h"
+
+#define ERR_BAD_COMPARE(cond) \
+	if (unlikely(cond)) { \
+		ERR_PRINT("bad comparison function; sorting will be broken"); \
+		break; \
+	}
+
+#ifdef DEBUG_ENABLED
+#define SORT_ARRAY_VALIDATE_ENABLED true
+#else
+#define SORT_ARRAY_VALIDATE_ENABLED false
+#endif
+
+template <typename T, typename Comparator = Comparator<T>, bool Validate = SORT_ARRAY_VALIDATE_ENABLED>
+class SortArray {
+	enum {
+		INTROSORT_THRESHOLD = 16
+	};
+
+public:
+	Comparator compare;
+
+	inline int64_t median_of_3_index(const T *p_ptr, int64_t p_a_index, int64_t p_b_index, int64_t p_c_index) const {
+		const T &a = p_ptr[p_a_index];
+		const T &b = p_ptr[p_b_index];
+		const T &c = p_ptr[p_c_index];
+		if (compare(a, b)) {
+			if (compare(b, c)) {
+				return p_b_index;
+			} else if (compare(a, c)) {
+				return p_c_index;
+			} else {
+				return p_a_index;
+			}
+		} else if (compare(a, c)) {
+			return p_a_index;
+		} else if (compare(b, c)) {
+			return p_c_index;
+		} else {
+			return p_b_index;
+		}
+	}
+
+	inline int64_t bitlog(int64_t p_n) const {
+		int64_t k;
+		for (k = 0; p_n != 1; p_n >>= 1) {
+			++k;
+		}
+		return k;
+	}
+
+	/* Heap / Heapsort functions */
+
+	inline void push_heap(int64_t p_first, int64_t p_hole_idx, int64_t p_top_index, T p_value, T *p_array) const {
+		int64_t parent = (p_hole_idx - 1) / 2;
+		while (p_hole_idx > p_top_index && compare(p_array[p_first + parent], p_value)) {
+			p_array[p_first + p_hole_idx] = p_array[p_first + parent];
+			p_hole_idx = parent;
+			parent = (p_hole_idx - 1) / 2;
+		}
+		p_array[p_first + p_hole_idx] = p_value;
+	}
+
+	inline void pop_heap(int64_t p_first, int64_t p_last, int64_t p_result, T p_value, T *p_array) const {
+		p_array[p_result] = p_array[p_first];
+		adjust_heap(p_first, 0, p_last - p_first, p_value, p_array);
+	}
+	inline void pop_heap(int64_t p_first, int64_t p_last, T *p_array) const {
+		pop_heap(p_first, p_last - 1, p_last - 1, p_array[p_last - 1], p_array);
+	}
+
+	inline void adjust_heap(int64_t p_first, int64_t p_hole_idx, int64_t p_len, T p_value, T *p_array) const {
+		int64_t top_index = p_hole_idx;
+		int64_t second_child = 2 * p_hole_idx + 2;
+
+		while (second_child < p_len) {
+			if (compare(p_array[p_first + second_child], p_array[p_first + (second_child - 1)])) {
+				second_child--;
+			}
+
+			p_array[p_first + p_hole_idx] = p_array[p_first + second_child];
+			p_hole_idx = second_child;
+			second_child = 2 * (second_child + 1);
+		}
+
+		if (second_child == p_len) {
+			p_array[p_first + p_hole_idx] = p_array[p_first + (second_child - 1)];
+			p_hole_idx = second_child - 1;
+		}
+		push_heap(p_first, p_hole_idx, top_index, p_value, p_array);
+	}
+
+	inline void sort_heap(int64_t p_first, int64_t p_last, T *p_array) const {
+		while (p_last - p_first > 1) {
+			pop_heap(p_first, p_last--, p_array);
+		}
+	}
+
+	inline void make_heap(int64_t p_first, int64_t p_last, T *p_array) const {
+		if (p_last - p_first < 2) {
+			return;
+		}
+		int64_t len = p_last - p_first;
+		int64_t parent = (len - 2) / 2;
+
+		while (true) {
+			adjust_heap(p_first, parent, len, p_array[p_first + parent], p_array);
+			if (parent == 0) {
+				return;
+			}
+			parent--;
+		}
+	}
+
+	inline void partial_sort(int64_t p_first, int64_t p_last, int64_t p_middle, T *p_array) const {
+		make_heap(p_first, p_middle, p_array);
+		for (int64_t i = p_middle; i < p_last; i++) {
+			if (compare(p_array[i], p_array[p_first])) {
+				pop_heap(p_first, p_middle, i, p_array[i], p_array);
+			}
+		}
+		sort_heap(p_first, p_middle, p_array);
+	}
+
+	inline void partial_select(int64_t p_first, int64_t p_last, int64_t p_middle, T *p_array) const {
+		make_heap(p_first, p_middle, p_array);
+		for (int64_t i = p_middle; i < p_last; i++) {
+			if (compare(p_array[i], p_array[p_first])) {
+				pop_heap(p_first, p_middle, i, p_array[i], p_array);
+			}
+		}
+	}
+
+	inline int64_t partitioner(int64_t p_first, int64_t p_last, int64_t p_pivot, T *p_array) const {
+		const int64_t unmodified_first = p_first;
+		const int64_t unmodified_last = p_last;
+		const T *pivot_element_location = &p_array[p_pivot];
+
+		while (true) {
+			while (p_first != p_pivot && compare(p_array[p_first], *pivot_element_location)) {
+				if constexpr (Validate) {
+					ERR_BAD_COMPARE(p_first == unmodified_last - 1);
+				}
+				p_first++;
+			}
+			p_last--;
+			while (p_last != p_pivot && compare(*pivot_element_location, p_array[p_last])) {
+				if constexpr (Validate) {
+					ERR_BAD_COMPARE(p_last == unmodified_first);
+				}
+				p_last--;
+			}
+
+			if (p_first >= p_last) {
+				return p_first;
+			}
+
+			if (pivot_element_location == &p_array[p_first]) {
+				pivot_element_location = &p_array[p_last];
+			} else if (pivot_element_location == &p_array[p_last]) {
+				pivot_element_location = &p_array[p_first];
+			}
+			SWAP(p_array[p_first], p_array[p_last]);
+			p_first++;
+		}
+	}
+
+	inline void introsort(int64_t p_first, int64_t p_last, T *p_array, int64_t p_max_depth) const {
+		while (p_last - p_first > INTROSORT_THRESHOLD) {
+			if (p_max_depth == 0) {
+				partial_sort(p_first, p_last, p_last, p_array);
+				return;
+			}
+
+			p_max_depth--;
+
+			int64_t cut = partitioner(
+					p_first,
+					p_last,
+					median_of_3_index(p_array, p_first, p_first + (p_last - p_first) / 2, p_last - 1),
+					p_array);
+
+			introsort(cut, p_last, p_array, p_max_depth);
+			p_last = cut;
+		}
+	}
+
+	inline void introselect(int64_t p_first, int64_t p_nth, int64_t p_last, T *p_array, int64_t p_max_depth) const {
+		while (p_last - p_first > 3) {
+			if (p_max_depth == 0) {
+				partial_select(p_first, p_nth + 1, p_last, p_array);
+				SWAP(p_first, p_nth);
+				return;
+			}
+
+			p_max_depth--;
+
+			int64_t cut = partitioner(
+					p_first,
+					p_last,
+					median_of_3_index(p_array, p_first, p_first + (p_last - p_first) / 2, p_last - 1),
+					p_array);
+
+			if (cut <= p_nth) {
+				p_first = cut;
+			} else {
+				p_last = cut;
+			}
+		}
+
+		insertion_sort(p_first, p_last, p_array);
+	}
+
+	inline void unguarded_linear_insert(int64_t p_last, T p_value, T *p_array) const {
+		int64_t next = p_last - 1;
+		while (compare(p_value, p_array[next])) {
+			if constexpr (Validate) {
+				ERR_BAD_COMPARE(next == 0);
+			}
+			p_array[p_last] = p_array[next];
+			p_last = next;
+			next--;
+		}
+		p_array[p_last] = p_value;
+	}
+
+	inline void linear_insert(int64_t p_first, int64_t p_last, T *p_array) const {
+		T val = p_array[p_last];
+		if (compare(val, p_array[p_first])) {
+			for (int64_t i = p_last; i > p_first; i--) {
+				p_array[i] = p_array[i - 1];
+			}
+
+			p_array[p_first] = val;
+		} else {
+			unguarded_linear_insert(p_last, val, p_array);
+		}
+	}
+
+	inline void insertion_sort(int64_t p_first, int64_t p_last, T *p_array) const {
+		if (p_first == p_last) {
+			return;
+		}
+		for (int64_t i = p_first + 1; i != p_last; i++) {
+			linear_insert(p_first, i, p_array);
+		}
+	}
+
+	inline void unguarded_insertion_sort(int64_t p_first, int64_t p_last, T *p_array) const {
+		for (int64_t i = p_first; i != p_last; i++) {
+			unguarded_linear_insert(i, p_array[i], p_array);
+		}
+	}
+
+	inline void final_insertion_sort(int64_t p_first, int64_t p_last, T *p_array) const {
+		if (p_last - p_first > INTROSORT_THRESHOLD) {
+			insertion_sort(p_first, p_first + INTROSORT_THRESHOLD, p_array);
+			unguarded_insertion_sort(p_first + INTROSORT_THRESHOLD, p_last, p_array);
+		} else {
+			insertion_sort(p_first, p_last, p_array);
+		}
+	}
+
+	inline void sort_range(int64_t p_first, int64_t p_last, T *p_array) const {
+		if (p_first != p_last) {
+			introsort(p_first, p_last, p_array, bitlog(p_last - p_first) * 2);
+			final_insertion_sort(p_first, p_last, p_array);
+		}
+	}
+
+	inline void sort(T *p_array, int64_t p_len) const {
+		sort_range(0, p_len, p_array);
+	}
+
+	inline void nth_element(int64_t p_first, int64_t p_last, int64_t p_nth, T *p_array) const {
+		if (p_first == p_last || p_nth == p_last) {
+			return;
+		}
+		introselect(p_first, p_nth, p_last, p_array, bitlog(p_last - p_first) * 2);
+	}
+};
+// --- End core/templates/sort_array.h ---
+// --- End core/templates/span.h ---
+#include "core/os/memory.h"
+
+
+#include <initializer_list>
+#include <type_traits>
+
+#ifdef ASAN_ENABLED
+#include <sanitizer/asan_interface.h>
+#endif
+
+static_assert(std::is_trivially_destructible_v<std::atomic<uint64_t>>);
+
+// Silences false-positive warnings.
+VLTR_GCC_WARNING_PUSH
+VLTR_GCC_WARNING_IGNORE("-Wplacement-new") // Silence a false positive warning (see GH-52119).
+VLTR_GCC_WARNING_IGNORE("-Wmaybe-uninitialized") // False positive raised when using constexpr.
+VLTR_GCC_WARNING_IGNORE("-Warray-bounds")
+VLTR_GCC_WARNING_IGNORE("-Wrestrict")
+VLTR_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignore" this for some reason.
+#ifdef WINDOWS_ENABLED
+VLTR_GCC_PRAGMA(GCC diagnostic warning "-Wdangling-pointer=0") // Can't "ignore" this for some reason.
+#endif
+
+template <typename T>
+class CowData {
+public:
+	typedef int64_t Size;
+	typedef uint64_t USize;
+	static constexpr USize MAX_INT = INT64_MAX;
+
+private:
+	// Alignment:  ↓ max_align_t           ↓ USize          ↓ USize            ↓ MAX_ALIGN
+	//             ┌────────────────────┬──┬───────────────┬──┬─────────────┬──┬───────────...
+	//             │ SafeNumeric<USize> │░░│ USize         │░░│ USize       │░░│ T[]
+	//             │ ref. count         │░░│ data capacity │░░│ data size   │░░│ data
+	//             └────────────────────┴──┴───────────────┴──┴─────────────┴──┴───────────...
+	// Offset:     ↑ REF_COUNT_OFFSET      ↑ CAPACITY_OFFSET  ↑ SIZE_OFFSET    ↑ DATA_OFFSET
+
+	static constexpr size_t REF_COUNT_OFFSET = 0;
+	static constexpr size_t CAPACITY_OFFSET = Memory::get_aligned_address(REF_COUNT_OFFSET + sizeof(SafeNumeric<USize>), alignof(USize));
+	static constexpr size_t SIZE_OFFSET = Memory::get_aligned_address(CAPACITY_OFFSET + sizeof(USize), alignof(USize));
+	static constexpr size_t DATA_OFFSET = Memory::get_aligned_address(SIZE_OFFSET + sizeof(USize), Memory::MAX_ALIGN);
+
+	mutable T *_ptr = nullptr;
+
+	// internal helpers
+
+	static constexpr _FORCE_INLINE_ USize grow_capacity(USize p_previous_capacity) {
+		// 1.5x the given size.
+		// This ratio was chosen because it is close to the ideal growth rate of the golden ratio.
+		// See https://archive.ph/Z2R8w for details.
+		return MAX((USize)2, p_previous_capacity + ((1 + p_previous_capacity) >> 1));
+	}
+
+	static constexpr _FORCE_INLINE_ USize next_capacity(USize p_previous_capacity, USize p_size) {
+		if (p_previous_capacity < p_size) {
+			return MAX(grow_capacity(p_previous_capacity), p_size);
+		}
+		return p_previous_capacity;
+	}
+
+	static constexpr _FORCE_INLINE_ USize smaller_capacity(USize p_previous_capacity, USize p_size) {
+		if (p_size < p_previous_capacity >> 2) {
+			return grow_capacity(p_size);
+		}
+		return p_previous_capacity;
+	}
+
+	static _FORCE_INLINE_ T *_get_data_ptr(uint8_t *p_ptr) {
+		return (T *)(p_ptr + DATA_OFFSET);
+	}
+
+	/// Note: Assumes _ptr != nullptr.
+	_FORCE_INLINE_ SafeNumeric<USize> *_get_refcount() const {
+		return (SafeNumeric<USize> *)((uint8_t *)_ptr - DATA_OFFSET + REF_COUNT_OFFSET);
+	}
+
+	/// Note: Assumes _ptr != nullptr.
+	_FORCE_INLINE_ USize *_get_size() const {
+		return (USize *)((uint8_t *)_ptr - DATA_OFFSET + SIZE_OFFSET);
+	}
+
+	/// Note: Assumes _ptr != nullptr.
+	_FORCE_INLINE_ USize *_get_capacity() const {
+		return (USize *)((uint8_t *)_ptr - DATA_OFFSET + CAPACITY_OFFSET);
+	}
+
+	// Decrements the reference count. Deallocates the backing buffer if needed.
+	// After this function, _ptr is guaranteed to be NULL.
+	void _unref();
+	void _ref(const CowData *p_from);
+	void _ref(const CowData &p_from);
+
+	/// Allocates a backing array of the given capacity. The reference count is initialized to 1, size to 0.
+	/// It is the responsibility of the caller to:
+	/// - Ensure _ptr == nullptr
+	/// - Ensure p_capacity > 0
+	Error _alloc_exact(USize p_capacity);
+
+	/// Re-allocates the backing array to the given capacity.
+	/// It is the responsibility of the caller to:
+	/// - Ensure we are the only owner of the backing array
+	/// - Ensure p_capacity > 0
+	Error _realloc_exact(USize p_capacity);
+
+	/// Create a new buffer and copies over elements from the old buffer.
+	/// Elements are inserted first from the start, then a gap is left uninitialized, and then elements are inserted from the back.
+	/// It is the responsibility of the caller to:
+	/// - Construct elements in the gap.
+	/// - Ensure size() >= p_size_from_start and size() >= p_size_from_back.
+	/// - Ensure p_capacity is enough to hold all elements.
+	[[nodiscard]] Error _copy_to_new_buffer_exact(USize p_capacity, USize p_size_from_start, USize p_gap, USize p_size_from_back);
+
+	/// Ensure we are the only owners of the backing buffer.
+	[[nodiscard]] Error _copy_on_write();
+
+public:
+	void operator=(const CowData<T> &p_from) { _ref(p_from); }
+	void operator=(CowData<T> &&p_from) {
+		if (_ptr == p_from._ptr) {
+			return;
+		}
+
+		_unref();
+		_ptr = p_from._ptr;
+		p_from._ptr = nullptr;
+	}
+
+	_FORCE_INLINE_ T *ptrw() _LIFETIME_BOUND_ {
+		// If forking fails, we can only crash.
+		CRASH_COND(_copy_on_write());
+		return _ptr;
+	}
+
+	_FORCE_INLINE_ const T *ptr() const _LIFETIME_BOUND_ {
+		return _ptr;
+	}
+
+	_FORCE_INLINE_ Size size() const { return !_ptr ? 0 : *_get_size(); }
+	_FORCE_INLINE_ USize capacity() const { return !_ptr ? 0 : *_get_capacity(); }
+	_FORCE_INLINE_ USize refcount() const { return !_ptr ? 0 : *_get_refcount(); }
+
+	_FORCE_INLINE_ void clear() { _unref(); }
+	_FORCE_INLINE_ bool is_empty() const { return size() == 0; }
+
+	_FORCE_INLINE_ void set(Size p_index, const T &p_elem) {
+		ERR_FAIL_INDEX(p_index, size());
+		// TODO Returning the error would be more appropriate.
+		CRASH_COND(_copy_on_write());
+		_ptr[p_index] = p_elem;
+	}
+
+	_FORCE_INLINE_ T &get_m(Size p_index) _LIFETIME_BOUND_ {
+		CRASH_BAD_INDEX(p_index, size());
+		// If we fail to fork, all we can do is crash,
+		// since the caller may write incorrectly to the unforked array.
+		CRASH_COND(_copy_on_write());
+		return _ptr[p_index];
+	}
+
+	_FORCE_INLINE_ const T &get(Size p_index) const _LIFETIME_BOUND_ {
+		CRASH_BAD_INDEX(p_index, size());
+
+		return _ptr[p_index];
+	}
+
+	template <bool p_init = false>
+	Error resize(Size p_size);
+
+	template <bool p_exact = false>
+	Error reserve(USize p_min_capacity);
+	_FORCE_INLINE_ Error reserve_exact(USize p_capacity) {
+		return reserve<true>(p_capacity);
+	}
+
+	_FORCE_INLINE_ void remove_at(Size p_index);
+
+	Error insert(Size p_pos, T &&p_val);
+	Error push_back(T &&p_val);
+
+	_FORCE_INLINE_ operator Span<T>() const _LIFETIME_BOUND_ { return Span<T>(ptr(), size()); }
+	_FORCE_INLINE_ Span<T> span() const _LIFETIME_BOUND_ { return operator Span<T>(); }
+
+	_FORCE_INLINE_ CowData() {}
+	_FORCE_INLINE_ ~CowData() { _unref(); }
+	_FORCE_INLINE_ CowData(std::initializer_list<T> p_init);
+	_FORCE_INLINE_ explicit CowData(Span<T> p_span);
+	_FORCE_INLINE_ CowData(const CowData<T> &p_from) { _ref(p_from); }
+	_FORCE_INLINE_ CowData(CowData<T> &&p_from) {
+		_ptr = p_from._ptr;
+		p_from._ptr = nullptr;
+	}
+};
+
+template <typename T>
+void CowData<T>::_unref() {
+	if (!_ptr) {
+		return;
+	}
+
+	if (_get_refcount()->decrement() > 0) {
+		// Data is still in use elsewhere.
+		_ptr = nullptr;
+		return;
+	}
+	// We had the only reference; destroy the data.
+
+	// First, invalidate our own reference.
+	// NOTE: It is required to do so immediately because it must not be observable outside of this
+	//       function after refcount has already been reduced to 0.
+	// WARNING: It must be done before calling the destructors, because one of them may otherwise
+	//          observe it through a reference to us. In this case, it may try to access the buffer,
+	//          which is illegal after some of the elements in it have already been destructed, and
+	//          may lead to a segmentation fault.
+	USize current_size = size();
+	T *prev_ptr = _ptr;
+	_ptr = nullptr;
+
+#ifdef ASAN_ENABLED
+	// Access during destruction is illegal in C++, and results in undefined behavior.
+	// In address sanitizer builds, we can poison ourselves (_ptr) to catch this.
+	__asan_poison_memory_region(this, sizeof(CowData));
+#endif
+
+	destruct_arr_placement(prev_ptr, current_size);
+
+	// Free Memory.
+	Memory::free_static((uint8_t *)prev_ptr - DATA_OFFSET, false);
+
+#ifdef ASAN_ENABLED
+	__asan_unpoison_memory_region(this, sizeof(CowData));
+#elif defined(DEBUG_ENABLED)
+	// In a non-asan build, the best we can do is catch if elements were added during destruction.
+	ERR_FAIL_COND_MSG(_ptr != nullptr, "Internal bug, please report: CowData was modified during destruction.");
+#endif
+}
+
+template <typename T>
+void CowData<T>::remove_at(Size p_index) {
+	const Size prev_size = size();
+	ERR_FAIL_INDEX(p_index, prev_size);
+
+	if (prev_size == 1) {
+		// Removing the only element.
+		_unref();
+		return;
+	}
+
+	const USize new_size = prev_size - 1;
+
+	if (_get_refcount()->get() == 1) {
+		// We're the only owner; remove in-place.
+
+		// Destruct the element, then relocate the rest one down.
+		_ptr[p_index].~T();
+		memmove((void *)(_ptr + p_index), (void *)(_ptr + p_index + 1), (new_size - p_index) * sizeof(T));
+
+		// Shrink to fit if necessary.
+		const USize new_capacity = smaller_capacity(capacity(), new_size);
+		if (new_capacity < capacity()) {
+			Error err = _realloc_exact(new_capacity);
+			CRASH_COND(err);
+		}
+		*_get_size() = new_size;
+	} else {
+		// Remove by forking.
+		Error err = _copy_to_new_buffer_exact(smaller_capacity(capacity(), new_size), p_index, 0, new_size - p_index);
+		CRASH_COND(err);
+	}
+}
+
+template <typename T>
+Error CowData<T>::insert(Size p_pos, T &&p_val) {
+	const Size new_size = size() + 1;
+	ERR_FAIL_INDEX_V(p_pos, new_size, ERR_INVALID_PARAMETER);
+
+	if (!_ptr) {
+		_alloc_exact(next_capacity(0, 1));
+		*_get_size() = 1;
+	} else if (_get_refcount()->get() == 1) {
+		if ((USize)new_size > capacity()) {
+			// Need to grow.
+			const Error error = _realloc_exact(grow_capacity(capacity()));
+			if (error) {
+				return error;
+			}
+		}
+
+		// Relocate elements one position up.
+		memmove((void *)(_ptr + p_pos + 1), (void *)(_ptr + p_pos), (size() - p_pos) * sizeof(T));
+		*_get_size() = new_size;
+	} else {
+		// Insert new element by forking.
+		// Use the max of capacity and new_size, to ensure we don't accidentally shrink after reserve.
+		const USize new_capacity = next_capacity(capacity(), new_size);
+		const Error error = _copy_to_new_buffer_exact(new_capacity, p_pos, 1, size() - p_pos);
+		if (error) {
+			return error;
+		}
+	}
+
+	// Create the new element at the given index.
+	memnew_placement(_ptr + p_pos, T(std::move(p_val)));
+
+	return OK;
+}
+
+template <typename T>
+Error CowData<T>::push_back(T &&p_val) {
+	const Size new_size = size() + 1;
+
+	if (!_ptr) {
+		// Grow by allocating.
+		_alloc_exact(next_capacity(0, 1));
+		*_get_size() = 1;
+	} else if (_get_refcount()->get() == 1) {
+		// Grow in-place.
+		if ((USize)new_size > capacity()) {
+			// Need to grow.
+			const Error error = _realloc_exact(grow_capacity(capacity()));
+			if (error) {
+				return error;
+			}
+		}
+
+		*_get_size() = new_size;
+	} else {
+		// Grow by forking.
+		// Use the max of capacity and new_size, to ensure we don't accidentally shrink after reserve.
+		const USize new_capacity = next_capacity(capacity(), new_size);
+		const Error error = _copy_to_new_buffer_exact(new_capacity, size(), 1, 0);
+		if (error) {
+			return error;
+		}
+	}
+
+	// Create the new element at the given index.
+	memnew_placement(_ptr + new_size - 1, T(std::move(p_val)));
+
+	return OK;
+}
+
+template <typename T>
+template <bool p_exact>
+Error CowData<T>::reserve(USize p_min_capacity) {
+	USize new_capacity = p_exact ? p_min_capacity : next_capacity(capacity(), p_min_capacity);
+	if (new_capacity <= capacity()) {
+		if (p_min_capacity < (USize)size()) {
+			WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This is likely a mistake.");
+		}
+		// No need to reserve more, we already have (at least) the right size.
+		return OK;
+	}
+
+	if (!_ptr) {
+		// Initial allocation.
+		return _alloc_exact(new_capacity);
+	} else if (_get_refcount()->get() == 1) {
+		// Grow in-place.
+		return _realloc_exact(new_capacity);
+	} else {
+		// Grow by forking.
+		return _copy_to_new_buffer_exact(new_capacity, size(), 0, 0);
+	}
+}
+
+template <typename T>
+template <bool p_initialize>
+Error CowData<T>::resize(Size p_size) {
+	ERR_FAIL_COND_V(p_size < 0, ERR_INVALID_PARAMETER);
+
+	const Size prev_size = size();
+	if (p_size == prev_size) {
+		// Caller wants to stay the same size, so we do nothing.
+		return OK;
+	}
+
+	if (p_size > prev_size) {
+		// Caller wants to grow.
+
+		if (!_ptr) {
+			// Grow by allocating.
+			const Error error = _alloc_exact(next_capacity(0, p_size));
+			if (error) {
+				return error;
+			}
+		} else if (_get_refcount()->get() == 1) {
+			// Grow in-place.
+			if ((USize)p_size > capacity()) {
+				const Error error = _realloc_exact(next_capacity(capacity(), p_size));
+				if (error) {
+					return error;
+				}
+			}
+		} else {
+			// Grow by forking.
+			const Error error = _copy_to_new_buffer_exact(next_capacity(capacity(), p_size), prev_size, 0, 0);
+			if (error) {
+				return error;
+			}
+		}
+
+		// Construct new elements.
+		if constexpr (p_initialize) {
+			memnew_arr_placement(_ptr + prev_size, p_size - prev_size);
+		}
+		*_get_size() = p_size;
+
+		return OK;
+	} else {
+		// Caller wants to shrink.
+
+		if (p_size == 0) {
+			_unref();
+			return OK;
+		} else if (_get_refcount()->get() == 1) {
+			// Shrink in-place.
+			destruct_arr_placement(_ptr + p_size, prev_size - p_size);
+
+			// Shrink buffer if necessary.
+			const USize new_capacity = smaller_capacity(capacity(), p_size);
+			if (new_capacity < capacity()) {
+				Error err = _realloc_exact(new_capacity);
+				CRASH_COND(err);
+			}
+
+			*_get_size() = p_size;
+			return OK;
+		} else {
+			// Shrink by forking.
+			const USize new_capacity = smaller_capacity(capacity(), p_size);
+			return _copy_to_new_buffer_exact(new_capacity, p_size, 0, 0);
+		}
+	}
+}
+
+template <typename T>
+Error CowData<T>::_alloc_exact(USize p_capacity) {
+	DEV_ASSERT(!_ptr);
+
+	uint8_t *mem_new = (uint8_t *)Memory::alloc_static(p_capacity * sizeof(T) + DATA_OFFSET, false);
+	ERR_FAIL_NULL_V(mem_new, ERR_OUT_OF_MEMORY);
+
+	_ptr = _get_data_ptr(mem_new);
+
+	// If we alloc, we're guaranteed to be the only reference.
+	new (_get_refcount()) SafeNumeric<USize>(1);
+	*_get_size() = 0;
+	// The actual capacity is whatever we can stuff into the alloc_size.
+	*_get_capacity() = p_capacity;
+
+	return OK;
+}
+
+template <typename T>
+Error CowData<T>::_realloc_exact(USize p_capacity) {
+	DEV_ASSERT(_ptr);
+
+	uint8_t *mem_new = (uint8_t *)Memory::realloc_static(((uint8_t *)_ptr) - DATA_OFFSET, p_capacity * sizeof(T) + DATA_OFFSET, false);
+	ERR_FAIL_NULL_V(mem_new, ERR_OUT_OF_MEMORY);
+
+	_ptr = _get_data_ptr(mem_new);
+
+	// If we realloc, we're guaranteed to be the only reference.
+	// So the reference was 1 and was copied to be 1 again.
+	DEV_ASSERT(_get_refcount()->get() == 1);
+	// The size was also copied from the previous allocation.
+	// The actual capacity is whatever we can stuff into the alloc_size.
+	*_get_capacity() = p_capacity;
+
+	return OK;
+}
+
+template <typename T>
+Error CowData<T>::_copy_to_new_buffer_exact(USize p_capacity, USize p_size_from_start, USize p_gap, USize p_size_from_back) {
+	DEV_ASSERT(p_capacity >= p_size_from_start + p_size_from_back + p_gap);
+	DEV_ASSERT((USize)size() >= p_size_from_start && (USize)size() >= p_size_from_back);
+
+	// Create a temporary CowData to hold ownership over our _ptr.
+	// It will be used to copy elements from the old buffer over to our new buffer.
+	// At the end of the block, it will be automatically destructed by going out of scope.
+	const CowData prev_data;
+	prev_data._ptr = _ptr;
+	_ptr = nullptr;
+
+	const Error error = _alloc_exact(p_capacity);
+	if (error) {
+		// On failure to allocate, recover the old data and return the error.
+		_ptr = prev_data._ptr;
+		prev_data._ptr = nullptr;
+		return error;
+	}
+
+	// Copy over elements.
+	copy_arr_placement(_ptr, prev_data._ptr, p_size_from_start);
+	copy_arr_placement(
+			_ptr + p_size_from_start + p_gap,
+			prev_data._ptr + prev_data.size() - p_size_from_back,
+			p_size_from_back);
+	*_get_size() = p_size_from_start + p_gap + p_size_from_back;
+
+	return OK;
+}
+
+template <typename T>
+Error CowData<T>::_copy_on_write() {
+	if (!_ptr || _get_refcount()->get() == 1) {
+		// Nothing to do.
+		return OK;
+	}
+
+	// Fork to become the only reference.
+	return _copy_to_new_buffer_exact(capacity(), size(), 0, 0);
+}
+
+template <typename T>
+void CowData<T>::_ref(const CowData *p_from) {
+	_ref(*p_from);
+}
+
+template <typename T>
+void CowData<T>::_ref(const CowData &p_from) {
+	if (_ptr == p_from._ptr) {
+		return; // self assign, do nothing.
+	}
+
+	_unref(); // Resets _ptr to nullptr.
+
+	if (!p_from._ptr) {
+		return; //nothing to do
+	}
+
+	if (p_from._get_refcount()->conditional_increment() > 0) { // could reference
+		_ptr = p_from._ptr;
+	}
+}
+
+template <typename T>
+CowData<T>::CowData(std::initializer_list<T> p_init) {
+	CRASH_COND(_alloc_exact(p_init.size()));
+
+	copy_arr_placement(_ptr, p_init.begin(), p_init.size());
+	*_get_size() = p_init.size();
+}
+
+template <typename T>
+CowData<T>::CowData(Span<T> p_span) {
+	CRASH_COND(_alloc_exact(p_span.size()));
+
+	copy_arr_placement(_ptr, p_span.begin(), p_span.size());
+	*_get_size() = p_span.size();
+}
+
+VLTR_GCC_WARNING_POP
+
+// Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
+template <typename T>
+struct is_zero_constructible<CowData<T>> : std::true_type {};
+
+#include "core/typedefs.h"
+
+template <typename T> class Vector;
+
+template <typename T> class VectorWriteProxy
+{
+public:
+	_FORCE_INLINE_ T& operator[](typename CowData<T>::Size p_index)
+	{
+		CRASH_BAD_INDEX(p_index, ((Vector<T>*)(this))->_cowdata.size());
+
+		return ((Vector<T>*)(this))->_cowdata.ptrw()[p_index];
+	}
+};
+
+template <typename T> class _WARN_UNUSED_ Vector
+{
+	friend class VectorWriteProxy<T>;
+
+public:
+	VectorWriteProxy<T> write;
+	typedef typename CowData<T>::Size Size;
+	typedef typename CowData<T>::USize USize;
+
+private:
+	CowData<T> _cowdata;
+
+public:
+	// Must take a copy instead of a reference (see GH-31736).
+	_FORCE_INLINE_ bool push_back(T p_elem) { return _cowdata.push_back(std::move(p_elem)); }
+
+	_FORCE_INLINE_ T pop_back()
+	{
+		if (!_cowdata.is_empty()) {
+			const int n = _cowdata.size() - 1;
+			T ret = std::move(_cowdata.get(n));
+			_cowdata.resize(n);
+			return ret;
+		}
+		return T();
+	}
+
+	_FORCE_INLINE_ bool append(T p_elem) { return _cowdata.push_back(std::move(p_elem)); } // alias
+
+	void fill(T p_elem);
+
+	void remove_at(Size p_index) { _cowdata.remove_at(p_index); }
+
+	_FORCE_INLINE_ bool erase(const T& p_val)
+	{
+		Size idx = find(p_val);
+		if (idx >= 0) {
+			remove_at(idx);
+			return true;
+		}
+		return false;
+	}
+
+	void reverse();
+
+	_FORCE_INLINE_ T* ptrw() _LIFETIME_BOUND_ { return _cowdata.ptrw(); }
+
+	_FORCE_INLINE_ const T* ptr() const _LIFETIME_BOUND_ { return _cowdata.ptr(); }
+
+	_FORCE_INLINE_ Size size() const { return _cowdata.size(); }
+
+	_FORCE_INLINE_ USize capacity() const { return _cowdata.capacity(); }
+
+	_FORCE_INLINE_ operator Span<T>() const _LIFETIME_BOUND_ { return _cowdata.span(); }
+
+	_FORCE_INLINE_ Span<T> span() const _LIFETIME_BOUND_ { return _cowdata.span(); }
+
+	_FORCE_INLINE_ void clear() { _cowdata.clear(); }
+
+	_FORCE_INLINE_ bool is_empty() const { return _cowdata.is_empty(); }
+
+	_FORCE_INLINE_ T get(Size p_index) _LIFETIME_BOUND_ { return _cowdata.get(p_index); }
+
+	_FORCE_INLINE_ const T& get(Size p_index) const _LIFETIME_BOUND_
+	{
+		return _cowdata.get(p_index);
+	}
+
+	_FORCE_INLINE_ void set(Size p_index, const T& p_elem) { _cowdata.set(p_index, p_elem); }
+
+	/// Resize the vector.
+	/// Elements are initialized (or not) depending on what the default C++ behavior for this type
+	/// is.
+	_FORCE_INLINE_ Error resize(Size p_size)
+	{
+		return _cowdata.template resize<!std::is_trivially_constructible_v<T>>(p_size);
+	}
+
+	/// Resize and set new values to 0 / false / nullptr.
+	/// This is only available for zero constructible types.
+	_FORCE_INLINE_ Error resize_initialized(Size p_size)
+	{
+		return _cowdata.template resize<true>(p_size);
+	}
+
+	/// Resize and keep memory uninitialized.
+	/// This means that any newly added elements have an unknown value, and are expected to be set
+	/// after the `resize_uninitialized` call. This is only available for trivially destructible
+	/// types (otherwise, trivial resize might be UB).
+	_FORCE_INLINE_ Error resize_uninitialized(Size p_size)
+	{
+		// resize() statically asserts that T is compatible, no need to do it ourselves.
+		return _cowdata.template resize<false>(p_size);
+	}
+
+	/// Reserves capacity for at least p_size total elements.
+	/// You can use `reserve` before repeated insertions to improve performance.
+	/// The capacity grows in 1.5x increments when possible, and uses `p_size`
+	/// exactly otherwise.
+	Error reserve(Size p_size)
+	{
+		ERR_FAIL_COND_V(p_size < 0, ERR_INVALID_PARAMETER);
+		return _cowdata.reserve(p_size);
+	}
+
+	/// Reserves capacity for exactly p_size total elements.
+	/// This can be useful to reduce RAM use of large vectors, but wastes CPU
+	/// time if more than p_size elements are added after the `reserve_exact` call.
+	/// Prefer using `reserve`, unless the vector (or copies of it) will never
+	/// grow again after p_size elements are inserted.
+	Error reserve_exact(Size p_size)
+	{
+		ERR_FAIL_COND_V(p_size < 0, ERR_INVALID_PARAMETER);
+		return _cowdata.reserve_exact(p_size);
+	}
+
+	_FORCE_INLINE_ const T& operator[](Size p_index) const _LIFETIME_BOUND_
+	{
+		return _cowdata.get(p_index);
+	}
+
+	// Must take a copy instead of a reference (see GH-31736).
+	Error insert(Size p_pos, T p_val) { return _cowdata.insert(p_pos, std::move(p_val)); }
+
+	Size find(const T& p_val, Size p_from = 0) const
+	{
+		if (p_from < 0) {
+			p_from = size() + p_from;
+		}
+		if (p_from < 0 || p_from >= size()) {
+			return -1;
+		}
+		return span().find(p_val, p_from);
+	}
+
+	Size rfind(const T& p_val, Size p_from = -1) const
+	{
+		if (p_from < 0) {
+			p_from = size() + p_from;
+		}
+		if (p_from < 0 || p_from >= size()) {
+			return -1;
+		}
+		return span().rfind(p_val, p_from);
+	}
+
+	Size count(const T& p_val) const { return span().count(p_val); }
+
+	// Must take a copy instead of a reference (see GH-31736).
+	void append_array(Vector<T> p_other);
+
+	_FORCE_INLINE_ bool has(const T& p_val) const { return find(p_val) != -1; }
+
+	void sort() { sort_custom<Comparator<T>>(); }
+
+	template <typename Comparator, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, typename... Args>
+	void sort_custom(Args&&... p_args)
+	{
+		Size len = _cowdata.size();
+		if (len == 0) {
+			return;
+		}
+
+		T* data = ptrw();
+		SortArray<T, Comparator, Validate> sorter{p_args...};
+		sorter.sort(data, len);
+	}
+
+	Size bsearch(const T& p_value, bool p_before) const
+	{
+		return bsearch_custom<Comparator<T>>(p_value, p_before);
+	}
+
+	template <typename Comparator, typename Value, typename... Args>
+	Size bsearch_custom(const Value& p_value, bool p_before, Args&&... p_args) const
+	{
+		return span().bisect(p_value, p_before, Comparator{p_args...});
+	}
+
+	Vector<T> duplicate() const { return *this; }
+
+	void ordered_insert(const T& p_val)
+	{
+		Size i;
+		for (i = 0; i < _cowdata.size(); i++) {
+			if (p_val < operator[](i)) {
+				break;
+			}
+		}
+		insert(i, p_val);
+	}
+
+	void operator=(const Vector& p_from) { _cowdata = p_from._cowdata; }
+
+	void operator=(Vector&& p_from) { _cowdata = std::move(p_from._cowdata); }
+
+	Vector<uint8_t> to_byte_array() const
+	{
+		Vector<uint8_t> ret;
+		if (is_empty()) {
+			return ret;
+		}
+		size_t alloc_size = size() * sizeof(T);
+		ret.resize(alloc_size);
+		if (alloc_size) {
+			memcpy(ret.ptrw(), ptr(), alloc_size);
+		}
+		return ret;
+	}
+
+	Vector<T> slice(Size p_begin, Size p_end = CowData<T>::MAX_INT) const
+	{
+		Vector<T> result;
+
+		const Size s = size();
+
+		Size begin = CLAMP(p_begin, -s, s);
+		if (begin < 0) {
+			begin += s;
+		}
+		Size end = CLAMP(p_end, -s, s);
+		if (end < 0) {
+			end += s;
+		}
+
+		ERR_FAIL_COND_V(begin > end, result);
+
+		Size result_size = end - begin;
+		result.resize(result_size);
+
+		const T* const r = ptr();
+		T* const w = result.ptrw();
+		for (Size i = 0; i < result_size; ++i) {
+			w[i] = r[begin + i];
+		}
+
+		return result;
+	}
+
+	bool operator==(const Vector<T>& p_arr) const { return span() == p_arr.span(); }
+
+	bool operator!=(const Vector<T>& p_arr) const { return span() != p_arr.span(); }
+
+	struct Iterator
+	{
+		_FORCE_INLINE_ T& operator*() const { return *elem_ptr; }
+
+		_FORCE_INLINE_ T* operator->() const { return elem_ptr; }
+
+		_FORCE_INLINE_ Iterator& operator++()
+		{
+			elem_ptr++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ Iterator& operator--()
+		{
+			elem_ptr--;
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator& p_other) const
+		{
+			return elem_ptr == p_other.elem_ptr;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const Iterator& p_other) const
+		{
+			return elem_ptr != p_other.elem_ptr;
+		}
+
+		Iterator(T* p_ptr) { elem_ptr = p_ptr; }
+
+		Iterator() {}
+
+		Iterator(const Iterator& p_it) { elem_ptr = p_it.elem_ptr; }
+
+	private:
+		T* elem_ptr = nullptr;
+	};
+
+	struct ConstIterator
+	{
+		_FORCE_INLINE_ const T& operator*() const { return *elem_ptr; }
+
+		_FORCE_INLINE_ const T* operator->() const { return elem_ptr; }
+
+		_FORCE_INLINE_ ConstIterator& operator++()
+		{
+			elem_ptr++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ ConstIterator& operator--()
+		{
+			elem_ptr--;
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const ConstIterator& p_other) const
+		{
+			return elem_ptr == p_other.elem_ptr;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const ConstIterator& p_other) const
+		{
+			return elem_ptr != p_other.elem_ptr;
+		}
+
+		ConstIterator(const T* p_ptr) { elem_ptr = p_ptr; }
+
+		ConstIterator() {}
+
+		ConstIterator(const ConstIterator& p_it) { elem_ptr = p_it.elem_ptr; }
+
+	private:
+		const T* elem_ptr = nullptr;
+	};
+
+	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_ { return Iterator(ptrw()); }
+
+	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_ { return Iterator(ptrw() + size()); }
+
+	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_ { return ConstIterator(ptr()); }
+
+	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(ptr() + size());
+	}
+
+	_FORCE_INLINE_ Vector() {}
+
+	_FORCE_INLINE_ Vector(std::initializer_list<T> p_init) : _cowdata(p_init) {}
+
+	_FORCE_INLINE_ explicit Vector(Span<T> p_span) : _cowdata(p_span) {}
+
+	_FORCE_INLINE_ Vector(const Vector& p_from) = default;
+	_FORCE_INLINE_ Vector(Vector&& p_from) = default;
+};
+
+template <typename T> void Vector<T>::reverse()
+{
+	T* p = ptrw();
+	for (Size i = 0; i < size() / 2; i++) {
+		SWAP(p[i], p[size() - i - 1]);
+	}
+}
+
+template <typename T> void Vector<T>::append_array(Vector<T> p_other)
+{
+	const Size ds = p_other.size();
+	if (ds == 0) {
+		return;
+	}
+	const Size bs = size();
+	resize(bs + ds);
+	T* p = ptrw();
+	for (Size i = 0; i < ds; ++i) {
+		p[bs + i] = p_other[i];
+	}
+}
+
+template <typename T> void Vector<T>::fill(T p_elem)
+{
+	T* p = ptrw();
+	for (Size i = 0; i < size(); i++) {
+		p[i] = p_elem;
+	}
+}
+
+// Zero-constructing Vector initializes CowData.ptr() to nullptr and thus empty.
+template <typename T> struct is_zero_constructible<Vector<T>> : std::true_type
+{
+};
+
+// --- Folded from core/templates/vset.h ---
+#include "core/typedefs.h"
+
+template <typename T>
+class _WARN_UNUSED_ VSet {
+	Vector<T> _data;
+
+protected:
+	_FORCE_INLINE_ int _find(const T &p_val, bool &r_exact) const {
+		r_exact = false;
+		if (_data.is_empty()) {
+			return 0;
+		}
+
+		int64_t pos = _data.span().bisect(p_val, true);
+
+		if (pos < _data.size() && !(p_val < _data[pos]) && !(_data[pos] < p_val)) {
+			r_exact = true;
+		}
+		return pos;
+	}
+
+	_FORCE_INLINE_ int _find_exact(const T &p_val) const {
+		if (_data.is_empty()) {
+			return -1;
+		}
+
+		int64_t pos = _data.span().bisect(p_val, true);
+
+		if (pos < _data.size() && !(p_val < _data[pos]) && !(_data[pos] < p_val)) {
+			return pos;
+		}
+		return -1;
+	}
+
+public:
+	void insert(const T &p_val) {
+		bool exact;
+		int pos = _find(p_val, exact);
+		if (exact) {
+			return;
+		}
+		_data.insert(pos, p_val);
+	}
+
+	bool has(const T &p_val) const {
+		return _find_exact(p_val) != -1;
+	}
+
+	void erase(const T &p_val) {
+		int pos = _find_exact(p_val);
+		if (pos < 0) {
+			return;
+		}
+		_data.remove_at(pos);
+	}
+
+	int find(const T &p_val) const {
+		return _find_exact(p_val);
+	}
+
+	_FORCE_INLINE_ bool is_empty() const { return _data.is_empty(); }
+
+	_FORCE_INLINE_ int size() const { return _data.size(); }
+
+	inline T &operator[](int p_index) {
+		return _data.write[p_index];
+	}
+
+	inline const T &operator[](int p_index) const {
+		return _data[p_index];
+	}
+
+	_FORCE_INLINE_ VSet() {}
+	_FORCE_INLINE_ VSet(std::initializer_list<T> p_init) :
+			_data(p_init) {}
+};
+// --- End core/templates/vector.h ---
+#include "core/math/vector2.h"
+
 #include "core/typedefs.h"
 
 #define UNIQUE_NODE_PREFIX "%"
@@ -1250,7 +3292,629 @@ inline constexpr char32_t alt_code_cp1252[256] = {
 // --- End core/string/alt_codes.h ---
 
 // --- Folded from core/string/string_builder.h ---
-#include "core/templates/local_vector.h"
+// --- Folded from core/templates/local_vector.h ---
+#include <initializer_list>
+#include <type_traits>
+#include "core/typedefs.h"
+#include "core/os/memory.h"
+
+
+
+
+// If tight, it grows strictly as much as needed.
+// Otherwise, it grows exponentially (the default and what you want in most cases).
+template <typename T, typename U = uint32_t, bool force_trivial = false, bool tight = false>
+class _WARN_UNUSED_ LocalVector
+{
+	static_assert(
+		!force_trivial, "force_trivial is no longer supported. Use resize_uninitialized instead.");
+
+private:
+	U count = 0;
+	U capacity = 0;
+	T* data = nullptr;
+
+	template <bool p_init> void _resize(U p_size)
+	{
+		if (p_size < count) {
+			if constexpr (!std::is_trivially_destructible_v<T>) {
+				for (U i = p_size; i < count; i++) {
+					data[i].~T();
+				}
+			}
+			count = p_size;
+		}
+		else if (p_size > count) {
+			reserve(p_size);
+			if constexpr (p_init) {
+				memnew_arr_placement(data + count, p_size - count);
+			}
+			else {
+				static_assert(std::is_trivially_destructible_v<T>,
+					"T must be trivially destructible to resize uninitialized");
+			}
+			count = p_size;
+		}
+	}
+
+public:
+	_FORCE_INLINE_ T* ptr() _LIFETIME_BOUND_ { return data; }
+
+	_FORCE_INLINE_ const T* ptr() const _LIFETIME_BOUND_ { return data; }
+
+	_FORCE_INLINE_ U size() const { return count; }
+
+	_FORCE_INLINE_ Span<T> span() const _LIFETIME_BOUND_ { return Span(data, count); }
+
+	_FORCE_INLINE_ operator Span<T>() const _LIFETIME_BOUND_ { return span(); }
+
+	// Must take a copy instead of a reference (see GH-31736).
+	_FORCE_INLINE_ void push_back(T p_elem)
+	{
+		if (unlikely(count == capacity)) {
+			reserve(count + 1);
+		}
+
+		memnew_placement(&data[count++], T(std::move(p_elem)));
+	}
+
+	void remove_at(U p_index)
+	{
+		ERR_FAIL_UNSIGNED_INDEX(p_index, count);
+		count--;
+		for (U i = p_index; i < count; i++) {
+			data[i] = std::move(data[i + 1]);
+		}
+		data[count].~T();
+	}
+
+	/// Removes the item copying the last value into the position of the one to
+	/// remove. It's generally faster than `remove_at`.
+	void remove_at_unordered(U p_index)
+	{
+		ERR_FAIL_INDEX(p_index, count);
+		count--;
+		if (count > p_index) {
+			data[p_index] = std::move(data[count]);
+		}
+		data[count].~T();
+	}
+
+	_FORCE_INLINE_ bool erase(const T& p_val)
+	{
+		int64_t idx = find(p_val);
+		if (idx >= 0) {
+			remove_at(idx);
+			return true;
+		}
+		return false;
+	}
+
+	bool erase_unordered(const T& p_val)
+	{
+		int64_t idx = find(p_val);
+		if (idx >= 0) {
+			remove_at_unordered(idx);
+			return true;
+		}
+		return false;
+	}
+
+	U erase_multiple_unordered(const T& p_val)
+	{
+		U from = 0;
+		U occurrences = 0;
+		while (true) {
+			int64_t idx = find(p_val, from);
+
+			if (idx == -1) {
+				break;
+			}
+			remove_at_unordered(idx);
+			from = idx;
+			occurrences++;
+		}
+		return occurrences;
+	}
+
+	void reverse()
+	{
+		for (U i = 0; i < count / 2; i++) {
+			SWAP(data[i], data[count - i - 1]);
+		}
+	}
+#ifndef DISABLE_DEPRECATED
+	[[deprecated("Use reverse() instead")]] void invert() { reverse(); }
+#endif
+
+	_FORCE_INLINE_ void clear() { resize(0); }
+
+	_FORCE_INLINE_ void reset()
+	{
+		clear();
+		if (data) {
+			memfree(data);
+			data = nullptr;
+			capacity = 0;
+		}
+	}
+
+	_FORCE_INLINE_ bool is_empty() const { return count == 0; }
+
+	_FORCE_INLINE_ U get_capacity() const { return capacity; }
+
+	void reserve(U p_size)
+	{
+		if (p_size > capacity) {
+			if (tight) {
+				capacity = p_size;
+			}
+			else {
+				// Try 1.5x the current capacity.
+				// This ratio was chosen because it is close to the ideal growth rate of the golden
+				// ratio. See https://archive.ph/Z2R8w for details.
+				capacity = MAX((U)2, capacity + ((1 + capacity) >> 1));
+				// If 1.5x growth isn't enough, just use the needed size exactly.
+				if (p_size > capacity) {
+					capacity = p_size;
+				}
+			}
+			data = (T*)memrealloc(data, capacity * sizeof(T));
+			CRASH_COND_MSG(!data, "Out of memory");
+		}
+		else if (p_size < count) {
+			WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This is "
+						 "likely a mistake.");
+		}
+	}
+
+	/// Resize the vector.
+	/// Elements are initialized (or not) depending on what the default C++ behavior for T is.
+	/// Note: If force_trivial is set, this will behave like resize_uninitialized instead.
+	void resize(U p_size)
+	{
+		// Don't init when trivially constructible.
+		_resize<!std::is_trivially_constructible_v<T>>(p_size);
+	}
+
+	/// Resize and set new values to 0 / false / nullptr.
+	_FORCE_INLINE_ void resize_initialized(U p_size) { _resize<true>(p_size); }
+
+	/// Resize and keep memory uninitialized.
+	/// This means that any newly added elements have an unknown value, and are expected to be set
+	/// after the `resize_uninitialized` call. This is only available for trivially destructible
+	/// types (otherwise, trivial resize might be UB).
+	_FORCE_INLINE_ void resize_uninitialized(U p_size) { _resize<false>(p_size); }
+
+	_FORCE_INLINE_ const T& operator[](U p_index) const _LIFETIME_BOUND_
+	{
+		CRASH_BAD_UNSIGNED_INDEX(p_index, count);
+		return data[p_index];
+	}
+
+	_FORCE_INLINE_ T& operator[](U p_index) _LIFETIME_BOUND_
+	{
+		CRASH_BAD_UNSIGNED_INDEX(p_index, count);
+		return data[p_index];
+	}
+
+	struct Iterator
+	{
+		_FORCE_INLINE_ T& operator*() const { return *elem_ptr; }
+
+		_FORCE_INLINE_ T* operator->() const { return elem_ptr; }
+
+		_FORCE_INLINE_ Iterator& operator++()
+		{
+			elem_ptr++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ Iterator& operator--()
+		{
+			elem_ptr--;
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator& p_other) const
+		{
+			return elem_ptr == p_other.elem_ptr;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const Iterator& p_other) const
+		{
+			return elem_ptr != p_other.elem_ptr;
+		}
+
+		Iterator(T* p_ptr) { elem_ptr = p_ptr; }
+
+		Iterator() {}
+
+		Iterator(const Iterator& p_it) { elem_ptr = p_it.elem_ptr; }
+
+	private:
+		T* elem_ptr = nullptr;
+	};
+
+	struct ConstIterator
+	{
+		_FORCE_INLINE_ const T& operator*() const { return *elem_ptr; }
+
+		_FORCE_INLINE_ const T* operator->() const { return elem_ptr; }
+
+		_FORCE_INLINE_ ConstIterator& operator++()
+		{
+			elem_ptr++;
+			return *this;
+		}
+
+		_FORCE_INLINE_ ConstIterator& operator--()
+		{
+			elem_ptr--;
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const ConstIterator& p_other) const
+		{
+			return elem_ptr == p_other.elem_ptr;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const ConstIterator& p_other) const
+		{
+			return elem_ptr != p_other.elem_ptr;
+		}
+
+		ConstIterator(const T* p_ptr) { elem_ptr = p_ptr; }
+
+		ConstIterator() {}
+
+		ConstIterator(const ConstIterator& p_it) { elem_ptr = p_it.elem_ptr; }
+
+	private:
+		const T* elem_ptr = nullptr;
+	};
+
+	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_ { return Iterator(data); }
+
+	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_ { return Iterator(data + size()); }
+
+	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_ { return ConstIterator(ptr()); }
+
+	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(ptr() + size());
+	}
+
+	void insert(U p_pos, T p_val)
+	{
+		ERR_FAIL_UNSIGNED_INDEX(p_pos, count + 1);
+		if (p_pos == count) {
+			push_back(std::move(p_val));
+		}
+		else {
+			resize(count + 1);
+			for (U i = count - 1; i > p_pos; i--) {
+				data[i] = std::move(data[i - 1]);
+			}
+			data[p_pos] = std::move(p_val);
+		}
+	}
+
+	int64_t find(const T& p_val, int64_t p_from = 0) const
+	{
+		if (p_from < 0) {
+			p_from = size() + p_from;
+		}
+		if (p_from < 0 || p_from >= size()) {
+			return -1;
+		}
+		return span().find(p_val, p_from);
+	}
+
+	bool has(const T& p_val) const { return find(p_val) != -1; }
+
+	template <typename C> void sort_custom()
+	{
+		U len = count;
+		if (len == 0) {
+			return;
+		}
+
+		SortArray<T, C> sorter;
+		sorter.sort(data, len);
+	}
+
+	void sort() { sort_custom<Comparator<T>>(); }
+
+	void ordered_insert(T p_val)
+	{
+		U i;
+		for (i = 0; i < count; i++) {
+			if (p_val < data[i]) {
+				break;
+			}
+		}
+		insert(i, p_val);
+	}
+
+	Vector<uint8_t> to_byte_array() const
+	{ // useful to pass stuff to gpu or variant
+		Vector<uint8_t> ret;
+		ret.resize(count * sizeof(T));
+		uint8_t* w = ret.ptrw();
+		if (w) {
+			memcpy(w, data, sizeof(T) * count);
+		}
+		return ret;
+	}
+
+	_FORCE_INLINE_ LocalVector() {}
+
+	_FORCE_INLINE_ LocalVector(std::initializer_list<T> p_init)
+	{
+		reserve(p_init.size());
+		for (const T& element : p_init) {
+			push_back(element);
+		}
+	}
+
+	_FORCE_INLINE_ explicit LocalVector(const LocalVector& p_from)
+	{
+		resize(p_from.size());
+		for (U i = 0; i < p_from.count; i++) {
+			data[i] = p_from.data[i];
+		}
+	}
+
+	_FORCE_INLINE_ LocalVector(LocalVector&& p_from)
+	{
+		data = p_from.data;
+		count = p_from.count;
+		capacity = p_from.capacity;
+
+		p_from.data = nullptr;
+		p_from.count = 0;
+		p_from.capacity = 0;
+	}
+
+	inline void operator=(const LocalVector& p_from)
+	{
+		resize(p_from.size());
+		for (U i = 0; i < p_from.count; i++) {
+			data[i] = p_from.data[i];
+		}
+	}
+
+	inline void operator=(const Vector<T>& p_from)
+	{
+		resize(p_from.size());
+		for (U i = 0; i < count; i++) {
+			data[i] = p_from[i];
+		}
+	}
+
+	inline void operator=(LocalVector&& p_from)
+	{
+		if (unlikely(this == &p_from)) {
+			return;
+		}
+		reset();
+
+		data = p_from.data;
+		count = p_from.count;
+		capacity = p_from.capacity;
+
+		p_from.data = nullptr;
+		p_from.count = 0;
+		p_from.capacity = 0;
+	}
+
+	inline void operator=(Vector<T>&& p_from)
+	{
+		resize(p_from.size());
+		for (U i = 0; i < count; i++) {
+			data[i] = std::move(p_from[i]);
+		}
+	}
+
+	_FORCE_INLINE_ ~LocalVector()
+	{
+		if (data) {
+			reset();
+		}
+	}
+};
+
+template <typename T, typename U = uint32_t>
+using TightLocalVector = LocalVector<T, U, false, true>;
+
+// Zero-constructing LocalVector initializes count, capacity and data to 0 and thus empty.
+template <typename T, typename U, bool force_trivial, bool tight>
+struct is_zero_constructible<LocalVector<T, U, force_trivial, tight>> : std::true_type
+{
+};
+
+// --- Folded from core/templates/pooled_list.h ---
+// Simple template to provide a pool with O(1) allocate and free.
+// The freelist could alternatively be a linked list placed within the unused elements
+// to use less memory, however a separate freelist is probably more cache friendly.
+
+// NOTE : Take great care when using this with non POD types. The construction and destruction
+// is done in the LocalVector, NOT as part of the pool. So requesting a new item does not guarantee
+// a constructor is run, and free does not guarantee a destructor.
+// You should generally handle clearing
+// an item explicitly after a request, as it may contain 'leftovers'.
+// This is by design for fastest use in the BVH. If you want a more general pool
+// that does call constructors / destructors on request / free, this should probably be
+// a separate template.
+
+// The zero_on_first_request feature is optional and is useful for e.g. pools of handles,
+// which may use a ref count which we want to be initialized to zero the first time a handle is created,
+// but left alone on subsequent allocations (as will typically be incremented).
+
+// Note that there is no function to compact the pool - this would
+// invalidate any existing pool IDs held externally.
+// Compaction can be done but would rely on a more complex method
+// of preferentially giving out lower IDs in the freelist first.
+
+
+template <typename T, typename U = uint32_t, bool force_trivial = false, bool zero_on_first_request = false>
+class _WARN_UNUSED_ PooledList {
+	LocalVector<T, U> list;
+	LocalVector<U, U> freelist;
+
+	// not all list members are necessarily used
+	U _used_size;
+
+public:
+	PooledList() {
+		_used_size = 0;
+	}
+
+	// Use with care, in most cases you should make sure to
+	// free all elements first (i.e. _used_size would be zero),
+	// although it could also be used without this as an optimization
+	// in some cases.
+	void clear() {
+		list.clear();
+		freelist.clear();
+		_used_size = 0;
+	}
+
+	uint64_t estimate_memory_use() const {
+		return ((uint64_t)list.size() * sizeof(T)) + ((uint64_t)freelist.size() * sizeof(U));
+	}
+
+	const T &operator[](U p_index) const {
+		return list[p_index];
+	}
+	T &operator[](U p_index) {
+		return list[p_index];
+	}
+
+	// To be explicit in a pool there is a distinction
+	// between the number of elements that are currently
+	// in use, and the number of elements that have been reserved.
+	// Using size() would be vague.
+	U used_size() const { return _used_size; }
+	U reserved_size() const { return list.size(); }
+
+	T *request(U &r_id) {
+		_used_size++;
+
+		if (freelist.size()) {
+			// pop from freelist
+			int new_size = freelist.size() - 1;
+			r_id = freelist[new_size];
+			freelist.resize_uninitialized(new_size);
+
+			return &list[r_id];
+		}
+
+		r_id = list.size();
+		if constexpr (force_trivial || std::is_trivially_constructible_v<T>) {
+			list.resize_uninitialized(r_id + 1);
+		} else {
+			list.resize_initialized(r_id + 1);
+		}
+
+		static_assert((!zero_on_first_request) || (__is_pod(T)), "zero_on_first_request requires trivial type");
+		if constexpr (zero_on_first_request && __is_pod(T)) {
+			list[r_id] = {};
+		}
+
+		return &list[r_id];
+	}
+	void free(const U &p_id) {
+		// should not be on free list already
+		ERR_FAIL_UNSIGNED_INDEX(p_id, list.size());
+		freelist.push_back(p_id);
+		ERR_FAIL_COND_MSG(!_used_size, "_used_size has become out of sync, have you double freed an item?");
+		_used_size--;
+	}
+};
+
+// a pooled list which automatically keeps a list of the active members
+template <typename T, typename U = uint32_t, bool force_trivial = false, bool zero_on_first_request = false>
+class TrackedPooledList {
+public:
+	U pool_used_size() const { return _pool.used_size(); }
+	U pool_reserved_size() const { return _pool.reserved_size(); }
+	U active_size() const { return _active_list.size(); }
+
+	// use with care, see the earlier notes in the PooledList clear()
+	void clear() {
+		_pool.clear();
+		_active_list.clear();
+		_active_map.clear();
+	}
+
+	U get_active_id(U p_index) const {
+		return _active_list[p_index];
+	}
+
+	const T &get_active(U p_index) const {
+		return _pool[get_active_id(p_index)];
+	}
+
+	T &get_active(U p_index) {
+		return _pool[get_active_id(p_index)];
+	}
+
+	const T &operator[](U p_index) const {
+		return _pool[p_index];
+	}
+	T &operator[](U p_index) {
+		return _pool[p_index];
+	}
+
+	T *request(U &r_id) {
+		T *item = _pool.request(r_id);
+
+		// add to the active list
+		U active_list_id = _active_list.size();
+		_active_list.push_back(r_id);
+
+		// expand the active map (this should be in sync with the pool list
+		if (_pool.used_size() > _active_map.size()) {
+			_active_map.resize_uninitialized(_pool.used_size());
+		}
+
+		// store in the active map
+		_active_map[r_id] = active_list_id;
+
+		return item;
+	}
+
+	void free(const U &p_id) {
+		_pool.free(p_id);
+
+		// remove from the active list.
+		U list_id = _active_map[p_id];
+
+		// zero the _active map to detect bugs (only in debug?)
+		_active_map[p_id] = -1;
+
+		_active_list.remove_unordered(list_id);
+
+		// keep the replacement in sync with the correct list Id
+		if (list_id < _active_list.size()) {
+			// which pool id has been replaced in the active list
+			U replacement_id = _active_list[list_id];
+
+			// keep that replacements map up to date with the new position
+			_active_map[replacement_id] = list_id;
+		}
+	}
+
+	const LocalVector<U, U> &get_active_list() const { return _active_list; }
+
+private:
+	PooledList<T, U, force_trivial, zero_on_first_request> _pool;
+	LocalVector<U, U> _active_map;
+	LocalVector<U, U> _active_list;
+};
+// --- End core/templates/local_vector.h ---
 
 class StringBuilder
 {

@@ -43,7 +43,7 @@
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "drivers/unix/os_unix.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
@@ -1077,7 +1077,7 @@ bool OS::_test_create_rendering_device_and_gl(const String &p_display_driver) {
 #include "platform/android/os_android.h"
 
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <android/asset_manager_jni.h>
 
@@ -1238,7 +1238,7 @@ void FileAccessAndroid::terminate() {
 #include "platform/android/os_android.h"
 
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 #include <unistd.h>
 
@@ -1939,7 +1939,7 @@ AudioDriverOpenSL::AudioDriverOpenSL() {
 #include "platform/android/os_android.h"
 
 
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 jobject DirAccessJAndroid::dir_access_handler = nullptr;
 jclass DirAccessJAndroid::cls = nullptr;
@@ -2274,7 +2274,6 @@ void DirAccessJAndroid::dir_close(int p_id) {
 #include "platform/android/os_android.h"
 
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 
@@ -2550,7 +2549,7 @@ void TTS_Android::stop() {
 // --- Merged from platform/android/thread_jandroid.cpp ---
 #include "platform/android/os_android.h"
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 
 #include <android/log.h>
 
@@ -2748,7 +2747,7 @@ Error NetSocketAndroid::leave_multicast_group(const IPAddress &p_multi_address, 
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 #include "platform/android/os_android.h"
 
@@ -4709,15 +4708,13 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 // --- End platform/android/java_godot_lib_jni.h ---
 
 #include "platform/android/os_android.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "platform/android/os_android.h"
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
+#include "core/os/mutex.h"
 #include "core/os/os.h"
-#include "core/os/thread.h"
-#include "core/os/os.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef XR_DISABLED
@@ -4725,7 +4722,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 #include <android/asset_manager_jni.h>
@@ -6506,7 +6503,7 @@ void GodotIOJavaWrapper::set_vk_height(int p_height) {
 // --- Merged from platform/android/jni_utils.cpp ---
 #include "platform/android/os_android.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
 // Maximum recursion depth allowed when converting variants to jobjects or vice-versa.
 #define RECURSION_DEPTH_LIMIT 64
@@ -7081,7 +7078,7 @@ jclass jni_find_class(JNIEnv *p_env, const char *p_class_name) {
 // --- Merged from platform/android/plugin/godot_plugin_jni.cpp ---
 #include "platform/android/os_android.h"
 
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #include "platform/android/os_android.h"
 
 #include "core/os/os.h"
@@ -7332,15 +7329,11 @@ Java_org_godotengine_godot_variant_Callable_releaseNativePointer(JNIEnv *p_env, 
 #include "platform/android/os_android.h"
 
 
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(VULKAN_ENABLED)
 #include "platform/android/os_android.h"
@@ -8869,3 +8862,123 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_utils_DialogUtils_inputDialogC
 	}
 }
 }
+
+// === Merged from modules/openxr/extensions/platform/openxr_android_extension.cpp ===
+#include "modules/modules_enabled.gen.h"
+#if defined(MODULE_OPENXR_ENABLED)
+/*  openxr_android_extension.cpp                                          */
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                https://github.com/BendyLand/Voltaire                   */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+
+#include "modules/openxr/openxr_platform_inc.h"
+
+#include "servers/rendering/renderer.h" // IWYU pragma: keep. `XR_FAILED` macro.
+#include "platform/android/os_android.h"
+#include "os_android.h"
+#include "platform/android/os_android.h"
+
+#include "core/os/os.h"
+
+#include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
+
+void OpenXRAndroidExtension::initialize() {
+	if (data) {
+		return;
+	}
+	data = memnew(Data);
+
+	JNIEnv *env = get_jni_env();
+	ERR_FAIL_NULL(env);
+
+	env->GetJavaVM(&data->vm);
+	data->activity_object = env->NewGlobalRef(OS_Android::get_godot_java()->get_activity());
+}
+
+HashMap<String, bool *> OpenXRAndroidExtension::get_requested_extensions(XrVersion p_version) {
+	HashMap<String, bool *> request_extensions;
+
+	// XR_KHR_LOADER_INIT_EXTENSION_NAME is a dependency of XR_KHR_LOADER_INIT_ANDROID_EXTENSION_NAME
+	request_extensions[XR_KHR_LOADER_INIT_EXTENSION_NAME] = &data->loader_init_extension_available;
+	request_extensions[XR_KHR_LOADER_INIT_ANDROID_EXTENSION_NAME] = &data->loader_init_android_extension_available;
+	request_extensions[XR_KHR_ANDROID_CREATE_INSTANCE_EXTENSION_NAME] = &data->create_instance_extension_available;
+
+	return request_extensions;
+}
+
+void OpenXRAndroidExtension::on_before_instance_created() {
+	if (XR_FAILED(EXT_TRY_INIT_XR_FUNC(xrInitializeLoaderKHR))) {
+		// XR_KHR_loader_init not supported on this platform
+		return;
+	}
+	data->loader_init_android_extension_available = true;
+
+	XrLoaderInitInfoAndroidKHR loader_init_info_android = {
+		.type = XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR,
+		.next = nullptr,
+		.applicationVM = data->vm,
+		.applicationContext = data->activity_object
+	};
+	XrResult result = xrInitializeLoaderKHR((const XrLoaderInitInfoBaseHeaderKHR *)&loader_init_info_android);
+	ERR_FAIL_COND_MSG(XR_FAILED(result), "Failed to call xrInitializeLoaderKHR");
+}
+
+// We're keeping the Android create info struct here to avoid including openxr_platform.h in a header, which would break other extensions.
+// This is reasonably safe as the struct is only used during initialization and the extension is a singleton.
+static XrInstanceCreateInfoAndroidKHR instance_create_info;
+
+void *OpenXRAndroidExtension::set_instance_create_info_and_get_next_pointer(XrVersion p_xr_version, void *p_next_pointer) {
+	if (!data->create_instance_extension_available) {
+		if (!data->loader_init_android_extension_available) {
+			WARN_PRINT("No Android extensions available, couldn't pass JVM and Activity to OpenXR");
+		}
+		return nullptr;
+	}
+
+	instance_create_info = {
+		.type = XR_TYPE_INSTANCE_CREATE_INFO_ANDROID_KHR,
+		.next = p_next_pointer,
+		.applicationVM = data->vm,
+		.applicationActivity = data->activity_object
+	};
+	return &instance_create_info;
+}
+
+void OpenXRAndroidExtension::finalize() {
+	if (!data) {
+		return;
+	}
+	JNIEnv *env = get_jni_env();
+	if (env) {
+		env->DeleteGlobalRef(data->activity_object);
+	}
+	memdelete(data);
+	data = nullptr;
+}
+#endif // defined(MODULE_OPENXR_ENABLED)

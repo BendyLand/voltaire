@@ -30,12 +30,10 @@
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "core/io/resource_loader.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
@@ -49,13 +47,11 @@
 #include "core/io/resource_loader.h"
 #include "core/io/packet_peer_udp.h"
 #include "core/io/resource_loader.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/types.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "core/os/time.h"
-#include "core/config/project_settings.h"
-#include "main/main.h"
+#include "servers/display/display_server.h"
 #ifndef DISABLE_DEPRECATED
 #include "core/io/file_access.h"
 #endif
@@ -165,8 +161,7 @@ void unregister_core_types()
 // Merged from core/core_constants.cpp
 // ============================================================================
 
-#include "core/input/input_event.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 struct _CoreConstant
 {
@@ -529,19 +524,18 @@ void CoreConstants::get_global_enums(List<String>* r_values)
 // Merged from core/config/project_settings.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 #include "core/types.h"
 #include "core/os/os.h"
 #include "core/templates/rb_set.h"
-#include "core/version.h"
-#include "core/config/project_settings.h"
+#include "core/typedefs.h"
+#include "core/os/os.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/os/os.h"
@@ -1483,11 +1477,11 @@ Error ProjectSettings::load_custom(const String& p_path)
 // ============================================================================
 
 #include "core/license.gen.h"
-#include "core/config/project_settings.h"
-#include "core/license.gen.h"
-#include "core/version.h"
 #include "core/os/os.h"
-#include "servers/rendering/rendering_device.h"
+#include "core/license.gen.h"
+#include "core/typedefs.h"
+#include "core/os/os.h"
+#include "servers/rendering/renderer.h"
 
 void Engine::_update_time_scale()
 {
@@ -1688,7 +1682,7 @@ bool Engine::is_embedded_in_editor() { return embedded_in_editor; }
 
 // Optional physics interpolation warnings try to include the path to the relevant node.
 #if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "scene/main/node.h"
 #endif
 
@@ -1946,7 +1940,7 @@ static_assert(std_size(error_names) == ERR_MAX);
 // Merged from core/templates/hashfuncs.cpp
 // ============================================================================
 
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 uint32_t hash_murmur3_one_float(float p_in, uint32_t p_seed) {
 	union {
@@ -2106,8 +2100,6 @@ Vector2 lerp(const Vector2 &p_a, const Vector2 &p_b, float p_fraction) {
 
 // --- Merged from core/input/input.cpp ---
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
 
 // --- input.compat.inc ---
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
@@ -2148,7 +2140,7 @@ void Input::_bind_compatibility_methods() {}
 
 
 #ifdef DEV_ENABLED
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #endif
 
 #include <thirdparty/gamepadmotionhelpers/GamepadMotion.hpp>
@@ -4705,9 +4697,6 @@ void Input::finalize()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 
 // --- input_map.compat.inc ---
@@ -5702,7 +5691,7 @@ void InputMap::load_from_project_settings() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 void Shortcut::set_events(const Vector<InputEvent>& p_events)
 {
@@ -6230,12 +6219,9 @@ void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event)
 // Merged from core/input/input_event.cpp
 // ============================================================================
 
-#include "core/input/input_event.h"
-
 #include "core/os/os.h"
-#include "core/input/input_event.h"
+
 #include "core/types.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 
@@ -7126,8 +7112,8 @@ String InputEvent::to_string() const { return as_text(); }
 // --- Merged from core/os/os.cpp ---
 #include <cstdarg>
 #include <cstdio>
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
@@ -7853,9 +7839,8 @@ String OS::get_user_data_dir() { return String(); }
 // Merged from core/os/keyboard.cpp
 // ============================================================================
 
-#include "core/input/input_event.h"
-
 #include "core/os/os.h"
+
 #include "core/string/ustring.h"
 
 struct _KeyCodeText {
@@ -8601,7 +8586,7 @@ template class MutexLock<MutexImpl<THREADING_NAMESPACE::mutex>>;
 
 #ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h.
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 
 #ifdef THREADS_ENABLED
 
@@ -8737,7 +8722,7 @@ void set_current_thread_safe_for_nodes(bool p_safe) {
 // ============================================================================
 
 #include "core/os/os.h"
-#include "core/os/time.h" // NOLINT(modernize-deprecated-headers) False positive with C-Header of the same name.
+#include "core/os/os.h" // NOLINT(modernize-deprecated-headers) False positive with C-Header of the same name.
 
 #define UNIX_EPOCH_YEAR_AD 1970		   // 1970
 #define SECONDS_PER_DAY (24 * 60 * 60) // 86400
@@ -10090,11 +10075,8 @@ void ResourceFormatSaverCrypto::get_recognized_extensions(
 {
 }
 
-#include "core/version_hash.gen.cpp"
-
-#include "core/script_encryption_key.gen.cpp"
-
-#include "core/input/default_controller_mappings.gen.cpp"
+#define DEFINE_CORE_GENERATED_GLOBALS
+#include "core/license.gen.h"
 
 // === Merged from core/math/geometry_3d.cpp ===
 /*                         This file is part of:                          */
@@ -10125,9 +10107,9 @@ void ResourceFormatSaverCrypto::get_recognized_extensions(
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 void Geometry3D::get_closest_points_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1, Vector3 &r_ps, Vector3 &r_qt) {
 	// Based on David Eberly's Computation of Distance Between Line Segments algorithm.
@@ -11499,8 +11481,8 @@ DynamicBVH::~DynamicBVH() {
 // Merged from core/math/triangle_mesh.cpp
 // ============================================================================
 
-#include "core/templates/span.h"
-#include "core/math/geometry_3d.h"
+#include "core/string/ustring.h"
+#include "servers/rendering/renderer.h"
 
 int TriangleMesh::_create_bvh(
 	BVH* p_bvh, BVH** p_bb, int p_from, int p_size, int p_depth, int& r_max_depth, int& r_max_alloc)
@@ -12642,7 +12624,7 @@ Expression::ENode* Expression::_parse_expression()
 // Merged from core/math/a_star.cpp
 // ============================================================================
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 int64_t AStar3D::get_available_point_id() const
 {
@@ -14213,7 +14195,7 @@ void AStarGrid2D::_bind_compatibility_methods() {}
 // Merged from core/math/geometry_2d.cpp
 // ============================================================================
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/types.h"
 
@@ -14762,14 +14744,11 @@ bool Triangulate::triangulate(const Vector<Vector2> &p_contour, Vector<int> &r_r
 
 
 // --- Merged from core/math/convex_hull.cpp ---
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/typedefs.h"
 #include "core/types.h"
 #include "core/typedefs.h"
-#include "core/types.h"
-#include "core/templates/hash_map.h"
-#include "core/templates/hash_set.h"
 #include "core/types.h"
 
 #include <cfloat> // FLT_MAX
@@ -17484,8 +17463,6 @@ Error QuickHull::build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_
 #include "core/typedefs.h"
 #include "core/types.h"
 #include "core/math/vector2.h"
-#include "core/templates/hashfuncs.h"
-#include "core/math/plane.h"
 #include "core/types.h"
 #include "core/string/ustring.h"
 
@@ -18561,18 +18538,17 @@ Rect2i::operator Rect2() const {
 // --- Merged from core/math/math_primitives.cpp ---
 #include "core/typedefs.h"
 #include "core/types.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 #include "core/math/color_names.inc"
 #include "core/types.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/typedefs.h"
-#include "core/math/plane.h"
 #include "core/types.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
-#include "core/templates/vector.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
 #include "modules/modules_enabled.gen.h"
 
 #include <thirdparty/misc/ok_color.h>
@@ -20197,9 +20173,8 @@ StaticRaycaster::~StaticRaycaster() {}
 // --- Merged from core/math/math_transforms.cpp ---
 #include "core/types.h"
 #include "core/typedefs.h"
-#include "core/math/plane.h"
 #include "core/types.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/string/ustring.h"
 
 // --- quaternion.cpp ---
@@ -23307,13 +23282,11 @@ TransformInterpolator::Method TransformInterpolator::find_method(const Basis &p_
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/io/dir_access.h"
 #include "core/io/resource_loader.h"
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/os/time.h"
 #include "core/io/file_access.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -24817,7 +24790,7 @@ int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_d
 
 #include <zstd.h>
 #include "core/typedefs.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 #include "core/io/file_access.h"
 
@@ -24964,7 +24937,7 @@ Error DeltaEncoding::decode_delta(
 
 #include "core/io/file_access.h"
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 int godot_unzip_get_current_file_info(unzFile p_zip_file, unz_file_info64 &r_file_info, String &r_filepath) {
 	const uLong short_file_path_buffer_size = 16384ul;
@@ -25153,8 +25126,8 @@ zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data) {
 
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/dir_access.h"
-#include "core/version.h"
+#include "core/io/net_socket.h"
+#include "core/typedefs.h"
 #include "core/io/file_access.h"
 
 static int _get_pad(int p_alignment, int p_n)
@@ -25687,7 +25660,7 @@ int PackedDataContainerRef::size() const { return from->_size(offset); }
 // ============================================================================
 
 #include "core/io/resource_loader.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/string/ustring.h"
 
 void ConfigFile::erase_section_key(const String& p_section, const String& p_key) {}
@@ -26251,7 +26224,7 @@ bool ResourceFormatSaverJSON::recognize(const Ref<Resource>& p_resource) const
 /**************************************************************************/
 
 #include "core/io/net_socket.h"
-#include "core/os/time.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
 
 PList::PLNodeType PListNode::get_type() const { return data_type; }
@@ -27609,7 +27582,7 @@ XMLParser::~XMLParser()
 #include "core/io/resource_loader.h"
 
 #include "core/io/file_access.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 Ref<Resource> TranslationLoaderPO::load_translation(Ref<FileAccess> r_file, Error *r_error) {
 	if (r_error) {
@@ -27956,12 +27929,11 @@ String TranslationLoaderPO::get_resource_type(const String &p_path) const {
 // Merged from core/io/dir_access.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "core/os/time.h"
-#include "core/templates/local_vector.h"
-#include "core/io/dir_access.h"
+#include "core/string/ustring.h"
+#include "core/io/net_socket.h"
 
 String DirAccess::_get_root_path() const
 {
@@ -28628,15 +28600,15 @@ DirAccess::~DirAccess() { _delete_temp(); }
 
 #include <cstdio>
 #include "core/types.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/os/time.h"
+#include "core/os/os.h"
 #include "core/templates/rb_set.h"
 #include "core/os/os.h"
 #include "modules/modules_enabled.gen.h" // For regex.
 
 #ifdef MODULE_REGEX_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #endif // MODULE_REGEX_ENABLED
 
 #if defined(MINGW_ENABLED) || defined(_MSC_VER)
@@ -28848,13 +28820,13 @@ CompositeLogger::~CompositeLogger()
 // Merged from core/io/file_access_wrappers.cpp
 // ============================================================================
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 
 // ============================================================================
 // FileAccessMemory
@@ -32263,7 +32235,7 @@ SocketServer::~SocketServer() { stop(); }
 #ifndef WEB_ENABLED
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 #endif
 
 const char* HTTPClient::_methods[METHOD_MAX] = {
@@ -33113,8 +33085,7 @@ HTTPClient::~HTTPClient() {}
 // ============================================================================
 
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 #include "core/io/ip.h"
 
 /************* RESOLVER ******************/
@@ -33767,7 +33738,7 @@ Ref<NetSocket> NetSocket::create() {
 
 #include "core/os/os.h"
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
@@ -34085,7 +34056,7 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 // Merged from core/io/packet_peer.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/io/net_socket.h"
 
@@ -35020,15 +34991,14 @@ DTLSServer::~DTLSServer() {}
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/os/condition_variable.h"
 #include "core/os/os.h"
 #include "core/os/condition_variable.h"
-#include "core/templates/span.h"
-#include "core/config/project_settings.h"
+#include "core/string/ustring.h"
+#include "core/os/os.h"
 #include "core/templates/rb_set.h"
 #include "core/io/resource_loader.h"
 #include "servers/rendering/renderer.h"
@@ -36235,7 +36205,7 @@ Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_o
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 
@@ -36476,9 +36446,8 @@ Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/io/dir_access.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/io/net_socket.h"
@@ -37165,7 +37134,7 @@ String ResourceFormatLoaderImage::get_resource_type(const String &p_path) const 
 #include "core/typedefs.h"
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/io/resource.h"
+#include "core/types.h"
 #include "scene/main/node.h" //only so casting works
 
 void Resource::register_custom_data_to_otdb()
@@ -37545,10 +37514,10 @@ void Resource::setup_local_to_scene() {}
 // Merged from core/io/resource_format_binary.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 #include "core/io/resource_loader.h"
 #include "scene/main/node.h"
 
@@ -38936,9 +38905,8 @@ void ResourceFormatSaverBinary::get_recognized_extensions(
 // Merged from core/io/resource_importer.cpp
 // ============================================================================
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/resource_loader.h"
-#include "core/io/image.h"
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
 
@@ -39448,12 +39416,12 @@ void ResourceFormatImporter::get_internal_resource_path_list(String const&, List
 
 
 // --- Merged from core/io/image.cpp ---
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/typedefs.h"
 #include "core/io/resource_loader.h"
 #include "core/typedefs.h"
-#include "core/templates/hash_map.h"
-#include "core/io/image.h"
+#include "core/types.h"
+#include "core/io/resource_loader.h"
 
 #ifndef DISABLE_DEPRECATED
 
@@ -44251,12 +44219,11 @@ void Image::copy_internals_from(const Ref<Image>& p_image)
 #include <thirdparty/grisu2/grisu2.h>
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 #include "core/typedefs.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
 #include "core/string/ustring.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 // --- Inlined from core/string/ucaps.h ---
 // This file was generated using the `misc/scripts/ucaps_fetch.py` script.
 
@@ -56681,11 +56648,11 @@ const CharRange unicode_letter[unicode_letter_size] = {
 
 
 // --- Merged from core/string/translation.cpp ---
-#include "core/os/thread.h"
-#include "core/config/project_settings.h"
-#include "core/templates/hashfuncs.h"
+#include "core/os/mutex.h"
+#include "core/os/os.h"
+#include "core/math/vector2.h"
 #include "core/types.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 extern "C"
 {
@@ -57187,7 +57154,7 @@ Translation::~Translation()
 /**************************************************************************/
 
 #include "core/types.h"
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 int PluralRules::_find_unquoted(const String& p_src, char32_t p_chr) const
 {
@@ -57338,7 +57305,7 @@ PluralRules* PluralRules::parse(const String& p_rules)
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 struct _character_accent_pair
 {
@@ -57873,7 +57840,6 @@ String TranslationDomain::pseudolocalize(const String& p_message) const
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 // --- Inlined from core/string/locales.h ---
@@ -59733,7 +59699,7 @@ static const struct NumSystemData {
 };
 
 // --- End core/string/locales.h ---
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 // --- translation_server.compat.inc ---
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
@@ -60986,7 +60952,7 @@ NodePath::~NodePath() { unref(); }
 #include <cstdio>
 #include "core/types.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 static PrintHandlerList* print_handler_list = nullptr;
 static thread_local bool is_printing = false;
@@ -61533,7 +61499,7 @@ String StringBuilder::as_string() const {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 static const String boundary_chars = "/\\-_. ";
 

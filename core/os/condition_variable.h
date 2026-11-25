@@ -202,7 +202,7 @@ public:
 
 // --- Folded from core/templates/command_queue_mt.h ---
 #include "core/os/mutex.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 // --- Folded from core/templates/simple_type.h ---
 #include <type_traits>
 

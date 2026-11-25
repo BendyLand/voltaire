@@ -32,7 +32,7 @@
 #pragma once
 
 // --- Folded from core/io/compression.h ---
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 #include "core/typedefs.h"
 
 #include <zlib.h>
@@ -61,7 +61,7 @@ public:
 };
 
 // --- Folded from core/io/delta_encoding.h ---
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 
 #include <cstdint>
 
@@ -77,7 +77,7 @@ public:
 // --- End core/io/delta_encoding.h ---
 
 // --- Folded from core/io/packed_data_container.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 class PackedDataContainer : public Resource
 {

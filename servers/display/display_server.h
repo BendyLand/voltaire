@@ -31,10 +31,9 @@
 
 #pragma once
 
-#include "core/input/input_event.h"
-#include "core/io/image.h"
-#include "core/io/resource.h"
-#include "core/input/input_event.h"
+#include "core/os/os.h"
+#include "core/io/resource_loader.h"
+#include "core/types.h"
 #include "core/os/os.h"
 #include "core/types.h"
 // --- Folded from servers/display/display_server_enums.h ---
@@ -1732,7 +1731,7 @@ public:
 // --- End servers/display/display_server_headless.h ---
 
 // --- Folded from servers/display/native_menu.h ---
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 #include "core/types.h"
 
 class Texture2D;
@@ -2701,9 +2700,8 @@ public:
 
 // --- End core/templates/safe_list.h ---
 // --- Folded from servers/audio/audio_effect.h ---
-#include "core/io/resource.h"
-
 #include "core/types.h"
+
 
 #include <type_traits>
 #include <utility>
@@ -3637,7 +3635,6 @@ public:
 
 // --- Folded from servers/audio/audio_driver_dummy.h ---
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 
 
@@ -3846,8 +3843,8 @@ public:
 // --- End servers/audio/audio_rb_resampler.h ---
 
 // --- Folded from servers/audio/audio_stream.h ---
-#include "core/io/resource.h"
-#include "core/templates/local_vector.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 
 
@@ -4505,3 +4502,1786 @@ public:
 // --- End scene/resources/audio_stream_wav.h ---
 // --- End servers/audio/audio_stream.h ---
 // --- End servers/audio/audio_server.h ---
+
+// --- Folded from main/main.h ---
+#include "core/os/mutex.h"
+#include "core/typedefs.h"
+
+template <typename T>
+class Vector;
+
+class Main {
+	enum CLIOptionAvailability {
+		CLI_OPTION_AVAILABILITY_EDITOR,
+		CLI_OPTION_AVAILABILITY_TEMPLATE_DEBUG,
+		CLI_OPTION_AVAILABILITY_TEMPLATE_RELEASE,
+		CLI_OPTION_AVAILABILITY_TEMPLATE_UNSAFE,
+		CLI_OPTION_AVAILABILITY_HIDDEN,
+	};
+
+	static void print_header(bool p_rich);
+	static void print_help_copyright(const char *p_notice);
+	static void print_help_title(const char *p_title);
+	static void print_help_option(const char *p_option, const char *p_description, CLIOptionAvailability p_availability = CLI_OPTION_AVAILABILITY_TEMPLATE_RELEASE);
+	static String format_help_option(const char *p_option);
+	static void print_help(const char *p_binary);
+	static uint64_t last_ticks;
+	static uint32_t hide_print_fps_attempts;
+	static uint32_t frames;
+	static uint32_t frame;
+	static bool force_redraw_requested;
+	static int iterating;
+
+public:
+	static bool is_cmdline_tool();
+#ifdef TOOLS_ENABLED
+	enum CLIScope {
+		CLI_SCOPE_TOOL, // Editor and project manager.
+		CLI_SCOPE_PROJECT,
+	};
+	static const Vector<String> &get_forwardable_cli_arguments(CLIScope p_scope);
+#endif
+
+	static int test_entrypoint(int argc, char *argv[], bool &tests_need_run);
+	static Error setup(const char *execpath, int argc, char *argv[], bool p_second_phase = true);
+	static Error setup2(bool p_show_boot_logo = true); // The thread calling setup2() will effectively become the main thread.
+	static String get_locale_override();
+	static void setup_boot_logo();
+	static Error test_setup();
+	static void test_cleanup();
+	static int start();
+
+	static bool iteration();
+	static void force_redraw();
+
+	static bool is_iterating();
+
+	static void cleanup(bool p_force = false);
+};
+
+// Test main override is for the testing behavior.
+#define TEST_MAIN_OVERRIDE \
+	bool run_test = false; \
+	int return_code = Main::test_entrypoint(argc, argv, run_test); \
+	if (run_test) { \
+		godot_cleanup_profiler(); \
+		return return_code; \
+	}
+
+#define TEST_MAIN_PARAM_OVERRIDE(argc, argv) \
+	bool run_test = false; \
+	int return_code = Main::test_entrypoint(argc, argv, run_test); \
+	if (run_test) { \
+		godot_cleanup_profiler(); \
+		return return_code; \
+	}
+
+// --- Folded from core/register_core_types.h ---
+void register_core_types();
+void register_core_settings();
+void register_core_extensions();
+void register_early_core_singletons();
+void register_core_singletons();
+void unregister_core_types();
+void unregister_core_extensions();
+
+// --- Folded from drivers/register_driver_types.h ---
+void register_core_driver_types();
+void unregister_core_driver_types();
+
+void register_driver_types();
+void unregister_driver_types();
+
+// --- Folded from scene/register_scene_types.h ---
+void register_scene_types();
+void unregister_scene_types();
+void register_scene_singletons();
+
+// --- Folded from servers/register_server_types.h ---
+void register_server_types();
+void unregister_server_types();
+
+// --- Folded from servers/movie_writer/movie_writer.h ---
+#include "core/io/resource_loader.h"
+#include "core/string/ustring.h"
+
+
+class MovieWriter
+{
+	uint64_t fps = 0;
+	uint64_t mix_rate = 0;
+	uint32_t audio_channels = 0;
+
+	// The output resolution, which can differ from the window size.
+	// Used as a base for resizing all subsequent frames if their resolution differs.
+	Vector2i movie_size;
+
+	float cpu_time = 0.0f;
+	float gpu_time = 0.0f;
+	uint64_t encoding_time_usec = 0;
+
+	String project_name;
+
+	LocalVector<int32_t> audio_mix_buffer;
+
+	enum
+	{
+		MAX_WRITERS = 8
+	};
+
+	static MovieWriter* writers[];
+	static uint32_t writer_count;
+
+protected:
+	virtual uint32_t get_audio_mix_rate() const;
+	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const;
+
+	virtual Error write_begin(
+		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data);
+	virtual void write_end();
+
+
+public:
+	virtual bool handles_file(const String& p_path) const;
+	virtual void get_supported_extensions(List<String>* r_extensions) const;
+
+	static void add_writer(MovieWriter* p_writer);
+	static MovieWriter* find_writer_for_file(const String& p_file);
+
+	void begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	void add_frame();
+
+	static void set_extensions_hint();
+
+	void end();
+};
+
+// --- Folded from servers/movie_writer/movie_writer_pngwav.h ---
+
+
+class MovieWriterPNGWAV : public MovieWriter {
+
+	enum {
+		MAX_TRAILING_ZEROS = 8 // more than 10 days at 60fps, no hard drive can put up with this anyway :)
+	};
+
+	uint32_t mix_rate = 48000;
+	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
+	String base_path;
+	uint32_t frame_count = 0;
+	uint32_t fps = 0;
+
+	uint32_t audio_block_size = 0;
+
+	Ref<FileAccess> f_wav;
+	uint32_t wav_data_size_pos = 0;
+
+	String zeros_str(uint32_t p_index);
+
+protected:
+	virtual uint32_t get_audio_mix_rate() const override;
+	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
+	virtual void get_supported_extensions(List<String> *r_extensions) const override;
+
+	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
+	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;
+	virtual void write_end() override;
+
+	virtual bool handles_file(const String &p_path) const override;
+
+public:
+	MovieWriterPNGWAV();
+};
+
+// --- End servers/movie_writer/movie_writer_pngwav.h ---
+
+// --- Folded from platform/register_platform_apis.h ---
+void register_platform_apis();
+void unregister_platform_apis();
+
+// --- Folded from platform/android/api/api.h ---
+void register_android_api();
+void unregister_android_api();
+// --- End platform/android/api/api.h ---
+
+// --- Folded from platform/ios/api/api.h ---
+#if defined(IOS_ENABLED)
+extern void godot_apple_embedded_plugins_initialize();
+extern void godot_apple_embedded_plugins_deinitialize();
+#endif
+
+void register_ios_api();
+void unregister_ios_api();
+// --- End platform/ios/api/api.h ---
+
+// --- Folded from platform/visionos/api/api.h ---
+#if defined(VISIONOS_ENABLED)
+extern void godot_apple_embedded_plugins_initialize();
+extern void godot_apple_embedded_plugins_deinitialize();
+#endif
+
+void register_visionos_api();
+void unregister_visionos_api();
+// --- End platform/visionos/api/api.h ---
+
+// --- Folded from platform/web/api/api.h ---
+void register_web_api();
+void unregister_web_api();
+// --- End platform/web/api/api.h ---
+// --- End platform/register_platform_apis.h ---
+
+// --- Folded from platform/android/api/java_class_wrapper.h ---
+#include "core/types.h"
+
+#ifdef ANDROID_ENABLED
+#include <android/log.h>
+#include <jni.h>
+#include "core/types.h"
+#endif
+
+#ifdef ANDROID_ENABLED
+class JavaObject;
+#endif
+
+class JavaClass : public RefCounted
+{
+#ifdef ANDROID_ENABLED
+	enum ArgumentType
+	{
+		ARG_TYPE_VOID,
+		ARG_TYPE_BOOLEAN,
+		ARG_TYPE_BYTE,
+		ARG_TYPE_CHAR,
+		ARG_TYPE_SHORT,
+		ARG_TYPE_INT,
+		ARG_TYPE_LONG,
+		ARG_TYPE_FLOAT,
+		ARG_TYPE_DOUBLE,
+		ARG_TYPE_STRING, // special case
+		ARG_TYPE_CHARSEQUENCE,
+		ARG_TYPE_CALLABLE,
+		ARG_TYPE_CLASS,
+		ARG_ARRAY_BIT = 1 << 16,
+		ARG_NUMBER_CLASS_BIT = 1 << 17,
+		ARG_TYPE_MASK = (1 << 16) - 1
+	};
+
+	RBMap<String, Variant> constant_map;
+
+	struct MethodInfo
+	{
+		bool _public = false;
+		bool _static = false;
+		bool _constructor = false;
+		Vector<uint32_t> param_types;
+		Vector<String> param_sigs;
+		uint32_t return_type = 0;
+		jmethodID method;
+	};
+
+	_FORCE_INLINE_ static void _convert_to_variant_type(
+		int p_sig, Variant::Type& r_type, float& likelihood)
+	{
+		likelihood = 1.0;
+		r_type = Variant::NIL;
+
+		switch (p_sig) {
+		case ARG_TYPE_VOID:
+			r_type = Variant::NIL;
+			break;
+		case ARG_TYPE_BOOLEAN | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_BOOLEAN:
+			r_type = Variant::BOOL;
+			break;
+		case ARG_TYPE_BYTE | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_BYTE:
+			r_type = Variant::INT;
+			likelihood = 0.1;
+			break;
+		case ARG_TYPE_CHAR | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_CHAR:
+			r_type = Variant::INT;
+			likelihood = 0.2;
+			break;
+		case ARG_TYPE_SHORT | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_SHORT:
+			r_type = Variant::INT;
+			likelihood = 0.3;
+			break;
+		case ARG_TYPE_INT | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_INT:
+			r_type = Variant::INT;
+			likelihood = 1.0;
+			break;
+		case ARG_TYPE_LONG | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_LONG:
+			r_type = Variant::INT;
+			likelihood = 0.5;
+			break;
+		case ARG_TYPE_FLOAT | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_FLOAT:
+			r_type = Variant::FLOAT;
+			likelihood = 1.0;
+			break;
+		case ARG_TYPE_DOUBLE | ARG_NUMBER_CLASS_BIT:
+		case ARG_TYPE_DOUBLE:
+			r_type = Variant::FLOAT;
+			likelihood = 0.5;
+			break;
+		case ARG_TYPE_STRING:
+		case ARG_TYPE_CHARSEQUENCE:
+			r_type = Variant::STRING;
+			break;
+		case ARG_TYPE_CALLABLE:
+			r_type = Variant::CALLABLE;
+			break;
+		case ARG_TYPE_CLASS:
+			r_type = Variant::OBJECT;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_VOID:
+			r_type = Variant::NIL;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_BOOLEAN:
+			r_type = Variant::ARRAY;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_BYTE:
+			r_type = Variant::PACKED_BYTE_ARRAY;
+			likelihood = 1.0;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_CHAR:
+			r_type = Variant::PACKED_BYTE_ARRAY;
+			likelihood = 0.5;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_SHORT:
+			r_type = Variant::PACKED_INT32_ARRAY;
+			likelihood = 0.3;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_INT:
+			r_type = Variant::PACKED_INT32_ARRAY;
+			likelihood = 1.0;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_LONG:
+			r_type = Variant::PACKED_INT32_ARRAY;
+			likelihood = 0.5;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_FLOAT:
+			r_type = Variant::PACKED_FLOAT32_ARRAY;
+			likelihood = 1.0;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_DOUBLE:
+			r_type = Variant::PACKED_FLOAT32_ARRAY;
+			likelihood = 0.5;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_STRING:
+		case ARG_ARRAY_BIT | ARG_TYPE_CHARSEQUENCE:
+			r_type = Variant::PACKED_STRING_ARRAY;
+			break;
+		case ARG_ARRAY_BIT | ARG_TYPE_CLASS:
+		case ARG_ARRAY_BIT | ARG_TYPE_CALLABLE:
+			r_type = Variant::ARRAY;
+			break;
+		}
+	}
+
+	_FORCE_INLINE_ static bool _convert_object_to_variant(
+		JNIEnv* env, jobject obj, Variant& var, uint32_t p_sig);
+
+	bool _call_method(JavaObject* p_instance, const String& p_method, const Variant** p_args,
+		int p_argcount, Callable::CallError& r_error, Variant& ret);
+
+	friend class JavaClassWrapper;
+	friend class JavaObject;
+	String java_class_name;
+	String java_constructor_name;
+	HashMap<String, List<MethodInfo>> methods;
+	jclass _class;
+	bool is_interface;
+#endif
+
+public:
+
+	String get_java_class_name() const;
+	Ref<JavaClass> get_java_parent_class() const;
+	bool has_java_method(const String& p_method) const;
+
+#ifdef ANDROID_ENABLED
+	virtual String _to_string() override;
+#endif
+
+	JavaClass();
+	~JavaClass();
+};
+
+class JavaObject : public RefCounted
+{
+#ifdef ANDROID_ENABLED
+	Ref<JavaClass> base_class;
+	friend class JavaClass;
+
+	jobject instance = nullptr;
+#endif
+
+protected:
+
+public:
+
+	Ref<JavaClass> get_java_class() const;
+	bool has_java_method(const String& p_method) const;
+
+#ifdef ANDROID_ENABLED
+	virtual String _to_string() override;
+
+	jobject get_instance() { return instance; }
+
+	JavaObject();
+	JavaObject(const Ref<JavaClass>& p_base, jobject p_instance);
+	~JavaObject();
+#endif
+};
+
+class JavaClassWrapper final
+{
+	friend class JavaClass;
+
+public:
+	struct Data
+	{
+#ifdef ANDROID_ENABLED
+		RBMap<String, Ref<JavaClass>> class_cache;
+		jmethodID Class_getConstructors = nullptr;
+		jmethodID Class_getDeclaredMethods = nullptr;
+		jmethodID Class_getFields = nullptr;
+		jmethodID Class_getInterfaces = nullptr;
+		jmethodID Class_getName = nullptr;
+		jmethodID Class_getSuperclass = nullptr;
+		jmethodID Class_isInterface = nullptr;
+		jmethodID Constructor_getParameterTypes = nullptr;
+		jmethodID Constructor_getModifiers = nullptr;
+		jmethodID Method_getParameterTypes = nullptr;
+		jmethodID Method_getReturnType = nullptr;
+		jmethodID Method_getModifiers = nullptr;
+		jmethodID Method_getName = nullptr;
+		jmethodID Field_getName = nullptr;
+		jmethodID Field_getModifiers = nullptr;
+		jmethodID Field_get = nullptr;
+		jmethodID Boolean_booleanValue = nullptr;
+		jmethodID Byte_byteValue = nullptr;
+		jmethodID Character_characterValue = nullptr;
+		jmethodID Short_shortValue = nullptr;
+		jmethodID Integer_integerValue = nullptr;
+		jmethodID Long_longValue = nullptr;
+		jmethodID Float_floatValue = nullptr;
+		jmethodID Double_doubleValue = nullptr;
+
+		jclass proxy_class = nullptr;
+		jmethodID Proxy_isProxyClass = nullptr;
+
+		jclass android_runtime_class = nullptr;
+		jmethodID ARP_create_proxy_from_godot_callable = nullptr;
+		jmethodID ARP_create_proxy_from_godot_object_id = nullptr;
+#endif
+		Ref<JavaObject> exception;
+	};
+
+	static inline Data* data = nullptr;
+
+private:
+#ifdef ANDROID_ENABLED
+	static bool _is_proxy_class(JNIEnv* env, jclass p_class);
+	static bool _get_type_sig(JNIEnv* env, jobject obj, uint32_t& sig, String& strsig);
+	static bool _wrap_class_components(JNIEnv* p_env, const Ref<JavaClass>& p_java_class,
+		jclass p_class, bool p_allow_non_public_methods_access);
+#endif
+
+	static Ref<JavaClass> _wrap(
+		const String& p_class, bool p_allow_non_public_methods_access = false);
+
+public:
+	static void initialize();
+	static void finalize();
+	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+	static Ref<JavaClass> wrap(const String& p_class) { return _wrap(p_class, false); }
+
+	static Ref<JavaObject> get_exception() { return data ? data->exception : Ref<JavaObject>(); }
+
+#ifdef ANDROID_ENABLED
+	static Ref<JavaClass> wrap_jclass(
+		jclass p_class, bool p_allow_non_public_methods_access = false);
+	static Ref<JavaObject> create_sam_callback(
+		const String& p_sam_interface, const Callable& p_callable);
+	static Ref<JavaObject> create_proxy(
+		const Object* p_object, const PackedStringArray& p_interfaces);
+#endif
+
+	JavaClassWrapper() = delete;
+	JavaClassWrapper(const JavaClassWrapper&) = delete;
+	JavaClassWrapper& operator=(const JavaClassWrapper&) = delete;
+	~JavaClassWrapper() = delete;
+};
+// --- End platform/android/api/java_class_wrapper.h ---
+
+// --- Folded from modules/register_module_types.h ---
+enum ModuleInitializationLevel {
+	MODULE_INITIALIZATION_LEVEL_CORE = 0,
+	MODULE_INITIALIZATION_LEVEL_SERVERS = 1,
+	MODULE_INITIALIZATION_LEVEL_SCENE = 2,
+	MODULE_INITIALIZATION_LEVEL_EDITOR = 3
+};
+
+void initialize_modules(ModuleInitializationLevel p_level);
+void uninitialize_modules(ModuleInitializationLevel p_level);
+
+#include "modules/modules_enabled.gen.h"
+
+#ifdef MODULE_OPENXR_ENABLED
+#define MODULE_OPENXR_HAS_PREREGISTER
+#endif
+#ifdef MODULE_GLSLANG_ENABLED
+#define MODULE_GLSLANG_HAS_PREREGISTER
+#endif
+
+inline void initialize_freetype_module(ModuleInitializationLevel p_level) {}
+inline void uninitialize_freetype_module(ModuleInitializationLevel p_level) {}
+inline void initialize_msdfgen_module(ModuleInitializationLevel p_level) {}
+inline void uninitialize_msdfgen_module(ModuleInitializationLevel p_level) {}
+
+void initialize_text_server_adv_module(ModuleInitializationLevel p_level);
+void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level);
+// --- End modules/register_module_types.h ---
+
+// --- Folded from tests/test_main.h ---
+int test_main(int argc, char *argv[]);
+// --- End tests/test_main.h ---
+// --- End main/main.h ---
+
+// --- Folded from scene/resources/texture.h ---
+#include "core/io/resource_loader.h"
+#include "core/types.h"
+// --- Folded from servers/rendering/rendering_server_enums.h ---
+#include <cstdint>
+
+namespace RenderingServerEnums
+{
+
+enum
+{
+	NO_INDEX_ARRAY = -1,
+	ARRAY_WEIGHTS_SIZE = 4,
+	CANVAS_ITEM_Z_MIN = -4096,
+	CANVAS_ITEM_Z_MAX = 4096,
+	CANVAS_LAYER_MIN = -2147483648,
+	CANVAS_LAYER_MAX = 2147483647,
+	MAX_GLOW_LEVELS = 7,
+	MAX_CURSORS = 8,
+	MAX_2D_DIRECTIONAL_LIGHTS = 8,
+	MAX_MESH_SURFACES = 256,
+};
+
+/* TEXTURE API */
+
+enum TextureType
+{
+	TEXTURE_TYPE_2D,
+	TEXTURE_TYPE_LAYERED,
+	TEXTURE_TYPE_3D,
+};
+
+enum TextureLayeredType
+{
+	TEXTURE_LAYERED_2D_ARRAY,
+	TEXTURE_LAYERED_CUBEMAP,
+	TEXTURE_LAYERED_CUBEMAP_ARRAY,
+};
+
+enum CubeMapLayer
+{
+	CUBEMAP_LAYER_LEFT,
+	CUBEMAP_LAYER_RIGHT,
+	CUBEMAP_LAYER_BOTTOM,
+	CUBEMAP_LAYER_TOP,
+	CUBEMAP_LAYER_FRONT,
+	CUBEMAP_LAYER_BACK,
+};
+
+enum TextureDrawableFormat
+{
+	TEXTURE_DRAWABLE_FORMAT_RGBA8,
+	TEXTURE_DRAWABLE_FORMAT_RGBA8_SRGB, // Use this if you want to read the result from both 2D
+										// (non-hdr) and 3D.
+	TEXTURE_DRAWABLE_FORMAT_RGBAH,
+	TEXTURE_DRAWABLE_FORMAT_RGBAF,
+};
+
+enum TextureDetectRoughnessChannel
+{
+	TEXTURE_DETECT_ROUGHNESS_R,
+	TEXTURE_DETECT_ROUGHNESS_G,
+	TEXTURE_DETECT_ROUGHNESS_B,
+	TEXTURE_DETECT_ROUGHNESS_A,
+	TEXTURE_DETECT_ROUGHNESS_GRAY,
+};
+
+/* PIPELINES API */
+
+enum PipelineSource
+{
+	PIPELINE_SOURCE_CANVAS,
+	PIPELINE_SOURCE_MESH,
+	PIPELINE_SOURCE_SURFACE,
+	PIPELINE_SOURCE_DRAW,
+	PIPELINE_SOURCE_SPECIALIZATION,
+	PIPELINE_SOURCE_MAX,
+};
+
+/* SHADER API */
+
+enum ShaderMode
+{
+	SHADER_SPATIAL,
+	SHADER_CANVAS_ITEM,
+	SHADER_PARTICLES,
+	SHADER_SKY,
+	SHADER_FOG,
+	SHADER_TEXTURE_BLIT,
+	SHADER_MAX,
+};
+
+enum CullMode
+{
+	CULL_MODE_DISABLED,
+	CULL_MODE_FRONT,
+	CULL_MODE_BACK,
+};
+
+/* COMMON MATERIAL API */
+
+enum
+{
+	MATERIAL_RENDER_PRIORITY_MIN = -128,
+	MATERIAL_RENDER_PRIORITY_MAX = 127,
+};
+
+/* MESH API */
+
+enum ArrayType
+{
+	ARRAY_VERTEX = 0,  // RG32F (2D), RGB32F, RGBA16 (compressed)
+	ARRAY_NORMAL = 1,  // RG16
+	ARRAY_TANGENT = 2, // BA16 (with normal) or A16 (with vertex, when compressed)
+	ARRAY_COLOR = 3,   // RGBA8
+	ARRAY_TEX_UV = 4,  // RG32F or RG16
+	ARRAY_TEX_UV2 = 5, // RG32F or RG16
+	ARRAY_CUSTOM0 = 6, // Depends on ArrayCustomFormat.
+	ARRAY_CUSTOM1 = 7,
+	ARRAY_CUSTOM2 = 8,
+	ARRAY_CUSTOM3 = 9,
+	ARRAY_BONES = 10,	// RGBA16UI (x2 if 8 weights)
+	ARRAY_WEIGHTS = 11, // RGBA16UNORM (x2 if 8 weights)
+	ARRAY_INDEX = 12,	// 16 or 32 bits depending on length > 0xFFFF.
+	ARRAY_MAX = 13,
+};
+
+enum
+{
+	ARRAY_CUSTOM_COUNT = ARRAY_BONES - ARRAY_CUSTOM0
+};
+
+enum ArrayCustomFormat
+{
+	ARRAY_CUSTOM_RGBA8_UNORM,
+	ARRAY_CUSTOM_RGBA8_SNORM,
+	ARRAY_CUSTOM_RG_HALF,
+	ARRAY_CUSTOM_RGBA_HALF,
+	ARRAY_CUSTOM_R_FLOAT,
+	ARRAY_CUSTOM_RG_FLOAT,
+	ARRAY_CUSTOM_RGB_FLOAT,
+	ARRAY_CUSTOM_RGBA_FLOAT,
+	ARRAY_CUSTOM_MAX,
+};
+
+enum ArrayFormat : uint64_t
+{
+	/* ARRAY FORMAT FLAGS */
+	ARRAY_FORMAT_VERTEX = 1 << ARRAY_VERTEX,
+	ARRAY_FORMAT_NORMAL = 1 << ARRAY_NORMAL,
+	ARRAY_FORMAT_TANGENT = 1 << ARRAY_TANGENT,
+	ARRAY_FORMAT_COLOR = 1 << ARRAY_COLOR,
+	ARRAY_FORMAT_TEX_UV = 1 << ARRAY_TEX_UV,
+	ARRAY_FORMAT_TEX_UV2 = 1 << ARRAY_TEX_UV2,
+	ARRAY_FORMAT_CUSTOM0 = 1 << ARRAY_CUSTOM0,
+	ARRAY_FORMAT_CUSTOM1 = 1 << ARRAY_CUSTOM1,
+	ARRAY_FORMAT_CUSTOM2 = 1 << ARRAY_CUSTOM2,
+	ARRAY_FORMAT_CUSTOM3 = 1 << ARRAY_CUSTOM3,
+	ARRAY_FORMAT_BONES = 1 << ARRAY_BONES,
+	ARRAY_FORMAT_WEIGHTS = 1 << ARRAY_WEIGHTS,
+	ARRAY_FORMAT_INDEX = 1 << ARRAY_INDEX,
+
+	ARRAY_FORMAT_BLEND_SHAPE_MASK =
+		ARRAY_FORMAT_VERTEX | ARRAY_FORMAT_NORMAL | ARRAY_FORMAT_TANGENT,
+
+	ARRAY_FORMAT_CUSTOM_BASE = (ARRAY_INDEX + 1),
+	ARRAY_FORMAT_CUSTOM_BITS = 3,
+	ARRAY_FORMAT_CUSTOM_MASK = 0x7,
+	ARRAY_FORMAT_CUSTOM0_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + 0),
+	ARRAY_FORMAT_CUSTOM1_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS),
+	ARRAY_FORMAT_CUSTOM2_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 2),
+	ARRAY_FORMAT_CUSTOM3_SHIFT = (ARRAY_FORMAT_CUSTOM_BASE + ARRAY_FORMAT_CUSTOM_BITS * 3),
+
+	ARRAY_COMPRESS_FLAGS_BASE = (ARRAY_INDEX + 1 + 12),
+
+	ARRAY_FLAG_USE_2D_VERTICES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 0),
+	ARRAY_FLAG_USE_DYNAMIC_UPDATE = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 1),
+	ARRAY_FLAG_USE_8_BONE_WEIGHTS = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 2),
+
+	ARRAY_FLAG_USES_EMPTY_VERTEX_ARRAY = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 3),
+
+	ARRAY_FLAG_COMPRESS_ATTRIBUTES = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 4),
+
+	// When set, the surface's vertex, attribute, skin, and index buffers are created with the
+	// `BUFFER_CREATION_AS_STORAGE_BIT` usage bit so they can be bound as storage buffers in
+	// compute shaders. Required to write into them from a compute pipeline through the RIDs
+	// returned by `mesh_surface_get_vertex_buffer_rd_rid` and friends.
+	ARRAY_FLAG_USE_STORAGE_BUFFER = 1 << (ARRAY_COMPRESS_FLAGS_BASE + 5),
+	// We leave enough room for up to 4 more compression flags.
+
+	ARRAY_FLAG_FORMAT_VERSION_BASE = ARRAY_COMPRESS_FLAGS_BASE + 10,
+	ARRAY_FLAG_FORMAT_VERSION_SHIFT = ARRAY_FLAG_FORMAT_VERSION_BASE,
+	// When changes are made to the mesh format, add a new version and use it for the
+	// CURRENT_VERSION.
+	ARRAY_FLAG_FORMAT_VERSION_1 = 0,
+	ARRAY_FLAG_FORMAT_VERSION_2 = 1ULL << ARRAY_FLAG_FORMAT_VERSION_SHIFT,
+	ARRAY_FLAG_FORMAT_CURRENT_VERSION = ARRAY_FLAG_FORMAT_VERSION_2,
+	ARRAY_FLAG_FORMAT_VERSION_MASK = 0xFF, // 8 bits version
+};
+
+static_assert(sizeof(ArrayFormat) == 8, "ArrayFormat should be 64 bits long.");
+
+enum PrimitiveType
+{
+	PRIMITIVE_POINTS,
+	PRIMITIVE_LINES,
+	PRIMITIVE_LINE_STRIP,
+	PRIMITIVE_TRIANGLES,
+	PRIMITIVE_TRIANGLE_STRIP,
+	PRIMITIVE_MAX,
+};
+
+enum BlendShapeMode
+{
+	BLEND_SHAPE_MODE_NORMALIZED,
+	BLEND_SHAPE_MODE_RELATIVE,
+};
+
+/* MULTIMESH API */
+
+enum MultimeshTransformFormat
+{
+	MULTIMESH_TRANSFORM_2D,
+	MULTIMESH_TRANSFORM_3D,
+};
+
+enum MultimeshPhysicsInterpolationQuality
+{
+	MULTIMESH_INTERP_QUALITY_FAST,
+	MULTIMESH_INTERP_QUALITY_HIGH,
+};
+
+/* LIGHT API */
+
+enum LightType
+{
+	LIGHT_DIRECTIONAL,
+	LIGHT_OMNI,
+	LIGHT_SPOT,
+	LIGHT_AREA,
+};
+
+enum LightParam
+{
+	LIGHT_PARAM_ENERGY,
+	LIGHT_PARAM_INDIRECT_ENERGY,
+	LIGHT_PARAM_VOLUMETRIC_FOG_ENERGY,
+	LIGHT_PARAM_SPECULAR,
+	LIGHT_PARAM_RANGE,
+	LIGHT_PARAM_SIZE,
+	LIGHT_PARAM_ATTENUATION,
+	LIGHT_PARAM_SPOT_ANGLE,
+	LIGHT_PARAM_SPOT_ATTENUATION,
+	LIGHT_PARAM_SHADOW_MAX_DISTANCE,
+	LIGHT_PARAM_SHADOW_SPLIT_1_OFFSET,
+	LIGHT_PARAM_SHADOW_SPLIT_2_OFFSET,
+	LIGHT_PARAM_SHADOW_SPLIT_3_OFFSET,
+	LIGHT_PARAM_SHADOW_FADE_START,
+	LIGHT_PARAM_SHADOW_NORMAL_BIAS,
+	LIGHT_PARAM_SHADOW_BIAS,
+	LIGHT_PARAM_SHADOW_PANCAKE_SIZE,
+	LIGHT_PARAM_SHADOW_OPACITY,
+	LIGHT_PARAM_SHADOW_BLUR,
+	LIGHT_PARAM_TRANSMITTANCE_BIAS,
+	LIGHT_PARAM_INTENSITY,
+	LIGHT_PARAM_MAX,
+};
+
+enum LightBakeMode
+{
+	LIGHT_BAKE_DISABLED,
+	LIGHT_BAKE_STATIC,
+	LIGHT_BAKE_DYNAMIC,
+};
+
+enum LightOmniShadowMode
+{
+	LIGHT_OMNI_SHADOW_DUAL_PARABOLOID,
+	LIGHT_OMNI_SHADOW_CUBE,
+};
+
+enum LightDirectionalShadowMode
+{
+	LIGHT_DIRECTIONAL_SHADOW_ORTHOGONAL,
+	LIGHT_DIRECTIONAL_SHADOW_PARALLEL_2_SPLITS,
+	LIGHT_DIRECTIONAL_SHADOW_PARALLEL_4_SPLITS,
+};
+
+enum LightDirectionalSkyMode
+{
+	LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_AND_SKY,
+	LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY,
+	LIGHT_DIRECTIONAL_SKY_MODE_SKY_ONLY,
+};
+
+enum ShadowQuality
+{
+	SHADOW_QUALITY_HARD,
+	SHADOW_QUALITY_SOFT_VERY_LOW,
+	SHADOW_QUALITY_SOFT_LOW,
+	SHADOW_QUALITY_SOFT_MEDIUM,
+	SHADOW_QUALITY_SOFT_HIGH,
+	SHADOW_QUALITY_SOFT_ULTRA,
+	SHADOW_QUALITY_MAX,
+};
+
+enum LightProjectorFilter
+{
+	LIGHT_PROJECTOR_FILTER_NEAREST,
+	LIGHT_PROJECTOR_FILTER_LINEAR,
+	LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS,
+	LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS,
+	LIGHT_PROJECTOR_FILTER_NEAREST_MIPMAPS_ANISOTROPIC,
+	LIGHT_PROJECTOR_FILTER_LINEAR_MIPMAPS_ANISOTROPIC,
+};
+
+/* REFLECTION PROBE API */
+
+enum ReflectionProbeUpdateMode
+{
+	REFLECTION_PROBE_UPDATE_ONCE,
+	REFLECTION_PROBE_UPDATE_ALWAYS,
+};
+
+enum ReflectionProbeAmbientMode
+{
+	REFLECTION_PROBE_AMBIENT_DISABLED,
+	REFLECTION_PROBE_AMBIENT_ENVIRONMENT,
+	REFLECTION_PROBE_AMBIENT_COLOR,
+};
+
+/* DECAL API */
+
+enum DecalTexture
+{
+	DECAL_TEXTURE_ALBEDO,
+	DECAL_TEXTURE_NORMAL,
+	DECAL_TEXTURE_ORM,
+	DECAL_TEXTURE_EMISSION,
+	DECAL_TEXTURE_MAX,
+};
+
+enum DecalFilter
+{
+	DECAL_FILTER_NEAREST,
+	DECAL_FILTER_LINEAR,
+	DECAL_FILTER_NEAREST_MIPMAPS,
+	DECAL_FILTER_LINEAR_MIPMAPS,
+	DECAL_FILTER_NEAREST_MIPMAPS_ANISOTROPIC,
+	DECAL_FILTER_LINEAR_MIPMAPS_ANISOTROPIC,
+};
+
+/* VOXEL GI API */
+
+enum VoxelGIQuality
+{
+	VOXEL_GI_QUALITY_LOW,
+	VOXEL_GI_QUALITY_HIGH,
+};
+
+/* LIGHTMAP API */
+
+enum ShadowmaskMode
+{
+	SHADOWMASK_MODE_NONE,
+	SHADOWMASK_MODE_REPLACE,
+	SHADOWMASK_MODE_OVERLAY,
+	SHADOWMASK_MODE_ONLY,
+};
+
+/* PARTICLES API */
+
+enum ParticlesMode
+{
+	PARTICLES_MODE_2D,
+	PARTICLES_MODE_3D,
+};
+
+enum ParticlesTransformAlign
+{
+	PARTICLES_TRANSFORM_ALIGN_DISABLED,
+	PARTICLES_TRANSFORM_ALIGN_Z_BILLBOARD,
+	PARTICLES_TRANSFORM_ALIGN_Y_TO_VELOCITY,
+	PARTICLES_TRANSFORM_ALIGN_Z_BILLBOARD_Y_TO_VELOCITY,
+	PARTICLES_TRANSFORM_ALIGN_LOCAL_BILLBOARD,
+};
+
+enum ParticlesEmitFlags
+{
+	PARTICLES_EMIT_FLAG_POSITION = 1,
+	PARTICLES_EMIT_FLAG_ROTATION_SCALE = 2,
+	PARTICLES_EMIT_FLAG_VELOCITY = 4,
+	PARTICLES_EMIT_FLAG_COLOR = 8,
+	PARTICLES_EMIT_FLAG_CUSTOM = 16,
+};
+
+enum ParticlesDrawOrder
+{
+	PARTICLES_DRAW_ORDER_INDEX,
+	PARTICLES_DRAW_ORDER_LIFETIME,
+	PARTICLES_DRAW_ORDER_REVERSE_LIFETIME,
+	PARTICLES_DRAW_ORDER_VIEW_DEPTH,
+};
+
+enum ParticlesTransformAlignCustomSrc
+{
+	PARTICLES_ALIGN_CHANNEL_FILTER_DISABLED,
+	PARTICLES_ALIGN_CHANNEL_FILTER_X,
+	PARTICLES_ALIGN_CHANNEL_FILTER_Y,
+	PARTICLES_ALIGN_CHANNEL_FILTER_Z,
+	PARTICLES_ALIGN_CHANNEL_FILTER_W,
+	PARTICLES_ALIGN_CHANNEL_FILTER_MAX,
+};
+
+enum ParticlesTransformAlignAxis
+{
+	PARTICLES_ALIGN_AXIS_X,
+	PARTICLES_ALIGN_AXIS_Y,
+	PARTICLES_ALIGN_AXIS_MAX,
+};
+
+/* PARTICLES COLLISION API */
+
+enum ParticlesCollisionType
+{
+	PARTICLES_COLLISION_TYPE_SPHERE_ATTRACT,
+	PARTICLES_COLLISION_TYPE_BOX_ATTRACT,
+	PARTICLES_COLLISION_TYPE_VECTOR_FIELD_ATTRACT,
+	PARTICLES_COLLISION_TYPE_SPHERE_COLLIDE,
+	PARTICLES_COLLISION_TYPE_BOX_COLLIDE,
+	PARTICLES_COLLISION_TYPE_SDF_COLLIDE,
+	PARTICLES_COLLISION_TYPE_HEIGHTFIELD_COLLIDE,
+};
+
+enum ParticlesCollisionHeightfieldResolution
+{ // Longest axis resolution.
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_256,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_512,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_1024,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_2048,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_4096,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_8192,
+	PARTICLES_COLLISION_HEIGHTFIELD_RESOLUTION_MAX,
+};
+
+/* FOG VOLUME API */
+
+enum FogVolumeShape
+{
+	FOG_VOLUME_SHAPE_ELLIPSOID,
+	FOG_VOLUME_SHAPE_CONE,
+	FOG_VOLUME_SHAPE_CYLINDER,
+	FOG_VOLUME_SHAPE_BOX,
+	FOG_VOLUME_SHAPE_WORLD,
+	FOG_VOLUME_SHAPE_MAX,
+};
+
+/* VIEWPORT API */
+
+enum CanvasItemTextureFilter
+{
+	CANVAS_ITEM_TEXTURE_FILTER_DEFAULT, // Uses canvas item setting for draw command, uses global
+										// setting for canvas item.
+	CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
+	CANVAS_ITEM_TEXTURE_FILTER_LINEAR,
+	CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+	CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+	CANVAS_ITEM_TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+	CANVAS_ITEM_TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+	CANVAS_ITEM_TEXTURE_FILTER_MAX,
+};
+
+enum CanvasItemTextureRepeat
+{
+	CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT, // Uses canvas item setting for draw command, uses global
+										// setting for canvas item.
+	CANVAS_ITEM_TEXTURE_REPEAT_DISABLED,
+	CANVAS_ITEM_TEXTURE_REPEAT_ENABLED,
+	CANVAS_ITEM_TEXTURE_REPEAT_MIRROR,
+	CANVAS_ITEM_TEXTURE_REPEAT_MAX,
+};
+
+enum ViewportScaling3DMode
+{
+	VIEWPORT_SCALING_3D_MODE_BILINEAR,
+	VIEWPORT_SCALING_3D_MODE_FSR,
+	VIEWPORT_SCALING_3D_MODE_FSR2,
+	VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL,
+	VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL,
+	VIEWPORT_SCALING_3D_MODE_NEAREST,
+	VIEWPORT_SCALING_3D_MODE_MAX,
+	VIEWPORT_SCALING_3D_MODE_OFF = 255, // for internal use only
+};
+
+enum ViewportScaling3DType
+{
+	VIEWPORT_SCALING_3D_TYPE_NONE,
+	VIEWPORT_SCALING_3D_TYPE_TEMPORAL,
+	VIEWPORT_SCALING_3D_TYPE_SPATIAL,
+	VIEWPORT_SCALING_3D_TYPE_MAX,
+};
+
+inline ViewportScaling3DType scaling_3d_mode_type(ViewportScaling3DMode p_mode)
+{
+	if (p_mode == VIEWPORT_SCALING_3D_MODE_NEAREST || p_mode == VIEWPORT_SCALING_3D_MODE_BILINEAR ||
+		p_mode == VIEWPORT_SCALING_3D_MODE_FSR ||
+		p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_SPATIAL) {
+		return VIEWPORT_SCALING_3D_TYPE_SPATIAL;
+	}
+	else if (p_mode == VIEWPORT_SCALING_3D_MODE_FSR2 ||
+			   p_mode == VIEWPORT_SCALING_3D_MODE_METALFX_TEMPORAL) {
+		return VIEWPORT_SCALING_3D_TYPE_TEMPORAL;
+	}
+	return VIEWPORT_SCALING_3D_TYPE_NONE;
+}
+
+enum ViewportAnisotropicFiltering
+{
+	VIEWPORT_ANISOTROPY_DISABLED,
+	VIEWPORT_ANISOTROPY_2X,
+	VIEWPORT_ANISOTROPY_4X,
+	VIEWPORT_ANISOTROPY_8X,
+	VIEWPORT_ANISOTROPY_16X,
+	VIEWPORT_ANISOTROPY_MAX,
+};
+
+enum ViewportUpdateMode
+{
+	VIEWPORT_UPDATE_DISABLED,
+	VIEWPORT_UPDATE_ONCE,		  // Then goes to disabled, must be manually updated.
+	VIEWPORT_UPDATE_WHEN_VISIBLE, // Default
+	VIEWPORT_UPDATE_WHEN_PARENT_VISIBLE,
+	VIEWPORT_UPDATE_ALWAYS,
+};
+
+enum ViewportClearMode
+{
+	VIEWPORT_CLEAR_ALWAYS,
+	VIEWPORT_CLEAR_NEVER,
+	VIEWPORT_CLEAR_ONLY_NEXT_FRAME,
+};
+
+enum ViewportEnvironmentMode
+{
+	VIEWPORT_ENVIRONMENT_DISABLED,
+	VIEWPORT_ENVIRONMENT_ENABLED,
+	VIEWPORT_ENVIRONMENT_INHERIT,
+	VIEWPORT_ENVIRONMENT_MAX,
+};
+
+enum ViewportSDFOversize
+{
+	VIEWPORT_SDF_OVERSIZE_100_PERCENT,
+	VIEWPORT_SDF_OVERSIZE_120_PERCENT,
+	VIEWPORT_SDF_OVERSIZE_150_PERCENT,
+	VIEWPORT_SDF_OVERSIZE_200_PERCENT,
+	VIEWPORT_SDF_OVERSIZE_MAX,
+};
+
+enum ViewportSDFScale
+{
+	VIEWPORT_SDF_SCALE_100_PERCENT,
+	VIEWPORT_SDF_SCALE_50_PERCENT,
+	VIEWPORT_SDF_SCALE_25_PERCENT,
+	VIEWPORT_SDF_SCALE_MAX,
+};
+
+enum ViewportMSAA
+{
+	VIEWPORT_MSAA_DISABLED,
+	VIEWPORT_MSAA_2X,
+	VIEWPORT_MSAA_4X,
+	VIEWPORT_MSAA_8X,
+	VIEWPORT_MSAA_MAX,
+};
+
+enum ViewportScreenSpaceAA
+{
+	VIEWPORT_SCREEN_SPACE_AA_DISABLED,
+	VIEWPORT_SCREEN_SPACE_AA_FXAA,
+	VIEWPORT_SCREEN_SPACE_AA_SMAA,
+	VIEWPORT_SCREEN_SPACE_AA_MAX,
+};
+
+enum ViewportOcclusionCullingBuildQuality
+{
+	VIEWPORT_OCCLUSION_BUILD_QUALITY_LOW = 0,
+	VIEWPORT_OCCLUSION_BUILD_QUALITY_MEDIUM = 1,
+	VIEWPORT_OCCLUSION_BUILD_QUALITY_HIGH = 2,
+};
+
+enum ViewportRenderInfo
+{
+	VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME,
+	VIEWPORT_RENDER_INFO_PRIMITIVES_IN_FRAME,
+	VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME,
+	VIEWPORT_RENDER_INFO_MAX,
+};
+
+enum ViewportRenderInfoType
+{
+	VIEWPORT_RENDER_INFO_TYPE_VISIBLE,
+	VIEWPORT_RENDER_INFO_TYPE_SHADOW,
+	VIEWPORT_RENDER_INFO_TYPE_CANVAS,
+	VIEWPORT_RENDER_INFO_TYPE_MAX,
+};
+
+enum ViewportDebugDraw
+{
+	VIEWPORT_DEBUG_DRAW_DISABLED,
+	VIEWPORT_DEBUG_DRAW_UNSHADED,
+	VIEWPORT_DEBUG_DRAW_LIGHTING,
+	VIEWPORT_DEBUG_DRAW_OVERDRAW,
+	VIEWPORT_DEBUG_DRAW_WIREFRAME,
+	VIEWPORT_DEBUG_DRAW_NORMAL_BUFFER,
+	VIEWPORT_DEBUG_DRAW_VOXEL_GI_ALBEDO,
+	VIEWPORT_DEBUG_DRAW_VOXEL_GI_LIGHTING,
+	VIEWPORT_DEBUG_DRAW_VOXEL_GI_EMISSION,
+	VIEWPORT_DEBUG_DRAW_SHADOW_ATLAS,
+	VIEWPORT_DEBUG_DRAW_DIRECTIONAL_SHADOW_ATLAS,
+	VIEWPORT_DEBUG_DRAW_SCENE_LUMINANCE,
+	VIEWPORT_DEBUG_DRAW_SSAO,
+	VIEWPORT_DEBUG_DRAW_SSIL,
+	VIEWPORT_DEBUG_DRAW_PSSM_SPLITS,
+	VIEWPORT_DEBUG_DRAW_DECAL_ATLAS,
+	VIEWPORT_DEBUG_DRAW_SDFGI,
+	VIEWPORT_DEBUG_DRAW_SDFGI_PROBES,
+	VIEWPORT_DEBUG_DRAW_GI_BUFFER,
+	VIEWPORT_DEBUG_DRAW_DISABLE_LOD,
+	VIEWPORT_DEBUG_DRAW_CLUSTER_OMNI_LIGHTS,
+	VIEWPORT_DEBUG_DRAW_CLUSTER_SPOT_LIGHTS,
+	VIEWPORT_DEBUG_DRAW_CLUSTER_DECALS,
+	VIEWPORT_DEBUG_DRAW_CLUSTER_REFLECTION_PROBES,
+	VIEWPORT_DEBUG_DRAW_OCCLUDERS,
+	VIEWPORT_DEBUG_DRAW_MOTION_VECTORS,
+	VIEWPORT_DEBUG_DRAW_INTERNAL_BUFFER,
+	VIEWPORT_DEBUG_DRAW_CLUSTER_AREA_LIGHTS,
+	VIEWPORT_DEBUG_DRAW_AREA_LIGHT_ATLAS,
+};
+
+enum ViewportVRSMode
+{
+	VIEWPORT_VRS_DISABLED,
+	VIEWPORT_VRS_TEXTURE,
+	VIEWPORT_VRS_XR,
+	VIEWPORT_VRS_MAX,
+};
+
+enum ViewportVRSUpdateMode
+{
+	VIEWPORT_VRS_UPDATE_DISABLED,
+	VIEWPORT_VRS_UPDATE_ONCE,
+	VIEWPORT_VRS_UPDATE_ALWAYS,
+	VIEWPORT_VRS_UPDATE_MAX,
+};
+
+/* SKY API */
+
+enum SkyMode
+{
+	SKY_MODE_AUTOMATIC,
+	SKY_MODE_QUALITY,
+	SKY_MODE_INCREMENTAL,
+	SKY_MODE_REALTIME,
+};
+
+/* COMPOSITOR EFFECTS API */
+
+enum CompositorEffectFlags
+{
+	COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_COLOR = 1,
+	COMPOSITOR_EFFECT_FLAG_ACCESS_RESOLVED_DEPTH = 2,
+	COMPOSITOR_EFFECT_FLAG_NEEDS_MOTION_VECTORS = 4,
+	COMPOSITOR_EFFECT_FLAG_NEEDS_ROUGHNESS = 8,
+	COMPOSITOR_EFFECT_FLAG_NEEDS_SEPARATE_SPECULAR = 16,
+};
+
+enum CompositorEffectCallbackType
+{
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_OPAQUE,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_OPAQUE,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_SKY,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_POST_TRANSPARENT,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_MAX,
+	COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY = -1,
+};
+
+/* ENVIRONMENT API */
+
+enum EnvironmentBG
+{
+	ENV_BG_CLEAR_COLOR,
+	ENV_BG_COLOR,
+	ENV_BG_SKY,
+	ENV_BG_CANVAS,
+	ENV_BG_KEEP,
+	ENV_BG_CAMERA_FEED,
+	ENV_BG_MAX,
+};
+
+enum EnvironmentAmbientSource
+{
+	ENV_AMBIENT_SOURCE_BG,
+	ENV_AMBIENT_SOURCE_DISABLED,
+	ENV_AMBIENT_SOURCE_COLOR,
+	ENV_AMBIENT_SOURCE_SKY,
+};
+
+enum EnvironmentReflectionSource
+{
+	ENV_REFLECTION_SOURCE_BG,
+	ENV_REFLECTION_SOURCE_DISABLED,
+	ENV_REFLECTION_SOURCE_SKY,
+};
+
+enum EnvironmentGlowBlendMode
+{
+	ENV_GLOW_BLEND_MODE_ADDITIVE,
+	ENV_GLOW_BLEND_MODE_SCREEN,
+	ENV_GLOW_BLEND_MODE_SOFTLIGHT,
+	ENV_GLOW_BLEND_MODE_REPLACE,
+	ENV_GLOW_BLEND_MODE_MIX,
+};
+
+enum EnvironmentToneMapper
+{
+	ENV_TONE_MAPPER_LINEAR,
+	ENV_TONE_MAPPER_REINHARD,
+	ENV_TONE_MAPPER_FILMIC,
+	ENV_TONE_MAPPER_ACES,
+	ENV_TONE_MAPPER_AGX,
+};
+
+enum EnvironmentSSRRoughnessQuality
+{
+	ENV_SSR_ROUGHNESS_QUALITY_DISABLED,
+	ENV_SSR_ROUGHNESS_QUALITY_LOW,
+	ENV_SSR_ROUGHNESS_QUALITY_MEDIUM,
+	ENV_SSR_ROUGHNESS_QUALITY_HIGH,
+};
+
+enum EnvironmentSSAOQuality
+{
+	ENV_SSAO_QUALITY_VERY_LOW,
+	ENV_SSAO_QUALITY_LOW,
+	ENV_SSAO_QUALITY_MEDIUM,
+	ENV_SSAO_QUALITY_HIGH,
+	ENV_SSAO_QUALITY_ULTRA,
+};
+
+enum EnvironmentSSILQuality
+{
+	ENV_SSIL_QUALITY_VERY_LOW,
+	ENV_SSIL_QUALITY_LOW,
+	ENV_SSIL_QUALITY_MEDIUM,
+	ENV_SSIL_QUALITY_HIGH,
+	ENV_SSIL_QUALITY_ULTRA,
+};
+
+enum EnvironmentSDFGIYScale
+{
+	ENV_SDFGI_Y_SCALE_50_PERCENT,
+	ENV_SDFGI_Y_SCALE_75_PERCENT,
+	ENV_SDFGI_Y_SCALE_100_PERCENT,
+};
+
+enum EnvironmentSDFGIRayCount
+{
+	ENV_SDFGI_RAY_COUNT_4,
+	ENV_SDFGI_RAY_COUNT_8,
+	ENV_SDFGI_RAY_COUNT_16,
+	ENV_SDFGI_RAY_COUNT_32,
+	ENV_SDFGI_RAY_COUNT_64,
+	ENV_SDFGI_RAY_COUNT_96,
+	ENV_SDFGI_RAY_COUNT_128,
+	ENV_SDFGI_RAY_COUNT_MAX,
+};
+
+enum EnvironmentSDFGIFramesToConverge
+{
+	ENV_SDFGI_CONVERGE_IN_5_FRAMES,
+	ENV_SDFGI_CONVERGE_IN_10_FRAMES,
+	ENV_SDFGI_CONVERGE_IN_15_FRAMES,
+	ENV_SDFGI_CONVERGE_IN_20_FRAMES,
+	ENV_SDFGI_CONVERGE_IN_25_FRAMES,
+	ENV_SDFGI_CONVERGE_IN_30_FRAMES,
+	ENV_SDFGI_CONVERGE_MAX
+};
+
+enum EnvironmentSDFGIFramesToUpdateLight
+{
+	ENV_SDFGI_UPDATE_LIGHT_IN_1_FRAME,
+	ENV_SDFGI_UPDATE_LIGHT_IN_2_FRAMES,
+	ENV_SDFGI_UPDATE_LIGHT_IN_4_FRAMES,
+	ENV_SDFGI_UPDATE_LIGHT_IN_8_FRAMES,
+	ENV_SDFGI_UPDATE_LIGHT_IN_16_FRAMES,
+	ENV_SDFGI_UPDATE_LIGHT_MAX,
+};
+
+enum EnvironmentFogMode
+{
+	ENV_FOG_MODE_EXPONENTIAL,
+	ENV_FOG_MODE_DEPTH,
+};
+
+enum SubSurfaceScatteringQuality
+{
+	SUB_SURFACE_SCATTERING_QUALITY_DISABLED,
+	SUB_SURFACE_SCATTERING_QUALITY_LOW,
+	SUB_SURFACE_SCATTERING_QUALITY_MEDIUM,
+	SUB_SURFACE_SCATTERING_QUALITY_HIGH,
+};
+
+/* CAMERA ATTRIBUTES API */
+
+enum DOFBlurQuality
+{
+	DOF_BLUR_QUALITY_VERY_LOW,
+	DOF_BLUR_QUALITY_LOW,
+	DOF_BLUR_QUALITY_MEDIUM,
+	DOF_BLUR_QUALITY_HIGH,
+};
+
+enum DOFBokehShape
+{
+	DOF_BOKEH_BOX,
+	DOF_BOKEH_HEXAGON,
+	DOF_BOKEH_CIRCLE,
+};
+
+/* INSTANCING API */
+
+enum InstanceType
+{
+	INSTANCE_NONE,
+	INSTANCE_MESH,
+	INSTANCE_MULTIMESH,
+	INSTANCE_PARTICLES,
+	INSTANCE_PARTICLES_COLLISION,
+	INSTANCE_LIGHT,
+	INSTANCE_REFLECTION_PROBE,
+	INSTANCE_DECAL,
+	INSTANCE_VOXEL_GI,
+	INSTANCE_LIGHTMAP,
+	INSTANCE_OCCLUDER,
+	INSTANCE_VISIBLITY_NOTIFIER, // TODO: Fix typo in "VISIBILITY" (in 5.0).
+	INSTANCE_FOG_VOLUME,
+	INSTANCE_MAX,
+
+	INSTANCE_GEOMETRY_MASK =
+		(1 << INSTANCE_MESH) | (1 << INSTANCE_MULTIMESH) | (1 << INSTANCE_PARTICLES)
+};
+
+enum InstanceFlags
+{
+	INSTANCE_FLAG_USE_BAKED_LIGHT,
+	INSTANCE_FLAG_USE_DYNAMIC_GI,
+	INSTANCE_FLAG_DRAW_NEXT_FRAME_IF_VISIBLE,
+	INSTANCE_FLAG_IGNORE_OCCLUSION_CULLING,
+	INSTANCE_FLAG_MAX,
+};
+
+enum ShadowCastingSetting
+{
+	SHADOW_CASTING_SETTING_OFF,
+	SHADOW_CASTING_SETTING_ON,
+	SHADOW_CASTING_SETTING_DOUBLE_SIDED,
+	SHADOW_CASTING_SETTING_SHADOWS_ONLY,
+};
+
+enum VisibilityRangeFadeMode
+{
+	VISIBILITY_RANGE_FADE_DISABLED,
+	VISIBILITY_RANGE_FADE_SELF,
+	VISIBILITY_RANGE_FADE_DEPENDENCIES,
+};
+
+/* BAKE API */
+
+enum BakeChannels
+{
+	BAKE_CHANNEL_ALBEDO_ALPHA,
+	BAKE_CHANNEL_NORMAL,
+	BAKE_CHANNEL_ORM,
+	BAKE_CHANNEL_EMISSION,
+};
+
+/* CANVAS TEXTURE API */
+
+enum CanvasTextureChannel
+{
+	CANVAS_TEXTURE_CHANNEL_DIFFUSE,
+	CANVAS_TEXTURE_CHANNEL_NORMAL,
+	CANVAS_TEXTURE_CHANNEL_SPECULAR,
+};
+
+/* CANVAS ITEM API */
+
+enum NinePatchAxisMode
+{
+	NINE_PATCH_STRETCH,
+	NINE_PATCH_TILE,
+	NINE_PATCH_TILE_FIT,
+};
+
+enum CanvasGroupMode
+{
+	CANVAS_GROUP_MODE_DISABLED,
+	CANVAS_GROUP_MODE_CLIP_ONLY,
+	CANVAS_GROUP_MODE_CLIP_AND_DRAW,
+	CANVAS_GROUP_MODE_TRANSPARENT,
+};
+
+/* CANVAS LIGHT API */
+
+enum CanvasLightMode
+{
+	CANVAS_LIGHT_MODE_POINT,
+	CANVAS_LIGHT_MODE_DIRECTIONAL,
+};
+
+enum CanvasLightBlendMode
+{
+	CANVAS_LIGHT_BLEND_MODE_ADD,
+	CANVAS_LIGHT_BLEND_MODE_SUB,
+	CANVAS_LIGHT_BLEND_MODE_MIX,
+};
+
+enum CanvasLightShadowFilter
+{
+	CANVAS_LIGHT_FILTER_NONE,
+	CANVAS_LIGHT_FILTER_PCF5,
+	CANVAS_LIGHT_FILTER_PCF13,
+	CANVAS_LIGHT_FILTER_MAX,
+};
+
+/* CANVAS OCCLUDER POLYGON API */
+
+enum CanvasOccluderPolygonCullMode
+{
+	CANVAS_OCCLUDER_POLYGON_CULL_DISABLED,
+	CANVAS_OCCLUDER_POLYGON_CULL_CLOCKWISE,
+	CANVAS_OCCLUDER_POLYGON_CULL_COUNTER_CLOCKWISE,
+};
+
+/* GLOBAL SHADER PARAMETERS API */
+
+enum GlobalShaderParameterType
+{
+	GLOBAL_VAR_TYPE_BOOL,
+	GLOBAL_VAR_TYPE_BVEC2,
+	GLOBAL_VAR_TYPE_BVEC3,
+	GLOBAL_VAR_TYPE_BVEC4,
+	GLOBAL_VAR_TYPE_INT,
+	GLOBAL_VAR_TYPE_IVEC2,
+	GLOBAL_VAR_TYPE_IVEC3,
+	GLOBAL_VAR_TYPE_IVEC4,
+	GLOBAL_VAR_TYPE_RECT2I,
+	GLOBAL_VAR_TYPE_UINT,
+	GLOBAL_VAR_TYPE_UVEC2,
+	GLOBAL_VAR_TYPE_UVEC3,
+	GLOBAL_VAR_TYPE_UVEC4,
+	GLOBAL_VAR_TYPE_FLOAT,
+	GLOBAL_VAR_TYPE_VEC2,
+	GLOBAL_VAR_TYPE_VEC3,
+	GLOBAL_VAR_TYPE_VEC4,
+	GLOBAL_VAR_TYPE_COLOR,
+	GLOBAL_VAR_TYPE_RECT2,
+	GLOBAL_VAR_TYPE_MAT2,
+	GLOBAL_VAR_TYPE_MAT3,
+	GLOBAL_VAR_TYPE_MAT4,
+	GLOBAL_VAR_TYPE_TRANSFORM_2D,
+	GLOBAL_VAR_TYPE_TRANSFORM,
+	GLOBAL_VAR_TYPE_SAMPLER2D,
+	GLOBAL_VAR_TYPE_SAMPLER2DARRAY,
+	GLOBAL_VAR_TYPE_SAMPLER3D,
+	GLOBAL_VAR_TYPE_SAMPLERCUBE,
+	GLOBAL_VAR_TYPE_SAMPLEREXT,
+	GLOBAL_VAR_TYPE_MAX,
+};
+
+/* STATUS INFORMATION */
+
+enum RenderingInfo
+{
+	RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME,
+	RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME,
+	RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME,
+	RENDERING_INFO_TEXTURE_MEM_USED,
+	RENDERING_INFO_BUFFER_MEM_USED,
+	RENDERING_INFO_VIDEO_MEM_USED,
+	RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS,
+	RENDERING_INFO_PIPELINE_COMPILATIONS_MESH,
+	RENDERING_INFO_PIPELINE_COMPILATIONS_SURFACE,
+	RENDERING_INFO_PIPELINE_COMPILATIONS_DRAW,
+	RENDERING_INFO_PIPELINE_COMPILATIONS_SPECIALIZATION,
+	RENDERING_INFO_MAX,
+};
+
+/* BACKGROUND */
+
+// If this is modified, review the conversion code in `project_settings.cpp`
+// which is hardcoded to avoid coupling `core` with `servers`.
+enum SplashStretchMode
+{
+	SPLASH_STRETCH_MODE_DISABLED,
+	SPLASH_STRETCH_MODE_KEEP,
+	SPLASH_STRETCH_MODE_KEEP_WIDTH,
+	SPLASH_STRETCH_MODE_KEEP_HEIGHT,
+	SPLASH_STRETCH_MODE_COVER,
+	SPLASH_STRETCH_MODE_IGNORE,
+};
+
+/* MISC */
+
+#ifndef DISABLE_DEPRECATED
+// Never actually used, should be removed when we can break compatibility.
+enum Features
+{
+	FEATURE_SHADERS,
+	FEATURE_MULTITHREADED,
+};
+#endif
+
+} // namespace RenderingServerEnums
+
+// Alias to make it easier to use.
+#define RSE RenderingServerEnums
+// --- End servers/rendering/rendering_server_enums.h ---
+
+class Mesh;
+
+using Texture = Resource;
+
+class Texture2D : public Resource
+{
+	mutable RID placeholder_rid;
+	Size2 placeholder_size = Size2(1, 1);
+	bool is_placeholder = false;
+
+public:
+	virtual Image::Format get_format() const;
+	virtual int get_mipmap_count() const;
+	virtual int get_width() const;
+	virtual int get_height() const;
+	virtual Size2 get_size() const;
+
+	virtual bool is_pixel_opaque(int p_x, int p_y) const;
+
+	virtual bool has_alpha() const;
+	virtual bool has_mipmaps() const;
+
+	virtual RID get_rid() const override;
+	virtual RID get_scaled_rid() const { return get_rid(); }
+
+	virtual void draw(RID p_canvas_item, const Point2& p_pos,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const;
+	virtual void draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const;
+	virtual void draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
+		bool p_clip_uv = true) const;
+	virtual bool get_rect_region(
+		const Rect2& p_rect, const Rect2& p_src_rect, Rect2& r_rect, Rect2& r_src_rect) const;
+
+	virtual Ref<Image> get_image() const;
+
+	static Ref<Texture2D> create_placeholder_2d(Size2 p_size = Size2(1, 1));
+	virtual Ref<Resource> create_placeholder() const;
+
+	Texture2D();
+	virtual ~Texture2D();
+};
+
+class CanvasTexture final : public Texture2D
+{
+public:
+	enum TextureFilter
+	{
+		TEXTURE_FILTER_PARENT_NODE,
+		TEXTURE_FILTER_NEAREST,
+		TEXTURE_FILTER_LINEAR,
+		TEXTURE_FILTER_NEAREST_WITH_MIPMAPS,
+		TEXTURE_FILTER_LINEAR_WITH_MIPMAPS,
+		TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC,
+		TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC,
+		TEXTURE_FILTER_MAX
+	};
+
+	enum TextureRepeat
+	{
+		TEXTURE_REPEAT_PARENT_NODE,
+		TEXTURE_REPEAT_DISABLED,
+		TEXTURE_REPEAT_ENABLED,
+		TEXTURE_REPEAT_MIRROR,
+		TEXTURE_REPEAT_MAX,
+	};
+
+private:
+	Ref<Texture2D> diffuse_texture;
+	Ref<Texture2D> normal_texture;
+	Ref<Texture2D> specular_texture;
+	Color specular = Color(1, 1, 1, 1);
+	real_t shininess = 1.0;
+
+	RID canvas_texture;
+
+	TextureFilter texture_filter = TEXTURE_FILTER_PARENT_NODE;
+	TextureRepeat texture_repeat = TEXTURE_REPEAT_PARENT_NODE;
+
+	// Optional 2D mesh drawing mode (folded from MeshTexture).
+	Ref<Mesh> mesh;
+	Ref<Texture2D> base_texture;
+	Size2i image_size;
+
+public:
+	void set_diffuse_texture(const Ref<Texture2D>& p_diffuse);
+	Ref<Texture2D> get_diffuse_texture() const;
+
+	void set_normal_texture(const Ref<Texture2D>& p_normal);
+	Ref<Texture2D> get_normal_texture() const;
+
+	void set_specular_texture(const Ref<Texture2D>& p_specular);
+	Ref<Texture2D> get_specular_texture() const;
+
+	void set_specular_color(const Color& p_color);
+	Color get_specular_color() const;
+
+	void set_specular_shininess(real_t p_shininess);
+	real_t get_specular_shininess() const;
+
+	void set_texture_filter(TextureFilter p_filter);
+	TextureFilter get_texture_filter() const;
+
+	void set_texture_repeat(TextureRepeat p_repeat);
+	TextureRepeat get_texture_repeat() const;
+
+	void set_mesh(const Ref<Mesh>& p_mesh);
+	Ref<Mesh> get_mesh() const;
+
+	void set_image_size(const Size2& p_size);
+	Size2 get_image_size() const;
+
+	void set_base_texture(const Ref<Texture2D>& p_texture);
+	Ref<Texture2D> get_base_texture() const;
+
+	virtual int get_width() const override;
+	virtual int get_height() const override;
+
+	virtual bool is_pixel_opaque(int p_x, int p_y) const override;
+	virtual bool has_alpha() const override;
+
+	virtual Ref<Image> get_image() const override;
+
+	virtual RID get_rid() const override;
+
+	virtual void draw(RID p_canvas_item, const Point2& p_pos,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect(RID p_canvas_item, const Rect2& p_rect, bool p_tile = false,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
+	virtual void draw_rect_region(RID p_canvas_item, const Rect2& p_rect, const Rect2& p_src_rect,
+		const Color& p_modulate = Color(1, 1, 1), bool p_transpose = false,
+		bool p_clip_uv = true) const override;
+	virtual bool get_rect_region(const Rect2& p_rect, const Rect2& p_src_rect, Rect2& r_rect,
+		Rect2& r_src_rect) const override;
+
+	CanvasTexture();
+	~CanvasTexture();
+};
+
+class TextureLayered : public Resource
+{
+public:
+	enum LayeredType
+	{
+		LAYERED_TYPE_2D_ARRAY,
+		LAYERED_TYPE_CUBEMAP,
+		LAYERED_TYPE_CUBEMAP_ARRAY
+	};
+
+private:
+	mutable RID placeholder_rid;
+	Size2i placeholder_size = Size2i(1, 1);
+	int placeholder_layers = 1;
+	LayeredType placeholder_layered_type = LAYERED_TYPE_2D_ARRAY;
+	bool is_placeholder = false;
+
+public:
+	virtual Image::Format get_format() const;
+	virtual LayeredType get_layered_type() const;
+	virtual int get_width() const;
+	virtual int get_height() const;
+	virtual int get_layers() const;
+	virtual bool has_mipmaps() const;
+	virtual Ref<Image> get_layer_data(int p_layer) const;
+	virtual RID get_rid() const override;
+
+	static Ref<TextureLayered> create_placeholder_layered(
+		LayeredType p_type = LAYERED_TYPE_2D_ARRAY, const Size2i& p_size = Size2i(1, 1),
+		int p_layers = 1);
+	virtual Ref<Resource> create_placeholder() const;
+
+	TextureLayered() = default;
+	virtual ~TextureLayered();
+};
+
+class Texture3D : public Resource
+{
+	mutable RID placeholder_rid;
+	Vector3i placeholder_size = Vector3i(1, 1, 1);
+	bool is_placeholder = false;
+
+public:
+	virtual Image::Format get_format() const;
+	virtual int get_width() const;
+	virtual int get_height() const;
+	virtual int get_depth() const;
+	virtual bool has_mipmaps() const;
+	virtual Vector<Ref<Image>> get_data() const;
+	virtual RID get_rid() const override;
+
+	static Ref<Texture3D> create_placeholder_3d(const Vector3i& p_size = Vector3i(1, 1, 1));
+	virtual Ref<Resource> create_placeholder() const;
+
+	Texture3D() = default;
+	virtual ~Texture3D();
+};
+// --- End scene/resources/texture.h ---

@@ -560,7 +560,7 @@ public:
 // --- End platform/android/net_socket_android.h ---
 
 // --- Folded from platform/android/android_keys_utils.h ---
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 #include <android/input.h>
 
@@ -729,7 +729,7 @@ KeyLocation godot_location_from_android_code(unsigned int p_code);
 // --- End platform/android/android_keys_utils.h ---
 
 // --- Folded from platform/android/android_input_handler.h ---
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 // This class encapsulates all the handling of input events that come from the Android UI thread.
 // Remarks:
@@ -808,9 +808,9 @@ public:
 // --- End platform/android/android_input_handler.h ---
 
 // --- Folded from platform/android/tts_android.h ---
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 #include "core/os/memory.h"
 
 #include <jni.h>
@@ -905,8 +905,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitS
 #endif // ANDROID_ENABLED
 
 // --- Folded from platform/android/api/jni_singleton.h ---
-#include "core/templates/hash_map.h"
-#include "main/main.h"
+#include "core/types.h"
+#include "servers/display/display_server.h"
 
 class JNISingleton
 {
@@ -1270,9 +1270,9 @@ public:
 
 // --- End platform/android/java_godot_view_wrapper.h ---
 
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 #include "core/templates/list.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 #include <jni.h>
 

@@ -518,7 +518,7 @@ TEST_CASE("[AABB] Finite number checks") {
 
 
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestAStar {
 
@@ -1160,7 +1160,7 @@ TEST_CASE("[Basis] Is rotation checks") {
 
 
 
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 namespace TestColor {
 
@@ -1891,7 +1891,7 @@ TEST_CASE("[Expression] Unusual expressions") {
 
 
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestGeometry2D {
 
@@ -2786,7 +2786,7 @@ TEST_CASE("[Geometry2D] Bresenham line") {
 
 
 
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestGeometry3D {
 
@@ -3670,7 +3670,7 @@ TEST_CASE_TEMPLATE("[Math] bezier_interpolate", T, float, double) {
 
 
 
-#include "core/math/plane.h"
+#include "core/types.h"
 
 namespace TestPlane {
 
@@ -3862,8 +3862,6 @@ TEST_CASE("[Plane] Finite number checks") {
 
 
 
-#include "core/types.h"
-#include "core/math/plane.h"
 #include "core/types.h"
 
 namespace TestProjection {
@@ -4559,7 +4557,6 @@ TEST_CASE("[Projection] Pixels per meter") {
 
 #include "core/typedefs.h"
 #include "core/types.h"
-#include "core/math/plane.h"
 
 namespace TestQuaternion {
 
@@ -6447,8 +6444,8 @@ TEST_CASE("[Transform3D] Rotate in-place (local rotation)") {
 
 #ifndef _3D_DISABLED
 
-#include "core/math/geometry_3d.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestTriangleMesh {
 
@@ -6535,7 +6532,6 @@ TEST_CASE("[SceneTree][TriangleMesh] BVH creation and intersection") {
 
 
 #include "core/math/vector2.h"
-#include "core/templates/hashfuncs.h"
 
 namespace TestVector2 {
 
@@ -7037,7 +7033,6 @@ TEST_CASE("[Vector2] Finite number checks") {
 
 
 #include "core/math/vector2.h"
-#include "core/templates/hashfuncs.h"
 
 namespace TestVector2i {
 
@@ -7208,7 +7203,7 @@ TEST_CASE("[Vector2i] Abs and sign methods") {
 
 
 
-#include "core/math/plane.h"
+#include "core/types.h"
 
 namespace TestVector3 {
 
@@ -7744,7 +7739,7 @@ TEST_CASE("[Vector3] Finite number checks") {
 
 
 
-#include "core/math/plane.h"
+#include "core/types.h"
 
 namespace TestVector3i {
 

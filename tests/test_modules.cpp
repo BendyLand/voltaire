@@ -424,7 +424,7 @@ void crypto_decrypt_test(const String &p_in_priv_path, const Vector<uint8_t> &p_
 /**************************************************************************/
 
 // --- Inlined from modules/zip/tests/test_zip.h ---
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 
 #include "tests/test_macros.h"
 
@@ -510,10 +510,8 @@ void check_file_size(const String &p_path, int p_expected_size) {
 
 // === Merged from modules/csg/tests/test_csg.h ===
 #ifdef MODULE_CSG_ENABLED
-#include "modules/gltf/gltf_document.h"
-
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
+
 #include "tests/test_macros.h"
 
 namespace TestCSG {
@@ -592,11 +590,8 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 } // namespace TestCSG
 
 // --- Folded from modules/gridmap/tests/test_grid_map.h ---
-#include "modules/gltf/gltf_document.h"
-
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
+
 #include "tests/test_macros.h"
 
 namespace TestGridMap {
@@ -687,12 +682,12 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 
 // === Merged from modules/dds/tests/test_dds.h ===
 #ifdef MODULE_DDS_ENABLED
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 #include "tests/test_macros.h"
 
 namespace TestDDS {
@@ -823,12 +818,12 @@ TEST_CASE("[SceneTree][DDSSaver] Save DDS - Save valid uncompressed image") {
 
 #ifdef TOOLS_ENABLED
 
-#include "modules/gltf/gltf_document.h"
+#include "scene/main/scene_tree.h"
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
-#include "modules/gltf/gltf_document.h"
-#include "scene/resources/material.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/node.h"
 #include "tests/test_macros.h"
 
@@ -992,12 +987,9 @@ TEST_CASE("[SceneTree][Node] GLTF emissiveTexture without emissiveFactor uses wh
 
 #ifdef TOOLS_ENABLED
 
-#include "modules/gltf/gltf_document.h"
-
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
-#include "scene/resources/material.h"
+
+#include "servers/rendering/renderer.h"
 #include "tests/test_macros.h"
 
 namespace TestGltf {
@@ -1132,11 +1124,8 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 
 
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestGltf {
 Ref<Texture2D> _check_texture(Node *p_node) {
@@ -1363,7 +1352,6 @@ TEST_CASE("[Multiplayer][MultiplayerAPI] Authentication validation") {
 
 // --- Folded from modules/multiplayer/tests/test_multiplayer_spawner.h ---
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "tests/test_macros.h"
 
 namespace TestMultiplayerSpawner
@@ -1403,7 +1391,7 @@ public:
 
 // === Merged from modules/noise/tests/test_fastnoise_lite.h ===
 #ifdef MODULE_NOISE_ENABLED
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "tests/test_macros.h"
 
@@ -2007,7 +1995,7 @@ TEST_CASE("[FastNoiseLite] Generating seamless 2D images (11x11px) and compare t
 } //namespace TestFastNoiseLite
 
 // --- Folded from modules/noise/tests/test_noise_texture_2d.h ---
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "tests/test_macros.h"
 
@@ -2240,7 +2228,7 @@ TEST_CASE("[NoiseTexture2D][SceneTree] Generating a seamless noise texture") {
 // --- End modules/noise/tests/test_noise_texture_2d.h ---
 
 // --- Folded from modules/noise/tests/test_noise_texture_3d.h ---
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "tests/test_macros.h"
 
@@ -2444,7 +2432,7 @@ TEST_CASE("[NoiseTexture3D][SceneTree] Generating a seamless noise texture") {
 
 // === Merged from modules/regex/tests/test_regex.h ===
 #ifdef MODULE_REGEX_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 
 #include "core/string/ustring.h"
 #include "tests/test_macros.h"

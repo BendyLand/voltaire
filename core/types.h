@@ -242,8 +242,1066 @@ template <typename T, typename... Args> _FORCE_INLINE_ Ref<T> memnew_ref(Args&&.
 // Math primitives
 // --- Folded from core/math/transform_3d.h ---
 // --- Folded from core/math/aabb.h ---
-#include "core/math/plane.h"
-#include "core/templates/hashfuncs.h"
+// --- Folded from core/math/plane.h ---
+// --- Folded from core/math/vector3.h ---
+#include "core/typedefs.h"
+#include "core/string/ustring.h"
+
+struct Basis;
+struct Vector2;
+struct Vector3i;
+
+struct [[nodiscard]] Vector3 {
+	static const Vector3 LEFT;
+	static const Vector3 RIGHT;
+	static const Vector3 UP;
+	static const Vector3 DOWN;
+	static const Vector3 FORWARD;
+	static const Vector3 BACK;
+	static const Vector3 MODEL_LEFT;
+	static const Vector3 MODEL_RIGHT;
+	static const Vector3 MODEL_TOP;
+	static const Vector3 MODEL_BOTTOM;
+	static const Vector3 MODEL_FRONT;
+	static const Vector3 MODEL_REAR;
+
+	static constexpr int AXIS_COUNT = 3;
+
+	enum Axis {
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+	};
+
+	real_t x = 0.0f;
+	real_t y = 0.0f;
+	real_t z = 0.0f;
+
+	constexpr real_t &operator[](int p_axis) {
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(Vector3, x) == 0 * sizeof(real_t));
+		static_assert(offsetof(Vector3, y) == 1 * sizeof(real_t));
+		static_assert(offsetof(Vector3, z) == 2 * sizeof(real_t));
+		static_assert(sizeof(Vector3) == 3 * sizeof(real_t));
+
+		DEV_ASSERT((unsigned int)p_axis < 3);
+		return (&x)[p_axis];
+	}
+	constexpr const real_t &operator[](int p_axis) const {
+		DEV_ASSERT((unsigned int)p_axis < 3);
+		return (&x)[p_axis];
+	}
+
+	_FORCE_INLINE_ Vector3::Axis min_axis_index() const {
+		return x < y ? (x < z ? Vector3::AXIS_X : Vector3::AXIS_Z) : (y < z ? Vector3::AXIS_Y : Vector3::AXIS_Z);
+	}
+
+	_FORCE_INLINE_ Vector3::Axis max_axis_index() const {
+		return x < y ? (y < z ? Vector3::AXIS_Z : Vector3::AXIS_Y) : (x < z ? Vector3::AXIS_Z : Vector3::AXIS_X);
+	}
+
+	Vector3 min(const Vector3 &p_vector3) const {
+		return Vector3(MIN(x, p_vector3.x), MIN(y, p_vector3.y), MIN(z, p_vector3.z));
+	}
+
+	Vector3 minf(real_t p_scalar) const {
+		return Vector3(MIN(x, p_scalar), MIN(y, p_scalar), MIN(z, p_scalar));
+	}
+
+	Vector3 max(const Vector3 &p_vector3) const {
+		return Vector3(MAX(x, p_vector3.x), MAX(y, p_vector3.y), MAX(z, p_vector3.z));
+	}
+
+	Vector3 maxf(real_t p_scalar) const {
+		return Vector3(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar));
+	}
+
+	Vector3 clamp(const Vector3 &p_min, const Vector3 &p_max) const {
+		return Vector3(
+				CLAMP(x, p_min.x, p_max.x),
+				CLAMP(y, p_min.y, p_max.y),
+				CLAMP(z, p_min.z, p_max.z));
+	}
+
+	Vector3 clampf(real_t p_min, real_t p_max) const {
+		return Vector3(
+				CLAMP(x, p_min, p_max),
+				CLAMP(y, p_min, p_max),
+				CLAMP(z, p_min, p_max));
+	}
+
+	_FORCE_INLINE_ real_t length() const;
+	_FORCE_INLINE_ real_t length_squared() const;
+
+	_FORCE_INLINE_ void normalize();
+	_FORCE_INLINE_ Vector3 normalized() const;
+	_FORCE_INLINE_ bool is_normalized() const;
+	_FORCE_INLINE_ Vector3 inverse() const;
+	Vector3 limit_length(real_t p_len = 1.0) const;
+
+	_FORCE_INLINE_ void zero();
+
+	void snap(const Vector3 &p_step);
+	void snapf(real_t p_step);
+	Vector3 snapped(const Vector3 &p_step) const;
+	Vector3 snappedf(real_t p_step) const;
+
+	void rotate(const Vector3 &p_axis, real_t p_angle);
+	Vector3 rotated(const Vector3 &p_axis, real_t p_angle) const;
+
+	/* Static Methods between 2 vector3s */
+
+	_FORCE_INLINE_ Vector3 lerp(const Vector3 &p_to, real_t p_weight) const;
+	_FORCE_INLINE_ Vector3 slerp(const Vector3 &p_to, real_t p_weight) const;
+	_FORCE_INLINE_ Vector3 cubic_interpolate(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight) const;
+	_FORCE_INLINE_ Vector3 cubic_interpolate_in_time(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const;
+	_FORCE_INLINE_ Vector3 bezier_interpolate(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const;
+	_FORCE_INLINE_ Vector3 bezier_derivative(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const;
+
+	Vector3 move_toward(const Vector3 &p_to, real_t p_delta) const;
+
+	Vector2 octahedron_encode() const;
+	static Vector3 octahedron_decode(const Vector2 &p_oct);
+	Vector2 octahedron_tangent_encode(float p_sign) const;
+	static Vector3 octahedron_tangent_decode(const Vector2 &p_oct, float *r_sign);
+
+	_FORCE_INLINE_ Vector3 cross(const Vector3 &p_with) const;
+	_FORCE_INLINE_ real_t dot(const Vector3 &p_with) const;
+	Basis outer(const Vector3 &p_with) const;
+	_FORCE_INLINE_ Vector3 get_any_perpendicular() const;
+
+	_FORCE_INLINE_ Vector3 abs() const;
+	_FORCE_INLINE_ Vector3 floor() const;
+	_FORCE_INLINE_ Vector3 sign() const;
+	_FORCE_INLINE_ Vector3 ceil() const;
+	_FORCE_INLINE_ Vector3 round() const;
+
+	_FORCE_INLINE_ real_t distance_to(const Vector3 &p_to) const;
+	_FORCE_INLINE_ real_t distance_squared_to(const Vector3 &p_to) const;
+
+	_FORCE_INLINE_ Vector3 posmod(real_t p_mod) const;
+	_FORCE_INLINE_ Vector3 posmodv(const Vector3 &p_modv) const;
+	_FORCE_INLINE_ Vector3 project(const Vector3 &p_to) const;
+
+	_FORCE_INLINE_ real_t angle_to(const Vector3 &p_to) const;
+	_FORCE_INLINE_ real_t signed_angle_to(const Vector3 &p_to, const Vector3 &p_axis) const;
+	_FORCE_INLINE_ Vector3 direction_to(const Vector3 &p_to) const;
+
+	_FORCE_INLINE_ Vector3 slide(const Vector3 &p_normal) const;
+	_FORCE_INLINE_ Vector3 bounce(const Vector3 &p_normal) const;
+	_FORCE_INLINE_ Vector3 reflect(const Vector3 &p_normal) const;
+
+	bool is_equal_approx(const Vector3 &p_v) const;
+	bool is_same(const Vector3 &p_v) const;
+	bool is_zero_approx() const;
+	bool is_finite() const;
+
+	/* Operators */
+
+	constexpr Vector3 &operator+=(const Vector3 &p_v);
+	constexpr Vector3 operator+(const Vector3 &p_v) const;
+	constexpr Vector3 &operator-=(const Vector3 &p_v);
+	constexpr Vector3 operator-(const Vector3 &p_v) const;
+	constexpr Vector3 &operator*=(const Vector3 &p_v);
+	constexpr Vector3 operator*(const Vector3 &p_v) const;
+	constexpr Vector3 &operator/=(const Vector3 &p_v);
+	constexpr Vector3 operator/(const Vector3 &p_v) const;
+
+	constexpr Vector3 &operator*=(real_t p_scalar);
+	constexpr Vector3 operator*(real_t p_scalar) const;
+	constexpr Vector3 &operator/=(real_t p_scalar);
+	constexpr Vector3 operator/(real_t p_scalar) const;
+
+	constexpr Vector3 operator-() const;
+
+	constexpr bool operator==(const Vector3 &p_v) const;
+	constexpr bool operator!=(const Vector3 &p_v) const;
+	constexpr bool operator<(const Vector3 &p_v) const;
+	constexpr bool operator<=(const Vector3 &p_v) const;
+	constexpr bool operator>(const Vector3 &p_v) const;
+	constexpr bool operator>=(const Vector3 &p_v) const;
+
+	explicit operator String() const;
+	operator Vector3i() const;
+
+	uint32_t hash() const {
+		uint32_t h = hash_murmur3_one_real(x);
+		h = hash_murmur3_one_real(y, h);
+		h = hash_murmur3_one_real(z, h);
+		return hash_fmix32(h);
+	}
+
+	constexpr Vector3() :
+			x(0), y(0), z(0) {}
+	constexpr Vector3(real_t p_x, real_t p_y, real_t p_z) :
+			x(p_x), y(p_y), z(p_z) {}
+};
+
+inline constexpr Vector3 Vector3::LEFT = { -1, 0, 0 };
+inline constexpr Vector3 Vector3::RIGHT = { 1, 0, 0 };
+inline constexpr Vector3 Vector3::UP = { 0, 1, 0 };
+inline constexpr Vector3 Vector3::DOWN = { 0, -1, 0 };
+inline constexpr Vector3 Vector3::FORWARD = { 0, 0, -1 };
+inline constexpr Vector3 Vector3::BACK = { 0, 0, 1 };
+inline constexpr Vector3 Vector3::MODEL_LEFT = { 1, 0, 0 };
+inline constexpr Vector3 Vector3::MODEL_RIGHT = { -1, 0, 0 };
+inline constexpr Vector3 Vector3::MODEL_TOP = { 0, 1, 0 };
+inline constexpr Vector3 Vector3::MODEL_BOTTOM = { 0, -1, 0 };
+inline constexpr Vector3 Vector3::MODEL_FRONT = { 0, 0, 1 };
+inline constexpr Vector3 Vector3::MODEL_REAR = { 0, 0, -1 };
+
+Vector3 Vector3::cross(const Vector3 &p_with) const {
+	Vector3 ret(
+			(y * p_with.z) - (z * p_with.y),
+			(z * p_with.x) - (x * p_with.z),
+			(x * p_with.y) - (y * p_with.x));
+
+	return ret;
+}
+
+real_t Vector3::dot(const Vector3 &p_with) const {
+	return x * p_with.x + y * p_with.y + z * p_with.z;
+}
+
+Vector3 Vector3::abs() const {
+	return Vector3(Math::abs(x), Math::abs(y), Math::abs(z));
+}
+
+Vector3 Vector3::sign() const {
+	return Vector3(SIGN(x), SIGN(y), SIGN(z));
+}
+
+Vector3 Vector3::floor() const {
+	return Vector3(Math::floor(x), Math::floor(y), Math::floor(z));
+}
+
+Vector3 Vector3::ceil() const {
+	return Vector3(Math::ceil(x), Math::ceil(y), Math::ceil(z));
+}
+
+Vector3 Vector3::round() const {
+	return Vector3(Math::round(x), Math::round(y), Math::round(z));
+}
+
+Vector3 Vector3::lerp(const Vector3 &p_to, real_t p_weight) const {
+	Vector3 res = *this;
+	res.x = Math::lerp(res.x, p_to.x, p_weight);
+	res.y = Math::lerp(res.y, p_to.y, p_weight);
+	res.z = Math::lerp(res.z, p_to.z, p_weight);
+	return res;
+}
+
+Vector3 Vector3::slerp(const Vector3 &p_to, real_t p_weight) const {
+	// This method seems more complicated than it really is, since we write out
+	// the internals of some methods for efficiency (mainly, checking length).
+	real_t start_length_sq = length_squared();
+	real_t end_length_sq = p_to.length_squared();
+	if (unlikely(start_length_sq == 0.0f || end_length_sq == 0.0f)) {
+		// Zero length vectors have no angle, so the best we can do is either lerp or throw an error.
+		return lerp(p_to, p_weight);
+	}
+	Vector3 axis = cross(p_to);
+	real_t axis_length_sq = axis.length_squared();
+	if (unlikely(axis_length_sq == 0.0f)) {
+		// Colinear vectors have no rotation axis or angle between them, so the best we can do is lerp.
+		return lerp(p_to, p_weight);
+	}
+	axis /= Math::sqrt(axis_length_sq);
+	real_t start_length = Math::sqrt(start_length_sq);
+	real_t result_length = Math::lerp(start_length, Math::sqrt(end_length_sq), p_weight);
+	real_t angle = angle_to(p_to);
+	return rotated(axis, angle * p_weight) * (result_length / start_length);
+}
+
+Vector3 Vector3::cubic_interpolate(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight) const {
+	Vector3 res = *this;
+	res.x = Math::cubic_interpolate(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight);
+	res.y = Math::cubic_interpolate(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight);
+	res.z = Math::cubic_interpolate(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight);
+	return res;
+}
+
+Vector3 Vector3::cubic_interpolate_in_time(const Vector3 &p_b, const Vector3 &p_pre_a, const Vector3 &p_post_b, real_t p_weight, real_t p_b_t, real_t p_pre_a_t, real_t p_post_b_t) const {
+	Vector3 res = *this;
+	res.x = Math::cubic_interpolate_in_time(res.x, p_b.x, p_pre_a.x, p_post_b.x, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
+	res.y = Math::cubic_interpolate_in_time(res.y, p_b.y, p_pre_a.y, p_post_b.y, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
+	res.z = Math::cubic_interpolate_in_time(res.z, p_b.z, p_pre_a.z, p_post_b.z, p_weight, p_b_t, p_pre_a_t, p_post_b_t);
+	return res;
+}
+
+Vector3 Vector3::bezier_interpolate(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const {
+	Vector3 res = *this;
+	res.x = Math::bezier_interpolate(res.x, p_control_1.x, p_control_2.x, p_end.x, p_t);
+	res.y = Math::bezier_interpolate(res.y, p_control_1.y, p_control_2.y, p_end.y, p_t);
+	res.z = Math::bezier_interpolate(res.z, p_control_1.z, p_control_2.z, p_end.z, p_t);
+	return res;
+}
+
+Vector3 Vector3::bezier_derivative(const Vector3 &p_control_1, const Vector3 &p_control_2, const Vector3 &p_end, real_t p_t) const {
+	Vector3 res = *this;
+	res.x = Math::bezier_derivative(res.x, p_control_1.x, p_control_2.x, p_end.x, p_t);
+	res.y = Math::bezier_derivative(res.y, p_control_1.y, p_control_2.y, p_end.y, p_t);
+	res.z = Math::bezier_derivative(res.z, p_control_1.z, p_control_2.z, p_end.z, p_t);
+	return res;
+}
+
+real_t Vector3::distance_to(const Vector3 &p_to) const {
+	return (p_to - *this).length();
+}
+
+real_t Vector3::distance_squared_to(const Vector3 &p_to) const {
+	return (p_to - *this).length_squared();
+}
+
+Vector3 Vector3::posmod(real_t p_mod) const {
+	return Vector3(Math::fposmod(x, p_mod), Math::fposmod(y, p_mod), Math::fposmod(z, p_mod));
+}
+
+Vector3 Vector3::posmodv(const Vector3 &p_modv) const {
+	return Vector3(Math::fposmod(x, p_modv.x), Math::fposmod(y, p_modv.y), Math::fposmod(z, p_modv.z));
+}
+
+Vector3 Vector3::project(const Vector3 &p_to) const {
+	return p_to * (dot(p_to) / p_to.length_squared());
+}
+
+real_t Vector3::angle_to(const Vector3 &p_to) const {
+	return Math::atan2(cross(p_to).length(), dot(p_to));
+}
+
+real_t Vector3::signed_angle_to(const Vector3 &p_to, const Vector3 &p_axis) const {
+	Vector3 cross_to = cross(p_to);
+	real_t unsigned_angle = Math::atan2(cross_to.length(), dot(p_to));
+	real_t sign = cross_to.dot(p_axis);
+	return (sign < 0) ? -unsigned_angle : unsigned_angle;
+}
+
+Vector3 Vector3::direction_to(const Vector3 &p_to) const {
+	Vector3 ret(p_to.x - x, p_to.y - y, p_to.z - z);
+	ret.normalize();
+	return ret;
+}
+
+Vector3 Vector3::get_any_perpendicular() const {
+	// Return the any perpendicular vector by cross product with the Vector3.RIGHT or Vector3.UP,
+	// whichever has the greater angle to the current vector with the sign of each element positive.
+	// The only essence is "to avoid being parallel to the current vector", and there is no mathematical basis for using Vector3.RIGHT and Vector3.UP,
+	// since it could be a different vector depending on the prior branching code Math::abs(x) <= Math::abs(y) && Math::abs(x) <= Math::abs(z).
+	// However, it would be reasonable to use any of the axes of the basis, as it is simpler to calculate.
+	ERR_FAIL_COND_V_MSG(is_zero_approx(), Vector3(0, 0, 0), "The Vector3 must not be zero.");
+	return cross((Math::abs(x) <= Math::abs(y) && Math::abs(x) <= Math::abs(z)) ? Vector3::RIGHT : Vector3::UP).normalized();
+}
+
+/* Operators */
+
+constexpr Vector3 &Vector3::operator+=(const Vector3 &p_v) {
+	x += p_v.x;
+	y += p_v.y;
+	z += p_v.z;
+	return *this;
+}
+
+constexpr Vector3 Vector3::operator+(const Vector3 &p_v) const {
+	return Vector3(x + p_v.x, y + p_v.y, z + p_v.z);
+}
+
+constexpr Vector3 &Vector3::operator-=(const Vector3 &p_v) {
+	x -= p_v.x;
+	y -= p_v.y;
+	z -= p_v.z;
+	return *this;
+}
+
+constexpr Vector3 Vector3::operator-(const Vector3 &p_v) const {
+	return Vector3(x - p_v.x, y - p_v.y, z - p_v.z);
+}
+
+constexpr Vector3 &Vector3::operator*=(const Vector3 &p_v) {
+	x *= p_v.x;
+	y *= p_v.y;
+	z *= p_v.z;
+	return *this;
+}
+
+constexpr Vector3 Vector3::operator*(const Vector3 &p_v) const {
+	return Vector3(x * p_v.x, y * p_v.y, z * p_v.z);
+}
+
+constexpr Vector3 &Vector3::operator/=(const Vector3 &p_v) {
+	x /= p_v.x;
+	y /= p_v.y;
+	z /= p_v.z;
+	return *this;
+}
+
+constexpr Vector3 Vector3::operator/(const Vector3 &p_v) const {
+	return Vector3(x / p_v.x, y / p_v.y, z / p_v.z);
+}
+
+constexpr Vector3 &Vector3::operator*=(real_t p_scalar) {
+	x *= p_scalar;
+	y *= p_scalar;
+	z *= p_scalar;
+	return *this;
+}
+
+// Multiplication operators required to workaround issues with LLVM using implicit conversion
+// to Vector3i instead for integers where it should not.
+
+constexpr Vector3 operator*(float p_scalar, const Vector3 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector3 operator*(double p_scalar, const Vector3 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector3 operator*(int32_t p_scalar, const Vector3 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector3 operator*(int64_t p_scalar, const Vector3 &p_vec) {
+	return p_vec * p_scalar;
+}
+
+constexpr Vector3 Vector3::operator*(real_t p_scalar) const {
+	return Vector3(x * p_scalar, y * p_scalar, z * p_scalar);
+}
+
+constexpr Vector3 &Vector3::operator/=(real_t p_scalar) {
+	x /= p_scalar;
+	y /= p_scalar;
+	z /= p_scalar;
+	return *this;
+}
+
+constexpr Vector3 Vector3::operator/(real_t p_scalar) const {
+	return Vector3(x / p_scalar, y / p_scalar, z / p_scalar);
+}
+
+constexpr Vector3 Vector3::operator-() const {
+	return Vector3(-x, -y, -z);
+}
+
+constexpr bool Vector3::operator==(const Vector3 &p_v) const {
+	return x == p_v.x && y == p_v.y && z == p_v.z;
+}
+
+constexpr bool Vector3::operator!=(const Vector3 &p_v) const {
+	return x != p_v.x || y != p_v.y || z != p_v.z;
+}
+
+constexpr bool Vector3::operator<(const Vector3 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z < p_v.z;
+		}
+		return y < p_v.y;
+	}
+	return x < p_v.x;
+}
+
+constexpr bool Vector3::operator>(const Vector3 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z > p_v.z;
+		}
+		return y > p_v.y;
+	}
+	return x > p_v.x;
+}
+
+constexpr bool Vector3::operator<=(const Vector3 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z <= p_v.z;
+		}
+		return y < p_v.y;
+	}
+	return x < p_v.x;
+}
+
+constexpr bool Vector3::operator>=(const Vector3 &p_v) const {
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z >= p_v.z;
+		}
+		return y > p_v.y;
+	}
+	return x > p_v.x;
+}
+
+_FORCE_INLINE_ Vector3 vec3_cross(const Vector3 &p_a, const Vector3 &p_b) {
+	return p_a.cross(p_b);
+}
+
+_FORCE_INLINE_ real_t vec3_dot(const Vector3 &p_a, const Vector3 &p_b) {
+	return p_a.dot(p_b);
+}
+
+real_t Vector3::length() const {
+	real_t x2 = x * x;
+	real_t y2 = y * y;
+	real_t z2 = z * z;
+
+	return Math::sqrt(x2 + y2 + z2);
+}
+
+real_t Vector3::length_squared() const {
+	real_t x2 = x * x;
+	real_t y2 = y * y;
+	real_t z2 = z * z;
+
+	return x2 + y2 + z2;
+}
+
+void Vector3::normalize() {
+	if (!is_finite()) {
+#ifdef MATH_CHECKS
+		WARN_PRINT("Vector3 cannot be normalized, the elements must be finite. Making (0, 0, 0) as a fallback.");
+#endif // MATH_CHECKS
+		zero();
+		return;
+	}
+
+	real_t l = length_squared();
+	if (l == 0) {
+		zero();
+	} else {
+		l = Math::sqrt(l);
+		x /= l;
+		y /= l;
+		z /= l;
+	}
+}
+
+Vector3 Vector3::normalized() const {
+	Vector3 v = *this;
+	v.normalize();
+	return v;
+}
+
+bool Vector3::is_normalized() const {
+	// use length_squared() instead of length() to avoid sqrt(), makes it more stringent.
+	return Math::is_equal_approx(length_squared(), 1, (real_t)UNIT_EPSILON);
+}
+
+Vector3 Vector3::inverse() const {
+	return Vector3(1.0f / x, 1.0f / y, 1.0f / z);
+}
+
+void Vector3::zero() {
+	x = y = z = 0;
+}
+
+// slide returns the component of the vector along the given plane, specified by its normal vector.
+Vector3 Vector3::slide(const Vector3 &p_normal) const {
+#ifdef MATH_CHECKS
+	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector3(), "The normal Vector3 " + p_normal.operator String() + " must be normalized.");
+#endif
+	return *this - p_normal * dot(p_normal);
+}
+
+Vector3 Vector3::bounce(const Vector3 &p_normal) const {
+	return -reflect(p_normal);
+}
+
+Vector3 Vector3::reflect(const Vector3 &p_normal) const {
+#ifdef MATH_CHECKS
+	ERR_FAIL_COND_V_MSG(!p_normal.is_normalized(), Vector3(), "The normal Vector3 " + p_normal.operator String() + " must be normalized.");
+#endif
+	return 2.0f * p_normal * dot(p_normal) - *this;
+}
+
+template <>
+struct is_zero_constructible<Vector3> : std::true_type {};
+
+// --- Folded from core/math/vector3i.h ---
+#include "core/typedefs.h"
+#include "core/math/vector2.h"
+
+class String;
+struct Vector3;
+
+struct [[nodiscard]] Vector3i
+{
+	static const Vector3i LEFT;
+	static const Vector3i RIGHT;
+	static const Vector3i UP;
+	static const Vector3i DOWN;
+	static const Vector3i FORWARD;
+	static const Vector3i BACK;
+
+	static constexpr int AXIS_COUNT = 3;
+
+	enum Axis
+	{
+		AXIS_X,
+		AXIS_Y,
+		AXIS_Z,
+	};
+
+	int32_t x = 0;
+	int32_t y = 0;
+	int32_t z = 0;
+
+	constexpr int32_t& operator[](int p_axis)
+	{
+		// The pointer math below assumes that the elements are placed back-to-back, like an array.
+		// This is always true in practice, but technically not guaranteed; we safety-check it here.
+		static_assert(offsetof(Vector3i, x) == 0 * sizeof(int32_t));
+		static_assert(offsetof(Vector3i, y) == 1 * sizeof(int32_t));
+		static_assert(offsetof(Vector3i, z) == 2 * sizeof(int32_t));
+		static_assert(sizeof(Vector3i) == 3 * sizeof(int32_t));
+
+		DEV_ASSERT((unsigned int)p_axis < 3);
+		return (&x)[p_axis];
+	}
+
+	constexpr const int32_t& operator[](int p_axis) const
+	{
+		DEV_ASSERT((unsigned int)p_axis < 3);
+		return (&x)[p_axis];
+	}
+
+	Vector3i::Axis min_axis_index() const;
+	Vector3i::Axis max_axis_index() const;
+
+	Vector3i min(const Vector3i& p_vector3i) const
+	{
+		return Vector3i(MIN(x, p_vector3i.x), MIN(y, p_vector3i.y), MIN(z, p_vector3i.z));
+	}
+
+	Vector3i mini(int32_t p_scalar) const
+	{
+		return Vector3i(MIN(x, p_scalar), MIN(y, p_scalar), MIN(z, p_scalar));
+	}
+
+	Vector3i max(const Vector3i& p_vector3i) const
+	{
+		return Vector3i(MAX(x, p_vector3i.x), MAX(y, p_vector3i.y), MAX(z, p_vector3i.z));
+	}
+
+	Vector3i maxi(int32_t p_scalar) const
+	{
+		return Vector3i(MAX(x, p_scalar), MAX(y, p_scalar), MAX(z, p_scalar));
+	}
+
+	_FORCE_INLINE_ int64_t length_squared() const;
+	_FORCE_INLINE_ double length() const;
+
+	_FORCE_INLINE_ void zero();
+
+	_FORCE_INLINE_ Vector3i abs() const;
+	_FORCE_INLINE_ Vector3i sign() const;
+	Vector3i clamp(const Vector3i& p_min, const Vector3i& p_max) const;
+	Vector3i clampi(int32_t p_min, int32_t p_max) const;
+	Vector3i snapped(const Vector3i& p_step) const;
+	Vector3i snappedi(int32_t p_step) const;
+
+	_FORCE_INLINE_ double distance_to(const Vector3i& p_to) const;
+	_FORCE_INLINE_ int64_t distance_squared_to(const Vector3i& p_to) const;
+
+	/* Operators */
+
+	constexpr Vector3i& operator+=(const Vector3i& p_v);
+	constexpr Vector3i operator+(const Vector3i& p_v) const;
+	constexpr Vector3i& operator-=(const Vector3i& p_v);
+	constexpr Vector3i operator-(const Vector3i& p_v) const;
+	constexpr Vector3i& operator*=(const Vector3i& p_v);
+	constexpr Vector3i operator*(const Vector3i& p_v) const;
+	constexpr Vector3i& operator/=(const Vector3i& p_v);
+	constexpr Vector3i operator/(const Vector3i& p_v) const;
+	constexpr Vector3i& operator%=(const Vector3i& p_v);
+	constexpr Vector3i operator%(const Vector3i& p_v) const;
+
+	constexpr Vector3i& operator*=(int32_t p_scalar);
+	constexpr Vector3i operator*(int32_t p_scalar) const;
+	constexpr Vector3i& operator/=(int32_t p_scalar);
+	constexpr Vector3i operator/(int32_t p_scalar) const;
+	constexpr Vector3i& operator%=(int32_t p_scalar);
+	constexpr Vector3i operator%(int32_t p_scalar) const;
+
+	constexpr Vector3i operator-() const;
+
+	constexpr bool operator==(const Vector3i& p_v) const;
+	constexpr bool operator!=(const Vector3i& p_v) const;
+	constexpr bool operator<(const Vector3i& p_v) const;
+	constexpr bool operator<=(const Vector3i& p_v) const;
+	constexpr bool operator>(const Vector3i& p_v) const;
+	constexpr bool operator>=(const Vector3i& p_v) const;
+
+	explicit operator String() const;
+	operator Vector3() const;
+
+	uint32_t hash() const
+	{
+		uint32_t h = hash_murmur3_one_32(uint32_t(x));
+		h = hash_murmur3_one_32(uint32_t(y), h);
+		h = hash_murmur3_one_32(uint32_t(z), h);
+		return hash_fmix32(h);
+	}
+
+	constexpr Vector3i() = default;
+
+	constexpr Vector3i(int32_t p_x, int32_t p_y, int32_t p_z) : x(p_x), y(p_y), z(p_z) {}
+};
+
+inline constexpr Vector3i Vector3i::LEFT = {-1, 0, 0};
+inline constexpr Vector3i Vector3i::RIGHT = {1, 0, 0};
+inline constexpr Vector3i Vector3i::UP = {0, 1, 0};
+inline constexpr Vector3i Vector3i::DOWN = {0, -1, 0};
+inline constexpr Vector3i Vector3i::FORWARD = {0, 0, -1};
+inline constexpr Vector3i Vector3i::BACK = {0, 0, 1};
+
+int64_t Vector3i::length_squared() const
+{
+	return x * (int64_t)x + y * (int64_t)y + z * (int64_t)z;
+}
+
+double Vector3i::length() const { return Math::sqrt((double)length_squared()); }
+
+Vector3i Vector3i::abs() const { return Vector3i(Math::abs(x), Math::abs(y), Math::abs(z)); }
+
+Vector3i Vector3i::sign() const { return Vector3i(SIGN(x), SIGN(y), SIGN(z)); }
+
+double Vector3i::distance_to(const Vector3i& p_to) const { return (p_to - *this).length(); }
+
+int64_t Vector3i::distance_squared_to(const Vector3i& p_to) const
+{
+	return (p_to - *this).length_squared();
+}
+
+/* Operators */
+
+constexpr Vector3i& Vector3i::operator+=(const Vector3i& p_v)
+{
+	x += p_v.x;
+	y += p_v.y;
+	z += p_v.z;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator+(const Vector3i& p_v) const
+{
+	return Vector3i(x + p_v.x, y + p_v.y, z + p_v.z);
+}
+
+constexpr Vector3i& Vector3i::operator-=(const Vector3i& p_v)
+{
+	x -= p_v.x;
+	y -= p_v.y;
+	z -= p_v.z;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator-(const Vector3i& p_v) const
+{
+	return Vector3i(x - p_v.x, y - p_v.y, z - p_v.z);
+}
+
+constexpr Vector3i& Vector3i::operator*=(const Vector3i& p_v)
+{
+	x *= p_v.x;
+	y *= p_v.y;
+	z *= p_v.z;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator*(const Vector3i& p_v) const
+{
+	return Vector3i(x * p_v.x, y * p_v.y, z * p_v.z);
+}
+
+constexpr Vector3i& Vector3i::operator/=(const Vector3i& p_v)
+{
+	x /= p_v.x;
+	y /= p_v.y;
+	z /= p_v.z;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator/(const Vector3i& p_v) const
+{
+	return Vector3i(x / p_v.x, y / p_v.y, z / p_v.z);
+}
+
+constexpr Vector3i& Vector3i::operator%=(const Vector3i& p_v)
+{
+	x %= p_v.x;
+	y %= p_v.y;
+	z %= p_v.z;
+
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator%(const Vector3i& p_v) const
+{
+	return Vector3i(x % p_v.x, y % p_v.y, z % p_v.z);
+}
+
+constexpr Vector3i& Vector3i::operator*=(int32_t p_scalar)
+{
+	x *= p_scalar;
+	y *= p_scalar;
+	z *= p_scalar;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator*(int32_t p_scalar) const
+{
+	return Vector3i(x * p_scalar, y * p_scalar, z * p_scalar);
+}
+
+// Multiplication operators required to workaround issues with LLVM using implicit conversion.
+
+constexpr Vector3i operator*(int32_t p_scalar, const Vector3i& p_vector)
+{
+	return p_vector * p_scalar;
+}
+
+constexpr Vector3i operator*(int64_t p_scalar, const Vector3i& p_vector)
+{
+	return p_vector * p_scalar;
+}
+
+constexpr Vector3i operator*(float p_scalar, const Vector3i& p_vector)
+{
+	return p_vector * p_scalar;
+}
+
+constexpr Vector3i operator*(double p_scalar, const Vector3i& p_vector)
+{
+	return p_vector * p_scalar;
+}
+
+constexpr Vector3i& Vector3i::operator/=(int32_t p_scalar)
+{
+	x /= p_scalar;
+	y /= p_scalar;
+	z /= p_scalar;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator/(int32_t p_scalar) const
+{
+	return Vector3i(x / p_scalar, y / p_scalar, z / p_scalar);
+}
+
+constexpr Vector3i& Vector3i::operator%=(int32_t p_scalar)
+{
+	x %= p_scalar;
+	y %= p_scalar;
+	z %= p_scalar;
+	return *this;
+}
+
+constexpr Vector3i Vector3i::operator%(int32_t p_scalar) const
+{
+	return Vector3i(x % p_scalar, y % p_scalar, z % p_scalar);
+}
+
+constexpr Vector3i Vector3i::operator-() const { return Vector3i(-x, -y, -z); }
+
+constexpr bool Vector3i::operator==(const Vector3i& p_v) const
+{
+	return (x == p_v.x && y == p_v.y && z == p_v.z);
+}
+
+constexpr bool Vector3i::operator!=(const Vector3i& p_v) const
+{
+	return (x != p_v.x || y != p_v.y || z != p_v.z);
+}
+
+constexpr bool Vector3i::operator<(const Vector3i& p_v) const
+{
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z < p_v.z;
+		}
+		else {
+			return y < p_v.y;
+		}
+	}
+	else {
+		return x < p_v.x;
+	}
+}
+
+constexpr bool Vector3i::operator>(const Vector3i& p_v) const
+{
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z > p_v.z;
+		}
+		else {
+			return y > p_v.y;
+		}
+	}
+	else {
+		return x > p_v.x;
+	}
+}
+
+constexpr bool Vector3i::operator<=(const Vector3i& p_v) const
+{
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z <= p_v.z;
+		}
+		else {
+			return y < p_v.y;
+		}
+	}
+	else {
+		return x < p_v.x;
+	}
+}
+
+constexpr bool Vector3i::operator>=(const Vector3i& p_v) const
+{
+	if (x == p_v.x) {
+		if (y == p_v.y) {
+			return z >= p_v.z;
+		}
+		else {
+			return y > p_v.y;
+		}
+	}
+	else {
+		return x > p_v.x;
+	}
+}
+
+void Vector3i::zero() { x = y = z = 0; }
+
+template <> struct is_zero_constructible<Vector3i> : std::true_type
+{
+};
+// --- End core/math/vector3.h ---
+
+struct [[nodiscard]] Plane
+{
+	static const Plane PLANE_YZ;
+	static const Plane PLANE_XZ;
+	static const Plane PLANE_XY;
+
+	Vector3 normal;
+	real_t d = 0;
+
+	void set_normal(const Vector3& p_normal);
+
+	_FORCE_INLINE_ Vector3 get_normal() const { return normal; }
+
+	void zero()
+	{
+		normal.zero();
+		d = 0;
+	}
+
+	void normalize();
+	Plane normalized() const;
+
+	/* Plane-Point operations */
+
+	_FORCE_INLINE_ Vector3 get_center() const { return normal * d; }
+
+	Vector3 get_any_perpendicular_normal() const;
+
+	_FORCE_INLINE_ bool is_point_over(const Vector3& p_point) const; ///< Point is over plane
+	_FORCE_INLINE_ real_t distance_to(const Vector3& p_point) const;
+	_FORCE_INLINE_ bool has_point(const Vector3& p_point, real_t p_tolerance = CMP_EPSILON) const;
+
+	/* intersections */
+
+	bool intersect_3(
+		const Plane& p_plane1, const Plane& p_plane2, Vector3* r_result = nullptr) const;
+	bool intersects_ray(const Vector3& p_from, const Vector3& p_dir, Vector3* p_intersection) const;
+	bool intersects_segment(
+		const Vector3& p_begin, const Vector3& p_end, Vector3* p_intersection) const;
+
+	_FORCE_INLINE_ Vector3 project(const Vector3& p_point) const
+	{
+		return p_point - normal * distance_to(p_point);
+	}
+
+	/* misc */
+
+	constexpr Plane operator-() const { return Plane(-normal, -d); }
+
+	bool is_equal_approx(const Plane& p_plane) const;
+	bool is_same(const Plane& p_plane) const;
+	bool is_equal_approx_any_side(const Plane& p_plane) const;
+	bool is_finite() const;
+
+	constexpr bool operator==(const Plane& p_plane) const;
+	constexpr bool operator!=(const Plane& p_plane) const;
+	explicit operator String() const;
+
+	Plane() = default;
+
+	constexpr Plane(real_t p_a, real_t p_b, real_t p_c, real_t p_d) : normal(p_a, p_b, p_c), d(p_d)
+	{
+	}
+
+	constexpr Plane(const Vector3& p_normal, real_t p_d = 0.0);
+	_FORCE_INLINE_ Plane(const Vector3& p_normal, const Vector3& p_point);
+	_FORCE_INLINE_ Plane(const Vector3& p_point1, const Vector3& p_point2, const Vector3& p_point3,
+		ClockDirection p_dir = CLOCKWISE);
+};
+
+inline constexpr Plane Plane::PLANE_YZ = {1, 0, 0, 0};
+inline constexpr Plane Plane::PLANE_XZ = {0, 1, 0, 0};
+inline constexpr Plane Plane::PLANE_XY = {0, 0, 1, 0};
+
+bool Plane::is_point_over(const Vector3& p_point) const { return (normal.dot(p_point) > d); }
+
+real_t Plane::distance_to(const Vector3& p_point) const { return (normal.dot(p_point) - d); }
+
+bool Plane::has_point(const Vector3& p_point, real_t p_tolerance) const
+{
+	real_t dist = normal.dot(p_point) - d;
+	dist = Math::abs(dist);
+	return (dist <= p_tolerance);
+}
+
+constexpr Plane::Plane(const Vector3& p_normal, real_t p_d) : normal(p_normal), d(p_d) {}
+
+Plane::Plane(const Vector3& p_normal, const Vector3& p_point)
+	: normal(p_normal), d(p_normal.dot(p_point))
+{
+}
+
+Plane::Plane(
+	const Vector3& p_point1, const Vector3& p_point2, const Vector3& p_point3, ClockDirection p_dir)
+{
+	if (p_dir == CLOCKWISE) {
+		normal = (p_point1 - p_point3).cross(p_point1 - p_point2);
+	}
+	else {
+		normal = (p_point1 - p_point2).cross(p_point1 - p_point3);
+	}
+
+	normal.normalize();
+	d = normal.dot(p_point1);
+}
+
+constexpr bool Plane::operator==(const Plane& p_plane) const
+{
+	return normal == p_plane.normal && d == p_plane.d;
+}
+
+constexpr bool Plane::operator!=(const Plane& p_plane) const
+{
+	return normal != p_plane.normal || d != p_plane.d;
+}
+
+template <> struct is_zero_constructible<Plane> : std::true_type
+{
+};
+// --- End core/math/plane.h ---
+#include "core/math/vector2.h"
 
 /**
  * AABB (Axis Aligned Bounding Box)
@@ -723,7 +1781,7 @@ struct is_zero_constructible<AABB> : std::true_type {};
 // --- Inlined/Folded from core/math/basis.h ---
 // --- Inlined/Folded from core/math/quaternion.h ---
 #include "core/typedefs.h"
-#include "core/math/plane.h"
+
 #include "core/string/ustring.h"
 
 struct [[nodiscard]] Quaternion {
@@ -938,7 +1996,7 @@ constexpr Quaternion Quaternion::operator*(const Quaternion &p_q) const {
 constexpr Quaternion operator*(real_t p_real, const Quaternion &p_quaternion) {
 	return p_quaternion * p_real;
 }
-#include "core/math/plane.h"
+
 
 struct [[nodiscard]] Basis {
 	static const Basis FLIP_X;
@@ -1259,8 +2317,8 @@ real_t Basis::determinant() const {
 			rows[1][0] * (rows[0][1] * rows[2][2] - rows[2][1] * rows[0][2]) +
 			rows[2][0] * (rows[0][1] * rows[1][2] - rows[1][1] * rows[0][2]);
 }
-#include "core/math/plane.h"
-#include "core/templates/vector.h"
+
+#include "core/string/ustring.h"
 
 struct [[nodiscard]] Transform3D {
 	static const Transform3D FLIP_X;
@@ -1541,12 +2599,12 @@ _FORCE_INLINE_ Plane Transform3D::xform_inv_fast(const Plane &p_plane, const Tra
 	return Plane(normal, d);
 }
 // --- End core/math/transform_3d.h ---
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 #include "core/typedefs.h"
 
 // --- Folded from core/math/face3.h ---
 
-#include "core/math/plane.h"
+
 
 
 struct [[nodiscard]] Face3 {
@@ -1754,7 +2812,6 @@ struct is_zero_constructible<Face3> : std::true_type {};
 // --- Folded from core/math/rect2.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
-#include "core/templates/hashfuncs.h"
 
 class String;
 struct Rect2i;
@@ -2165,7 +3222,7 @@ template <> struct is_zero_constructible<Rect2> : std::true_type
 
 // --- Folded from core/math/rect2i.h ---
 #include "core/typedefs.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 class String;
 struct Rect2;
@@ -2406,7 +3463,7 @@ template <> struct is_zero_constructible<Rect2i> : std::true_type
 #include "core/typedefs.h"
 
 #include "core/math/vector2.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 class String;
 
@@ -2671,13 +3728,12 @@ Vector<Vector2> Transform2D::xform_inv(const Vector<Vector2> &p_array) const {
 // --- End core/math/transform_2d.h ---
 
 #include "core/math/vector2.h"
-#include "core/templates/hashfuncs.h"
-#include "core/math/plane.h"
+
 // --- Folded from core/math/projection.h ---
-#include "core/math/plane.h"
+
 // --- Inlined/Folded from core/math/vector4.h ---
 #include "core/typedefs.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 #include "core/typedefs.h"
 
 class String;
@@ -2966,7 +4022,7 @@ struct is_zero_constructible<Vector4> : std::true_type {};
 
 // --- Folded from core/math/vector4i.h ---
 #include "core/typedefs.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 class String;
 struct Vector4;
@@ -3558,14 +4614,2167 @@ template <> struct is_zero_constructible<NodePath> : std::true_type
 #include "core/string/ustring.h"
 
 // Core Identifiers & Handles
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 // Native Container Templates
-#include "core/templates/vector.h"
-#include "core/templates/hash_map.h"
-#include "core/templates/hash_set.h"
+#include "core/string/ustring.h"
+// --- Folded from core/templates/hash_map.h ---
+#include <initializer_list>
+#include "core/os/memory.h"
+#include "core/string/ustring.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
+#include "core/math/vector2.h"
 #include "core/templates/list.h"
-#include "core/templates/local_vector.h"
+
+/**
+ * A HashMap implementation that uses open addressing with Robin Hood hashing.
+ * Robin Hood hashing swaps out entries that have a smaller probing distance
+ * than the to-be-inserted entry, that evens out the average probing distance
+ * and enables faster lookups. Backward shift deletion is employed to further
+ * improve the performance and to avoid infinite loops in rare cases.
+ *
+ * Keys and values are stored in a double linked list by insertion order. This
+ * has a slight performance overhead on lookup, which can be mostly compensated
+ * using a paged allocator if required.
+ *
+ * The assignment operator copy the pairs from one map to the other.
+ */
+
+template <typename TKey, typename TValue> struct HashMapElement
+{
+	HashMapElement* next = nullptr;
+	HashMapElement* prev = nullptr;
+	KeyValue<TKey, TValue> data;
+
+	HashMapElement() {}
+
+	HashMapElement(const TKey& p_key, const TValue& p_value) : data(p_key, p_value) {}
+};
+
+template <typename TKey, typename TValue, typename Hasher = HashMapHasherDefault,
+	typename Comparator = HashMapComparatorDefault<TKey>,
+	typename Allocator = DefaultTypedAllocator<HashMapElement<TKey, TValue>>>
+class _WARN_UNUSED_ HashMap : private Allocator
+{
+public:
+	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
+	static constexpr float MAX_OCCUPANCY = 0.75;
+	static constexpr uint32_t EMPTY_HASH = 0;
+	using KV = KeyValue<TKey, TValue>; // Type alias for easier access to KeyValue.
+
+private:
+	HashMapElement<TKey, TValue>** _elements = nullptr;
+	uint32_t* _hashes = nullptr;
+	HashMapElement<TKey, TValue>* _head_element = nullptr;
+	HashMapElement<TKey, TValue>* _tail_element = nullptr;
+
+	uint32_t _capacity_idx = 0;
+	uint32_t _size = 0;
+
+	_FORCE_INLINE_ static uint32_t _hash(const TKey& p_key)
+	{
+		uint32_t hash = Hasher::hash(p_key);
+
+		if (unlikely(hash == EMPTY_HASH)) {
+			hash = EMPTY_HASH + 1;
+		}
+
+		return hash;
+	}
+
+	_FORCE_INLINE_ static constexpr void _increment_mod(uint32_t& r_idx, const uint32_t p_capacity)
+	{
+		r_idx++;
+		// `if` is faster than both fastmod and mod.
+		if (unlikely(r_idx == p_capacity)) {
+			r_idx = 0;
+		}
+	}
+
+	static _FORCE_INLINE_ uint32_t _get_probe_length(const uint32_t p_idx, const uint32_t p_hash,
+		const uint32_t p_capacity, const uint64_t p_capacity_inv)
+	{
+		const uint32_t original_idx = fastmod(p_hash, p_capacity_inv, p_capacity);
+		const uint32_t distance_idx = p_idx - original_idx + p_capacity;
+		// At most p_capacity over 0, so we can use an if (faster than fastmod).
+		return distance_idx >= p_capacity ? distance_idx - p_capacity : distance_idx;
+	}
+
+	bool _lookup_idx(const TKey& p_key, uint32_t& r_idx) const
+	{
+		return _elements != nullptr && _size > 0 &&
+			   _lookup_idx_unchecked(p_key, _hash(p_key), r_idx);
+	}
+
+	/// Note: Assumes that _elements != nullptr
+	bool _lookup_idx_unchecked(const TKey& p_key, uint32_t p_hash, uint32_t& r_idx) const
+	{
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t idx = fastmod(p_hash, capacity_inv, capacity);
+		uint32_t distance = 0;
+
+		while (true) {
+			if (_hashes[idx] == EMPTY_HASH) {
+				return false;
+			}
+
+			if (distance > _get_probe_length(idx, _hashes[idx], capacity, capacity_inv)) {
+				return false;
+			}
+
+			if (_hashes[idx] == p_hash && Comparator::compare(_elements[idx]->data.key, p_key)) {
+				r_idx = idx;
+				return true;
+			}
+
+			_increment_mod(idx, capacity);
+			distance++;
+		}
+	}
+
+	void _insert_element(uint32_t p_hash, HashMapElement<TKey, TValue>* p_value)
+	{
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t hash = p_hash;
+		HashMapElement<TKey, TValue>* value = p_value;
+		uint32_t distance = 0;
+		uint32_t idx = fastmod(hash, capacity_inv, capacity);
+
+		while (true) {
+			if (_hashes[idx] == EMPTY_HASH) {
+				_elements[idx] = value;
+				_hashes[idx] = hash;
+
+				_size++;
+
+				return;
+			}
+
+			// Not an empty slot, let's check the probing length of the existing one.
+			uint32_t existing_probe_len =
+				_get_probe_length(idx, _hashes[idx], capacity, capacity_inv);
+			if (existing_probe_len < distance) {
+				SWAP(hash, _hashes[idx]);
+				SWAP(value, _elements[idx]);
+				distance = existing_probe_len;
+			}
+
+			_increment_mod(idx, capacity);
+			distance++;
+		}
+	}
+
+	void _resize_and_rehash(uint32_t p_new_capacity_idx)
+	{
+		uint32_t old_capacity = hash_table_size_primes[_capacity_idx];
+
+		// Capacity can't be 0.
+		_capacity_idx = MAX((uint32_t)MIN_CAPACITY_INDEX, p_new_capacity_idx);
+
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+
+		HashMapElement<TKey, TValue>** old_elements = _elements;
+		uint32_t* old_hashes = _hashes;
+
+		_size = 0;
+		static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+
+		_hashes =
+			reinterpret_cast<uint32_t*>(Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+		_elements = reinterpret_cast<HashMapElement<TKey, TValue>**>(
+			Memory::alloc_static(sizeof(HashMapElement<TKey, TValue>*) * capacity));
+
+		if (old_capacity == 0) {
+			// Nothing to do.
+			return;
+		}
+
+		for (uint32_t i = 0; i < old_capacity; i++) {
+			if (old_hashes[i] == EMPTY_HASH) {
+				continue;
+			}
+
+			_insert_element(old_hashes[i], old_elements[i]);
+		}
+
+		Memory::free_static(old_elements);
+		Memory::free_static(old_hashes);
+	}
+
+	_FORCE_INLINE_ HashMapElement<TKey, TValue>* _insert(
+		const TKey& p_key, const TValue& p_value, uint32_t p_hash, bool p_front_insert = false)
+	{
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		if (unlikely(_elements == nullptr)) {
+			// Allocate on demand to save memory.
+
+			static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+			_hashes = reinterpret_cast<uint32_t*>(
+				Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+			_elements = reinterpret_cast<HashMapElement<TKey, TValue>**>(
+				Memory::alloc_static(sizeof(HashMapElement<TKey, TValue>*) * capacity));
+		}
+
+		if (_size + 1 > MAX_OCCUPANCY * capacity) {
+			ERR_FAIL_COND_V_MSG(_capacity_idx + 1 == HASH_TABLE_SIZE_MAX, nullptr,
+				"Hash table maximum capacity reached, aborting insertion.");
+			_resize_and_rehash(_capacity_idx + 1);
+		}
+
+		HashMapElement<TKey, TValue>* elem =
+			Allocator::new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
+
+		if (_tail_element == nullptr) {
+			_head_element = elem;
+			_tail_element = elem;
+		}
+		else if (p_front_insert) {
+			_head_element->prev = elem;
+			elem->next = _head_element;
+			_head_element = elem;
+		}
+		else {
+			_tail_element->next = elem;
+			elem->prev = _tail_element;
+			_tail_element = elem;
+		}
+
+		_insert_element(p_hash, elem);
+		return elem;
+	}
+
+	void _clear_data()
+	{
+		HashMapElement<TKey, TValue>* current = _tail_element;
+		while (current != nullptr) {
+			HashMapElement<TKey, TValue>* prev = current->prev;
+			Allocator::delete_allocation(current);
+			current = prev;
+		}
+	}
+
+public:
+	_FORCE_INLINE_ uint32_t get_capacity() const { return hash_table_size_primes[_capacity_idx]; }
+
+	_FORCE_INLINE_ uint32_t size() const { return _size; }
+
+	/* Standard Godot Container API */
+
+	bool is_empty() const { return _size == 0; }
+
+	void clear()
+	{
+		if (_elements == nullptr || _size == 0) {
+			return;
+		}
+
+		_clear_data();
+		memset(_hashes, EMPTY_HASH, get_capacity() * sizeof(uint32_t));
+
+		_tail_element = nullptr;
+		_head_element = nullptr;
+		_size = 0;
+	}
+
+	void sort() { sort_custom<KeyValueSort<TKey, TValue>>(); }
+
+	template <typename C> void sort_custom()
+	{
+		if (size() < 2) {
+			return;
+		}
+
+		using E = HashMapElement<TKey, TValue>;
+		SortList<E, KeyValue<TKey, TValue>, &E::data, &E::prev, &E::next, C> sorter;
+		sorter.sort(_head_element, _tail_element);
+	}
+
+	TValue& get(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+		CRASH_COND_MSG(!exists, "HashMap key not found.");
+		return _elements[idx]->data.value;
+	}
+
+	const TValue& get(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+		CRASH_COND_MSG(!exists, "HashMap key not found.");
+		return _elements[idx]->data.value;
+	}
+
+	const TValue* getptr(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+
+		if (exists) {
+			return &_elements[idx]->data.value;
+		}
+		return nullptr;
+	}
+
+	TValue* getptr(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+
+		if (exists) {
+			return &_elements[idx]->data.value;
+		}
+		return nullptr;
+	}
+
+	_FORCE_INLINE_ bool has(const TKey& p_key) const
+	{
+		uint32_t _idx = 0;
+		return _lookup_idx(p_key, _idx);
+	}
+
+	bool erase(const TKey& p_key)
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+
+		if (!exists) {
+			return false;
+		}
+
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t next_idx = fastmod((idx + 1), capacity_inv, capacity);
+		while (_hashes[next_idx] != EMPTY_HASH &&
+			   _get_probe_length(next_idx, _hashes[next_idx], capacity, capacity_inv) != 0) {
+			SWAP(_hashes[next_idx], _hashes[idx]);
+			SWAP(_elements[next_idx], _elements[idx]);
+			idx = next_idx;
+			_increment_mod(next_idx, capacity);
+		}
+
+		_hashes[idx] = EMPTY_HASH;
+
+		if (_head_element == _elements[idx]) {
+			_head_element = _elements[idx]->next;
+		}
+
+		if (_tail_element == _elements[idx]) {
+			_tail_element = _elements[idx]->prev;
+		}
+
+		if (_elements[idx]->prev) {
+			_elements[idx]->prev->next = _elements[idx]->next;
+		}
+
+		if (_elements[idx]->next) {
+			_elements[idx]->next->prev = _elements[idx]->prev;
+		}
+
+		Allocator::delete_allocation(_elements[idx]);
+
+		_size--;
+		return true;
+	}
+
+	// Replace the key of an entry in-place, without invalidating iterators or changing the entries
+	// position during iteration. p_old_key must exist in the map and p_new_key must not, unless it
+	// is equal to p_old_key.
+	bool replace_key(const TKey& p_old_key, const TKey& p_new_key)
+	{
+		ERR_FAIL_COND_V(_elements == nullptr || _size == 0, false);
+		if (p_old_key == p_new_key) {
+			return true;
+		}
+		const uint32_t new_hash = _hash(p_new_key);
+		uint32_t idx = 0;
+		ERR_FAIL_COND_V(_lookup_idx_unchecked(p_new_key, new_hash, idx), false);
+		ERR_FAIL_COND_V(!_lookup_idx(p_old_key, idx), false);
+		HashMapElement<TKey, TValue>* element = _elements[idx];
+
+		// Delete the old entries in _hashes and _elements.
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t next_idx = fastmod((idx + 1), capacity_inv, capacity);
+		while (_hashes[next_idx] != EMPTY_HASH &&
+			   _get_probe_length(next_idx, _hashes[next_idx], capacity, capacity_inv) != 0) {
+			SWAP(_hashes[next_idx], _hashes[idx]);
+			SWAP(_elements[next_idx], _elements[idx]);
+			idx = next_idx;
+			_increment_mod(next_idx, capacity);
+		}
+
+		_hashes[idx] = EMPTY_HASH;
+
+		// _insert_element will increment this again.
+		_size--;
+
+		// Update the HashMapElement with the new key and reinsert it.
+		const_cast<TKey&>(element->data.key) = p_new_key;
+		_insert_element(new_hash, element);
+
+		return true;
+	}
+
+	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	// If adding a known (possibly large) number of elements at once, must be larger than old
+	// capacity.
+	void reserve(uint32_t p_new_capacity)
+	{
+		uint32_t new_idx = _capacity_idx;
+
+		while (hash_table_size_primes[new_idx] < p_new_capacity) {
+			ERR_FAIL_COND_MSG(new_idx + 1 == (uint32_t)HASH_TABLE_SIZE_MAX, nullptr);
+			new_idx++;
+		}
+
+		if (new_idx == _capacity_idx) {
+			if (p_new_capacity < _size) {
+				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This "
+							 "is likely a mistake.");
+			}
+			return;
+		}
+
+		if (_elements == nullptr) {
+			_capacity_idx = new_idx;
+			return; // Unallocated yet.
+		}
+		_resize_and_rehash(new_idx);
+	}
+
+	/** Iterator API **/
+
+	struct ConstIterator
+	{
+		_FORCE_INLINE_ const KeyValue<TKey, TValue>& operator*() const { return E->data; }
+
+		_FORCE_INLINE_ const KeyValue<TKey, TValue>* operator->() const { return &E->data; }
+
+		_FORCE_INLINE_ ConstIterator& operator++()
+		{
+			if (E) {
+				E = E->next;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ ConstIterator& operator--()
+		{
+			if (E) {
+				E = E->prev;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const ConstIterator& p_other) const
+		{
+			return E == p_other.E;
+		}
+
+		_FORCE_INLINE_ bool operator!=(const ConstIterator& p_other) const
+		{
+			return E != p_other.E;
+		}
+
+		_FORCE_INLINE_ explicit operator bool() const { return E != nullptr; }
+
+		_FORCE_INLINE_ ConstIterator(const HashMapElement<TKey, TValue>* p_element)
+		{
+			E = p_element;
+		}
+
+		_FORCE_INLINE_ ConstIterator() {}
+
+		_FORCE_INLINE_ ConstIterator(const ConstIterator& p_it) { E = p_it.E; }
+
+		_FORCE_INLINE_ void operator=(const ConstIterator& p_it) { E = p_it.E; }
+
+	private:
+		const HashMapElement<TKey, TValue>* E = nullptr;
+	};
+
+	struct Iterator
+	{
+		_FORCE_INLINE_ KeyValue<TKey, TValue>& operator*() const { return E->data; }
+
+		_FORCE_INLINE_ KeyValue<TKey, TValue>* operator->() const { return &E->data; }
+
+		_FORCE_INLINE_ Iterator& operator++()
+		{
+			if (E) {
+				E = E->next;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ Iterator& operator--()
+		{
+			if (E) {
+				E = E->prev;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator& p_other) const { return E == p_other.E; }
+
+		_FORCE_INLINE_ bool operator!=(const Iterator& p_other) const { return E != p_other.E; }
+
+		_FORCE_INLINE_ explicit operator bool() const { return E != nullptr; }
+
+		_FORCE_INLINE_ Iterator(HashMapElement<TKey, TValue>* p_element) { E = p_element; }
+
+		_FORCE_INLINE_ Iterator() {}
+
+		_FORCE_INLINE_ Iterator(const Iterator& p_it) { E = p_it.E; }
+
+		_FORCE_INLINE_ void operator=(const Iterator& p_it) { E = p_it.E; }
+
+		operator ConstIterator() const { return ConstIterator(E); }
+
+	private:
+		HashMapElement<TKey, TValue>* E = nullptr;
+	};
+
+	_FORCE_INLINE_ Iterator begin() _LIFETIME_BOUND_ { return Iterator(_head_element); }
+
+	_FORCE_INLINE_ Iterator end() _LIFETIME_BOUND_ { return Iterator(nullptr); }
+
+	_FORCE_INLINE_ Iterator last() _LIFETIME_BOUND_ { return Iterator(_tail_element); }
+
+	_FORCE_INLINE_ Iterator find(const TKey& p_key) _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+		if (!exists) {
+			return end();
+		}
+		return Iterator(_elements[idx]);
+	}
+
+	_FORCE_INLINE_ void remove(const Iterator& p_iter)
+	{
+		if (p_iter) {
+			erase(p_iter->key);
+		}
+	}
+
+	_FORCE_INLINE_ ConstIterator begin() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(_head_element);
+	}
+
+	_FORCE_INLINE_ ConstIterator end() const _LIFETIME_BOUND_ { return ConstIterator(nullptr); }
+
+	_FORCE_INLINE_ ConstIterator last() const _LIFETIME_BOUND_
+	{
+		return ConstIterator(_tail_element);
+	}
+
+	_FORCE_INLINE_ ConstIterator find(const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+		if (!exists) {
+			return end();
+		}
+		return ConstIterator(_elements[idx]);
+	}
+
+	/* Indexing */
+
+	const TValue& operator[](const TKey& p_key) const _LIFETIME_BOUND_
+	{
+		uint32_t idx = 0;
+		bool exists = _lookup_idx(p_key, idx);
+		CRASH_COND(!exists);
+		return _elements[idx]->data.value;
+	}
+
+	TValue& operator[](const TKey& p_key) _LIFETIME_BOUND_
+	{
+		const uint32_t hash = _hash(p_key);
+		uint32_t idx = 0;
+		bool exists = _elements && _size > 0 && _lookup_idx_unchecked(p_key, hash, idx);
+		if (!exists) {
+			return _insert(p_key, TValue(), hash)->data.value;
+		}
+		else {
+			return _elements[idx]->data.value;
+		}
+	}
+
+	/* Insert */
+
+	Iterator insert(const TKey& p_key, const TValue& p_value, bool p_front_insert = false)
+	{
+		const uint32_t hash = _hash(p_key);
+		uint32_t idx = 0;
+		bool exists = _elements && _size > 0 && _lookup_idx_unchecked(p_key, hash, idx);
+		if (!exists) {
+			return Iterator(_insert(p_key, p_value, hash, p_front_insert));
+		}
+		else {
+			_elements[idx]->data.value = p_value;
+			return Iterator(_elements[idx]);
+		}
+	}
+
+	/* Constructors */
+
+	explicit HashMap(const HashMap& p_other)
+	{
+		reserve(hash_table_size_primes[p_other._capacity_idx]);
+
+		if (p_other._size == 0) {
+			return;
+		}
+
+		for (const KeyValue<TKey, TValue>& E : p_other) {
+			insert(E.key, E.value);
+		}
+	}
+
+	HashMap(HashMap&& p_other)
+	{
+		_elements = p_other._elements;
+		_hashes = p_other._hashes;
+		_head_element = p_other._head_element;
+		_tail_element = p_other._tail_element;
+		_capacity_idx = p_other._capacity_idx;
+		_size = p_other._size;
+
+		p_other._elements = nullptr;
+		p_other._hashes = nullptr;
+		p_other._head_element = nullptr;
+		p_other._tail_element = nullptr;
+		p_other._capacity_idx = MIN_CAPACITY_INDEX;
+		p_other._size = 0;
+	}
+
+	void operator=(const HashMap& p_other)
+	{
+		if (this == &p_other) {
+			return; // Ignore self assignment.
+		}
+		if (_size != 0) {
+			clear();
+		}
+
+		reserve(hash_table_size_primes[p_other._capacity_idx]);
+
+		if (p_other._elements == nullptr) {
+			return; // Nothing to copy.
+		}
+
+		for (const KeyValue<TKey, TValue>& E : p_other) {
+			insert(E.key, E.value);
+		}
+	}
+
+	HashMap& operator=(HashMap&& p_other)
+	{
+		if (this == &p_other) {
+			return *this;
+		}
+
+		if (_size != 0) {
+			clear();
+		}
+		if (_elements != nullptr) {
+			Memory::free_static(_elements);
+			Memory::free_static(_hashes);
+		}
+
+		_elements = p_other._elements;
+		_hashes = p_other._hashes;
+		_head_element = p_other._head_element;
+		_tail_element = p_other._tail_element;
+		_capacity_idx = p_other._capacity_idx;
+		_size = p_other._size;
+
+		p_other._elements = nullptr;
+		p_other._hashes = nullptr;
+		p_other._head_element = nullptr;
+		p_other._tail_element = nullptr;
+		p_other._capacity_idx = MIN_CAPACITY_INDEX;
+		p_other._size = 0;
+
+		return *this;
+	}
+
+	HashMap(uint32_t p_initial_capacity)
+	{
+		// Capacity can't be 0.
+		_capacity_idx = 0;
+		reserve(p_initial_capacity);
+	}
+
+	HashMap() { _capacity_idx = MIN_CAPACITY_INDEX; }
+
+	HashMap(std::initializer_list<KeyValue<TKey, TValue>> p_init)
+	{
+		reserve(p_init.size());
+		for (const KeyValue<TKey, TValue>& E : p_init) {
+			insert(E.key, E.value);
+		}
+	}
+
+	uint32_t debug_get_hash(uint32_t p_idx)
+	{
+		if (_size == 0) {
+			return 0;
+		}
+		ERR_FAIL_INDEX_V(p_idx, get_capacity(), 0);
+		return _hashes[p_idx];
+	}
+
+	Iterator debug_get_element(uint32_t p_idx)
+	{
+		if (_size == 0) {
+			return Iterator();
+		}
+		ERR_FAIL_INDEX_V(p_idx, get_capacity(), Iterator());
+		return Iterator(_elements[p_idx]);
+	}
+
+	~HashMap()
+	{
+		_clear_data();
+
+		if (_elements != nullptr) {
+			Memory::free_static(_elements);
+			Memory::free_static(_hashes);
+		}
+	}
+};
+
+// --- Folded from core/templates/lru.h ---
+#include "core/templates/list.h"
+
+template <typename TKey, typename TData, typename Hasher = HashMapHasherDefault, typename Comparator = HashMapComparatorDefault<TKey>, void (*BeforeEvict)(TKey &, TData &) = nullptr>
+class _WARN_UNUSED_ LRUCache {
+public:
+	struct Pair {
+		TKey key;
+		TData data;
+
+		Pair() {}
+		Pair(const TKey &p_key, const TData &p_data) :
+				key(p_key),
+				data(p_data) {
+		}
+	};
+
+	typedef typename List<Pair>::Element *Element;
+
+private:
+	List<Pair> _list;
+	HashMap<TKey, Element, Hasher, Comparator> _map;
+	size_t capacity;
+
+public:
+	const Pair *insert(const TKey &p_key, const TData &p_value) {
+		Element *e = _map.getptr(p_key);
+		Element n = _list.push_front(Pair(p_key, p_value));
+
+		if (e) {
+			VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Waddress")
+			if constexpr (BeforeEvict != nullptr) {
+				BeforeEvict((*e)->get().key, (*e)->get().data);
+			}
+			VLTR_GCC_WARNING_POP
+			_list.erase(*e);
+			_map.erase(p_key);
+		}
+		_map[p_key] = _list.front();
+
+		while (_map.size() > capacity) {
+			Element d = _list.back();
+			VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Waddress")
+			if constexpr (BeforeEvict != nullptr) {
+				BeforeEvict(d->get().key, d->get().data);
+			}
+			VLTR_GCC_WARNING_POP
+			_map.erase(d->get().key);
+			_list.pop_back();
+		}
+
+		return &n->get();
+	}
+
+	void clear() {
+		_map.clear();
+		_list.clear();
+	}
+
+	bool has(const TKey &p_key) const {
+		return _map.getptr(p_key);
+	}
+
+	bool erase(const TKey &p_key) {
+		Element *e = _map.getptr(p_key);
+		if (!e) {
+			return false;
+		}
+		_list.move_to_front(*e);
+		_map.erase(p_key);
+		_list.pop_front();
+		return true;
+	}
+
+	const TData &get(const TKey &p_key) {
+		Element *e = _map.getptr(p_key);
+		CRASH_COND(!e);
+		_list.move_to_front(*e);
+		return (*e)->get().data;
+	}
+
+	const TData *getptr(const TKey &p_key) {
+		Element *e = _map.getptr(p_key);
+		if (!e) {
+			return nullptr;
+		} else {
+			_list.move_to_front(*e);
+			return &(*e)->get().data;
+		}
+	}
+
+	_FORCE_INLINE_ size_t get_capacity() const { return capacity; }
+	_FORCE_INLINE_ size_t get_size() const { return _map.size(); }
+
+	void set_capacity(size_t p_capacity) {
+		if (capacity > 0) {
+			capacity = p_capacity;
+			while (_map.size() > capacity) {
+				Element d = _list.back();
+				VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Waddress")
+				if constexpr (BeforeEvict != nullptr) {
+					BeforeEvict(d->get().key, d->get().data);
+				}
+				VLTR_GCC_WARNING_POP
+				_map.erase(d->get().key);
+				_list.pop_back();
+			}
+		}
+	}
+
+	LRUCache() {
+		capacity = 64;
+	}
+
+	LRUCache(int p_capacity) {
+		capacity = p_capacity;
+	}
+};
+
+// --- Folded from core/templates/rb_map.h ---
+#include "core/typedefs.h"
+#include "core/os/memory.h"
+#include "core/math/vector2.h"
+
+#include <initializer_list>
+
+// based on the very nice implementation of rb-trees by:
+// https://web.archive.org/web/20120507164830/https://web.mit.edu/~emin/www/source_code/red_black_tree/index.html
+
+template <typename K, typename V, typename C = Comparator<K>, typename A = DefaultAllocator>
+class _WARN_UNUSED_ RBMap {
+	enum Color {
+		RED,
+		BLACK
+	};
+	struct _Data;
+
+public:
+	class Element {
+	private:
+		friend class RBMap<K, V, C, A>;
+		int color = RED;
+		Element *right = nullptr;
+		Element *left = nullptr;
+		Element *parent = nullptr;
+		Element *_next = nullptr;
+		Element *_prev = nullptr;
+		KeyValue<K, V> _data;
+
+	public:
+		KeyValue<K, V> &key_value() { return _data; }
+		const KeyValue<K, V> &key_value() const { return _data; }
+
+		const Element *next() const {
+			return _next;
+		}
+		Element *next() {
+			return _next;
+		}
+		const Element *prev() const {
+			return _prev;
+		}
+		Element *prev() {
+			return _prev;
+		}
+		const K &key() const {
+			return _data.key;
+		}
+		V &value() {
+			return _data.value;
+		}
+		const V &value() const {
+			return _data.value;
+		}
+		V &get() {
+			return _data.value;
+		}
+		const V &get() const {
+			return _data.value;
+		}
+		Element(const KeyValue<K, V> &p_data) :
+				_data(p_data) {}
+	};
+
+	typedef KeyValue<K, V> ValueType;
+
+	struct Iterator {
+		friend class RBMap<K, V, C, A>;
+
+		_FORCE_INLINE_ KeyValue<K, V> &operator*() const {
+			return E->key_value();
+		}
+		_FORCE_INLINE_ KeyValue<K, V> *operator->() const { return &E->key_value(); }
+		_FORCE_INLINE_ Iterator &operator++() {
+			E = E->next();
+			return *this;
+		}
+		_FORCE_INLINE_ Iterator &operator--() {
+			E = E->prev();
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator &p_it) const { return E == p_it.E; }
+		_FORCE_INLINE_ bool operator!=(const Iterator &p_it) const { return E != p_it.E; }
+		explicit operator bool() const {
+			return E != nullptr;
+		}
+
+		Iterator &operator=(const Iterator &p_it) {
+			E = p_it.E;
+			return *this;
+		}
+		Iterator(Element *p_element) { E = p_element; }
+		Iterator() {}
+		Iterator(const Iterator &p_it) { E = p_it.E; }
+
+	private:
+		Element *E = nullptr;
+	};
+
+	struct ConstIterator {
+		_FORCE_INLINE_ const KeyValue<K, V> &operator*() const {
+			return E->key_value();
+		}
+		_FORCE_INLINE_ const KeyValue<K, V> *operator->() const { return &E->key_value(); }
+		_FORCE_INLINE_ ConstIterator &operator++() {
+			E = E->next();
+			return *this;
+		}
+		_FORCE_INLINE_ ConstIterator &operator--() {
+			E = E->prev();
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const ConstIterator &p_it) const { return E == p_it.E; }
+		_FORCE_INLINE_ bool operator!=(const ConstIterator &p_it) const { return E != p_it.E; }
+		explicit operator bool() const {
+			return E != nullptr;
+		}
+
+		ConstIterator &operator=(const ConstIterator &p_it) {
+			E = p_it.E;
+			return *this;
+		}
+		ConstIterator(const Element *p_element) { E = p_element; }
+		ConstIterator() {}
+		ConstIterator(const ConstIterator &p_it) { E = p_it.E; }
+
+	private:
+		const Element *E = nullptr;
+	};
+
+	_FORCE_INLINE_ Iterator begin() {
+		return Iterator(front());
+	}
+	_FORCE_INLINE_ Iterator end() {
+		return Iterator(nullptr);
+	}
+
+#if 0
+	//to use when replacing find()
+	_FORCE_INLINE_ Iterator find(const K &p_key) {
+		return Iterator(find(p_key));
+	}
+#endif
+	_FORCE_INLINE_ void remove(const Iterator &p_iter) {
+		return erase(p_iter.E);
+	}
+
+	_FORCE_INLINE_ ConstIterator begin() const {
+		return ConstIterator(front());
+	}
+	_FORCE_INLINE_ ConstIterator end() const {
+		return ConstIterator(nullptr);
+	}
+
+#if 0
+	//to use when replacing find()
+	_FORCE_INLINE_ ConstIterator find(const K &p_key) const {
+		return ConstIterator(find(p_key));
+	}
+#endif
+private:
+	struct _Data {
+		Element *_root = nullptr;
+		Element *_nil = nullptr;
+		int size_cache = 0;
+
+		_FORCE_INLINE_ _Data() {
+#ifdef GLOBALNIL_DISABLED
+			_nil = memnew_allocator(Element, A);
+			_nil->parent = _nil->left = _nil->right = _nil;
+			_nil->color = BLACK;
+#else
+			_nil = (Element *)&_GlobalNilClass::_nil;
+#endif
+		}
+
+		void _create_root() {
+			_root = memnew_allocator(Element(KeyValue<K, V>(K(), V())), A);
+			_root->parent = _root->left = _root->right = _nil;
+			_root->color = BLACK;
+		}
+
+		void _free_root() {
+			if (_root) {
+				memdelete_allocator<Element, A>(_root);
+				_root = nullptr;
+			}
+		}
+
+		~_Data() {
+			_free_root();
+
+#ifdef GLOBALNIL_DISABLED
+			memdelete_allocator<Element, A>(_nil);
+#endif
+		}
+	};
+
+	_Data _data;
+
+	inline void _set_color(Element *p_node, int p_color) {
+		ERR_FAIL_COND(p_node == _data._nil && p_color == RED);
+		p_node->color = p_color;
+	}
+
+	inline void _rotate_left(Element *p_node) {
+		Element *r = p_node->right;
+		p_node->right = r->left;
+		if (r->left != _data._nil) {
+			r->left->parent = p_node;
+		}
+		r->parent = p_node->parent;
+		if (p_node == p_node->parent->left) {
+			p_node->parent->left = r;
+		} else {
+			p_node->parent->right = r;
+		}
+
+		r->left = p_node;
+		p_node->parent = r;
+	}
+
+	inline void _rotate_right(Element *p_node) {
+		Element *l = p_node->left;
+		p_node->left = l->right;
+		if (l->right != _data._nil) {
+			l->right->parent = p_node;
+		}
+		l->parent = p_node->parent;
+		if (p_node == p_node->parent->right) {
+			p_node->parent->right = l;
+		} else {
+			p_node->parent->left = l;
+		}
+
+		l->right = p_node;
+		p_node->parent = l;
+	}
+
+	inline Element *_successor(Element *p_node) const {
+		Element *node = p_node;
+
+		if (node->right != _data._nil) {
+			node = node->right;
+			while (node->left != _data._nil) { /* returns the minimum of the right subtree of node */
+				node = node->left;
+			}
+			return node;
+		} else {
+			while (node == node->parent->right) {
+				node = node->parent;
+			}
+
+			if (node->parent == _data._root) {
+				return nullptr; // No successor, as p_node = last node
+			}
+			return node->parent;
+		}
+	}
+
+	inline Element *_predecessor(Element *p_node) const {
+		Element *node = p_node;
+
+		if (node->left != _data._nil) {
+			node = node->left;
+			while (node->right != _data._nil) { /* returns the minimum of the left subtree of node */
+				node = node->right;
+			}
+			return node;
+		} else {
+			while (node == node->parent->left) {
+				node = node->parent;
+			}
+
+			if (node == _data._root) {
+				return nullptr; // No predecessor, as p_node = first node
+			}
+			return node->parent;
+		}
+	}
+
+	Element *_find(const K &p_key) const {
+		Element *node = _data._root->left;
+		C less;
+
+		while (node != _data._nil) {
+			if (less(p_key, node->_data.key)) {
+				node = node->left;
+			} else if (less(node->_data.key, p_key)) {
+				node = node->right;
+			} else {
+				return node; // found
+			}
+		}
+
+		return nullptr;
+	}
+
+	Element *_find_closest(const K &p_key) const {
+		Element *node = _data._root->left;
+		Element *prev = nullptr;
+		C less;
+
+		while (node != _data._nil) {
+			prev = node;
+
+			if (less(p_key, node->_data.key)) {
+				node = node->left;
+			} else if (less(node->_data.key, p_key)) {
+				node = node->right;
+			} else {
+				return node; // found
+			}
+		}
+
+		if (prev == nullptr) {
+			return nullptr; // tree empty
+		}
+
+		if (less(p_key, prev->_data.key)) {
+			prev = prev->_prev;
+		}
+
+		return prev;
+	}
+
+	Element *_lower_bound(const K &p_key) const {
+		Element *node = _data._root->left;
+		Element *result = nullptr;
+		C less;
+
+		while (node != _data._nil) {
+			if (!less(node->_data.key, p_key)) {
+				result = node;
+				node = node->left;
+			} else {
+				node = node->right;
+			}
+		}
+
+		return result;
+	}
+
+	void _insert_rb_fix(Element *p_new_node) {
+		Element *node = p_new_node;
+		Element *nparent = node->parent;
+		Element *ngrand_parent = nullptr;
+
+		while (nparent->color == RED) {
+			ngrand_parent = nparent->parent;
+
+			if (nparent == ngrand_parent->left) {
+				if (ngrand_parent->right->color == RED) {
+					_set_color(nparent, BLACK);
+					_set_color(ngrand_parent->right, BLACK);
+					_set_color(ngrand_parent, RED);
+					node = ngrand_parent;
+					nparent = node->parent;
+				} else {
+					if (node == nparent->right) {
+						_rotate_left(nparent);
+						node = nparent;
+						nparent = node->parent;
+					}
+					_set_color(nparent, BLACK);
+					_set_color(ngrand_parent, RED);
+					_rotate_right(ngrand_parent);
+				}
+			} else {
+				if (ngrand_parent->left->color == RED) {
+					_set_color(nparent, BLACK);
+					_set_color(ngrand_parent->left, BLACK);
+					_set_color(ngrand_parent, RED);
+					node = ngrand_parent;
+					nparent = node->parent;
+				} else {
+					if (node == nparent->left) {
+						_rotate_right(nparent);
+						node = nparent;
+						nparent = node->parent;
+					}
+					_set_color(nparent, BLACK);
+					_set_color(ngrand_parent, RED);
+					_rotate_left(ngrand_parent);
+				}
+			}
+		}
+
+		_set_color(_data._root->left, BLACK);
+	}
+
+	Element *_insert(const K &p_key, const V &p_value) {
+		Element *new_parent = _data._root;
+		Element *node = _data._root->left;
+		C less;
+
+		while (node != _data._nil) {
+			new_parent = node;
+
+			if (less(p_key, node->_data.key)) {
+				node = node->left;
+			} else if (less(node->_data.key, p_key)) {
+				node = node->right;
+			} else {
+				node->_data.value = p_value;
+				return node; // Return existing node with new value
+			}
+		}
+
+		typedef KeyValue<K, V> KV;
+		Element *new_node = memnew_allocator(Element(KV(p_key, p_value)), A);
+		new_node->parent = new_parent;
+		new_node->right = _data._nil;
+		new_node->left = _data._nil;
+
+		//new_node->data=_data;
+
+		if (new_parent == _data._root || less(p_key, new_parent->_data.key)) {
+			new_parent->left = new_node;
+		} else {
+			new_parent->right = new_node;
+		}
+
+		new_node->_next = _successor(new_node);
+		new_node->_prev = _predecessor(new_node);
+		if (new_node->_next) {
+			new_node->_next->_prev = new_node;
+		}
+		if (new_node->_prev) {
+			new_node->_prev->_next = new_node;
+		}
+
+		_data.size_cache++;
+		_insert_rb_fix(new_node);
+		return new_node;
+	}
+
+	void _erase_fix_rb(Element *p_node) {
+		Element *root = _data._root->left;
+		Element *node = _data._nil;
+		Element *sibling = p_node;
+		Element *parent = sibling->parent;
+
+		while (node != root) { // If red node found, will exit at a break
+			if (sibling->color == RED) {
+				_set_color(sibling, BLACK);
+				_set_color(parent, RED);
+				if (sibling == parent->right) {
+					sibling = sibling->left;
+					_rotate_left(parent);
+				} else {
+					sibling = sibling->right;
+					_rotate_right(parent);
+				}
+			}
+			if ((sibling->left->color == BLACK) && (sibling->right->color == BLACK)) {
+				_set_color(sibling, RED);
+				if (parent->color == RED) {
+					_set_color(parent, BLACK);
+					break;
+				} else { // loop: haven't found any red nodes yet
+					node = parent;
+					parent = node->parent;
+					sibling = (node == parent->left) ? parent->right : parent->left;
+				}
+			} else {
+				if (sibling == parent->right) {
+					if (sibling->right->color == BLACK) {
+						_set_color(sibling->left, BLACK);
+						_set_color(sibling, RED);
+						_rotate_right(sibling);
+						sibling = sibling->parent;
+					}
+					_set_color(sibling, parent->color);
+					_set_color(parent, BLACK);
+					_set_color(sibling->right, BLACK);
+					_rotate_left(parent);
+					break;
+				} else {
+					if (sibling->left->color == BLACK) {
+						_set_color(sibling->right, BLACK);
+						_set_color(sibling, RED);
+						_rotate_left(sibling);
+						sibling = sibling->parent;
+					}
+
+					_set_color(sibling, parent->color);
+					_set_color(parent, BLACK);
+					_set_color(sibling->left, BLACK);
+					_rotate_right(parent);
+					break;
+				}
+			}
+		}
+
+		ERR_FAIL_COND(_data._nil->color != BLACK);
+	}
+
+	void _erase(Element *p_node) {
+		Element *rp = ((p_node->left == _data._nil) || (p_node->right == _data._nil)) ? p_node : p_node->_next;
+		Element *node = (rp->left == _data._nil) ? rp->right : rp->left;
+
+		Element *sibling = nullptr;
+		if (rp == rp->parent->left) {
+			rp->parent->left = node;
+			sibling = rp->parent->right;
+		} else {
+			rp->parent->right = node;
+			sibling = rp->parent->left;
+		}
+
+		if (node->color == RED) {
+			node->parent = rp->parent;
+			_set_color(node, BLACK);
+		} else if (rp->color == BLACK && rp->parent != _data._root) {
+			_erase_fix_rb(sibling);
+		}
+
+		if (rp != p_node) {
+			ERR_FAIL_COND(rp == _data._nil);
+
+			rp->left = p_node->left;
+			rp->right = p_node->right;
+			rp->parent = p_node->parent;
+			rp->color = p_node->color;
+			if (p_node->left != _data._nil) {
+				p_node->left->parent = rp;
+			}
+			if (p_node->right != _data._nil) {
+				p_node->right->parent = rp;
+			}
+
+			if (p_node == p_node->parent->left) {
+				p_node->parent->left = rp;
+			} else {
+				p_node->parent->right = rp;
+			}
+		}
+
+		if (p_node->_next) {
+			p_node->_next->_prev = p_node->_prev;
+		}
+		if (p_node->_prev) {
+			p_node->_prev->_next = p_node->_next;
+		}
+
+		memdelete_allocator<Element, A>(p_node);
+		_data.size_cache--;
+		ERR_FAIL_COND(_data._nil->color == RED);
+	}
+
+	void _calculate_depth(Element *p_element, int &p_max_d, int p_d) const {
+		if (p_element == _data._nil) {
+			return;
+		}
+
+		_calculate_depth(p_element->left, p_max_d, p_d + 1);
+		_calculate_depth(p_element->right, p_max_d, p_d + 1);
+
+		if (p_d > p_max_d) {
+			p_max_d = p_d;
+		}
+	}
+
+	void _cleanup_tree(Element *p_element) {
+		if (p_element == _data._nil) {
+			return;
+		}
+
+		_cleanup_tree(p_element->left);
+		_cleanup_tree(p_element->right);
+		memdelete_allocator<Element, A>(p_element);
+	}
+
+	void _copy_from(const RBMap &p_map) {
+		clear();
+		// not the fastest way, but safeset to write.
+		for (Element *I = p_map.front(); I; I = I->next()) {
+			insert(I->key(), I->value());
+		}
+	}
+
+public:
+	const Element *find(const K &p_key) const {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		const Element *res = _find(p_key);
+		return res;
+	}
+
+	Element *find(const K &p_key) {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		Element *res = _find(p_key);
+		return res;
+	}
+
+	const Element *find_closest(const K &p_key) const {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		const Element *res = _find_closest(p_key);
+		return res;
+	}
+
+	Element *find_closest(const K &p_key) {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		Element *res = _find_closest(p_key);
+		return res;
+	}
+
+	Element *lower_bound(const K &p_key) {
+		if (!_data._root) {
+			return nullptr;
+		}
+		return _lower_bound(p_key);
+	}
+
+	const Element *lower_bound(const K &p_key) const {
+		if (!_data._root) {
+			return nullptr;
+		}
+		return _lower_bound(p_key);
+	}
+
+	bool has(const K &p_key) const {
+		return find(p_key) != nullptr;
+	}
+
+	Element *insert(const K &p_key, const V &p_value) {
+		if (!_data._root) {
+			_data._create_root();
+		}
+		return _insert(p_key, p_value);
+	}
+
+	void erase(Element *p_element) {
+		if (!_data._root || !p_element) {
+			return;
+		}
+
+		_erase(p_element);
+		if (_data.size_cache == 0 && _data._root) {
+			_data._free_root();
+		}
+	}
+
+	bool erase(const K &p_key) {
+		if (!_data._root) {
+			return false;
+		}
+
+		Element *e = find(p_key);
+		if (!e) {
+			return false;
+		}
+
+		_erase(e);
+		if (_data.size_cache == 0 && _data._root) {
+			_data._free_root();
+		}
+		return true;
+	}
+
+	const V &operator[](const K &p_key) const {
+		CRASH_COND(!_data._root);
+		const Element *e = find(p_key);
+		CRASH_COND(!e);
+		return e->_data.value;
+	}
+
+	V &operator[](const K &p_key) {
+		if (!_data._root) {
+			_data._create_root();
+		}
+
+		Element *e = find(p_key);
+		if (!e) {
+			e = insert(p_key, V());
+		}
+
+		return e->_data.value;
+	}
+
+	Element *front() const {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		Element *e = _data._root->left;
+		if (e == _data._nil) {
+			return nullptr;
+		}
+
+		while (e->left != _data._nil) {
+			e = e->left;
+		}
+
+		return e;
+	}
+
+	Element *back() const {
+		if (!_data._root) {
+			return nullptr;
+		}
+
+		Element *e = _data._root->left;
+		if (e == _data._nil) {
+			return nullptr;
+		}
+
+		while (e->right != _data._nil) {
+			e = e->right;
+		}
+
+		return e;
+	}
+
+	inline bool is_empty() const {
+		return _data.size_cache == 0;
+	}
+	inline int size() const {
+		return _data.size_cache;
+	}
+
+	int calculate_depth() const {
+		// used for debug mostly
+		if (!_data._root) {
+			return 0;
+		}
+
+		int max_d = 0;
+		_calculate_depth(_data._root->left, max_d, 0);
+		return max_d;
+	}
+
+	void clear() {
+		if (!_data._root) {
+			return;
+		}
+
+		_cleanup_tree(_data._root->left);
+		_data._root->left = _data._nil;
+		_data.size_cache = 0;
+		_data._free_root();
+	}
+
+	void operator=(const RBMap &p_map) {
+		if (this == &p_map) {
+			return;
+		}
+
+		_copy_from(p_map);
+	}
+
+	void operator=(RBMap &&p_map) {
+		if (this == &p_map) {
+			return;
+		}
+
+		SWAP(_data._root, p_map._data._root);
+		SWAP(_data.size_cache, p_map._data.size_cache);
+	}
+
+	explicit RBMap(const RBMap &p_map) {
+		_copy_from(p_map);
+	}
+
+	RBMap(RBMap &&p_map) {
+		_data._root = p_map._data._root;
+		_data.size_cache = p_map._data.size_cache;
+
+		p_map._data._root = nullptr;
+		p_map._data.size_cache = 0;
+	}
+
+	RBMap(std::initializer_list<KeyValue<K, V>> p_init) {
+		for (const KeyValue<K, V> &E : p_init) {
+			insert(E.key, E.value);
+		}
+	}
+
+	_FORCE_INLINE_ RBMap() {}
+
+	~RBMap() {
+		clear();
+	}
+};
+// --- End core/templates/rb_map.h ---
+// --- End core/templates/hash_map.h ---
+// --- Folded from core/templates/hash_set.h ---
+#include "core/os/memory.h"
+#include "core/string/ustring.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
+#include "core/math/vector2.h"
+
+/**
+ * Implementation of Set using a bidi indexed hash map.
+ * Use RBSet instead of this only if the following conditions are met:
+ *
+ * - You need to keep an iterator or const pointer to Key and you intend to add/remove elements in the meantime.
+ * - Iteration order does matter (via operator<)
+ *
+ */
+
+template <typename TKey,
+		typename Hasher = HashMapHasherDefault,
+		typename Comparator = HashMapComparatorDefault<TKey>>
+class _WARN_UNUSED_ HashSet {
+public:
+	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
+	static constexpr float MAX_OCCUPANCY = 0.75;
+	static constexpr uint32_t EMPTY_HASH = 0;
+
+private:
+	TKey *_keys = nullptr;
+	uint32_t *_hash_idx_to_key_idx = nullptr;
+	uint32_t *_key_idx_to_hash_idx = nullptr;
+	uint32_t *_hashes = nullptr;
+
+	uint32_t _capacity_idx = 0;
+	uint32_t _size = 0;
+
+	_FORCE_INLINE_ uint32_t _hash(const TKey &p_key) const {
+		uint32_t hash = Hasher::hash(p_key);
+
+		if (unlikely(hash == EMPTY_HASH)) {
+			hash = EMPTY_HASH + 1;
+		}
+
+		return hash;
+	}
+
+	_FORCE_INLINE_ static constexpr void _increment_mod(uint32_t &r_idx, const uint32_t p_capacity) {
+		r_idx++;
+		// `if` is faster than both fastmod and mod.
+		if (unlikely(r_idx == p_capacity)) {
+			r_idx = 0;
+		}
+	}
+
+	static _FORCE_INLINE_ uint32_t _get_probe_length(const uint32_t p_hash_idx, const uint32_t p_hash, const uint32_t p_capacity, const uint64_t p_capacity_inv) {
+		const uint32_t original_idx = fastmod(p_hash, p_capacity_inv, p_capacity);
+		const uint32_t distance_idx = p_hash_idx - original_idx + p_capacity;
+		// At most p_capacity over 0, so we can use an if (faster than fastmod).
+		return distance_idx >= p_capacity ? distance_idx - p_capacity : distance_idx;
+	}
+
+	bool _lookup_key_idx(const TKey &p_key, uint32_t &r_key_idx) const {
+		if (_keys == nullptr || _size == 0) {
+			return false; // Failed lookups, no elements
+		}
+
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t hash = _hash(p_key);
+		uint32_t hash_idx = fastmod(hash, capacity_inv, capacity);
+		uint32_t distance = 0;
+
+		while (true) {
+			if (_hashes[hash_idx] == EMPTY_HASH) {
+				return false;
+			}
+
+			if (_hashes[hash_idx] == hash && Comparator::compare(_keys[_hash_idx_to_key_idx[hash_idx]], p_key)) {
+				r_key_idx = _hash_idx_to_key_idx[hash_idx];
+				return true;
+			}
+
+			if (distance > _get_probe_length(hash_idx, _hashes[hash_idx], capacity, capacity_inv)) {
+				return false;
+			}
+
+			_increment_mod(hash_idx, capacity);
+			distance++;
+		}
+	}
+
+	uint32_t _insert_with_hash(uint32_t p_hash, uint32_t p_key_idx) {
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t hash = p_hash;
+		uint32_t key_idx = p_key_idx;
+		uint32_t distance = 0;
+		uint32_t hash_idx = fastmod(hash, capacity_inv, capacity);
+
+		while (true) {
+			if (_hashes[hash_idx] == EMPTY_HASH) {
+				_hashes[hash_idx] = hash;
+				_key_idx_to_hash_idx[key_idx] = hash_idx;
+				_hash_idx_to_key_idx[hash_idx] = key_idx;
+				return hash_idx;
+			}
+
+			// Not an empty slot, let's check the probing length of the existing one.
+			uint32_t existing_probe_len = _get_probe_length(hash_idx, _hashes[hash_idx], capacity, capacity_inv);
+			if (existing_probe_len < distance) {
+				_key_idx_to_hash_idx[key_idx] = hash_idx;
+				SWAP(hash, _hashes[hash_idx]);
+				SWAP(key_idx, _hash_idx_to_key_idx[hash_idx]);
+				distance = existing_probe_len;
+			}
+
+			_increment_mod(hash_idx, capacity);
+			distance++;
+		}
+	}
+
+	void _resize_and_rehash(uint32_t p_new_capacity_idx) {
+		// Capacity can't be 0.
+		_capacity_idx = MAX((uint32_t)MIN_CAPACITY_INDEX, p_new_capacity_idx);
+
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+
+		uint32_t *old_hashes = _hashes;
+		uint32_t *old_key_to_hash = _key_idx_to_hash_idx;
+
+		static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+		_hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+		_keys = reinterpret_cast<TKey *>(Memory::realloc_static(_keys, sizeof(TKey) * capacity));
+		_key_idx_to_hash_idx = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+		_hash_idx_to_key_idx = reinterpret_cast<uint32_t *>(Memory::realloc_static(_hash_idx_to_key_idx, sizeof(uint32_t) * capacity));
+
+		for (uint32_t i = 0; i < _size; i++) {
+			uint32_t h = old_hashes[old_key_to_hash[i]];
+			_insert_with_hash(h, i);
+		}
+
+		Memory::free_static(old_hashes);
+		Memory::free_static(old_key_to_hash);
+	}
+
+	// Returns key index.
+	_FORCE_INLINE_ int32_t _insert(const TKey &p_key) {
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		if (unlikely(_keys == nullptr)) {
+			// Allocate on demand to save memory.
+
+			static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+			_hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+			_keys = reinterpret_cast<TKey *>(Memory::alloc_static(sizeof(TKey) * capacity));
+			_key_idx_to_hash_idx = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+			_hash_idx_to_key_idx = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+		}
+
+		uint32_t key_idx = 0;
+		bool exists = _lookup_key_idx(p_key, key_idx);
+
+		if (exists) {
+			return key_idx;
+		} else {
+			if (_size + 1 > MAX_OCCUPANCY * capacity) {
+				ERR_FAIL_COND_V_MSG(_capacity_idx + 1 == HASH_TABLE_SIZE_MAX, -1, "Hash table maximum capacity reached, aborting insertion.");
+				_resize_and_rehash(_capacity_idx + 1);
+			}
+
+			uint32_t hash = _hash(p_key);
+			memnew_placement(&_keys[_size], TKey(p_key));
+			_insert_with_hash(hash, _size);
+			_size++;
+			return _size - 1;
+		}
+	}
+
+	void _init_from(const HashSet &p_other) {
+		_capacity_idx = p_other._capacity_idx;
+		_size = p_other._size;
+
+		if (p_other._size == 0) {
+			return;
+		}
+
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+
+		_hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+		_keys = reinterpret_cast<TKey *>(Memory::alloc_static(sizeof(TKey) * capacity));
+		_key_idx_to_hash_idx = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+		_hash_idx_to_key_idx = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
+
+		for (uint32_t i = 0; i < _size; i++) {
+			memnew_placement(&_keys[i], TKey(p_other._keys[i]));
+			_key_idx_to_hash_idx[i] = p_other._key_idx_to_hash_idx[i];
+		}
+
+		for (uint32_t i = 0; i < capacity; i++) {
+			_hashes[i] = p_other._hashes[i];
+			_hash_idx_to_key_idx[i] = p_other._hash_idx_to_key_idx[i];
+		}
+	}
+
+public:
+	_FORCE_INLINE_ uint32_t get_capacity() const { return hash_table_size_primes[_capacity_idx]; }
+	_FORCE_INLINE_ uint32_t size() const { return _size; }
+
+	/* Standard Godot Container API */
+
+	bool is_empty() const {
+		return _size == 0;
+	}
+
+	void clear() {
+		if (_keys == nullptr || _size == 0) {
+			return;
+		}
+
+		uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		memset(_hashes, EMPTY_HASH, sizeof(EMPTY_HASH) * capacity);
+
+		if constexpr (!std::is_trivially_destructible_v<TKey>) {
+			for (uint32_t i = 0; i < _size; i++) {
+				_keys[i].~TKey();
+			}
+		}
+
+		_size = 0;
+	}
+
+	_FORCE_INLINE_ bool has(const TKey &p_key) const {
+		uint32_t _idx = 0;
+		return _lookup_key_idx(p_key, _idx);
+	}
+
+	bool erase(const TKey &p_key) {
+		uint32_t key_idx = 0;
+		bool exists = _lookup_key_idx(p_key, key_idx);
+
+		if (!exists) {
+			return false;
+		}
+
+		uint32_t hash_idx = _key_idx_to_hash_idx[key_idx];
+
+		const uint32_t capacity = hash_table_size_primes[_capacity_idx];
+		const uint64_t capacity_inv = hash_table_size_primes_inv[_capacity_idx];
+		uint32_t next_hash_idx = fastmod(hash_idx + 1, capacity_inv, capacity);
+		while (_hashes[next_hash_idx] != EMPTY_HASH && _get_probe_length(next_hash_idx, _hashes[next_hash_idx], capacity, capacity_inv) != 0) {
+			uint32_t cur_key_idx = _hash_idx_to_key_idx[hash_idx];
+			uint32_t next_key_idx = _hash_idx_to_key_idx[next_hash_idx];
+			SWAP(_key_idx_to_hash_idx[cur_key_idx], _key_idx_to_hash_idx[next_key_idx]);
+			SWAP(_hashes[next_hash_idx], _hashes[hash_idx]);
+			SWAP(_hash_idx_to_key_idx[next_hash_idx], _hash_idx_to_key_idx[hash_idx]);
+
+			hash_idx = next_hash_idx;
+			_increment_mod(next_hash_idx, capacity);
+		}
+
+		_hashes[hash_idx] = EMPTY_HASH;
+		_keys[key_idx].~TKey();
+		_size--;
+		if (key_idx < _size) {
+			// Not the last key, move the last one here to keep keys contiguous.
+			memnew_placement(&_keys[key_idx], TKey(_keys[_size]));
+			_keys[_size].~TKey();
+			_key_idx_to_hash_idx[key_idx] = _key_idx_to_hash_idx[_size];
+			_hash_idx_to_key_idx[_key_idx_to_hash_idx[_size]] = key_idx;
+		}
+
+		return true;
+	}
+
+	// Reserves space for a number of elements, useful to avoid many resizes and rehashes.
+	// If adding a known (possibly large) number of elements at once, must be larger than old capacity.
+	void reserve(uint32_t p_new_capacity) {
+		uint32_t new_capacity_idx = _capacity_idx;
+
+		while (hash_table_size_primes[new_capacity_idx] < p_new_capacity) {
+			ERR_FAIL_COND_MSG(new_capacity_idx + 1 == (uint32_t)HASH_TABLE_SIZE_MAX, nullptr);
+			new_capacity_idx++;
+		}
+
+		if (new_capacity_idx == _capacity_idx) {
+			if (p_new_capacity < _size) {
+				WARN_VERBOSE("reserve() called with a capacity smaller than the current size. This is likely a mistake.");
+			}
+			return;
+		}
+
+		if (_keys == nullptr) {
+			_capacity_idx = new_capacity_idx;
+			return; // Unallocated yet.
+		}
+		_resize_and_rehash(new_capacity_idx);
+	}
+
+	/** Iterator API **/
+
+	struct Iterator {
+		_FORCE_INLINE_ const TKey &operator*() const {
+			return _keys[_key_idx];
+		}
+		_FORCE_INLINE_ const TKey *operator->() const {
+			return &_keys[_key_idx];
+		}
+		_FORCE_INLINE_ Iterator &operator++() {
+			_key_idx++;
+			if (_key_idx >= (int32_t)_num_keys) {
+				_key_idx = -1;
+				_keys = nullptr;
+				_num_keys = 0;
+			}
+			return *this;
+		}
+		_FORCE_INLINE_ Iterator &operator--() {
+			_key_idx--;
+			if (_key_idx < 0) {
+				_key_idx = -1;
+				_keys = nullptr;
+				_num_keys = 0;
+			}
+			return *this;
+		}
+
+		_FORCE_INLINE_ bool operator==(const Iterator &p_other) const { return _keys == p_other._keys && _key_idx == p_other._key_idx; }
+		_FORCE_INLINE_ bool operator!=(const Iterator &p_other) const { return _keys != p_other._keys || _key_idx != p_other._key_idx; }
+
+		_FORCE_INLINE_ explicit operator bool() const {
+			return _keys != nullptr;
+		}
+
+		_FORCE_INLINE_ Iterator(const TKey *p_keys, uint32_t p_num_keys, int32_t p_key_idx = -1) {
+			_keys = p_keys;
+			_num_keys = p_num_keys;
+			_key_idx = p_key_idx;
+		}
+		_FORCE_INLINE_ Iterator() {}
+		_FORCE_INLINE_ Iterator(const Iterator &p_it) {
+			_keys = p_it._keys;
+			_num_keys = p_it._num_keys;
+			_key_idx = p_it._key_idx;
+		}
+		_FORCE_INLINE_ void operator=(const Iterator &p_it) {
+			_keys = p_it._keys;
+			_num_keys = p_it._num_keys;
+			_key_idx = p_it._key_idx;
+		}
+
+	private:
+		const TKey *_keys = nullptr;
+		uint32_t _num_keys = 0;
+		int32_t _key_idx = -1;
+	};
+
+	_FORCE_INLINE_ Iterator begin() const _LIFETIME_BOUND_ {
+		return _size ? Iterator(_keys, _size, 0) : Iterator();
+	}
+	_FORCE_INLINE_ Iterator end() const _LIFETIME_BOUND_ {
+		return Iterator();
+	}
+	_FORCE_INLINE_ Iterator last() const _LIFETIME_BOUND_ {
+		if (_size == 0) {
+			return Iterator();
+		}
+		return Iterator(_keys, _size, _size - 1);
+	}
+
+	_FORCE_INLINE_ Iterator find(const TKey &p_key) const _LIFETIME_BOUND_ {
+		uint32_t key_idx = 0;
+		bool exists = _lookup_key_idx(p_key, key_idx);
+		if (!exists) {
+			return end();
+		}
+		return Iterator(_keys, _size, key_idx);
+	}
+
+	_FORCE_INLINE_ void remove(const Iterator &p_iter) {
+		if (p_iter) {
+			erase(*p_iter);
+		}
+	}
+
+	/* Insert */
+
+	Iterator insert(const TKey &p_key) _LIFETIME_BOUND_ {
+		uint32_t key_idx = _insert(p_key);
+		return Iterator(_keys, _size, key_idx);
+	}
+
+	/* Constructors */
+
+	explicit HashSet(const HashSet &p_other) {
+		_init_from(p_other);
+	}
+
+	HashSet(HashSet &&p_other) {
+		_keys = p_other._keys;
+		_hash_idx_to_key_idx = p_other._hash_idx_to_key_idx;
+		_key_idx_to_hash_idx = p_other._key_idx_to_hash_idx;
+		_hashes = p_other._hashes;
+
+		_capacity_idx = p_other._capacity_idx;
+		_size = p_other._size;
+
+		p_other._keys = nullptr;
+		p_other._hash_idx_to_key_idx = nullptr;
+		p_other._hashes = nullptr;
+		p_other._key_idx_to_hash_idx = nullptr;
+
+		p_other._capacity_idx = 0;
+		p_other._size = 0;
+	}
+
+	void operator=(const HashSet &p_other) {
+		if (this == &p_other) {
+			return; // Ignore self assignment.
+		}
+
+		clear();
+
+		if (_keys != nullptr) {
+			Memory::free_static(_keys);
+			Memory::free_static(_key_idx_to_hash_idx);
+			Memory::free_static(_hash_idx_to_key_idx);
+			Memory::free_static(_hashes);
+			_keys = nullptr;
+			_hashes = nullptr;
+			_hash_idx_to_key_idx = nullptr;
+			_key_idx_to_hash_idx = nullptr;
+		}
+
+		_init_from(p_other);
+	}
+
+	void operator=(HashSet &&p_other) {
+		if (this == &p_other) {
+			return; // Ignore self assignment.
+		}
+
+		SWAP(_keys, p_other._keys);
+		SWAP(_hash_idx_to_key_idx, p_other._hash_idx_to_key_idx);
+		SWAP(_key_idx_to_hash_idx, p_other._key_idx_to_hash_idx);
+		SWAP(_hashes, p_other._hashes);
+
+		SWAP(_capacity_idx, p_other._capacity_idx);
+		SWAP(_size, p_other._size);
+	}
+
+	bool operator==(const HashSet &p_other) const {
+		if (_size != p_other._size) {
+			return false;
+		}
+		for (uint32_t i = 0; i < _size; i++) {
+			if (!p_other.has(_keys[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+	bool operator!=(const HashSet &p_other) const {
+		return !(*this == p_other);
+	}
+
+	HashSet(uint32_t p_initial_capacity) {
+		// Capacity can't be 0.
+		_capacity_idx = 0;
+		reserve(p_initial_capacity);
+	}
+	HashSet() {
+		_capacity_idx = MIN_CAPACITY_INDEX;
+	}
+	HashSet(std::initializer_list<TKey> p_init) {
+		reserve(p_init.size());
+		for (const TKey &E : p_init) {
+			insert(E);
+		}
+	}
+
+	void reset() {
+		clear();
+
+		if (_keys != nullptr) {
+			Memory::free_static(_keys);
+			Memory::free_static(_key_idx_to_hash_idx);
+			Memory::free_static(_hash_idx_to_key_idx);
+			Memory::free_static(_hashes);
+			_keys = nullptr;
+			_hashes = nullptr;
+			_hash_idx_to_key_idx = nullptr;
+			_key_idx_to_hash_idx = nullptr;
+		}
+		_capacity_idx = MIN_CAPACITY_INDEX;
+	}
+
+	~HashSet() {
+		clear();
+
+		if (_keys != nullptr) {
+			Memory::free_static(_keys);
+			Memory::free_static(_key_idx_to_hash_idx);
+			Memory::free_static(_hash_idx_to_key_idx);
+			Memory::free_static(_hashes);
+		}
+	}
+};
+// --- End core/templates/hash_set.h ---
+#include "core/templates/list.h"
+#include "core/string/ustring.h"
 // --- Folded from core/templates/paged_allocator.h ---
 #include <type_traits>
 #include <typeinfo> // IWYU pragma: keep // Used in macro.
@@ -4235,7 +7444,7 @@ public:
 };
 // --- End core/templates/paged_allocator.h ---
 // --- Inlined/Folded from core/templates/ring_buffer.h ---
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 template <typename T> class _WARN_UNUSED_ RingBuffer
 {
@@ -4427,7 +7636,7 @@ public:
 
 	RingBuffer(int p_power = 0) { resize(p_power); }
 };
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 // Packed Arrays
 typedef Vector<uint8_t> PackedByteArray;
@@ -4930,9 +8139,8 @@ public:
 #include <initializer_list>
 
 #include "core/os/memory.h"
-#include "core/templates/span.h"
 #include "core/string/ustring.h"
-#include "core/templates/hashfuncs.h"
+#include "core/math/vector2.h"
 
 class String;
 class String;
@@ -5718,8 +8926,7 @@ extern template class AHashMap<String, int>;
 #include <typeinfo> // IWYU pragma: keep // Used in macro.
 #include "core/os/memory.h"
 #include "core/os/mutex.h"
-#include "core/templates/span.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "core/os/memory.h"
 
 
@@ -6239,7 +9446,7 @@ public:
 // --- Folded from core/io/resource_uid.h ---
 
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
+
 
 class FileAccess;
 
@@ -6317,3 +9524,195 @@ public:
 	~ResourceUID() = delete;
 };
 // --- End core/io/resource_uid.h ---
+
+// --- Folded from core/io/resource.h ---
+
+
+
+class Node;
+class RWLock;
+
+#define RES_BASE_EXTENSION(m_ext)                                                                  \
+public:                                                                                            \
+	static void register_custom_data_to_otdb()                                                     \
+	{                                                                                              \
+		Resource::_add_resource_base_extension_to_classdb(m_ext, get_class_static());              \
+	}                                                                                              \
+                                                                                                   \
+	virtual String get_base_extension() const override                                             \
+	{                                                                                              \
+		return m_ext;                                                                              \
+	}                                                                                              \
+                                                                                                   \
+private:
+
+class Resource : public RefCounted
+{
+public:
+	static void register_custom_data_to_otdb();
+
+	virtual String get_base_extension() const { return "res"; }
+
+protected:
+	static void _add_resource_base_extension_to_classdb(
+		const String& p_extension, const String& p_class);
+
+private:
+	friend class ResourceCache;
+
+	String name;
+	String path_cache;
+	String scene_unique_id;
+
+#ifdef TOOLS_ENABLED
+	uint64_t last_modified_time = 0;
+	uint64_t import_last_modified_time = 0;
+	String import_path;
+#endif
+
+	enum EmitChangedState
+	{
+		EMIT_CHANGED_UNBLOCKED,
+		EMIT_CHANGED_BLOCKED,
+		EMIT_CHANGED_BLOCKED_PENDING_EMIT,
+	};
+
+	EmitChangedState emit_changed_state = EMIT_CHANGED_UNBLOCKED;
+	bool local_to_scene = false;
+	friend class SceneState;
+	Node* local_scene = nullptr;
+
+	SelfList<Resource> remapped_list = { this };
+
+	using DuplicateRemapCacheT = HashMap<Ref<Resource>, Ref<Resource>>;
+	static thread_local inline DuplicateRemapCacheT* thread_duplicate_remap_cache = nullptr;
+	static thread_local inline bool thread_duplicate_remap_cache_needs_deallocation = true;
+
+protected:
+	virtual void _resource_path_changed();
+
+	void _block_emit_changed();
+	void _unblock_emit_changed();
+
+	void _set_path(const String& p_path);
+	void _take_over_path(const String& p_path);
+
+	virtual void reset_local_to_scene();
+
+	virtual Ref<Resource> _duplicate(bool p_subresources = false) const;
+	virtual String _to_string();
+
+public:
+	Ref<Resource> duplicate(bool p_deep) const;
+	static Node* (*_get_local_scene_func)();		// Used by the editor.
+	static void (*_update_configuration_warning)(); // Used by the editor.
+
+	void update_configuration_warning();
+	virtual bool editor_can_reload_from_file();
+	virtual void reset_state(); // For resources that store state in non-exposed properties, such as
+								// via _validate_property or _get_property_list, this function must
+								// be implemented to clear them.
+	virtual Error copy_from(const Ref<Resource>& p_resource);
+	virtual void reload_from_file();
+
+	void emit_changed();
+	void set_name(const String& p_name);
+	String get_name() const;
+
+	virtual void set_path(const String& p_path, bool p_take_over = false);
+	String get_path() const;
+	virtual void set_path_cache(
+		const String& p_path); // Set raw path without involving resource cache.
+
+	_FORCE_INLINE_ bool is_built_in() const
+	{
+		return path_cache.is_empty() || path_cache.contains("::") ||
+			   path_cache.begins_with("local://");
+	}
+
+	static void seed_scene_unique_id(uint32_t p_seed);
+	static String generate_scene_unique_id();
+	void set_scene_unique_id(const String& p_id);
+	String get_scene_unique_id() const;
+
+	void configure_for_local_scene(
+		Node* p_for_scene, HashMap<Ref<Resource>, Ref<Resource>>& p_remap_cache);
+
+	void set_local_to_scene(bool p_enable);
+	bool is_local_to_scene() const;
+	virtual void setup_local_to_scene();
+
+	Node* get_local_scene() const;
+
+	void set_as_translation_remapped(bool p_remapped);
+
+	virtual RID get_rid() const; // Some resources may offer conversion to RID.
+
+	// Helps keep IDs the same when loading/saving scenes. An empty ID clears the entry, and an
+	// empty ID is returned when not found.
+	static void set_resource_id_for_path(
+		const String& p_referrer_path, const String& p_resource_path, const String& p_id);
+
+	void set_id_for_path(const String& p_referrer_path, const String& p_id)
+	{
+		set_resource_id_for_path(p_referrer_path, get_path(), p_id);
+	}
+
+	String get_id_for_path(const String& p_referrer_path) const;
+
+	Resource() = default;
+	~Resource();
+};
+
+class ResourceCache
+{
+	friend class Resource;
+	friend class ResourceLoader; // Need the lock.
+	static Mutex lock;
+	static HashMap<String, Resource*> resources;
+#ifdef TOOLS_ENABLED
+	static HashMap<String, HashMap<String, String>>
+		resource_path_cache; // Each tscn has a set of resource paths and IDs.
+	static RWLock path_cache_lock;
+#endif // TOOLS_ENABLED
+	friend void unregister_core_types();
+	static void clear();
+	friend void register_core_types();
+
+public:
+	static bool has(const String& p_path);
+	static Ref<Resource> get_ref(const String& p_path);
+	static void get_cached_resources(List<Ref<Resource>>* p_resources);
+	static int get_cached_resource_count();
+};
+
+// --- Folded from scene/property_list_helper.h ---
+class PropertyListHelper
+{
+	static HashMap<String, Vector<PropertyListHelper*>> base_helpers;
+
+	String prefix;
+
+	bool allow_oob_assign = false;
+
+	int _call_array_length_getter() const;
+
+public:
+	static void clear_base_helpers();
+	static void register_base_helper(const String& p_class_name, PropertyListHelper* p_helper);
+
+	static Vector<PropertyListHelper*> get_helpers_for_class(const String& p_class_name);
+
+	void set_prefix(const String& p_prefix);
+
+	bool is_initialized() const;
+	bool is_property_valid(const String& p_property, int* r_index = nullptr) const;
+
+	bool property_can_revert(const String& p_property) const;
+
+	void enable_out_of_bounds_assign() { allow_oob_assign = true; }
+
+	void clear();
+};
+// --- End scene/property_list_helper.h ---
+// --- End core/io/resource.h ---

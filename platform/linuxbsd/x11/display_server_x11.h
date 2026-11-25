@@ -33,12 +33,12 @@
 
 #ifdef X11_ENABLED
 
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 #include "core/os/mutex.h"
 #include "core/os/os.h"
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/os/os.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
@@ -3791,8 +3791,8 @@ public:
 // --- Folded from platform/linuxbsd/x11/gl_manager_x11.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
-#include "core/templates/hashfuncs.h"
-#include "core/templates/local_vector.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED

@@ -32,19 +32,15 @@
 #include "scene_tree.h"
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
+#include "scene/main/node.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
-#include "scene/main/window.h"
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
-#include "scene/main/node.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -53,11 +49,11 @@
 #endif // _3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_3D_DISABLED
 
 void SceneTreeTimer::set_time_left(double p_time) { time_left = p_time; }
@@ -1081,8 +1077,7 @@ bool SceneTree::process(double p_time)
 #ifndef _3D_DISABLED
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 
@@ -1925,11 +1920,11 @@ bool MultiplayerPeerExtension::is_server_relay_supported() const
 // Merged from scene/main/http_request.cpp
 // ==========================================================================
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 // --- Inlined from scene/main/http_request.h ---
 #include "core/io/net_socket.h"
 #include "core/os/memory.h"
@@ -2687,17 +2682,15 @@ void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray&
 // Merged from scene/main/node.cpp
 // ============================================================================
 
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 #include "core/types.h"
 #include "node.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/io/resource.h"
+#include "core/types.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/main/node.h"
 #include "servers/display/display_server.h"
 
@@ -5033,11 +5026,10 @@ PackedStringArray Timer::get_configuration_warnings() const
 // Merged from scene/main/status_indicator.cpp
 // ==========================================================================
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 // --- Inlined from scene/main/status_indicator.h ---
 #include "scene/main/node.h"
-#include "scene/resources/texture.h"
 #include "servers/display/display_server.h"
 
 class StatusIndicator : public Node {
@@ -5109,18 +5101,13 @@ Rect2 StatusIndicator::get_rect() const
 // Merged from scene/main/canvas_item.cpp
 // ============================================================================
 
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -6249,7 +6236,7 @@ void CanvasItem::_notification(int p_what) {}
 
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 
 void CanvasItem::_draw_char_bind_compat_104872(const Ref<Font>& p_font, const Point2& p_pos,
@@ -6304,10 +6291,7 @@ void CanvasItem::_bind_compatibility_methods() {}
 // Merged from scene/main/canvas_layer.cpp
 // ==========================================================================
 
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
-#include "scene/main/window.h"
 #include "servers/rendering/renderer.h"
 
 void CanvasLayer::_notification(int p_what)
@@ -6665,34 +6649,26 @@ void CanvasLayer::set_custom_viewport(Node*) {}
 
 #include <execinfo.h>
 #include <unistd.h>
-#include "core/templates/span.h"
-#include "scene/main/window.h"
-#include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/templates/hashfuncs.h"
-#include "core/templates/span.h"
-#include "scene/gui/control.h"
-#include "scene/gui/dialogs.h"
-#include "scene/gui/control.h"
+#include "core/string/ustring.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
+#include "core/os/os.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 // 2D.
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 
 #ifndef _3D_DISABLED
 #include "scene/main/scene_tree.h"
 #endif // _3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef XR_DISABLED
@@ -9236,7 +9212,7 @@ bool SubViewport::is_attached_in_viewport() const { return false; }
 
 #ifndef DISABLE_DEPRECATED
 
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 
 #ifndef XR_DISABLED
 bool Viewport::_is_using_xr_115799() { return is_using_xr(); }
@@ -9252,16 +9228,13 @@ void Viewport::_bind_compatibility_methods() {}
 // Merged from scene/main/window.cpp
 // ============================================================================
 
-#include "window.h"
+#include "scene/main/scene_tree.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 // Editor integration.
 
@@ -10975,11 +10948,11 @@ Size2 Window::_get_contents_minimum_size() const { return Size2(); }
 
 
 // --- Merged from scene/register_scene_types.cpp ---
-#include "main/main.h"
+#include "servers/display/display_server.h"
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/node.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/node.h"
 
 static Ref<ResourceFormatSaverText> resource_saver_text;
@@ -11055,7 +11028,7 @@ void PropertyListHelper::clear() {}
 
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "scene/main/node.h"
 
 // Like SceneState::PackState, but using a raw pointer to avoid the cost of
@@ -11408,13 +11381,12 @@ String AudioStreamPlayerInternal::get_bus() const
 // ============================================================================
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 // --- Inlined from scene/theme/default_theme.h ---
 #include "scene/resources/theme.h"
 
@@ -11747,8 +11719,7 @@ Ref<Theme> ThemeContext::get_fallback_theme() const
 
 // --- theme_owner.cpp ---
 
-#include "scene/gui/control.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 
 Node* ThemeOwner::_get_next_owner_node(Node* p_from_node) const
@@ -11917,10 +11888,10 @@ void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}
 
 // --- default_theme.cpp ---
 
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 
 #include "scene/resources/theme.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include "scene/main/node.h"
 #include "main/splash.gen.h"
@@ -12891,7 +12862,7 @@ public:
 };
 
 // --- End scene/animation/animation_blend_space.h ---
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
 
 #ifndef DISABLE_DEPRECATED
@@ -14103,7 +14074,7 @@ void AnimationNodeBlendTree::reset_state() {}
 // --- Inlined from scene/animation/animation_node_state_machine.h ---
 #include "core/types.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 class AnimationNodeStateMachineTransition : public Resource
 {
@@ -15741,7 +15712,6 @@ AnimationNode::NodeTimeInfo AnimationNodeStateMachine::_process(
 
 #include "scene/main/scene_tree.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/string/ustring.h"
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
@@ -17069,7 +17039,6 @@ void AnimationPlayer::_blend_post_process() {}
 #include "core/os/os.h"
 // --- Inlined from scene/animation/root_motion_view.h ---
 #include "scene/main/scene_tree.h"
-#include "scene/resources/mesh.h"
 
 class RootMotionView : public Node3D {
 public:
@@ -17121,7 +17090,7 @@ public:
 
 // --- End scene/animation/root_motion_view.h ---
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 void RootMotionView::set_animation_mixer(const NodePath& p_path)
 {
@@ -18113,27 +18082,24 @@ Tweener::Tweener(const Ref<Tween>& p_subtween) : subtween(p_subtween), type(TWEE
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "core/os/os.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 
 #ifdef TOOLS_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #endif
 
 void DialogChrome::init_controls(Window* p_owner)
@@ -20773,24 +20739,21 @@ void PopupMenu::_bind_compatibility_methods() {}
 // Merged from scene/gui/color_picker.cpp
 // ============================================================================
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #include "core/os/os.h"
-#include "core/io/image.h"
 #include "core/io/resource_loader.h"
 #include "core/types.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
-#include "scene/gui/dialogs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
-#include "core/templates/hashfuncs.h"
-#include "scene/resources/material.h"
-#include <thirdparty/misc/ok_color_shader.h>
-#include "scene/resources/material.h"
+#include "core/math/vector2.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/dialogs.h"
+#include <thirdparty/misc/ok_color_shader.h>
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 
 #ifdef MACOS_ENABLED
 #include "core/os/os.h"
@@ -22704,18 +22667,14 @@ void ColorRect::set_color(const Color& p_color)
 // ============================================================================
 
 #include "core/os/os.h"
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #include "core/typedefs.h"
-#include "core/input/input_event.h"
-#include "scene/gui/dialogs.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/gui/dialogs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include <cfloat>
-#include "core/input/input_event.h"
-#include "scene/main/window.h"
-#include "scene/gui/dialogs.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 
@@ -24223,18 +24182,14 @@ void GraphNode::_resort()
 // ============================================================================
 
 #include <climits>
-#include "core/config/project_settings.h"
 #include "core/os/os.h"
 #include "core/typedefs.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 Size2 TreeItem::Cell::get_icon_size() const
 {
@@ -27591,27 +27546,21 @@ void TreeItem::_bind_compatibility_methods() {}
 // Merged from scene/gui/label.cpp
 // ============================================================================
 
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
-#include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "scene/gui/dialogs.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/gui/dialogs.h"
-#include "scene/resources/material.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
 // --- Inlined from scene/gui/video_stream_player.h ---
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
 #include "servers/display/display_server.h"
 
@@ -27706,7 +27655,7 @@ public:
 
 // --- End scene/gui/video_stream_player.h ---
 // --- Inlined from scene/gui/virtual_joystick.h ---
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 
 class VirtualJoystick : public Control
 {
@@ -27803,7 +27752,7 @@ public:
 // --- End scene/gui/virtual_joystick.h ---
 
 #ifdef TOOLS_ENABLED
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 #endif
 
 TextServer::AutowrapMode Label::get_autowrap_mode() const { return autowrap_mode; }
@@ -30772,13 +30721,11 @@ VirtualJoystick::VisibilityMode VirtualJoystick::get_visibility_mode() const { r
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/typedefs.h"
-#include "core/input/input_event.h"
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "modules/modules_enabled.gen.h"
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 // --- Inlined from scene/gui/rich_text_effect.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 class CharFXTransform : public RefCounted
 {
@@ -30859,17 +30806,16 @@ public:
 
 
 // --- End scene/gui/rich_text_effect.h ---
-#include "scene/gui/dialogs.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef MODULE_REGEX_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #endif
 
 RichTextLabel::ImageData::~ImageData() = default;
@@ -33376,18 +33322,13 @@ bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return f
 
 // --- Merged from scene/gui/text_edit.cpp ---
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "core/input/input_event.h"
-#include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "scene/gui/dialogs.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 #include "scene/resources/theme.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
-#include "scene/gui/dialogs.h"
+#include "servers/display/display_server.h"
+#include "scene/main/scene_tree.h"
 
 void TextEdit::Text::set_font(const Ref<Font>& p_font)
 {
@@ -39668,13 +39609,13 @@ void TextEdit::_bind_compatibility_methods() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/math/geometry_3d.h"
-#include "core/templates/hashfuncs.h"
-#include "scene/resources/mesh.h"
+#include "servers/rendering/renderer.h"
+#include "core/math/vector2.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_3D_DISABLED
 
 void MeshConvexDecompositionSettings::set_max_concavity(real_t p_max_concavity)
@@ -40775,7 +40716,7 @@ void ArrayMesh::reload_from_file() {}
 
 // --- immediate_mesh.cpp ---
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 void ImmediateMesh::surface_begin(PrimitiveType p_primitive, const Ref<Material>& p_material)
@@ -41591,7 +41532,7 @@ MultiMesh::~MultiMesh()
 
 // --- mesh_data_tool.cpp ---
 // --- Inlined from scene/resources/mesh_data_tool.h ---
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 class MeshDataTool : public RefCounted
 {
@@ -41889,7 +41830,7 @@ void MeshDataTool::_bind_compatibility_methods() {}
 // --- surface_tool.cpp ---
 
 #include "core/types.h"
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 #define EQ_VERTEX_DIST 0.00001
 
@@ -42716,10 +42657,8 @@ Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}
 #include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 #include "scene/main/node.h"
-#include "scene/main/scene_tree.h"
-#include "scene/gui/control.h"
 #include "scene/main/scene_tree.h"
 #include "scene/main/node.h"
 
@@ -43331,8 +43270,8 @@ void PackedScene::reload_from_file() {}
 
 // --- resource_format_text.cpp ---
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 #include "scene/main/node.h"
 
@@ -43712,7 +43651,7 @@ Error ResourceFormatSaverTextInstance::save(String const&, Ref<Resource> const&,
 // --- audio_stream_wav.cpp ---
 
 #include "servers/display/display_server.h"
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/resource_loader.h"
 
 const float TRIM_DB_LIMIT = -50;
@@ -44389,12 +44328,12 @@ int VideoStreamPlayback::get_mix_rate() const { return 0; }
 
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
-#include "core/math/geometry_3d.h"
-#include "core/templates/local_vector.h"
+#include "servers/rendering/renderer.h"
+#include "core/string/ustring.h"
 #include "core/templates/rb_set.h"
-#include "scene/gui/control.h"
-#include "scene/resources/material.h"
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
+#include "servers/rendering/renderer.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
 
@@ -54347,17 +54286,16 @@ void SkeletonProfile::set_bone_name(int, String const&) {}
 
 // --- Merged from scene/resources/3d/primitive_meshes.cpp ---
 #if !defined(_3D_DISABLED)
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 #include <thirdparty/misc/polypartition.h>
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/typedefs.h"
 #include "core/os/os.h"
 #include "scene/resources/theme.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 #define PADDING_REF_SIZE 1024.0
 
@@ -55471,10 +55409,10 @@ bool PrimitiveMesh::is_uppercase() const { return _get_text_state().uppercase; }
 
 #include "core/io/resource_loader.h"
 #include "core/types.h"
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
 #ifndef PHYSICS_3D_DISABLED
-#include "core/math/geometry_3d.h"
+#include "servers/rendering/renderer.h"
 #endif // PHYSICS_3D_DISABLED
 
 #include <cfloat> // FLT_EPSILON
@@ -55763,12 +55701,12 @@ Ref<ImporterMesh> ImporterMesh::from_mesh(Ref<Mesh> const&)
 
 // --- mesh_library.cpp ---
 
-#include "scene/resources/mesh.h"
-#include "scene/resources/texture.h"
+#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h" // IWYU pragma: keep // Needed to bind RSE enums.
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #endif // PHYSICS_3D_DISABLED
 
 bool MeshLibrary::_validate_index(int p_idx)
@@ -56030,9 +55968,9 @@ void Skin::set_bind_name(int p_index, const String& p_name) {}
 // Merged from scene/resources/3d/sky_material.cpp
 // ============================================================================
 // --- Inlined from scene/resources/3d/sky_material.h ---
-#include "core/templates/hashfuncs.h"
-#include "scene/resources/material.h"
-#include "scene/resources/texture.h"
+#include "core/math/vector2.h"
+#include "servers/rendering/renderer.h"
+#include "servers/display/display_server.h"
 
 class SkyMaterial final : public Material
 {
@@ -56225,8 +56163,7 @@ public:
 // --- End scene/resources/3d/sky_material.h ---
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/version.h"
+#include "core/typedefs.h"
 #include "servers/rendering/renderer.h"
 
 Mutex SkyMaterial::shader_mutex;
@@ -56833,7 +56770,7 @@ SkyMaterial::~SkyMaterial()
 
 #include "scene/main/scene_tree.h"
 
-#include "core/templates/local_vector.h"
+#include "core/string/ustring.h"
 
 void JointLimitation3D::set_angle(real_t p_angle)
 {
@@ -57005,14 +56942,13 @@ void JointLimitation3D::draw_shape(Ref<SurfaceTool>& p_surface_tool, const Trans
 
 // --- world_3d.cpp ---
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "servers/physics_3d/physics_server_3d.h"
+#include "scene/main/scene_tree.h"
 #endif // NAVIGATION_3D_DISABLED
 
 void World3D::_register_camera(Camera3D* p_camera) { cameras.insert(p_camera); }
@@ -57161,9 +57097,9 @@ RID World3D::get_space() const
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 
 Size2 Texture2D::get_size() const { return Size2(get_width(), get_height()); }
@@ -57659,7 +57595,7 @@ Texture3D::~Texture3D()
 
 // --- atlas_texture.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/os/os.h"
 #include "servers/rendering/renderer.h"
@@ -58128,11 +58064,10 @@ AtlasTexture::~AtlasTexture()
 
 // --- image_texture.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/io/resource_loader.h"
 #include "modules/modules_enabled.gen.h" // For svg.
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #ifdef MODULE_SVG_ENABLED
@@ -58935,7 +58870,7 @@ ImageTexture3D::~ImageTexture3D()
 
 // --- external_texture.cpp ---
 // --- Inlined from scene/resources/external_texture.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 // External textures as defined by OES_EGL_image_external (GLES),
@@ -59187,7 +59122,7 @@ ExternalTexture::~ExternalTexture()
 
 // --- drawable_texture_2d.cpp ---
 // --- Inlined from scene/resources/drawable_texture_2d.h ---
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 
 class Material;
 
@@ -59255,7 +59190,6 @@ public:
 
 
 // --- End scene/resources/drawable_texture_2d.h ---
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 DrawableTexture2D::DrawableTexture2D()
@@ -59374,9 +59308,8 @@ void DrawableTexture2D::generate_mipmaps()
 
 // --- curve_texture.cpp ---
 
-#include "scene/resources/material.h"
-
 #include "servers/rendering/renderer.h"
+
 
 CurveTexture::CurveTexture(TextureMode p_mode) :
 	texture_mode(p_mode), _current_texture_mode(p_mode)
@@ -59618,10 +59551,8 @@ CurveTexture::~CurveTexture()
 
 // --- gradient_texture.cpp ---
 
-#include "scene/resources/material.h"
-
-#include "core/math/geometry_3d.h"
 #include "servers/rendering/renderer.h"
+
 
 GradientTexture2D::GradientTexture2D(bool p_1d) : is_1d(p_1d)
 {
@@ -59895,7 +59826,7 @@ void GradientTexture2D::update_now() const
 
 // --- bit_map.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 void BitMap::create(const Size2i& p_size)
 {
@@ -60706,12 +60637,11 @@ void SpriteFrames::get_argument_options(
 // Merged from scene/resources/compressed_texture.cpp
 // ============================================================================
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 static const char* compression_mode_names[7] = {
@@ -61707,7 +61637,7 @@ CompressedTextureLayered::~CompressedTextureLayered()
 
 // --- compressed_texture_resource_format.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 
 Ref<Resource> ResourceFormatLoaderCompressedTexture::load(const String& p_path,
@@ -61805,7 +61735,7 @@ String ResourceFormatLoaderCompressedTexture::get_resource_type(const String& p_
 
 #include <cfloat> // FLT_EPSILON
 #include "core/typedefs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 const char* Curve::SIGNAL_RANGE_CHANGED = "range_changed";
 const char* Curve::SIGNAL_DOMAIN_CHANGED = "domain_changed";
@@ -63814,7 +63744,7 @@ Curve2D::Curve2D() {}
 // --- gradient.cpp ---
 
 #include "core/os/os.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 Gradient::Gradient()
 {
@@ -63949,7 +63879,7 @@ int Gradient::get_point_count() const { return points.size(); }
 
 // --- color_palette.cpp ---
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 void ColorPalette::set_colors(const PackedColorArray& p_colors) { colors = p_colors; }
 
@@ -63962,10 +63892,9 @@ PackedColorArray ColorPalette::get_colors() const { return colors; }
 #include "core/os/os.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "core/templates/hash_map.h"
 #include "core/types.h"
 #include "scene/resources/theme.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include "servers/rendering/renderer.h"
 
@@ -66950,7 +66879,7 @@ void TextParagraph::_bind_compatibility_methods() {}
 
 // --- label_settings.cpp ---
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 void LabelSettings::_font_changed() { emit_changed(); }
 
@@ -67140,7 +67069,7 @@ int LabelSettings::get_stacked_shadow_outline_size(int p_index) const
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 // --- Inlined from scene/resources/text_file.h ---
-#include "core/io/resource.h"
+#include "core/types.h"
 
 class TextFile : public Resource
 {
@@ -67180,7 +67109,7 @@ Error TextFile::load_text(String const&) {}
 
 // --- syntax_highlighter.cpp ---
 
-#include "scene/gui/dialogs.h"
+#include "scene/main/scene_tree.h"
 
 void CodeHighlighter::_clear_highlighting_cache() { color_region_cache.clear(); }
 
@@ -68873,7 +68802,7 @@ void Theme::clear() {}
 
 #include <cfloat> // FLT_EPSILON
 #include "core/os/os.h"
-#include "scene/gui/control.h"
+#include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 
@@ -69860,14 +69789,13 @@ void StyleBox::_draw_line(RID p_canvas_item, const Rect2& p_rect) const
 
 // --- Merged from scene/resources/material.cpp ---
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/typedefs.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "core/version.h"
-#include "scene/resources/material.h"
+#include "core/typedefs.h"
+#include "servers/rendering/renderer.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
 void Material::set_next_pass(const Ref<Material>& p_pass)
@@ -72369,8 +72297,8 @@ void StandardMaterial3D::_check_material_rid() {}
 
 // --- canvas_item_material.cpp ---
 
-#include "scene/resources/material.h"
-#include "core/version.h"
+#include "servers/rendering/renderer.h"
+#include "core/typedefs.h"
 #include "servers/rendering/renderer.h"
 
 Mutex CanvasItemMaterial::material_mutex;
@@ -72743,8 +72671,7 @@ CanvasItemMaterial::~CanvasItemMaterial()
 // --- particle_process_material.cpp ---
 
 #include "core/os/os.h"
-#include "core/version.h"
-#include "scene/resources/material.h"
+#include "core/typedefs.h"
 #include "servers/rendering/renderer.h"
 
 Mutex ParticleProcessMaterial::dirty_materials_mutex;
@@ -73335,7 +73262,7 @@ void ParticleProcessMaterial::set_collision_bounce(float) {}
 
 // --- physics_material.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
@@ -73372,14 +73299,13 @@ void PhysicsMaterial::set_absorbent(bool p_val)
 
 #include "core/os/os.h"
 #include "scene/main/scene_tree.h"
-#include "scene/resources/texture.h"
+#include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/material.h"
 
 #ifdef TOOLS_ENABLED
 #include "modules/modules_enabled.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #endif
 #endif
 
@@ -73525,7 +73451,6 @@ void Shader::_bind_compatibility_methods() {}
 // --- shader_include.cpp ---
 
 #include "servers/rendering/renderer.h"
-#include "scene/resources/material.h"
 
 void ShaderInclude::_dependency_changed() { emit_changed(); }
 
@@ -73539,10 +73464,10 @@ void ShaderInclude::set_code(const String& p_code) {}
 
 // --- shader_resource_format.cpp ---
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/io/file_access.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 Ref<Resource> ResourceFormatLoaderShader::load(const String& p_path, const String& p_original_path,
 	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
@@ -73696,9 +73621,6 @@ void ResourceFormatSaverShader::get_recognized_extensions(
 // ============================================================================
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
-#include "core/os/os.h"
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 RID Environment::get_rid() const { return environment; }
@@ -74608,9 +74530,7 @@ void Environment::set_tonemapper(Environment::ToneMapper) {}
 
 // --- camera_attributes.cpp ---
 
-#include "scene/resources/material.h"
-#include "core/os/os.h"
-#include "core/config/project_settings.h"
+#include "servers/rendering/renderer.h"
 #include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 
@@ -74927,7 +74847,6 @@ CameraAttributesPhysical::~CameraAttributesPhysical() {}
 
 // --- compositor.cpp ---
 
-#include "scene/resources/material.h"
 #include "servers/rendering/renderer.h"
 
 void CompositorEffect::set_enabled(bool p_enabled)
@@ -75043,7 +74962,6 @@ void CompositorEffect::_call_render_callback(
 // --- sky.cpp ---
 
 #include "servers/rendering/renderer.h"
-#include "scene/resources/material.h"
 
 void Sky::set_radiance_size(RadianceSize p_size)
 {
@@ -75089,13 +75007,13 @@ Sky::~Sky()
 
 // --- world_2d.cpp ---
 
-#include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/renderer.h"
-#include "scene/main/window.h"
+#include "scene/main/scene_tree.h"
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 #endif // NAVIGATION_2D_DISABLED
 
 RID World2D::get_canvas() const { return canvas; }
@@ -75144,9 +75062,8 @@ RID World2D::get_space() const { return RID(); }
 
 // --- navigation_mesh.cpp ---
 
-#include "scene/resources/mesh.h"
+#include "scene/main/scene_tree.h"
 
-#include "servers/physics_3d/physics_server_3d.h"
 
 NavigationMesh::NavigationMesh() :
 		cell_size(NavigationDefaults3D::NAV_MESH_CELL_SIZE),

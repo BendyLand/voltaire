@@ -33,9 +33,9 @@
 
 #ifdef VULKAN_ENABLED
 
-#include "core/templates/hash_set.h"
-#include "core/templates/local_vector.h"
-#include "servers/rendering/rendering_device.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(DEBUG_ENABLED)
 #define VK_TRACK_DRIVER_MEMORY
@@ -257,8 +257,8 @@ public:
 
 // --- Folded from drivers/vulkan/vulkan_hooks.h ---
 #include <drivers/vulkan/godot_vulkan.h>
-#include "core/templates/hashfuncs.h"
-#include "core/templates/local_vector.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
 
 class VulkanHooks final
 {
@@ -340,7 +340,7 @@ public:
 // --- End drivers/vulkan/vulkan_hooks.h ---
 
 // --- Folded from drivers/vulkan/rendering_shader_container_vulkan.h ---
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 class RenderingShaderContainerVulkan : public RenderingShaderContainer
 {

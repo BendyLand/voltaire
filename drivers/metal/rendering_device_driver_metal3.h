@@ -53,7 +53,7 @@
 /**************************************************************************/
 
 
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #include <Metal/Metal.hpp>
 
@@ -616,8 +616,8 @@ _FORCE_INLINE_ static MTL::Size mipmapLevelSizeFromTexture(MTL::Texture *p_tex, 
 
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
 // --- Folded from drivers/metal/inflection_map.h ---
-#include "core/templates/hash_map.h"
-#include "core/templates/local_vector.h"
+#include "core/types.h"
+#include "core/string/ustring.h"
 
 #include <iterator>
 
@@ -731,7 +731,7 @@ protected:
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
 
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #include <Metal/Metal.hpp>
 
@@ -882,7 +882,7 @@ private:
 };
 
 // --- End drivers/metal/metal_device_properties.h ---
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef __OBJC__
 #include <Metal/Metal.h>
@@ -1377,8 +1377,8 @@ constexpr uint32_t MSL_VERSION_40 = make_msl_version(4, 0);
  */
 
 // --- Folded from drivers/metal/sha256_digest.h ---
-#include "core/templates/hashfuncs.h"
-#include "core/templates/local_vector.h"
+#include "core/math/vector2.h"
+#include "core/string/ustring.h"
 
 #include <CommonCrypto/CommonDigest.h>
 #include <simd/simd.h>
@@ -2489,7 +2489,7 @@ public:
 // --- Folded from drivers/metal/metal_device_profile.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 #include "core/typedefs.h"
 
 class MinOsVersion {
@@ -2629,7 +2629,7 @@ private:
 // --- End drivers/metal/metal_device_profile.h ---
 
 // --- Folded from drivers/metal/rendering_shader_container_metal.h ---
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 constexpr uint32_t R32UI_ALIGNMENT_CONSTANT_ID = 65535;
 /// Metal buffer index for the view mask when rendering multi-view.
@@ -2831,7 +2831,7 @@ public:
 	RenderingShaderContainerFormatMetal(const MetalDeviceProfile *p_device_profile, bool p_export = false);
 	virtual ~RenderingShaderContainerFormatMetal() = default;
 };
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #include <Metal/Metal.hpp>
 
@@ -3452,7 +3452,7 @@ public:
 // --- Folded from drivers/metal/rendering_context_driver_metal.h ---
 #ifdef METAL_ENABLED
 
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>

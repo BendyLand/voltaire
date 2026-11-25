@@ -31,7 +31,6 @@
 
 #pragma once
 
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 // --- Folded from platform/linuxbsd/crash_handler_linuxbsd.h ---
 class CrashHandler {
@@ -52,7 +51,6 @@ public:
 #ifdef ALSA_ENABLED
 
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
@@ -117,9 +115,8 @@ public:
 
 #include "core/os/os.h"
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 typedef struct _snd_rawmidi snd_rawmidi_t;
 
@@ -173,7 +170,6 @@ public:
 #ifdef PULSEAUDIO_ENABLED
 
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
@@ -1802,7 +1798,7 @@ public:
 // --- Folded from platform/linuxbsd/freedesktop_at_spi_monitor.h ---
 #ifdef DBUS_ENABLED
 
-#include "core/os/thread.h"
+#include "core/os/mutex.h"
 #include "core/os/memory.h"
 
 class FreeDesktopAtSPIMonitor {
@@ -1832,7 +1828,6 @@ public:
 #ifdef DBUS_ENABLED
 
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 #include "core/types.h"
@@ -1964,9 +1959,8 @@ public:
 
 // --- Folded from platform/linuxbsd/tts_linux.h ---
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 #include "core/templates/list.h"
 
 #ifdef SOWRAP_ENABLED

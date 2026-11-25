@@ -32,7 +32,6 @@
 #pragma once
 
 #ifdef _WIN32
-#include "core/input/input_event.h"
 #include "core/os/os.h"
 // --- Folded from platform/windows/crash_handler_windows.h ---
 #include <windows.h>
@@ -70,7 +69,6 @@ public:
 #ifdef WASAPI_ENABLED
 
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
@@ -165,7 +163,7 @@ public:
 #ifdef WINMIDI_ENABLED
 
 #include "core/os/os.h"
-#include "core/templates/vector.h"
+#include "core/string/ustring.h"
 
 #include <windows.h>
 
@@ -204,7 +202,6 @@ public:
 #ifdef XAUDIO2_ENABLED
 // --- Folded from drivers/xaudio2/audio_driver_xaudio2.h ---
 #include "core/os/mutex.h"
-#include "core/os/thread.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
@@ -624,7 +621,7 @@ public:
 // --- Folded from drivers/windows/dir_access_windows.h ---
 #ifdef WINDOWS_ENABLED
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 
 struct DirAccessWindowsPrivate;
 
@@ -883,7 +880,7 @@ public:
 #ifdef WINDOWS_ENABLED
 
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
+#include "core/types.h"
 
 class WindowsUtils {
 	static HashMap<String, Vector<String>> temp_pdbs;
@@ -923,12 +920,10 @@ public:
 
 // --- Folded from platform/windows/display_server_windows.h ---
 #if defined(WINDOWS_ENABLED)
-#include "core/config/project_settings.h"
-#include "core/input/input_event.h"
-#include "core/io/image.h"
+#include "core/os/os.h"
+#include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/types.h"
-#include "core/templates/hash_map.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -937,7 +932,7 @@ public:
 #endif
 
 #if defined(RD_ENABLED)
-#include "servers/rendering/rendering_device.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(GLES3_ENABLED)
@@ -972,8 +967,8 @@ public:
 // --- Folded from platform/windows/gl_manager_windows_native.h ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "core/templates/local_vector.h"
-#include "core/templates/hash_map.h"
+#include "core/string/ustring.h"
+#include "core/types.h"
 #include "servers/display/display_server.h"
 
 #include <windows.h>
@@ -1823,7 +1818,7 @@ VLTR_GCC_WARNING_POP
 // --- End platform/windows/drop_target_windows.h ---
 
 // --- Folded from platform/windows/key_mapping_windows.h ---
-#include "core/input/input_event.h"
+#include "core/os/os.h"
 
 #include <windows.h>
 
@@ -1845,8 +1840,7 @@ public:
 // --- End platform/windows/key_mapping_windows.h ---
 
 // --- Folded from platform/windows/native_menu_windows.h ---
-#include "core/io/image.h"
-#include "core/templates/hash_map.h"
+#include "core/io/resource_loader.h"
 #include "core/types.h"
 #include "servers/display/display_server.h"
 

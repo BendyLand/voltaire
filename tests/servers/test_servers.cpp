@@ -366,7 +366,7 @@ TEST_CASE("[ShaderPreprocessor] Invalid concatenations") {
 
 
 
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestNavHeap {
 
@@ -571,8 +571,6 @@ TEST_CASE("[Heap] clear") {
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "servers/physics_2d/physics_server_2d.h"
 #include "tests/test_macros.h"
 
 namespace TestNavigationServer2D
@@ -1430,9 +1428,6 @@ TEST_SUITE("[Navigation2D]")
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
 #include "scene/main/scene_tree.h"
-#include "scene/main/window.h"
-#include "scene/resources/mesh.h"
-#include "servers/physics_3d/physics_server_3d.h"
 #include "tests/test_macros.h"
 
 namespace TestNavigationServer3D
@@ -3420,7 +3415,7 @@ TEST_SUITE("[TextServer]") {
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "servers/physics_2d/physics_server_2d.h"
+#include "scene/main/scene_tree.h"
 
 namespace TestTriangle2 {
 

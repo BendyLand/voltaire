@@ -154,3 +154,32 @@ public:
 
 
 // --- End core/io/udp_server.h ---
+
+// --- Folded from core/os/time.h ---
+#include "core/types.h"
+
+class Time final
+{
+public:
+	// Methods that convert times.
+	static String get_datetime_string_from_unix_time(
+		int64_t p_unix_time_val, bool p_use_space = false);
+	static String get_date_string_from_unix_time(int64_t p_unix_time_val);
+	static String get_time_string_from_unix_time(int64_t p_unix_time_val);
+	static int64_t get_unix_time_from_datetime_string(const String& p_datetime);
+	static String get_offset_string_from_offset_minutes(int64_t p_offset_minutes);
+
+	// Methods that get information from OS.
+	static String get_datetime_string_from_system(bool p_utc = false, bool p_use_space = false);
+	static String get_date_string_from_system(bool p_utc = false);
+	static String get_time_string_from_system(bool p_utc = false);
+	static double get_unix_time_from_system();
+	static uint64_t get_ticks_msec();
+	static uint64_t get_ticks_usec();
+
+	Time() = delete;
+	Time(const Time&) = delete;
+	Time& operator=(const Time&) = delete;
+	~Time() = delete;
+};
+// --- End core/os/time.h ---

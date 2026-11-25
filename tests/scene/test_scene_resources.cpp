@@ -721,7 +721,7 @@ TEST_CASE("[Audio][AudioStreamWAV] Saving IMA ADPCM is not supported") {
 
 
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestBitMap {
 
@@ -1226,7 +1226,7 @@ TEST_CASE("[BitMap] Clip to polygon") {
 
 
 #include "core/typedefs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestCurve {
 
@@ -1660,7 +1660,7 @@ TEST_CASE("[Curve3D] Linear sampling should return exact value") {
 
 
 #include "core/typedefs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestCurve2D {
 
@@ -1961,7 +1961,7 @@ TEST_CASE("[Curve2D] Even length tessellation") {
 
 
 #include "core/typedefs.h"
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestCurve3D {
 
@@ -2388,7 +2388,7 @@ TEST_CASE("[FontFile] Create font file and check data") {
 
 
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestGradient {
 
@@ -2534,7 +2534,7 @@ TEST_CASE("[Gradient] Custom gradient (points specified out-of-order)") {
 
 
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestGradientTexture {
 
@@ -2623,8 +2623,8 @@ TEST_CASE("[SceneTree][GradientTexture2D] Create GradientTexture2D") {
 
 
 
-#include "core/io/image.h"
-#include "scene/resources/material.h"
+#include "core/io/resource_loader.h"
+#include "servers/rendering/renderer.h"
 #include "tests/test_macros.h"
 
 namespace TestImageTexture {
@@ -2733,8 +2733,8 @@ TEST_CASE("[SceneTree][ImageTexture] set_path") {
 
 
 
-#include "core/io/image.h"
-#include "scene/resources/material.h"
+#include "core/io/resource_loader.h"
+#include "servers/rendering/renderer.h"
 #include "tests/test_macros.h"
 
 namespace TestImageTexture3D {
@@ -3121,7 +3121,7 @@ TEST_CASE("[PackedScene] Recreate State") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 
 namespace TestSky {
 
@@ -3730,7 +3730,7 @@ TEST_CASE("[StyleBox] STYLE_TEXTURE get_draw_rect") {
 
 
 
-#include "scene/resources/material.h"
+#include "servers/rendering/renderer.h"
 #include "scene/resources/theme.h"
 #include "tests/test_macros.h"
 

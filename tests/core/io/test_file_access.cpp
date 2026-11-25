@@ -33,7 +33,7 @@
 
 
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "tests/test_macros.h"
 
@@ -609,7 +609,7 @@ TEST_CASE("[HTTPClient] connect_to_host") {
 
 
 #include "core/io/file_access.h"
-#include "core/io/image.h"
+#include "core/io/resource_loader.h"
 #include "tests/test_macros.h"
 
 #include "modules/modules_enabled.gen.h" // For bmp, jpg, svg, webp, tga.
@@ -2086,8 +2086,8 @@ TEST_CASE("[JSON][Native] Conversion between native and JSON formats") {
 
 
 
-#include "core/config/project_settings.h"
-#include "core/io/dir_access.h"
+#include "core/os/os.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 
@@ -2955,7 +2955,6 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Put packet buffer when is empty") {
 
 
 
-#include "core/io/file_access.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "tests/test_macros.h"
@@ -3872,7 +3871,6 @@ TEST_CASE("[StreamPeerGZIP] Fails to get if nothing was compress/decompress") {
 
 
 #include "core/io/net_socket.h"
-#include "core/io/net_socket.h"
 
 namespace TestStreamPeerTCP {
 
@@ -4655,7 +4653,7 @@ TEST_CASE("[UDPServer] Should not accept new connections after stop") {
 
 #ifdef UNIX_ENABLED
 
-#include "core/io/dir_access.h"
+#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"

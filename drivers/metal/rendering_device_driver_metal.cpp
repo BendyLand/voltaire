@@ -52,12 +52,11 @@
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include "core/os/os.h"
-#include "core/config/project_settings.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/templates/hash_map.h"
-#include "drivers/coreaudio/audio_driver_coreaudio.h"
+#include "core/types.h"
+#include "drivers/unix/os_unix.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <Metal/Metal.hpp>
@@ -3032,7 +3031,7 @@ const MetalDeviceProfile *MetalDeviceProfile::get_profile(Platform p_platform, G
 
 #include "core/os/os.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
-#include "servers/rendering/renderer_rd/renderer_compositor_rd.h"
+#include "servers/rendering/renderer.h"
 
 #include <MetalFX/MetalFX.hpp>
 #include <spirv_cross.hpp>
@@ -5259,7 +5258,7 @@ void PixelFormats::buildDFFormatMaps() {
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <objc/message.h>
@@ -5732,7 +5731,7 @@ void RenderingContextDriverMetal::surface_destroy(SurfaceID p_surface) {
 #include "core/io/file_access.h"
 #include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "core/templates/span.h"
+#include "core/string/ustring.h"
 #include "drivers/metal/rendering_device_driver_metal3.h"
 
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
