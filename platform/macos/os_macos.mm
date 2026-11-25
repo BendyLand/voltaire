@@ -13289,3 +13289,159 @@ Vector<EGLint> GLManagerANGLE_MacOS::_get_platform_context_attribs() const {
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 #endif // ANGLE_ENABLED
+
+// === Merged from platform/macos/godot_main_macos.mm & libgodot_macos.mm ===
+#if !defined(LIBGODOT_ENABLED)
+#import "servers/display/display_server.h"
+
+#include "servers/display/display_server.h"
+
+#if defined(ASAN_ENABLED)
+#include <sys/resource.h>
+#endif
+
+__attribute__((visibility("default"))) int main(int argc, char **argv) {
+	godot_init_profiler();
+
+#if defined(VULKAN_ENABLED)
+	setenv("MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE", "1", 1); // MoltenVK - enable full component swizzling support.
+	setenv("MVK_CONFIG_SWAPCHAIN_MIN_MAG_FILTER_USE_NEAREST", "0", 1); // MoltenVK - use linear surface scaling. TODO: remove when full DPI scaling is implemented.
+#endif
+
+#if defined(ASAN_ENABLED)
+	// Note: Set stack size to be at least 30 MB (vs 8 MB default) to avoid overflow, address sanitizer can increase stack usage up to 3 times.
+	struct rlimit stack_lim = { 0x1E00000, 0x1E00000 };
+	setrlimit(RLIMIT_STACK, &stack_lim);
+#endif
+
+	LocalVector<char *> args;
+	args.resize(argc);
+	uint32_t argsc = 0;
+
+	int wait_for_debugger = 0; // wait 5 second by default
+	bool is_embedded = false;
+	bool is_headless = false;
+
+	for (int i = 0; i < argc; i++) {
+		if (strcmp("-NSDocumentRevisionsDebugMode", argv[i]) == 0) {
+			// remove "-NSDocumentRevisionsDebugMode" and the next argument
+			continue;
+		}
+
+		if (strcmp("--os-debug", argv[i]) == 0) {
+			i++;
+			wait_for_debugger = 5000; // wait 5 seconds by default
+			if (i < argc && strncmp(argv[i], "--", 2) != 0) {
+				wait_for_debugger = atoi(argv[i]);
+			}
+			continue;
+		}
+
+		if (strcmp("--embedded", argv[i]) == 0) {
+			is_embedded = true;
+		}
+		for (size_t j = 0; j < std::size(OS_MacOS::headless_args); j++) {
+			if (strcmp(OS_MacOS::headless_args[j], argv[i]) == 0) {
+				is_headless = true;
+				break;
+			}
+		}
+
+		if (i < argc - 1 && strcmp("--display-driver", argv[i]) == 0 && strcmp("headless", argv[i + 1]) == 0) {
+			is_headless = true;
+		}
+
+		args.ptr()[argsc] = argv[i];
+		argsc++;
+	}
+
+	uint32_t remaining_args = argsc - 1;
+
+	OS_MacOS *os = nullptr;
+	if (is_embedded) {
+#ifdef TOOLS_ENABLED
+		os = memnew(OS_MacOS_Embedded(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+#else
+		WARN_PRINT("Embedded mode is not supported in release builds.");
+		return EXIT_FAILURE;
+#endif
+	} else if (is_headless) {
+		os = memnew(OS_MacOS_Headless(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+	} else {
+		os = memnew(OS_MacOS_NSApp(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+	}
+
+#ifdef TOOLS_ENABLED
+	if (wait_for_debugger > 0) {
+		os->wait_for_debugger(wait_for_debugger);
+		print_verbose("Continuing execution.");
+	}
+#else
+	if (wait_for_debugger > 0) {
+		WARN_PRINT("--os-debug is not supported in release builds.");
+	}
+#endif
+
+	if (is_embedded) {
+		// No dock icon for the embedded process, as it is hosted in the Godot editor.
+		ProcessSerialNumber psn = { 0, kCurrentProcess };
+		(void)TransformProcessType(&psn, kProcessTransformToBackgroundApplication);
+	}
+
+	// We must override main when testing is enabled.
+	TEST_MAIN_OVERRIDE
+
+	os->run();
+
+	// Note: `os->run()` will never return if `OS_MacOS_NSApp` is used. Use `OS_MacOS_NSApp::cleanup()` for cleanup.
+
+	int exit_code = os->get_exit_code();
+
+	memdelete(os);
+
+	godot_cleanup_profiler();
+	return exit_code;
+}
+#else
+#include "servers/display/display_server.h"
+
+#include "servers/display/display_server.h"
+
+static OS_MacOS *os = nullptr;
+
+static GodotInstance *instance = nullptr;
+
+GDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], GDExtensionInitializationFunction p_init_func) {
+	ERR_FAIL_COND_V_MSG(instance != nullptr, nullptr, "Only one Godot Instance may be created.");
+
+	uint32_t remaining_args = p_argc - 1;
+	os = new OS_MacOS_NSApp(p_argv[0], remaining_args, remaining_args > 0 ? &p_argv[1] : nullptr);
+
+	@autoreleasepool {
+		Error err = Main::setup(p_argv[0], remaining_args, remaining_args > 0 ? &p_argv[1] : nullptr, false);
+		if (err != OK) {
+			return nullptr;
+		}
+
+		instance = memnew(GodotInstance);
+		if (!instance->initialize(p_init_func)) {
+			memdelete(instance);
+			instance = nullptr;
+			return nullptr;
+		}
+
+		return (GDExtensionObjectPtr)instance;
+	}
+}
+
+void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
+	GodotInstance *godot_instance = (GodotInstance *)p_godot_instance;
+	if (instance == godot_instance) {
+		godot_instance->stop();
+		memdelete(godot_instance);
+		// Note: When Godot Engine supports reinitialization, clear the instance pointer here.
+		//instance = nullptr;
+		Main::cleanup();
+	}
+}
+#endif // !defined(LIBGODOT_ENABLED)

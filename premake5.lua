@@ -2864,7 +2864,6 @@ if use_metal then
         filter "platforms:arm64"
             files {
                 "drivers/metal/rendering_device_driver_metal.cpp",
-                "drivers/metal/rendering_device_driver_metal3.cpp",
             }
         filter {}
     register_tp("tp_metal")
@@ -4174,14 +4173,6 @@ project "voltaire"
                 "drivers/d3d12/rendering_device_driver_d3d12.cpp",
             }
         end
-        if library_type == "executable" then
-        else
-        end
-        if is_msvc then
-            files { "platform/windows/crash_handler_windows_seh.cpp" }
-        else
-            files { "platform/windows/crash_handler_windows_signal.cpp" }
-        end
         filter "configurations:editor"
             files { "platform/windows/godot_res.rc" }
         filter "configurations:template_debug or template_release"
@@ -4298,11 +4289,6 @@ project "voltaire"
             "drivers/coreaudio/audio_driver_coreaudio.mm",
             "platform/macos/os_macos.mm",
         }
-        if library_type == "executable" then
-            files { "platform/macos/godot_main_macos.mm" }
-        else
-            files { "platform/macos/libgodot_macos.mm" }
-        end
 
         if apple_sdk_path ~= "" then
             linkoptions { "-isysroot", apple_sdk_path }
@@ -4444,7 +4430,7 @@ project "voltaire"
                 "platform/visionos/os_visionos.mm",
             }
         end
-        -- Merge all static archives into a single fat libgodot.a (matches combine_libs_apple_embedded in platform_methods.py)
+        -- Merge all static archives into a single fat libgodot.a (matches combine_libs_apple_embedded in scripts/generate_headers.py)
         if host_os == "macosx" or os.getenv("OSXCROSS_IOS") or os.getenv("OSXCROSS_VISIONOS") then
             postbuildcommands {
                 [[(cd "%{cfg.buildtarget.directory}" && libtool -static -o libgodot.a lib*.a)]],

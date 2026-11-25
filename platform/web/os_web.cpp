@@ -1851,8 +1851,8 @@ void register_web_api() {}
 
 #ifdef TOOLS_ENABLED
 #include "core/io/file_access.h"
-#include "scene/main/scene_tree.h"
-#include "scene/main/scene_tree.h" // SceneTree only forward declares it.
+#define WANT_SCENE_TREE_H
+#include "servers/display/display_server.h"
 #endif
 
 #include <emscripten/emscripten.h>

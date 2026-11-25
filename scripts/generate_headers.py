@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 """
-Unified SCons-free code generator for Voltaire Engine.
-Generates all .gen.h / .gen.cpp / .gen.c files directly without external builder scripts.
+Single unified SCons-free code generator & build utility module for Voltaire Engine.
+Consolidates header/shader/translation/Wayland/ICU/splash/license/version generation and helper utilities.
 """
 
 import os
 import os.path
+import platform
 import shutil
 import subprocess
 import sys
@@ -17,16 +19,761 @@ from io import TextIOWrapper
 from pathlib import Path
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.chdir(ROOT_DIR)
+if __name__ == "__main__":
+    os.chdir(ROOT_DIR)
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
-if SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, SCRIPTS_DIR)
 
-import methods
-from methods import generated_wrapper, print_error, to_raw_cstring
+methods = sys.modules[__name__]
 
+import atexit
+import contextlib
+import glob
+import math
+import os
+import re
+import shlex
+import subprocess
+import sys
+import zlib
+from collections import OrderedDict
+from io import StringIO
+from pathlib import Path
+from typing import Generator, TextIO
+
+from misc.utility.color import print_error, print_info, print_warning
+
+base_folder = Path(ROOT_DIR)
+
+compiler_version_cache = None
+
+
+def get_version_info(module_version_string="", silent=False):
+    build_name = "custom_build"
+    if os.getenv("BUILD_NAME") is not None:
+        build_name = str(os.getenv("BUILD_NAME"))
+        if not silent:
+            print_info(f"Using custom build name: '{build_name}'.")
+
+    import version
+
+    version_info = {
+        "short_name": str(version.short_name),
+        "name": str(version.name),
+        "major": int(version.major),
+        "minor": int(version.minor),
+        "patch": int(version.patch),
+        "status": str(version.status),
+        "build": str(build_name),
+        "module_config": str(version.module_config) + module_version_string,
+        "website": str(version.website),
+        "docs_branch": str(version.docs),
+    }
+
+    if os.getenv("VLTR_VERSION_STATUS") is not None:
+        version_info["status"] = str(os.getenv("VLTR_VERSION_STATUS"))
+        if not silent:
+            print_info(f"Using version status '{version_info['status']}', overriding the original '{version.status}'.")
+
+    return version_info
+
+
+def get_git_info():
+    os.chdir(base_folder)
+
+    git_hash = ""
+    git_folder = ".git"
+
+    if os.path.isfile(".git"):
+        with open(".git", "r", encoding="utf-8") as file:
+            module_folder = file.readline().strip()
+        if module_folder.startswith("gitdir: "):
+            git_folder = module_folder[8:]
+
+    if os.path.isfile(os.path.join(git_folder, "HEAD")):
+        with open(os.path.join(git_folder, "HEAD"), "r", encoding="utf8") as file:
+            head = file.readline().strip()
+        if head.startswith("ref: "):
+            ref = head[5:]
+            parts = git_folder.split("/")
+            if len(parts) > 2 and parts[-2] == "worktrees":
+                git_folder = "/".join(parts[0:-2])
+            head = os.path.join(git_folder, ref)
+            packedrefs = os.path.join(git_folder, "packed-refs")
+            if os.path.isfile(head):
+                with open(head, "r", encoding="utf-8") as file:
+                    git_hash = file.readline().strip()
+            elif os.path.isfile(packedrefs):
+                for line in open(packedrefs, "r", encoding="utf-8").read().splitlines():
+                    if line.startswith("#"):
+                        continue
+                    (line_hash, line_ref) = line.split(" ")
+                    if ref == line_ref:
+                        git_hash = line_hash
+                        break
+        else:
+            git_hash = head
+
+    git_timestamp = 0
+    if os.path.exists(".git"):
+        try:
+            git_timestamp = subprocess.check_output(
+                ["git", "log", "-1", "--pretty=format:%ct", "--no-show-signature", git_hash], encoding="utf-8"
+            )
+        except (subprocess.CalledProcessError, OSError):
+            pass
+
+    return {
+        "git_hash": git_hash,
+        "git_timestamp": git_timestamp,
+    }
+
+
+def detect_modules(search_path, recursive=False):
+    """Detects and collects a list of C++ modules at specified path."""
+    modules = OrderedDict()
+
+    def add_module(path):
+        module_name = os.path.basename(path)
+        module_path = path.replace("\\", "/")
+        modules[module_name] = module_path
+
+    def is_engine(path):
+        version_path = os.path.join(path, "version.py")
+        if os.path.exists(version_path):
+            with open(version_path, "r", encoding="utf-8") as f:
+                if 'short_name = "godot"' in f.read() or 'short_name = "voltaire"' in f.read():
+                    return True
+        return False
+
+    def get_files(path):
+        files = glob.glob(os.path.join(path, "*"))
+        files.sort()
+        return files
+
+    if not recursive and os.path.basename(os.path.normpath(search_path)) == "modules":
+        for mname in ['astcenc', 'basis_universal', 'bcdec', 'betsy', 'bmp', 'camera', 'csg', 'cvtt', 'dds', 'enet', 'etcpak', 'fbx', 'freetype', 'glslang', 'gltf', 'godot_physics_2d', 'gridmap', 'hdr', 'interactive_music', 'jolt_physics', 'jpg', 'ktx', 'lightmapper_rd', 'mbedtls', 'meshoptimizer', 'mobile_vr', 'mp3', 'msdfgen', 'multiplayer', 'navigation_2d', 'navigation_3d', 'noise', 'ogg', 'openxr', 'raycast', 'regex', 'svg', 'text_server_adv', 'tga', 'theora', 'tinyexr', 'upnp', 'vhacd', 'vorbis', 'webp', 'webrtc', 'websocket', 'webxr', 'xatlas_unwrap', 'zip']:
+            modules[mname] = search_path.replace("\\", "/") + "/" + mname
+        for path in get_files(search_path):
+            if is_engine(path):
+                continue
+            if is_module(path) and os.path.basename(path) not in modules:
+                add_module(path)
+    elif not recursive:
+        if is_module(search_path):
+            add_module(search_path)
+        for path in get_files(search_path):
+            if is_engine(path):
+                continue
+            if is_module(path):
+                add_module(path)
+    else:
+        to_search = [search_path]
+        while to_search:
+            path = to_search.pop()
+            if is_module(path):
+                add_module(path)
+            for child in get_files(path):
+                if not os.path.isdir(child):
+                    continue
+                if is_engine(child):
+                    continue
+                to_search.insert(0, child)
+    return modules
+
+
+def is_module(path):
+    if not os.path.isdir(path):
+        return False
+    return os.path.exists(os.path.join(path, "register_types.h"))
+
+
+def convert_custom_modules_path(path):
+    if not path:
+        return path
+    path = os.path.realpath(os.path.expanduser(os.path.expandvars(path)))
+    err_msg = "Build option 'custom_modules' must %s"
+    if not os.path.isdir(path):
+        raise ValueError(err_msg % "point to an existing directory.")
+    if path == os.path.realpath("modules"):
+        raise ValueError(err_msg % "be a directory other than built-in `modules` directory.")
+    return path
+
+
+def detect_darwin_toolchain_path(env):
+    var_name = "APPLE_TOOLCHAIN_PATH"
+    if not env.get(var_name):
+        try:
+            xcode_path = subprocess.check_output(["xcode-select", "-p"]).strip().decode("utf-8")
+            if xcode_path:
+                env[var_name] = xcode_path + "/Toolchains/XcodeDefault.xctoolchain"
+        except (subprocess.CalledProcessError, OSError):
+            print_error("Failed to find SDK path while running 'xcode-select -p'.")
+            raise
+
+
+def detect_darwin_sdk_path(platform, env):
+    sdk_map = {
+        "macos": ("macosx", "MACOS_SDK_PATH"),
+        "ios": ("iphoneos", "APPLE_SDK_PATH"),
+        "iossimulator": ("iphonesimulator", "APPLE_SDK_PATH"),
+        "visionos": ("xros", "APPLE_SDK_PATH"),
+        "visionossimulator": ("xrsimulator", "APPLE_SDK_PATH"),
+    }
+    if platform not in sdk_map:
+        raise ValueError(f"Invalid platform argument passed to detect_darwin_sdk_path: {platform}")
+    sdk_name, var_name = sdk_map[platform]
+
+    if not env.get(var_name):
+        try:
+            sdk_path = subprocess.check_output(["xcrun", "--sdk", sdk_name, "--show-sdk-path"]).strip().decode("utf-8")
+            if sdk_path:
+                env[var_name] = sdk_path
+        except (subprocess.CalledProcessError, OSError):
+            print_error(f"Failed to find SDK path while running 'xcrun --sdk {sdk_name} --show-sdk-path'.")
+            raise
+
+
+def is_apple_clang(env):
+    if env.get("platform") not in ["macos", "ios", "visionos"]:
+        return False
+    if not using_clang(env):
+        return False
+    try:
+        cxx = env["CXX"]
+        version = subprocess.check_output(shlex.split(cxx, posix=False) + ["--version"]).strip().decode("utf-8")
+    except (subprocess.CalledProcessError, OSError):
+        print_warning("Couldn't parse CXX environment variable to infer compiler version.")
+        return False
+    return version.startswith("Apple")
+
+
+def get_compiler_version(env):
+    global compiler_version_cache
+    if compiler_version_cache is not None:
+        return compiler_version_cache
+
+    ret = {
+        "major": -1,
+        "minor": -1,
+        "patch": -1,
+        "metadata1": "",
+        "metadata2": "",
+        "date": "",
+        "apple_major": -1,
+        "apple_minor": -1,
+        "apple_patch1": -1,
+        "apple_patch2": -1,
+        "apple_patch3": -1,
+    }
+
+    try:
+        cxx = env.get("CXX", "c++")
+        version = subprocess.check_output(
+            shlex.split(cxx, posix=False) + ["--version"], shell=(os.name == "nt"), encoding="utf-8"
+        ).strip()
+    except (subprocess.CalledProcessError, OSError):
+        return update_compiler_version_cache(ret)
+
+    match = re.search(
+        r"(?:(?<=version )|(?<=\) )|(?<=^))"
+        r"(?P<major>\d+)"
+        r"(?:\.(?P<minor>\d*))?"
+        r"(?:\.(?P<patch>\d*))?"
+        r"(?:-(?P<metadata1>[0-9a-zA-Z-]*))?"
+        r"(?:\+(?P<metadata2>[0-9a-zA-Z-]*))?"
+        r"(?: (?P<date>[0-9]{8}|[0-9]{6})(?![0-9a-zA-Z]))?",
+        version,
+    )
+    if match is not None:
+        for key, value in match.groupdict().items():
+            if value is not None:
+                ret[key] = value
+
+    match_apple = re.search(
+        r"(?:(?<=clang-)|(?<=\) )|(?<=^))"
+        r"(?P<apple_major>\d+)"
+        r"(?:\.(?P<apple_minor>\d*))?"
+        r"(?:\.(?P<apple_patch1>\d*))?"
+        r"(?:\.(?P<apple_patch2>\d*))?"
+        r"(?:\.(?P<apple_patch3>\d*))?",
+        version,
+    )
+    if match_apple is not None:
+        for key, value in match_apple.groupdict().items():
+            if value is not None:
+                ret[key] = value
+
+    for key in [
+        "major",
+        "minor",
+        "patch",
+        "apple_major",
+        "apple_minor",
+        "apple_patch1",
+        "apple_patch2",
+        "apple_patch3",
+    ]:
+        ret[key] = int(ret[key] or -1)
+    return update_compiler_version_cache(ret)
+
+
+def update_compiler_version_cache(value):
+    global compiler_version_cache
+    compiler_version_cache = value
+    return value
+
+
+def using_gcc(env):
+    return "gcc" in os.path.basename(env.get("CC", ""))
+
+
+def using_clang(env):
+    return "clang" in os.path.basename(env.get("CC", ""))
+
+
+def using_emcc(env):
+    return "emcc" in os.path.basename(env.get("CC", ""))
+
+
+def convert_size(size_bytes: int) -> str:
+    if size_bytes == 0:
+        return "0 bytes"
+    SIZE_NAMES = ["bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+    index = math.floor(math.log(size_bytes, 1024))
+    power = math.pow(1024, index)
+    size = round(size_bytes / power, 2)
+    return f"{size} {SIZE_NAMES[index]}"
+
+
+def get_size(start_path: str = ".") -> int:
+    total_size = 0
+    for dirpath, _, filenames in os.walk(start_path):
+        for file in filenames:
+            path = os.path.join(dirpath, file)
+            total_size += os.path.getsize(path)
+    return total_size
+
+
+def prepare_timer():
+    import time
+
+    def print_elapsed_time(time_at_start: float):
+        time_elapsed = time.time() - time_at_start
+        time_formatted = time.strftime("%H:%M:%S", time.gmtime(time_elapsed))
+        time_centiseconds = (time_elapsed % 1) * 100
+        print_info(f"Time elapsed: {time_formatted}.{time_centiseconds:02.0f}")
+
+    atexit.register(print_elapsed_time, time.time())
+
+
+def generate_cpp_hint_file(filename):
+    if os.path.isfile(filename):
+        return
+    try:
+        with open(filename, "w", encoding="utf-8", newline="\n") as fd:
+            fd.write("#define VLTRCLASS(m_class, m_inherits)\n")
+            for name in ["VLTRVIRTUAL", "EXBIND", "MODBIND"]:
+                for count in range(13):
+                    for suffix in ["", "R", "C", "RC"]:
+                        fd.write(f"#define {name}{count}{suffix}(")
+                        if "R" in suffix:
+                            fd.write("m_ret, ")
+                        fd.write("m_name")
+                        for idx in range(1, count + 1):
+                            fd.write(f", type{idx}")
+                        fd.write(")\n")
+    except OSError:
+        print_warning("Could not write cpp.hint file.")
+
+
+############################################################
+# FILE GENERATION & FORMATTING
+############################################################
+
+
+def generate_copyright_header(filename: str) -> str:
+    MARGIN = 70
+    TEMPLATE = """\
+/**************************************************************************/
+/*  %s*/
+/**************************************************************************/
+/*                         This file is part of:                          */
+/*                            VOLTAIRE ENGINE                             */
+/*                        https://blandlogic.com                          */
+/**************************************************************************/
+/* Copyright (c) 2026-present Bland Logic LLC.                            */
+/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
+/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
+/*                                                                        */
+/* Permission is hereby granted, free of charge, to any person obtaining  */
+/* a copy of this software and associated documentation files (the        */
+/* "Software"), to deal in the Software without restriction, including    */
+/* without limitation the rights to use, copy, modify, merge, publish,    */
+/* distribute, sublicense, and/or sell copies of the Software, and to     */
+/* permit persons to whom the Software is furnished to do so, subject to  */
+/* the following conditions:                                              */
+/*                                                                        */
+/* The above copyright notice and this permission notice shall be         */
+/* included in all copies or substantial portions of the Software.        */
+/*                                                                        */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
+/**************************************************************************/
+"""
+    if len(filename := os.path.basename(filename).ljust(MARGIN)) > MARGIN:
+        print_warning(f'Filename "{filename}" too large for copyright header.')
+    return TEMPLATE % filename
+
+
+@contextlib.contextmanager
+def generated_wrapper(
+    path: str,
+    guard: bool | None = None,
+) -> Generator[TextIO, None, None]:
+    """
+    Wrapper class to automatically handle copyright headers and header guards
+    for generated scripts. Meant to be invoked via `with` statement similar to
+    creating a file.
+    """
+
+    with open(path, "wt", encoding="utf-8", newline="\n") as file:
+        if not path.endswith(".out"):
+            file.write(generate_copyright_header(path))
+            file.write("\n/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
+
+            if guard is None:
+                guard = path.endswith((".h", ".hh", ".hpp", ".hxx", ".inc"))
+            if guard:
+                file.write("#pragma once\n\n")
+
+        with StringIO(newline="\n") as str_io:
+            yield str_io
+            file.write(str_io.getvalue().strip() or "/* NO CONTENT */")
+
+        file.write("\n")
+
+
+def get_buffer(path: str) -> bytes:
+    with open(path, "rb") as file:
+        return file.read()
+
+
+def compress_buffer(buffer: bytes) -> bytes:
+    return zlib.compress(buffer, zlib.Z_BEST_COMPRESSION)
+
+
+def format_buffer(buffer: bytes, indent: int = 0, width: int = 120) -> str:
+    return re.sub(f"(.{{0,{width - indent - 1}}},) ", ("\t" * indent) + "\\g<1>\n", ", ".join(map(str, buffer)))
+
+
+############################################################
+# CSTRING PARSING
+############################################################
+
+C_ESCAPABLES = [
+    ("\\", "\\\\"),
+    ("\a", "\\a"),
+    ("\b", "\\b"),
+    ("\f", "\\f"),
+    ("\n", "\\n"),
+    ("\r", "\\r"),
+    ("\t", "\\t"),
+    ("\v", "\\v"),
+    ('"', '\\"'),
+]
+C_ESCAPE_TABLE = str.maketrans(dict((x, y) for x, y in C_ESCAPABLES))
+
+
+def to_escaped_cstring(value: str) -> str:
+    return value.translate(C_ESCAPE_TABLE)
+
+
+def to_raw_cstring(value: str | list[str]) -> str:
+    MAX_LITERAL = 16 * 1024
+
+    if isinstance(value, list):
+        value = "\n".join(value) + "\n"
+
+    split: list[bytes] = []
+    offset = 0
+    encoded = value.encode()
+
+    while offset <= len(encoded):
+        segment = encoded[offset : offset + MAX_LITERAL]
+        offset += MAX_LITERAL
+        if len(segment) == MAX_LITERAL:
+            pretty_break = segment.rfind(b"\n\n")
+            if pretty_break != -1:
+                segment = segment[: pretty_break + 1]
+                offset -= MAX_LITERAL - pretty_break - 1
+            elif segment[-1] & 0b10000000:
+                last_11xxxxxx_index = [i for i in range(-1, -5, -1) if segment[i] & 0b11000000 == 0b11000000][0]
+                last_11xxxxxx = segment[last_11xxxxxx_index]
+                if not last_11xxxxxx & 0b00100000:
+                    last_char_length = 2
+                elif not last_11xxxxxx & 0b0010000:
+                    last_char_length = 3
+                elif not last_11xxxxxx & 0b0001000:
+                    last_char_length = 4
+
+                if last_char_length > -last_11xxxxxx_index:
+                    segment = segment[:last_11xxxxxx_index]
+                    offset += last_11xxxxxx_index
+
+        split += [segment]
+
+    if len(split) == 1:
+        return f'R"<!>({split[0].decode()})<!>"'
+    else:
+        return "({})".format(" ".join(f'R"<!>({segment.decode()})<!>"' for segment in split))
+
+import os
+import platform
+import shutil
+import subprocess
+import sys
+
+
+compatibility_platform_aliases = {
+    "osx": "macos",
+    "iphone": "ios",
+    "x11": "linuxbsd",
+    "javascript": "web",
+}
+
+# CPU architecture options.
+architectures = ["x86_32", "x86_64", "arm32", "arm64", "rv64", "ppc64", "wasm32", "wasm64", "loongarch64"]
+architecture_aliases = {
+    "x86": "x86_32",
+    "x64": "x86_64",
+    "amd64": "x86_64",
+    "armv7": "arm32",
+    "armv8": "arm64",
+    "arm64v8": "arm64",
+    "aarch64": "arm64",
+    "rv": "rv64",
+    "riscv": "rv64",
+    "riscv64": "rv64",
+    "ppc64le": "ppc64",
+    "loong64": "loongarch64",
+}
+
+
+def detect_arch():
+    host_machine = platform.machine().lower()
+    if host_machine in architectures:
+        return host_machine
+    elif host_machine in architecture_aliases.keys():
+        return architecture_aliases[host_machine]
+    elif "86" in host_machine:
+        return "x86_32"
+    else:
+        methods.print_warning(f'Unsupported CPU architecture: "{host_machine}". Falling back to x86_64.')
+        return "x86_64"
+
+
+def validate_arch(arch, platform_name, supported_arches):
+    if arch not in supported_arches:
+        methods.print_error(
+            'Unsupported CPU architecture "%s" for %s. Supported architectures are: %s.'
+            % (arch, platform_name, ", ".join(supported_arches))
+        )
+        sys.exit(255)
+
+
+def get_build_version(short):
+    import version
+
+    name = "custom_build"
+    if os.getenv("BUILD_NAME") is not None:
+        name = os.getenv("BUILD_NAME")
+    v = "%d.%d" % (version.major, version.minor)
+    if version.patch > 0:
+        v += ".%d" % version.patch
+    status = version.status
+    if not short:
+        if os.getenv("GODOT_VERSION_STATUS") is not None:
+            status = str(os.getenv("GODOT_VERSION_STATUS"))
+        v += ".%s.%s" % (status, name)
+    return v
+
+
+def lipo(prefix, suffix):
+    from pathlib import Path
+
+    target_bin = ""
+    lipo_command = ["lipo", "-create"]
+    arch_found = 0
+
+    for arch in architectures:
+        bin_name = prefix + "." + arch + suffix
+        if Path(bin_name).is_file():
+            target_bin = bin_name
+            lipo_command += [bin_name]
+            arch_found += 1
+
+    if arch_found > 1:
+        target_bin = prefix + ".fat" + suffix
+        lipo_command += ["-output", target_bin]
+        subprocess.run(lipo_command)
+
+    return target_bin
+
+
+def get_mvk_sdk_path(osname):
+    def int_or_zero(i):
+        try:
+            return int(i)
+        except (TypeError, ValueError):
+            return 0
+
+    def ver_parse(a):
+        return [int_or_zero(i) for i in a.split(".")]
+
+    dirname = os.path.expanduser("~/VulkanSDK")
+    if not os.path.exists(dirname):
+        return ""
+
+    ver_min = ver_parse("1.3.231.0")
+    ver_num = ver_parse("0.0.0.0")
+    files = os.listdir(dirname)
+    lib_name_out = dirname
+    for file in files:
+        if os.path.isdir(os.path.join(dirname, file)):
+            ver_comp = ver_parse(file)
+            if ver_comp > ver_num and ver_comp >= ver_min:
+                lib_name = os.path.join(os.path.join(dirname, file), "macOS/lib/MoltenVK.xcframework/" + osname + "/")
+                if os.path.isfile(os.path.join(lib_name, "libMoltenVK.a")):
+                    ver_num = ver_comp
+                    lib_name_out = os.path.join(os.path.join(dirname, file), "macOS/lib/MoltenVK.xcframework")
+                else:
+                    lib_name = os.path.join(
+                        os.path.join(dirname, file), "MoltenVK/MoltenVK.xcframework/" + osname + "/"
+                    )
+                    if os.path.isfile(os.path.join(lib_name, "libMoltenVK.a")):
+                        ver_num = ver_comp
+                        lib_name_out = os.path.join(os.path.join(dirname, file), "MoltenVK/MoltenVK.xcframework")
+
+    return lib_name_out
+
+
+def detect_mvk(env, osname):
+    mvk_list = [
+        get_mvk_sdk_path(osname),
+        "/opt/homebrew/Frameworks/MoltenVK.xcframework",
+        "/usr/local/homebrew/Frameworks/MoltenVK.xcframework",
+        "/opt/local/Frameworks/MoltenVK.xcframework",
+    ]
+    vk_sdk = env.get("vulkan_sdk_path", "")
+    if vk_sdk != "":
+        mvk_list.insert(0, os.path.expanduser(vk_sdk))
+        mvk_list.insert(0, os.path.join(os.path.expanduser(vk_sdk), "macOS/lib/MoltenVK.xcframework"))
+        mvk_list.insert(0, os.path.join(os.path.expanduser(vk_sdk), "MoltenVK/MoltenVK.xcframework"))
+
+    for mvk_path in mvk_list:
+        if mvk_path and os.path.isfile(os.path.join(mvk_path, f"{osname}/libMoltenVK.a")):
+            print(f"MoltenVK found at: {mvk_path}")
+            return mvk_path
+
+    return ""
+
+
+def combine_libs_apple_embedded(lib_path, source_libs, toolchain_path="", triple=""):
+    prefix = os.path.join(toolchain_path, "usr", "bin", triple) if toolchain_path else ""
+    libtool = prefix + "libtool"
+    subprocess.run([libtool, "-static", "-o", str(lib_path), *[str(s) for s in source_libs]], check=True)
+
+
+def lipo_and_copy_apple_embedded(
+    platform, framework_dir, framework_dir_sim, rel_prefix, dbg_prefix, module_prefix, app_dir, env
+):
+    bin_dir = os.path.abspath("bin")
+    extra_suffix = getattr(env, "extra_suffix", "").replace(".simulator", "")
+    rel_target_bin = lipo(bin_dir + "/libgodot" + module_prefix + "." + rel_prefix, extra_suffix + ".a")
+    dbg_target_bin = lipo(bin_dir + "/libgodot" + module_prefix + "." + dbg_prefix, extra_suffix + ".a")
+    rel_target_bin_sim = lipo(
+        bin_dir + "/libgodot" + module_prefix + "." + rel_prefix, ".simulator" + extra_suffix + ".a"
+    )
+    dbg_target_bin_sim = lipo(
+        bin_dir + "/libgodot" + module_prefix + "." + dbg_prefix, ".simulator" + extra_suffix + ".a"
+    )
+    if rel_target_bin != "":
+        print(f' Copying "{platform}" release framework')
+        shutil.copy(
+            rel_target_bin,
+            f"{app_dir}/libgodot{module_prefix}.{platform}.release.xcframework/{framework_dir}/libgodot{module_prefix}.a",
+        )
+    if dbg_target_bin != "":
+        print(f' Copying "{platform}" debug framework')
+        shutil.copy(
+            dbg_target_bin,
+            f"{app_dir}/libgodot{module_prefix}.{platform}.debug.xcframework/{framework_dir}/libgodot{module_prefix}.a",
+        )
+    if rel_target_bin_sim != "":
+        print(f' Copying "{platform}" (simulator) release framework')
+        shutil.copy(
+            rel_target_bin_sim,
+            f"{app_dir}/libgodot{module_prefix}.{platform}.release.xcframework/{framework_dir_sim}/libgodot{module_prefix}.a",
+        )
+    if dbg_target_bin_sim != "":
+        print(f' Copying "{platform}" (simulator) debug framework')
+        shutil.copy(
+            dbg_target_bin_sim,
+            f"{app_dir}/libgodot{module_prefix}.{platform}.debug.xcframework/{framework_dir_sim}/libgodot{module_prefix}.a",
+        )
+
+
+def generate_bundle_apple_embedded(platform, framework_dir, framework_dir_sim, use_mkv, target, source, env):
+    extra_suffix = getattr(env, "extra_suffix", "").replace(".simulator", "")
+    app_prefix = "godot." + platform
+    rel_prefix = platform + ".template_release"
+    dbg_prefix = platform + ".template_debug"
+    if getattr(env, "dev_build", False):
+        app_prefix += ".dev"
+        rel_prefix += ".dev"
+        dbg_prefix += ".dev"
+    if env.get("precision") == "double":
+        app_prefix += ".double"
+        rel_prefix += ".double"
+        dbg_prefix += ".double"
+
+    app_dir = os.path.abspath("bin/" + platform + "_xcode")
+    templ = os.path.abspath("misc/dist/apple_embedded_xcode")
+    if os.path.exists(app_dir):
+        shutil.rmtree(app_dir)
+    shutil.copytree(templ, app_dir)
+
+    lipo_and_copy_apple_embedded(platform, framework_dir, framework_dir_sim, rel_prefix, dbg_prefix, "", app_dir, env)
+    if "MODULES_EXTERNAL" in env:
+        for mod in env["MODULES_EXTERNAL"]:
+            lipo_and_copy_apple_embedded(
+                platform, framework_dir, framework_dir_sim, rel_prefix, dbg_prefix, mod, app_dir, env
+            )
+
+    for entry in os.listdir(app_dir):
+        if (entry.startswith("libgodot.") or entry.startswith("libgodot_")) and entry.endswith(".xcframework"):
+            parts = entry.split(".")
+            if len(parts) >= 3 and parts[1] != platform:
+                shutil.rmtree(os.path.join(app_dir, entry))
+
+    if use_mkv:
+        mvk_path = detect_mvk(env, "ios-arm64")
+        if mvk_path != "":
+            shutil.copytree(mvk_path + "/ios-arm64", app_dir + "/MoltenVK.xcframework/ios-arm64")
+            shutil.copytree(
+                mvk_path + "/ios-arm64_x86_64-simulator", app_dir + "/MoltenVK.xcframework/ios-arm64_x86_64-simulator"
+            )
+            shutil.copy(mvk_path + "/Info.plist", app_dir + "/MoltenVK.xcframework/Info.plist")
+
+    zip_dir = os.path.abspath("bin/" + (app_prefix + extra_suffix).replace(".", "_"))
+    shutil.make_archive(zip_dir, "zip", root_dir=app_dir)
+    shutil.rmtree(app_dir)
 
 WAYLAND_PROTOCOLS = [
     ("wayland", "thirdparty/wayland/protocol/wayland.xml"),
@@ -58,11 +805,6 @@ WAYLAND_PROTOCOLS = [
     ("wayland-drm", "thirdparty/wayland-protocols/mesa/wayland-drm.xml"),
     ("godot_embedding_compositor", "platform/linuxbsd/wayland/godot-embedding-compositor.xml"),
 ]
-
-
-def run_script(script_name, *args):
-    cmd = [sys.executable, os.path.join("scripts", script_name), *map(str, args)]
-    subprocess.run(cmd, check=True)
 
 
 def generate_wayland_protocols(sowrap=True):
@@ -1766,12 +2508,126 @@ def generate_version_and_modules():
     )
 
 
+def build_gles3_header(filename: str, shader: str, output_attribs: bool = True) -> None:
+    with generated_wrapper(filename) as file:
+        _write_gles3_struct(file, shader)
+
+
+def build_raw_header(filename: str, shader: str) -> None:
+    with generated_wrapper(filename) as file:
+        file.write(build_raw_shader_body(shader))
+
+
+def build_rd_header(filename: str, shader: str) -> None:
+    with generated_wrapper(filename) as file:
+        file.write(build_rd_shader_body(shader))
+
+
+EDITOR_TRANSLATION_SOURCES = ["editor/translations/editor/ar.po", "editor/translations/editor/bg.po", "editor/translations/editor/bn.po", "editor/translations/editor/ca.po", "editor/translations/editor/cs.po", "editor/translations/editor/de.po", "editor/translations/editor/el.po", "editor/translations/editor/eo.po", "editor/translations/editor/es.po", "editor/translations/editor/es_AR.po", "editor/translations/editor/et.po", "editor/translations/editor/fa.po", "editor/translations/editor/fi.po", "editor/translations/editor/fr.po", "editor/translations/editor/ga.po", "editor/translations/editor/gl.po", "editor/translations/editor/he.po", "editor/translations/editor/hu.po", "editor/translations/editor/id.po", "editor/translations/editor/it.po", "editor/translations/editor/ja.po", "editor/translations/editor/ka.po", "editor/translations/editor/ko.po", "editor/translations/editor/nl.po", "editor/translations/editor/pl.po", "editor/translations/editor/pt.po", "editor/translations/editor/pt_BR.po", "editor/translations/editor/ro.po", "editor/translations/editor/ru.po", "editor/translations/editor/sk.po", "editor/translations/editor/sv.po", "editor/translations/editor/ta.po", "editor/translations/editor/th.po", "editor/translations/editor/tok.po", "editor/translations/editor/tr.po", "editor/translations/editor/uk.po", "editor/translations/editor/vi.po", "editor/translations/editor/zh_Hans.po", "editor/translations/editor/zh_Hant.po"]
+
+PROPERTY_TRANSLATION_SOURCES = ["editor/translations/properties/bg.po", "editor/translations/properties/ca.po", "editor/translations/properties/cs.po", "editor/translations/properties/de.po", "editor/translations/properties/es.po", "editor/translations/properties/et.po", "editor/translations/properties/fa.po", "editor/translations/properties/fr.po", "editor/translations/properties/ga.po", "editor/translations/properties/hi.po", "editor/translations/properties/id.po", "editor/translations/properties/it.po", "editor/translations/properties/ja.po", "editor/translations/properties/ka.po", "editor/translations/properties/ko.po", "editor/translations/properties/pl.po", "editor/translations/properties/pt.po", "editor/translations/properties/pt_BR.po", "editor/translations/properties/ru.po", "editor/translations/properties/sv.po", "editor/translations/properties/ta.po", "editor/translations/properties/tr.po", "editor/translations/properties/uk.po", "editor/translations/properties/vi.po", "editor/translations/properties/zh_Hans.po", "editor/translations/properties/zh_Hant.po"]
+
+
+def _compile_translation_entries(category, source):
+    valid_sources = [src for src in source if os.path.isfile(src)]
+    sorted_paths = sorted(
+        [os.path.abspath(src) for src in valid_sources],
+        key=lambda path: os.path.splitext(os.path.basename(path))[0],
+    )
+    xl_names = []
+    blobs = []
+    msgfmt = shutil.which("msgfmt")
+    if not msgfmt:
+        methods.print_warning("msgfmt not found, using .po files instead of .mo")
+
+    for path in sorted_paths:
+        name = os.path.splitext(os.path.basename(path))[0]
+        if msgfmt and name != category:
+            mo_path = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex + ".mo")
+            cmd = f'{msgfmt} "{path}" --no-hash -o "{mo_path}"'
+            try:
+                subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE).communicate()
+                buffer = methods.get_buffer(mo_path)
+            except OSError as e:
+                methods.print_warning(
+                    "msgfmt execution failed, using .po file instead of .mo: path=%r; [%s] %s"
+                    % (path, e.__class__.__name__, e)
+                )
+                buffer = methods.get_buffer(path)
+            finally:
+                try:
+                    if os.path.exists(mo_path):
+                        os.remove(mo_path)
+                except OSError as e:
+                    methods.print_warning(
+                        "Could not delete temporary .mo file: path=%r; [%s] %s"
+                        % (mo_path, e.__class__.__name__, e)
+                    )
+        else:
+            buffer = methods.get_buffer(path)
+            if name == category:
+                name = "source"
+
+        decomp_size = len(buffer)
+        buffer = methods.compress_buffer(buffer)
+        blobs.append(
+            f"inline constexpr const unsigned char _{category}_translation_{name}_compressed[] = {{\n"
+            f"{methods.format_buffer(buffer, 1)}\n}};\n\n"
+        )
+        xl_names.append([name, len(buffer), decomp_size])
+
+    return blobs, xl_names
+
+
+def make_translations(target, source):
+    target_h, target_cpp = str(target[0]), str(target[1])
+    category = os.path.basename(target_cpp).split("_")[0]
+    blobs, xl_names = _compile_translation_entries(category, source)
+
+    with methods.generated_wrapper(target_cpp) as file:
+        for b in blobs:
+            file.write(b)
+        file.write(f'#include "{target_h}"\n\nconst EditorTranslationList _{category}_translations[] = {{\n')
+        for x in xl_names:
+            file.write(f'\t{{ "{x[0]}", {x[1]}, {x[2]}, _{category}_translation_{x[0]}_compressed }},\n')
+        file.write("\t{ nullptr, 0, 0, nullptr },\n};\n")
+
+    with methods.generated_wrapper(target_h) as file:
+        file.write(f"""
+#ifndef EDITOR_TRANSLATION_LIST
+#define EDITOR_TRANSLATION_LIST
+
+struct EditorTranslationList {{
+\tconst char* lang;
+\tint comp_size;
+\tint uncomp_size;
+\tconst unsigned char* data;
+}};
+
+#endif // EDITOR_TRANSLATION_LIST
+
+extern const EditorTranslationList _{category}_translations[];
+""")
+
+
+def generate_translations(idx=None):
+    if idx in (None, 0):
+        make_translations(
+            ["editor/translations/editor_translations.gen.h", "editor/translations/editor_translations.gen.cpp"],
+            EDITOR_TRANSLATION_SOURCES,
+        )
+    if idx in (None, 1):
+        make_translations(
+            ["editor/translations/property_translations.gen.h", "editor/translations/property_translations.gen.cpp"],
+            PROPERTY_TRANSLATION_SOURCES,
+        )
+
+
 def generate_all():
     generate_version_and_modules()
     make_splash_and_icons("main/splash.gen.h", "main/splash.png", "main/app_icon.png")
     make_icu_data(["thirdparty/icu4c/icudata.gen.h"], ["thirdparty/icu4c/icudt_godot.dat"])
-    for idx in (0, 1):
-        run_script("make_translations.py", idx)
+    generate_translations()
     generate_wayland_protocols(sowrap=True)
 
 
@@ -1783,5 +2639,10 @@ if __name__ == "__main__":
         sys.exit(0)
     if "--version-only" in sys.argv:
         generate_version_and_modules()
+        sys.exit(0)
+    if "--translations-only" in sys.argv:
+        arg_idx = sys.argv.index("--translations-only")
+        which = int(sys.argv[arg_idx + 1]) if arg_idx + 1 < len(sys.argv) else None
+        generate_translations(which)
         sys.exit(0)
     generate_all()

@@ -8014,7 +8014,8 @@ RenderingShaderContainerFormatD3D12::~RenderingShaderContainerFormatD3D12() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "modules/openxr/openxr_platform_inc.h"
+#define WANT_OPENXR_PLATFORM_INC
+#include "servers/display/display_server.h"
 
 #ifdef D3D12_ENABLED
 

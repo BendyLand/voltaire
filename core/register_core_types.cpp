@@ -47,6 +47,7 @@
 #include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "core/os/os.h"
+#define WANT_SCENE_TREE_H
 #include "servers/display/display_server.h"
 #ifndef DISABLE_DEPRECATED
 #include "core/io/file_access.h"
@@ -1677,7 +1678,7 @@ bool Engine::is_embedded_in_editor() { return embedded_in_editor; }
 // Optional physics interpolation warnings try to include the path to the relevant node.
 #if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif
 
 static ErrorHandlerList *error_handler_list = nullptr;
@@ -2071,7 +2072,7 @@ template class AHashMap<String, String>;
 // Merged from core/templates/interpolated_property.cpp
 // ============================================================================
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "core/math/vector2.h"
 
@@ -37123,7 +37124,7 @@ String ResourceFormatLoaderImage::get_resource_type(const String &p_path) const 
 #include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/io/ip.h"
-#include "scene/main/scene_tree.h" //only so casting works
+#include "servers/display/display_server.h" //only so casting works
 
 void Resource::register_custom_data_to_otdb()
 {
@@ -37506,7 +37507,7 @@ void Resource::setup_local_to_scene() {}
 #include "core/io/net_socket.h"
 #include "core/typedefs.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 // #define print_bl(m_what) print_line(m_what)
 #define print_bl(m_what) (void)(m_what)
@@ -62165,27 +62166,27 @@ private:
 // --- End main/performance.h ---
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 // 2D
 #ifndef NAVIGATION_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_2D_DISABLED
 
 // 3D
 #ifndef NAVIGATION_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_3D_DISABLED
 
 #ifndef XR_DISABLED
@@ -63405,7 +63406,7 @@ struct SharedObject {
 
 // --- End core/os/shared_object.h ---
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 class EditorExportPlugin : public RefCounted
 {
@@ -64514,7 +64515,7 @@ public:
 // --- End editor/export/apple_export_utils.h ---
 
 // --- Folded main section from editor/export/editor_export.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 class Timer;
 
 typedef void* zipFile;
@@ -64692,7 +64693,7 @@ void register_windows_exporter_types();
 void register_windows_exporter();
 // --- End platform/windows/export/export.h ---
 // --- End editor/editor_ui.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
@@ -69452,23 +69453,23 @@ MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_
 
 #include "core/os/os.h"
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_2D_DISABLED
 
 #ifndef NAVIGATION_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_2D_DISABLED
 
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_3D_DISABLED
 
 int Performance::_get_orphan_node_count()
@@ -73034,7 +73035,7 @@ String read_project_name(const String& p_dir)
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 static String _get_indent(const String& p_text)
@@ -76402,7 +76403,7 @@ bool ProjectConverter3To4::convert() {}
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 String ProjectManager::_get_default_projects_dir()
@@ -77606,10 +77607,10 @@ bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProject
 #include "core/os/os.h"
 #include "core/templates/rb_set.h"
 #include "core/typedefs.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 // PRIVATE METHODS
@@ -78312,7 +78313,7 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY(
 // Merged from editor/themes/editor_scale.cpp
 // ============================================================================
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 float EditorScale::_scale = 1.0f;
 
@@ -78328,7 +78329,7 @@ float EditorScale::get_scale() {
 // Merged from editor/translations/editor_translation.cpp
 // ============================================================================
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
@@ -78559,7 +78560,7 @@ Vector<Vector<String>> get_extractable_message_list() {
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 int EditorFileSystem::nb_files_total = 0;
@@ -79465,7 +79466,7 @@ bool EditorFileSystem::_scan_extensions() { return true; }
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 bool EditorPaths::are_paths_valid() { return data ? data->paths_valid : false; }
@@ -79801,7 +79802,7 @@ void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 // EditorExportPreset
 
@@ -80169,7 +80170,7 @@ void EditorExport::emit_presets_runnable_changed() {}
 #include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/typedefs.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // Inlined editor/export/editor_export_platform.compat.inc
 #ifndef DISABLE_DEPRECATED
 
@@ -80192,7 +80193,7 @@ void EditorExportPlatform::_bind_compatibility_methods() {}
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 class EditorExportSaveProxy
@@ -81721,7 +81722,7 @@ public:
 #include "core/io/net_socket.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifdef VULKAN_ENABLED
@@ -82017,7 +82018,7 @@ void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID 
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "core/os/os.h"
 
 #include <ctime>
@@ -84419,7 +84420,7 @@ uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
 #include "core/io/net_socket.h"
@@ -84428,7 +84429,7 @@ uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
 #ifdef MACOS_ENABLED
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif
 
 Vector<EditorExportPlatformAppleEmbedded::ExportArchitecture>
@@ -85425,9 +85426,9 @@ void EditorExportPlatformAppleEmbedded::get_export_options(
 // --- Merged from editor/import/3d/resource_importer_scene.cpp ---
 #include "core/typedefs.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 
 void EditorSceneFormatImporter::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
@@ -88696,7 +88697,7 @@ void Collada::_parse_effect_material(XMLParser& p_parser, Collada::Effect& r_eff
 #include "core/templates/rb_set.h"
 
 // --- Inlined from editor/import/3d/editor_import_collada.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 class EditorSceneFormatImporterCollada : public EditorSceneFormatImporter
 {
@@ -88707,7 +88708,7 @@ public:
 
 
 // --- End editor/import/3d/editor_import_collada.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 struct ColladaImport
 {
@@ -89200,7 +89201,7 @@ Error ColladaImport::_create_resources(Collada::Node* p_node, bool p_is_root) { 
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 // --- Inlined from editor/import/3d/resource_importer_obj.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 class EditorOBJImporter : public EditorSceneFormatImporter
 {
@@ -89228,7 +89229,7 @@ public:
 
 
 // --- End editor/import/3d/resource_importer_obj.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 static Error _parse_material_library(const String& p_path,
 	HashMap<String, Ref<StandardMaterial3D>>& material_map, List<String>* r_missing_deps)
@@ -89469,7 +89470,7 @@ void ResourceImporterOBJ::get_import_options(
 // Merged from editor/import/editor_import_plugin.cpp
 // ============================================================================
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 bool EditorImportPlugin::can_import_threaded() const
 {
@@ -89770,7 +89771,7 @@ void EditorAtlasPacker::chart_pack(Vector<Chart> &charts, int &r_width, int &r_h
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
 
@@ -90041,18 +90042,18 @@ static String _include_function(const String& p_path, void* userpointer)
 // Merged from editor/import/resource_importer_texture.cpp
 // ============================================================================
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/typedefs.h"
 #include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "editor/import/atlas_import_failed.xpm"
 
-#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 
 void ResourceImporterTexture::_texture_reimport_roughness(const Ref<CompressedTexture2D>& p_tex,
 	const String& p_normal_path, RSE::TextureDetectRoughnessChannel p_channel)
@@ -90924,7 +90925,7 @@ void ResourceImporterWAV::get_import_options(
 /**************************************************************************/
 
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/android/export/export_plugin.h ---
 #ifndef DISABLE_DEPRECATED
 // --- Folded from platform/android/export/godot_plugin_config.h ---
@@ -91460,7 +91461,7 @@ public:
 
 #include "servers/display/display_server.h"
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 void AndroidEditorGradleRunner::run_gradle(const String &p_project_path, const String &p_build_path, const String &p_output_path, const String &p_export_format, const List<String> &p_gradle_build_args, const List<String> &p_gradle_copy_args) {
 	project_path = p_project_path;
@@ -91632,7 +91633,7 @@ void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
 #include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/typedefs.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "main/splash.gen.h"
 #include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
@@ -93352,7 +93353,7 @@ public:
 // --- End platform/ios/export/export_plugin.h ---
 
 #ifdef MACOS_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif
 
 void register_ios_exporter_types() {}
@@ -93610,7 +93611,7 @@ void register_linuxbsd_exporter()
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "main/splash.gen.h"
 #include "core/io/net_socket.h"
@@ -93950,7 +93951,7 @@ Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>
 
 
 // --- Merged from platform/macos/export/export.cpp ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/macos/export/export_plugin.h ---
 #include <sys/stat.h>
 #include "core/io/net_socket.h"
@@ -94127,7 +94128,7 @@ void register_macos_exporter() {}
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "main/splash.gen.h"
 #include "core/io/net_socket.h"
@@ -94523,7 +94524,7 @@ void EditorExportPlatformVisionOS::get_export_options(
 
 
 // --- Merged from platform/web/export/export.cpp ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/web/export/export_plugin.h ---
 // --- Folded from platform/web/export/editor_http_server.h ---
 #include "core/io/net_socket.h"
@@ -94678,7 +94679,7 @@ void register_web_exporter_types() {}
 
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 void EditorHTTPServer::_server_thread_poll(void *data) {
 	EditorHTTPServer *web_server = static_cast<EditorHTTPServer *>(data);
@@ -94912,7 +94913,7 @@ EditorHTTPServer::~EditorHTTPServer() {
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "main/splash.gen.h"
 #include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
@@ -95215,7 +95216,7 @@ void register_web_exporter() {}
 
 
 // --- Merged from platform/windows/export/export.cpp ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // --- Inlined from platform/windows/export/export_plugin.h ---
 #include "core/os/os.h"
 
@@ -95317,7 +95318,7 @@ void register_windows_exporter_types() {}
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "main/splash.gen.h"
 #include "core/io/net_socket.h"
@@ -96451,10 +96452,10 @@ HashMap<String, String> TemplateModifier::_get_strings(Ref<EditorExportPreset> c
 #include "servers/display/display_server.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 // --- Inlined from modules/lightmapper_rd/lightmapper_rd.h ---
 #include "core/string/ustring.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 class RenderingDevice;
 class RDShaderFile;

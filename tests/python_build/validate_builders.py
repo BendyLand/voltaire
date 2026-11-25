@@ -9,10 +9,9 @@ import os
 import sys
 from typing import Any, Callable
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../scripts"))
 
-from gles3_builders import build_gles3_header
-from glsl_builders import build_raw_header, build_rd_header
+from generate_headers import build_gles3_header, build_raw_header, build_rd_header
 
 FUNC_PATH_KWARGS: list[tuple[Callable[..., None], str, dict[str, Any]]] = [
     (

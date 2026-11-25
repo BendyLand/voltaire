@@ -37,12 +37,8 @@
 #endif
 
 #include "core/os/os.h"
-#include "core/extension/gdextension_manager.h"
-#include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#define WANT_SCENE_TREE_H
 #include "servers/display/display_server.h"
 
 #include <dlfcn.h>
@@ -4716,7 +4712,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_onPictureInPictureMod
 #endif // XR_DISABLED
 
 #ifdef TOOLS_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif
 
 #include <android/asset_manager_jni.h>
@@ -8887,7 +8883,8 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_utils_DialogUtils_inputDialogC
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "modules/openxr/openxr_platform_inc.h"
+#define WANT_OPENXR_PLATFORM_INC
+#include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h" // IWYU pragma: keep. `XR_FAILED` macro.
 #include "servers/display/display_server.h"

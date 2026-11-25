@@ -16024,3 +16024,549 @@ AudioDriverXAudio2::AudioDriverXAudio2() {
 	}
 }
 #endif // XAUDIO2_ENABLED
+
+// === Merged from platform/windows/crash_handler_windows_seh.cpp & crash_handler_windows_signal.cpp ===
+#if defined(_MSC_VER)
+#include "servers/display/display_server.h"
+
+#include "core/os/os.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
+
+#ifdef CRASH_HANDLER_EXCEPTION
+
+// Backtrace code based on: https://stackoverflow.com/questions/6205981/windows-c-stack-trace-from-a-running-app
+
+#include <psapi.h>
+
+#include <algorithm>
+#include <cstdlib>
+#include <iterator>
+#include <string>
+#include <vector>
+
+// Some versions of imagehlp.dll lack the proper packing directives themselves
+// so we need to do it.
+#pragma pack(push, before_imagehlp, 8)
+#include <imagehlp.h>
+#pragma pack(pop, before_imagehlp)
+
+struct module_data {
+	std::string image_name;
+	std::string module_name;
+	void *base_address = nullptr;
+	DWORD load_size;
+};
+
+class symbol {
+	typedef IMAGEHLP_SYMBOL64 sym_type;
+	sym_type *sym;
+	static const int max_name_len = 1024;
+
+public:
+	symbol(HANDLE process, DWORD64 address) :
+			sym((sym_type *)::operator new(sizeof(*sym) + max_name_len)) {
+		memset(sym, '\0', sizeof(*sym) + max_name_len);
+		sym->SizeOfStruct = sizeof(*sym);
+		sym->MaxNameLength = max_name_len;
+		DWORD64 displacement;
+
+		SymGetSymFromAddr64(process, address, &displacement, sym);
+	}
+
+	std::string name() { return std::string(sym->Name); }
+	std::string undecorated_name() {
+		if (*sym->Name == '\0') {
+			return "<couldn't map PC to fn name>";
+		}
+		std::vector<char> und_name(max_name_len);
+		UnDecorateSymbolName(sym->Name, &und_name[0], max_name_len, UNDNAME_COMPLETE);
+		return std::string(&und_name[0], strlen(&und_name[0]));
+	}
+};
+
+class get_mod_info {
+	HANDLE process;
+
+public:
+	get_mod_info(HANDLE h) :
+			process(h) {}
+
+	module_data operator()(HMODULE module) {
+		module_data ret;
+		char temp[4096];
+		MODULEINFO mi;
+
+		GetModuleInformation(process, module, &mi, sizeof(mi));
+		ret.base_address = mi.lpBaseOfDll;
+		ret.load_size = mi.SizeOfImage;
+
+		GetModuleFileNameEx(process, module, temp, sizeof(temp));
+		ret.image_name = temp;
+		GetModuleBaseName(process, module, temp, sizeof(temp));
+		ret.module_name = temp;
+		SymLoadModule64(process, nullptr, ret.image_name.c_str(), ret.module_name.c_str(), (DWORD64)ret.base_address, ret.load_size);
+		return ret;
+	}
+};
+
+DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
+	HANDLE process = GetCurrentProcess();
+	HANDLE hThread = GetCurrentThread();
+	DWORD offset_from_symbol = 0;
+	IMAGEHLP_LINE64 line = {};
+	std::vector<module_data> modules;
+	DWORD cbNeeded;
+	std::vector<HMODULE> module_handles(1);
+
+	if (!OS::is_initialized() || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	if (OS::is_crash_handler_silent()) {
+		std::_Exit(0);
+	}
+
+	String msg;
+	if (ProjectSettings::is_initialized()) {
+		msg = GLOBAL_GET("debug/settings/crash_handler/message");
+	}
+
+	// Tell MainLoop about the crash. This can be handled by users too in Node.
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
+	}
+
+	print_error("\n================================================================");
+	print_error(vformat("%s: Program crashed", __FUNCTION__));
+
+	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
+	if (String(VLTR_VERSION_HASH).is_empty()) {
+		print_error(vformat("Engine version: %s", VLTR_VERSION_FULL_NAME));
+	} else {
+		print_error(vformat("Engine version: %s (%s)", VLTR_VERSION_FULL_NAME, VLTR_VERSION_HASH));
+	}
+	print_error(vformat("Dumping the backtrace. %s", msg));
+
+	// Load the symbols:
+	if (!SymInitialize(process, nullptr, false)) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_EXACT_SYMBOLS);
+	EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
+	module_handles.resize(cbNeeded / sizeof(HMODULE));
+	EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
+	std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules), get_mod_info(process));
+	void *base = modules[0].base_address;
+
+	print_error(vformat("Load address: %x\n", (uint64_t)base));
+
+	// Setup stuff:
+	CONTEXT *context = ep->ContextRecord;
+	STACKFRAME64 frame;
+	bool skip_first = false;
+
+	frame.AddrPC.Mode = AddrModeFlat;
+	frame.AddrStack.Mode = AddrModeFlat;
+	frame.AddrFrame.Mode = AddrModeFlat;
+
+#if defined(_M_X64)
+	frame.AddrPC.Offset = context->Rip;
+	frame.AddrStack.Offset = context->Rsp;
+	frame.AddrFrame.Offset = context->Rbp;
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
+	frame.AddrPC.Offset = context->Pc;
+	frame.AddrStack.Offset = context->Sp;
+	frame.AddrFrame.Offset = context->Fp;
+#elif defined(_M_ARM)
+	frame.AddrPC.Offset = context->Pc;
+	frame.AddrStack.Offset = context->Sp;
+	frame.AddrFrame.Offset = context->R11;
+#else
+	frame.AddrPC.Offset = context->Eip;
+	frame.AddrStack.Offset = context->Esp;
+	frame.AddrFrame.Offset = context->Ebp;
+
+	// Skip the first one to avoid a duplicate on 32-bit mode
+	skip_first = true;
+#endif
+
+	line.SizeOfStruct = sizeof(line);
+	IMAGE_NT_HEADERS *h = ImageNtHeader(base);
+	DWORD image_type = h->FileHeader.Machine;
+
+	int n = 0;
+	do {
+		if (skip_first) {
+			skip_first = false;
+		} else {
+			if (frame.AddrPC.Offset != 0) {
+				std::string fnName = symbol(process, frame.AddrPC.Offset).undecorated_name();
+
+				IMAGEHLP_MODULE64 mod_info;
+				memset(&mod_info, 0, sizeof(IMAGEHLP_MODULE64));
+				mod_info.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
+				uint64_t offset = (uint64_t)base;
+				String mod_name = "main";
+				if (SymGetModuleInfo64(process, frame.AddrPC.Offset, &mod_info)) {
+					offset = mod_info.BaseOfImage;
+					if (offset != (uint64_t)base) {
+						if (mod_info.ImageName[0] != 0) {
+							mod_name = String((const char *)mod_info.ImageName).to_lower().get_file();
+						} else if (mod_info.ModuleName[0] != 0) {
+							mod_name = String((const char *)mod_info.ModuleName).to_lower();
+						} else {
+							mod_name = "<unknown module>";
+						}
+					}
+				}
+				if (SymGetLineFromAddr64(process, frame.AddrPC.Offset, &offset_from_symbol, &line)) {
+					print_error(vformat("[%d] %x (%s+%x) - %s (%s:%d)", n, (uint64_t)frame.AddrPC.Offset, mod_name, (uint64_t)frame.AddrPC.Offset - offset, fnName.c_str(), (char *)line.FileName, (int)line.LineNumber));
+				} else if (!fnName.empty()) {
+					print_error(vformat("[%d] %x (%s+%x) - %s", n, (uint64_t)frame.AddrPC.Offset, mod_name, (uint64_t)frame.AddrPC.Offset - offset, fnName.c_str()));
+				} else {
+					print_error(vformat("[%d] %x (%s+%x) - ???", n, (uint64_t)frame.AddrPC.Offset, mod_name, (uint64_t)frame.AddrPC.Offset - offset));
+				}
+			}
+
+			n++;
+		}
+
+		if (!StackWalk64(image_type, process, hThread, &frame, context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
+			break;
+		}
+	} while (frame.AddrReturn.Offset != 0 && n < 256);
+
+	print_error("-- END OF C++ BACKTRACE --");
+	print_error("================================================================");
+
+	SymCleanup(process);
+
+	for (const Ref<ScriptBacktrace> &backtrace : ScriptServer::capture_script_backtraces(false)) {
+		if (!backtrace->is_empty()) {
+			print_error(backtrace->format());
+			print_error(vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
+			print_error("================================================================");
+		}
+	}
+
+	// Pass the exception to the OS
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+CrashHandler::CrashHandler() {
+	disabled = false;
+}
+
+CrashHandler::~CrashHandler() {
+}
+
+void CrashHandler::disable() {
+	if (disabled) {
+		return;
+	}
+
+	disabled = true;
+}
+
+void CrashHandler::initialize() {
+}
+#else
+#include "servers/display/display_server.h"
+
+#include "core/os/os.h"
+#include "core/io/file_access.h"
+#include "core/os/os.h"
+#include "core/string/ustring.h"
+#include "core/typedefs.h"
+
+#ifdef CRASH_HANDLER_EXCEPTION
+
+#include <thirdparty/libbacktrace/backtrace.h>
+
+#include <cxxabi.h>
+#include <psapi.h>
+
+#include <algorithm>
+#include <csignal>
+#include <cstdlib>
+#include <iterator>
+#include <vector>
+
+// Some versions of imagehlp.dll lack the proper packing directives themselves
+// so we need to do it.
+#pragma pack(push, before_imagehlp, 8)
+#include <imagehlp.h>
+#pragma pack(pop, before_imagehlp)
+
+struct CrashHandlerData {
+	int64_t index = 0;
+	backtrace_state *state = nullptr;
+	int64_t offset = 0;
+	int64_t base = 0;
+	uint64_t pc = 0;
+	HANDLE process = nullptr;
+	bool sym_ok = false;
+};
+
+struct module_data {
+	std::string image_name;
+	std::string module_name;
+	void *base_address = nullptr;
+	DWORD load_size;
+};
+
+class get_mod_info {
+	HANDLE process;
+
+public:
+	get_mod_info(HANDLE h) :
+			process(h) {}
+
+	module_data operator()(HMODULE module) {
+		module_data ret;
+		char temp[4096];
+		MODULEINFO mi;
+
+		GetModuleInformation(process, module, &mi, sizeof(mi));
+		ret.base_address = mi.lpBaseOfDll;
+		ret.load_size = mi.SizeOfImage;
+
+		GetModuleFileNameEx(process, module, temp, sizeof(temp));
+		ret.image_name = temp;
+		GetModuleBaseName(process, module, temp, sizeof(temp));
+		ret.module_name = temp;
+		SymLoadModule64(process, nullptr, ret.image_name.c_str(), ret.module_name.c_str(), (DWORD64)ret.base_address, ret.load_size);
+		return ret;
+	}
+};
+
+int symbol_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
+	CrashHandlerData *ch_data = reinterpret_cast<CrashHandlerData *>(data);
+	uint64_t offset = (uint64_t)ch_data->base;
+	String mod_name = "main";
+	if (ch_data->sym_ok) {
+		IMAGEHLP_MODULE64 mod_info;
+		memset(&mod_info, 0, sizeof(IMAGEHLP_MODULE64));
+		mod_info.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
+		if (SymGetModuleInfo64(ch_data->process, ch_data->pc, &mod_info)) {
+			offset = mod_info.BaseOfImage;
+			if (offset != (uint64_t)ch_data->base) {
+				if (mod_info.ImageName[0] != 0) {
+					mod_name = String((const char *)mod_info.ImageName).to_lower().get_file();
+				} else if (mod_info.ModuleName[0] != 0) {
+					mod_name = String((const char *)mod_info.ModuleName).to_lower();
+				} else {
+					mod_name = "<unknown module>";
+				}
+			}
+		}
+	}
+
+	if (function) {
+		char fname[1024];
+		snprintf(fname, 1024, "%s", function);
+
+		if (function[0] == '_') {
+			int status;
+			char *demangled = abi::__cxa_demangle(function, nullptr, nullptr, &status);
+
+			if (status == 0 && demangled) {
+				snprintf(fname, 1024, "%s", demangled);
+			}
+
+			if (demangled) {
+				free(demangled);
+			}
+		}
+		print_error(vformat("[%d] %x (%s+%x) - %s (%s:%d)", ch_data->index++, ch_data->pc, mod_name, ch_data->pc - offset, String::utf8(fname), String::utf8(filename), lineno));
+	} else if ((int64_t)ch_data->pc > 0) {
+		print_error(vformat("[%d] %x (%s+%x) - ???", ch_data->index++, ch_data->pc, mod_name, ch_data->pc - offset));
+	}
+	return 0;
+}
+
+void error_callback(void *data, const char *msg, int errnum) {
+	CrashHandlerData *ch_data = reinterpret_cast<CrashHandlerData *>(data);
+	if (ch_data->index == 0) {
+		print_error(vformat("Error(%d): %s", errnum, String::utf8(msg)));
+	} else {
+		uint64_t offset = (uint64_t)ch_data->base;
+		String mod_name = "main";
+		if (ch_data->sym_ok) {
+			IMAGEHLP_MODULE64 mod_info;
+			memset(&mod_info, 0, sizeof(IMAGEHLP_MODULE64));
+			mod_info.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
+			if (SymGetModuleInfo64(ch_data->process, ch_data->pc, &mod_info)) {
+				offset = mod_info.BaseOfImage;
+				if (offset != (uint64_t)ch_data->base) {
+					if (mod_info.ImageName[0] != 0) {
+						mod_name = String((const char *)mod_info.ImageName).to_lower().get_file();
+					} else if (mod_info.ModuleName[0] != 0) {
+						mod_name = String((const char *)mod_info.ModuleName).to_lower();
+					} else {
+						mod_name = "<unknown module>";
+					}
+				}
+			}
+		}
+		print_error(vformat("[%d] %x (%s+%x) - %s", ch_data->index++, ch_data->pc, mod_name, ch_data->pc - offset, String::utf8(msg)));
+	}
+}
+
+int trace_callback(void *data, uintptr_t pc) {
+	CrashHandlerData *ch_data = reinterpret_cast<CrashHandlerData *>(data);
+	ch_data->pc = (uint64_t)pc;
+	backtrace_pcinfo(ch_data->state, pc - ch_data->offset, &symbol_callback, &error_callback, data);
+	return 0;
+}
+
+int64_t get_image_base(const String &p_path) {
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+	if (f.is_null()) {
+		return 0;
+	}
+	{
+		f->seek(0x3c);
+		uint32_t pe_pos = f->get_32();
+
+		f->seek(pe_pos);
+		uint32_t magic = f->get_32();
+		if (magic != 0x00004550) {
+			return 0;
+		}
+	}
+	int64_t opt_header_pos = f->get_position() + 0x14;
+	f->seek(opt_header_pos);
+
+	uint16_t opt_header_magic = f->get_16();
+	if (opt_header_magic == 0x10B) {
+		f->seek(opt_header_pos + 0x1C);
+		return f->get_32();
+	} else if (opt_header_magic == 0x20B) {
+		f->seek(opt_header_pos + 0x18);
+		return f->get_64();
+	} else {
+		return 0;
+	}
+}
+
+extern void CrashHandlerException(int signal) {
+	CrashHandlerData data;
+
+	if (!OS::is_initialized() || OS::is_disable_crash_handler() || IsDebuggerPresent()) {
+		return;
+	}
+
+	if (OS::is_crash_handler_silent()) {
+		std::_Exit(0);
+	}
+
+	String msg;
+	if (ProjectSettings::is_initialized()) {
+		msg = GLOBAL_GET("debug/settings/crash_handler/message");
+	}
+
+	// Tell MainLoop about the crash. This can be handled by users too in Node.
+	if (MainLoop::is_active()) {
+		MainLoop::notification(MainLoop::NOTIFICATION_CRASH);
+	}
+
+	print_error("\n================================================================");
+	print_error(vformat("%s: Program crashed with signal %d", __FUNCTION__, signal));
+
+	// Print the engine version just before, so that people are reminded to include the version in backtrace reports.
+	if (String(VLTR_VERSION_HASH).is_empty()) {
+		print_error(vformat("Engine version: %s", VLTR_VERSION_FULL_NAME));
+	} else {
+		print_error(vformat("Engine version: %s (%s)", VLTR_VERSION_FULL_NAME, VLTR_VERSION_HASH));
+	}
+	print_error(vformat("Dumping the backtrace. %s", msg));
+
+	String exec_path = OS::get_executable_path();
+
+	// Load process and image info to determine ASLR addresses offset.
+	MODULEINFO mi;
+	GetModuleInformation(GetCurrentProcess(), GetModuleHandle(nullptr), &mi, sizeof(mi));
+	int64_t image_mem_base = reinterpret_cast<int64_t>(mi.lpBaseOfDll);
+	int64_t image_file_base = get_image_base(exec_path);
+	data.offset = image_mem_base - image_file_base;
+
+	std::vector<module_data> modules;
+	DWORD cbNeeded;
+	std::vector<HMODULE> module_handles(1);
+
+	data.process = GetCurrentProcess();
+	data.sym_ok = SymInitialize(data.process, nullptr, false);
+
+	if (data.sym_ok) {
+		SymSetOptions(SymGetOptions() | SYMOPT_LOAD_LINES | SYMOPT_UNDNAME | SYMOPT_EXACT_SYMBOLS);
+		EnumProcessModules(data.process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
+		module_handles.resize(cbNeeded / sizeof(HMODULE));
+		EnumProcessModules(data.process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
+		std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules), get_mod_info(data.process));
+		data.base = (uint64_t)modules[0].base_address;
+	}
+
+	print_error(vformat("Load address: %x\n", (uint64_t)data.offset));
+
+	if (FileAccess::exists(exec_path + ".debugsymbols")) {
+		exec_path = exec_path + ".debugsymbols";
+	}
+	exec_path = exec_path.replace_char('/', '\\');
+
+	CharString cs = exec_path.utf8(); // Note: should remain in scope during backtrace_simple call.
+	data.state = backtrace_create_state(cs.get_data(), 0, &error_callback, reinterpret_cast<void *>(&data));
+	if (data.state != nullptr) {
+		data.index = 1;
+		backtrace_simple(data.state, 1, &trace_callback, &error_callback, reinterpret_cast<void *>(&data));
+	}
+
+	print_error("-- END OF C++ BACKTRACE --");
+	print_error("================================================================");
+
+	if (data.sym_ok) {
+		SymCleanup(data.process);
+	}
+
+	for (const Ref<ScriptBacktrace> &backtrace : ScriptServer::capture_script_backtraces(false)) {
+		if (!backtrace->is_empty()) {
+			print_error(backtrace->format());
+			print_error(vformat("-- END OF %s BACKTRACE --", backtrace->get_language_name().to_upper()));
+			print_error("================================================================");
+		}
+	}
+}
+#endif
+
+CrashHandler::CrashHandler() {
+	disabled = false;
+}
+
+CrashHandler::~CrashHandler() {
+}
+
+void CrashHandler::disable() {
+	if (disabled) {
+		return;
+	}
+
+#if defined(CRASH_HANDLER_EXCEPTION)
+	signal(SIGSEGV, nullptr);
+	signal(SIGFPE, nullptr);
+	signal(SIGILL, nullptr);
+#endif
+
+	disabled = true;
+}
+
+void CrashHandler::initialize() {
+#if defined(CRASH_HANDLER_EXCEPTION)
+	signal(SIGSEGV, CrashHandlerException);
+	signal(SIGFPE, CrashHandlerException);
+	signal(SIGILL, CrashHandlerException);
+#endif
+}
+#endif // defined(_MSC_VER)

@@ -29,12 +29,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#define WANT_SCENE_TREE_H
 #include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 // --- Inlined from tests/test_macros.h ---
 #include "core/io/ip.h"
@@ -466,21 +467,21 @@ public:
 // --- End tests/test_macros.h ---
 
 #ifdef TOOLS_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // TOOLS_ENABLED
 
 #ifndef NAVIGATION_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_2D_DISABLED
 #ifndef NAVIGATION_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // NAVIGATION_3D_DISABLED
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_2D_DISABLED
 #ifndef PHYSICS_3D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_3D_DISABLED
 
 
@@ -6733,7 +6734,7 @@ TEST_CASE("[String][URL] Parse URL") {
 #include "core/os/os.h"
 
 #ifdef TOOLS_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif
 
 
@@ -21394,7 +21395,7 @@ TEST_CASE("[Transform3D] Rotate in-place (local rotation)") {
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTriangleMesh {
 
@@ -27474,7 +27475,7 @@ TEST_CASE("[ShaderPreprocessor] Invalid concatenations") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavHeap {
 
@@ -27677,7 +27678,7 @@ TEST_CASE("[Heap] clear") {
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationServer2D
 {
@@ -28532,7 +28533,7 @@ TEST_SUITE("[Navigation2D]")
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationServer3D
 {
@@ -30517,7 +30518,7 @@ TEST_SUITE("[TextServer]") {
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTriangle2 {
 
@@ -30596,7 +30597,7 @@ TEST_FORCE_LINK(test_servers)
 
 
 #include "scene/gui/aspect_ratio_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestAspectRatioContainer {
 
@@ -30953,7 +30954,7 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 
 
 #include "scene/gui/box_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestBoxContainer {
 
@@ -31576,7 +31577,7 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestButton {
 
@@ -31642,7 +31643,7 @@ TEST_CASE("[SceneTree][Button] is_hovered()") {
 
 
 #include "scene/gui/center_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestCenterContainer {
 
@@ -31813,7 +31814,7 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestCodeEdit {
 
@@ -37507,7 +37508,7 @@ func _ready():
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestColorPicker {
 
@@ -37569,7 +37570,7 @@ TEST_CASE("[SceneTree][ColorPicker]") {
 
 
 #include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_ACTION` macro.
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestControl {
 
@@ -38852,9 +38853,9 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "scene/gui/flow_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestFlowContainer {
 
@@ -39430,7 +39431,7 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestFoldableContainer {
 
@@ -39698,7 +39699,7 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestGraphNode {
 
@@ -39779,9 +39780,9 @@ TEST_CASE("[GraphNode][SceneTree]") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "scene/gui/grid_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestGridContainer {
 
@@ -40048,7 +40049,7 @@ TEST_CASE("[SceneTree][GridContainer] RTL placement") {
 
 #if defined(MODULE_TEXT_SERVER_FB_ENABLED) || defined(MODULE_TEXT_SERVER_ADV_ENABLED)
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestLabel {
 
@@ -40306,9 +40307,9 @@ TEST_CASE("[SceneTree][Label] Sizing") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "scene/gui/margin_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestMarginContainer {
 
@@ -40452,7 +40453,7 @@ TEST_CASE("[SceneTree][MarginContainer] Multiple children use maximum minimum si
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestNinePatchRect {
@@ -40707,7 +40708,7 @@ TEST_CASE("[SceneTree][NinePatchRect] Axis stretch modes") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestOptionButton {
 
@@ -40868,9 +40869,9 @@ TEST_CASE("[SceneTree][OptionButton] Many items") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "scene/gui/panel_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestPanelContainer {
@@ -40984,7 +40985,7 @@ TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum siz
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestRichTextLabel {
 
@@ -41123,7 +41124,7 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestScrollContainer {
 
@@ -41633,7 +41634,7 @@ TEST_CASE("[SceneTree][ScrollContainer] Configuration warnings") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/typedefs.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSpinBox {
 
@@ -41808,7 +41809,7 @@ TEST_CASE("[SceneTree][SpinBox] Combined minimum size in tree") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSplitContainer {
 
@@ -43847,7 +43848,7 @@ TEST_CASE("[SceneTree][SplitContainer] More children") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTabBar {
 
@@ -44998,7 +44999,7 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "scene/gui/box_container.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTabContainer {
 
@@ -45896,7 +45897,7 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTextEdit {
 
@@ -53950,7 +53951,7 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 
 #include "core/io/net_socket.h"
 #include "scene/gui/texture_button.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestTextureButton {
@@ -54299,7 +54300,7 @@ TEST_CASE("[SceneTree][TextureButton] has_point with click mask and stretch keep
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTextureProgressBar {
 
@@ -54390,7 +54391,7 @@ TEST_CASE("[SceneTree][TextureProgressBar]") {
 
 
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestTextureRect {
@@ -54611,7 +54612,7 @@ TEST_CASE("[SceneTree][TextureRect] Configuration warnings") {
 
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTree {
 
@@ -54915,7 +54916,7 @@ TEST_FORCE_LINK(test_scene_gui)
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestAnimation {
 
@@ -55227,7 +55228,7 @@ TEST_CASE("[Animation] Create Bezier track") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestAnimationBlendTree {
 
@@ -55312,7 +55313,7 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestAnimationPlayer {
 
@@ -57698,7 +57699,7 @@ TEST_CASE("[SceneTree][ImageTexture3D] set_path") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPackedScene {
 
@@ -58863,7 +58864,7 @@ TEST_FORCE_LINK(test_scene_resources)
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestArrayMesh {
@@ -59312,7 +59313,7 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestCamera2D {
 
@@ -59629,7 +59630,7 @@ TEST_CASE("[SceneTree][Camera2D] Transforms") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestCamera3D {
 
@@ -60005,7 +60006,7 @@ TEST_CASE("[SceneTree][Camera3D] Project ray") {
 #ifndef _3D_DISABLED
 
 #include "core/io/ip.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestConvertTransformModifier3D {
 
@@ -60268,7 +60269,7 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 #ifndef _3D_DISABLED
 
 #include "core/io/ip.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestCopyTransformModifier3D {
 
@@ -60801,7 +60802,7 @@ TEST_CASE("[SceneTree][CopyTransformModifier3D]") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestDecal {
 
@@ -60941,7 +60942,7 @@ TEST_CASE("[SceneTree][Decal] Getters/Setters") {
 #ifndef PHYSICS_3D_DISABLED
 
 #include "scene/3d/physics/joints/generic_6dof_joint_3d.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include <cfloat>
 
@@ -61181,7 +61182,7 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Default joint configuration does not 
 #ifdef MODULE_GLTF_ENABLED
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestGLTFDocument {
 
@@ -61434,7 +61435,7 @@ TEST_CASE("[SceneTree][GLTFDocument] Load suzanne.glb") {
 #ifndef PHYSICS_3D_DISABLED
 
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestHeightMapShape3D {
 
@@ -61555,7 +61556,7 @@ TEST_CASE("[SceneTree][HeightMapShape3D] update_map_data_from_image") {
 
 
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestInstancePlaceholder {
 
@@ -62091,7 +62092,7 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instance a PackedScene containing an
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationAgent2D {
 
@@ -62164,7 +62165,7 @@ TEST_SUITE("[Navigation2D]") {
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationAgent3D {
 
@@ -62237,7 +62238,7 @@ TEST_SUITE("[Navigation3D]") {
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationObstacle2D {
 
@@ -62309,7 +62310,7 @@ TEST_SUITE("[Navigation2D]") {
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationObstacle3D {
 
@@ -62381,7 +62382,7 @@ TEST_SUITE("[Navigation3D]") {
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationRegion2D {
 
@@ -62435,7 +62436,7 @@ TEST_SUITE("[Navigation2D]") {
 
 #ifdef MODULE_NAVIGATION_3D_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNavigationRegion3D {
 
@@ -62518,7 +62519,7 @@ TEST_SUITE("[Navigation3D]") {
 
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNode {
 
@@ -63432,7 +63433,7 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestNode2D {
 
@@ -63645,7 +63646,7 @@ TEST_CASE("[SceneTree][Node2D] Utility methods") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 // Test cases for the Parallax2D class to ensure its properties are set and retrieved correctly.
 
@@ -63775,7 +63776,7 @@ TEST_CASE("[SceneTree][Parallax2D] Ignore Camera Scroll") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPath2D {
 
@@ -63884,7 +63885,7 @@ TEST_CASE("[SceneTree][Path2D] Curve setter and getter") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPath3D {
 
@@ -63968,7 +63969,7 @@ TEST_CASE("[Path3D] Curve setter and getter") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPathFollow2D {
 
@@ -64226,7 +64227,7 @@ TEST_CASE("[SceneTree][PathFollow2D] Progress out of range") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPathFollow3D {
 
@@ -64680,7 +64681,7 @@ TEST_CASE("[Physics_material] Absorbent") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestPrimitives {
 
@@ -65258,7 +65259,7 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestReferenceRect {
 
@@ -65385,7 +65386,7 @@ TEST_CASE("[SceneTree][ReferenceRect] Minimum size on tree") {
 
 #ifndef _3D_DISABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSkeleton3D {
 
@@ -65464,7 +65465,7 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSprite2D {
 
@@ -65731,7 +65732,7 @@ TEST_CASE("[SceneTree][Sprite2D] Offset") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSpriteFrames {
 
@@ -65985,7 +65986,7 @@ TEST_CASE("[SpriteFrames] Frame addition, removal, and retrieval") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestTimer {
 
@@ -66190,10 +66191,10 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #ifndef PHYSICS_2D_DISABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #endif // PHYSICS_2D_DISABLED
 
 namespace TestViewport {
@@ -68176,7 +68177,7 @@ TEST_CASE("[SceneTree][Viewport] Embedded Windows") {
 
 
 #include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_MOUSE_MOTION_EVENT` macro.
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestWindow {
 
@@ -68745,7 +68746,7 @@ void check_file_size(const String &p_path, int p_expected_size) {
 
 // === Merged from modules/csg/tests/test_csg.h ===
 #ifdef MODULE_CSG_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 
 namespace TestCSG {
@@ -68824,7 +68825,7 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 } // namespace TestCSG
 
 // --- Folded from modules/gridmap/tests/test_grid_map.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 
 namespace TestGridMap {
@@ -69049,13 +69050,13 @@ TEST_CASE("[SceneTree][DDSSaver] Save DDS - Save valid uncompressed image") {
 
 #ifdef TOOLS_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "scene/main/scene_tree.h"
 #include "servers/display/display_server.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 
 namespace TestGltf {
 
@@ -69217,7 +69218,7 @@ TEST_CASE("[SceneTree][Node] GLTF emissiveTexture without emissiveFactor uses wh
 
 #ifdef TOOLS_ENABLED
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
 
@@ -69353,7 +69354,7 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 
 
 
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 namespace TestGltf {
@@ -69493,10 +69494,10 @@ TEST_CASE("[SceneTree][Node][Editor] Import GLTF with embedded texture, check ho
 
 // === Merged from modules/multiplayer/tests/test_scene_multiplayer.h ===
 #ifdef MODULE_MULTIPLAYER_ENABLED
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 #include "core/os/os.h"
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestSceneMultiplayer {
 
@@ -69579,7 +69580,7 @@ TEST_CASE("[Multiplayer][MultiplayerAPI] Authentication validation") {
 } // namespace TestSceneMultiplayer
 
 // --- Folded from modules/multiplayer/tests/test_multiplayer_spawner.h ---
-#include "scene/main/scene_tree.h"
+#include "servers/display/display_server.h"
 
 namespace TestMultiplayerSpawner
 {

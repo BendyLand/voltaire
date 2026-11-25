@@ -1735,7 +1735,8 @@ void unregister_camera_external_module() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#import "modules/openxr/openxr_platform_inc.h"
+#define WANT_OPENXR_PLATFORM_INC
+#import "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
 
