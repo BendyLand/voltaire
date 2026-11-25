@@ -4341,7 +4341,7 @@ static const float earth_gravity = 9.80665;
 
 #import "drivers/unix/os_unix.h"
 
-#include "core/types.h"
+#include "core/io/ip.h"
 
 struct HashMapHasherKeys {
 	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }

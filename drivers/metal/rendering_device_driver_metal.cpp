@@ -49,15 +49,15 @@
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
 
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "drivers/unix/os_unix.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include <Metal/Metal.hpp>
 #include <os/log.h>
@@ -2926,7 +2926,7 @@ const RenderingShaderContainerFormat &RenderingDeviceDriverMetal::get_shader_con
 
 
 // --- Merged from drivers/metal/metal_device_profile.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 
 Mutex MetalDeviceProfile::profiles_lock;
@@ -3027,10 +3027,9 @@ const MetalDeviceProfile *MetalDeviceProfile::get_profile(Platform p_platform, G
 
 
 // --- Merged from drivers/metal/metal_device_properties.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/os/os.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
 #include "servers/rendering/renderer.h"
 
 #include <MetalFX/MetalFX.hpp>
@@ -3378,7 +3377,7 @@ const SampleCount MetalDeviceProperties::sample_count[RenderingDeviceCommons::Te
 
 
 // --- Merged from drivers/metal/metal_objects_shared.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 
 #include <os/signpost.h>
@@ -4250,7 +4249,7 @@ std::shared_ptr<MDLibrary> MDLibrary::create(ShaderCacheEntry *p_entry,
 
 
 // --- Merged from drivers/metal/pixel_formats.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 
 #if TARGET_OS_IPHONE || TARGET_OS_TV
@@ -5255,11 +5254,11 @@ void PixelFormats::buildDFFormatMaps() {
 
 
 // --- Merged from drivers/metal/rendering_context_driver_metal.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include <objc/message.h>
 #include <os/log.h>
@@ -5726,13 +5725,13 @@ void RenderingContextDriverMetal::surface_destroy(SurfaceID p_surface) {
 
 
 // --- Merged from drivers/metal/rendering_shader_container_metal.cpp ---
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include "core/io/file_access.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
 

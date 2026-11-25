@@ -37,7 +37,7 @@
 #ifdef WAYLAND_ENABLED
 // --- Folded from platform/linuxbsd/wayland/key_mapping_xkb.h ---
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 typedef uint32_t xkb_keycode_t;
 typedef uint32_t xkb_keysym_t;
@@ -381,7 +381,7 @@ int initialize_libdecor(int verbose);
 
 #include "core/io/net_socket.h"
 #include "core/os/mutex.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
 
 #include <poll.h>
@@ -2949,7 +2949,7 @@ public:
 #ifdef EGL_ENABLED
 
 #ifdef GLAD_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #else
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -3005,7 +3005,7 @@ public:
 #ifdef EGL_ENABLED
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 class EGLManagerWayland : public EGLManager {
 public:
@@ -3025,7 +3025,7 @@ public:
 #ifdef EGL_ENABLED
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 class EGLManagerWaylandGLES : public EGLManager {
 public:
@@ -3098,22 +3098,22 @@ public:
 #ifdef GLES3_ENABLED
 #include "core/io/file_access.h"
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #endif
 
 #ifdef DBUS_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef SOWRAP_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #else
 #include <dbus/dbus.h>
 #endif
 #endif
 
 #ifdef SPEECHD_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #endif
 
 #define WAYLAND_MAX_FRAME_TIME_US (1'000'000)
@@ -5540,11 +5540,11 @@ void DisplayServerWayland::register_wayland_driver()
 
 
 
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
 
 #ifdef GLAD_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #else
 #include <GL/glcorearb.h>
 #endif
@@ -6242,7 +6242,7 @@ KeyLocation KeyMappingXKB::get_location(unsigned int p_code) {
 #ifdef WAYLAND_ENABLED
 
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 
 #ifdef __FreeBSD__
@@ -16420,7 +16420,7 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 #include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -16451,7 +16451,7 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 
 #endif
 
-#include "modules/modules_enabled.gen.h" // For regex.
+#include "core/version_generated.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
 #include "core/os/os.h"
 #endif
@@ -16469,7 +16469,7 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 #endif
 #endif
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #include <cstdio>
@@ -18930,7 +18930,7 @@ void OS::finalize()
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 
 #ifndef DEBUG_ENABLED
@@ -19049,7 +19049,7 @@ void CrashHandler::initialize() {}
 // Merged from platform/linuxbsd/freedesktop_portal_desktop.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef DBUS_ENABLED
 
@@ -19060,7 +19060,7 @@ void CrashHandler::initialize() {}
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -19651,14 +19651,14 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 // Merged from platform/linuxbsd/freedesktop_screensaver.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef DBUS_ENABLED
 
 #include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -19773,12 +19773,12 @@ void FreeDesktopScreenSaver::inhibit() {}
 // Merged from platform/linuxbsd/freedesktop_at_spi_monitor.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef DBUS_ENABLED
 
 #ifdef SOWRAP_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #else
 #include <dbus/dbus.h>
 #endif
@@ -19981,11 +19981,10 @@ FreeDesktopAtSPIMonitor::~FreeDesktopAtSPIMonitor() {
 // Merged from platform/linuxbsd/tts_linux.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "scene/resources/theme.h"
 
 void TTS_Linux::_speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark)
 {
@@ -20208,7 +20207,7 @@ void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
 #include <cstdlib>
 #include <unistd.h>
 #include "servers/display/display_server.h"
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(ASAN_ENABLED)
 #include <sys/resource.h>
@@ -20319,7 +20318,7 @@ int main(int argc, char* argv[])
 
 // --- Merged from platform/linuxbsd/libgodot_linuxbsd.cpp ---
 #if defined(LIBGODOT_ENABLED)
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"

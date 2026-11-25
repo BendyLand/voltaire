@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from collections import OrderedDict
-from io import TextIOWrapper
-
 import methods
 
 
-def version_info_builder(target, source):
+def version_info_builder(target, source, modules):
     with methods.generated_wrapper(str(target[0])) as file:
         file.write("""\
 #define VLTR_VERSION_SHORT_NAME "{short_name}"
@@ -20,23 +17,29 @@ def version_info_builder(target, source):
 #define VLTR_VERSION_WEBSITE "{website}"
 #define VLTR_VERSION_DOCS_BRANCH "{docs_branch}"
 #define VLTR_VERSION_DOCS_URL "https://docs.godotengine.org/en/" VLTR_VERSION_DOCS_BRANCH
+
 """.format(**source[0]))
+        for module in sorted(modules.keys()):
+            upper = module.upper()
+            file.write(f"#ifndef MODULE_{upper}_DISABLED\n#define MODULE_{upper}_ENABLED\n#endif\n")
 
 
-version_info_builder(
-    ["core/version_generated.gen.h"],
-    [
-        {
-            "short_name": "voltaire",
-            "name": "Voltaire Engine",
-            "major": 0,
-            "minor": 0,
-            "patch": 1,
-            "status": "dev",
-            "build": "custom_build",
-            "module_config": "",
-            "website": "blandlogic.com",
-            "docs_branch": "latest",
-        }
-    ],
-)
+if __name__ == "__main__":
+    version_info_builder(
+        ["core/version_generated.gen.h"],
+        [
+            {
+                "short_name": "voltaire",
+                "name": "Voltaire Engine",
+                "major": 0,
+                "minor": 0,
+                "patch": 1,
+                "status": "dev",
+                "build": "custom_build",
+                "module_config": "",
+                "website": "blandlogic.com",
+                "docs_branch": "latest",
+            }
+        ],
+        methods.detect_modules("modules", recursive=False),
+    )

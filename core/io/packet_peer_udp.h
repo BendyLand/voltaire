@@ -156,7 +156,7 @@ public:
 // --- End core/io/udp_server.h ---
 
 // --- Folded from core/os/time.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class Time final
 {

@@ -77,7 +77,7 @@ public:
 // --- End core/io/delta_encoding.h ---
 
 // --- Folded from core/io/packed_data_container.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class PackedDataContainer : public Resource
 {
@@ -127,7 +127,7 @@ public:
 // --- End core/io/packed_data_container.h ---
 
 // --- Folded from core/io/pck_packer.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class FileAccess;
 
@@ -182,7 +182,7 @@ public:
 #include "core/os/memory.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 /**
  * Multi-Platform abstraction for accessing to files.

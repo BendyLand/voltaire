@@ -94,23 +94,20 @@ def generate_all():
         "version_info_builder.py",
         "make_license_header.py",
         "make_splash.py",
-        "modules_enabled_builder.py",
         "make_icu_data.py",
     ]
     for s in single_scripts:
         if os.path.exists(os.path.join("scripts", s)):
             run_script(s)
 
-    for idx in (0, 1, 3):
+    for idx in (0, 1):
         run_script("make_translations.py", idx)
-    run_script("make_fonts_header.py", 0)
 
     run_script("build_rd_headers.py", "--all")
-    run_script("build_gles3_headers.py", "--all")
     generate_wayland_protocols(sowrap=True)
 
 
 if __name__ == "__main__":
-    if "--if-needed" in sys.argv and os.path.exists("core/version_generated.gen.h") and os.path.exists("modules/modules_enabled.gen.h"):
+    if "--if-needed" in sys.argv and os.path.exists("core/version_generated.gen.h"):
         sys.exit(0)
     generate_all()

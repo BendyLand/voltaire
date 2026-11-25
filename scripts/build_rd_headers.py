@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Standalone RD shader header generator synced with root glsl_builders.py (no SCons required)."""
+"""Standalone RD & GLES3 shader header generator synced with root glsl_builders.py (no SCons required)."""
 
 import os
 import sys
@@ -10,13 +10,6 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 import glsl_builders
-import utils
-
-
-def build_rd_headers(target, source):
-    for src in source:
-        glsl_builders.build_rd_header(f"{src}.gen.h", str(src))
-
 
 SHADERS = [
     "servers/rendering/renderer_rd/shaders/effects/bokeh_dof.glsl",
@@ -103,7 +96,6 @@ SHADERS = [
     "servers/rendering/renderer_rd/shaders/giprobe_write.glsl",
 ]
 
-
 RAW_SHADERS = [
     "modules/betsy/alpha_stitch.glsl",
     "modules/betsy/bc1.glsl",
@@ -115,7 +107,24 @@ RAW_SHADERS = [
     "modules/lightmapper_rd/lm_raster.glsl",
 ]
 
+GLES3_SHADERS = [
+    "drivers/gles3/shaders/effects/copy.glsl",
+    "drivers/gles3/shaders/effects/cubemap_filter.glsl",
+    "drivers/gles3/shaders/feed.glsl",
+    "drivers/gles3/shaders/effects/glow.glsl",
+    "drivers/gles3/shaders/effects/post.glsl",
+    "drivers/gles3/shaders/canvas.glsl",
+    "drivers/gles3/shaders/canvas_occlusion.glsl",
+    "drivers/gles3/shaders/particles.glsl",
+    "drivers/gles3/shaders/scene.glsl",
+    "drivers/gles3/shaders/sky.glsl",
+    "drivers/gles3/shaders/tex_blit.glsl",
+    "drivers/gles3/shaders/skeleton.glsl",
+    "drivers/gles3/shaders/particles_copy.glsl",
+    "drivers/gles3/shaders/canvas_sdf.glsl",
+]
+
 BUNDLE_TARGET = "servers/rendering/renderer_rd/shaders/rd_shaders.gen.h"
 
 if __name__ == "__main__":
-    glsl_builders.build_rd_headers_bundle(BUNDLE_TARGET, SHADERS, RAW_SHADERS)
+    glsl_builders.build_rd_headers_bundle(BUNDLE_TARGET, SHADERS, RAW_SHADERS, GLES3_SHADERS)

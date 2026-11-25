@@ -33,7 +33,7 @@
 
 #ifdef VULKAN_ENABLED
 
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "servers/rendering/renderer.h"
 

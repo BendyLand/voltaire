@@ -34,7 +34,7 @@
 #include <cstdlib>
 // --- Folded from core/config/engine.h ---
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/templates/list.h"
 
 class Engine
@@ -222,7 +222,7 @@ public:
 #include <cstdarg>
 #include "core/io/file_access.h"
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class FileAccess;
 class RegEx;
@@ -340,7 +340,7 @@ public:
 };
 // --- Folded from core/io/remote_filesystem_client.h ---
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
 
 class RemoteFilesystemClient {
@@ -409,7 +409,7 @@ enum Weekday : uint8_t {
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class OS final
 {
@@ -986,7 +986,7 @@ constexpr MouseButtonMask& operator|=(MouseButtonMask& p_a, MouseButtonMask p_b)
 class String;
 
 #include <cstdint>
-#include "core/types.h"
+#include "core/io/ip.h"
 
 // Keep the values in this enum in sync with `_keycodes` in `keyboard.cpp`,
 // and the bindings in `core_constants.cpp`.
@@ -1627,7 +1627,7 @@ struct InputEvent
 };
 
 // --- Folded from core/input/shortcut.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class Shortcut : public Resource
 {
@@ -1651,7 +1651,7 @@ public:
 };
 // --- End core/input/input_event.h ---
 #include "core/typedefs.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 /**
  * Multi-Platform abstraction for accessing to MIDI.
@@ -1851,12 +1851,12 @@ public:
 
 // --- Folded from core/input/input.h ---
 
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/math/vector2.h"
 
 
 #include "core/templates/list.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/templates/rb_set.h"
 
 class GamepadMotion;
@@ -2437,7 +2437,7 @@ private:
 
 // --- Folded from core/input/input_map.h ---
 
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/templates/list.h"
 
 class InputMap final
@@ -2647,7 +2647,7 @@ static inline bool vltr_project_valid(const VoltaireProjectFile* p_file)
 		   p_file->config.icon_path[sizeof(p_file->config.icon_path) - 1] == '\0';
 }
 
-#include "core/types.h"
+#include "core/io/ip.h"
 
 template <typename T> class TypedArray;
 
@@ -2869,7 +2869,7 @@ public:
 
 // --- Folded from core/core_constants.h ---
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/templates/list.h"
 
 class CoreConstants {
@@ -2893,7 +2893,7 @@ public:
 
 // --- Folded from core/string/translation_server.h ---
 // --- Inlined/Folded from core/string/translation.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class PluralRules;
 
@@ -3005,7 +3005,7 @@ public:
 	~Translation();
 };
 // --- Folded from core/string/translation_domain.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class Translation;
 
@@ -3256,7 +3256,7 @@ public:
 };
 
 // --- Folded from core/string/plural_rules.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class Expression;
 
@@ -3300,7 +3300,7 @@ public:
 // --- End core/string/plural_rules.h ---
 
 // --- Folded from core/string/fuzzy_search.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class FuzzyTokenMatch;
 
@@ -3459,9 +3459,9 @@ public:
 
 // --- Folded from modules/regex/regex.h ---
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 class RegExMatch final : public RefCounted
 {

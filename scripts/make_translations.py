@@ -4,11 +4,11 @@ import os
 import os.path
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 
 import methods
-import utils
 
 
 def _compile_translation_entries(category, source):
@@ -93,52 +93,8 @@ extern const EditorTranslationList _{category}_translations[];
 """)
 
 
-def make_extractable_and_exporters(target_h, extractable_sources):
-    blobs, xl_names = _compile_translation_entries("extractable", extractable_sources)
-    platforms = ["android", "ios", "linuxbsd", "macos", "visionos", "web", "windows"]
-    exp_reg = "\n\t".join([f"register_{p}_exporter();" for p in platforms])
-    exp_type = "\n\t".join([f"register_{p}_exporter_types();" for p in platforms])
-
-    with open(str(target_h), "w", encoding="utf-8", newline="\n") as file:
-        file.write("/* THIS FILE IS GENERATED. EDITS WILL BE LOST. */\n\n")
-        file.write("""\
-#ifndef EXTRACTABLE_TRANSLATIONS_GEN_H
-#define EXTRACTABLE_TRANSLATIONS_GEN_H
-
-#ifndef EDITOR_TRANSLATION_LIST
-#define EDITOR_TRANSLATION_LIST
-
-struct EditorTranslationList {
-	const char* lang;
-	int comp_size;
-	int uncomp_size;
-	const unsigned char* data;
-};
-
-#endif // EDITOR_TRANSLATION_LIST
-
-extern const EditorTranslationList _extractable_translations[];
-extern const EditorTranslationList _doc_translations[];
-
-#endif // EXTRACTABLE_TRANSLATIONS_GEN_H
-
-#ifdef DEFINE_EDITOR_EXPORTERS_AND_TRANSLATIONS
-#undef DEFINE_EDITOR_EXPORTERS_AND_TRANSLATIONS
-
-""")
-        file.write(f"void register_exporters() {{\n\t{exp_reg}\n}}\n\n")
-        file.write(f"void register_exporter_types() {{\n\t{exp_type}\n}}\n\n")
-        file.write("const EditorTranslationList _doc_translations[] = {\n\t{ nullptr, 0, 0, nullptr },\n};\n\n")
-        for b in blobs:
-            file.write(b)
-        file.write("const EditorTranslationList _extractable_translations[] = {\n")
-        for x in xl_names:
-            file.write(f'\t{{ "{x[0]}", {x[1]}, {x[2]}, _extractable_translation_{x[0]}_compressed }},\n')
-        file.write("\t{ nullptr, 0, 0, nullptr },\n};\n\n#endif // DEFINE_EDITOR_EXPORTERS_AND_TRANSLATIONS\n")
-
-
 if __name__ == "__main__":
-    run = utils.get_run_arg()
+    run = int(sys.argv[1]) if len(sys.argv) > 1 else -1
     match run:
         case 0:
             make_translations(
@@ -150,12 +106,5 @@ if __name__ == "__main__":
                 ["editor/translations/property_translations.gen.h", "editor/translations/property_translations.gen.cpp"],
                 ["editor/translations/properties/bg.po", "editor/translations/properties/ca.po", "editor/translations/properties/cs.po", "editor/translations/properties/de.po", "editor/translations/properties/es.po", "editor/translations/properties/et.po", "editor/translations/properties/fa.po", "editor/translations/properties/fr.po", "editor/translations/properties/ga.po", "editor/translations/properties/hi.po", "editor/translations/properties/id.po", "editor/translations/properties/it.po", "editor/translations/properties/ja.po", "editor/translations/properties/ka.po", "editor/translations/properties/ko.po", "editor/translations/properties/pl.po", "editor/translations/properties/pt.po", "editor/translations/properties/pt_BR.po", "editor/translations/properties/ru.po", "editor/translations/properties/sv.po", "editor/translations/properties/ta.po", "editor/translations/properties/tr.po", "editor/translations/properties/uk.po", "editor/translations/properties/vi.po", "editor/translations/properties/zh_Hans.po", "editor/translations/properties/zh_Hant.po"],
             )
-        case 2:
-            pass
-        case 3:
-            make_extractable_and_exporters(
-                "editor/translations/extractable_translations.gen.h",
-                ["editor/translations/extractable/ar.po", "editor/translations/extractable/bg.po", "editor/translations/extractable/ca.po", "editor/translations/extractable/cs.po", "editor/translations/extractable/de.po", "editor/translations/extractable/el.po", "editor/translations/extractable/es.po", "editor/translations/extractable/es_AR.po", "editor/translations/extractable/et.po", "editor/translations/extractable/extractable.pot", "editor/translations/extractable/fa.po", "editor/translations/extractable/fi.po", "editor/translations/extractable/fr.po", "editor/translations/extractable/he.po", "editor/translations/extractable/id.po", "editor/translations/extractable/it.po", "editor/translations/extractable/ja.po", "editor/translations/extractable/ko.po", "editor/translations/extractable/lv.po", "editor/translations/extractable/nl.po", "editor/translations/extractable/pl.po", "editor/translations/extractable/pt.po", "editor/translations/extractable/pt_BR.po", "editor/translations/extractable/ru.po", "editor/translations/extractable/sk.po", "editor/translations/extractable/sv.po", "editor/translations/extractable/th.po", "editor/translations/extractable/tr.po", "editor/translations/extractable/uk.po", "editor/translations/extractable/vi.po", "editor/translations/extractable/zh_Hans.po", "editor/translations/extractable/zh_Hant.po"],
-            )
         case _:
-            print("No commands left to run.")
+            pass

@@ -2575,11 +2575,11 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 
 #include "core/os/os.h"
 #include "core/io/file_access.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "servers/rendering/renderer.h"
 #include "core/object/callable_mp.h"
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
@@ -2600,7 +2600,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 #endif
 #include "drivers/unix/os_unix.h"
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(RD_ENABLED)
@@ -2610,7 +2610,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 #import "drivers/unix/os_unix.h"
 #endif
 #if defined(METAL_ENABLED)
-#import "drivers/metal/rendering_device_driver_metal3.h"
+#import "servers/rendering/renderer.h"
 #endif
 #endif // RD_ENABLED
 
@@ -6611,7 +6611,7 @@ DisplayServerMacOS::~DisplayServerMacOS() {
 
 
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 #if defined(RD_ENABLED)
 #include "servers/rendering/renderer.h"
@@ -8991,7 +8991,7 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 #import "drivers/unix/os_unix.h"
 
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
@@ -11888,14 +11888,14 @@ GODOT_CLANG_WARNING_POP
 
 
 #import "core/os/os.h"
-#import "core/io/resource_loader.h"
+#import "core/io/net_socket.h"
 #import "core/os/os.h"
 #import "servers/display/display_server.h"
 
 #if defined(GLES3_ENABLED)
 #import "drivers/unix/os_unix.h"
 
-#import "drivers/gles3/shader_gles3.h"
+#import "servers/rendering/renderer.h"
 
 #endif
 
@@ -11906,7 +11906,7 @@ GODOT_CLANG_WARNING_POP
 #import "drivers/unix/os_unix.h"
 #endif // VULKAN_ENABLED
 #if defined(METAL_ENABLED)
-#import "drivers/metal/rendering_device_driver_metal3.h"
+#import "servers/rendering/renderer.h"
 #endif
 #endif // RD_ENABLED
 
@@ -12920,7 +12920,7 @@ Error EmbeddedDebugger::parse_message(
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
-#import "drivers/gles3/shader_gles3.h"
+#import "servers/rendering/renderer.h"
 
 
 #import <QuartzCore/QuartzCore.h>

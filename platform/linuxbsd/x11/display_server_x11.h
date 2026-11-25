@@ -41,6 +41,11 @@
 #include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
+#pragma push_macro("Font")
+#pragma push_macro("Glyph")
+#define Font X11Font
+#define Glyph X11Glyph
+
 #ifdef SOWRAP_ENABLED
 // --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xcursor-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XCURSOR
@@ -3204,6 +3209,9 @@ int initialize_xrandr(int verbose);
 #endif
 #endif
 
+#pragma pop_macro("Glyph")
+#pragma pop_macro("Font")
+
 #undef CursorShape // Xlib macro conflicting with our type.
 
 struct InputEvent;
@@ -3795,6 +3803,11 @@ public:
 #include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
+#pragma push_macro("Font")
+#pragma push_macro("Glyph")
+#define Font X11Font
+#define Glyph X11Glyph
+
 #ifdef SOWRAP_ENABLED
 #else
 #include <X11/Xlib.h>
@@ -3902,7 +3915,7 @@ public:
 // --- Folded from platform/linuxbsd/x11/gl_manager_x11_egl.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 class GLManagerEGL_X11 : public EGLManager

@@ -29,11 +29,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 
 #ifdef WINRT_ENABLED
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 #endif
 
 bool TTS_Windows::is_speaking()
@@ -164,7 +164,7 @@ void TTS_Windows::finalize()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "servers/display/display_server.h"
 
@@ -436,7 +436,7 @@ TTSDriverSAPI::~TTSDriverSAPI() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/typedefs.h"
 
@@ -698,7 +698,7 @@ void WinRTUtils::destroy_wd(WinRTWindowData *p_data) {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "servers/display/display_server.h"
 

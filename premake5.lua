@@ -4012,25 +4012,18 @@ project "voltaire"
     -- Engine Source Files (core, main, scene, servers, common drivers & modules)
     -- -------------------------------------------------------------------------
     files {
-        -- Core & MbedTLS Godot platform glue
+        -- Core, Main & MbedTLS Godot platform glue
         "core/register_core_types.cpp",
         "thirdparty/mbedtls/godot/godot_mbedtls_platform.cpp",
 
-        -- Main
-        "main/main.cpp",
-
         -- Scene (always-enabled)
-        "scene/2d/node_2d.cpp",
         "scene/main/scene_tree.cpp",
 
-        -- Servers (always-enabled)
+        -- Servers & Modules (always-enabled)
         "servers/rendering/renderer.cpp",
 
         -- Drivers (common)
         "drivers/register_driver_types.cpp",
-
-        -- Modules (always-enabled)
-        "modules/svg/image_loader_svg.cpp",
     }
 
     -- Feature-conditional scene/server/module files

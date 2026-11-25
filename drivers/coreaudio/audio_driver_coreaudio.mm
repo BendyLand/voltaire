@@ -34,7 +34,7 @@
 #ifdef COREAUDIO_ENABLED
 
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/os/os.h"
 
 #define kOutputBus 0
@@ -1100,7 +1100,7 @@ Thread::~Thread() {
 }
 
 // === Merged from modules/camera/camera_apple.mm ===
-#include "modules/modules_enabled.gen.h"
+#include "core/version_generated.gen.h"
 #if defined(MODULE_CAMERA_ENABLED)
 /*  camera_apple.mm                                                       */
 /**************************************************************************/
@@ -1703,7 +1703,7 @@ void unregister_camera_external_module() {
 #endif // defined(MODULE_CAMERA_ENABLED)
 
 // === Merged from modules/openxr/extensions/platform/openxr_metal_extension.mm ===
-#include "modules/modules_enabled.gen.h"
+#include "core/version_generated.gen.h"
 #if defined(MODULE_OPENXR_ENABLED) && defined(METAL_ENABLED)
 /*  openxr_metal_extension.mm                                             */
 /**************************************************************************/
@@ -1739,7 +1739,7 @@ void unregister_camera_external_module() {
 
 #include "servers/rendering/renderer.h"
 
-#import "drivers/metal/rendering_device_driver_metal3.h"
+#import "servers/rendering/renderer.h"
 #include "servers/rendering/renderer.h"
 #include "servers/rendering/rendering_server.h"
 

@@ -31,9 +31,9 @@
 
 #include "servers/display/display_server.h"
 
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 // --- Inlined/Folded from drivers/png/image_loader_png.h ---
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 class ImageLoaderPNG : public ImageFormatLoader {
 private:
@@ -49,7 +49,7 @@ public:
 };
 
 // --- Folded from drivers/png/resource_saver_png.h ---
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 class ResourceSaverPNG : public ResourceFormatSaver
 {
@@ -77,7 +77,7 @@ public:
 #ifdef ACCESSKIT_ENABLED
 
 #include <accesskit.h>
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 class AccessibilityServerAccessKit : public AccessibilityServerDriver
@@ -284,7 +284,7 @@ void unregister_driver_types() {
 #ifdef ACCESSKIT_ENABLED
 
 
-#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
 
 _FORCE_INLINE_ accesskit_role AccessibilityServerAccessKit::_accessibility_role(
 	AccessibilityServerEnums::AccessibilityRole p_role) const
@@ -2214,12 +2214,12 @@ void AccessibilityServerAccessKit::register_create_func()
 // Merged from drivers/alsa/audio_driver_alsa.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef ALSA_ENABLED
 
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
@@ -7648,7 +7648,7 @@ void AudioDriverALSA::finish() {
 
 #ifdef ALSAMIDI_ENABLED
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 
@@ -7803,7 +7803,7 @@ void MIDIDriverALSAMidi::unlock()
 // Merged from drivers/egl/egl_manager.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef EGL_ENABLED
 
@@ -7813,7 +7813,7 @@ void MIDIDriverALSAMidi::unlock()
 #include "core/os/os.h"
 
 #ifdef WINDOWS_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(EGL_STATIC)
@@ -8321,12 +8321,12 @@ EGLManager::~EGLManager() {
 // Merged from drivers/pulseaudio/audio_driver_pulseaudio.cpp
 // ============================================================================
 
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef PULSEAUDIO_ENABLED
 
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/typedefs.h"
 
@@ -9216,7 +9216,7 @@ AudioDriverPulseAudio::AudioDriverPulseAudio()
 
 #ifdef WINDOWS_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"
@@ -9908,12 +9908,12 @@ void FileAccessWindows::finalize() {
 
 #if defined(WINDOWS_ENABLED)
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/memory.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include <windows.h>
 
@@ -10455,7 +10455,7 @@ DirAccessWindows::~DirAccessWindows() {
 
 #ifdef WINDOWS_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/string/ustring.h"
 
@@ -10584,7 +10584,7 @@ FileAccessWindowsPipe::~FileAccessWindowsPipe() {
 
 #if defined(WINDOWS_ENABLED)
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -10718,7 +10718,7 @@ void IPWindows::make_default()
 
 #ifdef WINDOWS_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include <mswsock.h>
 #include <winsock2.h>
@@ -11321,7 +11321,7 @@ Error NetSocketWinSock::leave_multicast_group(const IPAddress &p_multi_address, 
 
 #ifdef WINDOWS_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
@@ -11354,7 +11354,7 @@ void init_thread_win() {
 
 #ifdef WINMIDI_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/string/ustring.h"
 
@@ -11452,7 +11452,7 @@ void MIDIDriverWinMidi::close()
 // --- Merged from drivers/png/image_loader_png.cpp ---
 
 
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	const uint64_t buffer_size = f->get_length();
@@ -11528,7 +11528,7 @@ ImageLoaderPNG::ImageLoaderPNG() {
 // Merged from drivers/png/png_driver_common.cpp
 // ============================================================================
 
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/os/os.h"
@@ -11638,7 +11638,7 @@ Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, 
 // ============================================================================
 
 #include "core/io/file_access.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 
 #include "servers/rendering/renderer.h"
 
@@ -15801,7 +15801,7 @@ void init_thread_posix() {
 #include "core/string/ustring.h"
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 // --- Inlined from drivers/vulkan/rendering_device_driver_vulkan.h ---
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 #include "servers/rendering/renderer.h"
 
@@ -16664,7 +16664,7 @@ using VKC = RenderingContextDriverVulkan;
 
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 #include <thirdparty/swappy-frame-pacing/swappyVk.h>
-#include "platform/android/os_android.h"
+#include "drivers/unix/os_unix.h"
 #endif
 
 #define ARRAY_SIZE(a) std_size(a)
@@ -26962,14 +26962,12 @@ void VulkanHooks::reset()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 #include "core/license.gen.h"
 
@@ -32580,7 +32578,7 @@ void GLES3::GI::sdfgi_reset() {}
 
 // --- Merged from drivers/gles3/storage/utilities.cpp ---
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 
 // RasterizerUtilGLES3
@@ -32609,10 +32607,10 @@ void RasterizerUtilGLES3::clear_stencil(int32_t p_stencil)
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef ANDROID_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #ifdef WEB_ENABLED
@@ -34026,14 +34024,14 @@ uint64_t Utilities::get_maximum_uniform_buffer_size()
 // Merged from drivers/gles3/storage/light_storage.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
 #include "servers/rendering/renderer.h"
 #include "core/os/os.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 using namespace GLES3;
 
@@ -35977,13 +35975,12 @@ void GLES3::LightStorage::initialize() {}
 // Merged from drivers/gles3/storage/material_storage.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "core/io/net_socket.h"
 #include "servers/rendering/renderer.h"
 
 using namespace GLES3;
@@ -38295,11 +38292,10 @@ void GLES3::MaterialStorage::finalize()
 // Merged from drivers/gles3/storage/mesh_storage.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 using namespace GLES3;
@@ -41195,12 +41191,10 @@ void MeshStorage::skeleton_update_dependency(RID p_skeleton, DependencyTracker* 
 // Merged from drivers/gles3/storage/particles_storage.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 using namespace GLES3;
@@ -42938,12 +42932,12 @@ void ParticlesStorage::particles_collision_instance_set_active(
 // Merged from drivers/gles3/storage/texture_storage.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 using namespace GLES3;
 
@@ -46965,13 +46959,11 @@ void GLES3::TextureStorage::texture_set_format(RID p_texture, Image::Format p_fo
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "servers/rendering/renderer.h"
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
@@ -50296,13 +50288,13 @@ void RasterizerCanvasGLES3::finalize()
 // Merged from drivers/gles3/shader_gles3.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/io/net_socket.h"
 #include "core/string/ustring.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifndef WEB_ENABLED
 #include "core/io/file_access.h"
@@ -51173,16 +51165,14 @@ ShaderGLES3::~ShaderGLES3()
 // Merged from drivers/gles3/rasterizer_gles3.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
 #include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/io/resource_loader.h"
 #include "core/os/os.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -51223,10 +51213,10 @@ ShaderGLES3::~ShaderGLES3()
 #endif
 #endif
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #if defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #if defined(GLAD_ENABLED) || defined(EGL_ENABLED) || defined(ANDROID_ENABLED)
@@ -51874,12 +51864,12 @@ void RasterizerGLES3::bind_utilities()
 // Merged from drivers/gles3/effects/gles3_effects.cpp
 // ============================================================================
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 
 #ifdef GLES3_ENABLED
 
 #include "core/os/os.h"
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #include "servers/display/display_server.h"
 
 using namespace GLES3;

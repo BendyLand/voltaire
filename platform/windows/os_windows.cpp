@@ -29,10 +29,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "os_windows.h"
+#include "drivers/unix/os_unix.h"
 #include "core/io/packet_peer_udp.h"
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 // --- Inlined from platform/windows/lang_table.h ---
 #include <windef.h>
 
@@ -194,16 +194,16 @@ static const _WinLocale _win_locales[] = {
 };
 
 // --- End platform/windows/lang_table.h ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 #include "core/debugger/script_debugger.h"
 #include "core/os/os.h"
 #include "core/version_generated.gen.h"
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
-#include "scene/resources/theme.h"
+#include "servers/display/display_server.h"
 
 #include <avrt.h>
 #include <bcrypt.h>
@@ -231,17 +231,17 @@ extern "C" {
 #endif
 
 #if defined(GLES3_ENABLED)
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 #endif
 
 #if defined(VULKAN_ENABLED)
 #include "drivers/vulkan/rendering_context_driver_vulkan.h"
 #endif
 #if defined(D3D12_ENABLED)
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
+#include "servers/rendering/renderer.h"
 #endif
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #ifdef DEBUG_ENABLED
@@ -3088,7 +3088,7 @@ OS_Windows::~OS_Windows() {
 
 
 // --- Merged from platform/windows/windows_terminal_logger.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef WINDOWS_ENABLED
 
@@ -3200,7 +3200,7 @@ WindowsTerminalLogger::~WindowsTerminalLogger() {}
 
 
 // --- Merged from platform/windows/windows_utils.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef WINDOWS_ENABLED
 
@@ -3454,7 +3454,7 @@ void WindowsUtils::remove_temp_pdbs(const String &p_dll_path) {
 
 // --- Merged from platform/windows/godot_windows.cpp ---
 #if !defined(LIBGODOT_ENABLED)
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "servers/display/display_server.h"
 
@@ -3581,7 +3581,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 // --- Merged from platform/windows/libgodot_windows.cpp ---
 #if defined(LIBGODOT_ENABLED)
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/extension/godot_instance.h"
 #include "core/extension/libgodot.h"
@@ -3652,16 +3652,16 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "core/typedefs.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/rendering/renderer.h"
 
@@ -3670,15 +3670,15 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #endif
 
 #if defined(VULKAN_ENABLED)
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 #endif
 #if defined(D3D12_ENABLED)
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
+#include "servers/rendering/renderer.h"
 
 #include <dxgi1_6.h>
 #endif
 #if defined(GLES3_ENABLED)
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #include <avrt.h>
@@ -12017,9 +12017,9 @@ DisplayServerWindows::~DisplayServerWindows() {
 
 
 // --- Merged from platform/windows/key_mapping_windows.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
-#include "core/types.h"
+#include "core/io/ip.h"
 
 // This provides translation from Windows virtual key codes to Godot and back.
 // See WinUser.h and the below for documentation:
@@ -12439,7 +12439,7 @@ KeyLocation KeyMappingWindows::get_location(unsigned int p_code, bool p_extended
 
 
 // --- Merged from platform/windows/native_menu_windows.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 
 #include "servers/rendering/renderer.h"
@@ -13647,7 +13647,7 @@ NativeMenuWindows::~NativeMenuWindows() {}
 
 
 // --- Merged from platform/windows/gl_manager_windows_native.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -14194,7 +14194,7 @@ GLManagerNative_Windows::~GLManagerNative_Windows() {
 // --- Merged from platform/windows/wgl_detect_version.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 
 #include "core/os/os.h"
@@ -14359,7 +14359,7 @@ Dictionary detect_wgl() {
 // --- Merged from platform/windows/rendering_context_driver_vulkan_windows.cpp ---
 #if defined(WINDOWS_ENABLED) && defined(VULKAN_ENABLED)
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 
@@ -14401,10 +14401,10 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_c
 
 
 // --- Merged from platform/windows/drop_target_windows.cpp ---
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/io/net_socket.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/os/os.h"
 
 #include <fileapi.h>
@@ -14751,7 +14751,7 @@ HRESULT STDMETHODCALLTYPE DropTargetWindows::Drop(IDataObject *pDataObj, DWORD g
 
 // --- Merged from platform/windows/gl_manager_windows_angle.cpp ---
 #if defined(ANGLE_ENABLED)
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -14826,7 +14826,7 @@ void GLManagerANGLE_Windows::window_resize(DisplayServerEnums::WindowID p_window
 
 #ifdef WASAPI_ENABLED
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
 
@@ -15879,10 +15879,10 @@ AudioDriverWASAPI::AudioDriverWASAPI() {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "platform/windows/os_windows.h"
+#include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 
 Error AudioDriverXAudio2::init() {
 	active.clear();

@@ -568,7 +568,7 @@ extern void godot_audio_script_start(float *p_in_buf, int p_in_size, float *p_ou
 // --- End platform/web/godot_audio.h ---
 
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #include <emscripten.h>
@@ -1846,7 +1846,7 @@ void register_web_api() {}
 #include "drivers/unix/os_unix.h"
 
 #include "core/os/os.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
 
@@ -2039,7 +2039,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #endif
 
 #include <emscripten.h>

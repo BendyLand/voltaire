@@ -39,7 +39,7 @@
 #include "core/typedefs.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-#include "core/io/resource_loader.h"
+#include "core/io/net_socket.h"
 #pragma push_macro("Status")
 #undef Status
 #include "drivers/unix/os_unix.h"
@@ -48,7 +48,12 @@
 #include "servers/rendering/renderer.h"
 // --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
 #include "core/os/os.h"
-#include "core/types.h"
+#include "core/io/ip.h"
+
+#pragma push_macro("Font")
+#pragma push_macro("Glyph")
+#define Font X11Font
+#define Glyph X11Glyph
 
 #include <X11/XF86keysym.h>
 #include <X11/Xlib.h>
@@ -391,6 +396,9 @@ int initialize_xrender(int verbose);
 #include <X11/extensions/shape.h>
 #endif
 
+#pragma pop_macro("Glyph")
+#pragma pop_macro("Font")
+
 #ifdef RD_ENABLED
 #ifdef VULKAN_ENABLED
 #include "platform/linuxbsd/x11/display_server_x11.h"
@@ -400,22 +408,22 @@ int initialize_xrender(int verbose);
 #endif
 
 #ifdef GLES3_ENABLED
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 #endif
 
 #ifdef DBUS_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 
 #ifdef SOWRAP_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #else
 #include <dbus/dbus.h>
 #endif
 #endif
 
 #ifdef SPEECHD_ENABLED
-#include "platform/linuxbsd/os_linuxbsd.h"
+#include "drivers/unix/os_unix.h"
 #endif
 
 #include <dlfcn.h> // dlopen
@@ -7456,11 +7464,11 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 
 #define glXCreateContextAttribsARB glad_glXCreateContextAttribsARB
 
-#include "drivers/gles3/shader_gles3.h"
+#include "servers/rendering/renderer.h"
 #include <thirdparty/glad/glad/glx.h>
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "core/string/ustring.h"
-#include "core/types.h"
+#include "core/io/ip.h"
 #include "platform/linuxbsd/x11/display_server_x11.h"
 
 #ifdef SOWRAP_ENABLED

@@ -53,7 +53,7 @@
 
 #ifdef METAL_ENABLED
 #define XR_USE_GRAPHICS_API_METAL
-#include "drivers/metal/rendering_device_driver_metal3.h"
+#include "servers/rendering/renderer.h"
 #endif // METAL_ENABLED
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
@@ -83,7 +83,7 @@
 
 #ifdef D3D12_ENABLED
 #define XR_USE_GRAPHICS_API_D3D12
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
+#include "servers/rendering/renderer.h"
 #endif // D3D12_ENABLED
 
 #ifdef X11_ENABLED
@@ -183,7 +183,7 @@ public:
 #include "servers/rendering/renderer.h"
 
 #include "core/string/ustring.h"
-#include "drivers/d3d12/rendering_context_driver_d3d12.h"
+#include "servers/rendering/renderer.h"
 
 // Always include this as late as possible.
 
