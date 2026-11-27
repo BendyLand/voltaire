@@ -90,7 +90,7 @@ void OS_MacOS::initialize() {
 	initialize_core();
 
 #ifdef COREMIDI_ENABLED
-	MIDIDriver::bind<MIDIDriverCoreMidi>();
+	MIDIDriver::bind(&MIDIDriverCoreMidi::initialize, &MIDIDriverCoreMidi::finalize, &MIDIDriverCoreMidi::open, &MIDIDriverCoreMidi::close);
 	MIDIDriver::initialize();
 #endif
 }
@@ -1331,81 +1331,73 @@ OS_MacOS_Embedded::OS_MacOS_Embedded(const char *p_execpath, int p_argc, char **
 
 #import <CoreServices/CoreServices.h>
 
-MIDIDriverCoreMidi::InputConnection::InputConnection(int p_device_index, MIDIEndpointRef p_source) :
-		parser(p_device_index), source(p_source) {}
-
 void MIDIDriverCoreMidi::read(const MIDIPacketList *packet_list, void *read_proc_ref_con, void *src_conn_ref_con) {
 	(void)read_proc_ref_con;
-	if (!data) {
+	if (!MIDIDriver::data) {
 		return;
 	}
-	MutexLock lock(data->mutex);
-	if (!data->core_midi_closed) {
-		InputConnection *source = static_cast<InputConnection *>(src_conn_ref_con);
+	MutexLock lock(MIDIDriver::data->mutex);
+	if (!MIDIDriver::data->core_midi_closed) {
+		MIDIDriver::Parser *source = static_cast<MIDIDriver::Parser *>(src_conn_ref_con);
 		const MIDIPacket *packet = packet_list->packet;
 		for (UInt32 packet_index = 0; packet_index < packet_list->numPackets; packet_index++) {
 			for (UInt16 data_index = 0; data_index < packet->length; data_index++) {
-				source->parser.parse_fragment(packet->data[data_index]);
+				source->parse_fragment(packet->data[data_index]);
 			}
 			packet = MIDIPacketNext(packet);
 		}
 	}
 }
 
-void MIDIDriverCoreMidi::initialize() {
-	if (data == nullptr) {
-		data = memnew(Data);
-	}
-}
+void MIDIDriverCoreMidi::initialize() {}
 
 void MIDIDriverCoreMidi::finalize() {
-	if (data == nullptr) {
-		return;
-	}
 	close();
-	memdelete(data);
-	data = nullptr;
 }
 
 Error MIDIDriverCoreMidi::open() {
-	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
-	ERR_FAIL_COND_V_MSG(data->client || data->core_midi_closed, FAILED,
+	ERR_FAIL_NULL_V(MIDIDriver::data, ERR_UNCONFIGURED);
+	ERR_FAIL_COND_V_MSG(MIDIDriver::data->core_client || MIDIDriver::data->core_midi_closed, FAILED,
 			"MIDIDriverCoreMidi cannot be reopened.");
 
 	CFStringRef name = CFStringCreateWithCString(nullptr, "Godot", kCFStringEncodingASCII);
-	OSStatus result = MIDIClientCreate(name, nullptr, nullptr, &data->client);
+	MIDIClientRef client = 0;
+	OSStatus result = MIDIClientCreate(name, nullptr, nullptr, &client);
 	CFRelease(name);
 	if (result != noErr) {
 		ERR_PRINT("MIDIClientCreate failed, code: " + itos(result));
 		return ERR_CANT_OPEN;
 	}
+	MIDIDriver::data->core_client = (uint32_t)client;
 
-	result = MIDIInputPortCreate(data->client, CFSTR("Godot Input"), MIDIDriverCoreMidi::read, nullptr, &data->port_in);
+	MIDIPortRef port_in = 0;
+	result = MIDIInputPortCreate(client, CFSTR("Godot Input"), MIDIDriverCoreMidi::read, nullptr, &port_in);
 	if (result != noErr) {
 		ERR_PRINT("MIDIInputPortCreate failed, code: " + itos(result));
 		return ERR_CANT_OPEN;
 	}
+	MIDIDriver::data->core_port_in = (uint32_t)port_in;
 
 	int source_count = MIDIGetNumberOfSources();
 	int connection_index = 0;
 	for (int i = 0; i < source_count; i++) {
 		MIDIEndpointRef source = MIDIGetSource(i);
 		if (source) {
-			InputConnection *conn = memnew(InputConnection(connection_index, source));
-			const OSStatus res = MIDIPortConnectSource(data->port_in, source, static_cast<void *>(conn));
+			MIDIDriver::Parser *conn = memnew(MIDIDriver::Parser(connection_index, nullptr, (uintptr_t)source));
+			const OSStatus res = MIDIPortConnectSource(port_in, source, static_cast<void *>(conn));
 			if (res != noErr) {
 				memdelete(conn);
 			} else {
-				data->connected_sources.push_back(conn);
+				MIDIDriver::data->connected_ptrs.push_back(conn);
 
 				CFStringRef nameRef = nullptr;
-				char name[256];
+				char cname[256];
 				MIDIObjectGetStringProperty(source, kMIDIPropertyDisplayName, &nameRef);
-				CFStringGetCString(nameRef, name, sizeof(name), kCFStringEncodingUTF8);
+				CFStringGetCString(nameRef, cname, sizeof(cname), kCFStringEncodingUTF8);
 				CFRelease(nameRef);
-				MIDIDriver::add_connected_input(name);
+				MIDIDriver::add_connected_input(cname);
 
-				connection_index++; // Contiguous index for successfully connected inputs.
+				connection_index++;
 			}
 		}
 	}
@@ -1414,30 +1406,30 @@ Error MIDIDriverCoreMidi::open() {
 }
 
 void MIDIDriverCoreMidi::close() {
-	if (data == nullptr) {
+	if (MIDIDriver::data == nullptr) {
 		return;
 	}
 
-	data->mutex.lock();
-	data->core_midi_closed = true;
-	data->mutex.unlock();
+	MIDIDriver::data->mutex.lock();
+	MIDIDriver::data->core_midi_closed = true;
+	MIDIDriver::data->mutex.unlock();
 
-	for (InputConnection *conn : data->connected_sources) {
-		MIDIPortDisconnectSource(data->port_in, conn->source);
+	for (MIDIDriver::Parser *conn : MIDIDriver::data->connected_ptrs) {
+		MIDIPortDisconnectSource((MIDIPortRef)MIDIDriver::data->core_port_in, (MIDIEndpointRef)conn->backend_ep);
 		memdelete(conn);
 	}
 
-	data->connected_sources.clear();
+	MIDIDriver::data->connected_ptrs.clear();
 	MIDIDriver::clear_connected_inputs();
 
-	if (data->port_in != 0) {
-		MIDIPortDispose(data->port_in);
-		data->port_in = 0;
+	if (MIDIDriver::data->core_port_in != 0) {
+		MIDIPortDispose((MIDIPortRef)MIDIDriver::data->core_port_in);
+		MIDIDriver::data->core_port_in = 0;
 	}
 
-	if (data->client != 0) {
-		MIDIClientDispose(data->client);
-		data->client = 0;
+	if (MIDIDriver::data->core_client != 0) {
+		MIDIClientDispose((MIDIClientRef)MIDIDriver::data->core_client);
+		MIDIDriver::data->core_client = 0;
 	}
 }
 

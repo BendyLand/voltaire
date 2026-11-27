@@ -238,19 +238,18 @@ public:
 	~HashingContext();
 };
 
+struct MbedTLSState;
+
 class CryptoKey : public Resource
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	static CryptoKey* create(bool p_notify_postinitialize = true);
 	static bool is_available();
 
-	Data* get_data() const { return data; }
+	MbedTLSState* get_data() const { return data; }
 
 	Error load(const String& p_path, bool p_public_only = false);
 	Error save(const String& p_path, bool p_public_only = false);
@@ -264,17 +263,14 @@ public:
 
 class X509Certificate : public Resource
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	static X509Certificate* create(bool p_notify_postinitialize = true);
 	static bool is_available();
 
-	Data* get_data() const { return data; }
+	MbedTLSState* get_data() const { return data; }
 
 	Error load(const String& p_path);
 	Error load_from_memory(const uint8_t* p_buffer, int p_len);
@@ -323,11 +319,8 @@ public:
 
 class HMACContext : public RefCounted
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	static HMACContext* create(bool p_notify_postinitialize = true);
@@ -1805,16 +1798,58 @@ public:
 
 class ResourceImporter : public RefCounted
 {
+public:
+	enum BuiltinFormat
+	{
+		FORMAT_CUSTOM = 0,
+		FORMAT_MP3,
+		FORMAT_OGG_VORBIS,
+	};
+
 protected:
+	BuiltinFormat builtin_format = FORMAT_CUSTOM;
 
 public:
+	ResourceImporter(BuiltinFormat p_format = FORMAT_CUSTOM) : builtin_format(p_format) {}
+
 	static inline ResourceFormatImporterLoadOnStartup load_on_startup = nullptr;
 
-	virtual String get_importer_name() const = 0;
-	virtual String get_visible_name() const = 0;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const = 0;
-	virtual String get_save_extension() const = 0;
-	virtual String get_resource_type() const = 0;
+	virtual String get_importer_name() const
+	{
+		if (builtin_format == FORMAT_MP3) return "mp3";
+		if (builtin_format == FORMAT_OGG_VORBIS) return "oggvorbisstr";
+		return String();
+	}
+	virtual String get_visible_name() const
+	{
+		if (builtin_format == FORMAT_MP3) return "MP3";
+		if (builtin_format == FORMAT_OGG_VORBIS) return "Ogg Vorbis";
+		return String();
+	}
+	virtual void get_recognized_extensions(List<String>* p_extensions) const
+	{
+		if (builtin_format == FORMAT_MP3) {
+#ifndef DR_MP3_ONLY_MP3
+			p_extensions->push_back("mp1");
+			p_extensions->push_back("mp2");
+#endif
+			p_extensions->push_back("mp3");
+		} else if (builtin_format == FORMAT_OGG_VORBIS) {
+			p_extensions->push_back("ogg");
+		}
+	}
+	virtual String get_save_extension() const
+	{
+		if (builtin_format == FORMAT_MP3) return "mp3str";
+		if (builtin_format == FORMAT_OGG_VORBIS) return "oggvorbisstr";
+		return String();
+	}
+	virtual String get_resource_type() const
+	{
+		if (builtin_format == FORMAT_MP3) return "AudioStreamMP3";
+		if (builtin_format == FORMAT_OGG_VORBIS) return "AudioStreamOggVorbis";
+		return String();
+	}
 
 	virtual float get_priority() const { return 1.0; }
 
@@ -1842,11 +1877,11 @@ public:
 	virtual String get_preset_name(int p_idx) const { return String(); }
 
 	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const = 0;
+		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const {}
 
 	virtual String get_option_group_file() const { return String(); }
 
-	virtual bool can_import_threaded() const { return false; }
+	virtual bool can_import_threaded() const { return builtin_format != FORMAT_CUSTOM; }
 
 	virtual void import_threaded_begin() {}
 
@@ -2685,11 +2720,8 @@ public:
 
 class StreamPeerTLS : public StreamPeer
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	enum Status

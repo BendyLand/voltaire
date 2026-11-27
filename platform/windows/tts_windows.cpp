@@ -38,101 +38,89 @@
 
 bool TTS_Windows::is_speaking()
 {
-	if (data && data->driver) {
-		return data->driver->is_speaking();
-	}
-	return false;
+	return driver ? driver->is_speaking() : false;
 }
 
 bool TTS_Windows::is_paused()
 {
-	if (data && data->driver) {
-		return data->driver->is_paused();
-	}
-	return false;
+	return driver ? driver->is_paused() : false;
 }
 
 Array TTS_Windows::get_voices()
 {
-	if (data && data->driver) {
-		return data->driver->get_voices();
-	}
-	return Array();
+	return driver ? driver->get_voices() : Array();
 }
 
 void TTS_Windows::speak(const String& p_text, const String& p_voice, int p_volume, float p_pitch,
 	float p_rate, int64_t p_utterance_id, bool p_interrupt)
 {
-	if (data && data->driver) {
-		data->driver->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
+	if (driver) {
+		driver->speak(p_text, p_voice, p_volume, p_pitch, p_rate, p_utterance_id, p_interrupt);
 	}
 }
 
 void TTS_Windows::pause()
 {
-	if (data && data->driver) {
-		data->driver->pause();
+	if (driver) {
+		driver->pause();
 	}
 }
 
 void TTS_Windows::resume()
 {
-	if (data && data->driver) {
-		data->driver->resume();
+	if (driver) {
+		driver->resume();
 	}
 }
 
 void TTS_Windows::stop()
 {
-	if (data && data->driver) {
-		data->driver->stop();
+	if (driver) {
+		driver->stop();
 	}
 }
 
 void TTS_Windows::process_events()
 {
-	if (data && data->driver) {
-		data->driver->process_events();
+	if (driver) {
+		driver->process_events();
 	}
 }
 
 void TTS_Windows::initialize()
 {
-	if (data) {
+	if (initialized) {
 		return;
 	}
-	data = memnew(Data);
+	initialized = true;
 #ifdef WINRT_ENABLED
-	// Try OneCore driver.
-	if (!data->driver) {
-		data->driver = memnew(TTSDriverOneCore);
-		if (!data->driver->init()) {
-			memdelete(data->driver);
-			data->driver = nullptr;
+	if (!driver) {
+		driver = memnew(TTSDriverOneCore);
+		if (!driver->init()) {
+			memdelete(driver);
+			driver = nullptr;
 		}
 	}
 #endif
-	// Try SAPI driver.
-	if (!data->driver) {
-		data->driver = memnew(TTSDriverSAPI);
-		if (!data->driver->init()) {
-			memdelete(data->driver);
-			data->driver = nullptr;
+	if (!driver) {
+		driver = memnew(TTSDriverSAPI);
+		if (!driver->init()) {
+			memdelete(driver);
+			driver = nullptr;
 		}
 	}
 }
 
 void TTS_Windows::finalize()
 {
-	if (!data) {
+	if (!initialized) {
 		return;
 	}
-	if (data->driver) {
-		memdelete(data->driver);
-		data->driver = nullptr;
+	if (driver) {
+		memdelete(driver);
+		driver = nullptr;
 	}
-	memdelete(data);
-	data = nullptr;
+	initialized = false;
 }
 
 // === Merged from platform/windows/tts_driver_sapi.cpp ===

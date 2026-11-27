@@ -34,29 +34,7 @@
 // --- Inlined from platform/web/ip_web.h ---
 #include "core/io/ip.h"
 
-class IPWeb final
-{
-public:
-	static void _resolve_hostname(
-		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY)
-	{
-		(void)r_addresses;
-		(void)p_hostname;
-		(void)p_type;
-	}
 
-	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
-	{
-		(void)r_interfaces;
-	}
-
-	static void make_default() { IP::bind<IPWeb>(); }
-
-	IPWeb() = delete;
-	IPWeb(const IPWeb&) = delete;
-	IPWeb& operator=(const IPWeb&) = delete;
-	~IPWeb() = delete;
-};
 
 // --- End platform/web/ip_web.h ---
 // --- Inlined from platform/web/net_socket_web.h ---
@@ -109,10 +87,10 @@ void OS_Web::initialize() {
 		AudioDriverManager::add_driver(audio_driver);
 	}
 
-	IPWeb::make_default();
+	IP::reset_backend();
 	NetSocket::make_default();
 	DisplayServerWeb::register_web_driver();
-	MIDIDriver::bind<MIDIDriverWebMidi>();
+	MIDIDriver::bind(&MIDIDriverWebMidi::initialize, &MIDIDriverWebMidi::finalize, &MIDIDriverWebMidi::open, &MIDIDriverWebMidi::close);
 	MIDIDriver::initialize();
 }
 

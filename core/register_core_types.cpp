@@ -2239,7 +2239,7 @@ bool Input::is_anything_pressed()
 	}
 
 	for (const KeyValue<String, Input::ActionState>& E : data->action_states) {
-		if (E.value.cache.pressed) {
+		if (E.value.cache_pressed) {
 			return true;
 		}
 	}
@@ -2361,7 +2361,7 @@ bool Input::is_action_pressed(const String& p_action, bool p_exact)
 		return false;
 	}
 
-	return E->value.cache.pressed && (p_exact ? E->value.exact : true);
+	return E->value.cache_pressed && (p_exact ? E->value.exact : true);
 }
 
 bool Input::is_action_just_pressed(const String& p_action, bool p_exact)
@@ -2385,7 +2385,7 @@ bool Input::is_action_just_pressed(const String& p_action, bool p_exact)
 	}
 
 	// Backward compatibility for legacy behavior, only return true if currently pressed.
-	bool pressed_requirement = data->legacy_just_pressed_behavior ? E->value.cache.pressed : true;
+	bool pressed_requirement = data->legacy_just_pressed_behavior ? E->value.cache_pressed : true;
 
 	if (Engine::is_in_physics_frame()) {
 		return pressed_requirement &&
@@ -2418,7 +2418,7 @@ bool Input::is_action_just_pressed_by_event(
 	}
 
 	// Backward compatibility for legacy behavior, only return true if currently pressed.
-	bool pressed_requirement = data->legacy_just_pressed_behavior ? E->value.cache.pressed : true;
+	bool pressed_requirement = data->legacy_just_pressed_behavior ? E->value.cache_pressed : true;
 
 	if (Engine::is_in_physics_frame()) {
 		return pressed_requirement &&
@@ -2451,7 +2451,7 @@ bool Input::is_action_just_released(const String& p_action, bool p_exact)
 	}
 
 	// Backward compatibility for legacy behavior, only return true if currently released.
-	bool released_requirement = data->legacy_just_pressed_behavior ? !E->value.cache.pressed : true;
+	bool released_requirement = data->legacy_just_pressed_behavior ? !E->value.cache_pressed : true;
 
 	if (Engine::is_in_physics_frame()) {
 		return released_requirement &&
@@ -2484,7 +2484,7 @@ bool Input::is_action_just_released_by_event(
 	}
 
 	// Backward compatibility for legacy behavior, only return true if currently released.
-	bool released_requirement = data->legacy_just_pressed_behavior ? !E->value.cache.pressed : true;
+	bool released_requirement = data->legacy_just_pressed_behavior ? !E->value.cache_pressed : true;
 
 	if (Engine::is_in_physics_frame()) {
 		return released_requirement &&
@@ -2516,7 +2516,7 @@ float Input::get_action_strength(const String& p_action, bool p_exact)
 		return 0.0f;
 	}
 
-	return E->value.cache.strength;
+	return E->value.cache_strength;
 }
 
 float Input::get_action_raw_strength(const String& p_action, bool p_exact)
@@ -2539,7 +2539,7 @@ float Input::get_action_raw_strength(const String& p_action, bool p_exact)
 		return 0.0f;
 	}
 
-	return E->value.cache.raw_strength;
+	return E->value.cache_raw_strength;
 }
 
 float Input::get_axis(
@@ -3069,15 +3069,15 @@ void Input::_parse_input_event_impl(const InputEvent& p_event, bool p_is_emulate
 		}
 		action_state.exact = InputMap::event_is_action(dispatched_event, E.key, true);
 
-		bool was_pressed = action_state.cache.pressed;
+		bool was_pressed = action_state.cache_pressed;
 		_update_action_cache(E.key, action_state);
 		// As input may come in part way through a physics tick, the earliest we can react to it is
 		// the next physics tick.
-		if (action_state.cache.pressed && !was_pressed) {
+		if (action_state.cache_pressed && !was_pressed) {
 			action_state.pressed_physics_frame = Engine::get_physics_frames() + 1;
 			action_state.pressed_process_frame = Engine::get_process_frames();
 		}
-		if (!action_state.cache.pressed && was_pressed) {
+		if (!action_state.cache_pressed && was_pressed) {
 			action_state.released_physics_frame = Engine::get_physics_frames() + 1;
 			action_state.released_process_frame = Engine::get_process_frames();
 		}
@@ -3550,7 +3550,7 @@ void Input::action_press(const String& p_action, float p_strength)
 
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
-	if (!action_state.cache.pressed) {
+	if (!action_state.cache_pressed) {
 		action_state.pressed_physics_frame = Engine::get_physics_frames() + 1;
 		action_state.pressed_process_frame = Engine::get_process_frames();
 	}
@@ -3569,9 +3569,9 @@ void Input::action_release(const String& p_action)
 
 	// Create or retrieve existing action.
 	ActionState& action_state = data->action_states[p_action];
-	action_state.cache.pressed = false;
-	action_state.cache.strength = 0.0;
-	action_state.cache.raw_strength = 0.0;
+	action_state.cache_pressed = false;
+	action_state.cache_strength = 0.0;
+	action_state.cache_raw_strength = 0.0;
 	// As input may come in part way through a physics tick, the earliest we can react to it is the
 	// next physics tick.
 	action_state.released_physics_frame = Engine::get_physics_frames() + 1;
@@ -3742,14 +3742,14 @@ void Input::release_pressed_events()
 		data->_joy_axis.clear();
 
 		for (KeyValue<String, Input::ActionState>& E : data->action_states) {
-			if (E.value.cache.pressed) {
+			if (E.value.cache_pressed) {
 				action_release(E.key);
 			}
 		}
 	}
 	else {
 		for (KeyValue<String, Input::ActionState>& E : data->action_states) {
-			if (E.value.cache.pressed) {
+			if (E.value.cache_pressed) {
 				bool is_only_joypad_pressed = true;
 				int max_event = InputMap::action_get_events(E.key)->size() +
 								1; // +1 comes from InputEventAction.
@@ -4015,28 +4015,28 @@ void Input::_axis_event(int p_device, JoyAxis p_axis, float p_value)
 void Input::_update_action_cache(const String& p_action_name, ActionState& r_action_state)
 {
 	// Update the action cache, computed from the per-device and per-event states.
-	r_action_state.cache.pressed = false;
-	r_action_state.cache.strength = 0.0;
-	r_action_state.cache.raw_strength = 0.0;
+	r_action_state.cache_pressed = false;
+	r_action_state.cache_strength = 0.0;
+	r_action_state.cache_raw_strength = 0.0;
 
 	int max_event = InputMap::action_get_events(p_action_name)->size() +
 					1; // +1 comes from InputEventAction.
 	for (const KeyValue<int, ActionState::DeviceState>& kv : r_action_state.device_states) {
 		const ActionState::DeviceState& device_state = kv.value;
 		for (int i = 0; i < max_event; i++) {
-			r_action_state.cache.pressed = r_action_state.cache.pressed || device_state.pressed[i];
-			r_action_state.cache.strength =
-				MAX(r_action_state.cache.strength, device_state.strength[i]);
-			r_action_state.cache.raw_strength =
-				MAX(r_action_state.cache.raw_strength, device_state.raw_strength[i]);
+			r_action_state.cache_pressed = r_action_state.cache_pressed || device_state.pressed[i];
+			r_action_state.cache_strength =
+				MAX(r_action_state.cache_strength, device_state.strength[i]);
+			r_action_state.cache_raw_strength =
+				MAX(r_action_state.cache_raw_strength, device_state.raw_strength[i]);
 		}
 	}
 
 	if (r_action_state.api_pressed) {
-		r_action_state.cache.pressed = true;
-		r_action_state.cache.strength =
-			MAX(r_action_state.cache.strength, r_action_state.api_strength);
-		r_action_state.cache.raw_strength = MAX(r_action_state.cache.raw_strength,
+		r_action_state.cache_pressed = true;
+		r_action_state.cache_strength =
+			MAX(r_action_state.cache_strength, r_action_state.api_strength);
+		r_action_state.cache_raw_strength = MAX(r_action_state.cache_raw_strength,
 			r_action_state
 				.api_strength); // Use the strength as raw_strength for API-pressed states.
 	}
@@ -24665,265 +24665,6 @@ zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data) {
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-static int _get_pad(int p_alignment, int p_n)
-{
-	int rest = p_n % p_alignment;
-	int pad = 0;
-	if (rest > 0) {
-		pad = p_alignment - rest;
-	}
-
-	return pad;
-}
-
-Error PCKPacker::pck_start(
-	const String& p_pck_path, int p_alignment, const String& p_key, bool p_encrypt_directory)
-{
-	ERR_FAIL_COND_V_MSG(
-		(p_key.is_empty() || !p_key.is_valid_hex_number(false) || p_key.length() != 64),
-		ERR_CANT_CREATE, "Invalid Encryption Key (must be 64 characters long).");
-	ERR_FAIL_COND_V_MSG(
-		p_alignment <= 0, ERR_CANT_CREATE, "Invalid alignment, must be greater then 0.");
-
-	String _key = p_key.to_lower();
-	key.resize(32);
-	for (int i = 0; i < 32; i++) {
-		int v = 0;
-		if (i * 2 < _key.length()) {
-			char32_t ct = _key[i * 2];
-			if (is_digit(ct)) {
-				ct = ct - '0';
-			}
-			else if (ct >= 'a' && ct <= 'f') {
-				ct = 10 + ct - 'a';
-			}
-			v |= ct << 4;
-		}
-
-		if (i * 2 + 1 < _key.length()) {
-			char32_t ct = _key[i * 2 + 1];
-			if (is_digit(ct)) {
-				ct = ct - '0';
-			}
-			else if (ct >= 'a' && ct <= 'f') {
-				ct = 10 + ct - 'a';
-			}
-			v |= ct;
-		}
-		key.write[i] = v;
-	}
-	enc_dir = p_encrypt_directory;
-
-	file = FileAccess::open(p_pck_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_CANT_CREATE,
-		vformat("Can't open file to write: '%s'.", String(p_pck_path)));
-
-	alignment = p_alignment;
-
-	file->store_32(PACK_HEADER_MAGIC);
-	file->store_32(PACK_FORMAT_VERSION);
-	file->store_32(VLTR_VERSION_MAJOR);
-	file->store_32(VLTR_VERSION_MINOR);
-	file->store_32(VLTR_VERSION_PATCH);
-
-	uint32_t pack_flags = PACK_REL_FILEBASE;
-	if (enc_dir) {
-		pack_flags |= PACK_DIR_ENCRYPTED;
-	}
-	file->store_32(pack_flags); // flags
-
-	file_base_ofs = file->get_position();
-	file->store_64(0); // Files base.
-
-	dir_base_ofs = file->get_position();
-	file->store_64(0); // Directory offset.
-
-	for (int i = 0; i < 16; i++) {
-		file->store_32(0); // Reserved.
-	}
-
-	// Align for first file.
-	int pad = _get_pad(alignment, file->get_position());
-	for (int i = 0; i < pad; i++) {
-		file->store_8(0);
-	}
-
-	file_base = file->get_position();
-	file->seek(file_base_ofs);
-	file->store_64(file_base); // Update files base.
-	file->seek(file_base);
-
-	files.clear();
-
-	return OK;
-}
-
-Error PCKPacker::add_file_removal(const String& p_target_path)
-{
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
-
-	File pf;
-	// Simplify path here and on every 'files' access so that paths that have extra '/'
-	// symbols or 'res://' in them still match the MD5 hash for the saved path.
-	pf.path = p_target_path.simplify_path().trim_prefix("res://");
-	pf.ofs = file->get_position();
-	pf.size = 0;
-	pf.removal = true;
-
-	pf.md5.resize_initialized(16);
-
-	files.push_back(pf);
-
-	return OK;
-}
-
-Error PCKPacker::add_file(const String& p_target_path, const String& p_source_path, bool p_encrypt)
-{
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
-
-	Ref<FileAccess> f = FileAccess::open(p_source_path, FileAccess::READ);
-	if (f.is_null()) {
-		return ERR_FILE_CANT_OPEN;
-	}
-	Vector<uint8_t> data = FileAccess::get_file_as_bytes(p_source_path);
-
-	return _add_file(p_target_path, p_source_path, data, p_encrypt);
-}
-
-Error PCKPacker::add_file_from_buffer(
-	const String& p_target_path, const Vector<uint8_t>& p_data, bool p_encrypt)
-{
-	return _add_file(p_target_path, "<PackedByteArray>", p_data, p_encrypt);
-}
-
-Error PCKPacker::_add_file(const String& p_target_path, const String& p_source_path,
-	const Vector<uint8_t>& p_data, bool p_encrypt)
-{
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
-
-	File pf;
-	// Simplify path here and on every 'files' access so that paths that have extra '/'
-	// symbols or 'res://' in them still match the MD5 hash for the saved path.
-	pf.path = p_target_path.simplify_path().trim_prefix("res://");
-	pf.src_path = p_source_path;
-	pf.ofs = file->get_position();
-	pf.size = p_data.size();
-
-	{
-		unsigned char hash[16];
-		CryptoCore::md5(p_data.ptr(), p_data.size(), hash);
-		pf.md5.resize(16);
-		for (int i = 0; i < 16; i++) {
-			pf.md5.write[i] = hash[i];
-		}
-	}
-	pf.encrypted = p_encrypt;
-
-	Ref<FileAccess> ftmp = file;
-
-	Ref<FileAccessEncrypted> fae;
-	if (p_encrypt) {
-		fae.instantiate();
-		ERR_FAIL_COND_V(fae.is_null(), ERR_CANT_CREATE);
-
-		Error err = fae->open_and_parse(file, key, FileAccessEncrypted::MODE_WRITE_AES256, false);
-		ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
-		ftmp = fae;
-	}
-
-	ftmp->store_buffer(p_data);
-
-	if (fae.is_valid()) {
-		ftmp.unref();
-		fae.unref();
-	}
-
-	int pad = _get_pad(alignment, file->get_position());
-	for (int j = 0; j < pad; j++) {
-		file->store_8(0);
-	}
-
-	files.push_back(pf);
-
-	return OK;
-}
-
-Error PCKPacker::flush(bool p_verbose)
-{
-	ERR_FAIL_COND_V_MSG(file.is_null(), ERR_INVALID_PARAMETER, "File must be opened before use.");
-
-	int dir_padding = _get_pad(alignment, file->get_position());
-	for (int i = 0; i < dir_padding; i++) {
-		file->store_8(0);
-	}
-
-	// Write directory.
-	uint64_t dir_offset = file->get_position();
-	file->seek(dir_base_ofs);
-	file->store_64(dir_offset);
-	file->seek(dir_offset);
-
-	file->store_32(uint32_t(files.size()));
-
-	Ref<FileAccessEncrypted> fae;
-	Ref<FileAccess> fhead = file;
-
-	if (enc_dir) {
-		fae.instantiate();
-		ERR_FAIL_COND_V(fae.is_null(), ERR_CANT_CREATE);
-
-		Error err = fae->open_and_parse(file, key, FileAccessEncrypted::MODE_WRITE_AES256, false);
-		ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
-
-		fhead = fae;
-	}
-
-	const int file_num = files.size();
-	for (int i = 0; i < file_num; i++) {
-		CharString utf8_string = files[i].path.utf8();
-		int string_len = utf8_string.length();
-		int pad = _get_pad(4, string_len);
-
-		fhead->store_32(uint32_t(string_len + pad));
-		fhead->store_buffer((const uint8_t*)utf8_string.get_data(), string_len);
-		for (int j = 0; j < pad; j++) {
-			fhead->store_8(0);
-		}
-
-		fhead->store_64(files[i].ofs - file_base);
-		fhead->store_64(files[i].size);
-		fhead->store_buffer(files[i].md5.ptr(), 16);
-
-		uint32_t flags = 0;
-		if (files[i].encrypted) {
-			flags |= PACK_FILE_ENCRYPTED;
-		}
-		if (files[i].removal) {
-			flags |= PACK_FILE_REMOVAL;
-		}
-		fhead->store_32(flags);
-
-		if (p_verbose) {
-			__print_line(vformat("[%d/%d - %d%%] PCKPacker flush: %s -> %s", i + 1, file_num,
-				float(i + 1) / file_num * 100, files[i].src_path, files[i].path));
-		}
-	}
-
-	if (fae.is_valid()) {
-		fhead.unref();
-		fae.unref();
-	}
-
-	file.unref();
-	return OK;
-}
-
-PCKPacker::~PCKPacker()
-{
-	if (file.is_valid()) {
-		flush();
-	}
-}
 
 // marshalls.cpp
 
@@ -32617,8 +32358,7 @@ IPAddress IP::resolve_hostname(const String& p_hostname, IP::Type p_type)
 
 Vector<String> IP::resolve_hostname_addresses(const String& p_hostname, Type p_type)
 {
-	ERR_FAIL_NULL_V(data, Vector<String>());
-	_IP_ResolverPrivate* resolver = data->resolver;
+	ERR_FAIL_NULL_V(resolver, Vector<String>());
 
 	List<IPAddress> res;
 	String key = _IP_ResolverPrivate::get_cache_key(p_hostname, p_type);
@@ -32651,8 +32391,7 @@ Vector<String> IP::resolve_hostname_addresses(const String& p_hostname, Type p_t
 
 IP::ResolverID IP::resolve_hostname_queue_item(const String& p_hostname, IP::Type p_type)
 {
-	ERR_FAIL_NULL_V(data, RESOLVER_INVALID_ID);
-	_IP_ResolverPrivate* resolver = data->resolver;
+	ERR_FAIL_NULL_V(resolver, RESOLVER_INVALID_ID);
 
 	MutexLock lock(resolver->mutex);
 
@@ -32686,13 +32425,13 @@ IP::ResolverID IP::resolve_hostname_queue_item(const String& p_hostname, IP::Typ
 
 IP::ResolverStatus IP::get_resolve_item_status(ResolverID p_id)
 {
-	ERR_FAIL_NULL_V(data, IP::RESOLVER_STATUS_NONE);
+	ERR_FAIL_NULL_V(resolver, IP::RESOLVER_STATUS_NONE);
 	ERR_FAIL_INDEX_V_MSG(p_id, IP::RESOLVER_MAX_QUERIES, IP::RESOLVER_STATUS_NONE,
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
-	IP::ResolverStatus res = data->resolver->queue[p_id].status.get();
+	IP::ResolverStatus res = resolver->queue[p_id].status.get();
 	if (res == IP::RESOLVER_STATUS_NONE) {
 		ERR_PRINT("Condition status == IP::RESOLVER_STATUS_NONE");
 		return IP::RESOLVER_STATUS_NONE;
@@ -32702,13 +32441,12 @@ IP::ResolverStatus IP::get_resolve_item_status(ResolverID p_id)
 
 IPAddress IP::get_resolve_item_address(ResolverID p_id)
 {
-	ERR_FAIL_NULL_V(data, IPAddress());
+	ERR_FAIL_NULL_V(resolver, IPAddress());
 	ERR_FAIL_INDEX_V_MSG(p_id, IP::RESOLVER_MAX_QUERIES, IPAddress(),
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
-	_IP_ResolverPrivate* resolver = data->resolver;
 	MutexLock lock(resolver->mutex);
 
 	if (resolver->queue[p_id].status.get() != IP::RESOLVER_STATUS_DONE) {
@@ -32728,19 +32466,18 @@ IPAddress IP::get_resolve_item_address(ResolverID p_id)
 
 void IP::erase_resolve_item(ResolverID p_id)
 {
-	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(resolver);
 	ERR_FAIL_INDEX_MSG(p_id, IP::RESOLVER_MAX_QUERIES,
 		vformat("Too many concurrent DNS resolver queries (%d, but should be %d at most). Try "
 				"performing less network requests at once.",
 			p_id, IP::RESOLVER_MAX_QUERIES));
 
-	data->resolver->queue[p_id].status.set(IP::RESOLVER_STATUS_NONE);
+	resolver->queue[p_id].status.set(IP::RESOLVER_STATUS_NONE);
 }
 
 void IP::clear_cache(const String& p_hostname)
 {
-	ERR_FAIL_NULL(data);
-	_IP_ResolverPrivate* resolver = data->resolver;
+	ERR_FAIL_NULL(resolver);
 	MutexLock lock(resolver->mutex);
 
 	if (p_hostname.is_empty()) {
@@ -32779,31 +32516,26 @@ void IP::get_local_addresses(List<IPAddress>* r_addresses)
 
 void IP::initialize()
 {
-	if (data != nullptr) {
+	if (resolver != nullptr) {
 		return;
 	}
-	data = memnew(Data);
-	data->resolver = memnew(_IP_ResolverPrivate);
-	data->resolver->thread_abort.clear();
-	data->resolver->thread.start(_IP_ResolverPrivate::_thread_function, data->resolver);
+	resolver = memnew(_IP_ResolverPrivate);
+	resolver->thread_abort.clear();
+	resolver->thread.start(_IP_ResolverPrivate::_thread_function, resolver);
 }
 
 void IP::finalize()
 {
-	if (data == nullptr) {
+	if (resolver == nullptr) {
 		return;
 	}
-	if (data->resolver != nullptr) {
-		data->resolver->thread_abort.set();
-		data->resolver->sem.post();
-		if (data->resolver->thread.is_started()) {
-			data->resolver->thread.wait_to_finish();
-		}
-		memdelete(data->resolver);
-		data->resolver = nullptr;
+	resolver->thread_abort.set();
+	resolver->sem.post();
+	if (resolver->thread.is_started()) {
+		resolver->thread.wait_to_finish();
 	}
-	memdelete(data);
-	data = nullptr;
+	memdelete(resolver);
+	resolver = nullptr;
 }
 
 void IP::reset_backend()
@@ -61864,63 +61596,8 @@ public:
 		const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found);
 };
 
-struct SharedObject {
-	String path;
-	Vector<String> tags;
-	String target;
 
-	SharedObject(const String &p_path, const Vector<String> &p_tags, const String &p_target) :
-			path(p_path),
-			tags(p_tags),
-			target(p_target) {
-	}
-
-	SharedObject() {}
-};
-
-class EditorStrings final
-{
-public:
-	struct Data
-	{
-		const String Editor = String("Editor");
-		const String EditorFonts = String("EditorFonts");
-		const String EditorIcons = String("EditorIcons");
-		const String EditorStyles = String("EditorStyles");
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize()
-	{
-		if (!data) {
-			data = memnew(Data);
-		}
-	}
-
-	static void finalize()
-	{
-		if (data) {
-			memdelete(data);
-			data = nullptr;
-		}
-	}
-
-	static bool is_initialized() { return data != nullptr; }
-
-	_FORCE_INLINE_ static Data* _get_data()
-	{
-		if (!data) {
-			initialize();
-		}
-		return data;
-	}
-
-	EditorStrings() = delete;
-	~EditorStrings() = delete;
-};
-
-#define EditorString(m_name) EditorStrings::_get_data()->m_name
+#define EditorString(m_name) SceneStrings::_get_data()->m_name
 
 #include "servers/display/display_server.h"
 
@@ -73887,30 +73564,6 @@ void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const
 
 #include "servers/display/display_server.h"
 
-String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
-
-String ResourceImporterCSVTranslation::get_visible_name() const { return "CSV Translation"; }
-
-void ResourceImporterCSVTranslation::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("csv");
-}
-
-String ResourceImporterCSVTranslation::get_save_extension() const
-{
-	return ""; // does not save a single resource
-}
-
-String ResourceImporterCSVTranslation::get_resource_type() const { return "Translation"; }
-
-int ResourceImporterCSVTranslation::get_preset_count() const { return 0; }
-
-String ResourceImporterCSVTranslation::get_preset_name(int p_idx) const { return ""; }
-
-void ResourceImporterCSVTranslation::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
 
 #include "servers/display/display_server.h"
 
@@ -74738,28 +74391,6 @@ class RDShaderFile;
 
 struct Lightmapper::RDState
 {
-	struct BakeParameters
-	{
-		float world_size[3] = {};
-		float bias = 0.0;
-
-		float to_cell_offset[3] = {};
-		int32_t grid_size = 0;
-
-		float to_cell_size[3] = {};
-		uint32_t light_count = 0;
-
-		float env_transform[12] = {};
-
-		int32_t atlas_size[2] = {};
-		float exposure_normalization = 0.0f;
-		uint32_t bounces = 0;
-
-		float bounce_indirect_energy = 0.0f;
-		uint32_t shadowmask_light_idx = 0;
-		uint32_t transparency_rays = 0;
-		float supersampling_factor = 0.0f;
-	};
 
 	struct MeshInstance
 	{
@@ -85102,15 +84733,12 @@ void AudioDriverALSA::finish() {
 
 #include <cerrno>
 
-MIDIDriverALSAMidi::InputConnection::InputConnection(int p_device_index,
-		snd_rawmidi_t *p_rawmidi) :
-		parser(p_device_index), rawmidi_ptr(p_rawmidi) {}
-
-void MIDIDriverALSAMidi::InputConnection::read() {
+static void _alsa_midi_read_parser(MIDIDriver::Parser& p_parser)
+{
 	int read_count;
 	do {
 		uint8_t buffer[32];
-		read_count = snd_rawmidi_read(rawmidi_ptr, buffer, sizeof(buffer));
+		read_count = snd_rawmidi_read(static_cast<snd_rawmidi_t*>(p_parser.backend_ptr), buffer, sizeof(buffer));
 
 		if (read_count < 0) {
 			if (read_count != -EAGAIN) {
@@ -85118,25 +84746,25 @@ void MIDIDriverALSAMidi::InputConnection::read() {
 			}
 		} else {
 			for (int i = 0; i < read_count; i++) {
-				parser.parse_fragment(buffer[i]);
+				p_parser.parse_fragment(buffer[i]);
 			}
 		}
 	} while (read_count > 0);
 }
 
-void MIDIDriverALSAMidi::thread_func(void* p_udata)
+static void _alsa_midi_thread_func(void* p_udata)
 {
 	(void)p_udata;
-	if (!data) {
+	if (!MIDIDriver::data) {
 		return;
 	}
 
-	while (!data->exit_thread.is_set()) {
-		lock();
-		for (InputConnection& conn : data->connected_inputs) {
-			conn.read();
+	while (!MIDIDriver::data->exit_thread.is_set()) {
+		MIDIDriver::data->mutex.lock();
+		for (MIDIDriver::Parser& conn : MIDIDriver::data->connected_inputs) {
+			_alsa_midi_read_parser(conn);
 		}
-		unlock();
+		MIDIDriver::data->mutex.unlock();
 
 		OS::delay_usec(1000);
 	}
@@ -85144,51 +84772,41 @@ void MIDIDriverALSAMidi::thread_func(void* p_udata)
 
 void MIDIDriverALSAMidi::initialize()
 {
-	if (data != nullptr) {
-		return;
+	if (MIDIDriver::data) {
+		MIDIDriver::data->exit_thread.clear();
 	}
-	data = memnew(Data);
-	data->exit_thread.clear();
 }
 
 void MIDIDriverALSAMidi::finalize()
 {
-	if (data == nullptr) {
-		return;
-	}
 	close();
-	memdelete(data);
-	data = nullptr;
 }
 
 Error MIDIDriverALSAMidi::open()
 {
-	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
-
+	ERR_FAIL_NULL_V(MIDIDriver::data, ERR_UNCONFIGURED);
 	void** hints;
 
 	if (snd_device_name_hint(-1, "rawmidi", &hints) < 0) {
 		return ERR_CANT_OPEN;
 	}
 
-	lock();
+	MIDIDriver::data->mutex.lock();
 	int device_index = 0;
-	for (void** h = hints; *h != nullptr; h++) {
-		char* name = snd_device_name_get_hint(*h, "NAME");
+	for (void** n = hints; *n != nullptr; n++) {
+		char* name = snd_device_name_get_hint(*n, "NAME");
 
 		if (name != nullptr) {
 			snd_rawmidi_t* midi_in;
 			int ret = snd_rawmidi_open(&midi_in, nullptr, name, SND_RAWMIDI_NONBLOCK);
 			if (ret >= 0) {
-				// Get display name.
 				snd_rawmidi_info_t* info;
 				snd_rawmidi_info_malloc(&info);
 				snd_rawmidi_info(midi_in, info);
 				MIDIDriver::add_connected_input(snd_rawmidi_info_get_name(info));
 				snd_rawmidi_info_free(info);
 
-				data->connected_inputs.push_back(InputConnection(device_index, midi_in));
-				// Only increment device_index for successfully connected devices.
+				MIDIDriver::data->connected_inputs.push_back(MIDIDriver::Parser(device_index, midi_in));
 				device_index++;
 			}
 		}
@@ -85198,45 +84816,28 @@ Error MIDIDriverALSAMidi::open()
 		}
 	}
 	snd_device_name_free_hint(hints);
-	unlock();
+	MIDIDriver::data->mutex.unlock();
 
-	data->exit_thread.clear();
-	data->thread.start(MIDIDriverALSAMidi::thread_func, nullptr);
+	MIDIDriver::data->exit_thread.clear();
+	MIDIDriver::data->thread.start(_alsa_midi_thread_func, nullptr);
 
 	return OK;
 }
 
 void MIDIDriverALSAMidi::close()
 {
-	if (data == nullptr) {
+	if (!MIDIDriver::data) {
 		return;
 	}
-
-	data->exit_thread.set();
-	if (data->thread.is_started()) {
-		data->thread.wait_to_finish();
+	MIDIDriver::data->exit_thread.set();
+	if (MIDIDriver::data->thread.is_started()) {
+		MIDIDriver::data->thread.wait_to_finish();
+		for (const MIDIDriver::Parser& conn : MIDIDriver::data->connected_inputs) {
+			snd_rawmidi_close(static_cast<snd_rawmidi_t*>(conn.backend_ptr));
+		}
 	}
-
-	for (const InputConnection& conn : data->connected_inputs) {
-		snd_rawmidi_close(conn.rawmidi_ptr);
-	}
-
-	data->connected_inputs.clear();
+	MIDIDriver::data->connected_inputs.clear();
 	MIDIDriver::clear_connected_inputs();
-}
-
-void MIDIDriverALSAMidi::lock()
-{
-	if (data) {
-		data->mutex.lock();
-	}
-}
-
-void MIDIDriverALSAMidi::unlock()
-{
-	if (data) {
-		data->mutex.unlock();
-	}
 }
 
 #endif // ALSAMIDI_ENABLED
@@ -87999,7 +87600,7 @@ static IPAddress _sockaddr2ip(struct sockaddr *p_addr) {
 	return ip;
 }
 
-void IPWindows::_resolve_hostname(
+static void _ip_windows_resolve_hostname(
 	List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type)
 {
 	struct addrinfo hints;
@@ -88050,7 +87651,7 @@ void IPWindows::_resolve_hostname(
 	freeaddrinfo(result);
 }
 
-void IPWindows::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
+static void _ip_windows_get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
 {
 	ULONG buf_size = 1024;
 	IP_ADAPTER_ADDRESSES* addrs;
@@ -88099,9 +87700,9 @@ void IPWindows::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_inte
 	memfree(addrs);
 }
 
-void IPWindows::make_default()
+void _ip_windows_make_default()
 {
-	IP::bind<IPWindows>();
+	IP::bind(&_ip_windows_resolve_hostname, &_ip_windows_get_local_interfaces);
 }
 
 #endif // WINDOWS_ENABLED
@@ -88749,26 +88350,16 @@ void MIDIDriverWinMidi::read(
 	}
 }
 
-void MIDIDriverWinMidi::initialize()
-{
-	if (data == nullptr) {
-		data = memnew(Data);
-	}
-}
+void MIDIDriverWinMidi::initialize() {}
 
 void MIDIDriverWinMidi::finalize()
 {
-	if (data == nullptr) {
-		return;
-	}
 	close();
-	memdelete(data);
-	data = nullptr;
 }
 
 Error MIDIDriverWinMidi::open()
 {
-	ERR_FAIL_NULL_V(data, ERR_UNCONFIGURED);
+	ERR_FAIL_NULL_V(MIDIDriver::data, ERR_UNCONFIGURED);
 
 	int device_index = 0;
 	for (UINT i = 0; i < midiInGetNumDevs(); i++) {
@@ -88781,16 +88372,13 @@ Error MIDIDriverWinMidi::open()
 
 		if (open_res == MMSYSERR_NOERROR) {
 			midiInStart(midi_in);
-			data->connected_sources.push_back(midi_in);
+			MIDIDriver::data->win_sources.push_back((void*)midi_in);
 			if (caps_res == MMSYSERR_NOERROR) {
 				MIDIDriver::add_connected_input(caps.szPname);
 			}
 			else {
-				// Should push something even if we don't get a name,
-				// so that the IDs line up correctly on the script side.
 				MIDIDriver::add_connected_input("ERROR");
 			}
-			// Only increment device index for successfully connected devices.
 			device_index++;
 		}
 		else {
@@ -88810,16 +88398,16 @@ Error MIDIDriverWinMidi::open()
 
 void MIDIDriverWinMidi::close()
 {
-	if (data == nullptr) {
+	if (MIDIDriver::data == nullptr) {
 		return;
 	}
 
-	for (int i = 0; i < data->connected_sources.size(); i++) {
-		HMIDIIN midi_in = data->connected_sources[i];
+	for (int i = 0; i < MIDIDriver::data->win_sources.size(); i++) {
+		HMIDIIN midi_in = (HMIDIIN)MIDIDriver::data->win_sources[i];
 		midiInStop(midi_in);
 		midiInClose(midi_in);
 	}
-	data->connected_sources.clear();
+	MIDIDriver::data->win_sources.clear();
 	MIDIDriver::clear_connected_inputs();
 }
 
@@ -89466,20 +89054,9 @@ void init_thread_posix();
 #ifndef UNIX_SOCKET_UNAVAILABLE
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
 
-class IPUnix final
-{
-public:
-	static void _resolve_hostname(
-		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY);
-	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces);
-
-	static void make_default();
-
-	IPUnix() = delete;
-	IPUnix(const IPUnix&) = delete;
-	IPUnix& operator=(const IPUnix&) = delete;
-	~IPUnix() = delete;
-};
+void _ip_unix_resolve_hostname(
+	List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY);
+void _ip_unix_get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces);
 
 #endif // UNIX_ENABLED
 
@@ -89616,7 +89193,7 @@ void OS_Unix::initialize_core()
 
 #ifndef UNIX_SOCKET_UNAVAILABLE
 	NetSocketUnix::make_default();
-	IPUnix::make_default();
+	IP::bind(&_ip_unix_resolve_hostname, &_ip_unix_get_local_interfaces);
 #endif
 	process_map = memnew((HashMap<ProcessID, ProcessInfo>));
 
@@ -91985,7 +91562,7 @@ static IPAddress _unix_sockaddr2ip(struct sockaddr *p_addr) {
 	return ip;
 }
 
-void IPUnix::_resolve_hostname(
+void _ip_unix_resolve_hostname(
 	List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type)
 {
 	struct addrinfo hints;
@@ -92036,7 +91613,7 @@ void IPUnix::_resolve_hostname(
 	freeaddrinfo(result);
 }
 
-void IPUnix::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
+void _ip_unix_get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces)
 {
 	struct ifaddrs* ifAddrStruct = nullptr;
 	struct ifaddrs* ifa = nullptr;
@@ -92074,10 +91651,7 @@ void IPUnix::get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfa
 	}
 }
 
-void IPUnix::make_default()
-{
-	IP::bind<IPUnix>();
-}
+
 
 #endif // UNIX_ENABLED
 
@@ -93215,11 +92789,8 @@ public:
 	{
 		VkBuffer vk_buffer = VK_NULL_HANDLE;
 
-		struct
-		{
-			VmaAllocation handle = nullptr;
-			uint64_t size = UINT64_MAX;
-		} allocation;
+		VmaAllocation alloc_handle = nullptr;
+		uint64_t alloc_size = UINT64_MAX;
 
 		uint64_t size = 0;
 		VkBufferView vk_view = VK_NULL_HANDLE; // For texel buffers.
@@ -93260,11 +92831,8 @@ public:
 		VkImageCreateInfo vk_create_info = {};
 		VkImageViewCreateInfo vk_view_create_info = {};
 
-		struct
-		{
-			VmaAllocation handle = nullptr;
-			VmaAllocationInfo info = {};
-		} allocation; // All 0/null if just a view.
+		VmaAllocation alloc_handle = nullptr;
+		VmaAllocationInfo alloc_info = {};
 
 		bool is_subsampled = false;
 #ifdef DEBUG_ENABLED
@@ -96154,8 +95722,8 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 		buf_info = VersatileResource::allocate<BufferInfo>(resources_allocator);
 	}
 	buf_info->vk_buffer = vk_buffer;
-	buf_info->allocation.handle = allocation;
-	buf_info->allocation.size = alloc_info.size;
+	buf_info->alloc_handle = allocation;
+	buf_info->alloc_size = alloc_info.size;
 	buf_info->size = original_size;
 
 	return BufferID(buf_info);
@@ -96171,7 +95739,7 @@ bool RenderingDeviceDriverVulkan::buffer_set_texel_format(BufferID p_buffer, RDC
 	view_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
 	view_create_info.buffer = buf_info->vk_buffer;
 	view_create_info.format = RD_TO_VK_FORMAT[p_format];
-	view_create_info.range = buf_info->allocation.size;
+	view_create_info.range = buf_info->alloc_size;
 
 	VkResult res = vkCreateBufferView(vk_device, &view_create_info,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_BUFFER_VIEW), &buf_info->vk_view);
@@ -96190,16 +95758,16 @@ void RenderingDeviceDriverVulkan::buffer_free(BufferID p_buffer)
 	}
 
 	if (buf_info->is_dynamic()) {
-		vmaUnmapMemory(allocator, buf_info->allocation.handle);
+		vmaUnmapMemory(allocator, buf_info->alloc_handle);
 	}
 
 	if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
-		vmaDestroyBuffer(allocator, buf_info->vk_buffer, buf_info->allocation.handle);
+		vmaDestroyBuffer(allocator, buf_info->vk_buffer, buf_info->alloc_handle);
 	}
 	else {
 		vkDestroyBuffer(
 			vk_device, buf_info->vk_buffer, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_BUFFER));
-		vmaFreeMemory(allocator, buf_info->allocation.handle);
+		vmaFreeMemory(allocator, buf_info->alloc_handle);
 	}
 
 	if (buf_info->is_dynamic()) {
@@ -96213,7 +95781,7 @@ void RenderingDeviceDriverVulkan::buffer_free(BufferID p_buffer)
 uint64_t RenderingDeviceDriverVulkan::buffer_get_allocation_size(BufferID p_buffer)
 {
 	const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
-	return buf_info->allocation.size;
+	return buf_info->alloc_size;
 }
 
 uint8_t* RenderingDeviceDriverVulkan::buffer_map(BufferID p_buffer)
@@ -96223,7 +95791,7 @@ uint8_t* RenderingDeviceDriverVulkan::buffer_map(BufferID p_buffer)
 		"Buffer must NOT have BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT. Use "
 		"buffer_persistent_map_advance() instead.");
 	void* data_ptr = nullptr;
-	VkResult err = vmaMapMemory(allocator, buf_info->allocation.handle, &data_ptr);
+	VkResult err = vmaMapMemory(allocator, buf_info->alloc_handle, &data_ptr);
 	ERR_FAIL_COND_V_MSG(
 		err, nullptr, vformat("Couldn't map buffer memory (VkResult error %d).", err));
 	return (uint8_t*)data_ptr;
@@ -96232,7 +95800,7 @@ uint8_t* RenderingDeviceDriverVulkan::buffer_map(BufferID p_buffer)
 void RenderingDeviceDriverVulkan::buffer_unmap(BufferID p_buffer)
 {
 	const BufferInfo* buf_info = (const BufferInfo*)p_buffer.id;
-	vmaUnmapMemory(allocator, buf_info->allocation.handle);
+	vmaUnmapMemory(allocator, buf_info->alloc_handle);
 }
 
 uint8_t* RenderingDeviceDriverVulkan::buffer_persistent_map_advance(
@@ -96275,18 +95843,18 @@ void RenderingDeviceDriverVulkan::buffer_flush(BufferID p_buffer)
 	BufferDynamicInfo* buf_info = (BufferDynamicInfo*)p_buffer.id;
 
 	VkMemoryPropertyFlags mem_props_flags;
-	vmaGetAllocationMemoryProperties(allocator, buf_info->allocation.handle, &mem_props_flags);
+	vmaGetAllocationMemoryProperties(allocator, buf_info->alloc_handle, &mem_props_flags);
 
 	const bool needs_flushing = !(mem_props_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	if (needs_flushing) {
 		if (buf_info->is_dynamic()) {
-			pending_flushes.allocations.push_back(buf_info->allocation.handle);
+			pending_flushes.allocations.push_back(buf_info->alloc_handle);
 			pending_flushes.offsets.push_back(buf_info->frame_idx * buf_info->size);
 			pending_flushes.sizes.push_back(buf_info->size);
 		}
 		else {
-			pending_flushes.allocations.push_back(buf_info->allocation.handle);
+			pending_flushes.allocations.push_back(buf_info->alloc_handle);
 			pending_flushes.offsets.push_back(0u);
 			pending_flushes.sizes.push_back(VK_WHOLE_SIZE);
 		}
@@ -96607,12 +96175,12 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create(
 	tex_info->rd_format = p_format.format;
 	tex_info->vk_create_info = create_info;
 	tex_info->vk_view_create_info = image_view_create_info;
-	tex_info->allocation.handle = allocation;
+	tex_info->alloc_handle = allocation;
 	tex_info->is_subsampled = Utils::has_flag(create_info.flags, VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT);
 #ifdef DEBUG_ENABLED
 	tex_info->transient = Utils::has_flag(p_format.usage_bits, RDC::TEXTURE_USAGE_TRANSIENT_BIT);
 #endif
-	vmaGetAllocationInfo(allocator, tex_info->allocation.handle, &tex_info->allocation.info);
+	vmaGetAllocationInfo(allocator, tex_info->alloc_handle, &tex_info->alloc_info);
 
 #if PRINT_NATIVE_COMMANDS
 	print_line(
@@ -96672,7 +96240,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(
 	const TextureInfo* owner_tex_info = (const TextureInfo*)p_original_texture.id;
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_V(
-		!owner_tex_info->allocation.handle && !owner_tex_info->created_from_extension, TextureID());
+		!owner_tex_info->alloc_handle && !owner_tex_info->created_from_extension, TextureID());
 #endif
 	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
 	image_view_create_info.format = RD_TO_VK_FORMAT[p_view.format];
@@ -96725,7 +96293,8 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared(
 	*tex_info = *owner_tex_info;
 	tex_info->vk_view = new_vk_image_view;
 	tex_info->vk_view_create_info = image_view_create_info;
-	tex_info->allocation = {};
+	tex_info->alloc_handle = nullptr;
+	tex_info->alloc_info = {};
 
 #if PRINT_NATIVE_COMMANDS
 	print_line(vformat("vkCreateImageView: 0x%uX for 0x%uX", uint64_t(new_vk_image_view),
@@ -96742,7 +96311,7 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(
 	const TextureInfo* owner_tex_info = (const TextureInfo*)p_original_texture.id;
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_V(
-		!owner_tex_info->allocation.handle && !owner_tex_info->created_from_extension, TextureID());
+		!owner_tex_info->alloc_handle && !owner_tex_info->created_from_extension, TextureID());
 #endif
 
 	VkImageViewCreateInfo image_view_create_info = owner_tex_info->vk_view_create_info;
@@ -96787,7 +96356,8 @@ RDD::TextureID RenderingDeviceDriverVulkan::texture_create_shared_from_slice(
 	*tex_info = *owner_tex_info;
 	tex_info->vk_view = new_vk_image_view;
 	tex_info->vk_view_create_info = image_view_create_info;
-	tex_info->allocation = {};
+	tex_info->alloc_handle = nullptr;
+	tex_info->alloc_info = {};
 
 #if PRINT_NATIVE_COMMANDS
 	print_line(vformat("vkCreateImageView: 0x%uX for 0x%uX (%d %d %d %d)",
@@ -96803,15 +96373,15 @@ void RenderingDeviceDriverVulkan::texture_free(TextureID p_texture)
 	TextureInfo* tex_info = (TextureInfo*)p_texture.id;
 	vkDestroyImageView(
 		vk_device, tex_info->vk_view, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_IMAGE_VIEW));
-	if (tex_info->allocation.handle) {
+	if (tex_info->alloc_handle) {
 		if (!Engine::is_extra_gpu_memory_tracking_enabled()) {
 			vmaDestroyImage(
-				allocator, tex_info->vk_view_create_info.image, tex_info->allocation.handle);
+				allocator, tex_info->vk_view_create_info.image, tex_info->alloc_handle);
 		}
 		else {
 			vkDestroyImage(vk_device, tex_info->vk_image,
 				VKC::get_allocation_callbacks(VK_OBJECT_TYPE_BUFFER));
-			vmaFreeMemory(allocator, tex_info->allocation.handle);
+			vmaFreeMemory(allocator, tex_info->alloc_handle);
 		}
 	}
 	VersatileResource::free(resources_allocator, tex_info);
@@ -96820,7 +96390,7 @@ void RenderingDeviceDriverVulkan::texture_free(TextureID p_texture)
 uint64_t RenderingDeviceDriverVulkan::texture_get_allocation_size(TextureID p_texture)
 {
 	const TextureInfo* tex_info = (const TextureInfo*)p_texture.id;
-	return tex_info->allocation.info.size;
+	return tex_info->alloc_info.size;
 }
 
 void RenderingDeviceDriverVulkan::texture_get_copyable_layout(
@@ -96864,7 +96434,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 	uint32_t pixel_size = RDC::get_image_format_pixel_size(tex_format);
 
 	void* data_ptr = nullptr;
-	VkResult err = vmaMapMemory(allocator, tex->allocation.handle, &data_ptr);
+	VkResult err = vmaMapMemory(allocator, tex->alloc_handle, &data_ptr);
 	ERR_FAIL_COND_V_MSG(err, Vector<uint8_t>(),
 		vformat("Couldn't map Vulkan memory for texture (VkResult error %d).", err));
 
@@ -96917,7 +96487,7 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 		}
 	}
 
-	vmaUnmapMemory(allocator, tex->allocation.handle);
+	vmaUnmapMemory(allocator, tex->alloc_handle);
 
 	return image_data;
 }
@@ -102026,14 +101596,14 @@ void RenderingDeviceDriverVulkan::print_lost_device_info()
 	uint8_t* breadcrumb_ptr = nullptr;
 	VkResult map_result = VK_SUCCESS;
 
-	vmaFlushAllocation(allocator, ((BufferInfo*)breadcrumb_buffer.id)->allocation.handle, 0,
+	vmaFlushAllocation(allocator, ((BufferInfo*)breadcrumb_buffer.id)->alloc_handle, 0,
 		BREADCRUMB_BUFFER_ENTRIES * sizeof(uint32_t) * 2u);
-	vmaInvalidateAllocation(allocator, ((BufferInfo*)breadcrumb_buffer.id)->allocation.handle, 0,
+	vmaInvalidateAllocation(allocator, ((BufferInfo*)breadcrumb_buffer.id)->alloc_handle, 0,
 		BREADCRUMB_BUFFER_ENTRIES * sizeof(uint32_t) * 2u);
 	{
 		void* ptr = nullptr;
 		map_result =
-			vmaMapMemory(allocator, ((BufferInfo*)breadcrumb_buffer.id)->allocation.handle, &ptr);
+			vmaMapMemory(allocator, ((BufferInfo*)breadcrumb_buffer.id)->alloc_handle, &ptr);
 		breadcrumb_ptr = reinterpret_cast<uint8_t*>(ptr);
 	}
 
@@ -102131,7 +101701,7 @@ void RenderingDeviceDriverVulkan::print_lost_device_info()
 			last_breadcrumb_offset -= sizeof(uint32_t) * 2u;
 		}
 
-		vmaUnmapMemory(allocator, ((BufferInfo*)breadcrumb_buffer.id)->allocation.handle);
+		vmaUnmapMemory(allocator, ((BufferInfo*)breadcrumb_buffer.id)->alloc_handle);
 		breadcrumb_ptr = nullptr;
 	}
 	else {
@@ -102180,7 +101750,7 @@ void RenderingDeviceDriverVulkan::set_object_name(
 	switch (p_type) {
 	case OBJECT_TYPE_TEXTURE: {
 		const TextureInfo* tex_info = (const TextureInfo*)p_driver_id.id;
-		if (tex_info->allocation.handle) {
+		if (tex_info->alloc_handle) {
 			_set_object_name(
 				VK_OBJECT_TYPE_IMAGE, (uint64_t)tex_info->vk_view_create_info.image, p_name);
 		}
@@ -104372,7 +103942,7 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface_with_material(
 		!p_material->shader_data->wireframe) {
 		flags |= GeometryInstanceSurface::FLAG_USES_SHARED_SHADOW_MATERIAL;
 		material_shadow = GLES3::MaterialStorage::material_get_data(
-			scene_globals.default_material, RSE::SHADER_SPATIAL);
+			scene_globals_default_material, RSE::SHADER_SPATIAL);
 
 		RID shadow_mesh = GLES3::MeshStorage::mesh_get_shadow_mesh(p_mesh);
 
@@ -104493,8 +104063,8 @@ void RasterizerSceneGLES3::_geometry_instance_add_surface(
 	}
 	else {
 		material_data = GLES3::MaterialStorage::material_get_data(
-			scene_globals.default_material, RSE::SHADER_SPATIAL);
-		m_src = scene_globals.default_material;
+			scene_globals_default_material, RSE::SHADER_SPATIAL);
+		m_src = scene_globals_default_material;
 	}
 
 	ERR_FAIL_NULL(material_data);
@@ -104800,7 +104370,7 @@ GLES3::MaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 	RID sky_material;
 
 	if (background == RSE::ENV_BG_CLEAR_COLOR || background == RSE::ENV_BG_COLOR) {
-		sky_material = sky_globals.fog_material;
+		sky_material = sky_globals_fog_material;
 		material_data =
 			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY);
 	}
@@ -104817,7 +104387,7 @@ GLES3::MaterialData* RasterizerSceneGLES3::_get_sky_material_data(RID p_env)
 	}
 
 	if (!material_data) {
-		sky_material = sky_globals.default_material;
+		sky_material = sky_globals_default_material;
 		material_data =
 			GLES3::MaterialStorage::material_get_data(sky_material, RSE::SHADER_SKY);
 	}
@@ -104933,9 +104503,9 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 	bool sun_scatter_enabled = environment_get_fog_enabled(p_render_data->environment) &&
 							   environment_get_fog_sun_scatter(p_render_data->environment) > 0.001;
 	glBindBufferBase(GL_UNIFORM_BUFFER, SKY_DIRECTIONAL_LIGHT_UNIFORM_LOCATION,
-		sky_globals.directional_light_buffer);
+		sky_globals_directional_light_buffer);
 	if (shader_data->uses_light || sun_scatter_enabled) {
-		sky_globals.directional_light_count = 0;
+		sky_globals_directional_light_count = 0;
 		for (int i = 0; i < (int)p_lights.size(); i++) {
 			GLES3::LightInstance* li =
 				GLES3::LightStorage::get_light_instance(p_lights[i]);
@@ -104951,7 +104521,7 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 				GLES3::LightStorage::light_directional_get_sky_mode(base) !=
 					RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY) {
 				DirectionalLightData& sky_light_data =
-					sky_globals.directional_lights[sky_globals.directional_light_count];
+					sky_globals_directional_lights[sky_globals_directional_light_count];
 				Transform3D light_transform = li->transform;
 				Vector3 world_direction =
 					light_transform.basis.xform(Vector3(0, 0, 1)).normalized();
@@ -104985,8 +104555,8 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 				float angular_diameter =
 					GLES3::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 				sky_light_data.size = Math::deg_to_rad(angular_diameter);
-				sky_globals.directional_light_count++;
-				if (sky_globals.directional_light_count >= sky_globals.max_directional_lights) {
+				sky_globals_directional_light_count++;
+				if (sky_globals_directional_light_count >= sky_globals_max_directional_lights) {
 					break;
 				}
 			}
@@ -104996,35 +104566,35 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 
 		// Light buffer is dirty if we have fewer or more lights
 		// If we have fewer lights, make sure that old lights are disabled
-		if (sky_globals.directional_light_count != sky_globals.last_frame_directional_light_count) {
+		if (sky_globals_directional_light_count != sky_globals_last_frame_directional_light_count) {
 			light_data_dirty = true;
-			for (uint32_t i = sky_globals.directional_light_count;
-				 i < sky_globals.max_directional_lights; i++) {
-				sky_globals.directional_lights[i].enabled = false;
-				sky_globals.last_frame_directional_lights[i].enabled = false;
+			for (uint32_t i = sky_globals_directional_light_count;
+				 i < sky_globals_max_directional_lights; i++) {
+				sky_globals_directional_lights[i].enabled = false;
+				sky_globals_last_frame_directional_lights[i].enabled = false;
 			}
 		}
 
 		if (!light_data_dirty) {
-			for (uint32_t i = 0; i < sky_globals.directional_light_count; i++) {
-				if (sky_globals.directional_lights[i].direction[0] !=
-						sky_globals.last_frame_directional_lights[i].direction[0] ||
-					sky_globals.directional_lights[i].direction[1] !=
-						sky_globals.last_frame_directional_lights[i].direction[1] ||
-					sky_globals.directional_lights[i].direction[2] !=
-						sky_globals.last_frame_directional_lights[i].direction[2] ||
-					sky_globals.directional_lights[i].energy !=
-						sky_globals.last_frame_directional_lights[i].energy ||
-					sky_globals.directional_lights[i].color[0] !=
-						sky_globals.last_frame_directional_lights[i].color[0] ||
-					sky_globals.directional_lights[i].color[1] !=
-						sky_globals.last_frame_directional_lights[i].color[1] ||
-					sky_globals.directional_lights[i].color[2] !=
-						sky_globals.last_frame_directional_lights[i].color[2] ||
-					sky_globals.directional_lights[i].enabled !=
-						sky_globals.last_frame_directional_lights[i].enabled ||
-					sky_globals.directional_lights[i].size !=
-						sky_globals.last_frame_directional_lights[i].size) {
+			for (uint32_t i = 0; i < sky_globals_directional_light_count; i++) {
+				if (sky_globals_directional_lights[i].direction[0] !=
+						sky_globals_last_frame_directional_lights[i].direction[0] ||
+					sky_globals_directional_lights[i].direction[1] !=
+						sky_globals_last_frame_directional_lights[i].direction[1] ||
+					sky_globals_directional_lights[i].direction[2] !=
+						sky_globals_last_frame_directional_lights[i].direction[2] ||
+					sky_globals_directional_lights[i].energy !=
+						sky_globals_last_frame_directional_lights[i].energy ||
+					sky_globals_directional_lights[i].color[0] !=
+						sky_globals_last_frame_directional_lights[i].color[0] ||
+					sky_globals_directional_lights[i].color[1] !=
+						sky_globals_last_frame_directional_lights[i].color[1] ||
+					sky_globals_directional_lights[i].color[2] !=
+						sky_globals_last_frame_directional_lights[i].color[2] ||
+					sky_globals_directional_lights[i].enabled !=
+						sky_globals_last_frame_directional_lights[i].enabled ||
+					sky_globals_directional_lights[i].size !=
+						sky_globals_last_frame_directional_lights[i].size) {
 					light_data_dirty = true;
 					break;
 				}
@@ -105033,14 +104603,14 @@ void RasterizerSceneGLES3::_setup_sky(const RenderDataGLES3* p_render_data,
 
 		if (light_data_dirty) {
 			glBufferData(GL_UNIFORM_BUFFER,
-				sizeof(DirectionalLightData) * sky_globals.max_directional_lights,
-				sky_globals.directional_lights, GL_STREAM_DRAW);
+				sizeof(DirectionalLightData) * sky_globals_max_directional_lights,
+				sky_globals_directional_lights, GL_STREAM_DRAW);
 			glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-			DirectionalLightData* temp = sky_globals.last_frame_directional_lights;
-			sky_globals.last_frame_directional_lights = sky_globals.directional_lights;
-			sky_globals.directional_lights = temp;
-			sky_globals.last_frame_directional_light_count = sky_globals.directional_light_count;
+			DirectionalLightData* temp = sky_globals_last_frame_directional_lights;
+			sky_globals_last_frame_directional_lights = sky_globals_directional_lights;
+			sky_globals_directional_lights = temp;
+			sky_globals_last_frame_directional_light_count = sky_globals_directional_light_count;
 			if (sky) {
 				sky->reflection_dirty = true;
 			}
@@ -105145,7 +104715,7 @@ void RasterizerSceneGLES3::_draw_sky(RID p_env, const Projection& p_projection,
 		environment_get_fog_sky_affect(p_env), shader_data->version,
 		SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
 	GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
-		SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals.directional_light_count,
+		SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals_directional_light_count,
 		shader_data->version, SkyShaderGLES3::MODE_BACKGROUND, spec_constants);
 
 	if (p_use_multiview) {
@@ -105154,7 +104724,7 @@ void RasterizerSceneGLES3::_draw_sky(RID p_env, const Projection& p_projection,
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
-	glBindVertexArray(sky_globals.screen_triangle_array);
+	glBindVertexArray(sky_globals_screen_triangle_array);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
@@ -105236,10 +104806,10 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 			SkyShaderGLES3::FOG_SKY_AFFECT, environment_get_fog_sky_affect(p_env),
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
 		GLES3::MaterialStorage::shaders->sky_shader.version_set_uniform(
-			SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals.directional_light_count,
+			SkyShaderGLES3::DIRECTIONAL_LIGHT_COUNT, sky_globals_directional_light_count,
 			shader_data->version, SkyShaderGLES3::MODE_CUBEMAP);
 
-		glBindVertexArray(sky_globals.screen_triangle_array);
+		glBindVertexArray(sky_globals_screen_triangle_array);
 
 		glViewport(0, 0, sky->radiance_size, sky->radiance_size);
 		glBindFramebuffer(GL_FRAMEBUFFER, sky->radiance_framebuffer);
@@ -107785,7 +107355,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 
 		// Area Light Lookup Tables
 		{ // Lookup-table for Area Lights - Linearly transformed cosines (LTC)
-			if (ltc.lut1_texture.is_null() || ltc.lut2_texture.is_null()) {
+			if (gles_ltc_lut1_texture.is_null() || gles_ltc_lut2_texture.is_null()) {
 				Ref<Image> lut1_image;
 				int dimensions = LTC_LUT_DIMENSIONS;
 				int lut1_bytes = 4 * dimensions * dimensions;
@@ -107798,7 +107368,7 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				lut1_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut1_data);
 
-				ltc.lut1_texture = Renderer::texture_2d_create(lut1_image);
+				gles_ltc_lut1_texture = Renderer::texture_2d_create(lut1_image);
 
 				int lut2_bytes = 4 * dimensions * dimensions;
 				size_t lut2_size = lut2_bytes * 4;
@@ -107811,17 +107381,17 @@ void RasterizerSceneGLES3::_render_list_template(RenderListParameters* p_params,
 				lut2_image = Image::create_from_data(
 					dimensions, dimensions, false, Image::FORMAT_RGBAF, lut2_data);
 
-				ltc.lut2_texture = Renderer::texture_2d_create(lut2_image);
+				gles_ltc_lut2_texture = Renderer::texture_2d_create(lut2_image);
 			}
 		}
 
 		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 10);
-		GLuint ltc_lut1_texture = GLES3::TextureStorage::texture_get_texid(ltc.lut1_texture);
+		GLuint ltc_lut1_texture = GLES3::TextureStorage::texture_get_texid(gles_ltc_lut1_texture);
 		glBindTexture(GL_TEXTURE_2D, ltc_lut1_texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glActiveTexture(GL_TEXTURE0 + GLES3::Config::max_texture_image_units - 11);
-		GLuint ltc_lut2_texture = GLES3::TextureStorage::texture_get_texid(ltc.lut2_texture);
+		GLuint ltc_lut2_texture = GLES3::TextureStorage::texture_get_texid(gles_ltc_lut2_texture);
 		glBindTexture(GL_TEXTURE_2D, ltc_lut2_texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -109342,18 +108912,18 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
     }
 
     {
-        sky_globals.max_directional_lights = 4;
+        sky_globals_max_directional_lights = 4;
         uint32_t directional_light_buffer_size =
-            sky_globals.max_directional_lights * sizeof(DirectionalLightData);
-        sky_globals.directional_lights =
-            memnew_arr(DirectionalLightData, sky_globals.max_directional_lights);
-        sky_globals.last_frame_directional_lights =
-            memnew_arr(DirectionalLightData, sky_globals.max_directional_lights);
-        sky_globals.last_frame_directional_light_count = sky_globals.max_directional_lights + 1;
-        glGenBuffers(1, &sky_globals.directional_light_buffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, sky_globals.directional_light_buffer);
+            sky_globals_max_directional_lights * sizeof(DirectionalLightData);
+        sky_globals_directional_lights =
+            memnew_arr(DirectionalLightData, sky_globals_max_directional_lights);
+        sky_globals_last_frame_directional_lights =
+            memnew_arr(DirectionalLightData, sky_globals_max_directional_lights);
+        sky_globals_last_frame_directional_light_count = sky_globals_max_directional_lights + 1;
+        glGenBuffers(1, &sky_globals_directional_light_buffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, sky_globals_directional_light_buffer);
         GLES3::Utilities::buffer_allocate_data(GL_UNIFORM_BUFFER,
-            sky_globals.directional_light_buffer, directional_light_buffer_size, nullptr,
+            sky_globals_directional_light_buffer, directional_light_buffer_size, nullptr,
             GL_STREAM_DRAW, "Sky DirectionalLight UBO");
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -109370,7 +108940,7 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
         global_defines += "\n#define MAX_FORWARD_LIGHTS " +
             itos(MAX(1, GLES3::Config::max_lights_per_object)) + "u\n";
         global_defines +=
-            "\n#define MAX_ROUGHNESS_LOD " + itos(sky_globals.roughness_layers - 1) + ".0\n";
+            "\n#define MAX_ROUGHNESS_LOD " + itos(sky_globals_roughness_layers - 1) + ".0\n";
         if (GLES3::Config::force_vertex_shading) {
             global_defines += "\n#define USE_VERTEX_LIGHTING\n";
         }
@@ -109378,17 +108948,17 @@ RasterizerSceneGLES3::RasterizerSceneGLES3(GLES3::TextureStorage* p_texture_stor
             global_defines += "\n#define SPECULAR_OCCLUSION_DISABLED\n";
         }
         GLES3::MaterialStorage::shaders->scene_shader.initialize(global_defines);
-        scene_globals.shader_default_version =
+        scene_globals_shader_default_version =
             GLES3::MaterialStorage::shaders->scene_shader.version_create();
         GLES3::MaterialStorage::shaders->scene_shader.version_bind_shader(
-            scene_globals.shader_default_version, SceneShaderGLES3::MODE_COLOR);
+            scene_globals_shader_default_version, SceneShaderGLES3::MODE_COLOR);
     }
 
     {
         // default material and shader
-        scene_globals.default_shader = GLES3::MaterialStorage::shader_allocate();
-        GLES3::MaterialStorage::shader_initialize(scene_globals.default_shader);
-        GLES3::MaterialStorage::shader_set_code(scene_globals.default_shader, R"(
+        scene_globals_default_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(scene_globals_default_shader);
+        GLES3::MaterialStorage::shader_set_code(scene_globals_default_shader, R"(
 // Default 3D material shader (Compatibility).
 
 shader_type spatial;
@@ -109403,19 +108973,19 @@ void fragment() {
     METALLIC = 0.2;
 }
 )");
-        scene_globals.default_material = GLES3::MaterialStorage::material_allocate();
-        GLES3::MaterialStorage::material_initialize(scene_globals.default_material);
+        scene_globals_default_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(scene_globals_default_material);
         GLES3::MaterialStorage::material_set_shader(
-            scene_globals.default_material, scene_globals.default_shader);
+            scene_globals_default_material, scene_globals_default_shader);
         default_material_data_ptr = GLES3::MaterialStorage::material_get_data(
-            scene_globals.default_material, RSE::SHADER_SPATIAL);
+            scene_globals_default_material, RSE::SHADER_SPATIAL);
     }
 
     {
         // Overdraw material and shader.
-        scene_globals.overdraw_shader = GLES3::MaterialStorage::shader_allocate();
-        GLES3::MaterialStorage::shader_initialize(scene_globals.overdraw_shader);
-        GLES3::MaterialStorage::shader_set_code(scene_globals.overdraw_shader, R"(
+        scene_globals_overdraw_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(scene_globals_overdraw_shader);
+        GLES3::MaterialStorage::shader_set_code(scene_globals_overdraw_shader, R"(
 // 3D editor Overdraw debug draw mode shader (Compatibility).
 
 shader_type spatial;
@@ -109427,12 +108997,12 @@ void fragment() {
     ALPHA = 0.2;
 }
 )");
-        scene_globals.overdraw_material = GLES3::MaterialStorage::material_allocate();
-        GLES3::MaterialStorage::material_initialize(scene_globals.overdraw_material);
+        scene_globals_overdraw_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(scene_globals_overdraw_material);
         GLES3::MaterialStorage::material_set_shader(
-            scene_globals.overdraw_material, scene_globals.overdraw_shader);
+            scene_globals_overdraw_material, scene_globals_overdraw_shader);
         overdraw_material_data_ptr = GLES3::MaterialStorage::material_get_data(
-            scene_globals.overdraw_material, RSE::SHADER_SPATIAL);
+            scene_globals_overdraw_material, RSE::SHADER_SPATIAL);
     }
 
     {
@@ -109440,18 +109010,18 @@ void fragment() {
         global_defines +=
             "#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
         global_defines += "\n#define MAX_DIRECTIONAL_LIGHT_DATA_STRUCTS " +
-                          itos(sky_globals.max_directional_lights) + "\n";
+                          itos(sky_globals_max_directional_lights) + "\n";
         GLES3::MaterialStorage::shaders->sky_shader.initialize(global_defines);
-        sky_globals.shader_default_version =
+        sky_globals_shader_default_version =
             GLES3::MaterialStorage::shaders->sky_shader.version_create();
     }
 
     {
-        sky_globals.default_shader = GLES3::MaterialStorage::shader_allocate();
+        sky_globals_default_shader = GLES3::MaterialStorage::shader_allocate();
 
-        GLES3::MaterialStorage::shader_initialize(sky_globals.default_shader);
+        GLES3::MaterialStorage::shader_initialize(sky_globals_default_shader);
 
-        GLES3::MaterialStorage::shader_set_code(sky_globals.default_shader, R"(
+        GLES3::MaterialStorage::shader_set_code(sky_globals_default_shader, R"(
 // Default sky shader.
 
 shader_type sky;
@@ -109460,17 +109030,17 @@ void sky() {
     COLOR = vec3(0.0);
 }
 )");
-        sky_globals.default_material = GLES3::MaterialStorage::material_allocate();
-        GLES3::MaterialStorage::material_initialize(sky_globals.default_material);
+        sky_globals_default_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(sky_globals_default_material);
 
         GLES3::MaterialStorage::material_set_shader(
-            sky_globals.default_material, sky_globals.default_shader);
+            sky_globals_default_material, sky_globals_default_shader);
     }
     {
-        sky_globals.fog_shader = GLES3::MaterialStorage::shader_allocate();
-        GLES3::MaterialStorage::shader_initialize(sky_globals.fog_shader);
+        sky_globals_fog_shader = GLES3::MaterialStorage::shader_allocate();
+        GLES3::MaterialStorage::shader_initialize(sky_globals_fog_shader);
 
-        GLES3::MaterialStorage::shader_set_code(sky_globals.fog_shader, R"(
+        GLES3::MaterialStorage::shader_set_code(sky_globals_fog_shader, R"(
 // Default clear color sky shader.
 
 shader_type sky;
@@ -109481,18 +109051,18 @@ void sky() {
     COLOR = clear_color.rgb;
 }
 )");
-        sky_globals.fog_material = GLES3::MaterialStorage::material_allocate();
-        GLES3::MaterialStorage::material_initialize(sky_globals.fog_material);
+        sky_globals_fog_material = GLES3::MaterialStorage::material_allocate();
+        GLES3::MaterialStorage::material_initialize(sky_globals_fog_material);
 
         GLES3::MaterialStorage::material_set_shader(
-            sky_globals.fog_material, sky_globals.fog_shader);
+            sky_globals_fog_material, sky_globals_fog_shader);
     }
 
     {
-        glGenVertexArrays(1, &sky_globals.screen_triangle_array);
-        glBindVertexArray(sky_globals.screen_triangle_array);
-        glGenBuffers(1, &sky_globals.screen_triangle);
-        glBindBuffer(GL_ARRAY_BUFFER, sky_globals.screen_triangle);
+        glGenVertexArrays(1, &sky_globals_screen_triangle_array);
+        glBindVertexArray(sky_globals_screen_triangle_array);
+        glGenBuffers(1, &sky_globals_screen_triangle);
+        glBindBuffer(GL_ARRAY_BUFFER, sky_globals_screen_triangle);
 
         const float qv[6] = {
             -1.0f,
@@ -109503,7 +109073,7 @@ void sky() {
             3.0f,
         };
 
-        GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER, sky_globals.screen_triangle,
+        GLES3::Utilities::buffer_allocate_data(GL_ARRAY_BUFFER, sky_globals_screen_triangle,
             sizeof(float) * 6, qv, GL_STATIC_DRAW, "Screen triangle vertex buffer");
 
         glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
@@ -109528,11 +109098,11 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
     printf("[LIFECYCLE 3] ~RasterizerSceneGLES3 running on %p, vptr=%p\n", (void*)this, *(void**)this);
     fflush(stdout);
     // ... rest of destructor
-	if (ltc.lut1_texture.is_valid()) {
-		Renderer::free_rid(ltc.lut1_texture);
+	if (gles_ltc_lut1_texture.is_valid()) {
+		Renderer::free_rid(gles_ltc_lut1_texture);
 	}
-	if (ltc.lut2_texture.is_valid()) {
-		Renderer::free_rid(ltc.lut2_texture);
+	if (gles_ltc_lut2_texture.is_valid()) {
+		Renderer::free_rid(gles_ltc_lut2_texture);
 	}
 
 	GLES3::Utilities::buffer_free_data(scene_state.directional_light_buffer);
@@ -109553,25 +109123,25 @@ RasterizerSceneGLES3::~RasterizerSceneGLES3()
 
 	// Scene Shader
 	GLES3::MaterialStorage::shaders->scene_shader.version_free(
-		scene_globals.shader_default_version);
-	GLES3::MaterialStorage::material_free(scene_globals.default_material);
-	GLES3::MaterialStorage::shader_free(scene_globals.default_shader);
+		scene_globals_shader_default_version);
+	GLES3::MaterialStorage::material_free(scene_globals_default_material);
+	GLES3::MaterialStorage::shader_free(scene_globals_default_shader);
 
 	// Overdraw Shader
-	GLES3::MaterialStorage::material_free(scene_globals.overdraw_material);
-	GLES3::MaterialStorage::shader_free(scene_globals.overdraw_shader);
+	GLES3::MaterialStorage::material_free(scene_globals_overdraw_material);
+	GLES3::MaterialStorage::shader_free(scene_globals_overdraw_shader);
 
 	// Sky Shader
-	GLES3::MaterialStorage::shaders->sky_shader.version_free(sky_globals.shader_default_version);
-	GLES3::MaterialStorage::material_free(sky_globals.default_material);
-	GLES3::MaterialStorage::shader_free(sky_globals.default_shader);
-	GLES3::MaterialStorage::material_free(sky_globals.fog_material);
-	GLES3::MaterialStorage::shader_free(sky_globals.fog_shader);
-	GLES3::Utilities::buffer_free_data(sky_globals.screen_triangle);
-	glDeleteVertexArrays(1, &sky_globals.screen_triangle_array);
-	GLES3::Utilities::buffer_free_data(sky_globals.directional_light_buffer);
-	memdelete_arr(sky_globals.directional_lights);
-	memdelete_arr(sky_globals.last_frame_directional_lights);
+	GLES3::MaterialStorage::shaders->sky_shader.version_free(sky_globals_shader_default_version);
+	GLES3::MaterialStorage::material_free(sky_globals_default_material);
+	GLES3::MaterialStorage::shader_free(sky_globals_default_shader);
+	GLES3::MaterialStorage::material_free(sky_globals_fog_material);
+	GLES3::MaterialStorage::shader_free(sky_globals_fog_shader);
+	GLES3::Utilities::buffer_free_data(sky_globals_screen_triangle);
+	glDeleteVertexArrays(1, &sky_globals_screen_triangle_array);
+	GLES3::Utilities::buffer_free_data(sky_globals_directional_light_buffer);
+	memdelete_arr(sky_globals_directional_lights);
+	memdelete_arr(sky_globals_last_frame_directional_lights);
 
 	// UBOs
 	if (scene_state.ubo_buffer != 0) {
@@ -109954,8 +109524,8 @@ void Config::finalize()
 RenderSceneBuffersGLES3::RenderSceneBuffersGLES3()
 {
 	for (int i = 0; i < 4; i++) {
-		glow.levels[i].color = 0;
-		glow.levels[i].fbo = 0;
+		rt_glow_levels[i].color = 0;
+		rt_glow_levels[i].fbo = 0;
 	}
 }
 
@@ -110017,7 +109587,7 @@ GLuint RenderSceneBuffersGLES3::_rt_get_cached_fbo(
 
 #if defined(ANDROID_ENABLED) || defined(WEB_ENABLED)
 	// There shouldn't be more then 3 entries in this...
-	for (const FBDEF& cached_fbo : msaa3d.cached_fbos) {
+	for (const FBDEF& cached_fbo : rt_msaa3d_cached_fbos) {
 		if (cached_fbo.color == p_color && cached_fbo.depth == p_depth) {
 			return cached_fbo.fbo;
 		}
@@ -110042,7 +109612,7 @@ GLuint RenderSceneBuffersGLES3::_rt_get_cached_fbo(
 	}
 	else {
 		// cache it!
-		msaa3d.cached_fbos.push_back(new_fbo);
+		rt_msaa3d_cached_fbos.push_back(new_fbo);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
@@ -110059,7 +109629,7 @@ void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p
 	target_size = p_config->get_target_size();
 	scaling_3d_mode = p_config->get_scaling_3d_mode();
 	render_target = p_config->get_render_target();
-	msaa3d.mode = p_config->get_msaa_3d();
+	rt_msaa3d_mode = p_config->get_msaa_3d();
 	view_count = GLES3::Config::multiview_supported ? p_config->get_view_count() : 1;
 
 	bool use_multiview = view_count > 1;
@@ -110100,21 +109670,21 @@ void RenderSceneBuffersGLES3::configure(const RenderSceneBuffersConfiguration* p
 	}
 
 	// Check if we support MSAA.
-	if (msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED && internal_size.x == 0 &&
+	if (rt_msaa3d_mode != RSE::VIEWPORT_MSAA_DISABLED && internal_size.x == 0 &&
 		internal_size.y == 0) {
 		// Disable, no size set.
-		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+		rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
-	else if (!use_multiview && msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED &&
+	else if (!use_multiview && rt_msaa3d_mode != RSE::VIEWPORT_MSAA_DISABLED &&
 			   !GLES3::Config::msaa_supported && !GLES3::Config::rt_msaa_supported) {
 		WARN_PRINT_ONCE("MSAA is not supported on this device.");
-		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+		rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
-	else if (use_multiview && msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED &&
+	else if (use_multiview && rt_msaa3d_mode != RSE::VIEWPORT_MSAA_DISABLED &&
 			   !GLES3::Config::msaa_multiview_supported &&
 			   !GLES3::Config::rt_msaa_multiview_supported) {
 		WARN_PRINT_ONCE("Multiview MSAA is not supported on this device.");
-		msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+		rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 	}
 }
 
@@ -110133,7 +109703,7 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 	}
 
 	if ((!use_internal_buffer || internal3d.color != 0) &&
-		(msaa3d.mode == RSE::VIEWPORT_MSAA_DISABLED || msaa3d.color != 0)) {
+		(rt_msaa3d_mode == RSE::VIEWPORT_MSAA_DISABLED || rt_msaa3d_color != 0)) {
 		// already setup!
 		return;
 	}
@@ -110216,53 +109786,53 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 		glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	}
 
-	if (msaa3d.mode != RSE::VIEWPORT_MSAA_DISABLED && msaa3d.color == 0) {
+	if (rt_msaa3d_mode != RSE::VIEWPORT_MSAA_DISABLED && rt_msaa3d_color == 0) {
 		// Setup MSAA.
 		const GLsizei samples[] = {1, 2, 4, 8};
-		msaa3d.samples = samples[msaa3d.mode];
+		rt_msaa3d_samples = samples[rt_msaa3d_mode];
 
 		// Constrain by limits of OpenGL driver.
-		if (msaa3d.samples > GLES3::Config::msaa_max_samples) {
-			msaa3d.samples = GLES3::Config::msaa_max_samples;
+		if (rt_msaa3d_samples > GLES3::Config::msaa_max_samples) {
+			rt_msaa3d_samples = GLES3::Config::msaa_max_samples;
 		}
 
 		if (!use_multiview && !GLES3::Config::rt_msaa_supported) {
-			msaa3d.needs_resolve = true;
-			msaa3d.check_fbo_cache = false;
+			rt_msaa3d_needs_resolve = true;
+			rt_msaa3d_check_fbo_cache = false;
 
 			// Create our color buffer.
-			glGenRenderbuffers(1, &msaa3d.color);
-			glBindRenderbuffer(GL_RENDERBUFFER, msaa3d.color);
+			glGenRenderbuffers(1, &rt_msaa3d_color);
+			glBindRenderbuffer(GL_RENDERBUFFER, rt_msaa3d_color);
 
-			glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa3d.samples, color_internal_format,
+			glRenderbufferStorageMultisample(GL_RENDERBUFFER, rt_msaa3d_samples, color_internal_format,
 				internal_size.x, internal_size.y);
-			GLES3::Utilities::render_buffer_allocated_data(msaa3d.color,
-				internal_size.x * internal_size.y * view_count * 4 * msaa3d.samples,
+			GLES3::Utilities::render_buffer_allocated_data(rt_msaa3d_color,
+				internal_size.x * internal_size.y * view_count * 4 * rt_msaa3d_samples,
 				"MSAA 3D color render buffer");
 
 			// Create our depth buffer.
-			glGenRenderbuffers(1, &msaa3d.depth);
-			glBindRenderbuffer(GL_RENDERBUFFER, msaa3d.depth);
+			glGenRenderbuffers(1, &rt_msaa3d_depth);
+			glBindRenderbuffer(GL_RENDERBUFFER, rt_msaa3d_depth);
 
 			glRenderbufferStorageMultisample(
-				GL_RENDERBUFFER, msaa3d.samples, depth_format, internal_size.x, internal_size.y);
-			GLES3::Utilities::render_buffer_allocated_data(msaa3d.depth,
-				internal_size.x * internal_size.y * view_count * depth_format_size * msaa3d.samples,
+				GL_RENDERBUFFER, rt_msaa3d_samples, depth_format, internal_size.x, internal_size.y);
+			GLES3::Utilities::render_buffer_allocated_data(rt_msaa3d_depth,
+				internal_size.x * internal_size.y * view_count * depth_format_size * rt_msaa3d_samples,
 				"MSAA 3D depth render buffer");
 
 			// Create our MSAA 3D FBO.
-			glGenFramebuffers(1, &msaa3d.fbo);
-			glBindFramebuffer(GL_FRAMEBUFFER, msaa3d.fbo);
+			glGenFramebuffers(1, &rt_msaa3d_fbo);
+			glBindFramebuffer(GL_FRAMEBUFFER, rt_msaa3d_fbo);
 
 			glFramebufferRenderbuffer(
-				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, msaa3d.color);
+				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rt_msaa3d_color);
 			glFramebufferRenderbuffer(
-				GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa3d.depth);
+				GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rt_msaa3d_depth);
 
 			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 			if (status != GL_FRAMEBUFFER_COMPLETE) {
 				_clear_msaa3d_buffers();
-				msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+				rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 				WARN_PRINT("Could not create 3D MSAA buffers, status: " +
 						   GLES3::TextureStorage::get_framebuffer_error(status));
 			}
@@ -110272,54 +109842,54 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 #if !defined(IOS_ENABLED) && !defined(WEB_ENABLED)
 		}
 		else if (use_multiview && !GLES3::Config::rt_msaa_multiview_supported) {
-			msaa3d.needs_resolve = true;
-			msaa3d.check_fbo_cache = false;
+			rt_msaa3d_needs_resolve = true;
+			rt_msaa3d_check_fbo_cache = false;
 
 			// Create our color buffer.
-			glGenTextures(1, &msaa3d.color);
-			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.color);
+			glGenTextures(1, &rt_msaa3d_color);
+			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_color);
 
 #ifdef ANDROID_ENABLED
-			glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.samples,
+			glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_samples,
 				color_internal_format, internal_size.x, internal_size.y, view_count, GL_TRUE);
 #else
-			glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.samples,
+			glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_samples,
 				color_internal_format, internal_size.x, internal_size.y, view_count, GL_TRUE);
 #endif
 
-			GLES3::Utilities::texture_allocated_data(msaa3d.color,
-				internal_size.x * internal_size.y * view_count * color_format_size * msaa3d.samples,
+			GLES3::Utilities::texture_allocated_data(rt_msaa3d_color,
+				internal_size.x * internal_size.y * view_count * color_format_size * rt_msaa3d_samples,
 				"MSAA 3D color texture");
 
 			// Create our depth buffer.
-			glGenTextures(1, &msaa3d.depth);
-			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.depth);
+			glGenTextures(1, &rt_msaa3d_depth);
+			glBindTexture(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_depth);
 
 #ifdef ANDROID_ENABLED
-			glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.samples, depth_format,
+			glTexStorage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_samples, depth_format,
 				internal_size.x, internal_size.y, view_count, GL_TRUE);
 #else
-			glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, msaa3d.samples, depth_format,
+			glTexImage3DMultisample(GL_TEXTURE_2D_MULTISAMPLE_ARRAY, rt_msaa3d_samples, depth_format,
 				internal_size.x, internal_size.y, view_count, GL_TRUE);
 #endif
 
-			GLES3::Utilities::texture_allocated_data(msaa3d.depth,
-				internal_size.x * internal_size.y * view_count * depth_format_size * msaa3d.samples,
+			GLES3::Utilities::texture_allocated_data(rt_msaa3d_depth,
+				internal_size.x * internal_size.y * view_count * depth_format_size * rt_msaa3d_samples,
 				"MSAA 3D depth texture");
 
 			// Create our MSAA 3D FBO.
-			glGenFramebuffers(1, &msaa3d.fbo);
-			glBindFramebuffer(GL_FRAMEBUFFER, msaa3d.fbo);
+			glGenFramebuffers(1, &rt_msaa3d_fbo);
+			glBindFramebuffer(GL_FRAMEBUFFER, rt_msaa3d_fbo);
 
 			glFramebufferTextureMultiviewOVR(
-				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, msaa3d.color, 0, 0, view_count);
+				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rt_msaa3d_color, 0, 0, view_count);
 			glFramebufferTextureMultiviewOVR(
-				GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, msaa3d.depth, 0, 0, view_count);
+				GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, rt_msaa3d_depth, 0, 0, view_count);
 
 			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 			if (status != GL_FRAMEBUFFER_COMPLETE) {
 				_clear_msaa3d_buffers();
-				msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+				rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 				WARN_PRINT("Could not create 3D MSAA buffers, status: " +
 						   GLES3::TextureStorage::get_framebuffer_error(status));
 			}
@@ -110330,23 +109900,23 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 #if defined(ANDROID_ENABLED) || defined(WEB_ENABLED) // Only supported on OpenGLES!
 		}
 		else if (!use_internal_buffer) {
-			msaa3d.needs_resolve = false;
-			msaa3d.check_fbo_cache = true;
+			rt_msaa3d_needs_resolve = false;
+			rt_msaa3d_check_fbo_cache = true;
 		}
 		else if (use_internal_buffer) {
-			msaa3d.needs_resolve = false;
-			msaa3d.check_fbo_cache = false;
+			rt_msaa3d_needs_resolve = false;
+			rt_msaa3d_check_fbo_cache = false;
 
-			glGenFramebuffers(1, &msaa3d.fbo);
-			glBindFramebuffer(GL_FRAMEBUFFER, msaa3d.fbo);
+			glGenFramebuffers(1, &rt_msaa3d_fbo);
+			glBindFramebuffer(GL_FRAMEBUFFER, rt_msaa3d_fbo);
 
 			_rt_attach_textures(
-				internal3d.color, internal3d.depth, msaa3d.samples, view_count, true);
+				internal3d.color, internal3d.depth, rt_msaa3d_samples, view_count, true);
 
 			GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 			if (status != GL_FRAMEBUFFER_COMPLETE) {
 				_clear_msaa3d_buffers();
-				msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
+				rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
 				WARN_PRINT("Could not create 3D MSAA framebuffer, status: " +
 						   GLES3::TextureStorage::get_framebuffer_error(status));
 			}
@@ -110356,14 +109926,14 @@ void RenderSceneBuffersGLES3::_check_render_buffers()
 		}
 		else {
 			WARN_PRINT_ONCE("MSAA is not supported on this device.");
-			msaa3d.mode = RSE::VIEWPORT_MSAA_DISABLED;
-			msaa3d.samples = 1;
-			msaa3d.check_fbo_cache = false;
+			rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
+			rt_msaa3d_samples = 1;
+			rt_msaa3d_check_fbo_cache = false;
 		}
 	}
 	else {
-		msaa3d.samples = 1;
-		msaa3d.check_fbo_cache = false;
+		rt_msaa3d_samples = 1;
+		rt_msaa3d_check_fbo_cache = false;
 	}
 }
 
@@ -110377,35 +109947,35 @@ void RenderSceneBuffersGLES3::configure_for_probe(Size2i p_size)
 
 void RenderSceneBuffersGLES3::_clear_msaa3d_buffers()
 {
-	for (const FBDEF& cached_fbo : msaa3d.cached_fbos) {
+	for (const FBDEF& cached_fbo : rt_msaa3d_cached_fbos) {
 		GLuint fbo = cached_fbo.fbo;
 		glDeleteFramebuffers(1, &fbo);
 	}
-	msaa3d.cached_fbos.clear();
+	rt_msaa3d_cached_fbos.clear();
 
-	if (msaa3d.fbo) {
-		glDeleteFramebuffers(1, &msaa3d.fbo);
-		msaa3d.fbo = 0;
+	if (rt_msaa3d_fbo) {
+		glDeleteFramebuffers(1, &rt_msaa3d_fbo);
+		rt_msaa3d_fbo = 0;
 	}
 
-	if (msaa3d.color != 0) {
+	if (rt_msaa3d_color != 0) {
 		if (view_count == 1) {
-			GLES3::Utilities::render_buffer_free_data(msaa3d.color);
+			GLES3::Utilities::render_buffer_free_data(rt_msaa3d_color);
 		}
 		else {
-			GLES3::Utilities::texture_free_data(msaa3d.color);
+			GLES3::Utilities::texture_free_data(rt_msaa3d_color);
 		}
-		msaa3d.color = 0;
+		rt_msaa3d_color = 0;
 	}
 
-	if (msaa3d.depth != 0) {
+	if (rt_msaa3d_depth != 0) {
 		if (view_count == 1) {
-			GLES3::Utilities::render_buffer_free_data(msaa3d.depth);
+			GLES3::Utilities::render_buffer_free_data(rt_msaa3d_depth);
 		}
 		else {
-			GLES3::Utilities::texture_free_data(msaa3d.depth);
+			GLES3::Utilities::texture_free_data(rt_msaa3d_depth);
 		}
-		msaa3d.depth = 0;
+		rt_msaa3d_depth = 0;
 	}
 }
 
@@ -110554,7 +110124,7 @@ void RenderSceneBuffersGLES3::set_apply_canvas_bg_exposure(bool p_apply_canvas_b
 
 void RenderSceneBuffersGLES3::check_glow_buffers()
 {
-	if (glow.levels[0].color != 0) {
+	if (rt_glow_levels[0].color != 0) {
 		// already have these setup..
 		return;
 	}
@@ -110563,12 +110133,12 @@ void RenderSceneBuffersGLES3::check_glow_buffers()
 	for (int i = 0; i < 4; i++) {
 		level_size = Size2i(level_size.x >> 1, level_size.y >> 1).maxi(4);
 
-		glow.levels[i].size = level_size;
+		rt_glow_levels[i].size = level_size;
 
 		// Create our texture
-		glGenTextures(1, &glow.levels[i].color);
+		glGenTextures(1, &rt_glow_levels[i].color);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, glow.levels[i].color);
+		glBindTexture(GL_TEXTURE_2D, rt_glow_levels[i].color);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, color_internal_format, level_size.x, level_size.y, 0,
 			color_format, color_type, nullptr);
@@ -110581,16 +110151,16 @@ void RenderSceneBuffersGLES3::check_glow_buffers()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
-		GLES3::Utilities::texture_allocated_data(glow.levels[i].color,
+		GLES3::Utilities::texture_allocated_data(rt_glow_levels[i].color,
 			level_size.x * level_size.y * color_format_size,
 			String("Glow buffer ") + String::num_int64(i));
 
 		// Create our FBO
-		glGenFramebuffers(1, &glow.levels[i].fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, glow.levels[i].fbo);
+		glGenFramebuffers(1, &rt_glow_levels[i].fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, rt_glow_levels[i].fbo);
 
 		glFramebufferTexture2D(
-			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glow.levels[i].color, 0);
+			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt_glow_levels[i].color, 0);
 
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -110608,14 +110178,14 @@ void RenderSceneBuffersGLES3::check_glow_buffers()
 void RenderSceneBuffersGLES3::_clear_glow_buffers()
 {
 	for (int i = 0; i < 4; i++) {
-		if (glow.levels[i].fbo != 0) {
-			glDeleteFramebuffers(1, &glow.levels[i].fbo);
-			glow.levels[i].fbo = 0;
+		if (rt_glow_levels[i].fbo != 0) {
+			glDeleteFramebuffers(1, &rt_glow_levels[i].fbo);
+			rt_glow_levels[i].fbo = 0;
 		}
 
-		if (glow.levels[i].color != 0) {
-			GLES3::Utilities::texture_free_data(glow.levels[i].color);
-			glow.levels[i].color = 0;
+		if (rt_glow_levels[i].color != 0) {
+			GLES3::Utilities::texture_free_data(rt_glow_levels[i].color);
+			rt_glow_levels[i].color = 0;
 		}
 	}
 }
@@ -110634,19 +110204,19 @@ GLuint RenderSceneBuffersGLES3::get_render_fbo()
 
 	_check_render_buffers();
 
-	if (msaa3d.check_fbo_cache) {
+	if (rt_msaa3d_check_fbo_cache) {
 		GLuint color = GLES3::TextureStorage::render_target_get_color(render_target);
 		GLuint depth = GLES3::TextureStorage::render_target_get_depth(render_target);
 
-		rt_fbo = _rt_get_cached_fbo(color, depth, msaa3d.samples, view_count);
+		rt_fbo = _rt_get_cached_fbo(color, depth, rt_msaa3d_samples, view_count);
 		if (rt_fbo == 0) {
 			// Somehow couldn't obtain this? Just render without MSAA.
 			rt_fbo = GLES3::TextureStorage::render_target_get_fbo(render_target);
 		}
 	}
-	else if (msaa3d.fbo != 0) {
+	else if (rt_msaa3d_fbo != 0) {
 		// We have an MSAA fbo, render to our MSAA buffer
-		return msaa3d.fbo;
+		return rt_msaa3d_fbo;
 	}
 	else if (internal3d.fbo != 0) {
 		// We have an internal buffer, render to our internal buffer!
@@ -110663,7 +110233,7 @@ GLuint RenderSceneBuffersGLES3::get_render_fbo()
 			GLES3::TextureStorage::render_target_get_depth_has_stencil(render_target);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, rt_fbo);
-		_rt_attach_textures(color, depth, msaa3d.samples, view_count, depth_has_stencil);
+		_rt_attach_textures(color, depth, rt_msaa3d_samples, view_count, depth_has_stencil);
 		glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	}
 

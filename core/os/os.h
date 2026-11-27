@@ -1668,6 +1668,8 @@ public:
  * Multi-Platform abstraction for accessing to MIDI.
  */
 
+#include "core/os/mutex.h"
+
 class MIDIDriver final
 {
 	static uint8_t last_received_message;
@@ -1685,13 +1687,6 @@ class MIDIDriver final
 	inline static void (*_finalize_backend)() = &_default_finalize_backend;
 
 public:
-	struct Data
-	{
-		PackedStringArray connected_input_names;
-	};
-
-	static inline Data* data = nullptr;
-
 	// Categories of message for parser logic.
 	enum class MessageCategory
 	{
@@ -1703,21 +1698,23 @@ public:
 		RealTime,
 	};
 
-	// Convert midi data to InputEventMIDI and send it to Input.
-	// p_data_len is the length of the buffer passed at p_data, this must be
-	// at least equal to the data required by the passed message type, but
-	// may be larger. Only the required data will be read.
 	static void send_event(int p_device_index, uint8_t p_status, const uint8_t* p_data = nullptr,
 		size_t p_data_len = 0);
 
 	class Parser
 	{
 	public:
+		void* backend_ptr = nullptr;
+		uintptr_t backend_ep = 0;
+
 		Parser() = default;
 
-		Parser(int p_device_index) : device_index{p_device_index} {}
+		Parser(int p_device_index, void* p_ptr = nullptr, uintptr_t p_ep = 0)
+			: backend_ptr{p_ptr}, backend_ep{p_ep}, device_index{p_device_index}
+		{
+		}
 
-		virtual ~Parser() = default;
+		~Parser() = default;
 
 		// Push a byte of MIDI stream. Any completed messages will be
 		// forwarded to MIDIDriver::send_event.
@@ -1749,6 +1746,22 @@ public:
 		bool skipping_sys_ex = false;
 	};
 
+	struct Data
+	{
+		PackedStringArray connected_input_names;
+		Thread thread;
+		Mutex mutex;
+		SafeFlag exit_thread;
+		Vector<Parser> connected_inputs;
+		Vector<Parser*> connected_ptrs;
+		Vector<void*> win_sources;
+		uint32_t core_client = 0;
+		uint32_t core_port_in = 0;
+		bool core_midi_closed = false;
+	};
+
+	static inline Data* data = nullptr;
+
 	static void initialize();
 	static void finalize();
 
@@ -1759,12 +1772,13 @@ public:
 	inline static Error (*open)() = &_default_open;
 	inline static void (*close)() = &_default_close;
 
-	template <typename Impl> static void bind()
+	static void bind(
+		void (*p_init)(), void (*p_fin)(), Error (*p_open)(), void (*p_close)())
 	{
-		_initialize_backend = &Impl::initialize;
-		_finalize_backend = &Impl::finalize;
-		open = &Impl::open;
-		close = &Impl::close;
+		_initialize_backend = p_init ? p_init : &_default_initialize_backend;
+		_finalize_backend = p_fin ? p_fin : &_default_finalize_backend;
+		open = p_open ? p_open : &_default_open;
+		close = p_close ? p_close : &_default_close;
 		_is_bound = true;
 	}
 
@@ -1966,12 +1980,9 @@ public:
 		HashMap<int, DeviceState> device_states;
 
 		// Cache.
-		struct ActionStateCache
-		{
-			bool pressed = false;
-			float strength = false;
-			float raw_strength = false;
-		} cache;
+		bool cache_pressed = false;
+		float cache_strength = false;
+		float cache_raw_strength = false;
 	};
 
 	struct VibrationInfo

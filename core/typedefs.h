@@ -430,16 +430,9 @@ SH VLTR_MSVC_WARNING_IGNORE(m_warning)
 #define VLTR_POP_IGNORE_DEPRECATION() VLTR_MSVC_WARNING_POP
 #endif
 
-	template <typename T, typename = void>
-	struct is_fully_defined : std::false_type
-{
-};
-
-template <typename T> struct is_fully_defined<T, std::void_t<decltype(sizeof(T))>> : std::true_type
-{
-};
-
-template <typename T> constexpr bool is_fully_defined_v = is_fully_defined<T>::value;
+template <typename T, typename = void> inline constexpr bool is_fully_defined_v = false;
+template <typename T>
+inline constexpr bool is_fully_defined_v<T, std::void_t<decltype(sizeof(T))>> = true;
 
 #ifndef SCU_BUILD_ENABLED
 /// Enforces the requirement that a class is not fully defined.

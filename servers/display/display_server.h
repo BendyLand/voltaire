@@ -2081,99 +2081,100 @@ class AccessibilityServerDriver
 public:
 	virtual bool is_supported() const { return false; }
 
-	virtual bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle) = 0;
-	virtual void window_destroy(DisplayServerEnums::WindowID p_window_id) = 0;
+	virtual bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle) { return true; }
+	virtual void window_destroy(DisplayServerEnums::WindowID p_window_id) {}
 
 	virtual RID create_element(DisplayServerEnums::WindowID p_window_id,
-		AccessibilityServerEnums::AccessibilityRole p_role) = 0;
+		AccessibilityServerEnums::AccessibilityRole p_role) { return RID(); }
 	virtual RID create_sub_element(const RID& p_parent_rid,
-		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1) = 0;
+		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1) { return RID(); }
 	virtual RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
-		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false) = 0;
-	virtual bool has_element(const RID& p_id) const = 0;
-	virtual void free_element(const RID& p_id) = 0;
+		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false) { return RID(); }
+	virtual bool has_element(const RID& p_id) const { return false; }
+	virtual void free_element(const RID& p_id) {}
 
-	virtual RID get_window_root(DisplayServerEnums::WindowID p_window_id) const = 0;
-	virtual void update_set_focus(const RID& p_id) = 0;
+	virtual RID get_window_root(DisplayServerEnums::WindowID p_window_id) const { return RID(); }
+	virtual void update_set_focus(const RID& p_id) {}
 
 	virtual void set_window_rect(DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out,
-		const Rect2& p_rect_in) = 0;
-	virtual void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused) = 0;
-	virtual void window_activation_completed(DisplayServerEnums::WindowID p_window_id) = 0;
-	virtual void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id) = 0;
+		const Rect2& p_rect_in) {}
+	virtual void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused) {}
+	virtual void window_activation_completed(DisplayServerEnums::WindowID p_window_id) {}
+	virtual void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id) {}
 
 	virtual void update_set_role(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role) = 0;
-	virtual void update_set_name(const RID& p_id, const String& p_name) = 0;
-	virtual void update_set_braille_label(const RID& p_id, const String& p_name) = 0;
+		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role) {}
+	virtual void update_set_name(const RID& p_id, const String& p_name) {}
+	virtual void update_set_braille_label(const RID& p_id, const String& p_name) {}
 	virtual void update_set_braille_role_description(
-		const RID& p_id, const String& p_description) = 0;
-	virtual void update_set_extra_info(const RID& p_id, const String& p_name_extra_info) = 0;
-	virtual void update_set_description(const RID& p_id, const String& p_description) = 0;
-	virtual void update_set_value(const RID& p_id, const String& p_value) = 0;
-	virtual void update_set_tooltip(const RID& p_id, const String& p_tooltip) = 0;
-	virtual void update_set_bounds(const RID& p_id, const Rect2& p_rect) = 0;
-	virtual void update_set_transform(const RID& p_id, const Transform2D& p_transform) = 0;
-	virtual void update_add_child(const RID& p_id, const RID& p_child_id) = 0;
-	virtual void update_add_related_controls(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_add_related_details(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_add_related_described_by(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_add_related_flow_to(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_add_related_radio_group(const RID& p_id, const RID& p_related_id) = 0;
-	virtual void update_set_active_descendant(const RID& p_id, const RID& p_other_id) = 0;
-	virtual void update_set_next_on_line(const RID& p_id, const RID& p_other_id) = 0;
-	virtual void update_set_previous_on_line(const RID& p_id, const RID& p_other_id) = 0;
-	virtual void update_set_member_of(const RID& p_id, const RID& p_group_id) = 0;
-	virtual void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id) = 0;
-	virtual void update_set_error_message(const RID& p_id, const RID& p_other_id) = 0;
+		const RID& p_id, const String& p_description) {}
+	virtual void update_set_extra_info(const RID& p_id, const String& p_name_extra_info) {}
+	virtual void update_set_description(const RID& p_id, const String& p_description) {}
+	virtual void update_set_value(const RID& p_id, const String& p_value) {}
+	virtual void update_set_tooltip(const RID& p_id, const String& p_tooltip) {}
+	virtual void update_set_bounds(const RID& p_id, const Rect2& p_rect) {}
+	virtual void update_set_transform(const RID& p_id, const Transform2D& p_transform) {}
+	virtual void update_add_child(const RID& p_id, const RID& p_child_id) {}
+	virtual void update_add_related_controls(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_add_related_details(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_add_related_described_by(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_add_related_flow_to(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_add_related_radio_group(const RID& p_id, const RID& p_related_id) {}
+	virtual void update_set_active_descendant(const RID& p_id, const RID& p_other_id) {}
+	virtual void update_set_next_on_line(const RID& p_id, const RID& p_other_id) {}
+	virtual void update_set_previous_on_line(const RID& p_id, const RID& p_other_id) {}
+	virtual void update_set_member_of(const RID& p_id, const RID& p_group_id) {}
+	virtual void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id) {}
+	virtual void update_set_error_message(const RID& p_id, const RID& p_other_id) {}
 	virtual void update_set_live(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live) = 0;
+		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live) {}
 	virtual void update_add_custom_action(
-		const RID& p_id, int p_action_id, const String& p_action_description) = 0;
-	virtual void update_set_table_row_count(const RID& p_id, int p_count) = 0;
-	virtual void update_set_table_column_count(const RID& p_id, int p_count) = 0;
-	virtual void update_set_table_row_index(const RID& p_id, int p_index) = 0;
-	virtual void update_set_table_column_index(const RID& p_id, int p_index) = 0;
+		const RID& p_id, int p_action_id, const String& p_action_description) {}
+	virtual void update_set_table_row_count(const RID& p_id, int p_count) {}
+	virtual void update_set_table_column_count(const RID& p_id, int p_count) {}
+	virtual void update_set_table_row_index(const RID& p_id, int p_index) {}
+	virtual void update_set_table_column_index(const RID& p_id, int p_index) {}
 	virtual void update_set_table_cell_position(
-		const RID& p_id, int p_row_index, int p_column_index) = 0;
-	virtual void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span) = 0;
-	virtual void update_set_list_item_count(const RID& p_id, int p_size) = 0;
-	virtual void update_set_list_item_index(const RID& p_id, int p_index) = 0;
-	virtual void update_set_list_item_level(const RID& p_id, int p_level) = 0;
-	virtual void update_set_list_item_selected(const RID& p_id, bool p_selected) = 0;
-	virtual void update_set_list_item_expanded(const RID& p_id, bool p_expanded) = 0;
+		const RID& p_id, int p_row_index, int p_column_index) {}
+	virtual void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span) {}
+	virtual void update_set_list_item_count(const RID& p_id, int p_size) {}
+	virtual void update_set_list_item_index(const RID& p_id, int p_index) {}
+	virtual void update_set_list_item_level(const RID& p_id, int p_level) {}
+	virtual void update_set_list_item_selected(const RID& p_id, bool p_selected) {}
+	virtual void update_set_list_item_expanded(const RID& p_id, bool p_expanded) {}
 	virtual void update_set_popup_type(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup) = 0;
-	virtual void update_set_checked(const RID& p_id, bool p_checekd) = 0;
-	virtual void update_set_num_value(const RID& p_id, double p_position) = 0;
-	virtual void update_set_num_range(const RID& p_id, double p_min, double p_max) = 0;
-	virtual void update_set_num_step(const RID& p_id, double p_step) = 0;
-	virtual void update_set_num_jump(const RID& p_id, double p_jump) = 0;
-	virtual void update_set_scroll_x(const RID& p_id, double p_position) = 0;
-	virtual void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max) = 0;
-	virtual void update_set_scroll_y(const RID& p_id, double p_position) = 0;
-	virtual void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max) = 0;
+		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup) {}
+	virtual void update_set_checked(const RID& p_id, bool p_checekd) {}
+	virtual void update_set_num_value(const RID& p_id, double p_position) {}
+	virtual void update_set_num_range(const RID& p_id, double p_min, double p_max) {}
+	virtual void update_set_num_step(const RID& p_id, double p_step) {}
+	virtual void update_set_num_jump(const RID& p_id, double p_jump) {}
+	virtual void update_set_scroll_x(const RID& p_id, double p_position) {}
+	virtual void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max) {}
+	virtual void update_set_scroll_y(const RID& p_id, double p_position) {}
+	virtual void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max) {}
 	virtual void update_set_text_decorations(const RID& p_id, bool p_underline,
-		bool p_strikethrough, bool p_overline, const Color& p_color) = 0;
-	virtual void update_set_text_align(const RID& p_id, HorizontalAlignment p_align) = 0;
+		bool p_strikethrough, bool p_overline, const Color& p_color) {}
+	virtual void update_set_text_align(const RID& p_id, HorizontalAlignment p_align) {}
 	virtual void update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
-		int p_start_char, const RID& p_text_end_id, int p_end_char) = 0;
+		int p_start_char, const RID& p_text_end_id, int p_end_char) {}
 	virtual void update_set_flag(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value) = 0;
-	virtual void update_set_classname(const RID& p_id, const String& p_classname) = 0;
-	virtual void update_set_placeholder(const RID& p_id, const String& p_placeholder) = 0;
-	virtual void update_set_language(const RID& p_id, const String& p_language) = 0;
-	virtual void update_set_text_orientation(const RID& p_id, bool p_vertical) = 0;
-	virtual void update_set_list_orientation(const RID& p_id, bool p_vertical) = 0;
-	virtual void update_set_shortcut(const RID& p_id, const String& p_shortcut) = 0;
-	virtual void update_set_url(const RID& p_id, const String& p_url) = 0;
-	virtual void update_set_role_description(const RID& p_id, const String& p_description) = 0;
-	virtual void update_set_state_description(const RID& p_id, const String& p_description) = 0;
-	virtual void update_set_color_value(const RID& p_id, const Color& p_color) = 0;
-	virtual void update_set_background_color(const RID& p_id, const Color& p_color) = 0;
-	virtual void update_set_foreground_color(const RID& p_id, const Color& p_color) = 0;
+		const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value) {}
+	virtual void update_set_classname(const RID& p_id, const String& p_classname) {}
+	virtual void update_set_placeholder(const RID& p_id, const String& p_placeholder) {}
+	virtual void update_set_language(const RID& p_id, const String& p_language) {}
+	virtual void update_set_text_orientation(const RID& p_id, bool p_vertical) {}
+	virtual void update_set_list_orientation(const RID& p_id, bool p_vertical) {}
+	virtual void update_set_shortcut(const RID& p_id, const String& p_shortcut) {}
+	virtual void update_set_url(const RID& p_id, const String& p_url) {}
+	virtual void update_set_role_description(const RID& p_id, const String& p_description) {}
+	virtual void update_set_state_description(const RID& p_id, const String& p_description) {}
+	virtual void update_set_color_value(const RID& p_id, const Color& p_color) {}
+	virtual void update_set_background_color(const RID& p_id, const Color& p_color) {}
+	virtual void update_set_foreground_color(const RID& p_id, const Color& p_color) {}
 
+	static AccessibilityServerDriver* create_dummy(Error& r_error) { r_error = OK; return memnew(AccessibilityServerDriver); }
 	AccessibilityServerDriver();
 	virtual ~AccessibilityServerDriver();
 };
@@ -2190,12 +2191,7 @@ public:
 
 	typedef AccessibilityServerDriver* (*CreateFunction)(Error& r_error);
 
-	struct Data
-	{
-		AccessibilityServerDriver* driver = nullptr;
-	};
-
-	static inline Data* data = nullptr;
+	static inline AccessibilityServerDriver* driver = nullptr;
 
 private:
 	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
@@ -2223,15 +2219,15 @@ public:
 	static void finalize();
 	_FORCE_INLINE_ static bool is_initialized()
 	{
-		return data != nullptr && data->driver != nullptr;
+		return driver != nullptr;
 	}
 	_FORCE_INLINE_ static AccessibilityServerDriver* get_driver()
 	{
-		return data ? data->driver : nullptr;
+		return driver;
 	}
 	template <typename T> _FORCE_INLINE_ static T* driver_as()
 	{
-		return data ? dynamic_cast<T*>(data->driver) : nullptr;
+		return dynamic_cast<T*>(driver);
 	}
 
 	_FORCE_INLINE_ static AccessibilityServerEnums::AccessibilityMode get_mode()
@@ -13494,11 +13490,6 @@ private:
 		TightLocalVector<RDD::SemaphoreID> transfer_worker_semaphores;
 		RDG::CommandBufferPool command_buffer_pool;
 
-		struct Timestamp
-		{
-			String description;
-			uint64_t value = 0;
-		};
 
 		RDD::QueryPoolID timestamp_pool;
 		TightLocalVector<String> timestamp_names;
@@ -24105,6 +24096,10 @@ public:
 	{
 		bool monitoring_feeds = false;
 		Vector<Ref<CameraFeed>> feeds;
+		SafeFlag exit_flag;
+		Thread camera_thread;
+		Mutex camera_mutex;
+		void* camera_manager = nullptr;
 	};
 
 	static inline Data* data = nullptr;
@@ -24138,14 +24133,20 @@ public:
 	inline static void (*handle_display_rotation_change)(
 		int p_orientation) = &_default_handle_display_rotation_change;
 
-	template <typename Impl> static void bind()
+	static void bind(
+		void (*p_init)(),
+		void (*p_fin)(),
+		void (*p_set_mon)(bool),
+		void (*p_pause)() = nullptr,
+		void (*p_resume)() = nullptr,
+		void (*p_rot)(int) = nullptr)
 	{
-		_initialize_backend = &Impl::initialize;
-		_finalize_backend = &Impl::finalize;
-		set_monitoring_feeds = &Impl::set_monitoring_feeds;
-		handle_application_pause = &Impl::handle_application_pause;
-		handle_application_resume = &Impl::handle_application_resume;
-		handle_display_rotation_change = &Impl::handle_display_rotation_change;
+		_initialize_backend = p_init ? p_init : &_default_initialize_backend;
+		_finalize_backend = p_fin ? p_fin : &_default_finalize_backend;
+		set_monitoring_feeds = p_set_mon ? p_set_mon : &_default_set_monitoring_feeds;
+		handle_application_pause = p_pause ? p_pause : &_default_handle_application_pause;
+		handle_application_resume = p_resume ? p_resume : &_default_handle_application_resume;
+		handle_display_rotation_change = p_rot ? p_rot : &_default_handle_display_rotation_change;
 	}
 
 	static void reset_backend()
@@ -24293,23 +24294,16 @@ public:
 ///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
 // If you fix something here, make sure you fix it there as well!
 
-class CameraApple final
+namespace CameraApple
 {
-public:
-	static void initialize() {}
-	static void finalize();
-
-	static void update_feeds();
-	static void set_monitoring_feeds(bool p_monitoring_feeds);
-	static void handle_display_rotation_change(int p_orientation);
-	static void handle_application_pause();
-	static void handle_application_resume();
-
-	CameraApple() = delete;
-	CameraApple(const CameraApple&) = delete;
-	CameraApple& operator=(const CameraApple&) = delete;
-	~CameraApple() = delete;
-};
+inline void initialize() {}
+void finalize();
+void update_feeds();
+void set_monitoring_feeds(bool p_monitoring_feeds);
+void handle_display_rotation_change(int p_orientation);
+void handle_application_pause();
+void handle_application_resume();
+} // namespace CameraApple
 #endif // defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 
 class InstanceUniforms final
@@ -37159,58 +37153,45 @@ private:
 		float p_brightness_modifier, float p_border_size = 0.0);
 
 public:
-	struct SkySceneState
+	struct SkySceneUBO
 	{
-		struct UBO
-		{
-			float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16]; // 2 x 64 - 128
-			float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16];	// 2 x 64 - 256
-			float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4];		// 2 x 16 - 288
+		float combined_reprojection[RendererSceneRender::MAX_RENDER_VIEWS][16];
+		float view_inv_projections[RendererSceneRender::MAX_RENDER_VIEWS][16];
+		float view_eye_offsets[RendererSceneRender::MAX_RENDER_VIEWS][4];
+		uint32_t volumetric_fog_enabled;
+		float volumetric_fog_inv_length;
+		float volumetric_fog_detail_spread;
+		float volumetric_fog_sky_affect;
+		uint32_t fog_enabled;
+		float fog_sky_affect;
+		float fog_density;
+		float fog_sun_scatter;
+		float fog_light_color[3];
+		float fog_aerial_perspective;
+		float z_far;
+		uint32_t directional_light_count;
+		uint32_t fog_use_legacy_blending;
+		uint32_t pad1;
+	};
 
-			uint32_t volumetric_fog_enabled;	// 4 - 292
-			float volumetric_fog_inv_length;	// 4 - 296
-			float volumetric_fog_detail_spread; // 4 - 300
-			float volumetric_fog_sky_affect;	// 4 - 304
-
-			uint32_t fog_enabled;  // 4 - 308
-			float fog_sky_affect;  // 4 - 312
-			float fog_density;	   // 4 - 316
-			float fog_sun_scatter; // 4 - 320
-
-			float fog_light_color[3];	  // 12 - 332
-			float fog_aerial_perspective; // 4 - 336
-
-			float z_far;					  // 4 - 340
-			uint32_t directional_light_count; // 4 - 344
-			uint32_t fog_use_legacy_blending; // 4 - 348
-			uint32_t pad1;					  // 4 - 352
-		};
-
-		UBO ubo;
-
-		uint32_t view_count = 1;
-		Transform3D cam_transform;
-		Projection cam_projection;
-
-		SkyDirectionalLightData* directional_lights = nullptr;
-		SkyDirectionalLightData* last_frame_directional_lights = nullptr;
-		uint32_t max_directional_lights;
-		uint32_t last_frame_directional_light_count;
-		RID directional_light_buffer;
-		RID uniform_set;
-		RID uniform_buffer;
-		RID fog_uniform_set;
-		RID default_fog_uniform_set;
-
-		RID fog_shader;
-		RID fog_material;
-
-		// These are lazily initialized, use "get_fog_only_texture_uniform_set" instead.
-		RID fog_only_texture_uniform_set;
-		RID fog_only_texture_multiview_uniform_set;
-
-		RID get_fog_only_texture_uniform_set(RID p_default_shader_rd, bool p_is_multiview);
-	} sky_scene_state;
+	SkySceneUBO sky_scene_state_ubo;
+	uint32_t sky_scene_state_view_count = 1;
+	Transform3D sky_scene_state_cam_transform;
+	Projection sky_scene_state_cam_projection;
+	SkyDirectionalLightData* sky_scene_state_directional_lights = nullptr;
+	SkyDirectionalLightData* sky_scene_state_last_frame_directional_lights = nullptr;
+	uint32_t sky_scene_state_max_directional_lights;
+	uint32_t sky_scene_state_last_frame_directional_light_count;
+	RID sky_scene_state_directional_light_buffer;
+	RID sky_scene_state_uniform_set;
+	RID sky_scene_state_uniform_buffer;
+	RID sky_scene_state_fog_uniform_set;
+	RID sky_scene_state_default_fog_uniform_set;
+	RID sky_scene_state_fog_shader;
+	RID sky_scene_state_fog_material;
+	RID sky_scene_state_fog_only_texture_uniform_set;
+	RID sky_scene_state_fog_only_texture_multiview_uniform_set;
+	RID sky_scene_state_get_fog_only_texture_uniform_set(RID p_default_shader_rd, bool p_is_multiview);
 
 	struct ReflectionData
 	{
@@ -37682,40 +37663,6 @@ private:
 			INTEGRATE_MODE_MAX
 		};
 
-		struct IntegratePushConstant
-		{
-			enum
-			{
-				SKY_FLAGS_MODE_COLOR = 0x01,
-				SKY_FLAGS_MODE_SKY = 0x02,
-				SKY_FLAGS_ORIENTATION_SIGN = 0x04,
-			};
-
-			float grid_size[3];
-			uint32_t max_cascades;
-
-			uint32_t probe_axis_size;
-			uint32_t cascade;
-			uint32_t history_index;
-			uint32_t history_size;
-
-			uint32_t ray_count;
-			float ray_bias;
-			int32_t image_size[2];
-
-			int32_t world_offset[3];
-			uint32_t sky_flags;
-
-			int32_t scroll[3];
-			float sky_energy;
-
-			float sky_color_or_orientation[3];
-			float y_mult;
-
-			float sky_irradiance_border_size[2];
-			uint32_t store_ambient_texture;
-			uint32_t pad;
-		};
 
 		ShaderRD integrate;
 		RID integrate_shader;
@@ -42345,72 +42292,26 @@ class ClusterBuilderSharedDataRD final {
 		DIVISOR_4,
 	};
 
-	struct ClusterRender {
-		struct PushConstant {
-			uint32_t base_index;
-			uint32_t pad0;
-			uint32_t pad1;
-			uint32_t pad2;
-		};
+	enum ClusterPipelineVersion {
+		CLUSTER_PIPELINE_NORMAL,
+		CLUSTER_PIPELINE_MSAA,
+		CLUSTER_PIPELINE_MAX
+	};
 
-		ShaderRD cluster_render_shader{ClusterRenderShaderRD()};
-		RID shader_version;
-		RID shader;
+	ShaderRD cluster_render_shader{ClusterRenderShaderRD()};
+	RID cluster_render_shader_version;
+	RID cluster_render_shader_rid;
+	RID cluster_render_shader_pipelines[CLUSTER_PIPELINE_MAX];
 
-		enum ShaderVariant {
-			SHADER_NORMAL,
-			SHADER_USE_ATTACHMENT,
-		};
+	ShaderRD cluster_store_shader{ClusterStoreShaderRD()};
+	RID cluster_store_shader_version;
+	RID cluster_store_shader_rid;
+	RID cluster_store_shader_pipeline;
 
-		enum PipelineVersion {
-			PIPELINE_NORMAL,
-			PIPELINE_MSAA,
-			PIPELINE_MAX
-		};
-
-		RID shader_pipelines[PIPELINE_MAX];
-	} cluster_render;
-
-	struct ClusterStore {
-		struct PushConstant {
-			uint32_t cluster_render_data_size; // how much data for a single cluster takes
-			uint32_t max_render_element_count_div_32; // divided by 32
-			uint32_t cluster_screen_size[2];
-			uint32_t render_element_count_div_32; // divided by 32
-			uint32_t max_cluster_element_count_div_32; // divided by 32
-
-			uint32_t pad1;
-			uint32_t pad2;
-		};
-
-		ShaderRD cluster_store_shader{ClusterStoreShaderRD()};
-		RID shader_version;
-		RID shader;
-		RID shader_pipeline;
-	} cluster_store;
-
-	struct ClusterDebug {
-		struct PushConstant {
-			uint32_t screen_size[2];
-			uint32_t cluster_screen_size[2];
-
-			uint32_t cluster_shift;
-			uint32_t cluster_type;
-			float z_near;
-			float z_far;
-
-			uint32_t orthogonal;
-			uint32_t max_cluster_element_count_div_32;
-
-			uint32_t pad1;
-			uint32_t pad2;
-		};
-
-		ShaderRD cluster_debug_shader{ClusterDebugShaderRD()};
-		RID shader_version;
-		RID shader;
-		RID shader_pipeline;
-	} cluster_debug;
+	ShaderRD cluster_debug_shader{ClusterDebugShaderRD()};
+	RID cluster_debug_shader_version;
+	RID cluster_debug_shader_rid;
+	RID cluster_debug_shader_pipeline;
 
 public:
 	ClusterBuilderSharedDataRD();
@@ -43993,18 +43894,13 @@ public:
 	public:
 		ClusterBuilderRD* cluster_builder = nullptr;
 
-		struct SSEffectsData
-		{
-			Projection ssil_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
-			Transform3D ssil_last_frame_transform;
-
-			Projection ssr_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
-			Transform3D ssr_last_frame_transform;
-
-			RendererRD::SSEffects::SSILRenderBuffers ssil;
-			RendererRD::SSEffects::SSAORenderBuffers ssao;
-			RendererRD::SSEffects::SSRRenderBuffers ssr;
-		} ss_effects_data;
+		Projection ss_effects_data_ssil_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
+		Transform3D ss_effects_data_ssil_last_frame_transform;
+		Projection ss_effects_data_ssr_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
+		Transform3D ss_effects_data_ssr_last_frame_transform;
+		RendererRD::SSEffects::SSILRenderBuffers ss_effects_data_ssil;
+		RendererRD::SSEffects::SSAORenderBuffers ss_effects_data_ssao;
+		RendererRD::SSEffects::SSRRenderBuffers ss_effects_data_ssr;
 
 		enum DepthFrameBufferType
 		{
@@ -49269,41 +49165,31 @@ public:
 ///////////////////////////////////////////////////////////////////////////
 // OpenXRUtil
 
-class OpenXRUtil final
+namespace OpenXRUtil
 {
-public:
-	static String get_result_string(XrResult p_result);
-	static String get_view_configuration_name(XrViewConfigurationType p_view_configuration);
-	static String get_reference_space_name(XrReferenceSpaceType p_reference_space);
-	static String get_structure_type_name(XrStructureType p_structure_type);
-	static String get_session_state_name(XrSessionState p_session_state);
-	static String get_action_type_name(XrActionType p_action_type);
-	static String get_environment_blend_mode_name(XrEnvironmentBlendMode p_blend_mode);
-	static String make_xr_version_string(XrVersion p_version);
-	static String get_handle_as_hex_string(void* p_handle);
-	static String string_from_xruuid(const XrUuid& xr_uuid);
-	static XrUuid xruuid_from_string(const String& p_uuid);
+String get_result_string(XrResult p_result);
+String get_view_configuration_name(XrViewConfigurationType p_view_configuration);
+String get_reference_space_name(XrReferenceSpaceType p_reference_space);
+String get_structure_type_name(XrStructureType p_structure_type);
+String get_session_state_name(XrSessionState p_session_state);
+String get_action_type_name(XrActionType p_action_type);
+String get_environment_blend_mode_name(XrEnvironmentBlendMode p_blend_mode);
+String make_xr_version_string(XrVersion p_version);
+String get_handle_as_hex_string(void* p_handle);
+String string_from_xruuid(const XrUuid& xr_uuid);
+XrUuid xruuid_from_string(const String& p_uuid);
 
-	// Copied from OpenXR xr_linear.h private header, so we can still link against
-	// system-provided packages without relying on our `thirdparty` code.
-
-	// Column-major, pre-multiplied. This type does not exist in the OpenXR API and is provided for convenience.
-	typedef struct XrMatrix4x4f
-	{
-		float m[16];
-	} XrMatrix4x4f;
-
-	static void XrMatrix4x4f_CreateProjection(XrMatrix4x4f* result, const float tanAngleLeft,
-		const float tanAngleRight, const float tanAngleUp, const float tanAngleDown,
-		const float nearZ, const float farZ);
-	static void XrMatrix4x4f_CreateProjectionFov(
-		XrMatrix4x4f* result, const XrFovf fov, const float nearZ, const float farZ);
-
-	OpenXRUtil() = delete;
-	OpenXRUtil(const OpenXRUtil&) = delete;
-	OpenXRUtil& operator=(const OpenXRUtil&) = delete;
-	~OpenXRUtil() = delete;
+struct XrMatrix4x4f
+{
+	float m[16];
 };
+
+void XrMatrix4x4f_CreateProjection(XrMatrix4x4f* result, const float tanAngleLeft,
+	const float tanAngleRight, const float tanAngleUp, const float tanAngleDown,
+	const float nearZ, const float farZ);
+void XrMatrix4x4f_CreateProjectionFov(
+	XrMatrix4x4f* result, const XrFovf fov, const float nearZ, const float farZ);
+} // namespace OpenXRUtil
 
 ///////////////////////////////////////////////////////////////////////////
 // OpenXRAPI
@@ -50642,28 +50528,20 @@ public:
 		GLuint fbo = 0;
 	};
 
-	struct RTMSAA3D
-	{
-		RSE::ViewportMSAA mode = RSE::VIEWPORT_MSAA_DISABLED;
-		bool needs_resolve = false;
-		GLsizei samples = 1;
-		GLuint color = 0;
-		GLuint depth = 0;
-		GLuint fbo = 0;
-
-		bool check_fbo_cache = false;
-		Vector<FBDEF> cached_fbos;
-	} msaa3d; // MSAA buffers used to render 3D
+	RSE::ViewportMSAA rt_msaa3d_mode = RSE::VIEWPORT_MSAA_DISABLED;
+	bool rt_msaa3d_needs_resolve = false;
+	GLsizei rt_msaa3d_samples = 1;
+	GLuint rt_msaa3d_color = 0;
+	GLuint rt_msaa3d_depth = 0;
+	GLuint rt_msaa3d_fbo = 0;
+	bool rt_msaa3d_check_fbo_cache = false;
+	Vector<FBDEF> rt_msaa3d_cached_fbos;
 
 	FBDEF internal3d; // buffers used to either render 3D (scaled/post) or to resolve MSAA into
 
 	FBDEF backbuffer3d; // our back buffer
 
-	// Buffers for our glow implementation
-	struct GLOW
-	{
-		GLES3::Effects::GlowLevel levels[4];
-	} glow;
+	GLES3::Effects::GlowLevel rt_glow_levels[4];
 
 private:
 	void _check_render_buffers();
@@ -50708,25 +50586,25 @@ public:
 	GLuint get_msaa3d_fbo()
 	{
 		_check_render_buffers();
-		return msaa3d.fbo;
+		return rt_msaa3d_fbo;
 	}
 
 	GLuint get_msaa3d_color()
 	{
 		_check_render_buffers();
-		return msaa3d.color;
+		return rt_msaa3d_color;
 	}
 
 	GLuint get_msaa3d_depth()
 	{
 		_check_render_buffers();
-		return msaa3d.depth;
+		return rt_msaa3d_depth;
 	}
 
 	bool get_msaa_needs_resolve()
 	{
 		_check_render_buffers();
-		return msaa3d.needs_resolve;
+		return rt_msaa3d_needs_resolve;
 	}
 
 	GLuint get_internal_fbo()
@@ -50753,7 +50631,7 @@ public:
 
 	GLuint get_backbuffer_depth() const { return backbuffer3d.depth; }
 
-	const GLES3::Effects::GlowLevel* get_glow_buffers() const { return &glow.levels[0]; }
+	const GLES3::Effects::GlowLevel* get_glow_buffers() const { return &rt_glow_levels[0]; }
 
 	// Getters
 
@@ -50770,7 +50648,7 @@ public:
 		return scaling_3d_mode;
 	}
 
-	_FORCE_INLINE_ RSE::ViewportMSAA get_msaa_3d() const { return msaa3d.mode; }
+	_FORCE_INLINE_ RSE::ViewportMSAA get_msaa_3d() const { return rt_msaa3d_mode; }
 };
 
 namespace GLES3
@@ -54683,23 +54561,17 @@ private:
 		bool operator<(const InstanceSort& p_sort) const { return depth < p_sort.depth; }
 	};
 
-	struct SceneGlobals
-	{
-		RID shader_default_version;
-		RID default_material;
-		RID default_shader;
-		RID overdraw_material;
-		RID overdraw_shader;
-	} scene_globals;
+	RID scene_globals_shader_default_version;
+	RID scene_globals_default_material;
+	RID scene_globals_default_shader;
+	RID scene_globals_overdraw_material;
+	RID scene_globals_overdraw_shader;
 
 	GLES3::MaterialData* default_material_data_ptr = nullptr;
 	GLES3::MaterialData* overdraw_material_data_ptr = nullptr;
 
-	struct LTC
-	{
-		RID lut1_texture;
-		RID lut2_texture;
-	} ltc;
+	RID gles_ltc_lut1_texture;
+	RID gles_ltc_lut2_texture;
 
 	/* LIGHT INSTANCE */
 
@@ -55387,31 +55259,26 @@ protected:
 
 	/* Sky */
 
-	struct SkyGlobals
-	{
-		float fog_aerial_perspective = 0.0;
-		Color fog_light_color;
-		float fog_sun_scatter = 0.0;
-		bool fog_enabled = false;
-		float fog_density = 0.0;
-		float z_far = 0.0;
-		uint32_t directional_light_count = 0;
-
-		DirectionalLightData* directional_lights = nullptr;
-		DirectionalLightData* last_frame_directional_lights = nullptr;
-		uint32_t last_frame_directional_light_count = 0;
-		GLuint directional_light_buffer = 0;
-
-		RID shader_default_version;
-		RID default_material;
-		RID default_shader;
-		RID fog_material;
-		RID fog_shader;
-		GLuint screen_triangle = 0;
-		GLuint screen_triangle_array = 0;
-		uint32_t max_directional_lights = 4;
-		uint32_t roughness_layers = 8;
-	} sky_globals;
+	float sky_globals_fog_aerial_perspective = 0.0;
+	Color sky_globals_fog_light_color;
+	float sky_globals_fog_sun_scatter = 0.0;
+	bool sky_globals_fog_enabled = false;
+	float sky_globals_fog_density = 0.0;
+	float sky_globals_z_far = 0.0;
+	uint32_t sky_globals_directional_light_count = 0;
+	DirectionalLightData* sky_globals_directional_lights = nullptr;
+	DirectionalLightData* sky_globals_last_frame_directional_lights = nullptr;
+	uint32_t sky_globals_last_frame_directional_light_count = 0;
+	GLuint sky_globals_directional_light_buffer = 0;
+	RID sky_globals_shader_default_version;
+	RID sky_globals_default_material;
+	RID sky_globals_default_shader;
+	RID sky_globals_fog_material;
+	RID sky_globals_fog_shader;
+	GLuint sky_globals_screen_triangle = 0;
+	GLuint sky_globals_screen_triangle_array = 0;
+	uint32_t sky_globals_max_directional_lights = 4;
+	uint32_t sky_globals_roughness_layers = 8;
 
 	struct Sky
 	{
@@ -57406,44 +57273,36 @@ public:
 	virtual ~RenderingContextDriverD3D12() override;
 };
 
-class D3D12Hooks final
+namespace D3D12Hooks
 {
-private:
-	static inline bool _is_bound = false;
+inline bool _is_bound = false;
 
-	static D3D_FEATURE_LEVEL _default_get_feature_level() { return D3D_FEATURE_LEVEL_11_0; }
-	static LUID _default_get_adapter_luid() { return {}; }
-	static void _default_set_device(ID3D12Device* p_device) { (void)p_device; }
-	static void _default_set_command_queue(ID3D12CommandQueue* p_queue) { (void)p_queue; }
-	static void _default_cleanup_device() {}
+inline D3D_FEATURE_LEVEL _default_get_feature_level() { return D3D_FEATURE_LEVEL_11_0; }
+inline LUID _default_get_adapter_luid() { return {}; }
+inline void _default_set_device(ID3D12Device* p_device) { (void)p_device; }
+inline void _default_set_command_queue(ID3D12CommandQueue* p_queue) { (void)p_queue; }
+inline void _default_cleanup_device() {}
 
-public:
-	static bool is_bound() { return _is_bound; }
+inline bool is_bound() { return _is_bound; }
 
-	inline static D3D_FEATURE_LEVEL (*get_feature_level)() = &_default_get_feature_level;
-	inline static LUID (*get_adapter_luid)() = &_default_get_adapter_luid;
-	inline static void (*set_device)(ID3D12Device* p_device) = &_default_set_device;
-	inline static void (*set_command_queue)(
-		ID3D12CommandQueue* p_queue) = &_default_set_command_queue;
-	inline static void (*cleanup_device)() = &_default_cleanup_device;
+inline D3D_FEATURE_LEVEL (*get_feature_level)() = &_default_get_feature_level;
+inline LUID (*get_adapter_luid)() = &_default_get_adapter_luid;
+inline void (*set_device)(ID3D12Device* p_device) = &_default_set_device;
+inline void (*set_command_queue)(ID3D12CommandQueue* p_queue) = &_default_set_command_queue;
+inline void (*cleanup_device)() = &_default_cleanup_device;
 
-	template <typename Impl> static void bind()
-	{
-		get_feature_level = &Impl::get_feature_level;
-		get_adapter_luid = &Impl::get_adapter_luid;
-		set_device = &Impl::set_device;
-		set_command_queue = &Impl::set_command_queue;
-		cleanup_device = &Impl::cleanup_device;
-		_is_bound = true;
-	}
+template <typename Impl> inline void bind()
+{
+	get_feature_level = &Impl::get_feature_level;
+	get_adapter_luid = &Impl::get_adapter_luid;
+	set_device = &Impl::set_device;
+	set_command_queue = &Impl::set_command_queue;
+	cleanup_device = &Impl::cleanup_device;
+	_is_bound = true;
+}
 
-	static void reset();
-
-	D3D12Hooks() = delete;
-	D3D12Hooks(const D3D12Hooks&) = delete;
-	D3D12Hooks& operator=(const D3D12Hooks&) = delete;
-	~D3D12Hooks() = delete;
-};
+void reset();
+} // namespace D3D12Hooks
 
 #include <windows.h>
 
@@ -59764,71 +59623,39 @@ public:
 	uint32_t push_constant_stages_mask = 0;
 	SampleCount sample_count = SampleCount1;
 
-	struct {
-		MTL::CullMode cull_mode = MTL::CullModeNone;
-		MTL::TriangleFillMode fill_mode = MTL::TriangleFillModeFill;
-		MTL::DepthClipMode clip_mode = MTL::DepthClipModeClip;
-		MTL::Winding winding = MTL::WindingClockwise;
-		MTL::PrimitiveType render_primitive = MTL::PrimitiveTypePoint;
+	MTL::CullMode raster_cull_mode = MTL::CullModeNone;
+	MTL::TriangleFillMode raster_fill_mode = MTL::TriangleFillModeFill;
+	MTL::DepthClipMode raster_clip_mode = MTL::DepthClipModeClip;
+	MTL::Winding raster_winding = MTL::WindingClockwise;
+	MTL::PrimitiveType raster_render_primitive = MTL::PrimitiveTypePoint;
+	bool raster_depth_test_enabled = false;
+	bool raster_depth_bias_enabled = false;
+	float raster_depth_bias_val = 0.0;
+	float raster_depth_bias_slope_scale = 0.0;
+	float raster_depth_bias_clamp = 0.0;
+	bool raster_stencil_enabled = false;
+	uint32_t raster_stencil_front_reference = 0;
+	uint32_t raster_stencil_back_reference = 0;
+	bool raster_blend_enabled = false;
+	float raster_blend_r = 0.0;
+	float raster_blend_g = 0.0;
+	float raster_blend_b = 0.0;
+	float raster_blend_a = 0.0;
 
-		struct {
-			bool enabled = false;
-		} depth_test;
-
-		struct {
-			bool enabled = false;
-			float depth_bias = 0.0;
-			float slope_scale = 0.0;
-			float clamp = 0.0;
-
-			template <typename T>
-			_FORCE_INLINE_ void apply(T *p_enc) const {
-				if (!enabled) {
-					return;
-				}
-				p_enc->setDepthBias(depth_bias, slope_scale, clamp);
-			}
-		} depth_bias;
-
-		struct {
-			bool enabled = false;
-			uint32_t front_reference = 0;
-			uint32_t back_reference = 0;
-
-			template <typename T>
-			_FORCE_INLINE_ void apply(T *p_enc) const {
-				if (!enabled) {
-					return;
-				}
-				p_enc->setStencilReferenceValues(front_reference, back_reference);
-			}
-		} stencil;
-
-		struct {
-			bool enabled = false;
-			float r = 0.0;
-			float g = 0.0;
-			float b = 0.0;
-			float a = 0.0;
-
-			template <typename T>
-			_FORCE_INLINE_ void apply(T *p_enc) const {
-				p_enc->setBlendColor(r, g, b, a);
-			}
-		} blend;
-
-		template <typename T>
-		_FORCE_INLINE_ void apply(T *p_enc) const {
-			p_enc->setCullMode(cull_mode);
-			p_enc->setTriangleFillMode(fill_mode);
-			p_enc->setDepthClipMode(clip_mode);
-			p_enc->setFrontFacingWinding(winding);
-			depth_bias.apply(p_enc);
-			stencil.apply(p_enc);
-			blend.apply(p_enc);
+	template <typename T>
+	_FORCE_INLINE_ void apply_raster_state(T *p_enc) const {
+		p_enc->setCullMode(raster_cull_mode);
+		p_enc->setTriangleFillMode(raster_fill_mode);
+		p_enc->setDepthClipMode(raster_clip_mode);
+		p_enc->setFrontFacingWinding(raster_winding);
+		if (raster_depth_bias_enabled) {
+			p_enc->setDepthBias(raster_depth_bias_val, raster_depth_bias_slope_scale, raster_depth_bias_clamp);
 		}
-
-	} raster_state;
+		if (raster_stencil_enabled) {
+			p_enc->setStencilReferenceValues(raster_stencil_front_reference, raster_stencil_back_reference);
+		}
+		p_enc->setBlendColor(raster_blend_r, raster_blend_g, raster_blend_b, raster_blend_a);
+	}
 
 	MDRenderShader *shader = nullptr;
 
@@ -59840,9 +59667,7 @@ public:
 class API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0), visionos(2.0)) MDComputePipeline final : public MDPipeline {
 public:
 	NS::SharedPtr<MTL::ComputePipelineState> state;
-	struct {
-		MTL::Size local = {};
-	} compute_state;
+	MTL::Size compute_state_local = {};
 
 	MDComputeShader *shader = nullptr;
 
@@ -61149,80 +60974,79 @@ public:
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
 
-class VulkanHooks final
+namespace VulkanHooks
 {
-private:
-	static inline bool _is_bound = false;
+inline bool _is_bound = false;
 
-	static bool _default_create_vulkan_instance(
-		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance)
-	{
-		(void)p_vulkan_create_info;
-		(void)r_instance;
-		return false;
-	}
-	static bool _default_get_physical_device(VkPhysicalDevice* r_device)
-	{
-		(void)r_device;
-		return false;
-	}
-	static bool _default_create_vulkan_device(
-		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device)
-	{
-		(void)p_device_create_info;
-		(void)r_device;
-		return false;
-	}
-	static void _default_set_direct_queue_family_and_index(
-		uint32_t p_queue_family_index, uint32_t p_queue_index)
-	{
-		(void)p_queue_family_index;
-		(void)p_queue_index;
-	}
-	static bool _default_use_fragment_density_offsets() { return false; }
-	static void _default_get_fragment_density_offsets(
-		LocalVector<VkOffset2D>& r_offsets, const Vector2i& p_granularity)
-	{
-		(void)r_offsets;
-		(void)p_granularity;
-	}
-	static bool _default_use_subsampled_images() { return false; }
+inline bool _default_create_vulkan_instance(
+	const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance)
+{
+	(void)p_vulkan_create_info;
+	(void)r_instance;
+	return false;
+}
+inline bool _default_get_physical_device(VkPhysicalDevice* r_device)
+{
+	(void)r_device;
+	return false;
+}
+inline bool _default_create_vulkan_device(
+	const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device)
+{
+	(void)p_device_create_info;
+	(void)r_device;
+	return false;
+}
+inline void _default_set_direct_queue_family_and_index(
+	uint32_t p_queue_family_index, uint32_t p_queue_index)
+{
+	(void)p_queue_family_index;
+	(void)p_queue_index;
+}
+inline bool _default_use_fragment_density_offsets() { return false; }
+inline void _default_get_fragment_density_offsets(
+	LocalVector<VkOffset2D>& r_offsets, const Vector2i& p_granularity)
+{
+	(void)r_offsets;
+	(void)p_granularity;
+}
+inline bool _default_use_subsampled_images() { return false; }
 
-public:
-	static bool is_bound() { return _is_bound; }
+inline bool is_bound() { return _is_bound; }
 
-	inline static bool (*create_vulkan_instance)(const VkInstanceCreateInfo* p_vulkan_create_info,
-		VkInstance* r_instance) = &_default_create_vulkan_instance;
-	inline static bool (*get_physical_device)(
-		VkPhysicalDevice* r_device) = &_default_get_physical_device;
-	inline static bool (*create_vulkan_device)(const VkDeviceCreateInfo* p_device_create_info,
-		VkDevice* r_device) = &_default_create_vulkan_device;
-	inline static void (*set_direct_queue_family_and_index)(uint32_t p_queue_family_index,
-		uint32_t p_queue_index) = &_default_set_direct_queue_family_and_index;
-	inline static bool (*use_fragment_density_offsets)() = &_default_use_fragment_density_offsets;
-	inline static void (*get_fragment_density_offsets)(LocalVector<VkOffset2D>& r_offsets,
-		const Vector2i& p_granularity) = &_default_get_fragment_density_offsets;
-	inline static bool (*use_subsampled_images)() = &_default_use_subsampled_images;
+inline bool (*create_vulkan_instance)(
+	const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance) = &_default_create_vulkan_instance;
+inline bool (*get_physical_device)(VkPhysicalDevice* r_device) = &_default_get_physical_device;
+inline bool (*create_vulkan_device)(
+	const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device) = &_default_create_vulkan_device;
+inline void (*set_direct_queue_family_and_index)(
+	uint32_t p_queue_family_index, uint32_t p_queue_index) = &_default_set_direct_queue_family_and_index;
+inline bool (*use_fragment_density_offsets)() = &_default_use_fragment_density_offsets;
+inline void (*get_fragment_density_offsets)(
+	LocalVector<VkOffset2D>& r_offsets, const Vector2i& p_granularity) = &_default_get_fragment_density_offsets;
+inline bool (*use_subsampled_images)() = &_default_use_subsampled_images;
 
-	template <typename Impl> static void bind()
-	{
-		create_vulkan_instance = &Impl::create_vulkan_instance;
-		get_physical_device = &Impl::get_physical_device;
-		create_vulkan_device = &Impl::create_vulkan_device;
-		set_direct_queue_family_and_index = &Impl::set_direct_queue_family_and_index;
-		use_fragment_density_offsets = &Impl::use_fragment_density_offsets;
-		get_fragment_density_offsets = &Impl::get_fragment_density_offsets;
-		use_subsampled_images = &Impl::use_subsampled_images;
-		_is_bound = true;
-	}
+inline void bind(
+	bool (*p_create_inst)(const VkInstanceCreateInfo*, VkInstance*),
+	bool (*p_get_phys)(VkPhysicalDevice*),
+	bool (*p_create_dev)(const VkDeviceCreateInfo*, VkDevice*),
+	void (*p_set_queue)(uint32_t, uint32_t),
+	bool (*p_use_fdm)(),
+	void (*p_get_fdm)(LocalVector<VkOffset2D>&, const Vector2i&),
+	bool (*p_use_subsampled)())
+{
+	create_vulkan_instance = p_create_inst;
+	get_physical_device = p_get_phys;
+	create_vulkan_device = p_create_dev;
+	set_direct_queue_family_and_index = p_set_queue;
+	use_fragment_density_offsets = p_use_fdm;
+	get_fragment_density_offsets = p_get_fdm;
+	use_subsampled_images = p_use_subsampled;
+	_is_bound = true;
+}
 
-	static void reset();
-
-	VulkanHooks() = delete;
-	VulkanHooks(const VulkanHooks&) = delete;
-	VulkanHooks& operator=(const VulkanHooks&) = delete;
-	~VulkanHooks() = delete;
-};
+void reset();
+} // namespace VulkanHooks
 
 
 
@@ -61949,31 +61773,24 @@ public:
 
 #include "core/os/os.h"
 
-class MIDIDriverWebMidi final
+namespace MIDIDriverWebMidi
 {
-private:
-	static constexpr int MAX_EVENT_BUFFER_LENGTH = 2;
-	static inline uint8_t _event_buffer[MAX_EVENT_BUFFER_LENGTH] = {0};
+inline constexpr int MAX_EVENT_BUFFER_LENGTH = 2;
+inline uint8_t _event_buffer[MAX_EVENT_BUFFER_LENGTH] = {0};
 
-public:
-	static void initialize();
-	static void finalize();
-	static Error open();
-	static void close();
+void initialize();
+void finalize();
+Error open();
+void close();
 
-	MIDIDriverWebMidi() = delete;
-	MIDIDriverWebMidi(const MIDIDriverWebMidi&) = delete;
-	MIDIDriverWebMidi& operator=(const MIDIDriverWebMidi&) = delete;
-	~MIDIDriverWebMidi() = delete;
+WASM_EXPORT void set_input_names_callback(int p_size, const char** p_input_names);
+void _set_input_names_callback(const Vector<String>& p_input_names);
 
-	WASM_EXPORT static void set_input_names_callback(int p_size, const char** p_input_names);
-	static void _set_input_names_callback(const Vector<String>& p_input_names);
-
-	WASM_EXPORT static void on_midi_message(
-		int p_device_index, int p_status, const uint8_t* p_data, int p_data_len);
-	static void _on_midi_message(
-		int p_device_index, int p_status, const PackedByteArray& p_data, int p_data_len);
-};
+WASM_EXPORT void on_midi_message(
+	int p_device_index, int p_status, const uint8_t* p_data, int p_data_len);
+void _on_midi_message(
+	int p_device_index, int p_status, const PackedByteArray& p_data, int p_data_len);
+} // namespace MIDIDriverWebMidi
 
 class OS_Web final
 {
@@ -62364,43 +62181,14 @@ public:
 
 #include <cstdio>
 
-class MIDIDriverCoreMidi final
+namespace MIDIDriverCoreMidi
 {
-	struct InputConnection
-	{
-		InputConnection() = default;
-		InputConnection(int p_device_index, MIDIEndpointRef p_source);
-		MIDIDriver::Parser parser;
-		MIDIEndpointRef source;
-	};
-
-public:
-	struct Data
-	{
-		MIDIClientRef client = 0;
-		MIDIPortRef port_in = 0;
-		Vector<InputConnection*> connected_sources;
-		Mutex mutex;
-		bool core_midi_closed = false;
-	};
-
-	static inline Data* data = nullptr;
-
-private:
-	static void read(
-		const MIDIPacketList* packet_list, void* read_proc_ref_con, void* src_conn_ref_con);
-
-public:
-	static void initialize();
-	static void finalize();
-	static Error open();
-	static void close();
-
-	MIDIDriverCoreMidi() = delete;
-	MIDIDriverCoreMidi(const MIDIDriverCoreMidi&) = delete;
-	MIDIDriverCoreMidi& operator=(const MIDIDriverCoreMidi&) = delete;
-	~MIDIDriverCoreMidi() = delete;
-};
+void read(const MIDIPacketList* packet_list, void* read_proc_ref_con, void* src_conn_ref_con);
+void initialize();
+void finalize();
+Error open();
+void close();
+} // namespace MIDIDriverCoreMidi
 
 #endif // COREMIDI_ENABLED
 
@@ -64706,48 +64494,13 @@ public:
 
 typedef struct _snd_rawmidi snd_rawmidi_t;
 
-class MIDIDriverALSAMidi final
+namespace MIDIDriverALSAMidi
 {
-	struct InputConnection
-	{
-		InputConnection() = default;
-		InputConnection(int p_device_index, snd_rawmidi_t* p_rawmidi);
-
-		MIDIDriver::Parser parser;
-		snd_rawmidi_t* rawmidi_ptr = nullptr;
-
-		// Read in and parse available data, forwarding complete events to Input.
-		void read();
-	};
-
-public:
-	struct Data
-	{
-		Thread thread;
-		Mutex mutex;
-		Vector<InputConnection> connected_inputs;
-		SafeFlag exit_thread;
-	};
-
-	static inline Data* data = nullptr;
-
-private:
-	static void thread_func(void* p_udata);
-
-	static void lock();
-	static void unlock();
-
-public:
-	static void initialize();
-	static void finalize();
-	static Error open();
-	static void close();
-
-	MIDIDriverALSAMidi() = delete;
-	MIDIDriverALSAMidi(const MIDIDriverALSAMidi&) = delete;
-	MIDIDriverALSAMidi& operator=(const MIDIDriverALSAMidi&) = delete;
-	~MIDIDriverALSAMidi() = delete;
-};
+void initialize();
+void finalize();
+Error open();
+void close();
+} // namespace MIDIDriverALSAMidi
 
 #endif // ALSAMIDI_ENABLED
 
@@ -66855,57 +66608,53 @@ int initialize_speechd(int verbose);
 
 struct TTSUtterance;
 
-class TTS_Linux final
+namespace TTS_Linux
 {
-	struct VoiceInfo
-	{
-		String language;
-		String variant;
-	};
-
-	struct Data
-	{
-		Mutex mutex;
-		List<TTSUtterance> queue;
-		SPDConnection* synth = nullptr;
-		bool speaking = false;
-		bool paused = false;
-		int last_msg_id = -1;
-		HashMap<int, int64_t> ids;
-		bool voices_loaded = false;
-		HashMap<String, VoiceInfo> voices;
-		Thread init_thread;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void speech_init_thread_func(void* p_userdata);
-	static void speech_event_callback(
-		size_t p_msg_id, size_t p_client_id, SPDNotificationType p_type);
-	static void speech_event_index_mark(
-		size_t p_msg_id, size_t p_client_id, SPDNotificationType p_type, char* p_index_mark);
-
-	static void _load_voices();
-	static void _speech_event(int p_msg_id, int p_type);
-	static void _speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark);
-
-public:
-	TTS_Linux() = delete;
-
-	static void initialize();
-	static void finalize();
-	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
-
-	static bool is_speaking();
-	static bool is_paused();
-
-	static void speak(const String& p_text, const String& p_voice, int p_volume = 50,
-		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
-		bool p_interrupt = false);
-	static void pause();
-	static void resume();
-	static void stop();
+struct VoiceInfo
+{
+	String language;
+	String variant;
 };
+
+struct Data
+{
+	Mutex mutex;
+	List<TTSUtterance> queue;
+	SPDConnection* synth = nullptr;
+	bool speaking = false;
+	bool paused = false;
+	int last_msg_id = -1;
+	HashMap<int, int64_t> ids;
+	bool voices_loaded = false;
+	HashMap<String, VoiceInfo> voices;
+	Thread init_thread;
+};
+
+inline Data* data = nullptr;
+
+void speech_init_thread_func(void* p_userdata);
+void speech_event_callback(size_t p_msg_id, size_t p_client_id, SPDNotificationType p_type);
+void speech_event_index_mark(
+	size_t p_msg_id, size_t p_client_id, SPDNotificationType p_type, char* p_index_mark);
+
+void _load_voices();
+void _speech_event(int p_msg_id, int p_type);
+void _speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark);
+
+void initialize();
+void finalize();
+inline bool is_initialized() { return data != nullptr; }
+
+bool is_speaking();
+bool is_paused();
+
+void speak(const String& p_text, const String& p_voice, int p_volume = 50,
+	float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
+	bool p_interrupt = false);
+void pause();
+void resume();
+void stop();
+} // namespace TTS_Linux
 
 #ifndef DYLIBLOAD_WRAPPER_DBUS
 #define DYLIBLOAD_WRAPPER_DBUS
@@ -68605,48 +68354,47 @@ public:
 
 #include <jni.h>
 
-class TTS_Android {
-	static inline int INIT_STATE_UNKNOWN = 0;
-	static inline int INIT_STATE_SUCCESS = 1;
-	static inline int INIT_STATE_FAIL = -1;
+namespace TTS_Android {
+inline constexpr int INIT_STATE_UNKNOWN = 0;
+inline constexpr int INIT_STATE_SUCCESS = 1;
+inline constexpr int INIT_STATE_FAIL = -1;
 
-	static bool initialized;
-	static jobject tts;
-	static jclass cls;
+extern bool initialized;
+extern jobject tts;
+extern jclass cls;
 
-	static jmethodID _init;
-	static jmethodID _is_speaking;
-	static jmethodID _is_paused;
-	static jmethodID _get_state;
-	static jmethodID _get_voices;
-	static jmethodID _speak;
-	static jmethodID _pause_speaking;
-	static jmethodID _resume_speaking;
-	static jmethodID _stop_speaking;
+extern jmethodID _init;
+extern jmethodID _is_speaking;
+extern jmethodID _is_paused;
+extern jmethodID _get_state;
+extern jmethodID _get_voices;
+extern jmethodID _speak;
+extern jmethodID _pause_speaking;
+extern jmethodID _resume_speaking;
+extern jmethodID _stop_speaking;
 
-	static Thread init_thread;
-	static SafeFlag quit_request;
-	static SafeFlag init_done;
+extern Thread init_thread;
+extern SafeFlag quit_request;
+extern SafeFlag init_done;
 
-	static void _thread_function(void *self);
+void _thread_function(void *self);
 
-	static HashMap<int64_t, Char16String> ids;
+extern HashMap<int64_t, Char16String> ids;
 
-	static void initialize_tts(bool p_wait = true);
+void initialize_tts(bool p_wait = true);
 
-public:
-	static void setup(jobject p_tts);
-	static void terminate();
-	static void _java_utterance_callback(int p_event, int64_t p_id, int p_pos);
+void setup(jobject p_tts);
+void terminate();
+void _java_utterance_callback(int p_event, int64_t p_id, int p_pos);
 
-	static bool is_speaking();
-	static bool is_paused();
-	static Array get_voices();
-	static void speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt);
-	static void pause();
-	static void resume();
-	static void stop();
-};
+bool is_speaking();
+bool is_paused();
+Array get_voices();
+void speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt);
+void pause();
+void resume();
+void stop();
+} // namespace TTS_Android
 
 #ifdef VULKAN_ENABLED
 
@@ -69373,31 +69121,15 @@ public:
 
 #include <mmsystem.h>
 
-class MIDIDriverWinMidi final
+namespace MIDIDriverWinMidi
 {
-public:
-	struct Data
-	{
-		Vector<HMIDIIN> connected_sources;
-	};
-
-	static inline Data* data = nullptr;
-
-private:
-	static void CALLBACK read(
-		HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
-
-public:
-	static void initialize();
-	static void finalize();
-	static Error open();
-	static void close();
-
-	MIDIDriverWinMidi() = delete;
-	MIDIDriverWinMidi(const MIDIDriverWinMidi&) = delete;
-	MIDIDriverWinMidi& operator=(const MIDIDriverWinMidi&) = delete;
-	~MIDIDriverWinMidi() = delete;
-};
+void CALLBACK read(
+	HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
+void initialize();
+void finalize();
+Error open();
+void close();
+} // namespace MIDIDriverWinMidi
 
 #endif // WINMIDI_ENABLED
 
@@ -69950,20 +69682,7 @@ public:
 
 #include "core/io/ip.h"
 
-class IPWindows final
-{
-public:
-	static void _resolve_hostname(
-		List<IPAddress>& r_addresses, const String& p_hostname, IP::Type p_type = IP::TYPE_ANY);
-	static void get_local_interfaces(HashMap<String, IP::Interface_Info>* r_interfaces);
-
-	static void make_default();
-
-	IPWindows() = delete;
-	IPWindows(const IPWindows&) = delete;
-	IPWindows& operator=(const IPWindows&) = delete;
-	~IPWindows() = delete;
-};
+void _ip_windows_make_default();
 
 #endif // WINDOWS_ENABLED
 
@@ -71191,35 +70910,28 @@ class TTSDriver;
 
 struct TTSUtterance;
 
-class TTS_Windows final
+namespace TTS_Windows
 {
-	struct Data
-	{
-		TTSDriver* driver = nullptr;
-	};
+inline TTSDriver* driver = nullptr;
+inline bool initialized = false;
 
-	static inline Data* data = nullptr;
+void initialize();
+void finalize();
+inline bool is_initialized() { return initialized; }
 
-public:
-	TTS_Windows() = delete;
+bool is_speaking();
+bool is_paused();
+Array get_voices();
 
-	static void initialize();
-	static void finalize();
-	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+void speak(const String& p_text, const String& p_voice, int p_volume = 50,
+	float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
+	bool p_interrupt = false);
+void pause();
+void resume();
+void stop();
 
-	static bool is_speaking();
-	static bool is_paused();
-	static Array get_voices();
-
-	static void speak(const String& p_text, const String& p_voice, int p_volume = 50,
-		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
-		bool p_interrupt = false);
-	static void pause();
-	static void resume();
-	static void stop();
-
-	static void process_events();
-};
+void process_events();
+} // namespace TTS_Windows
 
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -71499,6 +71211,11 @@ class SceneStrings final
 public:
 	struct Data
 	{
+		const String Editor = "Editor";
+		const String EditorFonts = "EditorFonts";
+		const String EditorIcons = "EditorIcons";
+		const String EditorStyles = "EditorStyles";
+
 		const String resized = "resized";
 		const String draw = "draw";
 		const String hidden = "hidden";
@@ -72636,11 +72353,6 @@ public:
 		GEN_EDIT_STATE_MAIN_INHERITED,
 	};
 
-	struct PackState
-	{
-		Ref<SceneState> state;
-		int node = -1;
-	};
 
 	static void set_disable_placeholders(bool p_disable);
 	static Ref<Resource> get_remap_resource(const Ref<Resource>& p_resource,
@@ -82604,6 +82316,7 @@ struct BVH_ABB {
 #define VERBOSE_PRINT(a)
 #endif
 
+
 template <typename T>
 class BVH_IterativeInfo {
 public:
@@ -82644,14 +82357,10 @@ public:
 	}
 };
 
-// really just a namespace
-struct BVHCommon {
-	// these could possibly also be the same constant,
-	// although this may be useful for debugging.
-	// or use zero for invalid and +1 based indices.
-	static const uint32_t INVALID = (0xffffffff);
-	static const uint32_t INACTIVE = (0xfffffffe);
-};
+namespace BVHCommon {
+	inline constexpr uint32_t INVALID = 0xffffffff;
+	inline constexpr uint32_t INACTIVE = 0xfffffffe;
+} // namespace BVHCommon
 
 // really a handle, can be anything
 // note that zero is a valid reference for the BVH .. this may involve using
@@ -82675,24 +82384,17 @@ struct BVHHandle {
 // helper class to make iterative versions of recursive functions
 
 template <typename T>
-class BVH_DummyPairTestFunction {
+class BVH_DummyTestFunction {
 public:
 	static bool user_collision_check(T *p_a, T *p_b) {
-		// return false if no collision, decided by masks etc
 		return true;
 	}
-};
-
-template <typename T>
-class BVH_DummyCullTestFunction {
-public:
 	static bool user_cull_check(T *p_a, T *p_b) {
-		// return false if no collision
 		return true;
 	}
 };
 
-template <typename T, int NUM_TREES, int MAX_CHILDREN, int MAX_ITEMS, typename USER_PAIR_TEST_FUNCTION = BVH_DummyPairTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyCullTestFunction<T>, bool USE_PAIRS = false, typename BOUNDS = AABB, typename POINT = Vector3>
+template <typename T, int NUM_TREES, int MAX_CHILDREN, int MAX_ITEMS, typename USER_PAIR_TEST_FUNCTION = BVH_DummyTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyTestFunction<T>, bool USE_PAIRS = false, typename BOUNDS = AABB, typename POINT = Vector3>
 class BVH_Tree {
 	friend class BVH;
 
@@ -82986,7 +82688,7 @@ private:
 #define BVHTREE_CLASS BVH_Tree<T, NUM_TREES, 2, MAX_ITEMS, USER_PAIR_TEST_FUNCTION, USER_CULL_TEST_FUNCTION, USE_PAIRS, BOUNDS, POINT>
 #define BVH_LOCKED_FUNCTION BVHLockedFunction _lock_guard(&_mutex, BVH_THREAD_SAFE &&_thread_safe);
 
-template <typename T, int NUM_TREES = 1, bool USE_PAIRS = false, int MAX_ITEMS = 32, typename USER_PAIR_TEST_FUNCTION = BVH_DummyPairTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyCullTestFunction<T>, typename BOUNDS = AABB, typename POINT = Vector3, bool BVH_THREAD_SAFE = true>
+template <typename T, int NUM_TREES = 1, bool USE_PAIRS = false, int MAX_ITEMS = 32, typename USER_PAIR_TEST_FUNCTION = BVH_DummyTestFunction<T>, typename USER_CULL_TEST_FUNCTION = BVH_DummyTestFunction<T>, typename BOUNDS = AABB, typename POINT = Vector3, bool BVH_THREAD_SAFE = true>
 class BVH_Manager {
 public:
 	// note we are using uint32_t instead of BVHHandle, losing type safety, but this
@@ -85049,130 +84751,6 @@ public:
 
 // This file contains Heap which is used by both 2D and 3D navigation.
 
-template <typename T>
-struct NoopIndexer {
-	void operator()(const T &p_value, uint32_t p_index) {}
-};
-
-/**
- * A max-heap implementation that notifies of element index changes.
- */
-template <typename T, typename LessThan = Comparator<T>, typename Indexer = NoopIndexer<T>>
-class Heap {
-	LocalVector<T> _buffer;
-
-	LessThan _less_than;
-	Indexer _indexer;
-
-public:
-	static constexpr uint32_t INVALID_INDEX = UINT32_MAX;
-	void reserve(uint32_t p_size) {
-		_buffer.reserve(p_size);
-	}
-
-	uint32_t size() const {
-		return _buffer.size();
-	}
-
-	bool is_empty() const {
-		return _buffer.is_empty();
-	}
-
-	void push(const T &p_element) {
-		_buffer.push_back(p_element);
-		_indexer(p_element, _buffer.size() - 1);
-		_shift_up(_buffer.size() - 1);
-	}
-
-	T pop() {
-		ERR_FAIL_COND_V_MSG(_buffer.is_empty(), T(), "Can't pop an empty heap.");
-		T value = _buffer[0];
-		_indexer(value, INVALID_INDEX);
-		if (_buffer.size() > 1) {
-			_buffer[0] = _buffer[_buffer.size() - 1];
-			_indexer(_buffer[0], 0);
-			_buffer.remove_at(_buffer.size() - 1);
-			_shift_down(0);
-		} else {
-			_buffer.remove_at(_buffer.size() - 1);
-		}
-		return value;
-	}
-
-	/**
-	 * Update the position of the element in the heap if necessary.
-	 */
-	void shift(uint32_t p_index) {
-		ERR_FAIL_UNSIGNED_INDEX_MSG(p_index, _buffer.size(), "Heap element index is out of range.");
-		if (!_shift_up(p_index)) {
-			_shift_down(p_index);
-		}
-	}
-
-	void clear() {
-		for (const T &value : _buffer) {
-			_indexer(value, INVALID_INDEX);
-		}
-		_buffer.clear();
-	}
-
-	Heap() {}
-
-	Heap(const LessThan &p_less_than) :
-			_less_than(p_less_than) {}
-
-	Heap(const Indexer &p_indexer) :
-			_indexer(p_indexer) {}
-
-	Heap(const LessThan &p_less_than, const Indexer &p_indexer) :
-			_less_than(p_less_than), _indexer(p_indexer) {}
-
-private:
-	bool _shift_up(uint32_t p_index) {
-		T value = _buffer[p_index];
-		uint32_t current_index = p_index;
-		uint32_t parent_index = (current_index - 1) / 2;
-		while (current_index > 0 && _less_than(_buffer[parent_index], value)) {
-			_buffer[current_index] = _buffer[parent_index];
-			_indexer(_buffer[current_index], current_index);
-			current_index = parent_index;
-			parent_index = (current_index - 1) / 2;
-		}
-		if (current_index != p_index) {
-			_buffer[current_index] = value;
-			_indexer(value, current_index);
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	bool _shift_down(uint32_t p_index) {
-		T value = _buffer[p_index];
-		uint32_t current_index = p_index;
-		uint32_t child_index = 2 * current_index + 1;
-		while (child_index < _buffer.size()) {
-			if (child_index + 1 < _buffer.size() &&
-					_less_than(_buffer[child_index], _buffer[child_index + 1])) {
-				child_index++;
-			}
-			if (_less_than(_buffer[child_index], value)) {
-				break;
-			}
-			_buffer[current_index] = _buffer[child_index];
-			_indexer(_buffer[current_index], current_index);
-			current_index = child_index;
-			child_index = 2 * current_index + 1;
-		}
-		if (current_index != p_index) {
-			_buffer[current_index] = value;
-			_indexer(value, current_index);
-			return true;
-		} else {
-			return false;
-		}
-	}
-};
 
 #ifdef CLIPPER2_ENABLED
 
@@ -97652,25 +97230,22 @@ private:
 	void _notify_theme_override_changed();
 	void _invalidate_theme_cache();
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> embedded_border;
-		Ref<StyleBox> embedded_unfocused_border;
+		Ref<StyleBox> tc_embedded_border;
+		Ref<StyleBox> tc_embedded_unfocused_border;
 
-		Ref<Font> title_font;
-		int title_font_size = 0;
-		Color title_color;
-		int title_height = 0;
-		Color title_outline_modulate;
-		int title_outline_size = 0;
+		Ref<Font> tc_title_font;
+		int tc_title_font_size = 0;
+		Color tc_title_color;
+		int tc_title_height = 0;
+		Color tc_title_outline_modulate;
+		int tc_title_outline_size = 0;
 
-		Ref<Texture2D> close;
-		Ref<Texture2D> close_pressed;
-		int close_h_offset = 0;
-		int close_v_offset = 0;
+		Ref<Texture2D> tc_close;
+		Ref<Texture2D> tc_close_pressed;
+		int tc_close_h_offset = 0;
+		int tc_close_v_offset = 0;
 
-		int resize_margin = 0;
-	} theme_cache;
+		int tc_resize_margin = 0;
 
 	void _settings_changed();
 
@@ -98136,71 +97711,68 @@ private:
 	VerticalAlignment vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER;
 	float _internal_margin[4] = {};
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal;
-		Ref<StyleBox> normal_mirrored;
-		Ref<StyleBox> pressed;
-		Ref<StyleBox> pressed_mirrored;
-		Ref<StyleBox> hover;
-		Ref<StyleBox> hover_mirrored;
-		Ref<StyleBox> hover_pressed;
-		Ref<StyleBox> hover_pressed_mirrored;
-		Ref<StyleBox> disabled;
-		Ref<StyleBox> disabled_mirrored;
-		Ref<StyleBox> focus;
+		Ref<StyleBox> tc_normal;
+		Ref<StyleBox> tc_normal_mirrored;
+		Ref<StyleBox> tc_pressed;
+		Ref<StyleBox> tc_pressed_mirrored;
+		Ref<StyleBox> tc_hover;
+		Ref<StyleBox> tc_hover_mirrored;
+		Ref<StyleBox> tc_hover_pressed;
+		Ref<StyleBox> tc_hover_pressed_mirrored;
+		Ref<StyleBox> tc_disabled;
+		Ref<StyleBox> tc_disabled_mirrored;
+		Ref<StyleBox> tc_focus;
 
-		Size2 max_style_size;
-		float style_margin_left = 0;
-		float style_margin_right = 0;
-		float style_margin_top = 0;
-		float style_margin_bottom = 0;
+		Size2 tc_max_style_size;
+		float tc_style_margin_left = 0;
+		float tc_style_margin_right = 0;
+		float tc_style_margin_top = 0;
+		float tc_style_margin_bottom = 0;
 
-		bool align_to_largest_stylebox = false;
+		bool tc_align_to_largest_stylebox = false;
 
-		Color font_color;
-		Color font_focus_color;
-		Color font_pressed_color;
-		Color font_hover_color;
-		Color font_hover_pressed_color;
-		Color font_disabled_color;
+		Color tc_font_color;
+		Color tc_font_focus_color;
+		Color tc_font_pressed_color;
+		Color tc_font_hover_color;
+		Color tc_font_hover_pressed_color;
+		Color tc_font_disabled_color;
 
-		Ref<Font> font;
-		int font_size = 0;
-		int outline_size = 0;
-		Color font_outline_color;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		int tc_outline_size = 0;
+		Color tc_font_outline_color;
 
-		Color icon_normal_color;
-		Color icon_focus_color;
-		Color icon_pressed_color;
-		Color icon_hover_color;
-		Color icon_hover_pressed_color;
-		Color icon_disabled_color;
+		Color tc_icon_normal_color;
+		Color tc_icon_focus_color;
+		Color tc_icon_pressed_color;
+		Color tc_icon_hover_color;
+		Color tc_icon_hover_pressed_color;
+		Color tc_icon_disabled_color;
 
-		Ref<Texture2D> icon;
+		Ref<Texture2D> tc_icon;
 
-		Ref<Texture2D> checked;
-		Ref<Texture2D> unchecked;
-		Ref<Texture2D> checked_disabled;
-		Ref<Texture2D> unchecked_disabled;
-		Ref<Texture2D> checked_mirrored;
-		Ref<Texture2D> unchecked_mirrored;
-		Ref<Texture2D> checked_disabled_mirrored;
-		Ref<Texture2D> unchecked_disabled_mirrored;
-		Ref<Texture2D> radio_checked;
-		Ref<Texture2D> radio_unchecked;
-		Ref<Texture2D> radio_checked_disabled;
-		Ref<Texture2D> radio_unchecked_disabled;
+		Ref<Texture2D> tc_checked;
+		Ref<Texture2D> tc_unchecked;
+		Ref<Texture2D> tc_checked_disabled;
+		Ref<Texture2D> tc_unchecked_disabled;
+		Ref<Texture2D> tc_checked_mirrored;
+		Ref<Texture2D> tc_unchecked_mirrored;
+		Ref<Texture2D> tc_checked_disabled_mirrored;
+		Ref<Texture2D> tc_unchecked_disabled_mirrored;
+		Ref<Texture2D> tc_radio_checked;
+		Ref<Texture2D> tc_radio_unchecked;
+		Ref<Texture2D> tc_radio_checked_disabled;
+		Ref<Texture2D> tc_radio_unchecked_disabled;
 
-		Color check_checked_color = Color(1, 1, 1);
-		Color check_unchecked_color = Color(1, 1, 1);
+		Color tc_check_checked_color = Color(1, 1, 1);
+		Color tc_check_unchecked_color = Color(1, 1, 1);
 
-		int h_separation = 0;
-		int check_v_offset = 0;
-		int underline_spacing = 0;
-		int icon_max_width = 0;
-		int line_spacing = 0;
-	} theme_cache;
+		int tc_h_separation = 0;
+		int tc_check_v_offset = 0;
+		int tc_underline_spacing = 0;
+		int tc_icon_max_width = 0;
+		int tc_line_spacing = 0;
 
 	void _shape(Ref<TextParagraph> p_paragraph = Ref<TextParagraph>(), String p_text = "") const;
 	void _update_style_margins(const Ref<StyleBox>& p_stylebox);
@@ -98398,10 +97970,7 @@ private:
 	Panel* panel = nullptr;
 	bool close_on_accept = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-	} theme_cache;
+		Ref<StyleBox> tc_panel_style;
 
 	mutable Rect2i pre_popup_rect;
 
@@ -98497,21 +98066,18 @@ private:
 	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
 	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> slider_style;
-		Ref<StyleBox> grabber_area_style;
-		Ref<StyleBox> grabber_area_hl_style;
+		Ref<StyleBox> tc_slider_style;
+		Ref<StyleBox> tc_grabber_area_style;
+		Ref<StyleBox> tc_grabber_area_hl_style;
 
-		Ref<Texture2D> grabber_icon;
-		Ref<Texture2D> grabber_hl_icon;
-		Ref<Texture2D> grabber_disabled_icon;
-		Ref<Texture2D> tick_icon;
+		Ref<Texture2D> tc_grabber_icon;
+		Ref<Texture2D> tc_grabber_hl_icon;
+		Ref<Texture2D> tc_grabber_disabled_icon;
+		Ref<Texture2D> tc_tick_icon;
 
-		bool center_grabber = false;
-		int grabber_offset = 0;
-		int tick_offset = 0;
-	} theme_cache;
+		bool tc_center_grabber = false;
+		int tc_grabber_offset = 0;
+		int tc_tick_offset = 0;
 
 protected:
 	bool ticks_on_borders = false;
@@ -98832,27 +98398,24 @@ class ScrollBar : public Control
 	void _drag_node_input(const InputEvent& p_input);
 
 protected:
-	struct ThemeCache
-	{
-		Ref<StyleBox> scroll_style;
-		Ref<StyleBox> scroll_focus_style;
-		Ref<StyleBox> scroll_offset_style;
-		Ref<StyleBox> grabber_style;
-		Ref<StyleBox> grabber_hl_style;
-		Ref<StyleBox> grabber_pressed_style;
+		Ref<StyleBox> tc_scroll_style;
+		Ref<StyleBox> tc_scroll_focus_style;
+		Ref<StyleBox> tc_scroll_offset_style;
+		Ref<StyleBox> tc_grabber_style;
+		Ref<StyleBox> tc_grabber_hl_style;
+		Ref<StyleBox> tc_grabber_pressed_style;
 
-		Ref<Texture2D> increment_icon;
-		Ref<Texture2D> increment_hl_icon;
-		Ref<Texture2D> increment_pressed_icon;
-		Ref<Texture2D> decrement_icon;
-		Ref<Texture2D> decrement_hl_icon;
-		Ref<Texture2D> decrement_pressed_icon;
+		Ref<Texture2D> tc_increment_icon;
+		Ref<Texture2D> tc_increment_hl_icon;
+		Ref<Texture2D> tc_increment_pressed_icon;
+		Ref<Texture2D> tc_decrement_icon;
+		Ref<Texture2D> tc_decrement_hl_icon;
+		Ref<Texture2D> tc_decrement_pressed_icon;
 
-		int padding_left = 0;
-		int padding_top = 0;
-		int padding_right = 0;
-		int padding_bottom = 0;
-	} theme_cache;
+		int tc_padding_left = 0;
+		int tc_padding_top = 0;
+		int tc_padding_right = 0;
+		int tc_padding_bottom = 0;
 
 	void _notification(int p_what);
 
@@ -99019,20 +98582,17 @@ private:
 	bool following = false;
 	Vector2 scroll_diff;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> focus_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_focus_style;
 
-		Ref<Texture2D> scroll_hint_vertical;
-		Ref<Texture2D> scroll_hint_horizontal;
+		Ref<Texture2D> tc_scroll_hint_vertical;
+		Ref<Texture2D> tc_scroll_hint_horizontal;
 
-		Color scroll_hint_vertical_color;
-		Color scroll_hint_horizontal_color;
+		Color tc_scroll_hint_vertical_color;
+		Color tc_scroll_hint_horizontal_color;
 
-		int scrollbar_h_separation = 0;
-		int scrollbar_v_separation = 0;
-	} theme_cache;
+		int tc_scrollbar_h_separation = 0;
+		int tc_scrollbar_v_separation = 0;
 
 	void _cancel_drag();
 
@@ -99140,37 +98700,34 @@ private:
 
 	LocalVector<Control*> title_controls;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> title_style;
-		Ref<StyleBox> title_hover_style;
-		Ref<StyleBox> title_collapsed_style;
-		Ref<StyleBox> title_collapsed_hover_style;
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> focus_style;
+		Ref<StyleBox> tc_title_style;
+		Ref<StyleBox> tc_title_hover_style;
+		Ref<StyleBox> tc_title_collapsed_style;
+		Ref<StyleBox> tc_title_collapsed_hover_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_focus_style;
 
-		Color title_font_color;
-		Color title_hovered_font_color;
-		Color title_collapsed_font_color;
-		Color title_font_outline_color;
+		Color tc_title_font_color;
+		Color tc_title_hovered_font_color;
+		Color tc_title_collapsed_font_color;
+		Color tc_title_font_outline_color;
 
-		Ref<Font> title_font;
-		int title_font_size = 0;
-		int title_font_outline_size = 0;
+		Ref<Font> tc_title_font;
+		int tc_title_font_size = 0;
+		int tc_title_font_outline_size = 0;
 
-		Ref<Texture2D> expanded_arrow;
-		Ref<Texture2D> expanded_arrow_mirrored;
-		Ref<Texture2D> folded_arrow;
-		Ref<Texture2D> folded_arrow_mirrored;
+		Ref<Texture2D> tc_expanded_arrow;
+		Ref<Texture2D> tc_expanded_arrow_mirrored;
+		Ref<Texture2D> tc_folded_arrow;
+		Ref<Texture2D> tc_folded_arrow_mirrored;
 
-		int h_separation = 0;
-	} theme_cache;
+		int tc_h_separation = 0;
 
 	Ref<StyleBox> _get_title_style() const;
 	Ref<Texture2D> _get_title_icon() const;
 	Rect2 _get_title_rect() const;
 
-	int _get_h_separation() const { return MAX(theme_cache.h_separation, 0); }
+	int _get_h_separation() const { return MAX(tc_h_separation, 0); }
 
 	real_t _get_title_controls_width() const;
 
@@ -99258,11 +98815,8 @@ public:
 
 class Separator : public Control
 {
-	struct ThemeCache
-	{
-		int separation = 0;
-		Ref<StyleBox> separator_style;
-	} theme_cache;
+		int tc_separation = 0;
+		Ref<StyleBox> tc_separator_style;
 
 protected:
 	Orientation orientation = Orientation::HORIZONTAL;
@@ -99378,23 +98932,20 @@ private:
 	bool drag_nested_intersections = false;
 	int force_show_grabber_icon = -1;
 
-	struct ThemeCache
-	{
-		Color touch_dragger_color;
-		Color touch_dragger_pressed_color;
-		Color touch_dragger_hover_color;
-		int separation = 0;
-		int minimum_grab_thickness = 0;
-		bool autohide = false;
-		Ref<Texture2D> touch_dragger_icon;
-		Ref<Texture2D> touch_dragger_icon_h;
-		Ref<Texture2D> touch_dragger_icon_v;
-		Ref<Texture2D> grabber_icon;
-		Ref<Texture2D> grabber_icon_h;
-		Ref<Texture2D> grabber_icon_v;
-		float base_scale = 1.0;
-		Ref<StyleBox> split_bar_background;
-	} theme_cache;
+		Color tc_touch_dragger_color;
+		Color tc_touch_dragger_pressed_color;
+		Color tc_touch_dragger_hover_color;
+		int tc_separation = 0;
+		int tc_minimum_grab_thickness = 0;
+		bool tc_autohide = false;
+		Ref<Texture2D> tc_touch_dragger_icon;
+		Ref<Texture2D> tc_touch_dragger_icon_h;
+		Ref<Texture2D> tc_touch_dragger_icon_v;
+		Ref<Texture2D> tc_grabber_icon;
+		Ref<Texture2D> tc_grabber_icon_h;
+		Ref<Texture2D> tc_grabber_icon_v;
+		float tc_base_scale = 1.0;
+		Ref<StyleBox> tc_split_bar_background;
 
 	Ref<Texture2D> _get_grabber_icon() const;
 	Ref<Texture2D> _get_touch_dragger_icon() const;
@@ -99642,45 +99193,42 @@ private:
 	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
 	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 
-	struct ThemeCache
-	{
-		int h_separation = 0;
-		int tab_separation = 0;
-		int icon_max_width = 0;
-		int hover_switch_wait_msec = 500;
+		int tc_h_separation = 0;
+		int tc_tab_separation = 0;
+		int tc_icon_max_width = 0;
+		int tc_hover_switch_wait_msec = 500;
 
-		Ref<StyleBox> tab_unselected_style;
-		Ref<StyleBox> tab_hovered_style;
-		Ref<StyleBox> tab_selected_style;
-		Ref<StyleBox> tab_disabled_style;
-		Ref<StyleBox> tab_focus_style;
+		Ref<StyleBox> tc_tab_unselected_style;
+		Ref<StyleBox> tc_tab_hovered_style;
+		Ref<StyleBox> tc_tab_selected_style;
+		Ref<StyleBox> tc_tab_disabled_style;
+		Ref<StyleBox> tc_tab_focus_style;
 
-		Ref<Texture2D> increment_icon;
-		Ref<Texture2D> increment_hl_icon;
-		Ref<Texture2D> decrement_icon;
-		Ref<Texture2D> decrement_hl_icon;
-		Ref<Texture2D> drop_mark_icon;
-		Color drop_mark_color;
+		Ref<Texture2D> tc_increment_icon;
+		Ref<Texture2D> tc_increment_hl_icon;
+		Ref<Texture2D> tc_decrement_icon;
+		Ref<Texture2D> tc_decrement_hl_icon;
+		Ref<Texture2D> tc_drop_mark_icon;
+		Color tc_drop_mark_color;
 
-		Ref<Font> font;
-		int font_size;
-		int outline_size = 0;
+		Ref<Font> tc_font;
+		int tc_font_size;
+		int tc_outline_size = 0;
 
-		Color font_selected_color;
-		Color font_hovered_color;
-		Color font_unselected_color;
-		Color font_disabled_color;
-		Color font_outline_color;
+		Color tc_font_selected_color;
+		Color tc_font_hovered_color;
+		Color tc_font_unselected_color;
+		Color tc_font_disabled_color;
+		Color tc_font_outline_color;
 
-		Color icon_selected_color;
-		Color icon_hovered_color;
-		Color icon_unselected_color;
-		Color icon_disabled_color;
+		Color tc_icon_selected_color;
+		Color tc_icon_hovered_color;
+		Color tc_icon_unselected_color;
+		Color tc_icon_disabled_color;
 
-		Ref<Texture2D> close_icon;
-		Ref<StyleBox> button_pressed_style;
-		Ref<StyleBox> button_hl_style;
-	} theme_cache;
+		Ref<Texture2D> tc_close_icon;
+		Ref<StyleBox> tc_button_pressed_style;
+		Ref<StyleBox> tc_button_hl_style;
 
 	Timer* hover_switch_delay = nullptr;
 
@@ -99851,49 +99399,46 @@ private:
 	int setup_current_tab = -2;
 	bool updating_visibility = false;
 
-	struct ThemeCache
-	{
-		int side_margin = 0;
+		int tc_side_margin = 0;
 
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> tabbar_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_tabbar_style;
 
-		Ref<Texture2D> menu_icon;
-		Ref<Texture2D> menu_hl_icon;
+		Ref<Texture2D> tc_menu_icon;
+		Ref<Texture2D> tc_menu_hl_icon;
 
 		// TabBar overrides.
-		int icon_separation = 0;
-		int tab_separation = 0;
-		int icon_max_width = 0;
-		int outline_size = 0;
+		int tc_icon_separation = 0;
+		int tc_tab_separation = 0;
+		int tc_icon_max_width = 0;
+		int tc_outline_size = 0;
 
-		Ref<StyleBox> tab_unselected_style;
-		Ref<StyleBox> tab_hovered_style;
-		Ref<StyleBox> tab_selected_style;
-		Ref<StyleBox> tab_disabled_style;
-		Ref<StyleBox> tab_focus_style;
+		Ref<StyleBox> tc_tab_unselected_style;
+		Ref<StyleBox> tc_tab_hovered_style;
+		Ref<StyleBox> tc_tab_selected_style;
+		Ref<StyleBox> tc_tab_disabled_style;
+		Ref<StyleBox> tc_tab_focus_style;
 
-		Ref<Texture2D> increment_icon;
-		Ref<Texture2D> increment_hl_icon;
-		Ref<Texture2D> decrement_icon;
-		Ref<Texture2D> decrement_hl_icon;
-		Ref<Texture2D> drop_mark_icon;
-		Color drop_mark_color;
+		Ref<Texture2D> tc_increment_icon;
+		Ref<Texture2D> tc_increment_hl_icon;
+		Ref<Texture2D> tc_decrement_icon;
+		Ref<Texture2D> tc_decrement_hl_icon;
+		Ref<Texture2D> tc_drop_mark_icon;
+		Color tc_drop_mark_color;
 
-		Color font_selected_color;
-		Color font_hovered_color;
-		Color font_unselected_color;
-		Color font_disabled_color;
-		Color font_outline_color;
+		Color tc_font_selected_color;
+		Color tc_font_hovered_color;
+		Color tc_font_unselected_color;
+		Color tc_font_disabled_color;
+		Color tc_font_outline_color;
 
-		Color icon_selected_color;
-		Color icon_hovered_color;
-		Color icon_unselected_color;
-		Color icon_disabled_color;
+		Color tc_icon_selected_color;
+		Color tc_icon_hovered_color;
+		Color tc_icon_unselected_color;
+		Color tc_icon_disabled_color;
 
-		Ref<Font> tab_font;
-		int tab_font_size;
-	} theme_cache;
+		Ref<Font> tc_tab_font;
+		int tc_tab_font_size;
 
 	struct CachedTab
 	{
@@ -100208,55 +99753,52 @@ private:
 	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 	bool joypad_event_process = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> hover_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_hover_style;
 
-		Ref<StyleBox> separator_style;
-		Ref<StyleBox> labeled_separator_left;
-		Ref<StyleBox> labeled_separator_right;
+		Ref<StyleBox> tc_separator_style;
+		Ref<StyleBox> tc_labeled_separator_left;
+		Ref<StyleBox> tc_labeled_separator_right;
 
-		int v_separation = 0;
-		int h_separation = 0;
-		int search_bar_separation = 0;
-		int indent = 0;
-		int item_start_padding = 0;
-		int item_end_padding = 0;
-		int icon_max_width = 0;
-		int gutter_compact = 0;
+		int tc_v_separation = 0;
+		int tc_h_separation = 0;
+		int tc_search_bar_separation = 0;
+		int tc_indent = 0;
+		int tc_item_start_padding = 0;
+		int tc_item_end_padding = 0;
+		int tc_icon_max_width = 0;
+		int tc_gutter_compact = 0;
 
-		Ref<Texture2D> checked;
-		Ref<Texture2D> checked_disabled;
-		Ref<Texture2D> unchecked;
-		Ref<Texture2D> unchecked_disabled;
-		Ref<Texture2D> indeterminate;
-		Ref<Texture2D> indeterminate_disabled;
-		Ref<Texture2D> radio_checked;
-		Ref<Texture2D> radio_checked_disabled;
-		Ref<Texture2D> radio_unchecked;
-		Ref<Texture2D> radio_unchecked_disabled;
+		Ref<Texture2D> tc_checked;
+		Ref<Texture2D> tc_checked_disabled;
+		Ref<Texture2D> tc_unchecked;
+		Ref<Texture2D> tc_unchecked_disabled;
+		Ref<Texture2D> tc_indeterminate;
+		Ref<Texture2D> tc_indeterminate_disabled;
+		Ref<Texture2D> tc_radio_checked;
+		Ref<Texture2D> tc_radio_checked_disabled;
+		Ref<Texture2D> tc_radio_unchecked;
+		Ref<Texture2D> tc_radio_unchecked_disabled;
 
-		Ref<Texture2D> search;
-		Ref<Texture2D> submenu;
-		Ref<Texture2D> submenu_mirrored;
+		Ref<Texture2D> tc_search;
+		Ref<Texture2D> tc_submenu;
+		Ref<Texture2D> tc_submenu_mirrored;
 
-		Ref<Font> font;
-		int font_size = 0;
-		Ref<Font> font_separator;
-		int font_separator_size = 0;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		Ref<Font> tc_font_separator;
+		int tc_font_separator_size = 0;
 
-		Color font_color;
-		Color font_hover_color;
-		Color font_disabled_color;
-		Color font_accelerator_color;
-		int font_outline_size = 0;
-		Color font_outline_color;
+		Color tc_font_color;
+		Color tc_font_hover_color;
+		Color tc_font_disabled_color;
+		Color tc_font_accelerator_color;
+		int tc_font_outline_size = 0;
+		Color tc_font_outline_color;
 
-		Color font_separator_color;
-		int font_separator_outline_size = 0;
-		Color font_separator_outline_color;
-	} theme_cache;
+		Color tc_font_separator_color;
+		int tc_font_separator_outline_size = 0;
+		Color tc_font_separator_outline_color;
 
 	void _draw_items();
 	void _update_search_bar_visibility();
@@ -100536,33 +100078,30 @@ class MenuBar : public Control
 
 	Vector2i old_mouse_pos;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal;
-		Ref<StyleBox> normal_mirrored;
-		Ref<StyleBox> disabled;
-		Ref<StyleBox> disabled_mirrored;
-		Ref<StyleBox> pressed;
-		Ref<StyleBox> pressed_mirrored;
-		Ref<StyleBox> hover;
-		Ref<StyleBox> hover_mirrored;
-		Ref<StyleBox> hover_pressed;
-		Ref<StyleBox> hover_pressed_mirrored;
+		Ref<StyleBox> tc_normal;
+		Ref<StyleBox> tc_normal_mirrored;
+		Ref<StyleBox> tc_disabled;
+		Ref<StyleBox> tc_disabled_mirrored;
+		Ref<StyleBox> tc_pressed;
+		Ref<StyleBox> tc_pressed_mirrored;
+		Ref<StyleBox> tc_hover;
+		Ref<StyleBox> tc_hover_mirrored;
+		Ref<StyleBox> tc_hover_pressed;
+		Ref<StyleBox> tc_hover_pressed_mirrored;
 
-		Ref<Font> font;
-		int font_size = 0;
-		int outline_size = 0;
-		Color font_outline_color;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		int tc_outline_size = 0;
+		Color tc_font_outline_color;
 
-		Color font_color;
-		Color font_disabled_color;
-		Color font_pressed_color;
-		Color font_hover_color;
-		Color font_hover_pressed_color;
-		Color font_focus_color;
+		Color tc_font_color;
+		Color tc_font_disabled_color;
+		Color tc_font_pressed_color;
+		Color tc_font_hover_color;
+		Color tc_font_hover_pressed_color;
+		Color tc_font_focus_color;
 
-		int h_separation = 0;
-	} theme_cache;
+		int tc_h_separation = 0;
 
 	int _get_index_at_point(const Point2& p_point) const;
 	Rect2 _get_menu_item_rect(int p_index) const;
@@ -100713,25 +100252,21 @@ class OptionButton : public Control
 	bool initialized = false;
 	int queued_current = -1;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal;
+		Ref<StyleBox> tc_normal;
 
-		Color font_color;
-		Color font_focus_color;
-		Color font_pressed_color;
-		Color font_hover_color;
-		Color font_hover_pressed_color;
-		Color font_disabled_color;
+		Color tc_font_color;
+		Color tc_font_focus_color;
+		Color tc_font_pressed_color;
+		Color tc_font_hover_color;
+		Color tc_font_hover_pressed_color;
+		Color tc_font_disabled_color;
 
-		int h_separation = 0;
+		int tc_h_separation = 0;
 
-		Ref<Texture2D> arrow_icon;
-		int arrow_margin = 0;
-		int modulate_arrow = 0;
-	};
+		Ref<Texture2D> tc_arrow_icon;
+		int tc_arrow_margin = 0;
+		int tc_modulate_arrow = 0;
 
-	ThemeCache theme_cache;
 
 	static inline PropertyListHelper base_property_helper;
 	PropertyListHelper property_helper;
@@ -101060,24 +100595,20 @@ private:
 
 	Ref<LabelSettings> settings;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal_style;
-		Ref<StyleBox> focus_style;
-		Ref<Font> font;
+		Ref<StyleBox> tc_normal_style;
+		Ref<StyleBox> tc_focus_style;
+		Ref<Font> tc_font;
 
-		int font_size = 0;
-		int line_spacing = 0;
-		int paragraph_spacing = 0;
-		Color font_color;
-		Color font_shadow_color;
-		Point2 font_shadow_offset;
-		Color font_outline_color;
-		int font_outline_size;
-		int font_shadow_outline_size;
-	};
+		int tc_font_size = 0;
+		int tc_line_spacing = 0;
+		int tc_paragraph_spacing = 0;
+		Color tc_font_color;
+		Color tc_font_shadow_color;
+		Point2 tc_font_shadow_offset;
+		Color tc_font_outline_color;
+		int tc_font_outline_size;
+		int tc_font_shadow_outline_size;
 
-	ThemeCache theme_cache;
 
 	Rect2 _get_line_rect(int p_para, int p_line) const;
 	void _ensure_shaped() const;
@@ -101372,42 +100903,39 @@ private:
 	void _shift_range_select(int p_from, int p_to);
 
 protected:
-	struct ThemeCache
-	{
-		int h_separation = 0;
-		int v_separation = 0;
-		int scroll_bar_h_separation = 0;
+		int tc_h_separation = 0;
+		int tc_v_separation = 0;
+		int tc_scroll_bar_h_separation = 0;
 
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> focus_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_focus_style;
 
-		Ref<Font> font;
-		int font_size = 0;
-		Color font_color;
-		Color font_hovered_color;
-		Color font_hovered_selected_color;
-		Color font_selected_color;
-		int font_outline_size = 0;
-		Color font_outline_color;
-		Color font_disabled_color;
-		Color font_disabled_hovered_color;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		Color tc_font_color;
+		Color tc_font_hovered_color;
+		Color tc_font_hovered_selected_color;
+		Color tc_font_selected_color;
+		int tc_font_outline_size = 0;
+		Color tc_font_outline_color;
+		Color tc_font_disabled_color;
+		Color tc_font_disabled_hovered_color;
 
-		int line_separation = 0;
-		int icon_margin = 0;
-		Ref<StyleBox> hovered_style;
-		Ref<StyleBox> hovered_selected_style;
-		Ref<StyleBox> hovered_selected_focus_style;
-		Ref<StyleBox> selected_style;
-		Ref<StyleBox> selected_focus_style;
-		Ref<StyleBox> cursor_style;
-		Ref<StyleBox> cursor_focus_style;
-		Ref<StyleBox> disabled_style;
-		Ref<StyleBox> disabled_hovered_style;
-		Color guide_color;
+		int tc_line_separation = 0;
+		int tc_icon_margin = 0;
+		Ref<StyleBox> tc_hovered_style;
+		Ref<StyleBox> tc_hovered_selected_style;
+		Ref<StyleBox> tc_hovered_selected_focus_style;
+		Ref<StyleBox> tc_selected_style;
+		Ref<StyleBox> tc_selected_focus_style;
+		Ref<StyleBox> tc_cursor_style;
+		Ref<StyleBox> tc_cursor_focus_style;
+		Ref<StyleBox> tc_disabled_style;
+		Ref<StyleBox> tc_disabled_hovered_style;
+		Color tc_guide_color;
 
-		Ref<Texture2D> scroll_hint;
-		Color scroll_hint_color;
-	} theme_cache;
+		Ref<Texture2D> tc_scroll_hint;
+		Color tc_scroll_hint_color;
 
 	void _notification(int p_what);
 
@@ -101632,10 +101160,7 @@ public:
 
 class Panel : public Control
 {
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-	} theme_cache;
+		Ref<StyleBox> tc_panel_style;
 
 	bool fit_children = false;
 
@@ -101671,13 +101196,10 @@ struct DialogChrome
 	bool hide_on_ok = true;
 	bool close_on_escape = true;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-		int buttons_separation = 0;
-		int buttons_min_width = 0;
-		int buttons_min_height = 0;
-	} theme_cache;
+		Ref<StyleBox> tc_panel_style;
+		int tc_buttons_separation = 0;
+		int tc_buttons_min_width = 0;
+		int tc_buttons_min_height = 0;
 
 	inline static bool swap_cancel_ok = false;
 
@@ -101971,46 +101493,42 @@ private:
 	Dialog* exterr = nullptr;
 	Dialog* confirm_save = nullptr;
 
-	struct ThemeCache
-	{
-		int thumbnail_size = 64;
+		int tc_thumbnail_size = 64;
 
-		Ref<Texture2D> parent_folder;
-		Ref<Texture2D> forward_folder;
-		Ref<Texture2D> back_folder;
-		Ref<Texture2D> reload;
-		Ref<Texture2D> toggle_hidden;
-		Ref<Texture2D> toggle_filename_filter;
-		Ref<Texture2D> thumbnail_mode;
-		Ref<Texture2D> list_mode;
-		Ref<Texture2D> folder;
-		Ref<Texture2D> file;
-		Ref<Texture2D> create_folder;
-		Ref<Texture2D> sort;
-		Ref<Texture2D> favorite;
-		Ref<Texture2D> favorite_up;
-		Ref<Texture2D> favorite_down;
-		Ref<Texture2D> file_thumbnail;
-		Ref<Texture2D> folder_thumbnail;
+		Ref<Texture2D> tc_parent_folder;
+		Ref<Texture2D> tc_forward_folder;
+		Ref<Texture2D> tc_back_folder;
+		Ref<Texture2D> tc_reload;
+		Ref<Texture2D> tc_toggle_hidden;
+		Ref<Texture2D> tc_toggle_filename_filter;
+		Ref<Texture2D> tc_thumbnail_mode;
+		Ref<Texture2D> tc_list_mode;
+		Ref<Texture2D> tc_folder;
+		Ref<Texture2D> tc_file;
+		Ref<Texture2D> tc_create_folder;
+		Ref<Texture2D> tc_sort;
+		Ref<Texture2D> tc_favorite;
+		Ref<Texture2D> tc_favorite_up;
+		Ref<Texture2D> tc_favorite_down;
+		Ref<Texture2D> tc_file_thumbnail;
+		Ref<Texture2D> tc_folder_thumbnail;
 
-		Ref<Texture2D> menu_copy_path;
-		Ref<Texture2D> menu_delete;
-		Ref<Texture2D> menu_refresh;
-		Ref<Texture2D> menu_new_folder;
-		Ref<Texture2D> menu_show_in_file_manager;
-		Ref<Texture2D> menu_open_bundle;
+		Ref<Texture2D> tc_menu_copy_path;
+		Ref<Texture2D> tc_menu_delete;
+		Ref<Texture2D> tc_menu_refresh;
+		Ref<Texture2D> tc_menu_new_folder;
+		Ref<Texture2D> tc_menu_show_in_file_manager;
+		Ref<Texture2D> tc_menu_open_bundle;
 
-		Color folder_icon_color;
-		Color file_icon_color;
-		Color file_disabled_color;
+		Color tc_folder_icon_color;
+		Color tc_file_icon_color;
+		Color tc_file_disabled_color;
 
-		Color icon_normal_color;
-		Color icon_hover_color;
-		Color icon_focus_color;
-		Color icon_pressed_color;
-	};
+		Color tc_icon_normal_color;
+		Color tc_icon_hover_color;
+		Color tc_icon_focus_color;
+		Color tc_icon_pressed_color;
 
-	ThemeCache theme_cache;
 
 	void update_dir();
 	void update_file_name();
@@ -102091,7 +101609,7 @@ protected:
 
 	virtual Color _get_folder_color(const String& p_path) const
 	{
-		return theme_cache.folder_icon_color;
+		return tc_folder_icon_color;
 	}
 
 	Vector2i _get_list_mode_icon_size() const;
@@ -102310,23 +101828,20 @@ private:
 	bool tint_color_enabled = false;
 	Color tint_color = Color(0.3, 0.3, 0.3, 0.75);
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel;
-		Ref<StyleBox> panel_selected;
-		Ref<StyleBox> panel_focus;
-		Ref<StyleBox> titlebar;
-		Ref<StyleBox> titlebar_selected;
-		Ref<StyleBox> slot;
-		Ref<StyleBox> slot_selected;
+		Ref<StyleBox> tc_panel;
+		Ref<StyleBox> tc_panel_selected;
+		Ref<StyleBox> tc_panel_focus;
+		Ref<StyleBox> tc_titlebar;
+		Ref<StyleBox> tc_titlebar_selected;
+		Ref<StyleBox> tc_slot;
+		Ref<StyleBox> tc_slot_selected;
 
-		int separation = 0;
-		int port_h_offset = 0;
+		int tc_separation = 0;
+		int tc_port_h_offset = 0;
 
-		Ref<Texture2D> port;
-		Ref<Texture2D> resizer;
-		Color resizer_color;
-	} theme_cache;
+		Ref<Texture2D> tc_port;
+		Ref<Texture2D> tc_resizer;
+		Color tc_resizer_color;
 
 #ifdef TOOLS_ENABLED
 	void _edit_set_position(const Point2& p_position) override;
@@ -102602,15 +102117,12 @@ class GraphEditMinimap : public Control
 	bool is_pressing = false;
 	bool is_resizing = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel;
-		Ref<StyleBox> node_style;
-		Ref<StyleBox> camera_style;
+		Ref<StyleBox> tc_panel;
+		Ref<StyleBox> tc_node_style;
+		Ref<StyleBox> tc_camera_style;
 
-		Ref<Texture2D> resizer;
-		Color resizer_color;
-	} theme_cache;
+		Ref<Texture2D> tc_resizer;
+		Color tc_resizer_color;
 
 	Vector2 _get_render_size();
 	Vector2 _get_graph_offset();
@@ -102675,26 +102187,13 @@ public:
 private:
 	struct ConnectionType
 	{
-		union
-		{
-			uint64_t key = 0;
-
-			struct
-			{
-				uint32_t type_a;
-				uint32_t type_b;
-			};
-		};
+		uint64_t key = 0;
 
 		static uint32_t hash(const ConnectionType& p_conn) { return hash_one_uint64(p_conn.key); }
 
 		bool operator==(const ConnectionType& p_type) const { return key == p_type.key; }
 
-		ConnectionType(uint32_t a = 0, uint32_t b = 0)
-		{
-			type_a = a;
-			type_b = b;
-		}
+		ConnectionType(uint32_t a = 0, uint32_t b = 0) : key((uint64_t(b) << 32) | uint64_t(a)) {}
 	};
 
 	Label* zoom_label = nullptr;
@@ -102801,38 +102300,35 @@ private:
 	HashSet<int> valid_left_disconnect_types;
 	HashSet<int> valid_right_disconnect_types;
 
-	struct ThemeCache
-	{
-		float base_scale = 1.0;
+		float tc_base_scale = 1.0;
 
-		Ref<StyleBox> panel;
-		Ref<StyleBox> panel_focus;
-		Color grid_major;
-		Color grid_minor;
+		Ref<StyleBox> tc_panel;
+		Ref<StyleBox> tc_panel_focus;
+		Color tc_grid_major;
+		Color tc_grid_minor;
 
-		Color activity_color;
-		Color connection_hover_tint_color;
-		int connection_hover_thickness;
-		Color connection_valid_target_tint_color;
-		Color connection_rim_color;
+		Color tc_activity_color;
+		Color tc_connection_hover_tint_color;
+		int tc_connection_hover_thickness;
+		Color tc_connection_valid_target_tint_color;
+		Color tc_connection_rim_color;
 
-		Color selection_fill;
-		Color selection_stroke;
+		Color tc_selection_fill;
+		Color tc_selection_stroke;
 
-		Ref<StyleBox> menu_panel;
+		Ref<StyleBox> tc_menu_panel;
 
-		Ref<Texture2D> zoom_in;
-		Ref<Texture2D> zoom_out;
-		Ref<Texture2D> zoom_reset;
+		Ref<Texture2D> tc_zoom_in;
+		Ref<Texture2D> tc_zoom_out;
+		Ref<Texture2D> tc_zoom_reset;
 
-		Ref<Texture2D> snapping_toggle;
-		Ref<Texture2D> grid_toggle;
-		Ref<Texture2D> minimap_toggle;
-		Ref<Texture2D> layout;
+		Ref<Texture2D> tc_snapping_toggle;
+		Ref<Texture2D> tc_grid_toggle;
+		Ref<Texture2D> tc_minimap_toggle;
+		Ref<Texture2D> tc_layout;
 
-		float port_hotzone_inner_extent = 0.0;
-		float port_hotzone_outer_extent = 0.0;
-	} theme_cache;
+		float tc_port_hotzone_inner_extent = 0.0;
+		float tc_port_hotzone_outer_extent = 0.0;
 
 	// This separates the children in two layers to ensure the order
 	// of both background nodes (e.g frame nodes) and foreground nodes (connectable nodes).
@@ -103058,8 +102554,7 @@ public:
 	GraphEdit();
 };
 
-class ColorMode;
-class ColorPickerShape;
+
 class FileDialog;
 class Label;
 class LineEdit;
@@ -103072,8 +102567,6 @@ class TextureRect;
 
 class ColorPicker : public Control
 {
-	friend class ColorPickerShape;
-	friend class ColorMode;
 
 public:
 	enum ColorModeType
@@ -103161,8 +102654,6 @@ private:
 
 	bool slider_theme_modified = true;
 
-	LocalVector<ColorMode*> modes;
-	LocalVector<ColorPickerShape*> shapes;
 
 	Popup* picker_window = nullptr;
 	TextureRect* picker_texture_zoom = nullptr;
@@ -103276,51 +102767,47 @@ private:
 
 	float intensity = 0.0;
 
-	struct ThemeCache
-	{
-		float base_scale = 1.0;
+		float tc_base_scale = 1.0;
 
-		int content_margin = 0;
-		int label_width = 0;
+		int tc_content_margin = 0;
+		int tc_label_width = 0;
 
-		int sv_height = 0;
-		int sv_width = 0;
-		int h_width = 0;
+		int tc_sv_height = 0;
+		int tc_sv_width = 0;
+		int tc_h_width = 0;
 
-		bool center_slider_grabbers = true;
+		bool tc_center_slider_grabbers = true;
 
-		Ref<StyleBox> picker_focus_rectangle;
-		Ref<StyleBox> picker_focus_circle;
-		Color focused_not_editing_cursor_color;
-		Ref<Texture2D> menu_option;
-		Ref<Texture2D> screen_picker;
-		Ref<Texture2D> expanded_arrow;
-		Ref<Texture2D> folded_arrow;
-		Ref<Texture2D> add_preset;
+		Ref<StyleBox> tc_picker_focus_rectangle;
+		Ref<StyleBox> tc_picker_focus_circle;
+		Color tc_focused_not_editing_cursor_color;
+		Ref<Texture2D> tc_menu_option;
+		Ref<Texture2D> tc_screen_picker;
+		Ref<Texture2D> tc_expanded_arrow;
+		Ref<Texture2D> tc_folded_arrow;
+		Ref<Texture2D> tc_add_preset;
 
-		Ref<Texture2D> shape_rect;
-		Ref<Texture2D> shape_rect_wheel;
-		Ref<Texture2D> shape_circle;
+		Ref<Texture2D> tc_shape_rect;
+		Ref<Texture2D> tc_shape_rect_wheel;
+		Ref<Texture2D> tc_shape_circle;
 
-		Ref<Texture2D> bar_arrow;
-		Ref<Texture2D> sample_bg;
-		Ref<Texture2D> sample_revert;
-		Ref<StyleBox> sample_focus;
-		Ref<Texture2D> overbright_indicator;
-		Ref<Texture2D> picker_cursor;
-		Ref<Texture2D> picker_cursor_bg;
-		Ref<Texture2D> color_hue;
+		Ref<Texture2D> tc_bar_arrow;
+		Ref<Texture2D> tc_sample_bg;
+		Ref<Texture2D> tc_sample_revert;
+		Ref<StyleBox> tc_sample_focus;
+		Ref<Texture2D> tc_overbright_indicator;
+		Ref<Texture2D> tc_picker_cursor;
+		Ref<Texture2D> tc_picker_cursor_bg;
+		Ref<Texture2D> tc_color_hue;
 
-		Ref<Texture2D> color_script;
-		Ref<Texture2D> color_copy;
+		Ref<Texture2D> tc_color_script;
+		Ref<Texture2D> tc_color_copy;
 
-		Ref<StyleBox> mode_button_normal;
-		Ref<StyleBox> mode_button_pressed;
-		Ref<StyleBox> mode_button_hover;
-		Ref<StyleBox> mode_button_hover_pressed;
-	};
+		Ref<StyleBox> tc_mode_button_normal;
+		Ref<StyleBox> tc_mode_button_pressed;
+		Ref<StyleBox> tc_mode_button_hover;
+		Ref<StyleBox> tc_mode_button_hover_pressed;
 
-	ThemeCache theme_cache;
 
 	void _copy_normalized_to_hsv_okhsl();
 	void _copy_hsv_okhsl_to_normalized();
@@ -103352,8 +102839,6 @@ public:
 	Slider* get_slider(int idx);
 	Vector<float> get_active_slider_values();
 
-	void add_mode(ColorMode* p_mode);
-	void add_shape(ColorPickerShape* p_shape);
 
 	bool is_editing_alpha() const;
 
@@ -103408,14 +102893,10 @@ class ColorPickerButton : public Control
 	bool edit_intensity = true;
 	bool popup_was_open = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal_style;
-		Ref<Texture2D> background_icon;
-		Ref<Texture2D> overbright_indicator;
-	};
+		Ref<StyleBox> tc_normal_style;
+		Ref<Texture2D> tc_background_icon;
+		Ref<Texture2D> tc_overbright_indicator;
 
-	ThemeCache theme_cache;
 
 	void _update_picker();
 
@@ -103490,17 +102971,6 @@ class EditorSettings final
 	static inline BinaryMutex _thread_safe_mutex;
 
 public:
-	struct Plugin
-	{
-		String path;
-		String name;
-		String author;
-		String version;
-		String description;
-		bool installs = false;
-		String script;
-		Vector<String> install_files;
-	};
 
 	enum NetworkMode
 	{
@@ -104624,55 +104094,52 @@ private:
 
 	bool fit_content = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal_style;
-		Ref<StyleBox> focus_style;
-		Ref<StyleBox> progress_bg_style;
-		Ref<StyleBox> progress_fg_style;
+		Ref<StyleBox> tc_normal_style;
+		Ref<StyleBox> tc_focus_style;
+		Ref<StyleBox> tc_progress_bg_style;
+		Ref<StyleBox> tc_progress_fg_style;
 
-		Ref<Texture2D> horizontal_rule;
+		Ref<Texture2D> tc_horizontal_rule;
 
-		int line_separation;
-		int paragraph_separation;
+		int tc_line_separation;
+		int tc_paragraph_separation;
 
-		Ref<Font> normal_font;
-		int normal_font_size;
+		Ref<Font> tc_normal_font;
+		int tc_normal_font_size;
 
-		Color default_color;
-		Color font_selected_color;
-		Color selection_color;
-		Color font_outline_color;
-		Color font_shadow_color;
-		int shadow_outline_size;
-		int shadow_offset_x;
-		int shadow_offset_y;
-		int outline_size;
-		Color outline_color;
+		Color tc_default_color;
+		Color tc_font_selected_color;
+		Color tc_selection_color;
+		Color tc_font_outline_color;
+		Color tc_font_shadow_color;
+		int tc_shadow_outline_size;
+		int tc_shadow_offset_x;
+		int tc_shadow_offset_y;
+		int tc_outline_size;
+		Color tc_outline_color;
 
-		Ref<Font> bold_font;
-		int bold_font_size;
-		Ref<Font> bold_italics_font;
-		int bold_italics_font_size;
-		Ref<Font> italics_font;
-		int italics_font_size;
-		Ref<Font> mono_font;
-		int mono_font_size;
+		Ref<Font> tc_bold_font;
+		int tc_bold_font_size;
+		Ref<Font> tc_bold_italics_font;
+		int tc_bold_italics_font_size;
+		Ref<Font> tc_italics_font;
+		int tc_italics_font_size;
+		Ref<Font> tc_mono_font;
+		int tc_mono_font_size;
 
-		int text_highlight_h_padding;
-		int text_highlight_v_padding;
+		int tc_text_highlight_h_padding;
+		int tc_text_highlight_v_padding;
 
-		int underline_alpha;
-		int strikethrough_alpha;
+		int tc_underline_alpha;
+		int tc_strikethrough_alpha;
 
-		int table_h_separation;
-		int table_v_separation;
-		Color table_odd_row_bg;
-		Color table_even_row_bg;
-		Color table_border;
+		int tc_table_h_separation;
+		int tc_table_v_separation;
+		Color tc_table_odd_row_bg;
+		Color tc_table_even_row_bg;
+		Color tc_table_border;
 
-		float base_scale = 1.0;
-	} theme_cache;
+		float tc_base_scale = 1.0;
 
 public:
 	virtual RID get_focused_accessibility_element() const override;
@@ -105009,11 +104476,6 @@ private:
 	List<TextOperation> undo_stack;
 	List<TextOperation>::Element* undo_stack_pos = nullptr;
 
-	struct ClearButtonStatus
-	{
-		bool press_attempt = false;
-		bool pressing_inside = false;
-	} clear_button_status;
 
 	uint64_t last_dblclk = 0;
 	Vector2 last_dblclk_pos;
@@ -105028,33 +104490,29 @@ private:
 	bool pending_select_all_on_focus = false;
 	bool select_all_on_focus = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal;
-		Ref<StyleBox> read_only;
-		Ref<StyleBox> focus;
+		Ref<StyleBox> tc_normal;
+		Ref<StyleBox> tc_read_only;
+		Ref<StyleBox> tc_focus;
 
-		Ref<Font> font;
-		int font_size = 0;
-		Color font_color;
-		Color font_uneditable_color;
-		Color font_selected_color;
-		int font_outline_size;
-		Color font_outline_color;
-		Color font_placeholder_color;
-		int caret_width = 0;
-		Color caret_color;
-		int minimum_character_width = 0;
-		Color selection_color;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		Color tc_font_color;
+		Color tc_font_uneditable_color;
+		Color tc_font_selected_color;
+		int tc_font_outline_size;
+		Color tc_font_outline_color;
+		Color tc_font_placeholder_color;
+		int tc_caret_width = 0;
+		Color tc_caret_color;
+		int tc_minimum_character_width = 0;
+		Color tc_selection_color;
 
-		Ref<Texture2D> clear_icon;
-		Color clear_button_color;
-		Color clear_button_color_pressed;
+		Ref<Texture2D> tc_clear_icon;
+		Color tc_clear_button_color;
+		Color tc_clear_button_color_pressed;
 
-		float base_scale = 1.0;
-	};
+		float tc_base_scale = 1.0;
 
-	ThemeCache theme_cache;
 
 	void _close_ime_window();
 	void _update_ime_window_position();
@@ -105287,19 +104745,16 @@ class SpinBox : public Control
 	bool update_on_text_changed = false;
 	bool accepted = true;
 
-	struct SizingCache
-	{
-		int buttons_block_width = 0;
-		int buttons_width = 0;
-		int buttons_vertical_separation = 0;
-		int buttons_left = 0;
-		int button_up_height = 0;
-		int button_down_height = 0;
-		int second_button_top = 0;
-		int buttons_separator_top = 0;
-		int field_and_buttons_separator_left = 0;
-		int field_and_buttons_separator_width = 0;
-	} sizing_cache;
+	int sizing_cache_buttons_block_width = 0;
+	int sizing_cache_buttons_width = 0;
+	int sizing_cache_buttons_vertical_separation = 0;
+	int sizing_cache_buttons_left = 0;
+	int sizing_cache_button_up_height = 0;
+	int sizing_cache_button_down_height = 0;
+	int sizing_cache_second_button_top = 0;
+	int sizing_cache_buttons_separator_top = 0;
+	int sizing_cache_field_and_buttons_separator_left = 0;
+	int sizing_cache_field_and_buttons_separator_width = 0;
 
 	Timer* range_click_timer = nullptr;
 	void _release_mouse_from_drag_mode();
@@ -105326,62 +104781,50 @@ class SpinBox : public Control
 		double diff_y = 0.0;
 	} drag;
 
-	struct StateCache
-	{
-		bool up_button_hovered = false;
-		bool up_button_pressed = false;
-		bool up_button_disabled = false;
-		bool down_button_hovered = false;
-		bool down_button_pressed = false;
-		bool down_button_disabled = false;
-	} state_cache;
 
 	void _line_edit_editing_toggled(bool p_toggled_on);
 
 	inline void _compute_sizes();
 	inline int _get_widest_button_icon_width();
 
-	struct ThemeCache
-	{
-		Ref<Texture2D> up_icon;
-		Ref<Texture2D> up_hover_icon;
-		Ref<Texture2D> up_pressed_icon;
-		Ref<Texture2D> up_disabled_icon;
-		Ref<Texture2D> down_icon;
-		Ref<Texture2D> down_hover_icon;
-		Ref<Texture2D> down_pressed_icon;
-		Ref<Texture2D> down_disabled_icon;
+		Ref<Texture2D> tc_up_icon;
+		Ref<Texture2D> tc_up_hover_icon;
+		Ref<Texture2D> tc_up_pressed_icon;
+		Ref<Texture2D> tc_up_disabled_icon;
+		Ref<Texture2D> tc_down_icon;
+		Ref<Texture2D> tc_down_hover_icon;
+		Ref<Texture2D> tc_down_pressed_icon;
+		Ref<Texture2D> tc_down_disabled_icon;
 
-		Ref<StyleBox> up_base_stylebox;
-		Ref<StyleBox> up_hover_stylebox;
-		Ref<StyleBox> up_pressed_stylebox;
-		Ref<StyleBox> up_disabled_stylebox;
-		Ref<StyleBox> down_base_stylebox;
-		Ref<StyleBox> down_hover_stylebox;
-		Ref<StyleBox> down_pressed_stylebox;
-		Ref<StyleBox> down_disabled_stylebox;
+		Ref<StyleBox> tc_up_base_stylebox;
+		Ref<StyleBox> tc_up_hover_stylebox;
+		Ref<StyleBox> tc_up_pressed_stylebox;
+		Ref<StyleBox> tc_up_disabled_stylebox;
+		Ref<StyleBox> tc_down_base_stylebox;
+		Ref<StyleBox> tc_down_hover_stylebox;
+		Ref<StyleBox> tc_down_pressed_stylebox;
+		Ref<StyleBox> tc_down_disabled_stylebox;
 
-		Color up_icon_modulate;
-		Color up_hover_icon_modulate;
-		Color up_pressed_icon_modulate;
-		Color up_disabled_icon_modulate;
-		Color down_icon_modulate;
-		Color down_hover_icon_modulate;
-		Color down_pressed_icon_modulate;
-		Color down_disabled_icon_modulate;
+		Color tc_up_icon_modulate;
+		Color tc_up_hover_icon_modulate;
+		Color tc_up_pressed_icon_modulate;
+		Color tc_up_disabled_icon_modulate;
+		Color tc_down_icon_modulate;
+		Color tc_down_hover_icon_modulate;
+		Color tc_down_pressed_icon_modulate;
+		Color tc_down_disabled_icon_modulate;
 
-		Ref<StyleBox> field_and_buttons_separator;
-		Ref<StyleBox> up_down_buttons_separator;
+		Ref<StyleBox> tc_field_and_buttons_separator;
+		Ref<StyleBox> tc_up_down_buttons_separator;
 
-		int buttons_vertical_separation = 0;
-		int field_and_buttons_separation = 0;
-		int buttons_width = 0;
+		int tc_buttons_vertical_separation = 0;
+		int tc_field_and_buttons_separation = 0;
+		int tc_buttons_width = 0;
 #ifndef DISABLE_DEPRECATED
-		Ref<Texture2D> updown_icon;
-		bool is_updown_assigned = false;
-		bool set_min_buttons_width_from_icons = false;
+		Ref<Texture2D> tc_updown_icon;
+		bool tc_is_updown_assigned = false;
+		bool tc_set_min_buttons_width_from_icons = false;
 #endif
-	} theme_cache;
 
 	void _mouse_exited();
 	void _update_buttons_state_for_current_value();
@@ -106411,92 +105854,89 @@ private:
 	void _code_text_changed();
 
 	/* Visual. */
-	struct ThemeCache
-	{
-		float base_scale = 1.0;
+		float tc_base_scale = 1.0;
 
 		/* Search */
-		Color search_result_color = Color(1, 1, 1);
-		Color search_result_border_color = Color(1, 1, 1);
+		Color tc_search_result_color = Color(1, 1, 1);
+		Color tc_search_result_border_color = Color(1, 1, 1);
 
 		/* Caret */
-		int caret_width = 1;
-		Color caret_color = Color(1, 1, 1);
-		Color caret_background_color = Color(0, 0, 0);
+		int tc_caret_width = 1;
+		Color tc_caret_color = Color(1, 1, 1);
+		Color tc_caret_background_color = Color(0, 0, 0);
 
 		/* Selection */
-		Color font_selected_color = Color(0, 0, 0, 0);
-		Color selection_color = Color(1, 1, 1);
+		Color tc_font_selected_color = Color(0, 0, 0, 0);
+		Color tc_selection_color = Color(1, 1, 1);
 
 		/* Other visuals */
-		Ref<StyleBox> style_normal;
-		Ref<StyleBox> style_focus;
-		Ref<StyleBox> style_readonly;
+		Ref<StyleBox> tc_style_normal;
+		Ref<StyleBox> tc_style_focus;
+		Ref<StyleBox> tc_style_readonly;
 
-		Ref<Texture2D> tab_icon;
-		Ref<Texture2D> space_icon;
+		Ref<Texture2D> tc_tab_icon;
+		Ref<Texture2D> tc_space_icon;
 
-		Ref<Font> font;
-		int font_size = 16;
-		Color font_color = Color(1, 1, 1);
-		Color font_readonly_color = Color(1, 1, 1);
-		Color font_placeholder_color = Color(1, 1, 1, 0.6);
+		Ref<Font> tc_font;
+		int tc_font_size = 16;
+		Color tc_font_color = Color(1, 1, 1);
+		Color tc_font_readonly_color = Color(1, 1, 1);
+		Color tc_font_placeholder_color = Color(1, 1, 1, 0.6);
 
-		int outline_size = 0;
-		Color outline_color = Color(1, 1, 1);
+		int tc_outline_size = 0;
+		Color tc_outline_color = Color(1, 1, 1);
 
-		int line_spacing = 1;
-		int wrap_offset = 10;
+		int tc_line_spacing = 1;
+		int tc_wrap_offset = 10;
 
-		Color current_line_color = Color(1, 1, 1);
-		Color word_highlighted_color = Color(1, 1, 1);
+		Color tc_current_line_color = Color(1, 1, 1);
+		Color tc_word_highlighted_color = Color(1, 1, 1);
 
 		/* Code mode gutters */
-		Color code_folding_color = Color(1, 1, 1);
-		Color folded_code_region_color = Color(1, 1, 1);
-		Ref<Texture2D> can_fold_icon;
-		Ref<Texture2D> folded_icon;
-		Ref<Texture2D> can_fold_code_region_icon;
-		Ref<Texture2D> folded_code_region_icon;
-		Ref<Texture2D> folded_eol_icon;
-		Ref<Texture2D> completion_color_bg;
+		Color tc_code_folding_color = Color(1, 1, 1);
+		Color tc_folded_code_region_color = Color(1, 1, 1);
+		Ref<Texture2D> tc_can_fold_icon;
+		Ref<Texture2D> tc_folded_icon;
+		Ref<Texture2D> tc_can_fold_code_region_icon;
+		Ref<Texture2D> tc_folded_code_region_icon;
+		Ref<Texture2D> tc_folded_eol_icon;
+		Ref<Texture2D> tc_completion_color_bg;
 
-		Color breakpoint_color = Color(1, 1, 1);
-		Ref<Texture2D> breakpoint_icon;
+		Color tc_breakpoint_color = Color(1, 1, 1);
+		Ref<Texture2D> tc_breakpoint_icon;
 
-		Color bookmark_color = Color(1, 1, 1);
-		Ref<Texture2D> bookmark_icon;
+		Color tc_bookmark_color = Color(1, 1, 1);
+		Ref<Texture2D> tc_bookmark_icon;
 
-		Color executing_line_color = Color(1, 1, 1);
-		Ref<Texture2D> executing_line_icon;
+		Color tc_executing_line_color = Color(1, 1, 1);
+		Ref<Texture2D> tc_executing_line_icon;
 
-		Color line_number_color = Color(1, 1, 1);
+		Color tc_line_number_color = Color(1, 1, 1);
 
 		/* Code Completion */
-		Ref<StyleBox> code_completion_style;
-		int code_completion_icon_separation = 0;
+		Ref<StyleBox> tc_code_completion_style;
+		int tc_code_completion_icon_separation = 0;
 
-		int code_completion_max_width = 0;
-		int code_completion_max_lines = 7;
-		int code_completion_scroll_width = 0;
-		Color code_completion_scroll_color = Color(0, 0, 0, 0);
-		Color code_completion_scroll_hovered_color = Color(0, 0, 0, 0);
-		Color code_completion_background_color = Color(0, 0, 0, 0);
-		Color code_completion_selected_color = Color(0, 0, 0, 0);
-		Color code_completion_existing_color = Color(0, 0, 0, 0);
+		int tc_code_completion_max_width = 0;
+		int tc_code_completion_max_lines = 7;
+		int tc_code_completion_scroll_width = 0;
+		Color tc_code_completion_scroll_color = Color(0, 0, 0, 0);
+		Color tc_code_completion_scroll_hovered_color = Color(0, 0, 0, 0);
+		Color tc_code_completion_background_color = Color(0, 0, 0, 0);
+		Color tc_code_completion_selected_color = Color(0, 0, 0, 0);
+		Color tc_code_completion_existing_color = Color(0, 0, 0, 0);
 
 		/* Code hint */
-		Ref<StyleBox> code_hint_style;
-		Color code_hint_color;
+		Ref<StyleBox> tc_code_hint_style;
+		Color tc_code_hint_color;
 
 		/* Line length guideline & brace mismatch */
-		Color line_length_guideline_color;
-		Color brace_mismatch_color;
+		Color tc_line_length_guideline_color;
+		Color tc_brace_mismatch_color;
 
 #ifndef DISABLE_DEPRECATED
-		Color background_color = Color(1, 1, 1);
+		Color tc_background_color = Color(1, 1, 1);
 #endif // DISABLE_DEPRECATED
-	} theme_cache;
 
 	bool window_has_focus = true;
 	bool first_draw = true;
@@ -107714,100 +107154,97 @@ private:
 
 	void propagate_set_columns(TreeItem* p_item);
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> panel_style;
-		Ref<StyleBox> focus_style;
+		Ref<StyleBox> tc_panel_style;
+		Ref<StyleBox> tc_focus_style;
 
-		Ref<Font> font;
-		Ref<Font> tb_font;
-		int font_size = 0;
-		int tb_font_size = 0;
+		Ref<Font> tc_font;
+		Ref<Font> tc_tb_font;
+		int tc_font_size = 0;
+		int tc_tb_font_size = 0;
 
-		Ref<StyleBox> hovered;
-		Ref<StyleBox> hovered_dimmed;
-		Ref<StyleBox> hovered_selected;
-		Ref<StyleBox> hovered_selected_focus;
-		Ref<StyleBox> selected;
-		Ref<StyleBox> selected_focus;
-		Ref<StyleBox> cursor;
-		Ref<StyleBox> cursor_unfocus;
-		Ref<StyleBox> button_hover;
-		Ref<StyleBox> button_pressed;
-		Ref<StyleBox> title_button;
-		Ref<StyleBox> title_button_hover;
-		Ref<StyleBox> title_button_pressed;
-		Ref<StyleBox> custom_button;
-		Ref<StyleBox> custom_button_hover;
-		Ref<StyleBox> custom_button_pressed;
+		Ref<StyleBox> tc_hovered;
+		Ref<StyleBox> tc_hovered_dimmed;
+		Ref<StyleBox> tc_hovered_selected;
+		Ref<StyleBox> tc_hovered_selected_focus;
+		Ref<StyleBox> tc_selected;
+		Ref<StyleBox> tc_selected_focus;
+		Ref<StyleBox> tc_cursor;
+		Ref<StyleBox> tc_cursor_unfocus;
+		Ref<StyleBox> tc_button_hover;
+		Ref<StyleBox> tc_button_pressed;
+		Ref<StyleBox> tc_title_button;
+		Ref<StyleBox> tc_title_button_hover;
+		Ref<StyleBox> tc_title_button_pressed;
+		Ref<StyleBox> tc_custom_button;
+		Ref<StyleBox> tc_custom_button_hover;
+		Ref<StyleBox> tc_custom_button_pressed;
 
-		Color title_button_color;
+		Color tc_title_button_color;
 
-		Ref<Texture2D> checked;
-		Ref<Texture2D> unchecked;
-		Ref<Texture2D> checked_disabled;
-		Ref<Texture2D> unchecked_disabled;
-		Ref<Texture2D> indeterminate;
-		Ref<Texture2D> indeterminate_disabled;
-		Ref<Texture2D> arrow;
-		Ref<Texture2D> arrow_collapsed;
-		Ref<Texture2D> arrow_collapsed_mirrored;
-		Ref<Texture2D> select_arrow;
-		Ref<Texture2D> updown;
-		Ref<Texture2D> scroll_hint;
+		Ref<Texture2D> tc_checked;
+		Ref<Texture2D> tc_unchecked;
+		Ref<Texture2D> tc_checked_disabled;
+		Ref<Texture2D> tc_unchecked_disabled;
+		Ref<Texture2D> tc_indeterminate;
+		Ref<Texture2D> tc_indeterminate_disabled;
+		Ref<Texture2D> tc_arrow;
+		Ref<Texture2D> tc_arrow_collapsed;
+		Ref<Texture2D> tc_arrow_collapsed_mirrored;
+		Ref<Texture2D> tc_select_arrow;
+		Ref<Texture2D> tc_updown;
+		Ref<Texture2D> tc_scroll_hint;
 
-		Color font_color;
-		Color font_hovered_color;
-		Color font_hovered_dimmed_color;
-		Color font_hovered_selected_color;
-		Color font_selected_color;
-		Color font_disabled_color;
-		Color guide_color;
-		Color drop_on_item_color;
-		Color drop_position_color;
-		Color relationship_line_color;
-		Color parent_hl_line_color;
-		Color children_hl_line_color;
-		Color custom_button_font_highlight;
-		Color font_outline_color;
-		Color scroll_hint_color;
+		Color tc_font_color;
+		Color tc_font_hovered_color;
+		Color tc_font_hovered_dimmed_color;
+		Color tc_font_hovered_selected_color;
+		Color tc_font_selected_color;
+		Color tc_font_disabled_color;
+		Color tc_guide_color;
+		Color tc_drop_on_item_color;
+		Color tc_drop_position_color;
+		Color tc_relationship_line_color;
+		Color tc_parent_hl_line_color;
+		Color tc_children_hl_line_color;
+		Color tc_custom_button_font_highlight;
+		Color tc_font_outline_color;
+		Color tc_scroll_hint_color;
 
-		float base_scale = 1.0;
-		int font_outline_size = 0;
+		float tc_base_scale = 1.0;
+		int tc_font_outline_size = 0;
 
-		int h_separation = 0;
-		int v_separation = 0;
-		int inner_item_margin_bottom = 0;
-		int inner_item_margin_left = 0;
-		int inner_item_margin_right = 0;
-		int inner_item_margin_top = 0;
-		int item_margin = 0;
-		int check_h_separation = 0;
-		int icon_h_separation = 0;
-		int button_margin = 0;
-		int icon_max_width = 0;
-		Point2 offset;
+		int tc_h_separation = 0;
+		int tc_v_separation = 0;
+		int tc_inner_item_margin_bottom = 0;
+		int tc_inner_item_margin_left = 0;
+		int tc_inner_item_margin_right = 0;
+		int tc_inner_item_margin_top = 0;
+		int tc_item_margin = 0;
+		int tc_check_h_separation = 0;
+		int tc_icon_h_separation = 0;
+		int tc_button_margin = 0;
+		int tc_icon_max_width = 0;
+		Point2 tc_offset;
 
-		int draw_relationship_lines = 0;
-		int relationship_line_width = 0;
-		int parent_hl_line_width = 0;
-		int children_hl_line_width = 0;
-		int parent_hl_line_margin = 0;
-		int draw_guides = 0;
+		int tc_draw_relationship_lines = 0;
+		int tc_relationship_line_width = 0;
+		int tc_parent_hl_line_width = 0;
+		int tc_children_hl_line_width = 0;
+		int tc_parent_hl_line_margin = 0;
+		int tc_draw_guides = 0;
 
-		int dragging_unfold_wait_msec = 500;
+		int tc_dragging_unfold_wait_msec = 500;
 
-		int scroll_border = 0;
-		int scroll_speed = 0;
-		int scroll_max_sticky_items = 5;
+		int tc_scroll_border = 0;
+		int tc_scroll_speed = 0;
+		int tc_scroll_max_sticky_items = 5;
 
-		int scrollbar_margin_top = -1;
-		int scrollbar_margin_right = -1;
-		int scrollbar_margin_bottom = -1;
-		int scrollbar_margin_left = -1;
-		int scrollbar_h_separation = 0;
-		int scrollbar_v_separation = 0;
-	} theme_cache;
+		int tc_scrollbar_margin_top = -1;
+		int tc_scrollbar_margin_right = -1;
+		int tc_scrollbar_margin_bottom = -1;
+		int tc_scrollbar_margin_left = -1;
+		int tc_scrollbar_h_separation = 0;
+		int tc_scrollbar_v_separation = 0;
 
 	struct Cache
 	{
@@ -108540,23 +107977,6 @@ Transform3D ResourceImporterScene::get_collision_shapes_transform(const M& p_opt
 
 #include "core/io/net_socket.h"
 
-class ResourceImporterCSVTranslation : public ResourceImporter
-{
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-
-	virtual bool can_import_threaded() const override { return true; }
-};
 
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"

@@ -6686,17 +6686,17 @@ void Viewport::_sub_window_update(Window* p_window)
 		TextServer::set_current_drawn_item_oversampling(get_oversampling());
 
 		Ref<StyleBox> panel = gui.subwindow_focused == p_window
-								  ? p_window->theme_cache.embedded_border
-								  : p_window->theme_cache.embedded_unfocused_border;
+								  ? p_window->tc_embedded_border
+								  : p_window->tc_embedded_unfocused_border;
 		panel->draw(sw.canvas_item, r);
 
 		// Draw the title bar text.
-		Ref<Font> title_font = p_window->theme_cache.title_font;
-		int font_size = p_window->theme_cache.title_font_size;
-		Color title_color = p_window->theme_cache.title_color;
-		int title_height = p_window->theme_cache.title_height;
-		int close_h_ofs = p_window->theme_cache.close_h_offset;
-		int close_v_ofs = p_window->theme_cache.close_v_offset;
+		Ref<Font> title_font = p_window->tc_title_font;
+		int font_size = p_window->tc_title_font_size;
+		Color title_color = p_window->tc_title_color;
+		int title_height = p_window->tc_title_height;
+		int close_h_ofs = p_window->tc_close_h_offset;
+		int close_v_ofs = p_window->tc_close_v_offset;
 
 		const real_t title_space = r.size.width - panel->get_minimum_size().x - close_h_ofs;
 		if (title_space > 0) {
@@ -6707,8 +6707,8 @@ void Viewport::_sub_window_update(Window* p_window)
 			int x = (r.size.width - title_text.get_size().x) / 2;
 			int y = (-title_height - title_text.get_size().y) / 2;
 
-			Color font_outline_color = p_window->theme_cache.title_outline_modulate;
-			int outline_size = p_window->theme_cache.title_outline_size;
+			Color font_outline_color = p_window->tc_title_outline_modulate;
+			int outline_size = p_window->tc_title_outline_size;
 			if (outline_size > 0 && font_outline_color.a > 0) {
 				title_text.draw_outline(
 					sw.canvas_item, r.position + Point2(x, y), outline_size, font_outline_color);
@@ -6720,7 +6720,7 @@ void Viewport::_sub_window_update(Window* p_window)
 					   gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
 					   gui.subwindow_drag_close_inside;
 		Ref<Texture2D> close_icon =
-			pressed ? p_window->theme_cache.close_pressed : p_window->theme_cache.close;
+			pressed ? p_window->tc_close_pressed : p_window->tc_close;
 		close_icon->draw(
 			sw.canvas_item, r.position + Vector2(r.size.width - close_h_ofs, -close_v_ofs));
 
@@ -7256,7 +7256,7 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(
 
 	Rect2i r = Rect2i(p_subwindow->get_position(), p_subwindow->get_size());
 
-	int title_height = p_subwindow->theme_cache.title_height;
+	int title_height = p_subwindow->tc_title_height;
 
 	r.position.y -= title_height;
 	r.size.y += title_height;
@@ -7274,7 +7274,7 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(
 			? (p_point.y - r.position.y)
 			: (p_point.y > (r.position.y + r.size.y) ? (p_point.y - (r.position.y + r.size.y)) : 0);
 
-	int limit = p_subwindow->theme_cache.resize_margin;
+	int limit = p_subwindow->tc_resize_margin;
 
 	if (Math::abs(dist_x) > limit) {
 		return SUB_WINDOW_RESIZE_DISABLED;
@@ -7463,7 +7463,7 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 
 			if (!sw.window->get_flag(Window::FLAG_BORDERLESS)) {
 				// Check top bar.
-				int title_height = sw.window->theme_cache.title_height;
+				int title_height = sw.window->tc_title_height;
 				Rect2i title_bar = r;
 				title_bar.position.y -= title_height;
 				title_bar.size.y = title_height;
@@ -7471,13 +7471,13 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 				if (title_bar.size.y > 0 && title_bar.has_point(mb_pos)) {
 					click_on_window = sw.window;
 
-					int close_h_ofs = sw.window->theme_cache.close_h_offset;
-					int close_v_ofs = sw.window->theme_cache.close_v_offset;
+					int close_h_ofs = sw.window->tc_close_h_offset;
+					int close_v_ofs = sw.window->tc_close_v_offset;
 					bool pressed = gui.subwindow_focused == sw.window &&
 								   gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
 								   gui.subwindow_drag_close_inside;
-					Ref<Texture2D> close_icon = pressed ? sw.window->theme_cache.close_pressed
-														: sw.window->theme_cache.close;
+					Ref<Texture2D> close_icon = pressed ? sw.window->tc_close_pressed
+														: sw.window->tc_close;
 
 					Rect2 close_rect;
 					close_rect.position =
@@ -9148,11 +9148,11 @@ Point2i Window::get_position_with_decorations() const
 	}
 	if (visible && is_embedded() && !get_flag(Window::FLAG_BORDERLESS)) {
 		Size2 border_offset;
-		if (theme_cache.embedded_border.is_valid()) {
-			border_offset = theme_cache.embedded_border->get_offset();
+		if (tc_embedded_border.is_valid()) {
+			border_offset = tc_embedded_border->get_offset();
 		}
-		if (theme_cache.embedded_unfocused_border.is_valid()) {
-			border_offset = border_offset.max(theme_cache.embedded_unfocused_border->get_offset());
+		if (tc_embedded_unfocused_border.is_valid()) {
+			border_offset = border_offset.max(tc_embedded_unfocused_border->get_offset());
 		}
 		return position - border_offset;
 	}
@@ -9167,12 +9167,12 @@ Size2i Window::get_size_with_decorations() const
 	}
 	if (visible && is_embedded() && !get_flag(Window::FLAG_BORDERLESS)) {
 		Size2 border_size;
-		if (theme_cache.embedded_border.is_valid()) {
-			border_size = theme_cache.embedded_border->get_minimum_size();
+		if (tc_embedded_border.is_valid()) {
+			border_size = tc_embedded_border->get_minimum_size();
 		}
-		if (theme_cache.embedded_unfocused_border.is_valid()) {
+		if (tc_embedded_unfocused_border.is_valid()) {
 			border_size =
-				border_size.max(theme_cache.embedded_unfocused_border->get_minimum_size());
+				border_size.max(tc_embedded_unfocused_border->get_minimum_size());
 		}
 		return size + border_size;
 	}
@@ -10138,7 +10138,7 @@ Rect2i Window::fit_rect_in_parent(Rect2i p_rect, const Rect2i& p_parent_rect) co
 		p_rect.position.x = 0;
 	}
 
-	int title_height = get_flag(Window::FLAG_BORDERLESS) ? 0 : theme_cache.title_height;
+	int title_height = get_flag(Window::FLAG_BORDERLESS) ? 0 : tc_title_height;
 
 	if (p_rect.position.y < title_height) {
 		p_rect.position.y = title_height;
@@ -17940,7 +17940,7 @@ bool FileDialog::_can_use_native_popup() const
 		DisplayServerEnums::FEATURE_NATIVE_DIALOG_FILE);
 }
 
-Vector2i FileDialog::_get_list_mode_icon_size() const { return theme_cache.file->get_size(); }
+Vector2i FileDialog::_get_list_mode_icon_size() const { return tc_file->get_size(); }
 
 void FileDialog::_input_from_window(const InputEvent& p_event)
 {
@@ -18899,7 +18899,7 @@ void Popup::_update_shadow_offsets() const
 		return;
 	}
 
-	const Ref<StyleBox> sb = theme_cache.panel_style;
+	const Ref<StyleBox> sb = tc_panel_style;
 	if (sb.is_null() || sb->get_style_type() != StyleBox::STYLE_FLAT) {
 		panel->set_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 0);
 		return;
@@ -18964,7 +18964,7 @@ void Popup::_notification(int p_what)
 
 	case NOTIFICATION_THEME_CHANGED: {
 		if (is_panel && panel) {
-			panel->add_theme_style_override(SceneString(panel), theme_cache.panel_style.ptr());
+			panel->add_theme_style_override(SceneString(panel), tc_panel_style.ptr());
 
 			if (is_visible()) {
 				_update_shadow_offsets();
@@ -19020,7 +19020,7 @@ PackedStringArray Popup::get_configuration_warnings() const
 
 	if (is_panel && !DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
-		Ref<StyleBox> sb = theme_cache.panel_style;
+		Ref<StyleBox> sb = tc_panel_style;
 		if (sb.is_valid() && sb->get_style_type() == StyleBox::STYLE_FLAT &&
 			(sb->get_shadow_size() > 0 || sb->get_corner_radius(CORNER_TOP_LEFT) > 0 ||
 				sb->get_corner_radius(CORNER_TOP_RIGHT) > 0 ||
@@ -19154,8 +19154,8 @@ Size2 PopupMenu::_get_item_icon_size(int p_idx) const
 	Size2 icon_size = item.get_icon_size();
 
 	int max_width = 0;
-	if (theme_cache.icon_max_width > 0) {
-		max_width = theme_cache.icon_max_width;
+	if (tc_icon_max_width > 0) {
+		max_width = tc_icon_max_width;
 	}
 	if (item.icon_max_width > 0 && (max_width == 0 || item.icon_max_width < max_width)) {
 		max_width = item.icon_max_width;
@@ -19171,7 +19171,7 @@ Size2 PopupMenu::_get_item_icon_size(int p_idx) const
 
 Size2 PopupMenu::_get_contents_minimum_size() const
 {
-	Size2 minsize = theme_cache.panel_style->get_minimum_size();
+	Size2 minsize = tc_panel_style->get_minimum_size();
 	minsize.width += scroll_container->get_v_scroll_bar()->get_size().width;
 	// Take shadows into account.
 	minsize.width += panel->get_offset(SIDE_LEFT) - panel->get_offset(SIDE_RIGHT);
@@ -19181,7 +19181,7 @@ Size2 PopupMenu::_get_contents_minimum_size() const
 	real_t icon_max_w = 0.0;
 	real_t accel_max_w = 0.0;
 	bool has_check_gutter = false;
-	bool gutter_compact = theme_cache.gutter_compact;
+	bool gutter_compact = tc_gutter_compact;
 
 	for (int i = 0; i < items.size(); i++) {
 		_shape_item(i);
@@ -19197,40 +19197,40 @@ Size2 PopupMenu::_get_contents_minimum_size() const
 
 		if (items[i].accel != Key::NONE ||
 			(items[i].shortcut.is_valid() && items[i].shortcut->has_valid_event())) {
-			real_t accel_w = theme_cache.h_separation * 2 + items[i].accel_text_buf->get_size().x;
+			real_t accel_w = tc_h_separation * 2 + items[i].accel_text_buf->get_size().x;
 			accel_max_w = MAX(accel_w, accel_max_w);
 		}
 
-		real_t body_w = items[i].indent * theme_cache.indent + items[i].text_buf->get_size().x;
+		real_t body_w = items[i].indent * tc_indent + items[i].text_buf->get_size().x;
 		if (items[i].submenu) {
-			body_w += theme_cache.submenu->get_width();
+			body_w += tc_submenu->get_width();
 		}
 		body_max_w = MAX(body_max_w, body_w);
 
-		minsize.height += _get_item_height(i) + theme_cache.v_separation;
+		minsize.height += _get_item_height(i) + tc_v_separation;
 	}
 
 	body_max_w =
-		theme_cache.item_start_padding + body_max_w + accel_max_w + theme_cache.item_end_padding;
+		tc_item_start_padding + body_max_w + accel_max_w + tc_item_end_padding;
 
 	const int check_w =
-		MAX(theme_cache.checked->get_width(), theme_cache.radio_checked->get_width());
+		MAX(tc_checked->get_width(), tc_radio_checked->get_width());
 	if (gutter_compact) {
-		body_max_w += MAX(icon_max_w, check_w) + theme_cache.h_separation;
+		body_max_w += MAX(icon_max_w, check_w) + tc_h_separation;
 	}
 	else {
 		if (icon_max_w > 0) {
-			body_max_w += icon_max_w + theme_cache.h_separation;
+			body_max_w += icon_max_w + tc_h_separation;
 		}
 		if (has_check_gutter) {
-			body_max_w += check_w + theme_cache.h_separation;
+			body_max_w += check_w + tc_h_separation;
 		}
 	}
 
 	if (search_bar->is_visible()) {
 		Size2 sb_min_size = search_bar->get_minimum_size();
 		minsize.width += MAX(body_max_w, sb_min_size.width);
-		minsize.height += sb_min_size.height + theme_cache.search_bar_separation;
+		minsize.height += sb_min_size.height + tc_search_bar_separation;
 	}
 	else {
 		minsize.width += body_max_w;
@@ -19256,19 +19256,19 @@ int PopupMenu::_get_item_height(int p_idx) const
 	int icon_height = icon_size.height;
 	if (items[p_idx].checkable_type && !items[p_idx].separator) {
 		icon_height = MAX(icon_height,
-			MAX(theme_cache.checked->get_height(), theme_cache.radio_checked->get_height()));
+			MAX(tc_checked->get_height(), tc_radio_checked->get_height()));
 	}
 
 	int text_height = items[p_idx].text_buf->get_size().height;
 	if (text_height == 0 && !items[p_idx].separator) {
-		text_height = theme_cache.font->get_height(theme_cache.font_size);
+		text_height = tc_font->get_height(tc_font_size);
 	}
 
 	int separator_height = 0;
 	if (items[p_idx].separator) {
-		separator_height = MAX(theme_cache.separator_style->get_minimum_size().height,
-			MAX(theme_cache.labeled_separator_left->get_minimum_size().height,
-				theme_cache.labeled_separator_right->get_minimum_size().height));
+		separator_height = MAX(tc_separator_style->get_minimum_size().height,
+			MAX(tc_labeled_separator_left->get_minimum_size().height,
+				tc_labeled_separator_right->get_minimum_size().height));
 	}
 
 	return MAX(separator_height, MAX(text_height, icon_height));
@@ -19282,7 +19282,7 @@ int PopupMenu::_get_items_total_height() const
 		if (!items[i].visible) {
 			continue;
 		}
-		items_total_height += _get_item_height(i) + theme_cache.v_separation;
+		items_total_height += _get_item_height(i) + tc_v_separation;
 	}
 
 	return items_total_height;
@@ -19310,7 +19310,7 @@ int PopupMenu::_get_mouse_over(const Point2& p_over) const
 		if (!items[i].visible) {
 			continue;
 		}
-		bottom_edge += theme_cache.v_separation;
+		bottom_edge += tc_v_separation;
 		bottom_edge += _get_item_height(i);
 		if (bottom_edge > over_control_y) {
 			return i;
@@ -19369,18 +19369,18 @@ void PopupMenu::_draw_items()
 	bool rtl = control->is_layout_rtl();
 	// In Item::checkable_type enum order (less the non-checkable member), with disabled repeated at
 	// the end.
-	Ref<Texture2D> check[] = {theme_cache.checked, theme_cache.radio_checked,
-		theme_cache.checked_disabled, theme_cache.radio_checked_disabled};
-	Ref<Texture2D> uncheck[] = {theme_cache.unchecked, theme_cache.radio_unchecked,
-		theme_cache.unchecked_disabled, theme_cache.radio_unchecked_disabled};
+	Ref<Texture2D> check[] = {tc_checked, tc_radio_checked,
+		tc_checked_disabled, tc_radio_checked_disabled};
+	Ref<Texture2D> uncheck[] = {tc_unchecked, tc_radio_unchecked,
+		tc_unchecked_disabled, tc_radio_unchecked_disabled};
 	Ref<Texture2D> indeterminate[] = {
-		theme_cache.indeterminate, theme_cache.indeterminate_disabled};
+		tc_indeterminate, tc_indeterminate_disabled};
 	Ref<Texture2D> submenu;
 	if (rtl) {
-		submenu = theme_cache.submenu_mirrored;
+		submenu = tc_submenu_mirrored;
 	}
 	else {
-		submenu = theme_cache.submenu;
+		submenu = tc_submenu;
 	}
 
 	float display_width = control->get_size().width;
@@ -19389,7 +19389,7 @@ void PopupMenu::_draw_items()
 	real_t icon_max_w = 0.0;
 	real_t check_max_w = 0.0;
 	bool has_check_gutter = false;
-	bool gutter_compact = theme_cache.gutter_compact;
+	bool gutter_compact = tc_gutter_compact;
 	for (int i = 0; i < items.size(); i++) {
 		if (items[i].separator || !items[i].visible) {
 			continue;
@@ -19422,7 +19422,7 @@ void PopupMenu::_draw_items()
 
 		// For the first visible item only add half a separation. For all other items, add a whole
 		// separation to the offset.
-		ofs.y += first_visible ? theme_cache.v_separation / 2 : theme_cache.v_separation;
+		ofs.y += first_visible ? tc_v_separation / 2 : tc_v_separation;
 		first_visible = false;
 
 		_shape_item(i);
@@ -19431,45 +19431,45 @@ void PopupMenu::_draw_items()
 		Size2 icon_size = _get_item_icon_size(i);
 		float h = _get_item_height(i);
 		if ((active_submenu_index == -1 && i == mouse_over) || i == active_submenu_index) {
-			theme_cache.hover_style->draw(
-				ci, Rect2(item_ofs + Point2(0, -theme_cache.v_separation / 2),
-						Size2(display_width, h + theme_cache.v_separation)));
+			tc_hover_style->draw(
+				ci, Rect2(item_ofs + Point2(0, -tc_v_separation / 2),
+						Size2(display_width, h + tc_v_separation)));
 		}
 
 		String text = items[i].xl_text;
 
 		// Separator
-		item_ofs.x += items[i].indent * theme_cache.indent;
+		item_ofs.x += items[i].indent * tc_indent;
 		if (items[i].separator) {
 			if (!text.is_empty() || items[i].icon.is_valid()) {
 				int content_size =
-					items[i].text_buf->get_size().width + theme_cache.h_separation * 2;
+					items[i].text_buf->get_size().width + tc_h_separation * 2;
 				if (items[i].icon.is_valid()) {
-					content_size += icon_size.width + theme_cache.h_separation;
+					content_size += icon_size.width + tc_h_separation;
 				}
 
 				int content_center = display_width / 2;
 				int content_left = content_center - content_size / 2;
 				int content_right = content_center + content_size / 2;
 				if (content_left > item_ofs.x) {
-					int sep_h = theme_cache.labeled_separator_left->get_minimum_size().height;
+					int sep_h = tc_labeled_separator_left->get_minimum_size().height;
 					int sep_ofs = Math::floor((h - sep_h) / 2.0);
-					theme_cache.labeled_separator_left->draw(
+					tc_labeled_separator_left->draw(
 						ci, Rect2(item_ofs + Point2(0, sep_ofs),
 								Size2(MAX(0, content_left - item_ofs.x), sep_h)));
 				}
 				if (content_right < display_width) {
-					int sep_h = theme_cache.labeled_separator_right->get_minimum_size().height;
+					int sep_h = tc_labeled_separator_right->get_minimum_size().height;
 					int sep_ofs = Math::floor((h - sep_h) / 2.0);
-					theme_cache.labeled_separator_right->draw(
+					tc_labeled_separator_right->draw(
 						ci, Rect2(Point2(content_right, item_ofs.y + sep_ofs),
 								Size2(MAX(0, display_width - content_right), sep_h)));
 				}
 			}
 			else {
-				int sep_h = theme_cache.separator_style->get_minimum_size().height;
+				int sep_h = tc_separator_style->get_minimum_size().height;
 				int sep_ofs = Math::floor((h - sep_h) / 2.0);
-				theme_cache.separator_style->draw(
+				tc_separator_style->draw(
 					ci, Rect2(item_ofs + Point2(0, sep_ofs), Size2(display_width, sep_h)));
 			}
 		}
@@ -19478,7 +19478,7 @@ void PopupMenu::_draw_items()
 
 		// For non-separator items, add some padding for the content.
 		if (!items[i].separator) {
-			item_ofs.x += theme_cache.item_start_padding;
+			item_ofs.x += tc_item_start_padding;
 		}
 
 		// Checkboxes
@@ -19514,7 +19514,7 @@ void PopupMenu::_draw_items()
 			Point2 icon_pos;
 
 			if (items[i].separator) {
-				separator_ofs -= (icon_size.width + theme_cache.h_separation) / 2;
+				separator_ofs -= (icon_size.width + tc_h_separation) / 2;
 
 				if (rtl) {
 					icon_pos = Size2(
@@ -19523,13 +19523,13 @@ void PopupMenu::_draw_items()
 				}
 				else {
 					icon_pos = item_ofs + Size2(separator_ofs, 0);
-					separator_ofs += icon_size.width + theme_cache.h_separation;
+					separator_ofs += icon_size.width + tc_h_separation;
 				}
 			}
 			else {
 				const real_t check_w = (gutter_compact || !has_check_gutter)
 										   ? 0
-										   : (check_max_w + theme_cache.h_separation);
+										   : (check_max_w + tc_h_separation);
 				if (rtl) {
 					icon_pos =
 						Size2(control->get_size().width - item_ofs.x - check_w - icon_size.width,
@@ -19548,13 +19548,13 @@ void PopupMenu::_draw_items()
 		if (items[i].submenu) {
 			if (rtl) {
 				submenu->draw(ci,
-					Point2(theme_cache.item_end_padding,
+					Point2(tc_item_end_padding,
 						item_ofs.y + Math::floor(h - submenu->get_height()) / 2),
 					icon_color);
 			}
 			else {
 				submenu->draw(ci,
-					Point2(display_width - submenu->get_width() - theme_cache.item_end_padding,
+					Point2(display_width - submenu->get_width() - tc_item_end_padding,
 						item_ofs.y + Math::floor(h - submenu->get_height()) / 2),
 					icon_color);
 			}
@@ -19566,25 +19566,25 @@ void PopupMenu::_draw_items()
 				Vector2 text_pos = Point2(separator_ofs,
 					item_ofs.y + Math::floor((h - items[i].text_buf->get_size().y) / 2.0));
 
-				if (theme_cache.font_separator_outline_size > 0 &&
-					theme_cache.font_separator_outline_color.a > 0) {
+				if (tc_font_separator_outline_size > 0 &&
+					tc_font_separator_outline_color.a > 0) {
 					items[i].text_buf->draw_outline(ci, text_pos,
-						theme_cache.font_separator_outline_size,
-						theme_cache.font_separator_outline_color);
+						tc_font_separator_outline_size,
+						tc_font_separator_outline_color);
 				}
-				items[i].text_buf->draw(ci, text_pos, theme_cache.font_separator_color);
+				items[i].text_buf->draw(ci, text_pos, tc_font_separator_color);
 			}
 		}
 		else {
 			if (gutter_compact) {
-				item_ofs.x += MAX(icon_max_w, check_max_w) + theme_cache.h_separation;
+				item_ofs.x += MAX(icon_max_w, check_max_w) + tc_h_separation;
 			}
 			else {
 				if (icon_max_w > 0) {
-					item_ofs.x += icon_max_w + theme_cache.h_separation;
+					item_ofs.x += icon_max_w + tc_h_separation;
 				}
 				if (has_check_gutter) {
-					item_ofs.x += check_max_w + theme_cache.h_separation;
+					item_ofs.x += check_max_w + tc_h_separation;
 				}
 			}
 			if (rtl) {
@@ -19593,30 +19593,30 @@ void PopupMenu::_draw_items()
 							  item_ofs.x,
 						item_ofs.y) +
 					Point2(0, Math::floor((h - items[i].text_buf->get_size().y) / 2.0));
-				if (theme_cache.font_outline_size > 0 && theme_cache.font_outline_color.a > 0) {
-					items[i].text_buf->draw_outline(ci, text_pos, theme_cache.font_outline_size,
-						theme_cache.font_outline_color);
+				if (tc_font_outline_size > 0 && tc_font_outline_color.a > 0) {
+					items[i].text_buf->draw_outline(ci, text_pos, tc_font_outline_size,
+						tc_font_outline_color);
 				}
 				items[i].text_buf->draw(ci, text_pos,
-					items[i].disabled ? theme_cache.font_disabled_color
+					items[i].disabled ? tc_font_disabled_color
 									  : (((active_submenu_index == -1 && i == mouse_over) ||
 											 i == active_submenu_index)
-												? theme_cache.font_hover_color
-												: theme_cache.font_color));
+												? tc_font_hover_color
+												: tc_font_color));
 			}
 			else {
 				Vector2 text_pos =
 					item_ofs + Point2(0, Math::floor((h - items[i].text_buf->get_size().y) / 2.0));
-				if (theme_cache.font_outline_size > 0 && theme_cache.font_outline_color.a > 0) {
-					items[i].text_buf->draw_outline(ci, text_pos, theme_cache.font_outline_size,
-						theme_cache.font_outline_color);
+				if (tc_font_outline_size > 0 && tc_font_outline_color.a > 0) {
+					items[i].text_buf->draw_outline(ci, text_pos, tc_font_outline_size,
+						tc_font_outline_color);
 				}
 				items[i].text_buf->draw(ci, text_pos,
-					items[i].disabled ? theme_cache.font_disabled_color
+					items[i].disabled ? tc_font_disabled_color
 									  : (((active_submenu_index == -1 && i == mouse_over) ||
 											 i == active_submenu_index)
-												? theme_cache.font_hover_color
-												: theme_cache.font_color));
+												? tc_font_hover_color
+												: tc_font_color));
 			}
 		}
 
@@ -19624,23 +19624,23 @@ void PopupMenu::_draw_items()
 		if (items[i].accel != Key::NONE ||
 			(items[i].shortcut.is_valid() && items[i].shortcut->has_valid_event())) {
 			if (rtl) {
-				item_ofs.x = theme_cache.item_end_padding;
+				item_ofs.x = tc_item_end_padding;
 			}
 			else {
 				item_ofs.x = display_width - items[i].accel_text_buf->get_size().x -
-							 theme_cache.item_end_padding;
+							 tc_item_end_padding;
 			}
 			Vector2 text_pos =
 				item_ofs +
 				Point2(0, Math::floor((h - items[i].accel_text_buf->get_size().y) / 2.0));
-			if (theme_cache.font_outline_size > 0 && theme_cache.font_outline_color.a > 0) {
+			if (tc_font_outline_size > 0 && tc_font_outline_color.a > 0) {
 				items[i].accel_text_buf->draw_outline(
-					ci, text_pos, theme_cache.font_outline_size, theme_cache.font_outline_color);
+					ci, text_pos, tc_font_outline_size, tc_font_outline_color);
 			}
 			items[i].accel_text_buf->draw(ci, text_pos,
 				((active_submenu_index == -1 && i == mouse_over) || i == active_submenu_index)
-					? theme_cache.font_hover_color
-					: theme_cache.font_accelerator_color);
+					? tc_font_hover_color
+					: tc_font_accelerator_color);
 		}
 
 		// Cache the item vertical offset from the first item and the height.
@@ -19745,7 +19745,7 @@ void PopupMenu::_update_shadow_offsets() const
 		return;
 	}
 
-	Ref<StyleBox> sb = theme_cache.panel_style;
+	Ref<StyleBox> sb = tc_panel_style;
 	if (sb.is_null() || sb->get_style_type() != StyleBox::STYLE_FLAT) {
 		panel->set_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_MINSIZE, 0);
 		return;
@@ -20177,7 +20177,7 @@ PackedStringArray PopupMenu::get_configuration_warnings() const
 
 	if (!DisplayServer::is_window_transparency_available() &&
 		!GLOBAL_GET_CACHED(bool, "display/window/subwindows/embed_subwindows")) {
-		Ref<StyleBox> sb = theme_cache.panel_style;
+		Ref<StyleBox> sb = tc_panel_style;
 		if (sb.is_valid() && sb->get_style_type() == StyleBox::STYLE_FLAT &&
 			(sb->get_shadow_size() > 0 || sb->get_corner_radius(CORNER_TOP_LEFT) > 0 ||
 				sb->get_corner_radius(CORNER_TOP_RIGHT) > 0 ||
@@ -20378,1411 +20378,19 @@ void PopupMenu::_bind_compatibility_methods() {}
 #ifdef MACOS_ENABLED
 #endif
 
-// --- color_mode (flattened internal helper) ---
-
-class ColorMode final
-{
-public:
-	ColorPicker* color_picker = nullptr;
-	ColorPicker::ColorModeType mode_type = ColorPicker::MODE_RGB;
-	float cached_hue = 0.0f;
-	float cached_saturation = 0.0f;
-	Ref<GradientTexture2D> rgb_texture[3];
-	Ref<GradientTexture2D> hue_texture;
-
-	ColorMode(ColorPicker* p_color_picker, ColorPicker::ColorModeType p_type = ColorPicker::MODE_RGB)
-		: color_picker(p_color_picker), mode_type(p_type)
-	{
-	}
-
-	String get_name() const
-	{
-		switch (mode_type) {
-		case ColorPicker::MODE_RGB:
-			return "RGB";
-		case ColorPicker::MODE_HSV:
-			return "HSV";
-		case ColorPicker::MODE_LINEAR:
-			return ETR("Linear");
-		case ColorPicker::MODE_OKHSL:
-			return "OKHSL";
-		default:
-			return String();
-		}
-	}
-
-	int get_slider_count() const { return 3; }
-
-	float get_slider_step() const
-	{
-		return mode_type == ColorPicker::MODE_LINEAR ? 0.001f : 1.0f;
-	}
-
-	float get_spinbox_arrow_step() const
-	{
-		return mode_type == ColorPicker::MODE_LINEAR ? 0.01f : get_slider_step();
-	}
-
-	String get_slider_label(int idx) const
-	{
-		ERR_FAIL_INDEX_V_MSG(idx, get_slider_count(), String(), "Couldn't get slider label.");
-		switch (mode_type) {
-		case ColorPicker::MODE_HSV: {
-			static const char* const labels[3] = {"H", "S", "V"};
-			return labels[idx];
-		}
-		case ColorPicker::MODE_OKHSL: {
-			static const char* const labels[3] = {"H", "S", "L"};
-			return labels[idx];
-		}
-		case ColorPicker::MODE_RGB:
-		case ColorPicker::MODE_LINEAR:
-		default: {
-			static const char* const labels[3] = {"R", "G", "B"};
-			return labels[idx];
-		}
-		}
-	}
-
-	float get_slider_max(int idx) const
-	{
-		ERR_FAIL_INDEX_V_MSG(idx, get_slider_count(), 0, "Couldn't get slider max value.");
-		switch (mode_type) {
-		case ColorPicker::MODE_RGB:
-			return 255.0f;
-		case ColorPicker::MODE_LINEAR:
-			return 1.0f;
-		case ColorPicker::MODE_HSV:
-		case ColorPicker::MODE_OKHSL:
-		default: {
-			static constexpr float slider_max[3] = {359.0f, 100.0f, 100.0f};
-			return slider_max[idx];
-		}
-		}
-	}
-
-	bool get_allow_greater() const
-	{
-		return mode_type == ColorPicker::MODE_RGB || mode_type == ColorPicker::MODE_LINEAR;
-	}
-
-	float get_alpha_slider_max() const
-	{
-		return mode_type == ColorPicker::MODE_LINEAR ? 1.0f : 255.0f;
-	}
-
-	float get_alpha_slider_value() const
-	{
-		return mode_type == ColorPicker::MODE_LINEAR
-				   ? color_picker->get_pick_color().a
-				   : color_picker->get_pick_color().a * 255.0f;
-	}
-
-	float get_slider_value(int idx) const;
-	Color get_color() const;
-	void _value_changed();
-	void _greater_value_inputted();
-	void slider_draw(int p_which);
-};
-
-float ColorMode::get_slider_value(int idx) const
-{
-	switch (mode_type) {
-	case ColorPicker::MODE_RGB: {
-		ERR_FAIL_INDEX_V_MSG(idx, get_slider_count(), 0, "Couldn't get slider value.");
-		return color_picker->color_normalized[idx] * 255;
-	}
-	case ColorPicker::MODE_HSV: {
-		switch (idx) {
-		case 0:
-			return (color_picker->color_normalized.get_s() > 0)
-					   ? color_picker->color_normalized.get_h() * 360.0
-					   : cached_hue;
-		case 1:
-			return (color_picker->color_normalized.get_v() > 0)
-					   ? color_picker->color_normalized.get_s() * 100.0
-					   : cached_saturation;
-		case 2:
-			return color_picker->color_normalized.get_v() * 100.0;
-		default:
-			ERR_FAIL_V_MSG(0, "Couldn't get slider value.");
-		}
-	}
-	case ColorPicker::MODE_LINEAR: {
-		ERR_FAIL_INDEX_V_MSG(idx, get_slider_count(), 0, "Couldn't get slider value.");
-		Color color = color_picker->color_normalized.srgb_to_linear();
-		return color[idx];
-	}
-	case ColorPicker::MODE_OKHSL: {
-		switch (idx) {
-		case 0:
-			return (color_picker->color_normalized.get_ok_hsl_s() > 0)
-					   ? color_picker->color_normalized.get_ok_hsl_h() * 360.0
-					   : cached_hue;
-		case 1:
-			return (color_picker->color_normalized.get_ok_hsl_l() > 0)
-					   ? color_picker->color_normalized.get_ok_hsl_s() * 100.0
-					   : cached_saturation;
-		case 2:
-			return color_picker->color_normalized.get_ok_hsl_l() * 100.0;
-		default:
-			ERR_FAIL_V_MSG(0, "Couldn't get slider value.");
-		}
-	}
-	default:
-		ERR_FAIL_V_MSG(0, "Couldn't get slider value.");
-	}
-}
-
-Color ColorMode::get_color() const
-{
-	Vector<float> values = color_picker->get_active_slider_values();
-	switch (mode_type) {
-	case ColorPicker::MODE_RGB: {
-		Color color;
-		for (int i = 0; i < 4; i++) {
-			color[i] = values[i] / 255.0;
-		}
-		return color;
-	}
-	case ColorPicker::MODE_HSV:
-		return Color::from_hsv(
-			values[0] / 360.0, values[1] / 100.0, values[2] / 100.0, values[3] / 255.0);
-	case ColorPicker::MODE_LINEAR: {
-		Color color;
-		for (int i = 0; i < 4; i++) {
-			color[i] = values[i];
-		}
-		return color.linear_to_srgb();
-	}
-	case ColorPicker::MODE_OKHSL:
-		return Color::from_ok_hsl(
-			values[0] / 360.0, values[1] / 100.0, values[2] / 100.0, values[3] / 255.0);
-	default:
-		return Color();
-	}
-}
-
-void ColorMode::_value_changed()
-{
-	if (mode_type == ColorPicker::MODE_HSV) {
-		Vector<float> values = color_picker->get_active_slider_values();
-
-		if (values[1] > 0 || values[0] != cached_hue) {
-			cached_hue = values[0];
-		}
-		if (values[2] > 0 || values[1] != cached_saturation) {
-			cached_saturation = values[1];
-		}
-
-		color_picker->h = color_picker->sliders[0]->get_value() / 360.0;
-		color_picker->s = color_picker->sliders[1]->get_value() / 100.0;
-		color_picker->v = color_picker->sliders[2]->get_value() / 100.0;
-
-		color_picker->hsv_cached = true;
-	}
-	else if (mode_type == ColorPicker::MODE_OKHSL) {
-		Vector<float> values = color_picker->get_active_slider_values();
-
-		if (values[1] > 0 || values[0] != cached_hue) {
-			cached_hue = values[0];
-		}
-		if (values[2] > 0 || values[1] != cached_saturation) {
-			cached_saturation = values[1];
-		}
-
-		color_picker->ok_hsl_h = color_picker->sliders[0]->get_value() / 360.0;
-		color_picker->ok_hsl_s = color_picker->sliders[1]->get_value() / 100.0;
-		color_picker->ok_hsl_l = color_picker->sliders[2]->get_value() / 100.0;
-
-		color_picker->okhsl_cached = true;
-	}
-}
-
-void ColorMode::_greater_value_inputted()
-{
-	if (mode_type == ColorPicker::MODE_RGB) {
-		Slider** sliders = color_picker->sliders;
-		Color color_prev = color_picker->color;
-		for (int i = 0; i < 3; i++) {
-			if (sliders[i]->get_value() > 255) {
-				color_prev[i] = sliders[i]->get_value() / 255.0;
-			}
-		}
-		Color linear_color = color_prev.srgb_to_linear();
-		float multiplier = MAX(1, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
-		Color srgb = Color(linear_color.r / multiplier, linear_color.g / multiplier,
-			linear_color.b / multiplier, linear_color.a)
-						 .linear_to_srgb();
-		sliders[0]->set_value_no_signal(srgb.r * 255);
-		sliders[1]->set_value_no_signal(srgb.g * 255);
-		sliders[2]->set_value_no_signal(srgb.b * 255);
-
-		color_picker->intensity = Math::log2(multiplier);
-		color_picker->intensity_slider->set_value_no_signal(color_picker->intensity);
-	}
-	else if (mode_type == ColorPicker::MODE_LINEAR) {
-		Slider** sliders = color_picker->sliders;
-		Color color_prev = color_picker->color;
-		Color linear_color = color_prev.srgb_to_linear();
-		for (int i = 0; i < 3; i++) {
-			if (sliders[i]->get_value() > 1 + CMP_EPSILON) {
-				linear_color[i] = sliders[i]->get_value();
-			}
-		}
-
-		float multiplier = MAX(1, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
-
-		sliders[0]->set_value_no_signal(linear_color.r / multiplier);
-		sliders[1]->set_value_no_signal(linear_color.g / multiplier);
-		sliders[2]->set_value_no_signal(linear_color.b / multiplier);
-
-		color_picker->intensity = Math::log2(multiplier);
-		color_picker->intensity_slider->set_value_no_signal(color_picker->intensity);
-	}
-}
-
-void ColorMode::slider_draw(int p_which)
-{
-	Slider* slider = color_picker->get_slider(p_which);
-	Size2 size = slider->get_size();
-	Color color = color_picker->color_normalized;
-	const real_t margin = 16 * color_picker->theme_cache.base_scale;
-
-	switch (mode_type) {
-	case ColorPicker::MODE_RGB:
-	case ColorPicker::MODE_LINEAR: {
-		Color left_color = Color(
-			p_which == 0 ? 0 : color.r, p_which == 1 ? 0 : color.g, p_which == 2 ? 0 : color.b);
-		Color right_color = Color(
-			p_which == 0 ? 1 : color.r, p_which == 1 ? 1 : color.g, p_which == 2 ? 1 : color.b);
-
-		if (rgb_texture[p_which].is_null()) {
-			rgb_texture[p_which].instantiate();
-			rgb_texture[p_which]->set_width(400);
-			rgb_texture[p_which]->set_height(6);
-		}
-
-		Ref<GradientTexture2D> gradient_texture = rgb_texture[p_which];
-		Ref<Gradient> gradient = gradient_texture->get_gradient();
-		if (gradient.is_null()) {
-			gradient.instantiate();
-			PackedFloat32Array offsets = {0, 1};
-			gradient->set_offsets(offsets);
-			gradient->set_interpolation_color_space(mode_type == ColorPicker::MODE_LINEAR
-														? Gradient::ColorSpace::GRADIENT_COLOR_SPACE_LINEAR_SRGB
-														: Gradient::ColorSpace::GRADIENT_COLOR_SPACE_SRGB);
-			gradient_texture->set_gradient(gradient);
-		}
-
-		PackedColorArray colors = {left_color, right_color};
-		gradient->set_colors(colors);
-
-		slider->draw_texture_rect(
-			gradient_texture.ptr(), Rect2(Vector2(), Vector2(size.x, margin)), false);
-	} break;
-
-	case ColorPicker::MODE_HSV: {
-		Vector<Vector2> pos;
-		pos.resize(4);
-		Vector<Color> col;
-		col.resize(4);
-		Color left_color;
-		Color right_color;
-
-		if (p_which == 0) {
-			float v = color.get_v();
-			left_color = Color(v, v, v);
-			right_color = left_color;
-		}
-		else {
-			Color s_col;
-			Color v_col;
-			s_col.set_hsv(color.get_h(), 0, color.get_v());
-			left_color = (p_which == 1) ? s_col : Color(0, 0, 0);
-
-			float s_col_hue =
-				(Math::is_zero_approx(color.get_s())) ? cached_hue / 360.0 : color.get_h();
-			s_col.set_hsv(s_col_hue, 1, color.get_v());
-			v_col.set_hsv(color.get_h(), color.get_s(), 1);
-			right_color = (p_which == 1) ? s_col : v_col;
-		}
-		col.set(0, left_color);
-		col.set(1, right_color);
-		col.set(2, right_color);
-		col.set(3, left_color);
-		pos.set(0, Vector2(0, 0));
-		pos.set(1, Vector2(size.x, 0));
-		pos.set(2, Vector2(size.x, margin));
-		pos.set(3, Vector2(0, margin));
-
-		slider->draw_polygon(pos, col);
-
-		if (p_which == 0) {
-			Ref<Texture2D> hue = color_picker->theme_cache.color_hue;
-			slider->draw_texture_rect(hue.ptr(), Rect2(Vector2(), Vector2(size.x, margin)), false,
-				Color::from_hsv(0, 0, color.get_v(), color.get_s()));
-		}
-	} break;
-
-	case ColorPicker::MODE_OKHSL: {
-		Vector<Vector2> pos;
-		Vector<Color> col;
-		Color left_color;
-		Color right_color;
-		float okhsl_l = color.get_ok_hsl_l();
-		float slider_hue =
-			(Math::is_zero_approx(color.get_ok_hsl_s())) ? cached_hue / 360.0 : color.get_ok_hsl_h();
-		float slider_sat = (Math::is_zero_approx(okhsl_l) || Math::is_equal_approx(okhsl_l, 1))
-							   ? cached_saturation / 100.0
-							   : color.get_ok_hsl_s();
-
-		if (p_which == 2) {
-			pos.resize(6);
-			col.resize(6);
-			left_color = Color(0, 0, 0);
-			Color middle_color = Color::from_ok_hsl(slider_hue, slider_sat, 0.5);
-			right_color.set_ok_hsl(slider_hue, slider_sat, 1);
-
-			col.set(0, left_color);
-			col.set(1, middle_color);
-			col.set(2, right_color);
-			col.set(3, right_color);
-			col.set(4, middle_color);
-			col.set(5, left_color);
-			pos.set(0, Vector2(0, 0));
-			pos.set(1, Vector2(size.x * 0.5, 0));
-			pos.set(2, Vector2(size.x, 0));
-			pos.set(3, Vector2(size.x, margin));
-			pos.set(4, Vector2(size.x * 0.5, margin));
-			pos.set(5, Vector2(0, margin));
-			slider->draw_polygon(pos, col);
-		}
-		else if (p_which == 1) {
-			pos.resize(4);
-			col.resize(4);
-
-			left_color.set_ok_hsl(slider_hue, 0, okhsl_l);
-			right_color.set_ok_hsl(slider_hue, 1, okhsl_l);
-
-			col.set(0, left_color);
-			col.set(1, right_color);
-			col.set(2, right_color);
-			col.set(3, left_color);
-			pos.set(0, Vector2(0, 0));
-			pos.set(1, Vector2(size.x, 0));
-			pos.set(2, Vector2(size.x, margin));
-			pos.set(3, Vector2(0, margin));
-			slider->draw_polygon(pos, col);
-		}
-		else if (p_which == 0) {
-			const int precision = 7;
-			if (hue_texture.is_null()) {
-				hue_texture.instantiate();
-				hue_texture->set_width(400);
-				hue_texture->set_height(6);
-			}
-			Ref<Gradient> hue_gradient = hue_texture->get_gradient();
-			if (hue_gradient.is_null()) {
-				hue_gradient.instantiate();
-				PackedFloat32Array offsets;
-				offsets.resize(precision);
-				for (int i = 0; i < precision; i++) {
-					float h = i / float(precision - 1);
-					offsets.write[i] = h;
-				}
-				hue_gradient->set_offsets(offsets);
-				hue_gradient->set_interpolation_color_space(
-					Gradient::ColorSpace::GRADIENT_COLOR_SPACE_OKLAB);
-				hue_texture->set_gradient(hue_gradient);
-			}
-
-			PackedColorArray colors;
-			colors.resize(precision);
-
-			for (int i = 0; i < precision; i++) {
-				float h = i / float(precision - 1);
-				colors.write[i] = Color::from_ok_hsl(h, slider_sat, okhsl_l);
-			}
-			hue_gradient->set_colors(colors);
-			slider->draw_texture_rect(
-				hue_texture.ptr(), Rect2(Vector2(), Vector2(size.x, margin)), false);
-		}
-	} break;
-
-	default:
-		break;
-	}
-}
-
-// --- color_picker_shape (internal helper) ---
-
-class ColorPickerShape final
-{
-	static constexpr float WHEEL_RADIUS = 0.42f;
-
-	static inline Ref<Shader> wheel_shader;
-	static inline Ref<Shader> circle_shader;
-	static inline Ref<Shader> circle_ok_color_shader;
-	static inline Ref<Shader> rectangle_ok_color_hs_shader;
-	static inline Ref<Shader> rectangle_ok_color_hl_shader;
-
-	ColorPicker* color_picker = nullptr;
-	ColorPicker::PickerShapeType shape_type = ColorPicker::SHAPE_NONE;
-	bool is_dragging = false;
-
-	// HSV Rectangle controls.
-	Control* sv_square = nullptr;
-	Control* hue_slider = nullptr;
-
-	// OK HS / HL Rectangle controls.
-	Control* rectangle_margin = nullptr;
-	Control* square = nullptr;
-	Control* square_overlay = nullptr;
-
-	// HSV Wheel controls & state.
-	Control* wheel = nullptr;
-	Control* wheel_uv = nullptr;
-	bool wheel_focused = true;
-	bool spinning = false;
-	bool rotate_next_echo_event = false;
-
-	// VHS / OKHSL Circle controls & state (value_slider shared with OK rectangles).
-	Control* circle = nullptr;
-	Control* circle_overlay = nullptr;
-	Control* value_slider = nullptr;
-	Vector2i circle_keyboard_joypad_picker_cursor_position;
-
-	void _emit_color_changed();
-
-	Ref<Shader> _get_shader() const;
-	void _initialize_controls();
-	void _update_cursor(const Vector2& p_color_change_vector, bool p_is_echo);
-
-	bool can_handle(
-		const InputEvent& p_event, Vector2& r_position, bool* r_is_click = nullptr);
-	void cancel_event();
-
-	void draw_focus_rect(Control* p_control, const Rect2& p_rect = Rect2());
-	void draw_focus_circle(Control* p_control);
-	void draw_sv_square(Control* p_control, const Rect2& p_square, bool p_draw_focus = true);
-	void draw_cursor(Control* p_control, const Vector2& p_center, bool p_draw_bg = true);
-	void draw_circle_cursor(Control* p_control, float p_hue, float p_saturation);
-
-	void connect_shape_focus(Control* p_shape);
-	void shape_focus_entered();
-	void shape_focus_exited();
-
-	void handle_cursor_editing(const InputEvent& p_event, Control* p_control);
-	int get_edge_h_change(const Vector2& p_color_change_vector);
-	float get_h_on_circle_edge(const Vector2& p_color_change_vector);
-	float _get_h_on_wheel(const Vector2& p_color_change_vector);
-	void _reset_wheel_focus();
-	void update_circle_cursor(
-		const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset);
-
-	// Draw & input callbacks dispatched by shape_type.
-	void _sv_square_draw();
-	void _hue_slider_draw();
-	void _square_draw();
-	void _square_overlay_draw();
-	void _value_slider_draw();
-	void _wheel_input(const InputEvent& p_event);
-	void _wheel_draw();
-	void _wheel_uv_draw();
-	void _circle_input(const InputEvent& p_event);
-	void _value_slider_input(const InputEvent& p_event);
-	void _circle_draw();
-	void _circle_overlay_draw();
-
-public:
-	Vector<Control*> controls;
-	bool is_initialized = false;
-	bool cursor_editing = false;
-	float echo_multiplier = 1.0f;
-
-	static void init_shaders();
-	static void finish_shaders();
-
-	ColorPicker::PickerShapeType get_shape_type() const { return shape_type; }
-	String get_name() const;
-	Ref<Texture2D> get_icon() const;
-	bool is_ok_hsl() const;
-
-	void initialize_controls();
-	void update_theme();
-	void grab_focus();
-
-	ColorPickerShape(ColorPicker* p_color_picker, ColorPicker::PickerShapeType p_type);
-};
-
-void ColorPickerShape::init_shaders()
-{
-	wheel_shader.instantiate();
-	wheel_shader->set_code(R"(
-// ColorPicker wheel shader.
-
-shader_type canvas_item;
-
-uniform float wheel_radius = 0.42;
-
-void fragment() {
-	float x = UV.x - 0.5;
-	float y = UV.y - 0.5;
-	float a = atan(y, x);
-	x += 0.001;
-	y += 0.001;
-	float b = float(sqrt(x * x + y * y) < 0.5) * float(sqrt(x * x + y * y) > wheel_radius);
-	x -= 0.002;
-	float b2 = float(sqrt(x * x + y * y) < 0.5) * float(sqrt(x * x + y * y) > wheel_radius);
-	y -= 0.002;
-	float b3 = float(sqrt(x * x + y * y) < 0.5) * float(sqrt(x * x + y * y) > wheel_radius);
-	x += 0.002;
-	float b4 = float(sqrt(x * x + y * y) < 0.5) * float(sqrt(x * x + y * y) > wheel_radius);
-
-	COLOR = vec4(clamp((abs(fract(((a - TAU) / TAU) + vec3(3.0, 2.0, 1.0) / 3.0) * 6.0 - 3.0) - 1.0), 0.0, 1.0), (b + b2 + b3 + b4) / 4.00);
-}
-)");
-
-	circle_shader.instantiate();
-	circle_shader->set_code(R"(
-// ColorPicker circle shader.
-
-shader_type canvas_item;
-
-uniform float v = 1.0;
-
-void fragment() {
-	float x = UV.x - 0.5;
-	float y = UV.y - 0.5;
-	float a = atan(y, x);
-	x += 0.001;
-	y += 0.001;
-	float b = float(sqrt(x * x + y * y) < 0.5);
-	x -= 0.002;
-	float b2 = float(sqrt(x * x + y * y) < 0.5);
-	y -= 0.002;
-	float b3 = float(sqrt(x * x + y * y) < 0.5);
-	x += 0.002;
-	float b4 = float(sqrt(x * x + y * y) < 0.5);
-
-	COLOR = vec4(mix(vec3(1.0), clamp(abs(fract(vec3((a - TAU) / TAU) + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - vec3(3.0)) - vec3(1.0), 0.0, 1.0), ((float(sqrt(x * x + y * y)) * 2.0)) / 1.0) * vec3(v), (b + b2 + b3 + b4) / 4.00);
-})");
-
-	circle_ok_color_shader.instantiate();
-	circle_ok_color_shader->set_code(OK_COLOR_SHADER + R"(
-// ColorPicker ok color hsl circle shader.
-
-uniform float ok_hsl_l = 1.0;
-
-void fragment() {
-	float x = UV.x - 0.5;
-	float y = UV.y - 0.5;
-	float h = atan(y, x) / (2.0 * M_PI);
-	float s = sqrt(x * x + y * y) * 2.0;
-	vec3 col = okhsl_to_srgb(vec3(h, s, ok_hsl_l));
-	x += 0.001;
-	y += 0.001;
-	float b = float(sqrt(x * x + y * y) < 0.5);
-	x -= 0.002;
-	float b2 = float(sqrt(x * x + y * y) < 0.5);
-	y -= 0.002;
-	float b3 = float(sqrt(x * x + y * y) < 0.5);
-	x += 0.002;
-	float b4 = float(sqrt(x * x + y * y) < 0.5);
-	COLOR = vec4(col, (b + b2 + b3 + b4) / 4.00);
-})");
-
-	rectangle_ok_color_hs_shader.instantiate();
-	rectangle_ok_color_hs_shader->set_code(OK_COLOR_SHADER + R"(
-// ColorPicker ok color hs rectangle shader.
-
-uniform float ok_hsl_l = 0.0;
-
-void fragment() {
-	float h = UV.x;
-	float s = 1.0 - UV.y;
-	vec3 col = okhsl_to_srgb(vec3(h, s, ok_hsl_l));
-	COLOR = vec4(col, 1.0);
-})");
-
-	rectangle_ok_color_hl_shader.instantiate();
-	rectangle_ok_color_hl_shader->set_code(OK_COLOR_SHADER + R"(
-// ColorPicker ok color hl rectangle shader.
-
-uniform float ok_hsl_s = 0.0;
-
-void fragment() {
-	float h = UV.x;
-	float l = 1.0 - UV.y;
-	vec3 col = okhsl_to_srgb(vec3(h, ok_hsl_s, l));
-	COLOR = vec4(col, 1.0);
-})");
-}
-
-void ColorPickerShape::finish_shaders()
-{
-	wheel_shader.unref();
-	circle_shader.unref();
-	circle_ok_color_shader.unref();
-	rectangle_ok_color_hs_shader.unref();
-	rectangle_ok_color_hl_shader.unref();
-}
-
-ColorPickerShape::ColorPickerShape(
-	ColorPicker* p_color_picker, ColorPicker::PickerShapeType p_type)
-	: color_picker(p_color_picker), shape_type(p_type)
-{
-}
-
-String ColorPickerShape::get_name() const
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE:
-		return ETR("HSV Rectangle");
-	case ColorPicker::SHAPE_HSV_WHEEL:
-		return ETR("HSV Wheel");
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-		return ETR("VHS Circle");
-	case ColorPicker::SHAPE_OKHSL_CIRCLE:
-		return ETR("OKHSL Circle");
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-		return ETR("OK HS Rectangle");
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
-		return ETR("OK HL Rectangle");
-	default:
-		return String();
-	}
-}
-
-Ref<Texture2D> ColorPickerShape::get_icon() const
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
-		return color_picker->theme_cache.shape_rect;
-	case ColorPicker::SHAPE_HSV_WHEEL:
-		return color_picker->theme_cache.shape_rect_wheel;
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-	case ColorPicker::SHAPE_OKHSL_CIRCLE:
-		return color_picker->theme_cache.shape_circle;
-	default:
-		return Ref<Texture2D>();
-	}
-}
-
-bool ColorPickerShape::is_ok_hsl() const
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_OKHSL_CIRCLE:
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
-		return true;
-	default:
-		return false;
-	}
-}
-
-Ref<Shader> ColorPickerShape::_get_shader() const
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_WHEEL:
-		return wheel_shader;
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-		return circle_shader;
-	case ColorPicker::SHAPE_OKHSL_CIRCLE:
-		return circle_ok_color_shader;
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-		return rectangle_ok_color_hs_shader;
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
-		return rectangle_ok_color_hl_shader;
-	default:
-		return Ref<Shader>();
-	}
-}
-
-bool ColorPickerShape::can_handle(
-	const InputEvent& p_event, Vector2& r_position, bool* r_is_click)
-{
-	if (p_event.type == InputEventType::MOUSE_BUTTON) {
-		if (p_event.mouse_button.button_index != MouseButton::LEFT) {
-			return false;
-		}
-
-		if (r_is_click) {
-			*r_is_click = true;
-		}
-
-		if (p_event.is_pressed()) {
-			is_dragging = true;
-			r_position = p_event.mouse_button.position;
-			return true;
-		}
-	}
-
-	if (is_dragging && p_event.type == InputEventType::MOUSE_MOTION) {
-		r_position = p_event.mouse_motion.position;
-		return true;
-	}
-	return false;
-}
-
-void ColorPickerShape::cancel_event() { is_dragging = false; }
-
-void ColorPickerShape::_emit_color_changed() {}
-
-void ColorPickerShape::connect_shape_focus(Control*) {}
-
-void ColorPickerShape::handle_cursor_editing(const InputEvent&, Control*) {}
-
-void ColorPickerShape::draw_focus_rect(Control* p_control, const Rect2& p_rect)
-{
-	if (!p_control->has_focus(true)) {
-		return;
-	}
-
-	Rect2 focus_rect;
-	if (p_rect.has_area()) {
-		focus_rect = p_rect;
-	}
-	else {
-		focus_rect = Rect2(Vector2(), p_control->get_size());
-	}
-
-	const RID ci = p_control->get_canvas_item();
-	if (!cursor_editing) {
-		Renderer::canvas_item_add_rect(
-			ci, focus_rect, color_picker->theme_cache.focused_not_editing_cursor_color);
-	}
-	color_picker->theme_cache.picker_focus_rectangle->draw(ci, focus_rect);
-}
-
-void ColorPickerShape::draw_focus_circle(Control* p_control)
-{
-	if (!p_control->has_focus(true)) {
-		return;
-	}
-
-	const Rect2 focus_rect(Vector2(), p_control->get_size());
-	const RID ci = p_control->get_canvas_item();
-	if (!cursor_editing) {
-		Renderer::canvas_item_add_circle(ci, focus_rect.get_center(),
-			focus_rect.get_size().y * 0.5,
-			color_picker->theme_cache.focused_not_editing_cursor_color);
-	}
-	color_picker->theme_cache.picker_focus_circle->draw(ci, focus_rect);
-}
-
-void ColorPickerShape::draw_sv_square(Control* p_control, const Rect2& p_square, bool p_draw_focus)
-{
-	const Vector2 end = p_square.get_end();
-	PackedVector2Array points = {
-		p_square.position,
-		Vector2(end.x, p_square.position.y),
-		end,
-		Vector2(p_square.position.x, end.y),
-	};
-
-	Color color1 = Color::from_hsv(color_picker->h, 1, 1);
-	Color color2 = Color::from_hsv(color_picker->h, 1, 0);
-
-	PackedColorArray colors = {
-		Color(1, 1, 1, 1),
-		Color(1, 1, 1, 1),
-		Color(0, 0, 0, 1),
-		Color(0, 0, 0, 1),
-	};
-	p_control->draw_polygon(points, colors);
-
-	colors = {
-		Color(color1, 0),
-		Color(color1, 1),
-		Color(color2, 1),
-		Color(color2, 0),
-	};
-	p_control->draw_polygon(points, colors);
-
-	Vector2 cursor_pos;
-	cursor_pos.x =
-		CLAMP(p_square.position.x + p_square.size.x * color_picker->s, p_square.position.x, end.x);
-	cursor_pos.y = CLAMP(p_square.position.y + p_square.size.y * (1.0 - color_picker->v),
-		p_square.position.y, end.y);
-
-	if (p_draw_focus) {
-		draw_focus_rect(p_control, p_square);
-	}
-	draw_cursor(p_control, cursor_pos);
-}
-
-void ColorPickerShape::draw_cursor(Control* p_control, const Vector2& p_center, bool p_draw_bg)
-{
-	const Vector2 position = p_center - color_picker->theme_cache.picker_cursor->get_size() * 0.5;
-	if (p_draw_bg) {
-		p_control->draw_texture(color_picker->theme_cache.picker_cursor_bg.ptr(), position,
-			Color(color_picker->color, 1.0));
-	}
-	p_control->draw_texture(color_picker->theme_cache.picker_cursor.ptr(), position);
-}
-
-void ColorPickerShape::draw_circle_cursor(Control* p_control, float p_hue, float p_saturation)
-{
-	const Vector2 center = p_control->get_size() * 0.5;
-	const Vector2 cursor_pos(center.x + (center.x * Math::cos(p_hue * Math::TAU) * p_saturation),
-		center.y + (center.y * Math::sin(p_hue * Math::TAU) * p_saturation));
-
-	draw_cursor(p_control, cursor_pos);
-}
-
-void ColorPickerShape::shape_focus_entered()
-{
-	if (!(Input::is_action_pressed("ui_up") || Input::is_action_pressed("ui_down") ||
-			Input::is_action_pressed("ui_left") || Input::is_action_pressed("ui_right"))) {
-		cursor_editing = true;
-	}
-}
-
-void ColorPickerShape::shape_focus_exited() { cursor_editing = false; }
-
-int ColorPickerShape::get_edge_h_change(const Vector2& p_color_change_vector)
-{
-	int h_change = 0;
-
-	if (color_picker->h > 0 && color_picker->h < 0.5) {
-		h_change -= p_color_change_vector.x;
-	}
-	else if (color_picker->h > 0.5 && color_picker->h < 1) {
-		h_change += p_color_change_vector.x;
-	}
-
-	if (color_picker->h > 0.25 && color_picker->h < 0.75) {
-		h_change -= p_color_change_vector.y;
-	}
-	else if (color_picker->h < 0.25 || color_picker->h > 0.75) {
-		h_change += p_color_change_vector.y;
-	}
-	return h_change;
-}
-
-float ColorPickerShape::get_h_on_circle_edge(const Vector2& p_color_change_vector)
-{
-	int h_change = get_edge_h_change(p_color_change_vector);
-
-	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
-	int current_quarter = color_picker->h * 4;
-	int future_quarter = target_h * 4;
-	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) ||
-										   (future_quarter == 1 && current_quarter == 0))) {
-		target_h = 0.25f;
-	}
-	else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) ||
-												  (future_quarter == 3 && current_quarter == 2))) {
-		target_h = 0.75f;
-	}
-	else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) ||
-												  (future_quarter == 2 && current_quarter == 1))) {
-		target_h = 0.5f;
-	}
-	else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) ||
-												  (future_quarter == 0 && current_quarter == 3))) {
-		target_h = 0;
-	}
-	return target_h;
-}
-
-float ColorPickerShape::_get_h_on_wheel(const Vector2& p_color_change_vector)
-{
-	int h_change = get_edge_h_change(p_color_change_vector);
-
-	float target_h = Math::wrapf(color_picker->h + h_change / 360.0, 0, 1);
-	int current_quarter = color_picker->h * 4;
-	int future_quarter = target_h * 4;
-
-	if (p_color_change_vector.y > 0 && ((future_quarter == 0 && current_quarter == 1) ||
-										   (future_quarter == 1 && current_quarter == 0))) {
-		rotate_next_echo_event = !rotate_next_echo_event;
-	}
-	else if (p_color_change_vector.y < 0 && ((future_quarter == 2 && current_quarter == 3) ||
-												  (future_quarter == 3 && current_quarter == 2))) {
-		rotate_next_echo_event = !rotate_next_echo_event;
-	}
-	else if (p_color_change_vector.x < 0 && ((future_quarter == 1 && current_quarter == 2) ||
-												  (future_quarter == 2 && current_quarter == 1))) {
-		rotate_next_echo_event = !rotate_next_echo_event;
-	}
-	else if (p_color_change_vector.x > 0 && ((future_quarter == 3 && current_quarter == 0) ||
-												  (future_quarter == 0 && current_quarter == 3))) {
-		rotate_next_echo_event = !rotate_next_echo_event;
-	}
-
-	return target_h;
-}
-
-void ColorPickerShape::_reset_wheel_focus() { wheel_focused = true; }
-
-void ColorPickerShape::update_circle_cursor(
-	const Vector2& p_color_change_vector, const Vector2& p_center, const Vector2& p_hue_offset)
-{
-	if (circle_keyboard_joypad_picker_cursor_position == Vector2i()) {
-		circle_keyboard_joypad_picker_cursor_position = p_center + p_hue_offset;
-	}
-
-	Vector2i potential_cursor_position =
-		circle_keyboard_joypad_picker_cursor_position + p_color_change_vector;
-	real_t potential_new_cursor_distance = p_center.distance_to(potential_cursor_position);
-	real_t dist_pre = p_center.distance_to(circle_keyboard_joypad_picker_cursor_position);
-	if (color_picker->s < 1 || potential_new_cursor_distance < dist_pre) {
-		circle_keyboard_joypad_picker_cursor_position += p_color_change_vector;
-		real_t dist = p_center.distance_to(circle_keyboard_joypad_picker_cursor_position);
-		real_t rad = p_center.angle_to_point(circle_keyboard_joypad_picker_cursor_position);
-		color_picker->h = ((rad >= 0) ? rad : (Math::TAU + rad)) / Math::TAU;
-		color_picker->s = CLAMP(dist / p_center.x, 0, 1);
-	}
-	else {
-		color_picker->h = get_h_on_circle_edge(p_color_change_vector);
-		circle_keyboard_joypad_picker_cursor_position = Vector2i();
-	}
-}
-
-void ColorPickerShape::initialize_controls()
-{
-	_initialize_controls();
-	update_theme();
-	is_initialized = true;
-}
-
-void ColorPickerShape::_initialize_controls()
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE: {
-		sv_square = memnew(Control);
-		hue_slider = memnew(Control);
-		controls.push_back(sv_square);
-		controls.push_back(hue_slider);
-	} break;
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
-		rectangle_margin = memnew(Control);
-		square = memnew(Control);
-		square_overlay = memnew(Control);
-		value_slider = memnew(Control);
-		rectangle_margin->add_child(square);
-		square->add_child(square_overlay);
-		controls.push_back(rectangle_margin);
-		controls.push_back(value_slider);
-	} break;
-	case ColorPicker::SHAPE_HSV_WHEEL: {
-		wheel = memnew(Control);
-		wheel_uv = memnew(Control);
-		wheel->add_child(wheel_uv);
-		controls.push_back(wheel);
-	} break;
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
-		circle = memnew(Control);
-		circle_overlay = memnew(Control);
-		value_slider = memnew(Control);
-		circle->add_child(circle_overlay);
-		controls.push_back(circle);
-		controls.push_back(value_slider);
-	} break;
-	default:
-		break;
-	}
-}
-
-void ColorPickerShape::update_theme()
-{
-	const ColorPicker::ThemeCache& theme_cache = color_picker->theme_cache;
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE: {
-		if (sv_square) {
-			sv_square->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-		}
-		if (hue_slider) {
-			hue_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-		}
-	} break;
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
-		if (rectangle_margin) {
-			rectangle_margin->set_custom_minimum_size(
-				Size2(theme_cache.sv_width, theme_cache.sv_height));
-		}
-		if (value_slider) {
-			value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-		}
-	} break;
-	case ColorPicker::SHAPE_HSV_WHEEL: {
-		if (wheel) {
-			wheel->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-		}
-	} break;
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
-		if (circle) {
-			circle->set_custom_minimum_size(Size2(theme_cache.sv_width, theme_cache.sv_height));
-		}
-		if (value_slider) {
-			value_slider->set_custom_minimum_size(Size2(theme_cache.h_width, 0));
-		}
-	} break;
-	default:
-		break;
-	}
-}
-
-void ColorPickerShape::grab_focus()
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE:
-		if (hue_slider) {
-			hue_slider->grab_focus();
-		}
-		break;
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE:
-		if (square_overlay) {
-			square_overlay->grab_focus();
-		}
-		break;
-	case ColorPicker::SHAPE_HSV_WHEEL:
-		if (wheel_uv) {
-			wheel_uv->grab_focus();
-		}
-		break;
-	case ColorPicker::SHAPE_VHS_CIRCLE:
-	case ColorPicker::SHAPE_OKHSL_CIRCLE:
-		if (circle_overlay) {
-			circle_overlay->grab_focus();
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-void ColorPickerShape::_update_cursor(const Vector2& p_color_change_vector, bool p_is_echo)
-{
-	switch (shape_type) {
-	case ColorPicker::SHAPE_HSV_RECTANGLE: {
-		if (sv_square && sv_square->has_focus()) {
-			color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
-			color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
-		}
-		else if (hue_slider && hue_slider->has_focus()) {
-			color_picker->h =
-				CLAMP(color_picker->h + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-		}
-	} break;
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE: {
-		if (square_overlay && square_overlay->has_focus()) {
-			color_picker->ok_hsl_h =
-				CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-			color_picker->ok_hsl_s =
-				CLAMP(color_picker->ok_hsl_s - p_color_change_vector.y / 100.0, 0, 1);
-		}
-		else if (value_slider && value_slider->has_focus()) {
-			color_picker->ok_hsl_l = CLAMP(
-				color_picker->ok_hsl_l + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-		}
-	} break;
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
-		if (square_overlay && square_overlay->has_focus()) {
-			color_picker->ok_hsl_h =
-				CLAMP(color_picker->ok_hsl_h + p_color_change_vector.x / 100.0, 0, 1);
-			color_picker->ok_hsl_l =
-				CLAMP(color_picker->ok_hsl_l - p_color_change_vector.y / 100.0, 0, 1);
-		}
-		else if (value_slider && value_slider->has_focus()) {
-			color_picker->ok_hsl_s = CLAMP(
-				color_picker->ok_hsl_s + p_color_change_vector.y * echo_multiplier / 360.0, 0, 1);
-		}
-	} break;
-	case ColorPicker::SHAPE_HSV_WHEEL: {
-		if (wheel_focused) {
-			if (p_is_echo && rotate_next_echo_event) {
-				color_picker->h = _get_h_on_wheel(-p_color_change_vector);
-			}
-			else {
-				rotate_next_echo_event = false;
-				color_picker->h = _get_h_on_wheel(p_color_change_vector);
-			}
-		}
-		else {
-			color_picker->s = CLAMP(color_picker->s + p_color_change_vector.x / 100.0, 0, 1);
-			color_picker->v = CLAMP(color_picker->v - p_color_change_vector.y / 100.0, 0, 1);
-		}
-	} break;
-	case ColorPicker::SHAPE_VHS_CIRCLE: {
-		if (circle_overlay && circle_overlay->has_focus()) {
-			const Vector2 center = circle_overlay->get_size() / 2.0;
-			const Vector2 hue_offset = center *
-									   Vector2(Math::cos(color_picker->h * Math::TAU),
-										   Math::sin(color_picker->h * Math::TAU)) *
-									   color_picker->s;
-			update_circle_cursor(p_color_change_vector, center, hue_offset);
-		}
-		else if (value_slider && value_slider->has_focus()) {
-			color_picker->v =
-				CLAMP(color_picker->v - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
-		}
-	} break;
-	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
-		if (circle_overlay && circle_overlay->has_focus()) {
-			const Vector2 center = circle_overlay->get_size() / 2.0;
-			const Vector2 hue_offset = center *
-									   Vector2(Math::cos(color_picker->ok_hsl_h * Math::TAU),
-										   Math::sin(color_picker->ok_hsl_h * Math::TAU)) *
-									   color_picker->ok_hsl_s;
-			update_circle_cursor(p_color_change_vector, center, hue_offset);
-			color_picker->ok_hsl_h = color_picker->h;
-			color_picker->ok_hsl_s = color_picker->s;
-		}
-		else if (value_slider && value_slider->has_focus()) {
-			color_picker->ok_hsl_l = CLAMP(
-				color_picker->ok_hsl_l - p_color_change_vector.y * echo_multiplier / 100.0, 0, 1);
-		}
-	} break;
-	default:
-		break;
-	}
-}
-
-void ColorPickerShape::_sv_square_draw()
-{
-	draw_sv_square(sv_square, Rect2(Vector2(), sv_square->get_size()));
-}
-
-void ColorPickerShape::_hue_slider_draw()
-{
-	const Vector2 size = hue_slider->get_size();
-	hue_slider->draw_texture_rect(color_picker->theme_cache.color_hue.ptr(),
-		Rect2(0, 0, -size.y, size.x), false, Color(1, 1, 1), true);
-
-	draw_focus_rect(hue_slider);
-
-	int y = size.y * color_picker->h;
-	const Color color = Color::from_hsv(color_picker->h, 1, 1);
-	hue_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-}
-
-void ColorPickerShape::_square_draw() {}
-
-void ColorPickerShape::_square_overlay_draw()
-{
-	if (!square_overlay) {
-		return;
-	}
-	const Rect2 rect = Rect2(Vector2(), square_overlay->get_size());
-	const Vector2 end = rect.get_end();
-	const float y_channel =
-		(shape_type == ColorPicker::SHAPE_OK_HL_RECTANGLE) ? color_picker->ok_hsl_l
-														   : color_picker->ok_hsl_s;
-
-	Vector2 cursor_pos;
-	cursor_pos.x =
-		CLAMP(rect.position.x + rect.size.x * color_picker->ok_hsl_h, rect.position.x, end.x);
-	cursor_pos.y = CLAMP(rect.position.y + rect.size.y * (1.0 - y_channel), rect.position.y, end.y);
-
-	draw_focus_rect(square_overlay);
-	draw_cursor(square_overlay, cursor_pos);
-}
-
-void ColorPickerShape::_value_slider_draw()
-{
-	if (!value_slider) {
-		return;
-	}
-
-	const Vector2 size = value_slider->get_size();
-
-	switch (shape_type) {
-	case ColorPicker::SHAPE_VHS_CIRCLE: {
-		PackedVector2Array points{
-			Vector2(),
-			Vector2(size.x, 0),
-			size,
-			Vector2(0, size.y),
-		};
-
-		Color color = Color::from_hsv(color_picker->h, color_picker->s, 1);
-		PackedColorArray colors = {
-			color,
-			color,
-			Color(),
-			Color(),
-		};
-
-		value_slider->draw_polygon(points, colors);
-		draw_focus_rect(value_slider);
-
-		int y = size.y * (1 - CLAMP(color_picker->v, 0, 1));
-		color.set_hsv(color_picker->h, 1, color_picker->v);
-		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-	} break;
-
-	case ColorPicker::SHAPE_OK_HL_RECTANGLE: {
-		const float ok_hsl_h = color_picker->ok_hsl_h;
-		const float ok_hsl_l = color_picker->ok_hsl_l;
-
-		PackedVector2Array points{
-			Vector2(size.x, 0),
-			Vector2(size.x, size.y * 0.5),
-			size,
-			Vector2(0, size.y),
-			Vector2(0, size.y * 0.5),
-			Vector2(),
-		};
-
-		Color color1 = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
-		Color color2 = Color::from_ok_hsl(ok_hsl_h, 0.5, ok_hsl_l);
-		Color color3 = Color::from_ok_hsl(ok_hsl_h, 0, ok_hsl_l);
-		PackedColorArray colors = {
-			color1,
-			color2,
-			color3,
-			color3,
-			color2,
-			color1,
-		};
-		value_slider->draw_polygon(points, colors);
-		draw_focus_rect(value_slider);
-
-		int y = size.y * (1 - CLAMP(color_picker->ok_hsl_s, 0, 1));
-		const Color color = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
-		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-	} break;
-
-	case ColorPicker::SHAPE_OK_HS_RECTANGLE:
-	case ColorPicker::SHAPE_OKHSL_CIRCLE: {
-		const float ok_hsl_h = color_picker->ok_hsl_h;
-		const float ok_hsl_s = color_picker->ok_hsl_s;
-		const float ok_hsl_l = color_picker->ok_hsl_l;
-
-		PackedVector2Array points{
-			Vector2(size.x, 0),
-			Vector2(size.x, size.y * 0.5),
-			size,
-			Vector2(0, size.y),
-			Vector2(0, size.y * 0.5),
-			Vector2(),
-		};
-
-		Color color1 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 1);
-		Color color2 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0.5);
-		Color color3 = Color::from_ok_hsl(ok_hsl_h, ok_hsl_s, 0);
-		PackedColorArray colors = {
-			color1,
-			color2,
-			color3,
-			color3,
-			color2,
-			color1,
-		};
-		value_slider->draw_polygon(points, colors);
-		draw_focus_rect(value_slider);
-
-		int y = size.y * (1 - CLAMP(ok_hsl_l, 0, 1));
-		const Color color = Color::from_ok_hsl(ok_hsl_h, 1, ok_hsl_l);
-		value_slider->draw_line(Vector2(0, y), Vector2(size.x, y), color.inverted());
-	} break;
-
-	default:
-		break;
-	}
-}
-
-void ColorPickerShape::_wheel_input(const InputEvent&) {}
-
-void ColorPickerShape::_wheel_draw()
-{
-	wheel->draw_rect(Rect2(Point2(), wheel->get_size()), Color(1, 1, 1));
-}
-
-void ColorPickerShape::_wheel_uv_draw()
-{
-	const Vector2 uv_size = wheel_uv->get_size();
-	const Vector2 ring_radius = uv_size * Math::SQRT12 * WHEEL_RADIUS;
-	const Vector2 center = uv_size * 0.5;
-
-	const Rect2 uv_rect(center - ring_radius, ring_radius * 2.0);
-	draw_sv_square(wheel_uv, uv_rect, !wheel_focused);
-	if (wheel_focused) {
-		draw_focus_circle(wheel_uv);
-	}
-
-	float radius = WHEEL_RADIUS * 2.0;
-	radius += (1.0 - radius) * 0.5;
-	const Vector2 cursor_pos =
-		center + Vector2(center.x * Math::cos(color_picker->h * Math::TAU) * radius,
-					 center.y * Math::sin(color_picker->h * Math::TAU) * radius);
-	draw_cursor(wheel_uv, cursor_pos, false);
-}
-
-void ColorPickerShape::_circle_input(const InputEvent&) {}
-
-void ColorPickerShape::_value_slider_input(const InputEvent&) {}
-
-void ColorPickerShape::_circle_draw() {}
-
-void ColorPickerShape::_circle_overlay_draw()
-{
-	if (!circle_overlay) {
-		return;
-	}
-	draw_focus_circle(circle_overlay);
-	if (shape_type == ColorPicker::SHAPE_OKHSL_CIRCLE) {
-		draw_circle_cursor(circle_overlay, color_picker->ok_hsl_h, color_picker->ok_hsl_s);
-	}
-	else {
-		draw_circle_cursor(circle_overlay, color_picker->h, color_picker->s);
-	}
-}
-
-// --- color_picker.cpp ---
-
 static inline bool is_color_overbright(const Color& color)
 {
 	return (color.r > 1.0) || (color.g > 1.0) || (color.b > 1.0);
-}
-
-static inline bool is_color_valid_hex(const Color& color)
-{
-	return !is_color_overbright(color) && color.r >= 0 && color.g >= 0 && color.b >= 0;
-}
-
-static inline String color_to_string(
-	const Color& color, bool show_alpha = true, bool force_value_format = false)
-{
-	if (!force_value_format && !is_color_overbright(color)) {
-		return "#" + color.to_html(show_alpha);
-	}
-	String t = "(" + String::num(color.r, 3) + ", " + String::num(color.g, 3) + ", " +
-			   String::num(color.b, 3);
-	if (show_alpha) {
-		t += ", " + String::num(color.a, 3) + ")";
-	}
-	else {
-		t += ")";
-	}
-	return t;
 }
 
 void ColorPicker::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
+	tc_base_scale = get_theme_default_base_scale();
 }
 
-void ColorPicker::set_focus_on_picker_shape()
-{
-	int idx = get_current_shape_index();
-	if (idx >= 0 && idx < (int)shapes.size()) {
-		shapes[idx]->grab_focus();
-	}
-}
+void ColorPicker::set_focus_on_picker_shape() {}
 
 void ColorPicker::set_old_color(const Color& p_color) { old_color = p_color; }
 
@@ -21796,9 +20404,6 @@ bool ColorPicker::is_editing_intensity() const { return edit_intensity; }
 
 void ColorPicker::_slider_drag_started() { currently_dragging = true; }
 
-void ColorPicker::add_mode(ColorMode* p_mode) { modes.push_back(p_mode); }
-
-void ColorPicker::add_shape(ColorPickerShape* p_shape) { shapes.push_back(p_shape); }
 
 Slider* ColorPicker::get_slider(int p_idx)
 {
@@ -21834,14 +20439,7 @@ void ColorPicker::_copy_normalized_to_hsv_okhsl()
 
 void ColorPicker::_copy_hsv_okhsl_to_normalized()
 {
-	int idx = get_current_shape_index();
-	if (current_shape != SHAPE_NONE && idx >= 0 && idx < (int)shapes.size() &&
-		shapes[idx]->is_ok_hsl()) {
-		color_normalized.set_ok_hsl(ok_hsl_h, ok_hsl_s, ok_hsl_l, color_normalized.a);
-	}
-	else {
-		color_normalized.set_hsv(h, s, v, color_normalized.a);
-	}
+	color_normalized.set_hsv(h, s, v, color_normalized.a);
 }
 
 Color ColorPicker::_color_apply_intensity(const Color& col) const
@@ -21879,16 +20477,16 @@ void ColorPicker::_copy_color_to_normalized_and_intensity()
 void ColorPicker::_reset_sliders_theme()
 {
 	Ref<StyleBox> style_box_flat(memnew(StyleBox(StyleBox::STYLE_FLAT)));
-	style_box_flat->set_content_margin(SIDE_TOP, 16 * theme_cache.base_scale);
+	style_box_flat->set_content_margin(SIDE_TOP, 16 * tc_base_scale);
 	style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 
 	for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
 		sliders[i]->begin_bulk_theme_override();
-		sliders[i]->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow.ptr());
+		sliders[i]->add_theme_icon_override(SNAME("grabber"), tc_bar_arrow.ptr());
 		sliders[i]->add_theme_icon_override(
-			SNAME("grabber_highlight"), theme_cache.bar_arrow.ptr());
+			SNAME("grabber_highlight"), tc_bar_arrow.ptr());
 		sliders[i]->add_theme_constant_override(
-			SNAME("grabber_offset"), 8 * theme_cache.base_scale);
+			SNAME("grabber_offset"), 8 * tc_base_scale);
 		if (!colorize_sliders) {
 			sliders[i]->add_theme_style_override(SNAME("slider"), style_box_flat.ptr());
 		}
@@ -21896,9 +20494,9 @@ void ColorPicker::_reset_sliders_theme()
 	}
 
 	alpha_slider->begin_bulk_theme_override();
-	alpha_slider->add_theme_icon_override(SNAME("grabber"), theme_cache.bar_arrow.ptr());
-	alpha_slider->add_theme_icon_override(SNAME("grabber_highlight"), theme_cache.bar_arrow.ptr());
-	alpha_slider->add_theme_constant_override(SNAME("grabber_offset"), 8 * theme_cache.base_scale);
+	alpha_slider->add_theme_icon_override(SNAME("grabber"), tc_bar_arrow.ptr());
+	alpha_slider->add_theme_icon_override(SNAME("grabber_highlight"), tc_bar_arrow.ptr());
+	alpha_slider->add_theme_constant_override(SNAME("grabber_offset"), 8 * tc_base_scale);
 	if (!colorize_sliders) {
 		alpha_slider->add_theme_style_override(SNAME("slider"), style_box_flat.ptr());
 	}
@@ -21985,7 +20583,7 @@ void ColorPicker::set_colorize_sliders(bool p_colorize_sliders)
 	}
 	else {
 		Ref<StyleBox> style_box_flat(memnew(StyleBox(StyleBox::STYLE_FLAT)));
-		style_box_flat->set_content_margin(SIDE_TOP, 16 * theme_cache.base_scale);
+		style_box_flat->set_content_margin(SIDE_TOP, 16 * tc_base_scale);
 		style_box_flat->set_bg_color(Color(0.2, 0.23, 0.31).lerp(Color(0, 0, 0, 1), 0.3).clamp());
 
 		for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
@@ -22015,14 +20613,14 @@ void ColorPicker::_sample_draw()
 			Point2(), Size2(sample->get_size().width * 0.5, sample->get_size().height * 0.95));
 
 		if (old_color.a < 1.0) {
-			sample->draw_texture_rect(theme_cache.sample_bg.ptr(), rect_old, true);
+			sample->draw_texture_rect(tc_sample_bg.ptr(), rect_old, true);
 		}
 
 		sample->draw_rect(rect_old, old_color);
 
 		if (!old_color.is_equal_approx(color)) {
-			sample->draw_texture(theme_cache.sample_revert.ptr(),
-				rect_old.size * 0.5 - theme_cache.sample_revert->get_size() * 0.5,
+			sample->draw_texture(tc_sample_revert.ptr(),
+				rect_old.size * 0.5 - tc_sample_revert->get_size() * 0.5,
 				Math::lerp(0.75f, old_color.get_luminance(), old_color.a) < 0.455
 					? Color(1, 1, 1)
 					: (Color(0.01, 0.01, 0.01)));
@@ -22034,7 +20632,7 @@ void ColorPicker::_sample_draw()
 		}
 
 		if (is_color_overbright(color)) {
-			sample->draw_texture(theme_cache.overbright_indicator.ptr(), Point2());
+			sample->draw_texture(tc_overbright_indicator.ptr(), Point2());
 		}
 	}
 	else {
@@ -22043,28 +20641,23 @@ void ColorPicker::_sample_draw()
 	}
 
 	if (color.a < 1.0) {
-		sample->draw_texture_rect(theme_cache.sample_bg.ptr(), rect_new, true);
+		sample->draw_texture_rect(tc_sample_bg.ptr(), rect_new, true);
 	}
 
 	sample->draw_rect(rect_new, color);
 
 	if (display_old_color && !old_color.is_equal_approx(color) && sample->has_focus(true)) {
 		RID ci = sample->get_canvas_item();
-		theme_cache.sample_focus->draw(ci, rect_old);
+		tc_sample_focus->draw(ci, rect_old);
 	}
 
 	if (is_color_overbright(color)) {
 		sample->draw_texture(
-			theme_cache.overbright_indicator.ptr(), Point2(sample->get_size().width * 0.5, 0));
+			tc_overbright_indicator.ptr(), Point2(sample->get_size().width * 0.5, 0));
 	}
 }
 
-void ColorPicker::_slider_draw(int p_which)
-{
-	if (colorize_sliders) {
-		modes[current_mode]->slider_draw(p_which);
-	}
-}
+void ColorPicker::_slider_draw(int p_which) { (void)p_which; }
 
 void ColorPicker::_alpha_slider_draw()
 {
@@ -22078,9 +20671,9 @@ void ColorPicker::_alpha_slider_draw()
 	Size2 size = alpha_slider->get_size();
 	Color left_color;
 	Color right_color;
-	const real_t margin = 16 * theme_cache.base_scale;
+	const real_t margin = 16 * tc_base_scale;
 	alpha_slider->draw_texture_rect(
-		theme_cache.sample_bg.ptr(), Rect2(Point2(0, 0), Size2(size.x, margin)), true);
+		tc_sample_bg.ptr(), Rect2(Point2(0, 0), Size2(size.x, margin)), true);
 
 	left_color = color_normalized;
 	left_color.a = 0;
@@ -22148,15 +20741,7 @@ ColorPicker::ColorPicker()
 	layout.orientation = VERTICAL;
 }
 
-ColorPicker::~ColorPicker()
-{
-	for (ColorMode* mode : modes) {
-		memdelete(mode);
-	}
-	for (ColorPickerShape* shape : shapes) {
-		memdelete(shape);
-	}
-}
+ColorPicker::~ColorPicker() {}
 
 void ColorPickerButton::_notification(int p_what)
 {
@@ -22173,18 +20758,18 @@ void ColorPickerButton::_notification(int p_what)
 	} break;
 
 	case NOTIFICATION_DRAW: {
-		if (theme_cache.normal_style.is_valid()) {
-			const Rect2 r = Rect2(theme_cache.normal_style->get_offset(),
-				get_size() - theme_cache.normal_style->get_minimum_size());
-			if (theme_cache.background_icon.is_valid()) {
-				draw_texture_rect(theme_cache.background_icon.ptr(), r, true);
+		if (tc_normal_style.is_valid()) {
+			const Rect2 r = Rect2(tc_normal_style->get_offset(),
+				get_size() - tc_normal_style->get_minimum_size());
+			if (tc_background_icon.is_valid()) {
+				draw_texture_rect(tc_background_icon.ptr(), r, true);
 			}
 			draw_rect(r, color);
 
 			if ((color.r > 1 || color.g > 1 || color.b > 1) &&
-				theme_cache.overbright_indicator.is_valid()) {
-				draw_texture(theme_cache.overbright_indicator.ptr(),
-					theme_cache.normal_style->get_offset());
+				tc_overbright_indicator.is_valid()) {
+				draw_texture(tc_overbright_indicator.ptr(),
+					tc_normal_style->get_offset());
 			}
 		}
 	} break;
@@ -22303,8 +20888,8 @@ GraphEditFilter::GraphEditFilter(GraphEdit* p_edit) { ge = p_edit; }
 
 Control::CursorShape GraphEditMinimap::get_cursor_shape(const Point2& p_pos) const
 {
-	if (is_resizing || (p_pos.x < theme_cache.resizer->get_width() &&
-						   p_pos.y < theme_cache.resizer->get_height())) {
+	if (is_resizing || (p_pos.x < tc_resizer->get_width() &&
+						   p_pos.y < tc_resizer->get_height())) {
 		return CURSOR_FDIAGSIZE;
 	}
 
@@ -22488,7 +21073,7 @@ void GraphEdit::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
+	tc_base_scale = get_theme_default_base_scale();
 }
 
 bool GraphEdit::is_in_input_hotzone(GraphNode* p_graph_node, int p_port_idx,
@@ -22503,7 +21088,7 @@ bool GraphEdit::is_in_output_hotzone(GraphNode* p_graph_node, int p_port_idx,
 	const Vector2& p_mouse_pos, const Vector2i& p_port_size)
 {
 	if (p_graph_node->is_resizable()) {
-		Ref<Texture2D> resizer = p_graph_node->theme_cache.resizer;
+		Ref<Texture2D> resizer = p_graph_node->tc_resizer;
 		Rect2 resizer_rect = Rect2(
 			p_graph_node->get_position() / zoom + p_graph_node->get_size() - resizer->get_size(),
 			resizer->get_size());
@@ -22619,8 +21204,8 @@ void GraphEdit::_top_layer_draw()
 		return;
 	}
 
-	top_layer->draw_rect(box_selecting_rect, theme_cache.selection_fill);
-	top_layer->draw_rect(box_selecting_rect, theme_cache.selection_stroke, false);
+	top_layer->draw_rect(box_selecting_rect, tc_selection_fill);
+	top_layer->draw_rect(box_selecting_rect, tc_selection_stroke, false);
 }
 
 void GraphEdit::_draw_grid()
@@ -22637,10 +21222,10 @@ void GraphEdit::_draw_grid()
 			Color color;
 
 			if (Math::abs(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
-				color = theme_cache.grid_major;
+				color = tc_grid_major;
 			}
 			else {
-				color = theme_cache.grid_minor;
+				color = tc_grid_minor;
 			}
 
 			float base_offset = i * snapping_distance * zoom - offset.x * zoom;
@@ -22651,10 +21236,10 @@ void GraphEdit::_draw_grid()
 			Color color;
 
 			if (Math::abs(i) % GRID_MINOR_STEPS_PER_MAJOR_LINE == 0) {
-				color = theme_cache.grid_major;
+				color = tc_grid_major;
 			}
 			else {
-				color = theme_cache.grid_minor;
+				color = tc_grid_minor;
 			}
 
 			float base_offset = i * snapping_distance * zoom - offset.y * zoom;
@@ -22662,7 +21247,7 @@ void GraphEdit::_draw_grid()
 		}
 	} break;
 	case GRID_PATTERN_DOTS: {
-		Color transparent_grid_minor = theme_cache.grid_minor;
+		Color transparent_grid_minor = tc_grid_minor;
 		transparent_grid_minor.a *= CLAMP(1.0 * (zoom - 0.4), 0, 1);
 
 		// Minor dots.
@@ -22684,7 +21269,7 @@ void GraphEdit::_draw_grid()
 		}
 
 		// Major dots.
-		if (theme_cache.grid_major.a != 0) {
+		if (tc_grid_major.a != 0) {
 			for (int i = from_pos.x - from_pos.x % GRID_MINOR_STEPS_PER_MAJOR_DOT;
 				 i < from_pos.x + len.x; i += GRID_MINOR_STEPS_PER_MAJOR_DOT) {
 				for (int j = from_pos.y - from_pos.y % GRID_MINOR_STEPS_PER_MAJOR_DOT;
@@ -22693,7 +21278,7 @@ void GraphEdit::_draw_grid()
 					float base_offset_y = j * snapping_distance * zoom - offset.y * zoom;
 
 					draw_rect(
-						Rect2(base_offset_x - 1, base_offset_y - 1, 3, 3), theme_cache.grid_major);
+						Rect2(base_offset_x - 1, base_offset_y - 1, 3, 3), tc_grid_major);
 				}
 			}
 		}
@@ -22811,7 +21396,7 @@ void GraphEdit::_invalidate_connection_line_cache()
 	}
 }
 
-float GraphEdit::_get_shader_line_width() { return lines_thickness * theme_cache.base_scale + 4.0; }
+float GraphEdit::_get_shader_line_width() { return lines_thickness * tc_base_scale + 4.0; }
 
 void GraphEdit::add_valid_connection_type(int p_type, int p_with_type)
 {
@@ -23225,8 +21810,8 @@ Size2 GraphNode::get_titlebar_size() const
 		return Size2();
 	}
 	Size2 min_size = titlebar_hbox->get_bound_minimum_size();
-	if (theme_cache.titlebar.is_valid()) {
-		min_size += theme_cache.titlebar->get_minimum_size();
+	if (tc_titlebar.is_valid()) {
+		min_size += tc_titlebar->get_minimum_size();
 	}
 	return min_size;
 }
@@ -23278,20 +21863,20 @@ void GraphNode::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		if (mode == MODE_FRAME) {
-			if (theme_cache.panel.is_null() || theme_cache.titlebar.is_null() || !titlebar_hbox) {
+			if (tc_panel.is_null() || tc_titlebar.is_null() || !titlebar_hbox) {
 				break;
 			}
 			// Used for layout calculations.
-			Ref<StyleBox> sb_panel = theme_cache.panel;
-			Ref<StyleBox> sb_titlebar = theme_cache.titlebar;
+			Ref<StyleBox> sb_panel = tc_panel;
+			Ref<StyleBox> sb_titlebar = tc_titlebar;
 
 			// Used for drawing.
 			Ref<StyleBox> sb_to_draw_panel =
-				(selected && theme_cache.panel_selected.is_valid()) ? theme_cache.panel_selected
+				(selected && tc_panel_selected.is_valid()) ? tc_panel_selected
 																	: sb_panel;
 			Ref<StyleBox> sb_to_draw_titlebar =
-				(selected && theme_cache.titlebar_selected.is_valid())
-					? theme_cache.titlebar_selected
+				(selected && tc_titlebar_selected.is_valid())
+					? tc_titlebar_selected
 					: sb_titlebar;
 
 			Rect2 titlebar_rect(
@@ -23308,10 +21893,10 @@ void GraphNode::_notification(int p_what)
 			draw_style_box(sb_to_draw_titlebar.ptr(), titlebar_rect);
 
 			// Only draw the resize handle if the frame is not auto-resizing.
-			if (resizable && !autoshrink_enabled && theme_cache.resizer.is_valid()) {
-				Ref<Texture2D> resizer = theme_cache.resizer;
+			if (resizable && !autoshrink_enabled && tc_resizer.is_valid()) {
+				Ref<Texture2D> resizer = tc_resizer;
 				draw_texture(
-					resizer.ptr(), get_size() - resizer->get_size(), theme_cache.resizer_color);
+					resizer.ptr(), get_size() - resizer->get_size(), tc_resizer_color);
 			}
 		}
 	} break;
@@ -23327,7 +21912,7 @@ void GraphNode::draw_port(int p_slot_index, Point2i p_pos, bool p_left, const Co
 	Ref<Texture2D> port_icon = p_left ? slot.custom_port_icon_left : slot.custom_port_icon_right;
 
 	if (port_icon.is_null()) {
-		port_icon = theme_cache.port;
+		port_icon = tc_port;
 	}
 	if (port_icon.is_null()) {
 		return;
@@ -23535,8 +22120,8 @@ bool GraphNode::is_ignoring_valid_connection_type() const { return ignore_invali
 bool GraphNode::has_point(const Point2& p_point) const
 {
 	if (mode == MODE_FRAME) {
-		if (theme_cache.resizer.is_valid()) {
-			Ref<Texture2D> resizer = theme_cache.resizer;
+		if (tc_resizer.is_valid()) {
+			Ref<Texture2D> resizer = tc_resizer;
 			if (Rect2(get_size() - resizer->get_size(), resizer->get_size()).has_point(p_point)) {
 				return true;
 			}
@@ -23697,9 +22282,9 @@ int GraphNode::get_output_port_slot(int p_port_idx)
 Control::CursorShape GraphNode::get_cursor_shape(const Point2& p_pos) const
 {
 	const bool can_resize = (mode == MODE_FRAME) ? (resizable && !autoshrink_enabled) : resizable;
-	if (can_resize && theme_cache.resizer.is_valid()) {
-		if (resizing || (p_pos.x > get_size().x - theme_cache.resizer->get_width() &&
-							p_pos.y > get_size().y - theme_cache.resizer->get_height())) {
+	if (can_resize && tc_resizer.is_valid()) {
+		if (resizing || (p_pos.x > get_size().x - tc_resizer->get_width() &&
+							p_pos.y > get_size().y - tc_resizer->get_height())) {
 			return CURSOR_FDIAGSIZE;
 		}
 	}
@@ -23773,8 +22358,8 @@ String GraphNode::_get_accessibility_name() const { return String(); }
 
 void GraphNode::_resort()
 {
-	if (mode == MODE_FRAME && titlebar_hbox && theme_cache.titlebar.is_valid()) {
-		Ref<StyleBox> sb_titlebar = theme_cache.titlebar;
+	if (mode == MODE_FRAME && titlebar_hbox && tc_titlebar.is_valid()) {
+		Ref<StyleBox> sb_titlebar = tc_titlebar;
 		Size2 titlebar_size = Size2(get_size().width, titlebar_hbox->get_size().height);
 		titlebar_size -= sb_titlebar->get_minimum_size();
 		Rect2 titlebar_rect = Rect2(sb_titlebar->get_offset(), titlebar_size);
@@ -25060,10 +23645,10 @@ Size2 TreeItem::get_minimum_size(int p_column)
 	const TreeItem::Cell& cell = cells[p_column];
 
 	if (cell.cached_minimum_size_dirty || cell.text_buf->is_dirty() || cell.dirty) {
-		Size2 size = Size2(parent_tree->theme_cache.inner_item_margin_left +
-							   parent_tree->theme_cache.inner_item_margin_right,
-			parent_tree->theme_cache.inner_item_margin_top +
-				parent_tree->theme_cache.inner_item_margin_bottom);
+		Size2 size = Size2(parent_tree->tc_inner_item_margin_left +
+							   parent_tree->tc_inner_item_margin_right,
+			parent_tree->tc_inner_item_margin_top +
+				parent_tree->tc_inner_item_margin_bottom);
 		int content_height = size.height;
 
 		// Text.
@@ -25080,20 +23665,20 @@ Size2 TreeItem::get_minimum_size(int p_column)
 
 		// Icon.
 		if (cell.mode == CELL_MODE_CHECK) {
-			Size2i check_size = parent_tree->theme_cache.checked->get_size();
-			size.width += check_size.width + parent_tree->theme_cache.h_separation;
+			Size2i check_size = parent_tree->tc_checked->get_size();
+			size.width += check_size.width + parent_tree->tc_h_separation;
 			content_height = MAX(content_height, check_size.height);
 		}
 		else if (cell.mode == CELL_MODE_RANGE) {
-			Ref<Texture2D> icon = cell.text.is_empty() ? parent_tree->theme_cache.updown
-													   : parent_tree->theme_cache.select_arrow;
+			Ref<Texture2D> icon = cell.text.is_empty() ? parent_tree->tc_updown
+													   : parent_tree->tc_select_arrow;
 			Size2i icon_size = icon->get_size();
-			size.width += icon_size.width + parent_tree->theme_cache.h_separation;
+			size.width += icon_size.width + parent_tree->tc_h_separation;
 			content_height = MAX(content_height, icon_size.height);
 		}
 		if (cell.icon.is_valid()) {
 			Size2i icon_size = parent_tree->_get_cell_icon_size(cell);
-			size.width += icon_size.width + parent_tree->theme_cache.icon_h_separation;
+			size.width += icon_size.width + parent_tree->tc_icon_h_separation;
 			content_height = MAX(content_height, icon_size.height);
 		}
 
@@ -25103,8 +23688,8 @@ Size2 TreeItem::get_minimum_size(int p_column)
 			if (texture.is_valid()) {
 				Size2 button_size = texture->get_size();
 				button_size.width +=
-					parent_tree->theme_cache.button_pressed->get_minimum_size().width;
-				size.width += button_size.width + parent_tree->theme_cache.button_margin;
+					parent_tree->tc_button_pressed->get_minimum_size().width;
+				size.width += button_size.width + parent_tree->tc_button_margin;
 				content_height = MAX(content_height, button_size.height);
 			}
 		}
@@ -25135,7 +23720,7 @@ void Tree::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
+	tc_base_scale = get_theme_default_base_scale();
 }
 
 Size2 Tree::_get_cell_icon_size(const TreeItem::Cell& p_cell) const
@@ -25143,8 +23728,8 @@ Size2 Tree::_get_cell_icon_size(const TreeItem::Cell& p_cell) const
 	Size2i icon_size = p_cell.get_icon_size();
 
 	int max_width = 0;
-	if (theme_cache.icon_max_width > 0) {
-		max_width = theme_cache.icon_max_width;
+	if (tc_icon_max_width > 0) {
+		max_width = tc_icon_max_width;
 	}
 	if (p_cell.icon_max_w > 0 && (max_width == 0 || p_cell.icon_max_w < max_width)) {
 		max_width = p_cell.icon_max_w;
@@ -25164,20 +23749,20 @@ int Tree::compute_item_height(TreeItem* p_item) const
 		return 0;
 	}
 
-	ERR_FAIL_COND_V(theme_cache.font.is_null(), 0);
+	ERR_FAIL_COND_V(tc_font.is_null(), 0);
 	int height = 0;
 
 	for (int i = 0; i < columns.size(); i++) {
 		height = MAX(height, p_item->get_minimum_size(i).y);
 	}
 	int font_height = cache.font_height != -1 ? cache.font_height
-											  : theme_cache.font->get_height(theme_cache.font_size);
+											  : tc_font->get_height(tc_font_size);
 	int item_min_height = MAX(font_height, p_item->get_custom_minimum_height());
 	if (height < item_min_height) {
 		height = item_min_height;
 	}
 
-	height += theme_cache.v_separation;
+	height += tc_v_separation;
 
 	return height;
 }
@@ -25188,7 +23773,7 @@ int Tree::get_item_height(TreeItem* p_item) const
 		return 0;
 	}
 	int height = compute_item_height(p_item);
-	height += theme_cache.v_separation;
+	height += tc_v_separation;
 
 	if (!p_item->collapsed) { // If not collapsed, check the children.
 
@@ -25233,7 +23818,7 @@ Rect2i Tree::convert_rtl_rect(const Rect2i& p_rect) const
 void Tree::draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, const Color& p_color,
 	const Color& p_icon_color, int p_ol_size, const Color& p_ol_color, const RID& p_ci) const
 {
-	ERR_FAIL_COND(theme_cache.font.is_null());
+	ERR_FAIL_COND(tc_font.is_null());
 
 	Rect2i rect = p_rect;
 	Size2 ts = p_cell.text_buf->get_size();
@@ -25247,7 +23832,7 @@ void Tree::draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, co
 	int displayed_width = 0;
 	if (p_cell.icon.is_valid()) {
 		displayed_width =
-			MIN(displayed_width + icon_size.width + theme_cache.icon_h_separation, rect.size.width);
+			MIN(displayed_width + icon_size.width + tc_icon_h_separation, rect.size.width);
 	}
 	if (displayed_width + ts.width > rect.size.width) {
 		ts.width = rect.size.width - displayed_width;
@@ -25284,7 +23869,7 @@ void Tree::draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, co
 			}
 			p_cell.text_buf->draw(ci, draw_pos, p_color);
 		}
-		rect.position.x += ts.width + theme_cache.icon_h_separation;
+		rect.position.x += ts.width + tc_icon_h_separation;
 	}
 
 	if (p_cell.icon.is_valid()) {
@@ -25298,7 +23883,7 @@ void Tree::draw_item_rect(const TreeItem::Cell& p_cell, const Rect2i& p_rect, co
 			icon_size.width = rect.size.width;
 		}
 		p_cell.draw_icon(ci, icon_pos, icon_size, icon_region, p_icon_color);
-		rect.position.x += icon_size.x + theme_cache.icon_h_separation;
+		rect.position.x += icon_size.x + tc_icon_h_separation;
 	}
 
 	if (!rtl && ts.width > 0) {
@@ -25448,7 +24033,7 @@ bool Tree::_scroll(bool p_horizontal, float p_pages)
 Rect2 Tree::_get_scrollbar_layout_rect() const
 {
 	const Size2 control_size = get_size();
-	const Ref<StyleBox> background = theme_cache.panel_style;
+	const Ref<StyleBox> background = tc_panel_style;
 
 	// This is the background stylebox's content rect.
 	const real_t width =
@@ -25458,16 +24043,16 @@ Rect2 Tree::_get_scrollbar_layout_rect() const
 	const Rect2 content_rect = Rect2(background->get_offset(), Size2(width, height));
 
 	// Use the stylebox's margins by default. Can be overridden by `scrollbar_margin_*`.
-	const real_t top = theme_cache.scrollbar_margin_top < 0 ? content_rect.get_position().y
-															: theme_cache.scrollbar_margin_top;
-	const real_t right = theme_cache.scrollbar_margin_right < 0
+	const real_t top = tc_scrollbar_margin_top < 0 ? content_rect.get_position().y
+															: tc_scrollbar_margin_top;
+	const real_t right = tc_scrollbar_margin_right < 0
 							 ? content_rect.get_end().x
-							 : (control_size.x - theme_cache.scrollbar_margin_right);
-	const real_t bottom = theme_cache.scrollbar_margin_bottom < 0
+							 : (control_size.x - tc_scrollbar_margin_right);
+	const real_t bottom = tc_scrollbar_margin_bottom < 0
 							  ? content_rect.get_end().y
-							  : (control_size.y - theme_cache.scrollbar_margin_bottom);
-	const real_t left = theme_cache.scrollbar_margin_left < 0 ? content_rect.get_position().x
-															  : theme_cache.scrollbar_margin_left;
+							  : (control_size.y - tc_scrollbar_margin_bottom);
+	const real_t left = tc_scrollbar_margin_left < 0 ? content_rect.get_position().x
+															  : tc_scrollbar_margin_left;
 
 	return Rect2(left, top, right - left, bottom - top);
 }
@@ -25475,7 +24060,7 @@ Rect2 Tree::_get_scrollbar_layout_rect() const
 Rect2 Tree::_get_content_rect() const
 {
 	const Size2 control_size = get_size();
-	const Ref<StyleBox> background = theme_cache.panel_style;
+	const Ref<StyleBox> background = tc_panel_style;
 
 	// This is the background stylebox's content rect.
 	const real_t width =
@@ -25488,11 +24073,11 @@ Rect2 Tree::_get_content_rect() const
 	// stylebox margin area.
 	const real_t v_size =
 		v_scroll->is_visible()
-			? (v_scroll->get_bound_minimum_size().x + theme_cache.scrollbar_h_separation)
+			? (v_scroll->get_bound_minimum_size().x + tc_scrollbar_h_separation)
 			: 0;
 	const real_t h_size =
 		h_scroll->is_visible()
-			? (h_scroll->get_bound_minimum_size().y + theme_cache.scrollbar_v_separation)
+			? (h_scroll->get_bound_minimum_size().y + tc_scrollbar_v_separation)
 			: 0;
 	const Point2 scroll_begin = _get_scrollbar_layout_rect().get_end() - Vector2(v_size, h_size);
 	const Size2 offset = (content_rect.get_end() - scroll_begin).maxf(0);
@@ -25571,12 +24156,12 @@ Size2 Tree::get_internal_min_size() const
 
 int Tree::_get_title_button_height() const
 {
-	ERR_FAIL_COND_V(theme_cache.tb_font.is_null() || theme_cache.title_button.is_null(), 0);
+	ERR_FAIL_COND_V(tc_tb_font.is_null() || tc_title_button.is_null(), 0);
 	int h = 0;
 	if (show_column_titles) {
 		for (int i = 0; i < columns.size(); i++) {
 			h = MAX(h, columns[i].text_buf->get_size().y +
-						   theme_cache.title_button->get_minimum_size().height);
+						   tc_title_button->get_minimum_size().height);
 		}
 	}
 	return h;
@@ -25802,7 +24387,7 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 					}
 
 					Ref<Texture2D> b = cell.buttons[j].texture;
-					Size2 b_size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
+					Size2 b_size = b->get_size() + tc_button_pressed->get_minimum_size();
 					ofst.x -= b_size.x;
 
 					AccessibilityServer::update_set_bounds(
@@ -25813,7 +24398,7 @@ void Tree::_accessibility_update_item(Point2& r_ofs, TreeItem* p_item, int& r_ro
 		}
 
 		r_ofs.y += item_size.y;
-		r_ofs.y += theme_cache.v_separation;
+		r_ofs.y += tc_v_separation;
 
 		p_item->accessibility_row_dirty = false;
 		r_row++;
@@ -25845,7 +24430,7 @@ void Tree::set_self_modulate(const Color& p_self_modulate)
 
 void Tree::_update_all()
 {
-	cache.font_height = theme_cache.font->get_height(theme_cache.font_size);
+	cache.font_height = tc_font->get_height(tc_font_size);
 	for (int i = 0; i < columns.size(); i++) {
 		update_column(i);
 	}
@@ -25858,8 +24443,8 @@ Size2 Tree::get_minimum_size() const
 {
 	Vector2 min_size = Vector2(0, _get_title_button_height());
 
-	if (theme_cache.panel_style.is_valid()) {
-		min_size += theme_cache.panel_style->get_minimum_size();
+	if (tc_panel_style.is_valid()) {
+		min_size += tc_panel_style->get_minimum_size();
 	}
 
 	Vector2 content_min_size = get_internal_min_size();
@@ -26016,11 +24601,11 @@ int Tree::get_column_minimum_width(int p_column) const
 
 		// Check if the visible title of the column is wider.
 		if (show_column_titles) {
-			const float padding = theme_cache.title_button->get_margin(SIDE_LEFT) +
-								  theme_cache.title_button->get_margin(SIDE_RIGHT);
-			min_width = MAX(theme_cache.font
+			const float padding = tc_title_button->get_margin(SIDE_LEFT) +
+								  tc_title_button->get_margin(SIDE_RIGHT);
+			min_width = MAX(tc_font
 									->get_string_size(columns[p_column].xl_title,
-										HORIZONTAL_ALIGNMENT_LEFT, -1, theme_cache.font_size)
+										HORIZONTAL_ALIGNMENT_LEFT, -1, tc_font_size)
 									.width +
 								padding,
 				min_width);
@@ -26046,10 +24631,10 @@ int Tree::get_column_minimum_width(int p_column) const
 							}
 						}
 					}
-					indent = theme_cache.item_margin * depth;
+					indent = tc_item_margin * depth;
 				}
 				else {
-					indent = theme_cache.h_separation;
+					indent = tc_h_separation;
 				}
 
 				// Get the item minimum size.
@@ -26137,7 +24722,7 @@ int Tree::get_item_offset(TreeItem* p_item) const
 
 		if ((it != root || !hide_root) && it->is_visible_in_tree()) {
 			ofs += compute_item_height(it);
-			ofs += theme_cache.v_separation;
+			ofs += tc_v_separation;
 		}
 
 		if (it->first_child && !it->collapsed) {
@@ -26193,7 +24778,7 @@ void Tree::ensure_cursor_is_visible()
 			y_offset -= sticky_stack_end;
 		}
 
-		const int cell_h = compute_item_height(selected_item) + theme_cache.v_separation;
+		const int cell_h = compute_item_height(selected_item) + tc_v_separation;
 		int screen_h = area_size.height - tbh - sticky_stack_end;
 
 		if (cell_h > screen_h) { // Screen size is too small, maybe it was not resized yet.
@@ -26265,9 +24850,9 @@ Rect2 Tree::get_item_rect(TreeItem* p_item, int p_column, int p_button) const
 	}
 
 	int ofs = get_item_offset(p_item);
-	int height = compute_item_height(p_item) + theme_cache.v_separation;
+	int height = compute_item_height(p_item) + tc_v_separation;
 	Rect2 r;
-	r.position.y = ofs - theme_cache.offset.y + theme_cache.panel_style->get_offset().y;
+	r.position.y = ofs - tc_offset.y + tc_panel_style->get_offset().y;
 	r.size.height = height;
 	bool rtl = is_layout_rtl();
 	const Rect2 content_rect = _get_content_rect();
@@ -26282,34 +24867,34 @@ Rect2 Tree::get_item_rect(TreeItem* p_item, int p_column, int p_button) const
 			accum += get_column_width(i);
 		}
 		r.position.x =
-			(rtl) ? get_size().x - (accum - theme_cache.offset.x) - get_column_width(p_column) -
-						theme_cache.panel_style->get_margin(SIDE_LEFT)
-				  : accum - theme_cache.offset.x + theme_cache.panel_style->get_margin(SIDE_LEFT);
+			(rtl) ? get_size().x - (accum - tc_offset.x) - get_column_width(p_column) -
+						tc_panel_style->get_margin(SIDE_LEFT)
+				  : accum - tc_offset.x + tc_panel_style->get_margin(SIDE_LEFT);
 		r.size.x = get_column_width(p_column);
 		if (p_button != -1) {
 			// RTL direction support for button rect is different due to buttons not
 			// having same behavior as they do in LTR when tree is scrolled.
 			const TreeItem::Cell& c = p_item->cells[p_column];
 			Vector2 ofst =
-				Vector2(r.position.x + r.size.x + theme_cache.button_margin, r.position.y);
+				Vector2(r.position.x + r.size.x + tc_button_margin, r.position.y);
 
 			// Compute total width of buttons block including spacings.
 			int buttons_width = 0;
 			for (int j = c.buttons.size() - 1; j >= 0; j--) {
 				Ref<Texture2D> b = c.buttons[j].texture;
-				Size2 size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
-				buttons_width += size.width + theme_cache.button_margin;
+				Size2 size = b->get_size() + tc_button_pressed->get_minimum_size();
+				buttons_width += size.width + tc_button_margin;
 			}
 			for (int j = c.buttons.size() - 1; j >= 0; j--) {
 				Ref<Texture2D> b = c.buttons[j].texture;
-				Size2 size = b->get_size() + theme_cache.button_pressed->get_minimum_size();
-				ofst.x -= size.x + theme_cache.button_margin;
+				Size2 size = b->get_size() + tc_button_pressed->get_minimum_size();
+				ofst.x -= size.x + tc_button_margin;
 
 				if (rtl) {
 					if (j == p_button) {
 						return Rect2(r.position, Size2(size.x, r.size.y));
 					}
-					r.position.x += size.x + theme_cache.button_margin;
+					r.position.x += size.x + tc_button_margin;
 					continue;
 				}
 
@@ -26319,11 +24904,11 @@ Rect2 Tree::get_item_rect(TreeItem* p_item, int p_column, int p_button) const
 						return Rect2(ofst, Size2(size.x, r.size.y));
 					}
 					// Button block can be outside of `content_rect`.
-					if (content_rect_end_x - (r.position.x + theme_cache.h_separation) <
+					if (content_rect_end_x - (r.position.x + tc_h_separation) <
 						buttons_width) {
 						return Rect2(
 							r.position +
-								Point2(theme_cache.h_separation +
+								Point2(tc_h_separation +
 										   (buttons_width - ((r.position.x + r.size.x) - ofst.x)),
 									0),
 							Size2(size.x, r.size.y));
@@ -26501,7 +25086,7 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 	}
 
 	if (p_sticky_check) {
-		Point2 relative_pos = p_pos - theme_cache.offset;
+		Point2 relative_pos = p_pos - tc_offset;
 		for (TreeItem* item : sticky_list) {
 			if (item && relative_pos.y >= item->sticky_offset.y &&
 				relative_pos.y < item->sticky_offset.y + item->cached_label_height) {
@@ -26515,7 +25100,7 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 	Point2 pos = p_pos;
 
 	// Calculate target parent based on horizontal mouse position.
-	int indent_width = theme_cache.item_margin;
+	int indent_width = tc_item_margin;
 	int target_depth =
 		MAX(0, (p_pos.x / indent_width) + 1); // +1 to overlap with relationship lines.
 	int current_item_depth = 0;
@@ -26539,7 +25124,7 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 	bool is_at_target_depth = (drop_mode_flags && current_item_depth == target_depth);
 
 	if ((root != p_item || !hide_root) && p_item->is_visible_in_tree()) {
-		r_height = compute_item_height(p_item) + theme_cache.v_separation;
+		r_height = compute_item_height(p_item) + tc_v_separation;
 
 		bool within_vertical_bounds = (pos.y < r_height);
 
@@ -26551,11 +25136,11 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 			}
 
 			if (!skip_item) {
-				int item_content_start_x = current_item_depth * theme_cache.item_margin;
+				int item_content_start_x = current_item_depth * tc_item_margin;
 				if (!p_item->first_child) {
 					item_content_start_x +=
-						((p_item->disable_folding || hide_folding) ? theme_cache.h_separation
-																   : theme_cache.item_margin);
+						((p_item->disable_folding || hide_folding) ? tc_h_separation
+																   : tc_item_margin);
 				}
 				bool over_content_area = (p_pos.x >= item_content_start_x);
 
@@ -26640,7 +25225,7 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 							   p_item->cells[i + plus].text.is_empty() &&
 							   p_item->cells[i + plus].icon.is_null() &&
 							   p_item->cells[i + plus].buttons.is_empty()) {
-							col_width += theme_cache.h_separation;
+							col_width += tc_h_separation;
 							col_width += get_column_width(i + plus);
 							plus++;
 						}
@@ -26700,7 +25285,7 @@ TreeItem* Tree::_find_item_at_pos(TreeItem* p_item, const Point2& p_pos, int& r_
 					   p_item->cells[i + plus].text.is_empty() &&
 					   p_item->cells[i + plus].icon.is_null() &&
 					   p_item->cells[i + plus].buttons.is_empty()) {
-					col_width += theme_cache.h_separation;
+					col_width += tc_h_separation;
 					col_width += get_column_width(i + plus);
 					plus++;
 				}
@@ -26736,15 +25321,15 @@ void Tree::_find_button_at_pos(
 	if (cache.rtl) {
 		pos.x = get_size().width - pos.x - 1;
 	}
-	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	Point2 margin_offset = tc_panel_style->get_offset();
 	pos -= margin_offset;
 	pos.y -= _get_title_button_height();
 	if (pos.y + margin_offset.y < 0) {
 		return;
 	}
-	pos += theme_cache.offset; // Scrolling.
+	pos += tc_offset; // Scrolling.
 
-	int x_limit = _get_content_rect().size.x + theme_cache.offset.width;
+	int x_limit = _get_content_rect().size.x + tc_offset.width;
 
 	if (pos.x > x_limit) {
 		// Inside the scroll area.
@@ -26793,7 +25378,7 @@ Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
 				   p_item->cells[i + plus].mode == TreeItem::CELL_MODE_STRING &&
 				   p_item->cells[i + plus].text.is_empty() &&
 				   p_item->cells[i + plus].icon.is_null()) {
-				col_width += theme_cache.h_separation;
+				col_width += tc_h_separation;
 				col_width += get_column_width(i + plus);
 				plus++;
 			}
@@ -26811,16 +25396,16 @@ Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
 
 	if (col >= 0) {
 		if (col == 0) {
-			int margin = p_x_ofs + theme_cache.item_margin;
+			int margin = p_x_ofs + tc_item_margin;
 			col_width -= margin;
 			limit_w -= margin;
 			col_ofs += margin;
 			x -= margin;
 		}
 		else {
-			col_width -= theme_cache.h_separation;
-			limit_w -= theme_cache.h_separation;
-			x -= theme_cache.h_separation;
+			col_width -= tc_h_separation;
+			limit_w -= tc_h_separation;
+			x -= tc_h_separation;
 		}
 
 		if (!cache.rtl && !p_item->cells[col].buttons.is_empty()) {
@@ -26828,8 +25413,8 @@ Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
 			for (int j = p_item->cells[col].buttons.size() - 1; j >= 0; j--) {
 				const Ref<Texture2D>& b = p_item->cells[col].buttons[j].texture;
 				button_w += b->get_size().width +
-							theme_cache.button_pressed->get_minimum_size().width +
-							theme_cache.button_margin;
+							tc_button_pressed->get_minimum_size().width +
+							tc_button_margin;
 			}
 
 			col_width = MAX(button_w, MIN(limit_w, col_width));
@@ -26838,18 +25423,18 @@ Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
 		// Cell button detection code.
 		// The first half of the button margin will be applied to the left button,
 		// and the other half to the right button.
-		const int offset_button_width = theme_cache.button_margin / 2;
+		const int offset_button_width = tc_button_margin / 2;
 		const TreeItem::Cell& c = p_item->cells[col];
 		for (int j = c.buttons.size() - 1; j >= 0; j--) {
 			const Ref<Texture2D>& b = c.buttons[j].texture;
-			int w = b->get_size().width + theme_cache.button_pressed->get_minimum_size().width;
+			int w = b->get_size().width + tc_button_pressed->get_minimum_size().width;
 
 			if (x >= col_width - w - offset_button_width - 1) {
 				result.button_index = j;
 				break;
 			}
 
-			col_width -= w + theme_cache.button_margin;
+			col_width -= w + tc_button_margin;
 		}
 	}
 
@@ -26871,7 +25456,7 @@ int Tree::get_column_at_position(const Point2& p_pos) const
 	if (is_layout_rtl()) {
 		pos.x = get_size().width - pos.x - 1;
 	}
-	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	Point2 margin_offset = tc_panel_style->get_offset();
 	pos -= margin_offset;
 	pos.y -= _get_title_button_height();
 	if (pos.y + margin_offset.y < 0) {
@@ -26904,7 +25489,7 @@ int Tree::get_drop_section_at_position(const Point2& p_pos) const
 	if (is_layout_rtl()) {
 		pos.x = get_size().width - pos.x - 1;
 	}
-	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	Point2 margin_offset = tc_panel_style->get_offset();
 	pos -= margin_offset;
 	pos.y -= _get_title_button_height();
 	if (pos.y + margin_offset.y < 0) {
@@ -26946,7 +25531,7 @@ TreeItem* Tree::get_item_at_position(const Point2& p_pos) const
 	if (is_layout_rtl()) {
 		pos.x = get_size().width - pos.x - 1;
 	}
-	Point2 margin_offset = theme_cache.panel_style->get_offset();
+	Point2 margin_offset = tc_panel_style->get_offset();
 	pos -= margin_offset;
 	pos.y -= _get_title_button_height();
 	if (pos.y + margin_offset.y < 0) {
@@ -26999,7 +25584,7 @@ int Tree::get_button_id_at_position(const Point2& p_pos) const
 
 Node::AutoTranslateMode Tree::get_tooltip_auto_translate_mode_at(const Point2& p_at) const
 {
-	Point2 pos = p_at - theme_cache.panel_style->get_offset();
+	Point2 pos = p_at - tc_panel_style->get_offset();
 	pos.y -= _get_title_button_height();
 
 	// `pos.y` less than 0 indicates we're in the header.
@@ -27264,13 +25849,10 @@ private:
 	String action_down = "ui_down";
 	VisibilityMode visibility = VISIBILITY_ALWAYS;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> normal_joystick;
-		Ref<StyleBox> normal_tip;
-		Ref<StyleBox> pressed_joystick;
-		Ref<StyleBox> pressed_tip;
-	} theme_cache;
+		Ref<StyleBox> tc_normal_joystick;
+		Ref<StyleBox> tc_normal_tip;
+		Ref<StyleBox> tc_pressed_joystick;
+		Ref<StyleBox> tc_pressed_tip;
 
 	bool is_pressed = false;
 	bool has_input = false;
@@ -27340,8 +25922,8 @@ bool Label::is_uppercase() const { return uppercase; }
 int Label::get_line_height(int p_line) const
 {
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 	if (p_line >= 0 && p_line < total_line_count) {
 		RID rid = get_line_rid(p_line);
@@ -27371,13 +25953,13 @@ int Label::get_line_height(int p_line) const
 void Label::_update_visible() const
 {
 	int line_spacing =
-		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+		settings.is_valid() ? settings->get_line_spacing() : tc_line_spacing;
 	int paragraph_spacing =
-		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
-	Ref<StyleBox> style = theme_cache.normal_style;
+		settings.is_valid() ? settings->get_paragraph_spacing() : tc_paragraph_spacing;
+	Ref<StyleBox> style = tc_normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 	int lines_visible = total_line_count;
 
@@ -27527,10 +26109,10 @@ Rect2 Label::_get_line_rect(int p_para, int p_line) const
 	bool rtl = TS->shaped_text_get_inferred_direction(paragraphs[p_para].text_rid) ==
 			   TextServer::DIRECTION_RTL;
 	bool rtl_layout = is_layout_rtl();
-	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<StyleBox> style = tc_normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 	Size2 size = get_size();
 	RID rid = paragraphs[p_para].lines_rid[p_line];
@@ -27582,15 +26164,15 @@ int Label::get_layout_data(Vector2& r_offset, int& r_last_line, int& r_line_spac
 	// label. Only vertical margin is considered in r_offset: use get_line_rect to get the
 	// horizontal offset for a given line of text.
 	Size2 size = get_size();
-	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<StyleBox> style = tc_normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 	int line_spacing =
-		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+		settings.is_valid() ? settings->get_line_spacing() : tc_line_spacing;
 	int paragraph_spacing =
-		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+		settings.is_valid() ? settings->get_paragraph_spacing() : tc_paragraph_spacing;
 	float total_h = 0.0;
 	int lines_visible = 0;
 
@@ -27713,7 +26295,7 @@ PackedStringArray Label::get_configuration_warnings() const
 		font = settings->get_font();
 	}
 	if (font.is_null()) {
-		font = theme_cache.font;
+		font = tc_font;
 	}
 
 	if (font.is_valid()) {
@@ -27735,9 +26317,9 @@ PackedStringArray Label::get_configuration_warnings() const
 	Ref<FontFile> ff = font;
 	if (ff.is_valid() && ff->is_multichannel_signed_distance_field()) {
 		bool has_settings = settings.is_valid();
-		int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+		int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 		int outline_size =
-			has_settings ? settings->get_outline_size() : theme_cache.font_outline_size;
+			has_settings ? settings->get_outline_size() : tc_font_outline_size;
 		Vector<LabelSettings::StackedOutlineData> stacked_outline_datas =
 			has_settings ? settings->get_stacked_outline_data()
 						 : Vector<LabelSettings::StackedOutlineData>();
@@ -27786,10 +26368,10 @@ Rect2 Label::get_character_bounds(int p_pos) const
 	_ensure_shaped();
 
 	int paragraph_spacing =
-		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+		settings.is_valid() ? settings->get_paragraph_spacing() : tc_paragraph_spacing;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 
 	Vector2 ofs;
@@ -27862,16 +26444,16 @@ Size2 Label::get_minimum_size() const
 
 	const Ref<Font>& font = (settings.is_valid() && settings->get_font().is_valid())
 								? settings->get_font()
-								: theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+								: tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 
 	min_size.height = MAX(min_size.height, font->get_height(font_size));
 
-	Size2 min_style = theme_cache.normal_style->get_minimum_size();
+	Size2 min_style = tc_normal_style->get_minimum_size();
 	if (autowrap_mode != TextServer::AUTOWRAP_OFF) {
 		if (!clip && overrun_behavior != TextServer::OVERRUN_NO_TRIMMING && max_lines_visible > 0) {
 			int line_spacing =
-				settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+				settings.is_valid() ? settings->get_line_spacing() : tc_line_spacing;
 			min_size.height = MIN(
 				min_size.height, (font->get_height(font_size) + line_spacing) * max_lines_visible);
 
@@ -27897,7 +26479,7 @@ Size2 Label::get_desired_size() const
 	}
 
 	_ensure_shaped();
-	Size2 min_style = theme_cache.normal_style->get_minimum_size();
+	Size2 min_style = tc_normal_style->get_minimum_size();
 	Size2 content_size = minsize + min_style;
 	content_size.width = MIN(content_size.width, int(combined_max.width));
 
@@ -27916,15 +26498,15 @@ int Label::get_line_count() const
 
 int Label::get_visible_line_count() const
 {
-	Ref<StyleBox> style = theme_cache.normal_style;
+	Ref<StyleBox> style = tc_normal_style;
 	Ref<Font> font = (settings.is_valid() && settings->get_font().is_valid()) ? settings->get_font()
-																			  : theme_cache.font;
-	int font_size = settings.is_valid() ? settings->get_font_size() : theme_cache.font_size;
+																			  : tc_font;
+	int font_size = settings.is_valid() ? settings->get_font_size() : tc_font_size;
 	int font_h = font->get_height(font_size);
 	int line_spacing =
-		settings.is_valid() ? settings->get_line_spacing() : theme_cache.line_spacing;
+		settings.is_valid() ? settings->get_line_spacing() : tc_line_spacing;
 	int paragraph_spacing =
-		settings.is_valid() ? settings->get_paragraph_spacing() : theme_cache.paragraph_spacing;
+		settings.is_valid() ? settings->get_paragraph_spacing() : tc_paragraph_spacing;
 	int lines_visible = 0;
 	float total_h = 0.0;
 
@@ -28085,7 +26667,7 @@ void LineEdit::_update_ime_window_position()
 	}
 	DisplayServer::window_set_ime_active(true, wid);
 	Point2 pos = Point2(get_caret_pixel_pos().x,
-					 (get_size().y + theme_cache.font->get_height(theme_cache.font_size)) / 2) +
+					 (get_size().y + tc_font->get_height(tc_font_size)) / 2) +
 				 get_global_position();
 	if (get_window()->get_embedder()) {
 		pos += get_viewport()->get_popup_base_transform().get_origin();
@@ -28361,7 +26943,7 @@ Point2 LineEdit::_get_right_icon_size(Ref<Texture2D> p_right_icon) const
 		icon_size = p_right_icon->get_size();
 		break;
 	case LineEdit::EXPAND_MODE_FIT_TO_TEXT: {
-		real_t height = theme_cache.font->get_height(theme_cache.font_size);
+		real_t height = tc_font->get_height(tc_font_size);
 		icon_size = Size2(height, height);
 	} break;
 	case LineEdit::EXPAND_MODE_FIT_TO_LINE_EDIT: {
@@ -28423,17 +27005,17 @@ bool LineEdit::_is_over_clear_button(const Point2& p_pos) const
 	if (!clear_button_enabled || !has_point(p_pos)) {
 		return false;
 	}
-	Ref<Texture2D> icon = theme_cache.clear_icon;
-	return is_layout_rtl() ? p_pos.x < theme_cache.normal->get_margin(SIDE_LEFT) + icon->get_width()
+	Ref<Texture2D> icon = tc_clear_icon;
+	return is_layout_rtl() ? p_pos.x < tc_normal->get_margin(SIDE_LEFT) + icon->get_width()
 						   : p_pos.x > get_size().width - icon->get_width() -
-										   theme_cache.normal->get_margin(SIDE_RIGHT);
+										   tc_normal->get_margin(SIDE_RIGHT);
 }
 
 void LineEdit::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
+	tc_base_scale = get_theme_default_base_scale();
 }
 
 void LineEdit::copy_text()
@@ -28535,7 +27117,7 @@ void LineEdit::shift_selection_check_post(bool p_shift)
 
 void LineEdit::set_caret_at_pixel_pos(int p_x)
 {
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style = tc_normal;
 	bool rtl = is_layout_rtl();
 
 	int x_ofs = 0;
@@ -28575,7 +27157,7 @@ void LineEdit::set_caret_at_pixel_pos(int p_x)
 	bool using_placeholder = text.is_empty() && ime_text.is_empty();
 	bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
 	if (right_icon.is_valid() || display_clear_icon) {
-		Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+		Ref<Texture2D> r_icon = display_clear_icon ? tc_clear_icon : right_icon;
 		Point2 right_icon_size = _get_right_icon_size(r_icon);
 		if (alignment == HORIZONTAL_ALIGNMENT_CENTER) {
 			if (Math::is_zero_approx(scroll_offset)) {
@@ -28611,7 +27193,7 @@ void LineEdit::set_caret_at_pixel_pos(int p_x)
 
 Vector2 LineEdit::get_caret_pixel_pos()
 {
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style = tc_normal;
 	bool rtl = is_layout_rtl();
 
 	int x_ofs = 0;
@@ -28651,7 +27233,7 @@ Vector2 LineEdit::get_caret_pixel_pos()
 	bool using_placeholder = text.is_empty() && ime_text.is_empty();
 	bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
 	if (right_icon.is_valid() || display_clear_icon) {
-		Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+		Ref<Texture2D> r_icon = display_clear_icon ? tc_clear_icon : right_icon;
 		Point2 right_icon_size = _get_right_icon_size(r_icon);
 		if (alignment == HORIZONTAL_ALIGNMENT_CENTER) {
 			if (Math::is_zero_approx(scroll_offset)) {
@@ -28853,8 +27435,8 @@ float LineEdit::get_scroll_offset() const { return scroll_offset; }
 
 Size2 LineEdit::get_minimum_size() const
 {
-	Ref<Font> font = theme_cache.font;
-	int font_size = theme_cache.font_size;
+	Ref<Font> font = tc_font;
+	int font_size = tc_font_size;
 
 	Size2 min_size;
 
@@ -28862,11 +27444,11 @@ Size2 LineEdit::get_minimum_size() const
 	// W is wider than M in most fonts, Using M may result in hiding the last digit when using float
 	// values in SpinBox, ie. ColorPicker RAW values.
 	float em_space_size = font->get_char_size('W', font_size).x;
-	min_size.width = theme_cache.minimum_character_width * em_space_size;
+	min_size.width = tc_minimum_character_width * em_space_size;
 
 	if (expand_to_text_length) {
 		// Ensure some space for the caret when placed at the end.
-		min_size.width = MAX(min_size.width, full_width + theme_cache.caret_width);
+		min_size.width = MAX(min_size.width, full_width + tc_caret_width);
 	}
 
 	min_size.height = MAX(TS->shaped_text_get_size(text_rid).y, font->get_height(font_size));
@@ -28879,14 +27461,14 @@ Size2 LineEdit::get_minimum_size() const
 		icon_max_width = right_icon_size.width;
 	}
 	if (clear_button_enabled) {
-		Point2 right_icon_size = _get_right_icon_size(theme_cache.clear_icon);
+		Point2 right_icon_size = _get_right_icon_size(tc_clear_icon);
 		min_size.height = MAX(min_size.height, right_icon_size.height);
 		icon_max_width = MAX(icon_max_width, right_icon_size.width);
 	}
 	min_size.width += icon_max_width;
 
 	Size2 style_min_size =
-		theme_cache.normal->get_minimum_size().max(theme_cache.read_only->get_minimum_size());
+		tc_normal->get_minimum_size().max(tc_read_only->get_minimum_size());
 	return style_min_size + min_size;
 }
 
@@ -29106,13 +27688,13 @@ PackedStringArray LineEdit::get_configuration_warnings() const
 void LineEdit::_fit_to_width()
 {
 	if (alignment == HORIZONTAL_ALIGNMENT_FILL) {
-		Ref<StyleBox> style = theme_cache.normal;
+		Ref<StyleBox> style = tc_normal;
 		int t_width =
 			get_size().width - style->get_margin(SIDE_RIGHT) - style->get_margin(SIDE_LEFT);
 		bool using_placeholder = text.is_empty() && ime_text.is_empty();
 		bool display_clear_icon = !using_placeholder && is_editable() && clear_button_enabled;
 		if (right_icon.is_valid() || display_clear_icon) {
-			Ref<Texture2D> r_icon = display_clear_icon ? theme_cache.clear_icon : right_icon;
+			Ref<Texture2D> r_icon = display_clear_icon ? tc_clear_icon : right_icon;
 			Point2 right_icon_size = _get_right_icon_size(r_icon);
 			t_width -= right_icon_size.width;
 		}
@@ -29391,14 +27973,14 @@ Rect2 ItemList::get_item_rect(int p_idx, bool p_expand) const
 
 	Rect2 ret = items[p_idx].rect_cache;
 	if (p_expand && p_idx % current_columns == current_columns - 1) {
-		int width = get_size().width - theme_cache.panel_style->get_minimum_size().width;
+		int width = get_size().width - tc_panel_style->get_minimum_size().width;
 		if (scroll_bar_v->is_visible()) {
 			width -=
-				scroll_bar_v->get_bound_minimum_size().width + theme_cache.scroll_bar_h_separation;
+				scroll_bar_v->get_bound_minimum_size().width + tc_scroll_bar_h_separation;
 		}
 		ret.size.width = width - ret.position.x;
 	}
-	ret.position += theme_cache.panel_style->get_offset();
+	ret.position += tc_panel_style->get_offset();
 	return ret;
 }
 
@@ -29534,14 +28116,14 @@ RID ItemList::get_focused_accessibility_element() const
 int ItemList::get_item_at_position(const Point2& p_pos, bool p_exact) const
 {
 	Vector2 pos = p_pos;
-	pos -= theme_cache.panel_style->get_offset();
+	pos -= tc_panel_style->get_offset();
 	pos.y += scroll_bar_v->get_value();
 	pos.x += scroll_bar_h->get_value();
 
 	if (is_layout_rtl()) {
 		pos.x = get_size().width - pos.x - scroll_bar_h->get_value() -
-				theme_cache.panel_style->get_margin(SIDE_LEFT) -
-				theme_cache.panel_style->get_margin(SIDE_RIGHT);
+				tc_panel_style->get_margin(SIDE_LEFT) -
+				tc_panel_style->get_margin(SIDE_RIGHT);
 	}
 
 	int closest = -1;
@@ -29588,7 +28170,7 @@ bool ItemList::is_pos_at_end_of_items(const Point2& p_pos) const
 	}
 
 	Vector2 pos = p_pos;
-	pos -= theme_cache.panel_style->get_offset();
+	pos -= tc_panel_style->get_offset();
 	pos.y += scroll_bar_v->get_value();
 
 	if (is_layout_rtl()) {
@@ -30170,12 +28752,12 @@ void VirtualJoystick::_notification(int p_what)
 		Rect2 rect_joystick = Rect2(joystick_pos - Vector2(0.5, 0.5) * joystick_size,
 			Vector2(joystick_size, joystick_size));
 		draw_style_box(
-			is_pressed ? theme_cache.pressed_joystick.ptr() : theme_cache.normal_joystick.ptr(),
+			is_pressed ? tc_pressed_joystick.ptr() : tc_normal_joystick.ptr(),
 			rect_joystick);
 
 		Rect2 rect_tip = Rect2(tip_pos - Vector2(0.5, 0.5) * tip_size, Vector2(tip_size, tip_size));
 		draw_style_box(
-			is_pressed ? theme_cache.pressed_tip.ptr() : theme_cache.normal_tip.ptr(), rect_tip);
+			is_pressed ? tc_pressed_tip.ptr() : tc_normal_tip.ptr(), rect_tip);
 	} break;
 
 	case NOTIFICATION_ENTER_TREE: {
@@ -30601,8 +29183,8 @@ RichTextLabel::Item* RichTextLabel::_get_prev_item(Item* p_item, bool p_free) co
 
 Rect2 RichTextLabel::_get_text_rect()
 {
-	return Rect2(theme_cache.normal_style->get_offset(),
-		get_size() - theme_cache.normal_style->get_minimum_size());
+	return Rect2(tc_normal_style->get_offset(),
+		get_size() - tc_normal_style->get_minimum_size());
 }
 
 int RichTextLabel::_get_wrap_width(const Rect2& p_text_rect) const
@@ -30611,7 +29193,7 @@ int RichTextLabel::_get_wrap_width(const Rect2& p_text_rect) const
 	float combined_maximum_width = get_combined_maximum_size().x;
 	if (autowrap_mode != TextServer::AUTOWRAP_OFF && combined_maximum_width > 0.0) {
 		int maximum_width =
-			int(combined_maximum_width - theme_cache.normal_style->get_minimum_size().width);
+			int(combined_maximum_width - tc_normal_style->get_minimum_size().width);
 		if (maximum_width <= 0) {
 			maximum_width = 1;
 		}
@@ -30765,7 +29347,7 @@ int RichTextLabel::_get_line_max_width(Item* p_frame, int p_line) const
 
 		// Recalculate the maximum width of the table.
 		const int col_count = table.columns.size();
-		max_width += theme_cache.table_h_separation * col_count;
+		max_width += tc_table_h_separation * col_count;
 
 		// The columns in the nested table have already been calculated in _shape_line().
 		for (TableData::Column& C : table.columns) {
@@ -30880,7 +29462,7 @@ void RichTextLabel::_update_table_column_width(Item* p_table, int p_available_wi
 	}
 
 	// Recalculate total width.
-	tbl.total_width = theme_cache.table_h_separation * col_count;
+	tbl.total_width = tc_table_h_separation * col_count;
 	for (TableData::Column& C : tbl.columns) {
 		tbl.total_width += C.width;
 	}
@@ -30898,7 +29480,7 @@ void RichTextLabel::_update_table_size(Item* p_table)
 	tbl.rows_baseline.clear();
 
 	Vector2 offset =
-		Vector2(theme_cache.table_h_separation * 0.5, theme_cache.table_v_separation * 0.5).floor();
+		Vector2(tc_table_h_separation * 0.5, tc_table_v_separation * 0.5).floor();
 	float row_height = 0.0;
 	const List<Item*>::Element* prev = p_table->subitems.front();
 
@@ -30921,9 +29503,9 @@ void RichTextLabel::_update_table_size(Item* p_table)
 			line.offset.y = prev_h;
 
 			float h = line.text_buf->get_size().y +
-					  (line.text_buf->get_line_count() - 1) * theme_cache.line_separation;
+					  (line.text_buf->get_line_count() - 1) * tc_line_separation;
 			if (i > 0) {
-				h += theme_cache.paragraph_separation + theme_cache.line_separation;
+				h += tc_paragraph_separation + tc_line_separation;
 			}
 			if (frame.min_size_over.y > 0) {
 				h = MAX(h, frame.min_size_over.y);
@@ -30933,8 +29515,8 @@ void RichTextLabel::_update_table_size(Item* p_table)
 			}
 			yofs += h;
 			prev_h = line.offset.y + line.text_buf->get_size().y +
-					 line.text_buf->get_line_count() * theme_cache.line_separation +
-					 theme_cache.paragraph_separation;
+					 line.text_buf->get_line_count() * tc_line_separation +
+					 tc_paragraph_separation;
 
 			line.offset += offset;
 			row_baseline = MAX(
@@ -30942,16 +29524,16 @@ void RichTextLabel::_update_table_size(Item* p_table)
 		}
 
 		offset -= frame.padding.position;
-		offset.x += tbl.columns[column].width + theme_cache.table_h_separation;
+		offset.x += tbl.columns[column].width + tc_table_h_separation;
 
 		row_height = MAX(yofs + frame.padding.position.y + frame.padding.size.y, row_height);
 		// Add row height after last column of the row or last cell of the table.
 		if (column == col_count - 1 || E->next() == nullptr) {
-			offset.x = Math::floor(theme_cache.table_h_separation * 0.5);
-			row_height += theme_cache.table_v_separation;
+			offset.x = Math::floor(tc_table_h_separation * 0.5);
+			row_height += tc_table_v_separation;
 			tbl.rows.push_back(row_height);
 			tbl.rows_baseline.push_back(tbl.total_height + row_baseline +
-										Math::floor(theme_cache.table_v_separation * 0.5));
+										Math::floor(tc_table_v_separation * 0.5));
 			tbl.total_height += row_height;
 			offset.y += row_height;
 			row_height = 0.0;
@@ -30988,19 +29570,19 @@ void RichTextLabel::_find_click(Item* p_frame, const Point2i& p_click,
 	int total_height = INT32_MAX;
 	if (to_line && vertical_alignment != VERTICAL_ALIGNMENT_TOP) {
 		MutexLock lock(main_fr.lines[to_line - 1].text_buf->get_mutex());
-		if (theme_cache.line_separation < 0) {
+		if (tc_line_separation < 0) {
 			// Do not apply to the last line to avoid cutting text.
 			total_height = main_fr.lines[to_line - 1].offset.y +
 						   main_fr.lines[to_line - 1].text_buf->get_size().y +
 						   (main_fr.lines[to_line - 1].text_buf->get_line_count() - 1) *
-							   theme_cache.line_separation;
+							   tc_line_separation;
 		}
 		else {
 			total_height =
 				main_fr.lines[to_line - 1].offset.y +
 				main_fr.lines[to_line - 1].text_buf->get_size().y +
-				main_fr.lines[to_line - 1].text_buf->get_line_count() * theme_cache.line_separation +
-				theme_cache.paragraph_separation;
+				main_fr.lines[to_line - 1].text_buf->get_line_count() * tc_line_separation +
+				tc_paragraph_separation;
 		}
 	}
 	float vbegin = 0, vsep = 0;
@@ -31036,8 +29618,8 @@ void RichTextLabel::_find_click(Item* p_frame, const Point2i& p_click,
 			r_click_line, r_click_item, r_click_char, false, p_meta);
 		ofs.y += main_fr.lines[from_line].text_buf->get_size().y +
 				 main_fr.lines[from_line].text_buf->get_line_count() *
-					 (theme_cache.line_separation + vsep) +
-				 (theme_cache.paragraph_separation);
+					 (tc_line_separation + vsep) +
+				 (tc_paragraph_separation);
 		if (((r_click_item != nullptr) && ((*r_click_item) != nullptr)) ||
 			((r_click_frame != nullptr) && ((*r_click_frame) != nullptr))) {
 			if (r_outside != nullptr) {
@@ -31095,15 +29677,15 @@ int RichTextLabel::_find_first_line(int p_from, int p_to, int p_vofs) const
 _FORCE_INLINE_ float RichTextLabel::_calculate_line_vertical_offset(
 	const RichTextLabel::Line& line) const
 {
-	return line.get_height(theme_cache.line_separation, theme_cache.paragraph_separation);
+	return line.get_height(tc_line_separation, tc_paragraph_separation);
 }
 
 void RichTextLabel::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
-	use_selected_font_color = theme_cache.font_selected_color != Color(0, 0, 0, 0);
+	tc_base_scale = get_theme_default_base_scale();
+	use_selected_font_color = tc_font_selected_color != Color(0, 0, 0, 0);
 }
 
 PackedStringArray RichTextLabel::get_accessibility_configuration_warnings() const
@@ -31225,70 +29807,70 @@ RichTextLabel::Item* RichTextLabel::_find_font(Item* p_item)
 				if (fontitem->variation) {
 					Ref<FontVariation> fc = fontitem->font;
 					if (fc.is_valid()) {
-						fc->set_base_font(theme_cache.normal_font);
+						fc->set_base_font(tc_normal_font);
 					}
 				}
 				else {
-					fontitem->font = theme_cache.normal_font;
+					fontitem->font = tc_normal_font;
 				}
 				if (fontitem->def_size) {
-					fontitem->font_size = theme_cache.normal_font_size;
+					fontitem->font_size = tc_normal_font_size;
 				}
 			} break;
 			case RTL_BOLD_FONT: {
 				if (fontitem->variation) {
 					Ref<FontVariation> fc = fontitem->font;
 					if (fc.is_valid()) {
-						fc->set_base_font(theme_cache.bold_font);
+						fc->set_base_font(tc_bold_font);
 					}
 				}
 				else {
-					fontitem->font = theme_cache.bold_font;
+					fontitem->font = tc_bold_font;
 				}
 				if (fontitem->def_size) {
-					fontitem->font_size = theme_cache.bold_font_size;
+					fontitem->font_size = tc_bold_font_size;
 				}
 			} break;
 			case RTL_ITALICS_FONT: {
 				if (fontitem->variation) {
 					Ref<FontVariation> fc = fontitem->font;
 					if (fc.is_valid()) {
-						fc->set_base_font(theme_cache.italics_font);
+						fc->set_base_font(tc_italics_font);
 					}
 				}
 				else {
-					fontitem->font = theme_cache.italics_font;
+					fontitem->font = tc_italics_font;
 				}
 				if (fontitem->def_size) {
-					fontitem->font_size = theme_cache.italics_font_size;
+					fontitem->font_size = tc_italics_font_size;
 				}
 			} break;
 			case RTL_BOLD_ITALICS_FONT: {
 				if (fontitem->variation) {
 					Ref<FontVariation> fc = fontitem->font;
 					if (fc.is_valid()) {
-						fc->set_base_font(theme_cache.bold_italics_font);
+						fc->set_base_font(tc_bold_italics_font);
 					}
 				}
 				else {
-					fontitem->font = theme_cache.bold_italics_font;
+					fontitem->font = tc_bold_italics_font;
 				}
 				if (fontitem->def_size) {
-					fontitem->font_size = theme_cache.bold_italics_font_size;
+					fontitem->font_size = tc_bold_italics_font_size;
 				}
 			} break;
 			case RTL_MONO_FONT: {
 				if (fontitem->variation) {
 					Ref<FontVariation> fc = fontitem->font;
 					if (fc.is_valid()) {
-						fc->set_base_font(theme_cache.mono_font);
+						fc->set_base_font(tc_mono_font);
 					}
 				}
 				else {
-					fontitem->font = theme_cache.mono_font;
+					fontitem->font = tc_mono_font;
 				}
 				if (fontitem->def_size) {
-					fontitem->font_size = theme_cache.mono_font_size;
+					fontitem->font_size = tc_mono_font_size;
 				}
 			} break;
 			default: {
@@ -31822,14 +30404,14 @@ void RichTextLabel::_remove_frame(HashSet<Item*>& r_erase_list, Item* p_frame, i
 
 void RichTextLabel::push_normal()
 {
-	ERR_FAIL_COND(theme_cache.normal_font.is_null());
+	ERR_FAIL_COND(tc_normal_font.is_null());
 
 	_push_def_font(RTL_NORMAL_FONT);
 }
 
 void RichTextLabel::push_bold()
 {
-	ERR_FAIL_COND(theme_cache.bold_font.is_null());
+	ERR_FAIL_COND(tc_bold_font.is_null());
 
 	Item* item_font = _find_font(current);
 	_push_def_font((item_font && item_font->def_font == RTL_ITALICS_FONT) ? RTL_BOLD_ITALICS_FONT
@@ -31838,14 +30420,14 @@ void RichTextLabel::push_bold()
 
 void RichTextLabel::push_bold_italics()
 {
-	ERR_FAIL_COND(theme_cache.bold_italics_font.is_null());
+	ERR_FAIL_COND(tc_bold_italics_font.is_null());
 
 	_push_def_font(RTL_BOLD_ITALICS_FONT);
 }
 
 void RichTextLabel::push_italics()
 {
-	ERR_FAIL_COND(theme_cache.italics_font.is_null());
+	ERR_FAIL_COND(tc_italics_font.is_null());
 
 	Item* item_font = _find_font(current);
 	_push_def_font((item_font && item_font->def_font == RTL_BOLD_FONT) ? RTL_BOLD_ITALICS_FONT
@@ -31854,7 +30436,7 @@ void RichTextLabel::push_italics()
 
 void RichTextLabel::push_mono()
 {
-	ERR_FAIL_COND(theme_cache.mono_font.is_null());
+	ERR_FAIL_COND(tc_mono_font.is_null());
 
 	_push_def_font(RTL_MONO_FONT);
 }
@@ -32063,7 +30645,7 @@ void RichTextLabel::scroll_to_line(int p_line)
 			for (int j = 0; j < p_line - line_count; j++) {
 				line_offset += main_fr.lines[i].text_buf->get_line_ascent(j) +
 							   main_fr.lines[i].text_buf->get_line_descent(j) +
-							   theme_cache.line_separation;
+							   tc_line_separation;
 			}
 			vscroll->set_value(main_fr.lines[i].offset.y + line_offset);
 			queue_accessibility_update();
@@ -32090,7 +30672,7 @@ float RichTextLabel::get_line_offset(int p_line)
 			for (int j = 0; j < p_line - line_count; j++) {
 				line_offset += main_fr.lines[i].text_buf->get_line_ascent(j) +
 							   main_fr.lines[i].text_buf->get_line_descent(j) +
-							   theme_cache.line_separation;
+							   tc_line_separation;
 			}
 			return main_fr.lines[i].offset.y + line_offset;
 		}
@@ -32452,7 +31034,7 @@ float RichTextLabel::get_selection_line_offset() const
 				break;
 			}
 			line_offset += from_l.text_buf->get_line_ascent(i) +
-						   from_l.text_buf->get_line_descent(i) + theme_cache.line_separation;
+						   from_l.text_buf->get_line_descent(i) + tc_line_separation;
 		}
 
 		// Add nested frame (e.g. table cell) offset.
@@ -32546,19 +31128,19 @@ int RichTextLabel::get_content_height() const
 	int to_line = main_fr.first_invalid_line.load();
 	if (to_line) {
 		MutexLock lock(main_fr.lines[to_line - 1].text_buf->get_mutex());
-		if (theme_cache.line_separation < 0) {
+		if (tc_line_separation < 0) {
 			// Do not apply to the last line to avoid cutting text.
 			total_height = main_fr.lines[to_line - 1].offset.y +
 						   main_fr.lines[to_line - 1].text_buf->get_size().y +
 						   (main_fr.lines[to_line - 1].text_buf->get_line_count() - 1) *
-							   theme_cache.line_separation;
+							   tc_line_separation;
 		}
 		else {
 			total_height =
 				main_fr.lines[to_line - 1].offset.y +
 				main_fr.lines[to_line - 1].text_buf->get_size().y +
-				main_fr.lines[to_line - 1].text_buf->get_line_count() * theme_cache.line_separation +
-				theme_cache.paragraph_separation;
+				main_fr.lines[to_line - 1].text_buf->get_line_count() * tc_line_separation +
+				tc_paragraph_separation;
 		}
 	}
 	return total_height;
@@ -32595,7 +31177,7 @@ int RichTextLabel::get_line_height(int p_line) const
 		if (p_line < line_count + lc) {
 			const Ref<TextParagraph> text_buf = main_fr.lines[i].text_buf;
 			return text_buf->get_line_ascent(p_line - line_count) +
-				   text_buf->get_line_descent(p_line - line_count) + theme_cache.line_separation;
+				   text_buf->get_line_descent(p_line - line_count) + tc_line_separation;
 		}
 		line_count += lc;
 	}
@@ -32722,7 +31304,7 @@ int RichTextLabel::get_total_glyph_count() const
 
 Size2 RichTextLabel::get_minimum_size() const
 {
-	Size2 sb_min_size = theme_cache.normal_style->get_minimum_size();
+	Size2 sb_min_size = tc_normal_style->get_minimum_size();
 	Size2 min_size;
 	bool wrap_with_max_width =
 		autowrap_mode != TextServer::AUTOWRAP_OFF && get_combined_maximum_size().x > 0.0;
@@ -33308,15 +31890,15 @@ String TextEdit::Text::get_enabled_word_separators() const
 
 Ref<StyleBox> TextEdit::_get_current_stylebox() const
 {
-	return editable ? theme_cache.style_normal : theme_cache.style_readonly;
+	return editable ? tc_style_normal : tc_style_readonly;
 }
 
 void TextEdit::_draw_selection_handle(Vector2 p_pos) const
 {
-	Color handle_color = theme_cache.caret_color;
+	Color handle_color = tc_caret_color;
 	int line_height = get_line_height();
 
-	int handle_line_width = theme_cache.caret_width * MAX(1, theme_cache.base_scale);
+	int handle_line_width = tc_caret_width * MAX(1, tc_base_scale);
 	Renderer::canvas_item_add_line(
 		text_ci, p_pos, p_pos + Vector2(0, line_height), handle_color, handle_line_width);
 
@@ -33712,17 +32294,17 @@ void TextEdit::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.base_scale = get_theme_default_base_scale();
-	use_selected_font_color = theme_cache.font_selected_color != Color(0, 0, 0, 0);
+	tc_base_scale = get_theme_default_base_scale();
+	use_selected_font_color = tc_font_selected_color != Color(0, 0, 0, 0);
 
-	if (text.get_line_height() + theme_cache.line_spacing < 1) {
+	if (text.get_line_height() + tc_line_spacing < 1) {
 		WARN_PRINT("Line height is too small, please increase font_size and/or line_spacing");
 	}
 
 	// The value was chosen after trying a few different radii.
 	// 10.0 provided the best balance between being easy to grab without making the touch area feel
 	// too large.
-	selection_handle_radius = 10.0 * theme_cache.base_scale;
+	selection_handle_radius = 10.0 * tc_base_scale;
 }
 
 void TextEdit::_close_ime_window()
@@ -33951,7 +32533,7 @@ int TextEdit::get_line_width(int p_line, int p_wrap_index) const
 
 int TextEdit::get_line_height() const
 {
-	return MAX(text.get_line_height() + theme_cache.line_spacing, 1);
+	return MAX(text.get_line_height() + tc_line_spacing, 1);
 }
 
 int TextEdit::_get_wrapped_indent_level(int p_line, int& r_first_wrap) const
@@ -36445,7 +35027,7 @@ bool TextEdit::is_drawing_tabs() const { return draw_tabs; }
 
 bool TextEdit::is_drawing_spaces() const { return draw_spaces; }
 
-Color TextEdit::get_font_color() const { return theme_cache.font_color; }
+Color TextEdit::get_font_color() const { return tc_font_color; }
 
 bool TextEdit::_is_hiding_enabled() const { return hiding_enabled; }
 
@@ -36843,7 +35425,7 @@ void TextEdit::_update_wrap_at_column(bool p_force)
 		new_wrap_at -= v_scroll->get_bound_minimum_size().width;
 	}
 	/* Give it a little more space. */
-	new_wrap_at -= theme_cache.wrap_offset;
+	new_wrap_at -= tc_wrap_offset;
 
 	if ((wrap_at_column != new_wrap_at) || p_force) {
 		wrap_at_column = new_wrap_at;
@@ -37365,8 +35947,8 @@ Control::CursorShape TextEdit::get_cursor_shape(Vector2 const& p_pos) const
 			if (line != -1 && is_line_folded(line)) {
 				int wrap_index = get_line_wrap_index_at_column(line, col);
 				if (wrap_index == get_line_wrap_count(line) &&
-					theme_cache.folded_eol_icon.is_valid()) {
-					int eol_icon_width = theme_cache.folded_eol_icon->get_width();
+					tc_folded_eol_icon.is_valid()) {
+					int eol_icon_width = tc_folded_eol_icon->get_width();
 					int left_margin = get_total_gutter_width() + eol_icon_width +
 									  get_line_width(line, wrap_index) - get_h_scroll();
 					if (p_pos.x > left_margin && p_pos.x <= left_margin + eol_icon_width + 3) {
@@ -37584,25 +36166,25 @@ void TextEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2&
 {
 	bool hovering = get_hovered_gutter() == Vector2i(code.main_gutter, p_line);
 	RID ci = get_text_canvas_item();
-	if (code.draw_breakpoints && theme_cache.breakpoint_icon.is_valid()) {
+	if (code.draw_breakpoints && tc_breakpoint_icon.is_valid()) {
 		bool breakpointed = is_line_breakpointed(p_line);
 		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
 
 		if (breakpointed || (hovering && !is_dragging_cursor() && !shift_pressed)) {
 			int padding = p_region.size.x / 6;
 
-			Color use_color = theme_cache.breakpoint_color;
+			Color use_color = tc_breakpoint_color;
 			if (hovering && !shift_pressed) {
 				use_color = breakpointed ? use_color.lightened(0.3) : use_color.darkened(0.5);
 			}
 			Rect2 icon_region = p_region;
 			icon_region.position += Point2(padding, padding);
 			icon_region.size -= Point2(padding, padding) * 2;
-			theme_cache.breakpoint_icon->draw_rect(ci, icon_region, false, use_color);
+			tc_breakpoint_icon->draw_rect(ci, icon_region, false, use_color);
 		}
 	}
 
-	if (code.draw_bookmarks && theme_cache.bookmark_icon.is_valid()) {
+	if (code.draw_bookmarks && tc_bookmark_icon.is_valid()) {
 		bool bookmarked = is_line_bookmarked(p_line);
 		bool shift_pressed = Input::is_key_pressed(Key::SHIFT);
 
@@ -37610,27 +36192,27 @@ void TextEdit::_main_gutter_draw_callback(int p_line, int p_gutter, const Rect2&
 			int horizontal_padding = p_region.size.x / (_is_bookmark_only() ? 8 : 2);
 			int vertical_padding = p_region.size.y / 4;
 
-			Color use_color = theme_cache.bookmark_color;
+			Color use_color = tc_bookmark_color;
 			if (hovering && shift_pressed) {
 				use_color = bookmarked ? use_color.lightened(0.3) : use_color.darkened(0.5);
 			}
 			Rect2 icon_region = p_region;
 			icon_region.position += Point2(horizontal_padding, 0);
 			icon_region.size -= Point2(horizontal_padding * 1.1, vertical_padding);
-			theme_cache.bookmark_icon->draw_rect(ci, icon_region, false, use_color);
+			tc_bookmark_icon->draw_rect(ci, icon_region, false, use_color);
 		}
 	}
 
 	if (code.draw_executing_lines && is_line_executing(p_line) &&
-		theme_cache.executing_line_icon.is_valid()) {
+		tc_executing_line_icon.is_valid()) {
 		int horizontal_padding = p_region.size.x / 10;
 		int vertical_padding = p_region.size.y / 4;
 
 		Rect2 icon_region = p_region;
 		icon_region.position += Point2(horizontal_padding, vertical_padding);
 		icon_region.size -= Point2(horizontal_padding, vertical_padding) * 2;
-		theme_cache.executing_line_icon->draw_rect(
-			ci, icon_region, false, theme_cache.executing_line_color);
+		tc_executing_line_icon->draw_rect(
+			ci, icon_region, false, tc_executing_line_color);
 	}
 }
 
@@ -37796,14 +36378,14 @@ void TextEdit::_clear_line_number_text_cache()
 
 void TextEdit::_update_line_number_gutter_width()
 {
-	if (code.line_number_gutter == -1 || theme_cache.font.is_null()) {
+	if (code.line_number_gutter == -1 || tc_font.is_null()) {
 		return;
 	}
 	int width_in_chars =
 		code.line_number_digits +
 		(!is_drawing_fold_gutter() ? 1 : 0); // Extra padding if there is no fold gutter.
 	set_gutter_width(code.line_number_gutter,
-		width_in_chars * theme_cache.font->get_char_size('0', theme_cache.font_size).width);
+		width_in_chars * tc_font->get_char_size('0', tc_font_size).width);
 }
 
 void TextEdit::set_draw_fold_gutter(bool p_draw)
@@ -37836,22 +36418,22 @@ void TextEdit::_fold_gutter_draw_callback(int p_line, int p_gutter, Rect2 p_regi
 	bool can_fold = can_fold_line(p_line);
 
 	if (is_line_code_region_start(p_line)) {
-		Color region_icon_color = theme_cache.folded_code_region_color;
+		Color region_icon_color = tc_folded_code_region_color;
 		region_icon_color.a = MAX(region_icon_color.a, 0.4f);
 		if (can_fold) {
-			theme_cache.can_fold_code_region_icon->draw_rect(
+			tc_can_fold_code_region_icon->draw_rect(
 				ci, p_region, false, region_icon_color);
 		}
 		else {
-			theme_cache.folded_code_region_icon->draw_rect(ci, p_region, false, region_icon_color);
+			tc_folded_code_region_icon->draw_rect(ci, p_region, false, region_icon_color);
 		}
 		return;
 	}
 	if (can_fold) {
-		theme_cache.can_fold_icon->draw_rect(ci, p_region, false, theme_cache.code_folding_color);
+		tc_can_fold_icon->draw_rect(ci, p_region, false, tc_code_folding_color);
 		return;
 	}
-	theme_cache.folded_icon->draw_rect(ci, p_region, false, theme_cache.code_folding_color);
+	tc_folded_icon->draw_rect(ci, p_region, false, tc_code_folding_color);
 }
 
 void TextEdit::set_line_folding_enabled(bool p_enabled)
@@ -37970,7 +36552,7 @@ bool TextEdit::_fold_line(int p_line)
 				}
 			}
 		}
-		set_line_background_color(p_line, theme_cache.folded_code_region_color);
+		set_line_background_color(p_line, tc_folded_code_region_color);
 	}
 
 	int in_comment = is_in_comment(p_line);
@@ -51923,274 +50505,6 @@ void Animation::optimize(
 
 // #define print_animc(m_str) print_line(m_str);
 
-struct AnimationCompressionDataState
-{
-	enum
-	{
-		MIN_OPTIMIZE_PACKETS = 5,
-		MAX_PACKETS = 16
-	};
-
-	uint32_t components = 3;
-	LocalVector<uint8_t> data; // Committed packets.
-
-	struct PacketData
-	{
-		int32_t data[3] = {0, 0, 0};
-		uint32_t frame = 0;
-	};
-
-	float split_tolerance = 1.5;
-
-	LocalVector<PacketData> temp_packets;
-
-	// used for rollback if the new frame does not fit
-	int32_t validated_packet_count = -1;
-
-	static int32_t _compute_delta16_signed(int32_t p_from, int32_t p_to)
-	{
-		int32_t delta = p_to - p_from;
-		if (delta > 32767) {
-			return delta - 65536; // use wrap around
-		}
-		else if (delta < -32768) {
-			return 65536 + delta; // use wrap around
-		}
-		return delta;
-	}
-
-	static uint32_t _compute_shift_bits_signed(int32_t p_delta)
-	{
-		if (p_delta == 0) {
-			return 0;
-		}
-		else if (p_delta < 0) {
-			p_delta = Math::abs(p_delta) - 1;
-			if (p_delta == 0) {
-				return 1;
-			}
-		}
-		return Math::nearest_shift((uint32_t)p_delta);
-	}
-
-	void _compute_max_shifts(
-		uint32_t p_from, uint32_t p_to, uint32_t* max_shifts, uint32_t& max_frame_delta_shift) const
-	{
-		for (uint32_t j = 0; j < components; j++) {
-			max_shifts[j] = 0;
-		}
-		max_frame_delta_shift = 0;
-
-		for (uint32_t i = p_from + 1; i <= p_to; i++) {
-			int32_t frame_delta = temp_packets[i].frame - temp_packets[i - 1].frame;
-			max_frame_delta_shift =
-				MAX(max_frame_delta_shift, Math::nearest_shift((uint32_t)frame_delta));
-			for (uint32_t j = 0; j < components; j++) {
-				int32_t diff =
-					_compute_delta16_signed(temp_packets[i - 1].data[j], temp_packets[i].data[j]);
-				uint32_t shift = _compute_shift_bits_signed(diff);
-				max_shifts[j] = MAX(shift, max_shifts[j]);
-			}
-		}
-	}
-
-	bool insert_key(uint32_t p_frame, const Vector3i& p_key)
-	{
-		if (temp_packets.size() == MAX_PACKETS) {
-			commit_temp_packets();
-		}
-		PacketData packet;
-		packet.frame = p_frame;
-		for (int i = 0; i < 3; i++) {
-			ERR_FAIL_COND_V(p_key[i] > 65535, false); // Safety checks.
-			packet.data[i] = p_key[i];
-		}
-
-		temp_packets.push_back(packet);
-
-		if (temp_packets.size() >= MIN_OPTIMIZE_PACKETS) {
-			uint32_t max_shifts[3] = {0, 0, 0}; // Base sizes, 16 bit
-			uint32_t max_frame_delta_shift = 0;
-			// Compute the average shift before the packet was added
-			_compute_max_shifts(0, temp_packets.size() - 2, max_shifts, max_frame_delta_shift);
-
-			float prev_packet_size_avg = 0;
-			prev_packet_size_avg = float(1 << max_frame_delta_shift);
-			for (uint32_t i = 0; i < components; i++) {
-				prev_packet_size_avg += float(1 << max_shifts[i]);
-			}
-			prev_packet_size_avg /= float(1 + components);
-
-			_compute_max_shifts(temp_packets.size() - 2, temp_packets.size() - 1, max_shifts,
-				max_frame_delta_shift);
-
-			float new_packet_size_avg = 0;
-			new_packet_size_avg = float(1 << max_frame_delta_shift);
-			for (uint32_t i = 0; i < components; i++) {
-				new_packet_size_avg += float(1 << max_shifts[i]);
-			}
-			new_packet_size_avg /= float(1 + components);
-
-			print_animc("packet count: " + rtos(temp_packets.size() - 1) + " size avg " +
-						rtos(prev_packet_size_avg) + " new avg " + rtos(new_packet_size_avg));
-			float ratio = (prev_packet_size_avg < new_packet_size_avg)
-							  ? (new_packet_size_avg / prev_packet_size_avg)
-							  : (prev_packet_size_avg / new_packet_size_avg);
-
-			if (ratio > split_tolerance) {
-				print_animc("split!");
-				temp_packets.resize(temp_packets.size() - 1);
-				commit_temp_packets();
-				temp_packets.push_back(packet);
-			}
-		}
-
-		return temp_packets.size() == 1; // First key
-	}
-
-	uint32_t get_temp_packet_size() const
-	{
-		if (temp_packets.is_empty()) {
-			return 0;
-		}
-		else if (temp_packets.size() == 1) {
-			return components == 1 ? 4 : 8; // 1 component packet is 16 bits and 16 bits unused. 3
-											// component packets is 48 bits and 16 bits unused
-		}
-		uint32_t max_shifts[3] = {0, 0, 0}; // base sizes, 16 bit
-		uint32_t max_frame_delta_shift = 0;
-
-		_compute_max_shifts(0, temp_packets.size() - 1, max_shifts, max_frame_delta_shift);
-
-		uint32_t size_bits = 16; // base value (all 4 bits of shift sizes for x,y,z,time)
-		size_bits += max_frame_delta_shift * (temp_packets.size() - 1); // times
-		for (uint32_t j = 0; j < components; j++) {
-			size_bits += 16; // base value
-			uint32_t shift = max_shifts[j];
-			if (shift > 0) {
-				shift += 1; // if not zero, add sign bit
-			}
-			size_bits += shift * (temp_packets.size() - 1);
-		}
-		if (size_bits % 8 != 0) { // wrap to 8 bits
-			size_bits += 8 - (size_bits % 8);
-		}
-		uint32_t size_bytes = size_bits / 8; // wrap to words
-		if (size_bytes % 4 != 0) {
-			size_bytes += 4 -
-(size_bytes % 4);
-		}
-		return size_bytes;
-	}
-
-	static void _push_bits(LocalVector<uint8_t>& data, uint32_t& r_buffer, uint32_t& r_bits_used,
-		uint32_t p_value, uint32_t p_bits)
-	{
-		r_buffer |= p_value << r_bits_used;
-		r_bits_used += p_bits;
-		while (r_bits_used >= 8) {
-			uint8_t byte = r_buffer & 0xFF;
-			data.push_back(byte);
-			r_buffer >>= 8;
-			r_bits_used -= 8;
-		}
-	}
-
-	void commit_temp_packets()
-	{
-		if (temp_packets.is_empty()) {
-			return; // Nothing to do.
-		}
-// #define DEBUG_PACKET_PUSH
-#ifdef DEBUG_PACKET_PUSH
-#ifndef _MSC_VER
-#warning Debugging packet push, disable this code in production to gain a bit more import performance.
-#endif
-		uint32_t debug_packet_push = get_temp_packet_size();
-		uint32_t debug_data_size = data.size();
-#endif
-		// Store header
-
-		uint8_t header[8];
-		uint32_t header_bytes = 0;
-		for (uint32_t i = 0; i < components; i++) {
-			encode_uint16(temp_packets[0].data[i], &header[header_bytes]);
-			header_bytes += 2;
-		}
-
-		uint32_t max_shifts[3] = {0, 0, 0}; // base sizes, 16 bit
-		uint32_t max_frame_delta_shift = 0;
-
-		if (temp_packets.size() > 1) {
-			_compute_max_shifts(0, temp_packets.size() - 1, max_shifts, max_frame_delta_shift);
-			uint16_t shift_header = (max_frame_delta_shift - 1) << 12;
-			for (uint32_t i = 0; i < components; i++) {
-				shift_header |= max_shifts[i] << (4 * i);
-			}
-
-			encode_uint16(shift_header, &header[header_bytes]);
-			header_bytes += 2;
-		}
-
-		while (header_bytes < 8 &&
-			   header_bytes % 4 != 0) { // First cond needed to silence wrong GCC warning.
-			header[header_bytes++] = 0;
-		}
-
-		for (uint32_t i = 0; i < header_bytes; i++) {
-			data.push_back(header[i]);
-		}
-
-		if (temp_packets.size() == 1) {
-			temp_packets.clear();
-			validated_packet_count = 0;
-			return; // only header stored, nothing else to do
-		}
-
-		uint32_t bit_buffer = 0;
-		uint32_t bits_used = 0;
-
-		for (uint32_t i = 1; i < temp_packets.size(); i++) {
-			uint32_t frame_delta = temp_packets[i].frame - temp_packets[i - 1].frame;
-			_push_bits(data, bit_buffer, bits_used, frame_delta, max_frame_delta_shift);
-
-			for (uint32_t j = 0; j < components; j++) {
-				if (max_shifts[j] == 0) {
-					continue; // Zero delta, do not store
-				}
-				int32_t delta =
-					_compute_delta16_signed(temp_packets[i - 1].data[j], temp_packets[i].data[j]);
-
-				ERR_FAIL_COND(delta < -32768 || delta > 32767); // Safety check.
-
-				uint16_t deltau;
-				if (delta < 0) {
-					deltau = (Math::abs(delta) - 1) | (1 << max_shifts[j]);
-				}
-				else {
-					deltau = delta;
-				}
-				_push_bits(
-					data, bit_buffer, bits_used, deltau, max_shifts[j] + 1); // Include sign bit
-			}
-		}
-		if (bits_used != 0) {
-			ERR_FAIL_COND(bit_buffer > 0xFF); // Safety check.
-			data.push_back(bit_buffer);
-		}
-
-		while (data.size() % 4 != 0) {
-			data.push_back(0); // pad to align with 4
-		}
-
-		temp_packets.clear();
-		validated_packet_count = 0;
-
-#ifdef DEBUG_PACKET_PUSH
-		ERR_FAIL_COND((data.size() - debug_data_size) != debug_packet_push);
-#endif
-	}
-};
 
 
 Vector3i Animation::_compress_key(
@@ -91884,10 +90198,10 @@ Size2 Button::_get_check_icon_size() const
 {
 	Size2 tex_size;
 	if (style == STYLE_CHECK_BOX) {
-		const Ref<Texture2D> candidates[] = {theme_cache.checked, theme_cache.unchecked,
-			theme_cache.radio_checked, theme_cache.radio_unchecked, theme_cache.checked_disabled,
-			theme_cache.unchecked_disabled, theme_cache.radio_checked_disabled,
-			theme_cache.radio_unchecked_disabled};
+		const Ref<Texture2D> candidates[] = {tc_checked, tc_unchecked,
+			tc_radio_checked, tc_radio_unchecked, tc_checked_disabled,
+			tc_unchecked_disabled, tc_radio_checked_disabled,
+			tc_radio_unchecked_disabled};
 		for (const Ref<Texture2D>& tex : candidates) {
 			if (tex.is_valid()) {
 				tex_size = tex_size.max(tex->get_size());
@@ -91896,15 +90210,15 @@ Size2 Button::_get_check_icon_size() const
 	}
 	else if (style == STYLE_CHECK_BUTTON) {
 		Ref<Texture2D> on_tex = is_layout_rtl()
-									? (is_disabled() ? theme_cache.checked_disabled_mirrored
-													 : theme_cache.checked_mirrored)
-									: (is_disabled() ? theme_cache.checked_disabled
-													 : theme_cache.checked);
+									? (is_disabled() ? tc_checked_disabled_mirrored
+													 : tc_checked_mirrored)
+									: (is_disabled() ? tc_checked_disabled
+													 : tc_checked);
 		Ref<Texture2D> off_tex = is_layout_rtl()
-									 ? (is_disabled() ? theme_cache.unchecked_disabled_mirrored
-													  : theme_cache.unchecked_mirrored)
-									 : (is_disabled() ? theme_cache.unchecked_disabled
-													  : theme_cache.unchecked);
+									 ? (is_disabled() ? tc_unchecked_disabled_mirrored
+													  : tc_unchecked_mirrored)
+									 : (is_disabled() ? tc_unchecked_disabled
+													  : tc_unchecked);
 		if (on_tex.is_valid()) {
 			tex_size = on_tex->get_size();
 		}
@@ -91953,7 +90267,7 @@ Size2 Button::get_minimum_size() const
 
 	Ref<Texture2D> _icon = icon;
 	if (_icon.is_null() && has_theme_icon(SNAME("icon"))) {
-		_icon = theme_cache.icon;
+		_icon = tc_icon;
 	}
 
 	Size2 minsize = get_minimum_size_for_text_and_icon("", _icon);
@@ -91964,7 +90278,7 @@ Size2 Button::get_minimum_size() const
 			const Size2 padding = _get_largest_stylebox_size();
 			Size2 content_size = minsize - padding;
 			if (content_size.width > 0 && tex_size.width > 0) {
-				content_size.width += MAX(0, theme_cache.h_separation);
+				content_size.width += MAX(0, tc_h_separation);
 			}
 			content_size.width += tex_size.width;
 			content_size.height = MAX(content_size.height, tex_size.height);
@@ -92138,89 +90452,89 @@ void Button::_update_theme_item_cache()
 {
 	Control::_update_theme_item_cache();
 
-	theme_cache.max_style_size = Vector2();
-	theme_cache.style_margin_left = 0;
-	theme_cache.style_margin_right = 0;
-	theme_cache.style_margin_top = 0;
-	theme_cache.style_margin_bottom = 0;
+	tc_max_style_size = Vector2();
+	tc_style_margin_left = 0;
+	tc_style_margin_right = 0;
+	tc_style_margin_top = 0;
+	tc_style_margin_bottom = 0;
 
 	const bool rtl = is_layout_rtl();
 	if (rtl && has_theme_stylebox(SNAME("normal_mirrored"))) {
-		_update_style_margins(theme_cache.normal_mirrored);
+		_update_style_margins(tc_normal_mirrored);
 	}
-	else if (theme_cache.normal.is_valid()) {
-		_update_style_margins(theme_cache.normal);
+	else if (tc_normal.is_valid()) {
+		_update_style_margins(tc_normal);
 	}
 	if (has_theme_stylebox("hover_pressed")) {
 		if (rtl && has_theme_stylebox(SNAME("hover_pressed_mirrored"))) {
-			_update_style_margins(theme_cache.hover_pressed_mirrored);
+			_update_style_margins(tc_hover_pressed_mirrored);
 		}
-		else if (theme_cache.hover_pressed.is_valid()) {
-			_update_style_margins(theme_cache.hover_pressed);
+		else if (tc_hover_pressed.is_valid()) {
+			_update_style_margins(tc_hover_pressed);
 		}
 	}
 	if (rtl && has_theme_stylebox(SNAME("pressed_mirrored"))) {
-		_update_style_margins(theme_cache.pressed_mirrored);
+		_update_style_margins(tc_pressed_mirrored);
 	}
-	else if (theme_cache.pressed.is_valid()) {
-		_update_style_margins(theme_cache.pressed);
+	else if (tc_pressed.is_valid()) {
+		_update_style_margins(tc_pressed);
 	}
 	if (rtl && has_theme_stylebox(SNAME("hover_mirrored"))) {
-		_update_style_margins(theme_cache.hover_mirrored);
+		_update_style_margins(tc_hover_mirrored);
 	}
-	else if (theme_cache.hover.is_valid()) {
-		_update_style_margins(theme_cache.hover);
+	else if (tc_hover.is_valid()) {
+		_update_style_margins(tc_hover);
 	}
 	if (rtl && has_theme_stylebox(SNAME("disabled_mirrored"))) {
-		_update_style_margins(theme_cache.disabled_mirrored);
+		_update_style_margins(tc_disabled_mirrored);
 	}
-	else if (theme_cache.disabled.is_valid()) {
-		_update_style_margins(theme_cache.disabled);
+	else if (tc_disabled.is_valid()) {
+		_update_style_margins(tc_disabled);
 	}
-	theme_cache.max_style_size = theme_cache.max_style_size.max(
-		Vector2(theme_cache.style_margin_left + theme_cache.style_margin_right,
-			theme_cache.style_margin_top + theme_cache.style_margin_bottom));
+	tc_max_style_size = tc_max_style_size.max(
+		Vector2(tc_style_margin_left + tc_style_margin_right,
+			tc_style_margin_top + tc_style_margin_bottom));
 }
 
-Size2 Button::_get_largest_stylebox_size() const { return theme_cache.max_style_size; }
+Size2 Button::_get_largest_stylebox_size() const { return tc_max_style_size; }
 
 Ref<StyleBox> Button::_get_current_stylebox() const
 {
-	Ref<StyleBox> stylebox = theme_cache.normal;
+	Ref<StyleBox> stylebox = tc_normal;
 	const bool rtl = is_layout_rtl();
 
 	switch (get_draw_mode()) {
 	case DRAW_NORMAL: {
 		stylebox = (rtl && has_theme_stylebox(SNAME("normal_mirrored")))
-					   ? theme_cache.normal_mirrored
-					   : theme_cache.normal;
+					   ? tc_normal_mirrored
+					   : tc_normal;
 	} break;
 
 	case DRAW_HOVER_PRESSED: {
 		if (has_theme_stylebox("hover_pressed")) {
 			stylebox = (rtl && has_theme_stylebox(SNAME("hover_pressed_mirrored")))
-						   ? theme_cache.hover_pressed_mirrored
-						   : theme_cache.hover_pressed;
+						   ? tc_hover_pressed_mirrored
+						   : tc_hover_pressed;
 			break;
 		}
 	}
 		[[fallthrough]];
 	case DRAW_PRESSED: {
 		stylebox = (rtl && has_theme_stylebox(SNAME("pressed_mirrored")))
-					   ? theme_cache.pressed_mirrored
-					   : theme_cache.pressed;
+					   ? tc_pressed_mirrored
+					   : tc_pressed;
 	} break;
 
 	case DRAW_HOVER: {
 		stylebox = (rtl && has_theme_stylebox(SNAME("hover_mirrored")))
-					   ? theme_cache.hover_mirrored
-					   : theme_cache.hover;
+					   ? tc_hover_mirrored
+					   : tc_hover;
 	} break;
 
 	case DRAW_DISABLED: {
 		stylebox = (rtl && has_theme_stylebox(SNAME("disabled_mirrored")))
-					   ? theme_cache.disabled_mirrored
-					   : theme_cache.disabled;
+					   ? tc_disabled_mirrored
+					   : tc_disabled;
 	} break;
 	}
 
@@ -92246,7 +90560,7 @@ String Button::_get_accessibility_name() const
 
 Size2 Button::_fit_icon_size(const Size2& p_size) const
 {
-	int max_width = theme_cache.icon_max_width;
+	int max_width = tc_icon_max_width;
 	Size2 icon_size = p_size;
 
 	if (max_width > 0 && icon_size.width > max_width) {
@@ -92286,7 +90600,7 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String& p_text, Ref<Textu
 		if (horizontal_icon_alignment != HORIZONTAL_ALIGNMENT_CENTER) {
 			minsize.width += icon_size.width;
 			if (!xl_text.is_empty() || !p_text.is_empty()) {
-				minsize.width += MAX(0, theme_cache.h_separation);
+				minsize.width += MAX(0, tc_h_separation);
 			}
 		}
 		else {
@@ -92294,8 +90608,8 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String& p_text, Ref<Textu
 		}
 	}
 
-	if ((!xl_text.is_empty() || !p_text.is_empty()) && theme_cache.font.is_valid()) {
-		float font_height = theme_cache.font->get_height(theme_cache.font_size);
+	if ((!xl_text.is_empty() || !p_text.is_empty()) && tc_font.is_valid()) {
+		float font_height = tc_font->get_height(tc_font_size);
 		if (vertical_icon_alignment == VERTICAL_ALIGNMENT_CENTER) {
 			minsize.height = MAX(font_height, minsize.height);
 		}
@@ -92305,7 +90619,7 @@ Size2 Button::get_minimum_size_for_text_and_icon(const String& p_text, Ref<Textu
 	}
 
 	Ref<StyleBox> sb = _get_current_stylebox();
-	Size2 sb_size = theme_cache.align_to_largest_stylebox
+	Size2 sb_size = tc_align_to_largest_stylebox
 						? _get_largest_stylebox_size()
 						: (sb.is_valid() ? sb->get_minimum_size() : Size2());
 	return sb_size + minsize;
@@ -92347,15 +90661,15 @@ void Button::_update_style_margins(const Ref<StyleBox>& p_stylebox)
 	if (p_stylebox.is_null()) {
 		return;
 	}
-	theme_cache.max_style_size = theme_cache.max_style_size.max(p_stylebox->get_minimum_size());
-	theme_cache.style_margin_left =
-		MAX(theme_cache.style_margin_left, p_stylebox->get_margin(SIDE_LEFT));
-	theme_cache.style_margin_right =
-		MAX(theme_cache.style_margin_right, p_stylebox->get_margin(SIDE_RIGHT));
-	theme_cache.style_margin_top =
-		MAX(theme_cache.style_margin_top, p_stylebox->get_margin(SIDE_TOP));
-	theme_cache.style_margin_bottom =
-		MAX(theme_cache.style_margin_bottom, p_stylebox->get_margin(SIDE_BOTTOM));
+	tc_max_style_size = tc_max_style_size.max(p_stylebox->get_minimum_size());
+	tc_style_margin_left =
+		MAX(tc_style_margin_left, p_stylebox->get_margin(SIDE_LEFT));
+	tc_style_margin_right =
+		MAX(tc_style_margin_right, p_stylebox->get_margin(SIDE_RIGHT));
+	tc_style_margin_top =
+		MAX(tc_style_margin_top, p_stylebox->get_margin(SIDE_TOP));
+	tc_style_margin_bottom =
+		MAX(tc_style_margin_bottom, p_stylebox->get_margin(SIDE_BOTTOM));
 }
 
 Ref<Texture2D> Button::get_button_icon() const { return icon; }
@@ -92475,14 +90789,14 @@ Size2 OptionButton::get_minimum_size() const
 						? _cached_size
 						: (button ? button->get_minimum_size() : Size2());
 
-	if (has_theme_icon(SNAME("arrow")) && theme_cache.arrow_icon.is_valid()) {
-		const Size2 padding = theme_cache.normal.is_valid()
-								  ? theme_cache.normal->get_minimum_size()
+	if (has_theme_icon(SNAME("arrow")) && tc_arrow_icon.is_valid()) {
+		const Size2 padding = tc_normal.is_valid()
+								  ? tc_normal->get_minimum_size()
 								  : Size2();
-		const Size2 arrow_size = theme_cache.arrow_icon->get_size();
+		const Size2 arrow_size = tc_arrow_icon->get_size();
 
 		Size2 content_size = minsize - padding;
-		content_size.width += arrow_size.width + MAX(0, theme_cache.h_separation);
+		content_size.width += arrow_size.width + MAX(0, tc_h_separation);
 		content_size.height = MAX(content_size.height, arrow_size.height);
 
 		minsize = content_size + padding;
@@ -92821,7 +91135,7 @@ void MenuBar::unbind_global_menu()
 
 int MenuBar::_get_index_at_point(const Point2& p_point) const
 {
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style = tc_normal;
 	int offset = 0;
 	Point2 point = p_point;
 	if (is_layout_rtl()) {
@@ -92838,7 +91152,7 @@ int MenuBar::_get_index_at_point(const Point2& p_point) const
 				return i;
 			}
 		}
-		offset += size.x + theme_cache.h_separation;
+		offset += size.x + tc_h_separation;
 	}
 	return -1;
 }
@@ -92847,7 +91161,7 @@ Rect2 MenuBar::_get_menu_item_rect(int p_index) const
 {
 	ERR_FAIL_INDEX_V(p_index, menu_cache.size(), Rect2());
 
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style = tc_normal;
 
 	int offset = 0;
 	for (int i = 0; i < p_index; i++) {
@@ -92855,7 +91169,7 @@ Rect2 MenuBar::_get_menu_item_rect(int p_index) const
 			continue;
 		}
 		Size2 size = menu_cache[i].text_buf->get_size() + style->get_minimum_size();
-		offset += size.x + theme_cache.h_separation;
+		offset += size.x + tc_h_separation;
 	}
 
 	Size2 size = menu_cache[p_index].text_buf->get_size() + style->get_minimum_size();
@@ -92886,83 +91200,83 @@ void MenuBar::_draw_menu_item(int p_index)
 
 	if (menu_cache[p_index].disabled) {
 		if (rtl && has_theme_stylebox(SNAME("disabled_mirrored"))) {
-			style = theme_cache.disabled_mirrored;
+			style = tc_disabled_mirrored;
 		}
 		else {
-			style = theme_cache.disabled;
+			style = tc_disabled;
 		}
 		if (!flat) {
 			style->draw(ci, item_rect);
 		}
-		color = theme_cache.font_disabled_color;
+		color = tc_font_disabled_color;
 	}
 	else if (hovered && pressed && has_theme_stylebox("hover_pressed")) {
 		if (rtl && has_theme_stylebox(SNAME("hover_pressed_mirrored"))) {
-			style = theme_cache.hover_pressed_mirrored;
+			style = tc_hover_pressed_mirrored;
 		}
 		else {
-			style = theme_cache.hover_pressed;
+			style = tc_hover_pressed;
 		}
 		if (!flat) {
 			style->draw(ci, item_rect);
 		}
 		if (has_theme_color(SNAME("font_hover_pressed_color"))) {
-			color = theme_cache.font_hover_pressed_color;
+			color = tc_font_hover_pressed_color;
 		}
 	}
 	else if (pressed) {
 		if (rtl && has_theme_stylebox(SNAME("pressed_mirrored"))) {
-			style = theme_cache.pressed_mirrored;
+			style = tc_pressed_mirrored;
 		}
 		else {
-			style = theme_cache.pressed;
+			style = tc_pressed;
 		}
 		if (!flat) {
 			style->draw(ci, item_rect);
 		}
 		if (has_theme_color(SNAME("font_pressed_color"))) {
-			color = theme_cache.font_pressed_color;
+			color = tc_font_pressed_color;
 		}
 		else {
-			color = theme_cache.font_color;
+			color = tc_font_color;
 		}
 	}
 	else if (hovered) {
 		if (rtl && has_theme_stylebox(SNAME("hover_mirrored"))) {
-			style = theme_cache.hover_mirrored;
+			style = tc_hover_mirrored;
 		}
 		else {
-			style = theme_cache.hover;
+			style = tc_hover;
 		}
 		if (!flat) {
 			style->draw(ci, item_rect);
 		}
-		color = theme_cache.font_hover_color;
+		color = tc_font_hover_color;
 	}
 	else {
 		if (rtl && has_theme_stylebox(SNAME("normal_mirrored"))) {
-			style = theme_cache.normal_mirrored;
+			style = tc_normal_mirrored;
 		}
 		else {
-			style = theme_cache.normal;
+			style = tc_normal;
 		}
 		if (!flat) {
 			style->draw(ci, item_rect);
 		}
 		// Focus colors only take precedence over normal state.
 		if (has_focus(true)) {
-			color = theme_cache.font_focus_color;
+			color = tc_font_focus_color;
 		}
 		else {
-			color = theme_cache.font_color;
+			color = tc_font_color;
 		}
 	}
 
 	Point2 text_ofs =
 		item_rect.position + Point2(style->get_margin(SIDE_LEFT), style->get_margin(SIDE_TOP));
 
-	Color font_outline_color = theme_cache.font_outline_color;
-	int outline_size = theme_cache.outline_size;
+	Color font_outline_color = tc_font_outline_color;
+	int outline_size = tc_outline_size;
 	if (outline_size > 0 && font_outline_color.a > 0) {
 		menu_cache[p_index].text_buf->draw_outline(ci, text_ofs, outline_size, font_outline_color);
 	}
@@ -93031,7 +91345,7 @@ Size2 MenuBar::get_minimum_size() const
 		return Size2();
 	}
 
-	Ref<StyleBox> style = theme_cache.normal;
+	Ref<StyleBox> style = tc_normal;
 
 	Vector2 size;
 	for (int i = 0; i < menu_cache.size(); i++) {
@@ -93043,7 +91357,7 @@ Size2 MenuBar::get_minimum_size() const
 		size.x += sz.x;
 	}
 	if (menu_cache.size() > 1) {
-		size.x += theme_cache.h_separation * (menu_cache.size() - 1);
+		size.x += tc_h_separation * (menu_cache.size() - 1);
 	}
 	return size;
 }
@@ -93137,17 +91451,14 @@ class ProgressBar : public Control
 	bool indeterminate = false;
 	bool editor_preview_indeterminate = false;
 
-	struct ThemeCache
-	{
-		Ref<StyleBox> background_style;
-		Ref<StyleBox> fill_style;
+		Ref<StyleBox> tc_background_style;
+		Ref<StyleBox> tc_fill_style;
 
-		Ref<Font> font;
-		int font_size = 0;
-		Color font_color;
-		int font_outline_size = 0;
-		Color font_outline_color;
-	} theme_cache;
+		Ref<Font> tc_font;
+		int tc_font_size = 0;
+		Color tc_font_color;
+		int tc_font_outline_size = 0;
+		Color tc_font_outline_color;
 
 protected:
 	void _notification(int p_what);
@@ -93424,13 +91735,13 @@ void NumericRange::append_configuration_warnings(PackedStringArray& r_warnings) 
 
 Size2 ProgressBar::get_minimum_size() const
 {
-	Size2 minimum_size = theme_cache.background_style->get_minimum_size();
-	minimum_size = minimum_size.max(theme_cache.fill_style->get_minimum_size());
+	Size2 minimum_size = tc_background_style->get_minimum_size();
+	minimum_size = minimum_size.max(tc_fill_style->get_minimum_size());
 	if (show_percentage) {
 		String txt = "100%";
-		TextLine tl = TextLine(txt, theme_cache.font, theme_cache.font_size);
+		TextLine tl = TextLine(txt, tc_font, tc_font_size);
 		minimum_size.height = MAX(minimum_size.height,
-			theme_cache.background_style->get_minimum_size().height + tl.get_size().y);
+			tc_background_style->get_minimum_size().height + tl.get_size().y);
 	}
 	else { // this is needed, else the progressbar will collapse
 		minimum_size = minimum_size.maxf(1);
@@ -93978,8 +92289,8 @@ void TextureProgressBar::set_fill_mode(int) {}
 
 Size2 Slider::get_minimum_size() const
 {
-	Size2i ss = theme_cache.slider_style->get_minimum_size();
-	Size2i rs = theme_cache.grabber_icon->get_size();
+	Size2i ss = tc_slider_style->get_minimum_size();
+	Size2i rs = tc_grabber_icon->get_size();
 
 	if (orientation == HORIZONTAL) {
 		return Size2i(ss.width, MAX(ss.height, rs.height));
@@ -94054,36 +92365,36 @@ void Slider::_notification(int p_what)
 		Size2i size = get_size();
 		double ratio = Math::is_nan(get_as_ratio()) ? 0 : get_as_ratio();
 
-		Ref<StyleBox> style = theme_cache.slider_style;
-		Ref<Texture2D> tick = theme_cache.tick_icon;
+		Ref<StyleBox> style = tc_slider_style;
+		Ref<Texture2D> tick = tc_tick_icon;
 
 		bool highlighted = editable && (mouse_inside || has_focus(true));
 		Ref<Texture2D> grabber;
 		if (editable) {
 			if (highlighted) {
-				grabber = theme_cache.grabber_hl_icon;
+				grabber = tc_grabber_hl_icon;
 			}
 			else {
-				grabber = theme_cache.grabber_icon;
+				grabber = tc_grabber_icon;
 			}
 		}
 		else {
-			grabber = theme_cache.grabber_disabled_icon;
+			grabber = tc_grabber_disabled_icon;
 		}
 
 		Ref<StyleBox> grabber_area;
 		if (highlighted) {
-			grabber_area = theme_cache.grabber_area_hl_style;
+			grabber_area = tc_grabber_area_hl_style;
 		}
 		else {
-			grabber_area = theme_cache.grabber_area_style;
+			grabber_area = tc_grabber_area_style;
 		}
 
 		if (orientation == VERTICAL) {
 			int widget_width = style->get_minimum_size().width;
 			double areasize =
-				size.height - (theme_cache.center_grabber ? 0 : grabber->get_height());
-			int grabber_shift = theme_cache.center_grabber ? grabber->get_height() / 2 : 0;
+				size.height - (tc_center_grabber ? 0 : grabber->get_height());
+			int grabber_shift = tc_center_grabber ? grabber->get_height() / 2 : 0;
 			style->draw(ci, Rect2i(Point2i(size.width / 2 - widget_width / 2, 0),
 								Size2i(widget_width, size.height)));
 			grabber_area->draw(ci,
@@ -94104,14 +92415,14 @@ void Slider::_notification(int p_what)
 					if (ticks_position == TICK_POSITION_BOTTOM_RIGHT ||
 						ticks_position == TICK_POSITION_BOTH) {
 						tick->draw(ci, Point2i(widget_width + (size.width - widget_width) / 2 +
-												   theme_cache.tick_offset,
+												   tc_tick_offset,
 										   ofs));
 					}
 
 					if (ticks_position == TICK_POSITION_TOP_LEFT ||
 						ticks_position == TICK_POSITION_BOTH) {
 						Point2i pos = Point2i((size.width - widget_width) / 2 - tick->get_width() -
-												  theme_cache.tick_offset,
+												  tc_tick_offset,
 							ofs);
 						tick->draw_rect(
 							ci, Rect2i(pos, Size2i(-tick->get_width(), tick->get_height())));
@@ -94119,20 +92430,20 @@ void Slider::_notification(int p_what)
 
 					if (ticks_position == TICK_POSITION_CENTER) {
 						tick->draw(ci,
-							Point2i((size.width - tick->get_width()) / 2 + theme_cache.tick_offset,
+							Point2i((size.width - tick->get_width()) / 2 + tc_tick_offset,
 								ofs));
 					}
 				}
 			}
 			grabber->draw(
-				ci, Point2i(size.width / 2 - grabber->get_width() / 2 + theme_cache.grabber_offset,
+				ci, Point2i(size.width / 2 - grabber->get_width() / 2 + tc_grabber_offset,
 						size.height - ratio * areasize - grabber->get_height() + grabber_shift));
 		}
 		else {
 			int widget_height = style->get_minimum_size().height;
 			double areasize =
-				size.width - (theme_cache.center_grabber ? 0 : grabber->get_size().width);
-			int grabber_shift = theme_cache.center_grabber ? -grabber->get_width() / 2 : 0;
+				size.width - (tc_center_grabber ? 0 : grabber->get_size().width);
+			int grabber_shift = tc_center_grabber ? -grabber->get_width() / 2 : 0;
 			bool rtl = is_layout_rtl();
 
 			style->draw(ci, Rect2i(Point2i(0, (size.height - widget_height) / 2),
@@ -94159,27 +92470,27 @@ void Slider::_notification(int p_what)
 						ticks_position == TICK_POSITION_BOTH) {
 						tick->draw(
 							ci, Point2i(ofs, widget_height + (size.height - widget_height) / 2 +
-												 theme_cache.tick_offset));
+												 tc_tick_offset));
 					}
 
 					if (ticks_position == TICK_POSITION_TOP_LEFT ||
 						ticks_position == TICK_POSITION_BOTH) {
 						Point2i pos =
 							Point2i(ofs, (size.height - widget_height) / 2 - tick->get_height() -
-											 theme_cache.tick_offset);
+											 tc_tick_offset);
 						tick->draw_rect(
 							ci, Rect2i(pos, Size2i(tick->get_width(), -tick->get_height())));
 					}
 
 					if (ticks_position == TICK_POSITION_CENTER) {
 						tick->draw(ci, Point2i(ofs, (size.height - tick->get_height()) / 2 +
-														theme_cache.tick_offset));
+														tc_tick_offset));
 					}
 				}
 			}
 			grabber->draw(
 				ci, Point2i((rtl ? 1 - ratio : ratio) * areasize + grabber_shift,
-						size.height / 2 - grabber->get_height() / 2 + theme_cache.grabber_offset));
+						size.height / 2 - grabber->get_height() / 2 + tc_grabber_offset));
 		}
 	} break;
 	}
@@ -94218,7 +92529,7 @@ Slider::Slider(Orientation p_orientation)
 Size2 SpinBox::get_minimum_size() const
 {
 	Size2 ms = line_edit->get_bound_minimum_size();
-	ms.width += sizing_cache.buttons_block_width;
+	ms.width += sizing_cache_buttons_block_width;
 	return ms;
 }
 
@@ -94292,58 +92603,58 @@ void SpinBox::_line_edit_editing_toggled(bool p_toggled_on)
 inline void SpinBox::_compute_sizes()
 {
 	int buttons_block_wanted_width =
-		theme_cache.buttons_width + theme_cache.field_and_buttons_separation;
+		tc_buttons_width + tc_field_and_buttons_separation;
 	int buttons_block_icon_enforced_width =
-		_get_widest_button_icon_width() + theme_cache.field_and_buttons_separation;
+		_get_widest_button_icon_width() + tc_field_and_buttons_separation;
 
 #ifndef DISABLE_DEPRECATED
 	const bool min_width_from_icons =
-		theme_cache.set_min_buttons_width_from_icons || (theme_cache.buttons_width < 0);
+		tc_set_min_buttons_width_from_icons || (tc_buttons_width < 0);
 #else
-	const bool min_width_from_icons = theme_cache.buttons_width < 0;
+	const bool min_width_from_icons = tc_buttons_width < 0;
 #endif
 	int w = min_width_from_icons != 0
 				? MAX(buttons_block_icon_enforced_width, buttons_block_wanted_width)
 				: buttons_block_wanted_width;
 
-	if (w != sizing_cache.buttons_block_width) {
+	if (w != sizing_cache_buttons_block_width) {
 		line_edit->set_offset(SIDE_LEFT, 0);
 		line_edit->set_offset(SIDE_RIGHT, -w);
-		sizing_cache.buttons_block_width = w;
+		sizing_cache_buttons_block_width = w;
 	}
 
 	Size2i size = get_size();
 
-	sizing_cache.buttons_width = w - theme_cache.field_and_buttons_separation;
-	sizing_cache.buttons_vertical_separation =
-		CLAMP(theme_cache.buttons_vertical_separation, 0, size.height);
-	sizing_cache.buttons_left = is_layout_rtl() ? 0 : size.width - sizing_cache.buttons_width;
-	sizing_cache.button_up_height = (size.height - sizing_cache.buttons_vertical_separation) / 2;
-	sizing_cache.button_down_height =
-		size.height - sizing_cache.button_up_height - sizing_cache.buttons_vertical_separation;
-	sizing_cache.second_button_top = size.height - sizing_cache.button_down_height;
+	sizing_cache_buttons_width = w - tc_field_and_buttons_separation;
+	sizing_cache_buttons_vertical_separation =
+		CLAMP(tc_buttons_vertical_separation, 0, size.height);
+	sizing_cache_buttons_left = is_layout_rtl() ? 0 : size.width - sizing_cache_buttons_width;
+	sizing_cache_button_up_height = (size.height - sizing_cache_buttons_vertical_separation) / 2;
+	sizing_cache_button_down_height =
+		size.height - sizing_cache_button_up_height - sizing_cache_buttons_vertical_separation;
+	sizing_cache_second_button_top = size.height - sizing_cache_button_down_height;
 
-	sizing_cache.buttons_separator_top = sizing_cache.button_up_height;
-	sizing_cache.field_and_buttons_separator_left =
-		is_layout_rtl() ? sizing_cache.buttons_width
-						: size.width - sizing_cache.buttons_block_width;
-	sizing_cache.field_and_buttons_separator_width = theme_cache.field_and_buttons_separation;
+	sizing_cache_buttons_separator_top = sizing_cache_button_up_height;
+	sizing_cache_field_and_buttons_separator_left =
+		is_layout_rtl() ? sizing_cache_buttons_width
+						: size.width - sizing_cache_buttons_block_width;
+	sizing_cache_field_and_buttons_separator_width = tc_field_and_buttons_separation;
 }
 
 inline int SpinBox::_get_widest_button_icon_width()
 {
 	int max = 0;
 #ifndef DISABLE_DEPRECATED
-	max = MAX(max, theme_cache.updown_icon->get_width());
+	max = MAX(max, tc_updown_icon->get_width());
 #endif
-	max = MAX(max, theme_cache.up_icon->get_width());
-	max = MAX(max, theme_cache.up_hover_icon->get_width());
-	max = MAX(max, theme_cache.up_pressed_icon->get_width());
-	max = MAX(max, theme_cache.up_disabled_icon->get_width());
-	max = MAX(max, theme_cache.down_icon->get_width());
-	max = MAX(max, theme_cache.down_hover_icon->get_width());
-	max = MAX(max, theme_cache.down_pressed_icon->get_width());
-	max = MAX(max, theme_cache.down_disabled_icon->get_width());
+	max = MAX(max, tc_up_icon->get_width());
+	max = MAX(max, tc_up_hover_icon->get_width());
+	max = MAX(max, tc_up_pressed_icon->get_width());
+	max = MAX(max, tc_up_disabled_icon->get_width());
+	max = MAX(max, tc_down_icon->get_width());
+	max = MAX(max, tc_down_hover_icon->get_width());
+	max = MAX(max, tc_down_pressed_icon->get_width());
+	max = MAX(max, tc_down_disabled_icon->get_width());
 	return max;
 }
 
@@ -94426,7 +92737,7 @@ void ScrollBar::set_can_focus_by_default(bool p_can_focus) { focus_by_default = 
 
 double ScrollBar::get_grabber_min_size() const
 {
-	Ref<StyleBox> grabber = theme_cache.grabber_style;
+	Ref<StyleBox> grabber = tc_grabber_style;
 	Size2 gminsize = grabber->get_minimum_size();
 	return (orientation == VERTICAL) ? gminsize.height : gminsize.width;
 }
@@ -94449,17 +92760,17 @@ double ScrollBar::get_area_size() const
 	switch (orientation) {
 	case VERTICAL: {
 		double area = get_size().height;
-		area -= theme_cache.scroll_style->get_minimum_size().height;
-		area -= theme_cache.increment_icon->get_height();
-		area -= theme_cache.decrement_icon->get_height();
+		area -= tc_scroll_style->get_minimum_size().height;
+		area -= tc_increment_icon->get_height();
+		area -= tc_decrement_icon->get_height();
 		area -= get_grabber_min_size();
 		return area;
 	} break;
 	case HORIZONTAL: {
 		double area = get_size().width;
-		area -= theme_cache.scroll_style->get_minimum_size().width;
-		area -= theme_cache.increment_icon->get_width();
-		area -= theme_cache.decrement_icon->get_width();
+		area -= tc_scroll_style->get_minimum_size().width;
+		area -= tc_increment_icon->get_width();
+		area -= tc_decrement_icon->get_width();
 		area -= get_grabber_min_size();
 		return area;
 	} break;
@@ -94473,14 +92784,14 @@ double ScrollBar::get_grabber_offset() const { return get_area_size() * get_as_r
 
 Size2 ScrollBar::get_minimum_size() const
 {
-	Ref<Texture2D> incr = theme_cache.increment_icon;
-	Ref<Texture2D> decr = theme_cache.decrement_icon;
-	Ref<StyleBox> bg = theme_cache.scroll_style;
+	Ref<Texture2D> incr = tc_increment_icon;
+	Ref<Texture2D> decr = tc_decrement_icon;
+	Ref<StyleBox> bg = tc_scroll_style;
 	Size2 minsize;
 
 	if (orientation == VERTICAL) {
-		int padding_left = MAX(theme_cache.padding_left, 0);
-		int padding_right = MAX(theme_cache.padding_right, 0);
+		int padding_left = MAX(tc_padding_left, 0);
+		int padding_right = MAX(tc_padding_right, 0);
 		minsize.width = MAX(incr->get_size().width, bg->get_minimum_size().width);
 		minsize.width += padding_left + padding_right;
 		minsize.height += incr->get_size().height;
@@ -94490,8 +92801,8 @@ Size2 ScrollBar::get_minimum_size() const
 	}
 
 	if (orientation == HORIZONTAL) {
-		int padding_top = MAX(theme_cache.padding_top, 0);
-		int padding_bottom = MAX(theme_cache.padding_bottom, 0);
+		int padding_top = MAX(tc_padding_top, 0);
+		int padding_bottom = MAX(tc_padding_bottom, 0);
 		minsize.height = MAX(incr->get_size().height, bg->get_minimum_size().height);
 		minsize.height += padding_top + padding_bottom;
 		minsize.width += incr->get_size().width;
@@ -94616,15 +92927,15 @@ Size2 ScrollContainer::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Control::get_inner_combined_maximum_size();
 
-	if (theme_cache.panel_style.is_valid()) {
-		ms -= theme_cache.panel_style->get_minimum_size();
+	if (tc_panel_style.is_valid()) {
+		ms -= tc_panel_style->get_minimum_size();
 	}
 
 	if (h_scroll && (_is_h_scroll_visible() || horizontal_scroll_mode == SCROLL_MODE_RESERVE)) {
-		ms.y -= h_scroll->get_minimum_size().y + theme_cache.scrollbar_v_separation;
+		ms.y -= h_scroll->get_minimum_size().y + tc_scrollbar_v_separation;
 	}
 	if (v_scroll && (_is_v_scroll_visible() || vertical_scroll_mode == SCROLL_MODE_RESERVE)) {
-		ms.x -= v_scroll->get_minimum_size().x + theme_cache.scrollbar_h_separation;
+		ms.x -= v_scroll->get_minimum_size().x + tc_scrollbar_h_separation;
 	}
 
 	return ms;
@@ -94643,26 +92954,26 @@ bool ScrollContainer::_is_v_scroll_visible() const
 
 Rect2 ScrollContainer::_get_margins() const
 {
-	float right_margin = theme_cache.panel_style->get_margin(SIDE_RIGHT);
-	float left_margin = theme_cache.panel_style->get_margin(SIDE_LEFT);
-	float top_margin = theme_cache.panel_style->get_margin(SIDE_TOP);
-	float bottom_margin = theme_cache.panel_style->get_margin(SIDE_BOTTOM);
+	float right_margin = tc_panel_style->get_margin(SIDE_RIGHT);
+	float left_margin = tc_panel_style->get_margin(SIDE_LEFT);
+	float top_margin = tc_panel_style->get_margin(SIDE_TOP);
+	float bottom_margin = tc_panel_style->get_margin(SIDE_BOTTOM);
 	if (draw_focus_border) {
 		// Only update margins if the focus style's margins don't fit into the panel style's
 		// margins.
-		float focus_margin = theme_cache.focus_style->get_margin(SIDE_RIGHT);
+		float focus_margin = tc_focus_style->get_margin(SIDE_RIGHT);
 		if (focus_margin > right_margin) {
 			right_margin = focus_margin;
 		}
-		focus_margin = theme_cache.focus_style->get_margin(SIDE_LEFT);
+		focus_margin = tc_focus_style->get_margin(SIDE_LEFT);
 		if (focus_margin > left_margin) {
 			left_margin = focus_margin;
 		}
-		focus_margin = theme_cache.focus_style->get_margin(SIDE_TOP);
+		focus_margin = tc_focus_style->get_margin(SIDE_TOP);
 		if (focus_margin > top_margin) {
 			top_margin = focus_margin;
 		}
-		focus_margin = theme_cache.focus_style->get_margin(SIDE_BOTTOM);
+		focus_margin = tc_focus_style->get_margin(SIDE_BOTTOM);
 		if (focus_margin > bottom_margin) {
 			bottom_margin = focus_margin;
 		}
@@ -94851,24 +93162,24 @@ SplitContainerDragger::SplitContainerDragger() { set_focus_mode(FOCUS_ACCESSIBIL
 Ref<Texture2D> SplitContainer::_get_grabber_icon() const
 {
 	if (vertical) {
-		return theme_cache.grabber_icon_v.is_valid() ? theme_cache.grabber_icon_v
-													 : theme_cache.grabber_icon;
+		return tc_grabber_icon_v.is_valid() ? tc_grabber_icon_v
+													 : tc_grabber_icon;
 	}
 	else {
-		return theme_cache.grabber_icon_h.is_valid() ? theme_cache.grabber_icon_h
-													 : theme_cache.grabber_icon;
+		return tc_grabber_icon_h.is_valid() ? tc_grabber_icon_h
+													 : tc_grabber_icon;
 	}
 }
 
 Ref<Texture2D> SplitContainer::_get_touch_dragger_icon() const
 {
 	if (vertical) {
-		return theme_cache.touch_dragger_icon_v.is_valid() ? theme_cache.touch_dragger_icon_v
-														   : theme_cache.touch_dragger_icon;
+		return tc_touch_dragger_icon_v.is_valid() ? tc_touch_dragger_icon_v
+														   : tc_touch_dragger_icon;
 	}
 	else {
-		return theme_cache.touch_dragger_icon_h.is_valid() ? theme_cache.touch_dragger_icon_h
-														   : theme_cache.touch_dragger_icon;
+		return tc_touch_dragger_icon_h.is_valid() ? tc_touch_dragger_icon_h
+														   : tc_touch_dragger_icon;
 	}
 }
 
@@ -94879,11 +93190,11 @@ int SplitContainer::_get_separation() const
 	}
 
 	if (touch_dragger_enabled) {
-		return theme_cache.separation;
+		return tc_separation;
 	}
 	// DRAGGER_VISIBLE or DRAGGER_HIDDEN.
 	Ref<Texture2D> g = _get_grabber_icon();
-	return MAX(theme_cache.separation, vertical ? g->get_height() : g->get_width());
+	return MAX(tc_separation, vertical ? g->get_height() : g->get_width());
 }
 
 Point2i SplitContainer::_get_valid_range(int p_dragger_index) const
@@ -95290,18 +93601,18 @@ Size2 TabBar::get_minimum_size() const
 	Size2 ms;
 	Size2 combined_max = get_combined_maximum_size();
 
-	int buttons_size = get_tab_count() > 1 ? theme_cache.decrement_icon->get_width() +
-												 theme_cache.increment_icon->get_width()
+	int buttons_size = get_tab_count() > 1 ? tc_decrement_icon->get_width() +
+												 tc_increment_icon->get_width()
 										   : 0;
 
 	if (tabs.is_empty()) {
 		return ms;
 	}
 
-	int y_margin = MAX(MAX(MAX(theme_cache.tab_unselected_style->get_minimum_size().height,
-							   theme_cache.tab_hovered_style->get_minimum_size().height),
-						   theme_cache.tab_selected_style->get_minimum_size().height),
-		theme_cache.tab_disabled_style->get_minimum_size().height);
+	int y_margin = MAX(MAX(MAX(tc_tab_unselected_style->get_minimum_size().height,
+							   tc_tab_hovered_style->get_minimum_size().height),
+						   tc_tab_selected_style->get_minimum_size().height),
+		tc_tab_disabled_style->get_minimum_size().height);
 	int max_tab_width = 0;
 
 	for (int i = 0; i < tabs.size(); i++) {
@@ -95313,27 +93624,27 @@ Size2 TabBar::get_minimum_size() const
 
 		Ref<StyleBox> style;
 		if (tabs[i].disabled) {
-			style = theme_cache.tab_disabled_style;
+			style = tc_tab_disabled_style;
 		}
 		else if (current == i) {
-			style = theme_cache.tab_selected_style;
+			style = tc_tab_selected_style;
 		}
 		else if (hover == i) {
-			style = theme_cache.tab_hovered_style;
+			style = tc_tab_hovered_style;
 		}
 		else {
-			style = theme_cache.tab_unselected_style;
+			style = tc_tab_unselected_style;
 		}
 		ms.width += style->get_minimum_size().width;
 
 		if (tabs[i].icon.is_valid()) {
 			const Size2 icon_size = _get_tab_icon_size(i);
 			ms.height = MAX(ms.height, icon_size.height + y_margin);
-			ms.width += icon_size.width + theme_cache.h_separation;
+			ms.width += icon_size.width + tc_h_separation;
 		}
 
 		if (!tabs[i].text.is_empty()) {
-			ms.width += tabs[i].size_text + theme_cache.h_separation;
+			ms.width += tabs[i].size_text + tc_h_separation;
 		}
 		ms.height = MAX(ms.height, tabs[i].text_buf->get_size().y + y_margin);
 
@@ -95344,29 +93655,29 @@ Size2 TabBar::get_minimum_size() const
 			Ref<Texture2D> rb = tabs[i].right_button;
 
 			if (close_visible) {
-				ms.width += theme_cache.button_hl_style->get_minimum_size().width + rb->get_width();
+				ms.width += tc_button_hl_style->get_minimum_size().width + rb->get_width();
 			}
 			else {
-				ms.width += theme_cache.button_hl_style->get_margin(SIDE_LEFT) + rb->get_width() +
-							theme_cache.h_separation;
+				ms.width += tc_button_hl_style->get_margin(SIDE_LEFT) + rb->get_width() +
+							tc_h_separation;
 			}
 
 			ms.height = MAX(ms.height, rb->get_height() + y_margin);
 		}
 
 		if (close_visible) {
-			ms.width += theme_cache.button_hl_style->get_margin(SIDE_LEFT) +
-						theme_cache.close_icon->get_width() + theme_cache.h_separation;
+			ms.width += tc_button_hl_style->get_margin(SIDE_LEFT) +
+						tc_close_icon->get_width() + tc_h_separation;
 
-			ms.height = MAX(ms.height, theme_cache.close_icon->get_height() + y_margin);
+			ms.height = MAX(ms.height, tc_close_icon->get_height() + y_margin);
 		}
 
 		if (ms.width - ofs > style->get_minimum_size().width) {
-			ms.width -= theme_cache.h_separation;
+			ms.width -= tc_h_separation;
 		}
 
 		if (i < tabs.size() - 1) {
-			ms.width += theme_cache.tab_separation;
+			ms.width += tc_tab_separation;
 		}
 
 		if (ms.width - ofs > max_tab_width) {
@@ -95433,11 +93744,11 @@ void TabBar::_draw_tab_drop(RID p_canvas_item)
 		if (get_local_mouse_position().x > tab_rect.get_center().x) {
 			x += tab_rect.size.x;
 			if (not_rightmost_tab) {
-				x += Math::ceil(0.5f * theme_cache.tab_separation);
+				x += Math::ceil(0.5f * tc_tab_separation);
 			}
 		}
 		else if (not_leftmost_tab) {
-			x -= Math::floor(0.5f * theme_cache.tab_separation);
+			x -= Math::floor(0.5f * tc_tab_separation);
 		}
 	}
 	else {
@@ -95457,10 +93768,10 @@ void TabBar::_draw_tab_drop(RID p_canvas_item)
 		}
 	}
 
-	theme_cache.drop_mark_icon->draw(p_canvas_item,
-		Point2(x - theme_cache.drop_mark_icon->get_width() / 2,
-			(size.height - theme_cache.drop_mark_icon->get_height()) / 2),
-		theme_cache.drop_mark_color);
+	tc_drop_mark_icon->draw(p_canvas_item,
+		Point2(x - tc_drop_mark_icon->get_width() / 2,
+			(size.height - tc_drop_mark_icon->get_height()) / 2),
+		tc_drop_mark_color);
 }
 
 void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
@@ -95479,7 +93790,7 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 		draw_set_transform(Point2(), 0.0, Size2(1.0, 1.0));
 	}
 	if (p_focus) {
-		Ref<StyleBox> focus_style = theme_cache.tab_focus_style;
+		Ref<StyleBox> focus_style = tc_tab_focus_style;
 		focus_style->draw(ci, sb_rect);
 	}
 
@@ -95497,8 +93808,8 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 				((sb_rect.size.y - sb_ms.y) - icon_size.height) / 2);
 		icon->draw_rect(ci, Rect2(icon_pos, icon_size), false, p_icon_color);
 
-		p_x = rtl ? p_x - icon_size.width - theme_cache.h_separation
-				  : p_x + icon_size.width + theme_cache.h_separation;
+		p_x = rtl ? p_x - icon_size.width - tc_h_separation
+				  : p_x + icon_size.width + tc_h_separation;
 	}
 
 	// Draw the text.
@@ -95507,19 +93818,19 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 			p_tab_style->get_margin(SIDE_TOP) +
 				((sb_rect.size.y - sb_ms.y) - tabs[p_index].text_buf->get_size().y) / 2);
 
-		if (theme_cache.outline_size > 0 && theme_cache.font_outline_color.a > 0) {
+		if (tc_outline_size > 0 && tc_font_outline_color.a > 0) {
 			tabs[p_index].text_buf->draw_outline(
-				ci, text_pos, theme_cache.outline_size, theme_cache.font_outline_color);
+				ci, text_pos, tc_outline_size, tc_font_outline_color);
 		}
 		tabs[p_index].text_buf->draw(ci, text_pos, p_font_color);
 
-		p_x = rtl ? p_x - tabs[p_index].size_text - theme_cache.h_separation
-				  : p_x + tabs[p_index].size_text + theme_cache.h_separation;
+		p_x = rtl ? p_x - tabs[p_index].size_text - tc_h_separation
+				  : p_x + tabs[p_index].size_text + tc_h_separation;
 	}
 
 	// Draw and calculate rect of the right button.
 	if (tabs[p_index].right_button.is_valid()) {
-		Ref<StyleBox> style = theme_cache.button_hl_style;
+		Ref<StyleBox> style = tc_button_hl_style;
 		Ref<Texture2D> rb = tabs[p_index].right_button;
 
 		Rect2 rb_rect;
@@ -95532,7 +93843,7 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 
 		if (rb_hover == p_index) {
 			if (rb_pressing) {
-				theme_cache.button_pressed_style->draw(ci, rb_rect);
+				tc_button_pressed_style->draw(ci, rb_rect);
 			}
 			else {
 				style->draw(ci, rb_rect);
@@ -95551,8 +93862,8 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 	// Draw and calculate rect of the close button.
 	if (cb_displaypolicy == CLOSE_BUTTON_SHOW_ALWAYS ||
 		(cb_displaypolicy == CLOSE_BUTTON_SHOW_ACTIVE_ONLY && p_index == current)) {
-		Ref<StyleBox> style = theme_cache.button_hl_style;
-		Ref<Texture2D> cb = theme_cache.close_icon;
+		Ref<StyleBox> style = tc_button_hl_style;
+		Ref<Texture2D> cb = tc_close_icon;
 
 		Rect2 cb_rect;
 		cb_rect.size = style->get_minimum_size() + cb->get_size();
@@ -95564,7 +93875,7 @@ void TabBar::_draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color,
 
 		if (!tabs[p_index].disabled && cb_hover == p_index) {
 			if (cb_pressing) {
-				theme_cache.button_pressed_style->draw(ci, cb_rect);
+				tc_button_pressed_style->draw(ci, cb_rect);
 			}
 			else {
 				style->draw(ci, cb_rect);
@@ -95718,8 +94029,8 @@ void TabBar::_update_cache(bool p_update_hover)
 
 	Size2 combined_max = get_combined_maximum_size();
 	int combined_max_width = combined_max.width >= 0 ? int(combined_max.width) -
-														   theme_cache.increment_icon->get_width() -
-														   theme_cache.decrement_icon->get_width()
+														   tc_increment_icon->get_width() -
+														   tc_decrement_icon->get_width()
 													 : INT_MAX;
 	int effective_max_width =
 		max_width > 0 ? MIN(max_width, combined_max_width) : combined_max_width;
@@ -95727,7 +94038,7 @@ void TabBar::_update_cache(bool p_update_hover)
 	int limit =
 		combined_max.width > 0 ? MIN(combined_max.width, get_size().width) : get_size().width;
 	int limit_minus_buttons =
-		limit - theme_cache.increment_icon->get_width() - theme_cache.decrement_icon->get_width();
+		limit - tc_increment_icon->get_width() - tc_decrement_icon->get_width();
 
 	int w = 0;
 
@@ -95768,7 +94079,7 @@ void TabBar::_update_cache(bool p_update_hover)
 			tabs.write[i].ofs_cache = 0;
 
 			w -= tabs[i].size_cache;
-			w -= theme_cache.tab_separation;
+			w -= tc_tab_separation;
 
 			max_drawn_tab = i - 1;
 
@@ -95777,7 +94088,7 @@ void TabBar::_update_cache(bool p_update_hover)
 
 				if (!tabs[max_drawn_tab].hidden) {
 					w -= tabs[max_drawn_tab].size_cache;
-					w -= theme_cache.tab_separation;
+					w -= tc_tab_separation;
 				}
 
 				max_drawn_tab--;
@@ -95785,7 +94096,7 @@ void TabBar::_update_cache(bool p_update_hover)
 		}
 		else if (i < tabs.size() - 1) {
 			// Only add the tab separation if this isn't the last tab drawn.
-			w += theme_cache.tab_separation;
+			w += tc_tab_separation;
 		}
 	}
 
@@ -95811,7 +94122,7 @@ void TabBar::_update_cache(bool p_update_hover)
 			tabs.write[i].ofs_cache = w;
 
 			w += tabs[i].size_cache;
-			w += theme_cache.tab_separation;
+			w += tc_tab_separation;
 		}
 	}
 
@@ -95830,8 +94141,8 @@ Size2 TabBar::get_desired_size() const
 		return Size2();
 	}
 
-	int buttons_size = tabs.size() > 1 ? theme_cache.decrement_icon->get_width() +
-											 theme_cache.increment_icon->get_width()
+	int buttons_size = tabs.size() > 1 ? tc_decrement_icon->get_width() +
+											 tc_increment_icon->get_width()
 									   : 0;
 	int limit = int(combined_max.width);
 	int limit_minus_buttons = limit - buttons_size;
@@ -95847,7 +94158,7 @@ Size2 TabBar::get_desired_size() const
 
 		int next_w = w + tabs[i].size_cache;
 		if (i > offset) {
-			next_w += theme_cache.tab_separation;
+			next_w += tc_tab_separation;
 		}
 
 		if (next_w > limit) {
@@ -95868,7 +94179,7 @@ Size2 TabBar::get_desired_size() const
 
 			int next_w = w + tabs[i].size_cache;
 			if (i > offset) {
-				next_w += theme_cache.tab_separation;
+				next_w += tc_tab_separation;
 			}
 
 			if (next_w > limit_minus_buttons) {
@@ -95949,54 +94260,54 @@ int TabBar::get_tab_width(int p_idx) const
 	Ref<StyleBox> style;
 
 	if (tabs[p_idx].disabled) {
-		style = theme_cache.tab_disabled_style;
+		style = tc_tab_disabled_style;
 	}
 	else if (current == p_idx) {
-		style = theme_cache.tab_selected_style;
+		style = tc_tab_selected_style;
 		// Always pick the widest style between hovered and unselected, to avoid an infinite loop
 		// when switching tabs with the mouse.
 	}
-	else if (theme_cache.tab_hovered_style->get_minimum_size().width >
-			   theme_cache.tab_unselected_style->get_minimum_size().width) {
-		style = theme_cache.tab_hovered_style;
+	else if (tc_tab_hovered_style->get_minimum_size().width >
+			   tc_tab_unselected_style->get_minimum_size().width) {
+		style = tc_tab_hovered_style;
 	}
 	else {
-		style = theme_cache.tab_unselected_style;
+		style = tc_tab_unselected_style;
 	}
 	int x = style->get_minimum_size().width;
 
 	if (tabs[p_idx].icon.is_valid()) {
 		const Size2 icon_size = _get_tab_icon_size(p_idx);
-		x += icon_size.width + theme_cache.h_separation;
+		x += icon_size.width + tc_h_separation;
 	}
 
 	if (!tabs[p_idx].text.is_empty()) {
-		x += tabs[p_idx].size_text + theme_cache.h_separation;
+		x += tabs[p_idx].size_text + tc_h_separation;
 	}
 
 	bool close_visible = cb_displaypolicy == CLOSE_BUTTON_SHOW_ALWAYS ||
 						 (cb_displaypolicy == CLOSE_BUTTON_SHOW_ACTIVE_ONLY && p_idx == current);
 
 	if (tabs[p_idx].right_button.is_valid()) {
-		Ref<StyleBox> btn_style = theme_cache.button_hl_style;
+		Ref<StyleBox> btn_style = tc_button_hl_style;
 		Ref<Texture2D> rb = tabs[p_idx].right_button;
 
 		if (close_visible) {
 			x += btn_style->get_minimum_size().width + rb->get_width();
 		}
 		else {
-			x += btn_style->get_margin(SIDE_LEFT) + rb->get_width() + theme_cache.h_separation;
+			x += btn_style->get_margin(SIDE_LEFT) + rb->get_width() + tc_h_separation;
 		}
 	}
 
 	if (close_visible) {
-		Ref<StyleBox> btn_style = theme_cache.button_hl_style;
-		Ref<Texture2D> cb = theme_cache.close_icon;
-		x += btn_style->get_margin(SIDE_LEFT) + cb->get_width() + theme_cache.h_separation;
+		Ref<StyleBox> btn_style = tc_button_hl_style;
+		Ref<Texture2D> cb = tc_close_icon;
+		x += btn_style->get_margin(SIDE_LEFT) + cb->get_width() + tc_h_separation;
 	}
 
 	if (x > style->get_minimum_size().width) {
-		x -= theme_cache.h_separation;
+		x -= tc_h_separation;
 	}
 
 	return x;
@@ -96009,8 +94320,8 @@ Size2 TabBar::_get_tab_icon_size(int p_index) const
 	Size2 icon_size = tab.icon->get_size();
 
 	int icon_max_width = 0;
-	if (theme_cache.icon_max_width > 0) {
-		icon_max_width = theme_cache.icon_max_width;
+	if (tc_icon_max_width > 0) {
+		icon_max_width = tc_icon_max_width;
 	}
 	if (tab.icon_max_width > 0 && (icon_max_width == 0 || tab.icon_max_width < icon_max_width)) {
 		icon_max_width = tab.icon_max_width;
@@ -96140,8 +94451,8 @@ int TabContainer::_get_tab_height() const
 	int height = 0;
 	if (tabs_visible && get_tab_count() > 0) {
 		height = tab_bar->get_minimum_size().height +
-				 theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-				 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
+				 tc_tabbar_style->get_margin(SIDE_TOP) +
+				 tc_tabbar_style->get_margin(SIDE_BOTTOM);
 	}
 
 	return height;
@@ -96342,19 +94653,19 @@ Size2 TabContainer::_get_minimum_size(bool p_use_desired_sizes) const
 
 	if (tabs_visible) {
 		ms = p_use_desired_sizes ? tab_bar->get_bound_desired_size() : tab_bar->get_minimum_size();
-		ms.width += theme_cache.tabbar_style->get_margin(SIDE_LEFT) +
-					theme_cache.tabbar_style->get_margin(SIDE_RIGHT);
-		ms.height += theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-					 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
+		ms.width += tc_tabbar_style->get_margin(SIDE_LEFT) +
+					tc_tabbar_style->get_margin(SIDE_RIGHT);
+		ms.height += tc_tabbar_style->get_margin(SIDE_TOP) +
+					 tc_tabbar_style->get_margin(SIDE_BOTTOM);
 
 		if (get_popup()) {
 			ms.width += p_use_desired_sizes ? popup_button->get_bound_desired_size().x
 											: popup_button->get_minimum_size().x;
 		}
 
-		if (theme_cache.side_margin > 0 && get_tab_alignment() != TabBar::ALIGNMENT_CENTER &&
+		if (tc_side_margin > 0 && get_tab_alignment() != TabBar::ALIGNMENT_CENTER &&
 			(get_tab_alignment() != TabBar::ALIGNMENT_RIGHT || !get_popup())) {
-			ms.width += theme_cache.side_margin;
+			ms.width += tc_side_margin;
 		}
 	}
 
@@ -96372,7 +94683,7 @@ Size2 TabContainer::_get_minimum_size(bool p_use_desired_sizes) const
 	}
 	ms.height += largest_child_min_size.height;
 
-	Size2 panel_ms = theme_cache.panel_style->get_minimum_size();
+	Size2 panel_ms = tc_panel_style->get_minimum_size();
 
 	ms.width = MAX(ms.width, largest_child_min_size.width + panel_ms.width);
 	ms.height += panel_ms.height;
@@ -96392,14 +94703,14 @@ Size2 TabContainer::get_inner_combined_maximum_size() const
 		Size2 tab_bar_ms = tab_bar->get_minimum_size();
 		ms.height -= tab_bar_ms.height;
 
-		if (theme_cache.tabbar_style.is_valid()) {
-			ms.height -= theme_cache.tabbar_style->get_margin(SIDE_TOP) +
-						 theme_cache.tabbar_style->get_margin(SIDE_BOTTOM);
+		if (tc_tabbar_style.is_valid()) {
+			ms.height -= tc_tabbar_style->get_margin(SIDE_TOP) +
+						 tc_tabbar_style->get_margin(SIDE_BOTTOM);
 		}
 	}
 
-	if (theme_cache.panel_style.is_valid()) {
-		ms -= theme_cache.panel_style->get_minimum_size();
+	if (tc_panel_style.is_valid()) {
+		ms -= tc_panel_style->get_minimum_size();
 	}
 
 	return ms;
@@ -96458,8 +94769,8 @@ Size2 FoldableContainer::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Control::get_inner_combined_maximum_size();
 
-	if (theme_cache.panel_style.is_valid()) {
-		ms -= theme_cache.panel_style->get_minimum_size();
+	if (tc_panel_style.is_valid()) {
+		ms -= tc_panel_style->get_minimum_size();
 	}
 
 	return ms;
@@ -96567,17 +94878,17 @@ void FoldableContainer::_notification(int p_what)
 		icon->draw(ci, title_rect.position + icon_pos);
 
 		Color font_color =
-			folded ? theme_cache.title_collapsed_font_color : theme_cache.title_font_color;
+			folded ? tc_title_collapsed_font_color : tc_title_font_color;
 		if (is_hovering) {
-			font_color = theme_cache.title_hovered_font_color;
+			font_color = tc_title_hovered_font_color;
 		}
 		text_buf->set_width(title_text_width);
 
 		if (title_text_width > 0) {
-			if (theme_cache.title_font_outline_size > 0 &&
-				theme_cache.title_font_outline_color.a > 0) {
+			if (tc_title_font_outline_size > 0 &&
+				tc_title_font_outline_color.a > 0) {
 				text_buf->draw_outline(ci, title_rect.position + title_text_pos,
-					theme_cache.title_font_outline_size, theme_cache.title_font_outline_color);
+					tc_title_font_outline_size, tc_title_font_outline_color);
 			}
 			text_buf->draw(ci, title_rect.position + title_text_pos, font_color);
 		}
@@ -96586,12 +94897,12 @@ void FoldableContainer::_notification(int p_what)
 			Rect2 panel_rect(
 				Point2(0, (title_position == POSITION_TOP) ? title_minimum_size.height : 0),
 				Size2(size.width, size.height - title_minimum_size.height));
-			_draw_flippable_stylebox(theme_cache.panel_style, panel_rect);
+			_draw_flippable_stylebox(tc_panel_style, panel_rect);
 		}
 
 		if (has_focus(true)) {
 			Rect2 focus_rect = folded ? title_rect : Rect2(Point2(), size);
-			_draw_flippable_stylebox(theme_cache.focus_style, focus_rect);
+			_draw_flippable_stylebox(tc_focus_style, focus_rect);
 		}
 	} break;
 	}
@@ -96616,21 +94927,21 @@ real_t FoldableContainer::_get_title_controls_width() const
 Ref<StyleBox> FoldableContainer::_get_title_style() const
 {
 	if (is_hovering) {
-		return folded ? theme_cache.title_collapsed_hover_style : theme_cache.title_hover_style;
+		return folded ? tc_title_collapsed_hover_style : tc_title_hover_style;
 	}
-	return folded ? theme_cache.title_collapsed_style : theme_cache.title_style;
+	return folded ? tc_title_collapsed_style : tc_title_style;
 }
 
 Ref<Texture2D> FoldableContainer::_get_title_icon() const
 {
 	if (!folded) {
-		return (title_position == POSITION_TOP) ? theme_cache.expanded_arrow
-												: theme_cache.expanded_arrow_mirrored;
+		return (title_position == POSITION_TOP) ? tc_expanded_arrow
+												: tc_expanded_arrow_mirrored;
 	}
 	else if (is_layout_rtl()) {
-		return theme_cache.folded_arrow_mirrored;
+		return tc_folded_arrow_mirrored;
 	}
-	return theme_cache.folded_arrow;
+	return tc_folded_arrow;
 }
 
 Rect2 FoldableContainer::_get_title_rect() const
@@ -96643,7 +94954,7 @@ Rect2 FoldableContainer::_get_title_rect() const
 void FoldableContainer::_update_title_min_size() const
 {
 	Ref<StyleBox> title_style =
-		folded ? theme_cache.title_collapsed_style : theme_cache.title_style;
+		folded ? tc_title_collapsed_style : tc_title_style;
 	Ref<Texture2D> icon = _get_title_icon();
 	Size2 title_ms = title_style->get_minimum_size();
 	int h_separation = _get_h_separation();
@@ -96869,8 +95180,8 @@ PackedStringArray SubViewportContainer::get_configuration_warnings() const { ret
 Size2 Panel::get_inner_combined_maximum_size() const
 {
 	Size2 ms = Control::get_inner_combined_maximum_size();
-	if (fit_children && theme_cache.panel_style.is_valid()) {
-		ms -= theme_cache.panel_style->get_minimum_size();
+	if (fit_children && tc_panel_style.is_valid()) {
+		ms -= tc_panel_style->get_minimum_size();
 	}
 	return ms;
 }
@@ -96888,8 +95199,8 @@ void Panel::_notification(int p_what)
 
 	case NOTIFICATION_DRAW: {
 		RID ci = get_canvas_item();
-		if (theme_cache.panel_style.is_valid()) {
-			theme_cache.panel_style->draw(ci, Rect2(Point2(), get_size()));
+		if (tc_panel_style.is_valid()) {
+			tc_panel_style->draw(ci, Rect2(Point2(), get_size()));
 		}
 	} break;
 	}
@@ -96906,10 +95217,10 @@ Size2 Separator::get_minimum_size() const
 {
 	Size2 ms(3, 3);
 	if (orientation == VERTICAL) {
-		ms.x = theme_cache.separation;
+		ms.x = tc_separation;
 	}
 	else { // HORIZONTAL
-		ms.y = theme_cache.separation;
+		ms.y = tc_separation;
 	}
 	return ms;
 }
@@ -96919,14 +95230,14 @@ void Separator::_notification(int p_what)
 	switch (p_what) {
 	case NOTIFICATION_DRAW: {
 		Size2i size = get_size();
-		Size2i ssize = theme_cache.separator_style->get_minimum_size();
+		Size2i ssize = tc_separator_style->get_minimum_size();
 
 		if (orientation == VERTICAL) {
-			theme_cache.separator_style->draw(
+			tc_separator_style->draw(
 				get_canvas_item(), Rect2((size.x - ssize.x) / 2, 0, ssize.x, size.y));
 		}
 		else {
-			theme_cache.separator_style->draw(
+			tc_separator_style->draw(
 				get_canvas_item(), Rect2(0, (size.y - ssize.y) / 2, size.x, ssize.y));
 		}
 	} break;
@@ -124546,45 +122857,6 @@ int godot_mbedtls_random_compat(void* p_rng, unsigned char* r_output, size_t p_o
 #define GODOT_MBEDTLS_COMPAT_SSL_CONF
 #endif
 
-struct CryptoKey::Data
-{
-	psa_key_id_t pk_slot = PSA_KEY_ID_NULL;
-	psa_key_type_t pk_type = PSA_KEY_TYPE_NONE;
-	size_t pk_size = 0;
-	bool public_only = true;
-
-	void clear();
-	int parse_key(const uint8_t* p_buf, int p_size, bool p_public_only);
-	psa_key_id_t reimport(psa_key_usage_t p_usage,
-		psa_algorithm_t p_alg); // You *MUST* call psa_destroy_key when you are done with the key.
-
-	static Ref<CryptoKey> generate(psa_key_type_t p_type, size_t p_size);
-};
-
-struct X509Certificate::Data
-{
-	mbedtls_x509_crt cert;
-	int locks = 0;
-
-	Data()
-	{
-		mbedtls_x509_crt_init(&cert);
-	}
-
-	_FORCE_INLINE_ void lock() { locks++; }
-	_FORCE_INLINE_ void unlock() { locks--; }
-};
-
-struct HMACContext::Data
-{
-	psa_mac_operation_t mac_op = PSA_MAC_OPERATION_INIT;
-	psa_key_id_t key_slot = PSA_KEY_ID_NULL;
-	int hash_len = 0;
-
-	void clear();
-	static bool is_hash_type_allowed(HashingContext::HashType p_hash_type);
-};
-
 namespace MbedTLSModule
 {
 void initialize_crypto();
@@ -124594,31 +122866,15 @@ psa_algorithm_t psa_alg_from_hashtype(HashingContext::HashType p_hash_type, int&
 mbedtls_md_type_t md_type_from_hashtype(HashingContext::HashType p_hash_type, int& r_size);
 } // namespace MbedTLSModule
 
-class TLSContextMbedTLS;
-
-class CookieContextMbedTLS final : public RefCounted
-{
-	friend class TLSContextMbedTLS;
-
-private:
-	bool inited = false;
-	mbedtls_ssl_cookie_ctx cookie_ctx;
-
-public:
-	Error setup();
-	void clear();
-
-	CookieContextMbedTLS();
-	~CookieContextMbedTLS();
-};
-
 class TLSContextMbedTLS final : public RefCounted
 {
 private:
 	bool inited = false;
+	bool cookie_inited = false;
+	mbedtls_ssl_cookie_ctx cookie_ctx;
 	mbedtls_pk_context pk;
 	Ref<X509Certificate> certs;
-	Ref<CookieContextMbedTLS> cookies;
+	Ref<TLSContextMbedTLS> cookies;
 	mbedtls_ssl_context tls;
 	mbedtls_ssl_config conf;
 
@@ -124627,8 +122883,11 @@ private:
 public:
 	static void print_mbedtls_error(int p_ret);
 
+	Error setup_cookies();
+	void clear_cookies();
+
 	Error init_server(int p_transport, Ref<TLSOptions> p_options,
-		Ref<CookieContextMbedTLS> p_cookies = Ref<CookieContextMbedTLS>());
+		Ref<TLSContextMbedTLS> p_cookies = Ref<TLSContextMbedTLS>());
 	Error init_client(int p_transport, const String& p_hostname, Ref<TLSOptions> p_options);
 	void clear();
 
@@ -124638,61 +122897,59 @@ public:
 	~TLSContextMbedTLS();
 };
 
-struct StreamPeerTLS::Data
+struct MbedTLSState
 {
-	Status status = STATUS_DISCONNECTED;
+	enum { PACKET_BUFFER_SIZE = 65536 };
+
+	// CryptoKey state
+	psa_key_id_t pk_slot = PSA_KEY_ID_NULL;
+	psa_key_type_t pk_type = PSA_KEY_TYPE_NONE;
+	size_t pk_size = 0;
+	bool public_only = true;
+
+	// X509Certificate state
+	mbedtls_x509_crt cert;
+	int locks = 0;
+
+	// HMACContext state
+	psa_mac_operation_t mac_op = PSA_MAC_OPERATION_INIT;
+	psa_key_id_t key_slot = PSA_KEY_ID_NULL;
+	int hash_len = 0;
+
+	// StreamPeerTLS / PacketPeerDTLS / DTLSServer state
+	int status = 0;
 	String hostname;
-	Ref<StreamPeer> base;
+	Ref<StreamPeer> tls_base;
+	Ref<PacketPeerUDP> dtls_base;
 	Ref<TLSContextMbedTLS> tls_ctx;
-
-	Data()
-	{
-		tls_ctx.instantiate();
-	}
-
-	static int bio_recv(void* ctx, unsigned char* buf, size_t len);
-	static int bio_send(void* ctx, const unsigned char* buf, size_t len);
-	void cleanup();
-	Error do_handshake(StreamPeerTLS* p_owner);
-};
-
-struct PacketPeerDTLS::Data
-{
-	enum
-	{
-		PACKET_BUFFER_SIZE = 65536
-	};
-
-	uint8_t packet_buffer[PACKET_BUFFER_SIZE];
-	Status status = STATUS_DISCONNECTED;
-	String hostname;
-	Ref<PacketPeerUDP> base;
-	Ref<TLSContextMbedTLS> tls_ctx;
-	mbedtls_timing_delay_context timer;
-
-	Data()
-	{
-		tls_ctx.instantiate();
-	}
-
-	static int bio_recv(void* ctx, unsigned char* buf, size_t len);
-	static int bio_send(void* ctx, const unsigned char* buf, size_t len);
-	void cleanup();
-	Error do_handshake();
-	int set_cookie();
-	Error accept_peer(Ref<PacketPeerUDP> p_base, Ref<TLSOptions> p_options,
-		Ref<CookieContextMbedTLS> p_cookies = Ref<CookieContextMbedTLS>());
-};
-
-struct DTLSServer::Data
-{
 	Ref<TLSOptions> tls_options;
-	Ref<CookieContextMbedTLS> cookies;
+	Ref<TLSContextMbedTLS> cookies;
+	mbedtls_timing_delay_context timer = {};
+	LocalVector<uint8_t> packet_buffer;
 
-	Data()
-	{
-		cookies.instantiate();
-	}
+	_FORCE_INLINE_ void lock() { locks++; }
+	_FORCE_INLINE_ void unlock() { locks--; }
+
+	void clear_key();
+	int parse_key(const uint8_t* p_buf, int p_size, bool p_public_only);
+	psa_key_id_t reimport(psa_key_usage_t p_usage, psa_algorithm_t p_alg);
+	static Ref<CryptoKey> generate(psa_key_type_t p_type, size_t p_size);
+
+	void clear_hmac();
+	static bool is_hash_type_allowed(HashingContext::HashType p_hash_type);
+
+	static int tls_bio_recv(void* ctx, unsigned char* buf, size_t len);
+	static int tls_bio_send(void* ctx, const unsigned char* buf, size_t len);
+	void tls_cleanup();
+	Error tls_do_handshake(StreamPeerTLS* p_owner);
+
+	static int dtls_bio_recv(void* ctx, unsigned char* buf, size_t len);
+	static int dtls_bio_send(void* ctx, const unsigned char* buf, size_t len);
+	void dtls_cleanup();
+	Error dtls_do_handshake();
+	int dtls_set_cookie();
+	Error accept_peer(Ref<PacketPeerUDP> p_base, Ref<TLSOptions> p_options,
+		Ref<TLSContextMbedTLS> p_cookies = Ref<TLSContextMbedTLS>());
 };
 
 #include <mbedtls/psa_util.h>
@@ -124746,13 +123003,13 @@ static Ref<X509Certificate> default_certs;
 
 CryptoKey::CryptoKey()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
 }
 
 CryptoKey::~CryptoKey()
 {
 	if (data) {
-		data->clear();
+		data->clear_key();
 		memdelete(data);
 		data = nullptr;
 	}
@@ -124773,7 +123030,7 @@ bool CryptoKey::is_public_only() const
 	return data->public_only;
 }
 
-Ref<CryptoKey> CryptoKey::Data::generate(psa_key_type_t p_type, size_t p_size)
+Ref<CryptoKey> MbedTLSState::generate(psa_key_type_t p_type, size_t p_size)
 {
 	psa_key_id_t slot = PSA_KEY_ID_NULL;
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -124784,10 +123041,10 @@ Ref<CryptoKey> CryptoKey::Data::generate(psa_key_type_t p_type, size_t p_size)
 	ERR_FAIL_COND_V(ret != 0, nullptr);
 	Ref<CryptoKey> out;
 	out.instantiate();
-	out->data->public_only = false;
-	out->data->pk_slot = slot;
-	out->data->pk_type = p_type;
-	out->data->pk_size = p_size;
+	out->get_data()->public_only = false;
+	out->get_data()->pk_slot = slot;
+	out->get_data()->pk_type = p_type;
+	out->get_data()->pk_size = p_size;
 	return out;
 }
 
@@ -124902,7 +123159,7 @@ String CryptoKey::save_to_string(bool p_public_only)
 	return s;
 }
 
-psa_key_id_t CryptoKey::Data::reimport(psa_key_usage_t p_usage, psa_algorithm_t p_alg)
+psa_key_id_t MbedTLSState::reimport(psa_key_usage_t p_usage, psa_algorithm_t p_alg)
 {
 	ERR_FAIL_COND_V(pk_slot == PSA_KEY_ID_NULL, PSA_KEY_ID_NULL);
 
@@ -124927,7 +123184,7 @@ psa_key_id_t CryptoKey::Data::reimport(psa_key_usage_t p_usage, psa_algorithm_t 
 	return slot;
 }
 
-void CryptoKey::Data::clear()
+void MbedTLSState::clear_key()
 {
 	psa_destroy_key(pk_slot);
 	pk_slot = PSA_KEY_ID_NULL;
@@ -124935,9 +123192,9 @@ void CryptoKey::Data::clear()
 	pk_size = 0;
 }
 
-int CryptoKey::Data::parse_key(const uint8_t* p_buf, int p_size, bool p_public_only)
+int MbedTLSState::parse_key(const uint8_t* p_buf, int p_size, bool p_public_only)
 {
-	clear();
+	clear_key();
 
 	// Not yet fully supported via PSA
 	// See: https://github.com/ARM-software/psa-api/issues/50
@@ -124973,7 +123230,7 @@ int CryptoKey::Data::parse_key(const uint8_t* p_buf, int p_size, bool p_public_o
 	ret = mbedtls_pk_import_into_psa(&ctx, &attr, &pk_slot);
 	mbedtls_pk_free(&ctx);
 	if (ret != PSA_SUCCESS) {
-		clear();
+		clear_key();
 	}
 	return ret;
 }
@@ -124982,7 +123239,8 @@ int CryptoKey::Data::parse_key(const uint8_t* p_buf, int p_size, bool p_public_o
 
 X509Certificate::X509Certificate()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
+	mbedtls_x509_crt_init(&data->cert);
 }
 
 X509Certificate::~X509Certificate()
@@ -125107,7 +123365,7 @@ Error X509Certificate::load_from_string(const String& p_string_key)
 
 /// HMACContext
 
-bool HMACContext::Data::is_hash_type_allowed(HashingContext::HashType p_hash_type)
+bool MbedTLSState::is_hash_type_allowed(HashingContext::HashType p_hash_type)
 {
 	switch (p_hash_type) {
 	case HashingContext::HASH_SHA1:
@@ -125120,13 +123378,13 @@ bool HMACContext::Data::is_hash_type_allowed(HashingContext::HashType p_hash_typ
 
 HMACContext::HMACContext()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
 }
 
 HMACContext::~HMACContext()
 {
 	if (data) {
-		data->clear();
+		data->clear_hmac();
 		memdelete(data);
 		data = nullptr;
 	}
@@ -125150,7 +123408,7 @@ Error HMACContext::start(HashingContext::HashType p_hash_type, const PackedByteA
 	// HMAC keys can be any size.
 	ERR_FAIL_COND_V_MSG(p_key.is_empty(), ERR_INVALID_PARAMETER, "Key must not be empty.");
 
-	bool allowed = Data::is_hash_type_allowed(p_hash_type);
+	bool allowed = MbedTLSState::is_hash_type_allowed(p_hash_type);
 	ERR_FAIL_COND_V_MSG(!allowed, ERR_INVALID_PARAMETER, "Unsupported hash type.");
 
 	psa_algorithm_t ht =
@@ -125164,7 +123422,7 @@ Error HMACContext::start(HashingContext::HashType p_hash_type, const PackedByteA
 
 	ret = psa_mac_sign_setup(&data->mac_op, data->key_slot, ht);
 	if (ret != PSA_SUCCESS) {
-		data->clear();
+		data->clear_hmac();
 		ERR_FAIL_V_MSG(FAILED, "Failed to setup HMAC signing: " + itos(ret));
 	}
 	return OK;
@@ -125192,13 +123450,13 @@ PackedByteArray HMACContext::finish()
 	out.resize(data->hash_len);
 	size_t mac_length = 0;
 	int ret = psa_mac_sign_finish(&data->mac_op, out.ptrw(), (size_t)out.size(), &mac_length);
-	data->clear();
+	data->clear_hmac();
 	ERR_FAIL_COND_V_MSG(ret, PackedByteArray(), "Error received while finishing HMAC");
 	ERR_FAIL_COND_V(mac_length != (size_t)out.size(), PackedByteArray()); // Bug?
 	return out;
 }
 
-void HMACContext::Data::clear()
+void MbedTLSState::clear_hmac()
 {
 	if (key_slot == PSA_KEY_ID_NULL) {
 		return;
@@ -125319,7 +123577,7 @@ void Crypto::load_default_certificates(const String& p_path)
 
 Ref<CryptoKey> Crypto::generate_rsa(int p_bits)
 {
-	return CryptoKey::Data::generate(PSA_KEY_TYPE_RSA_KEY_PAIR, p_bits);
+	return MbedTLSState::generate(PSA_KEY_TYPE_RSA_KEY_PAIR, p_bits);
 }
 
 Ref<X509Certificate> Crypto::generate_self_signed_certificate(Ref<CryptoKey> p_key,
@@ -125497,7 +123755,7 @@ Vector<uint8_t> Crypto::decrypt(Ref<CryptoKey> p_key, const Vector<uint8_t>& p_c
 	return out;
 }
 
-/// CookieContextMbedTLS & TLSContextMbedTLS
+/// TLSContextMbedTLS
 
 static void my_debug(void* ctx, int level, const char* file, int line, const char* str)
 {
@@ -125511,33 +123769,29 @@ void TLSContextMbedTLS::print_mbedtls_error(int p_ret)
 	fflush(stdout);
 }
 
-Error CookieContextMbedTLS::setup()
+Error TLSContextMbedTLS::setup_cookies()
 {
-	ERR_FAIL_COND_V_MSG(inited, ERR_ALREADY_IN_USE, "This cookie context is already in use");
+	ERR_FAIL_COND_V_MSG(cookie_inited, ERR_ALREADY_IN_USE, "This cookie context is already in use");
 
 	mbedtls_ssl_cookie_init(&cookie_ctx);
-	inited = true;
+	cookie_inited = true;
 
 	int ret = mbedtls_ssl_cookie_setup(GODOT_MBEDTLS_COMPAT_ARGS(&cookie_ctx));
 	if (ret != 0) {
-		clear();
+		clear_cookies();
 		ERR_FAIL_V_MSG(FAILED, "mbedtls_ssl_cookie_setup returned an error " + itos(ret));
 	}
 	return OK;
 }
 
-void CookieContextMbedTLS::clear()
+void TLSContextMbedTLS::clear_cookies()
 {
-	if (!inited) {
+	if (!cookie_inited) {
 		return;
 	}
 	mbedtls_ssl_cookie_free(&cookie_ctx);
-	inited = false;
+	cookie_inited = false;
 }
-
-CookieContextMbedTLS::CookieContextMbedTLS() {}
-
-CookieContextMbedTLS::~CookieContextMbedTLS() { clear(); }
 
 Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode)
 {
@@ -125561,7 +123815,7 @@ Error TLSContextMbedTLS::_setup(int p_endpoint, int p_transport, int p_authmode)
 }
 
 Error TLSContextMbedTLS::init_server(
-	int p_transport, Ref<TLSOptions> p_options, Ref<CookieContextMbedTLS> p_cookies)
+	int p_transport, Ref<TLSOptions> p_options, Ref<TLSContextMbedTLS> p_cookies)
 {
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
 
@@ -125594,7 +123848,7 @@ Error TLSContextMbedTLS::init_server(
 	}
 	// DTLS Cookies
 	if (p_transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
-		if (p_cookies.is_null() || !p_cookies->inited) {
+		if (p_cookies.is_null() || !p_cookies->cookie_inited) {
 			clear();
 			ERR_FAIL_V(ERR_BUG);
 		}
@@ -125669,7 +123923,7 @@ void TLSContextMbedTLS::clear()
 		certs->get_data()->unlock();
 	}
 	certs = Ref<X509Certificate>();
-	cookies = Ref<CookieContextMbedTLS>();
+	cookies = Ref<TLSContextMbedTLS>();
 	inited = false;
 }
 
@@ -125681,22 +123935,22 @@ mbedtls_ssl_context* TLSContextMbedTLS::get_context()
 
 TLSContextMbedTLS::TLSContextMbedTLS() {}
 
-TLSContextMbedTLS::~TLSContextMbedTLS() { clear(); }
+TLSContextMbedTLS::~TLSContextMbedTLS() { clear(); clear_cookies(); }
 
 /// StreamPeerTLS
 
-int StreamPeerTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t len)
+int MbedTLSState::tls_bio_send(void* ctx, const unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	StreamPeerTLS::Data* sp = static_cast<StreamPeerTLS::Data*>(ctx);
+	MbedTLSState* sp = static_cast<MbedTLSState*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
 	int sent;
-	Error err = sp->base->put_partial_data((const uint8_t*)buf, len, sent);
+	Error err = sp->tls_base->put_partial_data((const uint8_t*)buf, len, sent);
 	if (err != OK) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
@@ -125706,18 +123960,18 @@ int StreamPeerTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t le
 	return sent;
 }
 
-int StreamPeerTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
+int MbedTLSState::tls_bio_recv(void* ctx, unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	StreamPeerTLS::Data* sp = static_cast<StreamPeerTLS::Data*>(ctx);
+	MbedTLSState* sp = static_cast<MbedTLSState*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
 	int got;
-	Error err = sp->base->get_partial_data((uint8_t*)buf, len, got);
+	Error err = sp->tls_base->get_partial_data((uint8_t*)buf, len, got);
 	if (err != OK) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
@@ -125727,14 +123981,14 @@ int StreamPeerTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
 	return got;
 }
 
-void StreamPeerTLS::Data::cleanup()
+void MbedTLSState::tls_cleanup()
 {
 	tls_ctx->clear();
-	base = Ref<StreamPeer>();
-	status = STATUS_DISCONNECTED;
+	tls_base = Ref<StreamPeer>();
+	status = StreamPeerTLS::STATUS_DISCONNECTED;
 }
 
-Error StreamPeerTLS::Data::do_handshake(StreamPeerTLS* p_owner)
+Error MbedTLSState::tls_do_handshake(StreamPeerTLS* p_owner)
 {
 	int ret = mbedtls_ssl_handshake(tls_ctx->get_context());
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
@@ -125746,11 +124000,11 @@ Error StreamPeerTLS::Data::do_handshake(StreamPeerTLS* p_owner)
 		ERR_PRINT("TLS handshake error: " + itos(ret));
 		TLSContextMbedTLS::print_mbedtls_error(ret);
 		p_owner->disconnect_from_stream();
-		status = STATUS_ERROR;
+		status = StreamPeerTLS::STATUS_ERROR;
 		return FAILED;
 	}
 
-	status = STATUS_CONNECTED;
+	status = StreamPeerTLS::STATUS_CONNECTED;
 	return OK;
 }
 
@@ -125763,12 +124017,12 @@ Error StreamPeerTLS::connect_to_stream(
 		p_options.is_valid() ? p_options : TLSOptions::client());
 	ERR_FAIL_COND_V(err != OK, err);
 
-	data->base = p_base;
-	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, Data::bio_send, Data::bio_recv, nullptr);
+	data->tls_base = p_base;
+	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, MbedTLSState::tls_bio_send, MbedTLSState::tls_bio_recv, nullptr);
 
 	data->status = STATUS_HANDSHAKING;
 
-	if (data->do_handshake(this) != OK) {
+	if (data->tls_do_handshake(this) != OK) {
 		data->status = STATUS_ERROR_HOSTNAME_MISMATCH;
 		return FAILED;
 	}
@@ -125784,13 +124038,13 @@ Error StreamPeerTLS::accept_stream(Ref<StreamPeer> p_base, Ref<TLSOptions> p_opt
 	Error err = data->tls_ctx->init_server(MBEDTLS_SSL_TRANSPORT_STREAM, p_options);
 	ERR_FAIL_COND_V(err != OK, err);
 
-	data->base = p_base;
+	data->tls_base = p_base;
 
-	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, Data::bio_send, Data::bio_recv, nullptr);
+	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, MbedTLSState::tls_bio_send, MbedTLSState::tls_bio_recv, nullptr);
 
 	data->status = STATUS_HANDSHAKING;
 
-	if (data->do_handshake(this) != OK) {
+	if (data->tls_do_handshake(this) != OK) {
 		return FAILED;
 	}
 
@@ -125911,10 +124165,10 @@ Error StreamPeerTLS::get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_rec
 void StreamPeerTLS::poll()
 {
 	ERR_FAIL_COND(data->status != STATUS_CONNECTED && data->status != STATUS_HANDSHAKING);
-	ERR_FAIL_COND(data->base.is_null());
+	ERR_FAIL_COND(data->tls_base.is_null());
 
 	if (data->status == STATUS_HANDSHAKING) {
-		data->do_handshake(this);
+		data->tls_do_handshake(this);
 		return;
 	}
 
@@ -125937,7 +124191,7 @@ void StreamPeerTLS::poll()
 		return;
 	}
 
-	Ref<StreamPeerSocket> tcp = data->base;
+	Ref<StreamPeerSocket> tcp = data->tls_base;
 	if (tcp.is_valid() && tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
 		disconnect_from_stream();
 		return;
@@ -125953,7 +124207,8 @@ int StreamPeerTLS::get_available_bytes() const
 
 StreamPeerTLS::StreamPeerTLS()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
+	data->tls_ctx.instantiate();
 }
 
 StreamPeerTLS::~StreamPeerTLS()
@@ -125971,23 +124226,23 @@ void StreamPeerTLS::disconnect_from_stream()
 		return;
 	}
 
-	Ref<StreamPeerSocket> tcp = data->base;
+	Ref<StreamPeerSocket> tcp = data->tls_base;
 	if (tcp.is_valid() && tcp->get_status() == StreamPeerSocket::STATUS_CONNECTED) {
 		// We are still connected on the socket, try to send close notify.
 		mbedtls_ssl_close_notify(data->tls_ctx->get_context());
 	}
 
-	data->cleanup();
+	data->tls_cleanup();
 }
 
 StreamPeerTLS::Status StreamPeerTLS::get_status() const
 {
-	return data->status;
+	return static_cast<Status>(data->status);
 }
 
 Ref<StreamPeer> StreamPeerTLS::get_stream() const
 {
-	return data->base;
+	return data->tls_base;
 }
 
 StreamPeerTLS* StreamPeerTLS::create(bool p_notify_postinitialize)
@@ -126002,17 +124257,17 @@ bool StreamPeerTLS::is_available()
 
 /// PacketPeerDTLS
 
-int PacketPeerDTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t len)
+int MbedTLSState::dtls_bio_send(void* ctx, const unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	PacketPeerDTLS::Data* sp = static_cast<PacketPeerDTLS::Data*>(ctx);
+	MbedTLSState* sp = static_cast<MbedTLSState*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
-	Error err = sp->base->put_packet((const uint8_t*)buf, len);
+	Error err = sp->dtls_base->put_packet((const uint8_t*)buf, len);
 	if (err == ERR_BUSY) {
 		return MBEDTLS_ERR_SSL_WANT_WRITE;
 	}
@@ -126022,17 +124277,17 @@ int PacketPeerDTLS::Data::bio_send(void* ctx, const unsigned char* buf, size_t l
 	return len;
 }
 
-int PacketPeerDTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
+int MbedTLSState::dtls_bio_recv(void* ctx, unsigned char* buf, size_t len)
 {
 	if (buf == nullptr || len == 0) {
 		return 0;
 	}
 
-	PacketPeerDTLS::Data* sp = static_cast<PacketPeerDTLS::Data*>(ctx);
+	MbedTLSState* sp = static_cast<MbedTLSState*>(ctx);
 
 	ERR_FAIL_NULL_V(sp, 0);
 
-	int pc = sp->base->get_available_packet_count();
+	int pc = sp->dtls_base->get_available_packet_count();
 	if (pc == 0) {
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
@@ -126042,7 +124297,7 @@ int PacketPeerDTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
 
 	const uint8_t* buffer;
 	int buffer_size = 0;
-	Error err = sp->base->get_packet(&buffer, buffer_size);
+	Error err = sp->dtls_base->get_packet(&buffer, buffer_size);
 	if (err != OK) {
 		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 	}
@@ -126050,25 +124305,24 @@ int PacketPeerDTLS::Data::bio_recv(void* ctx, unsigned char* buf, size_t len)
 	return buffer_size;
 }
 
-void PacketPeerDTLS::Data::cleanup()
+void MbedTLSState::dtls_cleanup()
 {
 	tls_ctx->clear();
-	base = Ref<PacketPeerUDP>();
-	status = STATUS_DISCONNECTED;
+	dtls_base = Ref<PacketPeerUDP>();
+	status = PacketPeerDTLS::STATUS_DISCONNECTED;
 }
 
-int PacketPeerDTLS::Data::set_cookie()
+int MbedTLSState::dtls_set_cookie()
 {
-	// Setup DTLS session cookie for this client
 	uint8_t client_id[18];
-	IPAddress addr = base->get_packet_address();
-	uint16_t port = base->get_packet_port();
+	IPAddress addr = dtls_base->get_packet_address();
+	uint16_t port = dtls_base->get_packet_port();
 	memcpy(client_id, addr.get_ipv6(), 16);
 	memcpy(&client_id[16], (uint8_t*)&port, 2);
 	return mbedtls_ssl_set_client_transport_id(tls_ctx->get_context(), client_id, 18);
 }
 
-Error PacketPeerDTLS::Data::do_handshake()
+Error MbedTLSState::dtls_do_handshake()
 {
 	int ret = 0;
 	while ((ret = mbedtls_ssl_handshake(tls_ctx->get_context())) != 0) {
@@ -126077,15 +124331,14 @@ Error PacketPeerDTLS::Data::do_handshake()
 				ERR_PRINT("TLS handshake error: " + itos(ret));
 				TLSContextMbedTLS::print_mbedtls_error(ret);
 			}
-			cleanup();
-			status = STATUS_ERROR;
+			dtls_cleanup();
+			status = PacketPeerDTLS::STATUS_ERROR;
 			return FAILED;
 		}
-		// Will retry via poll later
 		return OK;
 	}
 
-	status = STATUS_CONNECTED;
+	status = PacketPeerDTLS::STATUS_CONNECTED;
 	return OK;
 }
 
@@ -126098,15 +124351,15 @@ Error PacketPeerDTLS::connect_to_peer(
 		p_options.is_valid() ? p_options : TLSOptions::client());
 	ERR_FAIL_COND_V(err != OK, err);
 
-	data->base = p_base;
+	data->dtls_base = p_base;
 
-	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, Data::bio_send, Data::bio_recv, nullptr);
+	mbedtls_ssl_set_bio(data->tls_ctx->get_context(), data, MbedTLSState::dtls_bio_send, MbedTLSState::dtls_bio_recv, nullptr);
 	mbedtls_ssl_set_timer_cb(
 		data->tls_ctx->get_context(), &data->timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
 
 	data->status = STATUS_HANDSHAKING;
 
-	if (data->do_handshake() != OK) {
+	if (data->dtls_do_handshake() != OK) {
 		data->status = STATUS_ERROR_HOSTNAME_MISMATCH;
 		return FAILED;
 	}
@@ -126114,33 +124367,33 @@ Error PacketPeerDTLS::connect_to_peer(
 	return OK;
 }
 
-Error PacketPeerDTLS::Data::accept_peer(
-	Ref<PacketPeerUDP> p_base, Ref<TLSOptions> p_options, Ref<CookieContextMbedTLS> p_cookies)
+Error MbedTLSState::accept_peer(
+	Ref<PacketPeerUDP> p_base, Ref<TLSOptions> p_options, Ref<TLSContextMbedTLS> p_cookies)
 {
 	ERR_FAIL_COND_V(p_base.is_null() || !p_base->is_socket_connected(), ERR_INVALID_PARAMETER);
 
 	Error err = tls_ctx->init_server(MBEDTLS_SSL_TRANSPORT_DATAGRAM, p_options, p_cookies);
 	ERR_FAIL_COND_V(err != OK, err);
 
-	base = p_base;
-	base->set_blocking_mode(false);
+	dtls_base = p_base;
+	dtls_base->set_blocking_mode(false);
 
 	mbedtls_ssl_session_reset(tls_ctx->get_context());
 
-	int ret = set_cookie();
+	int ret = dtls_set_cookie();
 	if (ret != 0) {
-		cleanup();
+		dtls_cleanup();
 		ERR_FAIL_V_MSG(FAILED, "Error setting DTLS client cookie");
 	}
 
-	mbedtls_ssl_set_bio(tls_ctx->get_context(), this, bio_send, bio_recv, nullptr);
+	mbedtls_ssl_set_bio(tls_ctx->get_context(), this, dtls_bio_send, dtls_bio_recv, nullptr);
 	mbedtls_ssl_set_timer_cb(
 		tls_ctx->get_context(), &timer, mbedtls_timing_set_delay, mbedtls_timing_get_delay);
 
-	status = STATUS_HANDSHAKING;
+	status = PacketPeerDTLS::STATUS_HANDSHAKING;
 
-	if (do_handshake() != OK) {
-		status = STATUS_ERROR;
+	if (dtls_do_handshake() != OK) {
+		status = PacketPeerDTLS::STATUS_ERROR;
 		return FAILED;
 	}
 
@@ -126161,7 +124414,7 @@ Error PacketPeerDTLS::put_packet(const uint8_t* p_buffer, int p_bytes)
 	}
 	else if (ret <= 0) {
 		TLSContextMbedTLS::print_mbedtls_error(ret);
-		data->cleanup();
+		data->dtls_cleanup();
 		return ERR_CONNECTION_ERROR;
 	}
 
@@ -126175,7 +124428,7 @@ Error PacketPeerDTLS::get_packet(const uint8_t** r_buffer, int& r_bytes)
 	r_bytes = 0;
 
 	int ret = mbedtls_ssl_read(
-		data->tls_ctx->get_context(), data->packet_buffer, Data::PACKET_BUFFER_SIZE);
+		data->tls_ctx->get_context(), data->packet_buffer.ptr(), MbedTLSState::PACKET_BUFFER_SIZE);
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 		ret = 0; // non blocking io
 	}
@@ -126185,13 +124438,13 @@ Error PacketPeerDTLS::get_packet(const uint8_t** r_buffer, int& r_bytes)
 			disconnect_from_peer();
 		}
 		else {
-			data->cleanup();
+			data->dtls_cleanup();
 			data->status = STATUS_ERROR;
 			TLSContextMbedTLS::print_mbedtls_error(ret);
 		}
 		return ERR_CONNECTION_ERROR;
 	}
-	*r_buffer = data->packet_buffer;
+	*r_buffer = data->packet_buffer.ptr();
 	r_bytes = ret;
 
 	return OK;
@@ -126200,14 +124453,14 @@ Error PacketPeerDTLS::get_packet(const uint8_t** r_buffer, int& r_bytes)
 void PacketPeerDTLS::poll()
 {
 	if (data->status == STATUS_HANDSHAKING) {
-		data->do_handshake();
+		data->dtls_do_handshake();
 		return;
 	}
 	else if (data->status != STATUS_CONNECTED) {
 		return;
 	}
 
-	ERR_FAIL_COND(data->base.is_null());
+	ERR_FAIL_COND(data->dtls_base.is_null());
 
 	int ret = mbedtls_ssl_read(data->tls_ctx->get_context(), nullptr, 0);
 
@@ -126217,7 +124470,7 @@ void PacketPeerDTLS::poll()
 			disconnect_from_peer();
 		}
 		else {
-			data->cleanup();
+			data->dtls_cleanup();
 			data->status = STATUS_ERROR;
 			TLSContextMbedTLS::print_mbedtls_error(ret);
 		}
@@ -126238,7 +124491,9 @@ int PacketPeerDTLS::get_max_packet_size() const
 
 PacketPeerDTLS::PacketPeerDTLS()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
+	data->tls_ctx.instantiate();
+	data->packet_buffer.resize(MbedTLSState::PACKET_BUFFER_SIZE);
 }
 
 PacketPeerDTLS::~PacketPeerDTLS()
@@ -126264,12 +124519,12 @@ void PacketPeerDTLS::disconnect_from_peer()
 		} while (ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 	}
 
-	data->cleanup();
+	data->dtls_cleanup();
 }
 
 PacketPeerDTLS::Status PacketPeerDTLS::get_status() const
 {
-	return data->status;
+	return static_cast<Status>(data->status);
 }
 
 PacketPeerDTLS* PacketPeerDTLS::create(bool p_notify_postinitialize)
@@ -126287,14 +124542,14 @@ bool PacketPeerDTLS::is_available()
 Error DTLSServer::setup(Ref<TLSOptions> p_options)
 {
 	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(data->cookies->setup() != OK, ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V(data->cookies->setup_cookies() != OK, ERR_ALREADY_IN_USE);
 	data->tls_options = p_options;
 	return OK;
 }
 
 void DTLSServer::stop()
 {
-	data->cookies->clear();
+	data->cookies->clear_cookies();
 }
 
 Ref<PacketPeerDTLS> DTLSServer::take_connection(Ref<PacketPeerUDP> p_udp_peer)
@@ -126321,7 +124576,8 @@ bool DTLSServer::is_available()
 
 DTLSServer::DTLSServer()
 {
-	data = memnew(Data);
+	data = memnew(MbedTLSState);
+	data->cookies.instantiate();
 }
 
 DTLSServer::~DTLSServer()
@@ -131478,61 +129734,11 @@ void uninitialize_interactive_music_module(ModuleInitializationLevel p_level)
 #include <thirdparty/dr_libs/dr_mp3.h>
 #include "servers/display/display_server.h"
 
-class AudioStreamMP3;
-
-class AudioStreamPlaybackMP3 : public AudioStreamPlaybackResampled
-{
-	enum
-	{
-		FADE_SIZE = 256
-	};
-
-	AudioFrame loop_fade[FADE_SIZE];
-	int loop_fade_remaining = FADE_SIZE;
-
-	bool looping_override = false;
-	bool looping = false;
-	drmp3 mp3d = {};
-	uint32_t frames_mixed = 0;
-	bool active = false;
-	int loops = 0;
-
-	friend class AudioStreamMP3;
-
-	Ref<AudioStreamMP3> mp3_stream;
-
-	bool _is_sample = false;
-	Ref<AudioSamplePlayback> sample_playback;
-
-protected:
-	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
-	virtual float get_stream_sampling_rate() override;
-
-public:
-	virtual void start(double p_from_pos = 0.0) override;
-	virtual void stop() override;
-	virtual bool is_playing() const override;
-
-	virtual int get_loop_count() const override; // times it looped
-
-	virtual double get_playback_position() const override;
-	virtual void seek(double p_time) override;
-
-	virtual void tag_used_streams() override;
-
-	virtual void set_is_sample(bool p_is_sample) override;
-	virtual bool get_is_sample() const override;
-	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
-
-	AudioStreamPlaybackMP3() {}
-
-	~AudioStreamPlaybackMP3();
-};
+class AudioStreamPlaybackCompressed;
 
 class AudioStreamMP3 final : public AudioStream
 {
-	friend class AudioStreamPlaybackMP3;
+	friend class AudioStreamPlaybackCompressed;
 
 	TightLocalVector<uint8_t> data;
 
@@ -131581,179 +129787,7 @@ public:
 	virtual Ref<AudioSample> generate_sample() const override;
 };
 
-class ResourceImporterMP3 final : public ResourceImporter
-{
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
 
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-
-#ifdef TOOLS_ENABLED
-	virtual bool has_advanced_options() const override;
-	virtual void show_advanced_options(const String& p_path) override;
-#endif
-
-	virtual bool can_import_threaded() const override { return true; }
-
-	ResourceImporterMP3() = default;
-};
-
-int AudioStreamPlaybackMP3::_mix_internal(AudioFrame* p_buffer, int p_frames)
-{
-	if (!active) {
-		return 0;
-	}
-
-	int todo = p_frames;
-
-	int frames_mixed_this_step = p_frames;
-
-	int beat_length_frames = -1;
-	bool use_loop = looping_override ? looping : mp3_stream->loop;
-
-	bool beat_loop = use_loop && mp3_stream->get_bpm() > 0 && mp3_stream->get_beat_count() > 0;
-	if (beat_loop) {
-		beat_length_frames =
-			mp3_stream->get_beat_count() * mp3_stream->sample_rate * 60 / mp3_stream->get_bpm();
-	}
-
-	while (todo && active) {
-		drmp3d_sample_t buf_frame[2];
-
-		int samples_mixed = drmp3_read_pcm_frames_f32(&mp3d, 1, buf_frame);
-
-		if (samples_mixed) {
-			p_buffer[p_frames - todo] = AudioFrame(buf_frame[0], buf_frame[mp3d.channels - 1]);
-			if (loop_fade_remaining < FADE_SIZE) {
-				p_buffer[p_frames - todo] +=
-					loop_fade[loop_fade_remaining] *
-					(float(FADE_SIZE - loop_fade_remaining) / float(FADE_SIZE));
-				loop_fade_remaining++;
-			}
-			--todo;
-			++frames_mixed;
-
-			if (beat_loop && (int)frames_mixed >= beat_length_frames) {
-				for (int i = 0; i < FADE_SIZE; i++) {
-					samples_mixed = drmp3_read_pcm_frames_f32(&mp3d, 1, buf_frame);
-					loop_fade[i] = AudioFrame(buf_frame[0], buf_frame[mp3d.channels - 1]);
-					if (!samples_mixed) {
-						break;
-					}
-				}
-				loop_fade_remaining = 0;
-				seek(mp3_stream->loop_offset);
-				loops++;
-			}
-		}
-
-		else {
-			// EOF
-			if (use_loop) {
-				seek(mp3_stream->loop_offset);
-				loops++;
-			}
-			else {
-				frames_mixed_this_step = p_frames - todo;
-				// fill remainder with silence
-				for (int i = p_frames - todo; i < p_frames; i++) {
-					p_buffer[i] = AudioFrame(0, 0);
-				}
-				active = false;
-				todo = 0;
-			}
-		}
-	}
-	return frames_mixed_this_step;
-}
-
-float AudioStreamPlaybackMP3::get_stream_sampling_rate() { return mp3_stream->sample_rate; }
-
-void AudioStreamPlaybackMP3::start(double p_from_pos)
-{
-	active = true;
-	seek(p_from_pos);
-	loops = 0;
-	begin_resample();
-}
-
-void AudioStreamPlaybackMP3::stop() { active = false; }
-
-bool AudioStreamPlaybackMP3::is_playing() const { return active; }
-
-int AudioStreamPlaybackMP3::get_loop_count() const { return loops; }
-
-double AudioStreamPlaybackMP3::get_playback_position() const
-{
-	return double(frames_mixed) / mp3_stream->sample_rate;
-}
-
-void AudioStreamPlaybackMP3::seek(double p_time)
-{
-	if (!active) {
-		return;
-	}
-
-	if (p_time >= mp3_stream->get_length()) {
-		p_time = 0;
-	}
-
-	frames_mixed = uint32_t(mp3_stream->sample_rate * p_time);
-	drmp3_seek_to_pcm_frame(&mp3d, (uint64_t)frames_mixed);
-}
-
-void AudioStreamPlaybackMP3::tag_used_streams() { mp3_stream->tag_used(get_playback_position()); }
-
-void AudioStreamPlaybackMP3::set_is_sample(bool p_is_sample) { _is_sample = p_is_sample; }
-
-bool AudioStreamPlaybackMP3::get_is_sample() const { return _is_sample; }
-
-Ref<AudioSamplePlayback> AudioStreamPlaybackMP3::get_sample_playback() const
-{
-	return sample_playback;
-}
-
-void AudioStreamPlaybackMP3::set_sample_playback(const Ref<AudioSamplePlayback>& p_playback)
-{
-	sample_playback = p_playback;
-	if (sample_playback.is_valid()) {
-		sample_playback->stream_playback = Ref<AudioStreamPlayback>(this);
-	}
-}
-
-AudioStreamPlaybackMP3::~AudioStreamPlaybackMP3() { drmp3_uninit(&mp3d); }
-
-Ref<AudioStreamPlayback> AudioStreamMP3::instantiate_playback()
-{
-	Ref<AudioStreamPlaybackMP3> mp3s;
-
-	ERR_FAIL_COND_V_MSG(data.is_empty(), mp3s,
-		"This AudioStreamMP3 does not have an audio file assigned "
-		"to it. AudioStreamMP3 should not be created from the "
-		"inspector or with `.new()`. Instead, load an audio file.");
-
-	mp3s.instantiate();
-	mp3s->mp3_stream = Ref<AudioStreamMP3>(this);
-
-	int success = drmp3_init_memory(
-		&mp3s->mp3d, data.ptr(), data.size(), (drmp3_allocation_callbacks*)&dr_alloc_calls);
-
-	mp3s->frames_mixed = 0;
-	mp3s->active = false;
-	mp3s->loops = 0;
-
-	ERR_FAIL_COND_V(!success, Ref<AudioStreamPlaybackMP3>());
-
-	return mp3s;
-}
 
 void AudioStreamMP3::set_data(const Vector<uint8_t>& p_data)
 {
@@ -131846,48 +129880,11 @@ Ref<AudioStreamMP3> AudioStreamMP3::load_from_file(const String& p_path)
 	return load_from_buffer(stream_data);
 }
 
-String ResourceImporterMP3::get_importer_name() const { return "mp3"; }
-
-String ResourceImporterMP3::get_visible_name() const { return "MP3"; }
-
-void ResourceImporterMP3::get_recognized_extensions(List<String>* p_extensions) const
-{
-#ifndef DR_MP3_ONLY_MP3
-	p_extensions->push_back("mp1");
-	p_extensions->push_back("mp2");
-#endif
-	p_extensions->push_back("mp3");
-}
-
-String ResourceImporterMP3::get_save_extension() const { return "mp3str"; }
-
-String ResourceImporterMP3::get_resource_type() const { return "AudioStreamMP3"; }
-
-int ResourceImporterMP3::get_preset_count() const { return 0; }
-
-String ResourceImporterMP3::get_preset_name(int p_idx) const { return String(); }
-
-#ifdef TOOLS_ENABLED
-bool ResourceImporterMP3::has_advanced_options() const { return false; }
-
-void ResourceImporterMP3::show_advanced_options(const String& p_path) {}
-#endif
-
-void ResourceImporterMP3::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
-
-#ifdef TOOLS_ENABLED
-#endif
-
 void initialize_mp3_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		Ref<ResourceImporterMP3> mp3_import;
-		mp3_import.instantiate();
-		ResourceFormatImporter::add_importer(mp3_import);
+		ResourceFormatImporter::add_importer(Ref<ResourceImporter>(memnew(ResourceImporter(ResourceImporter::FORMAT_MP3))));
 	}
 #endif
 }
@@ -132191,83 +130188,11 @@ void uninitialize_ogg_module(ModuleInitializationLevel p_level)
 
 #include "servers/display/display_server.h"
 
-class AudioStreamOggVorbis;
-
-class AudioStreamPlaybackOggVorbis : public AudioStreamPlaybackResampled
-{
-	uint32_t frames_mixed = 0;
-	bool active = false;
-	bool looping_override = false;
-	bool looping = false;
-	int loops = 0;
-
-	enum
-	{
-		FADE_SIZE = 256
-	};
-
-	AudioFrame loop_fade[FADE_SIZE];
-	int loop_fade_remaining = FADE_SIZE;
-
-	vorbis_info info;
-	vorbis_comment comment;
-	vorbis_dsp_state dsp_state;
-	vorbis_block block;
-
-	bool info_is_allocated = false;
-	bool comment_is_allocated = false;
-	bool dsp_state_is_allocated = false;
-	bool block_is_allocated = false;
-
-	bool ready = false;
-
-	bool have_samples_left = false;
-	bool have_packets_left = false;
-
-	friend class AudioStreamOggVorbis;
-
-	Ref<OggPacketSequence> vorbis_data;
-	Ref<OggPacketSequencePlayback> vorbis_data_playback;
-	Ref<AudioStreamOggVorbis> vorbis_stream;
-
-	bool _is_sample = false;
-	Ref<AudioSamplePlayback> sample_playback;
-
-	int _mix_frames(AudioFrame* p_buffer, int p_frames);
-	int _mix_frames_vorbis(AudioFrame* p_buffer, int p_frames);
-
-	// Allocates vorbis data structures. Returns true upon success, false on failure.
-	bool _alloc_vorbis();
-
-protected:
-	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override;
-	virtual float get_stream_sampling_rate() override;
-
-public:
-	virtual void start(double p_from_pos = 0.0) override;
-	virtual void stop() override;
-	virtual bool is_playing() const override;
-
-	virtual int get_loop_count() const override; // times it looped
-
-	virtual double get_playback_position() const override;
-	virtual void seek(double p_time) override;
-
-	virtual void tag_used_streams() override;
-
-	virtual void set_is_sample(bool p_is_sample) override;
-	virtual bool get_is_sample() const override;
-	virtual Ref<AudioSamplePlayback> get_sample_playback() const override;
-	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override;
-
-	AudioStreamPlaybackOggVorbis() {}
-
-	~AudioStreamPlaybackOggVorbis();
-};
+class AudioStreamPlaybackCompressed;
 
 class AudioStreamOggVorbis final : public AudioStream
 {
-	friend class AudioStreamPlaybackOggVorbis;
+	friend class AudioStreamPlaybackCompressed;
 
 	int channels = 1;
 	double length = 0.0;
@@ -132317,37 +130242,227 @@ public:
 	virtual Ref<AudioSample> generate_sample() const override;
 };
 
-class ResourceImporterOggVorbis final : public ResourceImporter
+class AudioStreamPlaybackCompressed final : public AudioStreamPlaybackResampled
 {
+	enum { FADE_SIZE = 256 };
+
+	bool is_ogg = false;
+	uint32_t frames_mixed = 0;
+	bool active = false;
+	bool looping_override = false;
+	bool looping = false;
+	int loops = 0;
+
+	AudioFrame loop_fade[FADE_SIZE];
+	int loop_fade_remaining = FADE_SIZE;
+
+	bool _is_sample = false;
+	Ref<AudioSamplePlayback> sample_playback;
+
+#if defined(MODULE_MP3_ENABLED)
+	drmp3 mp3d = {};
+	Ref<AudioStreamMP3> mp3_stream;
+#endif
+
+	vorbis_info info;
+	vorbis_comment comment;
+	vorbis_dsp_state dsp_state;
+	vorbis_block block;
+	bool info_is_allocated = false;
+	bool comment_is_allocated = false;
+	bool dsp_state_is_allocated = false;
+	bool block_is_allocated = false;
+	bool ready = false;
+	bool have_samples_left = false;
+	bool have_packets_left = false;
+	Ref<OggPacketSequence> vorbis_data;
+	Ref<OggPacketSequencePlayback> vorbis_data_playback;
+	Ref<AudioStreamOggVorbis> vorbis_stream;
+
+	friend class AudioStreamMP3;
+	friend class AudioStreamOggVorbis;
+
+	int _mix_mp3(AudioFrame* p_buffer, int p_frames);
+	int _mix_ogg(AudioFrame* p_buffer, int p_frames);
+	int _mix_frames_vorbis(AudioFrame* p_buffer, int p_frames);
+	bool _alloc_vorbis();
+	void _seek_ogg(double p_time);
+
 protected:
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames) override
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) return _mix_mp3(p_buffer, p_frames);
+#endif
+		return _mix_ogg(p_buffer, p_frames);
+	}
+	virtual float get_stream_sampling_rate() override
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) return mp3_stream->sample_rate;
+#endif
+		return vorbis_data->get_sampling_rate();
+	}
 
 public:
-#ifdef TOOLS_ENABLED
-	virtual bool has_advanced_options() const override;
-	virtual void show_advanced_options(const String& p_path) override;
+	virtual void start(double p_from_pos = 0.0) override
+	{
+		if (is_ogg) {
+			ERR_FAIL_COND(!ready);
+			loop_fade_remaining = FADE_SIZE;
+		}
+		active = true;
+		seek(p_from_pos);
+		loops = 0;
+		begin_resample();
+	}
+	virtual void stop() override { active = false; }
+	virtual bool is_playing() const override { return active; }
+	virtual int get_loop_count() const override { return loops; }
+	virtual double get_playback_position() const override
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) return double(frames_mixed) / mp3_stream->sample_rate;
 #endif
-
-#ifndef DISABLE_DEPRECATED
-	static Ref<AudioStreamOggVorbis> load_from_file(const String& p_path);
-	static Ref<AudioStreamOggVorbis> load_from_buffer(const Vector<uint8_t>& p_stream_data);
+		return double(frames_mixed) / (double)vorbis_data->get_sampling_rate();
+	}
+	virtual void seek(double p_time) override
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) {
+			if (!active) return;
+			if (p_time >= mp3_stream->get_length()) p_time = 0;
+			frames_mixed = uint32_t(mp3_stream->sample_rate * p_time);
+			drmp3_seek_to_pcm_frame(&mp3d, (uint64_t)frames_mixed);
+			return;
+		}
 #endif
+		_seek_ogg(p_time);
+	}
+	virtual void tag_used_streams() override
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) { mp3_stream->tag_used(get_playback_position()); return; }
+#endif
+		vorbis_stream->tag_used(get_playback_position());
+	}
+	virtual void set_is_sample(bool p_is_sample) override { _is_sample = p_is_sample; }
+	virtual bool get_is_sample() const override { return _is_sample; }
+	virtual Ref<AudioSamplePlayback> get_sample_playback() const override { return sample_playback; }
+	virtual void set_sample_playback(const Ref<AudioSamplePlayback>& p_playback) override
+	{
+		sample_playback = p_playback;
+		if (sample_playback.is_valid()) {
+			sample_playback->stream_playback = Ref<AudioStreamPlayback>(this);
+		}
+	}
 
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-
-	virtual bool can_import_threaded() const override { return true; }
-
-	ResourceImporterOggVorbis();
+	AudioStreamPlaybackCompressed() {}
+	~AudioStreamPlaybackCompressed()
+	{
+#if defined(MODULE_MP3_ENABLED)
+		if (!is_ogg) {
+			drmp3_uninit(&mp3d);
+			return;
+		}
+#endif
+		if (block_is_allocated) vorbis_block_clear(&block);
+		if (dsp_state_is_allocated) vorbis_dsp_clear(&dsp_state);
+		if (comment_is_allocated) vorbis_comment_clear(&comment);
+		if (info_is_allocated) vorbis_info_clear(&info);
+	}
 };
 
-int AudioStreamPlaybackOggVorbis::_mix_internal(AudioFrame* p_buffer, int p_frames)
+#if defined(MODULE_MP3_ENABLED)
+int AudioStreamPlaybackCompressed::_mix_mp3(AudioFrame* p_buffer, int p_frames)
+{
+	if (!active) {
+		return 0;
+	}
+
+	int todo = p_frames;
+	int frames_mixed_this_step = p_frames;
+
+	bool beat_loop = mp3_stream->has_loop() && mp3_stream->get_bpm() > 0 && mp3_stream->get_beat_count() > 0;
+	bool use_loop = looping_override ? looping : mp3_stream->loop;
+	int beat_length_frames = -1;
+	if (beat_loop) {
+		beat_length_frames = mp3_stream->get_beat_count() * mp3_stream->sample_rate * 60 / mp3_stream->get_bpm();
+	}
+
+	while (todo && active) {
+		float buf_frame[2];
+		int samples_mixed = drmp3_read_pcm_frames_f32(&mp3d, 1, buf_frame);
+
+		if (samples_mixed) {
+			p_buffer[p_frames - todo] = AudioFrame(buf_frame[0], buf_frame[mp3d.channels - 1]);
+			if (loop_fade_remaining < FADE_SIZE) {
+				p_buffer[p_frames - todo] +=
+					loop_fade[loop_fade_remaining] *
+					(float(FADE_SIZE - loop_fade_remaining) / float(FADE_SIZE));
+				loop_fade_remaining++;
+			}
+			--todo;
+			++frames_mixed;
+
+			if (beat_loop && (int)frames_mixed >= beat_length_frames) {
+				for (int i = 0; i < FADE_SIZE; i++) {
+					samples_mixed = drmp3_read_pcm_frames_f32(&mp3d, 1, buf_frame);
+					loop_fade[i] = AudioFrame(buf_frame[0], buf_frame[mp3d.channels - 1]);
+					if (!samples_mixed) {
+						break;
+					}
+				}
+				loop_fade_remaining = 0;
+				seek(mp3_stream->loop_offset);
+				loops++;
+			}
+		}
+		else {
+			if (use_loop) {
+				seek(mp3_stream->loop_offset);
+				loops++;
+			}
+			else {
+				frames_mixed_this_step = p_frames - todo;
+				for (int i = p_frames - todo; i < p_frames; i++) {
+					p_buffer[i] = AudioFrame(0, 0);
+				}
+				active = false;
+				todo = 0;
+			}
+		}
+	}
+	return frames_mixed_this_step;
+}
+
+Ref<AudioStreamPlayback> AudioStreamMP3::instantiate_playback()
+{
+	Ref<AudioStreamPlaybackCompressed> mp3s;
+
+	ERR_FAIL_COND_V_MSG(data.is_empty(), mp3s,
+		"This AudioStreamMP3 does not have an audio file assigned "
+		"to it. AudioStreamMP3 should not be created from the "
+		"inspector or with `.new()`. Instead, load an audio file.");
+
+	mp3s.instantiate();
+	mp3s->is_ogg = false;
+	mp3s->mp3_stream = Ref<AudioStreamMP3>(this);
+
+	int success = drmp3_init_memory(
+		&mp3s->mp3d, data.ptr(), data.size(), (drmp3_allocation_callbacks*)&dr_alloc_calls);
+
+	mp3s->frames_mixed = 0;
+	mp3s->active = false;
+	mp3s->loops = 0;
+
+	ERR_FAIL_COND_V(!success, Ref<AudioStreamPlaybackCompressed>());
+
+	return mp3s;
+}
+#endif
+
+int AudioStreamPlaybackCompressed::_mix_ogg(AudioFrame* p_buffer, int p_frames)
 {
 	ERR_FAIL_COND_V(!ready, 0);
 
@@ -132464,7 +130579,7 @@ int AudioStreamPlaybackOggVorbis::_mix_internal(AudioFrame* p_buffer, int p_fram
 	return p_frames - todo;
 }
 
-int AudioStreamPlaybackOggVorbis::_mix_frames_vorbis(AudioFrame* p_buffer, int p_frames)
+int AudioStreamPlaybackCompressed::_mix_frames_vorbis(AudioFrame* p_buffer, int p_frames)
 {
 	ERR_FAIL_COND_V(!ready, p_frames);
 	if (!have_samples_left) {
@@ -132514,12 +130629,7 @@ int AudioStreamPlaybackOggVorbis::_mix_frames_vorbis(AudioFrame* p_buffer, int p
 	return frames;
 }
 
-float AudioStreamPlaybackOggVorbis::get_stream_sampling_rate()
-{
-	return vorbis_data->get_sampling_rate();
-}
-
-bool AudioStreamPlaybackOggVorbis::_alloc_vorbis()
+bool AudioStreamPlaybackCompressed::_alloc_vorbis()
 {
 	vorbis_info_init(&info);
 	info_is_allocated = true;
@@ -132555,33 +130665,7 @@ bool AudioStreamPlaybackOggVorbis::_alloc_vorbis()
 	return true;
 }
 
-void AudioStreamPlaybackOggVorbis::start(double p_from_pos)
-{
-	ERR_FAIL_COND(!ready);
-	loop_fade_remaining = FADE_SIZE;
-	active = true;
-	seek(p_from_pos);
-	loops = 0;
-	begin_resample();
-}
-
-void AudioStreamPlaybackOggVorbis::stop() { active = false; }
-
-bool AudioStreamPlaybackOggVorbis::is_playing() const { return active; }
-
-int AudioStreamPlaybackOggVorbis::get_loop_count() const { return loops; }
-
-double AudioStreamPlaybackOggVorbis::get_playback_position() const
-{
-	return double(frames_mixed) / (double)vorbis_data->get_sampling_rate();
-}
-
-void AudioStreamPlaybackOggVorbis::tag_used_streams()
-{
-	vorbis_stream->tag_used(get_playback_position());
-}
-
-void AudioStreamPlaybackOggVorbis::seek(double p_time)
+void AudioStreamPlaybackCompressed::_seek_ogg(double p_time)
 {
 	ERR_FAIL_COND(!ready);
 	ERR_FAIL_COND(vorbis_stream.is_null());
@@ -132687,46 +130771,14 @@ void AudioStreamPlaybackOggVorbis::seek(double p_time)
 	}
 }
 
-void AudioStreamPlaybackOggVorbis::set_is_sample(bool p_is_sample) { _is_sample = p_is_sample; }
-
-bool AudioStreamPlaybackOggVorbis::get_is_sample() const { return _is_sample; }
-
-Ref<AudioSamplePlayback> AudioStreamPlaybackOggVorbis::get_sample_playback() const
-{
-	return sample_playback;
-}
-
-void AudioStreamPlaybackOggVorbis::set_sample_playback(const Ref<AudioSamplePlayback>& p_playback)
-{
-	sample_playback = p_playback;
-	if (sample_playback.is_valid()) {
-		sample_playback->stream_playback = Ref<AudioStreamPlayback>(this);
-	}
-}
-
-AudioStreamPlaybackOggVorbis::~AudioStreamPlaybackOggVorbis()
-{
-	if (block_is_allocated) {
-		vorbis_block_clear(&block);
-	}
-	if (dsp_state_is_allocated) {
-		vorbis_dsp_clear(&dsp_state);
-	}
-	if (comment_is_allocated) {
-		vorbis_comment_clear(&comment);
-	}
-	if (info_is_allocated) {
-		vorbis_info_clear(&info);
-	}
-}
-
 Ref<AudioStreamPlayback> AudioStreamOggVorbis::instantiate_playback()
 {
-	Ref<AudioStreamPlaybackOggVorbis> ovs;
+	Ref<AudioStreamPlaybackCompressed> ovs;
 
 	ERR_FAIL_COND_V(packet_sequence.is_null(), nullptr);
 
 	ovs.instantiate();
+	ovs->is_ogg = true;
 	ovs->vorbis_stream = Ref<AudioStreamOggVorbis>(this);
 	ovs->vorbis_data = packet_sequence;
 	ovs->frames_mixed = 0;
@@ -132935,59 +130987,11 @@ void AudioStreamOggVorbis::maybe_update_info() {}
 
 Ref<AudioSample> AudioStreamOggVorbis::generate_sample() const { return Ref<AudioSample>(); }
 
-String ResourceImporterOggVorbis::get_importer_name() const { return "oggvorbisstr"; }
-
-String ResourceImporterOggVorbis::get_visible_name() const { return "Ogg Vorbis"; }
-
-void ResourceImporterOggVorbis::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("ogg");
-}
-
-String ResourceImporterOggVorbis::get_save_extension() const { return "oggvorbisstr"; }
-
-String ResourceImporterOggVorbis::get_resource_type() const { return "AudioStreamOggVorbis"; }
-
-#ifdef TOOLS_ENABLED
-bool ResourceImporterOggVorbis::has_advanced_options() const { return false; }
-
-void ResourceImporterOggVorbis::show_advanced_options(const String& p_path) {}
-#endif
-
-#ifndef DISABLE_DEPRECATED
-Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_buffer(
-	const Vector<uint8_t>& p_stream_data)
-{
-	return AudioStreamOggVorbis::load_from_buffer(p_stream_data);
-}
-
-Ref<AudioStreamOggVorbis> ResourceImporterOggVorbis::load_from_file(const String& p_path)
-{
-	return AudioStreamOggVorbis::load_from_file(p_path);
-}
-#endif
-
-ResourceImporterOggVorbis::ResourceImporterOggVorbis() {}
-
-int ResourceImporterOggVorbis::get_preset_count() const { return 0; }
-
-String ResourceImporterOggVorbis::get_preset_name(int p_preset) const { return String(); }
-
-void ResourceImporterOggVorbis::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
-
-#ifdef TOOLS_ENABLED
-#endif
-
 void initialize_vorbis_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		Ref<ResourceImporterOggVorbis> ogg_vorbis_importer;
-		ogg_vorbis_importer.instantiate();
-		ResourceFormatImporter::add_importer(ogg_vorbis_importer);
+		ResourceFormatImporter::add_importer(Ref<ResourceImporter>(memnew(ResourceImporter(ResourceImporter::FORMAT_OGG_VORBIS))));
 	}
 #endif
 }
@@ -136327,69 +134331,34 @@ struct CameraFeed::PlatformData
 	bool activate();
 	void deactivate() {}
 };
-class CameraLinux final
+namespace CameraLinux
 {
-private:
-	struct Data
-	{
-		SafeFlag exit_flag;
-		Thread camera_thread;
-		Mutex camera_mutex;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void camera_thread_func(void* p_userdata);
-
-	static void _update_devices();
-	static bool _has_device(const String& p_device_name);
-	static void _add_device(const String& p_device_name);
-	static int _open_device(const String& p_device_name);
-	static bool _is_active(const String& p_device_name);
-	static bool _is_video_capture_device(int p_file_descriptor);
-	static bool _can_query_format(int p_file_descriptor, int p_type);
-
-public:
-	static void initialize();
-	static void finalize();
-
-	static void set_monitoring_feeds(bool p_monitoring_feeds);
-	static void handle_application_pause() {}
-	static void handle_application_resume() {}
-	static void handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
-
-	CameraLinux() = delete;
-	CameraLinux(const CameraLinux&) = delete;
-	CameraLinux& operator=(const CameraLinux&) = delete;
-	~CameraLinux() = delete;
-};
+void camera_thread_func(void* p_userdata);
+void _update_devices();
+bool _has_device(const String& p_device_name);
+void _add_device(const String& p_device_name);
+int _open_device(const String& p_device_name);
+bool _is_active(const String& p_device_name);
+bool _is_video_capture_device(int p_file_descriptor);
+bool _can_query_format(int p_file_descriptor, int p_type);
+void initialize();
+void finalize();
+void set_monitoring_feeds(bool p_monitoring_feeds);
+} // namespace CameraLinux
 #endif
 #if defined(WINDOWS_ENABLED)
 #include "servers/display/display_server.h"
 
-class CameraWindows final
+namespace CameraWindows
 {
-private:
-	static void add_active_cameras();
-
-public:
-	static void initialize();
-	static void finalize() {}
-
-	static void set_monitoring_feeds(bool p_monitoring_feeds)
-	{
-		CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
-	}
-
-	static void handle_application_pause() {}
-	static void handle_application_resume() {}
-	static void handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
-
-	CameraWindows() = delete;
-	CameraWindows(const CameraWindows&) = delete;
-	CameraWindows& operator=(const CameraWindows&) = delete;
-	~CameraWindows() = delete;
-};
+void add_active_cameras();
+void initialize();
+inline void finalize() {}
+inline void set_monitoring_feeds(bool p_monitoring_feeds)
+{
+	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
+}
+} // namespace CameraWindows
 #endif
 #if defined(MACOS_ENABLED)
 #include "servers/display/display_server.h"
@@ -136471,33 +134440,17 @@ struct CameraFeed::PlatformData {
 	static void onSessionClosed(void *context, ACameraCaptureSession *session);
 };
 
-class CameraAndroid final
+namespace CameraAndroid
 {
-private:
-	struct Data
-	{
-		ACameraManager* camera_manager = nullptr;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void update_feeds();
-	static void remove_all_feeds();
-
-public:
-	static void initialize();
-	static void finalize();
-
-	static void set_monitoring_feeds(bool p_monitoring_feeds);
-	static void handle_application_pause();
-	static void handle_application_resume();
-	static void handle_display_rotation_change(int p_orientation);
-
-	CameraAndroid() = delete;
-	CameraAndroid(const CameraAndroid&) = delete;
-	CameraAndroid& operator=(const CameraAndroid&) = delete;
-	~CameraAndroid() = delete;
-};
+void update_feeds();
+void remove_all_feeds();
+void initialize();
+void finalize();
+void set_monitoring_feeds(bool p_monitoring_feeds);
+void handle_application_pause();
+void handle_application_resume();
+void handle_display_rotation_change(int p_orientation);
+} // namespace CameraAndroid
 #endif
 
 void initialize_camera_module(ModuleInitializationLevel p_level) {
@@ -136506,16 +134459,16 @@ void initialize_camera_module(ModuleInitializationLevel p_level) {
 	}
 
 #if defined(LINUXBSD_ENABLED)
-	CameraServer::bind<CameraLinux>();
+	CameraServer::bind(&CameraLinux::initialize, &CameraLinux::finalize, &CameraLinux::set_monitoring_feeds);
 #endif
 #if defined(WINDOWS_ENABLED)
-	CameraServer::bind<CameraWindows>();
+	CameraServer::bind(&CameraWindows::initialize, &CameraWindows::finalize, &CameraWindows::set_monitoring_feeds);
 #endif
 #if defined(MACOS_ENABLED)
-	CameraServer::bind<CameraApple>();
+	CameraServer::bind(&CameraApple::initialize, &CameraApple::finalize, &CameraApple::set_monitoring_feeds, &CameraApple::handle_application_pause, &CameraApple::handle_application_resume, &CameraApple::handle_display_rotation_change);
 #endif
 #if defined(ANDROID_ENABLED)
-	CameraServer::bind<CameraAndroid>();
+	CameraServer::bind(&CameraAndroid::initialize, &CameraAndroid::finalize, &CameraAndroid::set_monitoring_feeds, &CameraAndroid::handle_application_pause, &CameraAndroid::handle_application_resume, &CameraAndroid::handle_display_rotation_change);
 #endif
 }
 
@@ -136540,12 +134493,12 @@ void CameraLinux::camera_thread_func(void* p_userdata)
 
 void CameraLinux::_update_devices()
 {
-	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(CameraServer::data);
 	ERR_FAIL_NULL(CameraServer::data);
 
-	while (!data->exit_flag.is_set()) {
+	while (!CameraServer::data->exit_flag.is_set()) {
 		{
-			MutexLock lock(data->camera_mutex);
+			MutexLock lock(CameraServer::data->camera_mutex);
 
 			for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
 				Ref<CameraFeed> feed = CameraServer::data->feeds[i];
@@ -136668,41 +134621,35 @@ bool CameraLinux::_can_query_format(int p_file_descriptor, int p_type)
 	return ioctl(p_file_descriptor, VIDIOC_G_FMT, &format) != -1;
 }
 
-void CameraLinux::initialize()
-{
-	ERR_FAIL_COND(data != nullptr);
-	data = memnew(Data);
-}
+void CameraLinux::initialize() {}
 
 void CameraLinux::finalize()
 {
-	if (!data) {
+	if (!CameraServer::data) {
 		return;
 	}
-	data->exit_flag.set();
-	if (data->camera_thread.is_started()) {
-		data->camera_thread.wait_to_finish();
+	CameraServer::CameraServer::data->exit_flag.set();
+	if (CameraServer::CameraServer::data->camera_thread.is_started()) {
+		CameraServer::CameraServer::data->camera_thread.wait_to_finish();
 	}
-	memdelete(data);
-	data = nullptr;
 }
 
 void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds)
 {
-	ERR_FAIL_NULL(data);
+	ERR_FAIL_NULL(CameraServer::data);
 	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
 		return;
 	}
 
 	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
 	if (p_monitoring_feeds) {
-		data->exit_flag.clear();
-		data->camera_thread.start(CameraLinux::camera_thread_func, nullptr);
+		CameraServer::data->exit_flag.clear();
+		CameraServer::data->camera_thread.start(CameraLinux::camera_thread_func, nullptr);
 	}
 	else {
-		data->exit_flag.set();
-		if (data->camera_thread.is_started()) {
-			data->camera_thread.wait_to_finish();
+		CameraServer::data->exit_flag.set();
+		if (CameraServer::data->camera_thread.is_started()) {
+			CameraServer::data->camera_thread.wait_to_finish();
 		}
 	}
 }
@@ -137802,26 +135749,20 @@ void CameraFeed::PlatformData::onDisconnected(void *context, ACameraDevice *p_de
 //////////////////////////////////////////////////////////////////////////
 // CameraAndroid - Subclass for our camera server on Android
 
-void CameraAndroid::initialize() {
-	ERR_FAIL_COND(data != nullptr);
-	data = memnew(Data);
-}
+void CameraAndroid::initialize() {}
 
 void CameraAndroid::finalize() {
-	if (!data) {
+	if (!CameraServer::data) {
 		return;
 	}
 	remove_all_feeds();
-	memdelete(data);
-	data = nullptr;
 }
 
 void CameraAndroid::update_feeds() {
-	ERR_FAIL_NULL(data);
 	ERR_FAIL_NULL(CameraServer::data);
 
 	ACameraIdList *cameraIds = nullptr;
-	camera_status_t c_status = ACameraManager_getCameraIdList(data->camera_manager, &cameraIds);
+	camera_status_t c_status = ACameraManager_getCameraIdList(static_cast<ACameraManager *>(CameraServer::data->camera_manager), &cameraIds);
 	ERR_FAIL_COND(c_status != ACAMERA_OK);
 
 	// Deactivate all feeds before removing to ensure proper cleanup.
@@ -137840,7 +135781,7 @@ void CameraAndroid::update_feeds() {
 	for (int c = 0; c < cameraIds->numCameras; ++c) {
 		const char *id = cameraIds->cameraIds[c];
 		ACameraMetadata *metadata = nullptr;
-		ACameraManager_getCameraCharacteristics(data->camera_manager, id, &metadata);
+		ACameraManager_getCameraCharacteristics(static_cast<ACameraManager *>(CameraServer::data->camera_manager), id, &metadata);
 		if (!metadata) {
 			continue;
 		}
@@ -137877,7 +135818,7 @@ void CameraAndroid::update_feeds() {
 
 		Ref<CameraFeed> feed;
 		feed.instantiate();
-		feed->init_android(data->camera_manager, metadata, id, position, cameraOrientation);
+		feed->init_android(static_cast<ACameraManager *>(CameraServer::data->camera_manager), metadata, id, position, cameraOrientation);
 		CameraServer::add_feed(feed);
 	}
 
@@ -137885,7 +135826,6 @@ void CameraAndroid::update_feeds() {
 }
 
 void CameraAndroid::remove_all_feeds() {
-	ERR_FAIL_NULL(data);
 	ERR_FAIL_NULL(CameraServer::data);
 
 	// Deactivate all feeds before removing to ensure proper cleanup.
@@ -137903,22 +135843,21 @@ void CameraAndroid::remove_all_feeds() {
 		CameraServer::remove_feed(CameraServer::data->feeds[i]);
 	}
 
-	if (data->camera_manager != nullptr) {
-		ACameraManager_delete(data->camera_manager);
-		data->camera_manager = nullptr;
+	if (static_cast<ACameraManager *>(CameraServer::data->camera_manager) != nullptr) {
+		ACameraManager_delete(static_cast<ACameraManager *>(CameraServer::data->camera_manager));
+		CameraServer::static_cast<ACameraManager *>(CameraServer::data->camera_manager) = nullptr;
 	}
 }
 
 void CameraAndroid::set_monitoring_feeds(bool p_monitoring_feeds) {
-	ERR_FAIL_NULL(data);
 	if (p_monitoring_feeds == CameraServer::is_monitoring_feeds()) {
 		return;
 	}
 
 	CameraServer::set_monitoring_feeds_state(p_monitoring_feeds);
 	if (p_monitoring_feeds) {
-		if (data->camera_manager == nullptr) {
-			data->camera_manager = ACameraManager_create();
+		if (static_cast<ACameraManager *>(CameraServer::data->camera_manager) == nullptr) {
+			CameraServer::static_cast<ACameraManager *>(CameraServer::data->camera_manager) = ACameraManager_create();
 		}
 
 		// Update feeds
@@ -178217,20 +176156,20 @@ void SkyRD::_render_sky(RD::DrawListID p_list, float p_time, RID p_fb, PipelineC
 
 	// Update uniform sets.
 	{
-		RD::draw_list_bind_uniform_set(draw_list, sky_scene_state.uniform_set, SKY_SET_UNIFORMS);
+		RD::draw_list_bind_uniform_set(draw_list, sky_scene_state_uniform_set, SKY_SET_UNIFORMS);
 		if (p_uniform_set.is_valid() &&
 			RD::uniform_set_is_valid(p_uniform_set)) { // Material may not have a uniform set.
 			RD::draw_list_bind_uniform_set(draw_list, p_uniform_set, SKY_SET_MATERIAL);
 		}
 		RD::draw_list_bind_uniform_set(draw_list, p_texture_set, SKY_SET_TEXTURES);
 		// Fog uniform set can be invalidated before drawing, so validate at draw time
-		if (sky_scene_state.fog_uniform_set.is_valid() &&
-			RD::uniform_set_is_valid(sky_scene_state.fog_uniform_set)) {
-			RD::draw_list_bind_uniform_set(draw_list, sky_scene_state.fog_uniform_set, SKY_SET_FOG);
+		if (sky_scene_state_fog_uniform_set.is_valid() &&
+			RD::uniform_set_is_valid(sky_scene_state_fog_uniform_set)) {
+			RD::draw_list_bind_uniform_set(draw_list, sky_scene_state_fog_uniform_set, SKY_SET_FOG);
 		}
 		else {
 			RD::draw_list_bind_uniform_set(
-				draw_list, sky_scene_state.default_fog_uniform_set, SKY_SET_FOG);
+				draw_list, sky_scene_state_default_fog_uniform_set, SKY_SET_FOG);
 		}
 	}
 
@@ -178480,11 +176419,11 @@ RendererRD::MaterialStorage::MaterialData* SkyRD::_create_sky_material_funcs(
 		static_cast<SkyShaderData*>(p_shader));
 }
 
-RID SkyRD::SkySceneState::get_fog_only_texture_uniform_set(
+RID SkyRD::sky_scene_state_get_fog_only_texture_uniform_set(
 	RID p_default_shader_rd, bool p_is_multiview)
 {
 	RID& uniform_set_rid =
-		p_is_multiview ? fog_only_texture_multiview_uniform_set : fog_only_texture_uniform_set;
+		p_is_multiview ? sky_scene_state_fog_only_texture_multiview_uniform_set : sky_scene_state_fog_only_texture_uniform_set;
 
 	if (uniform_set_rid.is_null()) {
 		Vector<RD::Uniform> uniforms;
@@ -178543,41 +176482,41 @@ SkyRD::~SkyRD()
 		MaterialStorage::shader_free(sky_shader.default_shader);
 		sky_shader.default_shader = RID();
 	}
-	if (sky_scene_state.directional_light_buffer.is_valid()) {
-		RD::free_rid(sky_scene_state.directional_light_buffer);
+	if (sky_scene_state_directional_light_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state_directional_light_buffer);
 	}
-	if (sky_scene_state.uniform_buffer.is_valid()) {
-		RD::free_rid(sky_scene_state.uniform_buffer);
+	if (sky_scene_state_uniform_buffer.is_valid()) {
+		RD::free_rid(sky_scene_state_uniform_buffer);
 	}
-	if (sky_scene_state.directional_lights) {
-		memdelete_arr(sky_scene_state.directional_lights);
+	if (sky_scene_state_directional_lights) {
+		memdelete_arr(sky_scene_state_directional_lights);
 	}
-	if (sky_scene_state.last_frame_directional_lights) {
-		memdelete_arr(sky_scene_state.last_frame_directional_lights);
+	if (sky_scene_state_last_frame_directional_lights) {
+		memdelete_arr(sky_scene_state_last_frame_directional_lights);
 	}
-	if (sky_scene_state.fog_material.is_valid()) {
-		MaterialStorage::material_free(sky_scene_state.fog_material);
+	if (sky_scene_state_fog_material.is_valid()) {
+		MaterialStorage::material_free(sky_scene_state_fog_material);
 	}
-	if (sky_scene_state.fog_shader.is_valid()) {
-		MaterialStorage::shader_free(sky_scene_state.fog_shader);
-	}
-
-	if (RD::uniform_set_is_valid(sky_scene_state.uniform_set)) {
-		RD::free_rid(sky_scene_state.uniform_set);
+	if (sky_scene_state_fog_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_scene_state_fog_shader);
 	}
 
-	if (RD::uniform_set_is_valid(sky_scene_state.default_fog_uniform_set)) {
-		RD::free_rid(sky_scene_state.default_fog_uniform_set);
+	if (RD::uniform_set_is_valid(sky_scene_state_uniform_set)) {
+		RD::free_rid(sky_scene_state_uniform_set);
 	}
 
-	if (sky_scene_state.fog_only_texture_uniform_set.is_valid() &&
-		RD::uniform_set_is_valid(sky_scene_state.fog_only_texture_uniform_set)) {
-		RD::free_rid(sky_scene_state.fog_only_texture_uniform_set);
+	if (RD::uniform_set_is_valid(sky_scene_state_default_fog_uniform_set)) {
+		RD::free_rid(sky_scene_state_default_fog_uniform_set);
 	}
 
-	if (sky_scene_state.fog_only_texture_multiview_uniform_set.is_valid() &&
-		RD::uniform_set_is_valid(sky_scene_state.fog_only_texture_multiview_uniform_set)) {
-		RD::free_rid(sky_scene_state.fog_only_texture_multiview_uniform_set);
+	if (sky_scene_state_fog_only_texture_uniform_set.is_valid() &&
+		RD::uniform_set_is_valid(sky_scene_state_fog_only_texture_uniform_set)) {
+		RD::free_rid(sky_scene_state_fog_only_texture_uniform_set);
+	}
+
+	if (sky_scene_state_fog_only_texture_multiview_uniform_set.is_valid() &&
+		RD::uniform_set_is_valid(sky_scene_state_fog_only_texture_multiview_uniform_set)) {
+		RD::free_rid(sky_scene_state_fog_only_texture_multiview_uniform_set);
 	}
 }
 
@@ -178725,7 +176664,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 	bool sun_scatter_enabled =
 		RendererSceneRender::environment_get_fog_enabled(p_render_data->environment) &&
 		RendererSceneRender::environment_get_fog_sun_scatter(p_render_data->environment) > 0.001;
-	sky_scene_state.ubo.directional_light_count = 0;
+	sky_scene_state_ubo.directional_light_count = 0;
 	if (shader_data->uses_light || sun_scatter_enabled) {
 		const PagedArray<RID>& lights = *p_render_data->lights;
 		// Run through the list of lights in the scene and pick out the Directional Lights.
@@ -178744,7 +176683,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				RendererRD::LightStorage::light_directional_get_sky_mode(base) !=
 					RSE::LIGHT_DIRECTIONAL_SKY_MODE_LIGHT_ONLY) {
 				SkyDirectionalLightData& sky_light_data =
-					sky_scene_state.directional_lights[sky_scene_state.ubo.directional_light_count];
+					sky_scene_state_directional_lights[sky_scene_state_ubo.directional_light_count];
 				Transform3D light_transform =
 					RendererRD::LightStorage::light_instance_get_base_transform(lights[i]);
 				Vector3 world_direction =
@@ -178779,9 +176718,9 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 				float angular_diameter =
 					RendererRD::LightStorage::light_get_param(base, RSE::LIGHT_PARAM_SIZE);
 				sky_light_data.size = Math::deg_to_rad(angular_diameter);
-				sky_scene_state.ubo.directional_light_count++;
-				if (sky_scene_state.ubo.directional_light_count >=
-					sky_scene_state.max_directional_lights) {
+				sky_scene_state_ubo.directional_light_count++;
+				if (sky_scene_state_ubo.directional_light_count >=
+					sky_scene_state_max_directional_lights) {
 					break;
 				}
 			}
@@ -178791,38 +176730,38 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 
 		// Light buffer is dirty if we have fewer or more lights.
 		// If we have fewer lights, make sure that old lights are disabled.
-		if (sky_scene_state.ubo.directional_light_count !=
-			sky_scene_state.last_frame_directional_light_count) {
+		if (sky_scene_state_ubo.directional_light_count !=
+			sky_scene_state_last_frame_directional_light_count) {
 			light_data_dirty = true;
-			for (uint32_t i = sky_scene_state.ubo.directional_light_count;
-				 i < sky_scene_state.max_directional_lights; i++) {
-				sky_scene_state.directional_lights[i] = {};
-				sky_scene_state.directional_lights[i].enabled = false;
-				sky_scene_state.last_frame_directional_lights[i] = {};
-				sky_scene_state.last_frame_directional_lights[i].enabled = false;
+			for (uint32_t i = sky_scene_state_ubo.directional_light_count;
+				 i < sky_scene_state_max_directional_lights; i++) {
+				sky_scene_state_directional_lights[i] = {};
+				sky_scene_state_directional_lights[i].enabled = false;
+				sky_scene_state_last_frame_directional_lights[i] = {};
+				sky_scene_state_last_frame_directional_lights[i].enabled = false;
 			}
 		}
 
 		if (!light_data_dirty) {
-			for (uint32_t i = 0; i < sky_scene_state.ubo.directional_light_count; i++) {
-				if (sky_scene_state.directional_lights[i].direction[0] !=
-						sky_scene_state.last_frame_directional_lights[i].direction[0] ||
-					sky_scene_state.directional_lights[i].direction[1] !=
-						sky_scene_state.last_frame_directional_lights[i].direction[1] ||
-					sky_scene_state.directional_lights[i].direction[2] !=
-						sky_scene_state.last_frame_directional_lights[i].direction[2] ||
-					sky_scene_state.directional_lights[i].energy !=
-						sky_scene_state.last_frame_directional_lights[i].energy ||
-					sky_scene_state.directional_lights[i].color[0] !=
-						sky_scene_state.last_frame_directional_lights[i].color[0] ||
-					sky_scene_state.directional_lights[i].color[1] !=
-						sky_scene_state.last_frame_directional_lights[i].color[1] ||
-					sky_scene_state.directional_lights[i].color[2] !=
-						sky_scene_state.last_frame_directional_lights[i].color[2] ||
-					sky_scene_state.directional_lights[i].enabled !=
-						sky_scene_state.last_frame_directional_lights[i].enabled ||
-					sky_scene_state.directional_lights[i].size !=
-						sky_scene_state.last_frame_directional_lights[i].size) {
+			for (uint32_t i = 0; i < sky_scene_state_ubo.directional_light_count; i++) {
+				if (sky_scene_state_directional_lights[i].direction[0] !=
+						sky_scene_state_last_frame_directional_lights[i].direction[0] ||
+					sky_scene_state_directional_lights[i].direction[1] !=
+						sky_scene_state_last_frame_directional_lights[i].direction[1] ||
+					sky_scene_state_directional_lights[i].direction[2] !=
+						sky_scene_state_last_frame_directional_lights[i].direction[2] ||
+					sky_scene_state_directional_lights[i].energy !=
+						sky_scene_state_last_frame_directional_lights[i].energy ||
+					sky_scene_state_directional_lights[i].color[0] !=
+						sky_scene_state_last_frame_directional_lights[i].color[0] ||
+					sky_scene_state_directional_lights[i].color[1] !=
+						sky_scene_state_last_frame_directional_lights[i].color[1] ||
+					sky_scene_state_directional_lights[i].color[2] !=
+						sky_scene_state_last_frame_directional_lights[i].color[2] ||
+					sky_scene_state_directional_lights[i].enabled !=
+						sky_scene_state_last_frame_directional_lights[i].enabled ||
+					sky_scene_state_directional_lights[i].size !=
+						sky_scene_state_last_frame_directional_lights[i].size) {
 					light_data_dirty = true;
 					break;
 				}
@@ -178830,11 +176769,11 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		}
 
 		if (light_data_dirty) {
-			SkyDirectionalLightData* temp = sky_scene_state.last_frame_directional_lights;
-			sky_scene_state.last_frame_directional_lights = sky_scene_state.directional_lights;
-			sky_scene_state.directional_lights = temp;
-			sky_scene_state.last_frame_directional_light_count =
-				sky_scene_state.ubo.directional_light_count;
+			SkyDirectionalLightData* temp = sky_scene_state_last_frame_directional_lights;
+			sky_scene_state_last_frame_directional_lights = sky_scene_state_directional_lights;
+			sky_scene_state_directional_lights = temp;
+			sky_scene_state_last_frame_directional_light_count =
+				sky_scene_state_ubo.directional_light_count;
 			if (sky) {
 				sky->reflection.dirty = true;
 			}
@@ -178842,33 +176781,33 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 	}
 
 	// Setup fog variables.
-	sky_scene_state.ubo.volumetric_fog_enabled = false;
+	sky_scene_state_ubo.volumetric_fog_enabled = false;
 	if (p_render_data->render_buffers->has_custom_data(RB_SCOPE_FOG)) {
 		Ref<RendererRD::Fog::VolumetricFog> fog =
 			p_render_data->render_buffers->get_custom_data(RB_SCOPE_FOG);
-		sky_scene_state.ubo.volumetric_fog_enabled = true;
+		sky_scene_state_ubo.volumetric_fog_enabled = true;
 
 		float fog_end = fog->length;
 		if (fog_end > 0.0) {
-			sky_scene_state.ubo.volumetric_fog_inv_length = 1.0 / fog_end;
+			sky_scene_state_ubo.volumetric_fog_inv_length = 1.0 / fog_end;
 		}
 		else {
-			sky_scene_state.ubo.volumetric_fog_inv_length = 1.0;
+			sky_scene_state_ubo.volumetric_fog_inv_length = 1.0;
 		}
 
 		float fog_detail_spread = fog->spread; // Reverse lookup.
 		if (fog_detail_spread > 0.0) {
-			sky_scene_state.ubo.volumetric_fog_detail_spread = 1.0 / fog_detail_spread;
+			sky_scene_state_ubo.volumetric_fog_detail_spread = 1.0 / fog_detail_spread;
 		}
 		else {
-			sky_scene_state.ubo.volumetric_fog_detail_spread = 1.0;
+			sky_scene_state_ubo.volumetric_fog_detail_spread = 1.0;
 		}
 
-		sky_scene_state.fog_uniform_set = fog->sky_uniform_set;
+		sky_scene_state_fog_uniform_set = fog->sky_uniform_set;
 	}
 
-	sky_scene_state.view_count = p_render_data->scene_data->view_count;
-	sky_scene_state.cam_transform = p_render_data->scene_data->cam_transform;
+	sky_scene_state_view_count = p_render_data->scene_data->view_count;
+	sky_scene_state_cam_transform = p_render_data->scene_data->cam_transform;
 
 	Projection correction;
 	correction.set_depth_correction(p_render_data->scene_data->flip_y, true);
@@ -178879,7 +176818,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 	float custom_fov =
 		RendererSceneRender::environment_get_sky_custom_fov(p_render_data->environment);
 
-	if (custom_fov && sky_scene_state.view_count == 1) {
+	if (custom_fov && sky_scene_state_view_count == 1) {
 		// With custom fov we don't support stereo...
 		float near_plane = projection.get_z_near();
 		float far_plane = projection.get_z_far();
@@ -178888,7 +176827,7 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		projection.set_perspective(custom_fov, aspect, near_plane, far_plane);
 	}
 
-	sky_scene_state.cam_projection = correction * projection;
+	sky_scene_state_cam_projection = correction * projection;
 
 	// Our info in our UBO is only used if we're rendering stereo.
 	for (uint32_t i = 0; i < p_render_data->scene_data->view_count; i++) {
@@ -178897,51 +176836,51 @@ void SkyRD::setup_sky(const RenderDataRD* p_render_data, const Size2i p_screen_s
 		if (p_render_data->scene_data->view_count > 1) {
 			// Reprojection is used when we need to have things in combined space.
 			RendererRD::MaterialStorage::store_camera(
-				sky_scene_state.cam_projection * view_inv_projection,
-				sky_scene_state.ubo.combined_reprojection[i]);
+				sky_scene_state_cam_projection * view_inv_projection,
+				sky_scene_state_ubo.combined_reprojection[i]);
 		}
 		else {
 			// This is unused so just reset to identity.
 			Projection ident;
 			RendererRD::MaterialStorage::store_camera(
-				ident, sky_scene_state.ubo.combined_reprojection[i]);
+				ident, sky_scene_state_ubo.combined_reprojection[i]);
 		}
 
 		RendererRD::MaterialStorage::store_camera(
-			view_inv_projection, sky_scene_state.ubo.view_inv_projections[i]);
-		sky_scene_state.ubo.view_eye_offsets[i][0] =
+			view_inv_projection, sky_scene_state_ubo.view_inv_projections[i]);
+		sky_scene_state_ubo.view_eye_offsets[i][0] =
 			p_render_data->scene_data->view_eye_offset[i].x;
-		sky_scene_state.ubo.view_eye_offsets[i][1] =
+		sky_scene_state_ubo.view_eye_offsets[i][1] =
 			p_render_data->scene_data->view_eye_offset[i].y;
-		sky_scene_state.ubo.view_eye_offsets[i][2] =
+		sky_scene_state_ubo.view_eye_offsets[i][2] =
 			p_render_data->scene_data->view_eye_offset[i].z;
-		sky_scene_state.ubo.view_eye_offsets[i][3] = 0.0;
+		sky_scene_state_ubo.view_eye_offsets[i][3] = 0.0;
 	}
 
-	sky_scene_state.ubo.z_far = p_render_data->scene_data->view_projection[0]
+	sky_scene_state_ubo.z_far = p_render_data->scene_data->view_projection[0]
 									.get_z_far(); // Should be the same for all projection.
-	sky_scene_state.ubo.fog_enabled =
+	sky_scene_state_ubo.fog_enabled =
 		RendererSceneRender::environment_get_fog_enabled(p_render_data->environment);
-	sky_scene_state.ubo.fog_density =
+	sky_scene_state_ubo.fog_density =
 		RendererSceneRender::environment_get_fog_density(p_render_data->environment);
-	sky_scene_state.ubo.fog_aerial_perspective =
+	sky_scene_state_ubo.fog_aerial_perspective =
 		RendererSceneRender::environment_get_fog_aerial_perspective(p_render_data->environment);
 	Color fog_color =
 		RendererSceneRender::environment_get_fog_light_color(p_render_data->environment)
 			.srgb_to_linear();
 	float fog_energy =
 		RendererSceneRender::environment_get_fog_light_energy(p_render_data->environment);
-	sky_scene_state.ubo.fog_light_color[0] = fog_color.r * fog_energy;
-	sky_scene_state.ubo.fog_light_color[1] = fog_color.g * fog_energy;
-	sky_scene_state.ubo.fog_light_color[2] = fog_color.b * fog_energy;
-	sky_scene_state.ubo.fog_sun_scatter =
+	sky_scene_state_ubo.fog_light_color[0] = fog_color.r * fog_energy;
+	sky_scene_state_ubo.fog_light_color[1] = fog_color.g * fog_energy;
+	sky_scene_state_ubo.fog_light_color[2] = fog_color.b * fog_energy;
+	sky_scene_state_ubo.fog_sun_scatter =
 		RendererSceneRender::environment_get_fog_sun_scatter(p_render_data->environment);
 
-	sky_scene_state.ubo.fog_sky_affect =
+	sky_scene_state_ubo.fog_sky_affect =
 		RendererSceneRender::environment_get_fog_sky_affect(p_render_data->environment);
-	sky_scene_state.ubo.volumetric_fog_sky_affect =
+	sky_scene_state_ubo.volumetric_fog_sky_affect =
 		RendererSceneRender::environment_get_volumetric_fog_sky_affect(p_render_data->environment);
-	sky_scene_state.ubo.fog_use_legacy_blending =
+	sky_scene_state_ubo.fog_use_legacy_blending =
 		RendererSceneRenderRD::fog_use_legacy_blending_get();
 }
 
@@ -178965,11 +176904,11 @@ void SkyRD::draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_ren
 	sky_transform.invert();
 
 	// Camera
-	Projection projection = sky_scene_state.cam_projection;
+	Projection projection = sky_scene_state_cam_projection;
 
-	sky_transform = sky_transform * sky_scene_state.cam_transform.basis;
+	sky_transform = sky_transform * sky_scene_state_cam_transform.basis;
 
-	bool is_multiview = sky_scene_state.view_count > 1;
+	bool is_multiview = sky_scene_state_view_count > 1;
 
 	PipelineCacheRD* pipeline =
 		&shader_data
@@ -178986,11 +176925,11 @@ void SkyRD::draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_ren
 	}
 	else {
 		texture_uniform_set =
-			sky_scene_state.get_fog_only_texture_uniform_set(default_shader_rd, is_multiview);
+			sky_scene_state_get_fog_only_texture_uniform_set(default_shader_rd, is_multiview);
 	}
 
 	_render_sky(p_draw_list, p_time, p_fb, pipeline, material_data->uniform_set,
-		texture_uniform_set, projection, sky_transform, sky_scene_state.cam_transform.origin,
+		texture_uniform_set, projection, sky_transform, sky_scene_state_cam_transform.origin,
 		p_luminance_multiplier, p_brightness_multiplier, border_size);
 }
 
@@ -179112,7 +177051,7 @@ SkyRD::SkyMaterialData* SkyRD::_get_sky_material_data(RID p_env)
 	RID sky_material;
 
 	if (background == RSE::ENV_BG_CLEAR_COLOR || background == RSE::ENV_BG_COLOR) {
-		sky_material = sky_scene_state.fog_material;
+		sky_material = sky_scene_state_fog_material;
 		material_data = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
 			sky_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
 	}
@@ -185518,9 +183457,9 @@ ClusterBuilderSharedDataRD::~ClusterBuilderSharedDataRD()
 	RD::free_rid(box_vertex_buffer);
 	RD::free_rid(box_index_buffer);
 
-	cluster_render.cluster_render_shader.version_free(cluster_render.shader_version);
-	cluster_store.cluster_store_shader.version_free(cluster_store.shader_version);
-	cluster_debug.cluster_debug_shader.version_free(cluster_debug.shader_version);
+	cluster_render_shader.version_free(cluster_render_shader_version);
+	cluster_store_shader.version_free(cluster_store_shader_version);
+	cluster_debug_shader.version_free(cluster_debug_shader_version);
 }
 
 /////////////////////////////
@@ -185629,7 +183568,7 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 		}
 
 		cluster_render_uniform_set =
-			RD::uniform_set_create(uniforms, shared->cluster_render.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_render_shader_rid, 0);
 	}
 
 	{
@@ -185658,7 +183597,7 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 		}
 
 		cluster_store_uniform_set =
-			RD::uniform_set_create(uniforms, shared->cluster_store.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_store_shader_rid, 0);
 	}
 
 	if (p_color_buffer.is_valid()) {
@@ -185694,7 +183633,7 @@ void ClusterBuilderRD::setup(Size2i p_screen_size, uint32_t p_max_elements, RID 
 		}
 
 		debug_uniform_set =
-			RD::uniform_set_create(uniforms, shared->cluster_debug.shader, 0);
+			RD::uniform_set_create(uniforms, shared->cluster_debug_shader_rid, 0);
 	}
 	else {
 		debug_uniform_set = RID();
@@ -221370,11 +219309,8 @@ public:
 	class BandProcess {
 		friend class EQ;
 		float c1, c2, c3;
-		struct History {
-			float a1, a2, a3;
-			float b1, b2, b3;
-
-		} history;
+		float history_a1, history_a2, history_a3;
+		float history_b1, history_b2, history_b3;
 
 	public:
 		inline void process_one(float &p_data);
@@ -221410,16 +219346,16 @@ public:
 /* Inline Function */
 
 inline void EQ::BandProcess::process_one(float &p_data) {
-	history.a1 = p_data;
+	history_a1 = p_data;
 
-	history.b1 = c1 * (history.a1 - history.a3) + c3 * history.b2 - c2 * history.b3;
+	history_b1 = c1 * (history_a1 - history_a3) + c3 * history_b2 - c2 * history_b3;
 
-	p_data = history.b1;
+	p_data = history_b1;
 
-	history.a3 = history.a2;
-	history.a2 = history.a1;
-	history.b3 = history.b2;
-	history.b2 = history.b1;
+	history_a3 = history_a2;
+	history_a2 = history_a1;
+	history_b3 = history_b2;
+	history_b2 = history_b1;
 }
 
 class Reverb {
@@ -224494,8 +222430,8 @@ static int solve_quadratic(double a, double b, double c, double *r1, double *r2)
 }
 
 EQ::BandProcess::BandProcess() {
-	c1 = c2 = c3 = history.a1 = history.a2 = history.a3 = 0;
-	history.b1 = history.b2 = history.b3 = 0;
+	c1 = c2 = c3 = history_a1 = history_a2 = history_a3 = 0;
+	history_b1 = history_b2 = history_b3 = 0;
 }
 
 void EQ::recalculate_band_coefficients() {
@@ -229017,235 +226953,6 @@ void DisplayServer::accessibility_update_set_foreground_color(const RID& p_id, c
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
-class AccessibilityServerDummy : public AccessibilityServerDriver
-{
-	friend class AccessibilityServer;
-
-protected:
-	static AccessibilityServerDriver* create_func(Error& r_error)
-	{
-		r_error = OK;
-		return memnew(AccessibilityServerDummy);
-	}
-
-public:
-	virtual bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle) override
-	{
-		return true;
-	}
-
-	virtual void window_destroy(DisplayServerEnums::WindowID p_window_id) override {}
-
-	virtual RID create_element(DisplayServerEnums::WindowID p_window_id,
-		AccessibilityServerEnums::AccessibilityRole p_role) override
-	{
-		return RID();
-	}
-
-	virtual RID create_sub_element(const RID& p_parent_rid,
-		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1) override
-	{
-		return RID();
-	}
-
-	virtual RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
-		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false) override
-	{
-		return RID();
-	}
-
-	virtual bool has_element(const RID& p_id) const override { return false; }
-
-	virtual void free_element(const RID& p_id) override {}
-
-	virtual RID get_window_root(DisplayServerEnums::WindowID p_window_id) const override
-	{
-		return RID();
-	}
-
-	virtual void update_set_focus(const RID& p_id) override {}
-
-	virtual void set_window_rect(DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out,
-		const Rect2& p_rect_in) override
-	{
-	}
-
-	virtual void set_window_focused(
-		DisplayServerEnums::WindowID p_window_id, bool p_focused) override
-	{
-	}
-
-	virtual void window_activation_completed(DisplayServerEnums::WindowID p_window_id) override {}
-
-	virtual void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id) override {}
-
-	virtual void update_set_role(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role) override
-	{
-	}
-
-	virtual void update_set_name(const RID& p_id, const String& p_name) override {}
-
-	virtual void update_set_braille_label(const RID& p_id, const String& p_name) override {}
-
-	virtual void update_set_braille_role_description(
-		const RID& p_id, const String& p_description) override
-	{
-	}
-
-	virtual void update_set_extra_info(const RID& p_id, const String& p_name_extra_info) override {}
-
-	virtual void update_set_description(const RID& p_id, const String& p_description) override {}
-
-	virtual void update_set_value(const RID& p_id, const String& p_value) override {}
-
-	virtual void update_set_tooltip(const RID& p_id, const String& p_tooltip) override {}
-
-	virtual void update_set_bounds(const RID& p_id, const Rect2& p_rect) override {}
-
-	virtual void update_set_transform(const RID& p_id, const Transform2D& p_transform) override {}
-
-	virtual void update_add_child(const RID& p_id, const RID& p_child_id) override {}
-
-	virtual void update_add_related_controls(const RID& p_id, const RID& p_related_id) override {}
-
-	virtual void update_add_related_details(const RID& p_id, const RID& p_related_id) override {}
-
-	virtual void update_add_related_described_by(const RID& p_id, const RID& p_related_id) override
-	{
-	}
-
-	virtual void update_add_related_flow_to(const RID& p_id, const RID& p_related_id) override {}
-
-	virtual void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id) override {}
-
-	virtual void update_add_related_radio_group(const RID& p_id, const RID& p_related_id) override
-	{
-	}
-
-	virtual void update_set_active_descendant(const RID& p_id, const RID& p_other_id) override {}
-
-	virtual void update_set_next_on_line(const RID& p_id, const RID& p_other_id) override {}
-
-	virtual void update_set_previous_on_line(const RID& p_id, const RID& p_other_id) override {}
-
-	virtual void update_set_member_of(const RID& p_id, const RID& p_group_id) override {}
-
-	virtual void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id) override {}
-
-	virtual void update_set_error_message(const RID& p_id, const RID& p_other_id) override {}
-
-	virtual void update_set_live(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live) override
-	{
-	}
-
-	virtual void update_add_custom_action(
-		const RID& p_id, int p_action_id, const String& p_action_description) override
-	{
-	}
-
-	virtual void update_set_table_row_count(const RID& p_id, int p_count) override {}
-
-	virtual void update_set_table_column_count(const RID& p_id, int p_count) override {}
-
-	virtual void update_set_table_row_index(const RID& p_id, int p_index) override {}
-
-	virtual void update_set_table_column_index(const RID& p_id, int p_index) override {}
-
-	virtual void update_set_table_cell_position(
-		const RID& p_id, int p_row_index, int p_column_index) override
-	{
-	}
-
-	virtual void update_set_table_cell_span(
-		const RID& p_id, int p_row_span, int p_column_span) override
-	{
-	}
-
-	virtual void update_set_list_item_count(const RID& p_id, int p_size) override {}
-
-	virtual void update_set_list_item_index(const RID& p_id, int p_index) override {}
-
-	virtual void update_set_list_item_level(const RID& p_id, int p_level) override {}
-
-	virtual void update_set_list_item_selected(const RID& p_id, bool p_selected) override {}
-
-	virtual void update_set_list_item_expanded(const RID& p_id, bool p_expanded) override {}
-
-	virtual void update_set_popup_type(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup) override
-	{
-	}
-
-	virtual void update_set_checked(const RID& p_id, bool p_checekd) override {}
-
-	virtual void update_set_num_value(const RID& p_id, double p_position) override {}
-
-	virtual void update_set_num_range(const RID& p_id, double p_min, double p_max) override {}
-
-	virtual void update_set_num_step(const RID& p_id, double p_step) override {}
-
-	virtual void update_set_num_jump(const RID& p_id, double p_jump) override {}
-
-	virtual void update_set_scroll_x(const RID& p_id, double p_position) override {}
-
-	virtual void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max) override {}
-
-	virtual void update_set_scroll_y(const RID& p_id, double p_position) override {}
-
-	virtual void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max) override {}
-
-	virtual void update_set_text_decorations(const RID& p_id, bool p_underline,
-		bool p_strikethrough, bool p_overline, const Color& p_color) override
-	{
-	}
-
-	virtual void update_set_text_align(const RID& p_id, HorizontalAlignment p_align) override {}
-
-	virtual void update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
-		int p_start_char, const RID& p_text_end_id, int p_end_char) override
-	{
-	}
-
-	virtual void update_set_flag(
-		const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value) override
-	{
-	}
-
-	virtual void update_set_classname(const RID& p_id, const String& p_classname) override {}
-
-	virtual void update_set_placeholder(const RID& p_id, const String& p_placeholder) override {}
-
-	virtual void update_set_language(const RID& p_id, const String& p_language) override {}
-
-	virtual void update_set_text_orientation(const RID& p_id, bool p_vertical) override {}
-
-	virtual void update_set_list_orientation(const RID& p_id, bool p_vertical) override {}
-
-	virtual void update_set_shortcut(const RID& p_id, const String& p_shortcut) override {}
-
-	virtual void update_set_url(const RID& p_id, const String& p_url) override {}
-
-	virtual void update_set_role_description(const RID& p_id, const String& p_description) override
-	{
-	}
-
-	virtual void update_set_state_description(const RID& p_id, const String& p_description) override
-	{
-	}
-
-	virtual void update_set_color_value(const RID& p_id, const Color& p_color) override {}
-
-	virtual void update_set_background_color(const RID& p_id, const Color& p_color) override {}
-
-	virtual void update_set_foreground_color(const RID& p_id, const Color& p_color) override {}
-
-	AccessibilityServerDummy() {}
-
-	virtual ~AccessibilityServerDummy() {}
-};
-
 AccessibilityServerDriver::AccessibilityServerDriver()
 {
 	AccessibilityServer::_bind_driver(this);
@@ -229258,56 +226965,48 @@ AccessibilityServerDriver::~AccessibilityServerDriver()
 
 AccessibilityServer::AccessibilityServerCreate
 	AccessibilityServer::server_create_functions[AccessibilityServer::MAX_SERVERS] = {
-		{"dummy", &AccessibilityServerDummy::create_func}};
+		{"dummy", &AccessibilityServerDriver::create_dummy}};
 
 int AccessibilityServer::server_create_count = 1;
 
 void AccessibilityServer::_bind_driver(AccessibilityServerDriver* p_driver)
 {
-	if (!data) {
-		data = memnew(Data);
-	}
-	data->driver = p_driver;
+	driver = p_driver;
 }
 
 void AccessibilityServer::_unbind_driver(AccessibilityServerDriver* p_driver)
 {
-	if (data && data->driver == p_driver) {
-		data->driver = nullptr;
+	if (driver == p_driver) {
+		driver = nullptr;
 	}
 }
 
 AccessibilityServerDriver* AccessibilityServer::create(int p_index, Error& r_error)
 {
 	ERR_FAIL_INDEX_V(p_index, server_create_count, nullptr);
-	if (data && data->driver) {
-		memdelete(data->driver);
-		data->driver = nullptr;
+	if (driver) {
+		memdelete(driver);
+		driver = nullptr;
 	}
-	AccessibilityServerDriver* driver = server_create_functions[p_index].create_function(r_error);
+	AccessibilityServerDriver* drv = server_create_functions[p_index].create_function(r_error);
 	if (r_error != OK) {
-		if (driver) {
-			memdelete(driver);
+		if (drv) {
+			memdelete(drv);
 		}
 		return nullptr;
 	}
-	if (driver) {
-		_bind_driver(driver);
+	if (drv) {
+		_bind_driver(drv);
 	}
-	return driver;
+	return drv;
 }
 
 void AccessibilityServer::finalize()
 {
-	if (!data) {
-		return;
+	if (driver) {
+		memdelete(driver);
+		driver = nullptr;
 	}
-	if (data->driver) {
-		memdelete(data->driver);
-		data->driver = nullptr;
-	}
-	memdelete(data);
-	data = nullptr;
 }
 
 void AccessibilityServer::register_create_function(const char* p_name, CreateFunction p_function)
@@ -229330,38 +227029,38 @@ const char* AccessibilityServer::get_create_function_name(int p_index)
 
 bool AccessibilityServer::is_supported()
 {
-	return is_initialized() ? data->driver->is_supported() : false;
+	return is_initialized() ? driver->is_supported() : false;
 }
 
 bool AccessibilityServer::window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle)
 {
-	return is_initialized() ? data->driver->window_create(p_window_id, p_handle) : true;
+	return is_initialized() ? driver->window_create(p_window_id, p_handle) : true;
 }
 
 void AccessibilityServer::window_destroy(DisplayServerEnums::WindowID p_window_id)
 {
 	if (is_initialized()) {
-		data->driver->window_destroy(p_window_id);
+		driver->window_destroy(p_window_id);
 	}
 }
 
 RID AccessibilityServer::create_element(
 	DisplayServerEnums::WindowID p_window_id, AccessibilityServerEnums::AccessibilityRole p_role)
 {
-	return is_initialized() ? data->driver->create_element(p_window_id, p_role) : RID();
+	return is_initialized() ? driver->create_element(p_window_id, p_role) : RID();
 }
 
 RID AccessibilityServer::create_sub_element(const RID& p_parent_rid,
 	AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos)
 {
-	return is_initialized() ? data->driver->create_sub_element(p_parent_rid, p_role, p_insert_pos)
+	return is_initialized() ? driver->create_sub_element(p_parent_rid, p_role, p_insert_pos)
 							: RID();
 }
 
 RID AccessibilityServer::create_sub_text_edit_elements(const RID& p_parent_rid,
 	const RID& p_shaped_text, float p_min_height, int p_insert_pos, bool p_is_last_line)
 {
-	return is_initialized() ? data->driver->create_sub_text_edit_elements(
+	return is_initialized() ? driver->create_sub_text_edit_elements(
 								  p_parent_rid, p_shaped_text, p_min_height, p_insert_pos,
 								  p_is_last_line)
 							: RID();
@@ -229369,25 +227068,25 @@ RID AccessibilityServer::create_sub_text_edit_elements(const RID& p_parent_rid,
 
 bool AccessibilityServer::has_element(const RID& p_id)
 {
-	return is_initialized() ? data->driver->has_element(p_id) : false;
+	return is_initialized() ? driver->has_element(p_id) : false;
 }
 
 void AccessibilityServer::free_element(const RID& p_id)
 {
 	if (is_initialized()) {
-		data->driver->free_element(p_id);
+		driver->free_element(p_id);
 	}
 }
 
 RID AccessibilityServer::get_window_root(DisplayServerEnums::WindowID p_window_id)
 {
-	return is_initialized() ? data->driver->get_window_root(p_window_id) : RID();
+	return is_initialized() ? driver->get_window_root(p_window_id) : RID();
 }
 
 void AccessibilityServer::update_set_focus(const RID& p_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_focus(p_id);
+		driver->update_set_focus(p_id);
 	}
 }
 
@@ -229395,7 +227094,7 @@ void AccessibilityServer::set_window_rect(
 	DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out, const Rect2& p_rect_in)
 {
 	if (is_initialized()) {
-		data->driver->set_window_rect(p_window_id, p_rect_out, p_rect_in);
+		driver->set_window_rect(p_window_id, p_rect_out, p_rect_in);
 	}
 }
 
@@ -229403,21 +227102,21 @@ void AccessibilityServer::set_window_focused(
 	DisplayServerEnums::WindowID p_window_id, bool p_focused)
 {
 	if (is_initialized()) {
-		data->driver->set_window_focused(p_window_id, p_focused);
+		driver->set_window_focused(p_window_id, p_focused);
 	}
 }
 
 void AccessibilityServer::window_activation_completed(DisplayServerEnums::WindowID p_window_id)
 {
 	if (is_initialized()) {
-		data->driver->window_activation_completed(p_window_id);
+		driver->window_activation_completed(p_window_id);
 	}
 }
 
 void AccessibilityServer::window_deactivation_completed(DisplayServerEnums::WindowID p_window_id)
 {
 	if (is_initialized()) {
-		data->driver->window_deactivation_completed(p_window_id);
+		driver->window_deactivation_completed(p_window_id);
 	}
 }
 
@@ -229425,21 +227124,21 @@ void AccessibilityServer::update_set_role(
 	const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role)
 {
 	if (is_initialized()) {
-		data->driver->update_set_role(p_id, p_role);
+		driver->update_set_role(p_id, p_role);
 	}
 }
 
 void AccessibilityServer::update_set_name(const RID& p_id, const String& p_name)
 {
 	if (is_initialized()) {
-		data->driver->update_set_name(p_id, p_name);
+		driver->update_set_name(p_id, p_name);
 	}
 }
 
 void AccessibilityServer::update_set_braille_label(const RID& p_id, const String& p_name)
 {
 	if (is_initialized()) {
-		data->driver->update_set_braille_label(p_id, p_name);
+		driver->update_set_braille_label(p_id, p_name);
 	}
 }
 
@@ -229447,7 +227146,7 @@ void AccessibilityServer::update_set_braille_role_description(
 	const RID& p_id, const String& p_description)
 {
 	if (is_initialized()) {
-		data->driver->update_set_braille_role_description(p_id, p_description);
+		driver->update_set_braille_role_description(p_id, p_description);
 	}
 }
 
@@ -229455,63 +227154,63 @@ void AccessibilityServer::update_set_extra_info(
 	const RID& p_id, const String& p_name_extra_info)
 {
 	if (is_initialized()) {
-		data->driver->update_set_extra_info(p_id, p_name_extra_info);
+		driver->update_set_extra_info(p_id, p_name_extra_info);
 	}
 }
 
 void AccessibilityServer::update_set_description(const RID& p_id, const String& p_description)
 {
 	if (is_initialized()) {
-		data->driver->update_set_description(p_id, p_description);
+		driver->update_set_description(p_id, p_description);
 	}
 }
 
 void AccessibilityServer::update_set_value(const RID& p_id, const String& p_value)
 {
 	if (is_initialized()) {
-		data->driver->update_set_value(p_id, p_value);
+		driver->update_set_value(p_id, p_value);
 	}
 }
 
 void AccessibilityServer::update_set_tooltip(const RID& p_id, const String& p_tooltip)
 {
 	if (is_initialized()) {
-		data->driver->update_set_tooltip(p_id, p_tooltip);
+		driver->update_set_tooltip(p_id, p_tooltip);
 	}
 }
 
 void AccessibilityServer::update_set_bounds(const RID& p_id, const Rect2& p_rect)
 {
 	if (is_initialized()) {
-		data->driver->update_set_bounds(p_id, p_rect);
+		driver->update_set_bounds(p_id, p_rect);
 	}
 }
 
 void AccessibilityServer::update_set_transform(const RID& p_id, const Transform2D& p_transform)
 {
 	if (is_initialized()) {
-		data->driver->update_set_transform(p_id, p_transform);
+		driver->update_set_transform(p_id, p_transform);
 	}
 }
 
 void AccessibilityServer::update_add_child(const RID& p_id, const RID& p_child_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_child(p_id, p_child_id);
+		driver->update_add_child(p_id, p_child_id);
 	}
 }
 
 void AccessibilityServer::update_add_related_controls(const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_controls(p_id, p_related_id);
+		driver->update_add_related_controls(p_id, p_related_id);
 	}
 }
 
 void AccessibilityServer::update_add_related_details(const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_details(p_id, p_related_id);
+		driver->update_add_related_details(p_id, p_related_id);
 	}
 }
 
@@ -229519,21 +227218,21 @@ void AccessibilityServer::update_add_related_described_by(
 	const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_described_by(p_id, p_related_id);
+		driver->update_add_related_described_by(p_id, p_related_id);
 	}
 }
 
 void AccessibilityServer::update_add_related_flow_to(const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_flow_to(p_id, p_related_id);
+		driver->update_add_related_flow_to(p_id, p_related_id);
 	}
 }
 
 void AccessibilityServer::update_add_related_labeled_by(const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_labeled_by(p_id, p_related_id);
+		driver->update_add_related_labeled_by(p_id, p_related_id);
 	}
 }
 
@@ -229541,49 +227240,49 @@ void AccessibilityServer::update_add_related_radio_group(
 	const RID& p_id, const RID& p_related_id)
 {
 	if (is_initialized()) {
-		data->driver->update_add_related_radio_group(p_id, p_related_id);
+		driver->update_add_related_radio_group(p_id, p_related_id);
 	}
 }
 
 void AccessibilityServer::update_set_active_descendant(const RID& p_id, const RID& p_other_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_active_descendant(p_id, p_other_id);
+		driver->update_set_active_descendant(p_id, p_other_id);
 	}
 }
 
 void AccessibilityServer::update_set_next_on_line(const RID& p_id, const RID& p_other_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_next_on_line(p_id, p_other_id);
+		driver->update_set_next_on_line(p_id, p_other_id);
 	}
 }
 
 void AccessibilityServer::update_set_previous_on_line(const RID& p_id, const RID& p_other_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_previous_on_line(p_id, p_other_id);
+		driver->update_set_previous_on_line(p_id, p_other_id);
 	}
 }
 
 void AccessibilityServer::update_set_member_of(const RID& p_id, const RID& p_group_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_member_of(p_id, p_group_id);
+		driver->update_set_member_of(p_id, p_group_id);
 	}
 }
 
 void AccessibilityServer::update_set_in_page_link_target(const RID& p_id, const RID& p_other_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_in_page_link_target(p_id, p_other_id);
+		driver->update_set_in_page_link_target(p_id, p_other_id);
 	}
 }
 
 void AccessibilityServer::update_set_error_message(const RID& p_id, const RID& p_other_id)
 {
 	if (is_initialized()) {
-		data->driver->update_set_error_message(p_id, p_other_id);
+		driver->update_set_error_message(p_id, p_other_id);
 	}
 }
 
@@ -229591,7 +227290,7 @@ void AccessibilityServer::update_set_live(
 	const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live)
 {
 	if (is_initialized()) {
-		data->driver->update_set_live(p_id, p_live);
+		driver->update_set_live(p_id, p_live);
 	}
 }
 
@@ -229599,35 +227298,35 @@ void AccessibilityServer::update_add_custom_action(
 	const RID& p_id, int p_action_id, const String& p_action_description)
 {
 	if (is_initialized()) {
-		data->driver->update_add_custom_action(p_id, p_action_id, p_action_description);
+		driver->update_add_custom_action(p_id, p_action_id, p_action_description);
 	}
 }
 
 void AccessibilityServer::update_set_table_row_count(const RID& p_id, int p_count)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_row_count(p_id, p_count);
+		driver->update_set_table_row_count(p_id, p_count);
 	}
 }
 
 void AccessibilityServer::update_set_table_column_count(const RID& p_id, int p_count)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_column_count(p_id, p_count);
+		driver->update_set_table_column_count(p_id, p_count);
 	}
 }
 
 void AccessibilityServer::update_set_table_row_index(const RID& p_id, int p_index)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_row_index(p_id, p_index);
+		driver->update_set_table_row_index(p_id, p_index);
 	}
 }
 
 void AccessibilityServer::update_set_table_column_index(const RID& p_id, int p_index)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_column_index(p_id, p_index);
+		driver->update_set_table_column_index(p_id, p_index);
 	}
 }
 
@@ -229635,7 +227334,7 @@ void AccessibilityServer::update_set_table_cell_position(
 	const RID& p_id, int p_row_index, int p_column_index)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_cell_position(p_id, p_row_index, p_column_index);
+		driver->update_set_table_cell_position(p_id, p_row_index, p_column_index);
 	}
 }
 
@@ -229643,42 +227342,42 @@ void AccessibilityServer::update_set_table_cell_span(
 	const RID& p_id, int p_row_span, int p_column_span)
 {
 	if (is_initialized()) {
-		data->driver->update_set_table_cell_span(p_id, p_row_span, p_column_span);
+		driver->update_set_table_cell_span(p_id, p_row_span, p_column_span);
 	}
 }
 
 void AccessibilityServer::update_set_list_item_count(const RID& p_id, int p_size)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_item_count(p_id, p_size);
+		driver->update_set_list_item_count(p_id, p_size);
 	}
 }
 
 void AccessibilityServer::update_set_list_item_index(const RID& p_id, int p_index)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_item_index(p_id, p_index);
+		driver->update_set_list_item_index(p_id, p_index);
 	}
 }
 
 void AccessibilityServer::update_set_list_item_level(const RID& p_id, int p_level)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_item_level(p_id, p_level);
+		driver->update_set_list_item_level(p_id, p_level);
 	}
 }
 
 void AccessibilityServer::update_set_list_item_selected(const RID& p_id, bool p_selected)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_item_selected(p_id, p_selected);
+		driver->update_set_list_item_selected(p_id, p_selected);
 	}
 }
 
 void AccessibilityServer::update_set_list_item_expanded(const RID& p_id, bool p_expanded)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_item_expanded(p_id, p_expanded);
+		driver->update_set_list_item_expanded(p_id, p_expanded);
 	}
 }
 
@@ -229686,70 +227385,70 @@ void AccessibilityServer::update_set_popup_type(
 	const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup)
 {
 	if (is_initialized()) {
-		data->driver->update_set_popup_type(p_id, p_popup);
+		driver->update_set_popup_type(p_id, p_popup);
 	}
 }
 
 void AccessibilityServer::update_set_checked(const RID& p_id, bool p_checekd)
 {
 	if (is_initialized()) {
-		data->driver->update_set_checked(p_id, p_checekd);
+		driver->update_set_checked(p_id, p_checekd);
 	}
 }
 
 void AccessibilityServer::update_set_num_value(const RID& p_id, double p_position)
 {
 	if (is_initialized()) {
-		data->driver->update_set_num_value(p_id, p_position);
+		driver->update_set_num_value(p_id, p_position);
 	}
 }
 
 void AccessibilityServer::update_set_num_range(const RID& p_id, double p_min, double p_max)
 {
 	if (is_initialized()) {
-		data->driver->update_set_num_range(p_id, p_min, p_max);
+		driver->update_set_num_range(p_id, p_min, p_max);
 	}
 }
 
 void AccessibilityServer::update_set_num_step(const RID& p_id, double p_step)
 {
 	if (is_initialized()) {
-		data->driver->update_set_num_step(p_id, p_step);
+		driver->update_set_num_step(p_id, p_step);
 	}
 }
 
 void AccessibilityServer::update_set_num_jump(const RID& p_id, double p_jump)
 {
 	if (is_initialized()) {
-		data->driver->update_set_num_jump(p_id, p_jump);
+		driver->update_set_num_jump(p_id, p_jump);
 	}
 }
 
 void AccessibilityServer::update_set_scroll_x(const RID& p_id, double p_position)
 {
 	if (is_initialized()) {
-		data->driver->update_set_scroll_x(p_id, p_position);
+		driver->update_set_scroll_x(p_id, p_position);
 	}
 }
 
 void AccessibilityServer::update_set_scroll_x_range(const RID& p_id, double p_min, double p_max)
 {
 	if (is_initialized()) {
-		data->driver->update_set_scroll_x_range(p_id, p_min, p_max);
+		driver->update_set_scroll_x_range(p_id, p_min, p_max);
 	}
 }
 
 void AccessibilityServer::update_set_scroll_y(const RID& p_id, double p_position)
 {
 	if (is_initialized()) {
-		data->driver->update_set_scroll_y(p_id, p_position);
+		driver->update_set_scroll_y(p_id, p_position);
 	}
 }
 
 void AccessibilityServer::update_set_scroll_y_range(const RID& p_id, double p_min, double p_max)
 {
 	if (is_initialized()) {
-		data->driver->update_set_scroll_y_range(p_id, p_min, p_max);
+		driver->update_set_scroll_y_range(p_id, p_min, p_max);
 	}
 }
 
@@ -229757,7 +227456,7 @@ void AccessibilityServer::update_set_text_decorations(const RID& p_id, bool p_un
 	bool p_strikethrough, bool p_overline, const Color& p_color)
 {
 	if (is_initialized()) {
-		data->driver->update_set_text_decorations(
+		driver->update_set_text_decorations(
 			p_id, p_underline, p_strikethrough, p_overline, p_color);
 	}
 }
@@ -229765,7 +227464,7 @@ void AccessibilityServer::update_set_text_decorations(const RID& p_id, bool p_un
 void AccessibilityServer::update_set_text_align(const RID& p_id, HorizontalAlignment p_align)
 {
 	if (is_initialized()) {
-		data->driver->update_set_text_align(p_id, p_align);
+		driver->update_set_text_align(p_id, p_align);
 	}
 }
 
@@ -229773,7 +227472,7 @@ void AccessibilityServer::update_set_text_selection(const RID& p_id, const RID& 
 	int p_start_char, const RID& p_text_end_id, int p_end_char)
 {
 	if (is_initialized()) {
-		data->driver->update_set_text_selection(
+		driver->update_set_text_selection(
 			p_id, p_text_start_id, p_start_char, p_text_end_id, p_end_char);
 	}
 }
@@ -229782,63 +227481,63 @@ void AccessibilityServer::update_set_flag(
 	const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value)
 {
 	if (is_initialized()) {
-		data->driver->update_set_flag(p_id, p_flag, p_value);
+		driver->update_set_flag(p_id, p_flag, p_value);
 	}
 }
 
 void AccessibilityServer::update_set_classname(const RID& p_id, const String& p_classname)
 {
 	if (is_initialized()) {
-		data->driver->update_set_classname(p_id, p_classname);
+		driver->update_set_classname(p_id, p_classname);
 	}
 }
 
 void AccessibilityServer::update_set_placeholder(const RID& p_id, const String& p_placeholder)
 {
 	if (is_initialized()) {
-		data->driver->update_set_placeholder(p_id, p_placeholder);
+		driver->update_set_placeholder(p_id, p_placeholder);
 	}
 }
 
 void AccessibilityServer::update_set_language(const RID& p_id, const String& p_language)
 {
 	if (is_initialized()) {
-		data->driver->update_set_language(p_id, p_language);
+		driver->update_set_language(p_id, p_language);
 	}
 }
 
 void AccessibilityServer::update_set_text_orientation(const RID& p_id, bool p_vertical)
 {
 	if (is_initialized()) {
-		data->driver->update_set_text_orientation(p_id, p_vertical);
+		driver->update_set_text_orientation(p_id, p_vertical);
 	}
 }
 
 void AccessibilityServer::update_set_list_orientation(const RID& p_id, bool p_vertical)
 {
 	if (is_initialized()) {
-		data->driver->update_set_list_orientation(p_id, p_vertical);
+		driver->update_set_list_orientation(p_id, p_vertical);
 	}
 }
 
 void AccessibilityServer::update_set_shortcut(const RID& p_id, const String& p_shortcut)
 {
 	if (is_initialized()) {
-		data->driver->update_set_shortcut(p_id, p_shortcut);
+		driver->update_set_shortcut(p_id, p_shortcut);
 	}
 }
 
 void AccessibilityServer::update_set_url(const RID& p_id, const String& p_url)
 {
 	if (is_initialized()) {
-		data->driver->update_set_url(p_id, p_url);
+		driver->update_set_url(p_id, p_url);
 	}
 }
 
 void AccessibilityServer::update_set_role_description(const RID& p_id, const String& p_description)
 {
 	if (is_initialized()) {
-		data->driver->update_set_role_description(p_id, p_description);
+		driver->update_set_role_description(p_id, p_description);
 	}
 }
 
@@ -229846,28 +227545,28 @@ void AccessibilityServer::update_set_state_description(
 	const RID& p_id, const String& p_description)
 {
 	if (is_initialized()) {
-		data->driver->update_set_state_description(p_id, p_description);
+		driver->update_set_state_description(p_id, p_description);
 	}
 }
 
 void AccessibilityServer::update_set_color_value(const RID& p_id, const Color& p_color)
 {
 	if (is_initialized()) {
-		data->driver->update_set_color_value(p_id, p_color);
+		driver->update_set_color_value(p_id, p_color);
 	}
 }
 
 void AccessibilityServer::update_set_background_color(const RID& p_id, const Color& p_color)
 {
 	if (is_initialized()) {
-		data->driver->update_set_background_color(p_id, p_color);
+		driver->update_set_background_color(p_id, p_color);
 	}
 }
 
 void AccessibilityServer::update_set_foreground_color(const RID& p_id, const Color& p_color)
 {
 	if (is_initialized()) {
-		data->driver->update_set_foreground_color(p_id, p_color);
+		driver->update_set_foreground_color(p_id, p_color);
 	}
 }
 
@@ -250010,10 +247709,10 @@ void RenderForwardClustered::_process_ssao(Ref<RenderSceneBuffersRD> p_render_bu
 	settings.sharpness = RendererSceneRender::environment_get_ssao_sharpness(p_environment);
 	settings.full_screen_size = p_render_buffers->get_internal_size();
 
-	RendererRD::SSEffects::ssao_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssao, settings);
+	RendererRD::SSEffects::ssao_allocate_buffers(p_render_buffers, rb_data->ss_effects_data_ssao, settings);
 
 	for (uint32_t v = 0; v < p_render_buffers->get_view_count(); v++) {
-		RendererRD::SSEffects::generate_ssao(p_render_buffers, rb_data->ss_effects_data.ssao, v,
+		RendererRD::SSEffects::generate_ssao(p_render_buffers, rb_data->ss_effects_data_ssao, v,
 			p_normal_buffers[v], p_projections[v], settings);
 	}
 }
@@ -250040,7 +247739,7 @@ void RenderForwardClustered::_process_ssil(Ref<RenderSceneBuffersRD> p_render_bu
 		RendererSceneRender::environment_get_ssil_normal_rejection(p_environment);
 	settings.full_screen_size = p_render_buffers->get_internal_size();
 
-	RendererRD::SSEffects::ssil_allocate_buffers(p_render_buffers, rb_data->ss_effects_data.ssil, settings);
+	RendererRD::SSEffects::ssil_allocate_buffers(p_render_buffers, rb_data->ss_effects_data_ssil, settings);
 
 	Transform3D transform = p_transform;
 	transform.set_origin(Vector3(0.0, 0.0, 0.0));
@@ -250050,16 +247749,16 @@ void RenderForwardClustered::_process_ssil(Ref<RenderSceneBuffersRD> p_render_bu
 		correction.set_depth_correction(true);
 		Projection projection = correction * p_projections[v];
 		Projection last_frame_projection =
-			rb_data->ss_effects_data.ssil_last_frame_projections[v] *
-			Projection(rb_data->ss_effects_data.ssil_last_frame_transform.affine_inverse()) *
+			rb_data->ss_effects_data_ssil_last_frame_projections[v] *
+			Projection(rb_data->ss_effects_data_ssil_last_frame_transform.affine_inverse()) *
 			Projection(transform) * projection.inverse();
 
-		RendererRD::SSEffects::screen_space_indirect_lighting(p_render_buffers, rb_data->ss_effects_data.ssil,
+		RendererRD::SSEffects::screen_space_indirect_lighting(p_render_buffers, rb_data->ss_effects_data_ssil,
 			v, p_normal_buffers[v], p_projections[v], last_frame_projection, settings);
 
-		rb_data->ss_effects_data.ssil_last_frame_projections[v] = projection;
+		rb_data->ss_effects_data_ssil_last_frame_projections[v] = projection;
 	}
-	rb_data->ss_effects_data.ssil_last_frame_transform = transform;
+	rb_data->ss_effects_data_ssil_last_frame_transform = transform;
 }
 
 void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buffers,
@@ -250076,7 +247775,7 @@ void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buf
 	RENDER_TIMESTAMP("Process SSR");
 
 	RendererRD::SSEffects::ssr_allocate_buffers(
-		p_render_buffers, rb_data->ss_effects_data.ssr, p_render_buffers->get_base_data_format());
+		p_render_buffers, rb_data->ss_effects_data_ssr, p_render_buffers->get_base_data_format());
 
 	Projection reprojections[RendererSceneRender::MAX_RENDER_VIEWS];
 
@@ -250086,15 +247785,15 @@ void RenderForwardClustered::_process_ssr(Ref<RenderSceneBuffersRD> p_render_buf
 
 		Projection projection = correction * p_projections[v];
 		reprojections[v] =
-			rb_data->ss_effects_data.ssr_last_frame_projections[v] *
-			Projection(rb_data->ss_effects_data.ssr_last_frame_transform.affine_inverse()) *
+			rb_data->ss_effects_data_ssr_last_frame_projections[v] *
+			Projection(rb_data->ss_effects_data_ssr_last_frame_transform.affine_inverse()) *
 			Projection(p_transform) * projection.inverse();
 
-		rb_data->ss_effects_data.ssr_last_frame_projections[v] = projection;
+		rb_data->ss_effects_data_ssr_last_frame_projections[v] = projection;
 	}
-	rb_data->ss_effects_data.ssr_last_frame_transform = p_transform;
+	rb_data->ss_effects_data_ssr_last_frame_transform = p_transform;
 
-	RendererRD::SSEffects::screen_space_reflection(p_render_buffers, rb_data->ss_effects_data.ssr,
+	RendererRD::SSEffects::screen_space_reflection(p_render_buffers, rb_data->ss_effects_data_ssr,
 		p_normal_slices, RendererSceneRender::environment_get_ssr_max_steps(p_environment),
 		RendererSceneRender::environment_get_ssr_fade_in(p_environment),
 		RendererSceneRender::environment_get_ssr_fade_out(p_environment),
@@ -252657,7 +250356,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 
 		RID ssr;
 		if (rb_data.is_valid()) {
-			if (rb_data->ss_effects_data.ssr.half_size) {
+			if (rb_data->ss_effects_data_ssr.half_size) {
 				if (rb->has_texture(RB_SCOPE_SSR, RB_FINAL)) {
 					ssr = rb->get_texture(RB_SCOPE_SSR, RB_FINAL);
 				}
@@ -252683,7 +250382,7 @@ RID RenderForwardClustered::_setup_render_pass_uniform_set(RenderListType p_rend
 		u.binding = 36;
 		u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
 
-		RID ssr_mip_level = (rb_data.is_valid() && !rb_data->ss_effects_data.ssr.half_size &&
+		RID ssr_mip_level = (rb_data.is_valid() && !rb_data->ss_effects_data_ssr.half_size &&
 								rb->has_texture(RB_SCOPE_SSR, RB_MIP_LEVEL))
 								? rb->get_texture(RB_SCOPE_SSR, RB_MIP_LEVEL)
 								: RID();
@@ -277522,39 +275221,37 @@ public:
 #define WANT_OPENXR_PLATFORM_INC
 #include "servers/display/display_server.h"
 
-class OpenXRVulkanExtension final
+namespace OpenXRVulkanExtension
 {
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void on_instance_created(const XrInstance p_instance);
-	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
+	HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
+	void on_instance_created(const XrInstance p_instance);
+	void* set_session_create_and_get_next_pointer(void* p_next_pointer);
 
-	static bool create_vulkan_instance(
+	bool create_vulkan_instance(
 		const VkInstanceCreateInfo* p_vulkan_create_info, VkInstance* r_instance);
-	static bool get_physical_device(VkPhysicalDevice* r_device);
-	static bool create_vulkan_device(
+	bool get_physical_device(VkPhysicalDevice* r_device);
+	bool create_vulkan_device(
 		const VkDeviceCreateInfo* p_device_create_info, VkDevice* r_device);
-	static void set_direct_queue_family_and_index(
+	void set_direct_queue_family_and_index(
 		uint32_t p_queue_family_index, uint32_t p_queue_index);
-	static bool use_subsampled_images();
-	static bool use_fragment_density_offsets();
-	static void get_fragment_density_offsets(
+	bool use_subsampled_images();
+	bool use_fragment_density_offsets();
+	void get_fragment_density_offsets(
 		LocalVector<VkOffset2D>& r_offets, const Vector2i& p_granularity);
 
-	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
-	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
-	static String get_swapchain_format_name(int64_t p_swapchain_format);
-	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
+	void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
+	void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
+	String get_swapchain_format_name(int64_t p_swapchain_format);
+	bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
 		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
 		void** r_swapchain_graphics_data);
-	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
-	static bool create_projection_fov(
+	void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
+	bool create_projection_fov(
 		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
-	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
-	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
+	RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
+	RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
 
-private:
-	static XrGraphicsBindingVulkanKHR graphics_binding_vulkan;
+	extern XrGraphicsBindingVulkanKHR graphics_binding_vulkan;
 
 	struct SwapchainGraphicsData
 	{
@@ -277563,7 +275260,7 @@ private:
 		Vector<RID> density_map_rids;
 	};
 
-	static bool check_graphics_api_support(XrVersion p_desired_version);
+	bool check_graphics_api_support(XrVersion p_desired_version);
 
 	EXT_PROTO_XRRESULT_FUNC3(xrGetVulkanGraphicsRequirements2KHR, (XrInstance), p_instance,
 		(XrSystemId), p_system_id, (XrGraphicsRequirementsVulkanKHR*), p_graphics_requirements)
@@ -277580,27 +275277,17 @@ private:
 		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
 		p_images)
 
-public:
-	struct Data
-	{
-		VkInstance vulkan_instance = nullptr;
-		VkPhysicalDevice vulkan_physical_device = nullptr;
-		VkDevice vulkan_device = nullptr;
-		uint32_t vulkan_queue_family_index = UINT32_MAX;
-		uint32_t vulkan_queue_index = UINT32_MAX;
-	};
+	inline VkInstance vulkan_instance = nullptr;
+	inline VkPhysicalDevice vulkan_physical_device = nullptr;
+	inline VkDevice vulkan_device = nullptr;
+	inline uint32_t vulkan_queue_family_index = UINT32_MAX;
+	inline uint32_t vulkan_queue_index = UINT32_MAX;
+	inline bool initialized = false;
 
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRVulkanExtension() = delete;
-	OpenXRVulkanExtension(const OpenXRVulkanExtension&) = delete;
-	OpenXRVulkanExtension& operator=(const OpenXRVulkanExtension&) = delete;
-	~OpenXRVulkanExtension() = delete;
-};
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return initialized; }
+} // namespace OpenXRVulkanExtension
 #endif
 
 #ifdef D3D12_ENABLED
@@ -283037,18 +280724,34 @@ bool OpenXRInteractionProfileExtension::is_available(int p_subindex) const
 
 void OpenXRVulkanExtension::initialize()
 {
-	if (data == nullptr) {
-		data = memnew(Data);
-		VulkanHooks::bind<OpenXRVulkanExtension>();
+	if (!initialized) {
+		vulkan_instance = nullptr;
+		vulkan_physical_device = nullptr;
+		vulkan_device = nullptr;
+		vulkan_queue_family_index = UINT32_MAX;
+		vulkan_queue_index = UINT32_MAX;
+		initialized = true;
+		VulkanHooks::bind(
+			&OpenXRVulkanExtension::create_vulkan_instance,
+			&OpenXRVulkanExtension::get_physical_device,
+			&OpenXRVulkanExtension::create_vulkan_device,
+			&OpenXRVulkanExtension::set_direct_queue_family_and_index,
+			&OpenXRVulkanExtension::use_fragment_density_offsets,
+			&OpenXRVulkanExtension::get_fragment_density_offsets,
+			&OpenXRVulkanExtension::use_subsampled_images);
 	}
 }
 
 void OpenXRVulkanExtension::finalize()
 {
-	if (data != nullptr) {
+	if (initialized) {
 		VulkanHooks::reset();
-		memdelete(data);
-		data = nullptr;
+		vulkan_instance = nullptr;
+		vulkan_physical_device = nullptr;
+		vulkan_device = nullptr;
+		vulkan_queue_family_index = UINT32_MAX;
+		vulkan_queue_index = UINT32_MAX;
+		initialized = false;
 	}
 }
 
@@ -283077,9 +280780,9 @@ void OpenXRVulkanExtension::on_instance_created(const XrInstance p_instance)
 void OpenXRVulkanExtension::set_direct_queue_family_and_index(
 	uint32_t p_queue_family_index, uint32_t p_queue_index)
 {
-	ERR_FAIL_NULL(data);
-	data->vulkan_queue_family_index = p_queue_family_index;
-	data->vulkan_queue_index = p_queue_index;
+	ERR_FAIL_COND(!initialized);
+	vulkan_queue_family_index = p_queue_family_index;
+	vulkan_queue_index = p_queue_index;
 }
 
 bool OpenXRVulkanExtension::use_fragment_density_offsets()
@@ -283122,17 +280825,17 @@ XrGraphicsBindingVulkanKHR OpenXRVulkanExtension::graphics_binding_vulkan;
 
 void* OpenXRVulkanExtension::set_session_create_and_get_next_pointer(void* p_next_pointer)
 {
-	DEV_ASSERT(data->vulkan_queue_family_index < UINT32_MAX &&
+	DEV_ASSERT(vulkan_queue_family_index < UINT32_MAX &&
 			   "Direct queue family index was not specified yet.");
-	DEV_ASSERT(data->vulkan_queue_index < UINT32_MAX && "Direct queue index was not specified yet.");
+	DEV_ASSERT(vulkan_queue_index < UINT32_MAX && "Direct queue index was not specified yet.");
 
 	graphics_binding_vulkan.type = XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR;
 	graphics_binding_vulkan.next = p_next_pointer;
-	graphics_binding_vulkan.instance = data->vulkan_instance;
-	graphics_binding_vulkan.physicalDevice = data->vulkan_physical_device;
-	graphics_binding_vulkan.device = data->vulkan_device;
-	graphics_binding_vulkan.queueFamilyIndex = data->vulkan_queue_family_index;
-	graphics_binding_vulkan.queueIndex = data->vulkan_queue_index;
+	graphics_binding_vulkan.instance = vulkan_instance;
+	graphics_binding_vulkan.physicalDevice = vulkan_physical_device;
+	graphics_binding_vulkan.device = vulkan_device;
+	graphics_binding_vulkan.queueFamilyIndex = vulkan_queue_family_index;
+	graphics_binding_vulkan.queueIndex = vulkan_queue_index;
 
 	return &graphics_binding_vulkan;
 }

@@ -36,11 +36,8 @@
 
 class PacketPeerDTLS : public PacketPeer
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	enum Status
@@ -52,7 +49,7 @@ public:
 		STATUS_ERROR_HOSTNAME_MISMATCH
 	};
 
-	Data* get_data() const { return data; }
+	MbedTLSState* get_data() const { return data; }
 
 	void poll();
 	Error connect_to_peer(Ref<PacketPeerUDP> p_base, const String& p_hostname,
@@ -76,11 +73,8 @@ public:
 
 class DTLSServer : public RefCounted
 {
-public:
-	struct Data;
-
 private:
-	Data* data = nullptr;
+	MbedTLSState* data = nullptr;
 
 public:
 	static bool is_available();

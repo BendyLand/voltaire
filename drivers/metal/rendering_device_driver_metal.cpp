@@ -1983,24 +1983,24 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 
 	switch (p_render_primitive) {
 		case RENDER_PRIMITIVE_POINTS:
-			pipeline->raster_state.render_primitive = MTL::PrimitiveTypePoint;
+			pipeline->raster_render_primitive = MTL::PrimitiveTypePoint;
 			break;
 		case RENDER_PRIMITIVE_LINES:
 		case RENDER_PRIMITIVE_LINES_WITH_ADJACENCY:
-			pipeline->raster_state.render_primitive = MTL::PrimitiveTypeLine;
+			pipeline->raster_render_primitive = MTL::PrimitiveTypeLine;
 			break;
 		case RENDER_PRIMITIVE_LINESTRIPS:
 		case RENDER_PRIMITIVE_LINESTRIPS_WITH_ADJACENCY:
-			pipeline->raster_state.render_primitive = MTL::PrimitiveTypeLineStrip;
+			pipeline->raster_render_primitive = MTL::PrimitiveTypeLineStrip;
 			break;
 		case RENDER_PRIMITIVE_TRIANGLES:
 		case RENDER_PRIMITIVE_TRIANGLES_WITH_ADJACENCY:
-			pipeline->raster_state.render_primitive = MTL::PrimitiveTypeTriangle;
+			pipeline->raster_render_primitive = MTL::PrimitiveTypeTriangle;
 			break;
 		case RENDER_PRIMITIVE_TRIANGLE_STRIPS:
 		case RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_AJACENCY:
 		case RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX:
-			pipeline->raster_state.render_primitive = MTL::PrimitiveTypeTriangleStrip;
+			pipeline->raster_render_primitive = MTL::PrimitiveTypeTriangleStrip;
 			break;
 		default:
 			break;
@@ -2008,20 +2008,20 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 
 	// Rasterization.
 	desc->setRasterizationEnabled(!p_rasterization_state.discard_primitives);
-	pipeline->raster_state.clip_mode = p_rasterization_state.enable_depth_clamp ? MTL::DepthClipModeClamp : MTL::DepthClipModeClip;
-	pipeline->raster_state.fill_mode = p_rasterization_state.wireframe ? MTL::TriangleFillModeLines : MTL::TriangleFillModeFill;
+	pipeline->raster_clip_mode = p_rasterization_state.enable_depth_clamp ? MTL::DepthClipModeClamp : MTL::DepthClipModeClip;
+	pipeline->raster_fill_mode = p_rasterization_state.wireframe ? MTL::TriangleFillModeLines : MTL::TriangleFillModeFill;
 
 	static const MTL::CullMode CULL_MODE[3] = {
 		MTL::CullModeNone,
 		MTL::CullModeFront,
 		MTL::CullModeBack,
 	};
-	pipeline->raster_state.cull_mode = CULL_MODE[p_rasterization_state.cull_mode];
-	pipeline->raster_state.winding = (p_rasterization_state.front_face == POLYGON_FRONT_FACE_CLOCKWISE) ? MTL::WindingClockwise : MTL::WindingCounterClockwise;
-	pipeline->raster_state.depth_bias.enabled = p_rasterization_state.depth_bias_enabled;
-	pipeline->raster_state.depth_bias.depth_bias = p_rasterization_state.depth_bias_constant_factor;
-	pipeline->raster_state.depth_bias.slope_scale = p_rasterization_state.depth_bias_slope_factor;
-	pipeline->raster_state.depth_bias.clamp = p_rasterization_state.depth_bias_clamp;
+	pipeline->raster_cull_mode = CULL_MODE[p_rasterization_state.cull_mode];
+	pipeline->raster_winding = (p_rasterization_state.front_face == POLYGON_FRONT_FACE_CLOCKWISE) ? MTL::WindingClockwise : MTL::WindingCounterClockwise;
+	pipeline->raster_depth_bias_enabled = p_rasterization_state.depth_bias_enabled;
+	pipeline->raster_depth_bias_val = p_rasterization_state.depth_bias_constant_factor;
+	pipeline->raster_depth_bias_slope_scale = p_rasterization_state.depth_bias_slope_factor;
+	pipeline->raster_depth_bias_clamp = p_rasterization_state.depth_bias_clamp;
 	// In Metal there is no line width.
 	if (!Math::is_equal_approx(p_rasterization_state.line_width, 1.0f)) {
 		WARN_PRINT("unsupported: line width");
@@ -2046,7 +2046,7 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 	if (depth_enabled || stencil_enabled) {
 		NS::SharedPtr<MTL::DepthStencilDescriptor> ds_desc = NS::TransferPtr(MTL::DepthStencilDescriptor::alloc()->init());
 
-		pipeline->raster_state.depth_test.enabled = depth_enabled;
+		pipeline->raster_depth_test_enabled = depth_enabled;
 		ds_desc->setDepthWriteEnabled(p_depth_stencil_state.enable_depth_write);
 		ds_desc->setDepthCompareFunction(COMPARE_OPERATORS[p_depth_stencil_state.depth_compare_operator]);
 		if (p_depth_stencil_state.enable_depth_range) {
@@ -2054,9 +2054,9 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 		}
 
 		if (stencil_enabled) {
-			pipeline->raster_state.stencil.enabled = true;
-			pipeline->raster_state.stencil.front_reference = p_depth_stencil_state.front_op.reference;
-			pipeline->raster_state.stencil.back_reference = p_depth_stencil_state.back_op.reference;
+			pipeline->raster_stencil_enabled = true;
+			pipeline->raster_stencil_front_reference = p_depth_stencil_state.front_op.reference;
+			pipeline->raster_stencil_back_reference = p_depth_stencil_state.back_op.reference;
 
 			{
 				// Front.
@@ -2125,20 +2125,20 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 			ca_desc->setWriteMask(writeMask);
 		}
 
-		pipeline->raster_state.blend.r = p_blend_state.blend_constant.r;
-		pipeline->raster_state.blend.g = p_blend_state.blend_constant.g;
-		pipeline->raster_state.blend.b = p_blend_state.blend_constant.b;
-		pipeline->raster_state.blend.a = p_blend_state.blend_constant.a;
+		pipeline->raster_blend_r = p_blend_state.blend_constant.r;
+		pipeline->raster_blend_g = p_blend_state.blend_constant.g;
+		pipeline->raster_blend_b = p_blend_state.blend_constant.b;
+		pipeline->raster_blend_a = p_blend_state.blend_constant.a;
 	}
 
 	// Dynamic state.
 
 	if (p_dynamic_state.has_flag(DYNAMIC_STATE_DEPTH_BIAS)) {
-		pipeline->raster_state.depth_bias.enabled = true;
+		pipeline->raster_depth_bias_enabled = true;
 	}
 
 	if (p_dynamic_state.has_flag(DYNAMIC_STATE_BLEND_CONSTANTS)) {
-		pipeline->raster_state.blend.enabled = true;
+		pipeline->raster_blend_enabled = true;
 	}
 
 	if (p_dynamic_state.has_flag(DYNAMIC_STATE_DEPTH_BOUNDS)) {
@@ -2154,7 +2154,7 @@ RDD::PipelineID RenderingDeviceDriverMetal::render_pipeline_create(
 	}
 
 	if (p_dynamic_state.has_flag(DYNAMIC_STATE_STENCIL_REFERENCE)) {
-		pipeline->raster_state.stencil.enabled = true;
+		pipeline->raster_stencil_enabled = true;
 	}
 
 	if (shader->vert) {
@@ -2267,7 +2267,7 @@ RDD::PipelineID RenderingDeviceDriverMetal::compute_pipeline_create(ShaderID p_s
 	ERR_FAIL_COND_V_MSG(!state, PipelineID(), "Failed to create compute pipeline state");
 
 	MDComputePipeline *pipeline = new MDComputePipeline(state);
-	pipeline->compute_state.local = shader->local;
+	pipeline->compute_state_local = shader->local;
 	pipeline->shader = shader;
 
 	if (arc) {
@@ -7104,7 +7104,7 @@ void MDCommandBuffer::bind_pipeline(RDD::PipelineID p_pipeline) {
 			if (render.pipeline != nullptr && render.pipeline->depth_stencil != rp->depth_stencil) {
 				render.dirty.set_flag(RenderState::DIRTY_DEPTH);
 			}
-			if (rp->raster_state.blend.enabled) {
+			if (rp->raster_blend_enabled) {
 				render.dirty.set_flag(RenderState::DIRTY_BLEND);
 			}
 			render.pipeline = rp;
@@ -7726,7 +7726,7 @@ void MDCommandBuffer::_render_set_dirty_state() {
 	}
 
 	if (render.dirty.has_flag(RenderState::DIRTY_RASTER)) {
-		render.pipeline->raster_state.apply(render.encoder.get());
+		render.pipeline->apply_raster_state(render.encoder.get());
 	}
 
 	if (render.dirty.has_flag(RenderState::DIRTY_SCISSOR) && !render.scissors.is_empty()) {
@@ -8058,7 +8058,7 @@ void MDCommandBuffer::render_draw(uint32_t p_vertex_count,
 	DEV_ASSERT(render.dirty == 0);
 
 	MTL::RenderCommandEncoder *enc = render.encoder.get();
-	enc->drawPrimitives(render.pipeline->raster_state.render_primitive, p_base_vertex, p_vertex_count, p_instance_count, p_first_instance);
+	enc->drawPrimitives(render.pipeline->raster_render_primitive, p_base_vertex, p_vertex_count, p_instance_count, p_first_instance);
 }
 
 void MDCommandBuffer::render_bind_vertex_buffers(uint32_t p_binding_count, const RDD::BufferID *p_buffers, const uint64_t *p_offsets, uint64_t p_dynamic_offsets) {
@@ -8136,7 +8136,7 @@ void MDCommandBuffer::render_draw_indexed(uint32_t p_index_count,
 	uint32_t index_offset = render.index_offset;
 	index_offset += p_first_index * (render.index_type == MTL::IndexTypeUInt16 ? sizeof(uint16_t) : sizeof(uint32_t));
 
-	enc->drawIndexedPrimitives(render.pipeline->raster_state.render_primitive, p_index_count, render.index_type, render.index_buffer, index_offset, p_instance_count, p_vertex_offset, p_first_instance);
+	enc->drawIndexedPrimitives(render.pipeline->raster_render_primitive, p_index_count, render.index_type, render.index_buffer, index_offset, p_instance_count, p_vertex_offset, p_first_instance);
 }
 
 void MDCommandBuffer::render_draw_indexed_indirect(RDD::BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) {
@@ -8151,7 +8151,7 @@ void MDCommandBuffer::render_draw_indexed_indirect(RDD::BufferID p_indirect_buff
 	NS::UInteger indirect_offset = p_offset;
 
 	for (uint32_t i = 0; i < p_draw_count; i++) {
-		enc->drawIndexedPrimitives(render.pipeline->raster_state.render_primitive, render.index_type, render.index_buffer, 0, indirect_buffer->metal_buffer.get(), indirect_offset);
+		enc->drawIndexedPrimitives(render.pipeline->raster_render_primitive, render.index_type, render.index_buffer, 0, indirect_buffer->metal_buffer.get(), indirect_offset);
 		indirect_offset += p_stride;
 	}
 }
@@ -8172,7 +8172,7 @@ void MDCommandBuffer::render_draw_indirect(RDD::BufferID p_indirect_buffer, uint
 	NS::UInteger indirect_offset = p_offset;
 
 	for (uint32_t i = 0; i < p_draw_count; i++) {
-		enc->drawPrimitives(render.pipeline->raster_state.render_primitive, indirect_buffer->metal_buffer.get(), indirect_offset);
+		enc->drawPrimitives(render.pipeline->raster_render_primitive, indirect_buffer->metal_buffer.get(), indirect_offset);
 		indirect_offset += p_stride;
 	}
 }
@@ -8347,7 +8347,7 @@ void MDCommandBuffer::compute_dispatch(uint32_t p_x_groups, uint32_t p_y_groups,
 	MTL::Size size = MTL::Size(p_x_groups, p_y_groups, p_z_groups);
 
 	MTL::ComputeCommandEncoder *enc = compute.encoder.get();
-	enc->dispatchThreadgroups(size, compute.pipeline->compute_state.local);
+	enc->dispatchThreadgroups(size, compute.pipeline->compute_state_local);
 }
 
 void MDCommandBuffer::compute_dispatch_indirect(RDD::BufferID p_indirect_buffer, uint64_t p_offset) {
@@ -8358,7 +8358,7 @@ void MDCommandBuffer::compute_dispatch_indirect(RDD::BufferID p_indirect_buffer,
 	const RenderingDeviceDriverMetal::BufferInfo *indirectBuffer = (const RenderingDeviceDriverMetal::BufferInfo *)p_indirect_buffer.id;
 
 	MTL::ComputeCommandEncoder *enc = compute.encoder.get();
-	enc->dispatchThreadgroups(indirectBuffer->metal_buffer.get(), p_offset, compute.pipeline->compute_state.local);
+	enc->dispatchThreadgroups(indirectBuffer->metal_buffer.get(), p_offset, compute.pipeline->compute_state_local);
 }
 
 void MDCommandBuffer::reset() {

@@ -469,7 +469,7 @@ void OS_Windows::initialize() {
 	current_pi.pi.hProcess = GetCurrentProcess();
 	process_map->insert(GetCurrentProcessId(), current_pi);
 
-	IPWindows::make_default();
+	_ip_windows_make_default();
 
 	HRESULT hr = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), reinterpret_cast<IUnknown **>(&dwrite_factory));
 	if (SUCCEEDED(hr)) {
@@ -494,7 +494,7 @@ void OS_Windows::initialize() {
 	FileAccessWindows::initialize();
 
 #ifdef WINMIDI_ENABLED
-	MIDIDriver::bind<MIDIDriverWinMidi>();
+	MIDIDriver::bind(&MIDIDriverWinMidi::initialize, &MIDIDriverWinMidi::finalize, &MIDIDriverWinMidi::open, &MIDIDriverWinMidi::close);
 	MIDIDriver::initialize();
 #endif
 }
@@ -3125,10 +3125,8 @@ Error WindowsUtils::copy_and_rename_pdb(const String &p_dll_path) {
 	// Usually no more than 2 will be used.
 	const int max_pdb_names = 1000;
 
-	struct PDBResourceInfo {
-		uint32_t address = 0;
-		String path;
-	} pdb_info;
+	uint32_t pdb_res_address = 0;
+	String pdb_res_path;
 
 	// Open and read the PDB information if available.
 	{
@@ -3210,12 +3208,12 @@ Error WindowsUtils::copy_and_rename_pdb(const String &p_dll_path) {
 		Error err = utf_path.append_utf8(raw_pdb_path);
 		ERR_FAIL_COND_V_MSG(err != OK, err, vformat("Failed to read PDB path from '%s'.", p_dll_path));
 
-		pdb_info.path = utf_path;
-		pdb_info.address = dbg_info_position + raw_pdb_offset;
+		pdb_res_path = utf_path;
+		pdb_res_address = dbg_info_position + raw_pdb_offset;
 	}
 
 	String dll_base_dir = p_dll_path.get_base_dir();
-	String copy_pdb_path = pdb_info.path;
+	String copy_pdb_path = pdb_res_path;
 
 	// Attempting to find the PDB by absolute and relative paths.
 	if (copy_pdb_path.is_relative_path()) {
@@ -3241,19 +3239,19 @@ Error WindowsUtils::copy_and_rename_pdb(const String &p_dll_path) {
 		const uint8_t suffix_size = String::num_characters((int64_t)max_pdb_names - 1) + 4;
 		// e.g. ~lib_ + 1 for the \0
 		const uint8_t min_base_size = 5 + 1;
-		int original_path_size = pdb_info.path.utf8().length();
+		int original_path_size = pdb_res_path.utf8().length();
 		CharString utf8_name = new_pdb_base_name.utf8();
 		int new_expected_buffer_size = utf8_name.length() + suffix_size;
 
 		// Since we have limited space inside the DLL to patch the path to the PDB,
 		// it is necessary to limit the size based on the number of bytes occupied by the string.
 		if (new_expected_buffer_size > original_path_size) {
-			ERR_FAIL_COND_V_MSG(original_path_size < min_base_size + suffix_size, FAILED, vformat("The original PDB path size in bytes is too small: '%s'. Expected size: %d or more bytes, but available %d.", pdb_info.path, min_base_size + suffix_size, original_path_size));
+			ERR_FAIL_COND_V_MSG(original_path_size < min_base_size + suffix_size, FAILED, vformat("The original PDB path size in bytes is too small: '%s'. Expected size: %d or more bytes, but available %d.", pdb_res_path, min_base_size + suffix_size, original_path_size));
 
 			new_pdb_base_name.clear();
 			new_pdb_base_name.append_utf8(utf8_name.get_data(), original_path_size - suffix_size);
 			new_pdb_base_name[new_pdb_base_name.length() - 1] = '_'; // Restore the last '_'
-			WARN_PRINT(vformat("The original path size of '%s' in bytes was too small to fit the new name, so it was shortened to '%s%d.pdb'.", pdb_info.path, new_pdb_base_name, max_pdb_names - 1));
+			WARN_PRINT(vformat("The original path size of '%s' in bytes was too small to fit the new name, so it was shortened to '%s%d.pdb'.", pdb_res_path, new_pdb_base_name, max_pdb_names - 1));
 		}
 	}
 
@@ -3292,12 +3290,12 @@ Error WindowsUtils::copy_and_rename_pdb(const String &p_dll_path) {
 		Ref<FileAccess> file = FileAccess::open(p_dll_path, FileAccess::READ_WRITE, &err);
 		ERR_FAIL_COND_V_MSG(err != OK, err, vformat("Failed to open '%s' to patch the PDB path.", p_dll_path));
 
-		int original_path_size = pdb_info.path.utf8().length();
+		int original_path_size = pdb_res_path.utf8().length();
 		// Double-check file bounds.
-		ERR_FAIL_UNSIGNED_INDEX_V_MSG(pdb_info.address + original_path_size, file->get_length(), FAILED, vformat("Failed to write a new PDB path. Probably '%s' has been changed.", p_dll_path));
+		ERR_FAIL_UNSIGNED_INDEX_V_MSG(pdb_res_address + original_path_size, file->get_length(), FAILED, vformat("Failed to write a new PDB path. Probably '%s' has been changed.", p_dll_path));
 
 		Vector<uint8_t> u8 = new_pdb_name.to_utf8_buffer();
-		file->seek(pdb_info.address);
+		file->seek(pdb_res_address);
 		file->store_buffer(u8);
 
 		// Terminate string and fill the remaining part of the original string with the '\0'.

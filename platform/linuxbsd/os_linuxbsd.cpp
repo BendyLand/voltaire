@@ -20874,7 +20874,7 @@ void OS_LinuxBSD::initialize()
 #endif
 
 #ifdef ALSAMIDI_ENABLED
-	MIDIDriver::bind<MIDIDriverALSAMidi>();
+	MIDIDriver::bind(&MIDIDriverALSAMidi::initialize, &MIDIDriverALSAMidi::finalize, &MIDIDriverALSAMidi::open, &MIDIDriverALSAMidi::close);
 	MIDIDriver::initialize();
 #endif
 

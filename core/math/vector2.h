@@ -173,17 +173,10 @@ _FORCE_INLINE_ uint64_t hash_djb2_one_64(uint64_t p_in, uint64_t p_prev = 5381)
 	return ((p_prev << 5) + p_prev) ^ p_in;
 }
 
-template <typename, typename = std::void_t<>> struct has_hash_method : std::false_type
-{
-};
-
+template <typename, typename = std::void_t<>> inline constexpr bool has_hash_method_v = false;
 template <typename T>
-struct has_hash_method<T,
-	std::void_t<std::is_same<decltype(std::declval<const T>().hash()), uint32_t>>> : std::true_type
-{
-};
-
-template <typename T> constexpr bool has_hash_method_v = has_hash_method<T>::value;
+inline constexpr bool has_hash_method_v<T,
+	std::void_t<std::is_same<decltype(std::declval<const T>().hash()), uint32_t>>> = true;
 
 template <typename T, typename = void> struct HashMapHasherDefaultImpl
 {
@@ -261,19 +254,11 @@ template <typename F, typename S> struct HashMapHasherDefaultImpl<Pair<F, S>>
 	}
 };
 
-template <typename, typename = std::void_t<>> struct has_is_same_method : std::false_type
-{
-};
-
+template <typename, typename = std::void_t<>> inline constexpr bool has_is_same_method_v = false;
 template <typename T>
-struct has_is_same_method<T,
+inline constexpr bool has_is_same_method_v<T,
 	std::void_t<
-		std::is_same<decltype(std::declval<const T>().is_same(std::declval<const T>())), uint32_t>>>
-	: std::true_type
-{
-};
-
-template <typename T> constexpr bool has_is_same_method_v = has_is_same_method<T>::value;
+		std::is_same<decltype(std::declval<const T>().is_same(std::declval<const T>())), uint32_t>>> = true;
 
 struct HashHasher
 {
@@ -1078,13 +1063,6 @@ template <typename F, typename S> struct Pair
 	}
 };
 
-template <typename F, typename S> struct PairSort
-{
-	constexpr bool operator()(const Pair<F, S>& p_lhs, const Pair<F, S>& p_rhs) const
-	{
-		return p_lhs < p_rhs;
-	}
-};
 
 // Pair is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename F, typename S>

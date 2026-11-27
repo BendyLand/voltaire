@@ -9715,12 +9715,7 @@ public:
 		List<IPAddress> ip_addresses;
 	};
 
-	struct Data
-	{
-		_IP_ResolverPrivate* resolver = nullptr;
-	};
-
-	static inline Data* data = nullptr;
+	static inline _IP_ResolverPrivate* resolver = nullptr;
 
 private:
 	static void _default_resolve_hostname(
@@ -9740,17 +9735,19 @@ private:
 public:
 	static void initialize();
 	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ static bool is_initialized() { return resolver != nullptr; }
 
 	inline static void (*_resolve_hostname)(List<IPAddress>& r_addresses, const String& p_hostname,
 		Type p_type) = &_default_resolve_hostname;
 	inline static void (*get_local_interfaces)(
 		HashMap<String, Interface_Info>* r_interfaces) = &_default_get_local_interfaces;
 
-	template <typename Impl> static void bind()
+	static void bind(
+		void (*p_resolve)(List<IPAddress>&, const String&, Type),
+		void (*p_get_ifaces)(HashMap<String, Interface_Info>*))
 	{
-		_resolve_hostname = &Impl::_resolve_hostname;
-		get_local_interfaces = &Impl::get_local_interfaces;
+		_resolve_hostname = p_resolve;
+		get_local_interfaces = p_get_ifaces;
 	}
 
 	static void reset_backend();

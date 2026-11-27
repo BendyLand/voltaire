@@ -597,44 +597,22 @@ template <typename T> std::string to_string(const T& p_val, int p_depth = 2);
 // ---------------------------------------------------------------------------
 
 // Detection: has .position and .size (Rect2, Rect2i)
-template <typename T, typename = void> struct has_pos_size : std::false_type
-{
-};
-
+template <typename T, typename = void> inline constexpr bool has_pos_size_v = false;
 template <typename T>
-struct has_pos_size<T,
-	std::void_t<decltype(std::declval<T>().position), decltype(std::declval<T>().size)>>
-	: std::true_type
-{
-};
-
-template <typename T> inline constexpr bool has_pos_size_v = has_pos_size<T>::value;
+inline constexpr bool has_pos_size_v<T,
+	std::void_t<decltype(std::declval<T>().position), decltype(std::declval<T>().size)>> = true;
 
 // Detection: has .x and .y (Vector2, Vector2i, Point2, Size2)
-template <typename T, typename = void> struct has_xy : std::false_type
-{
-};
-
+template <typename T, typename = void> inline constexpr bool has_xy_v = false;
 template <typename T>
-struct has_xy<T, std::void_t<decltype(std::declval<T>().x), decltype(std::declval<T>().y)>>
-	: std::true_type
-{
-};
-
-template <typename T> inline constexpr bool has_xy_v = has_xy<T>::value;
+inline constexpr bool has_xy_v<T,
+	std::void_t<decltype(std::declval<T>().x), decltype(std::declval<T>().y)>> = true;
 
 // Detection: supports std::ostream << val
-template <typename T, typename = void> struct is_streamable : std::false_type
-{
-};
-
+template <typename T, typename = void> inline constexpr bool is_streamable_v = false;
 template <typename T>
-struct is_streamable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>>
-	: std::true_type
-{
-};
-
-template <typename T> inline constexpr bool is_streamable_v = is_streamable<T>::value;
+inline constexpr bool is_streamable_v<T,
+	std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>> = true;
 
 // ---------------------------------------------------------------------------
 // Aggregate field walking (values only, no reflection needed)
@@ -648,19 +626,14 @@ struct any_t
 	template <typename U> constexpr operator U() const noexcept;
 };
 
-template <typename T, typename Seq, typename = void> struct brace_ok : std::false_type
-{
-};
-
+template <typename T, typename Seq, typename = void> inline constexpr bool brace_ok_v = false;
 template <typename T, std::size_t... I>
-struct brace_ok<T, std::index_sequence<I...>, std::void_t<decltype(T{(void(I), any_t{})...})>>
-	: std::true_type
-{
-};
+inline constexpr bool brace_ok_v<T, std::index_sequence<I...>,
+	std::void_t<decltype(T{(void(I), any_t{})...})>> = true;
 
 template <typename T, std::size_t N = 0> constexpr std::size_t count_fields()
 {
-	if constexpr (N < 16 && brace_ok<T, std::make_index_sequence<N + 1>>::value) {
+	if constexpr (N < 16 && brace_ok_v<T, std::make_index_sequence<N + 1>>) {
 		return count_fields<T, N + 1>();
 	}
 	else {
@@ -680,16 +653,9 @@ template <typename T> constexpr bool dumpable_check()
 }
 
 // Only complete types qualify (incomplete ones like VkCommandBuffer_T SFINAE out).
-template <typename T, typename = void> struct is_dumpable : std::false_type
-{
-};
-
+template <typename T, typename = void> inline constexpr bool is_dumpable_v = false;
 template <typename T>
-struct is_dumpable<T, std::void_t<decltype(sizeof(T))>> : std::bool_constant<dumpable_check<T>()>
-{
-};
-
-template <typename T> inline constexpr bool is_dumpable_v = is_dumpable<T>::value;
+inline constexpr bool is_dumpable_v<T, std::void_t<decltype(sizeof(T))>> = dumpable_check<T>();
 
 template <typename T, typename F> void for_each_field(const T& p_val, F&& p_fn)
 {
@@ -2186,32 +2152,17 @@ template <typename T> class CharStringT;
 namespace string_traits
 {
 
-template <typename, typename = void> struct has_op_string : std::false_type
-{
-};
-
+template <typename, typename = void> inline constexpr bool has_op_string_v = false;
 template <typename T>
-struct has_op_string<T, std::void_t<decltype(std::declval<T>().operator String())>> : std::true_type
-{
-};
+inline constexpr bool has_op_string_v<T, std::void_t<decltype(std::declval<T>().operator String())>> = true;
 
-template <typename, typename = void> struct has_to_string : std::false_type
-{
-};
-
+template <typename, typename = void> inline constexpr bool has_to_string_v = false;
 template <typename T>
-struct has_to_string<T, std::void_t<decltype(std::declval<T>().to_string())>> : std::true_type
-{
-};
+inline constexpr bool has_to_string_v<T, std::void_t<decltype(std::declval<T>().to_string())>> = true;
 
-template <typename, typename = void> struct has_as_text : std::false_type
-{
-};
-
+template <typename, typename = void> inline constexpr bool has_as_text_v = false;
 template <typename T>
-struct has_as_text<T, std::void_t<decltype(std::declval<T>().as_text())>> : std::true_type
-{
-};
+inline constexpr bool has_as_text_v<T, std::void_t<decltype(std::declval<T>().as_text())>> = true;
 
 } // namespace string_traits
 
@@ -2543,13 +2494,13 @@ public:
 		if constexpr (std::is_enum_v<T>) {
 			*this = String::num_int64(static_cast<int64_t>(p_val));
 		}
-		else if constexpr (string_traits::has_op_string<T>::value) {
+		else if constexpr (string_traits::has_op_string_v<T>) {
 			*this = p_val.operator String();
 		}
-		else if constexpr (string_traits::has_to_string<T>::value) {
+		else if constexpr (string_traits::has_to_string_v<T>) {
 			*this = p_val.to_string();
 		}
-		else if constexpr (string_traits::has_as_text<T>::value) {
+		else if constexpr (string_traits::has_as_text_v<T>) {
 			*this = p_val.as_text();
 		}
 	}

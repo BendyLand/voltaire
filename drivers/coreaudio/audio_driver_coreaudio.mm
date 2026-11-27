@@ -1604,7 +1604,7 @@ void CameraApple::handle_application_resume() {
 #ifdef APPLE_EMBEDDED_ENABLED
 
 void register_camera_external_module() {
-	CameraServer::bind<CameraApple>();
+	CameraServer::bind(&CameraApple::initialize, &CameraApple::finalize, &CameraApple::set_monitoring_feeds, &CameraApple::handle_application_pause, &CameraApple::handle_application_resume, &CameraApple::handle_display_rotation_change);
 }
 
 void unregister_camera_external_module() {
