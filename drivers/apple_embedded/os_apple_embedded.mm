@@ -142,7 +142,7 @@ void OS_AppleEmbedded::setup() {
 	apple_embedded_platform_init_callbacks_capacity = 0;
 
 	Vector<Logger *> loggers;
-	loggers.push_back(memnew(OsLogLogger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
+	loggers.push_back(memnew(Logger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
 	OS::_set_logger(memnew(CompositeLogger(loggers)));
 
 	AudioDriverManager::add_driver(&data->audio_driver);

@@ -63,14 +63,6 @@ String _remove_symlink(const String &dir) {
 	return dir_without_symlink;
 }
 
-class AndroidLogger : public Logger {
-public:
-	virtual void logv(const char *p_format, va_list p_list, bool p_err) {
-		__android_log_vprint(p_err ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, "voltaire", p_format, p_list);
-	}
-
-	virtual ~AndroidLogger() {}
-};
 
 void OS_Android::alert(const String &p_alert, const String &p_title) {
 	ERR_FAIL_NULL(data->godot_java);
@@ -885,7 +877,7 @@ void OS_Android::setup(GodotJavaWrapper *p_godot_java, GodotIOJavaWrapper *p_god
 	data->godot_io_java = p_godot_io_java;
 
 	Vector<Logger *> loggers;
-	loggers.push_back(memnew(AndroidLogger));
+	loggers.push_back(memnew(Logger(Logger::BACKEND_ANDROID)));
 	OS::_set_logger(memnew(CompositeLogger(loggers)));
 
 	AudioDriverManager::add_driver(&data->audio_driver_android);

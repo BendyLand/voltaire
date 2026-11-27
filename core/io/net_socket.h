@@ -129,10 +129,6 @@ public:
 	virtual ~NetSocket() {}
 };
 
-// --- Folded from core/crypto/crypto.h ---
-// --- Inlined/Folded from core/crypto/hashing_context.h ---
-#include "core/io/ip.h"
-
 class HashingContext : public RefCounted
 {
 public:
@@ -158,7 +154,6 @@ public:
 
 	~HashingContext();
 };
-#include "core/io/ip.h"
 
 class CryptoKey : public Resource
 {
@@ -295,8 +290,6 @@ public:
 	~Crypto();
 };
 
-// --- Folded from core/crypto/aes_context.h ---
-// --- Folded from core/crypto/crypto_core.h ---
 #include "core/typedefs.h"
 
 #include <cstddef>
@@ -312,43 +305,24 @@ public:
 	static void initialize();
 	static void finalize();
 
-	class MD5Context {
-	private:
-		void *ctx = nullptr;
-
-	public:
-		MD5Context();
-		~MD5Context();
-
-		Error start();
-		Error update(const uint8_t *p_src, size_t p_len);
-		Error finish(unsigned char r_hash[16]);
+	enum HashAlgorithm {
+		HASH_ALG_MD5,
+		HASH_ALG_SHA1,
+		HASH_ALG_SHA256,
 	};
 
-	class SHA1Context {
+	class HashContext {
 	private:
 		void *ctx = nullptr;
+		HashAlgorithm alg = HASH_ALG_SHA256;
 
 	public:
-		SHA1Context();
-		~SHA1Context();
+		explicit HashContext(HashAlgorithm p_alg);
+		~HashContext();
 
 		Error start();
 		Error update(const uint8_t *p_src, size_t p_len);
-		Error finish(unsigned char r_hash[20]);
-	};
-
-	class SHA256Context {
-	private:
-		void *ctx = nullptr;
-
-	public:
-		SHA256Context();
-		~SHA256Context();
-
-		Error start();
-		Error update(const uint8_t *p_src, size_t p_len);
-		Error finish(unsigned char r_hash[32]);
+		Error finish(unsigned char *r_hash);
 	};
 
 	class AESContext {
@@ -394,8 +368,6 @@ public:
 	static Error encrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
 	static Error decrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
 };
-// --- End core/crypto/crypto_core.h ---
-#include "core/io/ip.h"
 
 class AESContext : public RefCounted
 {
@@ -423,13 +395,6 @@ public:
 	void finish();
 };
 
-
-// --- End core/crypto/aes_context.h ---
-
-// --- Folded from core/crypto/crypto_resource_format.h ---
-// --- Folded from core/io/resource_loader.h ---
-#include "core/io/ip.h"
-// --- Folded from core/io/resource_loader_constants.h ---
 namespace ResourceLoaderConstants
 {
 
@@ -444,9 +409,6 @@ enum CacheMode
 
 } // namespace ResourceLoaderConstants
 
-
-
-// --- End core/io/resource_loader_constants.h ---
 #include "core/os/mutex.h"
 
 namespace CoreBind
@@ -470,7 +432,34 @@ public:
 	static constexpr CacheMode CACHE_MODE_REPLACE_DEEP =
 		ResourceLoaderConstants::CACHE_MODE_REPLACE_DEEP;
 
+	using LoadFn = Ref<Resource> (*)(const String&, const String&, Error*, bool, float*, CacheMode);
+	using HandlesTypeFn = bool (*)(const String&);
+	using GetResourceTypeFn = String (*)(const String&);
+	using GetExtensionsForTypeFn = void (*)(const String&, List<String>*);
+
+private:
+	LoadFn load_fn = nullptr;
+	const char* const* extensions = nullptr;
+	HandlesTypeFn handles_type_fn = nullptr;
+	GetResourceTypeFn get_resource_type_fn = nullptr;
+	GetExtensionsForTypeFn get_exts_for_type_fn = nullptr;
+	bool disable_uid_file = false;
+
 public:
+	ResourceFormatLoader() = default;
+	ResourceFormatLoader(LoadFn p_load_fn, const char* const* p_extensions,
+		HandlesTypeFn p_handles_fn, GetResourceTypeFn p_get_type_fn,
+		bool p_disable_uid_file = false, GetExtensionsForTypeFn p_exts_for_type_fn = nullptr) :
+		load_fn(p_load_fn),
+		extensions(p_extensions),
+		handles_type_fn(p_handles_fn),
+		get_resource_type_fn(p_get_type_fn),
+		get_exts_for_type_fn(p_exts_for_type_fn),
+		disable_uid_file(p_disable_uid_file)
+	{
+	}
+
+	static Ref<ResourceFormatLoader> create_compressed_texture_loader();
 	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
 		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
 		CacheMode p_cache_mode = CACHE_MODE_REUSE);
@@ -737,6 +726,7 @@ public:
 
 	static void reload_translation_remaps();
 	static void load_translation_remaps();
+	static Ref<Resource> load_translation(Ref<FileAccess> p_f, Error* r_error = nullptr);
 	static void clear_translation_remaps();
 
 	static void clear_thread_load_tasks();
@@ -767,11 +757,7 @@ public:
 	static void finalize();
 };
 
-// --- Folded from core/io/image_resource_format.h ---
-// --- Folded from core/io/image_loader.h ---
 #include "core/io/file_access.h"
-// --- Folded from core/io/image.h ---
-#include "core/io/ip.h"
 #include "core/math/vector2.h"
 
 /**
@@ -1276,16 +1262,14 @@ public:
 
 	void copy_internals_from(const Ref<Image>& p_image);
 };
-// --- End core/io/image.h ---
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 class ImageLoader;
 
-class ImageFormatLoader : public RefCounted
+class ImageFormatLoader final : public RefCounted
 {
 	friend class ImageLoader;
-	friend class ResourceFormatLoaderImage;
 
 public:
 	enum LoaderFlags
@@ -1294,38 +1278,43 @@ public:
 		FLAG_FORCE_LINEAR = 1,
 		FLAG_CONVERT_COLORS = 2,
 	};
+	using LoadImageFn = Error (*)(Ref<Image>, Ref<FileAccess>, uint32_t, float);
 
-protected:
+private:
+	LoadImageFn load_fn = nullptr;
+	const char* const* extensions = nullptr;
 
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
-		uint32_t p_flags = FLAG_NONE, float p_scale = 1.0) = 0;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const = 0;
+public:
+	ImageFormatLoader() = default;
+	ImageFormatLoader(LoadImageFn p_load_fn, const char* const* p_extensions) :
+		load_fn(p_load_fn), extensions(p_extensions) {}
+
+	Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
+		uint32_t p_flags = FLAG_NONE, float p_scale = 1.0f)
+	{
+		return load_fn ? load_fn(p_image, p_fileaccess, p_flags, p_scale) : ERR_UNAVAILABLE;
+	}
+	void get_recognized_extensions(List<String>* p_extensions) const;
 	bool recognize(const String& p_extension) const;
-
-public:
-	virtual ~ImageFormatLoader() {}
-};
-
-class ImageFormatLoaderExtension : public ImageFormatLoader
-{
-protected:
-
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
-		uint32_t p_flags = FLAG_NONE, float p_scale = 1.0) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-
-	void add_format_loader();
-	void remove_format_loader();
 };
 
 class ImageLoader
 {
-	static inline Vector<Ref<ImageFormatLoader>> loader;
-	friend class ResourceFormatLoaderImage;
-
-protected:
 public:
+	static inline Vector<Ref<ImageFormatLoader>> loader;
+	static HashMap<Color, Color> svg_forced_color_map;
+
+	static void _svg_replace_color_property(
+		const HashMap<Color, Color>& p_color_map, const String& p_prefix, String& r_string);
+	static Ref<Image> load_mem_svg(const uint8_t* p_svg, int p_size, float p_scale);
+	static void set_forced_color_map(const HashMap<Color, Color>& p_color_map);
+	static Error create_image_from_utf8_buffer(
+		Ref<Image> p_image, const uint8_t* p_buffer, int p_buffer_size, float p_scale, bool p_upsample);
+	static Error create_image_from_utf8_buffer(
+		Ref<Image> p_image, const PackedByteArray& p_buffer, float p_scale, bool p_upsample);
+	static Error create_image_from_string(Ref<Image> p_image, String p_string, float p_scale,
+		bool p_upsample, const HashMap<Color, Color>& p_color_map = HashMap<Color, Color>());
+
 	static Error load_image(const String& p_file, Ref<Image> p_image,
 		Ref<FileAccess> p_custom = Ref<FileAccess>(),
 		uint32_t p_flags = ImageFormatLoader::FLAG_NONE,
@@ -1339,56 +1328,31 @@ public:
 	static void cleanup();
 };
 
-// --- Folded from modules/svg/image_loader_svg.h ---
-class ImageLoaderSVG : public ImageFormatLoader {
-	static HashMap<Color, Color> forced_color_map;
-
-	static void _replace_color_property(const HashMap<Color, Color> &p_color_map, const String &p_prefix, String &r_string);
-
-	static Ref<Image> load_mem_svg(const uint8_t *p_svg, int p_size, float p_scale);
-
-public:
-	static void set_forced_color_map(const HashMap<Color, Color> &p_color_map);
-
-	static Error create_image_from_utf8_buffer(Ref<Image> p_image, const uint8_t *p_buffer, int p_buffer_size, float p_scale, bool p_upsample);
-	static Error create_image_from_utf8_buffer(Ref<Image> p_image, const PackedByteArray &p_buffer, float p_scale, bool p_upsample);
-
-	static Error create_image_from_string(Ref<Image> p_image, String p_string, float p_scale, bool p_upsample, const HashMap<Color, Color> &p_color_map);
-
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess, uint32_t p_flags, float p_scale) override;
-	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
-
-	ImageLoaderSVG();
-};
-// --- End core/io/image_loader.h ---
-
-
-class ResourceFormatLoaderImage : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-};
-
-
-
-// --- End core/io/image_resource_format.h ---
-
-// --- Folded from core/io/resource_format_binary.h ---
-#include "core/io/file_access.h"
-
-// --- Folded from core/io/resource_saver.h ---
-#include "core/io/ip.h"
-
 class ResourceFormatSaver : public RefCounted
 {
-protected:
+public:
+	using SaveFn = Error (*)(const Ref<Resource>&, const String&, uint32_t);
+	using RecognizeFn = bool (*)(const Ref<Resource>&);
+	using GetExtensionsFn = void (*)(const Ref<Resource>&, List<String>*);
+	using SetUidFn = Error (*)(const String&, ResourceUID::ID);
+
+private:
+	SaveFn save_fn = nullptr;
+	RecognizeFn recognize_fn = nullptr;
+	GetExtensionsFn get_exts_fn = nullptr;
+	SetUidFn set_uid_fn = nullptr;
 
 public:
+	ResourceFormatSaver() = default;
+	ResourceFormatSaver(SaveFn p_save_fn, RecognizeFn p_recognize_fn = nullptr,
+		GetExtensionsFn p_exts_fn = nullptr, SetUidFn p_set_uid_fn = nullptr) :
+		save_fn(p_save_fn),
+		recognize_fn(p_recognize_fn),
+		get_exts_fn(p_exts_fn),
+		set_uid_fn(p_set_uid_fn)
+	{
+	}
+
 	virtual Error save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0);
 	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid);
 	virtual bool recognize(const Ref<Resource>& p_resource) const;
@@ -1453,8 +1417,6 @@ public:
 	static void add_custom_savers();
 	static void remove_custom_savers();
 };
-// --- End core/io/resource_saver.h ---
-#include "core/io/ip.h"
 
 class ResourceLoaderBinary
 {
@@ -1626,13 +1588,6 @@ public:
 	ResourceFormatSaverBinary() = default;
 };
 
-
-
-// --- End core/io/resource_format_binary.h ---
-
-// --- Folded from core/io/missing_resource.h ---
-#include "core/io/ip.h"
-
 #define META_PROPERTY_MISSING_RESOURCES "metadata/_missing_resources"
 #define META_MISSING_RESOURCES "_missing_resources"
 
@@ -1653,13 +1608,6 @@ public:
 	virtual String get_save_class() const;
 };
 
-
-
-// --- End core/io/missing_resource.h ---
-
-// --- Folded from drivers/png/png_driver_common.h ---
-
-
 namespace PNGDriverCommon {
 
 // Attempt to load png from buffer (p_source, p_size) into p_image
@@ -1669,11 +1617,6 @@ Error png_to_image(const uint8_t *p_source, size_t p_size, bool p_force_linear, 
 // Contents of p_buffer is unspecified if error returned.
 Error image_to_png(const Ref<Image> &p_image, Vector<uint8_t> &p_buffer);
 } // namespace PNGDriverCommon
-// --- End drivers/png/png_driver_common.h ---
-
-// --- Folded from core/io/resource_importer.h ---
-
-
 
 class ResourceImporter;
 class ResourceFormatImporter;
@@ -1910,17 +1853,6 @@ public:
 		const String& p_path, HashSet<String>* r_build_dependencies);
 };
 
-class ResourceFormatImporterSaver : public ResourceFormatSaver
-{
-public:
-	virtual Error set_uid(const String& p_path, ResourceUID::ID p_uid) override;
-};
-// --- End core/io/resource_importer.h ---
-
-// --- Folded from core/io/marshalls.h ---
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-
 // uintr_t is only for pairing with real_t, and we only need it in here.
 #ifdef REAL_T_IS_DOUBLE
 typedef uint64_t uintr_t;
@@ -2110,17 +2042,7 @@ static inline double decode_double(const uint8_t* p_arr)
 	return md.d;
 }
 
-class EncodedObjectAsID : public RefCounted
-{
-protected:
-};
-
 Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count);
-// --- End core/io/marshalls.h ---
-
-// --- Folded from core/io/config_file.h ---
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
 
 class ConfigFile : public RefCounted
 {
@@ -2154,47 +2076,7 @@ public:
 	Error save_encrypted_pass(const String& p_path, const String& p_pass);
 };
 
-// --- Folded from core/io/json_resource_format.h ---
-
-#include "core/io/ip.h"
-
-class ResourceFormatLoaderJSON : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-
-	// Treat JSON as a text file, do not generate a `*.json.uid` file.
-	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override
-	{
-		return ResourceUID::INVALID_ID;
-	}
-
-	virtual bool has_custom_uid_support() const override { return true; }
-};
-
-class ResourceFormatSaverJSON : public ResourceFormatSaver
-{
-public:
-	virtual Error save(
-		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-	virtual void get_recognized_extensions(
-		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-};
-
-
-
-// --- End core/io/json_resource_format.h ---
-
-// --- Folded from core/io/plist.h ---
 // Property list file format (application/x-plist) parser, property list ASN-1 serialization.
-
-#include "core/io/file_access.h"
 
 class PListNode;
 
@@ -2285,41 +2167,6 @@ public:
 	void store_text(String& p_stream, uint8_t p_indent) const;
 };
 
-
-
-// --- End core/io/plist.h ---
-
-// --- Folded from core/io/translation_loader_po.h ---
-#include "core/io/file_access.h"
-
-
-class TranslationLoaderPO : public ResourceFormatLoader
-{
-public:
-	static Ref<Resource> load_translation(Ref<FileAccess> r_file, Error* r_error = nullptr);
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-
-	// Treat translations as text/binary files, do not generate a `*.{po,mo}.uid` file.
-	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override
-	{
-		return ResourceUID::INVALID_ID;
-	}
-
-	virtual bool has_custom_uid_support() const override { return true; }
-};
-
-
-
-// --- End core/io/translation_loader_po.h ---
-
-// --- Folded from core/io/json.h ---
-#include "core/io/ip.h"
-
 class JSON : public Resource
 {
 	enum TokenType
@@ -2370,11 +2217,6 @@ public:
 
 	_FORCE_INLINE_ String get_error_message() const { return err_str; }
 };
-// --- End core/io/json.h ---
-
-// --- Folded from core/io/xml_parser.h ---
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 /*
   Based on irrXML (see their zlib license). Added mainly for compatibility with their Collada
@@ -2441,7 +2283,6 @@ private:
 		P++;
 	}
 
-
 public:
 	Error read();
 	NodeType get_node_type();
@@ -2469,47 +2310,6 @@ public:
 
 	~XMLParser();
 };
-// --- End core/io/xml_parser.h ---
-// --- End core/io/config_file.h ---
-// --- End core/io/resource_loader.h ---
-#include "core/io/ip.h"
-
-class ResourceFormatLoaderCrypto : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-
-	// Treat certificates as text files, do not generate a `*.{crt,key,pub}.uid` file.
-	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override
-	{
-		return ResourceUID::INVALID_ID;
-	}
-
-	virtual bool has_custom_uid_support() const override { return true; }
-};
-
-class ResourceFormatSaverCrypto : public ResourceFormatSaver
-{
-public:
-	virtual Error save(
-		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-	virtual void get_recognized_extensions(
-		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-};
-
-
-
-// --- End core/crypto/crypto_resource_format.h ---
-// --- End core/crypto/crypto.h ---
-
-// --- Folded from core/io/stream_peer.h ---
-#include "core/io/ip.h"
 
 class StreamPeer : public RefCounted
 {
@@ -2566,17 +2366,6 @@ public:
 	String get_utf8_string(int p_bytes = -1);
 };
 
-class StreamPeerExtension : public StreamPeer
-{
-protected:
-
-public:
-	virtual Error put_data(const uint8_t* p_data, int p_bytes) override;
-	virtual Error put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent) override;
-	virtual Error get_data(uint8_t* p_buffer, int p_bytes) override;
-	virtual Error get_partial_data(uint8_t* p_buffer, int p_bytes, int& r_received) override;
-};
-
 class StreamPeerBuffer : public StreamPeer
 {
 	Vector<uint8_t> data;
@@ -2605,10 +2394,6 @@ public:
 
 	Ref<StreamPeerBuffer> duplicate() const;
 };
-
-// --- Folded from core/io/stream_peer_gzip.h ---
-
-#include "core/io/ip.h"
 
 class StreamPeerGZIP : public StreamPeer
 {
@@ -2644,15 +2429,7 @@ public:
 	~StreamPeerGZIP();
 };
 
-
-
-// --- End core/io/stream_peer_gzip.h ---
-
-// --- Folded from core/io/http_client.h ---
-
-
 #ifndef WEB_ENABLED
-#include "core/io/ip.h"
 
 class StreamPeerSocket;
 #endif
@@ -2901,9 +2678,6 @@ public:
 #endif
 };
 
-// --- Folded from core/io/stream_peer_tls.h ---
-
-
 class StreamPeerTLS : public StreamPeer
 {
 public:
@@ -2946,10 +2720,6 @@ public:
 	~StreamPeerTLS();
 };
 
-// --- Folded from core/io/packet_peer.h ---
-
-#include "core/io/ip.h"
-
 class PacketPeer : public RefCounted
 {
 	Error _put_packet(const Vector<uint8_t>& p_buffer);
@@ -2978,17 +2748,6 @@ public:
 	int get_encode_buffer_max_size() const;
 };
 
-class PacketPeerExtension : public PacketPeer
-{
-protected:
-	static void _bind_methods();
-
-public:
-	virtual Error get_packet(const uint8_t** r_buffer,
-		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-};
-
 class PacketPeerStream : public PacketPeer
 {
 	// the way the buffers work sucks, will change later
@@ -3015,12 +2774,6 @@ public:
 	int get_output_buffer_max_size() const;
 	PacketPeerStream();
 };
-// --- End core/io/packet_peer.h ---
-
-// --- Folded from core/io/stream_peer_socket.h ---
-#include "core/io/ip.h"
-
-
 
 class StreamPeerSocket final : public StreamPeer
 {
@@ -3090,10 +2843,6 @@ public:
 	~StreamPeerSocket() override;
 };
 
-// --- Folded from core/io/socket_server.h ---
-#include "core/io/ip.h"
-
-
 class SocketServer final : public RefCounted
 {
 private:
@@ -3124,13 +2873,6 @@ public:
 	SocketServer();
 	~SocketServer() override;
 };
-// --- End core/io/stream_peer_socket.h ---
-// --- End core/io/stream_peer.h ---
-
-// --- Folded from core/io/dir_access.h ---
-#include "core/string/ustring.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
 
 //@ TODO, excellent candidate for THREAD_SAFE MACRO, should go through all these and add THREAD_SAFE
 // where it applies
@@ -3277,18 +3019,7 @@ public:
 	virtual ~DirAccess();
 };
 
-// --- Folded from core/io/file_access_wrappers.h ---
-
-#include "core/io/file_access.h"
-
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/templates/list.h"
-
-// ============================================================================
 // FileAccessMemory
-// ============================================================================
 
 class FileAccessMemory final : public FileAccess
 {
@@ -3356,9 +3087,7 @@ public:
 	virtual void close() override {}
 };
 
-// ============================================================================
 // FileAccessPatched
-// ============================================================================
 
 class FileAccessPatched final : public FileAccess
 {
@@ -3427,9 +3156,7 @@ public:
 	virtual bool file_exists(const String& p_name) override;
 };
 
-// ============================================================================
 // FileAccessCompressed
-// ============================================================================
 
 class FileAccessCompressed final : public FileAccess
 {
@@ -3511,9 +3238,7 @@ public:
 	virtual ~FileAccessCompressed();
 };
 
-// ============================================================================
 // FileAccessEncrypted
-// ============================================================================
 
 #define ENCRYPTED_HEADER_MAGIC 0x43454447
 
@@ -3590,9 +3315,7 @@ public:
 	~FileAccessEncrypted();
 };
 
-// ============================================================================
 // PackedData / PackSource / FileAccessPack / DirAccessPack
-// ============================================================================
 
 // Godot's packed file magic header ("GDPC" in ASCII).
 #define PACK_HEADER_MAGIC 0x43504447
@@ -3743,35 +3466,28 @@ public:
 	~PackedData() = delete;
 };
 
-class PackSource
+class PackSource final
 {
 public:
-	virtual bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) = 0;
-	virtual Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) = 0;
+	enum Type
+	{
+		SOURCE_PCK,
+		SOURCE_DIRECTORY,
+		SOURCE_ZIP,
+	};
 
-	virtual ~PackSource() {}
-};
-
-class PackedSourcePCK final : public PackSource
-{
-public:
-	virtual bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-	virtual Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-};
-
-class PackedSourceDirectory final : public PackSource
-{
+private:
+	Type type = SOURCE_PCK;
 	void add_directory(const String& p_path, bool p_replace_files);
+	bool _try_open_pck(const String& p_path, bool p_replace_files, uint64_t p_offset,
+		const Vector<uint8_t>& p_decryption_key);
 
 public:
-	virtual bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-	virtual Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
+	explicit PackSource(Type p_type = SOURCE_PCK) : type(p_type) {}
+	bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
+	Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
+		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
 };
 
 class FileAccessPack final : public FileAccess
@@ -3949,9 +3665,7 @@ Ref<DirAccess> PackedData::try_open_directory(const String& p_path)
 	return da;
 }
 
-// ============================================================================
 // ZipArchive / PackedSourceZIP / FileAccessZip
-// ============================================================================
 
 #ifdef MINIZIP_ENABLED
 
@@ -3999,15 +3713,6 @@ public:
 	ZipArchive(const ZipArchive&) = delete;
 	ZipArchive& operator=(const ZipArchive&) = delete;
 	~ZipArchive() = delete;
-};
-
-class PackedSourceZIP final : public PackSource
-{
-public:
-	virtual bool try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
-	virtual Ref<FileAccess> get_file(const String& p_path, PackedData::PackedFile* p_file,
-		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>()) override;
 };
 
 class FileAccessZip final : public FileAccess
@@ -4076,10 +3781,8 @@ public:
 
 #endif // MINIZIP_ENABLED
 
-// --- Folded from modules/zip/zip_reader.h ---
 #include <thirdparty/minizip/unzip.h>
 #include <thirdparty/minizip/zip.h>
-#include "core/io/file_access.h"
 
 class ZIPPacker final : public RefCounted
 {
@@ -4139,6 +3842,3 @@ public:
 	ZIPReader();
 	~ZIPReader();
 };
-// --- End modules/zip/zip_reader.h ---
-// --- End core/io/file_access_wrappers.h ---
-// --- End core/io/dir_access.h ---

@@ -33,7 +33,6 @@
 
 #include <type_traits>
 #include <utility>
-// --- Folded from core/string/char_utils.h ---
 #include "core/typedefs.h"
 
 static constexpr char hex_char_table_upper[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -156,8 +155,6 @@ constexpr bool is_hyphen(char32_t p_char) {
 	return (p_char == '-') || (p_char == 0x2010) || (p_char == 0x2011);
 }
 
-// --- End core/string/char_utils.h ---
-// --- Folded from core/templates/vector.h ---
 /**
  * @class Vector
  * Vector container. Simple copy-on-write container.
@@ -167,12 +164,7 @@ constexpr bool is_hyphen(char32_t p_char) {
  */
 
 #include <initializer_list>
-#include "core/typedefs.h"
-// --- Inlined/Folded from core/templates/cowdata.h ---
-#include "core/typedefs.h"
 #include "core/os/memory.h"
-// --- Folded from core/templates/span.h ---
-#include "core/typedefs.h"
 
 template <typename LHS, typename RHS>
 bool are_spans_equal(const LHS *p_lhs, const RHS *p_rhs, size_t p_size) {
@@ -387,9 +379,6 @@ _FORCE_INLINE_ bool operator!=(const Span<LHS> &p_lhs, const Span<RHS> &p_rhs) {
 template <typename T>
 struct is_zero_constructible<Span<T>> : std::true_type {};
 
-// --- Folded from core/templates/fixed_vector.h ---
-#include "core/os/memory.h"
-
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
 
 /**
@@ -564,7 +553,6 @@ public:
 
 VLTR_GCC_WARNING_POP
 
-// --- Folded from core/string/print_string.h ---
 #include <cstddef>
 #include <cstdint>
 #include <iomanip>
@@ -574,7 +562,6 @@ VLTR_GCC_WARNING_POP
 #include <string_view>
 #include <type_traits>
 #include <utility>
-
 
 class String;
 
@@ -886,10 +873,6 @@ void print_unpacked(std::string_view p_names, const First& p_first, const Rest&.
 			__print_line(m_text);                                                                  \
 		}                                                                                          \
 	}
-// --- End core/string/print_string.h ---
-
-// --- Folded from core/templates/sort_array.h ---
-#include "core/typedefs.h"
 
 #define ERR_BAD_COMPARE(cond) \
 	if (unlikely(cond)) { \
@@ -1171,10 +1154,6 @@ public:
 		introselect(p_first, p_nth, p_last, p_array, bitlog(p_last - p_first) * 2);
 	}
 };
-// --- End core/templates/sort_array.h ---
-// --- End core/templates/span.h ---
-#include "core/os/memory.h"
-
 
 #include <initializer_list>
 #include <type_traits>
@@ -1732,8 +1711,6 @@ VLTR_GCC_WARNING_POP
 template <typename T>
 struct is_zero_constructible<CowData<T>> : std::true_type {};
 
-#include "core/typedefs.h"
-
 template <typename T> class Vector;
 
 template <typename T> class VectorWriteProxy
@@ -2122,9 +2099,6 @@ template <typename T> struct is_zero_constructible<Vector<T>> : std::true_type
 {
 };
 
-// --- Folded from core/templates/vset.h ---
-#include "core/typedefs.h"
-
 template <typename T>
 class _WARN_UNUSED_ VSet {
 	Vector<T> _data;
@@ -2199,10 +2173,7 @@ public:
 	_FORCE_INLINE_ VSet(std::initializer_list<T> p_init) :
 			_data(p_init) {}
 };
-// --- End core/templates/vector.h ---
 #include "core/math/vector2.h"
-
-#include "core/typedefs.h"
 
 #define UNIQUE_NODE_PREFIX "%"
 
@@ -3082,14 +3053,6 @@ String uitos(uint64_t p_val);
 String rtos(double p_val);
 String rtoss(double p_val); // scientific version
 
-struct NoCaseComparator
-{
-	bool operator()(const String& p_a, const String& p_b) const
-	{
-		return p_a.nocasecmp_to(p_b) < 0;
-	}
-};
-
 struct NaturalNoCaseComparator
 {
 	bool operator()(const String& p_a, const String& p_b) const
@@ -3248,7 +3211,6 @@ template <typename... Args> _FORCE_INLINE_ String vformat(const String& p_fmt, A
 
 #define SNAME(m_arg) String(m_arg)
 
-// --- Folded from core/string/alt_codes.h ---
 // OEM encodings for Alt codes input.
 
 inline constexpr char32_t alt_code_oem437[256] = {
@@ -3289,17 +3251,8 @@ inline constexpr char32_t alt_code_cp1252[256] = {
 	0x00f0, 0x00f1, 0x00f2, 0x00f3, 0x00f4, 0x00f5, 0x00f6, 0x00f7, 0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00fd, 0x00fe, 0x00ff
 };
 
-// --- End core/string/alt_codes.h ---
-
-// --- Folded from core/string/string_builder.h ---
-// --- Folded from core/templates/local_vector.h ---
 #include <initializer_list>
 #include <type_traits>
-#include "core/typedefs.h"
-#include "core/os/memory.h"
-
-
-
 
 // If tight, it grows strictly as much as needed.
 // Otherwise, it grows exponentially (the default and what you want in most cases).
@@ -3734,7 +3687,6 @@ struct is_zero_constructible<LocalVector<T, U, force_trivial, tight>> : std::tru
 {
 };
 
-// --- Folded from core/templates/pooled_list.h ---
 // Simple template to provide a pool with O(1) allocate and free.
 // The freelist could alternatively be a linked list placed within the unused elements
 // to use less memory, however a separate freelist is probably more cache friendly.
@@ -3756,7 +3708,6 @@ struct is_zero_constructible<LocalVector<T, U, force_trivial, tight>> : std::tru
 // invalidate any existing pool IDs held externally.
 // Compaction can be done but would rely on a more complex method
 // of preferentially giving out lower IDs in the freelist first.
-
 
 template <typename T, typename U = uint32_t, bool force_trivial = false, bool zero_on_first_request = false>
 class _WARN_UNUSED_ PooledList {
@@ -3835,86 +3786,6 @@ public:
 };
 
 // a pooled list which automatically keeps a list of the active members
-template <typename T, typename U = uint32_t, bool force_trivial = false, bool zero_on_first_request = false>
-class TrackedPooledList {
-public:
-	U pool_used_size() const { return _pool.used_size(); }
-	U pool_reserved_size() const { return _pool.reserved_size(); }
-	U active_size() const { return _active_list.size(); }
-
-	// use with care, see the earlier notes in the PooledList clear()
-	void clear() {
-		_pool.clear();
-		_active_list.clear();
-		_active_map.clear();
-	}
-
-	U get_active_id(U p_index) const {
-		return _active_list[p_index];
-	}
-
-	const T &get_active(U p_index) const {
-		return _pool[get_active_id(p_index)];
-	}
-
-	T &get_active(U p_index) {
-		return _pool[get_active_id(p_index)];
-	}
-
-	const T &operator[](U p_index) const {
-		return _pool[p_index];
-	}
-	T &operator[](U p_index) {
-		return _pool[p_index];
-	}
-
-	T *request(U &r_id) {
-		T *item = _pool.request(r_id);
-
-		// add to the active list
-		U active_list_id = _active_list.size();
-		_active_list.push_back(r_id);
-
-		// expand the active map (this should be in sync with the pool list
-		if (_pool.used_size() > _active_map.size()) {
-			_active_map.resize_uninitialized(_pool.used_size());
-		}
-
-		// store in the active map
-		_active_map[r_id] = active_list_id;
-
-		return item;
-	}
-
-	void free(const U &p_id) {
-		_pool.free(p_id);
-
-		// remove from the active list.
-		U list_id = _active_map[p_id];
-
-		// zero the _active map to detect bugs (only in debug?)
-		_active_map[p_id] = -1;
-
-		_active_list.remove_unordered(list_id);
-
-		// keep the replacement in sync with the correct list Id
-		if (list_id < _active_list.size()) {
-			// which pool id has been replaced in the active list
-			U replacement_id = _active_list[list_id];
-
-			// keep that replacements map up to date with the new position
-			_active_map[replacement_id] = list_id;
-		}
-	}
-
-	const LocalVector<U, U> &get_active_list() const { return _active_list; }
-
-private:
-	PooledList<T, U, force_trivial, zero_on_first_request> _pool;
-	LocalVector<U, U> _active_map;
-	LocalVector<U, U> _active_list;
-};
-// --- End core/templates/local_vector.h ---
 
 class StringBuilder
 {

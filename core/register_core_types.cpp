@@ -31,38 +31,51 @@
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/packet_peer_dtls.h"
-#include "core/io/net_socket.h"
 #include "core/io/packet_peer_dtls.h"
 #include "core/io/packet_peer_udp.h"
 #include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/io/packet_peer_udp.h"
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
 #include "core/io/ip.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
+#include "servers/display/display_server.h"
 #define WANT_SCENE_TREE_H
 #include "servers/display/display_server.h"
 #ifndef DISABLE_DEPRECATED
-#include "core/io/file_access.h"
 #endif
 
 static Ref<ResourceFormatSaverBinary> resource_saver_binary;
 static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
 static Ref<ResourceFormatImporterLoader> resource_format_importer;
-static Ref<ResourceFormatImporterSaver> resource_format_importer_saver;
-static Ref<ResourceFormatLoaderImage> resource_format_image;
-static Ref<TranslationLoaderPO> resource_format_po;
-static Ref<ResourceFormatSaverCrypto> resource_format_saver_crypto;
-static Ref<ResourceFormatLoaderCrypto> resource_format_loader_crypto;
-static Ref<ResourceFormatSaverJSON> resource_saver_json;
-static Ref<ResourceFormatLoaderJSON> resource_loader_json;
+static Ref<ResourceFormatSaver> resource_format_importer_saver;
+static Ref<ResourceFormatLoader> resource_format_image;
+static Ref<ResourceFormatLoader> resource_format_po;
+static Ref<ResourceFormatSaver> resource_format_saver_crypto;
+static Ref<ResourceFormatLoader> resource_format_loader_crypto;
+static Ref<ResourceFormatSaver> resource_saver_json;
+static Ref<ResourceFormatLoader> resource_loader_json;
+
+static Error _importer_saver_set_uid(const String& p_path, ResourceUID::ID p_uid);
+static Ref<Resource> _image_res_load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
+static bool _image_res_handles_type(const String& p_type);
+static String _image_res_get_type(const String& p_path);
+static const char* const _image_res_exts[] = { "image", nullptr };
+
+static Ref<Resource> _po_res_load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
+static bool _po_res_handles_type(const String& p_type);
+static String _po_res_get_type(const String& p_path);
+static const char* const _po_res_exts[] = { "po", "mo", nullptr };
+
+static Ref<Resource> _crypto_res_load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
+static bool _crypto_res_handles_type(const String& p_type);
+static String _crypto_res_get_type(const String& p_path);
+static const char* const _crypto_res_exts[] = { "crt", "key", "pub", nullptr };
+static Error _crypto_res_save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags);
+
+static Ref<Resource> _json_res_load(const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode);
+static bool _json_res_handles_type(const String& p_type);
+static String _json_res_get_type(const String& p_path);
+static const char* const _json_res_exts[] = { "json", nullptr };
+static Error _json_res_save(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags);
+static void _json_res_save_exts(const Ref<Resource>& p_resource, List<String>* p_extensions);
 
 static CoreBind::ResourceLoader* _resource_loader = nullptr;
 
@@ -83,7 +96,7 @@ void register_core_types()
 
 	ResourceLoader::initialize();
 
-	resource_format_po.instantiate();
+	resource_format_po = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_po_res_load, _po_res_exts, _po_res_handles_type, _po_res_get_type, true)));
 	ResourceLoader::add_resource_format_loader(resource_format_po);
 
 	resource_saver_binary.instantiate();
@@ -95,22 +108,22 @@ void register_core_types()
 	resource_format_importer.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_format_importer);
 
-	resource_format_importer_saver.instantiate();
+	resource_format_importer_saver = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(nullptr, nullptr, nullptr, _importer_saver_set_uid)));
 	ResourceSaver::add_resource_format_saver(resource_format_importer_saver);
 
-	resource_format_image.instantiate();
+	resource_format_image = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_image_res_load, _image_res_exts, _image_res_handles_type, _image_res_get_type)));
 	ResourceLoader::add_resource_format_loader(resource_format_image);
 
-	resource_format_saver_crypto.instantiate();
+	resource_format_saver_crypto = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(_crypto_res_save)));
 	ResourceSaver::add_resource_format_saver(resource_format_saver_crypto);
 
-	resource_format_loader_crypto.instantiate();
+	resource_format_loader_crypto = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_crypto_res_load, _crypto_res_exts, _crypto_res_handles_type, _crypto_res_get_type, true)));
 	ResourceLoader::add_resource_format_loader(resource_format_loader_crypto);
 
-	resource_saver_json.instantiate();
+	resource_saver_json = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(_json_res_save, nullptr, _json_res_save_exts)));
 	ResourceSaver::add_resource_format_saver(resource_saver_json);
 
-	resource_loader_json.instantiate();
+	resource_loader_json = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_json_res_load, _json_res_exts, _json_res_handles_type, _json_res_get_type, true)));
 	ResourceLoader::add_resource_format_loader(resource_loader_json);
 
 #ifndef DISABLE_DEPRECATED
@@ -151,14 +164,6 @@ void unregister_core_types()
 	ResourceFormatImporter::finalize();
 	ResourceUID::finalize();
 }
-
-
-
-// ============================================================================
-// Merged from core/core_constants.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 
 struct _CoreConstant
 {
@@ -517,23 +522,10 @@ void CoreConstants::get_global_enums(List<String>* r_values)
 #undef BIND_CORE_ENUM_CONSTANT_CUSTOM_NO_VAL
 #endif
 
-// ============================================================================
-// Merged from core/config/project_settings.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
 #include "core/templates/rb_set.h"
 #include "core/typedefs.h"
-#include "core/os/os.h"
 
 #ifdef TOOLS_ENABLED
-#include "core/os/os.h"
 #include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
 #endif									 // TOOLS_ENABLED
 
@@ -789,7 +781,7 @@ bool ProjectSettings::_load_resource_pack(
 	if (!p_main_pack && !data->using_datapack && !OS::get_resource_dir().is_empty()) {
 		// Add the project's resource file system to PackedData so directory access keeps working
 		// when the game is running without a main pack, like in the editor or on Android.
-		PackedData::add_pack_source(memnew(PackedSourceDirectory));
+		PackedData::add_pack_source(memnew(PackSource(PackSource::SOURCE_DIRECTORY)));
 		PackedData::add_pack("res://", false, 0);
 		DirAccess::make_default<DirAccessPack>(DirAccess::ACCESS_RESOURCES);
 		data->using_datapack = true;
@@ -1467,15 +1459,8 @@ Error ProjectSettings::load_custom(const String& p_path)
 	return _load_settings_text(p_path);
 }
 
-// ============================================================================
-// Merged from core/config/engine.cpp
-// ============================================================================
-
 #include "main/splash.gen.h"
-#include "core/os/os.h"
 #include "main/splash.gen.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void Engine::_update_time_scale()
@@ -1661,23 +1646,12 @@ void Engine::set_embedded_in_editor(bool p_enabled) { embedded_in_editor = p_ena
 
 bool Engine::is_embedded_in_editor() { return embedded_in_editor; }
 
-
-
-// ============================================================================
-// Merged from core/error/error_macros.cpp
-// ============================================================================
-
-#include "core/typedefs.h"
-
-#include "core/io/ip.h"
-#include "core/os/os.h"
 #include "core/string/ustring.h"
 
 #include <cstdio>
 
 // Optional physics interpolation warnings try to include the path to the relevant node.
 #if defined(DEBUG_ENABLED) && defined(TOOLS_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #endif
 
@@ -1868,15 +1842,6 @@ void _physics_interpolation_warning(const char *p_function, const char *p_file, 
 #endif
 }
 
-// ============================================================================
-// Merged from core/error/error_list.cpp
-// ============================================================================
-
-#include "core/typedefs.h"
-
-#include "core/string/ustring.h"
-#include "core/typedefs.h"
-
 const char *error_names[] = {
 	TTRC("OK"), // OK
 	TTRC("Failed"), // FAILED
@@ -1930,10 +1895,6 @@ const char *error_names[] = {
 };
 
 static_assert(std_size(error_names) == ERR_MAX);
-
-// ============================================================================
-// Merged from core/templates/hashfuncs.cpp
-// ============================================================================
 
 #include "core/math/vector2.h"
 
@@ -2057,24 +2018,12 @@ uint64_t hash_djb2_one_float_64(double p_in, uint64_t p_prev) {
 	return ((p_prev << 5) + p_prev) + u.i;
 }
 
-// ============================================================================
-// Merged from core/templates/a_hash_map.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
-
 // Explicit instantiation.
 template class AHashMap<int, int>;
 template class AHashMap<String, int>;
 template class AHashMap<String, String>;
 
-// ============================================================================
-// Merged from core/templates/interpolated_property.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/math/vector2.h"
 
 namespace InterpolatedPropertyFuncs {
 
@@ -2091,10 +2040,6 @@ Vector2 lerp(const Vector2 &p_a, const Vector2 &p_b, float p_fraction) {
 }
 
 } //namespace InterpolatedPropertyFuncs
-
-
-// --- Merged from core/input/input.cpp ---
-#include "core/os/os.h"
 
 // --- input.compat.inc ---
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
@@ -2123,7 +2068,6 @@ Vector2 lerp(const Vector2 &p_a, const Vector2 &p_b, float p_fraction) {
 
 #ifndef DISABLE_DEPRECATED
 
-
 void Input::_vibrate_handheld_bind_compat_91143(int p_duration_ms)
 {
 	vibrate_handheld(p_duration_ms, -1.0);
@@ -2132,7 +2076,6 @@ void Input::_vibrate_handheld_bind_compat_91143(int p_duration_ms)
 void Input::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 #ifdef DEV_ENABLED
 #include "core/os/mutex.h"
@@ -4664,9 +4607,7 @@ void Input::finalize()
 #undef STANDARD_GRAVITY
 #endif
 
-// ==========================================================================
 // input_map.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -4691,8 +4632,6 @@ void Input::finalize()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
 
 // --- input_map.compat.inc ---
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
@@ -4721,7 +4660,6 @@ void Input::finalize()
 
 #ifndef DISABLE_DEPRECATED
 
-
 void InputMap::_add_action_bind_compat_97281(const String& p_action, float p_deadzone)
 {
 	add_action(p_action, p_deadzone);
@@ -4730,7 +4668,6 @@ void InputMap::_add_action_bind_compat_97281(const String& p_action, float p_dea
 void InputMap::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 void InputMap::initialize()
 {
@@ -5658,9 +5595,7 @@ void InputMap::load_default()
 
 void InputMap::load_from_project_settings() {}
 
-// ==========================================================================
 // shortcut.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -5685,8 +5620,6 @@ void InputMap::load_from_project_settings() {}
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
 
 void Shortcut::set_events(const Vector<InputEvent>& p_events)
 {
@@ -5770,9 +5703,7 @@ bool Shortcut::is_event_array_equal(
 	return true;
 }
 
-// ==========================================================================
 // input_event_codec.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -5797,10 +5728,6 @@ bool Shortcut::is_event_array_equal(
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
-
-#include "core/io/net_socket.h"
 
 enum class BoolShift : uint8_t
 {
@@ -6209,16 +6136,6 @@ void decode_input_event(const Vector<uint8_t>& p_data, InputEvent& r_event)
 		break;
 	}
 }
-
-// ============================================================================
-// Merged from core/input/input_event.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 static const char* _mouse_button_descriptions[9] = {
 	TTRC("Left Mouse Button"),
@@ -7103,17 +7020,9 @@ String InputEvent::as_text() const
 
 String InputEvent::to_string() const { return as_text(); }
 
-
-// --- Merged from core/os/os.cpp ---
 #include <cstdarg>
 #include <cstdio>
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "core/version_generated.gen.h"
-#include "core/os/os.h"
 
 #ifdef MINGW_ENABLED
 #define MINGW_STDTHREAD_REDUNDANCY_WARNING
@@ -7829,15 +7738,6 @@ String OS::get_user_data_dir() { return String(); }
 #undef MINGW_STDTHREAD_REDUNDANCY_WARNING
 #endif
 
-
-// ============================================================================
-// Merged from core/os/keyboard.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
-#include "core/string/ustring.h"
-
 struct _KeyCodeText {
 	Key code;
 	const char *text;
@@ -8294,12 +8194,6 @@ Key fix_key_label(char32_t p_char, Key p_key) {
 	return p_key;
 }
 
-// ============================================================================
-// Merged from core/os/main_loop.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
 bool s_quit_requested = false;
 
 void MainLoop::reset_backend()
@@ -8323,12 +8217,6 @@ void MainLoop::clear()
 		destroy_fn();
 	}
 }
-
-// ============================================================================
-// Merged from core/os/midi_driver.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 
 uint8_t MIDIDriver::last_received_message = 0x00;
 
@@ -8547,12 +8435,6 @@ PackedStringArray MIDIDriver::get_connected_inputs()
 	return data != nullptr ? data->connected_input_names : PackedStringArray();
 }
 
-
-
-// ============================================================================
-// Merged from core/os/mutex.cpp
-// ============================================================================
-
 #include "core/os/mutex.h"
 
 void _global_lock() {
@@ -8572,16 +8454,9 @@ template class MutexLock<MutexImpl<THREADING_NAMESPACE::mutex>>;
 
 #endif
 
-// ============================================================================
-// Merged from core/os/thread.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
 #include "platform_config.h" // IWYU pragma: keep. Can override the implementation.
 
 #ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h.
-
-#include "core/os/mutex.h"
 
 #ifdef THREADS_ENABLED
 
@@ -8685,16 +8560,8 @@ Thread::~Thread()
 
 #endif // PLATFORM_THREAD_OVERRIDE
 
-
-
-// ============================================================================
-// Merged from core/os/thread_safe.cpp
-// ============================================================================
-
 #ifndef THREAD_SAFE_CPP
 #define THREAD_SAFE_CPP
-
-#include "core/os/os.h"
 
 static thread_local bool current_thread_safe_for_nodes = false;
 
@@ -8712,11 +8579,6 @@ void set_current_thread_safe_for_nodes(bool p_safe) {
 #undef THREAD_SAFE_CPP
 #endif
 
-// ============================================================================
-// Merged from core/os/time.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "core/os/os.h" // NOLINT(modernize-deprecated-headers) False positive with C-Header of the same name.
 
 #define UNIX_EPOCH_YEAR_AD 1970		   // 1970
@@ -9029,14 +8891,9 @@ uint64_t Time::get_ticks_usec() { return OS::get_ticks_usec(); }
 #undef EXTRACT_FROM_DICTIONARY
 #endif
 
-// ============================================================================
-// Merged from core/os/memory.cpp
-// ============================================================================
-
 #include "core/os/memory.h"
 
 #ifdef DEV_ENABLED
-#include "core/io/ip.h"
 #endif
 
 #include <cstdlib>
@@ -9236,10 +9093,6 @@ _GlobalNil::_GlobalNil()
 
 _GlobalNil _GlobalNilClass::_nil;
 
-
-// --- Merged from core/crypto/crypto.cpp ---
-#include "core/io/net_socket.h"
-
 #include "core/version_generated.gen.h"
 
 Ref<TLSOptions> TLSOptions::client(
@@ -9386,9 +9239,7 @@ Crypto::~Crypto() {}
 
 #endif // !MODULE_MBEDTLS_ENABLED
 
-// ==========================================================================
 // crypto_core.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -9414,104 +9265,49 @@ Crypto::~Crypto() {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-
 #include <mbedtls/base64.h>
 #include <psa/crypto.h>
 
-// MD5
-CryptoCore::MD5Context::MD5Context() {
+CryptoCore::HashContext::HashContext(HashAlgorithm p_alg) : alg(p_alg) {
 	ctx = memalloc_zeroed(sizeof(psa_hash_operation_t));
 }
 
-CryptoCore::MD5Context::~MD5Context() {
+CryptoCore::HashContext::~HashContext() {
 	psa_hash_abort((psa_hash_operation_t *)ctx);
 	memfree((psa_hash_operation_t *)ctx);
 }
 
-Error CryptoCore::MD5Context::start() {
-	int ret = psa_hash_setup((psa_hash_operation_t *)ctx, PSA_ALG_MD5);
+Error CryptoCore::HashContext::start() {
+	psa_algorithm_t psa_alg = PSA_ALG_SHA_256;
+	switch (alg) {
+		case HASH_ALG_MD5:
+			psa_alg = PSA_ALG_MD5;
+			break;
+		case HASH_ALG_SHA1:
+			psa_alg = PSA_ALG_SHA_1;
+			break;
+		case HASH_ALG_SHA256:
+			psa_alg = PSA_ALG_SHA_256;
+			break;
+	}
+	int ret = psa_hash_setup((psa_hash_operation_t *)ctx, psa_alg);
 	return ret ? FAILED : OK;
 }
 
-Error CryptoCore::MD5Context::update(const uint8_t *p_src, size_t p_len) {
+Error CryptoCore::HashContext::update(const uint8_t *p_src, size_t p_len) {
 	int ret = psa_hash_update((psa_hash_operation_t *)ctx, p_src, p_len);
 	return ret ? FAILED : OK;
 }
 
-Error CryptoCore::MD5Context::finish(unsigned char r_hash[16]) {
+Error CryptoCore::HashContext::finish(unsigned char *r_hash) {
+	size_t expected = (alg == HASH_ALG_MD5) ? 16 : ((alg == HASH_ALG_SHA1) ? 20 : 32);
 	size_t size = 0;
-	int ret = psa_hash_finish((psa_hash_operation_t *)ctx, r_hash, 16, &size);
+	int ret = psa_hash_finish((psa_hash_operation_t *)ctx, r_hash, expected, &size);
 	if (ret) {
 		psa_hash_abort((psa_hash_operation_t *)ctx);
 		return FAILED;
 	}
-	ERR_FAIL_COND_V(size != 16, ERR_BUG);
-	return OK;
-}
-
-// SHA1
-CryptoCore::SHA1Context::SHA1Context() {
-	ctx = memalloc_zeroed(sizeof(psa_hash_operation_t));
-}
-
-CryptoCore::SHA1Context::~SHA1Context() {
-	psa_hash_abort((psa_hash_operation_t *)ctx);
-	memfree((psa_hash_operation_t *)ctx);
-}
-
-Error CryptoCore::SHA1Context::start() {
-	int ret = psa_hash_setup((psa_hash_operation_t *)ctx, PSA_ALG_SHA_1);
-	return ret ? FAILED : OK;
-}
-
-Error CryptoCore::SHA1Context::update(const uint8_t *p_src, size_t p_len) {
-	int ret = psa_hash_update((psa_hash_operation_t *)ctx, p_src, p_len);
-	return ret ? FAILED : OK;
-}
-
-Error CryptoCore::SHA1Context::finish(unsigned char r_hash[20]) {
-	size_t size = 0;
-	int ret = psa_hash_finish((psa_hash_operation_t *)ctx, r_hash, 20, &size);
-	if (ret) {
-		psa_hash_abort((psa_hash_operation_t *)ctx);
-		return FAILED;
-	}
-	ERR_FAIL_COND_V(size != 20, ERR_BUG);
-	return OK;
-}
-
-// SHA256
-CryptoCore::SHA256Context::SHA256Context() {
-	ctx = memalloc_zeroed(sizeof(psa_hash_operation_t));
-}
-
-CryptoCore::SHA256Context::~SHA256Context() {
-	psa_hash_abort((psa_hash_operation_t *)ctx);
-	memfree((psa_hash_operation_t *)ctx);
-}
-
-Error CryptoCore::SHA256Context::start() {
-	int ret = psa_hash_setup((psa_hash_operation_t *)ctx, PSA_ALG_SHA_256);
-	return ret ? FAILED : OK;
-}
-
-Error CryptoCore::SHA256Context::update(const uint8_t *p_src, size_t p_len) {
-	int ret = psa_hash_update((psa_hash_operation_t *)ctx, p_src, p_len);
-	return ret ? FAILED : OK;
-}
-
-Error CryptoCore::SHA256Context::finish(unsigned char r_hash[32]) {
-	size_t size = 0;
-	int ret = psa_hash_finish((psa_hash_operation_t *)ctx, r_hash, 32, &size);
-	if (ret) {
-		psa_hash_abort((psa_hash_operation_t *)ctx);
-		return FAILED;
-	}
-	ERR_FAIL_COND_V(size != 32, ERR_BUG);
+	ERR_FAIL_COND_V(size != expected, ERR_BUG);
 	return OK;
 }
 
@@ -9722,9 +9518,7 @@ int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const u
 }
 #endif
 
-// ==========================================================================
 // hashing_context.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -9750,22 +9544,12 @@ int mbedtls_base64_decode(unsigned char *dst, size_t dlen, size_t *olen, const u
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
-
 Error HashingContext::start(HashType p_type)
 {
 	ERR_FAIL_COND_V(ctx != nullptr, ERR_ALREADY_IN_USE);
 	_create_ctx(p_type);
 	ERR_FAIL_NULL_V(ctx, ERR_UNAVAILABLE);
-	switch (type) {
-	case HASH_MD5:
-		return ((CryptoCore::MD5Context*)ctx)->start();
-	case HASH_SHA1:
-		return ((CryptoCore::SHA1Context*)ctx)->start();
-	case HASH_SHA256:
-		return ((CryptoCore::SHA256Context*)ctx)->start();
-	}
-	return ERR_UNAVAILABLE;
+	return static_cast<CryptoCore::HashContext*>(ctx)->start();
 }
 
 Error HashingContext::update(const Vector<uint8_t>& p_chunk)
@@ -9773,37 +9557,15 @@ Error HashingContext::update(const Vector<uint8_t>& p_chunk)
 	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
 	size_t len = p_chunk.size();
 	ERR_FAIL_COND_V(len == 0, FAILED);
-	const uint8_t* r = p_chunk.ptr();
-	switch (type) {
-	case HASH_MD5:
-		return ((CryptoCore::MD5Context*)ctx)->update(&r[0], len);
-	case HASH_SHA1:
-		return ((CryptoCore::SHA1Context*)ctx)->update(&r[0], len);
-	case HASH_SHA256:
-		return ((CryptoCore::SHA256Context*)ctx)->update(&r[0], len);
-	}
-	return ERR_UNAVAILABLE;
+	return static_cast<CryptoCore::HashContext*>(ctx)->update(p_chunk.ptr(), len);
 }
 
 Vector<uint8_t> HashingContext::finish()
 {
 	ERR_FAIL_NULL_V(ctx, Vector<uint8_t>());
 	Vector<uint8_t> out;
-	Error err = FAILED;
-	switch (type) {
-	case HASH_MD5:
-		out.resize(16);
-		err = ((CryptoCore::MD5Context*)ctx)->finish(out.ptrw());
-		break;
-	case HASH_SHA1:
-		out.resize(20);
-		err = ((CryptoCore::SHA1Context*)ctx)->finish(out.ptrw());
-		break;
-	case HASH_SHA256:
-		out.resize(32);
-		err = ((CryptoCore::SHA256Context*)ctx)->finish(out.ptrw());
-		break;
-	}
+	out.resize(type == HASH_MD5 ? 16 : (type == HASH_SHA1 ? 20 : 32));
+	Error err = static_cast<CryptoCore::HashContext*>(ctx)->finish(out.ptrw());
 	_delete_ctx();
 	ERR_FAIL_COND_V(err != OK, Vector<uint8_t>());
 	return out;
@@ -9814,13 +9576,13 @@ void HashingContext::_create_ctx(HashType p_type)
 	type = p_type;
 	switch (type) {
 	case HASH_MD5:
-		ctx = memnew(CryptoCore::MD5Context);
+		ctx = memnew(CryptoCore::HashContext(CryptoCore::HASH_ALG_MD5));
 		break;
 	case HASH_SHA1:
-		ctx = memnew(CryptoCore::SHA1Context);
+		ctx = memnew(CryptoCore::HashContext(CryptoCore::HASH_ALG_SHA1));
 		break;
 	case HASH_SHA256:
-		ctx = memnew(CryptoCore::SHA256Context);
+		ctx = memnew(CryptoCore::HashContext(CryptoCore::HASH_ALG_SHA256));
 		break;
 	default:
 		ctx = nullptr;
@@ -9829,30 +9591,18 @@ void HashingContext::_create_ctx(HashType p_type)
 
 void HashingContext::_delete_ctx()
 {
-	switch (type) {
-	case HASH_MD5:
-		memdelete((CryptoCore::MD5Context*)ctx);
-		break;
-	case HASH_SHA1:
-		memdelete((CryptoCore::SHA1Context*)ctx);
-		break;
-	case HASH_SHA256:
-		memdelete((CryptoCore::SHA256Context*)ctx);
-		break;
+	if (ctx) {
+		memdelete(static_cast<CryptoCore::HashContext*>(ctx));
+		ctx = nullptr;
 	}
-	ctx = nullptr;
 }
 
 HashingContext::~HashingContext()
 {
-	if (ctx != nullptr) {
-		_delete_ctx();
-	}
+	_delete_ctx();
 }
 
-// ==========================================================================
 // aes_context.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -9877,8 +9627,6 @@ HashingContext::~HashingContext()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 using AESMode = CryptoCore::AESContext::Mode;
 using AESCipher = CryptoCore::AESContext::Cipher;
@@ -9961,9 +9709,7 @@ void AESContext::finish()
 	mode = MODE_MAX;
 }
 
-// ==========================================================================
 // crypto_resource_format.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -9989,10 +9735,8 @@ void AESContext::finish()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
-
-Ref<Resource> ResourceFormatLoaderCrypto::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+static Ref<Resource> _crypto_res_load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	String el = p_path.get_extension().to_lower();
 	if (el == "crt") {
@@ -10019,19 +9763,12 @@ Ref<Resource> ResourceFormatLoaderCrypto::load(const String& p_path, const Strin
 	return nullptr;
 }
 
-void ResourceFormatLoaderCrypto::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("crt");
-	p_extensions->push_back("key");
-	p_extensions->push_back("pub");
-}
-
-bool ResourceFormatLoaderCrypto::handles_type(const String& p_type) const
+static bool _crypto_res_handles_type(const String& p_type)
 {
 	return p_type == "X509Certificate" || p_type == "CryptoKey";
 }
 
-String ResourceFormatLoaderCrypto::get_resource_type(const String& p_path) const
+static String _crypto_res_get_type(const String& p_path)
 {
 	String el = p_path.get_extension().to_lower();
 	if (el == "crt") {
@@ -10043,7 +9780,7 @@ String ResourceFormatLoaderCrypto::get_resource_type(const String& p_path) const
 	return "";
 }
 
-Error ResourceFormatSaverCrypto::save(
+static Error _crypto_res_save(
 	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
 	Error err;
@@ -10063,48 +9800,10 @@ Error ResourceFormatSaverCrypto::save(
 	return OK;
 }
 
-bool ResourceFormatSaverCrypto::recognize(const Ref<Resource>& p_resource) const { return false; }
-
-void ResourceFormatSaverCrypto::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-}
-
 #define DEFINE_CORE_GENERATED_GLOBALS
 #include "main/splash.gen.h"
 
-// === Merged from core/math/geometry_3d.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
-
-#include "core/io/ip.h"
 
 void Geometry3D::get_closest_points_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1, Vector3 &r_ps, Vector3 &r_qt) {
 	// Based on David Eberly's Computation of Distance Between Line Segments algorithm.
@@ -11058,10 +10757,6 @@ Vector<int8_t> Geometry3D::generate_sdf8(const Vector<uint32_t> &p_positive, con
 	return sdf8;
 }
 
-// ============================================================================
-// Merged from core/math/dynamic_bvh.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 void DynamicBVH::_delete_node(Node *p_node) {
@@ -11472,11 +11167,6 @@ DynamicBVH::~DynamicBVH() {
 	clear();
 }
 
-// ============================================================================
-// Merged from core/math/triangle_mesh.cpp
-// ============================================================================
-
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 int TriangleMesh::_create_bvh(
@@ -12030,13 +11720,6 @@ TriangleMesh::TriangleMesh()
 	valid = false;
 	max_depth = 0;
 }
-
-
-// ============================================================================
-// Merged from core/math/expression.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
 
 Error Expression::_get_token(Token& r_token)
 {
@@ -12613,11 +12296,6 @@ Expression::ENode* Expression::_parse_expression()
 {
 	return nullptr;
 }
-
-
-// ============================================================================
-// Merged from core/math/a_star.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -13478,7 +13156,6 @@ bool AStar2D::_solve(
 
 #ifndef DISABLE_DEPRECATED
 
-
 Vector<int64_t> AStar3D::_get_id_path_bind_compat_88047(int64_t p_from_id, int64_t p_to_id)
 {
 	return get_id_path(p_from_id, p_to_id, false);
@@ -14161,14 +13838,11 @@ Vector<Vector2> AStarGrid2D::get_point_path(
 	return path;
 }
 
-
-
 Vector<Vector2i> AStarGrid2D::get_id_path(Vector2i const&, Vector2i const&, bool) {}
 
 // --- a_star_grid_2d.compat.inc ---
 
 #ifndef DISABLE_DEPRECATED
-
 
 Vector<Vector2i> AStarGrid2D::_get_id_path_bind_compat_88047(
 	const Vector2i& p_from_id, const Vector2i& p_to_id)
@@ -14186,13 +13860,7 @@ void AStarGrid2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from core/math/geometry_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/io/ip.h"
 
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Walloc-zero")
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
@@ -14737,14 +14405,7 @@ bool Triangulate::triangulate(const Vector<Vector2> &p_contour, Vector<int> &r_r
 	return true;
 }
 
-
-// --- Merged from core/math/convex_hull.cpp ---
 #include "servers/display/display_server.h"
-
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
 
 #include <cfloat> // FLT_MAX
 
@@ -17452,15 +17113,6 @@ Error QuickHull::build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_
 	return OK;
 }
 
-
-// --- Merged from core/math/math_vectors.cpp ---
-#include "core/io/ip.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-
 // --- vector2.cpp ---
 
 real_t Vector2::angle() const {
@@ -18529,21 +18181,9 @@ Rect2i::operator Rect2() const {
 	return Rect2(position, size);
 }
 
-
-// --- Merged from core/math/math_primitives.cpp ---
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
 #include "core/math/color_names.inc"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 #include "core/version_generated.gen.h"
 
 #include <thirdparty/misc/ok_color.h>
@@ -19419,7 +19059,6 @@ void AABB::get_edge(int p_edge, Vector3& r_from, Vector3& r_to) const
 		r_from = Vector3(position.x + size.x, position.y, position.z + size.z);
 		r_to = Vector3(position.x + size.x, position.y + size.y, position.z + size.z);
 
-
 	} break;
 	}
 }
@@ -20164,13 +19803,7 @@ StaticRaycaster::~StaticRaycaster() {}
 
 #endif // !defined(MODULE_RAYCAST_ENABLED) || !defined(TOOLS_ENABLED)
 
-
-// --- Merged from core/math/math_transforms.cpp ---
-#include "core/io/ip.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
 
 // --- quaternion.cpp ---
 
@@ -23246,43 +22879,6 @@ TransformInterpolator::Method TransformInterpolator::find_method(const Basis &p_
 	return method;
 }
 
-// === Merged from core/io/file_access.cpp ===
-/*  file_access.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-
 #ifndef DISABLE_DEPRECATED
 
 Ref<FileAccess> FileAccess::_open_encrypted_bind_compat_98918(
@@ -24318,7 +23914,7 @@ String FileAccess::get_md5(const String& p_file)
 		return String();
 	}
 
-	CryptoCore::MD5Context ctx;
+	CryptoCore::HashContext ctx(CryptoCore::HASH_ALG_MD5);
 	ctx.start();
 
 	unsigned char step[32768];
@@ -24341,7 +23937,7 @@ String FileAccess::get_md5(const String& p_file)
 
 String FileAccess::get_multiple_md5(const Vector<String>& p_file)
 {
-	CryptoCore::MD5Context ctx;
+	CryptoCore::HashContext ctx(CryptoCore::HASH_ALG_MD5);
 	ctx.start();
 
 	for (int i = 0; i < p_file.size(); i++) {
@@ -24374,7 +23970,7 @@ String FileAccess::get_sha256(const String& p_file)
 		return String();
 	}
 
-	CryptoCore::SHA256Context ctx;
+	CryptoCore::HashContext ctx(CryptoCore::HASH_ALG_SHA256);
 	ctx.start();
 
 	unsigned char step[32768];
@@ -24396,15 +23992,6 @@ String FileAccess::get_sha256(const String& p_file)
 }
 
 FileAccess::~FileAccess() { _delete_temp(); }
-
-
-
-// ============================================================================
-// Merged from core/io/compression.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-
 
 #include <thirdparty/misc/fastlz.h>
 
@@ -24754,9 +24341,7 @@ int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_d
 	}
 }
 
-// ==========================================================================
 // delta_encoding.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -24783,10 +24368,6 @@ int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_d
 /**************************************************************************/
 
 #include <zstd.h>
-#include "core/typedefs.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/io/file_access.h"
 
 #define ERR_FAIL_ZSTD_V_MSG(m_result, m_retval, m_msg)                                             \
 	ERR_FAIL_COND_V_MSG(ZSTD_isError(m_result), m_retval,                                          \
@@ -24901,9 +24482,7 @@ Error DeltaEncoding::decode_delta(
 #undef ERR_FAIL_ZSTD_V_MSG
 #endif
 
-// ==========================================================================
 // zip_io.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -24928,10 +24507,6 @@ Error DeltaEncoding::decode_delta(
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/file_access.h"
-
-#include "core/string/ustring.h"
 
 int godot_unzip_get_current_file_info(unzFile p_zip_file, unz_file_info64 &r_file_info, String &r_filepath) {
 	const uLong short_file_path_buffer_size = 16384ul;
@@ -25090,9 +24665,7 @@ zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data) {
 	return io;
 }
 
-// ==========================================================================
 // pck_packer.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -25117,12 +24690,6 @@ zlib_filefunc_def zipio_create_io(Ref<FileAccess> *p_data) {
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/io/file_access.h"
 
 static int _get_pad(int p_alignment, int p_n)
 {
@@ -25384,9 +24951,7 @@ PCKPacker::~PCKPacker()
 	}
 }
 
-// ==========================================================================
 // marshalls.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -25414,8 +24979,6 @@ PCKPacker::~PCKPacker()
 
 #include <climits>
 #include <cstdio>
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 
 #define ERR_FAIL_ADD_OF(a, b, err)                                                                 \
 	ERR_FAIL_COND_V(                                                                               \
@@ -25574,9 +25137,7 @@ Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count)
 #undef GET_CONTAINER_TYPE_KIND
 #endif
 
-// ==========================================================================
 // packed_data_container.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -25601,9 +25162,6 @@ Vector<float> vector3_to_float32_array(const Vector3* p_vecs, size_t p_count)
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
 
 int PackedDataContainer::size() const { return _size(0); }
 
@@ -25648,13 +25206,6 @@ void PackedDataContainer::_set_data(const Vector<uint8_t>& p_data)
 Vector<uint8_t> PackedDataContainer::_get_data() const { return data; }
 
 int PackedDataContainerRef::size() const { return from->_size(offset); }
-
-// ============================================================================
-// Merged from core/io/config_file.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 
 void ConfigFile::erase_section_key(const String& p_section, const String& p_key) {}
 
@@ -25761,8 +25312,6 @@ Error ConfigFile::load_encrypted_pass(const String& p_path, const String& p_pass
 	return _internal_load(p_path, fae);
 }
 
-
-
 Error ConfigFile::_internal_save(Ref<FileAccess>) {}
 
 Error ConfigFile::_internal_load(String const&, Ref<FileAccess>) {}
@@ -25771,9 +25320,7 @@ void ConfigFile::erase_section(String const&) {}
 
 bool ConfigFile::has_section(String const&) const {}
 
-// ==========================================================================
 // json.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -25798,8 +25345,6 @@ bool ConfigFile::has_section(String const&) const {}
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 const char* JSON::tk_name[TK_MAX] = {
 	"'{'",
@@ -26059,13 +25604,9 @@ Error JSON::_get_token(
 
 String JSON::get_parsed_text() const { return text; }
 
-
-
 Error JSON::parse(String const&, bool) {}
 
-// ==========================================================================
 // json_resource_format.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -26091,12 +25632,8 @@ Error JSON::parse(String const&, bool) {}
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-
-Ref<Resource> ResourceFormatLoaderJSON::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+static Ref<Resource> _json_res_load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	if (r_error) {
 		*r_error = ERR_FILE_CANT_OPEN;
@@ -26138,17 +25675,12 @@ Ref<Resource> ResourceFormatLoaderJSON::load(const String& p_path, const String&
 	return json;
 }
 
-void ResourceFormatLoaderJSON::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("json");
-}
-
-bool ResourceFormatLoaderJSON::handles_type(const String& p_type) const
+static bool _json_res_handles_type(const String& p_type)
 {
 	return (p_type == "JSON");
 }
 
-String ResourceFormatLoaderJSON::get_resource_type(const String& p_path) const
+static String _json_res_get_type(const String& p_path)
 {
 	if (p_path.has_extension("json")) {
 		return "JSON";
@@ -26156,7 +25688,7 @@ String ResourceFormatLoaderJSON::get_resource_type(const String& p_path) const
 	return "";
 }
 
-Error ResourceFormatSaverJSON::save(
+static Error _json_res_save(
 	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
 	Ref<JSON> json = p_resource;
@@ -26174,8 +25706,8 @@ Error ResourceFormatSaverJSON::save(
 	return OK;
 }
 
-void ResourceFormatSaverJSON::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
+static void _json_res_save_exts(
+	const Ref<Resource>& p_resource, List<String>* p_extensions)
 {
 	Ref<JSON> json = p_resource;
 	if (json.is_valid()) {
@@ -26183,14 +25715,7 @@ void ResourceFormatSaverJSON::get_recognized_extensions(
 	}
 }
 
-bool ResourceFormatSaverJSON::recognize(const Ref<Resource>& p_resource) const
-{
-	return false;
-}
-
-// ==========================================================================
 // plist.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -26215,10 +25740,6 @@ bool ResourceFormatSaverJSON::recognize(const Ref<Resource>& p_resource) const
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 
 PList::PLNodeType PListNode::get_type() const { return data_type; }
 
@@ -27001,9 +26522,7 @@ String PList::save_text() const
 
 Ref<PListNode> PList::get_root() { return root; }
 
-// ==========================================================================
 // xml_parser.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -27028,9 +26547,6 @@ Ref<PListNode> PList::get_root() { return root; }
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 
 static inline bool _is_white_space(char p_char)
 {
@@ -27544,9 +27060,7 @@ XMLParser::~XMLParser()
 	}
 }
 
-// ==========================================================================
 // translation_loader_po.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -27572,12 +27086,7 @@ XMLParser::~XMLParser()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
-
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-
-Ref<Resource> TranslationLoaderPO::load_translation(Ref<FileAccess> r_file, Error *r_error) {
+Ref<Resource> ResourceLoader::load_translation(Ref<FileAccess> r_file, Error *r_error) {
 	if (r_error) {
 		*r_error = ERR_FILE_CORRUPT;
 	}
@@ -27891,42 +27400,25 @@ Ref<Resource> TranslationLoaderPO::load_translation(Ref<FileAccess> r_file, Erro
 	return translation;
 }
 
-Ref<Resource> TranslationLoaderPO::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+static Ref<Resource> _po_res_load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, ResourceFormatLoader::CacheMode p_cache_mode) {
 	if (r_error) {
 		*r_error = ERR_CANT_OPEN;
 	}
-
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	ERR_FAIL_COND_V_MSG(f.is_null(), Ref<Resource>(), vformat("Cannot open file '%s'.", p_path));
-
-	return load_translation(f, r_error);
+	return ResourceLoader::load_translation(f, r_error);
 }
 
-void TranslationLoaderPO::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("po");
-	p_extensions->push_back("mo");
-}
-
-bool TranslationLoaderPO::handles_type(const String &p_type) const {
+static bool _po_res_handles_type(const String &p_type) {
 	return p_type == "Translation";
 }
 
-String TranslationLoaderPO::get_resource_type(const String &p_path) const {
+static String _po_res_get_type(const String &p_path) {
 	if (p_path.has_extension("po") || p_path.has_extension("mo")) {
 		return "Translation";
 	}
 	return "";
 }
-
-// ============================================================================
-// Merged from core/io/dir_access.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/io/net_socket.h"
 
 String DirAccess::_get_root_path() const
 {
@@ -28563,9 +28055,7 @@ bool DirAccess::is_equivalent(const String& p_path_a, const String& p_path_b) co
 
 DirAccess::~DirAccess() { _delete_temp(); }
 
-// ==========================================================================
 // logger.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -28592,16 +28082,9 @@ DirAccess::~DirAccess() { _delete_temp(); }
 /**************************************************************************/
 
 #include <cstdio>
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/templates/rb_set.h"
-#include "core/os/os.h"
 #include "core/version_generated.gen.h" // For regex.
 
 #ifdef MODULE_REGEX_ENABLED
-#include "core/os/os.h"
 #endif // MODULE_REGEX_ENABLED
 
 #if defined(MINGW_ENABLED) || defined(_MSC_VER)
@@ -28762,11 +28245,75 @@ void RotatedFileLogger::logv(const char* p_format, va_list p_list, bool p_err)
 	}
 }
 
-void StdLogger::logv(const char* p_format, va_list p_list, bool p_err)
+#if defined(UNIX_ENABLED)
+#include <syslog.h>
+#endif
+#if defined(ANDROID_ENABLED)
+#include <android/log.h>
+#endif
+#if defined(__APPLE__)
+#include <os/log.h>
+Logger::Logger(const char* p_subsystem) :
+	backend(BACKEND_OS_LOG),
+	os_log_handle((void*)os_log_create(p_subsystem ? p_subsystem : "org.voltaire.engine", "engine"))
+{
+}
+#endif
+
+void Logger::logv(const char* p_format, va_list p_list, bool p_err)
 {
 	if (!should_log(p_err)) {
 		return;
 	}
+
+#if defined(UNIX_ENABLED)
+	if (backend == BACKEND_SYSLOG) {
+		vsyslog(p_err ? LOG_ERR : LOG_INFO, p_format, p_list);
+		return;
+	}
+#endif
+#if defined(ANDROID_ENABLED)
+	if (backend == BACKEND_ANDROID) {
+		__android_log_vprint(p_err ? ANDROID_LOG_ERROR : ANDROID_LOG_INFO, "voltaire", p_format, p_list);
+		return;
+	}
+#endif
+#if defined(__APPLE__)
+	if (backend == BACKEND_OS_LOG) {
+		char static_buf[1024];
+		char* buf = static_buf;
+		va_list list_copy;
+		va_copy(list_copy, p_list);
+		int len = vsnprintf(buf, sizeof(static_buf), p_format, p_list);
+		if (len >= (int)sizeof(static_buf)) {
+			buf = (char*)Memory::alloc_static(len + 1);
+			vsnprintf(buf, len + 1, p_format, list_copy);
+		}
+		va_end(list_copy);
+		os_log_with_type((os_log_t)os_log_handle, p_err ? OS_LOG_TYPE_ERROR : OS_LOG_TYPE_INFO, "%{public}s", buf);
+		if (len >= (int)sizeof(static_buf)) {
+			Memory::free_static(buf);
+		}
+		return;
+	}
+#endif
+#if defined(WINDOWS_ENABLED)
+	if (backend == BACKEND_WINDOWS_TERMINAL) {
+		const unsigned int BUFFER_SIZE = 16384;
+		char buf[BUFFER_SIZE + 1];
+		int len = vsnprintf(buf, BUFFER_SIZE, p_format, p_list);
+		if (len > 0) {
+			fflush(stdout);
+			DWORD written = 0;
+			HANDLE h = p_err ? GetStdHandle(STD_ERROR_HANDLE) : GetStdHandle(STD_OUTPUT_HANDLE);
+			WriteFile(h, buf, MIN((unsigned int)len, BUFFER_SIZE), &written, nullptr);
+#ifdef DEBUG_ENABLED
+			FlushFileBuffers(h);
+#endif
+		}
+		return;
+	}
+#endif
 
 	if (p_err) {
 		vfprintf(stderr, p_format, p_list);
@@ -28774,8 +28321,6 @@ void StdLogger::logv(const char* p_format, va_list p_list, bool p_err)
 	else {
 		vprintf(p_format, p_list);
 		if (_flush_stdout_on_print) {
-			// Don't always flush when printing stdout to avoid performance
-			// issues when `print()` is spammed in release builds.
 			fflush(stdout);
 		}
 	}
@@ -28809,21 +28354,7 @@ CompositeLogger::~CompositeLogger()
 #undef sprintf
 #endif
 
-// ============================================================================
-// Merged from core/io/file_access_wrappers.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
-
-// ============================================================================
 // FileAccessMemory
-// ============================================================================
 
 static HashMap<String, Vector<uint8_t>>* memory_files = nullptr;
 
@@ -28961,9 +28492,7 @@ bool FileAccessMemory::store_buffer(const uint8_t* p_src, uint64_t p_length)
 	return true;
 }
 
-// ============================================================================
 // FileAccessPatched
-// ============================================================================
 
 Error FileAccessPatched::_apply_patch() const
 {
@@ -29149,9 +28678,7 @@ bool FileAccessPatched::file_exists(const String& p_name)
 	return old_file->file_exists(p_name);
 }
 
-// ============================================================================
 // FileAccessCompressed
-// ============================================================================
 
 void FileAccessCompressed::configure(
 	const String& p_magic, Compression::Mode p_mode, uint32_t p_block_size)
@@ -29571,9 +29098,7 @@ void FileAccessCompressed::close() { _close(); }
 
 FileAccessCompressed::~FileAccessCompressed() { _close(); }
 
-// ============================================================================
 // FileAccessEncrypted
-// ============================================================================
 
 Error FileAccessEncrypted::open_and_parse(Ref<FileAccess> p_base, const Vector<uint8_t>& p_key,
 	Mode p_mode, bool p_with_magic, const Vector<uint8_t>& p_iv)
@@ -29879,9 +29404,7 @@ void FileAccessEncrypted::close() { _close(); }
 
 FileAccessEncrypted::~FileAccessEncrypted() { _close(); }
 
-// ============================================================================
 // PackedData / PackSource / FileAccessPack / DirAccessPack
-// ============================================================================
 
 void PackedData::initialize()
 {
@@ -29890,7 +29413,7 @@ void PackedData::initialize()
 	}
 	data = memnew(Data);
 	data->root = memnew(PackedDir);
-	add_pack_source(memnew(PackedSourcePCK));
+	add_pack_source(memnew(PackSource(PackSource::SOURCE_PCK)));
 }
 
 void PackedData::finalize()
@@ -30099,7 +29622,7 @@ void PackedData::_free_packed_dirs(PackedDir* p_dir)
 	memdelete(p_dir);
 }
 
-bool PackedSourcePCK::try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+bool PackSource::_try_open_pck(const String& p_path, bool p_replace_files, uint64_t p_offset,
 	const Vector<uint8_t>& p_decryption_key)
 {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
@@ -30269,46 +29792,7 @@ bool PackedSourcePCK::try_open_pack(const String& p_path, bool p_replace_files, 
 	return true;
 }
 
-Ref<FileAccess> PackedSourcePCK::get_file(
-	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
-{
-	Ref<FileAccess> file(memnew(FileAccessPack(p_path, *p_file, p_decryption_key)));
-
-	if (PackedData::has_delta_patches(p_path)) {
-		Ref<FileAccessPatched> file_patched;
-		file_patched.instantiate();
-		Error err = file_patched->open_custom(file);
-		ERR_FAIL_COND_V(err != OK, Ref<FileAccess>());
-		file = file_patched;
-	}
-
-	return file;
-}
-
-bool PackedSourceDirectory::try_open_pack(const String& p_path, bool p_replace_files,
-	uint64_t p_offset, const Vector<uint8_t>& p_decryption_key)
-{
-	// Load with offset feature only supported for PCK files.
-	ERR_FAIL_COND_V_MSG(p_offset != 0, false,
-		"Invalid PCK data. Note that loading files with a non-zero offset isn't supported with "
-		"directories.");
-
-	if (p_path != "res://") {
-		return false;
-	}
-	add_directory(p_path, p_replace_files);
-	return true;
-}
-
-Ref<FileAccess> PackedSourceDirectory::get_file(
-	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
-{
-	Ref<FileAccess> ret = FileAccess::create_for_path(p_path);
-	ret->reopen(p_path, FileAccess::READ);
-	return ret;
-}
-
-void PackedSourceDirectory::add_directory(const String& p_path, bool p_replace_files)
+void PackSource::add_directory(const String& p_path, bool p_replace_files)
 {
 	Ref<DirAccess> da = DirAccess::open(p_path);
 	if (da.is_null()) {
@@ -30327,6 +29811,60 @@ void PackedSourceDirectory::add_directory(const String& p_path, bool p_replace_f
 		String sub_dir_path = p_path.path_join(sub_dir_name);
 		add_directory(sub_dir_path, p_replace_files);
 	}
+}
+
+bool PackSource::try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+	const Vector<uint8_t>& p_decryption_key)
+{
+	switch (type) {
+	case SOURCE_PCK:
+		return _try_open_pck(p_path, p_replace_files, p_offset, p_decryption_key);
+	case SOURCE_DIRECTORY:
+		ERR_FAIL_COND_V_MSG(p_offset != 0, false,
+			"Invalid PCK data. Note that loading files with a non-zero offset isn't supported with directories.");
+		if (p_path != "res://") {
+			return false;
+		}
+		add_directory(p_path, p_replace_files);
+		return true;
+	case SOURCE_ZIP:
+#ifdef MINIZIP_ENABLED
+		return ZipArchive::try_open_pack(p_path, p_replace_files, p_offset, this, p_decryption_key);
+#else
+		return false;
+#endif
+	}
+	return false;
+}
+
+Ref<FileAccess> PackSource::get_file(
+	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
+{
+	switch (type) {
+	case SOURCE_PCK: {
+		Ref<FileAccess> file(memnew(FileAccessPack(p_path, *p_file, p_decryption_key)));
+		if (PackedData::has_delta_patches(p_path)) {
+			Ref<FileAccessPatched> file_patched;
+			file_patched.instantiate();
+			Error err = file_patched->open_custom(file);
+			ERR_FAIL_COND_V(err != OK, Ref<FileAccess>());
+			file = file_patched;
+		}
+		return file;
+	}
+	case SOURCE_DIRECTORY: {
+		Ref<FileAccess> ret = FileAccess::create_for_path(p_path);
+		ret->reopen(p_path, FileAccess::READ);
+		return ret;
+	}
+	case SOURCE_ZIP:
+#ifdef MINIZIP_ENABLED
+		return ZipArchive::get_file(p_path, p_file, p_decryption_key);
+#else
+		return Ref<FileAccess>();
+#endif
+	}
+	return Ref<FileAccess>();
 }
 
 Error FileAccessPack::open_internal(const String& p_path, int p_mode_flags)
@@ -30640,9 +30178,7 @@ DirAccessPack::DirAccessPack()
 	current = PackedData::data ? PackedData::data->root : nullptr;
 }
 
-// ============================================================================
 // ZipArchive / PackedSourceZIP / FileAccessZip
-// ============================================================================
 
 #ifdef MINIZIP_ENABLED
 
@@ -30865,18 +30401,6 @@ Ref<FileAccess> ZipArchive::get_file(
 	return memnew(FileAccessZip(p_path, *p_file));
 }
 
-bool PackedSourceZIP::try_open_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
-	const Vector<uint8_t>& p_decryption_key)
-{
-	return ZipArchive::try_open_pack(p_path, p_replace_files, p_offset, this, p_decryption_key);
-}
-
-Ref<FileAccess> PackedSourceZIP::get_file(
-	const String& p_path, PackedData::PackedFile* p_file, const Vector<uint8_t>& p_decryption_key)
-{
-	return ZipArchive::get_file(p_path, p_file, p_decryption_key);
-}
-
 Error FileAccessZip::open_internal(const String& p_path, int p_mode_flags)
 {
 	_close();
@@ -30979,10 +30503,6 @@ FileAccessZip::FileAccessZip(const String& p_path, const PackedData::PackedFile&
 FileAccessZip::~FileAccessZip() { _close(); }
 
 #endif // MINIZIP_ENABLED
-
-
-// --- Merged from core/io/stream_peer.cpp ---
-#include "core/io/net_socket.h"
 
 Error StreamPeer::_put_data(const Vector<uint8_t>& p_data)
 {
@@ -31278,30 +30798,6 @@ String StreamPeer::get_utf8_string(int p_bytes)
 	return String::utf8((const char*)buf.ptr(), buf.size());
 }
 
-Error StreamPeerExtension::get_data(uint8_t* r_buffer, int p_bytes)
-{
-	WARN_PRINT_ONCE("StreamPeerExtension::_get_data is unimplemented!");
-	return FAILED;
-}
-
-Error StreamPeerExtension::get_partial_data(uint8_t* r_buffer, int p_bytes, int& r_received)
-{
-	WARN_PRINT_ONCE("StreamPeerExtension::_get_partial_data is unimplemented!");
-	return FAILED;
-}
-
-Error StreamPeerExtension::put_data(const uint8_t* p_data, int p_bytes)
-{
-	WARN_PRINT_ONCE("StreamPeerExtension::_put_data is unimplemented!");
-	return FAILED;
-}
-
-Error StreamPeerExtension::put_partial_data(const uint8_t* p_data, int p_bytes, int& r_sent)
-{
-	WARN_PRINT_ONCE("StreamPeerExtension::_put_partial_data is unimplemented!");
-	return FAILED;
-}
-
 Error StreamPeerBuffer::put_data(const uint8_t* p_data, int p_bytes)
 {
 	if (p_bytes <= 0 || !p_data) {
@@ -31400,9 +30896,7 @@ Ref<StreamPeerBuffer> StreamPeerBuffer::duplicate() const
 	return spb;
 }
 
-// ==========================================================================
 // stream_peer_socket.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -31427,10 +30921,6 @@ Ref<StreamPeerBuffer> StreamPeerBuffer::duplicate() const
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
-
-#include "core/os/os.h"
 
 void StreamPeerSocket::accept_socket(Ref<NetSocket> p_sock, const NetSocket::Address& p_addr)
 {
@@ -31790,9 +31280,7 @@ StreamPeerSocket::StreamPeerSocket(Domain p_domain)
 
 StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }
 
-// ==========================================================================
 // stream_peer_gzip.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -31819,8 +31307,6 @@ StreamPeerSocket::~StreamPeerSocket() { disconnect_from_host(); }
 /**************************************************************************/
 
 #include <zlib.h>
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
 
 StreamPeerGZIP::~StreamPeerGZIP() { _close(); }
 
@@ -32003,9 +31489,7 @@ Error StreamPeerGZIP::finish()
 	return OK;
 }
 
-// ==========================================================================
 // stream_peer_tls.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -32030,8 +31514,6 @@ Error StreamPeerGZIP::finish()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 #include "core/version_generated.gen.h"
 
@@ -32073,9 +31555,7 @@ StreamPeerTLS::~StreamPeerTLS() {}
 
 #endif // !MODULE_MBEDTLS_ENABLED
 
-// ==========================================================================
 // socket_server.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -32100,8 +31580,6 @@ StreamPeerTLS::~StreamPeerTLS() {}
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 Error SocketServer::_listen(const NetSocket::Address& p_addr)
 {
@@ -32218,16 +31696,7 @@ SocketServer::SocketServer() : _sock(NetSocket::create()) {}
 
 SocketServer::~SocketServer() { stop(); }
 
-// ============================================================================
-// Merged from core/io/http_client.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-
 #ifndef WEB_ENABLED
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #endif
 
 const char* HTTPClient::_methods[METHOD_MAX] = {
@@ -33072,13 +32541,6 @@ HTTPClient::~HTTPClient() {}
 
 #endif // WEB_ENABLED
 
-// ============================================================================
-// Merged from core/io/ip.cpp
-// ============================================================================
-
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-
 /************* RESOLVER ******************/
 
 struct _IP_ResolverPrivate
@@ -33376,9 +32838,7 @@ void IP::reset_backend()
 	get_local_interfaces = &_default_get_local_interfaces;
 }
 
-// ==========================================================================
 // ip_address.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -33404,7 +32864,6 @@ void IP::reset_backend()
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/ip.h"
 /*
 IPAddress::operator Variant() const {
 	return operator String();
@@ -33658,9 +33117,7 @@ IPAddress::IPAddress(uint32_t p_a, uint32_t p_b, uint32_t p_c, uint32_t p_d, boo
 	}
 }
 
-// ==========================================================================
 // net_socket.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -33685,8 +33142,6 @@ IPAddress::IPAddress(uint32_t p_a, uint32_t p_b, uint32_t p_c, uint32_t p_d, boo
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 Ref<NetSocket> (*NetSocket::_create)() = nullptr;
 
@@ -33699,9 +33154,7 @@ Ref<NetSocket> NetSocket::create() {
 	return nullptr;
 }
 
-// ==========================================================================
 // remote_filesystem_client.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -33726,14 +33179,6 @@ Ref<NetSocket> NetSocket::create() {
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #define FILESYSTEM_CACHE_VERSION 1
 #define FILESYSTEM_PROTOCOL_VERSION 1
@@ -34043,13 +33488,6 @@ Error RemoteFilesystemClient::_synchronize_with_server(const String &p_host, int
 #undef FILES_CACHE_FILE
 #endif
 
-// ============================================================================
-// Merged from core/io/packet_peer.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-
 void PacketPeer::set_encode_buffer_max_size(int p_max_size)
 {
 	ERR_FAIL_COND_MSG(p_max_size < 1024, "Max encode buffer must be at least 1024 bytes");
@@ -34106,18 +33544,6 @@ Vector<uint8_t> PacketPeer::_get_packet()
 }
 
 Error PacketPeer::_get_packet_error() const { return last_get_error; }
-
-Error PacketPeerExtension::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	WARN_PRINT_ONCE("PacketPeerExtension::_get_packet_native is unimplemented!");
-	return FAILED;
-}
-
-Error PacketPeerExtension::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	WARN_PRINT_ONCE("PacketPeerExtension::_put_packet_native is unimplemented!");
-	return FAILED;
-}
 
 Error PacketPeerStream::_poll_buffer() const
 {
@@ -34254,9 +33680,7 @@ PacketPeerStream::PacketPeerStream()
 	output_buffer.resize(int64_t(1) << rbsize);
 }
 
-// ==========================================================================
 // packet_peer_udp.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -34281,9 +33705,6 @@ PacketPeerStream::PacketPeerStream()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/ip.h"
-#include "core/io/packet_peer_udp.h"
 
 void PacketPeerUDP::set_blocking_mode(bool p_enable) { blocking = p_enable; }
 
@@ -34631,9 +34052,7 @@ PacketPeerUDP::PacketPeerUDP() : _sock(Ref<NetSocket>(NetSocket::create())) { rb
 
 PacketPeerUDP::~PacketPeerUDP() { close(); }
 
-// ==========================================================================
 // packet_peer_dtls.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -34658,8 +34077,6 @@ PacketPeerUDP::~PacketPeerUDP() { close(); }
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/packet_peer_dtls.h"
 
 #include "core/version_generated.gen.h"
 
@@ -34694,9 +34111,7 @@ PacketPeerDTLS::~PacketPeerDTLS() {}
 
 #endif // !MODULE_MBEDTLS_ENABLED
 
-// ==========================================================================
 // udp_server.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -34721,8 +34136,6 @@ PacketPeerDTLS::~PacketPeerDTLS() {}
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/packet_peer_udp.h"
 
 Error UDPServer::poll()
 {
@@ -34902,9 +34315,7 @@ UDPServer::UDPServer() : _sock(Ref<NetSocket>(NetSocket::create())) {}
 
 UDPServer::~UDPServer() { stop(); }
 
-// ==========================================================================
 // dtls_server.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -34929,8 +34340,6 @@ UDPServer::~UDPServer() { stop(); }
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/packet_peer_dtls.h"
 
 #include "core/version_generated.gen.h"
 
@@ -34951,46 +34360,7 @@ DTLSServer::~DTLSServer() {}
 
 #endif // !MODULE_MBEDTLS_ENABLED
 
-// === Merged from core/io/resource_loader.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "core/os/condition_variable.h"
-#include "core/os/os.h"
-#include "core/os/condition_variable.h"
-#include "core/string/ustring.h"
-#include "core/os/os.h"
-#include "core/templates/rb_set.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_LOAD_THREADED
@@ -35038,6 +34408,9 @@ void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<String
 
 ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String& p_path) const
 {
+	if (disable_uid_file) {
+		return ResourceUID::INVALID_ID;
+	}
 	int64_t uid = ResourceUID::INVALID_ID;
 	Ref<FileAccess> file = FileAccess::open(p_path + ".uid", FileAccess::READ);
 	if (file.is_valid()) {
@@ -35049,6 +34422,10 @@ ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String& p_path) con
 void ResourceFormatLoader::get_recognized_extensions_for_type(
 	const String& p_type, List<String>* p_extensions) const
 {
+	if (get_exts_for_type_fn) {
+		get_exts_for_type_fn(p_type, p_extensions);
+		return;
+	}
 	if (p_type.is_empty() || handles_type(p_type)) {
 		get_recognized_extensions(p_extensions);
 	}
@@ -35069,10 +34446,10 @@ bool ResourceFormatLoader::exists(const String& p_path) const
 
 void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const
 {
-	PackedStringArray exts;
-	const String* r = exts.ptr();
-	for (int i = 0; i < exts.size(); ++i) {
-		p_extensions->push_back(r[i]);
+	if (extensions) {
+		for (const char* const* ext = extensions; *ext != nullptr; ++ext) {
+			p_extensions->push_back(*ext);
+		}
 	}
 }
 
@@ -36140,36 +35517,41 @@ HashMap<String, Vector<String>> ResourceLoader::translation_remaps;
 
 ResourceLoaderImport ResourceLoader::import = nullptr;
 
-bool ResourceFormatLoader::handles_type(const String& p_type) const { return false; }
+bool ResourceFormatLoader::handles_type(const String& p_type) const
+{
+	return handles_type_fn ? handles_type_fn(p_type) : false;
+}
 
-String ResourceFormatLoader::get_resource_type(const String& p_path) const { return String(); }
+String ResourceFormatLoader::get_resource_type(const String& p_path) const
+{
+	return get_resource_type_fn ? get_resource_type_fn(p_path) : String();
+}
 
 String ResourceFormatLoader::get_resource_script_class(const String& p_path) const
 {
 	return String();
 }
 
-bool ResourceFormatLoader::has_custom_uid_support() const { return false; }
+bool ResourceFormatLoader::has_custom_uid_support() const { return disable_uid_file; }
 
 void ResourceLoader::_run_load_task(void* p_userdata) {}
 
 void ResourceLoader::load_translation_remaps() {}
 
-
 Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_original_path,
 	Error* r_error, bool p_use_sub_threads, float* r_progress,
 	CacheMode p_cache_mode)
 {
-	Ref<Resource> r = memnew(Resource);
-	return r;
+	if (load_fn) {
+		return load_fn(p_path, p_original_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+	}
+	return Ref<Resource>(memnew(Resource));
 }
 #ifdef print_lt
 #undef print_lt
 #endif
 
-// ==========================================================================
 // resource_saver.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -36195,10 +35577,6 @@ Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_o
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-
 Ref<ResourceFormatSaver> ResourceSaver::saver[MAX_SAVERS];
 
 int ResourceSaver::saver_count = 0;
@@ -36209,29 +35587,24 @@ ResourceSaverGetResourceIDForPath ResourceSaver::save_get_id_for_path = nullptr;
 Error ResourceFormatSaver::save(
 	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
-	Error err = ERR_METHOD_NOT_FOUND;
-	return err;
+	return save_fn ? save_fn(p_resource, p_path, p_flags) : ERR_METHOD_NOT_FOUND;
 }
 
 Error ResourceFormatSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
 {
-	Error err = ERR_FILE_UNRECOGNIZED;
-	return err;
+	return set_uid_fn ? set_uid_fn(p_path, p_uid) : ERR_FILE_UNRECOGNIZED;
 }
 
 bool ResourceFormatSaver::recognize(const Ref<Resource>& p_resource) const
 {
-	bool success = false;
-	return success;
+	return recognize_fn ? recognize_fn(p_resource) : false;
 }
 
 void ResourceFormatSaver::get_recognized_extensions(
 	const Ref<Resource>& p_resource, List<String>* p_extensions) const
 {
-	PackedStringArray exts;
-	const String* r = exts.ptr();
-	for (int i = 0; i < exts.size(); ++i) {
-		p_extensions->push_back(r[i]);
+	if (get_exts_fn) {
+		get_exts_fn(p_resource, p_extensions);
 	}
 }
 
@@ -36408,9 +35781,7 @@ Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const
 	return rfs;
 }
 
-// ==========================================================================
 // resource_uid.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -36435,12 +35806,6 @@ Ref<ResourceFormatSaver> ResourceSaver::_find_custom_resource_format_saver(const
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 
 // These constants are off by 1, causing the 'z' and '9' characters never to be used.
 // This cannot be fixed without breaking compatibility; see GH-83843.
@@ -36848,9 +36213,7 @@ void ResourceUID::finalize()
 	data = nullptr;
 }
 
-// ==========================================================================
 // missing_resource.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -36875,8 +36238,6 @@ void ResourceUID::finalize()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/net_socket.h"
 
 void MissingResource::set_original_class(const String& p_class) { original_class = p_class; }
 
@@ -36888,9 +36249,7 @@ bool MissingResource::is_recording_properties() const { return recording_propert
 
 String MissingResource::get_save_class() const { return original_class; }
 
-// ==========================================================================
 // image_loader.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -36916,33 +36275,27 @@ String MissingResource::get_save_class() const { return original_class; }
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
+void ImageFormatLoader::get_recognized_extensions(List<String>* p_extensions) const
+{
+	if (!extensions) {
+		return;
+	}
+	for (const char* const* ext = extensions; *ext != nullptr; ++ext) {
+		p_extensions->push_back(*ext);
+	}
+}
 
 bool ImageFormatLoader::recognize(const String& p_extension) const
 {
-	List<String> extensions;
-	get_recognized_extensions(&extensions);
-	for (const String& E : extensions) {
-		if (E.nocasecmp_to(p_extension) == 0) {
+	if (!extensions) {
+		return false;
+	}
+	for (const char* const* ext = extensions; *ext != nullptr; ++ext) {
+		if (p_extension.nocasecmp_to(*ext) == 0) {
 			return true;
 		}
 	}
-
 	return false;
-}
-
-Error ImageFormatLoaderExtension::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess,
-	uint32_t p_flags, float p_scale)
-{
-	Error err = ERR_UNAVAILABLE;
-	return err;
-}
-
-void ImageFormatLoaderExtension::add_format_loader() { ImageLoader::add_image_format_loader(this); }
-
-void ImageFormatLoaderExtension::remove_format_loader()
-{
-	ImageLoader::remove_image_format_loader(this);
 }
 
 Error ImageLoader::load_image(const String& p_file, Ref<Image> p_image, Ref<FileAccess> p_custom,
@@ -37014,11 +36367,7 @@ void ImageLoader::cleanup()
 	}
 }
 
-void ImageFormatLoaderExtension::get_recognized_extensions(List<String>* p_extensions) const {}
-
-// ==========================================================================
 // image_resource_format.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -37044,9 +36393,7 @@ void ImageFormatLoaderExtension::get_recognized_extensions(List<String>* p_exten
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/io/net_socket.h"
-
-Ref<Resource> ResourceFormatLoaderImage::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
+static Ref<Resource> _image_res_load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, ResourceFormatLoader::CacheMode p_cache_mode) {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	if (f.is_null()) {
 		if (r_error) {
@@ -37103,27 +36450,14 @@ Ref<Resource> ResourceFormatLoaderImage::load(const String &p_path, const String
 	return image;
 }
 
-void ResourceFormatLoaderImage::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("image");
-}
-
-bool ResourceFormatLoaderImage::handles_type(const String &p_type) const {
+static bool _image_res_handles_type(const String &p_type) {
 	return p_type == "Image";
 }
 
-String ResourceFormatLoaderImage::get_resource_type(const String &p_path) const {
+static String _image_res_get_type(const String &p_path) {
 	return p_path.get_extension().to_lower() == "image" ? "Image" : String();
 }
 
-// ============================================================================
-// Merged from core/io/resource.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h" //only so casting works
 
 void Resource::register_custom_data_to_otdb()
@@ -37498,15 +36832,6 @@ void Resource::reload_from_file() {}
 
 void Resource::setup_local_to_scene() {}
 
-
-// ============================================================================
-// Merged from core/io/resource_format_binary.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 // #define print_bl(m_what) print_line(m_what)
@@ -38886,18 +38211,6 @@ void ResourceFormatSaverBinary::get_recognized_extensions(
 	}
 }
 
-
-
-
-// ============================================================================
-// Merged from core/io/resource_importer.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-
 bool ResourceFormatImporter::SortImporterByName::operator()(
 	const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) const
 {
@@ -39385,7 +38698,7 @@ void ResourceImporter::get_build_dependencies(const String& p_path, HashSet<Stri
 	}
 }
 
-Error ResourceFormatImporterSaver::set_uid(const String& p_path, ResourceUID::ID p_uid)
+static Error _importer_saver_set_uid(const String& p_path, ResourceUID::ID p_uid)
 {
 	Ref<ConfigFile> cf;
 	cf.instantiate();
@@ -39398,18 +38711,7 @@ Error ResourceFormatImporterSaver::set_uid(const String& p_path, ResourceUID::ID
 	return OK;
 }
 
-
-
 void ResourceFormatImporter::get_internal_resource_path_list(String const&, List<String, DefaultAllocator>*) {}
-
-
-// --- Merged from core/io/image.cpp ---
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
 
 #ifndef DISABLE_DEPRECATED
 
@@ -44174,45 +43476,8 @@ void Image::copy_internals_from(const Ref<Image>& p_image)
 	data = p_image->data;
 }
 
-// === Merged from core/string/ustring.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include <cstdio>
 #include <thirdparty/grisu2/grisu2.h>
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/os/os.h"
-// --- Inlined from core/string/ucaps.h ---
 // This file was generated using the `misc/scripts/ucaps_fetch.py` script.
 
 #define LTU_LEN 1505
@@ -47257,9 +46522,7 @@ inline int _find_lower(int p_ch) {
 	return p_ch;
 }
 
-// --- End core/string/ucaps.h ---
 #include "core/version_generated.gen.h"
-#include "core/string/ustring.h"
 
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS // to disable build-time warning which suggested to use strcpy_s
@@ -53005,15 +52268,7 @@ String RTRN(const String& p_text, const String& p_text_plural, int p_n, const St
 	return p_text_plural;
 }
 
-
-
-// ============================================================================
-// Merged from core/string/char_range.cpp
-// ============================================================================
-
 // This file was generated using the `misc/scripts/char_range_fetch.py` script.
-
-#include "core/string/ustring.h"
 
 // Unicode Derived Core Properties
 // Source: https://www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt
@@ -56634,14 +55889,6 @@ const CharRange unicode_letter[unicode_letter_size] = {
 	{ 0x31350, 0x33479 },
 };
 
-
-// --- Merged from core/string/translation.cpp ---
-#include "core/os/mutex.h"
-#include "core/os/os.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-
 extern "C"
 {
 #include <thirdparty/misc/smaz.h>
@@ -57113,9 +56360,7 @@ Translation::~Translation()
 	}
 }
 
-// ==========================================================================
 // plural_rules.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -57140,9 +56385,6 @@ Translation::~Translation()
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/io/ip.h"
-#include "core/os/os.h"
 
 int PluralRules::_find_unquoted(const String& p_src, char32_t p_chr) const
 {
@@ -57265,9 +56507,7 @@ PluralRules* PluralRules::parse(const String& p_rules)
 	return memnew(PluralRules(nplurals, plural));
 }
 
-// ==========================================================================
 // translation_domain.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -57292,8 +56532,6 @@ PluralRules* PluralRules::parse(const String& p_rules)
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
 
 struct _character_accent_pair
 {
@@ -57799,9 +57037,7 @@ String TranslationDomain::pseudolocalize(const String& p_message) const
 	return _add_padding(message, length);
 }
 
-// ==========================================================================
 // translation_server.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -57827,10 +57063,6 @@ String TranslationDomain::pseudolocalize(const String& p_message) const
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-// --- Inlined from core/string/locales.h ---
 // Windows has some weird locale identifiers which do not honor the ISO 639-1
 // standardized nomenclature. Whenever those don't conflict with existing ISO
 // identifiers, we override them.
@@ -59686,9 +58918,6 @@ static const struct NumSystemData {
 	{ nullptr, nullptr, nullptr, nullptr, nullptr }
 };
 
-// --- End core/string/locales.h ---
-#include "core/os/os.h"
-
 // --- translation_server.compat.inc ---
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -59716,7 +58945,6 @@ static const struct NumSystemData {
 
 #ifndef DISABLE_DEPRECATED
 
-
 String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_locale)
 {
 	return standardize_locale(p_locale, false);
@@ -59725,7 +58953,6 @@ String TranslationServer::_standardize_locale_bind_compat_98972(const String& p_
 void TranslationServer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 void TranslationServer::init_locale_info()
 {
@@ -60365,7 +59592,6 @@ String TranslationServer::pseudolocalize(const String& p_message)
 	return data->main_domain->pseudolocalize(p_message);
 }
 
-
 void TranslationServer::load_project_translations(Ref<TranslationDomain> p_domain)
 {
 	DEV_ASSERT(p_domain.is_valid());
@@ -60407,12 +59633,6 @@ void TranslationServer::finalize()
 }
 
 void TranslationServer::setup() {}
-
-// ============================================================================
-// Merged from core/string/node_path.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
 
 void NodePath::_update_hash_cache() const
 {
@@ -60909,9 +60129,7 @@ NodePath::NodePath(const String& p_path)
 
 NodePath::~NodePath() { unref(); }
 
-// ==========================================================================
 // print_string.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -60938,9 +60156,6 @@ NodePath::~NodePath() { unref(); }
 /**************************************************************************/
 
 #include <cstdio>
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 static PrintHandlerList* print_handler_list = nullptr;
 static thread_local bool is_printing = false;
@@ -61362,9 +60577,7 @@ void print_error(const String& p_string)
 
 bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
 
-// ==========================================================================
 // string_builder.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -61389,8 +60602,6 @@ bool is_print_verbose_enabled() { return OS::is_stdout_verbose(); }
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/string/ustring.h"
 
 StringBuilder &StringBuilder::append(const String &p_string) {
 	if (p_string.is_empty()) {
@@ -61459,9 +60670,7 @@ String StringBuilder::as_string() const {
 	return string;
 }
 
-// ==========================================================================
 // fuzzy_search.cpp
-// ==========================================================================
 
 /* Copyright (c) 2026-present Bland Logic LLC.                            */
 /* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
@@ -61486,8 +60695,6 @@ String StringBuilder::as_string() const {
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
-
-#include "core/os/os.h"
 
 static const String boundary_chars = "/\\-_. ";
 
@@ -61875,51 +61082,10 @@ Vector<Ref<FuzzySearchMatch>> FuzzySearch::search_all(
 }
 #undef vert
 
-// === Merged from main/main.cpp ===
-/*  main.cpp                                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include <cstdlib>
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 #include "main/splash.gen.h"
-// --- Inlined from main/main_timer_sync.h ---
 #include <cstdint>
 
 struct MainFrameTime {
@@ -62033,10 +61199,6 @@ public:
 	// advance one frame, return timesteps to take
 	MainFrameTime advance(double p_physics_step, int p_physics_ticks_per_second);
 };
-
-// --- End main/main_timer_sync.h ---
-// --- Inlined from main/performance.h ---
-#include "core/io/ip.h"
 
 #define PERF_WARN_OFFLINE_FUNCTION
 #define PERF_WARN_PROCESS_SYNC
@@ -62163,7 +61325,6 @@ private:
 	};
 };
 
-// --- End main/performance.h ---
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -62199,14 +61360,6 @@ private:
 
 #ifdef TOOLS_ENABLED
 #include "main/splash.gen.h"
-// --- Inlined from editor/editor_ui.h ---
-#include "core/os/os.h"
-// --- Folded from editor/ui_widgets.h ---
-#include "core/os/os.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 
 // Composable, zero-inheritance Canvas UI state structs and drawing primitives
@@ -62374,8 +61527,6 @@ void draw_clipped_line(RID p_ci, const Rect2& p_clip, Point2 p_a, Point2 p_b, co
 
 String read_project_name(const String& p_dir);
 } // namespace UIDraw
-
-// --- End editor/ui_widgets.h ---
 
 class EditorUI
 {
@@ -62557,10 +61708,6 @@ public:
 	static bool _can_delete_selected_node();
 };
 
-// --- Folded from editor/doc/doc_tools.h ---
-#include "core/templates/rb_set.h"
-#include "core/io/ip.h"
-
 class XMLParser;
 
 class DocTools
@@ -62593,14 +61740,7 @@ public:
 	Error load_xml(const uint8_t* p_data, int64_t p_size);
 };
 
-
-
-// --- End editor/doc/doc_tools.h ---
-
-// --- Folded from editor/project_upgrade/project_converter_3_to_4.h ---
 #ifndef DISABLE_DEPRECATED
-
-#include "core/string/ustring.h"
 
 struct SourceLine {
 	String line;
@@ -62684,12 +61824,6 @@ public:
 };
 
 #endif // DISABLE_DEPRECATED
-
-// --- End editor/project_upgrade/project_converter_3_to_4.h ---
-
-// --- Folded from editor/project_manager/project_manager.h ---
-#include "core/os/os.h"
-
 
 class ProjectManager
 {
@@ -62800,596 +61934,6 @@ public:
 		const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found);
 };
 
-// --- End editor/project_manager/project_manager.h ---
-
-// --- Folded from editor/export/editor_export_platform.h ---
-#include "core/os/os.h"
-// --- Folded preset section from editor/export/editor_export.h ---
-#ifndef EDITOR_EXPORT_PRESET_SECTION_H
-#define EDITOR_EXPORT_PRESET_SECTION_H
-
-#include "core/io/ip.h"
-
-class EditorExportPlatform;
-
-class EditorExportPreset : public RefCounted
-{
-public:
-	enum ExportFilter
-	{
-		EXPORT_ALL_RESOURCES,
-		EXPORT_SELECTED_SCENES,
-		EXPORT_SELECTED_RESOURCES,
-		EXCLUDE_SELECTED_RESOURCES,
-		EXPORT_CUSTOMIZED,
-	};
-
-	enum FileExportMode
-	{
-		MODE_FILE_NOT_CUSTOMIZED,
-		MODE_FILE_STRIP,
-		MODE_FILE_KEEP,
-		MODE_FILE_REMOVE,
-	};
-
-	enum ScriptExportMode
-	{
-		MODE_SCRIPT_TEXT,
-		MODE_SCRIPT_BINARY_TOKENS,
-		MODE_SCRIPT_BINARY_TOKENS_COMPRESSED,
-	};
-
-private:
-	Ref<EditorExportPlatform> platform;
-	ExportFilter export_filter = EXPORT_ALL_RESOURCES;
-	String include_filter;
-	String exclude_filter;
-	String export_path;
-
-	String exporter;
-	HashSet<String> selected_files;
-	HashMap<String, FileExportMode> customized_files;
-	bool dedicated_server = false;
-
-	Vector<String> patches;
-	bool patch_delta_encoding_enabled = false;
-	int patch_delta_zstd_level = 19;
-	double patch_delta_min_reduction = 0.1;
-	String patch_delta_include_filter = "*";
-	String patch_delta_exclude_filter;
-
-	friend class EditorExport;
-	friend class EditorExportPlatform;
-
-	HashMap<String, bool> update_visibility;
-
-	String name;
-	bool options_search_active = false;
-
-	String custom_features;
-
-	String enc_in_filters;
-	String enc_ex_filters;
-	bool enc_pck = false;
-	bool enc_directory = false;
-	uint64_t seed = 0;
-
-	String script_key;
-	ScriptExportMode script_mode = MODE_SCRIPT_BINARY_TOKENS_COMPRESSED;
-
-protected:
-	String _get_property_warning(const String& p_name) const;
-
-public:
-	Ref<EditorExportPlatform> get_platform() const;
-
-	void update_files();
-	void update_value_overrides();
-
-	Vector<String> get_files_to_export() const;
-	HashSet<String> get_selected_files() const;
-	void set_selected_files(const HashSet<String>& p_files);
-	int get_customized_files_count() const;
-
-	bool has_export_file(const String& p_path);
-
-	FileExportMode get_file_export_mode(
-		const String& p_path, FileExportMode p_default = MODE_FILE_NOT_CUSTOMIZED) const;
-
-	String get_name() const;
-
-	bool is_runnable() const;
-
-	bool are_advanced_options_enabled() const;
-	void set_options_search_active(bool p_active);
-
-	bool is_dedicated_server() const;
-
-	ExportFilter get_export_filter() const;
-
-	String get_include_filter() const;
-
-	String get_exclude_filter() const;
-
-	String get_patch(int p_index);
-
-	void set_patches(const Vector<String>& p_patches);
-	Vector<String> get_patches() const;
-
-	bool is_patch_delta_encoding_enabled() const;
-
-	int get_patch_delta_zstd_level() const;
-
-	double get_patch_delta_min_reduction() const;
-
-	String get_patch_delta_include_filter() const;
-
-	String get_patch_delta_exclude_filter() const;
-
-	String get_custom_features() const;
-
-	String get_export_path() const;
-
-	String get_enc_in_filter() const;
-
-	String get_enc_ex_filter() const;
-
-	uint64_t get_seed() const;
-
-	bool get_enc_pck() const;
-
-	bool get_enc_directory() const;
-
-	String get_script_encryption_key() const;
-
-	ScriptExportMode get_script_export_mode() const;
-
-	String get_version(const String& p_name, bool p_windows_version = false) const;
-};
-
-#endif // EDITOR_EXPORT_PRESET_SECTION_H
-#include "servers/display/display_server.h"
-
-class DirAccess;
-class EditorExportPlugin;
-class EditorFileSystemDirectory;
-class FileAccess;
-class Image;
-class Node;
-class RichTextLabel;
-class Texture2D;
-struct EditorProgress;
-struct SharedObject;
-
-typedef void* zipFile;
-
-const String ENV_SCRIPT_ENCRYPTION_KEY = "GODOT_SCRIPT_ENCRYPTION_KEY";
-
-class EditorExportPlatform : public RefCounted
-{
-protected:
-
-public:
-
-	EditorExportPlatform() {}
-	typedef Error (*EditorExportSaveFunction)(const Ref<EditorExportPreset>& p_preset,
-		void* p_userdata, const String& p_path, const Vector<uint8_t>& p_data, int p_file,
-		int p_total, const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-	typedef Error (*EditorExportRemoveFunction)(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const String& p_path);
-	typedef Error (*EditorExportSaveSharedObject)(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	enum DebugFlags
-	{
-		DEBUG_FLAG_DUMB_CLIENT = 1,
-		DEBUG_FLAG_REMOTE_DEBUG = 2,
-		DEBUG_FLAG_REMOTE_DEBUG_LOCALHOST = 4,
-		DEBUG_FLAG_VIEW_COLLISIONS = 8,
-		DEBUG_FLAG_VIEW_NAVIGATION = 16,
-	};
-
-	enum ExportMessageType
-	{
-		EXPORT_MESSAGE_NONE,
-		EXPORT_MESSAGE_INFO,
-		EXPORT_MESSAGE_WARNING,
-		EXPORT_MESSAGE_ERROR,
-	};
-
-	struct ExportMessage
-	{
-		ExportMessageType msg_type;
-		String category;
-		String text;
-	};
-
-	struct SavedData
-	{
-		uint64_t ofs = 0;
-		uint64_t size = 0;
-		bool encrypted = false;
-		bool removal = false;
-		bool delta = false;
-		Vector<uint8_t> md5;
-		CharString path_utf8;
-
-		bool operator<(const SavedData& p_data) const { return path_utf8 < p_data.path_utf8; }
-	};
-
-	struct PackData
-	{
-		String path;
-		String salt;
-		Ref<FileAccess> f;
-		Vector<SavedData> file_ofs;
-		EditorProgress* ep = nullptr;
-		Vector<SharedObject>* so_files = nullptr;
-		bool use_sparse_pck = false;
-	};
-
-	static bool _store_header(Ref<FileAccess> p_fd, bool p_enc, bool p_sparse,
-		uint64_t& r_file_base_ofs, uint64_t& r_dir_base_ofs, const String& p_salt);
-	static bool _encrypt_and_store_directory(Ref<FileAccess> p_fd, PackData& p_pack_data,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, uint64_t p_file_base);
-	static Error _encrypt_and_store_data(Ref<FileAccess> p_fd, const String& p_path,
-		const Vector<uint8_t>& p_data, const Vector<String>& p_enc_in_filters,
-		const Vector<String>& p_enc_ex_filters, const Vector<uint8_t>& p_key, uint64_t p_seed,
-		bool& r_encrypt);
-	static String _get_script_encryption_key(const Ref<EditorExportPreset>& p_preset);
-	static Vector<uint8_t> _get_script_encryption_key_bytes(
-		const Ref<EditorExportPreset>& p_preset);
-
-private:
-	struct ZipData
-	{
-		void* zip = nullptr;
-		EditorProgress* ep = nullptr;
-		Vector<SharedObject>* so_files = nullptr;
-		int file_count = 0;
-	};
-
-	Vector<ExportMessage> messages;
-	Vector<String> patch_temp_dirs;
-
-	void _export_find_resources(EditorFileSystemDirectory* p_dir, HashSet<String>& p_paths);
-	void _export_find_customized_resources(const Ref<EditorExportPreset>& p_preset,
-		EditorFileSystemDirectory* p_dir, EditorExportPreset::FileExportMode p_mode,
-		HashSet<String>& p_paths);
-	void _export_find_dependencies(const String& p_path, HashSet<String>& p_paths);
-
-	static Error _pack_add_shared_object(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	static Error _remove_pack_file(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const String& p_path);
-
-	static Error _zip_add_shared_object(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	static Error _script_save_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-	static Error _script_add_shared_object(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	void _edit_files_with_filter(
-		Ref<DirAccess>& da, const Vector<String>& p_filters, HashSet<String>& r_list, bool exclude);
-	void _edit_filter_list(HashSet<String>& r_list, const String& p_filter, bool exclude);
-
-	struct FilteredCache
-	{
-		Vector<uint8_t> extension_list;
-		Vector<uint8_t> global_class_list;
-		Vector<uint8_t> uids;
-	};
-
-	static FilteredCache _get_filtered_cache(const HashSet<String>& p_paths);
-
-	struct FileExportCache
-	{
-		uint64_t source_modified_time = 0;
-		String source_md5;
-		String saved_path;
-		bool used = false;
-	};
-
-	bool _export_customize_scene_resources(Node* p_root, Node* p_node,
-		LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins);
-	bool _is_editable_ancestor(Node* p_root, Node* p_node);
-
-	String _export_customize(const String& p_path,
-		LocalVector<Ref<EditorExportPlugin>>& customize_resources_plugins,
-		LocalVector<Ref<EditorExportPlugin>>& customize_scenes_plugins,
-		HashMap<String, FileExportCache>& export_cache, const String& export_base_path,
-		bool p_force_save);
-
-protected:
-	struct ExportNotifier
-	{
-		bool enabled = true;
-
-		ExportNotifier(EditorExportPlatform& p_platform, const Ref<EditorExportPreset>& p_preset,
-			bool p_debug, const String& p_path, uint32_t p_flags,
-			bool p_enabled = true);
-		~ExportNotifier();
-	};
-
-	HashSet<String> get_features(const Ref<EditorExportPreset>& p_preset, bool p_debug) const;
-
-	bool exists_export_template(const String& p_template_file_name, String* r_err) const;
-	String find_export_template(const String& p_template_file_name, String* r_err = nullptr) const;
-	Vector<String> gen_export_flags(uint32_t p_flags);
-
-	virtual void zip_folder_recursive(zipFile& p_zip, const String& p_root_path,
-		const String& p_folder, const String& p_pkg_name);
-
-	ProcessID _ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
-		const Vector<String>& p_ssh_args, const String& p_cmd_args, int p_port_fwd = -1) const
-	{
-		ProcessID pid = 0;
-		Error err =
-			ssh_run_on_remote_no_wait(p_host, p_port, p_ssh_args, p_cmd_args, &pid, p_port_fwd);
-		if (err != OK) {
-			return -1;
-		}
-		else {
-			return pid;
-		}
-	}
-
-	Error ssh_run_on_remote(const String& p_host, const String& p_port,
-		const Vector<String>& p_ssh_args, const String& p_cmd_args, String* r_out = nullptr,
-		int p_port_fwd = -1) const;
-	Error ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
-		const Vector<String>& p_ssh_args, const String& p_cmd_args, ProcessID* r_pid = nullptr,
-		int p_port_fwd = -1) const;
-	Error ssh_push_to_remote(const String& p_host, const String& p_port,
-		const Vector<String>& p_scp_args, const String& p_src_file, const String& p_dst_file) const;
-
-	Error _extract_android_assets(
-		const String& p_bundle_path, String& r_pck_path, String& r_temp_dir);
-	Error _load_patches(const Ref<EditorExportPreset>& p_preset, const Vector<String>& p_patches);
-	void _unload_patches();
-
-	Ref<Image> _load_icon_or_splash_image(const String& p_path, Error* r_error) const;
-
-#ifndef DISABLE_DEPRECATED
-	Error _export_project_bind_compat_118787(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0);
-	static Vector<String> _get_forced_export_files_bind_compat_71542();
-	static void _bind_compatibility_methods();
-#endif
-
-public:
-	static String simplify_path(const String& p_path);
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const;
-
-	struct ExportOption
-	{
-		bool update_visibility = false;
-		bool required = false;
-
-		ExportOption() {}
-	};
-
-	virtual Ref<EditorExportPreset> create_preset();
-
-	virtual bool is_executable(const String& p_path) const { return false; }
-
-	virtual void clear_messages() { messages.clear(); }
-
-	virtual void add_message(
-		ExportMessageType p_type, const String& p_category, const String& p_message)
-	{
-		ExportMessage msg;
-		msg.category = p_category;
-		msg.text = p_message;
-		msg.msg_type = p_type;
-		messages.push_back(msg);
-		switch (p_type) {
-		case EXPORT_MESSAGE_INFO: {
-			__print_line(vformat("%s: %s", msg.category, msg.text));
-		} break;
-		case EXPORT_MESSAGE_WARNING: {
-			WARN_PRINT(vformat("%s: %s", msg.category, msg.text));
-		} break;
-		case EXPORT_MESSAGE_ERROR: {
-			ERR_PRINT(vformat("%s: %s", msg.category, msg.text));
-		} break;
-		default:
-			break;
-		}
-	}
-
-	virtual int get_message_count() const { return messages.size(); }
-
-	virtual ExportMessage get_message(int p_index) const
-	{
-		ERR_FAIL_INDEX_V(p_index, messages.size(), ExportMessage());
-		return messages[p_index];
-	}
-
-	virtual ExportMessageType _get_message_type(int p_index) const
-	{
-		ERR_FAIL_INDEX_V(p_index, messages.size(), EXPORT_MESSAGE_NONE);
-		return messages[p_index].msg_type;
-	}
-
-	virtual String _get_message_category(int p_index) const
-	{
-		ERR_FAIL_INDEX_V(p_index, messages.size(), String());
-		return messages[p_index].category;
-	}
-
-	virtual String _get_message_text(int p_index) const
-	{
-		ERR_FAIL_INDEX_V(p_index, messages.size(), String());
-		return messages[p_index].text;
-	}
-
-	virtual ExportMessageType get_worst_message_type() const
-	{
-		ExportMessageType worst_type = EXPORT_MESSAGE_NONE;
-		for (int i = 0; i < messages.size(); i++) {
-			worst_type = MAX(worst_type, messages[i].msg_type);
-		}
-		return worst_type;
-	}
-
-	static Vector<String> get_forced_export_files(const Ref<EditorExportPreset>& p_preset);
-
-	virtual bool fill_log_messages(RichTextLabel* p_log, Error p_err);
-
-	virtual void get_export_options(List<ExportOption>* r_options) const;
-
-	virtual bool should_update_export_options() { return false; }
-
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const
-	{
-		return true;
-	}
-
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const
-	{
-		return String();
-	}
-
-	virtual String get_os_name() const;
-	virtual String get_name() const;
-	virtual Ref<Texture2D> get_logo() const;
-
-	Error export_project_files(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		EditorExportSaveFunction p_save_func, EditorExportRemoveFunction p_remove_func,
-		void* p_udata, EditorExportSaveSharedObject p_so_func = nullptr);
-
-	virtual bool poll_export() { return false; }
-
-	virtual int get_options_count() const { return 0; }
-
-	virtual bool is_option_runnable(int p_index) const { return true; }
-
-	virtual String get_options_tooltip() const { return ""; }
-
-	virtual String get_option_label(int p_device) const { return ""; }
-
-	virtual String get_option_tooltip(int p_device) const { return ""; }
-
-	virtual String get_device_architecture(int p_device) const { return ""; }
-
-	virtual void cleanup() {}
-
-	virtual Error run(const Ref<EditorExportPreset>& p_preset, int p_device,
-		uint32_t p_debug_flags)
-	{
-		return OK;
-	}
-
-	virtual Ref<Texture2D> get_run_icon() const { return get_logo(); }
-
-	virtual bool can_export(const Ref<EditorExportPreset>& p_preset, String& r_error,
-		bool& r_missing_templates, bool p_debug = false) const;
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const;
-
-	virtual List<String> get_binary_extensions(const Ref<EditorExportPreset>& p_preset) const;
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0,
-		bool p_notify = true);
-	virtual void get_platform_features(List<String>* r_features) const;
-
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features)
-	{
-	}
-
-	virtual String get_debug_protocol() const { return "tcp://"; }
-
-	virtual void initialize() {}
-};
-
-// --- Folded from editor/export/editor_export_platform_pc.h ---
-
-
-class ImageTexture;
-
-class EditorExportPlatformPC : public EditorExportPlatform
-{
-private:
-	Ref<ImageTexture> logo;
-	String name;
-	String os_name;
-
-	int chmod_flags = -1;
-
-public:
-	virtual String get_name() const override;
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const override;
-
-	virtual String get_os_name() const override;
-	virtual Ref<Texture2D> get_logo() const override;
-
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-	virtual Error sign_shared_object(
-		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path);
-	virtual String get_template_file_name(const String& p_target, const String& p_arch) const = 0;
-
-	virtual Error prepare_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags);
-
-	virtual Error modify_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags)
-	{
-		return OK;
-	}
-
-	virtual Error export_project_data(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags);
-
-	void set_name(const String& p_name);
-	void set_os_name(const String& p_name);
-
-	void set_logo(const Ref<Texture2D>& p_logo);
-
-	void add_platform_feature(const String& p_feature);
-	virtual void get_platform_features(List<String>* r_features) const override;
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override;
-
-	int get_chmod_flags() const;
-	void set_chmod_flags(int p_flags);
-
-	virtual Error fixup_embedded_pck(
-		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size)
-	{
-		return Error::OK;
-	}
-};
-
-
-
-// --- End editor/export/editor_export_platform_pc.h ---
-
-// --- Folded from editor/export/editor_export_plugin.h ---
-// --- Folded from core/os/shared_object.h ---
-#include "core/string/ustring.h"
-
 struct SharedObject {
 	String path;
 	Vector<String> tags;
@@ -63403,1211 +61947,6 @@ struct SharedObject {
 
 	SharedObject() {}
 };
-
-// --- End core/os/shared_object.h ---
-
-#include "servers/display/display_server.h"
-
-class EditorExportPlugin : public RefCounted
-{
-	friend class EditorExport;
-	friend class EditorExportPlatform;
-	friend class EditorExportPreset;
-
-	String export_base_path;
-	Ref<EditorExportPreset> export_preset;
-
-	Vector<SharedObject> shared_objects;
-
-	struct ExtraFile
-	{
-		String path;
-		Vector<uint8_t> data;
-		bool remap = false;
-	};
-
-	Vector<ExtraFile> extra_files;
-	bool skipped = false;
-
-	Vector<String> apple_embedded_platform_frameworks;
-	Vector<String> apple_embedded_platform_embedded_frameworks;
-	Vector<String> apple_embedded_platform_project_static_libs;
-	String apple_embedded_platform_plist_content;
-	String apple_embedded_platform_linker_flags;
-	Vector<String> apple_embedded_platform_bundle_files;
-	String apple_embedded_platform_cpp_code;
-
-	Vector<String> macos_plugin_files;
-
-	_FORCE_INLINE_ void _clear()
-	{
-		shared_objects.clear();
-		extra_files.clear();
-		skipped = false;
-	}
-
-	_FORCE_INLINE_ void _export_end_clear()
-	{
-		apple_embedded_platform_frameworks.clear();
-		apple_embedded_platform_embedded_frameworks.clear();
-		apple_embedded_platform_bundle_files.clear();
-		apple_embedded_platform_plist_content = "";
-		apple_embedded_platform_linker_flags = "";
-		apple_embedded_platform_cpp_code = "";
-		macos_plugin_files.clear();
-	}
-
-	// Export
-	void _export_file_script(
-		const String& p_path, const String& p_type, const Vector<String>& p_features);
-	void _export_begin_script(
-		const Vector<String>& p_features, bool p_debug, const String& p_path, int p_flags);
-	void _export_end_script();
-
-	String _has_valid_export_configuration(const Ref<EditorExportPlatform>& p_export_platform,
-		const Ref<EditorExportPreset>& p_preset);
-
-protected:
-	void set_export_base_path(const String& p_export_base_path);
-	const String& get_export_base_path() const;
-	void set_export_preset(const Ref<EditorExportPreset>& p_preset);
-	Ref<EditorExportPreset> get_export_preset() const;
-	Ref<EditorExportPlatform> get_export_platform() const;
-
-	void add_file(const String& p_path, const Vector<uint8_t>& p_file, bool p_remap);
-	void add_shared_object(
-		const String& p_path, const Vector<String>& tags, const String& p_target = String());
-	void _add_shared_object(const SharedObject& p_shared_object);
-
-	void add_apple_embedded_platform_framework(const String& p_path);
-	void add_apple_embedded_platform_embedded_framework(const String& p_path);
-	void add_apple_embedded_platform_project_static_lib(const String& p_path);
-	void add_apple_embedded_platform_plist_content(const String& p_plist_content);
-	void add_apple_embedded_platform_linker_flags(const String& p_flags);
-	void add_apple_embedded_platform_bundle_file(const String& p_path);
-	void add_apple_embedded_platform_cpp_code(const String& p_code);
-	void add_macos_plugin_file(const String& p_path);
-
-	void skip();
-
-	virtual void _export_file(
-		const String& p_path, const String& p_type, const HashSet<String>& p_features);
-	virtual void _export_begin(
-		const HashSet<String>& p_features, bool p_debug, const String& p_path, int p_flags);
-	virtual void _export_end();
-	virtual void _end_generate_apple_embedded_project(
-		const String& p_path, bool p_will_build_archive);
-
-	virtual bool _begin_customize_resources(const Ref<EditorExportPlatform>& p_platform,
-		const Vector<String>& p_features);
-	virtual Ref<Resource> _customize_resource(const Ref<Resource>& p_resource,
-		const String& p_path);
-
-	virtual bool _begin_customize_scenes(const Ref<EditorExportPlatform>& p_platform,
-		const Vector<String>& p_features);
-	virtual Node* _customize_scene(Node* p_root, const String& p_path);
-
-	virtual uint64_t _get_customization_configuration_hash() const;
-
-	virtual void _end_customize_scenes();
-	virtual void _end_customize_resources();
-
-	virtual PackedStringArray _get_export_features(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual void _get_export_options(const Ref<EditorExportPlatform>& p_export_platform,
-		List<EditorExportPlatform::ExportOption>* r_options) const;
-	virtual bool _should_update_export_options(
-		const Ref<EditorExportPlatform>& p_export_platform) const;
-	virtual bool _get_export_option_visibility(
-		const Ref<EditorExportPlatform>& p_export_platform, const String& p_option_name) const;
-	virtual String _get_export_option_warning(
-		const Ref<EditorExportPlatform>& p_export_platform, const String& p_option_name) const;
-
-public:
-	virtual String get_name() const;
-
-	virtual bool supports_platform(const Ref<EditorExportPlatform>& p_export_platform) const;
-	PackedStringArray get_export_features(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-
-	void end_generate_apple_embedded_project(const String& p_path, bool p_will_build_archive);
-
-	virtual PackedStringArray get_android_dependencies(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual PackedStringArray get_android_dependencies_maven_repos(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual PackedStringArray get_android_libraries(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual String get_android_manifest_activity_element_contents(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual String get_android_manifest_application_element_contents(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual String get_android_manifest_element_contents(
-		const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const;
-	virtual PackedByteArray update_android_prebuilt_manifest(
-		const Ref<EditorExportPlatform>& p_export_platform,
-		const PackedByteArray& p_manifest_data) const;
-
-	Vector<String> get_apple_embedded_platform_frameworks() const;
-	Vector<String> get_apple_embedded_platform_embedded_frameworks() const;
-	Vector<String> get_apple_embedded_platform_project_static_libs() const;
-	String get_apple_embedded_platform_plist_content() const;
-	String get_apple_embedded_platform_linker_flags() const;
-	Vector<String> get_apple_embedded_platform_bundle_files() const;
-	String get_apple_embedded_platform_cpp_code() const;
-	const Vector<String>& get_macos_plugin_files() const;
-};
-
-class DedicatedServerExportPlugin final : public EditorExportPlugin
-{
-private:
-	EditorExportPreset::FileExportMode current_export_mode =
-		EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-
-	EditorExportPreset::FileExportMode _get_export_mode_for_path(const String& p_path);
-
-protected:
-	String get_name() const override { return "DedicatedServer"; }
-
-	PackedStringArray _get_export_features(
-		const Ref<EditorExportPlatform>& p_platform, bool p_debug) const override;
-	uint64_t _get_customization_configuration_hash() const override;
-
-	bool _begin_customize_scenes(
-		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-	bool _begin_customize_resources(
-		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-
-	Node* _customize_scene(Node* p_root, const String& p_path) override;
-	Ref<Resource> _customize_resource(
-		const Ref<Resource>& p_resource, const String& p_path) override;
-
-	void _end_customize_scenes() override;
-	void _end_customize_resources() override;
-};
-
-// --- End editor/export/editor_export_plugin.h ---
-
-// --- Folded from editor/export/apple_export_utils.h ---
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/string/ustring.h"
-
-/*************************************************************************/
-/* MachO                                                                 */
-/*************************************************************************/
-
-class MachO final : public RefCounted
-{
-public:
-	struct MachHeader
-	{
-		uint32_t cputype;
-		uint32_t cpusubtype;
-		uint32_t filetype;
-		uint32_t ncmds;
-		uint32_t sizeofcmds;
-		uint32_t flags;
-	};
-
-	enum LoadCommandID
-	{
-		LC_SEGMENT = 0x00000001,
-		LC_SYMTAB = 0x00000002,
-		LC_SYMSEG = 0x00000003,
-		LC_THREAD = 0x00000004,
-		LC_UNIXTHREAD = 0x00000005,
-		LC_LOADFVMLIB = 0x00000006,
-		LC_IDFVMLIB = 0x00000007,
-		LC_IDENT = 0x00000008,
-		LC_FVMFILE = 0x00000009,
-		LC_PREPAGE = 0x0000000a,
-		LC_DYSYMTAB = 0x0000000b,
-		LC_LOAD_DYLIB = 0x0000000c,
-		LC_ID_DYLIB = 0x0000000d,
-		LC_LOAD_DYLINKER = 0x0000000e,
-		LC_ID_DYLINKER = 0x0000000f,
-		LC_PREBOUND_DYLIB = 0x00000010,
-		LC_ROUTINES = 0x00000011,
-		LC_SUB_FRAMEWORK = 0x00000012,
-		LC_SUB_UMBRELLA = 0x00000013,
-		LC_SUB_CLIENT = 0x00000014,
-		LC_SUB_LIBRARY = 0x00000015,
-		LC_TWOLEVEL_HINTS = 0x00000016,
-		LC_PREBIND_CKSUM = 0x00000017,
-		LC_LOAD_WEAK_DYLIB = 0x80000018,
-		LC_SEGMENT_64 = 0x00000019,
-		LC_ROUTINES_64 = 0x0000001a,
-		LC_UUID = 0x0000001b,
-		LC_RPATH = 0x8000001c,
-		LC_CODE_SIGNATURE = 0x0000001d,
-		LC_SEGMENT_SPLIT_INFO = 0x0000001e,
-		LC_REEXPORT_DYLIB = 0x8000001f,
-		LC_LAZY_LOAD_DYLIB = 0x00000020,
-		LC_ENCRYPTION_INFO = 0x00000021,
-		LC_DYLD_INFO = 0x00000022,
-		LC_DYLD_INFO_ONLY = 0x80000022,
-		LC_LOAD_UPWARD_DYLIB = 0x80000023,
-		LC_VERSION_MIN_MACOSX = 0x00000024,
-		LC_VERSION_MIN_IPHONEOS = 0x00000025,
-		LC_FUNCTION_STARTS = 0x00000026,
-		LC_DYLD_ENVIRONMENT = 0x00000027,
-		LC_MAIN = 0x80000028,
-		LC_DATA_IN_CODE = 0x00000029,
-		LC_SOURCE_VERSION = 0x0000002a,
-		LC_DYLIB_CODE_SIGN_DRS = 0x0000002b,
-		LC_ENCRYPTION_INFO_64 = 0x0000002c,
-		LC_LINKER_OPTION = 0x0000002d,
-		LC_LINKER_OPTIMIZATION_HINT = 0x0000002e,
-		LC_VERSION_MIN_TVOS = 0x0000002f,
-		LC_VERSION_MIN_WATCHOS = 0x00000030,
-		LC_BUILD_VERSION = 0x00000032,
-	};
-
-	enum PlatformID
-	{
-		PLATFORM_UNKNOWN = 0,
-		PLATFORM_MACOS = 1,
-		PLATFORM_IOS = 2,
-		PLATFORM_TVOS = 3,
-		PLATFORM_WATCHOS = 4,
-		PLATFORM_BRIDGEOS = 5,
-		PLATFORM_MACCATALYST = 6,
-		PLATFORM_IOSSIMULATOR = 7,
-		PLATFORM_TVOSSIMULATOR = 8,
-		PLATFORM_WATCHOSSIMULATOR = 9,
-		PLATFORM_DRIVERKIT = 10,
-		PLATFORM_VISIONOS = 11,
-		PLATFORM_VISIONOSSIMULATOR = 12,
-	};
-
-	struct LoadCommandHeader
-	{
-		uint32_t cmd;
-		uint32_t cmdsize;
-	};
-
-	struct LoadCommandSegment
-	{
-		char segname[16];
-		uint32_t vmaddr;
-		uint32_t vmsize;
-		uint32_t fileoff;
-		uint32_t filesize;
-		uint32_t maxprot;
-		uint32_t initprot;
-		uint32_t nsects;
-		uint32_t flags;
-	};
-
-	struct LoadCommandSegment64
-	{
-		char segname[16];
-		uint64_t vmaddr;
-		uint64_t vmsize;
-		uint64_t fileoff;
-		uint64_t filesize;
-		uint32_t maxprot;
-		uint32_t initprot;
-		uint32_t nsects;
-		uint32_t flags;
-	};
-
-	struct Section
-	{
-		char sectname[16];
-		char segname[16];
-		uint32_t addr;
-		uint32_t size;
-		uint32_t offset;
-		uint32_t align;
-		uint32_t reloff;
-		uint32_t nreloc;
-		uint32_t flags;
-		uint32_t reserved1;
-		uint32_t reserved2;
-	};
-
-	struct Section64
-	{
-		char sectname[16];
-		char segname[16];
-		uint64_t addr;
-		uint64_t size;
-		uint32_t offset;
-		uint32_t align;
-		uint32_t reloff;
-		uint32_t nreloc;
-		uint32_t flags;
-		uint32_t reserved1;
-		uint32_t reserved2;
-		uint32_t reserved3;
-	};
-
-private:
-	Ref<FileAccess> fa;
-	bool swap = false;
-
-	uint64_t lc_limit = 0;
-
-	uint64_t exe_limit = 0;
-	uint64_t exe_base = std::numeric_limits<uint64_t>::max();
-	uint32_t align = 0;
-	uint32_t cputype = 0;
-	uint32_t cpusubtype = 0;
-
-	uint64_t link_edit_offset = 0;
-	uint64_t signature_offset = 0;
-
-	uint32_t seg_align(uint64_t p_vmaddr, uint32_t p_min, uint32_t p_max);
-	bool alloc_signature(uint64_t p_size);
-
-	static inline size_t PAD(size_t s, size_t a) { return (a - s % a); }
-
-public:
-	static bool is_macho(const String& p_path);
-	static uint32_t get_filetype(const String& p_path);
-
-	bool open_file(const String& p_path);
-
-	uint64_t get_exe_base();
-	uint64_t get_exe_limit();
-	int32_t get_align();
-	uint32_t get_cputype();
-	uint32_t get_cpusubtype();
-	uint64_t get_size();
-	uint64_t get_code_limit();
-
-	uint64_t get_signature_offset();
-	bool is_signed();
-
-	PackedByteArray get_cdhash_sha1();
-	PackedByteArray get_cdhash_sha256();
-
-	PackedByteArray get_requirements();
-
-	const Ref<FileAccess> get_file() const;
-	Ref<FileAccess> get_file();
-
-	uint64_t get_signature_size();
-	bool set_signature_size(uint64_t p_size);
-};
-
-/*************************************************************************/
-/* LipO                                                                  */
-/*************************************************************************/
-
-class LipO final : public RefCounted
-{
-	struct FatArch
-	{
-		uint32_t cputype;
-		uint32_t cpusubtype;
-		uint64_t offset;
-		uint64_t size;
-		uint32_t align;
-	};
-
-	Ref<FileAccess> fa;
-	Vector<FatArch> archs;
-
-	static inline size_t PAD(size_t s, size_t a) { return (a - s % a); }
-
-public:
-	static bool is_lipo(const String& p_path);
-
-	bool create_file(const String& p_output_path, const Vector<String>& p_files);
-	bool create_file(const String& p_output_path, const Vector<String>& p_files,
-		const Vector<Vector2i>& p_cputypes);
-
-	bool open_file(const String& p_path);
-	int get_arch_count() const;
-	uint32_t get_arch_cputype(int p_index) const;
-	uint32_t get_arch_cpusubtype(int p_index) const;
-	bool extract_arch(int p_index, const String& p_path);
-
-	void close();
-
-	~LipO() override;
-};
-
-/*************************************************************************/
-/* CodeSignCodeResources                                                 */
-/*************************************************************************/
-
-class CodeSignCodeResources
-{
-public:
-	enum class CRMatch
-	{
-		CR_MATCH_NO,
-		CR_MATCH_YES,
-		CR_MATCH_NESTED,
-		CR_MATCH_OPTIONAL,
-	};
-
-private:
-	struct CRFile
-	{
-		String name;
-		String hash;
-		String hash2;
-		bool optional;
-		bool nested;
-		String requirements;
-	};
-
-	struct CRRule
-	{
-		String file_pattern;
-		String key;
-		int weight;
-		bool store;
-
-		CRRule()
-		{
-			weight = 1;
-			store = true;
-		}
-
-		CRRule(const String& p_file_pattern, const String& p_key, int p_weight, bool p_store)
-		{
-			file_pattern = p_file_pattern;
-			key = p_key;
-			weight = p_weight;
-			store = p_store;
-		}
-	};
-
-	Vector<CRRule> rules1;
-	Vector<CRRule> rules2;
-
-	Vector<CRFile> files1;
-	Vector<CRFile> files2;
-
-	String hash_sha1_base64(const String& p_path);
-	String hash_sha256_base64(const String& p_path);
-
-public:
-	void add_rule1(
-		const String& p_rule, const String& p_key = "", int p_weight = 0, bool p_store = true);
-	void add_rule2(
-		const String& p_rule, const String& p_key = "", int p_weight = 0, bool p_store = true);
-
-	CRMatch match_rules1(const String& p_path) const;
-	CRMatch match_rules2(const String& p_path) const;
-
-	bool add_file1(const String& p_root, const String& p_path);
-	bool add_file2(const String& p_root, const String& p_path);
-	bool add_nested_file(const String& p_root, const String& p_path, const String& p_exepath);
-
-	bool add_folder_recursive(
-		const String& p_root, const String& p_path = "", const String& p_main_exe_path = "");
-
-	bool save_to_file(const String& p_path);
-};
-
-/*************************************************************************/
-/* CodeSignBlob                                                          */
-/*************************************************************************/
-
-class CodeSignBlob
-{
-public:
-	enum IndexType : uint32_t
-	{
-		INDEX_CODE_DIRECTORY = 0x00000000,
-		INDEX_REQUIREMENTS = 0x00000002,
-		INDEX_ENTITLEMENTS_TEXT = 0x00000005,
-		INDEX_ENTITLEMENTS_BINARY = 0x00000007,
-		INDEX_SIGNATURE = 0x00010000,
-	};
-
-	enum Slot
-	{
-		SLOT_INFO_PLIST = -1,
-		SLOT_REQUIREMENTS = -2,
-		SLOT_RESOURCES = -3,
-		SLOT_APP_SPECIFIC = -4,
-		SLOT_ENTITLEMENTS = -5,
-		SLOT_RESERVER1 = -6,
-		SLOT_DER_ENTITLEMENTS = -7,
-	};
-
-	enum CodeSignExecSegFlags
-	{
-		EXECSEG_MAIN_BINARY = 0x1,
-		EXECSEG_ALLOW_UNSIGNED = 0x10,
-		EXECSEG_DEBUGGER = 0x20,
-		EXECSEG_JIT = 0x40,
-		EXECSEG_SKIP_LV = 0x80,
-		EXECSEG_CAN_LOAD_CDHASH = 0x100,
-		EXECSEG_CAN_EXEC_CDHASH = 0x200,
-	};
-
-	enum CodeSignatureFlags
-	{
-		SIGNATURE_HOST = 0x0001,
-		SIGNATURE_ADHOC = 0x0002,
-		SIGNATURE_TASK_ALLOW = 0x0004,
-		SIGNATURE_INSTALLER = 0x0008,
-		SIGNATURE_FORCED_LV = 0x0010,
-		SIGNATURE_INVALID_ALLOWED = 0x0020,
-		SIGNATURE_FORCE_HARD = 0x0100,
-		SIGNATURE_FORCE_KILL = 0x0200,
-		SIGNATURE_FORCE_EXPIRATION = 0x0400,
-		SIGNATURE_RESTRICT = 0x0800,
-		SIGNATURE_ENFORCEMENT = 0x1000,
-		SIGNATURE_LIBRARY_VALIDATION = 0x2000,
-		SIGNATURE_ENTITLEMENTS_VALIDATED = 0x4000,
-		SIGNATURE_NVRAM_UNRESTRICTED = 0x8000,
-		SIGNATURE_RUNTIME = 0x10000,
-		SIGNATURE_LINKER_SIGNED = 0x20000,
-	};
-
-private:
-	struct CodeDirectoryHeader
-	{
-		uint32_t version;
-		uint32_t flags;
-		uint32_t hash_offset;
-		uint32_t ident_offset;
-		uint32_t special_slots;
-		uint32_t code_slots;
-		uint32_t code_limit;
-		uint8_t hash_size;
-		uint8_t hash_type;
-		uint8_t platform;
-		uint8_t page_size;
-		uint32_t spare2;
-		uint32_t scatter_vector_offset;
-		uint32_t team_offset;
-		uint32_t spare3;
-		uint64_t code_limit_64;
-		uint64_t exec_seg_base;
-		uint64_t exec_seg_limit;
-		uint64_t exec_seg_flags;
-		uint32_t runtime;
-		uint32_t pre_encrypt_offset;
-	};
-
-	PackedByteArray blob;
-	uint32_t index_type = INDEX_CODE_DIRECTORY;
-	int32_t pages = 0;
-	int32_t remain = 0;
-	int32_t code_slots = 0;
-	int32_t special_slots = 0;
-
-	static inline size_t PAD(size_t s, size_t a) { return (s % a == 0) ? 0 : (a - s % a); }
-
-	_FORCE_INLINE_ void _parse_certificate_slot(
-		uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ void _parse_key(uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ void _parse_oid_key(uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ void _parse_hash_string(
-		uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ void _parse_value(uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ void _parse_date(uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-	_FORCE_INLINE_ bool _parse_match(uint32_t& r_pos, String& r_out, uint32_t p_rq_size) const;
-
-public:
-	CodeSignBlob() = default;
-
-	static CodeSignBlob make_requirements();
-	static CodeSignBlob make_requirements(const PackedByteArray& p_data);
-	static CodeSignBlob make_entitlements_text();
-	static CodeSignBlob make_entitlements_text(const String& p_string);
-	static CodeSignBlob make_entitlements_binary();
-	static CodeSignBlob make_entitlements_binary(const String& p_string);
-	static CodeSignBlob make_code_directory();
-	static CodeSignBlob make_code_directory(uint8_t p_hash_size, uint8_t p_hash_type, bool p_main,
-		const CharString& p_id, const CharString& p_team_id, uint32_t p_page_size,
-		uint64_t p_exe_limit, uint64_t p_code_limit);
-	static CodeSignBlob make_signature();
-
-	Vector<String> parse_requirements() const;
-
-	int32_t get_page_count() const { return pages; }
-	int32_t get_page_remainder() const { return remain; }
-	bool set_hash_in_slot(const PackedByteArray& p_hash, int p_slot);
-
-	bool is_empty() const { return blob.is_empty(); }
-	PackedByteArray get_hash_sha1() const;
-	PackedByteArray get_hash_sha256() const;
-	int get_size() const { return blob.size(); }
-	uint32_t get_index_type() const { return index_type; }
-	void write_to_file(Ref<FileAccess> p_file) const;
-};
-
-/*************************************************************************/
-/* CodeSignSuperBlob                                                     */
-/*************************************************************************/
-
-class CodeSignSuperBlob
-{
-	Vector<CodeSignBlob> blobs;
-
-public:
-	bool add_blob(const CodeSignBlob& p_blob);
-
-	int get_size() const;
-	void write_to_file(Ref<FileAccess> p_file) const;
-};
-
-/*************************************************************************/
-/* CodeSign                                                              */
-/*************************************************************************/
-
-class CodeSign
-{
-	static PackedByteArray file_hash_sha1(const String& p_path);
-	static PackedByteArray file_hash_sha256(const String& p_path);
-	static Error _codesign_file(bool p_use_hardened_runtime, bool p_force, const String& p_info,
-		const String& p_exe_path, const String& p_bundle_path, const String& p_ent_path,
-		bool p_ios_bundle, String& r_error_msg);
-
-public:
-	static Error codesign(bool p_use_hardened_runtime, bool p_force, const String& p_path,
-		const String& p_ent_path, String& r_error_msg);
-};
-
-/*************************************************************************/
-/* PluginConfigAppleEmbedded                                             */
-/*************************************************************************/
-
-struct PluginConfigAppleEmbedded
-{
-	inline static const char* PLUGIN_CONFIG_EXT = ".gdip";
-
-	inline static const char* CONFIG_SECTION = "config";
-	inline static const char* CONFIG_NAME_KEY = "name";
-	inline static const char* CONFIG_BINARY_KEY = "binary";
-	inline static const char* CONFIG_INITIALIZE_KEY = "initialization";
-	inline static const char* CONFIG_DEINITIALIZE_KEY = "deinitialization";
-
-	inline static const char* DEPENDENCIES_SECTION = "dependencies";
-	inline static const char* DEPENDENCIES_LINKED_KEY = "linked";
-	inline static const char* DEPENDENCIES_EMBEDDED_KEY = "embedded";
-	inline static const char* DEPENDENCIES_SYSTEM_KEY = "system";
-	inline static const char* DEPENDENCIES_CAPABILITIES_KEY = "capabilities";
-	inline static const char* DEPENDENCIES_FILES_KEY = "files";
-	inline static const char* DEPENDENCIES_LINKER_FLAGS = "linker_flags";
-	inline static const char* DEPENDENCIES_SPM_PACKAGES_KEY = "spm_packages";
-
-	inline static const char* PLIST_SECTION = "plist";
-
-	enum PlistItemType
-	{
-		UNKNOWN,
-		STRING,
-		INTEGER,
-		BOOLEAN,
-		RAW,
-		STRING_INPUT,
-	};
-
-	struct PlistItem
-	{
-		PlistItemType type;
-		String value;
-	};
-
-	struct SPMPackage
-	{
-		String url;
-		String version;
-		Vector<String> products;
-	};
-
-	bool valid_config = false;
-	bool supports_targets = false;
-	uint64_t last_updated = 0;
-
-	String name;
-	String binary;
-	String initialization_method;
-	String deinitialization_method;
-
-	Vector<String> linked_dependencies;
-	Vector<String> embedded_dependencies;
-	Vector<String> system_dependencies;
-
-	Vector<String> files_to_copy;
-	Vector<String> capabilities;
-
-	Vector<String> linker_flags;
-
-	Vector<SPMPackage> spm_packages;
-
-	HashMap<String, PlistItem> plist;
-
-	static String resolve_local_dependency_path(String plugin_config_dir, String dependency_path);
-	static String resolve_system_dependency_path(String dependency_path);
-	static Vector<String> resolve_local_dependencies(
-		String plugin_config_dir, Vector<String> p_paths);
-	static Vector<String> resolve_system_dependencies(Vector<String> p_paths);
-	static bool validate_plugin(PluginConfigAppleEmbedded& plugin_config);
-	static String get_plugin_main_binary(PluginConfigAppleEmbedded& plugin_config, bool p_debug);
-	static uint64_t get_plugin_modification_time(
-		const PluginConfigAppleEmbedded& plugin_config, const String& config_path);
-	static PluginConfigAppleEmbedded load_plugin_config(
-		Ref<ConfigFile> config_file, const String& path);
-};
-
-// --- Folded from editor/export/editor_export_platform_apple_embedded.h ---
-#include <sys/stat.h>
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/memory.h"
-
-#include "servers/display/display_server.h"
-
-#ifdef MACOS_ENABLED
-#include <functional>
-#endif
-
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
-const String ENV_APPLE_PLATFORM_PROFILE_UUID_DEBUG =
-	"GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_DEBUG";
-const String ENV_APPLE_PLATFORM_PROFILE_UUID_RELEASE =
-	"GODOT_APPLE_PLATFORM_PROVISIONING_PROFILE_UUID_RELEASE";
-const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG =
-	"GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_DEBUG";
-const String ENV_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE =
-	"GODOT_APPLE_PLATFORM_PROFILE_SPECIFIER_RELEASE";
-
-static const String storyboard_image_scale_mode[] = {
-	"center",
-	"scaleAspectFit",
-	"scaleAspectFill",
-	"scaleToFill",
-};
-
-class EditorExportPlatformAppleEmbedded : public EditorExportPlatform
-{
-	Ref<ImageTexture> logo;
-	Ref<ImageTexture> run_icon;
-
-	// Plugins
-	mutable SafeFlag plugins_changed;
-	SafeFlag devices_changed;
-
-	struct Device
-	{
-		String id;
-		String name;
-		bool wifi = false;
-		bool use_ios_deploy = false;
-	};
-
-	Vector<Device> devices;
-	Mutex device_lock;
-
-	Mutex plugins_lock;
-	mutable Vector<PluginConfigAppleEmbedded> plugins;
-#ifdef MACOS_ENABLED
-	Thread check_for_changes_thread;
-	SafeFlag quit_request;
-	SafeFlag has_runnable_preset;
-
-	static bool _check_xcode_install();
-	static void _check_for_changes_poll_thread(void* ud);
-	void _update_preset_status();
-
-protected:
-	void _start_remote_device_poller_thread()
-	{
-		check_for_changes_thread.start(_check_for_changes_poll_thread, this);
-	}
-
-	void _stop_remote_device_poller_thread()
-	{
-		quit_request.set();
-		if (check_for_changes_thread.is_started()) {
-			check_for_changes_thread.wait_to_finish();
-		}
-	}
-
-	int _execute(const String& p_path, const List<String>& p_arguments,
-		std::function<void(const String&)> p_on_data);
-
-private:
-#endif
-
-	typedef Error (*FileHandler)(String p_file, void* p_userdata);
-	static Error _walk_dir_recursive(Ref<DirAccess>& p_da, FileHandler p_handler, void* p_userdata);
-	static Error _codesign(String p_file, void* p_userdata);
-
-	struct ExportArchitecture
-	{
-		String name;
-		bool is_default = false;
-
-		ExportArchitecture() {}
-
-		ExportArchitecture(String p_name, bool p_is_default)
-		{
-			name = p_name;
-			is_default = p_is_default;
-		}
-	};
-
-	struct AppleEmbeddedExportAsset
-	{
-		String exported_path;
-		bool is_framework =
-			false; // framework is anything linked to the binary, otherwise it's a resource
-		bool should_embed = false;
-	};
-
-	String _get_additional_plist_content();
-	String _get_linker_flags();
-	String _get_cpp_code();
-
-protected:
-	struct AppleEmbeddedConfigData
-	{
-		String pkg_name;
-		String binary_name;
-		String plist_content;
-		String architectures;
-		String linker_flags;
-		String cpp_code;
-		String modules_buildfile;
-		String modules_fileref;
-		String modules_buildphase;
-		String modules_buildgrp;
-		String spm_packages;
-		String spm_package_refs;
-		String spm_package_products;
-		Vector<String> capabilities;
-	};
-
-	struct CodeSigningDetails
-	{
-		String debug_signing_identity;
-		String release_signing_identity;
-		String debug_provisioning_profile_uuid;
-		String release_provisioning_profile_uuid;
-		String debug_provisioning_profile_specifier;
-		String release_provisioning_profile_specifier;
-		bool debug_manual_signing = false;
-		bool release_manual_signing = false;
-	};
-
-	struct IconInfo
-	{
-		const char* preset_key;
-		const char* idiom;
-		const char* export_name;
-		const char* actual_size_side;
-		const char* scale;
-		const char* unscaled_size;
-		bool force_opaque;
-	};
-
-private:
-	void _fix_config_file(const Ref<EditorExportPreset>& p_preset, Vector<uint8_t>& pfile,
-		const AppleEmbeddedConfigData& p_config, bool p_debug);
-
-	Vector<ExportArchitecture> _get_supported_architectures() const;
-	Vector<String> _get_preset_architectures(const Ref<EditorExportPreset>& p_preset) const;
-
-	void _check_xcframework_content(const String& p_path, int& r_total_libs, int& r_static_libs,
-		int& r_dylibs, int& r_frameworks) const;
-	Error _convert_to_framework(
-		const String& p_source, const String& p_destination, const String& p_id) const;
-
-	void _add_assets_to_project(const String& p_out_dir, const Ref<EditorExportPreset>& p_preset,
-		Vector<uint8_t>& p_project_data,
-		const Vector<AppleEmbeddedExportAsset>& p_additional_assets);
-	Error _export_additional_assets(const Ref<EditorExportPreset>& p_preset,
-		const String& p_out_dir, const Vector<String>& p_assets, bool p_is_framework,
-		bool p_should_embed, Vector<AppleEmbeddedExportAsset>& r_exported_assets);
-	Error _copy_asset(const Ref<EditorExportPreset>& p_preset, const String& p_out_dir,
-		const String& p_asset, const String* p_custom_file_name, bool p_is_framework,
-		bool p_should_embed, Vector<AppleEmbeddedExportAsset>& r_exported_assets);
-	Error _export_additional_assets(const Ref<EditorExportPreset>& p_preset,
-		const String& p_out_dir, const Vector<SharedObject>& p_libraries,
-		Vector<AppleEmbeddedExportAsset>& r_exported_assets);
-	Error _export_apple_embedded_plugins(const Ref<EditorExportPreset>& p_preset,
-		AppleEmbeddedConfigData& p_config_data, const String& p_dest_dir,
-		const Vector<String>& p_module_libs, Vector<AppleEmbeddedExportAsset>& r_exported_assets,
-		bool p_debug);
-
-	Error _export_project_helper(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags, bool p_notify, bool p_oneclick);
-
-	bool is_package_name_valid(const String& p_package, String* r_error = nullptr) const;
-
-protected:
-	virtual String _process_config_file_line(const Ref<EditorExportPreset>& p_preset,
-		const String& p_line, const AppleEmbeddedConfigData& p_config, bool p_debug,
-		const CodeSigningDetails& p_code_signing);
-
-	String launch_screen_image_file_name;
-
-	void _blend_and_rotate(Ref<Image>& p_dst, Ref<Image>& p_src, bool p_rot);
-
-	virtual Error _export_loading_screen_file(
-		const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
-	{
-		return OK;
-	}
-
-	virtual Error _export_icons(
-		const Ref<EditorExportPreset>& p_preset, const String& p_iconset_dir)
-	{
-		return OK;
-	}
-
-	virtual String get_platform_name() const = 0;
-	virtual String get_sdk_name() const = 0;
-	virtual const Vector<String> get_device_types() const = 0;
-	virtual String get_minimum_deployment_target() const = 0;
-
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const override;
-
-	virtual Vector<IconInfo> get_icon_infos() const = 0;
-
-	void _notification(int p_what);
-
-	virtual void get_platform_features(List<String>* r_features) const override
-	{
-		r_features->push_back("mobile");
-		r_features->push_back("apple_embedded");
-	}
-
-	void _initialize(const char* p_platform_logo_svg, const char* p_run_icon_svg);
-
-public:
-	virtual Ref<Texture2D> get_logo() const override { return logo; }
-
-	virtual Ref<Texture2D> get_run_icon() const override { return run_icon; }
-
-	virtual int get_options_count() const override;
-	virtual String get_options_tooltip() const override;
-	virtual String get_option_label(int p_index) const override;
-	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
-
-	virtual bool poll_export() override
-	{
-		bool dc = devices_changed.is_set();
-		if (dc) {
-			// don't clear unless we're reporting true, to avoid race
-			devices_changed.clear();
-		}
-		return dc;
-	}
-
-	virtual bool should_update_export_options() override
-	{
-		bool export_options_changed = plugins_changed.is_set();
-		if (export_options_changed) {
-			// don't clear unless we're reporting true, to avoid race
-			plugins_changed.clear();
-		}
-		return export_options_changed;
-	}
-
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override
-	{
-	}
-
-	~EditorExportPlatformAppleEmbedded();
-
-	/// List the gdip files in the directory specified by the p_path parameter.
-	static Vector<String> list_plugin_config_files(const String& p_path, bool p_check_directories)
-	{
-		Vector<String> dir_files;
-		Ref<DirAccess> da = DirAccess::open(p_path);
-		if (da.is_valid()) {
-			da->list_dir_begin();
-			while (true) {
-				String file = da->get_next();
-				if (file.is_empty()) {
-					break;
-				}
-
-				if (file == "." || file == "..") {
-					continue;
-				}
-
-				if (da->current_is_hidden()) {
-					continue;
-				}
-
-				if (da->current_is_dir()) {
-					if (p_check_directories) {
-						Vector<String> directory_files =
-							list_plugin_config_files(p_path.path_join(file), false);
-						for (int i = 0; i < directory_files.size(); ++i) {
-							dir_files.push_back(file.path_join(directory_files[i]));
-						}
-					}
-
-					continue;
-				}
-
-				if (file.ends_with(PluginConfigAppleEmbedded::PLUGIN_CONFIG_EXT)) {
-					dir_files.push_back(file);
-				}
-			}
-			da->list_dir_end();
-		}
-
-		return dir_files;
-	}
-
-	static Vector<PluginConfigAppleEmbedded> get_plugins(const String& p_platform_name)
-	{
-		Vector<PluginConfigAppleEmbedded> loaded_plugins;
-
-		String plugins_dir = ProjectSettings::get_resource_path().path_join(
-			p_platform_name + "/plugins");
-
-		if (DirAccess::exists(plugins_dir)) {
-			Vector<String> plugins_filenames = list_plugin_config_files(plugins_dir, true);
-
-			if (!plugins_filenames.is_empty()) {
-				Ref<ConfigFile> config_file;
-				config_file.instantiate();
-				for (int i = 0; i < plugins_filenames.size(); i++) {
-					PluginConfigAppleEmbedded config =
-						PluginConfigAppleEmbedded::load_plugin_config(
-							config_file, plugins_dir.path_join(plugins_filenames[i]));
-					if (config.valid_config) {
-						loaded_plugins.push_back(config);
-					}
-					else {
-						print_error("Invalid plugin config file " + plugins_filenames[i]);
-					}
-				}
-			}
-		}
-
-		return loaded_plugins;
-	}
-};
-
-
-
-// --- End editor/export/editor_export_platform_apple_embedded.h ---
-
-// --- End editor/export/apple_export_utils.h ---
-
-// --- Folded main section from editor/export/editor_export.h ---
-#include "servers/display/display_server.h"
-class Timer;
-
-typedef void* zipFile;
-
-class ProjectZIPPacker
-{
-	static void _zip_file(const String& p_path, const String& p_base_path, zipFile p_zip);
-	static void _zip_recursive(const String& p_path, const String& p_base_path, zipFile p_zip);
-
-public:
-	static String get_project_zip_safe_name();
-	static void pack_project_zip(const String& p_path);
-};
-
-class EditorExport : public Node
-{
-	Vector<Ref<EditorExportPlatform>> export_platforms;
-	Vector<Ref<EditorExportPreset>> export_presets;
-	Vector<Ref<EditorExportPlugin>> export_plugins;
-	HashMap<Ref<EditorExportPlatform>, Ref<EditorExportPreset>> runnable_presets;
-
-	static inline const String RUNNABLE_SECTION_NAME = "runnable_presets";
-
-	static inline String _export_presets_updated;
-	static inline String _export_presets_runnable_updated;
-
-	Timer* save_timer = nullptr;
-	bool block_save = false;
-	bool should_update_presets = false;
-	bool should_reload_presets = false;
-
-	void _save();
-
-protected:
-	friend class EditorExportPreset;
-	void emit_presets_runnable_changed();
-
-	void _notification(int p_what);
-
-public:
-	static inline EditorExport* instance = nullptr;
-	_FORCE_INLINE_ static bool is_initialized() { return instance != nullptr; }
-
-	// Encodes a platform/device pair into a single menu/device id and decodes it back.
-	static int encode_platform_device_id(int p_platform_idx, int p_device_idx)
-	{
-		return p_platform_idx * 10000 + p_device_idx;
-	}
-
-	static int decode_platform_from_id(int p_id) { return p_id / 10000; }
-
-	static int decode_device_from_id(int p_id) { return p_id % 10000; }
-
-	void _impl_add_export_platform(const Ref<EditorExportPlatform>& p_platform);
-	static void add_export_platform(const Ref<EditorExportPlatform>& p_platform);
-	int _impl_get_export_platform_count() const;
-	static int get_export_platform_count();
-	int get_export_platform_index_by_name(const String& p_name);
-	Ref<EditorExportPlatform> _impl_get_export_platform(int p_idx);
-	static Ref<EditorExportPlatform> get_export_platform(int p_idx);
-	void _impl_remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
-	static void remove_export_platform(const Ref<EditorExportPlatform>& p_platform);
-
-	void add_export_preset(const Ref<EditorExportPreset>& p_preset, int p_at_pos = -1);
-	int _impl_get_export_preset_count() const;
-	static int get_export_preset_count();
-	Ref<EditorExportPreset> _impl_get_export_preset(int p_idx);
-	static Ref<EditorExportPreset> get_export_preset(int p_idx);
-
-	void _impl_add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	static void add_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	void _impl_remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	static void remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin);
-	Vector<Ref<EditorExportPlugin>> _impl_get_export_plugins();
-	static Vector<Ref<EditorExportPlugin>> get_export_plugins();
-
-	Ref<EditorExportPreset> _impl_get_runnable_preset_for_platform(
-		const Ref<EditorExportPlatform>& p_for_platform) const;
-	static Ref<EditorExportPreset> get_runnable_preset_for_platform(
-		const Ref<EditorExportPlatform>& p_for_platform);
-
-	void load_config();
-	void update_export_presets();
-	bool poll_export_platforms();
-	bool has_preset_with_name(const String& p_name, int p_exclude_index = -1) const;
-
-	EditorExport();
-};
-
-// --- Folded from editor/editor_string_names.h ---
-#include "core/os/memory.h"
-#include "core/string/ustring.h"
 
 class EditorStrings final
 {
@@ -64653,48 +61992,7 @@ public:
 
 #define EditorString(m_name) EditorStrings::_get_data()->m_name
 
-// --- Folded from editor/export/register_exporters.h ---
-void register_exporter_types();
-void register_exporters();
-// --- End editor/export/register_exporters.h ---
-
-// --- Folded from platform/android/export/export.h ---
-void register_android_exporter_types();
-void register_android_exporter();
-// --- End platform/android/export/export.h ---
-
-// --- Folded from platform/ios/export/export.h ---
-void register_ios_exporter_types();
-void register_ios_exporter();
-// --- End platform/ios/export/export.h ---
-
-// --- Folded from platform/linuxbsd/export/export.h ---
-void register_linuxbsd_exporter_types();
-void register_linuxbsd_exporter();
-// --- End platform/linuxbsd/export/export.h ---
-
-// --- Folded from platform/macos/export/export.h ---
-void register_macos_exporter_types();
-void register_macos_exporter();
-// --- End platform/macos/export/export.h ---
-
-// --- Folded from platform/visionos/export/export.h ---
-void register_visionos_exporter_types();
-void register_visionos_exporter();
-// --- End platform/visionos/export/export.h ---
-
-// --- Folded from platform/web/export/export.h ---
-void register_web_exporter_types();
-void register_web_exporter();
-// --- End platform/web/export/export.h ---
-
-// --- Folded from platform/windows/export/export.h ---
-void register_windows_exporter_types();
-void register_windows_exporter();
-// --- End platform/windows/export/export.h ---
-// --- End editor/editor_ui.h ---
 #include "servers/display/display_server.h"
-
 
 #if defined(TOOLS_ENABLED) && !defined(NO_EDITOR_SPLASH)
 #include "main/splash_editor.gen.h"
@@ -64706,7 +62004,6 @@ void register_windows_exporter();
 #endif // TOOLS_ENABLED
 
 #if defined(STEAMAPI_ENABLED)
-// --- Inlined from main/steam_tracker.h ---
 #if defined(STEAMAPI_ENABLED)
 
 // SteamTracker is used to load SteamAPI dynamic library and initialize
@@ -64745,7 +62042,6 @@ public:
 
 #endif // STEAMAPI_ENABLED
 
-// --- End main/steam_tracker.h ---
 #endif
 
 #include "core/version_generated.gen.h" // For mono.
@@ -65807,7 +63103,7 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 
 #ifdef MINIZIP_ENABLED
 	ZipArchive::initialize();
-	PackedData::add_pack_source(memnew(PackedSourceZIP));
+	PackedData::add_pack_source(memnew(PackSource(PackSource::SOURCE_ZIP)));
 #endif
 
 	// Exit error code used in the `goto error` conditions.
@@ -68930,18 +66226,11 @@ void Main::setup_boot_logo() {}
 #undef MAIN_PRINT
 #endif
 
-// ============================================================================
-// Merged from main/main_timer_sync.cpp
-// ============================================================================
-
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 // Uncomment this define to get more debugging logs for the delta smoothing.
 // #define GODOT_DEBUG_DELTA_SMOOTHER
 #ifdef GODOT_DEBUG_DELTA_SMOOTHER
-#include "core/string/ustring.h"
 #include "core/string/string.h"
 #endif
 
@@ -69447,12 +66736,6 @@ MainFrameTime MainTimerSync::advance(double p_physics_step, int p_physics_ticks_
 	return advance_checked(p_physics_step, p_physics_ticks_per_second, cpu_process_step);
 }
 
-// ============================================================================
-// Merged from main/performance.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -69931,17 +67214,7 @@ Performance::MonitorCall::MonitorCall() {}
 
 int Performance::_get_node_count() { return 0; }
 
-
-
-// ============================================================================
-// Merged from main/steam_tracker.cpp
-// ============================================================================
-
 #if defined(STEAMAPI_ENABLED)
-
-
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 
 // https://partner.steamgames.com/doc/sdk/api#initialization_and_shutdown
 
@@ -70020,8 +67293,6 @@ SteamTracker::~SteamTracker() {
 
 #endif // STEAMAPI_ENABLED
 
-
-// --- Merged from platform/android/api/api.cpp ---
 #include "servers/display/display_server.h"
 
 void unregister_android_api()
@@ -70057,10 +67328,6 @@ void register_android_api() {}
 
 #endif
 
-// ============================================================================
-// Merged from platform/ios/api/api.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #if defined(IOS_ENABLED)
@@ -70080,10 +67347,6 @@ void unregister_ios_api() {}
 
 #endif // IOS_ENABLED
 
-// ============================================================================
-// Merged from platform/visionos/api/api.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #if defined(VISIONOS_ENABLED)
@@ -70102,10 +67365,6 @@ void register_visionos_api() {}
 void unregister_visionos_api() {}
 
 #endif // VISIONOS_ENABLED
-
-// ============================================================================
-// Merged from platform/web/api/api.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -70131,42 +67390,8 @@ void JavaScriptBridge::download_buffer(
 #define DEFINE_MAIN_GENERATED_REGISTRIES
 #include "main/splash.gen.h"
 
-// === Merged from editor/editor_ui.cpp ===
 #ifdef TOOLS_ENABLED
-/**************************************************************************/
-/*  editor_ui.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 namespace
@@ -71150,9 +68375,7 @@ void EditorUI::process_and_draw()
 	const float pad = 12.0f;
 	const float content_w = MAX(0.0f, W - pad * 2.0f);
 
-	// =========================================================================
 	// RUNTIME PREVIEW MODE
-	// =========================================================================
 	if (data->playing) {
 		const float bar_h = 46.0f;
 		Rect2 bar_rect(pad, pad, content_w, bar_h);
@@ -71214,9 +68437,7 @@ void EditorUI::process_and_draw()
 		return;
 	}
 
-	// =========================================================================
 	// EDITOR WORKSPACE MODE
-	// =========================================================================
 	for (uint32_t i = 0; i < data->entities.size(); i++) {
 		data->entities[i].tree_row_rect = Rect2();
 	}
@@ -72240,14 +69461,6 @@ void EditorUI::_ps_toggle_use_3d()
 	}
 }
 
-
-// ============================================================================
-// Merged from editor/ui_widgets.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 static inline bool _is_word_char(char32_t c)
@@ -73027,14 +70240,6 @@ String read_project_name(const String& p_dir)
 }
 } // namespace UIDraw
 
-// ============================================================================
-// Merged from editor/doc/doc_tools.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -73189,22 +70394,10 @@ Error DocTools::save_classes(const String& p_default_path,
 	return OK;
 }
 
-
-
-// ============================================================================
-// Merged from editor/project_upgrade/project_converter_3_to_4.cpp
-// ============================================================================
-
-
 #ifndef DISABLE_DEPRECATED
 
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "core/templates/list.h"
 #include "editor/project_upgrade/renames_map_3_to_4.h"
-#include "core/os/os.h"
 
 // Find "OS.set_property(x)", capturing x into $1.
 static String make_regex_gds_os_property_set(const String& name_set)
@@ -76386,8 +73579,6 @@ String ProjectConverter3To4::collect_string_from_vector(Vector<SourceLine>& vect
 
 #endif // DISABLE_DEPRECATED
 
-
-
 void ProjectConverter3To4::rename_joypad_buttons_and_axes(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
 
 void ProjectConverter3To4::rename_input_map_scancode(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
@@ -76396,13 +73587,6 @@ bool ProjectConverter3To4::validate_conversion() {}
 
 bool ProjectConverter3To4::convert() {}
 
-// ============================================================================
-// Merged from editor/project_manager/project_manager.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -77594,22 +74778,9 @@ bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProject
 	return vltr_project_valid(r_out);
 }
 
-// ============================================================================
-// Merged from editor/settings/editor_settings.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "main/splash.gen.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/templates/rb_set.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -78307,12 +75478,6 @@ Ref<Shortcut> ED_SHORTCUT_ARRAY(
 	return s;
 }
 
-
-
-// ============================================================================
-// Merged from editor/themes/editor_scale.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 float EditorScale::_scale = 1.0f;
@@ -78325,15 +75490,8 @@ float EditorScale::get_scale() {
 	return _scale;
 }
 
-// ============================================================================
-// Merged from editor/translations/editor_translation.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "main/splash.gen.h"
 #include "editor/translations/editor_translations.gen.h"
 #include "main/splash.gen.h"
@@ -78362,7 +75520,7 @@ static void _load(const Ref<TranslationDomain> p_domain, const String &p_locale,
 			fa.instantiate();
 			fa->open_custom(data.ptr(), data.size());
 
-			Ref<Translation> tr = TranslationLoaderPO::load_translation(fa);
+			Ref<Translation> tr = ResourceLoader::load_translation(fa);
 			if (tr.is_valid()) {
 				tr->set_locale(etl->lang);
 				p_domain->add_translation(tr);
@@ -78551,15 +75709,6 @@ Vector<Vector<String>> get_extractable_message_list() {
 	return list;
 }
 
-// ============================================================================
-// Merged from editor/file_system/editor_file_system.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -78733,7 +75882,6 @@ String EditorFileSystemDirectory::get_file_resource_script_class(int p_idx) cons
 String EditorFileSystemDirectory::get_name() { return name; }
 
 EditorFileSystemDirectory* EditorFileSystemDirectory::get_parent() { return parent; }
-
 
 EditorFileSystemDirectory::EditorFileSystemDirectory()
 {
@@ -79451,21 +76599,12 @@ EditorFileSystem::~EditorFileSystem()
 	ResourceSaver::set_get_resource_id_for_path(nullptr);
 }
 
-
 bool EditorFileSystem::_scan_extensions() { return true; }
 
 #ifdef CACHE_FILE_NAME
 #undef CACHE_FILE_NAME
 #endif
 
-// ============================================================================
-// Merged from editor/file_system/editor_paths.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -79715,13 +76854,6 @@ void EditorPaths::initialize()
 	}
 }
 
-
-
-// ============================================================================
-// Merged from editor/file_system/file_info.cpp
-// ============================================================================
-// --- Inlined from editor/file_system/file_info.h ---
-#include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 enum class FileSortOption {
@@ -79762,8 +76894,6 @@ struct FileInfoModifiedTimeComparator {
 
 void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option);
 
-// --- End editor/file_system/file_info.h ---
-
 void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option) {
 	// Sort the file list if needed.
 	switch (p_file_sort_option) {
@@ -79794,5638 +76924,7 @@ void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort
 	}
 }
 
-
-// --- Merged from editor/export/editor_export.cpp ---
 #if defined(TOOLS_ENABLED)
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-// EditorExportPreset
-
-Ref<EditorExportPlatform> EditorExportPreset::get_platform() const { return platform; }
-
-void EditorExportPreset::update_files()
-{
-	{
-		Vector<String> to_remove;
-		for (const String& E : selected_files) {
-			if (!FileAccess::exists(E)) {
-				to_remove.push_back(E);
-			}
-		}
-		for (int i = 0; i < to_remove.size(); ++i) {
-			selected_files.erase(to_remove[i]);
-		}
-	}
-
-	{
-		Vector<String> to_remove;
-		for (const KeyValue<String, FileExportMode>& E : customized_files) {
-			if (!FileAccess::exists(E.key) && !DirAccess::exists(E.key)) {
-				to_remove.push_back(E.key);
-			}
-		}
-		for (int i = 0; i < to_remove.size(); ++i) {
-			customized_files.erase(to_remove[i]);
-		}
-	}
-}
-
-Vector<String> EditorExportPreset::get_files_to_export() const
-{
-	Vector<String> files;
-	for (const String& E : selected_files) {
-		files.push_back(E);
-	}
-	return files;
-}
-
-HashSet<String> EditorExportPreset::get_selected_files() const
-{
-	return HashSet<String>(selected_files);
-}
-
-void EditorExportPreset::set_selected_files(const HashSet<String>& p_files)
-{
-	selected_files = p_files;
-}
-
-int EditorExportPreset::get_customized_files_count() const { return customized_files.size(); }
-
-String EditorExportPreset::get_name() const { return name; }
-
-bool EditorExportPreset::is_runnable() const
-{
-	return EditorExport::get_runnable_preset_for_platform(platform).ptr() == this;
-}
-
-bool EditorExportPreset::is_dedicated_server() const { return dedicated_server; }
-
-EditorExportPreset::ExportFilter EditorExportPreset::get_export_filter() const
-{
-	return export_filter;
-}
-
-String EditorExportPreset::get_include_filter() const { return include_filter; }
-
-String EditorExportPreset::get_export_path() const { return export_path; }
-
-String EditorExportPreset::get_exclude_filter() const { return exclude_filter; }
-
-bool EditorExportPreset::has_export_file(const String& p_path)
-{
-	return selected_files.has(p_path);
-}
-
-EditorExportPreset::FileExportMode EditorExportPreset::get_file_export_mode(
-	const String& p_path, EditorExportPreset::FileExportMode p_default) const
-{
-	HashMap<String, FileExportMode>::ConstIterator i = customized_files.find(p_path);
-	if (i) {
-		return i->value;
-	}
-	return p_default;
-}
-
-String EditorExportPreset::get_patch(int p_index)
-{
-	ERR_FAIL_INDEX_V(p_index, patches.size(), String());
-	return patches[p_index];
-}
-
-void EditorExportPreset::set_patches(const Vector<String>& p_patches) { patches = p_patches; }
-
-Vector<String> EditorExportPreset::get_patches() const { return patches; }
-
-bool EditorExportPreset::is_patch_delta_encoding_enabled() const
-{
-	return patch_delta_encoding_enabled;
-}
-
-int EditorExportPreset::get_patch_delta_zstd_level() const { return patch_delta_zstd_level; }
-
-double EditorExportPreset::get_patch_delta_min_reduction() const
-{
-	return patch_delta_min_reduction;
-}
-
-String EditorExportPreset::get_patch_delta_include_filter() const
-{
-	return patch_delta_include_filter;
-}
-
-String EditorExportPreset::get_patch_delta_exclude_filter() const
-{
-	return patch_delta_exclude_filter;
-}
-
-String EditorExportPreset::get_custom_features() const { return custom_features; }
-
-String EditorExportPreset::get_enc_in_filter() const { return enc_in_filters; }
-
-String EditorExportPreset::get_enc_ex_filter() const { return enc_ex_filters; }
-
-uint64_t EditorExportPreset::get_seed() const { return seed; }
-
-bool EditorExportPreset::get_enc_pck() const { return enc_pck; }
-
-bool EditorExportPreset::get_enc_directory() const { return enc_directory; }
-
-String EditorExportPreset::get_script_encryption_key() const { return script_key; }
-
-EditorExportPreset::ScriptExportMode EditorExportPreset::get_script_export_mode() const
-{
-	return script_mode;
-}
-
-// ProjectZIPPacker
-
-void ProjectZIPPacker::pack_project_zip(const String& p_path)
-{
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-
-	String resource_path = ProjectSettings::get_resource_path();
-	const String base_path = resource_path.substr(0, resource_path.rfind_char('/')) + "/";
-
-	zipFile zip = zipOpen2(p_path.utf8().get_data(), APPEND_STATUS_CREATE, nullptr, &io);
-	_zip_recursive(resource_path, base_path, zip);
-	zipClose(zip, nullptr);
-}
-
-void ProjectZIPPacker::_zip_recursive(
-	const String& p_path, const String& p_base_path, zipFile p_zip)
-{
-	Ref<DirAccess> dir = DirAccess::open(p_path);
-	if (dir.is_null()) {
-		WARN_PRINT("Unable to open directory for zipping: " + p_path);
-		return;
-	}
-	dir->list_dir_begin();
-	String cur = dir->get_next();
-	String project_data_dir_name = ProjectSettings::get_project_data_dir_name();
-	while (!cur.is_empty()) {
-		String cs = p_path.path_join(cur);
-		if (cur == "." || cur == ".." || cur == project_data_dir_name) {
-			// Skip
-		}
-		else if (dir->current_is_dir()) {
-			String path = cs.trim_prefix(p_base_path) + "/";
-			zipOpenNewFileInZip4(p_zip, path.utf8().get_data(), nullptr, nullptr, 0, nullptr, 0,
-				nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS, DEF_MEM_LEVEL,
-				Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314,
-				1 << 11);
-			zipCloseFileInZip(p_zip);
-			_zip_recursive(cs, p_base_path, p_zip);
-		}
-		else {
-			_zip_file(cs, p_base_path, p_zip);
-		}
-		cur = dir->get_next();
-	}
-}
-
-void ProjectZIPPacker::_zip_file(String const&, String const&, void*) {}
-
-// EditorExport
-
-void EditorExport::add_export_platform(const Ref<EditorExportPlatform>& p_platform)
-{
-	ERR_FAIL_NULL(EditorExport::instance);
-	EditorExport::instance->_impl_add_export_platform(p_platform);
-}
-
-void EditorExport::_impl_add_export_platform(const Ref<EditorExportPlatform>& p_platform)
-{
-	p_platform->initialize();
-	export_platforms.push_back(p_platform);
-
-	should_update_presets = true;
-	should_reload_presets = true;
-}
-
-void EditorExport::remove_export_platform(const Ref<EditorExportPlatform>& p_platform)
-{
-	ERR_FAIL_NULL(EditorExport::instance);
-	EditorExport::instance->_impl_remove_export_platform(p_platform);
-}
-
-void EditorExport::_impl_remove_export_platform(const Ref<EditorExportPlatform>& p_platform)
-{
-	export_platforms.erase(p_platform);
-	p_platform->cleanup();
-
-	should_update_presets = true;
-	should_reload_presets = true;
-}
-
-int EditorExport::get_export_platform_count()
-{
-	return EditorExport::instance->_impl_get_export_platform_count();
-}
-
-int EditorExport::_impl_get_export_platform_count() const { return export_platforms.size(); }
-
-int EditorExport::get_export_platform_index_by_name(const String& p_name)
-{
-	for (int j = 0; j < get_export_platform_count(); j++) {
-		Ref<EditorExportPlatform> plat = get_export_platform(j);
-		if (!plat.is_null() && plat->get_name().nocasecmp_to(p_name) == 0) {
-			return j;
-		}
-	}
-	return -1;
-}
-
-bool EditorExport::has_preset_with_name(const String& p_name, int p_exclude_index) const
-{
-	for (int i = 0; i < export_presets.size(); i++) {
-		if (i == p_exclude_index) {
-			continue;
-		}
-		if (export_presets[i]->get_name() == p_name) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-Ref<EditorExportPlatform> EditorExport::get_export_platform(int p_idx)
-{
-	return EditorExport::instance->_impl_get_export_platform(p_idx);
-}
-
-Ref<EditorExportPlatform> EditorExport::_impl_get_export_platform(int p_idx)
-{
-	ERR_FAIL_INDEX_V(p_idx, export_platforms.size(), Ref<EditorExportPlatform>());
-
-	return export_platforms[p_idx];
-}
-
-void EditorExport::add_export_preset(const Ref<EditorExportPreset>& p_preset, int p_at_pos)
-{
-	if (p_at_pos < 0) {
-		export_presets.push_back(p_preset);
-	}
-	else {
-		export_presets.insert(p_at_pos, p_preset);
-	}
-	emit_presets_runnable_changed();
-}
-
-int EditorExport::get_export_preset_count()
-{
-	return EditorExport::instance->_impl_get_export_preset_count();
-}
-
-int EditorExport::_impl_get_export_preset_count() const { return export_presets.size(); }
-
-Ref<EditorExportPreset> EditorExport::get_export_preset(int p_idx)
-{
-	return EditorExport::instance->_impl_get_export_preset(p_idx);
-}
-
-Ref<EditorExportPreset> EditorExport::_impl_get_export_preset(int p_idx)
-{
-	ERR_FAIL_INDEX_V(p_idx, export_presets.size(), Ref<EditorExportPreset>());
-	return export_presets[p_idx];
-}
-
-void EditorExport::add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
-{
-	ERR_FAIL_NULL(EditorExport::instance);
-	EditorExport::instance->_impl_add_export_plugin(p_plugin);
-}
-
-void EditorExport::_impl_add_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
-{
-	if (!export_plugins.has(p_plugin)) {
-		export_plugins.push_back(p_plugin);
-		should_update_presets = true;
-	}
-}
-
-void EditorExport::remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
-{
-	ERR_FAIL_NULL(EditorExport::instance);
-	EditorExport::instance->_impl_remove_export_plugin(p_plugin);
-}
-
-void EditorExport::_impl_remove_export_plugin(const Ref<EditorExportPlugin>& p_plugin)
-{
-	export_plugins.erase(p_plugin);
-	should_update_presets = true;
-}
-
-Vector<Ref<EditorExportPlugin>> EditorExport::get_export_plugins()
-{
-	return EditorExport::instance->_impl_get_export_plugins();
-}
-
-Vector<Ref<EditorExportPlugin>> EditorExport::_impl_get_export_plugins() { return export_plugins; }
-
-Ref<EditorExportPreset> EditorExport::get_runnable_preset_for_platform(
-	const Ref<EditorExportPlatform>& p_for_platform)
-{
-	return EditorExport::instance->_impl_get_runnable_preset_for_platform(p_for_platform);
-}
-
-Ref<EditorExportPreset> EditorExport::_impl_get_runnable_preset_for_platform(
-	const Ref<EditorExportPlatform>& p_for_platform) const
-{
-	const Ref<EditorExportPreset>* preset = runnable_presets.getptr(p_for_platform);
-	return preset ? *preset : Ref<EditorExportPreset>();
-}
-
-bool EditorExport::poll_export_platforms()
-{
-	bool changed = false;
-	for (int i = 0; i < export_platforms.size(); i++) {
-		if (export_platforms.write[i]->poll_export()) {
-			changed = true;
-		}
-	}
-
-	return changed;
-}
-
-void EditorExport::emit_presets_runnable_changed() {}
-
-// ============================================================================
-// Merged from editor/export/editor_export_platform.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "servers/display/display_server.h"
-// Inlined editor/export/editor_export_platform.compat.inc
-#ifndef DISABLE_DEPRECATED
-
-
-Vector<String> EditorExportPlatform::_get_forced_export_files_bind_compat_71542()
-{
-	return get_forced_export_files(Ref<EditorExportPreset>());
-}
-
-Error EditorExportPlatform::_export_project_bind_compat_118787(
-	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path,
-	uint32_t p_flags)
-{
-	return export_project(p_preset, p_debug, p_path, p_flags, true);
-}
-
-void EditorExportPlatform::_bind_compatibility_methods() {}
-
-#endif // DISABLE_DEPRECATED
-
-
-
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-class EditorExportSaveProxy
-{
-	HashSet<String> saved_paths;
-	EditorExportPlatform::EditorExportSaveFunction save_func;
-	bool tracking_saves = false;
-
-public:
-	bool has_saved(const String& p_path) const { return saved_paths.has(p_path); }
-
-	Error save_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata, const String& p_path,
-		const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta)
-	{
-		if (tracking_saves) {
-			saved_paths.insert(p_path.simplify_path().trim_prefix("res://"));
-		}
-
-		return save_func(p_preset, p_userdata, p_path, p_data, p_file, p_total, p_enc_in_filters,
-			p_enc_ex_filters, p_key, p_seed, p_delta);
-	}
-
-	EditorExportSaveProxy(
-		EditorExportPlatform::EditorExportSaveFunction p_save_func, bool p_track_saves)
-		: save_func(p_save_func), tracking_saves(p_track_saves)
-	{
-	}
-};
-
-static int _get_pad_pck(int p_alignment, int p_n)
-{
-	int rest = p_n % p_alignment;
-	int pad = 0;
-	if (rest > 0) {
-		pad = p_alignment - rest;
-	};
-
-	return pad;
-}
-
-static constexpr int PCK_PADDING = 16;
-
-Ref<Image> EditorExportPlatform::_load_icon_or_splash_image(
-	const String& p_path, Error* r_error) const
-{
-	Ref<Image> image;
-
-	if (!p_path.is_empty() && ResourceLoader::exists(p_path) &&
-		!ResourceLoader::get_resource_type(p_path).is_empty()) {
-		Ref<Texture2D> texture =
-			ResourceLoader::load(p_path, "", ResourceFormatLoader::CACHE_MODE_IGNORE, r_error);
-		if (texture.is_valid()) {
-			image = texture->get_image();
-			if (image.is_valid() && image->is_compressed()) {
-				image->decompress();
-			}
-		}
-	}
-	if (image.is_null()) {
-		image.instantiate();
-		Error err = ImageLoader::load_image(p_path, image);
-		if (r_error) {
-			*r_error = err;
-		}
-	}
-	return image;
-}
-
-Error EditorExportPlatform::_extract_android_assets(
-	const String& p_bundle_path, String& r_pck_path, String& r_temp_dir)
-{
-	Error err = OK;
-
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-	unzFile zip_file = unzOpen2(p_bundle_path.utf8().get_data(), &io);
-	if (!zip_file) {
-		return ERR_FILE_CANT_OPEN;
-	}
-
-	const char* pck_name = "assets.sparsepck";
-	String pck_base_dir;
-
-	int ret = unzGoToFirstFile(zip_file);
-	while (ret == UNZ_OK) {
-		unz_file_info64 file_info = {};
-		char file_name_buf[16384];
-		ret = unzGetCurrentFileInfo64(
-			zip_file, &file_info, file_name_buf, sizeof(file_name_buf), nullptr, 0, nullptr, 0);
-		if (ret != UNZ_OK) {
-			break;
-		}
-
-		String file_name = String::utf8(file_name_buf);
-		if (file_name.ends_with(pck_name)) {
-			pck_base_dir = file_name.trim_suffix(pck_name);
-			break;
-		}
-
-		ret = unzGoToNextFile(zip_file);
-	}
-
-	if (ret != UNZ_OK || pck_base_dir.is_empty()) {
-		unzClose(zip_file);
-		return ERR_FILE_UNRECOGNIZED;
-	}
-
-	Ref<DirAccess> temp_dir = DirAccess::create_temp("export_patch_base", true, &err);
-	if (err != OK) {
-		unzClose(zip_file);
-		return err;
-	}
-
-	String temp_dir_path = temp_dir->get_current_dir();
-
-	ret = unzGoToFirstFile(zip_file);
-	while (ret == UNZ_OK) {
-		unz_file_info64 zip_file_info = {};
-		char file_name_buf[16384];
-		if (unzGetCurrentFileInfo64(zip_file, &zip_file_info, file_name_buf, sizeof(file_name_buf),
-				nullptr, 0, nullptr, 0) != UNZ_OK) {
-			err = ERR_FILE_CORRUPT;
-			break;
-		}
-
-		String file_name = String::utf8(file_name_buf);
-		if (!file_name.begins_with(pck_base_dir)) {
-			ret = unzGoToNextFile(zip_file);
-			continue;
-		}
-
-		String file_path_relative = file_name.trim_prefix(pck_base_dir).simplify_path();
-		if (file_path_relative.is_empty()) {
-			ret = unzGoToNextFile(zip_file);
-			continue;
-		}
-
-		String file_output_path = temp_dir_path.path_join(file_path_relative);
-		err = DirAccess::make_dir_recursive_absolute(file_output_path.get_base_dir());
-		if (err != OK) {
-			break;
-		}
-
-		if (unzOpenCurrentFile(zip_file) != UNZ_OK) {
-			err = ERR_FILE_CANT_OPEN;
-			break;
-		}
-
-		LocalVector<uint8_t> uncomp_data;
-		uncomp_data.resize(zip_file_info.uncompressed_size);
-		int read_bytes = unzReadCurrentFile(zip_file, uncomp_data.ptr(), uncomp_data.size());
-		unzCloseCurrentFile(zip_file);
-
-		if (read_bytes < 0 || read_bytes != (int)uncomp_data.size()) {
-			err = ERR_FILE_CANT_READ;
-			break;
-		}
-
-		Ref<FileAccess> temp_file = FileAccess::open(file_output_path, FileAccess::WRITE, &err);
-		if (err != OK) {
-			break;
-		}
-
-		if (!temp_file->store_buffer(uncomp_data.ptr(), uncomp_data.size())) {
-			err = ERR_FILE_CANT_WRITE;
-			break;
-		}
-
-		ret = unzGoToNextFile(zip_file);
-	}
-
-	unzClose(zip_file);
-
-	r_pck_path = temp_dir_path.path_join(pck_name);
-	r_temp_dir = temp_dir_path;
-
-	return err;
-}
-
-Error EditorExportPlatform::_load_patches(
-	const Ref<EditorExportPreset>& p_preset, const Vector<String>& p_patches)
-{
-	if (!p_patches.is_empty()) {
-		for (const String& path : p_patches) {
-			String pck_path = path;
-
-			if (path.ends_with(".apk") || path.ends_with(".aab")) {
-				String temp_dir;
-				Error err = _extract_android_assets(path, pck_path, temp_dir);
-				if (err != OK) {
-					_unload_patches();
-					add_message(EXPORT_MESSAGE_ERROR, TTR("Patch Creation"),
-						vformat(TTR("Could not extract assets from Android bundle \"%s\", due to "
-									"error \"%s\"."),
-							path, error_names[err]));
-					return err;
-				}
-
-				patch_temp_dirs.push_back(temp_dir);
-			}
-
-			Error err = PackedData::add_pack(
-				pck_path, true, 0, _get_script_encryption_key_bytes(p_preset));
-			if (err != OK) {
-				_unload_patches();
-				add_message(EXPORT_MESSAGE_ERROR, TTR("Patch Creation"),
-					vformat(TTR("Could not load patch pack with path \"%s\"."), pck_path));
-				return err;
-			}
-		}
-	}
-
-	return OK;
-}
-
-void EditorExportPlatform::_unload_patches()
-{
-	PackedData::clear();
-
-	for (const String& temp_dir : patch_temp_dirs) {
-		Ref<DirAccess> temp_dir_da = DirAccess::open(temp_dir);
-		if (temp_dir_da.is_valid()) {
-			temp_dir_da->erase_contents_recursive();
-			temp_dir_da->remove(temp_dir);
-		}
-	}
-
-	patch_temp_dirs.clear();
-}
-
-Error EditorExportPlatform::_encrypt_and_store_data(Ref<FileAccess> p_fd, const String& p_path,
-	const Vector<uint8_t>& p_data, const Vector<String>& p_enc_in_filters,
-	const Vector<String>& p_enc_ex_filters, const Vector<uint8_t>& p_key, uint64_t p_seed,
-	bool& r_encrypt)
-{
-	r_encrypt = false;
-	for (int i = 0; i < p_enc_in_filters.size(); ++i) {
-		if (p_path.matchn(p_enc_in_filters[i]) ||
-			p_path.trim_prefix("res://").matchn(p_enc_in_filters[i])) {
-			r_encrypt = true;
-			break;
-		}
-	}
-
-	for (int i = 0; i < p_enc_ex_filters.size(); ++i) {
-		if (p_path.matchn(p_enc_ex_filters[i]) ||
-			p_path.trim_prefix("res://").matchn(p_enc_ex_filters[i])) {
-			r_encrypt = false;
-			break;
-		}
-	}
-
-	Ref<FileAccessEncrypted> fae;
-	Ref<FileAccess> ftmp = p_fd;
-	if (r_encrypt) {
-		Vector<uint8_t> iv;
-		if (p_seed != 0) {
-			uint64_t seed = p_seed;
-
-			const uint8_t* ptr = p_data.ptr();
-			int64_t len = p_data.size();
-			for (int64_t i = 0; i < len; i++) {
-				seed = ((seed << 5) + seed) ^ ptr[i];
-			}
-
-			RandomPCG rng = RandomPCG(seed);
-			iv.resize(16);
-			for (int i = 0; i < 16; i++) {
-				iv.write[i] = rng.rand() % 256;
-			}
-		}
-
-		fae.instantiate();
-		ERR_FAIL_COND_V(fae.is_null(), ERR_FILE_CANT_OPEN);
-
-		Error err =
-			fae->open_and_parse(ftmp, p_key, FileAccessEncrypted::MODE_WRITE_AES256, false, iv);
-		ERR_FAIL_COND_V(err != OK, ERR_FILE_CANT_OPEN);
-		ftmp = fae;
-	}
-
-	// Store file content.
-	ftmp->store_buffer(p_data.ptr(), p_data.size());
-
-	if (fae.is_valid()) {
-		ftmp.unref();
-		fae.unref();
-	}
-	return OK;
-}
-
-String EditorExportPlatform::find_export_template(
-	const String& template_file_name, String* err) const
-{
-	String current_version = VLTR_VERSION_FULL_CONFIG;
-	String template_path = EditorPaths::get_export_templates_dir()
-							   .path_join(current_version)
-							   .path_join(template_file_name);
-
-	if (FileAccess::exists(template_path)) {
-		return template_path;
-	}
-
-	// Not found
-	if (err) {
-		*err += TTR("No export template found at the expected path:") + "\n" + template_path + "\n";
-	}
-	return String();
-}
-
-bool EditorExportPlatform::exists_export_template(
-	const String& template_file_name, String* err) const
-{
-	return find_export_template(template_file_name, err) != "";
-}
-
-void EditorExportPlatform::_export_find_resources(
-	EditorFileSystemDirectory* p_dir, HashSet<String>& p_paths)
-{
-	for (int i = 0; i < p_dir->get_subdir_count(); i++) {
-		_export_find_resources(p_dir->get_subdir(i), p_paths);
-	}
-
-	for (int i = 0; i < p_dir->get_file_count(); i++) {
-		if (p_dir->get_file_type(i) == "TextFile") {
-			continue;
-		}
-		p_paths.insert(p_dir->get_file_path(i));
-	}
-}
-
-void EditorExportPlatform::_export_find_customized_resources(
-	const Ref<EditorExportPreset>& p_preset, EditorFileSystemDirectory* p_dir,
-	EditorExportPreset::FileExportMode p_mode, HashSet<String>& p_paths)
-{
-	for (int i = 0; i < p_dir->get_subdir_count(); i++) {
-		EditorFileSystemDirectory* subdir = p_dir->get_subdir(i);
-		_export_find_customized_resources(
-			p_preset, subdir, p_preset->get_file_export_mode(subdir->get_path(), p_mode), p_paths);
-	}
-
-	for (int i = 0; i < p_dir->get_file_count(); i++) {
-		if (p_dir->get_file_type(i) == "TextFile") {
-			continue;
-		}
-		String path = p_dir->get_file_path(i);
-		EditorExportPreset::FileExportMode file_mode = p_preset->get_file_export_mode(path, p_mode);
-		if (file_mode != EditorExportPreset::MODE_FILE_REMOVE) {
-			p_paths.insert(path);
-		}
-	}
-}
-
-void EditorExportPlatform::_export_find_dependencies(const String& p_path, HashSet<String>& p_paths)
-{
-	if (p_paths.has(p_path)) {
-		return;
-	}
-
-	p_paths.insert(p_path);
-
-	EditorFileSystemDirectory* dir;
-	int file_idx;
-	dir = EditorFileSystem::find_file(p_path, &file_idx);
-	if (!dir) {
-		return;
-	}
-
-	Vector<String> deps = dir->get_file_deps(file_idx);
-
-	for (int i = 0; i < deps.size(); i++) {
-		_export_find_dependencies(deps[i], p_paths);
-	}
-}
-
-void EditorExportPlatform::_edit_files_with_filter(
-	Ref<DirAccess>& da, const Vector<String>& p_filters, HashSet<String>& r_list, bool exclude)
-{
-	da->list_dir_begin();
-	String cur_dir = da->get_current_dir().replace_char('\\', '/');
-	if (!cur_dir.ends_with("/")) {
-		cur_dir += "/";
-	}
-	String cur_dir_no_prefix = cur_dir.replace("res://", "");
-
-	Vector<String> dirs;
-	String f = da->get_next();
-	while (!f.is_empty()) {
-		if (da->current_is_dir()) {
-			dirs.push_back(f);
-		}
-		else {
-			String fullpath = cur_dir + f;
-			// Test also against path without res:// so that filters like `file.txt` can work.
-			String fullpath_no_prefix = cur_dir_no_prefix + f;
-			for (int i = 0; i < p_filters.size(); ++i) {
-				if (fullpath.matchn(p_filters[i]) || fullpath_no_prefix.matchn(p_filters[i])) {
-					if (!exclude) {
-						r_list.insert(fullpath);
-					}
-					else {
-						r_list.erase(fullpath);
-					}
-				}
-			}
-		}
-		f = da->get_next();
-	}
-
-	da->list_dir_end();
-
-	for (int i = 0; i < dirs.size(); ++i) {
-		const String& dir = dirs[i];
-		if (dir.begins_with(".")) {
-			continue;
-		}
-
-		if (EditorFileSystem::_should_skip_directory(cur_dir + dir)) {
-			continue;
-		}
-
-		da->change_dir(dir);
-		_edit_files_with_filter(da, p_filters, r_list, exclude);
-		da->change_dir("..");
-	}
-}
-
-void EditorExportPlatform::_edit_filter_list(
-	HashSet<String>& r_list, const String& p_filter, bool exclude)
-{
-	if (p_filter.is_empty()) {
-		return;
-	}
-	Vector<String> split = p_filter.split(",");
-	Vector<String> filters;
-	for (int i = 0; i < split.size(); i++) {
-		String f = split[i].strip_edges();
-		if (f.is_empty()) {
-			continue;
-		}
-		filters.push_back(f);
-	}
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	ERR_FAIL_COND(da.is_null());
-	_edit_files_with_filter(da, filters, r_list, exclude);
-}
-
-HashSet<String> EditorExportPlatform::get_features(
-	const Ref<EditorExportPreset>& p_preset, bool p_debug) const
-{
-	Ref<EditorExportPlatform> platform = p_preset->get_platform();
-	List<String> feature_list;
-	platform->get_platform_features(&feature_list);
-	platform->get_preset_features(p_preset, &feature_list);
-
-	HashSet<String> result;
-	for (const String& E : feature_list) {
-		result.insert(E);
-	}
-
-	result.insert("template");
-	if (p_debug) {
-		result.insert("debug");
-		result.insert("template_debug");
-	}
-	else {
-		result.insert("release");
-		result.insert("template_release");
-	}
-
-#ifdef REAL_T_IS_DOUBLE
-	result.insert("double");
-#else
-	result.insert("single");
-#endif // REAL_T_IS_DOUBLE
-
-	if (!p_preset->get_custom_features().is_empty()) {
-		Vector<String> tmp_custom_list = p_preset->get_custom_features().split(",");
-
-		for (int i = 0; i < tmp_custom_list.size(); i++) {
-			String f = tmp_custom_list[i].strip_edges();
-			if (!f.is_empty()) {
-				result.insert(f);
-			}
-		}
-	}
-
-	return result;
-}
-
-EditorExportPlatform::ExportNotifier::ExportNotifier(EditorExportPlatform& p_platform,
-	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags,
-	bool p_enabled)
-{
-	enabled = p_enabled;
-	if (!enabled) {
-		return;
-	}
-	HashSet<String> features = p_platform.get_features(p_preset, p_debug);
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	// initial export plugin callback
-	for (int i = 0; i < export_plugins.size(); i++) {
-		export_plugins.write[i]->set_export_preset(p_preset);
-		export_plugins.write[i]->_export_begin(features, p_debug, p_path, p_flags);
-	}
-}
-
-EditorExportPlatform::ExportNotifier::~ExportNotifier()
-{
-	if (!enabled) {
-		return;
-	}
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	for (int i = 0; i < export_plugins.size(); i++) {
-		export_plugins.write[i]->_export_end();
-		export_plugins.write[i]->_export_end_clear();
-		export_plugins.write[i]->set_export_preset(Ref<EditorExportPreset>());
-	}
-}
-
-bool EditorExportPlatform::_is_editable_ancestor(Node* p_root, Node* p_node)
-{
-	while (p_node != nullptr && p_node != p_root) {
-		if (p_root->is_editable_instance(p_node)) {
-			return true;
-		}
-		p_node = p_node->get_owner();
-	}
-	return false;
-}
-
-String EditorExportPlatform::_get_script_encryption_key(const Ref<EditorExportPreset>& p_preset)
-{
-	const String from_env = OS::get_environment(ENV_SCRIPT_ENCRYPTION_KEY);
-	if (!from_env.is_empty()) {
-		return from_env.to_lower();
-	}
-	return p_preset->get_script_encryption_key().to_lower();
-}
-
-Vector<uint8_t> EditorExportPlatform::_get_script_encryption_key_bytes(
-	const Ref<EditorExportPreset>& p_preset)
-{
-	Vector<uint8_t> key;
-	String script_key = _get_script_encryption_key(p_preset);
-	if (script_key.length() == 64) {
-		key.resize(32);
-		for (int i = 0; i < 32; i++) {
-			int v = 0;
-			if (i * 2 < script_key.length()) {
-				char32_t ct = script_key[i * 2];
-				if (is_digit(ct)) {
-					ct = ct - '0';
-				}
-				else if (ct >= 'a' && ct <= 'f') {
-					ct = 10 + ct - 'a';
-				}
-				v |= ct << 4;
-			}
-
-			if (i * 2 + 1 < script_key.length()) {
-				char32_t ct = script_key[i * 2 + 1];
-				if (is_digit(ct)) {
-					ct = ct - '0';
-				}
-				else if (ct >= 'a' && ct <= 'f') {
-					ct = 10 + ct - 'a';
-				}
-				v |= ct;
-			}
-			key.write[i] = v;
-		}
-	}
-
-	return key;
-}
-
-// Used by the main export function to filter excluded global classes, extensions
-// and UIDs based on excluded resources configured in the export preset.
-
-Error EditorExportPlatform::_pack_add_shared_object(
-	const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so)
-{
-	PackData* pack_data = (PackData*)p_userdata;
-	if (pack_data->so_files) {
-		pack_data->so_files->push_back(p_so);
-	}
-
-	return OK;
-}
-
-Error EditorExportPlatform::_remove_pack_file(
-	const Ref<EditorExportPreset>& p_preset, void* p_userdata, const String& p_path)
-{
-	PackData* pd = (PackData*)p_userdata;
-
-	SavedData sd;
-	sd.path_utf8 = p_path.utf8();
-	sd.ofs = pd->f->get_position();
-	sd.size = 0;
-	sd.removal = true;
-
-	// This padding will likely never be added, as we should already be aligned when removals are
-	// added.
-	int pad = _get_pad_pck(PCK_PADDING, pd->f->get_position());
-	for (int i = 0; i < pad; i++) {
-		pd->f->store_8(0);
-	}
-
-	sd.md5.resize_initialized(16);
-
-	pd->file_ofs.push_back(sd);
-
-	return OK;
-}
-
-Error EditorExportPlatform::_zip_add_shared_object(
-	const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so)
-{
-	ZipData* zip_data = (ZipData*)p_userdata;
-	if (zip_data->so_files) {
-		zip_data->so_files->push_back(p_so);
-	}
-
-	return OK;
-}
-
-void EditorExportPlatform::zip_folder_recursive(
-	zipFile& p_zip, const String& p_root_path, const String& p_folder, const String& p_pkg_name)
-{
-	String dir = p_folder.is_empty() ? p_root_path : p_root_path.path_join(p_folder);
-
-	Ref<DirAccess> da = DirAccess::open(dir);
-	ERR_FAIL_COND(da.is_null());
-
-	da->list_dir_begin();
-	String f = da->get_next();
-	while (!f.is_empty()) {
-		if (f == "." || f == "..") {
-			f = da->get_next();
-			continue;
-		}
-		if (da->is_link(f)) {
-			OS::DateTime dt = OS::get_datetime();
-
-			zip_fileinfo zipfi;
-			zipfi.tmz_date.tm_year = dt.year;
-			zipfi.tmz_date.tm_mon =
-				dt.month - 1; // Note: "tm" month range - 0..11, Godot month range - 1..12,
-							  // https://www.cplusplus.com/reference/ctime/tm/
-			zipfi.tmz_date.tm_mday = dt.day;
-			zipfi.tmz_date.tm_hour = dt.hour;
-			zipfi.tmz_date.tm_min = dt.minute;
-			zipfi.tmz_date.tm_sec = dt.second;
-			zipfi.dosDate = 0;
-			// 0120000: symbolic link type
-			// 0000755: permissions rwxr-xr-x
-			// 0000644: permissions rw-r--r--
-			uint32_t _mode = 0120644;
-			zipfi.external_fa =
-				(_mode << 16L) |
-				((_mode & 0200) ? 0 : 1); // UUUUUUUUUUUUUUUU0000000000ADVSHR: Unix permissions (U)
-										  // + DOS read-only flag (R).
-			zipfi.internal_fa = 0;
-
-			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
-				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
-				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
-				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
-						  // fields must be encoded using UTF-8.
-
-			const CharString target_utf8 = da->read_link(f).utf8();
-			zipWriteInFileInZip(p_zip, target_utf8.get_data(), target_utf8.size());
-			zipCloseFileInZip(p_zip);
-		}
-		else if (da->current_is_dir()) {
-			zip_folder_recursive(p_zip, p_root_path, p_folder.path_join(f), p_pkg_name);
-		}
-		else {
-			bool _is_executable = is_executable(dir.path_join(f));
-
-			OS::DateTime dt = OS::get_datetime();
-
-			zip_fileinfo zipfi;
-			zipfi.tmz_date.tm_year = dt.year;
-			zipfi.tmz_date.tm_mon =
-				dt.month - 1; // Note: "tm" month range - 0..11, Godot month range - 1..12,
-							  // https://www.cplusplus.com/reference/ctime/tm/
-			zipfi.tmz_date.tm_mday = dt.day;
-			zipfi.tmz_date.tm_hour = dt.hour;
-			zipfi.tmz_date.tm_min = dt.minute;
-			zipfi.tmz_date.tm_sec = dt.second;
-			zipfi.dosDate = 0;
-			// 0100000: regular file type
-			// 0000755: permissions rwxr-xr-x
-			// 0000644: permissions rw-r--r--
-			uint32_t _mode = (_is_executable ? 0100755 : 0100644);
-			zipfi.external_fa =
-				(_mode << 16L) |
-				((_mode & 0200) ? 0 : 1); // UUUUUUUUUUUUUUUU0000000000ADVSHR: Unix permissions (U)
-										  // + DOS read-only flag (R).
-			zipfi.internal_fa = 0;
-
-			zipOpenNewFileInZip4(p_zip, p_folder.path_join(f).utf8().get_data(), &zipfi, nullptr, 0,
-				nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, -MAX_WBITS,
-				DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, nullptr, 0,
-				0x0314, // "version made by", 0x03 - Unix, 0x14 - ZIP specification version 2.0,
-						// required to store Unix file permissions
-				1 << 11); // Bit 11 is the language encoding flag. When set, filename and comment
-						  // fields must be encoded using UTF-8.
-
-			Ref<FileAccess> fa = FileAccess::open(dir.path_join(f), FileAccess::READ);
-			if (fa.is_null()) {
-				add_message(EXPORT_MESSAGE_ERROR, TTR("ZIP Creation"),
-					vformat(
-						TTR("Could not open file to read from path \"%s\"."), dir.path_join(f)));
-				return;
-			}
-			const int bufsize = 16384;
-			uint8_t buf[bufsize];
-
-			while (true) {
-				uint64_t got = fa->get_buffer(buf, bufsize);
-				if (got == 0) {
-					break;
-				}
-				zipWriteInFileInZip(p_zip, buf, got);
-			}
-
-			zipCloseFileInZip(p_zip);
-		}
-		f = da->get_next();
-	}
-	da->list_dir_end();
-}
-
-bool EditorExportPlatform::_store_header(Ref<FileAccess> p_fd, bool p_enc, bool p_sparse,
-	uint64_t& r_file_base_ofs, uint64_t& r_dir_base_ofs, const String& p_salt)
-{
-	p_fd->store_32(PACK_HEADER_MAGIC);
-	p_fd->store_32(PACK_FORMAT_VERSION);
-	p_fd->store_32(VLTR_VERSION_MAJOR);
-	p_fd->store_32(VLTR_VERSION_MINOR);
-	p_fd->store_32(VLTR_VERSION_PATCH);
-
-	uint32_t pack_flags = PACK_REL_FILEBASE;
-	if (p_enc) {
-		pack_flags |= PACK_DIR_ENCRYPTED;
-	}
-	if (p_sparse) {
-		pack_flags |= PACK_SPARSE_BUNDLE;
-	}
-	p_fd->store_32(pack_flags); // Flags.
-
-	r_file_base_ofs = p_fd->get_position();
-	p_fd->store_64(0); // Files base offset.
-
-	r_dir_base_ofs = p_fd->get_position();
-	p_fd->store_64(0); // Directory offset.
-
-	if (p_enc && p_sparse && p_salt.length() == 32) {
-		CharString cs = p_salt.latin1();
-		p_fd->store_buffer((const uint8_t*)cs.ptr(), 32);
-	}
-	else {
-		for (int i = 0; i < 8; i++) {
-			// Reserved.
-			p_fd->store_32(0);
-		}
-	}
-
-	for (int i = 0; i < 8; i++) {
-		// Reserved.
-		p_fd->store_32(0);
-	}
-	return true;
-}
-
-bool EditorExportPlatform::_encrypt_and_store_directory(Ref<FileAccess> p_fd, PackData& p_pack_data,
-	const Vector<uint8_t>& p_key, uint64_t p_seed, uint64_t p_file_base)
-{
-	Ref<FileAccessEncrypted> fae;
-	Ref<FileAccess> fhead = p_fd;
-
-	fhead->store_32(p_pack_data.file_ofs.size()); // amount of files
-
-	if (!p_key.is_empty()) {
-		uint64_t seed = p_seed;
-		fae.instantiate();
-		if (fae.is_null()) {
-			return false;
-		}
-
-		Vector<uint8_t> iv;
-		if (seed != 0) {
-			for (int i = 0; i < p_pack_data.file_ofs.size(); i++) {
-				for (int64_t j = 0; j < p_pack_data.file_ofs[i].path_utf8.length(); j++) {
-					seed = ((seed << 5) + seed) ^ p_pack_data.file_ofs[i].path_utf8.get_data()[j];
-				}
-				for (int64_t j = 0; j < p_pack_data.file_ofs[i].md5.size(); j++) {
-					seed = ((seed << 5) + seed) ^ p_pack_data.file_ofs[i].md5[j];
-				}
-				seed = ((seed << 5) + seed) ^ (p_pack_data.file_ofs[i].ofs - p_file_base);
-				seed = ((seed << 5) + seed) ^ p_pack_data.file_ofs[i].size;
-			}
-
-			RandomPCG rng = RandomPCG(seed);
-			iv.resize(16);
-			for (int i = 0; i < 16; i++) {
-				iv.write[i] = rng.rand() % 256;
-			}
-		}
-
-		Error err =
-			fae->open_and_parse(fhead, p_key, FileAccessEncrypted::MODE_WRITE_AES256, false, iv);
-		if (err != OK) {
-			return false;
-		}
-
-		fhead = fae;
-	}
-	for (int i = 0; i < p_pack_data.file_ofs.size(); i++) {
-		uint32_t string_len = p_pack_data.file_ofs[i].path_utf8.length();
-		uint32_t pad = _get_pad_pck(4, string_len);
-
-		fhead->store_32(string_len + pad);
-		fhead->store_buffer(
-			(const uint8_t*)p_pack_data.file_ofs[i].path_utf8.get_data(), string_len);
-		for (uint32_t j = 0; j < pad; j++) {
-			fhead->store_8(0);
-		}
-
-		fhead->store_64(p_pack_data.file_ofs[i].ofs - p_file_base);
-		fhead->store_64(p_pack_data.file_ofs[i].size); // pay attention here, this is where file is
-		fhead->store_buffer(p_pack_data.file_ofs[i].md5.ptr(), 16); // also save md5 for file
-		uint32_t flags = 0;
-		if (p_pack_data.file_ofs[i].encrypted) {
-			flags |= PACK_FILE_ENCRYPTED;
-		}
-		if (p_pack_data.file_ofs[i].removal) {
-			flags |= PACK_FILE_REMOVAL;
-		}
-		if (p_pack_data.file_ofs[i].delta) {
-			flags |= PACK_FILE_DELTA;
-		}
-		fhead->store_32(flags);
-	}
-
-	if (fae.is_valid()) {
-		fhead.unref();
-		fae.unref();
-	}
-	return true;
-}
-
-String EditorExportPlatform::simplify_path(const String& p_path)
-{
-	if (p_path.begins_with("uid://")) {
-		const String path = ResourceUID::uid_to_path(p_path);
-		print_verbose(vformat(
-			R"(UID-referenced exported file name "%s" was replaced with "%s".)", p_path, path));
-		return path.simplify_path();
-	}
-	else {
-		return p_path.simplify_path();
-	}
-}
-
-void EditorExportPlatform::get_preset_features(
-	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
-{
-}
-
-bool EditorExportPlatform::fill_log_messages(RichTextLabel* p_log, Error p_err) { return true; }
-
-Ref<EditorExportPreset> EditorExportPlatform::create_preset()
-{
-	Ref<EditorExportPreset> eep = memnew(EditorExportPreset);
-	return eep;
-}
-
-bool EditorExportPlatform::can_export(const Ref<EditorExportPreset>& p_preset, String& r_error,
-	bool& r_missing_templates, bool p_debug) const
-{
-	return true;
-}
-
-void EditorExportPlatform::get_export_options(List<ExportOption>* r_options) const {}
-
-String EditorExportPlatform::get_os_name() const { return "CustomOS"; }
-
-String EditorExportPlatform::get_name() const { return "Custom Platform"; }
-
-Ref<Texture2D> EditorExportPlatform::get_logo() const { return Ref<Texture2D>(); }
-
-bool EditorExportPlatform::has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-	String& r_error, bool& r_missing_templates, bool p_debug) const
-{
-	r_missing_templates = false;
-	return true;
-}
-
-bool EditorExportPlatform::has_valid_project_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error) const
-{
-	return true;
-}
-
-List<String> EditorExportPlatform::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	return List<String>();
-}
-
-Error EditorExportPlatform::export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, uint32_t p_flags, bool p_notify)
-{
-	return OK;
-}
-
-Error EditorExportPlatform::ssh_run_on_remote_no_wait(const String& p_host, const String& p_port,
-	const Vector<String>& p_ssh_args, const String& p_cmd_args, ProcessID* r_pid,
-	int p_port_fwd) const
-{
-	return OK;
-}
-
-void EditorExportPlatform::get_platform_features(List<String>* r_features) const {}
-
-Vector<String> EditorExportPlatform::get_forced_export_files(
-	const Ref<EditorExportPreset>& p_preset)
-{
-	return Vector<String>();
-}
-
-Error EditorExportPlatform::ssh_run_on_remote(const String& p_host, const String& p_port,
-	const Vector<String>& p_ssh_args, const String& p_cmd_args, String* r_out, int p_port_fwd) const
-{
-	return OK;
-}
-
-
-
-// ============================================================================
-// Merged from editor/export/editor_export_platform_pc.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h" // IWYU pragma: keep. Misdetection of `logo`.
-
-String EditorExportPlatformPC::get_name() const { return name; }
-
-String EditorExportPlatformPC::get_os_name() const { return os_name; }
-
-Ref<Texture2D> EditorExportPlatformPC::get_logo() const { return logo; }
-
-bool EditorExportPlatformPC::has_valid_project_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error) const
-{
-	return true;
-}
-
-Error EditorExportPlatformPC::export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-	const String& p_path, uint32_t p_flags, bool p_notify)
-{
-	ExportNotifier notifier(*this, p_preset, p_debug, p_path, p_flags, p_notify);
-
-	Error err = prepare_template(p_preset, p_debug, p_path, p_flags);
-	if (err == OK) {
-		err = modify_template(p_preset, p_debug, p_path, p_flags);
-	}
-	if (err == OK) {
-		err = export_project_data(p_preset, p_debug, p_path, p_flags);
-	}
-
-	return err;
-}
-
-Error EditorExportPlatformPC::sign_shared_object(
-	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path)
-{
-	return OK;
-}
-
-void EditorExportPlatformPC::set_name(const String& p_name) { name = p_name; }
-
-void EditorExportPlatformPC::set_os_name(const String& p_name) { os_name = p_name; }
-
-void EditorExportPlatformPC::set_logo(const Ref<Texture2D>& p_logo) { logo = p_logo; }
-
-void EditorExportPlatformPC::get_platform_features(List<String>* r_features) const
-{
-	r_features->push_back("pc"); // Identify PC platforms as such.
-}
-
-void EditorExportPlatformPC::resolve_platform_feature_priorities(
-	const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features)
-{
-}
-
-int EditorExportPlatformPC::get_chmod_flags() const { return chmod_flags; }
-
-void EditorExportPlatformPC::set_chmod_flags(int p_flags) { chmod_flags = p_flags; }
-
-Error EditorExportPlatformPC::prepare_template(
-	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags)
-{
-	return OK;
-}
-
-void EditorExportPlatformPC::get_preset_features(
-	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
-{
-}
-
-String EditorExportPlatformPC::get_export_option_warning(
-	const EditorExportPreset* p_preset, const String& p_name) const
-{
-	return String();
-}
-
-Error EditorExportPlatformPC::export_project_data(
-	const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path, uint32_t p_flags)
-{
-	return OK;
-}
-
-void EditorExportPlatformPC::get_export_options(
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-}
-
-bool EditorExportPlatformPC::has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-	String& r_error, bool& r_missing_templates, bool p_debug) const
-{
-	return false;
-}
-
-
-
-// ============================================================================
-// Merged from editor/export/editor_export_plugin.cpp
-// ============================================================================
-
-
-#include "core/os/os.h"
-
-void EditorExportPlugin::set_export_base_path(const String& p_export_base_path)
-{
-	export_base_path = p_export_base_path;
-}
-
-const String& EditorExportPlugin::get_export_base_path() const { return export_base_path; }
-
-void EditorExportPlugin::set_export_preset(const Ref<EditorExportPreset>& p_preset)
-{
-	if (p_preset.is_valid()) {
-		export_preset = p_preset;
-	}
-}
-
-Ref<EditorExportPreset> EditorExportPlugin::get_export_preset() const { return export_preset; }
-
-Ref<EditorExportPlatform> EditorExportPlugin::get_export_platform() const
-{
-	if (export_preset.is_valid()) {
-		return export_preset->get_platform();
-	}
-	else {
-		return Ref<EditorExportPlatform>();
-	}
-}
-
-void EditorExportPlugin::add_file(const String& p_path, const Vector<uint8_t>& p_file, bool p_remap)
-{
-	ExtraFile ef;
-	ef.data = p_file;
-	ef.path = p_path;
-	ef.remap = p_remap;
-	extra_files.push_back(ef);
-}
-
-void EditorExportPlugin::add_shared_object(
-	const String& p_path, const Vector<String>& p_tags, const String& p_target)
-{
-	shared_objects.push_back(SharedObject(p_path, p_tags, p_target));
-}
-
-void EditorExportPlugin::_add_shared_object(const SharedObject& p_shared_object)
-{
-	shared_objects.push_back(p_shared_object);
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_framework(const String& p_path)
-{
-	apple_embedded_platform_frameworks.push_back(p_path);
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_embedded_framework(const String& p_path)
-{
-	apple_embedded_platform_embedded_frameworks.push_back(p_path);
-}
-
-Vector<String> EditorExportPlugin::get_apple_embedded_platform_frameworks() const
-{
-	return apple_embedded_platform_frameworks;
-}
-
-Vector<String> EditorExportPlugin::get_apple_embedded_platform_embedded_frameworks() const
-{
-	return apple_embedded_platform_embedded_frameworks;
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_plist_content(const String& p_plist_content)
-{
-	apple_embedded_platform_plist_content += p_plist_content + "\n";
-}
-
-String EditorExportPlugin::get_apple_embedded_platform_plist_content() const
-{
-	return apple_embedded_platform_plist_content;
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_linker_flags(const String& p_flags)
-{
-	if (apple_embedded_platform_linker_flags.length() > 0) {
-		apple_embedded_platform_linker_flags += ' ';
-	}
-	apple_embedded_platform_linker_flags += p_flags;
-}
-
-String EditorExportPlugin::get_apple_embedded_platform_linker_flags() const
-{
-	return apple_embedded_platform_linker_flags;
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_bundle_file(const String& p_path)
-{
-	apple_embedded_platform_bundle_files.push_back(p_path);
-}
-
-Vector<String> EditorExportPlugin::get_apple_embedded_platform_bundle_files() const
-{
-	return apple_embedded_platform_bundle_files;
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_cpp_code(const String& p_code)
-{
-	apple_embedded_platform_cpp_code += p_code;
-}
-
-String EditorExportPlugin::get_apple_embedded_platform_cpp_code() const
-{
-	return apple_embedded_platform_cpp_code;
-}
-
-void EditorExportPlugin::add_macos_plugin_file(const String& p_path)
-{
-	macos_plugin_files.push_back(p_path);
-}
-
-const Vector<String>& EditorExportPlugin::get_macos_plugin_files() const
-{
-	return macos_plugin_files;
-}
-
-void EditorExportPlugin::add_apple_embedded_platform_project_static_lib(const String& p_path)
-{
-	apple_embedded_platform_project_static_libs.push_back(p_path);
-}
-
-Vector<String> EditorExportPlugin::get_apple_embedded_platform_project_static_libs() const
-{
-	return apple_embedded_platform_project_static_libs;
-}
-
-// Customization
-
-PackedStringArray EditorExportPlugin::get_export_features(
-	const Ref<EditorExportPlatform>& p_export_platform, bool p_debug) const
-{
-	return _get_export_features(p_export_platform, p_debug);
-}
-
-void EditorExportPlugin::_export_file(
-	const String& p_path, const String& p_type, const HashSet<String>& p_features)
-{
-}
-
-void EditorExportPlugin::_export_begin(
-	const HashSet<String>& p_features, bool p_debug, const String& p_path, int p_flags)
-{
-}
-
-void EditorExportPlugin::_export_end() {}
-
-void EditorExportPlugin::_end_generate_apple_embedded_project(
-	const String& p_path, bool p_will_build_archive)
-{
-}
-
-void EditorExportPlugin::end_generate_apple_embedded_project(
-	const String& p_path, bool p_will_build_archive)
-{
-	_end_generate_apple_embedded_project(p_path, p_will_build_archive);
-}
-
-void EditorExportPlugin::skip() { skipped = true; }
-
-bool EditorExportPlugin::_begin_customize_resources(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_targets)
-{
-	return true;
-}
-
-Ref<Resource> EditorExportPlugin::_customize_resource(
-	const Ref<Resource>& p_resource, const String& p_path)
-{
-	return nullptr;
-}
-
-bool EditorExportPlugin::_begin_customize_scenes(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_targets)
-{
-	return true;
-}
-
-Node* EditorExportPlugin::_customize_scene(Node* p_scene, const String& p_path) { return nullptr; }
-
-uint64_t EditorExportPlugin::_get_customization_configuration_hash() const { return 0; }
-
-void EditorExportPlugin::_end_customize_scenes() {}
-
-void EditorExportPlugin::_end_customize_resources() {}
-
-PackedStringArray EditorExportPlugin::_get_export_features(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return PackedStringArray();
-}
-
-void EditorExportPlugin::_get_export_options(const Ref<EditorExportPlatform>& p_export_platform,
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-}
-
-bool EditorExportPlugin::_should_update_export_options(
-	const Ref<EditorExportPlatform>& p_platform) const
-{
-	return false;
-}
-
-bool EditorExportPlugin::_get_export_option_visibility(
-	const Ref<EditorExportPlatform>& p_platform, const String& p_option) const
-{
-	return true;
-}
-
-String EditorExportPlugin::_get_export_option_warning(
-	const Ref<EditorExportPlatform>& p_platform, const String& p_option) const
-{
-	return String();
-}
-
-String EditorExportPlugin::get_name() const { return String(); }
-
-bool EditorExportPlugin::supports_platform(const Ref<EditorExportPlatform>& p_platform) const
-{
-	return true;
-}
-
-Vector<String> EditorExportPlugin::get_android_dependencies(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return Vector<String>();
-}
-
-Vector<String> EditorExportPlugin::get_android_dependencies_maven_repos(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return Vector<String>();
-}
-
-Vector<String> EditorExportPlugin::get_android_libraries(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return Vector<String>();
-}
-
-String EditorExportPlugin::get_android_manifest_activity_element_contents(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return String();
-}
-
-String EditorExportPlugin::get_android_manifest_application_element_contents(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return String();
-}
-
-String EditorExportPlugin::get_android_manifest_element_contents(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	return String();
-}
-
-PackedByteArray EditorExportPlugin::update_android_prebuilt_manifest(
-	const Ref<EditorExportPlatform>& p_export_platform,
-	const PackedByteArray& p_manifest_data) const
-{
-	return PackedByteArray();
-}
-
-// DedicatedServerExportPlugin
-
-EditorExportPreset::FileExportMode DedicatedServerExportPlugin::_get_export_mode_for_path(
-	const String& p_path)
-{
-	Ref<EditorExportPreset> preset = get_export_preset();
-	ERR_FAIL_COND_V(preset.is_null(), EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED);
-
-	EditorExportPreset::FileExportMode mode = preset->get_file_export_mode(p_path);
-	if (mode != EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED) {
-		return mode;
-	}
-
-	String path = p_path;
-	if (path.begins_with("res://")) {
-		path = path.substr(6);
-	}
-
-	Vector<String> parts = path.split("/");
-
-	while (parts.size() > 0) {
-		parts.resize(parts.size() - 1);
-
-		String test_path = "res://";
-		if (parts.size() > 0) {
-			test_path += String("/").join(parts) + "/";
-		}
-
-		mode = preset->get_file_export_mode(test_path);
-		if (mode != EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED) {
-			break;
-		}
-	}
-
-	return mode;
-}
-
-PackedStringArray DedicatedServerExportPlugin::_get_export_features(
-	const Ref<EditorExportPlatform>& p_platform, bool p_debug) const
-{
-	PackedStringArray ret;
-
-	Ref<EditorExportPreset> preset = get_export_preset();
-	ERR_FAIL_COND_V(preset.is_null(), ret);
-
-	if (preset->is_dedicated_server()) {
-		ret.append("dedicated_server");
-	}
-	return ret;
-}
-
-bool DedicatedServerExportPlugin::_begin_customize_scenes(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
-{
-	Ref<EditorExportPreset> preset = get_export_preset();
-	ERR_FAIL_COND_V(preset.is_null(), false);
-
-	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-
-	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
-}
-
-bool DedicatedServerExportPlugin::_begin_customize_resources(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
-{
-	Ref<EditorExportPreset> preset = get_export_preset();
-	ERR_FAIL_COND_V(preset.is_null(), false);
-
-	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-
-	return preset->get_export_filter() == EditorExportPreset::EXPORT_CUSTOMIZED;
-}
-
-Node* DedicatedServerExportPlugin::_customize_scene(Node* p_root, const String& p_path)
-{
-	current_export_mode = _get_export_mode_for_path(p_path);
-	return nullptr;
-}
-
-void DedicatedServerExportPlugin::_end_customize_scenes()
-{
-	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-}
-
-void DedicatedServerExportPlugin::_end_customize_resources()
-{
-	current_export_mode = EditorExportPreset::MODE_FILE_NOT_CUSTOMIZED;
-}
-
-Ref<Resource> DedicatedServerExportPlugin::_customize_resource(
-	const Ref<Resource>& p_resource, const String& p_path)
-{
-	return p_resource;
-}
-
-uint64_t DedicatedServerExportPlugin::_get_customization_configuration_hash() const { return 0; }
-
-// ============================================================================
-// Merged from editor/export/shader_baker_export_plugin.cpp
-// ============================================================================
-// --- Inlined from editor/export/shader_baker_export_plugin.h ---
-#include "core/os/condition_variable.h"
-#include "core/templates/rb_set.h"
-
-class ShaderRD;
-class RenderingShaderContainerFormat;
-
-class ShaderBakerExportPluginPlatform final : public RefCounted
-{
-public:
-	enum Driver
-	{
-		DRIVER_VULKAN,
-		DRIVER_D3D12,
-		DRIVER_METAL,
-	};
-
-private:
-	Driver driver;
-#ifdef D3D12_ENABLED
-	void* lib_d3d12 = nullptr;
-#endif
-
-public:
-	explicit ShaderBakerExportPluginPlatform(Driver p_driver) : driver(p_driver) {}
-	~ShaderBakerExportPluginPlatform() override;
-
-	Driver get_driver() const { return driver; }
-	RenderingShaderContainerFormat* create_shader_container_format(
-		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset);
-	bool matches_driver(const String& p_driver) const;
-};
-
-class ShaderBakerExportPlugin final : public EditorExportPlugin
-{
-protected:
-	struct WorkItem
-	{
-		String cache_path;
-		String shader_name;
-		Vector<String> stage_sources;
-		Vector<uint64_t> dynamic_buffers;
-		int64_t variant = 0;
-	};
-
-	struct WorkResult
-	{
-		Vector<PackedByteArray> variant_data;
-	};
-
-	struct ShaderGroupItem
-	{
-		String cache_path;
-		LocalVector<int> variants;
-	};
-
-	String shader_cache_platform_name;
-	String shader_cache_renderer_name;
-	String shader_cache_export_path;
-	RBSet<String> shader_paths_processed;
-	HashMap<String, WorkResult> shader_work_results;
-	Mutex shader_work_results_mutex;
-	LocalVector<ShaderGroupItem> shader_group_items;
-	RenderingShaderContainerFormat* shader_container_format = nullptr;
-	String shader_container_driver;
-	Vector<Ref<ShaderBakerExportPluginPlatform>> platforms;
-	uint64_t customization_configuration_hash = 0;
-	uint32_t tasks_processed = 0;
-	uint32_t tasks_total = 0;
-	std::atomic<bool> tasks_cancelled;
-	BinaryMutex tasks_mutex;
-	ConditionVariable tasks_condition;
-
-	String get_name() const override;
-	bool _is_active(const Vector<String>& p_features) const;
-	bool _initialize_container_format(
-		const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset);
-	void _cleanup_container_format();
-	bool _initialize_cache_directory();
-	bool _begin_customize_resources(
-		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-	bool _begin_customize_scenes(
-		const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features) override;
-	void _end_customize_resources() override;
-	Ref<Resource> _customize_resource(
-		const Ref<Resource>& p_resource, const String& p_path) override;
-	Node* _customize_scene(Node* p_root, const String& p_path) override;
-	uint64_t _get_customization_configuration_hash() const override;
-	void _customize_shader_version(ShaderRD* p_shader, RID p_version);
-	void _process_work_item(WorkItem p_work_item);
-
-public:
-	ShaderBakerExportPlugin();
-	~ShaderBakerExportPlugin() override;
-	void add_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
-	void remove_platform(Ref<ShaderBakerExportPluginPlatform> p_platform);
-};
-
-// --- End editor/export/shader_baker_export_plugin.h ---
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
-#include "core/typedefs.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-#ifdef VULKAN_ENABLED
-#define Window VulkanX11Window
-#define Font VulkanX11Font
-#include "servers/display/display_server.h"
-#undef Font
-#undef Window
-#ifdef CursorShape
-#undef CursorShape
-#endif
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-#ifdef Bool
-#undef Bool
-#endif
-#ifdef True
-#undef True
-#endif
-#ifdef False
-#undef False
-#endif
-#ifdef Always
-#undef Always
-#endif
-#endif
-
-#ifdef D3D12_ENABLED
-#include "servers/display/display_server.h"
-#include <windows.h>
-#endif
-
-#ifdef METAL_ENABLED
-#include "servers/display/display_server.h"
-#endif
-
-// Ensure that AlphaCut is the same between the two classes so we can share the code to detect
-// transparency.
-static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_DISABLED, Label3D::ALPHA_CUT_DISABLED));
-static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_DISCARD, Label3D::ALPHA_CUT_DISCARD));
-static_assert(
-	ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_OPAQUE_PREPASS, Label3D::ALPHA_CUT_OPAQUE_PREPASS));
-static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_HASH, Label3D::ALPHA_CUT_HASH));
-static_assert(ENUM_MEMBERS_EQUAL(Sprite3D::ALPHA_CUT_MAX, Label3D::ALPHA_CUT_MAX));
-
-ShaderBakerExportPluginPlatform::~ShaderBakerExportPluginPlatform()
-{
-#ifdef D3D12_ENABLED
-	if (lib_d3d12 != nullptr) {
-		FreeLibrary((HMODULE)(lib_d3d12));
-	}
-#endif
-}
-
-RenderingShaderContainerFormat* ShaderBakerExportPluginPlatform::create_shader_container_format(
-	const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset)
-{
-	switch (driver) {
-	case DRIVER_VULKAN: {
-#ifdef VULKAN_ENABLED
-		return memnew(RenderingShaderContainerFormatVulkan);
-#else
-		ERR_FAIL_V_MSG(nullptr, "Vulkan shader baker is not enabled in this build.");
-#endif
-	}
-	case DRIVER_D3D12: {
-#ifdef D3D12_ENABLED
-		if (lib_d3d12 == nullptr) {
-			lib_d3d12 = LoadLibraryW(L"D3D12.dll");
-			ERR_FAIL_NULL_V_MSG(lib_d3d12, nullptr, "Unable to load D3D12.dll.");
-		}
-		RenderingShaderContainerFormatD3D12* shader_container_format_d3d12 =
-			memnew(RenderingShaderContainerFormatD3D12);
-		shader_container_format_d3d12->set_lib_d3d12(lib_d3d12);
-		return shader_container_format_d3d12;
-#else
-		ERR_FAIL_V_MSG(nullptr, "D3D12 shader baker is not enabled in this build.");
-#endif
-	}
-	case DRIVER_METAL: {
-#ifdef METAL_ENABLED
-		const String& os_name = p_platform->get_os_name();
-		const MetalDeviceProfile* profile = nullptr;
-		MinOsVersion min_os_version;
-
-		if (os_name == U"macOS") {
-			profile = MetalDeviceProfile::get_profile(
-				MetalDeviceProfile::Platform::macOS, MetalDeviceProfile::GPU::Apple7, min_os_version);
-		}
-		else if (os_name == U"iOS") {
-			profile = MetalDeviceProfile::get_profile(
-				MetalDeviceProfile::Platform::iOS, MetalDeviceProfile::GPU::Apple7, min_os_version);
-		}
-		else if (os_name == U"visionOS") {
-			profile = MetalDeviceProfile::get_profile(
-				MetalDeviceProfile::Platform::visionOS, MetalDeviceProfile::GPU::Apple8, min_os_version);
-		}
-		else {
-			ERR_FAIL_V_MSG(nullptr, vformat("Unsupported platform: %s", os_name));
-		}
-		ERR_FAIL_NULL_V(profile, nullptr);
-		return memnew(RenderingShaderContainerFormatMetal(profile, true));
-#else
-		ERR_FAIL_V_MSG(nullptr, "Metal shader baker is not enabled in this build.");
-#endif
-	}
-	}
-	return nullptr;
-}
-
-bool ShaderBakerExportPluginPlatform::matches_driver(const String& p_driver) const
-{
-	switch (driver) {
-	case DRIVER_VULKAN:
-		return p_driver == "vulkan";
-	case DRIVER_D3D12:
-		return p_driver == "d3d12";
-	case DRIVER_METAL:
-		return p_driver == "metal";
-	}
-	return false;
-}
-
-String ShaderBakerExportPlugin::get_name() const { return "ShaderBaker"; }
-
-bool ShaderBakerExportPlugin::_is_active(const Vector<String>& p_features) const
-{
-	// Shader baker should only work when a RendererRD driver is active, as the embedded shaders
-	// won't be found otherwise.
-	return RendererSceneRenderRD::data != nullptr && p_features.has("shader_baker");
-}
-
-void ShaderBakerExportPlugin::_cleanup_container_format()
-{
-	if (shader_container_format != nullptr) {
-		memdelete(shader_container_format);
-		shader_container_format = nullptr;
-	}
-}
-
-bool ShaderBakerExportPlugin::_initialize_cache_directory()
-{
-	shader_cache_export_path = get_export_base_path()
-								   .path_join("shader_baker")
-								   .path_join(shader_cache_platform_name)
-								   .path_join(shader_container_driver);
-
-	if (!DirAccess::dir_exists_absolute(shader_cache_export_path)) {
-		Error err = DirAccess::make_dir_recursive_absolute(shader_cache_export_path);
-		ERR_FAIL_COND_V_MSG(err != OK, false, "Can't create shader cache folder for exporting.");
-	}
-
-	return true;
-}
-
-bool ShaderBakerExportPlugin::_begin_customize_scenes(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
-{
-	if (!_is_active(p_features)) {
-		return false;
-	}
-
-	if (shader_container_format == nullptr) {
-		// Resource customization failed to initialize.
-		return false;
-	}
-
-	return true;
-}
-
-Ref<Resource> ShaderBakerExportPlugin::_customize_resource(
-	const Ref<Resource>& p_resource, const String& p_path)
-{
-	DEV_ASSERT(singleton != nullptr);
-
-	Ref<Material> material = p_resource;
-	if (material.is_valid()) {
-		RID material_rid = material->get_rid();
-		if (material_rid.is_valid()) {
-			RendererRD::MaterialStorage::ShaderData* shader_data =
-				RendererRD::MaterialStorage::material_get_shader_data(material_rid);
-			if (shader_data != nullptr) {
-				Pair<ShaderRD*, RID> shader_version_pair =
-					shader_data->get_native_shader_and_version();
-				if (shader_version_pair.first != nullptr) {
-					_customize_shader_version(
-						shader_version_pair.first, shader_version_pair.second);
-				}
-			}
-		}
-	}
-
-	return Ref<Resource>();
-}
-
-uint64_t ShaderBakerExportPlugin::_get_customization_configuration_hash() const
-{
-	return customization_configuration_hash;
-}
-
-void ShaderBakerExportPlugin::_process_work_item(WorkItem p_work_item)
-{
-	if (!tasks_cancelled) {
-		Vector<RDC::ShaderStageSPIRVData> spirv_data =
-			ShaderRD::compile_stages(p_work_item.stage_sources, p_work_item.dynamic_buffers);
-		if (unlikely(spirv_data.is_empty())) {
-			ERR_PRINT("Unable to retrieve SPIR-V data for shader.");
-		}
-		else {
-			Ref<RenderingShaderContainer> shader_container =
-				shader_container_format->create_container();
-
-			bool code_compiled =
-				shader_container->set_code_from_spirv(p_work_item.shader_name, spirv_data);
-			if (unlikely(!code_compiled)) {
-				ERR_PRINT("Failed to compile code to native for SPIR-V.");
-			}
-			else {
-				PackedByteArray shader_bytes = shader_container->to_bytes();
-				{
-					MutexLock lock(shader_work_results_mutex);
-					shader_work_results[p_work_item.cache_path]
-						.variant_data.ptrw()[p_work_item.variant] = shader_bytes;
-				}
-			}
-		}
-	}
-
-	{
-		MutexLock lock(tasks_mutex);
-		tasks_processed++;
-	}
-
-	tasks_condition.notify_one();
-}
-
-ShaderBakerExportPlugin::ShaderBakerExportPlugin()
-{
-#ifdef VULKAN_ENABLED
-	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_VULKAN)));
-#endif
-#ifdef D3D12_ENABLED
-	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_D3D12)));
-#endif
-#ifdef METAL_ENABLED
-	add_platform(memnew(ShaderBakerExportPluginPlatform(ShaderBakerExportPluginPlatform::DRIVER_METAL)));
-#endif
-}
-
-ShaderBakerExportPlugin::~ShaderBakerExportPlugin() {}
-
-void ShaderBakerExportPlugin::add_platform(Ref<ShaderBakerExportPluginPlatform> p_platform)
-{
-	platforms.push_back(p_platform);
-}
-
-void ShaderBakerExportPlugin::remove_platform(Ref<ShaderBakerExportPluginPlatform> p_platform)
-{
-	platforms.erase(p_platform);
-}
-
-bool ShaderBakerExportPlugin::_begin_customize_resources(
-	const Ref<EditorExportPlatform>& p_platform, const Vector<String>& p_features)
-{
-	return false;
-}
-
-Node* ShaderBakerExportPlugin::_customize_scene(Node* p_scene, const String& p_path)
-{
-	return p_scene;
-}
-
-void ShaderBakerExportPlugin::_end_customize_resources() {}
-
-bool ShaderBakerExportPlugin::_initialize_container_format(
-	const Ref<EditorExportPlatform>& p_platform, const Ref<EditorExportPreset>& p_preset)
-{
-	return false;
-}
-
-void ShaderBakerExportPlugin::_customize_shader_version(ShaderRD* p_shader, RID p_version) {}
-
-// ============================================================================
-// Merged from editor/export/apple_export_utils.cpp
-// ============================================================================
-
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-
-#include <ctime>
-
-
-/*************************************************************************/
-/* MachO                                                                 */
-/*************************************************************************/
-
-uint32_t MachO::seg_align(uint64_t p_vmaddr, uint32_t p_min, uint32_t p_max) {
-	uint32_t salign = p_max;
-	if (p_vmaddr != 0) {
-		uint64_t seg_align = 1;
-		salign = 0;
-		while ((seg_align & p_vmaddr) == 0) {
-			seg_align = seg_align << 1;
-			salign++;
-		}
-		salign = CLAMP(salign, p_min, p_max);
-	}
-	return salign;
-}
-
-bool MachO::alloc_signature(uint64_t p_size) {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
-	if (signature_offset != 0) {
-		// Nothing to do, already have signature load command.
-		return true;
-	}
-	if (lc_limit == 0 || lc_limit + 16 > exe_base) {
-		ERR_FAIL_V_MSG(false, "MachO: Can't allocate signature load command, please use \"codesign_allocate\" utility first.");
-	} else {
-		// Add signature load command.
-		signature_offset = lc_limit;
-
-		fa->seek(lc_limit);
-		LoadCommandHeader lc;
-		lc.cmd = LC_CODE_SIGNATURE;
-		lc.cmdsize = 16;
-		if (swap) {
-			lc.cmdsize = BSWAP32(lc.cmdsize);
-		}
-		fa->store_buffer((const uint8_t *)&lc, sizeof(LoadCommandHeader));
-
-		uint32_t lc_offset = fa->get_length() + PAD(fa->get_length(), 16);
-		uint32_t lc_size = 0;
-		if (swap) {
-			lc_offset = BSWAP32(lc_offset);
-			lc_size = BSWAP32(lc_size);
-		}
-		fa->store_32(lc_offset);
-		fa->store_32(lc_size);
-
-		// Write new command number.
-		fa->seek(0x10);
-		uint32_t ncmds = fa->get_32();
-		uint32_t cmdssize = fa->get_32();
-		if (swap) {
-			ncmds = BSWAP32(ncmds);
-			cmdssize = BSWAP32(cmdssize);
-		}
-		ncmds += 1;
-		cmdssize += 16;
-		if (swap) {
-			ncmds = BSWAP32(ncmds);
-			cmdssize = BSWAP32(cmdssize);
-		}
-		fa->seek(0x10);
-		fa->store_32(ncmds);
-		fa->store_32(cmdssize);
-
-		lc_limit = lc_limit + sizeof(LoadCommandHeader) + 8;
-
-		return true;
-	}
-}
-
-bool MachO::is_macho(const String &p_path) {
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("MachO: Can't open file: \"%s\".", p_path));
-	uint32_t magic = fb->get_32();
-	return (magic == 0xcefaedfe || magic == 0xfeedface || magic == 0xcffaedfe || magic == 0xfeedfacf);
-}
-
-uint32_t MachO::get_filetype(const String &p_path) {
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, vformat("MachO: Can't open file: \"%s\".", p_path));
-	uint32_t magic = fa->get_32();
-	MachHeader mach_header;
-
-	// Read MachO header.
-	if (magic == 0xcefaedfe || magic == 0xfeedface) {
-		// Thin 32-bit binary.
-		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
-	} else if (magic == 0xcffaedfe || magic == 0xfeedfacf) {
-		// Thin 64-bit binary.
-		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
-		fa->get_32(); // Skip extra reserved field.
-	} else {
-		ERR_FAIL_V_MSG(0, vformat("MachO: File is not a valid MachO binary: \"%s\".", p_path));
-	}
-	return mach_header.filetype;
-}
-
-bool MachO::open_file(const String &p_path) {
-	fa = FileAccess::open(p_path, FileAccess::READ_WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("MachO: Can't open file: \"%s\".", p_path));
-	uint32_t magic = fa->get_32();
-	MachHeader mach_header;
-
-	// Read MachO header.
-	swap = (magic == 0xcffaedfe || magic == 0xcefaedfe);
-	if (magic == 0xcefaedfe || magic == 0xfeedface) {
-		// Thin 32-bit binary.
-		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
-	} else if (magic == 0xcffaedfe || magic == 0xfeedfacf) {
-		// Thin 64-bit binary.
-		fa->get_buffer((uint8_t *)&mach_header, sizeof(MachHeader));
-		fa->get_32(); // Skip extra reserved field.
-	} else {
-		ERR_FAIL_V_MSG(false, vformat("MachO: File is not a valid MachO binary: \"%s\".", p_path));
-	}
-
-	if (swap) {
-		mach_header.ncmds = BSWAP32(mach_header.ncmds);
-		mach_header.cpusubtype = BSWAP32(mach_header.cpusubtype);
-		mach_header.cputype = BSWAP32(mach_header.cputype);
-	}
-	cpusubtype = mach_header.cpusubtype;
-	cputype = mach_header.cputype;
-	align = 0;
-	exe_base = std::numeric_limits<uint64_t>::max();
-	exe_limit = 0;
-	lc_limit = 0;
-	link_edit_offset = 0;
-	signature_offset = 0;
-
-	// Read load commands.
-	for (uint32_t i = 0; i < mach_header.ncmds; i++) {
-		LoadCommandHeader lc;
-		fa->get_buffer((uint8_t *)&lc, sizeof(LoadCommandHeader));
-		if (swap) {
-			lc.cmd = BSWAP32(lc.cmd);
-			lc.cmdsize = BSWAP32(lc.cmdsize);
-		}
-		uint64_t ps = fa->get_position();
-		switch (lc.cmd) {
-			case LC_SEGMENT: {
-				LoadCommandSegment lc_seg;
-				fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
-				if (swap) {
-					lc_seg.nsects = BSWAP32(lc_seg.nsects);
-					lc_seg.vmaddr = BSWAP32(lc_seg.vmaddr);
-					lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
-				}
-				align = MAX(align, seg_align(lc_seg.vmaddr, 2, 15));
-				if (String(lc_seg.segname) == "__TEXT") {
-					exe_limit = MAX(exe_limit, lc_seg.vmsize);
-					for (uint32_t j = 0; j < lc_seg.nsects; j++) {
-						Section lc_sect;
-						fa->get_buffer((uint8_t *)&lc_sect, sizeof(Section));
-						if (String(lc_sect.sectname) == "__text") {
-							if (swap) {
-								exe_base = MIN(exe_base, BSWAP32(lc_sect.offset));
-							} else {
-								exe_base = MIN(exe_base, lc_sect.offset);
-							}
-						}
-						if (swap) {
-							align = MAX(align, BSWAP32(lc_sect.align));
-						} else {
-							align = MAX(align, lc_sect.align);
-						}
-					}
-				} else if (String(lc_seg.segname) == "__LINKEDIT") {
-					link_edit_offset = ps - 8;
-				}
-			} break;
-			case LC_SEGMENT_64: {
-				LoadCommandSegment64 lc_seg;
-				fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
-				if (swap) {
-					lc_seg.nsects = BSWAP32(lc_seg.nsects);
-					lc_seg.vmaddr = BSWAP64(lc_seg.vmaddr);
-					lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
-				}
-				align = MAX(align, seg_align(lc_seg.vmaddr, 3, 15));
-				if (String(lc_seg.segname) == "__TEXT") {
-					exe_limit = MAX(exe_limit, lc_seg.vmsize);
-					for (uint32_t j = 0; j < lc_seg.nsects; j++) {
-						Section64 lc_sect;
-						fa->get_buffer((uint8_t *)&lc_sect, sizeof(Section64));
-						if (String(lc_sect.sectname) == "__text") {
-							if (swap) {
-								exe_base = MIN(exe_base, BSWAP32(lc_sect.offset));
-							} else {
-								exe_base = MIN(exe_base, lc_sect.offset);
-							}
-							if (swap) {
-								align = MAX(align, BSWAP32(lc_sect.align));
-							} else {
-								align = MAX(align, lc_sect.align);
-							}
-						}
-					}
-				} else if (String(lc_seg.segname) == "__LINKEDIT") {
-					link_edit_offset = ps - 8;
-				}
-			} break;
-			case LC_CODE_SIGNATURE: {
-				signature_offset = ps - 8;
-			} break;
-			default: {
-			} break;
-		}
-		fa->seek(ps + lc.cmdsize - 8);
-		lc_limit = ps + lc.cmdsize - 8;
-	}
-
-	if (exe_limit == 0 || lc_limit == 0) {
-		ERR_FAIL_V_MSG(false, vformat("MachO: No load commands or executable code found: \"%s\".", p_path));
-	}
-
-	return true;
-}
-
-uint64_t MachO::get_exe_base() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return exe_base;
-}
-
-uint64_t MachO::get_exe_limit() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return exe_limit;
-}
-
-int32_t MachO::get_align() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return align;
-}
-
-uint32_t MachO::get_cputype() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return cputype;
-}
-
-uint32_t MachO::get_cpusubtype() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return cpusubtype;
-}
-
-uint64_t MachO::get_size() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	return fa->get_length();
-}
-
-uint64_t MachO::get_signature_offset() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	ERR_FAIL_COND_V_MSG(signature_offset == 0, 0, "MachO: No signature load command.");
-
-	fa->seek(signature_offset + 8);
-	if (swap) {
-		return BSWAP32(fa->get_32());
-	} else {
-		return fa->get_32();
-	}
-}
-
-uint64_t MachO::get_code_limit() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-
-	if (signature_offset == 0) {
-		return fa->get_length() + PAD(fa->get_length(), 16);
-	} else {
-		return get_signature_offset();
-	}
-}
-
-uint64_t MachO::get_signature_size() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "MachO: File not opened.");
-	ERR_FAIL_COND_V_MSG(signature_offset == 0, 0, "MachO: No signature load command.");
-
-	fa->seek(signature_offset + 12);
-	if (swap) {
-		return BSWAP32(fa->get_32());
-	} else {
-		return fa->get_32();
-	}
-}
-
-bool MachO::is_signed() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
-	if (signature_offset == 0) {
-		return false;
-	}
-
-	fa->seek(get_signature_offset());
-	uint32_t magic = BSWAP32(fa->get_32());
-	if (magic != 0xfade0cc0) {
-		return false; // No SuperBlob found.
-	}
-	fa->get_32(); // Skip size field, unused.
-	uint32_t count = BSWAP32(fa->get_32());
-	for (uint32_t i = 0; i < count; i++) {
-		uint32_t index_type = BSWAP32(fa->get_32());
-		uint32_t offset = BSWAP32(fa->get_32());
-		if (index_type == 0x00000000) { // CodeDirectory index type.
-			fa->seek(get_signature_offset() + offset + 12);
-			uint32_t flags = BSWAP32(fa->get_32());
-			if (flags & 0x20000) {
-				return false; // Found CD, linker-signed.
-			} else {
-				return true; // Found CD, not linker-signed.
-			}
-		}
-	}
-	return false; // No CD found.
-}
-
-PackedByteArray MachO::get_cdhash_sha1() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
-	if (signature_offset == 0) {
-		return PackedByteArray();
-	}
-
-	fa->seek(get_signature_offset());
-	uint32_t magic = BSWAP32(fa->get_32());
-	if (magic != 0xfade0cc0) {
-		return PackedByteArray(); // No SuperBlob found.
-	}
-	fa->get_32(); // Skip size field, unused.
-	uint32_t count = BSWAP32(fa->get_32());
-	for (uint32_t i = 0; i < count; i++) {
-		fa->get_32(); // Index type, skip.
-		uint32_t offset = BSWAP32(fa->get_32());
-		uint64_t pos = fa->get_position();
-
-		fa->seek(get_signature_offset() + offset);
-		uint32_t cdmagic = BSWAP32(fa->get_32());
-		uint32_t cdsize = BSWAP32(fa->get_32());
-		if (cdmagic == 0xfade0c02) { // CodeDirectory.
-			fa->seek(get_signature_offset() + offset + 36);
-			uint8_t hash_size = fa->get_8();
-			uint8_t hash_type = fa->get_8();
-			if (hash_size == 0x14 && hash_type == 0x01) { /* SHA-1 */
-				PackedByteArray hash;
-				hash.resize(0x14);
-
-				fa->seek(get_signature_offset() + offset);
-				PackedByteArray blob;
-				blob.resize(cdsize);
-				fa->get_buffer(blob.ptrw(), cdsize);
-
-				CryptoCore::SHA1Context ctx;
-				ctx.start();
-				ctx.update(blob.ptr(), blob.size());
-				ctx.finish(hash.ptrw());
-
-				return hash;
-			}
-		}
-		fa->seek(pos);
-	}
-	return PackedByteArray();
-}
-
-PackedByteArray MachO::get_cdhash_sha256() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
-	if (signature_offset == 0) {
-		return PackedByteArray();
-	}
-
-	fa->seek(get_signature_offset());
-	uint32_t magic = BSWAP32(fa->get_32());
-	if (magic != 0xfade0cc0) {
-		return PackedByteArray(); // No SuperBlob found.
-	}
-	fa->get_32(); // Skip size field, unused.
-	uint32_t count = BSWAP32(fa->get_32());
-	for (uint32_t i = 0; i < count; i++) {
-		fa->get_32(); // Index type, skip.
-		uint32_t offset = BSWAP32(fa->get_32());
-		uint64_t pos = fa->get_position();
-
-		fa->seek(get_signature_offset() + offset);
-		uint32_t cdmagic = BSWAP32(fa->get_32());
-		uint32_t cdsize = BSWAP32(fa->get_32());
-		if (cdmagic == 0xfade0c02) { // CodeDirectory.
-			fa->seek(get_signature_offset() + offset + 36);
-			uint8_t hash_size = fa->get_8();
-			uint8_t hash_type = fa->get_8();
-			if (hash_size == 0x20 && hash_type == 0x02) { /* SHA-256 */
-				PackedByteArray hash;
-				hash.resize(0x20);
-
-				fa->seek(get_signature_offset() + offset);
-				PackedByteArray blob;
-				blob.resize(cdsize);
-				fa->get_buffer(blob.ptrw(), cdsize);
-
-				CryptoCore::SHA256Context ctx;
-				ctx.start();
-				ctx.update(blob.ptr(), blob.size());
-				ctx.finish(hash.ptrw());
-
-				return hash;
-			}
-		}
-		fa->seek(pos);
-	}
-	return PackedByteArray();
-}
-
-PackedByteArray MachO::get_requirements() {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), PackedByteArray(), "MachO: File not opened.");
-	if (signature_offset == 0) {
-		return PackedByteArray();
-	}
-
-	fa->seek(get_signature_offset());
-	uint32_t magic = BSWAP32(fa->get_32());
-	if (magic != 0xfade0cc0) {
-		return PackedByteArray(); // No SuperBlob found.
-	}
-	fa->get_32(); // Skip size field, unused.
-	uint32_t count = BSWAP32(fa->get_32());
-	for (uint32_t i = 0; i < count; i++) {
-		fa->get_32(); // Index type, skip.
-		uint32_t offset = BSWAP32(fa->get_32());
-		uint64_t pos = fa->get_position();
-
-		fa->seek(get_signature_offset() + offset);
-		uint32_t rqmagic = BSWAP32(fa->get_32());
-		uint32_t rqsize = BSWAP32(fa->get_32());
-		if (rqmagic == 0xfade0c01) { // Requirements.
-			PackedByteArray blob;
-			fa->seek(get_signature_offset() + offset);
-			blob.resize(rqsize);
-			fa->get_buffer(blob.ptrw(), rqsize);
-			return blob;
-		}
-		fa->seek(pos);
-	}
-	return PackedByteArray();
-}
-
-const Ref<FileAccess> MachO::get_file() const {
-	return fa;
-}
-
-Ref<FileAccess> MachO::get_file() {
-	return fa;
-}
-
-bool MachO::set_signature_size(uint64_t p_size) {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "MachO: File not opened.");
-
-	// Ensure signature load command exists.
-	ERR_FAIL_COND_V_MSG(link_edit_offset == 0, false, "MachO: No __LINKEDIT segment found.");
-	ERR_FAIL_COND_V_MSG(!alloc_signature(p_size), false, "MachO: Can't allocate signature load command.");
-
-	// Update signature load command.
-	uint64_t old_size = get_signature_size();
-	uint64_t new_size = p_size + PAD(p_size, 16384);
-
-	if (new_size <= old_size) {
-		fa->seek(get_signature_offset());
-		for (uint64_t i = 0; i < old_size; i++) {
-			fa->store_8(0x00);
-		}
-		return true;
-	}
-
-	fa->seek(signature_offset + 12);
-	if (swap) {
-		fa->store_32(BSWAP32(new_size));
-	} else {
-		fa->store_32(new_size);
-	}
-
-	uint64_t end = get_signature_offset() + new_size;
-
-	// Update "__LINKEDIT" segment.
-	LoadCommandHeader lc;
-	fa->seek(link_edit_offset);
-	fa->get_buffer((uint8_t *)&lc, sizeof(LoadCommandHeader));
-	if (swap) {
-		lc.cmd = BSWAP32(lc.cmd);
-		lc.cmdsize = BSWAP32(lc.cmdsize);
-	}
-	switch (lc.cmd) {
-		case LC_SEGMENT: {
-			LoadCommandSegment lc_seg;
-			fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
-			if (swap) {
-				lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
-				lc_seg.filesize = BSWAP32(lc_seg.filesize);
-				lc_seg.fileoff = BSWAP32(lc_seg.fileoff);
-			}
-
-			lc_seg.vmsize = end - lc_seg.fileoff;
-			lc_seg.vmsize += PAD(lc_seg.vmsize, 4096);
-			lc_seg.filesize = end - lc_seg.fileoff;
-
-			if (swap) {
-				lc_seg.vmsize = BSWAP32(lc_seg.vmsize);
-				lc_seg.filesize = BSWAP32(lc_seg.filesize);
-			}
-			fa->seek(link_edit_offset + 8);
-			fa->store_buffer((const uint8_t *)&lc_seg, sizeof(LoadCommandSegment));
-		} break;
-		case LC_SEGMENT_64: {
-			LoadCommandSegment64 lc_seg;
-			fa->get_buffer((uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
-			if (swap) {
-				lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
-				lc_seg.filesize = BSWAP64(lc_seg.filesize);
-				lc_seg.fileoff = BSWAP64(lc_seg.fileoff);
-			}
-			lc_seg.vmsize = end - lc_seg.fileoff;
-			lc_seg.vmsize += PAD(lc_seg.vmsize, 4096);
-			lc_seg.filesize = end - lc_seg.fileoff;
-			if (swap) {
-				lc_seg.vmsize = BSWAP64(lc_seg.vmsize);
-				lc_seg.filesize = BSWAP64(lc_seg.filesize);
-			}
-			fa->seek(link_edit_offset + 8);
-			fa->store_buffer((const uint8_t *)&lc_seg, sizeof(LoadCommandSegment64));
-		} break;
-		default: {
-			ERR_FAIL_V_MSG(false, "MachO: Invalid __LINKEDIT segment type.");
-		} break;
-	}
-	fa->seek(get_signature_offset());
-	for (uint64_t i = 0; i < new_size; i++) {
-		fa->store_8(0x00);
-	}
-	return true;
-}
-
-/*************************************************************************/
-/* LipO                                                                  */
-/*************************************************************************/
-
-bool LipO::is_lipo(const String &p_path) {
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
-	uint32_t magic = fb->get_32();
-	return (magic == 0xbebafeca || magic == 0xcafebabe || magic == 0xbfbafeca || magic == 0xcafebabf);
-}
-
-bool LipO::create_file(const String &p_output_path, const Vector<String> &p_files) {
-	close();
-
-	fa = FileAccess::open(p_output_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_output_path));
-
-	uint64_t max_size = 0;
-	for (int i = 0; i < p_files.size(); i++) {
-		{
-			MachO mh;
-			if (!mh.open_file(p_files[i])) {
-				ERR_FAIL_V_MSG(false, vformat("LipO: Invalid MachO file: \"%s\".", p_files[i]));
-			}
-
-			FatArch arch;
-			arch.cputype = mh.get_cputype();
-			arch.cpusubtype = mh.get_cpusubtype();
-			arch.offset = 0;
-			arch.size = mh.get_size();
-			arch.align = mh.get_align();
-			max_size += arch.size;
-
-			archs.push_back(arch);
-		}
-
-		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
-		if (fb.is_null()) {
-			close();
-			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
-		}
-	}
-
-	// Write header.
-	bool is_64 = (max_size >= std::numeric_limits<uint32_t>::max());
-	if (is_64) {
-		fa->store_32(0xbfbafeca);
-	} else {
-		fa->store_32(0xbebafeca);
-	}
-	fa->store_32(BSWAP32(archs.size()));
-	uint64_t offset = archs.size() * (is_64 ? 32 : 20) + 8;
-	for (int i = 0; i < archs.size(); i++) {
-		archs.write[i].offset = offset + PAD(offset, uint64_t(1) << archs[i].align);
-		if (is_64) {
-			fa->store_32(BSWAP32(archs[i].cputype));
-			fa->store_32(BSWAP32(archs[i].cpusubtype));
-			fa->store_64(BSWAP64(archs[i].offset));
-			fa->store_64(BSWAP64(archs[i].size));
-			fa->store_32(BSWAP32(archs[i].align));
-			fa->store_32(0);
-		} else {
-			fa->store_32(BSWAP32(archs[i].cputype));
-			fa->store_32(BSWAP32(archs[i].cpusubtype));
-			fa->store_32(BSWAP32(archs[i].offset));
-			fa->store_32(BSWAP32(archs[i].size));
-			fa->store_32(BSWAP32(archs[i].align));
-		}
-		offset = archs[i].offset + archs[i].size;
-	}
-
-	// Write files and padding.
-	for (int i = 0; i < archs.size(); i++) {
-		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
-		if (fb.is_null()) {
-			close();
-			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
-		}
-		uint64_t cur = fa->get_position();
-		for (uint64_t j = cur; j < archs[i].offset; j++) {
-			fa->store_8(0);
-		}
-		int pages = archs[i].size / 4096;
-		int remain = archs[i].size % 4096;
-		unsigned char step[4096];
-		for (int j = 0; j < pages; j++) {
-			uint64_t br = fb->get_buffer(step, 4096);
-			if (br > 0) {
-				fa->store_buffer(step, br);
-			}
-		}
-		uint64_t br = fb->get_buffer(step, remain);
-		if (br > 0) {
-			fa->store_buffer(step, br);
-		}
-	}
-	return true;
-}
-
-bool LipO::create_file(const String &p_output_path, const Vector<String> &p_files, const Vector<Vector2i> &p_cputypes) {
-	close();
-
-	fa = FileAccess::open(p_output_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_output_path));
-	ERR_FAIL_COND_V(p_files.size() != p_cputypes.size(), false);
-
-	uint64_t max_size = 0;
-	for (int i = 0; i < p_files.size(); i++) {
-		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
-		if (fb.is_null()) {
-			close();
-			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
-		}
-
-		{
-			FatArch arch;
-			MachO mh;
-			if (MachO::is_macho(p_files[i]) && mh.open_file(p_files[i])) {
-				arch.cputype = mh.get_cputype();
-				arch.cpusubtype = mh.get_cpusubtype();
-				arch.offset = 0;
-				arch.size = mh.get_size();
-				arch.align = mh.get_align();
-				ERR_FAIL_V_MSG(arch.cputype != (uint32_t)p_cputypes[i].x || arch.cpusubtype != (uint32_t)p_cputypes[i].y, vformat("Mismatching MachO architecture: \"%s\".", p_files[i]));
-			} else {
-				arch.cputype = (uint32_t)p_cputypes[i].x;
-				arch.cpusubtype = (uint32_t)p_cputypes[i].y;
-				arch.offset = 0;
-				arch.size = fb->get_length();
-				arch.align = 0x03;
-			}
-			max_size += arch.size;
-
-			archs.push_back(arch);
-		}
-	}
-
-	// Write header.
-	bool is_64 = (max_size >= std::numeric_limits<uint32_t>::max());
-	if (is_64) {
-		fa->store_32(0xbfbafeca);
-	} else {
-		fa->store_32(0xbebafeca);
-	}
-	fa->store_32(BSWAP32(archs.size()));
-	uint64_t offset = archs.size() * (is_64 ? 32 : 20) + 8;
-	for (int i = 0; i < archs.size(); i++) {
-		archs.write[i].offset = offset + PAD(offset, uint64_t(1) << archs[i].align);
-		if (is_64) {
-			fa->store_32(BSWAP32(archs[i].cputype));
-			fa->store_32(BSWAP32(archs[i].cpusubtype));
-			fa->store_64(BSWAP64(archs[i].offset));
-			fa->store_64(BSWAP64(archs[i].size));
-			fa->store_32(BSWAP32(archs[i].align));
-			fa->store_32(0);
-		} else {
-			fa->store_32(BSWAP32(archs[i].cputype));
-			fa->store_32(BSWAP32(archs[i].cpusubtype));
-			fa->store_32(BSWAP32(archs[i].offset));
-			fa->store_32(BSWAP32(archs[i].size));
-			fa->store_32(BSWAP32(archs[i].align));
-		}
-		offset = archs[i].offset + archs[i].size;
-	}
-
-	// Write files and padding.
-	for (int i = 0; i < archs.size(); i++) {
-		Ref<FileAccess> fb = FileAccess::open(p_files[i], FileAccess::READ);
-		if (fb.is_null()) {
-			close();
-			ERR_FAIL_V_MSG(false, vformat("LipO: Can't open file: \"%s\".", p_files[i]));
-		}
-		uint64_t cur = fa->get_position();
-		for (uint64_t j = cur; j < archs[i].offset; j++) {
-			fa->store_8(0);
-		}
-		int pages = archs[i].size / 4096;
-		int remain = archs[i].size % 4096;
-		unsigned char step[4096];
-		for (int j = 0; j < pages; j++) {
-			uint64_t br = fb->get_buffer(step, 4096);
-			if (br > 0) {
-				fa->store_buffer(step, br);
-			}
-		}
-		uint64_t br = fb->get_buffer(step, remain);
-		if (br > 0) {
-			fa->store_buffer(step, br);
-		}
-	}
-	return true;
-}
-
-bool LipO::open_file(const String &p_path) {
-	close();
-
-	fa = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
-
-	uint32_t magic = fa->get_32();
-	if (magic == 0xbebafeca) {
-		// 32-bit fat binary, bswap.
-		uint32_t nfat_arch = BSWAP32(fa->get_32());
-		for (uint32_t i = 0; i < nfat_arch; i++) {
-			FatArch arch;
-			arch.cputype = BSWAP32(fa->get_32());
-			arch.cpusubtype = BSWAP32(fa->get_32());
-			arch.offset = BSWAP32(fa->get_32());
-			arch.size = BSWAP32(fa->get_32());
-			arch.align = BSWAP32(fa->get_32());
-
-			archs.push_back(arch);
-		}
-	} else if (magic == 0xcafebabe) {
-		// 32-bit fat binary.
-		uint32_t nfat_arch = fa->get_32();
-		for (uint32_t i = 0; i < nfat_arch; i++) {
-			FatArch arch;
-			arch.cputype = fa->get_32();
-			arch.cpusubtype = fa->get_32();
-			arch.offset = fa->get_32();
-			arch.size = fa->get_32();
-			arch.align = fa->get_32();
-
-			archs.push_back(arch);
-		}
-	} else if (magic == 0xbfbafeca) {
-		// 64-bit fat binary, bswap.
-		uint32_t nfat_arch = BSWAP32(fa->get_32());
-		for (uint32_t i = 0; i < nfat_arch; i++) {
-			FatArch arch;
-			arch.cputype = BSWAP32(fa->get_32());
-			arch.cpusubtype = BSWAP32(fa->get_32());
-			arch.offset = BSWAP64(fa->get_64());
-			arch.size = BSWAP64(fa->get_64());
-			arch.align = BSWAP32(fa->get_32());
-			fa->get_32(); // Skip, reserved.
-
-			archs.push_back(arch);
-		}
-	} else if (magic == 0xcafebabf) {
-		// 64-bit fat binary.
-		uint32_t nfat_arch = fa->get_32();
-		for (uint32_t i = 0; i < nfat_arch; i++) {
-			FatArch arch;
-			arch.cputype = fa->get_32();
-			arch.cpusubtype = fa->get_32();
-			arch.offset = fa->get_64();
-			arch.size = fa->get_64();
-			arch.align = fa->get_32();
-			fa->get_32(); // Skip, reserved.
-
-			archs.push_back(arch);
-		}
-	} else {
-		close();
-		ERR_FAIL_V_MSG(false, vformat("LipO: Invalid fat binary: \"%s\".", p_path));
-	}
-	return true;
-}
-
-int LipO::get_arch_count() const {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
-	return archs.size();
-}
-
-uint32_t LipO::get_arch_cputype(int p_index) const {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
-	ERR_FAIL_INDEX_V(p_index, archs.size(), 0);
-	return archs[p_index].cputype;
-}
-
-uint32_t LipO::get_arch_cpusubtype(int p_index) const {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), 0, "LipO: File not opened.");
-	ERR_FAIL_INDEX_V(p_index, archs.size(), 0);
-	return archs[p_index].cpusubtype;
-}
-
-bool LipO::extract_arch(int p_index, const String &p_path) {
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, "LipO: File not opened.");
-	ERR_FAIL_INDEX_V(p_index, archs.size(), false);
-
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("LipO: Can't open file: \"%s\".", p_path));
-
-	fa->seek(archs[p_index].offset);
-
-	int pages = archs[p_index].size / 4096;
-	int remain = archs[p_index].size % 4096;
-	unsigned char step[4096];
-	for (int i = 0; i < pages; i++) {
-		uint64_t br = fa->get_buffer(step, 4096);
-		if (br > 0) {
-			fb->store_buffer(step, br);
-		}
-	}
-	uint64_t br = fa->get_buffer(step, remain);
-	if (br > 0) {
-		fb->store_buffer(step, br);
-	}
-	return true;
-}
-
-void LipO::close() {
-	archs.clear();
-}
-
-LipO::~LipO() {
-	close();
-}
-
-/*************************************************************************/
-/* CodeSignCodeResources                                                 */
-/*************************************************************************/
-
-String CodeSignCodeResources::hash_sha1_base64(const String &p_path) {
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), String(), vformat("CodeSign/CodeResources: Can't open file: \"%s\".", p_path));
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-
-	unsigned char step[4096];
-	while (true) {
-		uint64_t br = fa->get_buffer(step, 4096);
-		if (br > 0) {
-			ctx.update(step, br);
-		}
-		if (br < 4096) {
-			break;
-		}
-	}
-
-	unsigned char hash[0x14];
-	ctx.finish(hash);
-
-	return CryptoCore::b64_encode_str(hash, 0x14);
-}
-
-String CodeSignCodeResources::hash_sha256_base64(const String &p_path) {
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), String(), vformat("CodeSign/CodeResources: Can't open file: \"%s\".", p_path));
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-
-	unsigned char step[4096];
-	while (true) {
-		uint64_t br = fa->get_buffer(step, 4096);
-		if (br > 0) {
-			ctx.update(step, br);
-		}
-		if (br < 4096) {
-			break;
-		}
-	}
-
-	unsigned char hash[0x20];
-	ctx.finish(hash);
-
-	return CryptoCore::b64_encode_str(hash, 0x20);
-}
-
-void CodeSignCodeResources::add_rule1(const String &p_rule, const String &p_key, int p_weight, bool p_store) {
-	rules1.push_back(CRRule(p_rule, p_key, p_weight, p_store));
-}
-
-void CodeSignCodeResources::add_rule2(const String &p_rule, const String &p_key, int p_weight, bool p_store) {
-	rules2.push_back(CRRule(p_rule, p_key, p_weight, p_store));
-}
-
-CodeSignCodeResources::CRMatch CodeSignCodeResources::match_rules1(const String &p_path) const {
-	CRMatch found = CRMatch::CR_MATCH_NO;
-	int weight = 0;
-	for (int i = 0; i < rules1.size(); i++) {
-		RegEx regex = RegEx(rules1[i].file_pattern);
-		if (regex.search(p_path).is_valid()) {
-			if (rules1[i].key == "omit") {
-				return CRMatch::CR_MATCH_NO;
-			} else if (rules1[i].key == "nested") {
-				if (weight <= rules1[i].weight) {
-					found = CRMatch::CR_MATCH_NESTED;
-					weight = rules1[i].weight;
-				}
-			} else if (rules1[i].key == "optional") {
-				if (weight <= rules1[i].weight) {
-					found = CRMatch::CR_MATCH_OPTIONAL;
-					weight = rules1[i].weight;
-				}
-			} else {
-				if (weight <= rules1[i].weight) {
-					found = CRMatch::CR_MATCH_YES;
-					weight = rules1[i].weight;
-				}
-			}
-		}
-	}
-	return found;
-}
-
-CodeSignCodeResources::CRMatch CodeSignCodeResources::match_rules2(const String &p_path) const {
-	CRMatch found = CRMatch::CR_MATCH_NO;
-	int weight = 0;
-	for (int i = 0; i < rules2.size(); i++) {
-		RegEx regex = RegEx(rules2[i].file_pattern);
-		if (regex.search(p_path).is_valid()) {
-			if (rules2[i].key == "omit") {
-				return CRMatch::CR_MATCH_NO;
-			} else if (rules2[i].key == "nested") {
-				if (weight <= rules2[i].weight) {
-					found = CRMatch::CR_MATCH_NESTED;
-					weight = rules2[i].weight;
-				}
-			} else if (rules2[i].key == "optional") {
-				if (weight <= rules2[i].weight) {
-					found = CRMatch::CR_MATCH_OPTIONAL;
-					weight = rules2[i].weight;
-				}
-			} else {
-				if (weight <= rules2[i].weight) {
-					found = CRMatch::CR_MATCH_YES;
-					weight = rules2[i].weight;
-				}
-			}
-		}
-	}
-	return found;
-}
-
-bool CodeSignCodeResources::add_file1(const String &p_root, const String &p_path) {
-	CRMatch found = match_rules1(p_path);
-	if (found != CRMatch::CR_MATCH_YES && found != CRMatch::CR_MATCH_OPTIONAL) {
-		return true; // No match.
-	}
-
-	CRFile f;
-	f.name = p_path;
-	f.optional = (found == CRMatch::CR_MATCH_OPTIONAL);
-	f.nested = false;
-	f.hash = hash_sha1_base64(p_root.path_join(p_path));
-	print_verbose(vformat("CodeSign/CodeResources: File(V1) %s hash1:%s", f.name, f.hash));
-
-	files1.push_back(f);
-	return true;
-}
-
-bool CodeSignCodeResources::add_file2(const String &p_root, const String &p_path) {
-	CRMatch found = match_rules2(p_path);
-	if (found == CRMatch::CR_MATCH_NESTED) {
-		return add_nested_file(p_root, p_path, p_root.path_join(p_path));
-	}
-	if (found != CRMatch::CR_MATCH_YES && found != CRMatch::CR_MATCH_OPTIONAL) {
-		return true; // No match.
-	}
-
-	CRFile f;
-	f.name = p_path;
-	f.optional = (found == CRMatch::CR_MATCH_OPTIONAL);
-	f.nested = false;
-	f.hash = hash_sha1_base64(p_root.path_join(p_path));
-	f.hash2 = hash_sha256_base64(p_root.path_join(p_path));
-
-	print_verbose(vformat("CodeSign/CodeResources: File(V2) %s hash1:%s hash2:%s", f.name, f.hash, f.hash2));
-
-	files2.push_back(f);
-	return true;
-}
-
-bool CodeSignCodeResources::add_nested_file(const String &p_root, const String &p_path, const String &p_exepath) {
-#define CLEANUP() \
-	if (files_to_add.size() > 1) { \
-		for (int j = 0; j < files_to_add.size(); j++) { \
-			da->remove(files_to_add[j]); \
-		} \
-	}
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	ERR_FAIL_COND_V(da.is_null(), false);
-
-	Vector<String> files_to_add;
-	if (LipO::is_lipo(p_exepath)) {
-		String tmp_path_name = EditorPaths::get_temp_dir().path_join("_lipo");
-		Error err = da->make_dir_recursive(tmp_path_name);
-		ERR_FAIL_COND_V_MSG(err != OK, false, vformat("CodeSign/CodeResources: Failed to create \"%s\" subfolder.", tmp_path_name));
-		LipO lip;
-		if (lip.open_file(p_exepath)) {
-			for (int i = 0; i < lip.get_arch_count(); i++) {
-				if (!lip.extract_arch(i, tmp_path_name.path_join("_rqexe_" + itos(i)))) {
-					CLEANUP();
-					ERR_FAIL_V_MSG(false, "CodeSign/CodeResources: Failed to extract thin binary.");
-				}
-				files_to_add.push_back(tmp_path_name.path_join("_rqexe_" + itos(i)));
-			}
-		}
-	} else if (MachO::is_macho(p_exepath)) {
-		files_to_add.push_back(p_exepath);
-	}
-
-	CRFile f;
-	f.name = p_path;
-	f.optional = false;
-	f.nested = true;
-	for (int i = 0; i < files_to_add.size(); i++) {
-		MachO mh;
-		if (!mh.open_file(files_to_add[i])) {
-			CLEANUP();
-			ERR_FAIL_V_MSG(false, "CodeSign/CodeResources: Invalid executable file.");
-		}
-		PackedByteArray hash = mh.get_cdhash_sha256(); // Use SHA-256 variant, if available.
-		if (hash.size() != 0x20) {
-			hash = mh.get_cdhash_sha1(); // Use SHA-1 instead.
-			if (hash.size() != 0x14) {
-				CLEANUP();
-				ERR_FAIL_V_MSG(false, "CodeSign/CodeResources: Unsigned nested executable file.");
-			}
-		}
-		hash.resize(0x14); // Always clamp to 0x14 size.
-		f.hash = CryptoCore::b64_encode_str(hash.ptr(), hash.size());
-
-		PackedByteArray rq_blob = mh.get_requirements();
-		String req_string;
-		if (rq_blob.size() > 8) {
-			CodeSignBlob rq = CodeSignBlob::make_requirements(rq_blob);
-			Vector<String> rqs = rq.parse_requirements();
-			for (int j = 0; j < rqs.size(); j++) {
-				if (rqs[j].begins_with("designated => ")) {
-					req_string = rqs[j].replace("designated => ", "");
-				}
-			}
-		}
-		if (req_string.is_empty()) {
-			req_string = "cdhash H\"" + String::hex_encode_buffer(hash.ptr(), hash.size()) + "\"";
-		}
-		print_verbose(vformat("CodeSign/CodeResources: Nested object %s (cputype: %d) cdhash:%s designated rq:%s", f.name, mh.get_cputype(), f.hash, req_string));
-		if (f.requirements != req_string) {
-			if (i != 0) {
-				f.requirements += " or ";
-			}
-			f.requirements += req_string;
-		}
-	}
-	files2.push_back(f);
-
-	CLEANUP();
-	return true;
-
-#undef CLEANUP
-}
-
-bool CodeSignCodeResources::add_folder_recursive(const String &p_root, const String &p_path, const String &p_main_exe_path) {
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	ERR_FAIL_COND_V(da.is_null(), false);
-	Error err = da->change_dir(p_root.path_join(p_path));
-	ERR_FAIL_COND_V(err != OK, false);
-
-	bool ret = true;
-	da->list_dir_begin();
-	String n = da->get_next();
-	while (n != String()) {
-		if (n != "." && n != "..") {
-			String path = p_root.path_join(p_path).path_join(n);
-			if (path == p_main_exe_path) {
-				n = da->get_next();
-				continue; // Skip main executable.
-			}
-			if (da->current_is_dir()) {
-				CRMatch found = match_rules2(p_path.path_join(n));
-				String fmw_ver = "Current"; // Framework version (default).
-				String info_path;
-				String main_exe;
-				bool bundle = false;
-				if (da->file_exists(path.path_join("Contents/Info.plist"))) {
-					info_path = path.path_join("Contents/Info.plist");
-					main_exe = path.path_join("Contents/MacOS");
-					bundle = true;
-				} else if (da->file_exists(path.path_join(vformat("Versions/%s/Resources/Info.plist", fmw_ver)))) {
-					info_path = path.path_join(vformat("Versions/%s/Resources/Info.plist", fmw_ver));
-					main_exe = path.path_join(vformat("Versions/%s", fmw_ver));
-					bundle = true;
-				} else if (da->file_exists(path.path_join("Resources/Info.plist"))) {
-					info_path = path.path_join("Resources/Info.plist");
-					main_exe = path;
-					bundle = true;
-				} else if (da->file_exists(path.path_join("Info.plist"))) {
-					info_path = path.path_join("Info.plist");
-					main_exe = path;
-					bundle = true;
-				}
-				if (bundle && found == CRMatch::CR_MATCH_NESTED && !info_path.is_empty()) {
-					// Read Info.plist.
-					PList info_plist;
-					if (info_plist.load_file(info_path)) {
-						if (info_plist.get_root()->data_type == PList::PLNodeType::PL_NODE_TYPE_DICT && info_plist.get_root()->data_dict.has("CFBundleExecutable")) {
-							main_exe = main_exe.path_join(String::utf8(info_plist.get_root()->data_dict["CFBundleExecutable"]->data_string.get_data()));
-						} else {
-							ERR_FAIL_V_MSG(false, "CodeSign/CodeResources: Invalid Info.plist, no exe name.");
-						}
-					} else {
-						ERR_FAIL_V_MSG(false, "CodeSign/CodeResources: Invalid Info.plist, can't load.");
-					}
-					ret = ret && add_nested_file(p_root, p_path.path_join(n), main_exe);
-				} else {
-					ret = ret && add_folder_recursive(p_root, p_path.path_join(n), p_main_exe_path);
-				}
-			} else {
-				ret = ret && add_file1(p_root, p_path.path_join(n));
-				ret = ret && add_file2(p_root, p_path.path_join(n));
-			}
-		}
-
-		n = da->get_next();
-	}
-
-	da->list_dir_end();
-	return ret;
-}
-
-bool CodeSignCodeResources::save_to_file(const String &p_path) {
-	PList pl;
-
-	print_verbose(vformat("CodeSign/CodeResources: Writing to file: %s", p_path));
-
-	// Write version 1 hashes.
-	Ref<PListNode> files1_dict = PListNode::new_dict();
-	pl.get_root()->push_subnode(files1_dict, "files");
-	for (int i = 0; i < files1.size(); i++) {
-		if (files1[i].optional) {
-			Ref<PListNode> file_dict = PListNode::new_dict();
-			files1_dict->push_subnode(file_dict, files1[i].name);
-
-			file_dict->push_subnode(PListNode::new_data(files1[i].hash), "hash");
-			file_dict->push_subnode(PListNode::new_bool(true), "optional");
-		} else {
-			files1_dict->push_subnode(PListNode::new_data(files1[i].hash), files1[i].name);
-		}
-	}
-
-	// Write version 2 hashes.
-	Ref<PListNode> files2_dict = PListNode::new_dict();
-	pl.get_root()->push_subnode(files2_dict, "files2");
-	for (int i = 0; i < files2.size(); i++) {
-		Ref<PListNode> file_dict = PListNode::new_dict();
-		files2_dict->push_subnode(file_dict, files2[i].name);
-
-		if (files2[i].nested) {
-			file_dict->push_subnode(PListNode::new_data(files2[i].hash), "cdhash");
-			file_dict->push_subnode(PListNode::new_string(files2[i].requirements), "requirement");
-		} else {
-			file_dict->push_subnode(PListNode::new_data(files2[i].hash), "hash");
-			file_dict->push_subnode(PListNode::new_data(files2[i].hash2), "hash2");
-			if (files2[i].optional) {
-				file_dict->push_subnode(PListNode::new_bool(true), "optional");
-			}
-		}
-	}
-
-	// Write version 1 rules.
-	Ref<PListNode> rules1_dict = PListNode::new_dict();
-	pl.get_root()->push_subnode(rules1_dict, "rules");
-	for (int i = 0; i < rules1.size(); i++) {
-		if (rules1[i].store) {
-			if (rules1[i].key.is_empty() && rules1[i].weight <= 0) {
-				rules1_dict->push_subnode(PListNode::new_bool(true), rules1[i].file_pattern);
-			} else {
-				Ref<PListNode> rule_dict = PListNode::new_dict();
-				rules1_dict->push_subnode(rule_dict, rules1[i].file_pattern);
-				if (!rules1[i].key.is_empty()) {
-					rule_dict->push_subnode(PListNode::new_bool(true), rules1[i].key);
-				}
-				if (rules1[i].weight != 1) {
-					rule_dict->push_subnode(PListNode::new_real(rules1[i].weight), "weight");
-				}
-			}
-		}
-	}
-
-	// Write version 2 rules.
-	Ref<PListNode> rules2_dict = PListNode::new_dict();
-	pl.get_root()->push_subnode(rules2_dict, "rules2");
-	for (int i = 0; i < rules2.size(); i++) {
-		if (rules2[i].store) {
-			if (rules2[i].key.is_empty() && rules2[i].weight <= 0) {
-				rules2_dict->push_subnode(PListNode::new_bool(true), rules2[i].file_pattern);
-			} else {
-				Ref<PListNode> rule_dict = PListNode::new_dict();
-				rules2_dict->push_subnode(rule_dict, rules2[i].file_pattern);
-				if (!rules2[i].key.is_empty()) {
-					rule_dict->push_subnode(PListNode::new_bool(true), rules2[i].key);
-				}
-				if (rules2[i].weight != 1) {
-					rule_dict->push_subnode(PListNode::new_real(rules2[i].weight), "weight");
-				}
-			}
-		}
-	}
-	String text = pl.save_text();
-	ERR_FAIL_COND_V_MSG(text.is_empty(), false, "CodeSign/CodeResources: Generating resources PList failed.");
-
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), false, vformat("CodeSign/CodeResources: Can't open file: \"%s\".", p_path));
-
-	CharString cs = text.utf8();
-	fa->store_buffer((const uint8_t *)cs.ptr(), cs.length());
-	return true;
-}
-
-
-
-/*************************************************************************/
-/* CodeSignBlob                                                          */
-/*************************************************************************/
-
-CodeSignBlob CodeSignBlob::make_requirements() {
-	CodeSignBlob b;
-	b.index_type = INDEX_REQUIREMENTS;
-	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x01 }); // Requirement set magic.
-	b.blob.append_array({ 0x00, 0x00, 0x00, 0x0C }); // Length of requirements set (12 bytes).
-	b.blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Empty.
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_requirements(const PackedByteArray &p_data) {
-	CodeSignBlob b;
-	b.index_type = INDEX_REQUIREMENTS;
-	b.blob = p_data;
-	return b;
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_certificate_slot(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	r_out += "certificate ";
-	uint32_t tag_slot = _R(r_pos);
-	if (tag_slot == 0x00000000) {
-		r_out += "leaf";
-	} else if (tag_slot == 0xffffffff) {
-		r_out += "root";
-	} else {
-		r_out += itos((int32_t)tag_slot);
-	}
-	r_pos += 4;
-#undef _R
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	const uint32_t key_size = _R(r_pos);
-	ERR_FAIL_COND_MSG(r_pos + key_size > p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	r_pos += 4 + key_size + PAD(key_size, 4);
-	r_out += "[" + String::utf8((const char *)blob.ptr() + r_pos + 4, key_size) + "]";
-#undef _R
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_oid_key(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	uint32_t key_size = _R(r_pos);
-	ERR_FAIL_COND_MSG(r_pos + key_size > p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	r_out += "[field.";
-	r_out += itos(blob[r_pos + 4] / 40) + ".";
-	r_out += itos(blob[r_pos + 4] % 40);
-	uint32_t spos = r_pos + 5;
-	while (spos < r_pos + 4 + key_size) {
-		r_out += ".";
-		if (blob[spos] <= 127) {
-			r_out += itos(blob[spos]);
-			spos += 1;
-		} else {
-			uint32_t x = (0x7F & blob[spos]) << 7;
-			spos += 1;
-			while (blob[spos] > 127) {
-				x = (x + (0x7F & blob[spos])) << 7;
-				spos += 1;
-			}
-			x = (x + (0x7F & blob[spos]));
-			r_out += itos(x);
-			spos += 1;
-		}
-	}
-	r_out += "]";
-	r_pos += 4 + key_size + PAD(key_size, 4);
-#undef _R
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_hash_string(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	uint32_t tag_size = _R(r_pos);
-	ERR_FAIL_COND_MSG(r_pos + tag_size > p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	r_out += "H\"" + String::hex_encode_buffer(blob.ptr() + r_pos + 4, tag_size) + "\"";
-	r_pos += 4 + tag_size + PAD(tag_size, 4);
-#undef _R
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_value(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	const uint32_t key_size = _R(r_pos);
-	ERR_FAIL_COND_MSG(r_pos + key_size > p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	r_pos += 4 + key_size + PAD(key_size, 4);
-	r_out += "\"" + String::utf8((const char *)blob.ptr() + r_pos + 4, key_size) + "\"";
-#undef _R
-}
-
-_FORCE_INLINE_ void CodeSignBlob::_parse_date(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_MSG(r_pos >= p_rq_size, "CodeSign/Requirements: Out of bounds.");
-	uint32_t date = _R(r_pos);
-	time_t t = 978307200 + date;
-	struct tm lt;
-#ifdef WINDOWS_ENABLED
-	gmtime_s(&lt, &t);
-#else
-	gmtime_r(&t, &lt);
-#endif
-	r_out += vformat("<%04d-%02d-%02d ", (int)(1900 + lt.tm_year), (int)(lt.tm_mon + 1), (int)(lt.tm_mday)) + vformat("%02d:%02d:%02d +0000>", (int)(lt.tm_hour), (int)(lt.tm_min), (int)(lt.tm_sec));
-#undef _R
-}
-
-_FORCE_INLINE_ bool CodeSignBlob::_parse_match(uint32_t &r_pos, String &r_out, uint32_t p_rq_size) const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	ERR_FAIL_COND_V_MSG(r_pos >= p_rq_size, false, "CodeSign/Requirements: Out of bounds.");
-	uint32_t match = _R(r_pos);
-	r_pos += 4;
-	switch (match) {
-		case 0x00000000: {
-			r_out += "exists";
-		} break;
-		case 0x00000001: {
-			r_out += "= ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000002: {
-			r_out += "~ ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000003: {
-			r_out += "= *";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000004: {
-			r_out += "= ";
-			_parse_value(r_pos, r_out, p_rq_size);
-			r_out += "*";
-		} break;
-		case 0x00000005: {
-			r_out += "< ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000006: {
-			r_out += "> ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000007: {
-			r_out += "<= ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000008: {
-			r_out += ">= ";
-			_parse_value(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x00000009: {
-			r_out += "= ";
-			_parse_date(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x0000000A: {
-			r_out += "< ";
-			_parse_date(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x0000000B: {
-			r_out += "> ";
-			_parse_date(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x0000000C: {
-			r_out += "<= ";
-			_parse_date(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x0000000D: {
-			r_out += ">= ";
-			_parse_date(r_pos, r_out, p_rq_size);
-		} break;
-		case 0x0000000E: {
-			r_out += "absent";
-		} break;
-		default: {
-			return false;
-		}
-	}
-	return true;
-#undef _R
-}
-
-Vector<String> CodeSignBlob::parse_requirements() const {
-#define _R(x) BSWAP32(*(uint32_t *)(blob.ptr() + x))
-	Vector<String> list;
-
-	// Read requirements set header.
-	ERR_FAIL_COND_V_MSG(blob.size() < 12, list, "CodeSign/Requirements: Blob is too small.");
-	uint32_t magic = _R(0);
-	ERR_FAIL_COND_V_MSG(magic != 0xfade0c01, list, "CodeSign/Requirements: Invalid set magic.");
-	uint32_t size = _R(4);
-	ERR_FAIL_COND_V_MSG(size != (uint32_t)blob.size(), list, "CodeSign/Requirements: Invalid set size.");
-	uint32_t count = _R(8);
-
-	for (uint32_t i = 0; i < count; i++) {
-		String out;
-
-		// Read requirement header.
-		uint32_t rq_type = _R(12 + i * 8);
-		uint32_t rq_offset = _R(12 + i * 8 + 4);
-		ERR_FAIL_COND_V_MSG(rq_offset + 12 >= (uint32_t)blob.size(), list, "CodeSign/Requirements: Invalid requirement offset.");
-		switch (rq_type) {
-			case 0x00000001: {
-				out += "host => ";
-			} break;
-			case 0x00000002: {
-				out += "guest => ";
-			} break;
-			case 0x00000003: {
-				out += "designated => ";
-			} break;
-			case 0x00000004: {
-				out += "library => ";
-			} break;
-			case 0x00000005: {
-				out += "plugin => ";
-			} break;
-			default: {
-				ERR_FAIL_V_MSG(list, "CodeSign/Requirements: Invalid requirement type.");
-			}
-		}
-		uint32_t rq_magic = _R(rq_offset);
-		uint32_t rq_size = _R(rq_offset + 4);
-		uint32_t rq_ver = _R(rq_offset + 8);
-		uint32_t pos = rq_offset + 12;
-		ERR_FAIL_COND_V_MSG(rq_magic != 0xfade0c00, list, "CodeSign/Requirements: Invalid requirement magic.");
-		ERR_FAIL_COND_V_MSG(rq_ver != 0x00000001, list, "CodeSign/Requirements: Invalid requirement version.");
-
-		// Read requirement tokens.
-		List<String> tokens;
-		while (pos < rq_offset + rq_size) {
-			uint32_t rq_tag = _R(pos);
-			pos += 4;
-			String token;
-			switch (rq_tag) {
-				case 0x00000000: {
-					token = "false";
-				} break;
-				case 0x00000001: {
-					token = "true";
-				} break;
-				case 0x00000002: {
-					token = "identifier ";
-					_parse_value(pos, token, rq_offset + rq_size);
-				} break;
-				case 0x00000003: {
-					token = "anchor apple";
-				} break;
-				case 0x00000004: {
-					_parse_certificate_slot(pos, token, rq_offset + rq_size);
-					token += " ";
-					_parse_hash_string(pos, token, rq_offset + rq_size);
-				} break;
-				case 0x00000005: {
-					token = "info";
-					_parse_key(pos, token, rq_offset + rq_size);
-					token += " = ";
-					_parse_value(pos, token, rq_offset + rq_size);
-				} break;
-				case 0x00000006: {
-					token = "and";
-				} break;
-				case 0x00000007: {
-					token = "or";
-				} break;
-				case 0x00000008: {
-					token = "cdhash ";
-					_parse_hash_string(pos, token, rq_offset + rq_size);
-				} break;
-				case 0x00000009: {
-					token = "!";
-				} break;
-				case 0x0000000A: {
-					token = "info";
-					_parse_key(pos, token, rq_offset + rq_size);
-					token += " ";
-					ERR_FAIL_COND_V_MSG(!_parse_match(pos, token, rq_offset + rq_size), list, "CodeSign/Requirements: Unsupported match suffix.");
-				} break;
-				case 0x0000000B: {
-					_parse_certificate_slot(pos, token, rq_offset + rq_size);
-					_parse_key(pos, token, rq_offset + rq_size);
-					token += " ";
-					ERR_FAIL_COND_V_MSG(!_parse_match(pos, token, rq_offset + rq_size), list, "CodeSign/Requirements: Unsupported match suffix.");
-				} break;
-				case 0x0000000C: {
-					_parse_certificate_slot(pos, token, rq_offset + rq_size);
-					token += " trusted";
-				} break;
-				case 0x0000000D: {
-					token = "anchor trusted";
-				} break;
-				case 0x0000000E: {
-					_parse_certificate_slot(pos, token, rq_offset + rq_size);
-					_parse_oid_key(pos, token, rq_offset + rq_size);
-					token += " ";
-					ERR_FAIL_COND_V_MSG(!_parse_match(pos, token, rq_offset + rq_size), list, "CodeSign/Requirements: Unsupported match suffix.");
-				} break;
-				case 0x0000000F: {
-					token = "anchor apple generic";
-				} break;
-				default: {
-					ERR_FAIL_V_MSG(list, "CodeSign/Requirements: Invalid requirement token.");
-				} break;
-			}
-			tokens.push_back(token);
-		}
-
-		// Polish to infix notation (w/o bracket optimization).
-		for (List<String>::Element *E = tokens.back(); E; E = E->prev()) {
-			if (E->get() == "and") {
-				ERR_FAIL_COND_V_MSG(!E->next() || !E->next()->next(), list, "CodeSign/Requirements: Invalid token sequence.");
-				String token = "(" + E->next()->get() + " and " + E->next()->next()->get() + ")";
-				tokens.erase(E->next()->next());
-				tokens.erase(E->next());
-				E->get() = token;
-			} else if (E->get() == "or") {
-				ERR_FAIL_COND_V_MSG(!E->next() || !E->next()->next(), list, "CodeSign/Requirements: Invalid token sequence.");
-				String token = "(" + E->next()->get() + " or " + E->next()->next()->get() + ")";
-				tokens.erase(E->next()->next());
-				tokens.erase(E->next());
-				E->get() = token;
-			}
-		}
-
-		if (tokens.size() == 1) {
-			list.push_back(out + tokens.front()->get());
-		} else {
-			ERR_FAIL_V_MSG(list, "CodeSign/Requirements: Invalid token sequence.");
-		}
-	}
-
-	return list;
-#undef _R
-}
-
-CodeSignBlob CodeSignBlob::make_entitlements_text() {
-	CodeSignBlob b;
-	b.index_type = INDEX_ENTITLEMENTS_TEXT;
-	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
-	b.blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_entitlements_text(const String &p_string) {
-	CodeSignBlob b;
-	b.index_type = INDEX_ENTITLEMENTS_TEXT;
-	CharString utf8 = p_string.utf8();
-	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x71 }); // Text Entitlements set magic.
-	for (int i = 3; i >= 0; i--) {
-		uint8_t x = ((utf8.length() + 8) >> i * 8) & 0xFF; // Size.
-		b.blob.push_back(x);
-	}
-	for (int i = 0; i < utf8.length(); i++) { // Write data.
-		b.blob.push_back(utf8[i]);
-	}
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_entitlements_binary() {
-	CodeSignBlob b;
-	b.index_type = INDEX_ENTITLEMENTS_BINARY;
-	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
-	b.blob.append_array({ 0x00, 0x00, 0x00, 0x08 }); // Length (8 bytes).
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_entitlements_binary(const String &p_string) {
-	CodeSignBlob b;
-	b.index_type = INDEX_ENTITLEMENTS_BINARY;
-	PList pl = PList(p_string);
-
-	PackedByteArray asn1 = pl.save_asn1();
-	b.blob.append_array({ 0xFA, 0xDE, 0x71, 0x72 }); // Binary Entitlements magic.
-	uint32_t size = asn1.size() + 8;
-	for (int i = 3; i >= 0; i--) {
-		uint8_t x = (size >> i * 8) & 0xFF; // Size.
-		b.blob.push_back(x);
-	}
-	b.blob.append_array(asn1); // Write data.
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_code_directory() {
-	CodeSignBlob b;
-	b.index_type = INDEX_CODE_DIRECTORY;
-	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
-	b.blob.append_array({ 0x00, 0x00, 0x00, 0x00 }); // Size (8 bytes).
-	return b;
-}
-
-CodeSignBlob CodeSignBlob::make_code_directory(uint8_t p_hash_size, uint8_t p_hash_type, bool p_main, const CharString &p_id, const CharString &p_team_id, uint32_t p_page_size, uint64_t p_exe_limit, uint64_t p_code_limit) {
-	CodeSignBlob b;
-	b.index_type = INDEX_CODE_DIRECTORY;
-	b.pages = p_code_limit / (uint64_t(1) << p_page_size);
-	b.remain = p_code_limit % (uint64_t(1) << p_page_size);
-	b.code_slots = b.pages + (b.remain > 0 ? 1 : 0);
-	b.special_slots = 7;
-
-	int cd_size = 8 + sizeof(CodeDirectoryHeader) + (b.code_slots + b.special_slots) * p_hash_size + p_id.size() + p_team_id.size();
-	int cd_off = 8 + sizeof(CodeDirectoryHeader);
-	b.blob.append_array({ 0xFA, 0xDE, 0x0C, 0x02 }); // Code Directory magic.
-	for (int i = 3; i >= 0; i--) {
-		uint8_t x = (cd_size >> i * 8) & 0xFF; // Size.
-		b.blob.push_back(x);
-	}
-	b.blob.resize(cd_size);
-	memset(b.blob.ptrw() + 8, 0x00, cd_size - 8);
-	CodeDirectoryHeader *cd = reinterpret_cast<CodeDirectoryHeader *>(b.blob.ptrw() + 8);
-
-	bool is_64_cl = (p_code_limit >= std::numeric_limits<uint32_t>::max());
-
-	// Version and options.
-	cd->version = BSWAP32(0x20500);
-	cd->flags = BSWAP32(SIGNATURE_ADHOC | SIGNATURE_RUNTIME);
-	cd->special_slots = BSWAP32(b.special_slots);
-	cd->code_slots = BSWAP32(b.code_slots);
-	if (is_64_cl) {
-		cd->code_limit_64 = BSWAP64(p_code_limit);
-	} else {
-		cd->code_limit = BSWAP32(p_code_limit);
-	}
-	cd->hash_size = p_hash_size;
-	cd->hash_type = p_hash_type;
-	cd->page_size = p_page_size;
-	cd->exec_seg_base = 0x00;
-	cd->exec_seg_limit = BSWAP64(p_exe_limit);
-	cd->exec_seg_flags = 0;
-	if (p_main) {
-		cd->exec_seg_flags |= EXECSEG_MAIN_BINARY;
-	}
-	cd->exec_seg_flags = BSWAP64(cd->exec_seg_flags);
-	uint32_t version = (11 << 16) + (3 << 8) + 0; // Version 11.3.0
-	cd->runtime = BSWAP32(version);
-
-	// Copy ID.
-	cd->ident_offset = BSWAP32(cd_off);
-	memcpy(b.blob.ptrw() + cd_off, p_id.get_data(), p_id.size());
-	cd_off += p_id.size();
-
-	// Copy Team ID.
-	if (p_team_id.length() > 0) {
-		cd->team_offset = BSWAP32(cd_off);
-		memcpy(b.blob.ptrw() + cd_off, p_team_id.get_data(), p_team_id.size());
-		cd_off += p_team_id.size();
-	} else {
-		cd->team_offset = 0;
-	}
-
-	// Scatter vector.
-	cd->scatter_vector_offset = 0; // Not used.
-
-	// Executable hashes offset.
-	cd->hash_offset = BSWAP32(cd_off + b.special_slots * cd->hash_size);
-	return b;
-}
-
-bool CodeSignBlob::set_hash_in_slot(const PackedByteArray &p_hash, int p_slot) {
-	ERR_FAIL_COND_V_MSG((p_slot < -special_slots) || (p_slot >= code_slots), false, vformat("CodeSign/CodeDirectory: Invalid hash slot index: %d.", p_slot));
-	CodeDirectoryHeader *cd = reinterpret_cast<CodeDirectoryHeader *>(blob.ptrw() + 8);
-	for (int i = 0; i < cd->hash_size; i++) {
-		blob.write[BSWAP32(cd->hash_offset) + p_slot * cd->hash_size + i] = p_hash[i];
-	}
-	return true;
-}
-
-CodeSignBlob CodeSignBlob::make_signature() {
-	CodeSignBlob b;
-	b.index_type = INDEX_SIGNATURE;
-	b.blob.append_array({ 0xFA, 0xDE, 0x0B, 0x01 }); // Signature magic.
-	uint32_t sign_size = 8; // Ad-hoc signature is empty.
-	for (int i = 3; i >= 0; i--) {
-		uint8_t x = (sign_size >> i * 8) & 0xFF; // Size.
-		b.blob.push_back(x);
-	}
-	return b;
-}
-
-PackedByteArray CodeSignBlob::get_hash_sha1() const {
-	PackedByteArray hash;
-	hash.resize(0x14);
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-PackedByteArray CodeSignBlob::get_hash_sha256() const {
-	PackedByteArray hash;
-	hash.resize(0x20);
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-	ctx.update(blob.ptr(), blob.size());
-	ctx.finish(hash.ptrw());
-
-	return hash;
-}
-
-void CodeSignBlob::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSignBlob: Invalid file handle.");
-	p_file->store_buffer(blob.ptr(), blob.size());
-}
-
-/*************************************************************************/
-/* CodeSignSuperBlob                                                     */
-/*************************************************************************/
-
-bool CodeSignSuperBlob::add_blob(const CodeSignBlob &p_blob) {
-	if (!p_blob.is_empty()) {
-		blobs.push_back(p_blob);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-int CodeSignSuperBlob::get_size() const {
-	int size = 12 + blobs.size() * 8;
-	for (int i = 0; i < blobs.size(); i++) {
-		if (blobs[i].is_empty()) {
-			return 0;
-		}
-		size += blobs[i].get_size();
-	}
-	return size;
-}
-
-void CodeSignSuperBlob::write_to_file(Ref<FileAccess> p_file) const {
-	ERR_FAIL_COND_MSG(p_file.is_null(), "CodeSign/SuperBlob: Invalid file handle.");
-	uint32_t size = get_size();
-	uint32_t data_offset = 12 + blobs.size() * 8;
-
-	// Write header.
-	p_file->store_32(BSWAP32(0xfade0cc0));
-	p_file->store_32(BSWAP32(size));
-	p_file->store_32(BSWAP32(blobs.size()));
-
-	// Write index.
-	for (int i = 0; i < blobs.size(); i++) {
-		if (blobs[i].is_empty()) {
-			return;
-		}
-		p_file->store_32(BSWAP32(blobs[i].get_index_type()));
-		p_file->store_32(BSWAP32(data_offset));
-		data_offset += blobs[i].get_size();
-	}
-
-	// Write blobs.
-	for (int i = 0; i < blobs.size(); i++) {
-		blobs[i].write_to_file(p_file);
-	}
-}
-
-
-/*************************************************************************/
-/* CodeSign                                                              */
-/*************************************************************************/
-
-PackedByteArray CodeSign::file_hash_sha1(const String &p_path) {
-	PackedByteArray file_hash;
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), PackedByteArray(), vformat("CodeSign: Can't open file: \"%s\".", p_path));
-
-	CryptoCore::SHA1Context ctx;
-	ctx.start();
-
-	unsigned char step[4096];
-	while (true) {
-		uint64_t br = f->get_buffer(step, 4096);
-		if (br > 0) {
-			ctx.update(step, br);
-		}
-		if (br < 4096) {
-			break;
-		}
-	}
-
-	file_hash.resize(0x14);
-	ctx.finish(file_hash.ptrw());
-	return file_hash;
-}
-
-PackedByteArray CodeSign::file_hash_sha256(const String &p_path) {
-	PackedByteArray file_hash;
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), PackedByteArray(), vformat("CodeSign: Can't open file: \"%s\".", p_path));
-
-	CryptoCore::SHA256Context ctx;
-	ctx.start();
-
-	unsigned char step[4096];
-	while (true) {
-		uint64_t br = f->get_buffer(step, 4096);
-		if (br > 0) {
-			ctx.update(step, br);
-		}
-		if (br < 4096) {
-			break;
-		}
-	}
-
-	file_hash.resize(0x20);
-	ctx.finish(file_hash.ptrw());
-	return file_hash;
-}
-
-Error CodeSign::_codesign_file(bool p_use_hardened_runtime, bool p_force, const String &p_info, const String &p_exe_path, const String &p_bundle_path, const String &p_ent_path, bool p_ios_bundle, String &r_error_msg) {
-#define CLEANUP() \
-	if (files_to_sign.size() > 1) { \
-		for (int j = 0; j < files_to_sign.size(); j++) { \
-			da->remove(files_to_sign[j]); \
-		} \
-	}
-
-	print_verbose(vformat("CodeSign: Signing executable: %s, bundle: %s with entitlements %s", p_exe_path, p_bundle_path, p_ent_path));
-
-	PackedByteArray info_hash1, info_hash2;
-	PackedByteArray res_hash1, res_hash2;
-	String id;
-	String main_exe = p_exe_path;
-
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	if (da.is_null()) {
-		r_error_msg = TTR("Can't get filesystem access.");
-		ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CodeSign: Can't get filesystem access.");
-	}
-
-	// Read Info.plist.
-	if (!p_info.is_empty()) {
-		print_verbose("CodeSign: Reading bundle info...");
-		PList info_plist;
-		if (info_plist.load_file(p_info)) {
-			info_hash1 = file_hash_sha1(p_info);
-			info_hash2 = file_hash_sha256(p_info);
-			if (info_hash1.is_empty() || info_hash2.is_empty()) {
-				r_error_msg = TTR("Failed to get Info.plist hash.");
-				ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to get Info.plist hash.");
-			}
-
-			if (info_plist.get_root()->data_type == PList::PLNodeType::PL_NODE_TYPE_DICT && info_plist.get_root()->data_dict.has("CFBundleExecutable")) {
-				main_exe = p_exe_path.path_join(String::utf8(info_plist.get_root()->data_dict["CFBundleExecutable"]->data_string.get_data()));
-			} else {
-				r_error_msg = TTR("Invalid Info.plist, no exe name.");
-				ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid Info.plist, no exe name.");
-			}
-
-			if (info_plist.get_root()->data_type == PList::PLNodeType::PL_NODE_TYPE_DICT && info_plist.get_root()->data_dict.has("CFBundleIdentifier")) {
-				id = info_plist.get_root()->data_dict["CFBundleIdentifier"]->data_string.get_data();
-			} else {
-				r_error_msg = TTR("Invalid Info.plist, no bundle id.");
-				ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid Info.plist, no bundle id.");
-			}
-		} else {
-			r_error_msg = TTR("Invalid Info.plist, can't load.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid Info.plist, can't load.");
-		}
-	}
-
-	// Extract fat binary.
-	Vector<String> files_to_sign;
-	if (LipO::is_lipo(main_exe)) {
-		print_verbose(vformat("CodeSign: Executable is fat, extracting..."));
-		String tmp_path_name = EditorPaths::get_temp_dir().path_join("_lipo");
-		Error err = da->make_dir_recursive(tmp_path_name);
-		if (err != OK) {
-			r_error_msg = vformat(TTR("Failed to create \"%s\" subfolder."), tmp_path_name);
-			ERR_FAIL_V_MSG(FAILED, vformat("CodeSign: Failed to create \"%s\" subfolder.", tmp_path_name));
-		}
-		LipO lip;
-		if (lip.open_file(main_exe)) {
-			for (int i = 0; i < lip.get_arch_count(); i++) {
-				if (!lip.extract_arch(i, tmp_path_name.path_join("_exe_" + itos(i)))) {
-					CLEANUP();
-					r_error_msg = TTR("Failed to extract thin binary.");
-					ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to extract thin binary.");
-				}
-				files_to_sign.push_back(tmp_path_name.path_join("_exe_" + itos(i)));
-			}
-		}
-	} else if (MachO::is_macho(main_exe)) {
-		print_verbose("CodeSign: Executable is thin...");
-		files_to_sign.push_back(main_exe);
-	} else {
-		r_error_msg = TTR("Invalid binary format.");
-		ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid binary format.");
-	}
-
-	// Check if it's already signed.
-	if (!p_force) {
-		for (int i = 0; i < files_to_sign.size(); i++) {
-			MachO mh;
-			mh.open_file(files_to_sign[i]);
-			if (mh.is_signed()) {
-				CLEANUP();
-				r_error_msg = TTR("Already signed!");
-				ERR_FAIL_V_MSG(FAILED, "CodeSign: Already signed!");
-			}
-		}
-	}
-
-	// Generate core resources.
-	if (!p_bundle_path.is_empty()) {
-		print_verbose("CodeSign: Generating bundle CodeResources...");
-		CodeSignCodeResources cr;
-
-		if (p_ios_bundle) {
-			cr.add_rule1("^.*");
-			cr.add_rule1("^.*\\.lproj/", "optional", 100);
-			cr.add_rule1("^.*\\.lproj/locversion.plist$", "omit", 1100);
-			cr.add_rule1("^Base\\.lproj/", "", 1010);
-			cr.add_rule1("^version.plist$");
-
-			cr.add_rule2(".*\\.dSYM($|/)", "", 11);
-			cr.add_rule2("^(.*/)?\\.DS_Store$", "omit", 2000);
-			cr.add_rule2("^.*");
-			cr.add_rule2("^.*\\.lproj/", "optional", 1000);
-			cr.add_rule2("^.*\\.lproj/locversion.plist$", "omit", 1100);
-			cr.add_rule2("^Base\\.lproj/", "", 1010);
-			cr.add_rule2("^Info\\.plist$", "omit", 20);
-			cr.add_rule2("^PkgInfo$", "omit", 20);
-			cr.add_rule2("^embedded\\.provisionprofile$", "", 10);
-			cr.add_rule2("^version\\.plist$", "", 20);
-
-			cr.add_rule2("^_MASReceipt", "omit", 2000, false);
-			cr.add_rule2("^_CodeSignature", "omit", 2000, false);
-			cr.add_rule2("^CodeResources", "omit", 2000, false);
-		} else {
-			cr.add_rule1("^Resources($|/)");
-			cr.add_rule1("^Resources/.*\\.lproj/", "optional", 1000);
-			cr.add_rule1("^Resources/.*\\.lproj/locversion.plist$", "omit", 1100);
-			cr.add_rule1("^Resources/Base\\.lproj/", "", 1010);
-			cr.add_rule1("^version.plist$");
-
-			cr.add_rule2(".*\\.dSYM($|/)", "", 11);
-			cr.add_rule2("^(.*/)?\\.DS_Store$", "omit", 2000);
-			cr.add_rule2("^(Frameworks|SharedFrameworks|PlugIns|Plug-ins|XPCServices|Helpers|MacOS|Library/(Automator|Spotlight|LoginItems))/", "nested", 10);
-			cr.add_rule2("^.*");
-			cr.add_rule2("^Info\\.plist$", "omit", 20);
-			cr.add_rule2("^PkgInfo$", "omit", 20);
-			cr.add_rule2("^Resources($|/)", "", 20);
-			cr.add_rule2("^Resources/.*\\.lproj/", "optional", 1000);
-			cr.add_rule2("^Resources/.*\\.lproj/locversion.plist$", "omit", 1100);
-			cr.add_rule2("^Resources/Base\\.lproj/", "", 1010);
-			cr.add_rule2("^[^/]+$", "nested", 10);
-			cr.add_rule2("^embedded\\.provisionprofile$", "", 10);
-			cr.add_rule2("^version\\.plist$", "", 20);
-			cr.add_rule2("^_MASReceipt", "omit", 2000, false);
-			cr.add_rule2("^_CodeSignature", "omit", 2000, false);
-			cr.add_rule2("^CodeResources", "omit", 2000, false);
-		}
-
-		if (!cr.add_folder_recursive(p_bundle_path, "", main_exe)) {
-			CLEANUP();
-			r_error_msg = TTR("Failed to process nested resources.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to process nested resources.");
-		}
-		Error err = da->make_dir_recursive(p_bundle_path.path_join("_CodeSignature"));
-		if (err != OK) {
-			CLEANUP();
-			r_error_msg = TTR("Failed to create _CodeSignature subfolder.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to create _CodeSignature subfolder.");
-		}
-		cr.save_to_file(p_bundle_path.path_join("_CodeSignature").path_join("CodeResources"));
-		res_hash1 = file_hash_sha1(p_bundle_path.path_join("_CodeSignature").path_join("CodeResources"));
-		res_hash2 = file_hash_sha256(p_bundle_path.path_join("_CodeSignature").path_join("CodeResources"));
-		if (res_hash1.is_empty() || res_hash2.is_empty()) {
-			CLEANUP();
-			r_error_msg = TTR("Failed to get CodeResources hash.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to get CodeResources hash.");
-		}
-	}
-
-	// Generate common signature structures.
-	if (id.is_empty()) {
-		uint8_t uuid[16];
-		Error err = CryptoCore::generate_random(uuid, 16);
-		ERR_FAIL_COND_V_MSG(err, err, "Failed to generate UUID.");
-		id = (String("a-55554944") /*a-UUID*/ + String::hex_encode_buffer(uuid, 16));
-	}
-	CharString uuid_str = id.utf8();
-	print_verbose(vformat("CodeSign: Used bundle ID: %s", id));
-
-	print_verbose("CodeSign: Processing entitlements...");
-
-	CodeSignBlob cet;
-	CodeSignBlob ceb;
-	if (!p_ent_path.is_empty()) {
-		String entitlements = FileAccess::get_file_as_string(p_ent_path);
-		if (entitlements.is_empty()) {
-			CLEANUP();
-			r_error_msg = TTR("Invalid entitlements file.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid entitlements file.");
-		}
-		cet = CodeSignBlob::make_entitlements_text(entitlements);
-		ceb = CodeSignBlob::make_entitlements_binary(entitlements);
-	}
-
-	print_verbose("CodeSign: Generating requirements...");
-	String team_id = "";
-	CodeSignBlob rq = CodeSignBlob::make_requirements();
-
-	// Sign executables.
-	for (int i = 0; i < files_to_sign.size(); i++) {
-		MachO mh;
-		if (!mh.open_file(files_to_sign[i])) {
-			CLEANUP();
-			r_error_msg = TTR("Invalid executable file.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Invalid executable file.");
-		}
-		print_verbose(vformat("CodeSign: Signing executable for cputype: %d ...", mh.get_cputype()));
-
-		print_verbose("CodeSign: Generating CodeDirectory...");
-		CodeSignBlob cd1 = CodeSignBlob::make_code_directory(0x14, 0x01, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit());
-		CodeSignBlob cd2 = CodeSignBlob::make_code_directory(0x20, 0x02, true, uuid_str, team_id.utf8(), 12, mh.get_exe_limit(), mh.get_code_limit());
-		print_verbose("CodeSign: Calculating special slot hashes...");
-		if (info_hash2.size() == 0x20) {
-			cd2.set_hash_in_slot(info_hash2, CodeSignBlob::SLOT_INFO_PLIST);
-		}
-		if (info_hash1.size() == 0x14) {
-			cd1.set_hash_in_slot(info_hash1, CodeSignBlob::SLOT_INFO_PLIST);
-		}
-		cd1.set_hash_in_slot(rq.get_hash_sha1(), CodeSignBlob::SLOT_REQUIREMENTS);
-		cd2.set_hash_in_slot(rq.get_hash_sha256(), CodeSignBlob::SLOT_REQUIREMENTS);
-		if (res_hash2.size() == 0x20) {
-			cd2.set_hash_in_slot(res_hash2, CodeSignBlob::SLOT_RESOURCES);
-		}
-		if (res_hash1.size() == 0x14) {
-			cd1.set_hash_in_slot(res_hash1, CodeSignBlob::SLOT_RESOURCES);
-		}
-		if (!cet.is_empty()) {
-			cd1.set_hash_in_slot(cet.get_hash_sha1(), CodeSignBlob::SLOT_ENTITLEMENTS); //Text variant.
-			cd2.set_hash_in_slot(cet.get_hash_sha256(), CodeSignBlob::SLOT_ENTITLEMENTS);
-		}
-		if (!ceb.is_empty()) {
-			cd1.set_hash_in_slot(ceb.get_hash_sha1(), CodeSignBlob::SLOT_DER_ENTITLEMENTS); //ASN.1 variant.
-			cd2.set_hash_in_slot(ceb.get_hash_sha256(), CodeSignBlob::SLOT_DER_ENTITLEMENTS);
-		}
-
-		// Calculate signature size.
-		int sign_size = 12; // SuperBlob header.
-		sign_size += cd1.get_size() + 8;
-		sign_size += cd2.get_size() + 8;
-		sign_size += rq.get_size() + 8;
-		if (!cet.is_empty()) {
-			sign_size += cet.get_size() + 8;
-		}
-		if (!ceb.is_empty()) {
-			sign_size += ceb.get_size() + 8;
-		}
-		sign_size += 16; // Empty signature size.
-
-		// Alloc/resize signature load command.
-		print_verbose(vformat("CodeSign: Reallocating space for the signature superblob (%d)...", sign_size));
-		if (!mh.set_signature_size(sign_size)) {
-			CLEANUP();
-			r_error_msg = TTR("Can't resize signature load command.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Can't resize signature load command.");
-		}
-
-		print_verbose("CodeSign: Calculating executable code hashes...");
-		// Calculate executable code hashes.
-		PackedByteArray buffer;
-		PackedByteArray hash1, hash2;
-		hash1.resize(0x14);
-		hash2.resize(0x20);
-		buffer.resize(1 << 12);
-		mh.get_file()->seek(0);
-		for (int32_t j = 0; j < cd2.get_page_count(); j++) {
-			mh.get_file()->get_buffer(buffer.ptrw(), (1 << 12));
-			CryptoCore::SHA256Context ctx2;
-			ctx2.start();
-			ctx2.update(buffer.ptr(), (1 << 12));
-			ctx2.finish(hash2.ptrw());
-			cd2.set_hash_in_slot(hash2, j);
-
-			CryptoCore::SHA1Context ctx1;
-			ctx1.start();
-			ctx1.update(buffer.ptr(), (1 << 12));
-			ctx1.finish(hash1.ptrw());
-			cd1.set_hash_in_slot(hash1, j);
-		}
-		if (cd2.get_page_remainder() > 0) {
-			mh.get_file()->get_buffer(buffer.ptrw(), cd2.get_page_remainder());
-			CryptoCore::SHA256Context ctx2;
-			ctx2.start();
-			ctx2.update(buffer.ptr(), cd2.get_page_remainder());
-			ctx2.finish(hash2.ptrw());
-			cd2.set_hash_in_slot(hash2, cd2.get_page_count());
-
-			CryptoCore::SHA1Context ctx1;
-			ctx1.start();
-			ctx1.update(buffer.ptr(), cd1.get_page_remainder());
-			ctx1.finish(hash1.ptrw());
-			cd1.set_hash_in_slot(hash1, cd1.get_page_count());
-		}
-
-		print_verbose("CodeSign: Generating signature...");
-		CodeSignBlob cs = CodeSignBlob::make_signature();
-
-		print_verbose("CodeSign: Writing signature superblob...");
-		// Write signature data to the executable.
-		CodeSignSuperBlob sb = CodeSignSuperBlob();
-		sb.add_blob(cd2);
-		sb.add_blob(cd1);
-		sb.add_blob(rq);
-		if (!cet.is_empty()) {
-			sb.add_blob(cet);
-		}
-		if (!ceb.is_empty()) {
-			sb.add_blob(ceb);
-		}
-		sb.add_blob(cs);
-		mh.get_file()->seek(mh.get_signature_offset());
-		sb.write_to_file(mh.get_file());
-	}
-	if (files_to_sign.size() > 1) {
-		print_verbose("CodeSign: Rebuilding fat executable...");
-		LipO lip;
-		if (!lip.create_file(main_exe, files_to_sign)) {
-			CLEANUP();
-			r_error_msg = TTR("Failed to create fat binary.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Failed to create fat binary.");
-		}
-		CLEANUP();
-	}
-	FileAccess::set_unix_permissions(main_exe, 0755); // Restore unix permissions.
-	return OK;
-#undef CLEANUP
-}
-
-Error CodeSign::codesign(bool p_use_hardened_runtime, bool p_force, const String &p_path, const String &p_ent_path, String &r_error_msg) {
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	if (da.is_null()) {
-		r_error_msg = TTR("Can't get filesystem access.");
-		ERR_FAIL_V_MSG(ERR_CANT_CREATE, "CodeSign: Can't get filesystem access.");
-	}
-
-	if (da->dir_exists(p_path)) {
-		String fmw_ver = "Current"; // Framework version (default).
-		String info_path;
-		String main_exe;
-		String bundle_path;
-		bool bundle = false;
-		bool ios_bundle = false;
-		if (da->file_exists(p_path.path_join("Contents/Info.plist"))) {
-			info_path = p_path.path_join("Contents/Info.plist");
-			main_exe = p_path.path_join("Contents/MacOS");
-			bundle_path = p_path.path_join("Contents");
-			bundle = true;
-		} else if (da->file_exists(p_path.path_join(vformat("Versions/%s/Resources/Info.plist", fmw_ver)))) {
-			info_path = p_path.path_join(vformat("Versions/%s/Resources/Info.plist", fmw_ver));
-			main_exe = p_path.path_join(vformat("Versions/%s", fmw_ver));
-			bundle_path = p_path.path_join(vformat("Versions/%s", fmw_ver));
-			bundle = true;
-		} else if (da->file_exists(p_path.path_join("Resources/Info.plist"))) {
-			info_path = p_path.path_join("Resources/Info.plist");
-			main_exe = p_path;
-			bundle_path = p_path;
-			bundle = true;
-		} else if (da->file_exists(p_path.path_join("Info.plist"))) {
-			info_path = p_path.path_join("Info.plist");
-			main_exe = p_path;
-			bundle_path = p_path;
-			bundle = true;
-			ios_bundle = true;
-		}
-		if (bundle) {
-			return _codesign_file(p_use_hardened_runtime, p_force, info_path, main_exe, bundle_path, p_ent_path, ios_bundle, r_error_msg);
-		} else {
-			r_error_msg = TTR("Unknown bundle type.");
-			ERR_FAIL_V_MSG(FAILED, "CodeSign: Unknown bundle type.");
-		}
-	} else if (da->file_exists(p_path)) {
-		return _codesign_file(p_use_hardened_runtime, p_force, "", p_path, "", p_ent_path, false, r_error_msg);
-	} else {
-		r_error_msg = TTR("Unknown object type.");
-		ERR_FAIL_V_MSG(FAILED, "CodeSign: Unknown object type.");
-	}
-}
-
-/*************************************************************************/
-/* PluginConfigAppleEmbedded                                             */
-/*************************************************************************/
-
-String PluginConfigAppleEmbedded::resolve_local_dependency_path(
-	String plugin_config_dir, String dependency_path)
-{
-	String absolute_path;
-
-	if (dependency_path.is_empty()) {
-		return absolute_path;
-	}
-
-	if (dependency_path.is_absolute_path()) {
-		return dependency_path;
-	}
-
-	String res_path = ProjectSettings::globalize_path("res://");
-	absolute_path = plugin_config_dir.path_join(dependency_path);
-
-	return absolute_path.replace(res_path, "res://");
-}
-
-String PluginConfigAppleEmbedded::resolve_system_dependency_path(String dependency_path)
-{
-	String absolute_path;
-
-	if (dependency_path.is_empty()) {
-		return absolute_path;
-	}
-
-	if (dependency_path.is_absolute_path()) {
-		return dependency_path;
-	}
-
-	String system_path = "/System/Library/Frameworks";
-
-	return system_path.path_join(dependency_path);
-}
-
-Vector<String> PluginConfigAppleEmbedded::resolve_local_dependencies(
-	String plugin_config_dir, Vector<String> p_paths)
-{
-	Vector<String> paths;
-
-	for (int i = 0; i < p_paths.size(); i++) {
-		String path = resolve_local_dependency_path(plugin_config_dir, p_paths[i]);
-
-		if (path.is_empty()) {
-			continue;
-		}
-
-		paths.push_back(path);
-	}
-
-	return paths;
-}
-
-Vector<String> PluginConfigAppleEmbedded::resolve_system_dependencies(Vector<String> p_paths)
-{
-	Vector<String> paths;
-
-	for (int i = 0; i < p_paths.size(); i++) {
-		String path = resolve_system_dependency_path(p_paths[i]);
-
-		if (path.is_empty()) {
-			continue;
-		}
-
-		paths.push_back(path);
-	}
-
-	return paths;
-}
-
-bool PluginConfigAppleEmbedded::validate_plugin(PluginConfigAppleEmbedded& plugin_config)
-{
-	bool valid_name = !plugin_config.name.is_empty();
-	bool valid_binary_name = !plugin_config.binary.is_empty();
-	bool valid_initialize = !plugin_config.initialization_method.is_empty();
-	bool valid_deinitialize = !plugin_config.deinitialization_method.is_empty();
-
-	bool fields_value = valid_name && valid_binary_name && valid_initialize && valid_deinitialize;
-
-	if (!fields_value) {
-		return false;
-	}
-
-	String plugin_extension = plugin_config.binary.get_extension().to_lower();
-
-	if ((plugin_extension == "a" && FileAccess::exists(plugin_config.binary)) ||
-		(plugin_extension == "xcframework" && DirAccess::exists(plugin_config.binary))) {
-		plugin_config.valid_config = true;
-		plugin_config.supports_targets = false;
-	}
-	else {
-		String file_path = plugin_config.binary.get_base_dir();
-		String file_name = plugin_config.binary.get_basename().get_file();
-		String file_extension = plugin_config.binary.get_extension();
-		String release_file_name = file_path.path_join(file_name + ".release." + file_extension);
-		String debug_file_name = file_path.path_join(file_name + ".debug." + file_extension);
-
-		if ((plugin_extension == "a" && FileAccess::exists(release_file_name) &&
-				FileAccess::exists(debug_file_name)) ||
-			(plugin_extension == "xcframework" && DirAccess::exists(release_file_name) &&
-				DirAccess::exists(debug_file_name))) {
-			plugin_config.valid_config = true;
-			plugin_config.supports_targets = true;
-		}
-	}
-
-	return plugin_config.valid_config;
-}
-
-String PluginConfigAppleEmbedded::get_plugin_main_binary(
-	PluginConfigAppleEmbedded& plugin_config, bool p_debug)
-{
-	if (!plugin_config.supports_targets) {
-		return plugin_config.binary;
-	}
-
-	String plugin_binary_dir = plugin_config.binary.get_base_dir();
-	String plugin_name_prefix = plugin_config.binary.get_basename().get_file();
-	String plugin_extension = plugin_config.binary.get_extension();
-	String plugin_file =
-		plugin_name_prefix + "." + (p_debug ? "debug" : "release") + "." + plugin_extension;
-
-	return plugin_binary_dir.path_join(plugin_file);
-}
-
-uint64_t PluginConfigAppleEmbedded::get_plugin_modification_time(
-	const PluginConfigAppleEmbedded& plugin_config, const String& config_path)
-{
-	uint64_t last_updated = FileAccess::get_modified_time(config_path);
-
-	if (!plugin_config.supports_targets) {
-		last_updated = MAX(last_updated, FileAccess::get_modified_time(plugin_config.binary));
-	}
-	else {
-		String file_path = plugin_config.binary.get_base_dir();
-		String file_name = plugin_config.binary.get_basename().get_file();
-		String plugin_extension = plugin_config.binary.get_extension();
-		String release_file_name = file_path.path_join(file_name + ".release." + plugin_extension);
-		String debug_file_name = file_path.path_join(file_name + ".debug." + plugin_extension);
-
-		last_updated = MAX(last_updated, FileAccess::get_modified_time(release_file_name));
-		last_updated = MAX(last_updated, FileAccess::get_modified_time(debug_file_name));
-	}
-
-	return last_updated;
-}
-
-#ifdef CLEANUP
-#undef CLEANUP
-#endif
-#ifdef _R
-#undef _R
-#endif
-
-// ============================================================================
-// Merged from editor/export/editor_export_platform_apple_embedded.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
-
-#ifdef MACOS_ENABLED
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-#endif
-
-Vector<EditorExportPlatformAppleEmbedded::ExportArchitecture>
-EditorExportPlatformAppleEmbedded::_get_supported_architectures() const
-{
-	Vector<ExportArchitecture> archs;
-	archs.push_back(ExportArchitecture("arm64", true));
-	return archs;
-}
-
-struct APIAccessInfo
-{
-	String prop_name;
-	String type_name;
-	Vector<String> prop_flag_value;
-	Vector<String> prop_flag_name;
-	int default_value;
-};
-
-static const APIAccessInfo api_info[] = {
-	{"file_timestamp", "NSPrivacyAccessedAPICategoryFileTimestamp", {"DDA9.1", "C617.1", "3B52.1"},
-		{"Display to user on-device:", "Inside app or group container",
-			"Files provided to app by user"},
-		3},
-	{"system_boot_time", "NSPrivacyAccessedAPICategorySystemBootTime",
-		{"35F9.1", "8FFB.1", "3D61.1"},
-		{"Measure time on-device", "Calculate absolute event timestamps",
-			"User-initiated bug report"},
-		1},
-	{"disk_space", "NSPrivacyAccessedAPICategoryDiskSpace",
-		{"E174.1", "85F4.1", "7D9E.1", "B728.1"},
-		{"Write or delete file on-device", "Display to user on-device", "User-initiated bug report",
-			"Health research app"},
-		3},
-	{"active_keyboard", "NSPrivacyAccessedAPICategoryActiveKeyboards", {"3EC4.1", "54BD.1"},
-		{"Custom keyboard app on-device", "Customize UI on-device:2"}, 0},
-	{"user_defaults", "NSPrivacyAccessedAPICategoryUserDefaults", {"1C8F.1", "AC6B.1", "CA92.1"},
-		{"Access info from same App Group", "Access managed app configuration",
-			"Access info from same app"},
-		0},
-};
-
-struct DataCollectionInfo
-{
-	String prop_name;
-	String type_name;
-};
-
-static const DataCollectionInfo data_collect_type_info[] = {
-	{"name", "NSPrivacyCollectedDataTypeName"},
-	{"email_address", "NSPrivacyCollectedDataTypeEmailAddress"},
-	{"phone_number", "NSPrivacyCollectedDataTypePhoneNumber"},
-	{"physical_address", "NSPrivacyCollectedDataTypePhysicalAddress"},
-	{"other_contact_info", "NSPrivacyCollectedDataTypeOtherUserContactInfo"},
-	{"health", "NSPrivacyCollectedDataTypeHealth"},
-	{"fitness", "NSPrivacyCollectedDataTypeFitness"},
-	{"payment_info", "NSPrivacyCollectedDataTypePaymentInfo"},
-	{"credit_info", "NSPrivacyCollectedDataTypeCreditInfo"},
-	{"other_financial_info", "NSPrivacyCollectedDataTypeOtherFinancialInfo"},
-	{"precise_location", "NSPrivacyCollectedDataTypePreciseLocation"},
-	{"coarse_location", "NSPrivacyCollectedDataTypeCoarseLocation"},
-	{"sensitive_info", "NSPrivacyCollectedDataTypeSensitiveInfo"},
-	{"contacts", "NSPrivacyCollectedDataTypeContacts"},
-	{"emails_or_text_messages", "NSPrivacyCollectedDataTypeEmailsOrTextMessages"},
-	{"photos_or_videos", "NSPrivacyCollectedDataTypePhotosorVideos"},
-	{"audio_data", "NSPrivacyCollectedDataTypeAudioData"},
-	{"gameplay_content", "NSPrivacyCollectedDataTypeGameplayContent"},
-	{"customer_support", "NSPrivacyCollectedDataTypeCustomerSupport"},
-	{"other_user_content", "NSPrivacyCollectedDataTypeOtherUserContent"},
-	{"browsing_history", "NSPrivacyCollectedDataTypeBrowsingHistory"},
-	{"search_history", "NSPrivacyCollectedDataTypeSearchHistory"},
-	{"user_id", "NSPrivacyCollectedDataTypeUserID"},
-	{"device_id", "NSPrivacyCollectedDataTypeDeviceID"},
-	{"purchase_history", "NSPrivacyCollectedDataTypePurchaseHistory"},
-	{"product_interaction", "NSPrivacyCollectedDataTypeProductInteraction"},
-	{"advertising_data", "NSPrivacyCollectedDataTypeAdvertisingData"},
-	{"other_usage_data", "NSPrivacyCollectedDataTypeOtherUsageData"},
-	{"crash_data", "NSPrivacyCollectedDataTypeCrashData"},
-	{"performance_data", "NSPrivacyCollectedDataTypePerformanceData"},
-	{"other_diagnostic_data", "NSPrivacyCollectedDataTypeOtherDiagnosticData"},
-	{"environment_scanning", "NSPrivacyCollectedDataTypeEnvironmentScanning"},
-	{"hands", "NSPrivacyCollectedDataTypeHands"},
-	{"head", "NSPrivacyCollectedDataTypeHead"},
-	{"other_data_types", "NSPrivacyCollectedDataTypeOtherDataTypes"},
-};
-
-static const DataCollectionInfo data_collect_purpose_info[] = {
-	{"Analytics", "NSPrivacyCollectedDataTypePurposeAnalytics"},
-	{"App Functionality", "NSPrivacyCollectedDataTypePurposeAppFunctionality"},
-	{"Developer Advertising", "NSPrivacyCollectedDataTypePurposeDeveloperAdvertising"},
-	{"Third-party Advertising", "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"},
-	{"Product Personalization", "NSPrivacyCollectedDataTypePurposeProductPersonalization"},
-	{"Other", "NSPrivacyCollectedDataTypePurposeOther"},
-};
-
-static const String export_method_string[] = {
-	"app-store",
-	"development",
-	"ad-hoc",
-	"enterprise",
-};
-
-void EditorExportPlatformAppleEmbedded::_notification(int p_what)
-{
-}
-
-String EditorExportPlatformAppleEmbedded::_get_additional_plist_content()
-{
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	String result;
-	for (int i = 0; i < export_plugins.size(); ++i) {
-		result += export_plugins[i]->get_apple_embedded_platform_plist_content();
-	}
-	return result;
-}
-
-String EditorExportPlatformAppleEmbedded::_get_linker_flags()
-{
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	String result;
-	for (int i = 0; i < export_plugins.size(); ++i) {
-		String flags = export_plugins[i]->get_apple_embedded_platform_linker_flags();
-		if (flags.length() == 0) {
-			continue;
-		}
-		if (result.length() > 0) {
-			result += ' ';
-		}
-		result += flags;
-	}
-	// the flags will be enclosed in quotes, so need to escape them
-	return result.replace("\"", "\\\"");
-}
-
-String EditorExportPlatformAppleEmbedded::_get_cpp_code()
-{
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	String result;
-	for (int i = 0; i < export_plugins.size(); ++i) {
-		result += export_plugins[i]->get_apple_embedded_platform_cpp_code();
-	}
-	return result;
-}
-
-void EditorExportPlatformAppleEmbedded::_blend_and_rotate(
-	Ref<Image>& p_dst, Ref<Image>& p_src, bool p_rot)
-{
-	ERR_FAIL_COND(p_dst.is_null());
-	ERR_FAIL_COND(p_src.is_null());
-
-	int sw = p_rot ? p_src->get_height() : p_src->get_width();
-	int sh = p_rot ? p_src->get_width() : p_src->get_height();
-
-	int x_pos = (p_dst->get_width() - sw) / 2;
-	int y_pos = (p_dst->get_height() - sh) / 2;
-
-	int xs = (x_pos >= 0) ? 0 : -x_pos;
-	int ys = (y_pos >= 0) ? 0 : -y_pos;
-
-	if (sw + x_pos > p_dst->get_width()) {
-		sw = p_dst->get_width() - x_pos;
-	}
-	if (sh + y_pos > p_dst->get_height()) {
-		sh = p_dst->get_height() - y_pos;
-	}
-
-	for (int y = ys; y < sh; y++) {
-		for (int x = xs; x < sw; x++) {
-			Color sc =
-				p_rot ? p_src->get_pixel(p_src->get_width() - y - 1, x) : p_src->get_pixel(x, y);
-			Color dc = p_dst->get_pixel(x_pos + x, y_pos + y);
-			dc.r = (double)(sc.a * sc.r + dc.a * (1.0 - sc.a) * dc.r);
-			dc.g = (double)(sc.a * sc.g + dc.a * (1.0 - sc.a) * dc.g);
-			dc.b = (double)(sc.a * sc.b + dc.a * (1.0 - sc.a) * dc.b);
-			dc.a = (double)(sc.a + dc.a * (1.0 - sc.a));
-			p_dst->set_pixel(x_pos + x, y_pos + y, dc);
-		}
-	}
-}
-
-Error EditorExportPlatformAppleEmbedded::_walk_dir_recursive(
-	Ref<DirAccess>& p_da, FileHandler p_handler, void* p_userdata)
-{
-	Vector<String> dirs;
-	String current_dir = p_da->get_current_dir();
-	p_da->list_dir_begin();
-	String path = p_da->get_next();
-	while (!path.is_empty()) {
-		if (p_da->current_is_dir()) {
-			if (path != "." && path != "..") {
-				dirs.push_back(path);
-			}
-		}
-		else {
-			Error err = p_handler(current_dir.path_join(path), p_userdata);
-			if (err) {
-				p_da->list_dir_end();
-				return err;
-			}
-		}
-		path = p_da->get_next();
-	}
-	p_da->list_dir_end();
-
-	for (int i = 0; i < dirs.size(); ++i) {
-		p_da->change_dir(dirs[i]);
-		Error err = _walk_dir_recursive(p_da, p_handler, p_userdata);
-		p_da->change_dir("..");
-		if (err) {
-			return err;
-		}
-	}
-
-	return OK;
-}
-
-struct CodesignData
-{
-	const Ref<EditorExportPreset>& preset;
-	bool debug = false;
-
-	CodesignData(const Ref<EditorExportPreset>& p_preset, bool p_debug)
-		: preset(p_preset), debug(p_debug)
-	{
-	}
-};
-
-struct PbxId
-{
-private:
-	static char _hex_char(uint8_t p_four_bits)
-	{
-		if (p_four_bits < 10) {
-			return ('0' + p_four_bits);
-		}
-		return 'A' + (p_four_bits - 10);
-	}
-
-	static String _hex_pad(uint32_t p_num)
-	{
-		Vector<char> ret;
-		ret.resize(sizeof(p_num) * 2);
-		for (uint64_t i = 0; i < sizeof(p_num) * 2; ++i) {
-			uint8_t four_bits = (p_num >> (sizeof(p_num) * 8 - (i + 1) * 4)) & 0xF;
-			ret.write[i] = _hex_char(four_bits);
-		}
-		return String::utf8(ret.ptr(), ret.size());
-	}
-
-public:
-	uint32_t high_bits;
-	uint32_t mid_bits;
-	uint32_t low_bits;
-
-	String str() const { return _hex_pad(high_bits) + _hex_pad(mid_bits) + _hex_pad(low_bits); }
-
-	PbxId& operator++()
-	{
-		low_bits++;
-		if (!low_bits) {
-			mid_bits++;
-			if (!mid_bits) {
-				high_bits++;
-			}
-		}
-
-		return *this;
-	}
-};
-
-struct ExportLibsData
-{
-	Vector<String> lib_paths;
-	String dest_dir;
-};
-
-Error EditorExportPlatformAppleEmbedded::_export_additional_assets(
-	const Ref<EditorExportPreset>& p_preset, const String& p_out_dir,
-	const Vector<String>& p_assets, bool p_is_framework, bool p_should_embed,
-	Vector<AppleEmbeddedExportAsset>& r_exported_assets)
-{
-	for (int f_idx = 0; f_idx < p_assets.size(); ++f_idx) {
-		const String& asset = p_assets[f_idx];
-		if (asset.begins_with("res://")) {
-			Error err = _copy_asset(p_preset, p_out_dir, asset, nullptr, p_is_framework,
-				p_should_embed, r_exported_assets);
-			ERR_FAIL_COND_V(err != OK, err);
-		}
-		else if (asset.is_absolute_path() &&
-				   ProjectSettings::localize_path(asset).begins_with("res://")) {
-			Error err = _copy_asset(p_preset, p_out_dir,
-				ProjectSettings::localize_path(asset), nullptr, p_is_framework,
-				p_should_embed, r_exported_assets);
-			ERR_FAIL_COND_V(err != OK, err);
-		}
-		else {
-			// either SDK-builtin or already a part of the export template
-			AppleEmbeddedExportAsset exported_asset = {asset, p_is_framework, p_should_embed};
-			r_exported_assets.push_back(exported_asset);
-		}
-	}
-
-	return OK;
-}
-
-Error EditorExportPlatformAppleEmbedded::_export_additional_assets(
-	const Ref<EditorExportPreset>& p_preset, const String& p_out_dir,
-	const Vector<SharedObject>& p_libraries, Vector<AppleEmbeddedExportAsset>& r_exported_assets)
-{
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	for (int i = 0; i < export_plugins.size(); i++) {
-		Vector<String> linked_frameworks =
-			export_plugins[i]->get_apple_embedded_platform_frameworks();
-		Error err = _export_additional_assets(
-			p_preset, p_out_dir, linked_frameworks, true, false, r_exported_assets);
-		ERR_FAIL_COND_V(err, err);
-
-		Vector<String> embedded_frameworks =
-			export_plugins[i]->get_apple_embedded_platform_embedded_frameworks();
-		err = _export_additional_assets(
-			p_preset, p_out_dir, embedded_frameworks, true, true, r_exported_assets);
-		ERR_FAIL_COND_V(err, err);
-
-		Vector<String> project_static_libs =
-			export_plugins[i]->get_apple_embedded_platform_project_static_libs();
-		for (int j = 0; j < project_static_libs.size(); j++) {
-			project_static_libs.write[j] =
-				project_static_libs[j]
-					.get_file(); // Only the file name as it's copied to the project
-		}
-		err = _export_additional_assets(
-			p_preset, p_out_dir, project_static_libs, true, false, r_exported_assets);
-		ERR_FAIL_COND_V(err, err);
-
-		Vector<String> apple_embedded_platform_bundle_files =
-			export_plugins[i]->get_apple_embedded_platform_bundle_files();
-		err = _export_additional_assets(p_preset, p_out_dir, apple_embedded_platform_bundle_files,
-			false, false, r_exported_assets);
-		ERR_FAIL_COND_V(err, err);
-	}
-
-	Vector<String> library_paths;
-	for (int i = 0; i < p_libraries.size(); ++i) {
-		library_paths.push_back(p_libraries[i].path);
-	}
-	Error err = _export_additional_assets(
-		p_preset, p_out_dir, library_paths, true, true, r_exported_assets);
-	ERR_FAIL_COND_V(err, err);
-
-	return OK;
-}
-
-Error EditorExportPlatformAppleEmbedded::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, uint32_t p_flags, bool p_notify)
-{
-	return _export_project_helper(p_preset, p_debug, p_path, p_flags, p_notify, false);
-}
-
-int EditorExportPlatformAppleEmbedded::get_options_count() const
-{
-	MutexLock lock(device_lock);
-	return devices.size();
-}
-
-String EditorExportPlatformAppleEmbedded::get_options_tooltip() const
-{
-	return TTR("Select device from the list");
-}
-
-String EditorExportPlatformAppleEmbedded::get_option_label(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, devices.size(), "");
-	MutexLock lock(device_lock);
-	return devices[p_index].name;
-}
-
-String EditorExportPlatformAppleEmbedded::get_option_tooltip(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, devices.size(), "");
-	MutexLock lock(device_lock);
-	return "UUID: " + devices[p_index].id;
-}
-
-bool EditorExportPlatformAppleEmbedded::is_package_name_valid(
-	const String& p_package, String* r_error) const
-{
-	String pname = p_package;
-
-	if (pname.length() == 0) {
-		if (r_error) {
-			*r_error = TTR("Identifier is missing.");
-		}
-		return false;
-	}
-
-	for (int i = 0; i < pname.length(); i++) {
-		char32_t c = pname[i];
-		if (!(is_ascii_alphanumeric_char(c) || c == '-' || c == '.')) {
-			if (r_error) {
-				*r_error = vformat(
-					TTR("The character '%s' is not allowed in Identifier."), String::chr(c));
-			}
-			return false;
-		}
-	}
-
-	return true;
-}
-
-#ifdef MACOS_ENABLED
-bool EditorExportPlatformAppleEmbedded::_check_xcode_install()
-{
-	static bool xcode_found = false;
-	if (!xcode_found) {
-		Vector<String> mdfind_paths;
-		List<String> mdfind_args;
-		mdfind_args.push_back("kMDItemCFBundleIdentifier=com.apple.dt.Xcode");
-
-		String output;
-		Error err = OS::execute("mdfind", mdfind_args, &output);
-		if (err == OK) {
-			mdfind_paths = output.split("\n");
-		}
-		for (const String& found_path : mdfind_paths) {
-			xcode_found =
-				!found_path.is_empty() && DirAccess::dir_exists_absolute(found_path.strip_edges());
-			if (xcode_found) {
-				break;
-			}
-		}
-	}
-	return xcode_found;
-}
-
-void EditorExportPlatformAppleEmbedded::_check_for_changes_poll_thread(void* ud)
-{
-	EditorExportPlatformAppleEmbedded* ea = static_cast<EditorExportPlatformAppleEmbedded*>(ud);
-
-	String device_types;
-	bool first = true;
-	for (const String& d : ea->get_device_types()) {
-		if (first) {
-			first = false;
-		}
-		else {
-			device_types += "|";
-		}
-		device_types += d;
-	}
-
-	while (!ea->quit_request.is_set()) {
-		// Nothing to do if we already know the plugins have changed.
-		if (!ea->plugins_changed.is_set()) {
-			MutexLock lock(ea->plugins_lock);
-
-			Vector<PluginConfigAppleEmbedded> loaded_plugins = get_plugins(ea->get_platform_name());
-
-			if (ea->plugins.size() != loaded_plugins.size()) {
-				ea->plugins_changed.set();
-			}
-			else {
-				for (int i = 0; i < ea->plugins.size(); i++) {
-					if (ea->plugins[i].name != loaded_plugins[i].name ||
-						ea->plugins[i].last_updated != loaded_plugins[i].last_updated) {
-						ea->plugins_changed.set();
-						break;
-					}
-				}
-			}
-		}
-
-		// Check for devices updates.
-		Vector<Device> ldevices;
-
-		// Enum real devices (via ios_deploy, pre Xcode 15).
-		String ios_deploy_setting = "export/" + ea->get_platform_name() + "/ios_deploy";
-		if (EditorSettings::is_initialized() &&
-			EditorSettings::has_setting(ios_deploy_setting)) {
-			String idepl = EDITOR_GET(ios_deploy_setting);
-			if (ea->has_runnable_preset.is_set() && !idepl.is_empty()) {
-				String devices_json;
-				List<String> args;
-				args.push_back("-c");
-				args.push_back("-timeout");
-				args.push_back("1");
-				args.push_back("-j");
-				args.push_back("-u");
-				args.push_back("-I");
-
-				int ec = 0;
-				Error err = OS::execute(idepl, args, &devices_json, &ec, true);
-				if (err == OK && ec == 0) {
-					Ref<JSON> json;
-					json.instantiate();
-					devices_json = "{ \"devices\":[" + devices_json.replace("}{", "},{") + "]}";
-					err = json->parse(devices_json);
-					if (err == OK) {
-						Dictionary data = json->get_data();
-						Array devices = data["devices"];
-						for (int i = 0; i < devices.size(); i++) {
-							Dictionary device_event = devices[i];
-							if (device_event["Event"] == "DeviceDetected") {
-								Dictionary device_info = device_event["Device"];
-								Device nd;
-								nd.id = device_info["DeviceIdentifier"];
-								nd.name =
-									device_info["DeviceName"].operator String() + " (ios_deploy, " +
-									((device_event["Interface"] == "WIFI") ? "network" : "wired") +
-									")";
-								nd.wifi = device_event["Interface"] == "WIFI";
-								nd.use_ios_deploy = true;
-								ldevices.push_back(nd);
-							}
-						}
-					}
-				}
-			}
-		}
-		// Enum devices (via Xcode).
-		if (ea->has_runnable_preset.is_set() && _check_xcode_install() &&
-			(FileAccess::exists("/usr/bin/xcrun") || FileAccess::exists("/bin/xcrun"))) {
-			String devices_json;
-			List<String> args;
-			args.push_back("devicectl");
-			args.push_back("list");
-			args.push_back("devices");
-			args.push_back("-j");
-			args.push_back("-");
-			args.push_back("-q");
-			// Add a timeout, so the process doesn't hang indefinitely, which can prevent Godot
-			// shutting down.
-			args.push_back("--timeout");
-			args.push_back("5");
-			args.push_back("--filter");
-			args.push_back(vformat("hardwareProperties.deviceType MATCHES '%s'", device_types));
-
-			int ec = 0;
-			Error err = OS::execute("xcrun", args, &devices_json, &ec, false);
-			if (err == OK && ec == 0) {
-				Ref<JSON> json;
-				json.instantiate();
-				err = json->parse(devices_json);
-				if (err == OK) {
-					const Dictionary& data = json->get_data();
-					const Dictionary& result = data["result"];
-					const Array& devices = result["devices"];
-					for (int i = 0; i < devices.size(); i++) {
-						const Dictionary& device_info = devices[i];
-						const Dictionary& conn_props = device_info["connectionProperties"];
-						const Dictionary& dev_props = device_info["deviceProperties"];
-						if (dev_props.has("developerModeStatus") &&
-							conn_props.has("pairingState") && conn_props.has("transportType") &&
-							conn_props["pairingState"] == "paired" &&
-							dev_props["developerModeStatus"] == "enabled") {
-							Device nd;
-							nd.id = device_info["identifier"];
-							nd.name = dev_props["name"].operator String() + " (devicectl, " +
-									  ((conn_props["transportType"] == "localNetwork") ? "network"
-																					   : "wired") +
-									  ")";
-							nd.wifi = conn_props["transportType"] == "localNetwork";
-							ldevices.push_back(nd);
-						}
-					}
-				}
-			}
-		}
-
-		// Update device list.
-		{
-			MutexLock lock(ea->device_lock);
-
-			bool different = false;
-
-			if (ea->devices.size() != ldevices.size()) {
-				different = true;
-			}
-			else {
-				for (int i = 0; i < ea->devices.size(); i++) {
-					if (ea->devices[i].id != ldevices[i].id) {
-						different = true;
-						break;
-					}
-				}
-			}
-
-			if (different) {
-				ea->devices = ldevices;
-				ea->devices_changed.set();
-			}
-		}
-
-		uint64_t sleep = 200;
-		uint64_t wait = 3000000;
-		uint64_t time = OS::get_ticks_usec();
-		while (OS::get_ticks_usec() - time < wait) {
-			OS::delay_usec(1000 * sleep);
-			if (ea->quit_request.is_set()) {
-				break;
-			}
-		}
-	}
-}
-
-void EditorExportPlatformAppleEmbedded::_update_preset_status()
-{
-	bool has_runnable =
-		EditorExport::get_runnable_preset_for_platform(this).is_valid();
-	if (has_runnable) {
-		has_runnable_preset.set();
-	}
-	else {
-		has_runnable_preset.clear();
-	}
-	devices_changed.set();
-}
-
-class FileReader
-{
-	Ref<FileAccess> f;
-	LocalVector<char> buf;
-
-	void append_span(Span<char> p_span, String& p_data)
-	{
-		uint32_t old_size = p_data.size();
-		if (p_data.append_utf8(p_span) != OK) {
-			p_data.resize_uninitialized(old_size); // Back up to original size.
-			if (old_size > 0) {
-				p_data[old_size - 1] = '\0';
-			}
-			p_data.append_latin1(p_span);
-		}
-	}
-
-public:
-	uint32_t get_lines(String& p_data)
-	{
-		uint64_t available = f->get_length() - f->get_position();
-		if (available == 0) {
-			return 0;
-		}
-
-		uint32_t start = buf.size();
-		buf.resize_uninitialized(buf.size() + available);
-		f->get_buffer((uint8_t*)buf.ptr() + start, available);
-		const char* end = &buf[buf.size() - 1];
-		const char* p = end;
-		uint32_t n = available;
-		bool found = false;
-		// Scan for a newline starting from the end of the appended bytes.
-		while (n--) {
-			if (*p == '\n') {
-				found = true;
-				break;
-			}
-			p--;
-		}
-		if (found) {
-			size_t len = static_cast<size_t>(p - buf.ptr()) + 1;
-			Span<char> new_data(buf.ptr(), len);
-			append_span(new_data, p_data);
-			size_t remain = static_cast<size_t>(end - p);
-			// If there is unprocessed data in the buffer, move it to the front.
-			if (remain > 0) {
-				// Move to next char after '\n'.
-				p++;
-				memmove(buf.ptr(), p, remain);
-			}
-			buf.resize_uninitialized(remain);
-		}
-		return available;
-	}
-
-	// Flush any remaining data.
-	uint32_t flush(String& p_data)
-	{
-		Span<char> new_data = buf.span();
-		if (new_data.size() > 0) {
-			append_span(new_data, p_data);
-		}
-		return new_data.size();
-	}
-
-	FileReader(Ref<FileAccess> p_f) : f(p_f) {}
-};
-
-int EditorExportPlatformAppleEmbedded::_execute(const String& p_path,
-	const List<String>& p_arguments, std::function<void(const String&)> p_on_data)
-{
-	Dictionary pipe_info = OS::execute_with_pipe(p_path, p_arguments, false);
-	ERR_FAIL_COND_V_MSG(pipe_info.is_empty(), 1, "execute_with_pipe failed");
-
-	Ref<FileAccess> fa_stdout = pipe_info["stdio"];
-	Ref<FileAccess> fa_stderr = pipe_info["stderr"];
-	ProcessID pid = pipe_info["pid"];
-
-	FileReader stdout_r(fa_stdout);
-	FileReader stderr_r(fa_stderr);
-
-	while (true) {
-		String output;
-		stdout_r.get_lines(output);
-		stderr_r.get_lines(output);
-		if (!output.is_empty()) {
-			p_on_data(output);
-		}
-
-		// If the process is no longer running and no new data arrived, we're done.
-		if (output.is_empty() && !OS::is_process_running(pid)) {
-			break;
-		}
-
-		OS::delay_usec(1000);
-	}
-
-	// Flush any remaining content
-	String output;
-	stdout_r.flush(output);
-	stderr_r.flush(output);
-	if (!output.is_empty()) {
-		p_on_data(output);
-	}
-
-	fa_stdout->close();
-	fa_stderr->close();
-
-	return OS::get_process_exit_code(pid);
-}
-
-#endif
-
-Error EditorExportPlatformAppleEmbedded::run(
-	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
-{
-#ifdef MACOS_ENABLED
-	ERR_FAIL_INDEX_V(p_device, devices.size(), ERR_INVALID_PARAMETER);
-
-	String can_export_error;
-	bool can_export_missing_templates;
-	if (!can_export(p_preset, can_export_error, can_export_missing_templates)) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Run"), can_export_error);
-		return ERR_UNCONFIGURED;
-	}
-
-	MutexLock lock(device_lock);
-
-	String id = "tmpexport." + uitos(OS::get_unix_time());
-
-	Ref<DirAccess> filesystem_da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	ERR_FAIL_COND_V_MSG(filesystem_da.is_null(), ERR_CANT_CREATE,
-		"Cannot create DirAccess for path '" + EditorPaths::get_temp_dir() + "'.");
-	filesystem_da->make_dir_recursive(EditorPaths::get_temp_dir().path_join(id));
-	String tmp_export_path =
-		EditorPaths::get_temp_dir().path_join(id).path_join("export.ipa");
-
-#define CLEANUP_AND_RETURN(m_err)                                                                  \
-	{                                                                                              \
-		if (filesystem_da->change_dir(                                                             \
-				EditorPaths::get_temp_dir().path_join(id)) == OK) {               \
-			filesystem_da->erase_contents_recursive();                                             \
-			filesystem_da->change_dir("..");                                                       \
-			filesystem_da->remove(id);                                                             \
-		}                                                                                          \
-		return m_err;                                                                              \
-	}                                                                                              \
-	((void)0)
-
-	Device dev = devices[p_device];
-
-	// Export before sending to device.
-	Error err = _export_project_helper(p_preset, true, tmp_export_path, p_debug_flags, true, true);
-
-	if (err != OK) {
-		CLEANUP_AND_RETURN(err);
-	}
-
-	Vector<String> cmd_args_list;
-	String host = EDITOR_GET("network/debug/remote_host");
-	int remote_port = (int)EDITOR_GET("network/debug/remote_port");
-
-	if (p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG_LOCALHOST)) {
-		host = "localhost";
-	}
-
-	if (p_debug_flags.has_flag(DEBUG_FLAG_DUMB_CLIENT)) {
-		int port = EDITOR_GET("filesystem/file_server/port");
-		String passwd = EDITOR_GET("filesystem/file_server/password");
-		cmd_args_list.push_back("--remote-fs");
-		cmd_args_list.push_back(host + ":" + itos(port));
-		if (!passwd.is_empty()) {
-			cmd_args_list.push_back("--remote-fs-password");
-			cmd_args_list.push_back(passwd);
-		}
-	}
-
-	if (p_debug_flags.has_flag(DEBUG_FLAG_REMOTE_DEBUG)) {
-		cmd_args_list.push_back("--remote-debug");
-		cmd_args_list.push_back(get_debug_protocol() + host + ":" + String::num_int64(remote_port));
-	}
-
-	if (p_debug_flags.has_flag(DEBUG_FLAG_VIEW_COLLISIONS)) {
-		cmd_args_list.push_back("--debug-collisions");
-	}
-
-	if (p_debug_flags.has_flag(DEBUG_FLAG_VIEW_NAVIGATION)) {
-		cmd_args_list.push_back("--debug-navigation");
-	}
-
-	if (dev.use_ios_deploy) {
-		// Deploy and run on real device (via ios-deploy).
-		{
-			List<String> args;
-			args.push_back("-u");
-			args.push_back("-I");
-			args.push_back("--id");
-			args.push_back(dev.id);
-			args.push_back("--justlaunch");
-			args.push_back("--bundle");
-			args.push_back(EditorPaths::get_temp_dir().path_join(id).path_join(
-				"export.xcarchive/Products/Applications/export.app"));
-			String app_args;
-			for (const String& E : cmd_args_list) {
-				app_args += E + " ";
-			}
-			if (!app_args.is_empty()) {
-				args.push_back("--args");
-				args.push_back(app_args);
-			}
-
-			String idepl = EDITOR_GET("export/" + get_platform_name() + "/ios_deploy");
-			if (idepl.is_empty()) {
-				idepl = "ios-deploy";
-			}
-			String log;
-			int ec;
-			err = OS::execute(idepl, args, &log, &ec, true);
-			if (err != OK) {
-				add_message(EXPORT_MESSAGE_WARNING, TTR("Run"),
-					TTR("Could not start ios-deploy executable."));
-				CLEANUP_AND_RETURN(err);
-			}
-			if (ec != 0) {
-				print_line("ios-deploy:\n" + log);
-				add_message(EXPORT_MESSAGE_ERROR, TTR("Run"),
-					TTR("Installation/running failed, see editor log for details."));
-				CLEANUP_AND_RETURN(ERR_UNCONFIGURED);
-			}
-		}
-	}
-	else {
-		// Deploy and run on real device (via Xcode).
-		{
-			List<String> args;
-			args.push_back("devicectl");
-			args.push_back("device");
-			args.push_back("install");
-			args.push_back("app");
-			args.push_back("-d");
-			args.push_back(dev.id);
-			args.push_back(EditorPaths::get_temp_dir().path_join(id).path_join(
-				"export.xcarchive/Products/Applications/export.app"));
-
-			String log;
-			int ec = _execute(
-				"xcrun", args, [&log](const String& p_data) { log.append_utf32(p_data.span()); });
-			if (ec != 0) {
-				print_line("device install:\n" + log);
-				add_message(EXPORT_MESSAGE_ERROR, TTR("Run"),
-					TTR("Installation failed, see editor log for details."));
-				CLEANUP_AND_RETURN(ERR_UNCONFIGURED);
-			}
-		}
-
-		{
-			List<String> args;
-			args.push_back("devicectl");
-			args.push_back("device");
-			args.push_back("process");
-			args.push_back("launch");
-			args.push_back("--terminate-existing");
-			args.push_back("-d");
-			args.push_back(dev.id);
-			args.push_back(p_preset->get("application/bundle_identifier"));
-			for (const String& E : cmd_args_list) {
-				args.push_back(E);
-			}
-
-			String log;
-			int ec = _execute(
-				"xcrun", args, [&log](const String& p_data) { log.append_utf32(p_data.span()); });
-			if (ec != 0) {
-				print_line("devicectl launch:\n" + log);
-				add_message(EXPORT_MESSAGE_ERR OR, TTR("Run"),
-					TTR("Running failed, see editor log for details."));
-			}
-		}
-	}
-
-	CLEANUP_AND_RETURN(OK);
-
-#undef CLEANUP_AND_RETURN
-#else
-	return ERR_UNCONFIGURED;
-#endif
-}
-
-void EditorExportPlatformAppleEmbedded::_initialize(
-	const char* p_platform_logo_svg, const char* p_run_icon_svg)
-{
-	Ref<Image> img = memnew(Image);
-	const bool upsample = !Math::is_equal_approx(Math::round(EDSCALE), EDSCALE);
-
-	ImageLoaderSVG::create_image_from_string(img, p_platform_logo_svg, EDSCALE, upsample, false);
-	logo = ImageTexture::create_from_image(img);
-
-	ImageLoaderSVG::create_image_from_string(img, p_run_icon_svg, EDSCALE, upsample, false);
-	run_icon = ImageTexture::create_from_image(img);
-
-	plugins_changed.set();
-
-
-	devices_changed.set();
-#ifdef MACOS_ENABLED
-	_update_preset_status();
-#endif
-}
-
-EditorExportPlatformAppleEmbedded::~EditorExportPlatformAppleEmbedded() {}
-
-Error EditorExportPlatformAppleEmbedded::_copy_asset(Ref<EditorExportPreset> const&, String const&,
-	String const&, String const*, bool, bool,
-	Vector<EditorExportPlatformAppleEmbedded::AppleEmbeddedExportAsset>&)
-{
-	return OK;
-}
-
-String EditorExportPlatformAppleEmbedded::_process_config_file_line(Ref<EditorExportPreset> const&,
-	String const&, EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData const&, bool,
-	EditorExportPlatformAppleEmbedded::CodeSigningDetails const&)
-{
-	return String();
-}
-
-Error EditorExportPlatformAppleEmbedded::_export_project_helper(
-	Ref<EditorExportPreset> const&, bool, String const&, unsigned int, bool, bool)
-{
-	return OK;
-}
-
-bool EditorExportPlatformAppleEmbedded::has_valid_project_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error) const
-{
-	return false;
-}
-
-void EditorExportPlatformAppleEmbedded::get_preset_features(
-	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
-{
-}
-
-String EditorExportPlatformAppleEmbedded::get_export_option_warning(
-	const EditorExportPreset* p_preset, const String& p_name) const
-{
-	return String();
-}
-
-bool EditorExportPlatformAppleEmbedded::get_export_option_visibility(
-	const EditorExportPreset* p_preset, const String& p_option) const
-{
-	return false;
-}
-
-bool EditorExportPlatformAppleEmbedded::has_valid_export_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
-	bool p_debug) const
-{
-	return false;
-}
-
-void EditorExportPlatformAppleEmbedded::get_export_options(
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-}
-
-#ifdef CLEANUP_AND_RETURN
-#undef CLEANUP_AND_RETURN
-#endif
-
-
-// --- Merged from editor/import/3d/resource_importer_scene.cpp ---
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -85436,10 +76935,6 @@ void EditorSceneFormatImporter::get_import_options(
 	current_option_list = r_options;
 	current_option_list = nullptr;
 }
-
-String EditorScenePostImport::get_source_file() const { return source_file; }
-
-void EditorScenePostImport::init(const String& p_source_file) { source_file = p_source_file; }
 
 void EditorScenePostImportPlugin::get_internal_import_options(
 	InternalImportCategory p_category, List<ResourceImporter::ImportOption>* r_options)
@@ -85698,13 +77193,6 @@ void ResourceImporterScene::get_scene_importer_extensions(List<String>* p_extens
 	}
 }
 
-void EditorSceneFormatImporterESCN::get_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("escn");
-}
-
-Node* EditorScenePostImport::post_import(Node* p_scene) { return p_scene; }
-
 void ResourceImporterScene::get_import_options(
 	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
 {
@@ -85712,4065 +77200,6 @@ void ResourceImporterScene::get_import_options(
 
 void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const {}
 
-
-
-// ============================================================================
-// Merged from editor/import/3d/collada.cpp
-// ============================================================================
-// --- Inlined from editor/import/3d/collada.h ---
-#include "core/io/net_socket.h"
-
-class Collada
-{
-public:
-	enum ImportFlags
-	{
-		IMPORT_FLAG_SCENE = 1,
-		IMPORT_FLAG_ANIMATION = 2
-	};
-
-	struct Image
-	{
-		String path;
-	};
-
-	struct Material
-	{
-		String name;
-		String instance_effect;
-	};
-
-	struct Effect
-	{
-		String name;
-
-		struct Channel
-		{
-			int uv_idx = 0;
-			String texture;
-			Color color;
-		};
-
-		Channel diffuse, specular, emission, bump;
-		float shininess = 40;
-		bool found_double_sided = false;
-		bool double_sided = true;
-		bool unshaded = false;
-
-		String get_texture_path(const String& p_source, Collada& p_state) const;
-
-		Effect() { diffuse.color = Color(1, 1, 1, 1); }
-	};
-
-	struct CameraData
-	{
-		enum Mode
-		{
-			MODE_PERSPECTIVE,
-			MODE_ORTHOGONAL
-		};
-
-		Mode mode = MODE_PERSPECTIVE;
-
-		union
-		{
-			struct
-			{
-				float x_fov = 0;
-				float y_fov = 0;
-			} perspective;
-
-			struct
-			{
-				float x_mag = 0;
-				float y_mag = 0;
-			} orthogonal;
-		};
-
-		float aspect = 1;
-		float z_near = 0.05;
-		float z_far = 4000;
-
-		CameraData() {}
-	};
-
-	struct LightData
-	{
-		enum Mode
-		{
-			MODE_AMBIENT,
-			MODE_DIRECTIONAL,
-			MODE_OMNI,
-			MODE_SPOT
-		};
-
-		Mode mode = MODE_AMBIENT;
-
-		Color color = Color(1, 1, 1, 1);
-
-		float constant_att = 0;
-		float linear_att = 0;
-		float quad_att = 0;
-
-		float spot_angle = 45;
-		float spot_exp = 1;
-	};
-
-	struct MeshData
-	{
-		String name;
-
-		struct Source
-		{
-			Vector<float> array;
-			int stride = 0;
-		};
-
-		HashMap<String, Source> sources;
-
-		struct Vertices
-		{
-			HashMap<String, String> sources;
-		};
-
-		HashMap<String, Vertices> vertices;
-
-		struct Primitives
-		{
-			struct SourceRef
-			{
-				String source;
-				int offset = 0;
-			};
-
-			String material;
-			HashMap<String, SourceRef> sources;
-			Vector<float> polygons;
-			Vector<float> indices;
-			int count = 0;
-			int vertex_size = 0;
-		};
-
-		Vector<Primitives> primitives;
-
-		bool found_double_sided = false;
-		bool double_sided = true;
-	};
-
-	struct CurveData
-	{
-		String name;
-		bool closed = false;
-
-		struct Source
-		{
-			Vector<String> sarray;
-			Vector<float> array;
-			int stride = 0;
-		};
-
-		HashMap<String, Source> sources;
-
-		HashMap<String, String> control_vertices;
-	};
-
-	struct SkinControllerData
-	{
-		String base;
-		bool use_idrefs = false;
-
-		Transform3D bind_shape;
-
-		struct Source
-		{
-			Vector<String> sarray; // maybe for names
-			Vector<float> array;
-			int stride = 1;
-		};
-
-		HashMap<String, Source> sources;
-
-		struct Joints
-		{
-			HashMap<String, String> sources;
-		} joints;
-
-		struct Weights
-		{
-			struct SourceRef
-			{
-				String source;
-				int offset = 0;
-			};
-
-			String material;
-			HashMap<String, SourceRef> sources;
-			Vector<float> sets;
-			Vector<float> indices;
-			int count = 0;
-		} weights;
-
-		HashMap<String, Transform3D> bone_rest_map;
-	};
-
-	struct MorphControllerData
-	{
-		String mesh;
-		String mode;
-
-		struct Source
-		{
-			int stride = 1;
-			Vector<String> sarray; // maybe for names
-			Vector<float> array;
-		};
-
-		HashMap<String, Source> sources;
-
-		HashMap<String, String> targets;
-	};
-
-	struct Vertex
-	{
-		int idx = 0;
-		Vector3 vertex;
-		Vector3 normal;
-		Vector3 uv;
-		Vector3 uv2;
-		Plane tangent;
-		Color color;
-		int uid = 0;
-
-		struct Weight
-		{
-			int bone_idx = 0;
-			float weight = 0;
-
-			bool operator<(const Weight w) const { return weight > w.weight; } // heaviest first
-		};
-
-		Vector<Weight> weights;
-
-		void fix_weights()
-		{
-			weights.sort();
-			if (weights.size() > 4) {
-				// cap to 4 and make weights add up 1
-				weights.resize(4);
-				float total = 0;
-				for (int i = 0; i < 4; i++) {
-					total += weights[i].weight;
-				}
-				if (total) {
-					for (int i = 0; i < 4; i++) {
-						weights.write[i].weight /= total;
-					}
-				}
-			}
-		}
-
-		void fix_unit_scale(const Collada& p_state);
-
-		bool operator<(const Vertex& p_vert) const
-		{
-			if (uid == p_vert.uid) {
-				if (vertex == p_vert.vertex) {
-					if (normal == p_vert.normal) {
-						if (uv == p_vert.uv) {
-							if (uv2 == p_vert.uv2) {
-								if (!weights.is_empty() || !p_vert.weights.is_empty()) {
-									if (weights.size() == p_vert.weights.size()) {
-										for (int i = 0; i < weights.size(); i++) {
-											if (weights[i].bone_idx != p_vert.weights[i].bone_idx) {
-												return weights[i].bone_idx <
-													   p_vert.weights[i].bone_idx;
-											}
-
-											if (weights[i].weight != p_vert.weights[i].weight) {
-												return weights[i].weight < p_vert.weights[i].weight;
-											}
-										}
-									}
-									else {
-										return weights.size() < p_vert.weights.size();
-									}
-								}
-
-								return (color < p_vert.color);
-							}
-							else {
-								return (uv2 < p_vert.uv2);
-							}
-						}
-						else {
-							return (uv < p_vert.uv);
-						}
-					}
-					else {
-						return (normal < p_vert.normal);
-					}
-				}
-				else {
-					return vertex < p_vert.vertex;
-				}
-			}
-			else {
-				return uid < p_vert.uid;
-			}
-		}
-	};
-
-	struct Node
-	{
-		enum Type
-		{
-			TYPE_NODE,
-			TYPE_JOINT,
-			TYPE_SKELETON, // this bone is not collada, it's added afterwards as optimization
-			TYPE_LIGHT,
-			TYPE_CAMERA,
-			TYPE_GEOMETRY
-		};
-
-		struct XForm
-		{
-			enum Op
-			{
-				OP_ROTATE,
-				OP_SCALE,
-				OP_TRANSLATE,
-				OP_MATRIX,
-				OP_VISIBILITY
-			};
-
-			String id;
-			Op op = OP_ROTATE;
-			Vector<float> data;
-		};
-
-		Type type = TYPE_NODE;
-
-		String name;
-		String id;
-		String empty_draw_type;
-		bool noname = false;
-		Vector<XForm> xform_list;
-		Transform3D default_transform;
-		Transform3D post_transform;
-		Vector<Node*> children;
-
-		Node* parent = nullptr;
-
-		Transform3D compute_transform(const Collada& p_state) const;
-		Transform3D get_global_transform() const;
-		Transform3D get_transform() const;
-
-		bool ignore_anim = false;
-
-		virtual ~Node()
-		{
-			for (int i = 0; i < children.size(); i++) {
-				memdelete(children[i]);
-			}
-		}
-	};
-
-	struct NodeSkeleton : public Node
-	{
-		NodeSkeleton() { type = TYPE_SKELETON; }
-	};
-
-	struct NodeJoint : public Node
-	{
-		NodeSkeleton* owner = nullptr;
-		String sid;
-
-		NodeJoint() { type = TYPE_JOINT; }
-	};
-
-	struct NodeGeometry : public Node
-	{
-		bool controller = false;
-		String source;
-
-		struct Material
-		{
-			String target;
-		};
-
-		HashMap<String, Material> material_map;
-		Vector<String> skeletons;
-
-		NodeGeometry() { type = TYPE_GEOMETRY; }
-	};
-
-	struct NodeCamera : public Node
-	{
-		String camera;
-
-		NodeCamera() { type = TYPE_CAMERA; }
-	};
-
-	struct NodeLight : public Node
-	{
-		String light;
-
-		NodeLight() { type = TYPE_LIGHT; }
-	};
-
-	struct VisualScene
-	{
-		String name;
-		Vector<Node*> root_nodes;
-
-		~VisualScene()
-		{
-			for (int i = 0; i < root_nodes.size(); i++) {
-				memdelete(root_nodes[i]);
-			}
-		}
-	};
-
-	struct AnimationClip
-	{
-		String name;
-		float begin = 0;
-		float end = 1;
-		Vector<String> tracks;
-	};
-
-	struct AnimationTrack
-	{
-		String id;
-		String target;
-		String param;
-		String component;
-		bool property = false;
-
-		enum InterpolationType
-		{
-			INTERP_LINEAR,
-			INTERP_BEZIER
-		};
-
-		struct Key
-		{
-			enum Type
-			{
-				TYPE_FLOAT,
-				TYPE_MATRIX
-			};
-
-			float time = 0;
-			Vector<float> data;
-			Point2 in_tangent;
-			Point2 out_tangent;
-			InterpolationType interp_type = INTERP_LINEAR;
-		};
-
-		Vector<float> get_value_at_time(float p_time) const;
-
-		Vector<Key> keys;
-	};
-
-	/****************/
-	/* IMPORT STATE */
-	/****************/
-
-	struct State
-	{
-		int import_flags = 0;
-
-		float unit_scale = 1.0;
-		Vector3::Axis up_axis = Vector3::AXIS_Y;
-		bool z_up = false;
-
-		struct Version
-		{
-			int major = 0, minor = 0, rev = 0;
-
-			bool operator<(const Version& p_ver) const
-			{
-				return (major == p_ver.major)
-						   ? ((minor == p_ver.minor) ? (rev < p_ver.rev) : minor < p_ver.minor)
-						   : major < p_ver.major;
-			}
-
-			Version(int p_major = 0, int p_minor = 0, int p_rev = 0)
-			{
-				major = p_major;
-				minor = p_minor;
-				rev = p_rev;
-			}
-		} version;
-
-		HashMap<String, CameraData> camera_data_map;
-		HashMap<String, MeshData> mesh_data_map;
-		HashMap<String, LightData> light_data_map;
-		HashMap<String, CurveData> curve_data_map;
-
-		HashMap<String, String> mesh_name_map;
-		HashMap<String, String> morph_name_map;
-		HashMap<String, String> morph_ownership_map;
-		HashMap<String, SkinControllerData> skin_controller_data_map;
-		HashMap<String, MorphControllerData> morph_controller_data_map;
-
-		HashMap<String, Image> image_map;
-		HashMap<String, Material> material_map;
-		HashMap<String, Effect> effect_map;
-
-		HashMap<String, VisualScene> visual_scene_map;
-		HashMap<String, Node*> scene_map;
-		HashSet<String> idref_joints;
-		HashMap<String, String> sid_to_node_map;
-		// RBMap<String,NodeJoint*> bone_map;
-
-		HashMap<String, Transform3D> bone_rest_map;
-
-		String local_path;
-		String root_visual_scene;
-		String root_physics_scene;
-
-		Vector<AnimationClip> animation_clips;
-		Vector<AnimationTrack> animation_tracks;
-		HashMap<String, Vector<int>> referenced_tracks;
-		HashMap<String, Vector<int>> by_id_tracks;
-
-		float animation_length = 0;
-	} state;
-
-	Error load(const String& p_path, int p_flags = 0);
-
-	Transform3D fix_transform(const Transform3D& p_transform);
-
-	Transform3D get_root_transform() const;
-
-	int get_uv_channel(const String& p_name);
-
-private: // private stuff
-	HashMap<String, int> channel_map;
-
-	void _parse_asset(XMLParser& p_parser);
-	void _parse_image(XMLParser& p_parser);
-	void _parse_material(XMLParser& p_parser);
-	void _parse_effect_material(XMLParser& p_parser, Effect& p_effect, String& p_id);
-	void _parse_effect(XMLParser& p_parser);
-	void _parse_camera(XMLParser& p_parser);
-	void _parse_light(XMLParser& p_parser);
-	void _parse_animation_clip(XMLParser& p_parser);
-
-	void _parse_mesh_geometry(XMLParser& p_parser, const String& p_id, const String& p_name);
-	void _parse_curve_geometry(XMLParser& p_parser, const String& p_id, const String& p_name);
-
-	void _parse_skin_controller(XMLParser& p_parser, const String& p_id);
-	void _parse_morph_controller(XMLParser& p_parser, const String& p_id);
-	void _parse_controller(XMLParser& p_parser);
-
-	Node* _parse_visual_instance_geometry(XMLParser& p_parser);
-	Node* _parse_visual_instance_camera(XMLParser& p_parser);
-	Node* _parse_visual_instance_light(XMLParser& p_parser);
-
-	Node* _parse_visual_node_instance_data(XMLParser& p_parser);
-	Node* _parse_visual_scene_node(XMLParser& p_parser);
-	void _parse_visual_scene(XMLParser& p_parser);
-
-	void _parse_animation(XMLParser& p_parser);
-	void _parse_scene(XMLParser& p_parser);
-	void _parse_library(XMLParser& p_parser);
-
-	Vector<float> _read_float_array(XMLParser& p_parser);
-	Vector<String> _read_string_array(XMLParser& p_parser);
-	Transform3D _read_transform(XMLParser& p_parser);
-	String _read_empty_draw_type(XMLParser& p_parser);
-
-	void _joint_set_owner(Collada::Node* p_node, NodeSkeleton* p_owner);
-	void _create_skeletons(Collada::Node** p_node, NodeSkeleton* p_skeleton = nullptr);
-	void _find_morph_nodes(VisualScene* p_vscene, Node* p_node);
-	bool _remove_node(Node* p_parent, Node* p_node);
-	void _remove_node(VisualScene* p_vscene, Node* p_node);
-	void _merge_skeletons2(VisualScene* p_vscene);
-	void _merge_skeletons(VisualScene* p_vscene, Node* p_node);
-	bool _optimize_skeletons(VisualScene* p_vscene, Node* p_node);
-
-	bool _move_geometry_to_skeletons(VisualScene* p_vscene, Node* p_node, List<Node*>* p_mgeom);
-
-	void _optimize();
-};
-
-
-
-// --- End editor/import/3d/collada.h ---
-#include "core/os/os.h"
-
-// #define DEBUG_DEFAULT_ANIMATION
-// #define DEBUG_COLLADA
-#ifdef DEBUG_COLLADA
-#define COLLADA_PRINT(m_what) print_line(m_what)
-#else
-#define COLLADA_PRINT(m_what)
-#endif
-
-#define COLLADA_IMPORT_SCALE_SCENE
-
-/* HELPERS */
-
-String Collada::Effect::get_texture_path(const String& p_source, Collada& p_state) const
-{
-	const String& image = p_source;
-	ERR_FAIL_COND_V(!p_state.state.image_map.has(image), "");
-	return p_state.state.image_map[image].path;
-}
-
-Transform3D Collada::get_root_transform() const
-{
-	Transform3D unit_scale_transform;
-#ifndef COLLADA_IMPORT_SCALE_SCENE
-	unit_scale_transform.scale(Vector3(state.unit_scale, state.unit_scale, state.unit_scale));
-#endif
-	return unit_scale_transform;
-}
-
-void Collada::Vertex::fix_unit_scale(const Collada& p_state)
-{
-#ifdef COLLADA_IMPORT_SCALE_SCENE
-	vertex *= p_state.state.unit_scale;
-#endif
-}
-
-static String _uri_to_id(const String& p_uri)
-{
-	if (p_uri.begins_with("#")) {
-		return p_uri.substr(1);
-	}
-	else {
-		return p_uri;
-	}
-}
-
-/** HELPER FUNCTIONS **/
-
-Transform3D Collada::fix_transform(const Transform3D& p_transform)
-{
-	Transform3D tr = p_transform;
-
-#ifndef NO_UP_AXIS_SWAP
-
-	if (state.up_axis != Vector3::AXIS_Y) {
-		for (int i = 0; i < 3; i++) {
-			SWAP(tr.basis[1][i], tr.basis[state.up_axis][i]);
-		}
-		for (int i = 0; i < 3; i++) {
-			SWAP(tr.basis[i][1], tr.basis[i][state.up_axis]);
-		}
-
-		SWAP(tr.origin[1], tr.origin[state.up_axis]);
-
-		tr.basis[state.up_axis][0] = -tr.basis[state.up_axis][0];
-		tr.basis[state.up_axis][1] = -tr.basis[state.up_axis][1];
-		tr.basis[0][state.up_axis] = -tr.basis[0][state.up_axis];
-		tr.basis[1][state.up_axis] = -tr.basis[1][state.up_axis];
-		tr.origin[state.up_axis] = -tr.origin[state.up_axis];
-	}
-#endif
-
-	// tr.scale(Vector3(state.unit_scale.unit_scale.unit_scale));
-	return tr;
-	// return state.matrix_fix * p_transform;
-}
-
-static Transform3D _read_transform_from_array(const Vector<float>& p_array, int p_ofs = 0)
-{
-	Transform3D tr;
-	// i wonder why collada matrices are transposed, given that's opposed to opengl..
-	tr.basis.rows[0][0] = p_array[0 + p_ofs];
-	tr.basis.rows[0][1] = p_array[1 + p_ofs];
-	tr.basis.rows[0][2] = p_array[2 + p_ofs];
-	tr.basis.rows[1][0] = p_array[4 + p_ofs];
-	tr.basis.rows[1][1] = p_array[5 + p_ofs];
-	tr.basis.rows[1][2] = p_array[6 + p_ofs];
-	tr.basis.rows[2][0] = p_array[8 + p_ofs];
-	tr.basis.rows[2][1] = p_array[9 + p_ofs];
-	tr.basis.rows[2][2] = p_array[10 + p_ofs];
-	tr.origin.x = p_array[3 + p_ofs];
-	tr.origin.y = p_array[7 + p_ofs];
-	tr.origin.z = p_array[11 + p_ofs];
-	return tr;
-}
-
-/* STRUCTURES */
-
-Transform3D Collada::Node::compute_transform(const Collada& p_state) const
-{
-	Transform3D xform;
-
-	for (int i = 0; i < xform_list.size(); i++) {
-		Transform3D xform_step;
-		const XForm& xf = xform_list[i];
-		switch (xf.op) {
-		case XForm::OP_ROTATE: {
-			if (xf.data.size() >= 4) {
-				xform_step.rotate(
-					Vector3(xf.data[0], xf.data[1], xf.data[2]), Math::deg_to_rad(xf.data[3]));
-			}
-		} break;
-		case XForm::OP_SCALE: {
-			if (xf.data.size() >= 3) {
-				xform_step.scale(Vector3(xf.data[0], xf.data[1], xf.data[2]));
-			}
-
-		} break;
-		case XForm::OP_TRANSLATE: {
-			if (xf.data.size() >= 3) {
-				xform_step.origin = Vector3(xf.data[0], xf.data[1], xf.data[2]);
-			}
-
-		} break;
-		case XForm::OP_MATRIX: {
-			if (xf.data.size() >= 16) {
-				xform_step = _read_transform_from_array(xf.data, 0);
-			}
-
-		} break;
-		default: {
-		}
-		}
-
-		xform = xform * xform_step;
-	}
-
-#ifdef COLLADA_IMPORT_SCALE_SCENE
-	xform.origin *= p_state.state.unit_scale;
-#endif
-	return xform;
-}
-
-Transform3D Collada::Node::get_transform() const { return default_transform; }
-
-Transform3D Collada::Node::get_global_transform() const
-{
-	if (parent) {
-		return parent->get_global_transform() * default_transform;
-	}
-	else {
-		return default_transform;
-	}
-}
-
-Vector<float> Collada::AnimationTrack::get_value_at_time(float p_time) const
-{
-	ERR_FAIL_COND_V(keys.is_empty(), Vector<float>());
-	int i = 0;
-
-	for (i = 0; i < keys.size(); i++) {
-		if (keys[i].time > p_time) {
-			break;
-		}
-	}
-
-	if (i == 0) {
-		return keys[0].data;
-	}
-	if (i == keys.size()) {
-		return keys[keys.size() - 1].data;
-	}
-
-	switch (keys[i].interp_type) {
-	case INTERP_BEZIER: // wait for bezier
-	case INTERP_LINEAR: {
-		float c = (p_time - keys[i - 1].time) / (keys[i].time - keys[i - 1].time);
-
-		if (keys[i].data.size() == 16) {
-			// interpolate a matrix
-			Transform3D src = _read_transform_from_array(keys[i - 1].data);
-			Transform3D dst = _read_transform_from_array(keys[i].data);
-
-			Transform3D interp = c < 0.001 ? src : src.interpolate_with(dst, c);
-
-			Vector<float> ret;
-			ret.resize(16);
-			// i wonder why collada matrices are transposed, given that's opposed to opengl..
-			ret.write[0] = interp.basis.rows[0][0];
-			ret.write[1] = interp.basis.rows[0][1];
-			ret.write[2] = interp.basis.rows[0][2];
-			ret.write[4] = interp.basis.rows[1][0];
-			ret.write[5] = interp.basis.rows[1][1];
-			ret.write[6] = interp.basis.rows[1][2];
-			ret.write[8] = interp.basis.rows[2][0];
-			ret.write[9] = interp.basis.rows[2][1];
-			ret.write[10] = interp.basis.rows[2][2];
-			ret.write[3] = interp.origin.x;
-			ret.write[7] = interp.origin.y;
-			ret.write[11] = interp.origin.z;
-			ret.write[12] = 0;
-			ret.write[13] = 0;
-			ret.write[14] = 0;
-			ret.write[15] = 1;
-
-			return ret;
-		}
-		else {
-			Vector<float> dest;
-			dest.resize(keys[i].data.size());
-			for (int j = 0; j < dest.size(); j++) {
-				dest.write[j] = keys[i].data[j] * c + keys[i - 1].data[j] * (1.0 - c);
-			}
-			return dest;
-			// interpolate one by one
-		}
-	} break;
-	}
-
-	ERR_FAIL_V(Vector<float>());
-}
-
-void Collada::_parse_asset(XMLParser& p_parser)
-{
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-
-			if (name == "up_axis") {
-				p_parser.read();
-				if (p_parser.get_node_data() == "X_UP") {
-					state.up_axis = Vector3::AXIS_X;
-				}
-				if (p_parser.get_node_data() == "Y_UP") {
-					state.up_axis = Vector3::AXIS_Y;
-				}
-				if (p_parser.get_node_data() == "Z_UP") {
-					state.up_axis = Vector3::AXIS_Z;
-				}
-
-				COLLADA_PRINT("up axis: " + p_parser.get_node_data());
-			}
-			else if (name == "unit") {
-				state.unit_scale = p_parser.get_named_attribute_value("meter").to_float();
-				COLLADA_PRINT("unit scale: " + rtos(state.unit_scale));
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "asset") {
-			break; // end of <asset>
-		}
-	}
-}
-
-void Collada::_parse_image(XMLParser& p_parser)
-{
-	String id = p_parser.get_named_attribute_value("id");
-
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	Image image;
-
-	if (state.version < State::Version(1, 4, 0)) {
-		/* <1.4 */
-		String path = p_parser.get_named_attribute_value("source").strip_edges();
-		if (!path.contains("://") && path.is_relative_path()) {
-			// path is relative to file being loaded, so convert to a resource path
-			image.path = ProjectSettings::localize_path(
-				state.local_path.get_base_dir().path_join(path.uri_file_decode()));
-		}
-	}
-	else {
-		while (p_parser.read() == OK) {
-			if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-				String name = p_parser.get_node_name();
-
-				if (name == "init_from") {
-					p_parser.read();
-					String path = p_parser.get_node_data().strip_edges().uri_file_decode();
-
-					if (!path.contains("://") && path.is_relative_path()) {
-						// path is relative to file being loaded, so convert to a resource path
-						path = ProjectSettings::localize_path(
-							state.local_path.get_base_dir().path_join(path));
-
-					}
-					else if (path.find("file:///") == 0) {
-						path = path.replace_first("file:///", "");
-						path = ProjectSettings::localize_path(path);
-					}
-
-					image.path = path;
-
-				}
-				else if (name == "data") {
-					ERR_PRINT("COLLADA Embedded image data not supported!");
-
-				}
-				else if (name == "extra" && !p_parser.is_empty()) {
-					p_parser.skip_section();
-				}
-
-			}
-			else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-					   p_parser.get_node_name() == "image") {
-				break; // end of <asset>
-			}
-		}
-	}
-
-	state.image_map[id] = image;
-}
-
-void Collada::_parse_material(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	Material material;
-
-	String id = p_parser.get_named_attribute_value("id");
-	if (p_parser.has_attribute("name")) {
-		material.name = p_parser.get_named_attribute_value("name");
-	}
-
-	if (state.version < State::Version(1, 4, 0)) {
-		/* <1.4 */
-		ERR_PRINT("Collada Materials < 1.4 are not supported (yet)");
-	}
-	else {
-		while (p_parser.read() == OK) {
-			if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT &&
-				p_parser.get_node_name() == "instance_effect") {
-				material.instance_effect = _uri_to_id(p_parser.get_named_attribute_value("url"));
-			}
-			else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-					   p_parser.get_node_name() == "material") {
-				break; // end of <asset>
-			}
-		}
-	}
-
-	state.material_map[id] = material;
-}
-
-//! reads floats from inside of xml element until end of xml element
-Vector<float> Collada::_read_float_array(XMLParser& p_parser)
-{
-	if (p_parser.is_empty()) {
-		return Vector<float>();
-	}
-
-	Vector<String> splitters;
-	splitters.push_back(" ");
-	splitters.push_back("\n");
-	splitters.push_back("\r");
-	splitters.push_back("\t");
-
-	Vector<float> array;
-	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
-
-		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
-			// parse float data
-			String str = p_parser.get_node_data();
-			array = str.split_floats_mk(splitters, false);
-			// array=str.split_floats(" ",false);
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END) {
-			break; // end parsing text
-		}
-	}
-
-	return array;
-}
-
-Vector<String> Collada::_read_string_array(XMLParser& p_parser)
-{
-	if (p_parser.is_empty()) {
-		return Vector<String>();
-	}
-
-	Vector<String> array;
-	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
-
-		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
-			// parse String data
-			String str = p_parser.get_node_data();
-			array = str.split_spaces();
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END) {
-			break; // end parsing text
-		}
-	}
-
-	return array;
-}
-
-Transform3D Collada::_read_transform(XMLParser& p_parser)
-{
-	if (p_parser.is_empty()) {
-		return Transform3D();
-	}
-
-	Vector<String> array;
-	while (p_parser.read() == OK) {
-		// TODO: check for comments inside the element
-		// and ignore them.
-
-		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
-			// parse float data
-			String str = p_parser.get_node_data();
-			array = str.split_spaces();
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END) {
-			break; // end parsing text
-		}
-	}
-
-	ERR_FAIL_COND_V(array.size() != 16, Transform3D());
-	Vector<float> farr;
-	farr.resize(16);
-	for (int i = 0; i < 16; i++) {
-		farr.write[i] = array[i].to_float();
-	}
-
-	return _read_transform_from_array(farr);
-}
-
-String Collada::_read_empty_draw_type(XMLParser& p_parser)
-{
-	String empty_draw_type = "";
-
-	if (p_parser.is_empty()) {
-		return empty_draw_type;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_TEXT) {
-			empty_draw_type = p_parser.get_node_data();
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END) {
-			break; // end parsing text
-		}
-	}
-	return empty_draw_type;
-}
-
-void Collada::_parse_effect(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	String id = p_parser.get_named_attribute_value("id");
-
-	Effect effect;
-	if (p_parser.has_attribute("name")) {
-		effect.name = p_parser.get_named_attribute_value("name");
-	}
-	_parse_effect_material(p_parser, effect, id);
-
-	state.effect_map[id] = effect;
-
-	COLLADA_PRINT("Effect ID:" + id);
-}
-
-void Collada::_parse_camera(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	String id = p_parser.get_named_attribute_value("id");
-
-	state.camera_data_map[id] = CameraData();
-	CameraData& camera = state.camera_data_map[id];
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-
-			if (name == "perspective") {
-				camera.mode = CameraData::MODE_PERSPECTIVE;
-			}
-			else if (name == "orthographic") {
-				camera.mode = CameraData::MODE_ORTHOGONAL;
-			}
-			else if (name == "xfov") {
-				p_parser.read();
-				camera.perspective.x_fov = p_parser.get_node_data().to_float();
-
-			}
-			else if (name == "yfov") {
-				p_parser.read();
-				camera.perspective.y_fov = p_parser.get_node_data().to_float();
-			}
-			else if (name == "xmag") {
-				p_parser.read();
-				camera.orthogonal.x_mag = p_parser.get_node_data().to_float();
-
-			}
-			else if (name == "ymag") {
-				p_parser.read();
-				camera.orthogonal.y_mag = p_parser.get_node_data().to_float();
-			}
-			else if (name == "aspect_ratio") {
-				p_parser.read();
-				camera.aspect = p_parser.get_node_data().to_float();
-
-			}
-			else if (name == "znear") {
-				p_parser.read();
-				camera.z_near = p_parser.get_node_data().to_float();
-
-			}
-			else if (name == "zfar") {
-				p_parser.read();
-				camera.z_far = p_parser.get_node_data().to_float();
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "camera") {
-			break; // end of <asset>
-		}
-	}
-
-	COLLADA_PRINT("Camera ID:" + id);
-}
-
-void Collada::_parse_light(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	String id = p_parser.get_named_attribute_value("id");
-
-	state.light_data_map[id] = LightData();
-	LightData& light = state.light_data_map[id];
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-
-			if (name == "ambient") {
-				light.mode = LightData::MODE_AMBIENT;
-			}
-			else if (name == "directional") {
-				light.mode = LightData::MODE_DIRECTIONAL;
-			}
-			else if (name == "point") {
-				light.mode = LightData::MODE_OMNI;
-			}
-			else if (name == "spot") {
-				light.mode = LightData::MODE_SPOT;
-			}
-			else if (name == "color") {
-				p_parser.read();
-				Vector<float> colorarr = _read_float_array(p_parser);
-				COLLADA_PRINT("colorarr size: " + rtos(colorarr.size()));
-
-				if (colorarr.size() >= 4) {
-					// alpha strangely not alright? maybe it needs to be multiplied by value as a
-					// channel intensity
-					Color color(colorarr[0], colorarr[1], colorarr[2], 1.0);
-					light.color = color;
-				}
-
-			}
-			else if (name == "constant_attenuation") {
-				p_parser.read();
-				light.constant_att = p_parser.get_node_data().to_float();
-			}
-			else if (name == "linear_attenuation") {
-				p_parser.read();
-				light.linear_att = p_parser.get_node_data().to_float();
-			}
-			else if (name == "quadratic_attenuation") {
-				p_parser.read();
-				light.quad_att = p_parser.get_node_data().to_float();
-			}
-			else if (name == "falloff_angle") {
-				p_parser.read();
-				light.spot_angle = p_parser.get_node_data().to_float();
-
-			}
-			else if (name == "falloff_exponent") {
-				p_parser.read();
-				light.spot_exp = p_parser.get_node_data().to_float();
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "light") {
-			break; // end of <asset>
-		}
-	}
-
-	COLLADA_PRINT("Light ID:" + id);
-}
-
-void Collada::_parse_curve_geometry(XMLParser& p_parser, const String& p_id, const String& p_name)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	// load everything into a pre dictionary
-
-	state.curve_data_map[p_id] = CurveData();
-
-	CurveData& curvedata = state.curve_data_map[p_id];
-	curvedata.name = p_name;
-	String closed = p_parser.get_named_attribute_value_safe("closed").to_lower();
-	curvedata.closed = closed == "true" || closed == "1";
-
-	COLLADA_PRINT("curve name: " + p_name);
-
-	String current_source;
-	// handles geometry node and the curve children in this loop
-	// read sources with arrays and accessor for each curve
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "source") {
-				String id = p_parser.get_named_attribute_value("id");
-				curvedata.sources[id] = CurveData::Source();
-				current_source = id;
-				COLLADA_PRINT("source data: " + id);
-
-			}
-			else if (section == "float_array" || section == "array") {
-				// create a new array and read it.
-				if (curvedata.sources.has(current_source)) {
-					curvedata.sources[current_source].array = _read_float_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(curvedata.sources[current_source].array.size()) +
-								  " values.");
-				}
-			}
-			else if (section == "Name_array") {
-				// create a new array and read it.
-				if (curvedata.sources.has(current_source)) {
-					curvedata.sources[current_source].sarray = _read_string_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(curvedata.sources[current_source].array.size()) +
-								  " values.");
-				}
-
-			}
-			else if (section == "technique_common") {
-				// skip it
-			}
-			else if (section == "accessor") { // child of source (below a technique tag)
-
-				if (curvedata.sources.has(current_source)) {
-					curvedata.sources[current_source].stride =
-						p_parser.get_named_attribute_value("stride").to_int();
-					COLLADA_PRINT("section: " + current_source + " stride " +
-								  itos(curvedata.sources[current_source].stride));
-				}
-			}
-			else if (section == "control_vertices") {
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							curvedata.control_vertices[semantic] = source;
-
-							COLLADA_PRINT(
-								section + " input semantic: " + semantic + " source: " + source);
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-
-			}
-			else if (!p_parser.is_empty()) {
-				p_parser.skip_section();
-			}
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "spline") {
-			break;
-		}
-	}
-}
-
-void Collada::_parse_mesh_geometry(XMLParser& p_parser, const String& p_id, const String& p_name)
-{
-	if (!(state.import_flags & IMPORT_FLAG_SCENE)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-		return;
-	}
-
-	// load everything into a pre dictionary
-
-	state.mesh_data_map[p_id] = MeshData();
-
-	MeshData& meshdata = state.mesh_data_map[p_id];
-	meshdata.name = p_name;
-
-	COLLADA_PRINT("mesh name: " + p_name);
-
-	String current_source;
-	// handles geometry node and the mesh children in this loop
-	// read sources with arrays and accessor for each mesh
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "source") {
-				String id = p_parser.get_named_attribute_value("id");
-				meshdata.sources[id] = MeshData::Source();
-				current_source = id;
-				COLLADA_PRINT("source data: " + id);
-
-			}
-			else if (section == "float_array" || section == "array") {
-				// create a new array and read it.
-				if (meshdata.sources.has(current_source)) {
-					meshdata.sources[current_source].array = _read_float_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(meshdata.sources[current_source].array.size()) + " values.");
-				}
-			}
-			else if (section == "technique_common") {
-				// skip it
-			}
-			else if (section == "accessor") { // child of source (below a technique tag)
-
-				if (meshdata.sources.has(current_source)) {
-					meshdata.sources[current_source].stride =
-						p_parser.get_named_attribute_value("stride").to_int();
-					COLLADA_PRINT("section: " + current_source + " stride " +
-								  itos(meshdata.sources[current_source].stride));
-				}
-			}
-			else if (section == "vertices") {
-				MeshData::Vertices vert;
-				String id = p_parser.get_named_attribute_value("id");
-				int last_ref = 0;
-
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							if (semantic == "TEXCOORD") {
-								semantic = "TEXCOORD" + itos(last_ref++);
-							}
-
-							vert.sources[semantic] = source;
-
-							COLLADA_PRINT(
-								section + " input semantic: " + semantic + " source: " + source);
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-
-				meshdata.vertices[id] = vert;
-
-			}
-			else if (section == "triangles" || section == "polylist" || section == "polygons") {
-				bool polygons = (section == "polygons");
-				if (polygons) {
-					WARN_PRINT("Primitive type \"polygons\" is not well supported (concave shapes "
-							   "may fail). To ensure that the geometry is properly imported, "
-							   "please re-export using \"triangles\" or \"polylist\".");
-				}
-				MeshData::Primitives prim;
-
-				if (p_parser.has_attribute("material")) {
-					prim.material = p_parser.get_named_attribute_value("material");
-				}
-				prim.count = p_parser.get_named_attribute_value("count").to_int();
-				prim.vertex_size = 0;
-				int last_ref = 0;
-
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							if (semantic == "TEXCOORD") {
-								semantic = "TEXCOORD" + itos(last_ref++);
-							}
-							int offset = p_parser.get_named_attribute_value("offset").to_int();
-
-							MeshData::Primitives::SourceRef sref;
-							sref.source = source;
-							sref.offset = offset;
-							prim.sources[semantic] = sref;
-							prim.vertex_size = MAX(prim.vertex_size, offset + 1);
-
-							COLLADA_PRINT(section + " input semantic: " + semantic +
-										  " source: " + source + " offset: " + itos(offset));
-
-						}
-						else if (p_parser.get_node_name() == "p") { // indices
-
-							Vector<float> values = _read_float_array(p_parser);
-							if (polygons) {
-								ERR_CONTINUE(prim.vertex_size == 0);
-								prim.polygons.push_back(values.size() / prim.vertex_size);
-								int from = prim.indices.size();
-								prim.indices.resize(from + values.size());
-								for (int i = 0; i < values.size(); i++) {
-									prim.indices.write[from + i] = values[i];
-								}
-
-							}
-							else if (prim.vertex_size > 0) {
-								prim.indices = values;
-							}
-
-							COLLADA_PRINT("read " + itos(values.size()) + " index values");
-
-						}
-						else if (p_parser.get_node_name() == "vcount") { // primitive
-
-							Vector<float> values = _read_float_array(p_parser);
-							prim.polygons = values;
-							COLLADA_PRINT("read " + itos(values.size()) + " polygon values");
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-
-				meshdata.primitives.push_back(prim);
-
-			}
-			else if (p_parser.get_node_name() == "double_sided") {
-				p_parser.read();
-				meshdata.found_double_sided = true;
-				meshdata.double_sided = p_parser.get_node_data().to_int();
-
-			}
-			else if (p_parser.get_node_name() == "polygons") {
-				ERR_PRINT("Primitive type \"polygons\" not supported, re-export using \"polylist\" "
-						  "or \"triangles\".");
-			}
-			else if (!p_parser.is_empty()) {
-				p_parser.skip_section();
-			}
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "mesh") {
-			break;
-		}
-	}
-}
-
-void Collada::_parse_skin_controller(XMLParser& p_parser, const String& p_id)
-{
-	state.skin_controller_data_map[p_id] = SkinControllerData();
-	SkinControllerData& skindata = state.skin_controller_data_map[p_id];
-
-	skindata.base = _uri_to_id(p_parser.get_named_attribute_value("source"));
-
-	String current_source;
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "bind_shape_matrix") {
-				skindata.bind_shape = _read_transform(p_parser);
-#ifdef COLLADA_IMPORT_SCALE_SCENE
-				skindata.bind_shape.origin *= state.unit_scale;
-
-#endif
-				COLLADA_PRINT("skeleton bind shape transform: " + skindata.bind_shape);
-
-			}
-			else if (section == "source") {
-				String id = p_parser.get_named_attribute_value("id");
-				skindata.sources[id] = SkinControllerData::Source();
-				current_source = id;
-				COLLADA_PRINT("source data: " + id);
-
-			}
-			else if (section == "float_array" || section == "array") {
-				// create a new array and read it.
-				if (skindata.sources.has(current_source)) {
-					skindata.sources[current_source].array = _read_float_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(skindata.sources[current_source].array.size()) + " values.");
-				}
-			}
-			else if (section == "Name_array" || section == "IDREF_array") {
-				// create a new array and read it.
-
-				if (section == "IDREF_array") {
-					skindata.use_idrefs = true;
-				}
-				if (skindata.sources.has(current_source)) {
-					skindata.sources[current_source].sarray = _read_string_array(p_parser);
-					if (section == "IDREF_array") {
-						Vector<String> sa = skindata.sources[current_source].sarray;
-						for (int i = 0; i < sa.size(); i++) {
-							state.idref_joints.insert(sa[i]);
-						}
-					}
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(skindata.sources[current_source].array.size()) + " values.");
-				}
-			}
-			else if (section == "technique_common") {
-				// skip it
-			}
-			else if (section == "accessor") { // child of source (below a technique tag)
-
-				if (skindata.sources.has(current_source)) {
-					int stride = 1;
-					if (p_parser.has_attribute("stride")) {
-						stride = p_parser.get_named_attribute_value("stride").to_int();
-					}
-
-					skindata.sources[current_source].stride = stride;
-					COLLADA_PRINT("section: " + current_source + " stride " +
-								  itos(skindata.sources[current_source].stride));
-				}
-
-			}
-			else if (section == "joints") {
-				SkinControllerData::Joints joint;
-
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							joint.sources[semantic] = source;
-
-							COLLADA_PRINT(
-								section + " input semantic: " + semantic + " source: " + source);
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-
-				skindata.joints = joint;
-
-			}
-			else if (section == "vertex_weights") {
-				SkinControllerData::Weights weights;
-
-				weights.count = p_parser.get_named_attribute_value("count").to_int();
-
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							int offset = p_parser.get_named_attribute_value("offset").to_int();
-
-							SkinControllerData::Weights::SourceRef sref;
-							sref.source = source;
-							sref.offset = offset;
-							weights.sources[semantic] = sref;
-
-							COLLADA_PRINT(section + " input semantic: " + semantic +
-										  " source: " + source + " offset: " + itos(offset));
-
-						}
-						else if (p_parser.get_node_name() == "v") { // indices
-
-							Vector<float> values = _read_float_array(p_parser);
-							weights.indices = values;
-							COLLADA_PRINT("read " + itos(values.size()) + " index values");
-
-						}
-						else if (p_parser.get_node_name() == "vcount") { // weightsitive
-
-							Vector<float> values = _read_float_array(p_parser);
-							weights.sets = values;
-							COLLADA_PRINT("read " + itos(values.size()) + " polygon values");
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-
-				skindata.weights = weights;
-			}
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "skin") {
-			break;
-		}
-	}
-
-	/* STORE REST MATRICES */
-
-	ERR_FAIL_COND(!skindata.joints.sources.has("JOINT"));
-	ERR_FAIL_COND(!skindata.joints.sources.has("INV_BIND_MATRIX"));
-
-	String joint_arr = skindata.joints.sources["JOINT"];
-	String ibm = skindata.joints.sources["INV_BIND_MATRIX"];
-
-	ERR_FAIL_COND(!skindata.sources.has(joint_arr));
-	ERR_FAIL_COND(!skindata.sources.has(ibm));
-
-	SkinControllerData::Source& joint_source = skindata.sources[joint_arr];
-	SkinControllerData::Source& ibm_source = skindata.sources[ibm];
-
-	ERR_FAIL_COND(joint_source.sarray.size() != ibm_source.array.size() / 16);
-
-	for (int i = 0; i < joint_source.sarray.size(); i++) {
-		String name = joint_source.sarray[i];
-		Transform3D xform = _read_transform_from_array(
-			ibm_source.array, i * 16); //<- this is a mistake, it must be applied to vertices
-		xform.affine_invert();		   // inverse for rest, because it's an inverse
-#ifdef COLLADA_IMPORT_SCALE_SCENE
-		xform.origin *= state.unit_scale;
-#endif
-		skindata.bone_rest_map[name] = xform;
-	}
-}
-
-void Collada::_parse_morph_controller(XMLParser& p_parser, const String& p_id)
-{
-	state.morph_controller_data_map[p_id] = MorphControllerData();
-	MorphControllerData& morphdata = state.morph_controller_data_map[p_id];
-
-	morphdata.mesh = _uri_to_id(p_parser.get_named_attribute_value("source"));
-	morphdata.mode = p_parser.get_named_attribute_value("method");
-	String current_source;
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "source") {
-				String id = p_parser.get_named_attribute_value("id");
-				morphdata.sources[id] = MorphControllerData::Source();
-				current_source = id;
-				COLLADA_PRINT("source data: " + id);
-
-			}
-			else if (section == "float_array" || section == "array") {
-				// create a new array and read it.
-				if (morphdata.sources.has(current_source)) {
-					morphdata.sources[current_source].array = _read_float_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(morphdata.sources[current_source].array.size()) +
-								  " values.");
-				}
-			}
-			else if (section == "Name_array" || section == "IDREF_array") {
-				// create a new array and read it.
-				if (morphdata.sources.has(current_source)) {
-					morphdata.sources[current_source].sarray = _read_string_array(p_parser);
-					COLLADA_PRINT("section: " + current_source + " read " +
-								  itos(morphdata.sources[current_source].array.size()) +
-								  " values.");
-				}
-			}
-			else if (section == "technique_common") {
-				// skip it
-			}
-			else if (section == "accessor") { // child of source (below a technique tag)
-
-				if (morphdata.sources.has(current_source)) {
-					int stride = 1;
-					if (p_parser.has_attribute("stride")) {
-						stride = p_parser.get_named_attribute_value("stride").to_int();
-					}
-
-					morphdata.sources[current_source].stride = stride;
-					COLLADA_PRINT("section: " + current_source + " stride " +
-								  itos(morphdata.sources[current_source].stride));
-				}
-
-			}
-			else if (section == "targets") {
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "input") {
-							String semantic = p_parser.get_named_attribute_value("semantic");
-							String source =
-								_uri_to_id(p_parser.get_named_attribute_value("source"));
-
-							morphdata.targets[semantic] = source;
-
-							COLLADA_PRINT(
-								section + " input semantic: " + semantic + " source: " + source);
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == section) {
-						break;
-					}
-				}
-			}
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "morph") {
-			break;
-		}
-	}
-
-	if (morphdata.targets.has("MORPH_WEIGHT")) {
-		state.morph_name_map[morphdata.targets["MORPH_WEIGHT"]] = p_id;
-	}
-}
-
-void Collada::_parse_controller(XMLParser& p_parser)
-{
-	String id = p_parser.get_named_attribute_value("id");
-
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "skin") {
-				_parse_skin_controller(p_parser, id);
-			}
-			else if (section == "morph") {
-				_parse_morph_controller(p_parser, id);
-			}
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "controller") {
-			break;
-		}
-	}
-}
-
-Collada::Node* Collada::_parse_visual_instance_geometry(XMLParser& p_parser)
-{
-	String type = p_parser.get_node_name();
-	NodeGeometry* geom = memnew(NodeGeometry);
-	geom->controller = type == "instance_controller";
-	geom->source = _uri_to_id(p_parser.get_named_attribute_value_safe("url"));
-
-	if (p_parser.is_empty()) { // nothing else to parse...
-		return geom;
-	}
-	// try to find also many materials and skeletons!
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			if (p_parser.get_node_name() == "instance_material") {
-				String symbol = p_parser.get_named_attribute_value("symbol");
-				String target = _uri_to_id(p_parser.get_named_attribute_value("target"));
-
-				NodeGeometry::Material mat;
-				mat.target = target;
-				geom->material_map[symbol] = mat;
-				COLLADA_PRINT("uses material: '" + target + "' on primitive'" + symbol + "'");
-			}
-			else if (p_parser.get_node_name() == "skeleton") {
-				p_parser.read();
-				String uri = _uri_to_id(p_parser.get_node_data());
-				if (!uri.is_empty()) {
-					geom->skeletons.push_back(uri);
-				}
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == type) {
-			break;
-		}
-	}
-
-	if (geom->controller) {
-		if (geom->skeletons.is_empty()) {
-			// XSI style
-
-			if (state.skin_controller_data_map.has(geom->source)) {
-				SkinControllerData* skin = &state.skin_controller_data_map[geom->source];
-				// case where skeletons reference bones with IDREF (XSI)
-				ERR_FAIL_COND_V(!skin->joints.sources.has("JOINT"), geom);
-				String joint_arr = skin->joints.sources["JOINT"];
-				ERR_FAIL_COND_V(!skin->sources.has(joint_arr), geom);
-				Collada::SkinControllerData::Source& joint_source = skin->sources[joint_arr];
-				geom->skeletons = joint_source.sarray; // quite crazy, but should work.
-			}
-		}
-	}
-
-	return geom;
-}
-
-Collada::Node* Collada::_parse_visual_instance_camera(XMLParser& p_parser)
-{
-	NodeCamera* cam = memnew(NodeCamera);
-	cam->camera = _uri_to_id(p_parser.get_named_attribute_value_safe("url"));
-
-	if (state.up_axis == Vector3::AXIS_Z) { // collada weirdness
-		cam->post_transform.basis.rotate(Vector3(1, 0, 0), -Math::PI * 0.5);
-	}
-
-	if (p_parser.is_empty()) { // nothing else to parse...
-		return cam;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-			p_parser.get_node_name() == "instance_camera") {
-			break;
-		}
-	}
-
-	return cam;
-}
-
-Collada::Node* Collada::_parse_visual_instance_light(XMLParser& p_parser)
-{
-	NodeLight* cam = memnew(NodeLight);
-	cam->light = _uri_to_id(p_parser.get_named_attribute_value_safe("url"));
-
-	if (state.up_axis == Vector3::AXIS_Z) { // collada weirdness
-		cam->post_transform.basis.rotate(Vector3(1, 0, 0), -Math::PI * 0.5);
-	}
-
-	if (p_parser.is_empty()) { // nothing else to parse...
-		return cam;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-			p_parser.get_node_name() == "instance_light") {
-			break;
-		}
-	}
-
-	return cam;
-}
-
-Collada::Node* Collada::_parse_visual_node_instance_data(XMLParser& p_parser)
-{
-	String instance_type = p_parser.get_node_name();
-
-	if (instance_type == "instance_geometry" || instance_type == "instance_controller") {
-		return _parse_visual_instance_geometry(p_parser);
-	}
-	else if (instance_type == "instance_camera") {
-		return _parse_visual_instance_camera(p_parser);
-	}
-	else if (instance_type == "instance_light") {
-		return _parse_visual_instance_light(p_parser);
-	}
-
-	if (p_parser.is_empty()) { // nothing else to parse...
-		return nullptr;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-			p_parser.get_node_name() == instance_type) {
-			break;
-		}
-	}
-
-	return nullptr;
-}
-
-Collada::Node* Collada::_parse_visual_scene_node(XMLParser& p_parser)
-{
-	String name;
-
-	String id = p_parser.get_named_attribute_value_safe("id");
-
-	bool found_name = false;
-
-	if (id.is_empty()) {
-		id = "%NODEID%" + itos(Math::rand());
-
-	}
-	else {
-		found_name = true;
-	}
-
-	Vector<Node::XForm> xform_list;
-	Vector<Node*> children;
-
-	String empty_draw_type = "";
-
-	Node* node = nullptr;
-
-	name = p_parser.has_attribute("name") ? p_parser.get_named_attribute_value_safe("name")
-										  : p_parser.get_named_attribute_value_safe("id");
-	if (name.is_empty()) {
-		name = id;
-	}
-	else {
-		found_name = true;
-	}
-
-	if ((p_parser.has_attribute("type") && p_parser.get_named_attribute_value("type") == "JOINT") ||
-		state.idref_joints.has(name)) {
-		// handle a bone
-
-		NodeJoint* joint = memnew(NodeJoint);
-
-		if (p_parser.has_attribute("sid")) { // bones may not have sid
-			joint->sid = p_parser.get_named_attribute_value("sid");
-			// state.bone_map[joint->sid]=joint;
-		}
-		else if (state.idref_joints.has(name)) {
-			joint->sid = name; // kind of a cheat but..
-		}
-		else if (p_parser.has_attribute("name")) {
-			joint->sid = p_parser.get_named_attribute_value_safe("name");
-		}
-
-		if (!joint->sid.is_empty()) {
-			state.sid_to_node_map[joint->sid] = id;
-		}
-
-		node = joint;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "translate") {
-				Node::XForm xf;
-				if (p_parser.has_attribute("sid")) {
-					xf.id = p_parser.get_named_attribute_value("sid");
-				}
-				xf.op = Node::XForm::OP_TRANSLATE;
-
-				Vector<float> xlt = _read_float_array(p_parser);
-				xf.data = xlt;
-				xform_list.push_back(xf);
-
-			}
-			else if (section == "rotate") {
-				Node::XForm xf;
-				if (p_parser.has_attribute("sid")) {
-					xf.id = p_parser.get_named_attribute_value("sid");
-				}
-				xf.op = Node::XForm::OP_ROTATE;
-
-				Vector<float> rot = _read_float_array(p_parser);
-				xf.data = rot;
-
-				xform_list.push_back(xf);
-
-			}
-			else if (section == "scale") {
-				Node::XForm xf;
-				if (p_parser.has_attribute("sid")) {
-					xf.id = p_parser.get_named_attribute_value("sid");
-				}
-
-				xf.op = Node::XForm::OP_SCALE;
-
-				Vector<float> scale = _read_float_array(p_parser);
-
-				xf.data = scale;
-
-				xform_list.push_back(xf);
-
-			}
-			else if (section == "matrix") {
-				Node::XForm xf;
-				if (p_parser.has_attribute("sid")) {
-					xf.id = p_parser.get_named_attribute_value("sid");
-				}
-				xf.op = Node::XForm::OP_MATRIX;
-
-				Vector<float> matrix = _read_float_array(p_parser);
-
-				xf.data = matrix;
-				String mtx;
-				for (int i = 0; i < matrix.size(); i++) {
-					mtx += " " + rtos(matrix[i]);
-				}
-
-				xform_list.push_back(xf);
-
-			}
-			else if (section == "visibility") {
-				Node::XForm xf;
-				if (p_parser.has_attribute("sid")) {
-					xf.id = p_parser.get_named_attribute_value("sid");
-				}
-				xf.op = Node::XForm::OP_VISIBILITY;
-
-				Vector<float> visible = _read_float_array(p_parser);
-
-				xf.data = visible;
-
-				xform_list.push_back(xf);
-
-			}
-			else if (section == "empty_draw_type") {
-				empty_draw_type = _read_empty_draw_type(p_parser);
-			}
-			else if (section == "technique" || section == "extra") {
-			}
-			else if (section != "node") {
-				// usually what defines the type of node
-				if (section.begins_with("instance_")) {
-					if (!node) {
-						node = _parse_visual_node_instance_data(p_parser);
-
-					}
-					else {
-						ERR_PRINT("Multiple instance_* not supported.");
-					}
-				}
-
-			}
-			else {
-				/* Found a child node!! what to do..*/
-
-				Node* child = _parse_visual_scene_node(p_parser);
-				children.push_back(child);
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "node") {
-			break;
-		}
-	}
-
-	if (!node) {
-		node = memnew(Node); // generic node, nothing of relevance found
-	}
-
-	node->noname = !found_name;
-	node->xform_list = xform_list;
-	node->children = children;
-	for (int i = 0; i < children.size(); i++) {
-		node->children[i]->parent = node;
-	}
-
-	node->name = name;
-	node->id = id;
-	node->empty_draw_type = empty_draw_type;
-
-	if (node->children.size() == 1) {
-		if (node->children[0]->noname && !node->noname) {
-			node->children[0]->name = node->name;
-			node->name = node->name + "-base";
-		}
-	}
-
-	node->default_transform = node->compute_transform(*this);
-	state.scene_map[id] = node;
-
-	return node;
-}
-
-void Collada::_parse_visual_scene(XMLParser& p_parser)
-{
-	String id = p_parser.get_named_attribute_value("id");
-
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	state.visual_scene_map[id] = VisualScene();
-	VisualScene& vscene = state.visual_scene_map[id];
-
-	if (p_parser.has_attribute("name")) {
-		vscene.name = p_parser.get_named_attribute_value("name");
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String section = p_parser.get_node_name();
-
-			if (section == "node") {
-				vscene.root_nodes.push_back(_parse_visual_scene_node(p_parser));
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "visual_scene") {
-			break;
-		}
-	}
-
-	COLLADA_PRINT("Scene ID:" + id);
-}
-
-void Collada::_parse_animation(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_ANIMATION)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-
-		return;
-	}
-
-	HashMap<String, Vector<float>> float_sources;
-	HashMap<String, Vector<String>> string_sources;
-	HashMap<String, int> source_strides;
-	HashMap<String, HashMap<String, String>> samplers;
-	HashMap<String, Vector<String>> source_param_names;
-	HashMap<String, Vector<String>> source_param_types;
-
-	String id = "";
-	if (p_parser.has_attribute("id")) {
-		id = p_parser.get_named_attribute_value("id");
-	}
-
-	String current_source;
-	String current_sampler;
-	Vector<String> channel_sources;
-	Vector<String> channel_targets;
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-			if (name == "source") {
-				current_source = p_parser.get_named_attribute_value("id");
-				source_param_names[current_source] = Vector<String>();
-				source_param_types[current_source] = Vector<String>();
-
-			}
-			else if (name == "float_array") {
-				if (!current_source.is_empty()) {
-					float_sources[current_source] = _read_float_array(p_parser);
-				}
-
-			}
-			else if (name == "Name_array") {
-				if (!current_source.is_empty()) {
-					string_sources[current_source] = _read_string_array(p_parser);
-				}
-			}
-			else if (name == "accessor") {
-				if (!current_source.is_empty() && p_parser.has_attribute("stride")) {
-					source_strides[current_source] =
-						p_parser.get_named_attribute_value("stride").to_int();
-				}
-			}
-			else if (name == "sampler") {
-				current_sampler = p_parser.get_named_attribute_value("id");
-				samplers[current_sampler] = HashMap<String, String>();
-			}
-			else if (name == "param") {
-				if (p_parser.has_attribute("name")) {
-					source_param_names[current_source].push_back(
-						p_parser.get_named_attribute_value("name"));
-				}
-				else {
-					source_param_names[current_source].push_back("");
-				}
-
-				if (p_parser.has_attribute("type")) {
-					source_param_types[current_source].push_back(
-						p_parser.get_named_attribute_value("type"));
-				}
-				else {
-					source_param_types[current_source].push_back("");
-				}
-
-			}
-			else if (name == "input") {
-				if (!current_sampler.is_empty()) {
-					samplers[current_sampler][p_parser.get_named_attribute_value("semantic")] =
-						p_parser.get_named_attribute_value("source");
-				}
-
-			}
-			else if (name == "channel") {
-				channel_sources.push_back(p_parser.get_named_attribute_value("source"));
-				channel_targets.push_back(p_parser.get_named_attribute_value("target"));
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "animation") {
-			break; // end of <asset>
-		}
-	}
-
-	for (int i = 0; i < channel_sources.size(); i++) {
-		String source = _uri_to_id(channel_sources[i]);
-		const String& target = channel_targets[i];
-		ERR_CONTINUE(!samplers.has(source));
-		HashMap<String, String>& sampler = samplers[source];
-
-		ERR_CONTINUE(!sampler.has("INPUT")); // no input semantic? wtf?
-		String input_id = _uri_to_id(sampler["INPUT"]);
-		COLLADA_PRINT("input id is " + input_id);
-		ERR_CONTINUE(!float_sources.has(input_id));
-
-		ERR_CONTINUE(!sampler.has("OUTPUT"));
-		String output_id = _uri_to_id(sampler["OUTPUT"]);
-		ERR_CONTINUE(!float_sources.has(output_id));
-
-		ERR_CONTINUE(!source_param_names.has(output_id));
-
-		Vector<String>& names = source_param_names[output_id];
-
-		for (int l = 0; l < names.size(); l++) {
-			String name = names[l];
-
-			Vector<float>& time_keys = float_sources[input_id];
-			int key_count = time_keys.size();
-
-			AnimationTrack track; // begin crating track
-			track.id = id;
-
-			track.keys.resize(key_count);
-
-			for (int j = 0; j < key_count; j++) {
-				track.keys.write[j].time = time_keys[j];
-				state.animation_length = MAX(state.animation_length, time_keys[j]);
-			}
-
-			// now read actual values
-
-			int stride = 1;
-
-			if (source_strides.has(output_id)) {
-				stride = source_strides[output_id];
-			}
-			int output_len = stride / names.size();
-
-			ERR_CONTINUE(output_len == 0);
-			ERR_CONTINUE(!float_sources.has(output_id));
-
-			Vector<float>& output = float_sources[output_id];
-
-			ERR_CONTINUE_MSG(
-				(output.size() / stride) != key_count, "Wrong number of keys in output.");
-
-			for (int j = 0; j < key_count; j++) {
-				track.keys.write[j].data.resize(output_len);
-				for (int k = 0; k < output_len; k++) {
-					track.keys.write[j].data.write[k] =
-						output[l + j * stride + k]; // super weird but should work:
-				}
-			}
-
-			if (sampler.has("INTERPOLATION")) {
-				String interp_id = _uri_to_id(sampler["INTERPOLATION"]);
-				ERR_CONTINUE(!string_sources.has(interp_id));
-				Vector<String>& interps = string_sources[interp_id];
-				ERR_CONTINUE(interps.size() != key_count);
-
-				for (int j = 0; j < key_count; j++) {
-					if (interps[j] == "BEZIER") {
-						track.keys.write[j].interp_type = AnimationTrack::INTERP_BEZIER;
-					}
-					else {
-						track.keys.write[j].interp_type = AnimationTrack::INTERP_LINEAR;
-					}
-				}
-			}
-
-			if (sampler.has("IN_TANGENT") && sampler.has("OUT_TANGENT")) {
-				// bezier control points..
-				String intangent_id = _uri_to_id(sampler["IN_TANGENT"]);
-				ERR_CONTINUE(!float_sources.has(intangent_id));
-				Vector<float>& intangents = float_sources[intangent_id];
-
-				ERR_CONTINUE(intangents.size() != key_count * 2 * names.size());
-
-				String outangent_id = _uri_to_id(sampler["OUT_TANGENT"]);
-				ERR_CONTINUE(!float_sources.has(outangent_id));
-				Vector<float>& outangents = float_sources[outangent_id];
-				ERR_CONTINUE(outangents.size() != key_count * 2 * names.size());
-
-				for (int j = 0; j < key_count; j++) {
-					track.keys.write[j].in_tangent =
-						Vector2(intangents[j * 2 * names.size() + 0 + l * 2],
-							intangents[j * 2 * names.size() + 1 + l * 2]);
-					track.keys.write[j].out_tangent =
-						Vector2(outangents[j * 2 * names.size() + 0 + l * 2],
-							outangents[j * 2 * names.size() + 1 + l * 2]);
-				}
-			}
-
-			if (target.contains_char('/')) { // transform component
-				track.target = target.get_slicec('/', 0);
-				track.param = target.get_slicec('/', 1);
-				if (track.param.contains_char('.')) {
-					track.component = track.param.get_slicec('.', 1).to_upper();
-				}
-				track.param = track.param.get_slicec('.', 0);
-				if (names.size() > 1 && track.component.is_empty()) {
-					// this is a guess because the collada spec is ambiguous here...
-					// i suppose if you have many names (outputs) you can't use a component and i
-					// should abide to that.
-					track.component = name;
-				}
-			}
-			else {
-				track.target = target;
-			}
-
-			state.animation_tracks.push_back(track);
-
-			if (!state.referenced_tracks.has(target)) {
-				state.referenced_tracks[target] = Vector<int>();
-			}
-
-			state.referenced_tracks[target].push_back(state.animation_tracks.size() - 1);
-
-			if (!id.is_empty()) {
-				if (!state.by_id_tracks.has(id)) {
-					state.by_id_tracks[id] = Vector<int>();
-				}
-
-				state.by_id_tracks[id].push_back(state.animation_tracks.size() - 1);
-			}
-
-			COLLADA_PRINT("loaded animation with " + itos(key_count) + " keys");
-		}
-	}
-}
-
-void Collada::_parse_animation_clip(XMLParser& p_parser)
-{
-	if (!(state.import_flags & IMPORT_FLAG_ANIMATION)) {
-		if (!p_parser.is_empty()) {
-			p_parser.skip_section();
-		}
-
-		return;
-	}
-
-	AnimationClip clip;
-
-	if (p_parser.has_attribute("name")) {
-		clip.name = p_parser.get_named_attribute_value("name");
-	}
-	else if (p_parser.has_attribute("id")) {
-		clip.name = p_parser.get_named_attribute_value("id");
-	}
-	if (p_parser.has_attribute("start")) {
-		clip.begin = p_parser.get_named_attribute_value("start").to_float();
-	}
-	if (p_parser.has_attribute("end")) {
-		clip.end = p_parser.get_named_attribute_value("end").to_float();
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-			if (name == "instance_animation") {
-				String url = _uri_to_id(p_parser.get_named_attribute_value("url"));
-				clip.tracks.push_back(url);
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "animation_clip") {
-			break; // end of <asset>
-		}
-	}
-
-	state.animation_clips.push_back(clip);
-}
-
-void Collada::_parse_scene(XMLParser& p_parser)
-{
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-
-			if (name == "instance_visual_scene") {
-				state.root_visual_scene = _uri_to_id(p_parser.get_named_attribute_value("url"));
-			}
-			else if (name == "instance_physics_scene") {
-				state.root_physics_scene = _uri_to_id(p_parser.get_named_attribute_value("url"));
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name() == "scene") {
-			break; // end of <asset>
-		}
-	}
-}
-
-void Collada::_parse_library(XMLParser& p_parser)
-{
-	if (p_parser.is_empty()) {
-		return;
-	}
-
-	while (p_parser.read() == OK) {
-		if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			String name = p_parser.get_node_name();
-			COLLADA_PRINT("library name is: " + name);
-			if (name == "image") {
-				_parse_image(p_parser);
-			}
-			else if (name == "material") {
-				_parse_material(p_parser);
-			}
-			else if (name == "effect") {
-				_parse_effect(p_parser);
-			}
-			else if (name == "camera") {
-				_parse_camera(p_parser);
-			}
-			else if (name == "light") {
-				_parse_light(p_parser);
-			}
-			else if (name == "geometry") {
-				String id = p_parser.get_named_attribute_value("id");
-				String name2 = p_parser.get_named_attribute_value_safe("name");
-				while (p_parser.read() == OK) {
-					if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-						if (p_parser.get_node_name() == "mesh") {
-							state.mesh_name_map[id] = (!name2.is_empty()) ? name2 : id;
-							_parse_mesh_geometry(p_parser, id, name2);
-						}
-						else if (p_parser.get_node_name() == "spline") {
-							state.mesh_name_map[id] = (!name2.is_empty()) ? name2 : id;
-							_parse_curve_geometry(p_parser, id, name2);
-						}
-						else if (!p_parser.is_empty()) {
-							p_parser.skip_section();
-						}
-					}
-					else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-							   p_parser.get_node_name() == "geometry") {
-						break;
-					}
-				}
-
-			}
-			else if (name == "controller") {
-				_parse_controller(p_parser);
-			}
-			else if (name == "animation") {
-				_parse_animation(p_parser);
-			}
-			else if (name == "animation_clip") {
-				_parse_animation_clip(p_parser);
-			}
-			else if (name == "visual_scene") {
-				COLLADA_PRINT("visual scene");
-				_parse_visual_scene(p_parser);
-			}
-			else if (!p_parser.is_empty()) {
-				p_parser.skip_section();
-			}
-
-		}
-		else if (p_parser.get_node_type() == XMLParser::NODE_ELEMENT_END &&
-				   p_parser.get_node_name().begins_with("library_")) {
-			break; // end of <asset>
-		}
-	}
-}
-
-void Collada::_joint_set_owner(Collada::Node* p_node, NodeSkeleton* p_owner)
-{
-	if (p_node->type == Node::TYPE_JOINT) {
-		NodeJoint* nj = static_cast<NodeJoint*>(p_node);
-		nj->owner = p_owner;
-
-		for (int i = 0; i < nj->children.size(); i++) {
-			_joint_set_owner(nj->children.write[i], p_owner);
-		}
-	}
-}
-
-void Collada::_create_skeletons(Collada::Node** p_node, NodeSkeleton* p_skeleton)
-{
-	Node* node = *p_node;
-
-	if (node->type == Node::TYPE_JOINT) {
-		if (!p_skeleton) {
-			// ohohohoohoo it's a joint node, time to work!
-			NodeSkeleton* sk = memnew(NodeSkeleton);
-			*p_node = sk;
-			sk->children.push_back(node);
-			sk->parent = node->parent;
-			node->parent = sk;
-			p_skeleton = sk;
-		}
-
-		NodeJoint* nj = static_cast<NodeJoint*>(node);
-		nj->owner = p_skeleton;
-	}
-	else {
-		p_skeleton = nullptr;
-	}
-
-	for (int i = 0; i < node->children.size(); i++) {
-		_create_skeletons(&node->children.write[i], p_skeleton);
-	}
-}
-
-bool Collada::_remove_node(Node* p_parent, Node* p_node)
-{
-	for (int i = 0; i < p_parent->children.size(); i++) {
-		if (p_parent->children[i] == p_node) {
-			p_parent->children.remove_at(i);
-			return true;
-		}
-		if (_remove_node(p_parent->children[i], p_node)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void Collada::_remove_node(VisualScene* p_vscene, Node* p_node)
-{
-	for (int i = 0; i < p_vscene->root_nodes.size(); i++) {
-		if (p_vscene->root_nodes[i] == p_node) {
-			p_vscene->root_nodes.remove_at(i);
-			return;
-		}
-		if (_remove_node(p_vscene->root_nodes[i], p_node)) {
-			return;
-		}
-	}
-
-	ERR_PRINT("Not found node to remove?");
-}
-
-void Collada::_merge_skeletons(VisualScene* p_vscene, Node* p_node)
-{
-	if (p_node->type == Node::TYPE_GEOMETRY) {
-		NodeGeometry* gnode = static_cast<NodeGeometry*>(p_node);
-		if (gnode->controller) {
-			// recount skeletons used
-			HashSet<NodeSkeleton*> skeletons;
-
-			for (int i = 0; i < gnode->skeletons.size(); i++) {
-				String nodeid = gnode->skeletons[i];
-
-				ERR_CONTINUE(!state.scene_map.has(nodeid)); // weird, it should have it...
-
-				NodeJoint* nj = dynamic_cast<NodeJoint*>(state.scene_map[nodeid]);
-				ERR_CONTINUE(!nj);		  // broken collada
-				ERR_CONTINUE(!nj->owner); // weird, node should have a skeleton owner
-
-				skeletons.insert(nj->owner);
-			}
-
-			if (skeletons.size() > 1) {
-				// do the merger!!
-				HashSet<NodeSkeleton*>::Iterator E = skeletons.begin();
-				NodeSkeleton* base = *E;
-
-				for (++E; E; ++E) {
-					NodeSkeleton* merged = *E;
-					_remove_node(p_vscene, merged);
-					for (int i = 0; i < merged->children.size(); i++) {
-						_joint_set_owner(merged->children[i], base);
-						base->children.push_back(merged->children[i]);
-						merged->children[i]->parent = base;
-					}
-
-					merged->children.clear(); // take children from it
-					memdelete(merged);
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < p_node->children.size(); i++) {
-		_merge_skeletons(p_vscene, p_node->children[i]);
-	}
-}
-
-void Collada::_merge_skeletons2(VisualScene* p_vscene)
-{
-	for (KeyValue<String, SkinControllerData>& E : state.skin_controller_data_map) {
-		SkinControllerData& cd = E.value;
-
-		NodeSkeleton* skeleton = nullptr;
-
-		for (const KeyValue<String, Transform3D>& F : cd.bone_rest_map) {
-			String name;
-
-			if (!state.sid_to_node_map.has(F.key)) {
-				continue;
-			}
-
-			name = state.sid_to_node_map[F.key];
-
-			ERR_CONTINUE(!state.scene_map.has(name));
-
-			Node* node = state.scene_map[name];
-			ERR_CONTINUE(node->type != Node::TYPE_JOINT);
-
-			NodeSkeleton* sk = nullptr;
-
-			while (node && !sk) {
-				if (node->type == Node::TYPE_SKELETON) {
-					sk = static_cast<NodeSkeleton*>(node);
-				}
-				node = node->parent;
-			}
-
-			ERR_CONTINUE(!sk);
-
-			if (!skeleton) {
-				skeleton = sk;
-				continue;
-			}
-
-			if (skeleton != sk) {
-				// whoa.. wtf, merge.
-				_remove_node(p_vscene, sk);
-				for (int i = 0; i < sk->children.size(); i++) {
-					_joint_set_owner(sk->children[i], skeleton);
-					skeleton->children.push_back(sk->children[i]);
-					sk->children[i]->parent = skeleton;
-				}
-
-				sk->children.clear(); // take children from it
-				memdelete(sk);
-			}
-		}
-	}
-}
-
-bool Collada::_optimize_skeletons(VisualScene* p_vscene, Node* p_node)
-{
-	Node* node = p_node;
-
-	if (node->type == Node::TYPE_SKELETON && node->parent &&
-		node->parent->type == Node::TYPE_NODE && node->parent->children.size() == 1) {
-		// replace parent by this...
-		Node* parent = node->parent;
-
-		// i wonder if this is alright.. i think it is since created skeleton (first joint) is
-		// already animated by bone..
-		node->id = parent->id;
-		node->name = parent->name;
-		node->xform_list = parent->xform_list;
-		node->default_transform = parent->default_transform;
-
-		state.scene_map[node->id] = node;
-		node->parent = parent->parent;
-
-		if (parent->parent) {
-			Node* gp = parent->parent;
-			bool found = false;
-			for (int i = 0; i < gp->children.size(); i++) {
-				if (gp->children[i] == parent) {
-					gp->children.write[i] = node;
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ERR_PRINT("BUG");
-			}
-		}
-		else {
-			bool found = false;
-
-			for (int i = 0; i < p_vscene->root_nodes.size(); i++) {
-				if (p_vscene->root_nodes[i] == parent) {
-					p_vscene->root_nodes.write[i] = node;
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ERR_PRINT("BUG");
-			}
-		}
-
-		parent->children.clear();
-		memdelete(parent);
-		return true;
-	}
-
-	for (int i = 0; i < node->children.size(); i++) {
-		if (_optimize_skeletons(p_vscene, node->children[i])) {
-			return false; // stop processing, go up
-		}
-	}
-
-	return false;
-}
-
-bool Collada::_move_geometry_to_skeletons(VisualScene* p_vscene, Node* p_node, List<Node*>* p_mgeom)
-{
-	// Bind Shape Matrix scales the bones and makes them gigantic, so the matrix then shrinks the
-	// model? Solution: apply the Bind Shape Matrix to the VERTICES, and if the object comes scaled,
-	// it seems to be left alone!
-
-	if (p_node->type == Node::TYPE_GEOMETRY) {
-		NodeGeometry* ng = static_cast<NodeGeometry*>(p_node);
-		if (ng->ignore_anim) {
-			return false; // already made child of skeleton and processeg
-		}
-
-		if (ng->controller && ng->skeletons.size()) {
-			String nodeid = ng->skeletons[0];
-
-			ERR_FAIL_COND_V(!state.scene_map.has(nodeid), false); // weird, it should have it...
-			NodeJoint* nj = dynamic_cast<NodeJoint*>(state.scene_map[nodeid]);
-			ERR_FAIL_NULL_V(nj, false);
-			ERR_FAIL_NULL_V(nj->owner, false); // Weird, node should have a skeleton owner.
-
-			NodeSkeleton* sk = nj->owner;
-
-			Node* p = sk->parent;
-			bool node_is_parent_of_skeleton = false;
-
-			while (p) {
-				if (p == p_node) {
-					node_is_parent_of_skeleton = true;
-					break;
-				}
-				p = p->parent; // try again
-			}
-
-			ERR_FAIL_COND_V(node_is_parent_of_skeleton, false);
-
-			// this should be correct
-			ERR_FAIL_COND_V(!state.skin_controller_data_map.has(ng->source), false);
-			SkinControllerData& skin = state.skin_controller_data_map[ng->source];
-			Transform3D skel_inv = sk->get_global_transform().affine_inverse();
-			p_node->default_transform =
-				skel_inv *
-				(skin.bind_shape /* p_node->get_global_transform()*/); // i honestly have no idea
-																	   // what to do with a previous
-																	   // model xform.. most
-																	   // exporters ignore it
-
-			// make rests relative to the skeleton (they seem to be always relative to world)
-			for (KeyValue<String, Transform3D>& E : skin.bone_rest_map) {
-				E.value = skel_inv * E.value; // make the bone rest local to the skeleton
-				state.bone_rest_map[E.key] =
-					E.value; // make it remember where the bone is globally, now that it's relative
-			}
-
-			// but most exporters seem to work only if i do this..
-			// p_node->default_transform = p_node->get_global_transform();
-
-			// p_node->default_transform=Transform3D(); //this seems to be correct, because bind
-			// shape makes the object local to the skeleton
-			p_node->ignore_anim =
-				true; // collada may animate this later, if it does, then this is not supported
-					  // (redo your original asset and don't animate the base mesh)
-			p_node->parent = sk;
-			// sk->children.push_back(0,p_node); //avoid INFINITE loop
-			p_mgeom->push_back(p_node);
-			return true;
-		}
-	}
-
-	for (int i = 0; i < p_node->children.size(); i++) {
-		if (_move_geometry_to_skeletons(p_vscene, p_node->children[i], p_mgeom)) {
-			p_node->children.remove_at(i);
-			i--;
-		}
-	}
-
-	return false;
-}
-
-void Collada::_find_morph_nodes(VisualScene* p_vscene, Node* p_node)
-{
-	if (p_node->type == Node::TYPE_GEOMETRY) {
-		NodeGeometry* nj = static_cast<NodeGeometry*>(p_node);
-
-		if (nj->controller) {
-			String base = nj->source;
-
-			while (!base.is_empty() && !state.mesh_data_map.has(base)) {
-				if (state.skin_controller_data_map.has(base)) {
-					SkinControllerData& sk = state.skin_controller_data_map[base];
-					base = sk.base;
-				}
-				else if (state.morph_controller_data_map.has(base)) {
-					state.morph_ownership_map[base] = nj->id;
-					break;
-				}
-				else {
-					ERR_FAIL_MSG("Invalid scene.");
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < p_node->children.size(); i++) {
-		_find_morph_nodes(p_vscene, p_node->children[i]);
-	}
-}
-
-void Collada::_optimize()
-{
-	for (KeyValue<String, VisualScene>& E : state.visual_scene_map) {
-		VisualScene& vs = E.value;
-		for (int i = 0; i < vs.root_nodes.size(); i++) {
-			_create_skeletons(&vs.root_nodes.write[i]);
-		}
-
-
-	for (int i = 0; i < vs.root_nodes.size(); i++) {
-			_merge_skeletons(&vs, vs.root_nodes[i]);
-		}
-
-		_merge_skeletons2(&vs);
-
-		for (int i = 0; i < vs.root_nodes.size(); i++) {
-			_optimize_skeletons(&vs, vs.root_nodes[i]);
-		}
-
-		for (int i = 0; i < vs.root_nodes.size(); i++) {
-			List<Node*> mgeom;
-			if (_move_geometry_to_skeletons(&vs, vs.root_nodes[i], &mgeom)) {
-				vs.root_nodes.remove_at(i);
-				i--;
-			}
-
-			while (!mgeom.is_empty()) {
-				Node* n = mgeom.front()->get();
-				n->parent->children.push_back(n);
-				mgeom.pop_front();
-			}
-		}
-
-		for (int i = 0; i < vs.root_nodes.size(); i++) {
-			_find_morph_nodes(&vs, vs.root_nodes[i]);
-		}
-	}
-}
-
-int Collada::get_uv_channel(const String& p_name)
-{
-	if (!channel_map.has(p_name)) {
-		ERR_FAIL_COND_V(channel_map.size() == 2, 0);
-
-		channel_map[p_name] = channel_map.size();
-	}
-
-	return channel_map[p_name];
-}
-
-Error Collada::load(const String& p_path, int p_flags)
-{
-	Ref<XMLParser> parserr = memnew(XMLParser);
-	XMLParser& parser = *parserr.ptr();
-	Error err = parser.open(p_path);
-	ERR_FAIL_COND_V_MSG(err, err, "Cannot open Collada file '" + p_path + "'.");
-
-	state.local_path = ProjectSettings::localize_path(p_path);
-	state.import_flags = p_flags;
-	/* Skip headers */
-	while ((err = parser.read()) == OK) {
-		if (parser.get_node_type() == XMLParser::NODE_ELEMENT) {
-			if (parser.get_node_name() == "COLLADA") {
-				break;
-			}
-			else if (!parser.is_empty()) {
-				parser.skip_section(); // unknown section, likely headers
-			}
-		}
-	}
-
-	ERR_FAIL_COND_V_MSG(err != OK, ERR_FILE_CORRUPT, "Corrupted Collada file '" + p_path + "'.");
-
-	/* Start loading Collada */
-
-	{
-		// version
-		String version = parser.get_named_attribute_value("version");
-		state.version.major = version.get_slicec('.', 0).to_int();
-		state.version.minor = version.get_slicec('.', 1).to_int();
-		state.version.rev = version.get_slicec('.', 2).to_int();
-		COLLADA_PRINT("Collada VERSION: " + version);
-	}
-
-	while ((err = parser.read()) == OK) {
-		/* Read all the main sections.. */
-
-		if (parser.get_node_type() != XMLParser::NODE_ELEMENT) {
-			continue; // no idea what this may be, but skipping anyway
-		}
-
-		String section = parser.get_node_name();
-
-		COLLADA_PRINT("section: " + section);
-
-		if (section == "asset") {
-			_parse_asset(parser);
-
-		}
-		else if (section.begins_with("library_")) {
-			_parse_library(parser);
-		}
-		else if (section == "scene") {
-			_parse_scene(parser);
-		}
-		else if (!parser.is_empty()) {
-			parser.skip_section(); // unknown section, likely headers
-		}
-	}
-
-	_optimize();
-	return OK;
-}
-
-void Collada::_parse_effect_material(XMLParser& p_parser, Collada::Effect& r_effect, String& r_id) {}
-
-#ifdef COLLADA_PRINT
-#undef COLLADA_PRINT
-#endif
-#ifdef COLLADA_IMPORT_SCALE_SCENE
-#undef COLLADA_IMPORT_SCALE_SCENE
-#endif
-
-// ============================================================================
-// Merged from editor/import/3d/editor_import_collada.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/templates/rb_set.h"
-
-// --- Inlined from editor/import/3d/editor_import_collada.h ---
-#include "servers/display/display_server.h"
-
-class EditorSceneFormatImporterCollada : public EditorSceneFormatImporter
-{
-public:
-	virtual void get_extensions(List<String>* r_extensions) const override;
-};
-
-
-
-// --- End editor/import/3d/editor_import_collada.h ---
-#include "servers/display/display_server.h"
-
-struct ColladaImport
-{
-	Collada collada;
-	Node3D* scene = nullptr;
-
-	Vector<Ref<Animation>> animations;
-
-	struct NodeMap
-	{
-		// String path;
-		Node3D* node = nullptr;
-		int bone = -1;
-		List<int> anim_tracks;
-	};
-
-	bool found_ambient = false;
-	Color ambient;
-	bool found_directional = false;
-	bool force_make_tangents = false;
-	bool apply_mesh_xform_to_vertices = true;
-	bool use_mesh_builtin_materials = false;
-	float bake_fps = 30;
-
-	HashMap<String, NodeMap> node_map;	   // map from collada node to engine node
-	HashMap<String, String> node_name_map; // map from collada node to engine node
-	HashMap<String, Ref<ImporterMesh>> mesh_cache;
-	HashMap<String, Ref<Curve3D>> curve_cache;
-	HashMap<String, Ref<Material>> material_cache;
-	HashMap<Collada::Node*, Skeleton3D*> skeleton_map;
-
-	HashMap<Skeleton3D*, HashMap<String, int>> skeleton_bone_map;
-
-	HashSet<String> valid_animated_nodes;
-	Vector<int> valid_animated_properties;
-	HashMap<String, bool> bones_with_animation;
-
-	HashSet<String> mesh_unique_names;
-	HashSet<String> material_unique_names;
-
-	Error _populate_skeleton(
-		Skeleton3D* p_skeleton, Collada::Node* p_node, int& r_bone, int p_parent);
-	Error _create_scene_skeletons(Collada::Node* p_node);
-	Error _create_scene(Collada::Node* p_node, Node3D* p_parent);
-	Error _create_resources(Collada::Node* p_node, bool p_use_compression);
-	Error _create_material(const String& p_target);
-	Error _create_mesh_surfaces(bool p_optimize, Ref<ImporterMesh>& p_mesh,
-		const HashMap<String, Collada::NodeGeometry::Material>& p_material_map,
-		const Collada::MeshData& meshdata, const Transform3D& p_local_xform,
-		const Vector<int>& bone_remap, const Collada::SkinControllerData* p_skin_controller,
-		const Collada::MorphControllerData* p_morph_data,
-		const Vector<Ref<ImporterMesh>>& p_morph_meshes = Vector<Ref<ImporterMesh>>(),
-		bool p_use_compression = false, bool p_use_mesh_material = false);
-	Error load(const String& p_path, int p_flags, bool p_force_make_tangents = false,
-		bool p_use_compression = false);
-	void _fix_param_animation_tracks();
-	void create_animation(int p_clip, bool p_import_value_tracks);
-	void create_animations(bool p_import_value_tracks);
-
-	HashSet<String> tracks_in_clips;
-	Vector<String> missing_textures;
-
-	void _pre_process_lights(Collada::Node* p_node);
-};
-
-Error ColladaImport::_populate_skeleton(
-	Skeleton3D* p_skeleton, Collada::Node* p_node, int& r_bone, int p_parent)
-{
-	if (p_node->type != Collada::Node::TYPE_JOINT) {
-		return OK;
-	}
-
-	Collada::NodeJoint* joint = static_cast<Collada::NodeJoint*>(p_node);
-
-	p_skeleton->add_bone(p_node->name);
-	if (p_parent >= 0) {
-		p_skeleton->set_bone_parent(r_bone, p_parent);
-	}
-
-	NodeMap nm;
-	nm.node = p_skeleton;
-	nm.bone = r_bone;
-	node_map[p_node->id] = nm;
-	node_name_map[p_node->name] = p_node->id;
-
-	skeleton_bone_map[p_skeleton][joint->sid] = r_bone;
-
-	{
-		Transform3D xform = joint->compute_transform(collada);
-		xform = collada.fix_transform(xform) * joint->post_transform;
-
-		p_skeleton->set_bone_pose_position(r_bone, xform.origin);
-		p_skeleton->set_bone_pose_rotation(r_bone, xform.basis.get_rotation_quaternion());
-		p_skeleton->set_bone_pose_scale(r_bone, xform.basis.get_scale());
-	}
-
-	if (collada.state.bone_rest_map.has(joint->sid)) {
-		p_skeleton->set_bone_rest(
-			r_bone, collada.fix_transform(collada.state.bone_rest_map[joint->sid]));
-		// should map this bone to something for animation?
-	}
-	else {
-		WARN_PRINT("Collada: Joint has no rest.");
-	}
-
-	int id = r_bone++;
-	for (int i = 0; i < p_node->children.size(); i++) {
-		Error err = _populate_skeleton(p_skeleton, p_node->children[i], r_bone, id);
-		if (err) {
-			return err;
-		}
-	}
-
-	return OK;
-}
-
-void ColladaImport::_pre_process_lights(Collada::Node* p_node)
-{
-	if (p_node->type == Collada::Node::TYPE_LIGHT) {
-		Collada::NodeLight* light = static_cast<Collada::NodeLight*>(p_node);
-		if (collada.state.light_data_map.has(light->light)) {
-			Collada::LightData& ld = collada.state.light_data_map[light->light];
-			if (ld.mode == Collada::LightData::MODE_AMBIENT) {
-				found_ambient = true;
-				ambient = ld.color;
-			}
-			if (ld.mode == Collada::LightData::MODE_DIRECTIONAL) {
-				found_directional = true;
-			}
-		}
-	}
-
-	for (int i = 0; i < p_node->children.size(); i++) {
-		_pre_process_lights(p_node->children[i]);
-	}
-}
-
-Error ColladaImport::_create_scene_skeletons(Collada::Node* p_node)
-{
-	if (p_node->type == Collada::Node::TYPE_SKELETON) {
-		Skeleton3D* sk = memnew(Skeleton3D);
-		int bone = 0;
-		for (int i = 0; i < p_node->children.size(); i++) {
-			_populate_skeleton(sk, p_node->children[i], bone, -1);
-		}
-		sk->localize_rests(); // after creating skeleton, rests must be localized...!
-		skeleton_map[p_node] = sk;
-	}
-
-	for (int i = 0; i < p_node->children.size(); i++) {
-		Error err = _create_scene_skeletons(p_node->children[i]);
-		if (err) {
-			return err;
-		}
-	}
-	return OK;
-}
-
-Error ColladaImport::_create_material(const String& p_target)
-{
-	ERR_FAIL_COND_V(material_cache.has(p_target), ERR_ALREADY_EXISTS);
-	ERR_FAIL_COND_V(!collada.state.material_map.has(p_target), ERR_INVALID_PARAMETER);
-	Collada::Material& src_mat = collada.state.material_map[p_target];
-	ERR_FAIL_COND_V(!collada.state.effect_map.has(src_mat.instance_effect), ERR_INVALID_PARAMETER);
-	Collada::Effect& effect = collada.state.effect_map[src_mat.instance_effect];
-
-	Ref<StandardMaterial3D> material = memnew(StandardMaterial3D);
-
-	String base_name;
-	if (!src_mat.name.is_empty()) {
-		base_name = src_mat.name;
-	}
-	else if (!effect.name.is_empty()) {
-		base_name = effect.name;
-	}
-	else {
-		base_name = "Material";
-	}
-
-	String name = base_name;
-	int counter = 2;
-	while (material_unique_names.has(name)) {
-		name = base_name + itos(counter++);
-	}
-
-	material_unique_names.insert(name);
-
-	material->set_name(name);
-
-	// DIFFUSE
-
-	if (!effect.diffuse.texture.is_empty()) {
-		String texfile = effect.get_texture_path(effect.diffuse.texture, collada);
-		if (!texfile.is_empty()) {
-			if (texfile.begins_with("/")) {
-				texfile = texfile.replace_first("/", "res://");
-			}
-			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
-			if (texture.is_valid()) {
-				material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, texture);
-				// material->set_parameter(StandardMaterial3D::PARAM_DIFFUSE,Color(1,1,1,1));
-			}
-			else {
-				missing_textures.push_back(texfile.get_file());
-			}
-		}
-	}
-
-	// SPECULAR
-
-	if (!effect.specular.texture.is_empty()) {
-		String texfile = effect.get_texture_path(effect.specular.texture, collada);
-		if (!texfile.is_empty()) {
-			if (texfile.begins_with("/")) {
-				texfile = texfile.replace_first("/", "res://");
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
-			if (texture.is_valid()) {
-				material->set_texture(StandardMaterial3D::TEXTURE_METALLIC, texture);
-				material->set_specular(1.0);
-
-				// material->set_texture(StandardMaterial3D::PARAM_SPECULAR,texture);
-				// material->set_parameter(StandardMaterial3D::PARAM_SPECULAR,Color(1,1,1,1));
-			}
-			else {
-				missing_textures.push_back(texfile.get_file());
-			}
-		}
-
-	}
-	else {
-		material->set_metallic(effect.specular.color.get_v());
-	}
-
-	// EMISSION
-
-	if (!effect.emission.texture.is_empty()) {
-		String texfile = effect.get_texture_path(effect.emission.texture, collada);
-		if (!texfile.is_empty()) {
-			if (texfile.begins_with("/")) {
-				texfile = texfile.replace_first("/", "res://");
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
-			if (texture.is_valid()) {
-				material->set_feature(StandardMaterial3D::FEATURE_EMISSION, true);
-				material->set_texture(StandardMaterial3D::TEXTURE_EMISSION, texture);
-				material->set_emission(Color(1, 1, 1, 1));
-
-				// material->set_parameter(StandardMaterial3D::PARAM_EMISSION,Color(1,1,1,1));
-			}
-			else {
-				missing_textures.push_back(texfile.get_file());
-			}
-		}
-	}
-	else {
-		if (effect.emission.color != Color()) {
-			material->set_feature(StandardMaterial3D::FEATURE_EMISSION, true);
-			material->set_emission(effect.emission.color);
-		}
-	}
-
-	// NORMAL
-
-	if (!effect.bump.texture.is_empty()) {
-		String texfile = effect.get_texture_path(effect.bump.texture, collada);
-		if (!texfile.is_empty()) {
-			if (texfile.begins_with("/")) {
-				texfile = texfile.replace_first("/", "res://");
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(texfile, "Texture2D");
-			if (texture.is_valid()) {
-				material->set_feature(StandardMaterial3D::FEATURE_NORMAL_MAPPING, true);
-				material->set_texture(StandardMaterial3D::TEXTURE_NORMAL, texture);
-				// material->set_emission(Color(1,1,1,1));
-
-				// material->set_texture(StandardMaterial3D::PARAM_NORMAL,texture);
-			}
-			else {
-				// missing_textures.push_back(texfile.get_file());
-			}
-		}
-	}
-
-	float roughness = (effect.shininess - 1.0) / 510;
-	material->set_roughness(roughness);
-
-	if (effect.double_sided) {
-		material->set_cull_mode(StandardMaterial3D::CULL_DISABLED);
-	}
-	if (effect.unshaded) {
-		material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-	}
-
-	material_cache[p_target] = material;
-	return OK;
-}
-
-Error ColladaImport::load(
-	const String& p_path, int p_flags, bool p_force_make_tangents, bool p_use_compression)
-{
-	Error err = collada.load(p_path, p_flags);
-	ERR_FAIL_COND_V_MSG(err, err, "Cannot load file '" + p_path + "'.");
-
-	force_make_tangents = p_force_make_tangents;
-	ERR_FAIL_COND_V(
-		!collada.state.visual_scene_map.has(collada.state.root_visual_scene), ERR_INVALID_DATA);
-	Collada::VisualScene& vs = collada.state.visual_scene_map[collada.state.root_visual_scene];
-
-	scene = memnew(Node3D); // root
-
-	// determine what's going on with the lights
-	for (int i = 0; i < vs.root_nodes.size(); i++) {
-		_pre_process_lights(vs.root_nodes[i]);
-	}
-	// import scene
-
-	for (int i = 0; i < vs.root_nodes.size(); i++) {
-		Error err2 = _create_scene_skeletons(vs.root_nodes[i]);
-		if (err2 != OK) {
-			memdelete(scene);
-			ERR_FAIL_COND_V(err2, err2);
-		}
-	}
-
-	for (int i = 0; i < vs.root_nodes.size(); i++) {
-		Error err2 = _create_scene(vs.root_nodes[i], scene);
-		if (err2 != OK) {
-			memdelete(scene);
-			ERR_FAIL_COND_V(err2, err2);
-		}
-
-		Error err3 = _create_resources(vs.root_nodes[i], p_use_compression);
-		if (err3 != OK) {
-			memdelete(scene);
-			ERR_FAIL_COND_V(err3, err3);
-		}
-	}
-
-	// optatively, set unit scale in the root
-	scene->set_transform(collada.get_root_transform());
-
-	return OK;
-}
-
-void ColladaImport::_fix_param_animation_tracks()
-{
-	for (KeyValue<String, Collada::Node*>& E : collada.state.scene_map) {
-		Collada::Node* n = E.value;
-		switch (n->type) {
-		case Collada::Node::TYPE_NODE: {
-			// ? do nothing
-		} break;
-		case Collada::Node::TYPE_JOINT: {
-		} break;
-		case Collada::Node::TYPE_SKELETON: {
-		} break;
-		case Collada::Node::TYPE_LIGHT: {
-		} break;
-		case Collada::Node::TYPE_CAMERA: {
-		} break;
-		case Collada::Node::TYPE_GEOMETRY: {
-			Collada::NodeGeometry* ng = static_cast<Collada::NodeGeometry*>(n);
-			// test source(s)
-			String source = ng->source;
-
-			while (!source.is_empty()) {
-				if (collada.state.skin_controller_data_map.has(source)) {
-					const Collada::SkinControllerData& skin =
-						collada.state.skin_controller_data_map[source];
-
-					// nothing to animate here i think
-
-					source = skin.base;
-				}
-				else if (collada.state.morph_controller_data_map.has(source)) {
-					const Collada::MorphControllerData& morph =
-						collada.state.morph_controller_data_map[source];
-
-					if (morph.targets.has("MORPH_WEIGHT") && morph.targets.has("MORPH_TARGET")) {
-						String weights = morph.targets["MORPH_WEIGHT"];
-						String targets = morph.targets["MORPH_TARGET"];
-						// fails here
-
-						if (morph.sources.has(targets) && morph.sources.has(weights)) {
-							const Collada::MorphControllerData::Source& weight_src =
-								morph.sources[weights];
-							const Collada::MorphControllerData::Source& target_src =
-								morph.sources[targets];
-
-							ERR_FAIL_COND(weight_src.array.size() != target_src.sarray.size());
-
-							for (int i = 0; i < weight_src.array.size(); i++) {
-								String track_name = weights + "(" + itos(i) + ")";
-								String mesh_name = target_src.sarray[i];
-								if (collada.state.mesh_name_map.has(mesh_name) &&
-									collada.state.referenced_tracks.has(track_name)) {
-									const Vector<int>& rt =
-										collada.state.referenced_tracks[track_name];
-
-									for (int rti = 0; rti < rt.size(); rti++) {
-										Collada::AnimationTrack* at =
-											&collada.state.animation_tracks.write[rt[rti]];
-
-										at->target = E.key;
-										at->param =
-											"morph/" + collada.state.mesh_name_map[mesh_name];
-										at->property = true;
-										// at->param
-									}
-								}
-							}
-						}
-					}
-					source = morph.mesh;
-				}
-				else {
-					source = ""; // for now nothing else supported
-				}
-			}
-
-		} break;
-		}
-	}
-}
-
-void ColladaImport::create_animations(bool p_import_value_tracks)
-{
-	_fix_param_animation_tracks();
-	for (int i = 0; i < collada.state.animation_clips.size(); i++) {
-		for (int j = 0; j < collada.state.animation_clips[i].tracks.size(); j++) {
-			tracks_in_clips.insert(collada.state.animation_clips[i].tracks[j]);
-		}
-	}
-
-	for (int i = 0; i < collada.state.animation_tracks.size(); i++) {
-		const Collada::AnimationTrack& at = collada.state.animation_tracks[i];
-
-		String node;
-
-		if (!node_map.has(at.target)) {
-			if (node_name_map.has(at.target)) {
-				node = node_name_map[at.target];
-			}
-			else {
-				WARN_PRINT("Collada: Couldn't find node: " + at.target);
-				continue;
-			}
-		}
-		else {
-			node = at.target;
-		}
-
-		if (at.property) {
-			valid_animated_properties.push_back(i);
-
-		}
-		else {
-			node_map[node].anim_tracks.push_back(i);
-			valid_animated_nodes.insert(node);
-		}
-	}
-
-	create_animation(-1, p_import_value_tracks);
-	for (int i = 0; i < collada.state.animation_clips.size(); i++) {
-		create_animation(i, p_import_value_tracks);
-	}
-}
-
-void EditorSceneFormatImporterCollada::get_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("dae");
-}
-
-void ColladaImport::create_animation(int p_clip, bool p_bake) {}
-
-Error ColladaImport::_create_scene(Collada::Node* p_node, Node3D* p_parent) { return OK; }
-
-Error ColladaImport::_create_resources(Collada::Node* p_node, bool p_is_root) { return OK; }
-
-
-
-// ============================================================================
-// Merged from editor/import/3d/resource_importer_obj.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-// --- Inlined from editor/import/3d/resource_importer_obj.h ---
-#include "servers/display/display_server.h"
-
-class EditorOBJImporter : public EditorSceneFormatImporter
-{
-public:
-	virtual void get_extensions(List<String>* r_extensions) const override;
-};
-
-class ResourceImporterOBJ : public ResourceImporter
-{
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-	virtual int get_format_version() const override;
-
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-};
-
-
-
-// --- End editor/import/3d/resource_importer_obj.h ---
-#include "servers/display/display_server.h"
-
-static Error _parse_material_library(const String& p_path,
-	HashMap<String, Ref<StandardMaterial3D>>& material_map, List<String>* r_missing_deps)
-{
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(f.is_null(), ERR_CANT_OPEN,
-		vformat("Couldn't open MTL file '%s', it may not exist or not be readable.", p_path));
-
-	Ref<StandardMaterial3D> current;
-	String current_name;
-	String base_path = p_path.get_base_dir();
-	while (true) {
-		String l = f->get_line().strip_edges();
-
-		if (l.begins_with("newmtl ")) {
-			// Start of a new material.
-			current_name = l.replace("newmtl", "").strip_edges();
-			current.instantiate();
-			current->set_name(current_name);
-			material_map[current_name] = current;
-		}
-		else if (l.begins_with("Ka ")) {
-			// Ambient color.
-			WARN_PRINT("OBJ: Ambient light for material '" + current_name + "' is ignored in PBR");
-
-		}
-		else if (l.begins_with("Kd ")) {
-			// Diffuse color.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-			Vector<String> v = l.split(" ", false);
-			ERR_FAIL_COND_V(v.size() < 4, ERR_INVALID_DATA);
-			Color c = current->get_albedo();
-			c.r = v[1].to_float();
-			c.g = v[2].to_float();
-			c.b = v[3].to_float();
-		}
-		else if (l.begins_with("Ks ")) {
-			// Specular color.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-			Vector<String> v = l.split(" ", false);
-			ERR_FAIL_COND_V(v.size() < 4, ERR_INVALID_DATA);
-			float r = v[1].to_float();
-			float g = v[2].to_float();
-			float b = v[3].to_float();
-			float metalness = MAX(r, MAX(g, b));
-			current->set_metallic(metalness);
-		}
-		else if (l.begins_with("Ns ")) {
-			// Specular exponent.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-			Vector<String> v = l.split(" ", false);
-			ERR_FAIL_COND_V(v.size() != 2, ERR_INVALID_DATA);
-			float s = v[1].to_float();
-			current->set_metallic((1000.0 - s) / 1000.0);
-		}
-		else if (l.begins_with("d ")) {
-			// Dissolve (1.0 is fully opaque, 0.0 is completely transparent).
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-			Vector<String> v = l.split(" ", false);
-			ERR_FAIL_COND_V(v.size() != 2, ERR_INVALID_DATA);
-			float d = v[1].to_float();
-			Color c = current->get_albedo();
-			c.a = d;
-			if (c.a < 0.99) {
-				current->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-			}
-		}
-		else if (l.begins_with("Tr ")) {
-			// Transparency (1.0 is completely transparent, 0.0 is fully opaque).
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-			Vector<String> v = l.split(" ", false);
-			ERR_FAIL_COND_V(v.size() != 2, ERR_INVALID_DATA);
-			float d = v[1].to_float();
-			Color c = current->get_albedo();
-			c.a = 1.0 - d;
-			if (c.a < 0.99) {
-				current->set_transparency(StandardMaterial3D::TRANSPARENCY_ALPHA);
-			}
-
-		}
-		else if (l.begins_with("map_Ka ")) {
-			// Ambient texture map.
-			WARN_PRINT(
-				"OBJ: Ambient light texture for material '" + current_name + "' is ignored in PBR");
-
-		}
-		else if (l.begins_with("map_Kd ")) {
-			// Diffuse texture map.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-
-			String p = l.replace("map_Kd", "").replace_char('\\', '/').strip_edges();
-			String path;
-			if (p.is_absolute_path()) {
-				path = p;
-			}
-			else {
-				path = base_path.path_join(p);
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(path);
-
-			if (texture.is_valid()) {
-				current->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, texture);
-			}
-			else if (r_missing_deps) {
-				r_missing_deps->push_back(path);
-			}
-
-		}
-		else if (l.begins_with("map_Ks ")) {
-			// Specular color texture map.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-
-			String p = l.replace("map_Ks", "").replace_char('\\', '/').strip_edges();
-			String path;
-			if (p.is_absolute_path()) {
-				path = p;
-			}
-			else {
-				path = base_path.path_join(p);
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(path);
-
-			if (texture.is_valid()) {
-				current->set_texture(StandardMaterial3D::TEXTURE_METALLIC, texture);
-			}
-			else if (r_missing_deps) {
-				r_missing_deps->push_back(path);
-			}
-
-		}
-		else if (l.begins_with("map_Ns ")) {
-			// Specular exponent texture map.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-
-			String p = l.replace("map_Ns", "").replace_char('\\', '/').strip_edges();
-			String path;
-			if (p.is_absolute_path()) {
-				path = p;
-			}
-			else {
-				path = base_path.path_join(p);
-			}
-
-			Ref<Texture2D> texture = ResourceLoader::load(path);
-
-			if (texture.is_valid()) {
-				current->set_texture(StandardMaterial3D::TEXTURE_ROUGHNESS, texture);
-			}
-			else if (r_missing_deps) {
-				r_missing_deps->push_back(path);
-			}
-		}
-		else if (l.begins_with("map_bump ") || l.begins_with("map_Bump ")) {
-			// Bump texture map.
-			ERR_FAIL_COND_V(current.is_null(), ERR_FILE_CORRUPT);
-
-			l = l.begins_with("map_bump ") ? l.trim_prefix("map_bump ")
-										   : l.trim_prefix("map_Bump ");
-			l = l.strip_edges();
-
-			// Read path and optional bump multiplier.
-			String p;
-			float bm = 1.0;
-			int bm_pos = l.find("-bm ");
-			if (bm_pos >= 0) {
-				int bm_start = bm_pos + 4;
-				int bm_end = l.find_char(' ', bm_start);
-				if (bm_end >= 0) {
-					bm = l.substr(bm_start, bm_end - bm_start).to_float();
-					p = l.substr(bm_end + 1);
-				}
-				else { // Bump multiplier ends at end of line.
-					bm = l.substr(bm_start).to_float();
-					p = l.substr(0, bm_pos);
-				}
-			}
-			else {
-				p = l;
-			}
-
-			String path = base_path.path_join(p.replace_char('\\', '/').strip_edges());
-
-			Ref<Texture2D> texture = ResourceLoader::load(path);
-
-			if (texture.is_valid()) {
-				current->set_feature(StandardMaterial3D::FEATURE_NORMAL_MAPPING, true);
-				current->set_texture(StandardMaterial3D::TEXTURE_NORMAL, texture);
-				current->set_normal_scale(bm);
-			}
-			else if (r_missing_deps) {
-				r_missing_deps->push_back(path);
-			}
-		}
-		else if (f->eof_reached()) {
-			break;
-		}
-	}
-
-	return OK;
-}
-
-void EditorOBJImporter::get_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("obj");
-}
-
-////////////////////////////////////////////////////
-
-String ResourceImporterOBJ::get_importer_name() const { return "wavefront_obj"; }
-
-String ResourceImporterOBJ::get_visible_name() const { return "OBJ as Mesh"; }
-
-void ResourceImporterOBJ::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("obj");
-}
-
-String ResourceImporterOBJ::get_save_extension() const { return "mesh"; }
-
-String ResourceImporterOBJ::get_resource_type() const { return "Mesh"; }
-
-int ResourceImporterOBJ::get_format_version() const { return 1; }
-
-int ResourceImporterOBJ::get_preset_count() const { return 0; }
-
-String ResourceImporterOBJ::get_preset_name(int p_idx) const { return ""; }
-
-void ResourceImporterOBJ::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
-
-
-
-// ============================================================================
-// Merged from editor/import/editor_import_plugin.cpp
-// ============================================================================
-
-#include "servers/display/display_server.h"
-
-bool EditorImportPlugin::can_import_threaded() const
-{
-	return ResourceImporter::can_import_threaded();
-}
-
-String EditorImportPlugin::get_importer_name() const { return ""; }
-
-String EditorImportPlugin::get_visible_name() const { return ""; }
-
-String EditorImportPlugin::get_save_extension() const { return ""; }
-
-String EditorImportPlugin::get_resource_type() const { return ""; }
-
-int EditorImportPlugin::get_preset_count() const { return 0; }
-
-float EditorImportPlugin::get_priority() const { return 1.0; }
-
-int EditorImportPlugin::get_import_order() const { return 0; }
-
-int EditorImportPlugin::get_format_version() const { return 0; }
-
-String EditorImportPlugin::get_preset_name(int p_idx) const { return String(); }
-
-void EditorImportPlugin::get_recognized_extensions(List<String>* r_extensions) const {}
-
-void EditorImportPlugin::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
-
-
-
-// ============================================================================
-// Merged from editor/import/editor_atlas_packer.cpp
-// ============================================================================
-// --- Inlined from editor/import/editor_atlas_packer.h ---
-#include "core/math/vector2.h"
-#include "core/string/ustring.h"
-
-class EditorAtlasPacker {
-public:
-	struct Chart {
-		Vector<Vector2> vertices;
-		struct Face {
-			int vertex[3] = { 0 };
-		};
-		Vector<Face> faces;
-		bool can_transpose = false;
-
-		Vector2 final_offset;
-		bool transposed = false;
-	};
-
-private:
-	struct PlottedBitmap {
-		int chart_index = 0;
-		Vector2i offset;
-		int area = 0;
-		Vector<int> top_heights;
-		Vector<int> bottom_heights;
-		bool transposed = false;
-
-		Vector2 final_pos;
-
-		bool operator<(const PlottedBitmap &p_bm) const {
-			return area > p_bm.area;
-		}
-	};
-
-public:
-	static void chart_pack(Vector<Chart> &charts, int &r_width, int &r_height, int p_atlas_max_size = 2048, int p_cell_resolution = 4);
-};
-
-// --- End editor/import/editor_atlas_packer.h ---
-
-#include "servers/display/display_server.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "servers/display/display_server.h"
-
-void EditorAtlasPacker::chart_pack(Vector<Chart> &charts, int &r_width, int &r_height, int p_atlas_max_size, int p_cell_resolution) {
-	int divide_by = MIN(64, p_cell_resolution);
-	Vector<PlottedBitmap> bitmaps;
-
-	int max_w = 0;
-
-	for (int i = 0; i < charts.size(); i++) {
-		const Chart &chart = charts[i];
-
-		//generate aabb
-
-		Rect2i aabb;
-		int vertex_count = chart.vertices.size();
-		const Vector2 *vertices = chart.vertices.ptr();
-
-		for (int j = 0; j < vertex_count; j++) {
-			if (j == 0) {
-				aabb.position = vertices[j];
-			} else {
-				aabb.expand_to(vertices[j]);
-			}
-		}
-
-		Ref<BitMap> src_bitmap;
-		src_bitmap.instantiate();
-		src_bitmap->create((aabb.size + Vector2(divide_by - 1, divide_by - 1)) / divide_by);
-
-		int w = src_bitmap->get_size().width;
-		int h = src_bitmap->get_size().height;
-
-		//plot triangles, using divisor
-
-		for (int j = 0; j < chart.faces.size(); j++) {
-			Vector2i v[3];
-			for (int k = 0; k < 3; k++) {
-				Vector2 vtx = chart.vertices[chart.faces[j].vertex[k]];
-				vtx -= aabb.position;
-				vtx /= divide_by;
-				vtx = vtx.min(Vector2(w - 1, h - 1));
-				v[k] = vtx;
-			}
-
-			for (int k = 0; k < 3; k++) {
-				int l = k == 0 ? 2 : k - 1;
-				Vector<Point2i> points = Geometry2D::bresenham_line(v[k], v[l]);
-				for (Point2i point : points) {
-					src_bitmap->set_bitv(point, true);
-				}
-			}
-		}
-
-		//src_bitmap->convert_to_image()->save_png("bitmap" + itos(i) + ".png");
-
-		//grow by 1 for each side
-
-		int bmw = src_bitmap->get_size().width + 2;
-		int bmh = src_bitmap->get_size().height + 2;
-
-		int heights_size = -1;
-		bool transpose = false;
-		if (chart.can_transpose && bmh > bmw) {
-			heights_size = bmh;
-			transpose = true;
-		} else {
-			heights_size = bmw;
-		}
-
-		max_w = MAX(max_w, heights_size);
-
-		Vector<int> top_heights;
-		Vector<int> bottom_heights;
-		top_heights.resize(heights_size);
-		bottom_heights.resize(heights_size);
-
-		for (int x = 0; x < heights_size; x++) {
-			top_heights.write[x] = -1;
-			bottom_heights.write[x] = 0x7FFFFFFF;
-		}
-
-		for (int x = 0; x < bmw; x++) {
-			for (int y = 0; y < bmh; y++) {
-				bool found_pixel = false;
-				for (int lx = x - 1; lx < x + 2 && !found_pixel; lx++) {
-					for (int ly = y - 1; ly < y + 2 && !found_pixel; ly++) {
-						int px = lx - 1;
-						if (px < 0 || px >= w) {
-							continue;
-						}
-						int py = ly - 1;
-						if (py < 0 || py >= h) {
-							continue;
-						}
-
-						if (src_bitmap->get_bit(px, py)) {
-							found_pixel = true;
-						}
-					}
-				}
-				if (found_pixel) {
-					if (transpose) {
-						if (x > top_heights[y]) {
-							top_heights.write[y] = x;
-						}
-						if (x < bottom_heights[y]) {
-							bottom_heights.write[y] = x;
-						}
-					} else {
-						if (y > top_heights[x]) {
-							top_heights.write[x] = y;
-						}
-						if (y < bottom_heights[x]) {
-							bottom_heights.write[x] = y;
-						}
-					}
-				}
-			}
-		}
-
-		String row;
-		for (int j = 0; j < top_heights.size(); j++) {
-			row += "(" + itos(top_heights[j]) + "-" + itos(bottom_heights[j]) + "),";
-		}
-
-		PlottedBitmap plotted_bitmap;
-		plotted_bitmap.offset = aabb.position;
-		plotted_bitmap.top_heights = top_heights;
-		plotted_bitmap.bottom_heights = bottom_heights;
-		plotted_bitmap.chart_index = i;
-		plotted_bitmap.transposed = transpose;
-		plotted_bitmap.area = bmw * bmh;
-
-		bitmaps.push_back(plotted_bitmap);
-	}
-
-	bitmaps.sort();
-
-	int atlas_max_width = Math::nearest_power_of_2_templated(p_atlas_max_size) / divide_by;
-	int atlas_w = Math::nearest_power_of_2_templated(max_w);
-	int atlas_h;
-	while (true) {
-		atlas_h = 0;
-
-		//do a tetris
-		Vector<int> heights;
-		heights.resize(atlas_w);
-		for (int i = 0; i < atlas_w; i++) {
-			heights.write[i] = 0;
-		}
-
-		int *atlas_ptr = heights.ptrw();
-
-		for (int i = 0; i < bitmaps.size(); i++) {
-			int best_height = 0x7FFFFFFF;
-			int best_height_offset = -1;
-			int w = bitmaps[i].top_heights.size();
-
-			const int *top_heights = bitmaps[i].top_heights.ptr();
-			const int *bottom_heights = bitmaps[i].bottom_heights.ptr();
-
-			for (int j = 0; j <= atlas_w - w; j++) {
-				int height = 0;
-
-				for (int k = 0; k < w; k++) {
-					int pixmap_h = bottom_heights[k];
-					if (pixmap_h == 0x7FFFFFFF) {
-						continue; //no pixel here, anything is fine
-					}
-
-					int h = MAX(0, atlas_ptr[j + k] - pixmap_h);
-					if (h > height) {
-						height = h;
-					}
-				}
-
-				if (height < best_height) {
-					best_height = height;
-					best_height_offset = j;
-				}
-			}
-
-			for (int j = 0; j < w; j++) { //add
-				if (top_heights[j] == -1) { //unused
-					continue;
-				}
-				int height = best_height + top_heights[j] + 1;
-				atlas_ptr[j + best_height_offset] = height;
-				atlas_h = MAX(atlas_h, height);
-			}
-
-			// set
-			Vector2 offset = bitmaps[i].offset;
-			if (bitmaps[i].transposed) {
-				SWAP(offset.x, offset.y);
-			}
-
-			Vector2 final_pos = Vector2(best_height_offset * divide_by, best_height * divide_by) + Vector2(divide_by, divide_by) - offset;
-			charts.write[bitmaps[i].chart_index].final_offset = final_pos;
-			charts.write[bitmaps[i].chart_index].transposed = bitmaps[i].transposed;
-		}
-
-		if (atlas_h <= atlas_w * 2 || atlas_w >= atlas_max_width) {
-			break; //ok this one is enough
-		}
-
-		//try again
-		atlas_w *= 2;
-	}
-
-	r_width = atlas_w * divide_by;
-	r_height = atlas_h * divide_by;
-}
-
-// ============================================================================
-// Merged from editor/import/resource_importer_csv_translation.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 String ResourceImporterCSVTranslation::get_importer_name() const { return "csv_translation"; }
@@ -89798,255 +77227,8 @@ void ResourceImporterCSVTranslation::get_import_options(
 {
 }
 
-
-
-// ============================================================================
-// Merged from editor/import/resource_importer_font.cpp
-// ============================================================================
-// --- Inlined from editor/import/resource_importer_font.h ---
-#include "core/io/net_socket.h"
-
-class ResourceImporterFont final : public ResourceImporter
-{
-public:
-	enum Mode
-	{
-		MODE_DYNAMIC,
-		MODE_BMFONT,
-		MODE_IMAGEFONT,
-	};
-
-private:
-	enum Presets
-	{
-		PRESET_DYNAMIC,
-		PRESET_MSDF,
-		PRESET_MAX
-	};
-
-	Mode mode = MODE_DYNAMIC;
-
-public:
-	explicit ResourceImporterFont(Mode p_mode = MODE_DYNAMIC);
-
-	Mode get_mode() const { return mode; }
-	void set_mode(Mode p_mode) { mode = p_mode; }
-
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-	virtual void get_build_dependencies(
-		const String& p_path, HashSet<String>* r_build_dependencies) override;
-
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-	virtual bool has_advanced_options() const override;
-	virtual void show_advanced_options(const String& p_path) override;
-
-	virtual bool can_import_threaded() const override { return true; }
-};
-
-// --- End editor/import/resource_importer_font.h ---
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
-ResourceImporterFont::ResourceImporterFont(Mode p_mode) :
-	mode(p_mode)
-{
-}
-
-String ResourceImporterFont::get_importer_name() const
-{
-	switch (mode) {
-	case MODE_DYNAMIC:
-		return "font_data_dynamic";
-	case MODE_BMFONT:
-		return "font_data_bmfont";
-	case MODE_IMAGEFONT:
-		return "font_data_image";
-	}
-	ERR_FAIL_V(String());
-}
-
-String ResourceImporterFont::get_visible_name() const
-{
-	switch (mode) {
-	case MODE_DYNAMIC:
-		return "Font Data (Dynamic Font)";
-	case MODE_BMFONT:
-		return "Font Data (AngelCode BMFont)";
-	case MODE_IMAGEFONT:
-		return "Font Data (Image Font)";
-	}
-	ERR_FAIL_V(String());
-}
-
-void ResourceImporterFont::get_recognized_extensions(List<String>* p_extensions) const
-{
-	if (!p_extensions) {
-		return;
-	}
-	switch (mode) {
-	case MODE_DYNAMIC: {
-		p_extensions->push_back("ttf");
-		p_extensions->push_back("ttc");
-		p_extensions->push_back("otf");
-		p_extensions->push_back("otc");
-		p_extensions->push_back("woff");
-		p_extensions->push_back("woff2");
-		p_extensions->push_back("pfb");
-		p_extensions->push_back("pfm");
-	} break;
-	case MODE_BMFONT: {
-		p_extensions->push_back("font");
-		p_extensions->push_back("fnt");
-	} break;
-	case MODE_IMAGEFONT: {
-		ImageLoader::get_recognized_extensions(p_extensions);
-	} break;
-	}
-}
-
-String ResourceImporterFont::get_save_extension() const { return "fontdata"; }
-
-String ResourceImporterFont::get_resource_type() const { return "FontFile"; }
-
-void ResourceImporterFont::get_build_dependencies(
-	const String& p_path, HashSet<String>* r_dependencies)
-{
-	if (mode == MODE_DYNAMIC) {
-		Ref<FontFile> font = ResourceLoader::load(p_path);
-		if (font.is_valid() && font->is_multichannel_signed_distance_field()) {
-			r_dependencies->insert("module_msdfgen_enabled");
-		}
-	}
-}
-
-int ResourceImporterFont::get_preset_count() const
-{
-	if (mode == MODE_DYNAMIC) {
-		return PRESET_MAX;
-	}
-	return 0;
-}
-
-String ResourceImporterFont::get_preset_name(int p_idx) const
-{
-	if (mode == MODE_DYNAMIC) {
-		switch (p_idx) {
-		case PRESET_DYNAMIC:
-			return TTR("Dynamically rendered TrueType/OpenType font");
-		case PRESET_MSDF:
-			return TTR("Prerendered multichannel(+true) signed distance field");
-		default:
-			return String();
-		}
-	}
-	return String();
-}
-
-bool ResourceImporterFont::has_advanced_options() const { return false; }
-
-void ResourceImporterFont::show_advanced_options(const String& p_path) { (void)p_path; }
-
-void ResourceImporterFont::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-	(void)p_path;
-	(void)r_options;
-	(void)p_preset;
-}
-
-// ============================================================================
-// Merged from editor/import/resource_importer_shader_file.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-// --- Inlined from editor/import/resource_importer_shader_file.h ---
-#include "core/io/net_socket.h"
-
-class ResourceImporterShaderFile : public ResourceImporter
-{
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-	virtual bool can_import_threaded() const override { return true; }
-};
-
-
-
-// --- End editor/import/resource_importer_shader_file.h ---
-#include "servers/display/display_server.h"
-
-String ResourceImporterShaderFile::get_importer_name() const { return "glsl"; }
-
-String ResourceImporterShaderFile::get_visible_name() const { return "GLSL Shader File"; }
-
-void ResourceImporterShaderFile::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("glsl");
-}
-
-String ResourceImporterShaderFile::get_save_extension() const { return "res"; }
-
-String ResourceImporterShaderFile::get_resource_type() const { return "RDShaderFile"; }
-
-int ResourceImporterShaderFile::get_preset_count() const { return 0; }
-
-String ResourceImporterShaderFile::get_preset_name(int p_idx) const { return String(); }
-
-void ResourceImporterShaderFile::get_import_options(
-	const String& p_path, List<ImportOption>* r_options, int p_preset) const
-{
-}
-
-static String _include_function(const String& p_path, void* userpointer)
-{
-	Error err;
-
-	String* base_path = (String*)userpointer;
-
-	String include = p_path;
-	if (include.is_relative_path()) {
-		include = base_path->path_join(include);
-	}
-
-	Ref<FileAccess> file_inc = FileAccess::open(include, FileAccess::READ, &err);
-	if (err != OK) {
-		return String();
-	}
-	return file_inc->get_as_utf8_string();
-}
-
-
-
-// ============================================================================
-// Merged from editor/import/resource_importer_texture.cpp
-// ============================================================================
-
-#include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "editor/import/atlas_import_failed.xpm"
@@ -90836,5625 +78018,34 @@ void ResourceImporterTexture::get_import_options(
 
 String ResourceImporterTexture::get_import_settings_string() const { return String(); }
 
-// ============================================================================
-// Merged from editor/import/resource_importer_wav.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-// --- Inlined from editor/import/resource_importer_wav.h ---
-#include "core/io/net_socket.h"
-
-class ResourceImporterWAV : public ResourceImporter
-{
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-
-	virtual int get_preset_count() const override;
-	virtual String get_preset_name(int p_idx) const override;
-
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset = 0) const override;
-
-	virtual bool can_import_threaded() const override { return true; }
-};
-
-
-
-// --- End editor/import/resource_importer_wav.h ---
-#include "servers/display/display_server.h"
-
-String ResourceImporterWAV::get_importer_name() const { return "wav"; }
-
-String ResourceImporterWAV::get_visible_name() const { return "Microsoft WAV"; }
-
-void ResourceImporterWAV::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("wav");
-}
-
-String ResourceImporterWAV::get_save_extension() const { return "sample"; }
-
-String ResourceImporterWAV::get_resource_type() const { return "AudioStreamWAV"; }
-
-int ResourceImporterWAV::get_preset_count() const { return 0; }
-
-String ResourceImporterWAV::get_preset_name(int p_idx) const { return String(); }
-
-void ResourceImporterWAV::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options, int p_preset) const
-{
-}
 #endif // defined(TOOLS_ENABLED)
 #endif // TOOLS_ENABLED
 
-// === Merged from platform/android/export/export.cpp ===
 #ifdef TOOLS_ENABLED
-/**************************************************************************/
-/*  export.cpp                                                            */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-// --- Inlined from platform/android/export/export_plugin.h ---
-#ifndef DISABLE_DEPRECATED
-// --- Folded from platform/android/export/godot_plugin_config.h ---
-#ifndef DISABLE_DEPRECATED
-
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
-
-/*
- The `config` section and fields are required and defined as follow:
-- **name**: name of the plugin.
-- **binary_type**: can be either `local` or `remote`. The type affects the **binary** field.
-- **binary**:
-  - if **binary_type** is `local`, then this should be the filename of the plugin `aar` file in the `res://android/plugins` directory (e.g: `MyPlugin.aar`).
-  - if **binary_type** is `remote`, then this should be a declaration for a remote gradle binary (e.g: "org.godot.example:my-plugin:0.0.0").
-
-The `dependencies` section and fields are optional and defined as follow:
-- **local**: contains a list of local `.aar` binary files the plugin depends on. The local binary dependencies must also be located in the `res://android/plugins` directory.
-- **remote**: contains a list of remote binary gradle dependencies for the plugin.
-- **custom_maven_repos**: contains a list of urls specifying custom maven repos required for the plugin's dependencies.
-
- See https://github.com/godotengine/godot/issues/38157#issuecomment-618773871
- */
-struct PluginConfigAndroid {
-	inline static const char *PLUGIN_CONFIG_EXT = ".gdap";
-
-	inline static const char *CONFIG_SECTION = "config";
-	inline static const char *CONFIG_NAME_KEY = "name";
-	inline static const char *CONFIG_BINARY_TYPE_KEY = "binary_type";
-	inline static const char *CONFIG_BINARY_KEY = "binary";
-
-	inline static const char *DEPENDENCIES_SECTION = "dependencies";
-	inline static const char *DEPENDENCIES_LOCAL_KEY = "local";
-	inline static const char *DEPENDENCIES_REMOTE_KEY = "remote";
-	inline static const char *DEPENDENCIES_CUSTOM_MAVEN_REPOS_KEY = "custom_maven_repos";
-
-	inline static const char *BINARY_TYPE_LOCAL = "local";
-	inline static const char *BINARY_TYPE_REMOTE = "remote";
-
-	// Set to true when the config file is properly loaded.
-	bool valid_config = false;
-	// Unix timestamp of last change to this plugin.
-	uint64_t last_updated = 0;
-
-	// Required config section
-	String name;
-	String binary_type;
-	String binary;
-
-	// Optional dependencies section
-	Vector<String> local_dependencies;
-	Vector<String> remote_dependencies;
-	Vector<String> custom_maven_repos;
-
-	static String resolve_local_dependency_path(String plugin_config_dir, String dependency_path);
-
-	static PluginConfigAndroid resolve_prebuilt_plugin(PluginConfigAndroid prebuilt_plugin, String plugin_config_dir);
-
-	static Vector<PluginConfigAndroid> get_prebuilt_plugins(String plugins_base_dir);
-
-	static bool is_plugin_config_valid(PluginConfigAndroid plugin_config);
-
-	static uint64_t get_plugin_modification_time(const PluginConfigAndroid &plugin_config, const String &config_path);
-
-	static PluginConfigAndroid load_plugin_config(Ref<ConfigFile> config_file, const String &path);
-
-	static void get_plugins_binaries(String binary_type, Vector<PluginConfigAndroid> plugins_configs, Vector<String> &r_result);
-
-	static void get_plugins_custom_maven_repos(Vector<PluginConfigAndroid> plugins_configs, Vector<String> &r_result);
-
-	static void get_plugins_names(Vector<PluginConfigAndroid> plugins_configs, Vector<String> &r_result);
-};
-
-#endif // DISABLE_DEPRECATED
-
-// --- End platform/android/export/godot_plugin_config.h ---
-#endif // DISABLE_DEPRECATED
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-// --- Folded from platform/android/export/gradle_export_util.h ---
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
-
-const String VLTR_PROJECT_NAME_XML_STRING = R"(<?xml version="1.0" encoding="utf-8"?>
-<!--WARNING: THIS FILE WILL BE OVERWRITTEN AT BUILD TIME-->
-<resources>
-	<string name="vltr_project_name_string">%s</string>
-</resources>
-)";
-
-// Application category.
-// See https://developer.android.com/guide/topics/manifest/application-element#appCategory for standards
-static const int APP_CATEGORY_ACCESSIBILITY = 0;
-static const int APP_CATEGORY_AUDIO = 1;
-static const int APP_CATEGORY_GAME = 2;
-static const int APP_CATEGORY_IMAGE = 3;
-static const int APP_CATEGORY_MAPS = 4;
-static const int APP_CATEGORY_NEWS = 5;
-static const int APP_CATEGORY_PRODUCTIVITY = 6;
-static const int APP_CATEGORY_SOCIAL = 7;
-static const int APP_CATEGORY_VIDEO = 8;
-static const int APP_CATEGORY_UNDEFINED = 9;
-
-// Supported XR modes.
-// This should match the entries in 'platform/android/java/lib/src/main/java/org/godotengine/godot/xr/XRMode.java'
-static const int XR_MODE_REGULAR = 0;
-static const int XR_MODE_OPENXR = 1;
-
-struct CustomExportData {
-	EditorExportPlatform::PackData pd;
-	String assets_directory;
-	String libs_directory;
-	bool debug;
-	Vector<String> libs;
-};
-
-struct MetadataInfo {
-	String name;
-	String value;
-};
-
-int _get_android_orientation_value(DisplayServerEnums::ScreenOrientation screen_orientation);
-
-String _get_android_orientation_label(DisplayServerEnums::ScreenOrientation screen_orientation);
-
-int _get_app_category_value(int category_index);
-
-String _get_app_category_label(int category_index);
-
-Error _store_temp_file(const String &p_simplified_path, const Vector<uint8_t> &p_data, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key, uint64_t p_seed, bool p_delta, Vector<uint8_t> &r_enc_data, EditorExportPlatform::SavedData &r_sd);
-
-// Utility method used to create a directory.
-Error create_directory(const String &p_dir);
-
-// Writes p_data into a file at p_path, creating directories if necessary.
-// Note: this will overwrite the file at p_path if it already exists.
-Error store_file_at_path(const String &p_path, const Vector<uint8_t> &p_data);
-
-// Writes string p_data into a file at p_path, creating directories if necessary.
-// Note: this will overwrite the file at p_path if it already exists.
-Error store_string_at_path(const String &p_path, const String &p_data);
-
-// Implementation of EditorExportSaveFunction.
-// This method will only be called as an input to export_project_files.
-// It is used by the export_project_files method to save all the asset files into the gradle project.
-// It's functionality mirrors that of the method save_apk_file.
-// This method will be called ONLY when gradle build is enabled.
-Error rename_and_store_file_in_gradle_project(const Ref<EditorExportPreset> &p_preset, void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total, const Vector<String> &p_enc_in_filters, const Vector<String> &p_enc_ex_filters, const Vector<uint8_t> &p_key, uint64_t p_seed, bool p_delta);
-
-String bool_to_string(bool v);
-
-String _get_gles_tag();
-
-String _get_screen_sizes_tag(const Ref<EditorExportPreset> &p_preset);
-
-String _get_activity_tag(const Ref<EditorExportPlatform> &p_export_platform, const Ref<EditorExportPreset> &p_preset, bool p_debug);
-
-String _get_application_tag(const Ref<EditorExportPlatform> &p_export_platform, const Ref<EditorExportPreset> &p_preset, bool p_has_read_write_storage_permission, bool p_debug, const Vector<MetadataInfo> &p_metadata);
-
-// --- End platform/android/export/gradle_export_util.h ---
-
-class ImageTexture;
-
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
-const String ENV_ANDROID_KEYSTORE_DEBUG_PATH = "GODOT_ANDROID_KEYSTORE_DEBUG_PATH";
-const String ENV_ANDROID_KEYSTORE_DEBUG_USER = "GODOT_ANDROID_KEYSTORE_DEBUG_USER";
-const String ENV_ANDROID_KEYSTORE_DEBUG_PASS = "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD";
-const String ENV_ANDROID_KEYSTORE_RELEASE_PATH = "GODOT_ANDROID_KEYSTORE_RELEASE_PATH";
-const String ENV_ANDROID_KEYSTORE_RELEASE_USER = "GODOT_ANDROID_KEYSTORE_RELEASE_USER";
-const String ENV_ANDROID_KEYSTORE_RELEASE_PASS = "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD";
-
-const String DEFAULT_ANDROID_KEYSTORE_DEBUG_USER = "androiddebugkey";
-const String DEFAULT_ANDROID_KEYSTORE_DEBUG_PASSWORD = "android";
-
-struct LauncherIcon
-{
-	const char* export_path;
-	int dimensions = 0;
-};
-
-class AndroidEditorGradleRunner;
-
-class EditorExportPlatformAndroid : public EditorExportPlatform
-{
-	Ref<ImageTexture> logo;
-	Ref<ImageTexture> run_icon;
-
-	struct Device
-	{
-		String id;
-		String name;
-		String description;
-		int api_level = 0;
-		String architecture;
-	};
-
-	struct APKExportData
-	{
-		EditorExportPlatform::PackData pd;
-		zipFile apk;
-		EditorProgress* ep = nullptr;
-	};
-
-	struct FeatureInfo
-	{
-		String name;
-		bool required;
-		String version;
-	};
-
-#ifndef DISABLE_DEPRECATED
-	mutable Vector<PluginConfigAndroid> android_plugins;
-	mutable SafeFlag android_plugins_changed;
-	Mutex android_plugins_lock;
-#endif // DISABLE_DEPRECATED
-	String last_plugin_names;
-	uint64_t last_gradle_build_time = 0;
-	String last_gradle_build_dir;
-
-#ifndef ANDROID_ENABLED
-	bool use_scrcpy = false;
-	Vector<Device> devices;
-	SafeFlag devices_changed;
-	Mutex device_lock;
-
-	Thread check_for_changes_thread;
-	SafeFlag quit_request;
-	SafeFlag has_runnable_preset;
-
-	static void _check_for_changes_poll_thread(void* ud);
-	void _start_check_for_changes_poll_thread();
-	void _stop_check_for_changes_poll_thread();
-	void _update_preset_status();
-#else  // ANDROID_ENABLED
-	AndroidEditorGradleRunner* android_editor_gradle_runner = nullptr;
-#endif // ANDROID_ENABLED
-
-	String get_project_name(const Ref<EditorExportPreset>& p_preset, const String& p_name) const;
-
-	String get_package_name(const Ref<EditorExportPreset>& p_preset, const String& p_package) const;
-
-	String get_valid_basename(const Ref<EditorExportPreset>& p_preset) const;
-
-	String get_assets_directory(const Ref<EditorExportPreset>& p_preset, int p_export_format) const;
-
-	bool is_package_name_valid(const Ref<EditorExportPreset>& p_preset, const String& p_package,
-		String* r_error = nullptr) const;
-	bool is_project_name_valid(const Ref<EditorExportPreset>& p_preset) const;
-
-	static bool _should_compress_asset(const String& p_path, const Vector<uint8_t>& p_data);
-
-	static zip_fileinfo get_zip_fileinfo();
-
-	struct ABI
-	{
-		String abi;
-		String arch;
-
-		bool operator==(const ABI& p_a) const { return p_a.abi == abi; }
-
-		ABI(const String& p_abi, const String& p_arch)
-		{
-			abi = p_abi;
-			arch = p_arch;
-		}
-
-		ABI() {}
-	};
-
-	static Vector<ABI> get_abis();
-
-#ifndef DISABLE_DEPRECATED
-	/// List the gdap files in the directory specified by the p_path parameter.
-	static Vector<String> list_gdap_files(const String& p_path);
-
-	static Vector<PluginConfigAndroid> get_plugins();
-
-	static Vector<PluginConfigAndroid> get_enabled_plugins(
-		const Ref<EditorExportPreset>& p_presets);
-#endif // DISABLE_DEPRECATED
-
-	static Error store_in_apk(APKExportData* ed, const String& p_path,
-		const Vector<uint8_t>& p_data, int compression_method = Z_DEFLATED);
-
-	static Error save_apk_so(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	static Error save_apk_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-
-	static Error ignore_apk_file(const Ref<EditorExportPreset>& p_preset, void* p_userdata,
-		const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta);
-
-	static Error copy_gradle_so(
-		const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so);
-
-	bool _has_read_write_storage_permission(const Vector<String>& p_permissions);
-
-	bool _has_manage_external_storage_permission(const Vector<String>& p_permissions);
-
-	void _get_manifest_info(const Ref<EditorExportPreset>& p_preset, bool p_give_internet,
-		Vector<String>& r_permissions, Vector<FeatureInfo>& r_features,
-		Vector<MetadataInfo>& r_metadata);
-
-	void _write_tmp_manifest(
-		const Ref<EditorExportPreset>& p_preset, bool p_give_internet, bool p_debug);
-
-	bool _is_transparency_allowed(const Ref<EditorExportPreset>& p_preset) const;
-
-	void _fix_themes_xml(const Ref<EditorExportPreset>& p_preset);
-
-	void _fix_manifest(
-		const Ref<EditorExportPreset>& p_preset, Vector<uint8_t>& p_manifest, bool p_give_internet);
-
-	static String _get_keystore_path(const Ref<EditorExportPreset>& p_preset, bool p_debug);
-
-	static String _parse_string(const uint8_t* p_bytes, bool p_utf8);
-
-	void _fix_resources(const Ref<EditorExportPreset>& p_preset, Vector<uint8_t>& r_manifest);
-
-	void _process_launcher_icons(const String& p_file_name, const Ref<Image>& p_source_image,
-		int dimension, Vector<uint8_t>& p_data);
-
-	void load_icon_refs(const Ref<EditorExportPreset>& p_preset, Ref<Image>& icon,
-		Ref<Image>& foreground, Ref<Image>& background, Ref<Image>& monochrome,
-		Ref<Image>& splash_icon, Ref<Image>& splash_branding_image);
-
-	void _copy_icons_to_gradle_project(const Ref<EditorExportPreset>& p_preset,
-		const Ref<Image>& p_main_image, const Ref<Image>& p_foreground,
-		const Ref<Image>& p_background, const Ref<Image>& p_monochrome,
-		const Ref<Image>& p_splash_icon, const Ref<Image>& p_splash_branding_image);
-
-	static void _create_editor_debug_keystore_if_needed();
-
-	static Vector<ABI> get_enabled_abis(const Ref<EditorExportPreset>& p_preset);
-
-	bool _uses_vulkan(const Ref<EditorExportPreset>& p_preset) const;
-
-	Error _generate_sparse_pck_metadata(
-		const Ref<EditorExportPreset>& p_preset, PackData& p_pack_data, Vector<uint8_t>& r_data);
-
-protected:
-	void _notification(int p_what);
-
-public:
-	typedef Error (*EditorExportSaveFunction)(void* p_userdata, const String& p_path,
-		const Vector<uint8_t>& p_data, int p_file, int p_total,
-		const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-		const Vector<uint8_t>& p_key, uint64_t p_seed);
-
-	virtual String get_name() const override;
-
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
-
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const override;
-
-	virtual String get_os_name() const override;
-
-	virtual Ref<Texture2D> get_logo() const override;
-
-	virtual bool should_update_export_options() override;
-
-#ifndef ANDROID_ENABLED
-	virtual bool poll_export() override;
-
-	virtual int get_options_count() const override;
-
-	virtual bool is_option_runnable(int p_index) const override { return p_index != 0; }
-
-	virtual String get_options_tooltip() const override;
-
-	virtual String get_option_label(int p_index) const override;
-
-	virtual String get_option_tooltip(int p_index) const override;
-
-	virtual String get_device_architecture(int p_index) const override;
-
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
-#endif // ANDROID_ENABLED
-
-	virtual Ref<Texture2D> get_run_icon() const override;
-
-	static String get_adb_path();
-
-	static String get_apksigner_path(int p_target_sdk = -1, bool p_check_executes = false);
-
-	static String get_java_path();
-
-	static String get_keytool_path();
-
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-	static bool has_valid_username_and_password(
-		const Ref<EditorExportPreset>& p_preset, String& r_error);
-
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override;
-
-	String _get_deprecated_plugins_names(const Ref<EditorExportPreset>& p_preset) const;
-
-	String _get_plugins_names(const Ref<EditorExportPreset>& p_preset) const;
-
-	String _resolve_export_plugin_android_library_path(const String& p_android_library_path) const;
-
-	bool _is_clean_build_required(const Ref<EditorExportPreset>& p_preset);
-
-	void get_command_line_flags(const Ref<EditorExportPreset>& p_preset, const String& p_path,
-		uint32_t& r_command_line_flags);
-
-	Error sign_apk(const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& export_path,
-		EditorProgress& ep);
-
-	void _clear_assets_directory(const Ref<EditorExportPreset>& p_preset);
-
-	void _remove_copied_libs(String p_gdextension_libs_path);
-
-	static String join_list(const List<String>& p_parts, const String& p_separator);
-	static String join_abis(const Vector<ABI>& p_parts, const String& p_separator, bool p_use_arch);
-
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-
-	Error export_project_helper(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, int export_format, bool should_sign, uint32_t p_flags);
-
-	virtual void get_platform_features(List<String>* r_features) const override;
-
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override;
-
-	virtual void initialize() override;
-
-	~EditorExportPlatformAndroid();
-};
-
-
-// --- End platform/android/export/export_plugin.h ---
-
-String get_default_android_sdk_path();
-
-void register_android_exporter_types() {}
-
-inline String get_default_android_sdk_path()
-{
-#ifdef WINDOWS_ENABLED
-	return OS::get_environment("LOCALAPPDATA").path_join("Android/Sdk");
-#elif LINUXBSD_ENABLED
-	return OS::get_environment("HOME").path_join("Android/Sdk");
-#elif MACOS_ENABLED
-	return OS::get_environment("HOME").path_join("Library/Android/sdk");
-#else
-	return String();
-#endif
-}
-
-
-
-// ============================================================================
-// Merged from platform/android/export/android_editor_gradle_runner.cpp
-// ============================================================================
-
-#ifdef ANDROID_ENABLED
-// --- Inlined from platform/android/export/android_editor_gradle_runner.h ---
-#ifdef ANDROID_ENABLED
-
-
-class Dialog;
-class RichTextLabel;
-
-class AndroidEditorGradleRunner
-{
-	RichTextLabel* output_label = nullptr;
-	Dialog* output_dialog = nullptr;
-
-	enum State
-	{
-		STATE_IDLE,
-		STATE_BUILDING,
-		STATE_CLEANING,
-	};
-
-	State state = STATE_IDLE;
-
-	String project_path;
-	String build_path;
-	String output_path;
-	String export_format;
-	List<String> gradle_build_args;
-	List<String> gradle_copy_args;
-	int64_t job_id;
-
-	void _android_gradle_build_connect();
-	void _android_gradle_build_disconnect();
-	void _android_gradle_build_output(int p_type, const String& p_line);
-	void _android_gradle_build_build();
-	void _android_gradle_build_build_callback(int p_exit_code);
-	void _android_gradle_build_copy();
-	void _android_gradle_build_copy_callback(int p_exit_code);
-	void _android_gradle_build_clean_project(bool p_was_successful);
-	void _android_gradle_build_clean_project_callback();
-
-	void _android_gradle_build_failed(const String& p_msg = String());
-	void _android_gradle_build_cancel();
-
-public:
-	mem_unique_ptr<Object> obj;
-	void run_gradle(const String& p_project_path, const String& p_build_path,
-		const String& p_output_path, const String& p_export_format,
-		const List<String>& p_gradle_build_args, const List<String>& p_gradle_copy_args);
-};
-
-#endif // ANDROID_ENABLED
-
-
-
-// --- End platform/android/export/android_editor_gradle_runner.h ---
-
-#include "servers/display/display_server.h"
-
-#include "servers/display/display_server.h"
-
-void AndroidEditorGradleRunner::run_gradle(const String &p_project_path, const String &p_build_path, const String &p_output_path, const String &p_export_format, const List<String> &p_gradle_build_args, const List<String> &p_gradle_copy_args) {
-	project_path = p_project_path;
-	build_path = p_build_path;
-	output_path = p_output_path;
-	export_format = p_export_format;
-	gradle_build_args = p_gradle_build_args;
-	gradle_copy_args = p_gradle_copy_args;
-
-	if (output_dialog == nullptr) {
-		output_label = memnew(RichTextLabel);
-		output_label->set_selection_enabled(true);
-		output_label->set_context_menu_enabled(true);
-		output_label->set_scroll_follow(true);
-
-		output_dialog = memnew(Dialog(true));
-		output_dialog->set_unparent_when_invisible(true);
-		output_dialog->set_title(TTR("Building Android Project (gradle)"));
-		output_dialog->add_child(output_label);
-
-		output_dialog->connect("canceled", callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_cancel));
-	}
-
-	output_label->clear();
-	output_dialog->get_ok_button()->set_disabled(true);
-	output_dialog->popup_centered_ratio();
-
-	state = STATE_BUILDING;
-	_android_gradle_build_connect();
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_connect() {
-	_android_gradle_build_output(0, TTR("> Connecting to Gradle Build Environment..."));
-
-	GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-	if (!godot_java->build_env_connect(callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_build))) {
-		_android_gradle_build_failed(TTR("Unable to connect to Gradle Build Environment service"));
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_disconnect() {
-	GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-	godot_java->build_env_disconnect();
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_output(int p_type, const String &p_line) {
-	if (p_type == 0) {
-		print_line(p_line);
-		output_label->append_text("[color=green]" + p_line + "[/color]\n");
-	} else if (p_type == 1) {
-		print_line(p_line);
-		output_label->add_text(p_line + "\n");
-	} else {
-		print_error(p_line);
-		output_label->append_text("[color=red]" + p_line + "[/color]\n");
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_build() {
-	_android_gradle_build_output(0, TTR("> Starting Gradle build..."));
-
-	GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-	job_id = godot_java->build_env_execute(
-			"gradle",
-			gradle_build_args,
-			project_path,
-			build_path,
-			callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_output),
-			callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_build_callback));
-	if (job_id < 0) {
-		_android_gradle_build_failed(TTR("Failed to execute Gradle command"));
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_build_callback(int p_exit_code) {
-	job_id = -1;
-	if (p_exit_code != 0) {
-		_android_gradle_build_failed();
-		return;
-	}
-
-	_android_gradle_build_copy();
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_copy() {
-	_android_gradle_build_output(0, TTR("> Copying Gradle artifacts..."));
-
-	GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-	job_id = godot_java->build_env_execute(
-			"gradle",
-			gradle_copy_args,
-			project_path,
-			build_path,
-			callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_output),
-			callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_copy_callback));
-	if (job_id < 0) {
-		_android_gradle_build_failed(TTR("Failed to execute Gradle command"));
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_copy_callback(int p_exit_code) {
-	job_id = -1;
-	if (p_exit_code != 0) {
-		_android_gradle_build_failed();
-	} else {
-		_android_gradle_build_clean_project(true);
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_clean_project(bool p_was_successful) {
-	if (state != STATE_CLEANING) {
-		state = STATE_CLEANING;
-
-		if (p_was_successful) {
-			output_dialog->hide();
-
-			bool prompt_apk_install = EDITOR_GET("export/android/install_exported_apk");
-			if (prompt_apk_install && export_format == "apk") {
-				OS_Android::shell_open(output_path);
-			}
-		} else {
-			output_dialog->get_ok_button()->set_disabled(false);
-		}
-
-		GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-		godot_java->build_env_clean_project(
-				project_path,
-				build_path,
-				callable_mp(this, &AndroidEditorGradleRunner::_android_gradle_build_clean_project_callback));
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_clean_project_callback() {
-	// Ensure we haven't switched back to STATE_BUILDING in the meantime.
-	if (state == STATE_CLEANING) {
-		_android_gradle_build_disconnect();
-		state = STATE_IDLE;
-	}
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_failed(const String &p_msg) {
-	job_id = -1;
-
-	if (p_msg != "") {
-		_android_gradle_build_output(1, p_msg);
-	}
-
-	_android_gradle_build_clean_project(false);
-}
-
-void AndroidEditorGradleRunner::_android_gradle_build_cancel() {
-	if (job_id > 0) {
-		GodotJavaWrapper *godot_java = OS_Android::get_godot_java();
-		godot_java->build_env_cancel(job_id);
-		_android_gradle_build_clean_project(false);
-	}
-}
-
-#endif // ANDROID_ENABLED
-
-// ============================================================================
-// Merged from platform/android/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "servers/display/display_server.h"
-
-#include "main/splash.gen.h"
-#include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/net_socket.h"
-#include "main/splash.gen.h"
-#include "servers/display/display_server.h"
-
-#ifdef MODULE_MONO_ENABLED
-#include "modules/mono/utils/path_utils.h"
-#endif
-
-#ifdef ANDROID_ENABLED
-#include "servers/display/display_server.h"
-
-#endif
-
-#ifndef ANDROID_ENABLED
-#endif
-
-static String _get_android_build_directory(const Ref<EditorExportPreset>& p_preset)
-{
-	(void)p_preset;
-	return String();
-}
-
-static const char* ANDROID_PERMS[] = {"ACCESS_CHECKIN_PROPERTIES", "ACCESS_COARSE_LOCATION",
-	"ACCESS_FINE_LOCATION", "ACCESS_LOCATION_EXTRA_COMMANDS", "ACCESS_MEDIA_LOCATION",
-	"ACCESS_MOCK_LOCATION", "ACCESS_NETWORK_STATE", "ACCESS_SURFACE_FLINGER", "ACCESS_WIFI_STATE",
-	"ACCOUNT_MANAGER", "ADD_VOICEMAIL", "AUTHENTICATE_ACCOUNTS", "BATTERY_STATS",
-	"BIND_ACCESSIBILITY_SERVICE", "BIND_APPWIDGET", "BIND_DEVICE_ADMIN", "BIND_INPUT_METHOD",
-	"BIND_NFC_SERVICE", "BIND_NOTIFICATION_LISTENER_SERVICE", "BIND_PRINT_SERVICE",
-	"BIND_REMOTEVIEWS", "BIND_TEXT_SERVICE", "BIND_VPN_SERVICE", "BIND_WALLPAPER", "BLUETOOTH",
-	"BLUETOOTH_ADMIN", "BLUETOOTH_PRIVILEGED", "BRICK", "BROADCAST_PACKAGE_REMOVED",
-	"BROADCAST_SMS", "BROADCAST_STICKY", "BROADCAST_WAP_PUSH", "CALL_PHONE", "CALL_PRIVILEGED",
-	"CAMERA", "CAPTURE_AUDIO_OUTPUT", "CAPTURE_SECURE_VIDEO_OUTPUT", "CAPTURE_VIDEO_OUTPUT",
-	"CHANGE_COMPONENT_ENABLED_STATE", "CHANGE_CONFIGURATION", "CHANGE_NETWORK_STATE",
-	"CHANGE_WIFI_MULTICAST_STATE", "CHANGE_WIFI_STATE", "CLEAR_APP_CACHE", "CLEAR_APP_USER_DATA",
-	"CONTROL_LOCATION_UPDATES", "DELETE_CACHE_FILES", "DELETE_PACKAGES", "DEVICE_POWER",
-	"DIAGNOSTIC", "DISABLE_KEYGUARD", "DUMP", "EXPAND_STATUS_BAR", "FACTORY_TEST", "FLASHLIGHT",
-	"FORCE_BACK", "GET_ACCOUNTS", "GET_PACKAGE_SIZE", "GET_TASKS", "GET_TOP_ACTIVITY_INFO",
-	"GLOBAL_SEARCH", "HARDWARE_TEST", "INJECT_EVENTS", "INSTALL_LOCATION_PROVIDER",
-	"INSTALL_PACKAGES", "INSTALL_SHORTCUT", "INTERNAL_SYSTEM_WINDOW", "INTERNET",
-	"KILL_BACKGROUND_PROCESSES", "LOCATION_HARDWARE", "MANAGE_ACCOUNTS", "MANAGE_APP_TOKENS",
-	"MANAGE_DOCUMENTS", "MANAGE_EXTERNAL_STORAGE", "MANAGE_MEDIA", "MASTER_CLEAR",
-	"MEDIA_CONTENT_CONTROL", "MODIFY_AUDIO_SETTINGS", "MODIFY_PHONE_STATE",
-	"MOUNT_FORMAT_FILESYSTEMS", "MOUNT_UNMOUNT_FILESYSTEMS", "NFC", "PERSISTENT_ACTIVITY",
-	"POST_NOTIFICATIONS", "PROCESS_OUTGOING_CALLS", "READ_CALENDAR", "READ_CALL_LOG",
-	"READ_CONTACTS", "READ_EXTERNAL_STORAGE", "READ_FRAME_BUFFER", "READ_HISTORY_BOOKMARKS",
-	"READ_INPUT_STATE", "READ_LOGS", "READ_MEDIA_AUDIO", "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO",
-	"READ_MEDIA_VISUAL_USER_SELECTED", "READ_PHONE_STATE", "READ_PROFILE", "READ_SMS",
-	"READ_SOCIAL_STREAM", "READ_SYNC_SETTINGS", "READ_SYNC_STATS", "READ_USER_DICTIONARY", "REBOOT",
-	"RECEIVE_BOOT_COMPLETED", "RECEIVE_MMS", "RECEIVE_SMS", "RECEIVE_WAP_PUSH", "RECORD_AUDIO",
-	"REORDER_TASKS", "RESTART_PACKAGES", "SEND_RESPOND_VIA_MESSAGE", "SEND_SMS",
-	"SET_ACTIVITY_WATCHER", "SET_ALARM", "SET_ALWAYS_FINISH", "SET_ANIMATION_SCALE",
-	"SET_DEBUG_APP", "SET_ORIENTATION", "SET_POINTER_SPEED", "SET_PREFERRED_APPLICATIONS",
-	"SET_PROCESS_LIMIT", "SET_TIME", "SET_TIME_ZONE", "SET_WALLPAPER", "SET_WALLPAPER_HINTS",
-	"SIGNAL_PERSISTENT_PROCESSES", "STATUS_BAR", "SUBSCRIBED_FEEDS_READ", "SUBSCRIBED_FEEDS_WRITE",
-	"SYSTEM_ALERT_WINDOW", "TRANSMIT_IR", "UNINSTALL_SHORTCUT", "UPDATE_DEVICE_STATS",
-	"USE_CREDENTIALS", "USE_SIP", "VIBRATE", "WAKE_LOCK", "WRITE_APN_SETTINGS", "WRITE_CALENDAR",
-	"WRITE_CALL_LOG", "WRITE_CONTACTS", "WRITE_EXTERNAL_STORAGE", "WRITE_GSERVICES",
-	"WRITE_HISTORY_BOOKMARKS", "WRITE_PROFILE", "WRITE_SECURE_SETTINGS", "WRITE_SETTINGS",
-	"WRITE_SMS", "WRITE_SOCIAL_STREAM", "WRITE_SYNC_SETTINGS", "WRITE_USER_DICTIONARY", nullptr};
-
-static const char* MISMATCHED_VERSIONS_MESSAGE =
-	"Android build version mismatch:\n| Template installed: %s\n| Requested version: %s\nPlease "
-	"reinstall Android build template from 'Project' menu.";
-
-static const char* GDEXTENSION_LIBS_PATH = "libs/gdextensionlibs.json";
-
-// This template string must be in sync with the content of
-// 'platform/android/java/lib/src/main/java/res/mipmap-anydpi-v26/icon.xml'.
-static const String ICON_XML_TEMPLATE =
-	"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-	"<adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-	"    <background android:drawable=\"@mipmap/icon_background\"/>\n"
-	"    <foreground android:drawable=\"@mipmap/icon_foreground\"/>\n"
-	"%s" // Placeholder for the optional monochrome tag.
-	"</adaptive-icon>";
-
-static const String ICON_XML_PATH = "res/mipmap-anydpi-v26/icon.xml";
-static const String THEMED_ICON_XML_PATH = "res/mipmap-anydpi-v26/themed_icon.xml";
-
-static const String ANDROID_SPLASH_ICON_PATH = "res/drawable/splash_icon.webp";
-static const String ANDROID_SPLASH_BRANDING_IMAGE_PATH = "res/drawable/splash_branding_image.webp";
-
-static const char* DISABLE_GODOT_SPLASH_OPTION = PNAME("splash_screen/disable_godot_boot_splash");
-static const char* ANDROID_SPLASH_ICON_OPTION = PNAME("splash_screen/icon");
-static const char* ANDROID_SPLASH_BACKGROUND_COLOR_OPTION = PNAME("splash_screen/background_color");
-static const char* ANDROID_SPLASH_BRANDING_IMAGE_OPTION = PNAME("splash_screen/branding_image");
-
-static const int ICON_DENSITIES_COUNT = 6;
-static const char* LAUNCHER_ICON_OPTION = PNAME("launcher_icons/main_192x192");
-static const char* LAUNCHER_ADAPTIVE_ICON_FOREGROUND_OPTION =
-	PNAME("launcher_icons/adaptive_foreground_432x432");
-static const char* LAUNCHER_ADAPTIVE_ICON_BACKGROUND_OPTION =
-	PNAME("launcher_icons/adaptive_background_432x432");
-static const char* LAUNCHER_ADAPTIVE_ICON_MONOCHROME_OPTION =
-	PNAME("launcher_icons/adaptive_monochrome_432x432");
-
-static const LauncherIcon LAUNCHER_ICONS[ICON_DENSITIES_COUNT] = {
-	{"res/mipmap-xxxhdpi-v4/icon.webp", 192}, {"res/mipmap-xxhdpi-v4/icon.webp", 144},
-	{"res/mipmap-xhdpi-v4/icon.webp", 96}, {"res/mipmap-hdpi-v4/icon.webp", 72},
-	{"res/mipmap-mdpi-v4/icon.webp", 48}, {"res/mipmap/icon.webp", 192}};
-
-static const LauncherIcon LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[ICON_DENSITIES_COUNT] = {
-	{"res/mipmap-xxxhdpi-v4/icon_foreground.webp", 432},
-	{"res/mipmap-xxhdpi-v4/icon_foreground.webp", 324},
-	{"res/mipmap-xhdpi-v4/icon_foreground.webp", 216},
-	{"res/mipmap-hdpi-v4/icon_foreground.webp", 162},
-	{"res/mipmap-mdpi-v4/icon_foreground.webp", 108}, {"res/mipmap/icon_foreground.webp", 432}};
-
-static const LauncherIcon LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[ICON_DENSITIES_COUNT] = {
-	{"res/mipmap-xxxhdpi-v4/icon_background.webp", 432},
-	{"res/mipmap-xxhdpi-v4/icon_background.webp", 324},
-	{"res/mipmap-xhdpi-v4/icon_background.webp", 216},
-	{"res/mipmap-hdpi-v4/icon_background.webp", 162},
-	{"res/mipmap-mdpi-v4/icon_background.webp", 108}, {"res/mipmap/icon_background.webp", 432}};
-
-static const LauncherIcon LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[ICON_DENSITIES_COUNT] = {
-	{"res/mipmap-xxxhdpi-v4/icon_monochrome.webp", 432},
-	{"res/mipmap-xxhdpi-v4/icon_monochrome.webp", 324},
-	{"res/mipmap-xhdpi-v4/icon_monochrome.webp", 216},
-	{"res/mipmap-hdpi-v4/icon_monochrome.webp", 162},
-	{"res/mipmap-mdpi-v4/icon_monochrome.webp", 108}, {"res/mipmap/icon_monochrome.webp", 432}};
-
-static const int EXPORT_FORMAT_APK = 0;
-static const int EXPORT_FORMAT_AAB = 1;
-
-static const char* APK_ASSETS_DIRECTORY = "src/main/assets";
-static const char* AAB_ASSETS_DIRECTORY = "assetPackInstallTime/src/main/assets";
-
-static const int DEFAULT_MIN_SDK_VERSION =
-	24; // Should match the value in 'platform/android/java/app/config.gradle#minSdk'
-static const int VULKAN_MIN_SDK_VERSION =
-	29; // Minimum recommended sdk version for Vulkan 1.1 support. See
-		// https://developer.android.com/games/develop/vulkan/native-engine-support#recommendations
-static const int DEFAULT_TARGET_SDK_VERSION =
-	36; // Should match the value in 'platform/android/java/app/config.gradle#targetSdk'
-
-#ifndef ANDROID_ENABLED
-void EditorExportPlatformAndroid::_update_preset_status()
-{
-	bool has_runnable =
-		EditorExport::get_runnable_preset_for_platform(this).is_valid();
-	if (has_runnable) {
-		has_runnable_preset.set();
-		_start_check_for_changes_poll_thread();
-	}
-	else {
-		has_runnable_preset.clear();
-		_stop_check_for_changes_poll_thread();
-	}
-	devices_changed.set();
-}
-
-void EditorExportPlatformAndroid::_start_check_for_changes_poll_thread()
-{
-	quit_request.clear();
-	if (!check_for_changes_thread.is_started()) {
-		check_for_changes_thread.start(_check_for_changes_poll_thread, this);
-	}
-}
-
-void EditorExportPlatformAndroid::_stop_check_for_changes_poll_thread()
-{
-	quit_request.set();
-	if (check_for_changes_thread.is_started()) {
-		check_for_changes_thread.wait_to_finish();
-	}
-}
-#endif
-
-String EditorExportPlatformAndroid::get_package_name(
-	const Ref<EditorExportPreset>& p_preset, const String& p_package) const
-{
-	String pname = p_package;
-	String name = get_valid_basename(p_preset);
-	pname = pname.replace("$genname", name);
-	return pname;
-}
-
-String EditorExportPlatformAndroid::get_assets_directory(
-	const Ref<EditorExportPreset>& p_preset, int p_export_format) const
-{
-	String gradle_build_directory = _get_android_build_directory(p_preset);
-	return gradle_build_directory.path_join(
-		p_export_format == EXPORT_FORMAT_AAB ? AAB_ASSETS_DIRECTORY : APK_ASSETS_DIRECTORY);
-}
-
-bool EditorExportPlatformAndroid::is_package_name_valid(
-	const Ref<EditorExportPreset>& p_preset, const String& p_package, String* r_error) const
-{
-	String pname = get_package_name(p_preset, p_package);
-
-	if (pname.length() == 0) {
-		if (r_error) {
-			*r_error = TTR("Package name is missing.");
-		}
-		return false;
-	}
-
-	int segments = 0;
-	bool first = true;
-	for (int i = 0; i < pname.length(); i++) {
-		char32_t c = pname[i];
-		if (first && c == '.') {
-			if (r_error) {
-				*r_error = TTR("Package segments must be of non-zero length.");
-			}
-			return false;
-		}
-		if (c == '.') {
-			segments++;
-			first = true;
-			continue;
-		}
-		if (!is_ascii_identifier_char(c)) {
-			if (r_error) {
-				*r_error = vformat(
-					TTR("The character '%s' is not allowed in Android application package names."),
-					String::chr(c));
-			}
-			return false;
-		}
-		if (first && is_digit(c)) {
-			if (r_error) {
-				*r_error = TTR("A digit cannot be the first character in a package segment.");
-			}
-			return false;
-		}
-		if (first && is_underscore(c)) {
-			if (r_error) {
-				*r_error = vformat(
-					TTR("The character '%s' cannot be the first character in a package segment."),
-					String::chr(c));
-			}
-			return false;
-		}
-		first = false;
-	}
-
-	if (segments == 0) {
-		if (r_error) {
-			*r_error = TTR("The package must have at least one '.' separator.");
-		}
-		return false;
-	}
-
-	if (first) {
-		if (r_error) {
-			*r_error = TTR("Package segments must be of non-zero length.");
-		}
-		return false;
-	}
-
-	return true;
-}
-
-bool EditorExportPlatformAndroid::_should_compress_asset(
-	const String& p_path, const Vector<uint8_t>& p_data)
-{
-	/*
-	 *  By not compressing files with little or no benefit in doing so,
-	 *  a performance gain is expected at runtime. Moreover, if the APK is
-	 *  zip-aligned, assets stored as they are can be efficiently read by
-	 *  Android by memory-mapping them.
-	 */
-
-	// -- Unconditional uncompress to mimic AAPT plus some other
-
-	static const char* unconditional_compress_ext[] = {// From
-		// https://github.com/android/platform_frameworks_base/blob/master/tools/aapt/Package.cpp
-		// These formats are already compressed, or don't compress well:
-		".jpg", ".jpeg", ".png", ".gif", ".wav", ".mp2", ".mp3", ".ogg", ".aac", ".mpg", ".mpeg",
-		".mid", ".midi", ".smf", ".jet", ".rtttl", ".imy", ".xmf", ".mp4", ".m4a", ".m4v", ".3gp",
-		".3gpp", ".3g2", ".3gpp2", ".amr", ".awb", ".wma", ".wmv",
-		// Godot-specific:
-		".webp", // Same reasoning as .png
-		".cfb",	 // Don't let small config files slow-down startup
-		".scn",	 // Binary scenes are usually already compressed
-		".ctex", // Streamable textures are usually already compressed
-		".pck",	 // Pack.
-		// Trailer for easier processing
-		nullptr};
-
-	for (const char** ext = unconditional_compress_ext; *ext; ++ext) {
-		if (p_path.to_lower().ends_with(String(*ext))) {
-			return false;
-		}
-	}
-
-	// -- Compressed resource?
-
-	if (p_data.size() >= 4 && p_data[0] == 'R' && p_data[1] == 'S' && p_data[2] == 'C' &&
-		p_data[3] == 'C') {
-		// Already compressed
-		return false;
-	}
-
-	// --- TODO: Decide on texture resources according to their image compression setting
-
-	return true;
-}
-
-zip_fileinfo EditorExportPlatformAndroid::get_zip_fileinfo()
-{
-	OS::DateTime dt = OS::get_datetime();
-
-	zip_fileinfo zipfi;
-	zipfi.tmz_date.tm_year = dt.year;
-	zipfi.tmz_date.tm_mon = dt.month - 1; // tm_mon is zero indexed
-	zipfi.tmz_date.tm_mday = dt.day;
-	zipfi.tmz_date.tm_hour = dt.hour;
-	zipfi.tmz_date.tm_min = dt.minute;
-	zipfi.tmz_date.tm_sec = dt.second;
-	zipfi.dosDate = 0;
-	zipfi.external_fa = 0;
-	zipfi.internal_fa = 0;
-
-	return zipfi;
-}
-
-Vector<EditorExportPlatformAndroid::ABI> EditorExportPlatformAndroid::get_abis()
-{
-	// Should have the same order and size as get_archs.
-	Vector<ABI> abis;
-	abis.push_back(ABI("armeabi-v7a", "arm32"));
-	abis.push_back(ABI("arm64-v8a", "arm64"));
-	abis.push_back(ABI("x86", "x86_32"));
-	abis.push_back(ABI("x86_64", "x86_64"));
-	return abis;
-}
-
-#ifndef DISABLE_DEPRECATED
-/// List the gdap files in the directory specified by the p_path parameter.
-Vector<String> EditorExportPlatformAndroid::list_gdap_files(const String& p_path)
-{
-	Vector<String> dir_files;
-	Ref<DirAccess> da = DirAccess::open(p_path);
-	if (da.is_valid()) {
-		da->list_dir_begin();
-		while (true) {
-			String file = da->get_next();
-			if (file.is_empty()) {
-				break;
-			}
-
-			if (da->current_is_dir() || da->current_is_hidden()) {
-				continue;
-			}
-
-			if (file.ends_with(PluginConfigAndroid::PLUGIN_CONFIG_EXT)) {
-				dir_files.push_back(file);
-			}
-		}
-		da->list_dir_end();
-	}
-
-	return dir_files;
-}
-
-Vector<PluginConfigAndroid> EditorExportPlatformAndroid::get_plugins()
-{
-	Vector<PluginConfigAndroid> loaded_plugins;
-
-	String plugins_dir =
-		ProjectSettings::get_resource_path().path_join("android/plugins");
-
-	// Add the prebuilt plugins
-	loaded_plugins.append_array(PluginConfigAndroid::get_prebuilt_plugins(plugins_dir));
-
-	if (DirAccess::exists(plugins_dir)) {
-		Vector<String> plugins_filenames = list_gdap_files(plugins_dir);
-
-		if (!plugins_filenames.is_empty()) {
-			Ref<ConfigFile> config_file;
-			config_file.instantiate();
-			for (int i = 0; i < plugins_filenames.size(); i++) {
-				PluginConfigAndroid config = PluginConfigAndroid::load_plugin_config(
-					config_file, plugins_dir.path_join(plugins_filenames[i]));
-				if (config.valid_config) {
-					loaded_plugins.push_back(config);
-				}
-				else {
-					print_error("Invalid plugin config file " + plugins_filenames[i]);
-				}
-			}
-		}
-	}
-
-	return loaded_plugins;
-}
-
-#endif // DISABLE_DEPRECATED
-
-Error EditorExportPlatformAndroid::store_in_apk(
-	APKExportData* ed, const String& p_path, const Vector<uint8_t>& p_data, int compression_method)
-{
-	zip_fileinfo zipfi = get_zip_fileinfo();
-	zipOpenNewFileInZip(ed->apk, p_path.utf8().get_data(), &zipfi, nullptr, 0, nullptr, 0, nullptr,
-		compression_method, Z_DEFAULT_COMPRESSION);
-
-	zipWriteInFileInZip(ed->apk, p_data.ptr(), p_data.size());
-	zipCloseFileInZip(ed->apk);
-
-	return OK;
-}
-
-Error EditorExportPlatformAndroid::save_apk_so(
-	const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so)
-{
-	if (!p_so.path.get_file().begins_with("lib")) {
-		String err = "Android .so file names must start with \"lib\", but got: " + p_so.path;
-		ERR_PRINT(err);
-		return FAILED;
-	}
-	APKExportData* ed = static_cast<APKExportData*>(p_userdata);
-	Vector<ABI> abis = get_abis();
-	bool exported = false;
-	for (int i = 0; i < p_so.tags.size(); ++i) {
-		// shared objects can be fat (compatible with multiple ABIs)
-		int abi_index = -1;
-		for (int j = 0; j < abis.size(); ++j) {
-			if (abis[j].abi == p_so.tags[i] || abis[j].arch == p_so.tags[i]) {
-				abi_index = j;
-				break;
-			}
-		}
-		if (abi_index != -1) {
-			exported = true;
-			String abi = abis[abi_index].abi;
-			String dst_path = String("lib").path_join(abi).path_join(p_so.path.get_file());
-			Vector<uint8_t> array = FileAccess::get_file_as_bytes(p_so.path);
-			Error store_err = store_in_apk(ed, dst_path, array, Z_NO_COMPRESSION);
-			ERR_FAIL_COND_V_MSG(
-				store_err, store_err, "Cannot store in apk file '" + dst_path + "'.");
-		}
-	}
-	if (!exported) {
-		ERR_PRINT("Cannot determine architecture for library \"" + p_so.path +
-				  "\". One of the supported architectures must be used as a tag: " +
-				  join_abis(abis, " ", true));
-		return FAILED;
-	}
-	return OK;
-}
-
-Error EditorExportPlatformAndroid::save_apk_file(const Ref<EditorExportPreset>& p_preset,
-	void* p_userdata, const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-	const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-	const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta)
-{
-	APKExportData* ed = static_cast<APKExportData*>(p_userdata);
-
-	const String simplified_path = simplify_path(p_path);
-
-	Vector<uint8_t> enc_data;
-	EditorExportPlatform::SavedData sd;
-	Error err = _store_temp_file(simplified_path, p_data, p_enc_in_filters, p_enc_ex_filters, p_key,
-		p_seed, p_delta, enc_data, sd);
-	if (err != OK) {
-		return err;
-	}
-
-	String dst_path;
-	if (ed->pd.salt.length() == 32) {
-		dst_path = String("assets/") + (simplified_path + ed->pd.salt).sha256_text();
-	}
-	else {
-		dst_path = String("assets/") + simplified_path.trim_prefix("res://");
-	}
-	print_verbose("Saving project files from " + simplified_path + " into " + dst_path);
-	store_in_apk(
-		ed, dst_path, enc_data, _should_compress_asset(simplified_path, enc_data) ? Z_DEFLATED : 0);
-
-	ed->pd.file_ofs.push_back(sd);
-
-	return OK;
-}
-
-Error EditorExportPlatformAndroid::ignore_apk_file(const Ref<EditorExportPreset>& p_preset,
-	void* p_userdata, const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-	const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-	const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta)
-{
-	return OK;
-}
-
-Error EditorExportPlatformAndroid::copy_gradle_so(
-	const Ref<EditorExportPreset>& p_preset, void* p_userdata, const SharedObject& p_so)
-{
-	ERR_FAIL_COND_V_MSG(!p_so.path.get_file().begins_with("lib"), FAILED,
-		"Android .so file names must start with \"lib\", but got: " + p_so.path);
-	Vector<ABI> abis = get_abis();
-	CustomExportData* export_data = static_cast<CustomExportData*>(p_userdata);
-	bool exported = false;
-	for (int i = 0; i < p_so.tags.size(); ++i) {
-		int abi_index = -1;
-		for (int j = 0; j < abis.size(); ++j) {
-			if (abis[j].abi == p_so.tags[i] || abis[j].arch == p_so.tags[i]) {
-				abi_index = j;
-				break;
-			}
-		}
-		if (abi_index != -1) {
-			exported = true;
-			String type = export_data->debug ? "debug" : "release";
-			String abi = abis[abi_index].abi;
-			String filename = p_so.path.get_file();
-			String dst_path =
-				export_data->libs_directory.path_join(type).path_join(abi).path_join(filename);
-			Vector<uint8_t> data = FileAccess::get_file_as_bytes(p_so.path);
-			print_verbose("Copying .so file from " + p_so.path + " to " + dst_path);
-			Error err = store_file_at_path(dst_path, data);
-			ERR_FAIL_COND_V_MSG(
-				err, err, "Failed to copy .so file from " + p_so.path + " to " + dst_path);
-			export_data->libs.push_back(dst_path);
-		}
-	}
-	ERR_FAIL_COND_V_MSG(!exported, FAILED,
-		"Cannot determine architecture for library \"" + p_so.path +
-			"\". One of the supported architectures must be used as a tag:" +
-			join_abis(abis, " ", true));
-	return OK;
-}
-
-bool EditorExportPlatformAndroid::_has_read_write_storage_permission(
-	const Vector<String>& p_permissions)
-{
-	return p_permissions.has("android.permission.READ_EXTERNAL_STORAGE") ||
-		   p_permissions.has("android.permission.WRITE_EXTERNAL_STORAGE");
-}
-
-bool EditorExportPlatformAndroid::_has_manage_external_storage_permission(
-	const Vector<String>& p_permissions)
-{
-	return p_permissions.has("android.permission.MANAGE_EXTERNAL_STORAGE");
-}
-
-void EditorExportPlatformAndroid::_write_tmp_manifest(
-	const Ref<EditorExportPreset>& p_preset, bool p_give_internet, bool p_debug)
-{
-	print_verbose("Building temporary manifest...");
-	String manifest_text =
-		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-		"<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-		"    xmlns:tools=\"http://schemas.android.com/tools\">\n";
-
-	manifest_text += _get_screen_sizes_tag(p_preset);
-	manifest_text += _get_gles_tag();
-
-	Vector<String> perms;
-	Vector<FeatureInfo> features;
-	Vector<MetadataInfo> manifest_metadata;
-	_get_manifest_info(p_preset, p_give_internet, perms, features, manifest_metadata);
-	for (int i = 0; i < perms.size(); i++) {
-		String permission = perms.get(i);
-		if (permission == "android.permission.WRITE_EXTERNAL_STORAGE" ||
-			(permission == "android.permission.READ_EXTERNAL_STORAGE" &&
-				_has_manage_external_storage_permission(perms))) {
-			manifest_text += vformat(
-				"    <uses-permission android:name=\"%s\" android:maxSdkVersion=\"29\" />\n",
-				permission);
-		}
-		else {
-			manifest_text += vformat("    <uses-permission android:name=\"%s\" />\n", permission);
-		}
-	}
-
-	for (int i = 0; i < features.size(); i++) {
-		manifest_text += vformat("    <uses-feature tools:node=\"replace\" android:name=\"%s\" "
-								 "android:required=\"%s\" android:version=\"%s\" />\n",
-			features[i].name, features[i].required, features[i].version);
-	}
-
-	Vector<Ref<EditorExportPlugin>> export_plugins =
-		EditorExport::get_export_plugins();
-	for (int i = 0; i < export_plugins.size(); i++) {
-		if (export_plugins[i]->supports_platform(Ref<EditorExportPlatform>(this))) {
-			const String contents = export_plugins[i]->get_android_manifest_element_contents(
-				Ref<EditorExportPlatform>(this), p_debug);
-			if (!contents.is_empty()) {
-				const String export_plugin_name = export_plugins[i]->get_name();
-				manifest_text +=
-					"<!-- Start of manifest element contents from " + export_plugin_name + " -->\n";
-				manifest_text += contents;
-				manifest_text += "\n";
-				manifest_text +=
-					"<!-- End of manifest element contents from " + export_plugin_name + " -->\n";
-			}
-		}
-	}
-
-	manifest_text += _get_application_tag(Ref<EditorExportPlatform>(this), p_preset,
-		_has_read_write_storage_permission(perms), p_debug, manifest_metadata);
-	manifest_text += "</manifest>\n";
-	String manifest_path = _get_android_build_directory(p_preset).path_join(
-		vformat("src/%s/AndroidManifest.xml", (p_debug ? "debug" : "release")));
-
-	print_verbose("Storing manifest into " + manifest_path + ": " + "\n" + manifest_text);
-	store_string_at_path(manifest_path, manifest_text);
-}
-
-String EditorExportPlatformAndroid::_parse_string(const uint8_t* p_bytes, bool p_utf8)
-{
-	uint32_t offset = 0;
-	uint32_t len = 0;
-
-	if (p_utf8) {
-		uint8_t byte = p_bytes[offset];
-		if (byte & 0x80) {
-			offset += 2;
-		}
-		else {
-			offset += 1;
-		}
-		byte = p_bytes[offset];
-		offset++;
-		if (byte & 0x80) {
-			len = byte & 0x7F;
-			len = (len << 8) + p_bytes[offset];
-			offset++;
-		}
-		else {
-			len = byte;
-		}
-	}
-	else {
-		len = decode_uint16(&p_bytes[offset]);
-		offset += 2;
-		if (len & 0x8000) {
-			len &= 0x7FFF;
-			len = (len << 16) + decode_uint16(&p_bytes[offset]);
-			offset += 2;
-		}
-	}
-
-	if (p_utf8) {
-		Vector<uint8_t> str8;
-		str8.resize(len + 1);
-		for (uint32_t i = 0; i < len; i++) {
-			str8.write[i] = p_bytes[offset + i];
-		}
-		str8.write[len] = 0;
-		return String::utf8((const char*)str8.ptr(), len);
-	}
-	else {
-		String str;
-		for (uint32_t i = 0; i < len; i++) {
-			char32_t c = decode_uint16(&p_bytes[offset + i * 2]);
-			if (c == 0) {
-				break;
-			}
-			str += String::chr(c);
-		}
-		return str;
-	}
-}
-
-void EditorExportPlatformAndroid::_process_launcher_icons(const String& p_file_name,
-	const Ref<Image>& p_source_image, int dimension, Vector<uint8_t>& p_data)
-{
-	Ref<Image> working_image = p_source_image;
-
-	Vector<uint8_t> buffer = working_image->save_webp_to_buffer();
-	p_data.resize(buffer.size());
-	memcpy(p_data.ptrw(), buffer.ptr(), p_data.size());
-}
-
-void EditorExportPlatformAndroid::_copy_icons_to_gradle_project(
-	const Ref<EditorExportPreset>& p_preset, const Ref<Image>& p_main_image,
-	const Ref<Image>& p_foreground, const Ref<Image>& p_background, const Ref<Image>& p_monochrome,
-	const Ref<Image>& p_splash_icon, const Ref<Image>& p_splash_branding_image)
-{
-	String gradle_build_dir = _get_android_build_directory(p_preset);
-
-	// Copy splash screen icon to the drawable directory.
-	// This is only for png/webp/svg file; XML file is handled in _fix_themes_xml().
-	if (p_splash_icon.is_valid() && !p_splash_icon->is_empty()) {
-		print_verbose("Copying splash screen icon into " + ANDROID_SPLASH_ICON_PATH);
-		Vector<uint8_t> buffer = p_splash_icon->save_webp_to_buffer();
-		store_file_at_path(gradle_build_dir.path_join(ANDROID_SPLASH_ICON_PATH), buffer);
-	}
-
-	if (p_splash_branding_image.is_valid() && !p_splash_branding_image->is_empty()) {
-		print_verbose(
-			"Copying splash screen branding image into " + ANDROID_SPLASH_BRANDING_IMAGE_PATH);
-		Vector<uint8_t> buffer = p_splash_branding_image->save_webp_to_buffer();
-		store_file_at_path(gradle_build_dir.path_join(ANDROID_SPLASH_BRANDING_IMAGE_PATH), buffer);
-	}
-
-	String monochrome_tag = "";
-
-	// Prepare images to be resized for the icons. If some image ends up being uninitialized,
-	// the default image from the export template will be used.
-
-	for (int i = 0; i < ICON_DENSITIES_COUNT; ++i) {
-		if (p_main_image.is_valid() && !p_main_image->is_empty()) {
-			print_verbose("Processing launcher icon for dimension " +
-						  itos(LAUNCHER_ICONS[i].dimensions) + " into " +
-						  LAUNCHER_ICONS[i].export_path);
-			Vector<uint8_t> data;
-			_process_launcher_icons(
-				LAUNCHER_ICONS[i].export_path, p_main_image, LAUNCHER_ICONS[i].dimensions, data);
-			store_file_at_path(gradle_build_dir.path_join(LAUNCHER_ICONS[i].export_path), data);
-		}
-
-		if (p_foreground.is_valid() && !p_foreground->is_empty()) {
-			print_verbose("Processing launcher adaptive icon p_foreground for dimension " +
-						  itos(LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[i].dimensions) + " into " +
-						  LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[i].export_path);
-			Vector<uint8_t> data;
-			_process_launcher_icons(LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[i].export_path, p_foreground,
-				LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[i].dimensions, data);
-			store_file_at_path(
-				gradle_build_dir.path_join(LAUNCHER_ADAPTIVE_ICON_FOREGROUNDS[i].export_path),
-				data);
-		}
-
-		if (p_background.is_valid() && !p_background->is_empty()) {
-			print_verbose("Processing launcher adaptive icon p_background for dimension " +
-						  itos(LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[i].dimensions) + " into " +
-						  LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[i].export_path);
-			Vector<uint8_t> data;
-			_process_launcher_icons(LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[i].export_path, p_background,
-				LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[i].dimensions, data);
-			store_file_at_path(
-				gradle_build_dir.path_join(LAUNCHER_ADAPTIVE_ICON_BACKGROUNDS[i].export_path),
-				data);
-		}
-
-		if (p_monochrome.is_valid() && !p_monochrome->is_empty()) {
-			print_verbose("Processing launcher adaptive icon p_monochrome for dimension " +
-						  itos(LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[i].dimensions) + " into " +
-						  LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[i].export_path);
-			Vector<uint8_t> data;
-			_process_launcher_icons(LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[i].export_path, p_monochrome,
-				LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[i].dimensions, data);
-			store_file_at_path(
-				gradle_build_dir.path_join(LAUNCHER_ADAPTIVE_ICON_MONOCHROMES[i].export_path),
-				data);
-			monochrome_tag = "    <monochrome android:drawable=\"@mipmap/icon_monochrome\"/>\n";
-		}
-	}
-
-	// Finalize the icon.xml by formatting the template with the optional monochrome tag.
-	store_string_at_path(
-		gradle_build_dir.path_join(ICON_XML_PATH), vformat(ICON_XML_TEMPLATE, monochrome_tag));
-}
-
-String EditorExportPlatformAndroid::get_name() const { return "Android"; }
-
-String EditorExportPlatformAndroid::get_os_name() const { return "Android"; }
-
-Ref<Texture2D> EditorExportPlatformAndroid::get_logo() const { return logo; }
-
-bool EditorExportPlatformAndroid::should_update_export_options()
-{
-#ifndef DISABLE_DEPRECATED
-	if (android_plugins_changed.is_set()) {
-		// don't clear unless we're reporting true, to avoid race
-		android_plugins_changed.clear();
-		return true;
-	}
-#endif // DISABLE_DEPRECATED
-	return false;
-}
-
-#ifndef ANDROID_ENABLED
-bool EditorExportPlatformAndroid::poll_export()
-{
-	bool dc = devices_changed.is_set();
-	if (dc) {
-		// don't clear unless we're reporting true, to avoid race
-		devices_changed.clear();
-	}
-	return dc;
-}
-
-int EditorExportPlatformAndroid::get_options_count() const
-{
-	MutexLock lock(device_lock);
-	return devices.size() + 1;
-}
-
-String EditorExportPlatformAndroid::get_options_tooltip() const
-{
-	return TTR("Select device from the list");
-}
-
-String EditorExportPlatformAndroid::get_option_label(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, devices.size() + 1, "");
-	if (p_index == 0) {
-		return TTR("Mirror Android devices");
-	}
-	MutexLock lock(device_lock);
-	return devices[p_index - 1].name;
-}
-
-String EditorExportPlatformAndroid::get_option_tooltip(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, devices.size() + 1, "");
-	if (p_index == 0) {
-		return TTR("If enabled, \"scrcpy\" is used to start the project and automatically stream "
-				   "device display (or virtual display) content.");
-	}
-	MutexLock lock(device_lock);
-	String s = devices[p_index - 1].description;
-	if (devices.size() == 1) {
-		// Tooltip will be:
-		// Name
-		// Description
-		s = devices[p_index - 1].name + "\n\n" + s;
-	}
-	return s;
-}
-
-String EditorExportPlatformAndroid::get_device_architecture(int p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, devices.size() + 1, "");
-	if (p_index == 0) {
-		return String();
-	}
-	MutexLock lock(device_lock);
-	return devices[p_index - 1].architecture;
-}
-
-#endif // ANDROID_ENABLED
-
-Ref<Texture2D> EditorExportPlatformAndroid::get_run_icon() const { return run_icon; }
-
-static bool has_valid_keystore_credentials(String& r_error_str, const String& p_keystore,
-	const String& p_username, const String& p_password, const String& p_type)
-{
-	String output;
-	List<String> args;
-	args.push_back("-list");
-	args.push_back("-keystore");
-	args.push_back(p_keystore);
-	args.push_back("-storepass");
-	args.push_back(p_password);
-	args.push_back("-alias");
-	args.push_back(p_username);
-	String keytool_path = EditorExportPlatformAndroid::get_keytool_path();
-	Error error = OS::execute(keytool_path, args, &output, nullptr, true);
-	String keytool_error = "keytool error:";
-	bool valid = output.substr(0, keytool_error.length()) != keytool_error;
-
-	if (error != OK) {
-		r_error_str =
-			TTR("Error: There was a problem validating the keystore username and password");
-		return false;
-	}
-	if (!valid) {
-		r_error_str = TTR(
-			p_type + " Username and/or Password is invalid for the given " + p_type + " Keystore");
-		return false;
-	}
-	r_error_str = "";
-	return true;
-}
-
-#ifdef MODULE_MONO_ENABLED
-static uint64_t _last_validate_tfm_time = 0;
-static String _last_validate_tfm = "";
-
-bool _validate_dotnet_tfm(const String& required_tfm, String& r_error)
-{
-	String assembly_name = Path::get_csharp_project_name();
-	String project_path =
-		ProjectSettings::globalize_path("res://" + assembly_name + ".csproj");
-
-	if (!FileAccess::exists(project_path)) {
-		return true;
-	}
-
-	uint64_t modified_time = FileAccess::get_modified_time(project_path);
-	String tfm;
-
-	if (modified_time == _last_validate_tfm_time) {
-		tfm = _last_validate_tfm;
-	}
-	else {
-		String pipe;
-		List<String> args;
-		args.push_back("build");
-		args.push_back(project_path);
-		args.push_back("/p:GodotTargetPlatform=android");
-		args.push_back("--getProperty:TargetFramework");
-
-		int exitcode;
-		Error err = OS::execute("dotnet", args, &pipe, &exitcode, true);
-		if (err != OK || exitcode != 0) {
-			if (err != OK) {
-				WARN_PRINT("Failed to execute dotnet command. Error " + String(error_names[err]));
-			}
-			else if (exitcode != 0) {
-				print_line(pipe);
-				WARN_PRINT("dotnet command exited with code " + itos(exitcode) +
-						   ". See output above for more details.");
-			}
-			r_error +=
-				vformat(TTR("Unable to determine the C# project's TFM, it may be incompatible. The "
-							"export template only supports '%s'. Make sure the project targets "
-							"'%s' or consider using gradle builds instead."),
-					required_tfm, required_tfm) +
-				"\n";
-			return true;
-		}
-		else {
-			tfm = pipe.strip_edges();
-			_last_validate_tfm_time = modified_time;
-			_last_validate_tfm = tfm;
-		}
-	}
-
-	if (tfm != required_tfm) {
-		r_error += vformat(TTR("C# project targets '%s' but the export template only supports "
-							   "'%s'. Consider using gradle builds instead."),
-					   tfm, required_tfm) +
-				   "\n";
-		return false;
-	}
-
-	return true;
-}
-#endif
-
-void EditorExportPlatformAndroid::_clear_assets_directory(const Ref<EditorExportPreset>& p_preset)
-{
-	Ref<DirAccess> da_res = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-	String gradle_build_directory = _get_android_build_directory(p_preset);
-
-	// Clear the APK assets directory
-	String apk_assets_directory = gradle_build_directory.path_join(APK_ASSETS_DIRECTORY);
-	if (da_res->dir_exists(apk_assets_directory)) {
-		print_verbose("Clearing APK assets directory...");
-		Ref<DirAccess> da_assets = DirAccess::open(apk_assets_directory);
-		ERR_FAIL_COND(da_assets.is_null());
-
-		da_assets->erase_contents_recursive();
-		da_res->remove(apk_assets_directory);
-	}
-
-	// Clear the AAB assets directory
-	String aab_assets_directory = gradle_build_directory.path_join(AAB_ASSETS_DIRECTORY);
-	if (da_res->dir_exists(aab_assets_directory)) {
-		print_verbose("Clearing AAB assets directory...");
-		Ref<DirAccess> da_assets = DirAccess::open(aab_assets_directory);
-		ERR_FAIL_COND(da_assets.is_null());
-
-		da_assets->erase_contents_recursive();
-		da_res->remove(aab_assets_directory);
-	}
-}
-
-String EditorExportPlatformAndroid::join_list(
-	const List<String>& p_parts, const String& p_separator)
-{
-	String ret;
-	for (List<String>::ConstIterator itr = p_parts.begin(); itr != p_parts.end(); ++itr) {
-		if (itr != p_parts.begin()) {
-			ret += p_separator;
-		}
-		ret += *itr;
-	}
-	return ret;
-}
-
-String EditorExportPlatformAndroid::join_abis(
-	const Vector<EditorExportPlatformAndroid::ABI>& p_parts, const String& p_separator,
-	bool p_use_arch)
-{
-	String ret;
-	for (int i = 0; i < p_parts.size(); ++i) {
-		if (i > 0) {
-			ret += p_separator;
-		}
-		ret += (p_use_arch) ? p_parts[i].arch : p_parts[i].abi;
-	}
-	return ret;
-}
-
-String EditorExportPlatformAndroid::_get_deprecated_plugins_names(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	Vector<String> names;
-
-#ifndef DISABLE_DEPRECATED
-	PluginConfigAndroid::get_plugins_names(get_enabled_plugins(p_preset), names);
-#endif // DISABLE_DEPRECATED
-
-	String plugins_names = String("|").join(names);
-	return plugins_names;
-}
-
-String EditorExportPlatformAndroid::_resolve_export_plugin_android_library_path(
-	const String& p_android_library_path) const
-{
-	String absolute_path;
-	if (!p_android_library_path.is_empty()) {
-		if (p_android_library_path.is_absolute_path()) {
-			absolute_path =
-				ProjectSettings::globalize_path(p_android_library_path);
-		}
-		else {
-			const String export_plugin_absolute_path =
-				String("res://addons/").path_join(p_android_library_path);
-			absolute_path =
-				ProjectSettings::globalize_path(export_plugin_absolute_path);
-		}
-	}
-	return absolute_path;
-}
-
-bool EditorExportPlatformAndroid::_is_clean_build_required(const Ref<EditorExportPreset>& p_preset)
-{
-	bool first_build = last_gradle_build_time == 0;
-	bool have_plugins_changed = false;
-	String gradle_build_dir = _get_android_build_directory(p_preset);
-	bool has_build_dir_changed = last_gradle_build_dir != gradle_build_dir;
-
-	String plugin_names = _get_plugins_names(p_preset);
-
-	if (!first_build) {
-		have_plugins_changed = plugin_names != last_plugin_names;
-#ifndef DISABLE_DEPRECATED
-		if (!have_plugins_changed) {
-			Vector<PluginConfigAndroid> enabled_plugins = get_enabled_plugins(p_preset);
-			for (int i = 0; i < enabled_plugins.size(); i++) {
-				if (enabled_plugins.get(i).last_updated > last_gradle_build_time) {
-					have_plugins_changed = true;
-					break;
-				}
-			}
-		}
-#endif // DISABLE_DEPRECATED
-	}
-
-	last_gradle_build_time = OS::get_unix_time();
-	last_gradle_build_dir = gradle_build_dir;
-	last_plugin_names = plugin_names;
-
-	return have_plugins_changed || has_build_dir_changed || first_build;
-}
-
-Error EditorExportPlatformAndroid::_generate_sparse_pck_metadata(
-	const Ref<EditorExportPreset>& p_preset, PackData& p_pack_data, Vector<uint8_t>& r_data)
-{
-	Error err;
-	Ref<FileAccess> ftmp =
-		FileAccess::create_temp(FileAccess::WRITE_READ, "export_index", "tmp", false, &err);
-	if (err != OK) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Save PCK"), TTR("Could not create temporary file!"));
-		return err;
-	}
-	int64_t pck_start_pos = ftmp->get_position();
-	uint64_t file_base_ofs = 0;
-	uint64_t dir_base_ofs = 0;
-	EditorExportPlatform::_store_header(ftmp,
-		p_preset->get_enc_pck() && p_preset->get_enc_directory(), true, file_base_ofs, dir_base_ofs,
-		p_pack_data.salt);
-
-	// Write directory.
-	uint64_t dir_offset = ftmp->get_position();
-	ftmp->seek(dir_base_ofs);
-	ftmp->store_64(dir_offset - pck_start_pos);
-	ftmp->seek(dir_offset);
-
-	Vector<uint8_t> key;
-	if (p_preset->get_enc_pck() && p_preset->get_enc_directory()) {
-		String script_key = _get_script_encryption_key(p_preset);
-		key.resize(32);
-		if (script_key.length() == 64) {
-			for (int i = 0; i < 32; i++) {
-				int v = 0;
-				if (i * 2 < script_key.length()) {
-					char32_t ct = script_key[i * 2];
-					if (is_digit(ct)) {
-						ct = ct - '0';
-					}
-					else if (ct >= 'a' && ct <= 'f') {
-						ct = 10 + ct - 'a';
-					}
-					v |= ct << 4;
-				}
-
-				if (i * 2 + 1 < script_key.length()) {
-					char32_t ct = script_key[i * 2 + 1];
-					if (is_digit(ct)) {
-						ct = ct - '0';
-					}
-					else if (ct >= 'a' && ct <= 'f') {
-						ct = 10 + ct - 'a';
-					}
-					v |= ct;
-				}
-				key.write[i] = v;
-			}
-		}
-	}
-
-	if (!EditorExportPlatform::_encrypt_and_store_directory(
-			ftmp, p_pack_data, key, p_preset->get_seed(), 0)) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Save PCK"), TTR("Can't create encrypted file."));
-		return ERR_CANT_CREATE;
-	}
-
-	r_data.resize(ftmp->get_length());
-	ftmp->seek(0);
-	ftmp->get_buffer(r_data.ptrw(), r_data.size());
-	ftmp.unref();
-
-	return OK;
-}
-
-#ifdef ANDROID_ENABLED
-// Copies the given keystore to temp file.
-// Returns the new path on success, or an empty String on failure.
-static String _copy_keystore_to_temp(
-	const String& p_keystore_path, const String& p_build_path, const String& p_name)
-{
-	Error err;
-	PackedByteArray keystore_data = FileAccess::get_file_as_bytes(p_keystore_path, &err);
-	if (err != OK) {
-		return String();
-	}
-
-	String temp_dir = p_build_path + "/.android";
-	String temp_filename = temp_dir + "/" + p_name;
-
-	DirAccess::make_dir_recursive_absolute(temp_dir);
-	Ref<FileAccess> temp_file = FileAccess::open(temp_filename, FileAccess::WRITE);
-	if (!temp_file.is_valid()) {
-		return String();
-	}
-
-	temp_file->store_buffer(keystore_data);
-	return temp_filename;
-}
-#endif
-
-void EditorExportPlatformAndroid::get_platform_features(List<String>* r_features) const
-{
-	r_features->push_back("mobile");
-	r_features->push_back("android");
-}
-
-void EditorExportPlatformAndroid::resolve_platform_feature_priorities(
-	const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features)
-{
-}
-
-EditorExportPlatformAndroid::~EditorExportPlatformAndroid()
-{
-#ifndef ANDROID_ENABLED
-	_stop_check_for_changes_poll_thread();
-#else
-	memdelete(android_editor_gradle_runner);
-#endif
-}
-
-Vector<PluginConfigAndroid> EditorExportPlatformAndroid::get_enabled_plugins(
-	const Ref<EditorExportPreset>& p_presets)
-{
-	return Vector<PluginConfigAndroid>();
-}
-
-void EditorExportPlatformAndroid::_check_for_changes_poll_thread(void* ud) {}
-
-String EditorExportPlatformAndroid::get_valid_basename(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	return String();
-}
-
-String EditorExportPlatformAndroid::_get_plugins_names(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	return String();
-}
-
-void EditorExportPlatformAndroid::_get_manifest_info(const Ref<EditorExportPreset>& p_preset,
-	bool p_give_internet, Vector<String>& r_permissions, Vector<FeatureInfo>& r_features,
-	Vector<MetadataInfo>& r_metadata)
-{
-}
-
-String _get_screen_sizes_tag(const Ref<EditorExportPreset>& p_preset) { return String(); }
-
-String _get_application_tag(const Ref<EditorExportPlatform>& p_platform,
-	const Ref<EditorExportPreset>& p_preset, bool p_is_in_front, bool p_is_engine,
-	const Vector<MetadataInfo>& p_metadata)
-{
-	return String();
-}
-
-void register_android_exporter() {}
-
-PluginConfigAndroid PluginConfigAndroid::load_plugin_config(
-	Ref<ConfigFile> p_config_file, const String& p_path)
-{
-	return PluginConfigAndroid();
-}
-
-Error EditorExportPlatformAndroid::run(
-	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
-{
-	return OK;
-}
-
-void EditorExportPlatformAndroid::initialize() {}
-
-bool EditorExportPlatformAndroid::has_valid_project_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error) const
-{
-	return false;
-}
-
-bool EditorExportPlatformAndroid::has_valid_export_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
-	bool p_debug) const
-{
-	return false;
-}
-
-void EditorExportPlatformAndroid::get_preset_features(
-	const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const
-{
-}
-
-String EditorExportPlatformAndroid::get_export_option_warning(
-	const EditorExportPreset* p_preset, const String& p_name) const
-{
-	return String();
-}
-
-bool EditorExportPlatformAndroid::get_export_option_visibility(
-	const EditorExportPreset* p_preset, const String& p_option) const
-{
-	return false;
-}
-
-void EditorExportPlatformAndroid::get_export_options(List<ExportOption>* r_options) const {}
-
-List<String> EditorExportPlatformAndroid::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	return List<String>();
-}
-
-Error EditorExportPlatformAndroid::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, uint32_t p_flags, bool p_notify)
-{
-	return OK;
-}
-
-
-
-// ============================================================================
-// Merged from platform/android/export/godot_plugin_config.cpp
-// ============================================================================
-
-
-#ifndef DISABLE_DEPRECATED
-
-#include "core/os/os.h"
-
-/*
- * Set of prebuilt plugins.
- * Currently unused, this is just for future reference:
- */
-// static const PluginConfigAndroid MY_PREBUILT_PLUGIN = {
-//    /*.valid_config =*/true,
-//    /*.last_updated =*/0,
-//    /*.name =*/"GodotPayment",
-//    /*.binary_type =*/"local",
-//    /*.binary =*/"res://android/build/libs/plugins/GodotPayment.release.aar",
-//    /*.local_dependencies =*/{},
-//     /*.remote_dependencies =*/String("com.android.billingclient:billing:2.2.1").split("|"),
-//     /*.custom_maven_repos =*/{}
-// };
-
-String PluginConfigAndroid::resolve_local_dependency_path(
-	String plugin_config_dir, String dependency_path)
-{
-	String absolute_path;
-	if (!dependency_path.is_empty()) {
-		if (dependency_path.is_absolute_path()) {
-			absolute_path = ProjectSettings::globalize_path(dependency_path);
-		}
-		else {
-			absolute_path = plugin_config_dir.path_join(dependency_path);
-		}
-	}
-
-	return absolute_path;
-}
-
-PluginConfigAndroid PluginConfigAndroid::resolve_prebuilt_plugin(
-	PluginConfigAndroid prebuilt_plugin, String plugin_config_dir)
-{
-	PluginConfigAndroid resolved = prebuilt_plugin;
-	resolved.binary = resolved.binary_type == PluginConfigAndroid::BINARY_TYPE_LOCAL
-						  ? resolve_local_dependency_path(plugin_config_dir, prebuilt_plugin.binary)
-						  : prebuilt_plugin.binary;
-	if (!prebuilt_plugin.local_dependencies.is_empty()) {
-		resolved.local_dependencies.clear();
-		for (int i = 0; i < prebuilt_plugin.local_dependencies.size(); i++) {
-			resolved.local_dependencies.push_back(resolve_local_dependency_path(
-				plugin_config_dir, prebuilt_plugin.local_dependencies[i]));
-		}
-	}
-	return resolved;
-}
-
-Vector<PluginConfigAndroid> PluginConfigAndroid::get_prebuilt_plugins(String plugins_base_dir)
-{
-	Vector<PluginConfigAndroid> prebuilt_plugins;
-	return prebuilt_plugins;
-}
-
-bool PluginConfigAndroid::is_plugin_config_valid(PluginConfigAndroid plugin_config)
-{
-	bool valid_name = !plugin_config.name.is_empty();
-	bool valid_binary_type = plugin_config.binary_type == PluginConfigAndroid::BINARY_TYPE_LOCAL ||
-							 plugin_config.binary_type == PluginConfigAndroid::BINARY_TYPE_REMOTE;
-
-	bool valid_binary = false;
-	if (valid_binary_type) {
-		valid_binary = !plugin_config.binary.is_empty() &&
-					   (plugin_config.binary_type == PluginConfigAndroid::BINARY_TYPE_REMOTE ||
-						   FileAccess::exists(plugin_config.binary));
-	}
-
-	bool valid_local_dependencies = true;
-	if (!plugin_config.local_dependencies.is_empty()) {
-		for (int i = 0; i < plugin_config.local_dependencies.size(); i++) {
-			if (!FileAccess::exists(plugin_config.local_dependencies[i])) {
-				valid_local_dependencies = false;
-				break;
-			}
-		}
-	}
-	return valid_name && valid_binary && valid_binary_type && valid_local_dependencies;
-}
-
-uint64_t PluginConfigAndroid::get_plugin_modification_time(
-	const PluginConfigAndroid& plugin_config, const String& config_path)
-{
-	uint64_t last_updated = FileAccess::get_modified_time(config_path);
-	last_updated = MAX(last_updated, FileAccess::get_modified_time(plugin_config.binary));
-
-	for (int i = 0; i < plugin_config.local_dependencies.size(); i++) {
-		String binary = plugin_config.local_dependencies.get(i);
-		last_updated = MAX(last_updated, FileAccess::get_modified_time(binary));
-	}
-
-	return last_updated;
-}
-
-void PluginConfigAndroid::get_plugins_binaries(
-	String binary_type, Vector<PluginConfigAndroid> plugins_configs, Vector<String>& r_result)
-{
-	if (!plugins_configs.is_empty()) {
-		for (int i = 0; i < plugins_configs.size(); i++) {
-			PluginConfigAndroid config = plugins_configs[i];
-			if (!config.valid_config) {
-				continue;
-			}
-
-			if (config.binary_type == binary_type) {
-				r_result.push_back(config.binary);
-			}
-
-			if (binary_type == PluginConfigAndroid::BINARY_TYPE_LOCAL) {
-				r_result.append_array(config.local_dependencies);
-			}
-
-			if (binary_type == PluginConfigAndroid::BINARY_TYPE_REMOTE) {
-				r_result.append_array(config.remote_dependencies);
-			}
-		}
-	}
-}
-
-void PluginConfigAndroid::get_plugins_custom_maven_repos(
-	Vector<PluginConfigAndroid> plugins_configs, Vector<String>& r_result)
-{
-	if (!plugins_configs.is_empty()) {
-		for (int i = 0; i < plugins_configs.size(); i++) {
-			PluginConfigAndroid config = plugins_configs[i];
-			if (!config.valid_config) {
-				continue;
-			}
-
-			r_result.append_array(config.custom_maven_repos);
-		}
-	}
-}
-
-void PluginConfigAndroid::get_plugins_names(
-	Vector<PluginConfigAndroid> plugins_configs, Vector<String>& r_result)
-{
-	if (!plugins_configs.is_empty()) {
-		for (int i = 0; i < plugins_configs.size(); i++) {
-			PluginConfigAndroid config = plugins_configs[i];
-			if (!config.valid_config) {
-				continue;
-			}
-
-			r_result.push_back(config.name);
-		}
-	}
-}
-
-#endif // DISABLE_DEPRECATED
-
-
-
-// ============================================================================
-// Merged from platform/android/export/gradle_export_util.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-
-
-int _get_android_orientation_value(DisplayServerEnums::ScreenOrientation screen_orientation)
-{
-	switch (screen_orientation) {
-	case DisplayServerEnums::SCREEN_PORTRAIT:
-		return 1;
-	case DisplayServerEnums::SCREEN_REVERSE_LANDSCAPE:
-		return 8;
-	case DisplayServerEnums::SCREEN_REVERSE_PORTRAIT:
-		return 9;
-	case DisplayServerEnums::SCREEN_SENSOR_LANDSCAPE:
-		return 11;
-	case DisplayServerEnums::SCREEN_SENSOR_PORTRAIT:
-		return 12;
-	case DisplayServerEnums::SCREEN_SENSOR:
-		return 13;
-	case DisplayServerEnums::SCREEN_LANDSCAPE:
-	default:
-		return 0;
-	}
-}
-
-String _get_android_orientation_label(DisplayServerEnums::ScreenOrientation screen_orientation)
-{
-	switch (screen_orientation) {
-	case DisplayServerEnums::SCREEN_PORTRAIT:
-		return "portrait";
-	case DisplayServerEnums::SCREEN_REVERSE_LANDSCAPE:
-		return "reverseLandscape";
-	case DisplayServerEnums::SCREEN_REVERSE_PORTRAIT:
-		return "reversePortrait";
-	case DisplayServerEnums::SCREEN_SENSOR_LANDSCAPE:
-		return "userLandscape";
-	case DisplayServerEnums::SCREEN_SENSOR_PORTRAIT:
-		return "userPortrait";
-	case DisplayServerEnums::SCREEN_SENSOR:
-		return "fullUser";
-	case DisplayServerEnums::SCREEN_LANDSCAPE:
-	default:
-		return "landscape";
-	}
-}
-
-int _get_app_category_value(int category_index)
-{
-	switch (category_index) {
-	case APP_CATEGORY_ACCESSIBILITY:
-		return 8;
-	case APP_CATEGORY_AUDIO:
-		return 1;
-	case APP_CATEGORY_IMAGE:
-		return 3;
-	case APP_CATEGORY_MAPS:
-		return 6;
-	case APP_CATEGORY_NEWS:
-		return 5;
-	case APP_CATEGORY_PRODUCTIVITY:
-		return 7;
-	case APP_CATEGORY_SOCIAL:
-		return 4;
-	case APP_CATEGORY_UNDEFINED:
-		return -1;
-	case APP_CATEGORY_VIDEO:
-		return 2;
-	case APP_CATEGORY_GAME:
-	default:
-		return 0;
-	}
-}
-
-String _get_app_category_label(int category_index)
-{
-	switch (category_index) {
-	case APP_CATEGORY_ACCESSIBILITY:
-		return "accessibility";
-	case APP_CATEGORY_AUDIO:
-		return "audio";
-	case APP_CATEGORY_IMAGE:
-		return "image";
-	case APP_CATEGORY_MAPS:
-		return "maps";
-	case APP_CATEGORY_NEWS:
-		return "news";
-	case APP_CATEGORY_PRODUCTIVITY:
-		return "productivity";
-	case APP_CATEGORY_SOCIAL:
-		return "social";
-	case APP_CATEGORY_VIDEO:
-		return "video";
-	case APP_CATEGORY_GAME:
-	default:
-		return "game";
-	}
-}
-
-// Utility method used to create a directory.
-Error create_directory(const String& p_dir)
-{
-	if (!DirAccess::exists(p_dir)) {
-		Ref<DirAccess> filesystem_da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		ERR_FAIL_COND_V_MSG(
-			filesystem_da.is_null(), ERR_CANT_CREATE, "Cannot create directory '" + p_dir + "'.");
-		Error err = filesystem_da->make_dir_recursive(p_dir);
-		ERR_FAIL_COND_V_MSG(err, ERR_CANT_CREATE, "Cannot create directory '" + p_dir + "'.");
-	}
-	return OK;
-}
-
-// Writes p_data into a file at p_path, creating directories if necessary.
-// Note: this will overwrite the file at p_path if it already exists.
-Error store_file_at_path(const String& p_path, const Vector<uint8_t>& p_data)
-{
-	String dir = p_path.get_base_dir();
-	Error err = create_directory(dir);
-	if (err != OK) {
-		return err;
-	}
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), ERR_CANT_CREATE, "Cannot create file '" + p_path + "'.");
-	fa->store_buffer(p_data.ptr(), p_data.size());
-	return OK;
-}
-
-// Writes string p_data into a file at p_path, creating directories if necessary.
-// Note: this will overwrite the file at p_path if it already exists.
-Error store_string_at_path(const String& p_path, const String& p_data)
-{
-	String dir = p_path.get_base_dir();
-	Error err = create_directory(dir);
-	if (err != OK) {
-		if (OS::is_stdout_verbose()) {
-			print_error("Unable to write data into " + p_path);
-		}
-		return err;
-	}
-	Ref<FileAccess> fa = FileAccess::open(p_path, FileAccess::WRITE);
-	ERR_FAIL_COND_V_MSG(fa.is_null(), ERR_CANT_CREATE, "Cannot create file '" + p_path + "'.");
-	fa->store_string(p_data);
-	return OK;
-}
-
-// Implementation of EditorExportSaveFunction.
-// This method will only be called as an input to export_project_files.
-// It is used by the export_project_files method to save all the asset files into the gradle
-// project. It's functionality mirrors that of the method save_apk_file. This method will be called
-// ONLY when gradle build is enabled.
-Error rename_and_store_file_in_gradle_project(const Ref<EditorExportPreset>& p_preset,
-	void* p_userdata, const String& p_path, const Vector<uint8_t>& p_data, int p_file, int p_total,
-	const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-	const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta)
-{
-	CustomExportData* export_data = static_cast<CustomExportData*>(p_userdata);
-
-	const String simplified_path = EditorExportPlatform::simplify_path(p_path);
-
-	Vector<uint8_t> enc_data;
-	EditorExportPlatform::SavedData sd;
-	Error err = _store_temp_file(simplified_path, p_data, p_enc_in_filters, p_enc_ex_filters, p_key,
-		p_seed, p_delta, enc_data, sd);
-	if (err != OK) {
-		return err;
-	}
-
-	String dst_path;
-	if (export_data->pd.salt.length() == 32) {
-		dst_path = export_data->assets_directory + String("/") +
-				   (simplified_path + export_data->pd.salt).sha256_text();
-	}
-	else {
-		dst_path =
-			export_data->assets_directory + String("/") + simplified_path.trim_prefix("res://");
-	}
-	print_verbose("Saving project files from " + simplified_path + " into " + dst_path);
-	err = store_file_at_path(dst_path, enc_data);
-
-	export_data->pd.file_ofs.push_back(sd);
-	return err;
-}
-
-String _android_xml_escape(const String& p_string)
-{
-	// Android XML requires strings to be both valid XML (`xml_escape()`) but also
-	// to escape characters which are valid XML but have special meaning in Android XML.
-	// https://developer.android.com/guide/topics/resources/string-resource.html#FormattingAndStyling
-	// Note: Didn't handle U+XXXX unicode chars, could be done if needed.
-	return p_string.replace("@", "\\@")
-		.replace("?", "\\?")
-		.replace("'", "\\'")
-		.replace("\"", "\\\"")
-		.replace("\n", "\\n")
-		.replace("\t", "\\t")
-		.xml_escape(false);
-}
-
-String bool_to_string(bool v) { return v ? "true" : "false"; }
-
-String _get_gles_tag()
-{
-	return "    <uses-feature android:glEsVersion=\"0x00030000\" android:required=\"true\" />\n";
-}
-
-Error _store_temp_file(const String& p_simplified_path, const Vector<uint8_t>& p_data,
-	const Vector<String>& p_enc_in_filters, const Vector<String>& p_enc_ex_filters,
-	const Vector<uint8_t>& p_key, uint64_t p_seed, bool p_delta, Vector<uint8_t>& r_enc_data,
-	EditorExportPlatform::SavedData& r_sd)
-{
-	Error err = OK;
-	Ref<FileAccess> ftmp =
-		FileAccess::create_temp(FileAccess::WRITE_READ, "export", "tmp", false, &err);
-	if (err != OK) {
-		return err;
-	}
-	r_sd.path_utf8 = p_simplified_path.trim_prefix("res://").utf8();
-	r_sd.ofs = 0;
-	r_sd.size = p_data.size();
-	r_sd.delta = p_delta;
-	err = EditorExportPlatform::_encrypt_and_store_data(ftmp, p_simplified_path, p_data,
-		p_enc_in_filters, p_enc_ex_filters, p_key, p_seed, r_sd.encrypted);
-	if (err != OK) {
-		return err;
-	}
-
-	r_enc_data.resize(ftmp->get_length());
-	ftmp->seek(0);
-	ftmp->get_buffer(r_enc_data.ptrw(), r_enc_data.size());
-	ftmp.unref();
-
-	// Store MD5 of original file.
-	{
-		unsigned char hash[16];
-		CryptoCore::md5(p_data.ptr(), p_data.size(), hash);
-		r_sd.md5.resize(16);
-		for (int i = 0; i < 16; i++) {
-			r_sd.md5.write[i] = hash[i];
-		}
-	}
-	return OK;
-}
-
-
-// --- Merged from platform/ios/export/export.cpp ---
-// --- Inlined from platform/ios/export/export_plugin.h ---
-
-class EditorExportPlatformIOS : public EditorExportPlatformAppleEmbedded
-{
-	static Vector<String> device_types;
-
-	virtual String get_platform_name() const override { return "ios"; }
-
-	virtual String get_sdk_name() const override { return "iphoneos"; }
-
-	virtual const Vector<String> get_device_types() const override { return device_types; }
-
-	virtual String get_minimum_deployment_target() const override { return "15.0"; }
-
-	virtual Vector<IconInfo> get_icon_infos() const override;
-
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-
-	virtual Error _export_loading_screen_file(
-		const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir) override;
-	virtual Error _export_icons(
-		const Ref<EditorExportPreset>& p_preset, const String& p_iconset_dir) override;
-
-	virtual String _process_config_file_line(const Ref<EditorExportPreset>& p_preset,
-		const String& p_line, const AppleEmbeddedConfigData& p_config, bool p_debug,
-		const CodeSigningDetails& p_code_signing) override;
-
-public:
-	virtual String get_name() const override { return "iOS"; }
-
-	virtual String get_os_name() const override { return "iOS"; }
-
-	virtual void get_platform_features(List<String>* r_features) const override
-	{
-		EditorExportPlatformAppleEmbedded::get_platform_features(r_features);
-		r_features->push_back("ios");
-	}
-
-	virtual void initialize() override;
-	~EditorExportPlatformIOS();
-};
-
-
-
-// --- End platform/ios/export/export_plugin.h ---
-
-#ifdef MACOS_ENABLED
-#include "servers/display/display_server.h"
-#endif
-
-void register_ios_exporter_types() {}
-
-void register_ios_exporter()
-{
-	Ref<EditorExportPlatformIOS> platform;
-	platform.instantiate();
-
-	EditorExport::add_export_platform(platform);
-}
-
-
-
-// ============================================================================
-// Merged from platform/ios/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
-#include "main/splash.gen.h"
-
-Vector<String> EditorExportPlatformIOS::device_types({"iPhone", "iPad"});
-
-void EditorExportPlatformIOS::initialize()
-{
-	if (Engine::is_editor_hint()) {
-		EditorExportPlatformAppleEmbedded::_initialize(_ios_logo_svg, _ios_run_icon_svg);
-#ifdef MACOS_ENABLED
-		_start_remote_device_poller_thread();
-#endif
-	}
-}
-
-EditorExportPlatformIOS::~EditorExportPlatformIOS()
-{
-#ifdef MACOS_ENABLED
-	_stop_remote_device_poller_thread();
-#endif
-}
-
-Vector<EditorExportPlatformAppleEmbedded::IconInfo> EditorExportPlatformIOS::get_icon_infos() const
-{
-	return {
-		// Settings on iPhone, iPad Pro, iPad, iPad mini
-		{PNAME("icons/settings_58x58"), "universal", "Icon-58", "58", "2x", "29x29", false},
-		{PNAME("icons/settings_87x87"), "universal", "Icon-87", "87", "3x", "29x29", false},
-
-		// Notifications on iPhone, iPad Pro, iPad, iPad mini
-		{PNAME("icons/notification_40x40"), "universal", "Icon-40", "40", "2x", "20x20", false},
-		{PNAME("icons/notification_60x60"), "universal", "Icon-60", "60", "3x", "20x20", false},
-		{PNAME("icons/notification_76x76"), "universal", "Icon-76", "76", "2x", "38x38", false},
-		{PNAME("icons/notification_114x114"), "universal", "Icon-114", "114", "3x", "38x38", false},
-
-		// Spotlight on iPhone, iPad Pro, iPad, iPad mini
-		{PNAME("icons/spotlight_80x80"), "universal", "Icon-80", "80", "2x", "40x40", false},
-		{PNAME("icons/spotlight_120x120"), "universal", "Icon-120", "120", "3x", "40x40", false},
-
-		// Home Screen on iPhone
-		{PNAME("icons/iphone_120x120"), "universal", "Icon-120-1", "120", "2x", "60x60", false},
-		{PNAME("icons/iphone_180x180"), "universal", "Icon-180", "180", "3x", "60x60", false},
-
-		// Home Screen on iPad Pro
-		{PNAME("icons/ipad_167x167"), "universal", "Icon-167", "167", "2x", "83.5x83.5", false},
-
-		// Home Screen on iPad, iPad mini
-		{PNAME("icons/ipad_152x152"), "universal", "Icon-152", "152", "2x", "76x76", false},
-
-		{PNAME("icons/ios_128x128"), "universal", "Icon-128", "128", "2x", "64x64", false},
-		{PNAME("icons/ios_192x192"), "universal", "Icon-192", "192", "3x", "64x64", false},
-
-		{PNAME("icons/ios_136x136"), "universal", "Icon-136", "136", "2x", "68x68", false},
-
-		// App Store
-		{PNAME("icons/app_store_1024x1024"), "universal", "Icon-1024", "1024", "1x", "1024x1024",
-			true},
-	};
-}
-
-void EditorExportPlatformIOS::get_export_options(
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-}
-
-bool EditorExportPlatformIOS::has_valid_export_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
-	bool p_debug) const
-{
-	return false;
-}
-
-String EditorExportPlatformIOS::_process_config_file_line(const Ref<EditorExportPreset>& p_preset,
-	const String& p_line,
-	const EditorExportPlatformAppleEmbedded::AppleEmbeddedConfigData& p_config_data, bool p_is_main,
-	const EditorExportPlatformAppleEmbedded::CodeSigningDetails& p_signing_details)
-{
-	return String();
-}
-
-Error EditorExportPlatformIOS::_export_loading_screen_file(
-	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
-{
-	return OK;
-}
-
-Error EditorExportPlatformIOS::_export_icons(
-	const Ref<EditorExportPreset>& p_preset, const String& p_dest_dir)
-{
-	return OK;
-}
-
-
-// --- Merged from platform/linuxbsd/export/export.cpp ---
-// --- Inlined from platform/linuxbsd/export/export_plugin.h ---
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-class EditorExportPlatformLinuxBSD : public EditorExportPlatformPC
-{
-	HashMap<String, String> extensions;
-
-	struct SSHCleanupCommand
-	{
-		String host;
-		String port;
-		Vector<String> ssh_args;
-		String cmd_args;
-		bool wait = false;
-
-		SSHCleanupCommand() {}
-
-		SSHCleanupCommand(const String& p_host, const String& p_port,
-			const Vector<String>& p_ssh_arg, const String& p_cmd_args, bool p_wait = false)
-		{
-			host = p_host;
-			port = p_port;
-			ssh_args = p_ssh_arg;
-			cmd_args = p_cmd_args;
-			wait = p_wait;
-		}
-	};
-
-	Ref<ImageTexture> run_icon;
-	Ref<ImageTexture> stop_icon;
-
-	Vector<SSHCleanupCommand> cleanup_commands;
-	ProcessID ssh_pid = 0;
-	int menu_options = 0;
-
-	bool is_elf(const String& p_path) const;
-	bool is_shebang(const String& p_path) const;
-
-	Error _export_debug_script(const Ref<EditorExportPreset>& p_preset, const String& p_app_name,
-		const String& p_pkg_name, const String& p_path);
-	String _get_exe_arch(const String& p_path) const;
-
-public:
-	virtual String get_template_file_name(
-		const String& p_target, const String& p_arch) const override;
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override;
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-	virtual Error fixup_embedded_pck(
-		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size) override;
-	virtual bool is_executable(const String& p_path) const override;
-
-	virtual void get_platform_features(List<String>* r_features) const override;
-
-	virtual Ref<Texture2D> get_run_icon() const override;
-	virtual bool poll_export() override;
-	virtual int get_options_count() const override;
-	virtual String get_option_label(int p_index) const override;
-	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
-	virtual void cleanup() override;
-};
-
-
-
-// --- End platform/linuxbsd/export/export_plugin.h ---
-
-void register_linuxbsd_exporter_types() {}
-
-void register_linuxbsd_exporter()
-{
-	Ref<EditorExportPlatformLinuxBSD> platform;
-	platform.instantiate();
-	platform->set_name("Linux");
-	platform->set_os_name("Linux");
-	platform->set_chmod_flags(0755);
-
-	EditorExport::add_export_platform(platform);
-}
-
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-#ifdef Bool
-#undef Bool
-#endif
-#ifdef True
-#undef True
-#endif
-#ifdef False
-#undef False
-#endif
-#ifdef CursorShape
-#undef CursorShape
-#endif
-#ifdef KeyPress
-#undef KeyPress
-#endif
-#ifdef KeyRelease
-#undef KeyRelease
-#endif
-#ifdef FocusIn
-#undef FocusIn
-#endif
-#ifdef FocusOut
-#undef FocusOut
-#endif
-#ifdef Expose
-#undef Expose
-#endif
-#ifdef FontChange
-#undef FontChange
-#endif
-#ifdef Unsorted
-#undef Unsorted
-#endif
-#ifdef Always
-#undef Always
-#endif
-#ifdef Above
-#undef Above
-#endif
-#ifdef Below
-#undef Below
-#endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-#include "main/splash.gen.h"
-#include "core/io/net_socket.h"
-#include "main/splash.gen.h"
-
-Error EditorExportPlatformLinuxBSD::_export_debug_script(const Ref<EditorExportPreset>& p_preset,
-	const String& p_app_name, const String& p_pkg_name, const String& p_path)
-{
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Script Export"),
-			vformat(TTR("Could not open file \"%s\"."), p_path));
-		return ERR_CANT_CREATE;
-	}
-
-	f->store_line("#!/bin/sh");
-	f->store_line("printf '\\033c\\033]0;%s\\a' " + p_app_name);
-	f->store_line("base_path=\"$(dirname \"$(realpath \"$0\")\")\"");
-	f->store_line("\"$base_path/" + p_pkg_name + "\" \"$@\"");
-
-	return OK;
-}
-
-String EditorExportPlatformLinuxBSD::get_template_file_name(
-	const String& p_target, const String& p_arch) const
-{
-	return "linux_" + p_target + "." + p_arch;
-}
-
-bool EditorExportPlatformLinuxBSD::is_elf(const String& p_path) const
-{
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
-	uint32_t magic = fb->get_32();
-	return (magic == 0x464c457f);
-}
-
-bool EditorExportPlatformLinuxBSD::is_shebang(const String& p_path) const
-{
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
-	uint16_t magic = fb->get_16();
-	return (magic == 0x2123);
-}
-
-bool EditorExportPlatformLinuxBSD::is_executable(const String& p_path) const
-{
-	return is_elf(p_path) || is_shebang(p_path);
-}
-
-void EditorExportPlatformLinuxBSD::get_platform_features(List<String>* r_features) const
-{
-	EditorExportPlatformPC::get_platform_features(r_features);
-	r_features->push_back("linux");
-	r_features->push_back("linuxbsd");
-}
-
-String EditorExportPlatformLinuxBSD::_get_exe_arch(const String& p_path) const
-{
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
-	if (f.is_null()) {
-		return "invalid";
-	}
-
-	// Read and check ELF magic number.
-	{
-		uint32_t magic = f->get_32();
-		if (magic != 0x464c457f) { // 0x7F + "ELF"
-			return "invalid";
-		}
-	}
-
-	// Process header.
-	int64_t header_pos = f->get_position();
-	f->seek(header_pos + 14);
-	uint16_t machine = f->get_16();
-	f->close();
-
-	switch (machine) {
-	case 0x0003:
-		return "x86_32";
-	case 0x003e:
-		return "x86_64";
-	case 0x0015:
-		return "ppc64";
-	case 0x0028:
-		return "arm32";
-	case 0x00b7:
-		return "arm64";
-	case 0x00f3:
-		return "rv64";
-	case 0x0102:
-		return "loongarch64";
-	default:
-		return "unknown";
-	}
-}
-
-Error EditorExportPlatformLinuxBSD::fixup_embedded_pck(
-	const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size)
-{
-	// Patch the header of the "pck" section in the ELF file so that it corresponds to the embedded
-	// data.
-
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ_WRITE);
-	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
-			vformat(TTR("Failed to open executable file \"%s\"."), p_path));
-		return ERR_CANT_OPEN;
-	}
-
-	// Read and check ELF magic number.
-	{
-		uint32_t magic = f->get_32();
-		if (magic != 0x464c457f) { // 0x7F + "ELF"
-			add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
-				TTR("Executable file header corrupted."));
-			return ERR_FILE_CORRUPT;
-		}
-	}
-
-	// Read program architecture bits from class field.
-
-	int bits = f->get_8() * 32;
-
-	if (bits == 32 && p_embedded_size >= 0x100000000) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
-			TTR("32-bit executables cannot have embedded data >= 4 GiB."));
-	}
-
-	// Get info about the section header table.
-
-	int64_t section_table_pos;
-	int64_t section_header_size;
-	if (bits == 32) {
-		section_header_size = 40;
-		f->seek(0x20);
-		section_table_pos = f->get_32();
-		f->seek(0x30);
-	}
-	else { // 64
-		section_header_size = 64;
-		f->seek(0x28);
-		section_table_pos = f->get_64();
-		f->seek(0x3c);
-	}
-	int num_sections = f->get_16();
-	int string_section_idx = f->get_16();
-
-	// Load the strings table.
-	uint8_t* strings;
-	{
-		// Jump to the strings section header.
-		f->seek(section_table_pos + string_section_idx * section_header_size);
-
-		// Read strings data size and offset.
-		int64_t string_data_pos;
-		int64_t string_data_size;
-		if (bits == 32) {
-			f->seek(f->get_position() + 0x10);
-			string_data_pos = f->get_32();
-			string_data_size = f->get_32();
-		}
-		else { // 64
-			f->seek(f->get_position() + 0x18);
-			string_data_pos = f->get_64();
-			string_data_size = f->get_64();
-		}
-
-		// Read strings data.
-		f->seek(string_data_pos);
-		strings = (uint8_t*)memalloc(string_data_size);
-		if (!strings) {
-			return ERR_OUT_OF_MEMORY;
-		}
-		f->get_buffer(strings, string_data_size);
-	}
-
-	// Search for the "pck" section.
-
-	bool found = false;
-	for (int i = 0; i < num_sections; ++i) {
-		int64_t section_header_pos = section_table_pos + i * section_header_size;
-		f->seek(section_header_pos);
-
-		uint32_t name_offset = f->get_32();
-		if (strcmp((char*)strings + name_offset, "pck") == 0) {
-			// "pck" section found, let's patch!
-
-			if (bits == 32) {
-				f->seek(section_header_pos + 0x10);
-				f->store_32(p_embedded_start);
-				f->store_32(p_embedded_size);
-			}
-			else { // 64
-				f->seek(section_header_pos + 0x18);
-				f->store_64(p_embedded_start);
-				f->store_64(p_embedded_size);
-			}
-
-			found = true;
-			break;
-		}
-	}
-
-	memfree(strings);
-
-	if (!found) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("PCK Embedding"),
-			TTR("Executable \"pck\" section not found."));
-		return ERR_FILE_CORRUPT;
-	}
-	return OK;
-}
-
-Ref<Texture2D> EditorExportPlatformLinuxBSD::get_run_icon() const { return run_icon; }
-
-int EditorExportPlatformLinuxBSD::get_options_count() const { return menu_options; }
-
-String EditorExportPlatformLinuxBSD::get_option_label(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall") : TTR("Run on remote Linux/BSD system");
-}
-
-String EditorExportPlatformLinuxBSD::get_option_tooltip(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall running project from the remote system")
-					 : TTR("Run exported project on remote Linux/BSD system");
-}
-
-void EditorExportPlatformLinuxBSD::cleanup()
-{
-	if (ssh_pid != 0 && OS::is_process_running(ssh_pid)) {
-		__print_line("Terminating connection...");
-		OS::kill(ssh_pid);
-		OS::delay_usec(1000);
-	}
-
-	if (!cleanup_commands.is_empty()) {
-		__print_line("Stopping and deleting previous version...");
-		for (const SSHCleanupCommand& cmd : cleanup_commands) {
-			if (cmd.wait) {
-				ssh_run_on_remote(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
-			}
-			else {
-				ssh_run_on_remote_no_wait(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
-			}
-		}
-	}
-	ssh_pid = 0;
-	cleanup_commands.clear();
-}
-
-Error EditorExportPlatformLinuxBSD::run(
-	const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags)
-{
-	return OK;
-}
-
-bool EditorExportPlatformLinuxBSD::poll_export() { return true; }
-
-bool EditorExportPlatformLinuxBSD::has_valid_export_configuration(
-	const Ref<EditorExportPreset>& p_preset, String& r_error, bool& r_missing_templates,
-	bool p_debug) const
-{
-	return false;
-}
-
-bool EditorExportPlatformLinuxBSD::get_export_option_visibility(
-	const EditorExportPreset* p_preset, const String& p_option) const
-{
-	return false;
-}
-
-void EditorExportPlatformLinuxBSD::get_export_options(List<ExportOption>* r_options) const {}
-
-List<String> EditorExportPlatformLinuxBSD::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	return List<String>();
-}
-
-Error EditorExportPlatformLinuxBSD::export_project(const Ref<EditorExportPreset>& p_preset,
-	bool p_debug, const String& p_path, uint32_t p_flags, bool p_notify)
-{
-	return OK;
-}
-
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-#ifdef Bool
-#undef Bool
-#endif
-#ifdef True
-#undef True
-#endif
-#ifdef False
-#undef False
-#endif
-#ifdef CursorShape
-#undef CursorShape
-#endif
-#ifdef KeyPress
-#undef KeyPress
-#endif
-#ifdef KeyRelease
-#undef KeyRelease
-#endif
-#ifdef FocusIn
-#undef FocusIn
-#endif
-#ifdef FocusOut
-#undef FocusOut
-#endif
-#ifdef Expose
-#undef Expose
-#endif
-#ifdef FontChange
-#undef FontChange
-#endif
-#ifdef Unsorted
-#undef Unsorted
-#endif
-#ifdef Always
-#undef Always
-#endif
-#ifdef Above
-#undef Above
-#endif
-#ifdef Below
-#undef Below
-#endif
-
-
-// --- Merged from platform/macos/export/export.cpp ---
-#include "servers/display/display_server.h"
-// --- Inlined from platform/macos/export/export_plugin.h ---
-#include <sys/stat.h>
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
-const String ENV_MAC_CODESIGN_CERT_FILE = "GODOT_MACOS_CODESIGN_CERTIFICATE_FILE";
-const String ENV_MAC_CODESIGN_CERT_PASS = "GODOT_MACOS_CODESIGN_CERTIFICATE_PASSWORD";
-const String ENV_MAC_CODESIGN_PROFILE = "GODOT_MACOS_CODESIGN_PROVISIONING_PROFILE";
-const String ENV_MAC_NOTARIZATION_UUID = "GODOT_MACOS_NOTARIZATION_API_UUID";
-const String ENV_MAC_NOTARIZATION_KEY = "GODOT_MACOS_NOTARIZATION_API_KEY";
-const String ENV_MAC_NOTARIZATION_KEY_ID = "GODOT_MACOS_NOTARIZATION_API_KEY_ID";
-const String ENV_MAC_NOTARIZATION_APPLE_ID = "GODOT_MACOS_NOTARIZATION_APPLE_ID_NAME";
-const String ENV_MAC_NOTARIZATION_APPLE_PASS = "GODOT_MACOS_NOTARIZATION_APPLE_ID_PASSWORD";
-
-class EditorExportPlatformMacOS : public EditorExportPlatform
-{
-	int version_code = 0;
-
-	Ref<ImageTexture> logo;
-
-	struct SSHCleanupCommand
-	{
-		String host;
-		String port;
-		Vector<String> ssh_args;
-		String cmd_args;
-		bool wait = false;
-
-		SSHCleanupCommand() {}
-
-		SSHCleanupCommand(const String& p_host, const String& p_port,
-			const Vector<String>& p_ssh_arg, const String& p_cmd_args, bool p_wait = false)
-		{
-			host = p_host;
-			port = p_port;
-			ssh_args = p_ssh_arg;
-			cmd_args = p_cmd_args;
-			wait = p_wait;
-		}
-	};
-
-	Ref<ImageTexture> run_icon;
-	Ref<ImageTexture> stop_icon;
-
-	Vector<SSHCleanupCommand> cleanup_commands;
-	ProcessID ssh_pid = 0;
-	int menu_options = 0;
-
-	void _fix_privacy_manifest(const Ref<EditorExportPreset>& p_preset, Vector<uint8_t>& plist);
-	void _fix_plist(const Ref<EditorExportPreset>& p_preset, Vector<uint8_t>& plist,
-		const String& p_binary, bool p_lg_icon_exported, const String& p_lg_icon);
-	void _make_icon(
-		const Ref<EditorExportPreset>& p_preset, const Ref<Image>& p_icon, Vector<uint8_t>& p_data);
-
-	Error _export_liquid_glass_icon(const Ref<EditorExportPreset>& p_preset,
-		const String& p_app_path, const String& p_icon_path);
-	Error _notarize(const Ref<EditorExportPreset>& p_preset, const String& p_path);
-	void _code_sign(const Ref<EditorExportPreset>& p_preset, const String& p_path,
-		const String& p_ent_path, bool p_warn = true, bool p_set_id = false);
-	void _code_sign_directory(const Ref<EditorExportPreset>& p_preset, const String& p_path,
-		const String& p_ent_path, const String& p_helper_ent_path,
-		bool p_should_error_on_non_code = true);
-	Error _copy_and_sign_files(Ref<DirAccess>& dir_access, const String& p_src_path,
-		const String& p_in_app_path, bool p_sign_enabled, const Ref<EditorExportPreset>& p_preset,
-		const String& p_ent_path, const String& p_helper_ent_path,
-		bool p_should_error_on_non_code_sign, bool p_sandbox);
-	Error _export_macos_plugins_for(Ref<EditorExportPlugin> p_editor_export_plugin,
-		const String& p_app_path_name, Ref<DirAccess>& dir_access, bool p_sign_enabled,
-		const Ref<EditorExportPreset>& p_preset, const String& p_ent_path,
-		const String& p_helper_ent_path, bool p_sandbox);
-	Error _create_dmg(
-		const String& p_dmg_path, const String& p_pkg_name, const String& p_app_path_name);
-	Error _create_pkg(const Ref<EditorExportPreset>& p_preset, const String& p_pkg_path,
-		const String& p_app_path_name);
-	Error _export_debug_script(const Ref<EditorExportPreset>& p_preset, const String& p_app_name,
-		const String& p_pkg_name, const String& p_path);
-
-	bool use_codesign() const { return true; }
-
-	bool is_package_name_valid(const String& p_package, String* r_error = nullptr) const
-	{
-		String pname = p_package;
-
-		if (pname.length() == 0) {
-			if (r_error) {
-				*r_error = TTR("Identifier is missing.");
-			}
-			return false;
-		}
-
-		for (int i = 0; i < pname.length(); i++) {
-			char32_t c = pname[i];
-			if (!(is_ascii_alphanumeric_char(c) || c == '-' || c == '.')) {
-				if (r_error) {
-					*r_error = vformat(
-						TTR("The character '%s' is not allowed in Identifier."), String::chr(c));
-				}
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	bool is_shebang(const String& p_path) const;
-
-protected:
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const override;
-
-public:
-	virtual String get_name() const override { return "macOS"; }
-
-	virtual String get_os_name() const override { return "macOS"; }
-
-	virtual Ref<Texture2D> get_logo() const override { return logo; }
-
-	virtual bool is_executable(const String& p_path) const override;
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override;
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-
-	virtual void get_platform_features(List<String>* r_features) const override
-	{
-		r_features->push_back("pc");
-		r_features->push_back("s3tc");
-		r_features->push_back("macos");
-	}
-
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override
-	{
-	}
-
-	virtual Ref<Texture2D> get_run_icon() const override;
-	virtual bool poll_export() override;
-	virtual int get_options_count() const override;
-	virtual String get_option_label(int p_index) const override;
-	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
-	virtual void cleanup() override;
-};
-
-
-
-// --- End platform/macos/export/export_plugin.h ---
-
-void register_macos_exporter_types() {}
-void register_macos_exporter() {}
-
-
-
-// ============================================================================
-// Merged from platform/macos/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
-
-#include "main/splash.gen.h"
-#include "core/io/net_socket.h"
-#include "main/splash.gen.h"
-#include "servers/display/display_server.h"
-
-struct IosDataCollectionInfo
-{
-	String prop_name;
-	String type_name;
-};
-
-static const IosDataCollectionInfo ios_data_collect_type_info[] = {
-	{"name", "NSPrivacyCollectedDataTypeName"},
-	{"email_address", "NSPrivacyCollectedDataTypeEmailAddress"},
-	{"phone_number", "NSPrivacyCollectedDataTypePhoneNumber"},
-	{"physical_address", "NSPrivacyCollectedDataTypePhysicalAddress"},
-	{"other_contact_info", "NSPrivacyCollectedDataTypeOtherUserContactInfo"},
-	{"health", "NSPrivacyCollectedDataTypeHealth"},
-	{"fitness", "NSPrivacyCollectedDataTypeFitness"},
-	{"payment_info", "NSPrivacyCollectedDataTypePaymentInfo"},
-	{"credit_info", "NSPrivacyCollectedDataTypeCreditInfo"},
-	{"other_financial_info", "NSPrivacyCollectedDataTypeOtherFinancialInfo"},
-	{"precise_location", "NSPrivacyCollectedDataTypePreciseLocation"},
-	{"coarse_location", "NSPrivacyCollectedDataTypeCoarseLocation"},
-	{"sensitive_info", "NSPrivacyCollectedDataTypeSensitiveInfo"},
-	{"contacts", "NSPrivacyCollectedDataTypeContacts"},
-	{"emails_or_text_messages", "NSPrivacyCollectedDataTypeEmailsOrTextMessages"},
-	{"photos_or_videos", "NSPrivacyCollectedDataTypePhotosorVideos"},
-	{"audio_data", "NSPrivacyCollectedDataTypeAudioData"},
-	{"gameplay_content", "NSPrivacyCollectedDataTypeGameplayContent"},
-	{"customer_support", "NSPrivacyCollectedDataTypeCustomerSupport"},
-	{"other_user_content", "NSPrivacyCollectedDataTypeOtherUserContent"},
-	{"browsing_history", "NSPrivacyCollectedDataTypeBrowsingHistory"},
-	{"search_history", "NSPrivacyCollectedDataTypeSearchHistory"},
-	{"user_id", "NSPrivacyCollectedDataTypeUserID"},
-	{"device_id", "NSPrivacyCollectedDataTypeDeviceID"},
-	{"purchase_history", "NSPrivacyCollectedDataTypePurchaseHistory"},
-	{"product_interaction", "NSPrivacyCollectedDataTypeProductInteraction"},
-	{"advertising_data", "NSPrivacyCollectedDataTypeAdvertisingData"},
-	{"other_usage_data", "NSPrivacyCollectedDataTypeOtherUsageData"},
-	{"crash_data", "NSPrivacyCollectedDataTypeCrashData"},
-	{"performance_data", "NSPrivacyCollectedDataTypePerformanceData"},
-	{"other_diagnostic_data", "NSPrivacyCollectedDataTypeOtherDiagnosticData"},
-	{"environment_scanning", "NSPrivacyCollectedDataTypeEnvironmentScanning"},
-	{"hands", "NSPrivacyCollectedDataTypeHands"},
-	{"head", "NSPrivacyCollectedDataTypeHead"},
-	{"other_data_types", "NSPrivacyCollectedDataTypeOtherDataTypes"},
-};
-
-static const IosDataCollectionInfo ios_data_collect_purpose_info[] = {
-	{"Analytics", "NSPrivacyCollectedDataTypePurposeAnalytics"},
-	{"App Functionality", "NSPrivacyCollectedDataTypePurposeAppFunctionality"},
-	{"Developer Advertising", "NSPrivacyCollectedDataTypePurposeDeveloperAdvertising"},
-	{"Third-party Advertising", "NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising"},
-	{"Product Personalization", "NSPrivacyCollectedDataTypePurposeProductPersonalization"},
-	{"Other", "NSPrivacyCollectedDataTypePurposeOther"},
-};
-
-void _rgba8_to_packbits_encode(
-	int p_ch, int p_size, Vector<uint8_t>& p_source, Vector<uint8_t>& p_dest)
-{
-	int src_len = p_size * p_size;
-
-	Vector<uint8_t> result;
-
-	int i = 0;
-	const uint8_t* src = p_source.ptr();
-	while (i < src_len) {
-		Vector<uint8_t> seq;
-
-		uint8_t count = 0;
-		while (count <= 0x7f && i < src_len) {
-			if (i + 2 < src_len && src[i * 4 + p_ch] == src[(i + 1) * 4 + p_ch] &&
-				src[i] == src[(i + 2) * 4 + p_ch]) {
-				break;
-			}
-			seq.push_back(src[i * 4 + p_ch]);
-			i++;
-			count++;
-		}
-		if (!seq.is_empty()) {
-			result.push_back(count - 1);
-			result.append_array(seq);
-		}
-		if (i >= src_len) {
-			break;
-		}
-
-		uint8_t rep = src[i * 4 + p_ch];
-		count = 0;
-		while (count <= 0x7f && i < src_len && src[i * 4 + p_ch] == rep) {
-			i++;
-			count++;
-		}
-		if (count >= 3) {
-			result.push_back(0x80 + count - 3);
-			result.push_back(rep);
-		}
-		else {
-			result.push_back(count - 1);
-			for (int j = 0; j < count; j++) {
-				result.push_back(rep);
-			}
-		}
-	}
-
-	int ofs = p_dest.size();
-	p_dest.resize(p_dest.size() + result.size());
-	memcpy(&p_dest.write[ofs], result.ptr(), result.size());
-}
-
-/**
- * If we're running the macOS version of the Godot editor we'll:
- * - export our application bundle to a temporary folder
- * - attempt to code sign it
- * - and then wrap it up in a DMG
- */
-
-Error EditorExportPlatformMacOS::_export_macos_plugins_for(
-	Ref<EditorExportPlugin> p_editor_export_plugin, const String& p_app_path_name,
-	Ref<DirAccess>& dir_access, bool p_sign_enabled, const Ref<EditorExportPreset>& p_preset,
-	const String& p_ent_path, const String& p_helper_ent_path, bool p_sandbox)
-{
-	Error error{OK};
-	const Vector<String>& macos_plugins{p_editor_export_plugin->get_macos_plugin_files()};
-	for (int i = 0; i < macos_plugins.size(); ++i) {
-		String src_path{ProjectSettings::globalize_path(macos_plugins[i])};
-		String path_in_app{p_app_path_name + "/Contents/PlugIns/" + src_path.get_file()};
-		error = _copy_and_sign_files(dir_access, src_path, path_in_app, p_sign_enabled, p_preset,
-			p_ent_path, p_helper_ent_path, false, p_sandbox);
-		if (error != OK) {
-			break;
-		}
-	}
-	return error;
-}
-
-Error EditorExportPlatformMacOS::_create_dmg(
-	const String& p_dmg_path, const String& p_pkg_name, const String& p_app_path_name)
-{
-	List<String> args;
-
-	if (FileAccess::exists(p_dmg_path)) {
-		OS::move_to_trash(p_dmg_path);
-	}
-
-	args.push_back("create");
-	args.push_back(p_dmg_path);
-	args.push_back("-volname");
-	args.push_back(p_pkg_name);
-	args.push_back("-fs");
-	args.push_back("HFS+");
-	args.push_back("-srcfolder");
-	args.push_back(p_app_path_name);
-
-	String str;
-	Error err = OS::execute("hdiutil", args, &str, nullptr, true);
-	if (err != OK) {
-		add_message(
-			EXPORT_MESSAGE_ERROR, TTR("DMG Creation"), TTR("Could not start hdiutil executable."));
-		return err;
-	}
-
-	print_verbose("hdiutil returned: " + str);
-	if (str.contains("create failed")) {
-		if (str.contains("File exists")) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("DMG Creation"),
-				TTR("`hdiutil create` failed - file exists."));
-		}
-		else {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("DMG Creation"), TTR("`hdiutil create` failed."));
-		}
-		return FAILED;
-	}
-
-	return OK;
-}
-
-bool EditorExportPlatformMacOS::is_shebang(const String& p_path) const
-{
-	Ref<FileAccess> fb = FileAccess::open(p_path, FileAccess::READ);
-	ERR_FAIL_COND_V_MSG(fb.is_null(), false, vformat("Can't open file: \"%s\".", p_path));
-	uint16_t magic = fb->get_16();
-	return (magic == 0x2123);
-}
-
-bool EditorExportPlatformMacOS::is_executable(const String& p_path) const
-{
-	return MachO::is_macho(p_path) || LipO::is_lipo(p_path) || is_shebang(p_path);
-}
-
-Error EditorExportPlatformMacOS::_export_debug_script(const Ref<EditorExportPreset>& p_preset,
-	const String& p_app_name, const String& p_pkg_name, const String& p_path)
-{
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Debug Script Export"),
-			vformat(TTR("Could not open file \"%s\"."), p_path));
-		return ERR_CANT_CREATE;
-	}
-
-	f->store_line("#!/bin/sh");
-	f->store_line("printf '\\033c\\033]0;%s\\a' " + p_app_name);
-	f->store_line("");
-	f->store_line("function app_realpath() {");
-	f->store_line("    SOURCE=$1");
-	f->store_line("    while [ -h \"$SOURCE\" ]; do");
-	f->store_line("        DIR=$(dirname \"$SOURCE\")");
-	f->store_line("        SOURCE=$(readlink \"$SOURCE\")");
-	f->store_line("        [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE");
-	f->store_line("    done");
-	f->store_line("    echo \"$( cd -P \"$( dirname \"$SOURCE\" )\" >/dev/null 2>&1 && pwd )\"");
-	f->store_line("}");
-	f->store_line("");
-	f->store_line("BASE_PATH=\"$(app_realpath \"${BASH_SOURCE[0]}\")\"");
-	f->store_line("\"$BASE_PATH/" + p_pkg_name + "\" \"$@\"");
-	f->store_line("");
-
-	return OK;
-}
-
-Ref<Texture2D> EditorExportPlatformMacOS::get_run_icon() const { return run_icon; }
-
-int EditorExportPlatformMacOS::get_options_count() const { return menu_options; }
-
-String EditorExportPlatformMacOS::get_option_label(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall") : TTR("Run on remote macOS system");
-}
-
-String EditorExportPlatformMacOS::get_option_tooltip(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall running project from the remote system")
-					 : TTR("Run exported project on remote macOS system");
-}
-
-Error EditorExportPlatformMacOS::_copy_and_sign_files(Ref<DirAccess>& dir_access,
-	const String& p_src_path, const String& p_in_app_path, bool p_sign_enabled,
-	const Ref<EditorExportPreset>& p_preset, const String& p_ent_path,
-	const String& p_helper_ent_path, bool p_should_error_on_non_code_sign, bool p_sandbox)
-{
-	return OK;
-}
-
-
-// --- Merged from platform/visionos/export/export.cpp ---
-// --- Inlined from platform/visionos/export/export_plugin.h ---
-
-class EditorExportPlatformVisionOS : public EditorExportPlatformAppleEmbedded
-{
-	static Vector<String> device_types;
-
-	virtual String get_platform_name() const override { return "visionos"; }
-
-	virtual String get_sdk_name() const override { return "xros"; }
-
-	virtual const Vector<String> get_device_types() const override { return device_types; }
-
-	virtual String get_minimum_deployment_target() const override { return "26.0"; }
-
-	virtual Vector<EditorExportPlatformAppleEmbedded::IconInfo> get_icon_infos() const override;
-
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-
-	virtual String _process_config_file_line(const Ref<EditorExportPreset>& p_preset,
-		const String& p_line, const AppleEmbeddedConfigData& p_config, bool p_debug,
-		const CodeSigningDetails& p_code_signing) override;
-
-public:
-	virtual String get_name() const override { return "visionOS"; }
-
-	virtual String get_os_name() const override { return "visionOS"; }
-
-	virtual void get_platform_features(List<String>* r_features) const override
-	{
-		EditorExportPlatformAppleEmbedded::get_platform_features(r_features);
-		r_features->push_back("visionos");
-	}
-
-	virtual void initialize() override;
-	~EditorExportPlatformVisionOS();
-};
-
-
-
-// --- End platform/visionos/export/export_plugin.h ---
-
-void register_visionos_exporter_types() {}
-
-void register_visionos_exporter()
-{
-	Ref<EditorExportPlatformVisionOS> platform;
-	platform.instantiate();
-
-	EditorExport::add_export_platform(platform);
-}
-
-
-
-// ============================================================================
-// Merged from platform/visionos/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-
-#include "main/splash.gen.h"
-
-Vector<String> EditorExportPlatformVisionOS::device_types({"realityDevice"});
-
-void EditorExportPlatformVisionOS::initialize()
-{
-	if (Engine::is_editor_hint()) {
-		EditorExportPlatformAppleEmbedded::_initialize(_visionos_logo_svg, _visionos_run_icon_svg);
-#ifdef MACOS_ENABLED
-		_start_remote_device_poller_thread();
-#endif
-	}
-}
-
-EditorExportPlatformVisionOS::~EditorExportPlatformVisionOS()
-{
-#ifdef MACOS_ENABLED
-	_stop_remote_device_poller_thread();
-#endif
-}
-
-Vector<EditorExportPlatformAppleEmbedded::IconInfo>
-EditorExportPlatformVisionOS::get_icon_infos() const
-{
-	return Vector<EditorExportPlatformAppleEmbedded::IconInfo>();
-}
-
-String EditorExportPlatformVisionOS::_process_config_file_line(
-	const Ref<EditorExportPreset>& p_preset, const String& p_line,
-	const AppleEmbeddedConfigData& p_config, bool p_debug, const CodeSigningDetails& p_code_signing)
-{
-	// Do visionOS specific processing first, and call super implementation if there are no matches
-
-	String strnew;
-
-	// Supported Destinations
-	if (p_line.contains("$targeted_device_family")) {
-		strnew += p_line.replace("$targeted_device_family", "7") + "\n";
-
-		// MoltenVK Framework not used on visionOS
-	}
-	else if (p_line.contains("$moltenvk_buildfile")) {
-		strnew += p_line.replace("$moltenvk_buildfile", "") + "\n";
-	}
-	else if (p_line.contains("$moltenvk_fileref")) {
-		strnew += p_line.replace("$moltenvk_fileref", "") + "\n";
-	}
-	else if (p_line.contains("$moltenvk_buildphase")) {
-		strnew += p_line.replace("$moltenvk_buildphase", "") + "\n";
-	}
-	else if (p_line.contains("$moltenvk_buildgrp")) {
-		strnew += p_line.replace("$moltenvk_buildgrp", "") + "\n";
-
-		// Launch Storyboard
-	}
-	else if (p_line.contains("$plist_launch_screen_name")) {
-		strnew += p_line.replace("$plist_launch_screen_name", "") + "\n";
-	}
-	else if (p_line.contains("$pbx_launch_screen_file_reference")) {
-		strnew += p_line.replace("$pbx_launch_screen_file_reference", "") + "\n";
-	}
-	else if (p_line.contains("$pbx_launch_screen_copy_files")) {
-		strnew += p_line.replace("$pbx_launch_screen_copy_files", "") + "\n";
-	}
-	else if (p_line.contains("$pbx_launch_screen_build_phase")) {
-		strnew += p_line.replace("$pbx_launch_screen_build_phase", "") + "\n";
-	}
-	else if (p_line.contains("$pbx_launch_screen_build_reference")) {
-		strnew += p_line.replace("$pbx_launch_screen_build_reference", "") + "\n";
-	}
-	else if (p_line.contains("$valid_archs")) {
-		strnew += p_line.replace("$valid_archs", "arm64") + "\n";
-
-		// Apple Embedded common
-	}
-	else {
-		strnew += EditorExportPlatformAppleEmbedded::_process_config_file_line(
-			p_preset, p_line, p_config, p_debug, p_code_signing);
-	}
-	return strnew;
-}
-
-void EditorExportPlatformVisionOS::get_export_options(
-	List<EditorExportPlatform::ExportOption>* r_options) const
-{
-}
-
-
-// --- Merged from platform/web/export/export.cpp ---
-#include "servers/display/display_server.h"
-// --- Inlined from platform/web/export/export_plugin.h ---
-// --- Folded from platform/web/export/editor_http_server.h ---
-#include "core/io/net_socket.h"
-
-class EditorHTTPServer : public RefCounted
-{
-private:
-	Ref<SocketServer> server;
-	HashMap<String, String> mimes;
-	Ref<StreamPeerSocket> tcp;
-	Ref<StreamPeerTLS> tls;
-	Ref<StreamPeer> peer;
-	Ref<CryptoKey> key;
-	Ref<X509Certificate> cert;
-	bool use_tls = false;
-	uint64_t time = 0;
-	uint8_t req_buf[4096];
-	int req_pos = 0;
-
-	SafeFlag server_quit;
-	Mutex server_lock;
-	Thread server_thread;
-
-	void _clear_client();
-	void _set_internal_certs(Ref<Crypto> p_crypto);
-	void _send_response();
-	void _poll();
-
-	static void _server_thread_poll(void* data);
-
-public:
-	EditorHTTPServer();
-	~EditorHTTPServer();
-
-	void stop();
-	Error listen(
-		int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert);
-	bool is_listening() const;
-};
-
-
-
-// --- End platform/web/export/editor_http_server.h ---
-#include "main/splash.gen.h"
-
-class ImageTexture;
-
-class EditorExportPlatformWeb : public EditorExportPlatform
-{
-	enum RemoteDebugState
-	{
-		REMOTE_DEBUG_STATE_UNAVAILABLE,
-		REMOTE_DEBUG_STATE_AVAILABLE,
-		REMOTE_DEBUG_STATE_SERVING,
-	};
-
-	Ref<ImageTexture> logo;
-	Ref<ImageTexture> run_icon;
-	Ref<ImageTexture> stop_icon;
-	Ref<ImageTexture> restart_icon;
-	RemoteDebugState remote_debug_state = REMOTE_DEBUG_STATE_UNAVAILABLE;
-
-	Ref<EditorHTTPServer> server;
-
-	String _get_template_name(bool p_extension, bool p_thread_support, bool p_debug) const
-	{
-		String name = "web";
-		if (p_extension) {
-			name += "_dlink";
-		}
-		if (!p_thread_support) {
-			name += "_nothreads";
-		}
-		if (p_debug) {
-			name += "_debug.zip";
-		}
-		else {
-			name += "_release.zip";
-		}
-		return name;
-	}
-
-	Error _extract_template(
-		const String& p_template, const String& p_dir, const String& p_name, bool pwa);
-	void _replace_strings(const HashMap<String, String>& p_replaces, Vector<uint8_t>& r_template);
-	Error _build_pwa(const Ref<EditorExportPreset>& p_preset, const String p_path,
-		const Vector<SharedObject>& p_shared_objects);
-	Error _write_or_error(const uint8_t* p_content, int p_len, String p_path);
-
-	Error _export_project(const Ref<EditorExportPreset>& p_preset, int p_debug_flags);
-	Error _launch_browser(const String& p_bind_host, uint16_t p_bind_port, bool p_use_tls);
-	Error _start_server(const String& p_bind_host, uint16_t p_bind_port, bool p_use_tls);
-	Error _stop_server();
-
-public:
-	virtual void get_preset_features(
-		const Ref<EditorExportPreset>& p_preset, List<String>* r_features) const override;
-
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-
-	virtual String get_name() const override;
-	virtual String get_os_name() const override;
-	virtual Ref<Texture2D> get_logo() const override;
-
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override;
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-
-	virtual bool poll_export() override;
-	virtual int get_options_count() const override;
-	virtual String get_option_label(int p_index) const override;
-	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_option, uint32_t p_debug_flags) override;
-	virtual Ref<Texture2D> get_run_icon() const override;
-
-	virtual void get_platform_features(List<String>* r_features) const override
-	{
-		r_features->push_back("web");
-		r_features->push_back(get_os_name().to_lower());
-	}
-
-	virtual void resolve_platform_feature_priorities(
-		const Ref<EditorExportPreset>& p_preset, HashSet<String>& p_features) override
-	{
-	}
-
-	String get_debug_protocol() const override { return "ws://"; }
-
-	~EditorExportPlatformWeb() = default;
-};
-
-// --- End platform/web/export/export_plugin.h ---
-
-void register_web_exporter_types() {}
-
-
-
-
-
-// ============================================================================
-// Merged from platform/web/export/editor_http_server.cpp
-// ============================================================================
-
-
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-void EditorHTTPServer::_server_thread_poll(void *data) {
-	EditorHTTPServer *web_server = static_cast<EditorHTTPServer *>(data);
-	while (!web_server->server_quit.is_set()) {
-		OS::delay_usec(6900);
-		{
-			MutexLock lock(web_server->server_lock);
-			web_server->_poll();
-		}
-	}
-}
-
-void EditorHTTPServer::_clear_client() {
-	peer = Ref<StreamPeer>();
-	tls = Ref<StreamPeerTLS>();
-	tcp = Ref<StreamPeerSocket>();
-	memset(req_buf, 0, sizeof(req_buf));
-	time = 0;
-	req_pos = 0;
-}
-
-void EditorHTTPServer::_set_internal_certs(Ref<Crypto> p_crypto) {
-	const String cache_path = EditorPaths::get_cache_dir();
-	const String key_path = cache_path.path_join("html5_server.key");
-	const String crt_path = cache_path.path_join("html5_server.crt");
-	bool regen = !FileAccess::exists(key_path) || !FileAccess::exists(crt_path);
-	if (!regen) {
-		key = Ref<CryptoKey>(CryptoKey::create());
-		cert = Ref<X509Certificate>(X509Certificate::create());
-		if (key->load(key_path) != OK || cert->load(crt_path) != OK) {
-			regen = true;
-		}
-	}
-	if (regen) {
-		key = p_crypto->generate_rsa(2048);
-		key->save(key_path);
-		cert = p_crypto->generate_self_signed_certificate(key, "CN=godot-debug.local,O=A Game Dev,C=XXA", "20140101000000", "20340101000000");
-		cert->save(crt_path);
-	}
-}
-
-void EditorHTTPServer::_send_response() {
-	Vector<String> psa = String((char *)req_buf).split("\r\n");
-	int len = psa.size();
-	ERR_FAIL_COND_MSG(len < 4, "Not enough response headers, got: " + itos(len) + ", expected >= 4.");
-
-	Vector<String> req = psa[0].split(" ", false);
-	ERR_FAIL_COND_MSG(req.size() < 2, "Invalid protocol or status code.");
-
-	// Wrong protocol
-	ERR_FAIL_COND_MSG(req[0] != "GET" || req[2] != "HTTP/1.1", "Invalid method or HTTP version.");
-
-	const int query_index = req[1].find_char('?');
-	const String path = (query_index == -1) ? req[1] : req[1].substr(0, query_index);
-
-	const String req_file = path.get_file();
-	const String req_ext = path.get_extension();
-	const String cache_path = EditorPaths::get_temp_dir().path_join("web");
-	const String filepath = cache_path.path_join(req_file);
-
-	if (!mimes.has(req_ext) || !FileAccess::exists(filepath)) {
-		String s = "HTTP/1.1 404 Not Found\r\n";
-		s += "Connection: Close\r\n";
-		s += "\r\n";
-		CharString cs = s.utf8();
-		peer->put_data((const uint8_t *)cs.get_data(), cs.size() - 1);
-		return;
-	}
-	const String ctype = mimes[req_ext];
-
-	Ref<FileAccess> f = FileAccess::open(filepath, FileAccess::READ);
-	ERR_FAIL_COND(f.is_null());
-	String s = "HTTP/1.1 200 OK\r\n";
-	s += "Connection: Close\r\n";
-	s += "Content-Type: " + ctype + "\r\n";
-	s += "Access-Control-Allow-Origin: *\r\n";
-	s += "Cross-Origin-Opener-Policy: same-origin\r\n";
-	s += "Cross-Origin-Embedder-Policy: require-corp\r\n";
-	s += "Cache-Control: no-store, max-age=0\r\n";
-	s += "\r\n";
-	CharString cs = s.utf8();
-	Error err = peer->put_data((const uint8_t *)cs.get_data(), cs.size() - 1);
-	if (err != OK) {
-		ERR_FAIL();
-	}
-
-	while (true) {
-		uint8_t bytes[4096];
-		uint64_t read = f->get_buffer(bytes, 4096);
-		if (read == 0) {
-			break;
-		}
-		err = peer->put_data(bytes, read);
-		if (err != OK) {
-			ERR_FAIL();
-		}
-	}
-}
-
-void EditorHTTPServer::_poll() {
-	if (!server->is_listening()) {
-		return;
-	}
-	if (tcp.is_null()) {
-		if (!server->is_connection_available()) {
-			return;
-		}
-		tcp = server->take_connection();
-		peer = tcp;
-		time = OS::get_ticks_usec();
-	}
-	if (OS::get_ticks_usec() - time > 1000000) {
-		_clear_client();
-		return;
-	}
-	if (tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
-		return;
-	}
-
-	if (use_tls) {
-		if (tls.is_null()) {
-			tls = Ref<StreamPeerTLS>(StreamPeerTLS::create());
-			peer = tls;
-			if (tls->accept_stream(tcp, TLSOptions::server(key, cert)) != OK) {
-				_clear_client();
-				return;
-			}
-		}
-		tls->poll();
-		if (tls->get_status() == StreamPeerTLS::STATUS_HANDSHAKING) {
-			// Still handshaking, keep waiting.
-			return;
-		}
-		if (tls->get_status() != StreamPeerTLS::STATUS_CONNECTED) {
-			_clear_client();
-			return;
-		}
-	}
-
-	while (true) {
-		char *r = (char *)req_buf;
-		int l = req_pos - 1;
-		if (l > 3 && r[l] == '\n' && r[l - 1] == '\r' && r[l - 2] == '\n' && r[l - 3] == '\r') {
-			_send_response();
-			_clear_client();
-			return;
-		}
-
-		int read = 0;
-		ERR_FAIL_COND(req_pos >= 4096);
-		Error err = peer->get_partial_data(&req_buf[req_pos], 1, read);
-		if (err != OK) {
-			// Got an error
-			_clear_client();
-			return;
-		} else if (read != 1) {
-			// Busy, wait next poll
-			return;
-		}
-		req_pos += read;
-	}
-}
-
-void EditorHTTPServer::stop() {
-	server_quit.set();
-	if (server_thread.is_started()) {
-		server_thread.wait_to_finish();
-	}
-	if (server.is_valid()) {
-		server->stop();
-	}
-	_clear_client();
-}
-
-Error EditorHTTPServer::listen(int p_port, IPAddress p_address, bool p_use_tls, String p_tls_key, String p_tls_cert) {
-	MutexLock lock(server_lock);
-	if (server->is_listening()) {
-		return ERR_ALREADY_IN_USE;
-	}
-	use_tls = p_use_tls;
-	if (use_tls) {
-		Ref<Crypto> crypto = Crypto::create();
-		if (crypto.is_null()) {
-			return ERR_UNAVAILABLE;
-		}
-		if (!p_tls_key.is_empty() && !p_tls_cert.is_empty()) {
-			key = Ref<CryptoKey>(CryptoKey::create());
-			Error err = key->load(p_tls_key);
-			ERR_FAIL_COND_V(err != OK, err);
-			cert = Ref<X509Certificate>(X509Certificate::create());
-			err = cert->load(p_tls_cert);
-			ERR_FAIL_COND_V(err != OK, err);
-		} else {
-			_set_internal_certs(crypto);
-		}
-	}
-	Error err = server->listen(p_port, p_address);
-	if (err == OK) {
-		server_quit.clear();
-		server_thread.start(_server_thread_poll, this);
-	}
-	return err;
-}
-
-bool EditorHTTPServer::is_listening() const {
-	MutexLock lock(server_lock);
-	return server->is_listening();
-}
-
-EditorHTTPServer::EditorHTTPServer() {
-	mimes["html"] = "text/html";
-	mimes["js"] = "application/javascript";
-	mimes["json"] = "application/json";
-	mimes["pck"] = "application/octet-stream";
-	mimes["png"] = "image/png";
-	mimes["svg"] = "image/svg";
-	mimes["wasm"] = "application/wasm";
-	server.instantiate();
-	stop();
-}
-
-EditorHTTPServer::~EditorHTTPServer() {
-	stop();
-}
-
-// ============================================================================
-// Merged from platform/web/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-#include "main/splash.gen.h"
-#include "core/version_generated.gen.h" // IWYU pragma: keep. For mono.
-#include "core/io/net_socket.h"
-#include "main/splash.gen.h"
-#include "servers/display/display_server.h"
-
-Error EditorExportPlatformWeb::_extract_template(
-	const String& p_template, const String& p_dir, const String& p_name, bool pwa)
-{
-	Ref<FileAccess> io_fa;
-	zlib_filefunc_def io = zipio_create_io(&io_fa);
-	unzFile pkg = unzOpen2(p_template.utf8().get_data(), &io);
-
-	if (!pkg) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
-			vformat(TTR("Could not open template for export: \"%s\"."), p_template));
-		return ERR_FILE_NOT_FOUND;
-	}
-
-	if (unzGoToFirstFile(pkg) != UNZ_OK) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
-			vformat(TTR("Invalid export template: \"%s\"."), p_template));
-		unzClose(pkg);
-		return ERR_FILE_CORRUPT;
-	}
-
-	do {
-		// get filename
-		unz_file_info info;
-		char fname[16384];
-		unzGetCurrentFileInfo(pkg, &info, fname, 16384, nullptr, 0, nullptr, 0);
-
-		String file = String::utf8(fname);
-
-		// Skip folders.
-		if (file.ends_with("/")) {
-			continue;
-		}
-
-		// Skip service worker and offline page if not exporting pwa.
-		if (!pwa && (file == "godot.service.worker.js" || file == "godot.offline.html")) {
-			continue;
-		}
-		Vector<uint8_t> data;
-		data.resize(info.uncompressed_size);
-
-		// read
-		unzOpenCurrentFile(pkg);
-		unzReadCurrentFile(pkg, data.ptrw(), data.size());
-		unzCloseCurrentFile(pkg);
-
-		// write
-		String dst = p_dir.path_join(file.replace("voltaire", p_name));
-		Ref<FileAccess> f = FileAccess::open(dst, FileAccess::WRITE);
-		if (f.is_null()) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Prepare Templates"),
-				vformat(TTR("Could not write file: \"%s\"."), dst));
-			unzClose(pkg);
-			return ERR_FILE_CANT_WRITE;
-		}
-		f->store_buffer(data.ptr(), data.size());
-
-	} while (unzGoToNextFile(pkg) == UNZ_OK);
-	unzClose(pkg);
-	return OK;
-}
-
-Error EditorExportPlatformWeb::_write_or_error(const uint8_t* p_content, int p_size, String p_path)
-{
-	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
-	if (f.is_null()) {
-		add_message(EXPORT_MESSAGE_ERROR, TTR("Export"),
-			vformat(TTR("Could not write file: \"%s\"."), p_path));
-		return ERR_FILE_CANT_WRITE;
-	}
-	f->store_buffer(p_content, p_size);
-	return OK;
-}
-
-void EditorExportPlatformWeb::_replace_strings(
-	const HashMap<String, String>& p_replaces, Vector<uint8_t>& r_template)
-{
-	String str_template =
-		String::utf8(reinterpret_cast<const char*>(r_template.ptr()), r_template.size());
-	String out;
-	Vector<String> lines = str_template.split("\n");
-	for (int i = 0; i < lines.size(); i++) {
-		String current_line = lines[i];
-		for (const KeyValue<String, String>& E : p_replaces) {
-			current_line = current_line.replace(E.key, E.value);
-		}
-		out += current_line + "\n";
-	}
-	CharString cs = out.utf8();
-	r_template.resize(cs.length());
-	for (int i = 0; i < cs.length(); i++) {
-		r_template.write[i] = cs[i];
-	}
-}
-
-String EditorExportPlatformWeb::get_name() const { return "Web"; }
-
-String EditorExportPlatformWeb::get_os_name() const { return "Web"; }
-
-Ref<Texture2D> EditorExportPlatformWeb::get_logo() const { return logo; }
-
-List<String> EditorExportPlatformWeb::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	List<String> list;
-	list.push_back("html");
-	return list;
-}
-
-bool EditorExportPlatformWeb::poll_export()
-{
-	Ref<EditorExportPreset> preset =
-		EditorExport::get_runnable_preset_for_platform(this);
-
-	RemoteDebugState prev_remote_debug_state = remote_debug_state;
-	remote_debug_state = REMOTE_DEBUG_STATE_UNAVAILABLE;
-
-	if (preset.is_valid()) {
-		const bool debug = true;
-		// Throwaway variables to pass to validation functions.
-		String err;
-		bool missing_templates;
-
-		bool valid = has_valid_export_configuration(preset, err, missing_templates, debug) &&
-					 has_valid_project_configuration(preset, err);
-
-		if (valid) {
-			if (server->is_listening()) {
-				remote_debug_state = REMOTE_DEBUG_STATE_SERVING;
-			}
-			else {
-				remote_debug_state = REMOTE_DEBUG_STATE_AVAILABLE;
-			}
-		}
-	}
-
-	if (remote_debug_state != REMOTE_DEBUG_STATE_SERVING && server->is_listening()) {
-		server->stop();
-	}
-
-	return remote_debug_state != prev_remote_debug_state;
-}
-
-int EditorExportPlatformWeb::get_options_count() const
-{
-	switch (remote_debug_state) {
-	case REMOTE_DEBUG_STATE_UNAVAILABLE: {
-		return 0;
-	} break;
-
-	case REMOTE_DEBUG_STATE_AVAILABLE: {
-		return 2;
-	} break;
-
-	case REMOTE_DEBUG_STATE_SERVING: {
-		return 3;
-	} break;
-	}
-
-	return 0;
-}
-
-String EditorExportPlatformWeb::get_option_label(int p_index) const
-{
-	String run_in_browser = TTR("Run in Browser");
-	String start_http_server = TTR("Start HTTP Server");
-	String reexport_project = TTR("Re-export Project");
-	String stop_http_server = TTR("Stop HTTP Server");
-
-	switch (remote_debug_state) {
-	case REMOTE_DEBUG_STATE_UNAVAILABLE:
-		return "";
-
-	case REMOTE_DEBUG_STATE_AVAILABLE: {
-		switch (p_index) {
-		case 0:
-			return run_in_browser;
-		case 1:
-			return start_http_server;
-		default:
-			ERR_FAIL_V("");
-		}
-	} break;
-
-	case REMOTE_DEBUG_STATE_SERVING: {
-		switch (p_index) {
-		case 0:
-			return run_in_browser;
-		case 1:
-			return reexport_project;
-		case 2:
-			return stop_http_server;
-		default:
-			ERR_FAIL_V("");
-		}
-	} break;
-	}
-
-	return "";
-}
-
-String EditorExportPlatformWeb::get_option_tooltip(int p_index) const
-{
-	String run_in_browser = TTR("Run exported HTML in the system's default browser.");
-	String start_http_server = TTR("Start the HTTP server.");
-	String reexport_project = TTR("Export project again to account for updates.");
-	String stop_http_server = TTR("Stop the HTTP server.");
-
-	switch (remote_debug_state) {
-	case REMOTE_DEBUG_STATE_UNAVAILABLE:
-		return "";
-
-	case REMOTE_DEBUG_STATE_AVAILABLE: {
-		switch (p_index) {
-		case 0:
-			return run_in_browser;
-		case 1:
-			return start_http_server;
-		default:
-			ERR_FAIL_V("");
-		}
-	} break;
-
-	case REMOTE_DEBUG_STATE_SERVING: {
-		switch (p_index) {
-		case 0:
-			return run_in_browser;
-		case 1:
-			return reexport_project;
-		case 2:
-			return stop_http_server;
-		default:
-			ERR_FAIL_V("");
-		}
-	} break;
-	}
-
-	return "";
-}
-
-Error EditorExportPlatformWeb::_export_project(
-	const Ref<EditorExportPreset>& p_preset, int p_debug_flags)
-{
-	const String dest = EditorPaths::get_temp_dir().path_join("web");
-	Ref<DirAccess> da = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-	if (!da->dir_exists(dest)) {
-		Error err = da->make_dir_recursive(dest);
-		if (err != OK) {
-			add_message(EXPORT_MESSAGE_ERROR, TTR("Run"),
-				vformat(TTR("Could not create HTTP server directory: %s."), dest));
-			return err;
-		}
-	}
-
-	const String basepath = dest.path_join("tmp_js_export");
-	Error err = export_project(p_preset, true, basepath + ".html", p_debug_flags);
-	if (err != OK) {
-		// Export generates several files, clean them up on failure.
-		DirAccess::remove_file_or_error(basepath + ".html");
-		DirAccess::remove_file_or_error(basepath + ".offline.html");
-		DirAccess::remove_file_or_error(basepath + ".js");
-		DirAccess::remove_file_or_error(basepath + ".audio.worklet.js");
-		DirAccess::remove_file_or_error(basepath + ".audio.position.worklet.js");
-		DirAccess::remove_file_or_error(basepath + ".service.worker.js");
-		DirAccess::remove_file_or_error(basepath + ".pck");
-		DirAccess::remove_file_or_error(basepath + ".png");
-		DirAccess::remove_file_or_error(basepath + ".side.wasm");
-		DirAccess::remove_file_or_error(basepath + ".wasm");
-		DirAccess::remove_file_or_error(basepath + ".icon.png");
-		DirAccess::remove_file_or_error(basepath + ".apple-touch-icon.png");
-	}
-	return err;
-}
-
-Error EditorExportPlatformWeb::_launch_browser(
-	const String& p_bind_host, const uint16_t p_bind_port, const bool p_use_tls)
-{
-	OS::shell_open(String((p_use_tls ? "https://" : "http://") + p_bind_host +
-										   ":" + itos(p_bind_port) + "/tmp_js_export.html"));
-	// FIXME: Find out how to clean up export files after running the successfully
-	// exported game. Might not be trivial.
-	return OK;
-}
-
-Error EditorExportPlatformWeb::_stop_server()
-{
-	server->stop();
-	return OK;
-}
-
-Ref<Texture2D> EditorExportPlatformWeb::get_run_icon() const { return run_icon; }
-
-void register_web_exporter() {}
-
-
-// --- Merged from platform/windows/export/export.cpp ---
-#include "servers/display/display_server.h"
-// --- Inlined from platform/windows/export/export_plugin.h ---
-#include "core/os/os.h"
-
-// Optional environment variables for defining confidential information. If any
-// of these is set, they will override the values set in the credentials file.
-const String ENV_WIN_CODESIGN_ID_TYPE = "GODOT_WINDOWS_CODESIGN_IDENTITY_TYPE";
-const String ENV_WIN_CODESIGN_ID = "GODOT_WINDOWS_CODESIGN_IDENTITY";
-const String ENV_WIN_CODESIGN_PASS = "GODOT_WINDOWS_CODESIGN_PASSWORD";
-
-class EditorExportPlatformWindows : public EditorExportPlatformPC
-{
-	struct SSHCleanupCommand
-	{
-		String host;
-		String port;
-		Vector<String> ssh_args;
-		String cmd_args;
-		bool wait = false;
-
-		SSHCleanupCommand() {}
-
-		SSHCleanupCommand(const String& p_host, const String& p_port,
-			const Vector<String>& p_ssh_arg, const String& p_cmd_args, bool p_wait = false)
-		{
-			host = p_host;
-			port = p_port;
-			ssh_args = p_ssh_arg;
-			cmd_args = p_cmd_args;
-			wait = p_wait;
-		}
-	};
-
-	Ref<ImageTexture> run_icon;
-	Ref<ImageTexture> stop_icon;
-
-	Vector<SSHCleanupCommand> cleanup_commands;
-	ProcessID ssh_pid = 0;
-	int menu_options = 0;
-
-	Error _process_icon(const Ref<EditorExportPreset>& p_preset, const String& p_src_path,
-		const String& p_dst_path);
-	Error _add_data(
-		const Ref<EditorExportPreset>& p_preset, const String& p_path, bool p_console_icon);
-	Error _code_sign(const Ref<EditorExportPreset>& p_preset, const String& p_path);
-
-	String _get_exe_arch(const String& p_path) const;
-
-public:
-	virtual Error export_project(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags = 0, bool p_notify = true) override;
-	virtual Error modify_template(const Ref<EditorExportPreset>& p_preset, bool p_debug,
-		const String& p_path, uint32_t p_flags) override;
-	virtual Error sign_shared_object(
-		const Ref<EditorExportPreset>& p_preset, bool p_debug, const String& p_path) override;
-	virtual List<String> get_binary_extensions(
-		const Ref<EditorExportPreset>& p_preset) const override;
-	virtual void get_export_options(List<ExportOption>* r_options) const override;
-	virtual bool has_valid_export_configuration(const Ref<EditorExportPreset>& p_preset,
-		String& r_error, bool& r_missing_templates, bool p_debug = false) const override;
-	virtual bool has_valid_project_configuration(
-		const Ref<EditorExportPreset>& p_preset, String& r_error) const override;
-	virtual bool get_export_option_visibility(
-		const EditorExportPreset* p_preset, const String& p_option) const override;
-	virtual String get_export_option_warning(
-		const EditorExportPreset* p_preset, const String& p_name) const override;
-
-	virtual String get_template_file_name(
-		const String& p_target, const String& p_arch) const override;
-	virtual Error fixup_embedded_pck(
-		const String& p_path, int64_t p_embedded_start, int64_t p_embedded_size) override;
-
-	virtual void get_platform_features(List<String>* r_features) const override;
-
-	virtual Ref<Texture2D> get_run_icon() const override;
-	virtual bool poll_export() override;
-	virtual int get_options_count() const override;
-	virtual String get_option_label(int p_index) const override;
-	virtual String get_option_tooltip(int p_index) const override;
-	virtual Error run(
-		const Ref<EditorExportPreset>& p_preset, int p_device, uint32_t p_debug_flags) override;
-	virtual void cleanup() override;
-};
-
-
-
-// --- End platform/windows/export/export_plugin.h ---
-
-void register_windows_exporter_types() {}
-
-
-
-
-
-// ============================================================================
-// Merged from platform/windows/export/export_plugin.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-#include "main/splash.gen.h"
-#include "core/io/net_socket.h"
-#include "main/splash.gen.h"
-#include "servers/display/display_server.h"
-// --- Inlined from platform/windows/export/template_modifier.h ---
-#include "core/io/file_access.h"
-
-class EditorExportPreset;
-
-class TemplateModifier {
-	const uint32_t PE_PAGE_SIZE = 4096;
-	const uint32_t BLOCK_SIZE = 512;
-	const uint32_t COFF_HEADER_SIZE = 24;
-	const uint32_t POINTER_TO_PE_HEADER_OFFSET = 0x3c;
-	// all offsets below are calculated from POINTER_TO_PE_HEADER_OFFSET value, at 0 is magic string PE (0x50450000)
-	const uint32_t MAGIC_NUMBER_OFFSET = 24;
-	const uint32_t SIZE_OF_INITIALIZED_DATA_OFFSET = 32;
-	const uint32_t SIZE_OF_IMAGE_OFFSET = 80;
-
-	struct ByteStream {
-		void save(uint8_t p_value, Vector<uint8_t> &r_bytes) const;
-		void save(uint16_t p_value, Vector<uint8_t> &r_bytes) const;
-		void save(uint32_t p_value, Vector<uint8_t> &r_bytes) const;
-		void save(const String &p_value, Vector<uint8_t> &r_bytes) const;
-		void save(uint32_t p_value, Vector<uint8_t> &r_bytes, uint32_t p_count) const;
-		Vector<uint8_t> save() const;
-	};
-
-	struct ResourceDirectoryTable : ByteStream {
-		static const uint16_t SIZE = 16;
-
-		uint16_t name_entry_count = 0;
-		uint16_t id_entry_count = 0;
-
-		Vector<uint8_t> save() const;
-	};
-
-	struct ResourceDirectoryEntry : ByteStream {
-		static const uint16_t SIZE = 8;
-		static const uint32_t ICON = 0x03;
-		static const uint32_t GROUP_ICON = 0x0e;
-		static const uint32_t MANIFEST = 0x18;
-		static const uint32_t VERSION = 0x10;
-		static const uint32_t ENGLISH = 0x0409;
-		static const uint32_t HIGH_BIT = 0x80000000;
-
-		uint32_t id = 0;
-		uint32_t data_offset = 0;
-		bool name = false;
-		bool subdirectory = false;
-
-		Vector<uint8_t> save() const;
-	};
-
-	struct FixedFileInfo : ByteStream {
-		uint32_t signature = 0xfeef04bd;
-		uint32_t struct_version = 0x10000;
-		uint32_t file_version_ms = 0;
-		uint32_t file_version_ls = 0;
-		uint32_t product_version_ms = 0;
-		uint32_t product_version_ls = 0;
-		uint32_t file_flags_mask = 0;
-		uint32_t file_flags = 0;
-		uint32_t file_os = 0x00000004;
-		uint32_t file_type = 0x00000001;
-		uint32_t file_subtype = 0;
-		uint32_t file_date_ms = 0;
-		uint32_t file_date_ls = 0;
-
-		Vector<uint8_t> save() const;
-		void set_file_version(const String &p_file_version);
-		void set_product_version(const String &p_product_version);
-	};
-
-	struct Structure : ByteStream {
-		uint16_t length = 0;
-		uint16_t value_length = 0;
-		uint16_t type = 0;
-		String key;
-
-		Vector<uint8_t> save() const;
-		Vector<uint8_t> &add_length(Vector<uint8_t> &r_bytes) const;
-	};
-
-	struct StringStructure : Structure {
-		String value;
-
-		Vector<uint8_t> save() const;
-		StringStructure();
-		StringStructure(const String &p_key, const String &p_value);
-	};
-
-	struct StringTable : Structure {
-		Vector<StringStructure> strings;
-
-		Vector<uint8_t> save() const;
-		void put(const String &p_key, const String &p_value);
-		StringTable();
-	};
-
-	struct StringFileInfo : Structure {
-		StringTable string_table;
-
-		Vector<uint8_t> save() const;
-		StringFileInfo();
-	};
-
-	struct Var : Structure {
-		const uint32_t value = 0x04b00409;
-
-		Vector<uint8_t> save() const;
-		Var();
-	};
-
-	struct VarFileInfo : Structure {
-		Var var;
-
-		Vector<uint8_t> save() const;
-		VarFileInfo();
-	};
-
-	struct VersionInfo : Structure {
-		FixedFileInfo value;
-		StringFileInfo string_file_info;
-		VarFileInfo var_file_info;
-
-		Vector<uint8_t> save() const;
-		VersionInfo();
-	};
-
-	struct ManifestInfo : Structure {
-		String manifest;
-
-		Vector<uint8_t> save() const;
-		ManifestInfo() {}
-	};
-
-	struct IconEntry : ByteStream {
-		static const uint32_t SIZE = 16;
-
-		uint8_t width = 0;
-		uint8_t height = 0;
-		uint8_t colors = 0;
-		uint8_t reserved = 0;
-		uint16_t planes = 0;
-		uint16_t bits_per_pixel = 32;
-		uint32_t image_size = 0;
-		uint32_t image_offset = 0;
-		Vector<uint8_t> data;
-
-		Vector<uint8_t> save() const;
-		void load(Ref<FileAccess> p_file);
-	};
-
-	struct GroupIcon : ByteStream {
-		static constexpr uint8_t SIZES[6] = { 16, 32, 48, 64, 128, 0 };
-
-		uint16_t reserved = 0;
-		uint16_t type = 1;
-		uint16_t image_count = 0;
-		Vector<IconEntry> icon_entries;
-		Vector<Vector<uint8_t>> images;
-
-		Vector<uint8_t> save() const;
-		void load(Ref<FileAccess> p_icon_file);
-		void fill_with_godot_blue();
-	};
-
-	struct SectionEntry : ByteStream {
-		static const uint32_t SIZE = 40;
-
-		String name;
-		uint32_t virtual_size = 0;
-		uint32_t virtual_address = 0;
-		uint32_t size_of_raw_data = 0;
-		uint32_t pointer_to_raw_data = 0;
-		uint32_t pointer_to_relocations = 0;
-		uint32_t pointer_to_line_numbers = 0;
-		uint16_t number_of_relocations = 0;
-		uint16_t number_of_line_numbers = 0;
-		uint32_t characteristics = 0;
-
-		Vector<uint8_t> save() const;
-		void load(Ref<FileAccess> p_file);
-	};
-
-	struct ResourceDataEntry : ByteStream {
-		static const uint16_t SIZE = 16;
-
-		uint32_t rva = 0;
-		uint32_t size = 0;
-
-		Vector<uint8_t> save() const;
-	};
-
-	uint32_t _snap(uint32_t p_value, uint32_t p_size) const;
-	uint32_t _get_pe_header_offset(Ref<FileAccess> p_executable) const;
-	Vector<SectionEntry> _get_section_entries(Ref<FileAccess> p_executable) const;
-	GroupIcon _create_group_icon(const String &p_icon_path) const;
-	ManifestInfo _create_manifest_info() const;
-	VersionInfo _create_version_info(const HashMap<String, String> &p_strings) const;
-	Vector<uint8_t> _create_resources(uint32_t p_virtual_address, const GroupIcon &p_group_icon, const VersionInfo &p_version_info, const ManifestInfo &p_manifest_info) const;
-	Error _truncate(const String &p_executable_path, uint32_t p_size) const;
-	HashMap<String, String> _get_strings(const Ref<EditorExportPreset> &p_preset) const;
-	Error _modify_template(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path) const;
-
-public:
-	static Error modify(const Ref<EditorExportPreset> &p_preset, const String &p_template_path, const String &p_icon_path);
-};
-
-// --- End platform/windows/export/template_modifier.h ---
-
-#ifdef WINDOWS_ENABLED
-#include "shlobj.h"
-
-// Converts long path to Windows UNC format.
-static String fix_path(const String& p_path)
-{
-	String path = p_path;
-	if (p_path.is_relative_path()) {
-		Char16String current_dir_name;
-		size_t str_len = GetCurrentDirectoryW(0, nullptr);
-		current_dir_name.resize_uninitialized(str_len + 1);
-		GetCurrentDirectoryW(current_dir_name.size(), (LPWSTR)current_dir_name.ptrw());
-		path = String::utf16((const char16_t*)current_dir_name.get_data())
-				   .trim_prefix(R"(\\?\)")
-				   .replace_char('\\', '/')
-				   .path_join(path);
-	}
-	path = path.simplify_path();
-	path = path.replace_char('/', '\\');
-	if (path.size() >= MAX_PATH && !path.is_network_share_path() && !path.begins_with(R"(\\?\)")) {
-		path = R"(\\?\)" + path;
-	}
-	return path;
-}
-
-#endif
-
-String EditorExportPlatformWindows::get_template_file_name(
-	const String& p_target, const String& p_arch) const
-{
-	return "windows_" + p_target + "_" + p_arch + ".exe";
-}
-
-List<String> EditorExportPlatformWindows::get_binary_extensions(
-	const Ref<EditorExportPreset>& p_preset) const
-{
-	List<String> list;
-	list.push_back("exe");
-	list.push_back("zip");
-	return list;
-}
-
-void EditorExportPlatformWindows::get_platform_features(List<String>* r_features) const
-{
-	EditorExportPlatformPC::get_platform_features(r_features);
-	r_features->push_back("windows");
-}
-
-Ref<Texture2D> EditorExportPlatformWindows::get_run_icon() const { return run_icon; }
-
-int EditorExportPlatformWindows::get_options_count() const { return menu_options; }
-
-String EditorExportPlatformWindows::get_option_label(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall") : TTR("Run on remote Windows system");
-}
-
-String EditorExportPlatformWindows::get_option_tooltip(int p_index) const
-{
-	return (p_index) ? TTR("Stop and uninstall running project from the remote system")
-					 : TTR("Run exported project on remote Windows system");
-}
-
-void EditorExportPlatformWindows::cleanup()
-{
-	if (ssh_pid != 0 && OS::is_process_running(ssh_pid)) {
-		__print_line("Terminating connection...");
-		OS::kill(ssh_pid);
-		OS::delay_usec(1000);
-	}
-
-	if (!cleanup_commands.is_empty()) {
-		__print_line("Stopping and deleting previous version...");
-		for (const SSHCleanupCommand& cmd : cleanup_commands) {
-			if (cmd.wait) {
-				ssh_run_on_remote(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
-			}
-			else {
-				ssh_run_on_remote_no_wait(cmd.host, cmd.port, cmd.ssh_args, cmd.cmd_args);
-			}
-		}
-	}
-	ssh_pid = 0;
-	cleanup_commands.clear();
-}
-
-void register_windows_exporter() {}
-
-
-
-// ============================================================================
-// Merged from platform/windows/export/template_modifier.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-
-
-void TemplateModifier::ByteStream::save(uint8_t p_value, Vector<uint8_t>& r_bytes) const
-{
-	save(p_value, r_bytes, 1);
-}
-
-void TemplateModifier::ByteStream::save(uint16_t p_value, Vector<uint8_t>& r_bytes) const
-{
-	save(p_value, r_bytes, 2);
-}
-
-void TemplateModifier::ByteStream::save(uint32_t p_value, Vector<uint8_t>& r_bytes) const
-{
-	save(p_value, r_bytes, 4);
-}
-
-void TemplateModifier::ByteStream::save(const String& p_value, Vector<uint8_t>& r_bytes) const
-{
-	r_bytes.append_array(p_value.to_utf16_buffer());
-	save((uint16_t)0, r_bytes);
-}
-
-void TemplateModifier::ByteStream::save(
-	uint32_t p_value, Vector<uint8_t>& r_bytes, uint32_t p_count) const
-{
-	for (uint32_t i = 0; i < p_count; i++) {
-		r_bytes.append((uint8_t)(p_value & 0xff));
-		p_value >>= 8;
-	}
-}
-
-Vector<uint8_t> TemplateModifier::ByteStream::save() const { return Vector<uint8_t>(); }
-
-Vector<uint8_t> TemplateModifier::Structure::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(length, bytes);
-	ByteStream::save(value_length, bytes);
-	ByteStream::save(type, bytes);
-	ByteStream::save(key, bytes);
-	while (bytes.size() % 4) {
-		bytes.append(0);
-	}
-	return bytes;
-}
-
-Vector<uint8_t>& TemplateModifier::Structure::add_length(Vector<uint8_t>& r_bytes) const
-{
-	r_bytes.write[0] = r_bytes.size() & 0xff;
-	r_bytes.write[1] = r_bytes.size() >> 8 & 0xff;
-	return r_bytes;
-}
-
-Vector<uint8_t> TemplateModifier::ResourceDirectoryTable::save() const
-{
-	Vector<uint8_t> bytes;
-	bytes.resize_initialized(12);
-	ByteStream::save(name_entry_count, bytes);
-	ByteStream::save(id_entry_count, bytes);
-	return bytes;
-}
-
-Vector<uint8_t> TemplateModifier::ResourceDirectoryEntry::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(id | (name ? HIGH_BIT : 0), bytes);
-	ByteStream::save(data_offset | (subdirectory ? HIGH_BIT : 0), bytes);
-	return bytes;
-}
-
-Vector<uint8_t> TemplateModifier::FixedFileInfo::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(signature, bytes);
-	ByteStream::save(struct_version, bytes);
-	ByteStream::save(file_version_ms, bytes);
-	ByteStream::save(file_version_ls, bytes);
-	ByteStream::save(product_version_ms, bytes);
-	ByteStream::save(product_version_ls, bytes);
-	ByteStream::save(file_flags_mask, bytes);
-	ByteStream::save(file_flags, bytes);
-	ByteStream::save(file_os, bytes);
-	ByteStream::save(file_type, bytes);
-	ByteStream::save(file_subtype, bytes);
-	ByteStream::save(file_date_ms, bytes);
-	ByteStream::save(file_date_ls, bytes);
-	return bytes;
-}
-
-void TemplateModifier::FixedFileInfo::set_file_version(const String& p_file_version)
-{
-	Vector<String> parts = p_file_version.split(".");
-	while (parts.size() < 4) {
-		parts.append("0");
-	}
-	file_version_ms = parts[0].to_int() << 16 | (parts[1].to_int() & 0xffff);
-	file_version_ls = parts[2].to_int() << 16 | (parts[3].to_int() & 0xffff);
-}
-
-void TemplateModifier::FixedFileInfo::set_product_version(const String& p_product_version)
-{
-	Vector<String> parts = p_product_version.split(".");
-	while (parts.size() < 4) {
-		parts.append("0");
-	}
-	product_version_ms = parts[0].to_int() << 16 | (parts[1].to_int() & 0xffff);
-	product_version_ls = parts[2].to_int() << 16 | (parts[3].to_int() & 0xffff);
-}
-
-Vector<uint8_t> TemplateModifier::StringStructure::save() const
-{
-	Vector<uint8_t> bytes = Structure::save();
-	ByteStream::save(value, bytes);
-	return add_length(bytes);
-}
-
-TemplateModifier::StringStructure::StringStructure() { type = 1; }
-
-TemplateModifier::StringStructure::StringStructure(const String& p_key, const String& p_value)
-{
-	type = 1;
-	value_length = p_value.length() + 1;
-	key = p_key;
-	value = p_value;
-}
-
-Vector<uint8_t> TemplateModifier::StringTable::save() const
-{
-	Vector<uint8_t> bytes = Structure::save();
-	for (const StringStructure& string : strings) {
-		bytes.append_array(string.save());
-		while (bytes.size() % 4) {
-			bytes.append(0);
-		}
-	}
-	return add_length(bytes);
-}
-
-void TemplateModifier::StringTable::put(const String& p_key, const String& p_value)
-{
-	strings.append(StringStructure(p_key, p_value));
-}
-
-TemplateModifier::StringTable::StringTable()
-{
-	key = "040904b0";
-	type = 1;
-}
-
-TemplateModifier::StringFileInfo::StringFileInfo()
-{
-	key = "StringFileInfo";
-	value_length = 0;
-	type = 1;
-}
-
-Vector<uint8_t> TemplateModifier::StringFileInfo::save() const
-{
-	Vector<uint8_t> bytes = Structure::save();
-	bytes.append_array(string_table.save());
-	return add_length(bytes);
-}
-
-Vector<uint8_t> TemplateModifier::Var::save() const
-{
-	Vector<uint8_t> bytes = Structure::save();
-	ByteStream::save(value, bytes);
-	return add_length(bytes);
-}
-
-TemplateModifier::Var::Var()
-{
-	value_length = 4;
-	key = "Translation";
-}
-
-Vector<uint8_t> TemplateModifier::VarFileInfo::save() const
-{
-	Vector<uint8_t> bytes = Structure::save();
-	bytes.append_array(var.save());
-	return add_length(bytes);
-}
-
-TemplateModifier::VarFileInfo::VarFileInfo()
-{
-	type = 1;
-	key = "VarFileInfo";
-}
-
-Vector<uint8_t> TemplateModifier::VersionInfo::save() const
-{
-	Vector<uint8_t> fixed_file_info = value.save();
-	Vector<uint8_t> bytes = Structure::save();
-	bytes.append_array(fixed_file_info);
-	bytes.append_array(string_file_info.save());
-	while (bytes.size() % 4) {
-		bytes.append(0);
-	}
-	bytes.append_array(var_file_info.save());
-	return add_length(bytes);
-}
-
-TemplateModifier::VersionInfo::VersionInfo()
-{
-	key = "VS_VERSION_INFO";
-	value_length = 52;
-}
-
-Vector<uint8_t> TemplateModifier::ManifestInfo::save() const
-{
-	Vector<uint8_t> bytes = manifest.to_utf8_buffer();
-	return bytes;
-}
-
-Vector<uint8_t> TemplateModifier::IconEntry::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(width, bytes);
-	ByteStream::save(height, bytes);
-	ByteStream::save(colors, bytes);
-	ByteStream::save((uint8_t)0, bytes);
-	ByteStream::save(planes, bytes);
-	ByteStream::save(bits_per_pixel, bytes);
-	ByteStream::save(image_size, bytes);
-	ByteStream::save((uint16_t)image_offset, bytes);
-	return bytes;
-}
-
-void TemplateModifier::IconEntry::load(Ref<FileAccess> p_file)
-{
-	width = p_file->get_8();		   // Width in pixels.
-	height = p_file->get_8();		   // Height in pixels.
-	colors = p_file->get_8();		   // Number of colors in the palette (0 - no palette).
-	p_file->get_8();				   // Reserved.
-	planes = p_file->get_16();		   // Number of color planes.
-	bits_per_pixel = p_file->get_16(); // Bits per pixel.
-	image_size = p_file->get_32();	   // Image data size in bytes.
-	image_offset = p_file->get_32();   // Image data offset.
-}
-
-Vector<uint8_t> TemplateModifier::GroupIcon::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(reserved, bytes);
-	ByteStream::save(type, bytes);
-	ByteStream::save(image_count, bytes);
-	for (const IconEntry& icon_entry : icon_entries) {
-		bytes.append_array(icon_entry.save());
-	}
-	return bytes;
-}
-
-void TemplateModifier::GroupIcon::load(Ref<FileAccess> p_icon_file)
-{
-	if (p_icon_file->get_32() != 0x10000) { // Wrong reserved bytes
-		ERR_FAIL_MSG("Wrong icon file type.");
-	}
-
-	image_count = p_icon_file->get_16();
-	for (uint16_t i = 0; i < image_count; i++) {
-		IconEntry icon_entry;
-		icon_entry.load(p_icon_file);
-		icon_entries.append(icon_entry);
-	}
-
-	int id = 1;
-	for (IconEntry& icon_entry : icon_entries) {
-		Vector<uint8_t> image;
-		image.resize(icon_entry.image_size);
-		p_icon_file->seek(icon_entry.image_offset);
-		p_icon_file->get_buffer(image.ptrw(), image.size());
-		icon_entry.image_offset = id++;
-		images.append(image);
-	}
-}
-
-void TemplateModifier::GroupIcon::fill_with_godot_blue()
-{
-	uint32_t id = 1;
-	for (uint8_t size : SIZES) {
-		Ref<Image> image =
-			Image::create_empty(size ? size : 256, size ? size : 256, false, Image::FORMAT_RGB8);
-		image->fill(Color::hex(0x478cbfff));
-		Vector<uint8_t> data = image->save_png_to_buffer();
-		IconEntry icon_entry;
-		icon_entry.width = size;
-		icon_entry.height = size;
-		icon_entry.bits_per_pixel = 24;
-		icon_entry.image_size = data.size();
-		icon_entry.image_offset = id++;
-		icon_entries.append(icon_entry);
-		images.append(data);
-	}
-}
-
-Vector<uint8_t> TemplateModifier::SectionEntry::save() const
-{
-	Vector<uint8_t> bytes;
-	bytes.append_array(name.to_utf8_buffer());
-	while (bytes.size() < 8) {
-		bytes.append(0);
-	}
-	ByteStream::save(virtual_size, bytes);
-	ByteStream::save(virtual_address, bytes);
-	ByteStream::save(size_of_raw_data, bytes);
-	ByteStream::save(pointer_to_raw_data, bytes);
-	ByteStream::save(pointer_to_relocations, bytes);
-	ByteStream::save(pointer_to_line_numbers, bytes);
-	ByteStream::save(number_of_relocations, bytes);
-	ByteStream::save(number_of_line_numbers, bytes);
-	ByteStream::save(characteristics, bytes);
-	return bytes;
-}
-
-void TemplateModifier::SectionEntry::load(Ref<FileAccess> p_file)
-{
-	uint8_t section_name[8];
-	p_file->get_buffer(section_name, 8);
-	name = String::utf8((char*)section_name, 8);
-	virtual_size = p_file->get_32();
-	virtual_address = p_file->get_32();
-	size_of_raw_data = p_file->get_32();
-	pointer_to_raw_data = p_file->get_32();
-	pointer_to_relocations = p_file->get_32();
-	pointer_to_line_numbers = p_file->get_32();
-	number_of_relocations = p_file->get_16();
-	number_of_line_numbers = p_file->get_16();
-	characteristics = p_file->get_32();
-}
-
-Vector<uint8_t> TemplateModifier::ResourceDataEntry::save() const
-{
-	Vector<uint8_t> bytes;
-	ByteStream::save(rva, bytes);
-	ByteStream::save(size, bytes);
-	ByteStream::save(0, bytes, 8);
-	return bytes;
-}
-
-uint32_t TemplateModifier::_get_pe_header_offset(Ref<FileAccess> p_executable) const
-{
-	p_executable->seek(POINTER_TO_PE_HEADER_OFFSET);
-	uint32_t pe_header_offset = p_executable->get_32();
-
-	p_executable->seek(pe_header_offset);
-	uint32_t magic = p_executable->get_32();
-
-	return magic == 0x00004550 ? pe_header_offset : 0;
-}
-
-uint32_t TemplateModifier::_snap(uint32_t p_value, uint32_t p_size) const
-{
-	return p_value + (p_value % p_size ? p_size - (p_value % p_size) : 0);
-}
-
-Vector<uint8_t> TemplateModifier::_create_resources(uint32_t p_virtual_address,
-	const GroupIcon& p_group_icon, const VersionInfo& p_version_info,
-	const ManifestInfo& p_manifest_info) const
-{
-	// 0x04, 0x00 as string length ICON in UTF16 and padding to 32 bits
-	const uint8_t ICON_DIRECTORY_STRING[] = {
-		0x04, 0x00, 0x49, 0x00, 0x43, 0x00, 0x4f, 0x00, 0x4e, 0x00, 0x00, 0x00};
-	const uint16_t RT_ENTRY_COUNT = 4;
-	const uint32_t icon_count = p_group_icon.images.size();
-
-	ResourceDirectoryTable root_directory_table;
-	root_directory_table.id_entry_count = RT_ENTRY_COUNT;
-
-	Vector<uint8_t> resources = root_directory_table.save();
-
-	ResourceDirectoryEntry rt_icon_entry;
-	rt_icon_entry.id = ResourceDirectoryEntry::ICON;
-	rt_icon_entry.data_offset =
-		ResourceDirectoryTable::SIZE + RT_ENTRY_COUNT * ResourceDirectoryEntry::SIZE;
-	rt_icon_entry.subdirectory = true;
-	resources.append_array(rt_icon_entry.save());
-
-	ResourceDirectoryEntry rt_group_icon_entry;
-	rt_group_icon_entry.id = ResourceDirectoryEntry::GROUP_ICON;
-	rt_group_icon_entry.data_offset =
-		(2 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count) * ResourceDirectoryEntry::SIZE;
-	rt_group_icon_entry.subdirectory = true;
-	resources.append_array(rt_group_icon_entry.save());
-
-	ResourceDirectoryEntry rt_version_entry;
-	rt_version_entry.id = ResourceDirectoryEntry::VERSION;
-	rt_version_entry.data_offset =
-		(4 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 2) * ResourceDirectoryEntry::SIZE;
-	rt_version_entry.subdirectory = true;
-	resources.append_array(rt_version_entry.save());
-
-	ResourceDirectoryEntry rt_manifest_entry;
-	rt_manifest_entry.id = ResourceDirectoryEntry::MANIFEST;
-	rt_manifest_entry.data_offset =
-		(6 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 4) * ResourceDirectoryEntry::SIZE;
-	rt_manifest_entry.subdirectory = true;
-	resources.append_array(rt_manifest_entry.save());
-
-	ResourceDirectoryTable icon_table;
-	icon_table.id_entry_count = icon_count;
-	resources.append_array(icon_table.save());
-
-	for (uint32_t i = 0; i < icon_count; i++) {
-		ResourceDirectoryEntry icon_entry;
-		icon_entry.id = i + 1;
-		icon_entry.data_offset = (2 + i) * ResourceDirectoryTable::SIZE +
-								 (RT_ENTRY_COUNT + icon_count + i) * ResourceDirectoryEntry::SIZE;
-		icon_entry.subdirectory = true;
-		resources.append_array(icon_entry.save());
-	}
-
-	for (uint32_t i = 0; i < icon_count; i++) {
-		ResourceDirectoryTable language_icon_table;
-		language_icon_table.id_entry_count = 1;
-		resources.append_array(language_icon_table.save());
-
-		ResourceDirectoryEntry language_icon_entry;
-		language_icon_entry.id = ResourceDirectoryEntry::ENGLISH;
-		language_icon_entry.data_offset =
-			(8 + icon_count) * ResourceDirectoryTable::SIZE +
-			(RT_ENTRY_COUNT + icon_count * 2 + 6) * ResourceDirectoryEntry::SIZE +
-			sizeof(ICON_DIRECTORY_STRING) + i * ResourceDataEntry::SIZE;
-		resources.append_array(language_icon_entry.save());
-	}
-
-	ResourceDirectoryTable group_icon_name_table;
-	group_icon_name_table.name_entry_count = 1;
-	resources.append_array(group_icon_name_table.save());
-
-	ResourceDirectoryEntry group_icon_name_entry;
-	group_icon_name_entry.id = (6 + icon_count) * ResourceDirectoryTable::SIZE +
-							   (RT_ENTRY_COUNT + icon_count * 2 + 4) * ResourceDirectoryEntry::SIZE;
-	group_icon_name_entry.data_offset =
-		(3 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 1) * ResourceDirectoryEntry::SIZE;
-	group_icon_name_entry.name = true;
-	group_icon_name_entry.subdirectory = true;
-	resources.append_array(group_icon_name_entry.save());
-
-	ResourceDirectoryTable group_icon_language_table;
-	group_icon_language_table.id_entry_count = 1;
-	resources.append_array(group_icon_language_table.save());
-
-	ResourceDirectoryEntry group_icon_language_entry;
-	group_icon_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	group_icon_language_entry.data_offset =
-		(8 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
-		sizeof(ICON_DIRECTORY_STRING) + icon_count * ResourceDataEntry::SIZE;
-	resources.append_array(group_icon_language_entry.save());
-
-	ResourceDirectoryTable version_table;
-	version_table.id_entry_count = 1;
-	resources.append_array(version_table.save());
-
-	ResourceDirectoryEntry version_entry;
-	version_entry.id = 1;
-	version_entry.data_offset =
-		(5 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 3) * ResourceDirectoryEntry::SIZE;
-	version_entry.subdirectory = true;
-	resources.append_array(version_entry.save());
-
-	ResourceDirectoryTable version_language_table;
-	version_language_table.id_entry_count = 1;
-	resources.append_array(version_language_table.save());
-
-	ResourceDirectoryEntry version_language_entry;
-	version_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	version_language_entry.data_offset =
-		(8 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
-		sizeof(ICON_DIRECTORY_STRING) + (icon_count + 1) * ResourceDataEntry::SIZE;
-	resources.append_array(version_language_entry.save());
-
-	ResourceDirectoryTable manifest_table;
-	manifest_table.id_entry_count = 1;
-	resources.append_array(manifest_table.save());
-
-	ResourceDirectoryEntry manifest_entry;
-	manifest_entry.id = 1;
-	manifest_entry.data_offset =
-		(7 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 5) * ResourceDirectoryEntry::SIZE;
-	manifest_entry.subdirectory = true;
-	resources.append_array(manifest_entry.save());
-
-	ResourceDirectoryTable manifest_language_table;
-	manifest_language_table.id_entry_count = 1;
-	resources.append_array(manifest_language_table.save());
-
-	ResourceDirectoryEntry manifest_language_entry;
-	manifest_language_entry.id = ResourceDirectoryEntry::ENGLISH;
-	manifest_language_entry.data_offset =
-		(8 + icon_count) * ResourceDirectoryTable::SIZE +
-		(RT_ENTRY_COUNT + 2 * icon_count + 6) * ResourceDirectoryEntry::SIZE +
-		sizeof(ICON_DIRECTORY_STRING) + (icon_count + 2) * ResourceDataEntry::SIZE;
-	resources.append_array(manifest_language_entry.save());
-
-	Vector<uint8_t> icon_directory_string;
-	icon_directory_string.resize(sizeof(ICON_DIRECTORY_STRING));
-	memcpy(icon_directory_string.ptrw(), ICON_DIRECTORY_STRING, sizeof(ICON_DIRECTORY_STRING));
-	resources.append_array(icon_directory_string);
-
-	Vector<Vector<uint8_t>> data_entries;
-	for (const Vector<uint8_t>& image : p_group_icon.images) {
-		data_entries.append(image);
-	}
-	data_entries.append(p_group_icon.save());
-	data_entries.append(p_version_info.save());
-	data_entries.append(p_manifest_info.save());
-
-	uint32_t offset = resources.size() + data_entries.size() * ResourceDataEntry::SIZE;
-
-	for (const Vector<uint8_t>& data_entry : data_entries) {
-		ResourceDataEntry resource_data_entry;
-		resource_data_entry.rva = p_virtual_address + offset;
-		resource_data_entry.size = data_entry.size();
-		resources.append_array(resource_data_entry.save());
-		offset += resource_data_entry.size;
-		while (offset % 4) {
-			offset += 1;
-		}
-	}
-
-	for (const Vector<uint8_t>& data_entry : data_entries) {
-		resources.append_array(data_entry);
-		while (resources.size() % 4) {
-			resources.append(0);
-		}
-	}
-
-	return resources;
-}
-
-TemplateModifier::VersionInfo TemplateModifier::_create_version_info(
-	const HashMap<String, String>& p_strings) const
-{
-	StringTable string_table;
-	for (const KeyValue<String, String>& E : p_strings) {
-		string_table.put(E.key, E.value);
-	}
-
-	StringFileInfo string_file_info;
-	string_file_info.string_table = string_table;
-
-	FixedFileInfo fixed_file_info;
-	if (p_strings.has("FileVersion")) {
-		fixed_file_info.set_file_version(p_strings["FileVersion"]);
-	}
-	if (p_strings.has("ProductVersion")) {
-		fixed_file_info.set_product_version(p_strings["ProductVersion"]);
-	}
-
-	VersionInfo version_info;
-	version_info.value = fixed_file_info;
-	version_info.string_file_info = string_file_info;
-
-	return version_info;
-}
-
-TemplateModifier::ManifestInfo TemplateModifier::_create_manifest_info() const
-{
-	ManifestInfo manifest_info;
-	manifest_info.manifest = R"MANIFEST(<?xml version="1.0" encoding="utf-8"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-	<application xmlns="urn:schemas-microsoft-com:asm.v3">
-		<windowsSettings xmlns:ws2="http://schemas.microsoft.com/SMI/2016/WindowsSettings">
-			<ws2:longPathAware>true</ws2:longPathAware>
-		</windowsSettings>
-	</application>
-	<dependency>
-		<dependentAssembly>
-			<assemblyIdentity type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'/>
-		</dependentAssembly>
-	</dependency>
-</assembly>)MANIFEST";
-	return manifest_info;
-}
-
-TemplateModifier::GroupIcon TemplateModifier::_create_group_icon(const String& p_icon_path) const
-{
-	GroupIcon group_icon;
-
-	Ref<FileAccess> icon_file = FileAccess::open(p_icon_path, FileAccess::READ);
-	if (icon_file.is_null()) {
-		group_icon.fill_with_godot_blue();
-		return group_icon;
-	}
-
-	group_icon.load(icon_file);
-
-	return group_icon;
-}
-
-Error TemplateModifier::_truncate(const String& p_path, uint32_t p_size) const
-{
-	Error error;
-
-	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ, &error);
-	ERR_FAIL_COND_V(error != OK, ERR_CANT_OPEN);
-
-	String truncated_path = p_path + ".truncated";
-	Ref<FileAccess> truncated = FileAccess::open(truncated_path, FileAccess::WRITE, &error);
-	ERR_FAIL_COND_V(error != OK, ERR_CANT_CREATE);
-
-	truncated->store_buffer(file->get_buffer(p_size));
-
-	file->close();
-	truncated->close();
-
-	DirAccess::remove_absolute(p_path);
-	DirAccess::rename_absolute(truncated_path, p_path);
-
-	return error;
-}
-
-Error TemplateModifier::_modify_template(const Ref<EditorExportPreset>& p_preset,
-	const String& p_template_path, const String& p_icon_path) const
-{
-	Error error;
-	Ref<FileAccess> template_file =
-		FileAccess::open(p_template_path, FileAccess::READ_WRITE, &error);
-	ERR_FAIL_COND_V(error != OK, ERR_CANT_OPEN);
-
-	Vector<SectionEntry> section_entries = _get_section_entries(template_file);
-	ERR_FAIL_COND_V(section_entries.size() < 2, ERR_CANT_OPEN);
-
-	// Find resource (".rsrc") and relocation (".reloc") sections, usually last two, but ".debug_*"
-	// sections (referenced as "/[n]"), symbol table, and string table can follow.
-	int resource_index = section_entries.size() - 2;
-	int relocations_index = section_entries.size() - 1;
-	for (int i = 0; i < section_entries.size(); i++) {
-		if (section_entries[i].name == ".rsrc") {
-			resource_index = i;
-		}
-		else if (section_entries[i].name == ".reloc") {
-			relocations_index = i;
-		}
-	}
-
-	ERR_FAIL_COND_V(section_entries[resource_index].name != ".rsrc", ERR_CANT_OPEN);
-	ERR_FAIL_COND_V(section_entries[relocations_index].name != ".reloc", ERR_CANT_OPEN);
-
-	uint64_t original_template_size = template_file->get_length();
-
-	GroupIcon group_icon = _create_group_icon(p_icon_path);
-
-	VersionInfo version_info = _create_version_info(_get_strings(p_preset));
-	ManifestInfo manifest_info = _create_manifest_info();
-
-	SectionEntry& resources_section_entry = section_entries.write[resource_index];
-	uint32_t old_resources_size_of_raw_data = resources_section_entry.size_of_raw_data;
-	Vector<uint8_t> resources = _create_resources(
-		resources_section_entry.virtual_address, group_icon, version_info, manifest_info);
-	resources_section_entry.virtual_size = resources.size();
-	resources.resize_initialized(_snap(resources.size(), BLOCK_SIZE));
-	resources_section_entry.size_of_raw_data = resources.size();
-
-	int32_t raw_size_delta =
-		resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
-	uint32_t old_last_section_virtual_address =
-		section_entries.get(section_entries.size() - 1).virtual_address;
-
-	// Some data (e.g. DWARF debug symbols) can be placed after the last section.
-	uint32_t old_footer_offset =
-		section_entries.get(section_entries.size() - 1).pointer_to_raw_data +
-		section_entries.get(section_entries.size() - 1).size_of_raw_data;
-
-	// Copy and update sections after ".rsrc".
-	Vector<Vector<uint8_t>> moved_section_data;
-	uint32_t prev_virtual_address = resources_section_entry.virtual_address;
-	uint32_t prev_virtual_size = resources_section_entry.virtual_size;
-	for (int i = resource_index + 1; i < section_entries.size(); i++) {
-		SectionEntry& section_entry = section_entries.write[i];
-		template_file->seek(section_entry.pointer_to_raw_data);
-		Vector<uint8_t> data = template_file->get_buffer(section_entry.size_of_raw_data);
-		moved_section_data.push_back(data);
-		section_entry.pointer_to_raw_data += raw_size_delta;
-		section_entry.virtual_address =
-			prev_virtual_address + _snap(prev_virtual_size, PE_PAGE_SIZE);
-		prev_virtual_address = section_entry.virtual_address;
-		prev_virtual_size = section_entry.virtual_size;
-	}
-
-	// Copy COFF symbol table and string table after the last section.
-	uint32_t footer_size = template_file->get_length() - old_footer_offset;
-	template_file->seek(old_footer_offset);
-	Vector<uint8_t> footer;
-	if (footer_size > 0) {
-		footer = template_file->get_buffer(footer_size);
-	}
-
-	uint32_t pe_header_offset = _get_pe_header_offset(template_file);
-
-	// Update symbol table pointer.
-	template_file->seek(pe_header_offset + 12);
-	uint32_t symbols_offset = template_file->get_32();
-	if (symbols_offset > resources_section_entry.pointer_to_raw_data) {
-		template_file->seek(pe_header_offset + 12);
-		template_file->store_32(symbols_offset + raw_size_delta);
-	}
-
-	template_file->seek(pe_header_offset + MAGIC_NUMBER_OFFSET);
-	uint16_t magic_number = template_file->get_16();
-	ERR_FAIL_COND_V_MSG(magic_number != 0x10b && magic_number != 0x20b, ERR_CANT_OPEN,
-		vformat("Magic number has wrong value: %04x", magic_number));
-	bool pe32plus = magic_number == 0x20b;
-
-	// Update image size.
-	template_file->seek(pe_header_offset + SIZE_OF_INITIALIZED_DATA_OFFSET);
-	uint32_t size_of_initialized_data = template_file->get_32();
-	size_of_initialized_data +=
-		resources_section_entry.size_of_raw_data - old_resources_size_of_raw_data;
-	template_file->seek(pe_header_offset + SIZE_OF_INITIALIZED_DATA_OFFSET);
-	template_file->store_32(size_of_initialized_data);
-
-	template_file->seek(pe_header_offset + SIZE_OF_IMAGE_OFFSET);
-	uint32_t size_of_image = template_file->get_32();
-	size_of_image += section_entries.get(section_entries.size() - 1).virtual_address -
-					 old_last_section_virtual_address;
-	template_file->seek(pe_header_offset + SIZE_OF_IMAGE_OFFSET);
-	template_file->store_32(size_of_image);
-
-	uint32_t optional_header_offset = pe_header_offset + COFF_HEADER_SIZE;
-
-	// Update resource section size.
-	template_file->seek(optional_header_offset + (pe32plus ? 132 : 116));
-	template_file->store_32(resources_section_entry.virtual_size);
-
-	// Update relocation section size and pointer.
-	template_file->seek(optional_header_offset + (pe32plus ? 152 : 136));
-	template_file->store_32(section_entries[relocations_index].virtual_address);
-	template_file->store_32(section_entries[relocations_index].virtual_size);
-
-	template_file->seek(
-		optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * resource_index);
-	template_file->store_buffer(resources_section_entry.save());
-	for (int i = resource_index + 1; i < section_entries.size(); i++) {
-		template_file->seek(
-			optional_header_offset + (pe32plus ? 240 : 224) + SectionEntry::SIZE * i);
-		template_file->store_buffer(section_entries[i].save());
-	}
-
-	// Write new resource section.
-	template_file->seek(resources_section_entry.pointer_to_raw_data);
-	template_file->store_buffer(resources);
-	// Write the rest of sections.
-	for (const Vector<uint8_t>& data : moved_section_data) {
-		template_file->store_buffer(data);
-	}
-	// Write footer data.
-	if (footer_size > 0) {
-		template_file->store_buffer(footer);
-	}
-
-	if (template_file->get_position() < original_template_size) {
-		template_file->close();
-		_truncate(p_template_path,
-			section_entries.get(section_entries.size() - 1).pointer_to_raw_data +
-				section_entries.get(section_entries.size() - 1).size_of_raw_data + footer_size);
-	}
-
-	return OK;
-}
-
-Vector<TemplateModifier::SectionEntry> TemplateModifier::_get_section_entries(
-	Ref<FileAccess> p_executable) const
-{
-	Vector<SectionEntry> section_entries;
-
-	uint32_t pe_header_offset = _get_pe_header_offset(p_executable);
-	if (pe_header_offset == 0) {
-		return section_entries;
-	}
-
-	p_executable->seek(pe_header_offset + 6);
-	int num_sections = p_executable->get_16();
-	p_executable->seek(pe_header_offset + 20
-);
-	uint16_t size_of_optional_header = p_executable->get_16();
-	p_executable->seek(pe_header_offset + COFF_HEADER_SIZE + size_of_optional_header);
-
-	for (int i = 0; i < num_sections; ++i) {
-		SectionEntry section_entry;
-		section_entry.load(p_executable);
-		section_entries.append(section_entry);
-	}
-
-	return section_entries;
-}
-
-Error TemplateModifier::modify(const Ref<EditorExportPreset>& p_preset,
-	const String& p_template_path, const String& p_icon_path)
-{
-	TemplateModifier template_modifier;
-	return template_modifier._modify_template(p_preset, p_template_path, p_icon_path);
-}
-
-HashMap<String, String> TemplateModifier::_get_strings(Ref<EditorExportPreset> const&) const
-{
-	return HashMap<String, String>();
-}
-
-#ifdef TOOLS_ENABLED
+inline void register_android_exporter() {}
+inline void register_ios_exporter() {}
+inline void register_linuxbsd_exporter() {}
+inline void register_macos_exporter() {}
+inline void register_visionos_exporter() {}
+inline void register_web_exporter() {}
+inline void register_windows_exporter() {}
+inline void register_android_exporter_types() {}
+inline void register_ios_exporter_types() {}
+inline void register_linuxbsd_exporter_types() {}
+inline void register_macos_exporter_types() {}
+inline void register_visionos_exporter_types() {}
+inline void register_web_exporter_types() {}
+inline void register_windows_exporter_types() {}
 #define DEFINE_EDITOR_EXPORTERS_AND_TRANSLATIONS
 #include "main/splash.gen.h"
 #endif
 
-#endif // TOOLS_ENABLED
-
-// === Merged from modules/lightmapper_rd/lightmapper_rd.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_LIGHTMAPPER_RD_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
-// --- Inlined from modules/lightmapper_rd/lightmapper_rd.h ---
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 class RenderingDevice;
@@ -96781,9 +78372,6 @@ struct Lightmapper::RDState
 		bool p_shadowmask, const String& p_exe);
 };
 
-
-
-// --- End modules/lightmapper_rd/lightmapper_rd.h ---
 #define DEFINE_RD_SHADERS_GEN
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
@@ -97794,14 +79382,8 @@ void uninitialize_lightmapper_rd_module(ModuleInitializationLevel p_level)
 void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_LIGHTMAPPER_RD_ENABLED)
 
-
-// --- Merged from modules/xatlas_unwrap/register_types.cpp ---
 #if defined(MODULE_XATLAS_UNWRAP_ENABLED)
 #include "servers/display/display_server.h"
-
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/os/memory.h"
 
 #include <xatlas.h>
 
@@ -97810,7 +79392,7 @@ void initialize_lightmapper_rd_module(ModuleInitializationLevel p_level) {}
 extern bool (*array_mesh_lightmap_unwrap_callback)(float p_texel_size, const float *p_vertices, const float *p_normals, int p_vertex_count, const int *p_indices, int p_index_count, const uint8_t *p_cache_data, bool *r_use_cache, uint8_t **r_mesh_cache, int *r_mesh_cache_size, float **r_uv, int **r_vertex, int *r_vertex_count, int **r_index, int *r_index_count, int *r_size_hint_x, int *r_size_hint_y);
 
 bool xatlas_mesh_lightmap_unwrap_callback(float p_texel_size, const float *p_vertices, const float *p_normals, int p_vertex_count, const int *p_indices, int p_index_count, const uint8_t *p_cache_data, bool *r_use_cache, uint8_t **r_mesh_cache, int *r_mesh_cache_size, float **r_uv, int **r_vertex, int *r_vertex_count, int **r_index, int *r_index_count, int *r_size_hint_x, int *r_size_hint_y) {
-	CryptoCore::MD5Context ctx;
+	CryptoCore::HashContext ctx(CryptoCore::HASH_ALG_MD5);
 	ctx.start();
 
 	ctx.update((unsigned char *)&p_texel_size, sizeof(float));
@@ -98012,13 +79594,10 @@ void uninitialize_xatlas_unwrap_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_XATLAS_UNWRAP_ENABLED)
 
-
-// --- Merged from modules/betsy/image_compress_betsy.cpp ---
 #if defined(MODULE_BETSY_ENABLED)
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
 #include "main/splash.gen.h"
-// --- Inlined from modules/betsy/betsy_bc1.h ---
 static unsigned char stb__OMatch5[256][2] = {
 	{ 0, 0 },
 	{ 0, 0 },
@@ -98537,12 +80116,6 @@ static unsigned char stb__OMatch6[256][2] = {
 	{ 63, 63 },
 };
 
-// --- End modules/betsy/betsy_bc1.h ---
-#include "core/os/os.h"
-// --- Inlined from modules/betsy/image_compress_betsy.h ---
-#include "core/io/net_socket.h"
-#include "core/os/condition_variable.h"
-
 class RDShaderFile;
 class RenderingDevice;
 class RenderingContextDriver;
@@ -98647,9 +80220,6 @@ public:
 	}
 };
 
-
-
-// --- End modules/betsy/image_compress_betsy.h ---
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
 
@@ -98918,21 +80488,12 @@ void uninitialize_betsy_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_BETSY_ENABLED)
 
-
-// --- Merged from modules/cvtt/image_compress_cvtt.cpp ---
 #if defined(MODULE_CVTT_ENABLED)
 #include <ConvectionKernels.h>
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/os/memory.h"
-// --- Inlined from modules/cvtt/image_compress_cvtt.h ---
-#include "core/io/net_socket.h"
 
 void image_compress_cvtt(Image *p_image, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
 void image_decompress_cvtt(Image *p_image);
-
-// --- End modules/cvtt/image_compress_cvtt.h ---
 
 struct CVTTCompressionJobParams
 {
@@ -99341,86 +80902,23 @@ void uninitialize_cvtt_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_CVTT_ENABLED)
 
-// === Merged from drivers/register_driver_types.cpp ===
-/*  register_driver_types.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
 
-#include "core/io/net_socket.h"
-// --- Inlined/Folded from drivers/png/image_loader_png.h ---
-#include "core/io/net_socket.h"
+static Error _png_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
+static Ref<Image> _png_load_mem(const uint8_t *p_png, int p_size);
+static Ref<Image> _png_unpack_mem(const uint8_t *p_png, int p_size);
+static Ref<Image> _png_lossless_unpack(const Vector<uint8_t> &p_data);
+static Vector<uint8_t> _png_lossless_pack(const Ref<Image> &p_image);
+static const char *const _png_exts[] = { "png", nullptr };
 
-class ImageLoaderPNG : public ImageFormatLoader {
-private:
-	static Vector<uint8_t> lossless_pack_png(const Ref<Image> &p_image);
-	static Ref<Image> lossless_unpack_png(const Vector<uint8_t> &p_data);
-	static Ref<Image> unpack_mem_png(const uint8_t *p_png, int p_size);
-	static Ref<Image> load_mem_png(const uint8_t *p_png, int p_size);
-
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderPNG();
-};
-
-// --- Folded from drivers/png/resource_saver_png.h ---
-#include "core/io/net_socket.h"
-
-class ResourceSaverPNG : public ResourceFormatSaver
-{
-public:
-	static Error save_image(const String& p_path, const Ref<Image>& p_img);
-	static Vector<uint8_t> save_image_to_buffer(const Ref<Image>& p_img);
-
-	virtual Error save(
-		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-	virtual void get_recognized_extensions(
-		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-
-	ResourceSaverPNG();
-};
-
-
-
-
-
-// --- End drivers/png/resource_saver_png.h ---
+static Error _png_save_resource(const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags);
+static Error _png_save_image(const String& p_path, const Ref<Image>& p_img);
+static Vector<uint8_t> _png_save_image_to_buffer(const Ref<Image>& p_img);
 
 #ifdef ACCESSKIT_ENABLED
-// --- Inlined/Folded from drivers/accesskit/accessibility_server_accesskit.h ---
 #ifdef ACCESSKIT_ENABLED
 
 #include <accesskit.h>
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 class AccessibilityServerAccessKit : public AccessibilityServerDriver
@@ -99500,7 +80998,6 @@ public:
 		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false) override;
 	bool has_element(const RID& p_id) const override;
 	void free_element(const RID& p_id) override;
-
 
 	void update_set_focus(const RID& p_id) override;
 	RID get_window_root(DisplayServerEnums::WindowID p_window_id) const override;
@@ -99591,18 +81088,24 @@ public:
 #endif // ACCESSKIT_ENABLED
 #endif
 
-static Ref<ImageLoaderPNG> image_loader_png;
-static Ref<ResourceSaverPNG> resource_saver_png;
+static Ref<ImageFormatLoader> image_loader_png;
+static Ref<ResourceFormatSaver> resource_saver_png;
 
 void register_core_driver_types() {
 #ifdef ACCESSKIT_ENABLED
 	AccessibilityServerAccessKit::register_create_func();
 #endif
 
-	image_loader_png.instantiate();
+	Image::_png_mem_loader_func = _png_load_mem;
+	Image::_png_mem_unpacker_func = _png_unpack_mem;
+	Image::png_unpacker = _png_lossless_unpack;
+	Image::png_packer = _png_lossless_pack;
+	image_loader_png = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_png_load_image, _png_exts)));
 	ImageLoader::add_image_format_loader(image_loader_png);
 
-	resource_saver_png.instantiate();
+	Image::save_png_func = &_png_save_image;
+	Image::save_png_buffer_func = &_png_save_image_to_buffer;
+	resource_saver_png = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(_png_save_resource)));
 	ResourceSaver::add_resource_format_saver(resource_saver_png);
 }
 
@@ -99620,12 +81123,7 @@ void register_driver_types() {
 void unregister_driver_types() {
 }
 
-// ============================================================================
-// Merged from drivers/accesskit/accessibility_server_accesskit.cpp
-// ============================================================================
-
 #ifdef ACCESSKIT_ENABLED
-
 
 #include "servers/display/display_server.h"
 
@@ -101551,22 +83049,11 @@ void AccessibilityServerAccessKit::register_create_func()
 
 #endif // ACCESSKIT_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/alsa/audio_driver_alsa.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef ALSA_ENABLED
 
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from drivers/alsa/asound-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_ASOUND
 #define DYLIBLOAD_WRAPPER_ASOUND
 // This file is generated. Do not edit!
@@ -106985,15 +88472,9 @@ void AudioDriverALSA::finish() {
 
 #endif // ALSA_ENABLED
 
-// ============================================================================
-// Merged from drivers/alsamidi/midi_driver_alsamidi.cpp
-// ============================================================================
-
 #ifdef ALSAMIDI_ENABLED
 
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
 
@@ -107142,18 +88623,9 @@ void MIDIDriverALSAMidi::unlock()
 
 #endif // ALSAMIDI_ENABLED
 
-// ============================================================================
-// Merged from drivers/egl/egl_manager.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef EGL_ENABLED
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 
 #ifdef WINDOWS_ENABLED
 #include "servers/display/display_server.h"
@@ -107660,18 +89132,9 @@ EGLManager::~EGLManager() {
 
 #endif // EGL_ENABLED
 
-// ============================================================================
-// Merged from drivers/pulseaudio/audio_driver_pulseaudio.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef PULSEAUDIO_ENABLED
-
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 
 #ifdef ALSAMIDI_ENABLED
 #ifdef SOWRAP_ENABLED
@@ -108551,18 +90014,9 @@ AudioDriverPulseAudio::AudioDriverPulseAudio()
 
 #endif // PULSEAUDIO_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/windows/file_access_windows.cpp
-// ============================================================================
-
 #ifdef WINDOWS_ENABLED
 
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #include <io.h>
 #include <share.h> // _SH_DENYNO
@@ -109245,17 +90699,10 @@ void FileAccessWindows::finalize() {
 #endif
 #endif
 
-// ============================================================================
-// Merged from drivers/windows/dir_access_windows.cpp
-// ============================================================================
-
 #if defined(WINDOWS_ENABLED)
 
 #include "servers/display/display_server.h"
 
-#include "core/os/memory.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #include <windows.h>
@@ -109792,15 +91239,9 @@ DirAccessWindows::~DirAccessWindows() {
 #undef NT_FILE_CS_FLAG_CASE_SENSITIVE_DIR
 #endif
 
-// ============================================================================
-// Merged from drivers/windows/file_access_windows_pipe.cpp
-// ============================================================================
-
 #ifdef WINDOWS_ENABLED
 
 #include "servers/display/display_server.h"
-
-#include "core/string/ustring.h"
 
 #include <winbase.h>
 
@@ -109920,10 +91361,6 @@ FileAccessWindowsPipe::~FileAccessWindowsPipe() {
 }
 
 #endif // WINDOWS_ENABLED
-
-// ============================================================================
-// Merged from drivers/windows/ip_windows.cpp
-// ============================================================================
 
 #if defined(WINDOWS_ENABLED)
 
@@ -110054,10 +91491,6 @@ void IPWindows::make_default()
 }
 
 #endif // WINDOWS_ENABLED
-
-// ============================================================================
-// Merged from drivers/windows/net_socket_winsock.cpp
-// ============================================================================
 
 #ifdef WINDOWS_ENABLED
 
@@ -110658,16 +92091,9 @@ Error NetSocketWinSock::leave_multicast_group(const IPAddress &p_multi_address, 
 #undef SIO_UDP_NETRESET
 #endif
 
-// ============================================================================
-// Merged from drivers/windows/thread_windows.cpp
-// ============================================================================
-
 #ifdef WINDOWS_ENABLED
 
 #include "servers/display/display_server.h"
-
-#include "core/os/mutex.h"
-#include "core/string/ustring.h"
 
 #include <windows.h>
 
@@ -110691,15 +92117,9 @@ void init_thread_win() {
 
 #endif // WINDOWS_ENABLED
 
-// ============================================================================
-// Merged from drivers/winmidi/midi_driver_winmidi.cpp
-// ============================================================================
-
 #ifdef WINMIDI_ENABLED
 
 #include "servers/display/display_server.h"
-
-#include "core/string/ustring.h"
 
 void MIDIDriverWinMidi::read(
 	HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
@@ -110791,13 +92211,7 @@ void MIDIDriverWinMidi::close()
 
 #endif // WINMIDI_ENABLED
 
-
-// --- Merged from drivers/png/image_loader_png.cpp ---
-
-
-#include "core/io/net_socket.h"
-
-Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+static Error _png_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	const uint64_t buffer_size = f->get_length();
 	Vector<uint8_t> file_buffer;
 	Error err = file_buffer.resize(buffer_size);
@@ -110809,72 +92223,44 @@ Error ImageLoaderPNG::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 		f->get_buffer(writer, buffer_size);
 	}
 	const uint8_t *reader = file_buffer.ptr();
-	return PNGDriverCommon::png_to_image(reader, buffer_size, p_flags & FLAG_FORCE_LINEAR, p_image);
+	return PNGDriverCommon::png_to_image(reader, buffer_size, p_flags & ImageFormatLoader::FLAG_FORCE_LINEAR, p_image);
 }
 
-void ImageLoaderPNG::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("png");
-}
-
-Ref<Image> ImageLoaderPNG::load_mem_png(const uint8_t *p_png, int p_size) {
+static Ref<Image> _png_load_mem(const uint8_t *p_png, int p_size) {
 	Ref<Image> img;
 	img.instantiate();
-
-	// the value of p_force_linear does not matter since it only applies to 16 bit
 	Error err = PNGDriverCommon::png_to_image(p_png, p_size, false, img);
 	ERR_FAIL_COND_V(err, Ref<Image>());
-
 	return img;
 }
 
-Ref<Image> ImageLoaderPNG::unpack_mem_png(const uint8_t *p_png, int p_size) {
+static Ref<Image> _png_unpack_mem(const uint8_t *p_png, int p_size) {
 	ERR_FAIL_COND_V(p_size < 4, Ref<Image>());
 	ERR_FAIL_COND_V(p_png[0] != 'P' || p_png[1] != 'N' || p_png[2] != 'G' || p_png[3] != ' ', Ref<Image>());
-	return load_mem_png(&p_png[4], p_size - 4);
+	return _png_load_mem(&p_png[4], p_size - 4);
 }
 
-Ref<Image> ImageLoaderPNG::lossless_unpack_png(const Vector<uint8_t> &p_data) {
-	return unpack_mem_png(p_data.ptr(), p_data.size());
+static Ref<Image> _png_lossless_unpack(const Vector<uint8_t> &p_data) {
+	return _png_unpack_mem(p_data.ptr(), p_data.size());
 }
 
-Vector<uint8_t> ImageLoaderPNG::lossless_pack_png(const Ref<Image> &p_image) {
+static Vector<uint8_t> _png_lossless_pack(const Ref<Image> &p_image) {
 	Vector<uint8_t> out_buffer;
-
-	// add Godot's own "PNG " prefix
 	if (out_buffer.resize(4) != OK) {
 		ERR_FAIL_V(Vector<uint8_t>());
 	}
-
-	// scope for writer lifetime
 	{
-		// must be closed before call to image_to_png
 		uint8_t *writer = out_buffer.ptrw();
 		memcpy(writer, "PNG ", 4);
 	}
-
 	Error err = PNGDriverCommon::image_to_png(p_image, out_buffer);
 	if (err) {
 		ERR_FAIL_V(Vector<uint8_t>());
 	}
-
 	return out_buffer;
 }
 
-ImageLoaderPNG::ImageLoaderPNG() {
-	Image::_png_mem_loader_func = load_mem_png;
-	Image::_png_mem_unpacker_func = unpack_mem_png;
-	Image::png_unpacker = lossless_unpack_png;
-	Image::png_packer = lossless_pack_png;
-}
-
-// ============================================================================
-// Merged from drivers/png/png_driver_common.cpp
-// ============================================================================
-
-#include "core/io/net_socket.h"
-
 #ifdef TOOLS_ENABLED
-#include "core/os/os.h"
 #endif
 
 #include <png.h>
@@ -110974,53 +92360,23 @@ Error png_to_image(const uint8_t* p_source, size_t p_size, bool p_force_linear, 
 
 } // namespace PNGDriverCommon
 
-
-
-// ============================================================================
-// Merged from drivers/png/resource_saver_png.cpp
-// ============================================================================
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-
 #include "servers/display/display_server.h"
 
-Error ResourceSaverPNG::save(
-	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
-{
-	Ref<ImageTexture> texture = p_resource;
-
-	ERR_FAIL_COND_V_MSG(
-		texture.is_null(), ERR_INVALID_PARAMETER, "Can't save invalid texture as PNG.");
-	ERR_FAIL_COND_V_MSG(
-		!texture->get_width(), ERR_INVALID_PARAMETER, "Can't save empty texture as PNG.");
-
-	Ref<Image> img = texture->get_image();
-
-	Error err = save_image(p_path, img);
-
-	return err;
-}
-
-Error ResourceSaverPNG::save_image(const String& p_path, const Ref<Image>& p_img)
+static Error _png_save_image(const String& p_path, const Ref<Image>& p_img)
 {
 	Vector<uint8_t> buffer;
 	Error err = PNGDriverCommon::image_to_png(p_img, buffer);
 	ERR_FAIL_COND_V_MSG(err, err, "Can't convert image to PNG.");
 	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
 	ERR_FAIL_COND_V_MSG(err, err, vformat("Can't save PNG at path: '%s'.", p_path));
-
-	const uint8_t* reader = buffer.ptr();
-
-	file->store_buffer(reader, buffer.size());
+	file->store_buffer(buffer.ptr(), buffer.size());
 	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
 		return ERR_CANT_CREATE;
 	}
-
 	return OK;
 }
 
-Vector<uint8_t> ResourceSaverPNG::save_image_to_buffer(const Ref<Image>& p_img)
+static Vector<uint8_t> _png_save_image_to_buffer(const Ref<Image>& p_img)
 {
 	Vector<uint8_t> buffer;
 	Error err = PNGDriverCommon::image_to_png(p_img, buffer);
@@ -111028,25 +92384,18 @@ Vector<uint8_t> ResourceSaverPNG::save_image_to_buffer(const Ref<Image>& p_img)
 	return buffer;
 }
 
-ResourceSaverPNG::ResourceSaverPNG()
+static Error _png_save_resource(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
-	Image::save_png_func = &save_image;
-	Image::save_png_buffer_func = &save_image_to_buffer;
+	Ref<ImageTexture> texture = p_resource;
+	ERR_FAIL_COND_V_MSG(texture.is_null(), ERR_INVALID_PARAMETER, "Can't save invalid texture as PNG.");
+	ERR_FAIL_COND_V_MSG(!texture->get_width(), ERR_INVALID_PARAMETER, "Can't save empty texture as PNG.");
+	return _png_save_image(p_path, texture->get_image());
 }
 
 Error PNGDriverCommon::image_to_png(Ref<Image> const&, Vector<unsigned char>&) { return OK; }
 
-bool ResourceSaverPNG::recognize(const Ref<Resource>& p_resource) const { return false; }
-
-void ResourceSaverPNG::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-}
-
-
-// --- Merged from drivers/sdl/joypad_sdl.cpp ---
 #if defined(SDL_ENABLED)
-#include "core/os/os.h"
 
 #ifdef SDL_ENABLED
 
@@ -111056,7 +92405,6 @@ void ResourceSaverPNG::get_recognized_extensions(
 #include <SDL3/SDL_gamepad.h>
 #include <SDL3/SDL_iostream.h>
 #include <SDL3/SDL_joystick.h>
-#include "core/os/os.h"
 
 // Macro to skip the SDL joystick event handling if the device is an SDL gamepad, because
 // there are separate events for SDL gamepads
@@ -111405,18 +92753,13 @@ SDL_Gamepad* JoypadSDL::Joypad::get_sdl_gamepad() const
 #endif // SDL_ENABLED
 #endif // defined(SDL_ENABLED)
 
-
-// --- Merged from drivers/unix/os_unix.cpp ---
 #if defined(UNIX_ENABLED)
 #include "servers/display/display_server.h"
 
 #ifdef UNIX_ENABLED
 
 #include "servers/display/display_server.h"
-// --- Inlined from drivers/unix/file_access_unix_pipe.h ---
 #if defined(UNIX_ENABLED)
-
-#include "core/io/file_access.h"
 
 class FileAccessUnixPipe : public FileAccess
 {
@@ -111504,19 +92847,10 @@ public:
 
 #endif // UNIX_ENABLED
 
-
-
-// --- End drivers/unix/file_access_unix_pipe.h ---
-// --- Inlined from drivers/unix/thread_posix.h ---
 void init_thread_posix();
 
-// --- End drivers/unix/thread_posix.h ---
-
 #ifndef UNIX_SOCKET_UNAVAILABLE
-// --- Inlined from drivers/unix/ip_unix.h ---
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
-
-#include "core/io/ip.h"
 
 class IPUnix final
 {
@@ -111535,9 +92869,6 @@ public:
 
 #endif // UNIX_ENABLED
 
-
-
-// --- End drivers/unix/ip_unix.h ---
 #include "servers/display/display_server.h"
 #endif
 
@@ -112486,8 +93817,6 @@ String OS_Unix::expand_path(const String& p_path)
 	return path;
 }
 
-UnixTerminalLogger::~UnixTerminalLogger() {}
-
 void OS_Unix::initialize()
 {
 #if !defined(__GLIBC__) && !defined(WEB_ENABLED)
@@ -112495,7 +93824,7 @@ void OS_Unix::initialize()
 #endif
 
 	Vector<Logger*> loggers;
-	loggers.push_back(memnew(UnixTerminalLogger));
+	loggers.push_back(memnew(Logger));
 	OS::_set_logger(memnew(CompositeLogger(loggers)));
 }
 
@@ -112514,16 +93843,10 @@ void OS_Unix::initialize()
 #undef GODOT_CLOCK
 #endif
 
-// ============================================================================
-// Merged from drivers/unix/dir_access_unix.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #if defined(UNIX_ENABLED)
 
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 #include <fcntl.h>
@@ -113243,15 +94566,9 @@ DirAccessUnix::~DirAccessUnix() {
 
 #endif // UNIX_ENABLED
 
-// ============================================================================
-// Merged from drivers/unix/file_access_unix.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #if defined(UNIX_ENABLED)
-
-#include "core/string/ustring.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -113851,14 +95168,7 @@ FileAccessUnix::~FileAccessUnix() {
 
 #endif // UNIX_ENABLED
 
-// ============================================================================
-// Merged from drivers/unix/file_access_unix_pipe.cpp
-// ============================================================================
-
-
 #if defined(UNIX_ENABLED)
-
-#include "core/string/ustring.h"
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -114019,12 +95329,7 @@ FileAccessUnixPipe::~FileAccessUnixPipe() {
 
 #endif // UNIX_ENABLED
 
-// ============================================================================
-// Merged from drivers/unix/ip_unix.cpp
-// ============================================================================
-
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
-
 
 #include <netdb.h>
 
@@ -114157,10 +95462,6 @@ void IPUnix::make_default()
 }
 
 #endif // UNIX_ENABLED
-
-// ============================================================================
-// Merged from drivers/unix/net_socket_unix.cpp
-// ============================================================================
 
 // Some proprietary Unix-derived platforms don't expose Unix sockets
 // so this allows skipping this file to reimplement this API differently.
@@ -114996,69 +96297,7 @@ Error NetSocketUnix::leave_multicast_group(const IPAddress &p_multi_address, con
 #undef IPV6_DROP_MEMBERSHIP
 #endif
 
-// ============================================================================
-// Merged from drivers/unix/syslog_logger.cpp
-// ============================================================================
-
-#ifdef UNIX_ENABLED
-// --- Inlined from drivers/unix/syslog_logger.h ---
-#ifdef UNIX_ENABLED
-
-#include "core/os/os.h"
-
-class SyslogLogger : public Logger {
-public:
-	virtual void logv(const char *p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0;
-	virtual void print_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, ErrorType p_type);
-
-	virtual ~SyslogLogger();
-};
-
-#endif // UNIX_ENABLED
-
-// --- End drivers/unix/syslog_logger.h ---
-
-#include <syslog.h>
-
-void SyslogLogger::logv(const char *p_format, va_list p_list, bool p_err) {
-	if (!should_log(p_err)) {
-		return;
-	}
-
-	vsyslog(p_err ? LOG_ERR : LOG_INFO, p_format, p_list);
-}
-
-void SyslogLogger::print_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, ErrorType p_type) {
-	if (!should_log(true)) {
-		return;
-	}
-
-	const char *err_type = error_type_string(p_type);
-
-	const char *err_details;
-	if (p_rationale && *p_rationale) {
-		err_details = p_rationale;
-	} else {
-		err_details = p_code;
-	}
-
-	syslog(p_type == ERR_WARNING ? LOG_WARNING : LOG_ERR, "**%s**: %s\n   At: %s:%i:%s() - %s", err_type, err_details, p_file, p_line, p_function, p_code);
-}
-
-SyslogLogger::~SyslogLogger() {
-}
-
-#endif
-
-// ============================================================================
-// Merged from drivers/unix/thread_posix.cpp
-// ============================================================================
-
 #if defined(UNIX_ENABLED)
-
-
-#include "core/os/mutex.h"
-#include "core/string/ustring.h"
 
 #if defined(PLATFORM_THREAD_OVERRIDE) && defined(__APPLE__)
 void init_thread_posix() {
@@ -115108,43 +96347,11 @@ void init_thread_posix() {
 #endif // UNIX_ENABLED
 #endif // defined(UNIX_ENABLED)
 
-// === Merged from drivers/vulkan/rendering_device_driver_vulkan.cpp ===
 #ifdef VULKAN_ENABLED
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include <thirdparty/misc/smolv.h>
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
-// --- Inlined from drivers/vulkan/rendering_device_driver_vulkan.h ---
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_ENABLED
@@ -115514,7 +96721,6 @@ public:
 		CommandBufferType p_cmd_buffer_type) override final;
 	virtual bool command_pool_reset(CommandPoolID p_cmd_pool) override final;
 	virtual void command_pool_free(CommandPoolID p_cmd_pool) override final;
-
 
 private:
 	struct CommandBufferInfo
@@ -116001,9 +97207,6 @@ public:
 
 using VKC = RenderingContextDriverVulkan;
 
-
-// --- End drivers/vulkan/rendering_device_driver_vulkan.h ---
-
 #if defined(SWAPPY_FRAME_PACING_ENABLED)
 #include <thirdparty/swappy-frame-pacing/swappyVk.h>
 #include "servers/display/display_server.h"
@@ -116038,7 +97241,6 @@ using VKC = RenderingContextDriverVulkan;
 #define RECORD_PIPELINE_STATISTICS 0
 
 #if RECORD_PIPELINE_STATISTICS
-#include "core/io/file_access.h"
 #define RECORD_PIPELINE_STATISTICS_PATH "./pipelines.csv"
 #endif
 
@@ -119002,7 +100204,6 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::texture_get_data(TextureID p_textur
 
 	Vector<uint8_t> image_data;
 	image_data.resize(tight_mip_size);
-
 
 	uint32_t blockw, blockh;
 	RDC::get_compressed_image_format_block_dimensions(tex_format, blockw, blockh);
@@ -124780,19 +105981,11 @@ RenderingDeviceDriverVulkan::~RenderingDeviceDriverVulkan()
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from drivers/vulkan/rendering_context_driver_vulkan.cpp
-// ============================================================================
-
 #ifdef VULKAN_ENABLED
-
-#include "core/os/os.h"
-#include "core/typedefs.h"
 
 #include "servers/display/display_server.h"
 
 #ifndef DEV_ENABLED
-#include "core/os/os.h"
 #endif
 
 #include <vk_enum_string_helper.h>
@@ -126054,10 +107247,6 @@ const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::fun
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from drivers/vulkan/rendering_shader_container_vulkan.cpp
-// ============================================================================
-
 #include <thirdparty/misc/smolv.h>
 #include "servers/display/display_server.h"
 
@@ -126204,10 +107393,6 @@ RenderingShaderContainerFormatVulkan::~RenderingShaderContainerFormatVulkan() {}
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from drivers/vulkan/vulkan_hooks.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 void VulkanHooks::reset()
@@ -126272,44 +107457,12 @@ void VulkanHooks::reset()
 #endif
 #endif // VULKAN_ENABLED
 
-// === Merged from drivers/gles3/rasterizer_scene_gles3.cpp ===
 #ifdef GLES3_ENABLED
-/*  rasterizer_scene_gles3.cpp                                            */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "main/splash.gen.h"
 
@@ -127476,12 +108629,12 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 
 		if (update_single_frame) {
 			for (int i = 0; i < max_processing_layer; i++) {
-				GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
+				GLES3::Effects::filter_radiance(sky->raw_radiance, sky->radiance,
 					sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count, i);
 			}
 		}
 		else {
-			GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
+			GLES3::Effects::filter_radiance(sky->raw_radiance, sky->radiance,
 				sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count,
 				0); // Just copy over the first mipmap.
 		}
@@ -127495,7 +108648,7 @@ void RasterizerSceneGLES3::_update_sky_radiance(RID p_env, const Projection& p_p
 			scene_state.set_gl_cull_mode(RSE::CULL_MODE_DISABLED);
 			scene_state.enable_gl_blend(false);
 
-			GLES3::CubemapFilter::filter_radiance(sky->raw_radiance, sky->radiance,
+			GLES3::Effects::filter_radiance(sky->raw_radiance, sky->radiance,
 				sky->radiance_framebuffer, sky->radiance_size, sky->mipmap_count,
 				sky->processing_layer);
 			sky->processing_layer++;
@@ -127545,7 +108698,7 @@ Ref<Image> RasterizerSceneGLES3::sky_bake_panorama(
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	GLES3::CopyEffects::copy_cube_to_panorama(p_bake_irradiance ? float(sky->mipmap_count) : 0.0);
+	GLES3::Effects::copy_cube_to_panorama(p_bake_irradiance ? float(sky->mipmap_count) : 0.0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 	glDeleteFramebuffers(1, &rad_fbo);
@@ -129559,11 +110712,11 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 		glBindTexture(rt->view_count > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, rt->color);
 
 		if (apply_canvas_bg_exposure) {
-			GLES3::CopyEffects::copy_with_exposure(
+			GLES3::Effects::copy_with_exposure(
 				tonemap_ubo.exposure, render_data.luminance_multiplier);
 		}
 		else {
-			GLES3::CopyEffects::copy_screen(render_data.luminance_multiplier);
+			GLES3::Effects::copy_screen(render_data.luminance_multiplier);
 		}
 
 		scene_state.enable_gl_depth_test(true);
@@ -129615,7 +110768,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 			RID camera_YCBCR = feed->get_texture(CameraServer::FEED_YCBCR_IMAGE);
 			GLES3::TextureStorage::texture_bind(camera_YCBCR, 0);
 
-			GLES3::FeedEffects::draw();
+			GLES3::Effects::draw_feed();
 		}
 		scene_state.enable_gl_depth_draw(true);
 		scene_state.enable_gl_depth_test(true);
@@ -129830,23 +110983,23 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_rend
 				fbo_int != 0 ? rb->get_internal_depth()
 							 : GLES3::TextureStorage::render_target_get_depth(render_target);
 
-			const GLES3::Glow::Level* glow_buffers = nullptr;
+			const GLES3::Effects::GlowLevel* glow_buffers = nullptr;
 			if (glow_enabled) {
 				glow_buffers = rb->get_glow_buffers();
 
-				GLES3::Glow::set_luminance_multiplier(p_render_data->luminance_multiplier);
+				GLES3::Effects::set_luminance_multiplier(p_render_data->luminance_multiplier);
 
-				GLES3::Glow::set_intensity(glow_intensity);
-				GLES3::Glow::set_glow_bloom(glow_bloom);
-				GLES3::Glow::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
-				GLES3::Glow::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
-				GLES3::Glow::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
+				GLES3::Effects::set_intensity(glow_intensity);
+				GLES3::Effects::set_glow_bloom(glow_bloom);
+				GLES3::Effects::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
+				GLES3::Effects::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
+				GLES3::Effects::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
 
-				GLES3::Glow::process_glow(color, internal_size, glow_buffers);
+				GLES3::Effects::process_glow(color, internal_size, glow_buffers);
 			}
 
 			// Copy color buffer
-			GLES3::PostEffects::post_copy(fbo_rt, target_size, color, depth_buffer, ssao_enabled,
+			GLES3::Effects::post_copy(fbo_rt, target_size, color, depth_buffer, ssao_enabled,
 				ssao_quality, ssao_strength, ssao_radius, internal_size,
 				p_render_data->luminance_multiplier, glow_buffers, glow_intensity, srgb_white, 0,
 				false, bcs_spec_constants,
@@ -129904,7 +111057,7 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_rend
 		// Rendered to intermediate buffer, must copy to our render target
 		if (fbo_int != 0) {
 			// Apply glow/bloom if requested? then populate our glow buffers
-			const GLES3::Glow::Level* glow_buffers = nullptr;
+			const GLES3::Effects::GlowLevel* glow_buffers = nullptr;
 			GLuint source_color =
 				fbo_int != 0 ? rb->get_internal_color()
 							 : GLES3::TextureStorage::render_target_get_color(render_target);
@@ -129915,25 +111068,25 @@ void RasterizerSceneGLES3::_render_post_processing(const RenderDataGLES3* p_rend
 			if (glow_enabled) {
 				glow_buffers = rb->get_glow_buffers();
 
-				GLES3::Glow::set_luminance_multiplier(p_render_data->luminance_multiplier);
+				GLES3::Effects::set_luminance_multiplier(p_render_data->luminance_multiplier);
 
-				GLES3::Glow::set_intensity(glow_intensity);
-				GLES3::Glow::set_glow_bloom(glow_bloom);
-				GLES3::Glow::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
-				GLES3::Glow::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
-				GLES3::Glow::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
+				GLES3::Effects::set_intensity(glow_intensity);
+				GLES3::Effects::set_glow_bloom(glow_bloom);
+				GLES3::Effects::set_glow_hdr_bleed_threshold(glow_hdr_bleed_threshold);
+				GLES3::Effects::set_glow_hdr_bleed_scale(glow_hdr_bleed_scale);
+				GLES3::Effects::set_glow_hdr_luminance_cap(glow_hdr_luminance_cap);
 			}
 
 			GLuint write_color = GLES3::TextureStorage::render_target_get_color(render_target);
 
 			for (uint32_t v = 0; v < view_count; v++) {
 				if (glow_enabled) {
-					GLES3::Glow::process_glow(source_color, internal_size, glow_buffers, v, true);
+					GLES3::Effects::process_glow(source_color, internal_size, glow_buffers, v, true);
 				}
 
 				glBindFramebuffer(GL_FRAMEBUFFER, fbos[2]);
 				glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, write_color, 0, v);
-				GLES3::PostEffects::post_copy(fbos[2], target_size, source_color, read_depth,
+				GLES3::Effects::post_copy(fbos[2], target_size, source_color, read_depth,
 					ssao_enabled, ssao_quality, ssao_strength, ssao_radius, internal_size,
 					p_render_data->luminance_multiplier, glow_buffers, glow_intensity, srgb_white,
 					v, true, bcs_spec_constants,
@@ -131353,7 +112506,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 						glBindTexture(GL_TEXTURE_CUBE_MAP, shadow_tex);
 						glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-						GLES3::CopyEffects::copy_cube_to_rect(atlas_uv_rect);
+						GLES3::Effects::copy_cube_to_rect(atlas_uv_rect);
 
 						glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE,
 							GL_COMPARE_REF_TO_TEXTURE);
@@ -131363,7 +112516,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 						glBindTexture(GL_TEXTURE_2D, shadow_tex);
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-						GLES3::CopyEffects::copy_to_rect(atlas_uv_rect);
+						GLES3::Effects::copy_to_rect(atlas_uv_rect);
 
 						glTexParameteri(
 							GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
@@ -131378,7 +112531,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 			glViewport(0, 0, size.width, size.height);
 			glBindTexture(GL_TEXTURE_2D, shadow_atlas_texture);
 
-			GLES3::CopyEffects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
+			GLES3::Effects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
 			glBindTexture(GL_TEXTURE_2D, 0);
 			glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 		}
@@ -131397,7 +112550,7 @@ void RasterizerSceneGLES3::_render_buffers_debug_draw(
 			scene_state.enable_gl_depth_test(false);
 			scene_state.enable_gl_depth_draw(false);
 
-			GLES3::CopyEffects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
+			GLES3::Effects::copy_to_rect(Rect2(Vector2(), Vector2(0.5, 0.5)));
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_BLUE);
@@ -131917,11 +113070,8 @@ void GLES3::GI::sdfgi_reset() {}
 
 #endif // GLES3_ENABLED
 
-
-// --- Merged from drivers/gles3/storage/utilities.cpp ---
 #if defined(GLES3_ENABLED)
 #include "servers/display/display_server.h"
-
 
 // RasterizerUtilGLES3
 
@@ -131948,7 +113098,6 @@ void RasterizerUtilGLES3::clear_stencil(int32_t p_stencil)
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #ifdef ANDROID_ENABLED
@@ -133362,17 +114511,11 @@ uint64_t Utilities::get_maximum_uniform_buffer_size()
 
 #endif // GLES3_ENABLED
 
-// ============================================================================
-// Merged from drivers/gles3/storage/light_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 using namespace GLES3;
@@ -134499,7 +115642,7 @@ bool GLES3::LightStorage::reflection_probe_instance_postprocess_step(RID p_insta
 		for (int m = 0; m < atlas->mipmap_count; m++) {
 			const GLES3::ReflectionAtlas::Reflection& reflection =
 				atlas->reflections[rpi->atlas_index];
-			GLES3::CubemapFilter::filter_radiance(reflection.color, reflection.radiance,
+			GLES3::Effects::filter_radiance(reflection.color, reflection.radiance,
 				reflection.fbos[6], atlas->size, atlas->mipmap_count, m);
 		}
 
@@ -134509,7 +115652,7 @@ bool GLES3::LightStorage::reflection_probe_instance_postprocess_step(RID p_insta
 	}
 	else {
 		const GLES3::ReflectionAtlas::Reflection& reflection = atlas->reflections[rpi->atlas_index];
-		GLES3::CubemapFilter::filter_radiance(reflection.color, reflection.radiance,
+		GLES3::Effects::filter_radiance(reflection.color, reflection.radiance,
 			reflection.fbos[6], atlas->size, atlas->mipmap_count, rpi->processing_layer);
 
 		rpi->processing_layer++;
@@ -135311,18 +116454,10 @@ void GLES3::LightStorage::initialize() {}
 
 #endif // !GLES3_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/gles3/storage/material_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 using namespace GLES3;
@@ -137627,12 +118762,6 @@ void GLES3::MaterialStorage::finalize()
 }
 
 #endif // !GLES3_ENABLED
-
-
-
-// ============================================================================
-// Merged from drivers/gles3/storage/mesh_storage.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -140527,12 +121656,6 @@ void MeshStorage::skeleton_update_dependency(RID p_skeleton, DependencyTracker* 
 
 #endif // GLES3_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/gles3/storage/particles_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
@@ -140540,7 +121663,6 @@ void MeshStorage::skeleton_update_dependency(RID p_skeleton, DependencyTracker* 
 #include "servers/display/display_server.h"
 
 using namespace GLES3;
-
 
 void ParticlesStorage::initialize()
 {
@@ -142268,17 +123390,10 @@ void ParticlesStorage::particles_collision_instance_set_active(
 
 #endif // GLES3_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/gles3/storage/texture_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 using namespace GLES3;
@@ -143583,7 +124698,7 @@ Ref<Image> GLES3::TextureStorage::texture_2d_get(RID p_texture)
 		glClearColor(0.0, 0.0, 0.0, 0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		CopyEffects::copy_to_rect(Rect2i(0, 0, 1.0, 1.0));
+		Effects::copy_to_rect(Rect2i(0, 0, 1.0, 1.0));
 
 		glReadPixels(
 			0, 0, texture->alloc_width, texture->alloc_height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
@@ -143667,7 +124782,7 @@ Ref<Image> GLES3::TextureStorage::texture_2d_layer_get(RID p_texture, int p_laye
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	CopyEffects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), p_layer, Texture::TYPE_LAYERED);
+	Effects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), p_layer, Texture::TYPE_LAYERED);
 
 	glReadPixels(
 		0, 0, texture->alloc_width, texture->alloc_height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
@@ -143721,7 +124836,7 @@ Vector<Ref<Image>> GLES3::TextureStorage::_texture_3d_read_framebuffer(GLES3::Te
 			uint8_t* w = data.ptrw();
 
 			float layer_f = layer / float(depth);
-			CopyEffects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), layer_f, Texture::TYPE_3D, mipmap_level);
+			Effects::copy_to_rect_3d(Rect2i(0, 0, 1, 1), layer_f, Texture::TYPE_3D, mipmap_level);
 			glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, &w[0]);
 
 			data.resize(data_size);
@@ -143804,7 +124919,7 @@ void GLES3::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
 {
 	Texture* texture = get_texture(p_texture);
 	Vector3i size = texture_get_size(p_texture);
-	CopyEffects::bilinear_blur(texture->tex_id, texture->mipmaps, Rect2i(0, 0, size.x, size.y));
+	Effects::bilinear_blur(texture->tex_id, texture->mipmaps, Rect2i(0, 0, size.x, size.y));
 }
 
 RID GLES3::TextureStorage::texture_drawable_get_default_material()
@@ -144376,7 +125491,7 @@ GLuint GLES3::TextureStorage::texture_atlas_get_texture() { return texture_atlas
 
 void GLES3::TextureStorage::update_texture_atlas()
 {
-	ERR_FAIL_COND(!CopyEffects::is_initialized());
+	ERR_FAIL_COND(!Effects::is_initialized());
 
 	if (!texture_atlas.dirty) {
 		return; // nothing to do
@@ -144424,7 +125539,6 @@ void GLES3::TextureStorage::update_texture_atlas()
 		// attempt to create atlas
 		int item_count = itemsv.size();
 		TextureAtlas::SortItem* items = itemsv.ptrw();
-
 
 	int atlas_height = 0;
 
@@ -144544,7 +125658,7 @@ void GLES3::TextureStorage::update_texture_atlas()
 			Texture* src_tex = get_texture(E.key);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, src_tex->tex_id);
-			CopyEffects::copy_to_rect(t->uv_rect);
+			Effects::copy_to_rect(t->uv_rect);
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
@@ -145714,7 +126828,7 @@ GLuint GLES3::TextureStorage::render_target_get_sdf_framebuffer(RID p_render_tar
 
 void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 {
-	ERR_FAIL_COND(!CopyEffects::is_initialized());
+	ERR_FAIL_COND(!Effects::is_initialized());
 
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL(rt);
@@ -145774,7 +126888,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 	glEnable(GL_SCISSOR_TEST);
 	glScissor(0, 0, size.width, size.height);
 
-	CopyEffects::draw_screen_triangle();
+	Effects::draw_screen_triangle();
 
 	// Process
 
@@ -145807,7 +126921,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 		sdf_shader.shader.version_set_uniform(
 			CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader.shader_version, variant);
 
-		CopyEffects::draw_screen_triangle();
+		Effects::draw_screen_triangle();
 
 		stride /= 2;
 		swap = !swap;
@@ -145835,7 +126949,7 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 		GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->sdf_texture_read, 0);
 	glBindTexture(GL_TEXTURE_2D, rt->sdf_texture_process[swap ? 1 : 0]);
 
-	CopyEffects::draw_screen_triangle();
+	Effects::draw_screen_triangle();
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, system_fbo);
@@ -145873,10 +126987,10 @@ void GLES3::TextureStorage::render_target_copy_to_back_buffer(
 	Rect2 normalized_region = region;
 	normalized_region.position = normalized_region.position / Size2(rt->size);
 	normalized_region.size = normalized_region.size / Size2(rt->size);
-	GLES3::CopyEffects::copy_to_and_from_rect(normalized_region);
+	GLES3::Effects::copy_to_and_from_rect(normalized_region);
 
 	if (p_gen_mipmaps) {
-		GLES3::CopyEffects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
+		GLES3::Effects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
 	}
 
@@ -145908,7 +127022,7 @@ void GLES3::TextureStorage::render_target_clear_back_buffer(
 			return; // nothing to do
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
-		GLES3::CopyEffects::set_color(p_color, region);
+		GLES3::Effects::set_color(p_color, region);
 	}
 }
 
@@ -145933,7 +127047,7 @@ void GLES3::TextureStorage::render_target_gen_back_buffer_mipmaps(
 		}
 	}
 	glDisable(GL_BLEND);
-	GLES3::CopyEffects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
+	GLES3::Effects::gaussian_blur(rt->backbuffer, rt->mipmap_count, region, rt->size);
 	glEnable(GL_BLEND); // 2D starts with blend enabled.
 
 	glBindFramebuffer(GL_FRAMEBUFFER, rt->backbuffer_fbo);
@@ -146272,40 +127386,10 @@ void GLES3::TextureStorage::texture_set_format(RID p_texture, Image::Format p_fo
 #endif // GLES3_ENABLED
 #endif // defined(GLES3_ENABLED)
 
-// === Merged from drivers/gles3/rasterizer_canvas_gles3.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void RasterizerCanvasGLES3::_update_transform_2d_to_mat4(
@@ -149624,22 +130708,13 @@ void RasterizerCanvasGLES3::finalize()
 
 #endif // GLES3_ENABLED
 
-
-
-// ============================================================================
-// Merged from drivers/gles3/shader_gles3.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifndef WEB_ENABLED
-#include "core/io/file_access.h"
 #endif
 
 static String _mkid(const String& p_id)
@@ -150501,19 +131576,10 @@ ShaderGLES3::~ShaderGLES3()
 }
 #endif
 
-
-
-// ============================================================================
-// Merged from drivers/gles3/rasterizer_gles3.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #define _EXT_DEBUG_OUTPUT_SYNCHRONOUS_ARB 0x8242
@@ -150950,11 +132016,7 @@ void RasterizerGLES3::initialize()
 	GLES3::MeshStorage::initialize();
 	GLES3::LightStorage::initialize();
 	GLES3::ParticlesStorage::initialize();
-	GLES3::CopyEffects::initialize();
-	GLES3::CubemapFilter::initialize();
-	GLES3::Glow::initialize();
-	GLES3::PostEffects::initialize();
-	GLES3::FeedEffects::initialize();
+	GLES3::Effects::initialize();
 	GLES3::GI::initialize();
 	GLES3::Fog::initialize();
 
@@ -151000,11 +132062,7 @@ void RasterizerGLES3::finalize()
 	RasterizerCanvasGLES3::finalize();
 	GLES3::GI::finalize();
 	GLES3::Fog::finalize();
-	GLES3::PostEffects::finalize();
-	GLES3::Glow::finalize();
-	GLES3::CubemapFilter::finalize();
-	GLES3::CopyEffects::finalize();
-	GLES3::FeedEffects::finalize();
+	GLES3::Effects::finalize();
 	GLES3::ParticlesStorage::finalize();
 	GLES3::MeshStorage::finalize();
 	GLES3::MaterialStorage::finalize();
@@ -151063,18 +132121,18 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 
 	if (p_blit.lens_distortion.apply &&
 		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
-		GLES3::CopyEffects::copy_with_lens_distortion(screenrect,
+		GLES3::Effects::copy_with_lens_distortion(screenrect,
 			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
 			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
 			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
 	}
 	else if (rt->view_count > 1) {
-		GLES3::CopyEffects::copy_to_rect_3d(screenrect,
+		GLES3::Effects::copy_to_rect_3d(screenrect,
 			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
 			0.0, linear_to_srgb);
 	}
 	else {
-		GLES3::CopyEffects::copy_to_rect(screenrect, linear_to_srgb);
+		GLES3::Effects::copy_to_rect(screenrect, linear_to_srgb);
 	}
 
 	glBindTexture(target, 0);
@@ -151141,7 +132199,7 @@ void RasterizerGLES3::set_boot_image_with_stretch(const Ref<Image>& p_image, con
 								  : RSE::CANVAS_ITEM_TEXTURE_FILTER_NEAREST);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, t->tex_id);
-	GLES3::CopyEffects::copy_to_rect(screenrect);
+	GLES3::Effects::copy_to_rect(screenrect);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	gl_end_frame(true);
@@ -151200,47 +132258,50 @@ void RasterizerGLES3::bind_utilities()
 
 #endif // GLES3_ENABLED
 
-// ============================================================================
-// Merged from drivers/gles3/effects/gles3_effects.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef GLES3_ENABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 using namespace GLES3;
 
-// CopyEffects
+// GLES3::Effects
 
-void CopyEffects::initialize()
+void Effects::initialize()
 {
 	if (data) {
 		return;
 	}
 	data = memnew(Data);
 
-	data->copy.shader.initialize();
-	data->copy.shader_version = data->copy.shader.version_create();
-	data->copy.shader.version_bind_shader(data->copy.shader_version, CopyShaderGLES3::MODE_DEFAULT);
+	data->copy_shader.initialize();
+	data->copy_shader_version = data->copy_shader.version_create();
+	data->copy_shader.version_bind_shader(data->copy_shader_version, CopyShaderGLES3::MODE_DEFAULT);
 
-	{ // Screen Triangle.
+	{
+		String defines = "\n#define MAX_SAMPLE_COUNT " + itos(data->ggx_samples) + "\n";
+		data->cubemap_filter_shader.initialize(defines);
+		data->cubemap_filter_shader_version = data->cubemap_filter_shader.version_create();
+	}
+
+	data->feed_shader.initialize();
+	data->feed_shader_version = data->feed_shader.version_create();
+	data->feed_shader.version_bind_shader(data->feed_shader_version, FeedShaderGLES3::MODE_DEFAULT);
+
+	data->glow_shader.initialize();
+	data->glow_shader_version = data->glow_shader.version_create();
+
+	data->post_shader.initialize();
+	data->post_shader_version = data->post_shader.version_create();
+	data->post_shader.version_bind_shader(data->post_shader_version, PostShaderGLES3::MODE_DEFAULT);
+
+	{ // Screen Triangle (shared across all GLES3 effects).
 		glGenBuffers(1, &data->screen_triangle);
 		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-
-		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			3.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-		};
-
+		const float qv[6] = { -1.0f, -1.0f, 3.0f, -1.0f, -1.0f, 3.0f };
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		glGenVertexArrays(1, &data->screen_triangle_array);
 		glBindVertexArray(data->screen_triangle_array);
@@ -151248,30 +132309,15 @@ void CopyEffects::initialize()
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	{ // Screen Quad
+	{ // Screen Quad.
 		glGenBuffers(1, &data->quad);
 		glBindBuffer(GL_ARRAY_BUFFER, data->quad);
-
-		const float qv[12] = {
-			-1.0f,
-			-1.0f,
-			1.0f,
-			-1.0f,
-			1.0f,
-			1.0f,
-			-1.0f,
-			-1.0f,
-			1.0f,
-			1.0f,
-			-1.0f,
-			1.0f,
-		};
-
+		const float qv[12] = { -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f };
 		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 		glGenVertexArrays(1, &data->quad_array);
 		glBindVertexArray(data->quad_array);
@@ -151279,11 +132325,11 @@ void CopyEffects::initialize()
 		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
 		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
 		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 }
 
-void CopyEffects::finalize()
+void Effects::finalize()
 {
 	if (!data) {
 		return;
@@ -151293,31 +132339,48 @@ void CopyEffects::finalize()
 	glDeleteVertexArrays(1, &data->screen_triangle_array);
 	glDeleteBuffers(1, &data->quad);
 	glDeleteVertexArrays(1, &data->quad_array);
-	data->copy.shader.version_free(data->copy.shader_version);
+
+	data->copy_shader.version_free(data->copy_shader_version);
+	data->cubemap_filter_shader.version_free(data->cubemap_filter_shader_version);
+	data->feed_shader.version_free(data->feed_shader_version);
+	data->glow_shader.version_free(data->glow_shader_version);
+	data->post_shader.version_free(data->post_shader_version);
 
 	memdelete(data);
 	data = nullptr;
 }
 
-void CopyEffects::copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb)
+void Effects::draw_feed()
+{
+	ERR_FAIL_NULL(data);
+	bool success = data->feed_shader.version_bind_shader(
+		data->feed_shader_version, FeedShaderGLES3::MODE_DEFAULT, FeedShaderGLES3::USE_EXTERNAL_SAMPLER);
+	if (!success) {
+		OS::print("Godot : FeedShaderGLES3 Could not bind version_bind_shader USE_EXTERNAL_SAMPLER");
+		return;
+	}
+	draw_screen_triangle();
+}
+
+void Effects::copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb)
 {
 	ERR_FAIL_NULL(data);
 
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION, specializations);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_COPY_SECTION, specializations);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION, specializations);
 	draw_screen_quad();
 }
 
-void CopyEffects::copy_to_rect_3d(
+void Effects::copy_to_rect_3d(
 	const Rect2& p_rect, float p_layer, int p_type, float p_lod, bool p_linear_to_srgb)
 {
 	ERR_FAIL_NULL(data);
@@ -151329,22 +132392,22 @@ void CopyEffects::copy_to_rect_3d(
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
 	bool success =
-		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
+		data->copy_shader.version_bind_shader(data->copy_shader_version, variant, specializations);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version, variant,
 		specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::LOD, p_lod, data->copy.shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::LOD, p_lod, data->copy_shader_version, variant, specializations);
 	draw_screen_quad();
 }
 
-void CopyEffects::copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
+void Effects::copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
 	const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale, float p_aspect_ration,
 	bool p_linear_to_srgb)
 {
@@ -151355,119 +132418,119 @@ void CopyEffects::copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
 	uint64_t specializations = p_linear_to_srgb ? CopyShaderGLES3::CONVERT_LINEAR_TO_SRGB : 0;
 
 	bool success =
-		data->copy.shader.version_bind_shader(data->copy.shader_version, variant, specializations);
+		data->copy_shader.version_bind_shader(data->copy_shader_version, variant, specializations);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version, variant,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version, variant,
 		specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::LAYER, p_layer, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::LOD, 0.0, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::EYE_CENTER, p_eye_center.x,
-		p_eye_center.y, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::K1, p_k1, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::K2, p_k2, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(
-		CopyShaderGLES3::UPSCALE, p_upscale, data->copy.shader_version, variant, specializations);
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::ASPECT_RATIO, p_aspect_ration,
-		data->copy.shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::LAYER, p_layer, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::LOD, 0.0, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::EYE_CENTER, p_eye_center.x,
+		p_eye_center.y, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::K1, p_k1, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::K2, p_k2, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(
+		CopyShaderGLES3::UPSCALE, p_upscale, data->copy_shader_version, variant, specializations);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::ASPECT_RATIO, p_aspect_ration,
+		data->copy_shader_version, variant, specializations);
 
 	draw_screen_quad();
 }
 
-void CopyEffects::copy_to_and_from_rect(const Rect2& p_rect)
+void Effects::copy_to_and_from_rect(const Rect2& p_rect)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version,
 		CopyShaderGLES3::MODE_COPY_SECTION_SOURCE);
 
 	draw_screen_quad();
 }
 
-void CopyEffects::copy_screen(float p_multiply)
+void Effects::copy_screen(float p_multiply)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_SCREEN);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
-		data->copy.shader_version, CopyShaderGLES3::MODE_SCREEN);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy_shader_version, CopyShaderGLES3::MODE_SCREEN);
 
 	draw_screen_triangle();
 }
 
-void CopyEffects::copy_with_exposure(float p_exposure, float p_multiply)
+void Effects::copy_with_exposure(float p_exposure, float p_multiply)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::EXPOSURE, p_exposure,
-		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
-		data->copy.shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::EXPOSURE, p_exposure,
+		data->copy_shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::MULTIPLY, p_multiply,
+		data->copy_shader_version, CopyShaderGLES3::MODE_APPLY_LINEAR_EXPOSURE_TO_SRGB);
 
 	draw_screen_triangle();
 }
 
-void CopyEffects::copy_cube_to_rect(const Rect2& p_rect)
+void Effects::copy_cube_to_rect(const Rect2& p_rect)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
-		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy.shader_version,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_rect.position.x,
+		p_rect.position.y, p_rect.size.x, p_rect.size.y, data->copy_shader_version,
 		CopyShaderGLES3::MODE_CUBE_TO_OCTAHEDRAL);
 	draw_screen_quad();
 }
 
-void CopyEffects::copy_cube_to_panorama(float p_mip_level)
+void Effects::copy_cube_to_panorama(float p_mip_level)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::MIP_LEVEL, p_mip_level,
-		data->copy.shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::MIP_LEVEL, p_mip_level,
+		data->copy_shader_version, CopyShaderGLES3::MODE_CUBE_TO_PANORAMA);
 	draw_screen_quad();
 }
 
 // Intended for efficiently mipmapping textures.
-void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region)
+void Effects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region)
 {
 	GLuint framebuffers[2];
 	glGenFramebuffers(2, framebuffers);
@@ -151499,7 +132562,7 @@ void CopyEffects::bilinear_blur(GLuint p_source_texture, int p_mipmap_count, con
 
 // Intended for approximating a gaussian blur. Used for 2D backbuffer mipmaps. Slightly less
 // efficient than bilinear_blur().
-void CopyEffects::gaussian_blur(
+void Effects::gaussian_blur(
 	GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size)
 {
 	ERR_FAIL_NULL(data);
@@ -151547,8 +132610,8 @@ void CopyEffects::gaussian_blur(
 
 		glViewport(0, 0, base_size.x, base_size.y);
 
-		bool success = data->copy.shader.version_bind_shader(
-			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		bool success = data->copy_shader.version_bind_shader(
+			data->copy_shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
 		if (!success) {
 			return;
 		}
@@ -151557,16 +132620,16 @@ void CopyEffects::gaussian_blur(
 		normalized_dest_region.position = Size2(dest_region.position) / float_size;
 		normalized_dest_region.size = Size2(dest_region.size) / float_size;
 
-		data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION,
+		data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION,
 			normalized_dest_region.position.x, normalized_dest_region.position.y,
-			normalized_dest_region.size.x, normalized_dest_region.size.y, data->copy.shader_version,
+			normalized_dest_region.size.x, normalized_dest_region.size.y, data->copy_shader_version,
 			CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
-		data->copy.shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION,
+		data->copy_shader.version_set_uniform(CopyShaderGLES3::SOURCE_SECTION,
 			normalized_source_region.position.x, normalized_source_region.position.y,
 			normalized_source_region.size.x, normalized_source_region.size.y,
-			data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
-		data->copy.shader.version_set_uniform(CopyShaderGLES3::PIXEL_SIZE, 1.0 / float_size.x,
-			1.0 / float_size.y, data->copy.shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+			data->copy_shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
+		data->copy_shader.version_set_uniform(CopyShaderGLES3::PIXEL_SIZE, 1.0 / float_size.x,
+			1.0 / float_size.y, data->copy_shader_version, CopyShaderGLES3::MODE_GAUSSIAN_BLUR);
 
 		draw_screen_quad();
 
@@ -151585,25 +132648,25 @@ void CopyEffects::gaussian_blur(
 	glViewport(0, 0, p_size.x, p_size.y);
 }
 
-void CopyEffects::set_color(const Color& p_color, const Rect2i& p_region)
+void Effects::set_color(const Color& p_color, const Rect2i& p_region)
 {
 	ERR_FAIL_NULL(data);
 
-	bool success = data->copy.shader.version_bind_shader(
-		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	bool success = data->copy_shader.version_bind_shader(
+		data->copy_shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
 	if (!success) {
 		return;
 	}
 
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_region.position.x,
-		p_region.position.y, p_region.size.x, p_region.size.y, data->copy.shader_version,
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COPY_SECTION, p_region.position.x,
+		p_region.position.y, p_region.size.x, p_region.size.y, data->copy_shader_version,
 		CopyShaderGLES3::MODE_SIMPLE_COLOR);
-	data->copy.shader.version_set_uniform(CopyShaderGLES3::COLOR_IN, p_color,
-		data->copy.shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
+	data->copy_shader.version_set_uniform(CopyShaderGLES3::COLOR_IN, p_color,
+		data->copy_shader_version, CopyShaderGLES3::MODE_SIMPLE_COLOR);
 	draw_screen_quad();
 }
 
-void CopyEffects::draw_screen_triangle()
+void Effects::draw_screen_triangle()
 {
 	ERR_FAIL_NULL(data);
 
@@ -151612,69 +132675,13 @@ void CopyEffects::draw_screen_triangle()
 	glBindVertexArray(0);
 }
 
-void CopyEffects::draw_screen_quad()
+void Effects::draw_screen_quad()
 {
 	ERR_FAIL_NULL(data);
 
 	glBindVertexArray(data->quad_array);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
-}
-
-// CubemapFilter
-
-void CubemapFilter::initialize()
-{
-	if (data) {
-		return;
-	}
-	data = memnew(Data);
-
-	{
-		String defines;
-		defines += "\n#define MAX_SAMPLE_COUNT " + itos(data->ggx_samples) + "\n";
-		data->cubemap_filter.shader.initialize(defines);
-		data->cubemap_filter.shader_version = data->cubemap_filter.shader.version_create();
-	}
-
-	{ // Screen Triangle.
-		glGenBuffers(1, &data->screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-
-		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-			3.0f,
-			-1.0f,
-		};
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-
-		glGenVertexArrays(1, &data->screen_triangle_array);
-		glBindVertexArray(data->screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-	}
-}
-
-void CubemapFilter::finalize()
-{
-	if (!data) {
-		return;
-	}
-
-	glDeleteBuffers(1, &data->screen_triangle);
-	glDeleteVertexArrays(1, &data->screen_triangle_array);
-	data->cubemap_filter.shader.version_free(data->cubemap_filter.shader_version);
-
-	memdelete(data);
-	data = nullptr;
 }
 
 static Vector3 importance_sample_GGX(Vector2 xi, float roughness4)
@@ -151718,11 +132725,12 @@ static Vector2 hammersley(uint32_t i, uint32_t N)
 	return Vector2(float(i) / float(N), radical_inverse_vdC(i));
 }
 
-void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+void Effects::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
 	GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer)
 {
 	ERR_FAIL_NULL(data);
 
+	glDisable(GL_CULL_FACE);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, p_source_cubemap);
 	glBindFramebuffer(GL_FRAMEBUFFER, p_dest_framebuffer);
@@ -151740,7 +132748,7 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 	glBindVertexArray(data->screen_triangle_array);
 
 	bool success =
-		data->cubemap_filter.shader.version_bind_shader(data->cubemap_filter.shader_version, mode);
+		data->cubemap_filter_shader.version_bind_shader(data->cubemap_filter_shader_version, mode);
 	if (!success) {
 		return;
 	}
@@ -151790,14 +132798,14 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 		}
 
 		glUniform4fv(
-			data->cubemap_filter.shader.version_get_uniform(
+			data->cubemap_filter_shader.version_get_uniform(
 				CubemapFilterShaderGLES3::SAMPLE_DIRECTIONS_MIP,
-				data->cubemap_filter.shader_version, mode),
+				data->cubemap_filter_shader_version, mode),
 			sample_count, sample_directions.ptr());
-		data->cubemap_filter.shader.version_set_uniform(
-			CubemapFilterShaderGLES3::WEIGHT, weight, data->cubemap_filter.shader_version, mode);
-		data->cubemap_filter.shader.version_set_uniform(
-			CubemapFilterShaderGLES3::SAMPLE_COUNT, index, data->cubemap_filter.shader_version, mode);
+		data->cubemap_filter_shader.version_set_uniform(
+			CubemapFilterShaderGLES3::WEIGHT, weight, data->cubemap_filter_shader_version, mode);
+		data->cubemap_filter_shader.version_set_uniform(
+			CubemapFilterShaderGLES3::SAMPLE_COUNT, index, data->cubemap_filter_shader_version, mode);
 	}
 
 	for (int i = 0; i < 6; i++) {
@@ -151810,8 +132818,8 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 					   ", status: " + GLES3::TextureStorage::get_framebuffer_error(status));
 		}
 #endif
-		data->cubemap_filter.shader.version_set_uniform(
-			CubemapFilterShaderGLES3::FACE_ID, i, data->cubemap_filter.shader_version, mode);
+		data->cubemap_filter_shader.version_set_uniform(
+			CubemapFilterShaderGLES3::FACE_ID, i, data->cubemap_filter_shader_version, mode);
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
@@ -151819,144 +132827,7 @@ void CubemapFilter::filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubem
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 }
 
-// FeedEffects
-
-void FeedEffects::initialize()
-{
-	if (data) {
-		return;
-	}
-	data = memnew(Data);
-
-	data->feed.shader.initialize();
-	data->feed.shader_version = data->feed.shader.version_create();
-	data->feed.shader.version_bind_shader(data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT);
-
-	{ // Screen Triangle.
-		glGenBuffers(1, &data->screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-
-		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			3.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-		};
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-
-		glGenVertexArrays(1, &data->screen_triangle_array);
-		glBindVertexArray(data->screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-	}
-}
-
-void FeedEffects::finalize()
-{
-	if (!data) {
-		return;
-	}
-
-	glDeleteBuffers(1, &data->screen_triangle);
-	glDeleteVertexArrays(1, &data->screen_triangle_array);
-	data->feed.shader.version_free(data->feed.shader_version);
-
-	memdelete(data);
-	data = nullptr;
-}
-
-void FeedEffects::draw()
-{
-	ERR_FAIL_NULL(data);
-
-	bool success = data->feed.shader.version_bind_shader(
-		data->feed.shader_version, FeedShaderGLES3::MODE_DEFAULT, FeedShaderGLES3::USE_EXTERNAL_SAMPLER);
-	if (!success) {
-		OS::print("Godot : FeedShaderGLES3 Could not bind version_bind_shader USE_EXTERNAL_SAMPLER");
-		return;
-	}
-
-	draw_screen_triangle();
-}
-
-void FeedEffects::draw_screen_triangle()
-{
-	ERR_FAIL_NULL(data);
-
-	glBindVertexArray(data->screen_triangle_array);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
-}
-
-// Glow
-
-void Glow::initialize()
-{
-	if (data) {
-		return;
-	}
-	data = memnew(Data);
-
-	data->glow.shader.initialize();
-	data->glow.shader_version = data->glow.shader.version_create();
-
-	{ // Screen Triangle.
-		glGenBuffers(1, &data->screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-
-		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			3.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-		};
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-
-		glGenVertexArrays(1, &data->screen_triangle_array);
-		glBindVertexArray(data->screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-	}
-}
-
-void Glow::finalize()
-{
-	if (!data) {
-		return;
-	}
-
-	glDeleteBuffers(1, &data->screen_triangle);
-	glDeleteVertexArrays(1, &data->screen_triangle_array);
-	data->glow.shader.version_free(data->glow.shader_version);
-
-	memdelete(data);
-	data = nullptr;
-}
-
-void Glow::_draw_screen_triangle()
-{
-	ERR_FAIL_NULL(data);
-
-	glBindVertexArray(data->screen_triangle_array);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
-}
-
-void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level* p_glow_buffers,
+void Effects::process_glow(GLuint p_source_color, Size2i p_size, const Effects::GlowLevel* p_glow_buffers,
 	uint32_t p_view, bool p_use_multiview)
 {
 	ERR_FAIL_NULL(data);
@@ -151977,39 +132848,39 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level*
 		glBindTexture(p_use_multiview ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D, p_source_color);
 
 		uint64_t specialization = p_use_multiview ? GlowShaderGLES3::USE_MULTIVIEW : 0;
-		bool success = data->glow.shader.version_bind_shader(
-			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		bool success = data->glow_shader.version_bind_shader(
+			data->glow_shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
 		if (!success) {
 			return;
 		}
 
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
 			1.0 / p_glow_buffers[0].size.x, 1.0 / p_glow_buffers[0].size.y,
-			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::VIEW, float(p_view),
-			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::LUMINANCE_MULTIPLIER,
-			data->luminance_multiplier, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+			data->glow_shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::VIEW, float(p_view),
+			data->glow_shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::LUMINANCE_MULTIPLIER,
+			data->luminance_multiplier, data->glow_shader_version, GlowShaderGLES3::MODE_FILTER,
 			specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_BLOOM, data->glow_bloom,
-			data->glow.shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_THRESHOLD,
-			data->glow_hdr_bleed_threshold, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::GLOW_BLOOM, data->glow_bloom,
+			data->glow_shader_version, GlowShaderGLES3::MODE_FILTER, specialization);
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_THRESHOLD,
+			data->glow_hdr_bleed_threshold, data->glow_shader_version, GlowShaderGLES3::MODE_FILTER,
 			specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_SCALE,
-			data->glow_hdr_bleed_scale, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::GLOW_HDR_SCALE,
+			data->glow_hdr_bleed_scale, data->glow_shader_version, GlowShaderGLES3::MODE_FILTER,
 			specialization);
-		data->glow.shader.version_set_uniform(GlowShaderGLES3::GLOW_LUMINANCE_CAP,
-			data->glow_hdr_luminance_cap, data->glow.shader_version, GlowShaderGLES3::MODE_FILTER,
+		data->glow_shader.version_set_uniform(GlowShaderGLES3::GLOW_LUMINANCE_CAP,
+			data->glow_hdr_luminance_cap, data->glow_shader_version, GlowShaderGLES3::MODE_FILTER,
 			specialization);
 
-		_draw_screen_triangle();
+		draw_screen_triangle();
 	}
 
 	// Continue with downsampling
 	{
-		bool success = data->glow.shader.version_bind_shader(
-			data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE, 0);
+		bool success = data->glow_shader.version_bind_shader(
+			data->glow_shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE, 0);
 		if (!success) {
 			return;
 		}
@@ -152021,18 +132892,18 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level*
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i - 1].color);
 
-			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+			data->glow_shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
 				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
-				data->glow.shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE);
+				data->glow_shader_version, GlowShaderGLES3::MODE_DOWNSAMPLE);
 
-			_draw_screen_triangle();
+			draw_screen_triangle();
 		}
 	}
 
 	// Now upsample
 	{
-		bool success = data->glow.shader.version_bind_shader(
-			data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE, 0);
+		bool success = data->glow_shader.version_bind_shader(
+			data->glow_shader_version, GlowShaderGLES3::MODE_UPSAMPLE, 0);
 		if (!success) {
 			return;
 		}
@@ -152044,11 +132915,11 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level*
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, p_glow_buffers[i + 1].color);
 
-			data->glow.shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
+			data->glow_shader.version_set_uniform(GlowShaderGLES3::PIXEL_SIZE,
 				1.0 / p_glow_buffers[i].size.x, 1.0 / p_glow_buffers[i].size.y,
-				data->glow.shader_version, GlowShaderGLES3::MODE_UPSAMPLE);
+				data->glow_shader_version, GlowShaderGLES3::MODE_UPSAMPLE);
 
-			_draw_screen_triangle();
+			draw_screen_triangle();
 		}
 	}
 
@@ -152060,72 +132931,10 @@ void Glow::process_glow(GLuint p_source_color, Size2i p_size, const Glow::Level*
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
 }
 
-// PostEffects
-
-void PostEffects::initialize()
-{
-	if (data) {
-		return;
-	}
-	data = memnew(Data);
-
-	data->post.shader.initialize();
-	data->post.shader_version = data->post.shader.version_create();
-	data->post.shader.version_bind_shader(data->post.shader_version, PostShaderGLES3::MODE_DEFAULT);
-
-	{ // Screen Triangle.
-		glGenBuffers(1, &data->screen_triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-
-		const float qv[6] = {
-			-1.0f,
-			-1.0f,
-			3.0f,
-			-1.0f,
-			-1.0f,
-			3.0f,
-		};
-
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6, qv, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-
-		glGenVertexArrays(1, &data->screen_triangle_array);
-		glBindVertexArray(data->screen_triangle_array);
-		glBindBuffer(GL_ARRAY_BUFFER, data->screen_triangle);
-		glVertexAttribPointer(RSE::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-		glEnableVertexAttribArray(RSE::ARRAY_VERTEX);
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
-	}
-}
-
-void PostEffects::finalize()
-{
-	if (!data) {
-		return;
-	}
-
-	glDeleteBuffers(1, &data->screen_triangle);
-	glDeleteVertexArrays(1, &data->screen_triangle_array);
-	data->post.shader.version_free(data->post.shader_version);
-
-	memdelete(data);
-	data = nullptr;
-}
-
-void PostEffects::_draw_screen_triangle()
-{
-	ERR_FAIL_NULL(data);
-
-	glBindVertexArray(data->screen_triangle_array);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
-}
-
-void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
+void Effects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
 	GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
 	float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
-	const Glow::Level* p_glow_buffers, float p_glow_intensity, float p_srgb_white, uint32_t p_view,
+	const Effects::GlowLevel* p_glow_buffers, float p_glow_intensity, float p_srgb_white, uint32_t p_view,
 	bool p_use_multiview, uint64_t p_spec_constants, bool p_bilinear_filtering)
 {
 	ERR_FAIL_NULL(data);
@@ -152166,7 +132975,7 @@ void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuin
 		flags |= PostShaderGLES3::USE_LUMINANCE_MULTIPLIER;
 	}
 
-	bool success = data->post.shader.version_bind_shader(data->post.shader_version, mode, flags);
+	bool success = data->post_shader.version_bind_shader(data->post_shader_version, mode, flags);
 	if (!success) {
 		return;
 	}
@@ -152186,15 +132995,15 @@ void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuin
 		glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // Thanks to mrjustaguy!
 		glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-		data->post.shader.version_set_uniform(
-			PostShaderGLES3::SSAO_INTENSITY, p_ssao_strength, data->post.shader_version, mode, flags);
-		data->post.shader.version_set_uniform(
-			PostShaderGLES3::SSAO_RADIUS_FRAC, p_ssao_radius, data->post.shader_version, mode, flags);
-		data->post.shader.version_set_uniform(
+		data->post_shader.version_set_uniform(
+			PostShaderGLES3::SSAO_INTENSITY, p_ssao_strength, data->post_shader_version, mode, flags);
+		data->post_shader.version_set_uniform(
+			PostShaderGLES3::SSAO_RADIUS_FRAC, p_ssao_radius, data->post_shader_version, mode, flags);
+		data->post_shader.version_set_uniform(
 			PostShaderGLES3::SSAO_PRN_UV, // This converts the UV coordinate into a pseudo-random
 										  // number.
 			p_source_size.x * 1.087f * ((1.0f + sqrt(5.0f)) / 2.0f),
-			p_source_size.y * 1.087f * ((9.0f + sqrt(221.0f)) / 10.0f), data->post.shader_version,
+			p_source_size.y * 1.087f * ((9.0f + sqrt(221.0f)) / 10.0f), data->post_shader_version,
 			mode, flags);
 	}
 
@@ -152202,20 +133011,20 @@ void PostEffects::post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuin
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, p_glow_buffers[0].color);
 
-		data->post.shader.version_set_uniform(PostShaderGLES3::PIXEL_SIZE, 1.0 / p_source_size.x,
-			1.0 / p_source_size.y, data->post.shader_version, mode, flags);
-		data->post.shader.version_set_uniform(
-			PostShaderGLES3::GLOW_INTENSITY, p_glow_intensity, data->post.shader_version, mode, flags);
-		data->post.shader.version_set_uniform(
-			PostShaderGLES3::SRGB_WHITE, p_srgb_white, data->post.shader_version, mode, flags);
+		data->post_shader.version_set_uniform(PostShaderGLES3::PIXEL_SIZE, 1.0 / p_source_size.x,
+			1.0 / p_source_size.y, data->post_shader_version, mode, flags);
+		data->post_shader.version_set_uniform(
+			PostShaderGLES3::GLOW_INTENSITY, p_glow_intensity, data->post_shader_version, mode, flags);
+		data->post_shader.version_set_uniform(
+			PostShaderGLES3::SRGB_WHITE, p_srgb_white, data->post_shader_version, mode, flags);
 	}
 
-	data->post.shader.version_set_uniform(
-		PostShaderGLES3::VIEW, float(p_view), data->post.shader_version, mode, flags);
-	data->post.shader.version_set_uniform(PostShaderGLES3::LUMINANCE_MULTIPLIER,
-		p_luminance_multiplier, data->post.shader_version, mode, flags);
+	data->post_shader.version_set_uniform(
+		PostShaderGLES3::VIEW, float(p_view), data->post_shader_version, mode, flags);
+	data->post_shader.version_set_uniform(PostShaderGLES3::LUMINANCE_MULTIPLIER,
+		p_luminance_multiplier, data->post_shader_version, mode, flags);
 
-	_draw_screen_triangle();
+	draw_screen_triangle();
 
 	// Reset state
 	if (p_glow_buffers != nullptr) {

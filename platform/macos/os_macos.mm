@@ -1034,8 +1034,8 @@ OS_MacOS::OS_MacOS(const char *p_execpath, int p_argc, char **p_argv) {
 		[[NSUserDefaults standardUserDefaults] setObject:new_bookmarks forKey:@"sec_bookmarks"];
 	}
 	Vector<Logger *> loggers;
-	loggers.push_back(memnew(OsLogLogger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
-	loggers.push_back(memnew(UnixTerminalLogger));
+	loggers.push_back(memnew(Logger(NSBundle.mainBundle.bundleIdentifier.UTF8String)));
+	loggers.push_back(memnew(Logger));
 	_set_logger(memnew(CompositeLogger(loggers)));
 
 #ifdef COREAUDIO_ENABLED

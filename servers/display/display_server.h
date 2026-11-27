@@ -37,7 +37,6 @@
 #include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/io/ip.h"
-// --- Folded from servers/display/display_server_enums.h ---
 namespace DisplayServerEnums
 {
 
@@ -452,7 +451,6 @@ enum AccessibilityScrollHint
 #endif // DISABLE_DEPRECATED
 
 } // namespace DisplayServerEnums
-// --- End servers/display/display_server_enums.h ---
 
 class NativeMenu;
 class Texture2D;
@@ -499,7 +497,6 @@ public:
 	virtual void swap_buffers();
 
 	virtual void beep() const;
-
 
 	/* GLOBAL MENU */
 
@@ -907,7 +904,6 @@ public:
 	virtual void delete_status_indicator(DisplayServerEnums::IndicatorID p_id);
 
 	/* OUTPUT */
-
 
 public:
 	/* PICTURE_IN_PICTURE */
@@ -1383,9 +1379,6 @@ public:
 #endif // DISABLE_DEPRECATED
 };
 
-// --- Folded from servers/display/display_server_headless.h ---
-
-
 struct InputEvent;
 
 class DisplayServerHeadless : public DisplayServerDriver
@@ -1727,11 +1720,6 @@ public:
 	~DisplayServerHeadless();
 };
 
-
-
-// --- End servers/display/display_server_headless.h ---
-
-// --- Folded from servers/display/native_menu.h ---
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
@@ -1959,11 +1947,8 @@ public:
 	static void remove_item(const RID& p_rid, int p_idx);
 	static void clear(const RID& p_rid);
 };
-// --- End servers/display/native_menu.h ---
 
-// --- Folded from servers/display/accessibility_server.h ---
 #include "core/io/ip.h"
-// --- Folded from servers/display/accessibility_server_enums.h ---
 namespace AccessibilityServerEnums {
 
 enum AccessibilityMode {
@@ -2090,9 +2075,6 @@ enum AccessibilityScrollHint {
 };
 
 }; // namespace AccessibilityServerEnums
-
-// --- End servers/display/accessibility_server_enums.h ---
-
 
 class AccessibilityServerDriver
 {
@@ -2355,11 +2337,8 @@ public:
 	static void update_set_background_color(const RID& p_id, const Color& p_color);
 	static void update_set_foreground_color(const RID& p_id, const Color& p_color);
 };
-// --- End servers/display/accessibility_server.h ---
 
-// --- Folded from servers/audio/audio_server.h ---
 #include <atomic>
-// --- Folded from core/math/audio_frame.h ---
 #include "core/math/vector2.h"
 #include "core/typedefs.h"
 
@@ -2484,8 +2463,6 @@ constexpr AudioFrame operator*(int64_t p_scalar, const AudioFrame &p_frame) {
 template <>
 struct is_zero_constructible<AudioFrame> : std::true_type {};
 
-// --- End core/math/audio_frame.h ---
-// --- Folded from core/templates/safe_list.h ---
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 
@@ -2699,10 +2676,7 @@ public:
 	}
 };
 
-// --- End core/templates/safe_list.h ---
-// --- Folded from servers/audio/audio_effect.h ---
 #include "core/io/ip.h"
-
 
 #include <type_traits>
 #include <utility>
@@ -2803,23 +2777,7 @@ public:
 	}
 };
 
-struct AudioEffectAmplifyConfig;
-struct AudioEffectCaptureConfig;
-struct AudioEffectChorusConfig;
-struct AudioEffectCompressorConfig;
-struct AudioEffectDelayConfig;
-struct AudioEffectDistortionConfig;
-struct AudioEffectEQConfig;
-struct AudioEffectFilterConfig;
-struct AudioEffectHardLimiterConfig;
-struct AudioEffectLimiterConfig;
-struct AudioEffectPannerConfig;
-struct AudioEffectPhaserConfig;
-struct AudioEffectPitchShiftConfig;
-struct AudioEffectRecordConfig;
-struct AudioEffectReverbConfig;
-struct AudioEffectSpectrumAnalyzerConfig;
-struct AudioEffectStereoEnhanceConfig;
+struct AudioEffectConfig;
 
 class AudioEffect final : public Resource
 {
@@ -2847,7 +2805,7 @@ public:
 
 private:
 	Type effect_type = EFFECT_AMPLIFY;
-	void* config = nullptr;
+	AudioEffectConfig* config = nullptr;
 
 	void _init_config(Type p_type);
 	void _free_config();
@@ -2856,76 +2814,7 @@ public:
 	Type get_effect_type() const { return effect_type; }
 	void set_effect_type(Type p_type);
 
-	void* get_config_ptr() const { return config; }
-
-	AudioEffectAmplifyConfig* get_amplify_config() const
-	{
-		return effect_type == EFFECT_AMPLIFY ? static_cast<AudioEffectAmplifyConfig*>(config) : nullptr;
-	}
-	AudioEffectCaptureConfig* get_capture_config() const
-	{
-		return effect_type == EFFECT_CAPTURE ? static_cast<AudioEffectCaptureConfig*>(config) : nullptr;
-	}
-	AudioEffectChorusConfig* get_chorus_config() const
-	{
-		return effect_type == EFFECT_CHORUS ? static_cast<AudioEffectChorusConfig*>(config) : nullptr;
-	}
-	AudioEffectCompressorConfig* get_compressor_config() const
-	{
-		return effect_type == EFFECT_COMPRESSOR ? static_cast<AudioEffectCompressorConfig*>(config) : nullptr;
-	}
-	AudioEffectDelayConfig* get_delay_config() const
-	{
-		return effect_type == EFFECT_DELAY ? static_cast<AudioEffectDelayConfig*>(config) : nullptr;
-	}
-	AudioEffectDistortionConfig* get_distortion_config() const
-	{
-		return effect_type == EFFECT_DISTORTION ? static_cast<AudioEffectDistortionConfig*>(config) : nullptr;
-	}
-	AudioEffectEQConfig* get_eq_config() const
-	{
-		return effect_type == EFFECT_EQ ? static_cast<AudioEffectEQConfig*>(config) : nullptr;
-	}
-	AudioEffectFilterConfig* get_filter_config() const
-	{
-		return effect_type == EFFECT_FILTER ? static_cast<AudioEffectFilterConfig*>(config) : nullptr;
-	}
-	AudioEffectHardLimiterConfig* get_hard_limiter_config() const
-	{
-		return effect_type == EFFECT_HARD_LIMITER ? static_cast<AudioEffectHardLimiterConfig*>(config) : nullptr;
-	}
-	AudioEffectLimiterConfig* get_limiter_config() const
-	{
-		return effect_type == EFFECT_LIMITER ? static_cast<AudioEffectLimiterConfig*>(config) : nullptr;
-	}
-	AudioEffectPannerConfig* get_panner_config() const
-	{
-		return effect_type == EFFECT_PANNER ? static_cast<AudioEffectPannerConfig*>(config) : nullptr;
-	}
-	AudioEffectPhaserConfig* get_phaser_config() const
-	{
-		return effect_type == EFFECT_PHASER ? static_cast<AudioEffectPhaserConfig*>(config) : nullptr;
-	}
-	AudioEffectPitchShiftConfig* get_pitch_shift_config() const
-	{
-		return effect_type == EFFECT_PITCH_SHIFT ? static_cast<AudioEffectPitchShiftConfig*>(config) : nullptr;
-	}
-	AudioEffectRecordConfig* get_record_config() const
-	{
-		return effect_type == EFFECT_RECORD ? static_cast<AudioEffectRecordConfig*>(config) : nullptr;
-	}
-	AudioEffectReverbConfig* get_reverb_config() const
-	{
-		return effect_type == EFFECT_REVERB ? static_cast<AudioEffectReverbConfig*>(config) : nullptr;
-	}
-	AudioEffectSpectrumAnalyzerConfig* get_spectrum_analyzer_config() const
-	{
-		return effect_type == EFFECT_SPECTRUM_ANALYZER ? static_cast<AudioEffectSpectrumAnalyzerConfig*>(config) : nullptr;
-	}
-	AudioEffectStereoEnhanceConfig* get_stereo_enhance_config() const
-	{
-		return effect_type == EFFECT_STEREO_ENHANCE ? static_cast<AudioEffectStereoEnhanceConfig*>(config) : nullptr;
-	}
+	AudioEffectConfig* get_config() const { return config; }
 
 	Ref<AudioEffectInstance> instantiate();
 
@@ -2935,8 +2824,6 @@ public:
 	~AudioEffect();
 };
 
-// --- End servers/audio/audio_effect.h ---
-// --- Folded from servers/audio/audio_filter_sw.h ---
 #include "core/typedefs.h"
 
 class AudioFilterSW {
@@ -3028,8 +2915,6 @@ void AudioFilterSW::Processor::process_one_interp(float &p_sample) {
 	coeffs.a1 += incr_coeffs.a1;
 	coeffs.a2 += incr_coeffs.a2;
 }
-
-// --- End servers/audio/audio_filter_sw.h ---
 
 class AudioDriverDummy;
 class AudioSample;
@@ -3634,10 +3519,8 @@ public:
 	AudioBusLayout();
 };
 
-// --- Folded from servers/audio/audio_driver_dummy.h ---
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
-
 
 class AudioDriverDummy : public AudioDriver {
 	Thread thread;
@@ -3683,10 +3566,6 @@ public:
 	AudioDriverDummy();
 	~AudioDriverDummy() {}
 };
-
-// --- End servers/audio/audio_driver_dummy.h ---
-
-// --- Folded from servers/audio/audio_rb_resampler.h ---
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"
@@ -3841,13 +3720,9 @@ public:
 	~AudioRBResampler();
 };
 
-// --- End servers/audio/audio_rb_resampler.h ---
-
-// --- Folded from servers/audio/audio_stream.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 class AudioStream;
 
@@ -4250,9 +4125,7 @@ public:
 	~AudioStreamPlaybackPolyphonic();
 };
 
-// --- Folded from scene/resources/audio_stream_wav.h ---
 #include <thirdparty/misc/qoa.h>
-
 
 class AudioStreamWAV;
 
@@ -4500,11 +4373,7 @@ public:
 		}
 	}
 };
-// --- End scene/resources/audio_stream_wav.h ---
-// --- End servers/audio/audio_stream.h ---
-// --- End servers/audio/audio_server.h ---
 
-// --- Folded from main/main.h ---
 #include "core/os/mutex.h"
 #include "core/typedefs.h"
 
@@ -4577,7 +4446,6 @@ public:
 		return return_code; \
 	}
 
-// --- Folded from core/register_core_types.h ---
 void register_core_types();
 void register_core_settings();
 void register_core_extensions();
@@ -4586,127 +4454,110 @@ void register_core_singletons();
 void unregister_core_types();
 void unregister_core_extensions();
 
-// --- Folded from drivers/register_driver_types.h ---
 void register_core_driver_types();
 void unregister_core_driver_types();
 
 void register_driver_types();
 void unregister_driver_types();
 
-// --- Folded from scene/register_scene_types.h ---
 void register_scene_types();
 void unregister_scene_types();
 void register_scene_singletons();
 
-// --- Folded from servers/register_server_types.h ---
 void register_server_types();
 void unregister_server_types();
 
-// --- Folded from servers/movie_writer/movie_writer.h ---
 #include "core/io/net_socket.h"
 #include "core/string/ustring.h"
 
-
-class MovieWriter
+class MovieWriter final
 {
+public:
+	enum Format
+	{
+		FORMAT_PNG_WAV,
+		FORMAT_OGV,
+		FORMAT_MJPEG,
+	};
+
+	struct OGVState;
+
+private:
+	enum
+	{
+		MAX_WRITERS = 8,
+		MAX_TRAILING_ZEROS = 8,
+	};
+
+	Format format = FORMAT_PNG_WAV;
 	uint64_t fps = 0;
-	uint64_t mix_rate = 0;
+	uint64_t mix_rate = 48000;
+	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
 	uint32_t audio_channels = 0;
+	uint32_t audio_bit_depth = 16;
+	uint32_t frame_count = 0;
+	uint32_t audio_block_size = 0;
+	uint32_t wav_data_size_pos = 0;
+	float quality = 0.75f;
 
-	// The output resolution, which can differ from the window size.
-	// Used as a base for resizing all subsequent frames if their resolution differs.
 	Vector2i movie_size;
-
 	float cpu_time = 0.0f;
 	float gpu_time = 0.0f;
 	uint64_t encoding_time_usec = 0;
 
 	String project_name;
-
+	String base_path;
 	LocalVector<int32_t> audio_mix_buffer;
+	Vector<uint32_t> jpg_frame_sizes;
 
-	enum
-	{
-		MAX_WRITERS = 8
-	};
+	uint64_t total_frames_ofs = 0;
+	uint64_t total_frames_ofs2 = 0;
+	uint64_t total_frames_ofs3 = 0;
+	uint64_t total_audio_frames_ofs4 = 0;
+	uint64_t movi_data_ofs = 0;
 
-	static MovieWriter* writers[];
+	Ref<FileAccess> f;
+	OGVState* ogv = nullptr;
+
+	static MovieWriter* writers[MAX_WRITERS];
 	static uint32_t writer_count;
 
-protected:
-	virtual uint32_t get_audio_mix_rate() const;
-	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const;
-
-	virtual Error write_begin(
-		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
-	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data);
-	virtual void write_end();
-
+	String zeros_str(uint32_t p_index);
+	Error _write_begin_ogv(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	Error _write_frame_ogv(const Ref<Image>& p_image, const int32_t* p_audio_data);
+	void _write_end_ogv();
+	Error _write_begin_mjpeg(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	Error _write_frame_mjpeg(const Ref<Image>& p_image, const int32_t* p_audio_data);
+	void _write_end_mjpeg();
 
 public:
-	virtual bool handles_file(const String& p_path) const;
-	virtual void get_supported_extensions(List<String>* r_extensions) const;
+	explicit MovieWriter(Format p_format = FORMAT_PNG_WAV);
+	~MovieWriter();
+
+	uint32_t get_audio_mix_rate() const { return (uint32_t)mix_rate; }
+	AudioServer::SpeakerMode get_audio_speaker_mode() const { return speaker_mode; }
+
+	Error write_begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
+	Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data);
+	void write_end();
+
+	bool handles_file(const String& p_path) const;
+	void get_supported_extensions(List<String>* r_extensions) const;
 
 	static void add_writer(MovieWriter* p_writer);
 	static MovieWriter* find_writer_for_file(const String& p_file);
 
 	void begin(const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path);
 	void add_frame();
-
-	static void set_extensions_hint();
-
 	void end();
 };
 
-// --- Folded from servers/movie_writer/movie_writer_pngwav.h ---
-
-
-class MovieWriterPNGWAV : public MovieWriter {
-
-	enum {
-		MAX_TRAILING_ZEROS = 8 // more than 10 days at 60fps, no hard drive can put up with this anyway :)
-	};
-
-	uint32_t mix_rate = 48000;
-	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
-	String base_path;
-	uint32_t frame_count = 0;
-	uint32_t fps = 0;
-
-	uint32_t audio_block_size = 0;
-
-	Ref<FileAccess> f_wav;
-	uint32_t wav_data_size_pos = 0;
-
-	String zeros_str(uint32_t p_index);
-
-protected:
-	virtual uint32_t get_audio_mix_rate() const override;
-	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
-	virtual void get_supported_extensions(List<String> *r_extensions) const override;
-
-	virtual Error write_begin(const Size2i &p_movie_size, uint32_t p_fps, const String &p_base_path) override;
-	virtual Error write_frame(const Ref<Image> &p_image, const int32_t *p_audio_data) override;
-	virtual void write_end() override;
-
-	virtual bool handles_file(const String &p_path) const override;
-
-public:
-	MovieWriterPNGWAV();
-};
-
-// --- End servers/movie_writer/movie_writer_pngwav.h ---
-
-// --- Folded from platform/register_platform_apis.h ---
 void register_platform_apis();
 void unregister_platform_apis();
 
-// --- Folded from platform/android/api/api.h ---
 void register_android_api();
 void unregister_android_api();
-// --- End platform/android/api/api.h ---
 
-// --- Folded from platform/ios/api/api.h ---
 #if defined(IOS_ENABLED)
 extern void godot_apple_embedded_plugins_initialize();
 extern void godot_apple_embedded_plugins_deinitialize();
@@ -4714,9 +4565,7 @@ extern void godot_apple_embedded_plugins_deinitialize();
 
 void register_ios_api();
 void unregister_ios_api();
-// --- End platform/ios/api/api.h ---
 
-// --- Folded from platform/visionos/api/api.h ---
 #if defined(VISIONOS_ENABLED)
 extern void godot_apple_embedded_plugins_initialize();
 extern void godot_apple_embedded_plugins_deinitialize();
@@ -4724,15 +4573,10 @@ extern void godot_apple_embedded_plugins_deinitialize();
 
 void register_visionos_api();
 void unregister_visionos_api();
-// --- End platform/visionos/api/api.h ---
 
-// --- Folded from platform/web/api/api.h ---
 void register_web_api();
 void unregister_web_api();
-// --- End platform/web/api/api.h ---
-// --- End platform/register_platform_apis.h ---
 
-// --- Folded from platform/android/api/java_class_wrapper.h ---
 #include "core/io/ip.h"
 
 #ifdef ANDROID_ENABLED
@@ -5021,9 +4865,7 @@ public:
 	JavaClassWrapper& operator=(const JavaClassWrapper&) = delete;
 	~JavaClassWrapper() = delete;
 };
-// --- End platform/android/api/java_class_wrapper.h ---
 
-// --- Folded from modules/register_module_types.h ---
 enum ModuleInitializationLevel {
 	MODULE_INITIALIZATION_LEVEL_CORE = 0,
 	MODULE_INITIALIZATION_LEVEL_SERVERS = 1,
@@ -5050,17 +4892,11 @@ inline void uninitialize_msdfgen_module(ModuleInitializationLevel p_level) {}
 
 void initialize_text_server_adv_module(ModuleInitializationLevel p_level);
 void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level);
-// --- End modules/register_module_types.h ---
 
-// --- Folded from tests/test_main.h ---
 int test_main(int argc, char *argv[]);
-// --- End tests/test_main.h ---
-// --- End main/main.h ---
 
-// --- Folded from scene/resources/texture.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
-// --- Folded from servers/rendering/rendering_server_enums.h ---
 #include <cstdint>
 
 namespace RenderingServerEnums
@@ -6086,7 +5922,6 @@ enum Features
 
 // Alias to make it easier to use.
 #define RSE RenderingServerEnums
-// --- End servers/rendering/rendering_server_enums.h ---
 
 class Mesh;
 
@@ -6285,13 +6120,9 @@ public:
 	Texture3D() = default;
 	virtual ~Texture3D();
 };
-// --- End scene/resources/texture.h ---
 
-// --- Folded from scene/resources/theme.h ---
 #include "core/io/ip.h"
-// --- Folded from scene/resources/font.h ---
 #include "core/io/ip.h"
-// --- Folded from servers/text/text_server.h ---
 #include "core/io/net_socket.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -6520,7 +6351,6 @@ protected:
 	HashMap<char32_t, char32_t> diacritics_map;
 	void _diacritics_map_add(const String& p_from, char32_t p_to);
 	void _init_diacritics_map();
-
 
 #ifndef DISABLE_DEPRECATED
 	void _font_draw_glyph_bind_compat_104872(const RID& p_font, const RID& p_canvas, int64_t p_size,
@@ -7274,7 +7104,6 @@ public:
 	virtual PackedInt32Array string_get_character_breaks(
 		const String& p_string, const String& p_language = "") const;
 
-
 	virtual int64_t is_confusable(const String& p_string, const PackedStringArray& p_dict) const
 	{
 		return -1;
@@ -7371,11 +7200,9 @@ public:
 
 #define TS TextServerManager::get_primary_interface()
 
-// --- Folded from servers/text/text_server_dummy.h ---
 /*************************************************************************/
 
 #include "core/os/os.h"
-
 
 class TextServerDummy : public TextServer
 {
@@ -7676,11 +7503,6 @@ public:
 	{
 	}
 };
-
-
-
-// --- End servers/text/text_server_dummy.h ---
-// --- End servers/text/text_server.h ---
 
 class TextLine;
 class TextParagraph;
@@ -8283,10 +8105,6 @@ public:
 	~SystemFont();
 };
 
-// --- Folded from scene/resources/text_line.h ---
-
-
-
 /*************************************************************************/
 
 class TextLine : public RefCounted
@@ -8312,7 +8130,6 @@ protected:
 		int p_outline_size = 1, const Color& p_color = Color(1, 1, 1)) const;
 	static void _bind_compatibility_methods();
 #endif
-
 
 	void _shape() const;
 
@@ -8375,11 +8192,8 @@ public:
 	~TextLine();
 };
 
-// --- Folded from scene/resources/text_paragraph.h ---
 #include "core/os/os.h"
 #include "core/string/ustring.h"
-
-
 
 /*************************************************************************/
 
@@ -8536,11 +8350,7 @@ public:
 	TextParagraph();
 	~TextParagraph();
 };
-// --- End scene/resources/text_line.h ---
-// --- End scene/resources/font.h ---
-// --- Folded from scene/resources/style_box.h ---
 #include "core/io/ip.h"
-
 
 class CanvasItem;
 
@@ -8717,8 +8527,6 @@ public:
 
 	StyleBox(StyleType p_type = STYLE_EMPTY);
 };
-// --- End scene/resources/style_box.h ---
-
 
 class Theme : public Resource
 {
@@ -8785,7 +8593,6 @@ protected:
 	HashMap<String, ThemeConstantMap> constant_map;
 	HashMap<String, String> variation_map;
 	HashMap<String, List<String>> variation_base_map;
-
 
 	void _freeze_change_propagation();
 	void _unfreeze_and_propagate_changes();
@@ -8928,9 +8735,7 @@ const String& p_theme_type);
 	~Theme();
 };
 
-// --- Folded from scene/theme/theme_db.h ---
 #include <functional>
-
 
 class Font;
 class Node;
@@ -9067,9 +8872,6 @@ public:
 	Ref<Theme> get_fallback_theme() const;
 };
 
-// --- Folded from scene/theme/theme_owner.h ---
-
-
 class Control;
 class Node;
 class ThemeContext;
@@ -9118,23 +8920,14 @@ public:
 	ThemeOwner(Node* p_holder) { holder = p_holder; }
 };
 
-
-
-// --- End scene/theme/theme_owner.h ---
-// --- End scene/theme/theme_db.h ---
-// --- End scene/resources/theme.h ---
-
-// --- Folded from servers/rendering/renderer.h ---
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 
-// --- Inlined/Folded from servers/rendering/environment/renderer_fog.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
-
 
 class RendererFog
 {
@@ -9169,10 +8962,8 @@ public:
 		fog_volume_get_shape = T::fog_volume_get_shape;
 	}
 };
-// --- Folded from servers/rendering/environment/renderer_gi.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
-
 
 class RendererGI
 {
@@ -9262,11 +9053,8 @@ public:
 	}
 };
 
-// --- End servers/rendering/environment/renderer_gi.h ---
-// --- Folded from servers/rendering/renderer_compositor.h ---
 #include "core/io/net_socket.h"
 
-// --- Folded from servers/rendering/rendering_device.h ---
 #include "core/os/condition_variable.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
@@ -9274,7 +9062,6 @@ public:
 #include "core/templates/rb_set.h"
 #include "core/io/ip.h"
 
-// --- Folded from servers/rendering/rendering_device_commons.h ---
 #include "core/io/ip.h"
 #include "core/typedefs.h"
 
@@ -10448,7 +10235,6 @@ public:
 
 using RDC = RenderingDeviceCommons;
 
-// --- Folded from servers/rendering/rendering_device_enums.h ---
 namespace RenderingDeviceEnums
 {
 
@@ -10466,14 +10252,7 @@ enum DeviceType
 
 } // namespace RenderingDeviceEnums
 
-// --- Folded from modules/glslang/register_types.h ---
-// --- Folded from modules/glslang/shader_compile.h ---
-
-
 Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_stage, const String &p_source_code, RenderingDeviceCommons::ShaderLanguageVersion p_language_version, RenderingDeviceCommons::ShaderSpirvVersion p_spirv_version, String *r_error);
-// --- End modules/glslang/register_types.h ---
-// --- End servers/rendering/rendering_device_commons.h ---
-// --- Folded from servers/rendering/rendering_device_driver.h ---
 // ***********************************************************************************
 // RenderingDeviceDriver - Design principles
 // -----------------------------------------
@@ -10495,11 +10274,9 @@ Vector<uint8_t> compile_glslang_shader(RenderingDeviceCommons::ShaderStage p_sta
 // ***********************************************************************************
 
 #include "core/io/ip.h"
-// --- Folded from servers/rendering/rendering_context_driver.h ---
 #include <cstdint>
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 class RenderingDeviceDriver;
 
@@ -10615,8 +10392,6 @@ public:
 	virtual uint64_t get_device_memory_by_object_type(uint32_t p_type) const;
 	virtual uint64_t get_device_allocs_by_object_type(uint32_t p_type) const;
 };
-// --- End servers/rendering/rendering_context_driver.h ---
-
 
 class RenderingShaderContainer;
 class RenderingShaderContainerFormat;
@@ -11571,9 +11346,7 @@ public:
 
 using RDD = RenderingDeviceDriver;
 
-// --- Folded from servers/rendering/rendering_shader_container.h ---
 #include "core/io/ip.h"
-
 
 struct SpvReflectShaderModule;
 struct SpvReflectDescriptorBinding;
@@ -11889,12 +11662,6 @@ public:
 	virtual RDC::ShaderLanguageVersion get_shader_language_version() const = 0;
 	virtual RDC::ShaderSpirvVersion get_shader_spirv_version() const = 0;
 };
-// --- End servers/rendering/rendering_device_driver.h ---
-
-// --- Folded from servers/rendering/rendering_device_graph.h ---
-
-
-
 
 #ifdef DEV_ENABLED
 #include "core/io/ip.h"
@@ -11911,6 +11678,9 @@ public:
 class RenderingDeviceGraph
 {
 public:
+	struct ResourceTracker;
+	struct FramebufferCache;
+
 	struct RaytracingListInstruction
 	{
 		enum Type
@@ -11924,6 +11694,22 @@ public:
 		};
 
 		Type type = TYPE_NONE;
+		RDD::AccelerationStructureID acceleration_structure;
+		RDC::AccelerationStructureType acceleration_structure_type = RDC::ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+		RDD::RaytracingPipelineID pipeline;
+		RDD::UniformSetID uniform_set;
+		RDD::ShaderID shader;
+		uint32_t set_index = 0;
+		uint32_t size = 0;
+		RDD::ShaderBindingTable raygen_sbt;
+		RDD::ShaderBindingTable miss_sbt;
+		RDD::ShaderBindingTable hit_sbt;
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t depth = 0;
+
+		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
+		_FORCE_INLINE_ const uint8_t* data() const { return reinterpret_cast<const uint8_t*>(&this[1]); }
 	};
 
 	struct ComputeListInstruction
@@ -11940,6 +11726,24 @@ public:
 		};
 
 		Type type = TYPE_NONE;
+		RDD::PipelineID pipeline;
+		RDD::ShaderID shader;
+		RDD::UniformSetID uniform_set;
+		RDD::BufferID buffer;
+		uint32_t first_set_index = 0;
+		uint32_t set_count = 0;
+		uint32_t set_index = 0;
+		uint32_t dynamic_offsets_mask = 0u;
+		uint32_t x_groups = 0;
+		uint32_t y_groups = 0;
+		uint32_t z_groups = 0;
+		uint32_t offset = 0;
+		uint32_t size = 0;
+
+		_FORCE_INLINE_ RDD::UniformSetID* uniform_set_ids() { return reinterpret_cast<RDD::UniformSetID*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::UniformSetID* uniform_set_ids() const { return reinterpret_cast<const RDD::UniformSetID*>(&this[1]); }
+		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
+		_FORCE_INLINE_ const uint8_t* data() const { return reinterpret_cast<const uint8_t*>(&this[1]); }
 	};
 
 	struct DrawListInstruction
@@ -11967,7 +11771,49 @@ public:
 		};
 
 		Type type = TYPE_NONE;
+		RDD::BufferID buffer;
+		RenderingDeviceCommons::IndexBufferFormat format = RenderingDeviceCommons::INDEX_BUFFER_FORMAT_UINT16;
+		RDD::PipelineID pipeline;
+		RDD::ShaderID shader;
+		RDD::UniformSetID uniform_set;
+		RDD::CommandBufferID command_buffer;
+		RDD::CommandBufferType command_buffer_type = RDD::COMMAND_BUFFER_TYPE_PRIMARY;
+		uint32_t offset = 0;
+		uint32_t first_set_index = 0;
+		uint32_t set_count = 0;
+		uint32_t set_index = 0;
+		uint32_t dynamic_offsets_mask = 0u;
+		uint64_t vertex_buffers_dynamic_offsets_mask = 0;
+		uint32_t vertex_buffers_count = 0;
+		uint32_t attachments_clear_count = 0;
+		uint32_t attachments_clear_rect_count = 0;
+		uint32_t vertex_count = 0;
+		uint32_t index_count = 0;
+		uint32_t instance_count = 0;
+		uint32_t first_index = 0;
+		uint32_t draw_count = 0;
+		uint32_t stride = 0;
+		uint32_t size = 0;
+		float width = 0.0f;
+		Color color;
+		Rect2i rect;
+
+		_FORCE_INLINE_ RDD::UniformSetID* uniform_set_ids() { return reinterpret_cast<RDD::UniformSetID*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::UniformSetID* uniform_set_ids() const { return reinterpret_cast<const RDD::UniformSetID*>(&this[1]); }
+		_FORCE_INLINE_ RDD::BufferID* vertex_buffers() { return reinterpret_cast<RDD::BufferID*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::BufferID* vertex_buffers() const { return reinterpret_cast<const RDD::BufferID*>(&this[1]); }
+		_FORCE_INLINE_ uint64_t* vertex_buffer_offsets() { return reinterpret_cast<uint64_t*>(&vertex_buffers()[vertex_buffers_count]); }
+		_FORCE_INLINE_ const uint64_t* vertex_buffer_offsets() const { return reinterpret_cast<const uint64_t*>(&vertex_buffers()[vertex_buffers_count]); }
+		_FORCE_INLINE_ RDD::AttachmentClear* attachments_clear() { return reinterpret_cast<RDD::AttachmentClear*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::AttachmentClear* attachments_clear() const { return reinterpret_cast<const RDD::AttachmentClear*>(&this[1]); }
+		_FORCE_INLINE_ Rect2i* attachments_clear_rect() { return reinterpret_cast<Rect2i*>(&attachments_clear()[attachments_clear_count]); }
+		_FORCE_INLINE_ const Rect2i* attachments_clear_rect() const { return reinterpret_cast<const Rect2i*>(&attachments_clear()[attachments_clear_count]); }
+		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
+		_FORCE_INLINE_ const uint8_t* data() const { return reinterpret_cast<const uint8_t*>(&this[1]); }
 	};
+
+	struct RecordedBufferCopy;
+	struct RecordedBufferToTextureCopy;
 
 	struct RecordedCommand
 	{
@@ -12011,6 +11857,69 @@ public:
 		uint32_t previous_stages = 0;
 		uint32_t next_stages = 0;
 		uint32_t self_stages = 0;
+
+		RDD::AccelerationStructureID acceleration_structure;
+		RDD::BufferID scratch_buffer;
+		RDD::BufferID instance_buffer;
+		RDD::BufferID buffer;
+		RDD::BufferID source;
+		RDD::BufferID destination;
+		RDD::BufferID to_buffer;
+		RDD::TextureID texture;
+		RDD::TextureID from_texture;
+		RDD::TextureID to_texture;
+		RDD::QueryPoolID pool;
+		FramebufferCache* framebuffer_cache = nullptr;
+		RDD::FramebufferID framebuffer;
+		RDD::RenderPassID render_pass;
+		RDD::DriverCallback callback = nullptr;
+		void* userdata = nullptr;
+		RDD::BufferCopyRegion buffer_copy_region;
+		RDD::TextureSubresourceRange range;
+		Color color;
+		Rect2i region;
+		RDD::CommandBufferType command_buffer_type = RDD::COMMAND_BUFFER_TYPE_PRIMARY;
+		uint32_t instance_offset = 0;
+		uint32_t instance_count = 0;
+		uint32_t offset = 0;
+		uint32_t size = 0;
+		uint32_t buffer_copies_count = 0;
+		uint32_t instruction_data_size = 0;
+		uint32_t breadcrumb = 0;
+		uint32_t clear_values_count = 0;
+		uint32_t trackers_count = 0;
+		uint32_t texture_copy_regions_count = 0;
+		uint32_t buffer_texture_copy_regions_count = 0;
+		uint32_t buffer_to_texture_copies_count = 0;
+		uint32_t src_layer = 0;
+		uint32_t src_mipmap = 0;
+		uint32_t dst_layer = 0;
+		uint32_t dst_mipmap = 0;
+		uint32_t index = 0;
+		float depth = 0.0f;
+		uint8_t stencil = 0;
+		bool split_cmd_buffer = false;
+
+		_FORCE_INLINE_ RecordedBufferCopy* buffer_copies() { return reinterpret_cast<RecordedBufferCopy*>(&this[1]); }
+		_FORCE_INLINE_ const RecordedBufferCopy* buffer_copies() const { return reinterpret_cast<const RecordedBufferCopy*>(&this[1]); }
+		_FORCE_INLINE_ uint8_t* instruction_data() { return reinterpret_cast<uint8_t*>(&this[1]); }
+		_FORCE_INLINE_ const uint8_t* instruction_data() const { return reinterpret_cast<const uint8_t*>(&this[1]); }
+		_FORCE_INLINE_ RDD::RenderPassClearValue* clear_values() { return reinterpret_cast<RDD::RenderPassClearValue*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::RenderPassClearValue* clear_values() const { return reinterpret_cast<const RDD::RenderPassClearValue*>(&this[1]); }
+		_FORCE_INLINE_ ResourceTracker** trackers() { return reinterpret_cast<ResourceTracker**>(&clear_values()[clear_values_count]); }
+		_FORCE_INLINE_ ResourceTracker* const* trackers() const { return reinterpret_cast<ResourceTracker* const*>(&clear_values()[clear_values_count]); }
+		_FORCE_INLINE_ RDD::AttachmentLoadOp* load_ops() { return reinterpret_cast<RDD::AttachmentLoadOp*>(&trackers()[trackers_count]); }
+		_FORCE_INLINE_ const RDD::AttachmentLoadOp* load_ops() const { return reinterpret_cast<const RDD::AttachmentLoadOp*>(&trackers()[trackers_count]); }
+		_FORCE_INLINE_ RDD::AttachmentStoreOp* store_ops() { return reinterpret_cast<RDD::AttachmentStoreOp*>(&load_ops()[trackers_count]); }
+		_FORCE_INLINE_ const RDD::AttachmentStoreOp* store_ops() const { return reinterpret_cast<const RDD::AttachmentStoreOp*>(&load_ops()[trackers_count]); }
+		_FORCE_INLINE_ uint8_t* draw_list_instruction_data() { return reinterpret_cast<uint8_t*>(&store_ops()[trackers_count]); }
+		_FORCE_INLINE_ const uint8_t* draw_list_instruction_data() const { return reinterpret_cast<const uint8_t*>(&store_ops()[trackers_count]); }
+		_FORCE_INLINE_ RDD::TextureCopyRegion* texture_copy_regions() { return reinterpret_cast<RDD::TextureCopyRegion*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::TextureCopyRegion* texture_copy_regions() const { return reinterpret_cast<const RDD::TextureCopyRegion*>(&this[1]); }
+		_FORCE_INLINE_ RDD::BufferTextureCopyRegion* buffer_texture_copy_regions() { return reinterpret_cast<RDD::BufferTextureCopyRegion*>(&this[1]); }
+		_FORCE_INLINE_ const RDD::BufferTextureCopyRegion* buffer_texture_copy_regions() const { return reinterpret_cast<const RDD::BufferTextureCopyRegion*>(&this[1]); }
+		_FORCE_INLINE_ RecordedBufferToTextureCopy* buffer_to_texture_copies() { return reinterpret_cast<RecordedBufferToTextureCopy*>(&this[1]); }
+		_FORCE_INLINE_ const RecordedBufferToTextureCopy* buffer_to_texture_copies() const { return reinterpret_cast<const RecordedBufferToTextureCopy*>(&this[1]); }
 	};
 
 	struct RecordedBufferCopy
@@ -12242,553 +12151,6 @@ private:
 		bool partial_coverage = false;
 	};
 
-	struct RecordedBottomLevelAccelerationStructureBuildCommand
-	{
-		RecordedCommand header;
-		RDD::AccelerationStructureID acceleration_structure;
-		RDD::BufferID scratch_buffer;
-	};
-
-	struct RecordedTopLevelAccelerationStructureBuildCommand
-	{
-		RecordedCommand header;
-		RDD::AccelerationStructureID acceleration_structure;
-		RDD::BufferID scratch_buffer;
-		RDD::BufferID instance_buffer;
-		uint32_t instance_offset = 0;
-		uint32_t instance_count = 0;
-	};
-
-	struct RecordedBufferClearCommand
-	{
-		RecordedCommand header;
-		RDD::BufferID buffer;
-		uint32_t offset = 0;
-		uint32_t size = 0;
-	};
-
-	struct RecordedBufferCopyCommand
-	{
-		RecordedCommand header;
-		RDD::BufferID source;
-		RDD::BufferID destination;
-		RDD::BufferCopyRegion region;
-	};
-
-	struct RecordedBufferGetDataCommand
-	{
-		RecordedCommand header;
-		RDD::BufferID source;
-		RDD::BufferID destination;
-		RDD::BufferCopyRegion region;
-	};
-
-	struct RecordedBufferUpdateCommand
-	{
-		RecordedCommand header;
-		RDD::BufferID destination;
-		uint32_t buffer_copies_count = 0;
-
-		_FORCE_INLINE_ RecordedBufferCopy* buffer_copies()
-		{
-			return reinterpret_cast<RecordedBufferCopy*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RecordedBufferCopy* buffer_copies() const
-		{
-			return reinterpret_cast<const RecordedBufferCopy*>(&this[1]);
-		}
-	};
-
-	struct RecordedDriverCallbackCommand
-	{
-		RecordedCommand header;
-		RDD::DriverCallback callback;
-		void* userdata = nullptr;
-	};
-
-	struct RecordedRaytracingListCommand
-	{
-		RecordedCommand header;
-		uint32_t instruction_data_size = 0;
-
-		_FORCE_INLINE_ uint8_t* instruction_data() { return reinterpret_cast<uint8_t*>(&this[1]); }
-
-		_FORCE_INLINE_ const uint8_t* instruction_data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&this[1]);
-		}
-	};
-
-	struct RecordedComputeListCommand
-	{
-		RecordedCommand header;
-		uint32_t instruction_data_size = 0;
-		uint32_t breadcrumb = 0;
-
-		_FORCE_INLINE_ uint8_t* instruction_data() { return reinterpret_cast<uint8_t*>(&this[1]); }
-
-		_FORCE_INLINE_ const uint8_t* instruction_data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&this[1]);
-		}
-	};
-
-	struct RecordedDrawListCommand
-	{
-		RecordedCommand header;
-		FramebufferCache* framebuffer_cache = nullptr;
-		RDD::FramebufferID framebuffer;
-		RDD::RenderPassID render_pass;
-		uint32_t instruction_data_size = 0;
-		RDD::CommandBufferType command_buffer_type;
-		Rect2i region;
-		uint32_t clear_values_count = 0;
-		uint32_t trackers_count = 0;
-
-#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-		uint32_t breadcrumb = 0;
-#endif
-		bool split_cmd_buffer = false;
-
-		_FORCE_INLINE_ RDD::RenderPassClearValue* clear_values()
-		{
-			return reinterpret_cast<RDD::RenderPassClearValue*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::RenderPassClearValue* clear_values() const
-		{
-			return reinterpret_cast<const RDD::RenderPassClearValue*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ ResourceTracker** trackers()
-		{
-			return reinterpret_cast<ResourceTracker**>(&clear_values()[clear_values_count]);
-		}
-
-		_FORCE_INLINE_ ResourceTracker* const* trackers() const
-		{
-			return reinterpret_cast<ResourceTracker* const*>(&clear_values()[clear_values_count]);
-		}
-
-		_FORCE_INLINE_ RDD::AttachmentLoadOp* load_ops()
-		{
-			return reinterpret_cast<RDD::AttachmentLoadOp*>(&trackers()[trackers_count]);
-		}
-
-		_FORCE_INLINE_ const RDD::AttachmentLoadOp* load_ops() const
-		{
-			return reinterpret_cast<const RDD::AttachmentLoadOp*>(&trackers()[trackers_count]);
-		}
-
-		_FORCE_INLINE_ RDD::AttachmentStoreOp* store_ops()
-		{
-			return reinterpret_cast<RDD::AttachmentStoreOp*>(&load_ops()[trackers_count]);
-		}
-
-		_FORCE_INLINE_ const RDD::AttachmentStoreOp* store_ops() const
-		{
-			return reinterpret_cast<const RDD::AttachmentStoreOp*>(&load_ops()[trackers_count]);
-		}
-
-		_FORCE_INLINE_ uint8_t* instruction_data()
-		{
-			return reinterpret_cast<uint8_t*>(&store_ops()[trackers_count]);
-		}
-
-		_FORCE_INLINE_ const uint8_t* instruction_data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&store_ops()[trackers_count]);
-		}
-	};
-
-	struct RecordedTextureClearColorCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID texture;
-		RDD::TextureSubresourceRange range;
-		Color color;
-	};
-
-	struct RecordedTextureClearDepthStencilCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID texture;
-		RDD::TextureSubresourceRange range;
-		float depth;
-		uint8_t stencil;
-	};
-
-	struct RecordedTextureCopyCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID from_texture;
-		RDD::TextureID to_texture;
-		uint32_t texture_copy_regions_count = 0;
-
-		_FORCE_INLINE_ RDD::TextureCopyRegion* texture_copy_regions()
-		{
-			return reinterpret_cast<RDD::TextureCopyRegion*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::TextureCopyRegion* texture_copy_regions() const
-		{
-			return reinterpret_cast<const RDD::TextureCopyRegion*>(&this[1]);
-		}
-	};
-
-	struct RecordedTextureGetDataCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID from_texture;
-		RDD::BufferID to_buffer;
-		uint32_t buffer_texture_copy_regions_count = 0;
-
-		_FORCE_INLINE_ RDD::BufferTextureCopyRegion* buffer_texture_copy_regions()
-		{
-			return reinterpret_cast<RDD::BufferTextureCopyRegion*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::BufferTextureCopyRegion* buffer_texture_copy_regions() const
-		{
-			return reinterpret_cast<const RDD::BufferTextureCopyRegion*>(&this[1]);
-		}
-	};
-
-	struct RecordedTextureResolveCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID from_texture;
-		RDD::TextureID to_texture;
-		uint32_t src_layer = 0;
-		uint32_t src_mipmap = 0;
-		uint32_t dst_layer = 0;
-		uint32_t dst_mipmap = 0;
-	};
-
-	struct RecordedTextureUpdateCommand
-	{
-		RecordedCommand header;
-		RDD::TextureID to_texture;
-		uint32_t buffer_to_texture_copies_count = 0;
-
-		_FORCE_INLINE_ RecordedBufferToTextureCopy* buffer_to_texture_copies()
-		{
-			return reinterpret_cast<RecordedBufferToTextureCopy*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RecordedBufferToTextureCopy* buffer_to_texture_copies() const
-		{
-			return reinterpret_cast<const RecordedBufferToTextureCopy*>(&this[1]);
-		}
-	};
-
-	struct RecordedCaptureTimestampCommand
-	{
-		RecordedCommand header;
-		RDD::QueryPoolID pool;
-		uint32_t index = 0;
-	};
-
-	struct DrawListBindIndexBufferInstruction
-	{
-		DrawListInstruction header;
-		RDD::BufferID buffer;
-		RenderingDeviceCommons::IndexBufferFormat format;
-		uint32_t offset = 0;
-	};
-
-	struct DrawListBindPipelineInstruction
-	{
-		DrawListInstruction header;
-		RDD::PipelineID pipeline;
-	};
-
-	struct DrawListBindUniformSetsInstruction
-	{
-		DrawListInstruction header;
-		RDD::ShaderID shader;
-		uint32_t first_set_index = 0;
-		uint32_t set_count = 0;
-		uint32_t dynamic_offsets_mask = 0u;
-
-		_FORCE_INLINE_ RDD::UniformSetID* uniform_set_ids()
-		{
-			return reinterpret_cast<RDD::UniformSetID*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::UniformSetID* uniform_set_ids() const
-		{
-			return reinterpret_cast<const RDD::UniformSetID*>(&this[1]);
-		}
-	};
-
-	struct DrawListBindVertexBuffersInstruction
-	{
-		DrawListInstruction header;
-		uint32_t vertex_buffers_count = 0;
-		uint64_t dynamic_offsets_mask = 0;
-
-		_FORCE_INLINE_ RDD::BufferID* vertex_buffers()
-		{
-			return reinterpret_cast<RDD::BufferID*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::BufferID* vertex_buffers() const
-		{
-			return reinterpret_cast<const RDD::BufferID*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ uint64_t* vertex_buffer_offsets()
-		{
-			return reinterpret_cast<uint64_t*>(&vertex_buffers()[vertex_buffers_count]);
-		}
-
-		_FORCE_INLINE_ const uint64_t* vertex_buffer_offsets() const
-		{
-			return reinterpret_cast<const uint64_t*>(&vertex_buffers()[vertex_buffers_count]);
-		}
-	};
-
-	struct DrawListClearAttachmentsInstruction
-	{
-		DrawListInstruction header;
-		uint32_t attachments_clear_count = 0;
-		uint32_t attachments_clear_rect_count = 0;
-
-		_FORCE_INLINE_ RDD::AttachmentClear* attachments_clear()
-		{
-			return reinterpret_cast<RDD::AttachmentClear*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::AttachmentClear* attachments_clear() const
-		{
-			return reinterpret_cast<const RDD::AttachmentClear*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ Rect2i* attachments_clear_rect()
-		{
-			return reinterpret_cast<Rect2i*>(&attachments_clear()[attachments_clear_count]);
-		}
-
-		_FORCE_INLINE_ const Rect2i* attachments_clear_rect() const
-		{
-			return reinterpret_cast<const Rect2i*>(&attachments_clear()[attachments_clear_count]);
-		}
-	};
-
-	struct DrawListDrawInstruction
-	{
-		DrawListInstruction header;
-		uint32_t vertex_count = 0;
-		uint32_t instance_count = 0;
-	};
-
-	struct DrawListDrawIndexedInstruction
-	{
-		DrawListInstruction header;
-		uint32_t index_count = 0;
-		uint32_t instance_count = 0;
-		uint32_t first_index = 0;
-	};
-
-	struct DrawListDrawIndirectInstruction
-	{
-		DrawListInstruction header;
-		RDD::BufferID buffer;
-		uint32_t offset = 0;
-		uint32_t draw_count = 0;
-		uint32_t stride = 0;
-	};
-
-	struct DrawListDrawIndexedIndirectInstruction
-	{
-		DrawListInstruction header;
-		RDD::BufferID buffer;
-		uint32_t offset = 0;
-		uint32_t draw_count = 0;
-		uint32_t stride = 0;
-	};
-
-	struct DrawListEndRenderPassInstruction
-	{
-		DrawListInstruction header;
-	};
-
-	struct DrawListExecuteCommandsInstruction
-	{
-		DrawListInstruction header;
-		RDD::CommandBufferID command_buffer;
-	};
-
-	struct DrawListSetPushConstantInstruction
-	{
-		DrawListInstruction header;
-		uint32_t size = 0;
-		RDD::ShaderID shader;
-
-		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
-
-		_FORCE_INLINE_ const uint8_t* data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&this[1]);
-		}
-	};
-
-	struct DrawListNextSubpassInstruction
-	{
-		DrawListInstruction header;
-		RDD::CommandBufferType command_buffer_type;
-	};
-
-	struct DrawListSetBlendConstantsInstruction
-	{
-		DrawListInstruction header;
-		Color color;
-	};
-
-	struct DrawListSetLineWidthInstruction
-	{
-		DrawListInstruction header;
-		float width;
-	};
-
-	struct DrawListSetScissorInstruction
-	{
-		DrawListInstruction header;
-		Rect2i rect;
-	};
-
-	struct DrawListSetViewportInstruction
-	{
-		DrawListInstruction header;
-		Rect2i rect;
-	};
-
-	struct DrawListUniformSetPrepareForUseInstruction
-	{
-		DrawListInstruction header;
-		RDD::UniformSetID uniform_set;
-		RDD::ShaderID shader;
-		uint32_t set_index = 0;
-	};
-
-	struct RaytracingListBuildAccelerationStructureInstruction
-	{
-		RaytracingListInstruction header;
-		RDD::AccelerationStructureID acceleration_structure;
-		RDC::AccelerationStructureType acceleration_structure_type;
-	};
-
-	struct RaytracingListBindPipelineInstruction
-	{
-		RaytracingListInstruction header;
-		RDD::RaytracingPipelineID pipeline;
-	};
-
-	struct RaytracingListBindUniformSetInstruction
-	{
-		RaytracingListInstruction header;
-		RDD::UniformSetID uniform_set;
-		RDD::ShaderID shader;
-		uint32_t set_index = 0;
-	};
-
-	struct RaytracingListSetPushConstantInstruction
-	{
-		RaytracingListInstruction header;
-		uint32_t size = 0;
-		RDD::ShaderID shader;
-
-		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
-
-		_FORCE_INLINE_ const uint8_t* data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&this[1]);
-		}
-	};
-
-	struct RaytracingListTraceRaysInstruction
-	{
-		RaytracingListInstruction header;
-		RDD::ShaderBindingTable raygen_sbt;
-		RDD::ShaderBindingTable miss_sbt;
-		RDD::ShaderBindingTable hit_sbt;
-		uint32_t width = 0;
-		uint32_t height = 0;
-		uint32_t depth = 0;
-	};
-
-	struct RaytracingListUniformSetPrepareForUseInstruction
-	{
-		RaytracingListInstruction header;
-		RDD::UniformSetID uniform_set;
-		RDD::ShaderID shader;
-		uint32_t set_index = 0;
-	};
-
-	struct ComputeListBindPipelineInstruction
-	{
-		ComputeListInstruction header;
-		RDD::PipelineID pipeline;
-	};
-
-	struct ComputeListBindUniformSetsInstruction
-	{
-		ComputeListInstruction header;
-		RDD::ShaderID shader;
-		uint32_t first_set_index = 0;
-		uint32_t set_count = 0;
-		uint32_t dynamic_offsets_mask = 0u;
-
-		_FORCE_INLINE_ RDD::UniformSetID* uniform_set_ids()
-		{
-			return reinterpret_cast<RDD::UniformSetID*>(&this[1]);
-		}
-
-		_FORCE_INLINE_ const RDD::UniformSetID* uniform_set_ids() const
-		{
-			return reinterpret_cast<const RDD::UniformSetID*>(&this[1]);
-		}
-	};
-
-	struct ComputeListDispatchInstruction
-	{
-		ComputeListInstruction header;
-		uint32_t x_groups = 0;
-		uint32_t y_groups = 0;
-		uint32_t z_groups = 0;
-	};
-
-	struct ComputeListDispatchIndirectInstruction
-	{
-		ComputeListInstruction header;
-		RDD::BufferID buffer;
-		uint32_t offset = 0;
-	};
-
-	struct ComputeListSetPushConstantInstruction
-	{
-		ComputeListInstruction header;
-		uint32_t size = 0;
-		RDD::ShaderID shader;
-
-		_FORCE_INLINE_ uint8_t* data() { return reinterpret_cast<uint8_t*>(&this[1]); }
-
-		_FORCE_INLINE_ const uint8_t* data() const
-		{
-			return reinterpret_cast<const uint8_t*>(&this[1]);
-		}
-	};
-
-	struct ComputeListUniformSetPrepareForUseInstruction
-	{
-		ComputeListInstruction header;
-		RDD::UniformSetID uniform_set;
-		RDD::ShaderID shader;
-		uint32_t set_index = 0;
-	};
-
 	struct BarrierGroup
 	{
 		uint32_t src_stages = 0;
@@ -12913,7 +12275,7 @@ private:
 	void _run_compute_list_command(RDD::CommandBufferID p_command_buffer,
 		const uint8_t* p_instruction_data, uint32_t p_instruction_data_size);
 	void _get_draw_list_render_pass_and_framebuffer(
-		const RecordedDrawListCommand* p_draw_list_command, RDD::RenderPassID& r_render_pass,
+		const RecordedCommand* p_draw_list_command, RDD::RenderPassID& r_render_pass,
 		RDD::FramebufferID& r_framebuffer);
 	void _run_raytracing_list_command(RDD::CommandBufferID p_command_buffer,
 		const uint8_t* p_instruction_data, uint32_t p_instruction_data_size);
@@ -13075,28 +12437,9 @@ public:
 
 using RDG = RenderingDeviceGraph;
 
-
-
-// --- End servers/rendering/rendering_device_graph.h ---
-
 class RDTextureFormat;
 class RDTextureView;
-class RDAttachmentFormat;
-class RDSamplerState;
-class RDVertexAttribute;
-class RDShaderSource;
 class RDShaderSPIRV;
-class RDUniform;
-class RDPipelineRasterizationState;
-class RDPipelineMultisampleState;
-class RDPipelineDepthStencilState;
-class RDPipelineColorBlendState;
-class RDFramebufferPass;
-class RDPipelineSpecializationConstant;
-class RDAccelerationStructureGeometry;
-class RDAccelerationStructureInstance;
-class RDPipelineShader;
-class RDHitGroup;
 
 class RenderingDevice final
 {
@@ -14695,7 +14038,6 @@ public:
 
 using RD = RenderingDevice;
 
-// --- Folded from core/utils.h ---
 #include "core/typedefs.h"
 
 namespace Utils
@@ -14705,7 +14047,6 @@ namespace Utils
 	_ALWAYS_INLINE_ constexpr uint32_t clear_flag(uint32_t p_value, uint32_t p_flag) { return p_value &= ~p_flag; }
 }; // namespace Utils
 
-// --- Folded from servers/rendering/rendering_device_binds.h ---
 #include "core/io/ip.h"
 
 #define RD_SETGET(m_type, m_member)                                                                \
@@ -14774,107 +14115,6 @@ public:
 	RD_SETGET(RDC::TextureSwizzle, swizzle_g)
 	RD_SETGET(RDC::TextureSwizzle, swizzle_b)
 	RD_SETGET(RDC::TextureSwizzle, swizzle_a)
-protected:
-};
-
-class RDAttachmentFormat : public RefCounted
-{
-	friend class RenderingDevice;
-
-	RD::AttachmentFormat base;
-
-public:
-	RD_SETGET(RDC::DataFormat, format)
-	RD_SETGET(RDC::TextureSamples, samples)
-	RD_SETGET(uint32_t, usage_flags)
-protected:
-};
-
-class RDFramebufferPass : public RefCounted
-{
-	friend class RenderingDevice;
-	friend class FramebufferCacheRD;
-
-	RD::FramebufferPass base;
-
-public:
-	RD_SETGET(PackedInt32Array, color_attachments)
-	RD_SETGET(PackedInt32Array, input_attachments)
-	RD_SETGET(PackedInt32Array, resolve_attachments)
-	RD_SETGET(PackedInt32Array, preserve_attachments)
-	RD_SETGET(int32_t, depth_attachment)
-protected:
-	enum
-	{
-		ATTACHMENT_UNUSED = -1
-	};
-
-};
-
-class RDSamplerState : public RefCounted
-{
-	friend class RenderingDevice;
-
-	RDC::SamplerState base;
-
-public:
-	RD_SETGET(RDC::SamplerFilter, mag_filter)
-	RD_SETGET(RDC::SamplerFilter, min_filter)
-	RD_SETGET(RDC::SamplerFilter, mip_filter)
-	RD_SETGET(RDC::SamplerRepeatMode, repeat_u)
-	RD_SETGET(RDC::SamplerRepeatMode, repeat_v)
-	RD_SETGET(RDC::SamplerRepeatMode, repeat_w)
-	RD_SETGET(float, lod_bias)
-	RD_SETGET(bool, use_anisotropy)
-	RD_SETGET(float, anisotropy_max)
-	RD_SETGET(bool, enable_compare)
-	RD_SETGET(RDC::CompareOperator, compare_op)
-	RD_SETGET(float, min_lod)
-	RD_SETGET(float, max_lod)
-	RD_SETGET(RDC::SamplerBorderColor, border_color)
-	RD_SETGET(bool, unnormalized_uvw)
-
-protected:
-};
-
-class RDVertexAttribute : public RefCounted
-{
-	friend class RenderingDevice;
-	RDC::VertexAttribute base;
-
-public:
-	RD_SETGET(uint32_t, binding)
-	RD_SETGET(uint32_t, location)
-	RD_SETGET(uint32_t, offset)
-	RD_SETGET(RDC::DataFormat, format)
-	RD_SETGET(uint32_t, stride)
-	RD_SETGET(RDC::VertexFrequency, frequency)
-
-protected:
-};
-
-class RDShaderSource : public RefCounted
-{
-	String source[RDC::SHADER_STAGE_MAX];
-	RDC::ShaderLanguage language = RDC::SHADER_LANGUAGE_GLSL;
-
-public:
-	void set_stage_source(RDC::ShaderStage p_stage, const String& p_source)
-	{
-		ERR_FAIL_INDEX(p_stage, RDC::SHADER_STAGE_MAX);
-		source[p_stage] = p_source;
-	}
-
-	String get_stage_source(RDC::ShaderStage p_stage) const
-	{
-		ERR_FAIL_INDEX_V(p_stage, RDC::SHADER_STAGE_MAX, String());
-		return source[p_stage];
-	}
-
-	void set_language(RDC::ShaderLanguage p_language) { language = p_language; }
-
-	RDC::ShaderLanguage get_language() const { return language; }
-
 protected:
 };
 
@@ -14986,223 +14226,6 @@ public:
 		OpenIncludeFunction p_include_func = nullptr, void* p_include_func_userdata = nullptr);
 };
 
-class RDUniform : public RefCounted
-{
-	friend class RenderingDevice;
-	friend class UniformSetCacheRD;
-	RD::Uniform base;
-
-public:
-	RD_SETGET(RDC::UniformType, uniform_type)
-	RD_SETGET(int32_t, binding)
-
-	void add_id(const RID& p_id) { base.append_id(p_id); }
-
-	void clear_ids() { base.clear_ids(); }
-};
-
-class RDPipelineSpecializationConstant : public RefCounted
-{
-	friend class RenderingDevice;
-
-	uint32_t constant_id = 0;
-
-public:
-	void set_constant_id(uint32_t p_id) { constant_id = p_id; }
-
-	uint32_t get_constant_id() const { return constant_id; }
-};
-
-class RDPipelineRasterizationState : public RefCounted
-{
-	friend class RenderingDevice;
-
-	RDC::PipelineRasterizationState base;
-
-public:
-	RD_SETGET(bool, enable_depth_clamp)
-	RD_SETGET(bool, discard_primitives)
-	RD_SETGET(bool, wireframe)
-	RD_SETGET(RDC::PolygonCullMode, cull_mode)
-	RD_SETGET(RDC::PolygonFrontFace, front_face)
-	RD_SETGET(bool, depth_bias_enabled)
-	RD_SETGET(float, depth_bias_constant_factor)
-	RD_SETGET(float, depth_bias_clamp)
-	RD_SETGET(float, depth_bias_slope_factor)
-	RD_SETGET(float, line_width)
-	RD_SETGET(uint32_t, patch_control_points)
-};
-
-class RDPipelineMultisampleState : public RefCounted
-{
-	friend class RenderingDevice;
-
-	RDC::PipelineMultisampleState base;
-
-public:
-	RD_SETGET(RDC::TextureSamples, sample_count)
-	RD_SETGET(bool, enable_sample_shading)
-	RD_SETGET(float, min_sample_shading)
-	RD_SETGET(bool, enable_alpha_to_coverage)
-	RD_SETGET(bool, enable_alpha_to_one)
-
-protected:
-};
-
-class RDPipelineDepthStencilState : public RefCounted
-{
-	friend class RenderingDevice;
-
-	RDC::PipelineDepthStencilState base;
-
-public:
-	RD_SETGET(bool, enable_depth_test)
-	RD_SETGET(bool, enable_depth_write)
-	RD_SETGET(RDC::CompareOperator, depth_compare_operator)
-	RD_SETGET(bool, enable_depth_range)
-	RD_SETGET(float, depth_range_min)
-	RD_SETGET(float, depth_range_max)
-	RD_SETGET(bool, enable_stencil)
-
-	RD_SETGET_SUB(RDC::StencilOperation, front_op, fail)
-	RD_SETGET_SUB(RDC::StencilOperation, front_op, pass)
-	RD_SETGET_SUB(RDC::StencilOperation, front_op, depth_fail)
-	RD_SETGET_SUB(RDC::CompareOperator, front_op, compare)
-	RD_SETGET_SUB(uint32_t, front_op, compare_mask)
-	RD_SETGET_SUB(uint32_t, front_op, write_mask)
-	RD_SETGET_SUB(uint32_t, front_op, reference)
-
-	RD_SETGET_SUB(RDC::StencilOperation, back_op, fail)
-	RD_SETGET_SUB(RDC::StencilOperation, back_op, pass)
-	RD_SETGET_SUB(RDC::StencilOperation, back_op, depth_fail)
-	RD_SETGET_SUB(RDC::CompareOperator, back_op, compare)
-	RD_SETGET_SUB(uint32_t, back_op, compare_mask)
-	RD_SETGET_SUB(uint32_t, back_op, write_mask)
-	RD_SETGET_SUB(uint32_t, back_op, reference)
-
-protected:
-};
-
-class RDPipelineColorBlendStateAttachment : public RefCounted
-{
-	friend class RenderingDevice;
-	RDC::PipelineColorBlendState::Attachment base;
-
-public:
-	RD_SETGET(bool, enable_blend)
-	RD_SETGET(RDC::BlendFactor, src_color_blend_factor)
-	RD_SETGET(RDC::BlendFactor, dst_color_blend_factor)
-	RD_SETGET(RDC::BlendOperation, color_blend_op)
-	RD_SETGET(RDC::BlendFactor, src_alpha_blend_factor)
-	RD_SETGET(RDC::BlendFactor, dst_alpha_blend_factor)
-	RD_SETGET(RDC::BlendOperation, alpha_blend_op)
-	RD_SETGET(bool, write_r)
-	RD_SETGET(bool, write_g)
-	RD_SETGET(bool, write_b)
-	RD_SETGET(bool, write_a)
-
-	void set_as_mix()
-	{
-		base = RDC::PipelineColorBlendState::Attachment();
-		base.enable_blend = true;
-		base.src_color_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
-		base.dst_color_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-		base.src_alpha_blend_factor = RDC::BLEND_FACTOR_SRC_ALPHA;
-		base.dst_alpha_blend_factor = RDC::BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-	}
-
-protected:
-};
-
-class RDPipelineColorBlendState : public RefCounted
-{
-	friend class RenderingDevice;
-	RDC::PipelineColorBlendState base;
-
-public:
-	RD_SETGET(bool, enable_logic_op)
-	RD_SETGET(RDC::LogicOperation, logic_op)
-	RD_SETGET(Color, blend_constant)
-
-protected:
-};
-
-class RDAccelerationStructureGeometry : public RefCounted
-{
-	friend class RenderingDevice;
-	RD::AccelerationStructureGeometry base;
-
-public:
-	RD_SETGET(uint32_t, flags)
-	RD_SETGET(RID, vertex_buffer)
-	RD_SETGET(uint32_t, vertex_offset)
-	RD_SETGET(uint32_t, vertex_stride)
-	RD_SETGET(uint32_t, vertex_count)
-	RD_SETGET(RDC::DataFormat, vertex_format)
-	RD_SETGET(RID, index_buffer)
-	RD_SETGET(uint32_t, index_offset)
-	RD_SETGET(uint32_t, index_count)
-
-protected:
-};
-
-class RDAccelerationStructureInstance : public RefCounted
-{
-	friend class RenderingDevice;
-	RD::AccelerationStructureInstance base;
-
-public:
-	RD_SETGET(Transform3D, transform)
-	RD_SETGET(uint32_t, id)
-	RD_SETGET(uint8_t, mask)
-	RD_SETGET(RD::HitShaderBindingTableRange, hit_sbt_range)
-	RD_SETGET(uint32_t, flags)
-	RD_SETGET(RID, blas)
-
-protected:
-};
-
-class RDPipelineShader : public RefCounted
-{
-	friend class RenderingDevice;
-	RD::PipelineShader base;
-
-public:
-	RD_SETGET(RID, shader)
-};
-
-class RDHitGroup : public RefCounted
-{
-	friend class RenderingDevice;
-
-	Ref<RDPipelineShader> closest_hit_shader;
-	Ref<RDPipelineShader> any_hit_shader;
-	Ref<RDPipelineShader> intersection_shader;
-
-public:
-	void set_closest_hit_shader(const Ref<RDPipelineShader>& p_closest_hit_shader)
-	{
-		closest_hit_shader = p_closest_hit_shader;
-	}
-
-	Ref<RDPipelineShader> get_closest_hit_shader() const { return closest_hit_shader; }
-
-	void set_any_hit_shader(const Ref<RDPipelineShader>& p_any_hit_shader)
-	{
-		any_hit_shader = p_any_hit_shader;
-	}
-
-	Ref<RDPipelineShader> get_any_hit_shader() const { return any_hit_shader; }
-
-	void set_intersection_shader(const Ref<RDPipelineShader>& p_intersection_shader)
-	{
-		intersection_shader = p_intersection_shader;
-	}
-
-	Ref<RDPipelineShader> get_intersection_shader() const { return intersection_shader; }
-};
-
-// --- Folded from servers/rendering/rendering_server_types.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -15210,7 +14233,6 @@ public:
 #include "core/string/ustring.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
-
 
 #include <cstdint>
 
@@ -15391,17 +14413,12 @@ struct RenderInfo {
 };
 
 } // namespace RenderingServerTypes
-// --- End servers/rendering/rendering_server_types.h ---
-// --- End servers/rendering/rendering_device.h ---
-// --- Folded from servers/rendering/storage/utilities.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/list.h"
 #include "core/math/vector2.h"
-
-
 
 class DependencyTracker;
 
@@ -15548,7 +14565,6 @@ public:
 	if (RendererUtilities::capture_timestamp) {                                                    \
 		RendererUtilities::capture_timestamp(m_text);                                              \
 	}
-// --- End servers/rendering/storage/utilities.h ---
 
 class RendererCanvasRender;
 class RendererSceneRender;
@@ -15627,13 +14643,8 @@ public:
 };
 
 using RC = RendererCompositor;
-// --- End servers/rendering/renderer_compositor.h ---
 
-
-
-// --- Folded from servers/rendering/storage/camera_attributes_storage.h ---
 #include "core/io/ip.h"
-
 
 class RendererCameraAttributes final
 {
@@ -15750,8 +14761,6 @@ public:
 	}
 };
 
-// --- End servers/rendering/storage/camera_attributes_storage.h ---
-// --- Inlined/Folded from servers/rendering/storage/light_storage.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -15759,13 +14768,10 @@ public:
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 
-// --- Folded from servers/rendering/renderer_scene_render.h ---
 #include "core/io/ip.h"
-// --- Folded from servers/rendering/renderer_geometry_instance.h ---
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
-
 
 // Base implementation of RenderGeometryInstance shared by internal renderers.
 class RenderGeometryInstance {
@@ -15860,11 +14866,7 @@ public:
 	virtual void set_softshadow_projector_pairing(bool p_softshadow, bool p_projector) {}
 };
 
-// --- End servers/rendering/renderer_geometry_instance.h ---
-
-// --- Folded from servers/rendering/storage/compositor_storage.h ---
 #include "core/io/ip.h"
-
 
 class RendererCompositorStorage final
 {
@@ -15942,10 +14944,7 @@ public:
 		bool p_enabled_only = true);
 };
 
-// --- End servers/rendering/storage/compositor_storage.h ---
-// --- Folded from servers/rendering/storage/environment_storage.h ---
 #include "core/io/ip.h"
-
 
 class RendererEnvironmentStorage final
 {
@@ -16281,10 +15280,7 @@ public:
 	static RID environment_get_color_correction(RID p_env);
 };
 
-// --- End servers/rendering/storage/environment_storage.h ---
-// --- Inlined/Folded from servers/rendering/storage/render_scene_buffers.h ---
 #include "core/io/ip.h"
-
 
 class RenderSceneBuffersConfiguration : public RefCounted
 {
@@ -16774,151 +15770,10 @@ public:
 	}
 };
 
-// --- Folded from servers/rendering/storage/variant_converters.h ---
 #include <initializer_list>
 #include <type_traits>
 #include "core/typedefs.h"
 #include "core/io/ip.h"
-
-template <typename T> struct VariantConverterStd140
-{
-	// Generic base template for all Vector2/3/4(i) classes.
-	static constexpr int Elements = T::AXIS_COUNT;
-
-	template <typename P> static void convert(const T& p_v, P* p_write, bool p_compact)
-	{
-		for (int i = 0; i < Elements; i++) {
-			p_write[i] = p_v[i];
-		}
-	}
-};
-
-template <> struct VariantConverterStd140<float>
-{
-	static constexpr int Elements = 1;
-
-	template <typename P> static void convert(float p_v, P* p_write, bool p_compact)
-	{
-		p_write[0] = p_v;
-	}
-};
-
-template <> struct VariantConverterStd140<int32_t>
-{
-	static constexpr int Elements = 1;
-
-	template <typename P> static void convert(int32_t p_v, P* p_write, bool p_compact)
-	{
-		p_write[0] = p_v;
-	}
-};
-
-template <> struct VariantConverterStd140<uint32_t>
-{
-	static constexpr int Elements = 1;
-
-	template <typename P> static void convert(uint32_t p_v, P* p_write, bool p_compact)
-	{
-		p_write[0] = p_v;
-	}
-};
-
-template <> struct VariantConverterStd140<Basis>
-{
-	static constexpr int Elements = 9;
-
-	template <typename P> static void convert(const Basis& p_v, P* p_write, bool p_compact)
-	{
-		// Basis can have compact 9 floats or std140 layout 12 floats.
-		int i = 0;
-
-		p_write[i++] = p_v.rows[0][0];
-		p_write[i++] = p_v.rows[1][0];
-		p_write[i++] = p_v.rows[2][0];
-		if (!p_compact) {
-			p_write[i++] = 0;
-		}
-
-		p_write[i++] = p_v.rows[0][1];
-		p_write[i++] = p_v.rows[1][1];
-		p_write[i++] = p_v.rows[2][1];
-		if (!p_compact) {
-			p_write[i++] = 0;
-		}
-
-		p_write[i++] = p_v.rows[0][2];
-		p_write[i++] = p_v.rows[1][2];
-		p_write[i++] = p_v.rows[2][2];
-		if (!p_compact) {
-			p_write[i++] = 0;
-		}
-	}
-};
-
-template <> struct VariantConverterStd140<Transform2D>
-{
-	static constexpr int Elements = 12;
-
-	template <typename P> static void convert(const Transform2D& p_v, P* p_write, bool p_compact)
-	{
-		p_write[0] = p_v.columns[0][0];
-		p_write[1] = p_v.columns[0][1];
-		p_write[2] = 0;
-		p_write[3] = 0;
-
-		p_write[4] = p_v.columns[1][0];
-		p_write[5] = p_v.columns[1][1];
-		p_write[6] = 0;
-		p_write[7] = 0;
-
-		p_write[8] = p_v.columns[2][0];
-		p_write[9] = p_v.columns[2][1];
-		p_write[10] = 1;
-		p_write[11] = 0;
-	}
-};
-
-template <> struct VariantConverterStd140<Transform3D>
-{
-	static constexpr int Elements = 16;
-
-	template <typename P> static void convert(const Transform3D& p_v, P* p_write, bool p_compact)
-	{
-		p_write[0] = p_v.basis.rows[0][0];
-		p_write[1] = p_v.basis.rows[1][0];
-		p_write[2] = p_v.basis.rows[2][0];
-		p_write[3] = 0;
-
-		p_write[4] = p_v.basis.rows[0][1];
-		p_write[5] = p_v.basis.rows[1][1];
-		p_write[6] = p_v.basis.rows[2][1];
-		p_write[7] = 0;
-
-		p_write[8] = p_v.basis.rows[0][2];
-		p_write[9] = p_v.basis.rows[1][2];
-		p_write[10] = p_v.basis.rows[2][2];
-		p_write[11] = 0;
-
-		p_write[12] = p_v.origin.x;
-		p_write[13] = p_v.origin.y;
-		p_write[14] = p_v.origin.z;
-		p_write[15] = 1;
-	}
-};
-
-template <> struct VariantConverterStd140<Projection>
-{
-	static constexpr int Elements = 16;
-
-	template <typename P> static void convert(const Projection& p_v, P* p_write, bool p_compact)
-	{
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				p_write[i * 4 + j] = p_v.columns[i][j];
-			}
-		}
-	}
-};
 
 template <typename T, typename P> T construct_vector(const std::initializer_list<P>& values)
 {
@@ -16938,16 +15793,102 @@ template <typename, typename = void> inline constexpr bool is_vector_type_v = fa
 template <typename T>
 inline constexpr bool is_vector_type_v<T, std::void_t<decltype(T::AXIS_COUNT)>> = true;
 
+template <typename T> constexpr int std140_elements()
+{
+	if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t>) {
+		return 1;
+	}
+	else if constexpr (std::is_same_v<T, Basis>) {
+		return 9;
+	}
+	else if constexpr (std::is_same_v<T, Transform2D>) {
+		return 12;
+	}
+	else if constexpr (std::is_same_v<T, Transform3D> || std::is_same_v<T, Projection>) {
+		return 16;
+	}
+	else {
+		return T::AXIS_COUNT;
+	}
+}
+
 template <typename T, typename P>
 void convert_item_std140(const T& p_item, P* p_write, bool p_compact = false)
 {
-	VariantConverterStd140<T>::template convert<P>(p_item, p_write, p_compact);
+	if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int32_t> || std::is_same_v<T, uint32_t>) {
+		p_write[0] = p_item;
+	}
+	else if constexpr (std::is_same_v<T, Basis>) {
+		int i = 0;
+		p_write[i++] = p_item.rows[0][0];
+		p_write[i++] = p_item.rows[1][0];
+		p_write[i++] = p_item.rows[2][0];
+		if (!p_compact) {
+			p_write[i++] = 0;
+		}
+		p_write[i++] = p_item.rows[0][1];
+		p_write[i++] = p_item.rows[1][1];
+		p_write[i++] = p_item.rows[2][1];
+		if (!p_compact) {
+			p_write[i++] = 0;
+		}
+		p_write[i++] = p_item.rows[0][2];
+		p_write[i++] = p_item.rows[1][2];
+		p_write[i++] = p_item.rows[2][2];
+		if (!p_compact) {
+			p_write[i++] = 0;
+		}
+	}
+	else if constexpr (std::is_same_v<T, Transform2D>) {
+		p_write[0] = p_item.columns[0][0];
+		p_write[1] = p_item.columns[0][1];
+		p_write[2] = 0;
+		p_write[3] = 0;
+		p_write[4] = p_item.columns[1][0];
+		p_write[5] = p_item.columns[1][1];
+		p_write[6] = 0;
+		p_write[7] = 0;
+		p_write[8] = p_item.columns[2][0];
+		p_write[9] = p_item.columns[2][1];
+		p_write[10] = 1;
+		p_write[11] = 0;
+	}
+	else if constexpr (std::is_same_v<T, Transform3D>) {
+		p_write[0] = p_item.basis.rows[0][0];
+		p_write[1] = p_item.basis.rows[1][0];
+		p_write[2] = p_item.basis.rows[2][0];
+		p_write[3] = 0;
+		p_write[4] = p_item.basis.rows[0][1];
+		p_write[5] = p_item.basis.rows[1][1];
+		p_write[6] = p_item.basis.rows[2][1];
+		p_write[7] = 0;
+		p_write[8] = p_item.basis.rows[0][2];
+		p_write[9] = p_item.basis.rows[1][2];
+		p_write[10] = p_item.basis.rows[2][2];
+		p_write[11] = 0;
+		p_write[12] = p_item.origin.x;
+		p_write[13] = p_item.origin.y;
+		p_write[14] = p_item.origin.z;
+		p_write[15] = 1;
+	}
+	else if constexpr (std::is_same_v<T, Projection>) {
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				p_write[i * 4 + j] = p_item.columns[i][j];
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < T::AXIS_COUNT; i++) {
+			p_write[i] = p_item[i];
+		}
+	}
 }
 
 template <typename T, typename From, typename To>
 void write_array_std140(const Vector<From>& p_values, To* p_write, int p_array_size, int p_stride)
 {
-	constexpr int elements = VariantConverterStd140<T>::Elements;
+	constexpr int elements = std140_elements<T>();
 	const int src_count = p_values.size();
 	const int dst_count = elements * p_array_size;
 	const int stride_count = p_stride * p_array_size;
@@ -16958,19 +15899,16 @@ void write_array_std140(const Vector<From>& p_values, To* p_write, int p_array_s
 
 	for (int i = 0, j = 0; i < dst_count; i += elements, j += p_stride) {
 		if (i + elements - 1 < src_count) {
-			// Only copy full items with all elements, no partial or missing data.
 			for (int e = 0; e < elements; e++) {
 				DEV_ASSERT(j + e < stride_count && i + e < src_count);
 				p_write[j + e] = read[i + e];
 			}
 		}
 		else {
-			// If not enough source data was passed in, write default values.
 			convert_item_std140(default_value, p_write + j);
 		}
 	}
 }
-// --- End servers/rendering/renderer_scene_render.h ---
 
 namespace LightStorage
 {
@@ -18002,10 +16940,6 @@ public:
 		api.set_directional_shadow_count(p_count);
 	}
 };
-// --- Inlined/Folded from servers/rendering/storage/material_storage.h ---
-
-
-
 
 struct InstanceShaderParam
 {
@@ -18279,13 +17213,9 @@ public:
         }
     }
 };
-// --- Inlined/Folded from servers/rendering/storage/mesh_storage.h ---
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
-
-
-
 
 struct InterpolationData
 {
@@ -18514,14 +17444,12 @@ public:
     static void update_interpolation_tick(bool p_process = true);
     static void update_interpolation_frame(bool p_process = true);
 };
-// --- Inlined/Folded from servers/rendering/storage/particles_storage.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/typedefs.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
-
 
 class RendererParticlesStorage
 {
@@ -18734,14 +17662,11 @@ public:
 		particles_collision_instance_set_active = T::particles_collision_instance_set_active;
 	}
 };
-// --- Inlined/Folded from servers/rendering/storage/texture_storage.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
-
-
 
 struct RenderTargetSetOverrideFn
 {
@@ -20647,12 +19572,10 @@ public:
 	~Renderer() = delete;
 };
 
-// --- Folded from servers/rendering/renderer_rd/shader_rd.h ---
 #include "core/os/mutex.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 class StringBuilder;
 
@@ -20956,21 +19879,10 @@ public:
 
 	~ShaderRD();
 };
-// --- End servers/rendering/renderer_rd/shader_rd.h ---
-
-// --- Folded from servers/rendering/renderer_viewport.h ---
-#include "core/io/ip.h"
-
-
-
-
-
 
 #include "core/io/ip.h"
 
-
-
-
+#include "core/io/ip.h"
 
 class RendererViewport final
 {
@@ -21081,7 +19993,6 @@ public:
 
 			int get_layer() const { return stacking >> 32; }
 		};
-
 
 		struct CanvasData
 		{
@@ -21268,10 +20179,7 @@ public:
 		DisplayServerEnums::VSyncMode p_mode, DisplayServerEnums::WindowID p_window);
 };
 
-// --- Folded from servers/rendering/renderer_canvas_cull.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from servers/rendering/renderer_scene_cull.h ---
-// --- Folded from core/math/dynamic_bvh.h ---
 #include "core/io/ip.h"
 #include "core/templates/list.h"
 #include "core/string/ustring.h"
@@ -21716,10 +20624,7 @@ void DynamicBVH::ray_query(const Vector3 &p_from, const Vector3 &p_to, QueryResu
 	} while (depth > 0);
 }
 
-// --- End core/math/dynamic_bvh.h ---
-// --- Folded from core/math/geometry_3d.h ---
 #include "core/math/vector2.h"
-// --- Folded from core/math/delaunay_3d.h ---
 #include "core/io/ip.h"
 #include "core/templates/list.h"
 #include "core/string/ustring.h"
@@ -22074,7 +20979,6 @@ public:
 	}
 };
 
-// --- End core/math/delaunay_3d.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
@@ -22904,7 +21808,6 @@ _FORCE_INLINE_ Vector3 octahedron_map_decode(const Vector2 &p_uv) {
 }
 } //namespace Geometry3D
 
-// --- Folded from core/math/a_star.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -23314,7 +22217,6 @@ public:
 		const Vector2i& p_from, const Vector2i& p_to, bool p_allow_partial_path = false);
 };
 
-// --- Folded from core/math/convex_hull.h ---
 /*
 Copyright (c) 2011 Ole Kniemeyer, MAXON, www.maxon.net
 This software is provided 'as-is', without any express or implied warranty.
@@ -23450,7 +22352,6 @@ public:
 	static Error build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
 };
 
-// --- Folded from core/math/static_raycaster.h ---
 #include "core/io/ip.h"
 
 class StaticRaycaster final : public RefCounted
@@ -23518,7 +22419,6 @@ public:
 	~StaticRaycaster();
 };
 
-// --- Folded from core/math/triangle_mesh.h ---
 #include "core/io/ip.h"
 
 class TriangleMesh : public RefCounted
@@ -23606,7 +22506,6 @@ public:
 	TriangleMesh();
 };
 
-// --- Folded from core/math/transform_interpolator.h ---
 #include "core/typedefs.h"
 #include "core/io/ip.h"
 
@@ -23667,10 +22566,7 @@ public:
 
 	static Method find_method(const Basis &p_a, const Basis &p_b);
 };
-// --- End core/math/transform_interpolator.h ---
 
-// --- Folded from core/math/geometry_2d.h ---
-// --- Folded from core/math/delaunay_2d.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 
@@ -23797,7 +22693,6 @@ public:
 	}
 };
 
-// --- End core/math/delaunay_2d.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -24295,9 +23190,6 @@ private:
 	static Vector<Vector<Point2>> _polypaths_do_operation(PolyBooleanOperation p_op, const Vector<Point2> &p_polypath_a, const Vector<Point2> &p_polypath_b, bool p_is_a_open = false);
 	static Vector<Vector<Point2>> _polypath_offset(const Vector<Point2> &p_polypath, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type);
 };
-// --- End core/math/geometry_2d.h ---
-// --- End core/math/geometry_3d.h ---
-// --- Folded from core/templates/bin_sorted_array.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
@@ -24445,15 +23337,12 @@ public:
 	}
 };
 
-// --- End core/templates/bin_sorted_array.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
-// --- Folded from servers/rendering/renderer_scene_occlusion_cull.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
-
 
 #include <cfloat> // FLT_MIN, FLT_MAX
 
@@ -24776,11 +23665,6 @@ public:
 	~RendererSceneOcclusionCull() = delete;
 };
 
-// --- End servers/rendering/renderer_scene_occlusion_cull.h ---
-
-
-
-// --- Folded from servers/xr/xr_server.h ---
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
@@ -24917,7 +23801,6 @@ public:
 
 #define XR XRServer
 
-// --- Folded from servers/xr/xr_tracker.h ---
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
@@ -25437,7 +24320,6 @@ public:
 	~XRTracker() override;
 };
 
-// --- Folded from servers/xr/xr_interface.h ---
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
@@ -25642,9 +24524,7 @@ public:
 
 	RID make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p_eye_foci);
 };
-// --- End servers/xr/xr_interface.h ---
 
-// --- Folded from servers/camera/camera_server.h ---
 #include "core/os/os.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -25753,7 +24633,6 @@ public:
 	~CameraServer() = delete;
 };
 
-// --- Folded from servers/camera/camera_feed.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 
@@ -25812,7 +24691,6 @@ protected:
 	bool active; // only when active do we actually update the camera texture each frame
 	RID texture[CameraServer::FEED_IMAGES]; // texture images needed for this
 
-
 public:
 	int get_id() const;
 	bool is_active() const;
@@ -25849,12 +24727,9 @@ public:
 	virtual void deactivate_feed();
 };
 
-// --- Folded from modules/camera/camera_apple.h ---
 #if defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
 ///@TODO this is a near duplicate of CameraIOS, we should find a way to combine those to minimize code duplication!!!!
 // If you fix something here, make sure you fix it there as well!
-
-
 
 class CameraApple final
 {
@@ -25874,9 +24749,6 @@ public:
 	~CameraApple() = delete;
 };
 #endif // defined(MACOS_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
-// --- End modules/camera/camera_apple.h ---
-// --- End servers/camera/camera_server.h ---
-// --- End servers/xr/xr_server.h ---
 
 class InstanceUniforms final
 {
@@ -25959,7 +24831,6 @@ public:
 			vaspect = false;
 		}
 	};
-
 
 	static RID camera_allocate();
 	static void camera_initialize(RID p_rid);
@@ -26204,7 +25075,6 @@ public:
 		}
 	};
 
-
 	struct Scenario
 	{
 		enum IndexerType
@@ -26244,7 +25114,6 @@ public:
 		}
 	};
 
-
 	static void _instance_pair(Instance* p_A, Instance* p_B);
 	static void _instance_unpair(Instance* p_A, Instance* p_B);
 
@@ -26275,7 +25144,6 @@ public:
 
 		InstancePair() : list_a(this), list_b(this) {}
 	};
-
 
 	struct InstanceBaseData
 	{
@@ -26625,7 +25493,6 @@ public:
 	static void _instance_queue_update(
 		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false);
 
-
 	struct PairInstances
 	{
 		Instance* instance = nullptr;
@@ -26689,7 +25556,6 @@ public:
 			}
 		}
 	};
-
 
 	struct InstanceCullResult
 	{
@@ -26823,7 +25689,6 @@ public:
 			}
 		}
 	};
-
 
 	static RID instance_allocate();
 	static void instance_initialize(RID p_rid);
@@ -27574,9 +26439,6 @@ private:
 	LocalVector<uint8_t> _calculated_LUT[LUT_SIZE];
 #endif
 };
-// --- Inlined/Folded from servers/rendering/renderer_canvas_render.h ---
-
-
 
 class Renderer;
 
@@ -28142,9 +27004,6 @@ public:
     }
 };
 
-
-
-
 class RendererCanvasCull
 {
 	static void _dependency_changed(
@@ -28597,12 +27456,6 @@ public:
 	~RendererCanvasCull();
 };
 
-
-
-// --- End servers/rendering/renderer_canvas_cull.h ---
-// --- End servers/rendering/renderer_viewport.h ---
-
-// --- Folded from servers/rendering/shader_language.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/list.h"
@@ -29011,6 +27864,9 @@ public:
 		uint32_t uint;
 	};
 
+	struct FunctionNode;
+	struct BlockNode;
+
 	struct Node
 	{
 		Node* next = nullptr;
@@ -29031,79 +27887,6 @@ public:
 			NODE_TYPE_STRUCT,
 		};
 
-		Type type;
-
-		virtual DataType get_datatype() const { return TYPE_VOID; }
-
-		virtual String get_datatype_name() const { return ""; }
-
-		virtual int get_array_size() const { return 0; }
-
-		virtual bool is_indexed() const { return false; }
-
-		virtual Vector<Scalar> get_values() const { return Vector<Scalar>(); }
-
-		Node(Type t) : type(t) {}
-
-		virtual ~Node() {}
-	};
-
-	template <typename T> T* alloc_node()
-	{
-		T* node = memnew(T);
-		node->next = nodes;
-		nodes = node;
-		return node;
-	}
-
-	Node* nodes = nullptr;
-
-	struct OperatorNode : public Node
-	{
-		DataType return_cache = TYPE_VOID;
-		DataPrecision return_precision_cache = PRECISION_DEFAULT;
-		int return_array_size = 0;
-		Operator op = OP_EQUAL;
-		String struct_name;
-		Vector<Node*> arguments;
-		Vector<Scalar> values;
-
-		virtual DataType get_datatype() const override { return return_cache; }
-
-		virtual String get_datatype_name() const override { return String(struct_name); }
-
-		virtual int get_array_size() const override { return return_array_size; }
-
-		virtual bool is_indexed() const override { return op == OP_INDEX; }
-
-		virtual Vector<Scalar> get_values() const override { return values; }
-
-		OperatorNode() : Node(NODE_TYPE_OPERATOR) {}
-	};
-
-	struct VariableNode : public Node
-	{
-		DataType datatype_cache = TYPE_VOID;
-		String name;
-		String rname;
-		String struct_name;
-		bool is_const = false;
-		bool is_local = false;
-
-		virtual DataType get_datatype() const override { return datatype_cache; }
-
-		virtual String get_datatype_name() const override { return String(struct_name); }
-
-		VariableNode() : Node(NODE_TYPE_VARIABLE) {}
-	};
-
-	struct VariableDeclarationNode : public Node
-	{
-		DataPrecision precision = PRECISION_DEFAULT;
-		DataType datatype = TYPE_VOID;
-		String struct_name;
-		bool is_const = false;
-
 		struct Declaration
 		{
 			String name;
@@ -29113,81 +27896,147 @@ public:
 			bool single_expression = false;
 		};
 
-		Vector<Declaration> declarations;
+		Type type;
 
-		virtual DataType get_datatype() const override { return datatype; }
-
-		VariableDeclarationNode() : Node(NODE_TYPE_VARIABLE_DECLARATION) {}
-	};
-
-	struct ArrayNode : public Node
-	{
+		// Unified fields for expression/statement AST nodes (Operator, Variable, VariableDeclaration,
+		// Array, ArrayConstruct, Constant, ControlFlow, Member, Struct):
+		DataType return_cache = TYPE_VOID;
+		DataPrecision return_precision_cache = PRECISION_DEFAULT;
+		int return_array_size = 0;
+		Operator op = OP_EQUAL;
 		DataType datatype_cache = TYPE_VOID;
-		String struct_name;
+		DataType datatype = TYPE_VOID;
+		DataType basetype = TYPE_VOID;
+		DataPrecision precision = PRECISION_DEFAULT;
+		FlowOperation flow_op = FLOW_OP_IF;
+		int array_size = 0;
+		bool is_const = false;
+		bool is_local = false;
+		bool basetype_const = false;
+		bool has_swizzling_duplicates = false;
 		String name;
+		String rname;
+		String struct_name;
+		String base_struct_name;
+		Node* owner = nullptr;
 		Node* index_expression = nullptr;
 		Node* call_expression = nullptr;
 		Node* assign_expression = nullptr;
-		bool is_const = false;
-		int array_size = 0;
-		bool is_local = false;
-
-		virtual DataType get_datatype() const override
-		{
-			return call_expression ? call_expression->get_datatype() : datatype_cache;
-		}
-
-		virtual String get_datatype_name() const override
-		{
-			return call_expression ? call_expression->get_datatype_name() : String(struct_name);
-		}
-
-		virtual int get_array_size() const override
-		{
-			return (index_expression || call_expression) ? 0 : array_size;
-		}
-
-		virtual bool is_indexed() const override { return index_expression != nullptr; }
-
-		ArrayNode() : Node(NODE_TYPE_ARRAY) {}
-	};
-
-	struct ArrayConstructNode : public Node
-	{
-		DataType datatype = TYPE_VOID;
-		String struct_name;
-		Vector<Node*> initializer;
-
-		virtual DataType get_datatype() const override { return datatype; }
-
-		virtual String get_datatype_name() const override { return struct_name; }
-
-		virtual int get_array_size() const override { return initializer.size(); }
-
-		ArrayConstructNode() : Node(NODE_TYPE_ARRAY_CONSTRUCT) {}
-	};
-
-	struct ConstantNode : public Node
-	{
-		DataType datatype = TYPE_VOID;
-		String struct_name = "";
-		int array_size = 0;
-
+		Vector<Node*> arguments;
 		Vector<Scalar> values;
-		Vector<VariableDeclarationNode::Declaration> array_declarations;
+		Vector<Declaration> declarations;
+		Vector<Declaration> array_declarations;
+		Vector<Node*> initializer;
+		Vector<Node*> expressions;
+		Vector<BlockNode*> blocks;
+		List<Node*> members;
 
-		virtual DataType get_datatype() const override { return datatype; }
+		virtual DataType get_datatype() const
+		{
+			switch (type) {
+			case NODE_TYPE_OPERATOR:
+				return return_cache;
+			case NODE_TYPE_VARIABLE:
+				return datatype_cache;
+			case NODE_TYPE_VARIABLE_DECLARATION:
+			case NODE_TYPE_ARRAY_CONSTRUCT:
+			case NODE_TYPE_CONSTANT:
+				return datatype;
+			case NODE_TYPE_ARRAY:
+				return call_expression ? call_expression->get_datatype() : datatype_cache;
+			case NODE_TYPE_MEMBER:
+				return call_expression ? call_expression->get_datatype() : datatype;
+			default:
+				return TYPE_VOID;
+			}
+		}
 
-		virtual String get_datatype_name() const override { return struct_name; }
+		virtual String get_datatype_name() const
+		{
+			switch (type) {
+			case NODE_TYPE_OPERATOR:
+			case NODE_TYPE_VARIABLE:
+			case NODE_TYPE_ARRAY_CONSTRUCT:
+			case NODE_TYPE_CONSTANT:
+				return struct_name;
+			case NODE_TYPE_ARRAY:
+			case NODE_TYPE_MEMBER:
+				return call_expression ? call_expression->get_datatype_name() : struct_name;
+			default:
+				return "";
+			}
+		}
 
-		virtual int get_array_size() const override { return array_size; }
+		virtual int get_array_size() const
+		{
+			switch (type) {
+			case NODE_TYPE_OPERATOR:
+				return return_array_size;
+			case NODE_TYPE_ARRAY:
+			case NODE_TYPE_MEMBER:
+				return (index_expression || call_expression) ? 0 : array_size;
+			case NODE_TYPE_ARRAY_CONSTRUCT:
+				return initializer.size();
+			case NODE_TYPE_CONSTANT:
+				return array_size;
+			default:
+				return 0;
+			}
+		}
 
-		virtual Vector<Scalar> get_values() const override { return values; }
+		virtual bool is_indexed() const
+		{
+			switch (type) {
+			case NODE_TYPE_OPERATOR:
+				return op == OP_INDEX;
+			case NODE_TYPE_ARRAY:
+				return index_expression != nullptr;
+			case NODE_TYPE_MEMBER:
+				return index_expression != nullptr || call_expression != nullptr;
+			default:
+				return false;
+			}
+		}
 
-		ConstantNode() : Node(NODE_TYPE_CONSTANT) {}
+		virtual Vector<Scalar> get_values() const
+		{
+			if (type == NODE_TYPE_OPERATOR || type == NODE_TYPE_CONSTANT) {
+				return values;
+			}
+			return Vector<Scalar>();
+		}
+
+		Node(Type t) : type(t) {}
+		virtual ~Node() {}
 	};
 
-	struct FunctionNode;
+	using OperatorNode = Node;
+	using VariableNode = Node;
+	using VariableDeclarationNode = Node;
+	using ArrayNode = Node;
+	using ArrayConstructNode = Node;
+	using ConstantNode = Node;
+	using ControlFlowNode = Node;
+	using MemberNode = Node;
+	using StructNode = Node;
+
+	template <typename T> T* alloc_node()
+	{
+		T* node = memnew(T);
+		node->next = nodes;
+		nodes = node;
+		return node;
+	}
+
+	Node* alloc_node(Node::Type p_type)
+	{
+		Node* node = memnew(Node(p_type));
+		node->next = nodes;
+		nodes = node;
+		return node;
+	}
+
+	Node* nodes = nullptr;
 
 	struct BlockNode : public Node
 	{
@@ -29213,7 +28062,7 @@ public:
 			DataType type;
 			String struct_name;
 			DataPrecision precision;
-			int line; // for completion
+			int line;
 			int array_size;
 			bool is_const;
 			Vector<Scalar> values;
@@ -29229,61 +28078,6 @@ public:
 		HashSet<int> constants;
 
 		BlockNode() : Node(NODE_TYPE_BLOCK) {}
-	};
-
-	struct ControlFlowNode : public Node
-	{
-		FlowOperation flow_op = FLOW_OP_IF;
-		Vector<Node*> expressions;
-		Vector<BlockNode*> blocks;
-
-		ControlFlowNode() : Node(NODE_TYPE_CONTROL_FLOW) {}
-	};
-
-	struct MemberNode : public Node
-	{
-		DataType basetype = TYPE_VOID;
-		bool basetype_const = false;
-		String base_struct_name;
-		DataPrecision precision = PRECISION_DEFAULT;
-		DataType datatype = TYPE_VOID;
-		int array_size = 0;
-		String struct_name;
-		String name;
-		Node* owner = nullptr;
-		Node* index_expression = nullptr;
-		Node* assign_expression = nullptr;
-		Node* call_expression = nullptr;
-		bool has_swizzling_duplicates = false;
-
-		virtual DataType get_datatype() const override
-		{
-			return call_expression ? call_expression->get_datatype() : datatype;
-		}
-
-		virtual String get_datatype_name() const override
-		{
-			return call_expression ? call_expression->get_datatype_name() : String(struct_name);
-		}
-
-		virtual int get_array_size() const override
-		{
-			return (index_expression || call_expression) ? 0 : array_size;
-		}
-
-		virtual bool is_indexed() const override
-		{
-			return index_expression != nullptr || call_expression != nullptr;
-		}
-
-		MemberNode() : Node(NODE_TYPE_MEMBER) {}
-	};
-
-	struct StructNode : public Node
-	{
-		List<MemberNode*> members;
-
-		StructNode() : Node(NODE_TYPE_STRUCT) {}
 	};
 
 	struct ShaderNode : public Node
@@ -30062,10 +28856,7 @@ public:
 	~ShaderLanguage();
 };
 
-// --- Folded from servers/rendering/shader_compiler.h ---
 #include "core/math/vector2.h"
-
-
 
 class ShaderCompiler final
 {
@@ -30189,17 +28980,13 @@ public:
 	ShaderCompiler();
 };
 
-// --- Folded from servers/rendering/shader_preprocessor.h ---
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/rb_set.h"
-// --- Folded from scene/resources/material.h ---
 #include "core/io/ip.h"
-// --- Folded from scene/resources/shader.h ---
 #include "core/io/ip.h"
-// --- Folded from scene/resources/shader_include.h ---
 #include "core/io/ip.h"
 
 class ShaderInclude : public Resource
@@ -30218,10 +29005,6 @@ public:
 
 	void set_include_path(const String& p_path);
 };
-
-
-
-// --- End scene/resources/shader_include.h ---
 
 using Texture = Resource;
 class Texture2D;
@@ -30268,7 +29051,6 @@ protected:
 	static void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
-
 public:
 	// void set_mode(Mode p_mode);
 	virtual Mode get_mode() const;
@@ -30280,7 +29062,6 @@ public:
 	String get_code() const;
 
 	void inspect_native_shader_code();
-
 
 	void set_default_texture_parameter(
 		const String& p_name, const Ref<Texture>& p_texture, int p_index = 0);
@@ -30295,35 +29076,7 @@ public:
 	~Shader();
 };
 
-// --- Folded from scene/resources/shader_resource_format.h ---
 #include "core/io/net_socket.h"
-
-class ResourceFormatLoaderShader final : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual void get_recognized_extensions_for_type(
-		const String& p_type, List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-};
-
-class ResourceFormatSaverShader final : public ResourceFormatSaver
-{
-public:
-	virtual Error save(
-		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-	virtual void get_recognized_extensions(
-		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-};
-
-// --- End scene/resources/shader_resource_format.h ---
-// --- End scene/resources/shader.h ---
-
 
 class Material : public Resource
 {
@@ -31200,9 +29953,6 @@ public:
 
 //////////////////////
 
-// --- Folded from scene/resources/canvas_item_material.h ---
-
-
 class CanvasItemMaterial final : public Material
 {
 public:
@@ -31327,14 +30077,9 @@ public:
 	virtual ~CanvasItemMaterial();
 };
 
-// --- End scene/resources/canvas_item_material.h ---
-
-// --- Folded from scene/resources/particle_process_material.h ---
 #include "core/templates/rb_set.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
-// --- Folded from scene/resources/curve_texture.h ---
-// --- Folded from scene/resources/curve.h ---
 #include "core/io/ip.h"
 
 // y(x) curve
@@ -31450,7 +30195,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-
 private:
 	bool _filter_property(const String& p_name, int p_index) const;
 
@@ -31535,7 +30279,6 @@ protected:
 	{
 		return property_helper.property_can_revert(p_name);
 	}
-
 
 public:
 	int get_point_count() const;
@@ -31644,7 +30387,6 @@ protected:
 		return property_helper.property_can_revert(p_name);
 	}
 
-
 public:
 #ifdef TOOLS_ENABLED
 	// For Path3DGizmo.
@@ -31697,8 +30439,6 @@ public:
 
 	Curve3D();
 };
-// --- End scene/resources/curve.h ---
-
 
 class CurveTexture final : public Texture2D
 {
@@ -31753,9 +30493,6 @@ public:
 	explicit CurveTexture(TextureMode p_mode = TEXTURE_MODE_RGB);
 	~CurveTexture();
 };
-
-// --- End scene/resources/curve_texture.h ---
-
 
 /*
  TODO:
@@ -32256,12 +30993,6 @@ public:
 	~ParticleProcessMaterial();
 };
 
-
-
-
-// --- End scene/resources/particle_process_material.h ---
-
-// --- Folded from scene/resources/camera_attributes.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 
@@ -32404,11 +31135,6 @@ public:
 	~CameraAttributesPhysical();
 };
 
-
-
-// --- End scene/resources/camera_attributes.h ---
-
-// --- Folded from scene/resources/physics_material.h ---
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 #include "core/io/ip.h"
 
@@ -32443,9 +31169,7 @@ public:
 	_FORCE_INLINE_ real_t computed_bounce() const { return absorbent ? -bounce : bounce; }
 };
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
-// --- End scene/resources/physics_material.h ---
 
-// --- Folded from scene/resources/gradient.h ---
 #include <thirdparty/misc/ok_color.h>
 #include "core/io/ip.h"
 
@@ -32661,9 +31385,6 @@ public:
 	int get_point_count() const;
 };
 
-// --- Folded from scene/resources/gradient_texture.h ---
-
-
 class GradientTexture2D final : public Texture2D
 {
 public:
@@ -32738,11 +31459,8 @@ public:
 	explicit GradientTexture2D(bool p_1d = false);
 	virtual ~GradientTexture2D();
 };
-// --- End scene/resources/gradient.h ---
 
-// --- Folded from scene/resources/environment.h ---
 #include "core/io/ip.h"
-
 
 class Sky;
 
@@ -33164,7 +31882,6 @@ public:
 	~Environment();
 };
 
-// --- Folded from scene/resources/compositor.h ---
 #include "core/io/ip.h"
 
 class RenderDataRD;
@@ -33227,7 +31944,6 @@ public:
 	~CompositorEffect();
 };
 
-
 /* Compositor */
 
 class Compositor : public Resource
@@ -33247,13 +31963,7 @@ public:
 	~Compositor();
 };
 
-
-
-// --- End scene/resources/compositor.h ---
-
-// --- Folded from scene/resources/sky.h ---
 #include "core/io/ip.h"
-
 
 class Sky : public Resource
 {
@@ -33302,15 +32012,8 @@ public:
 	~Sky();
 };
 
-
-
-// --- End scene/resources/sky.h ---
-// --- End scene/resources/environment.h ---
-
-// --- Folded from scene/resources/image_texture.h ---
 #include "core/os/mutex.h"
 #include "core/io/ip.h"
-// --- Folded from scene/resources/bit_map.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 
@@ -33350,8 +32053,6 @@ public:
 	Vector<Vector<Vector2>> clip_opaque_to_polygons(
 		const Rect2i& p_rect, float p_epsilon = 2.0) const;
 };
-// --- End scene/resources/bit_map.h ---
-
 
 class BitMap;
 
@@ -33530,10 +32231,8 @@ public:
 	~ImageTexture3D();
 };
 
-// --- Folded from scene/resources/atlas_texture.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
-
 
 class AtlasTexture final : public Texture2D
 {
@@ -33637,10 +32336,6 @@ public:
 	AtlasTexture() = default;
 	~AtlasTexture();
 };
-
-// --- Folded from scene/resources/compressed_texture.h ---
-
-
 
 class BitMap;
 
@@ -33887,45 +32582,13 @@ public:
 	~CompressedTexture3D();
 };
 
-// --- Folded from scene/resources/compressed_texture_resource_format.h ---
 #include "core/io/net_socket.h"
 
-class ResourceFormatLoaderCompressedTexture final : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-};
-
-// --- End scene/resources/compressed_texture_resource_format.h ---
-
-// --- Folded from modules/dds/texture_loader_dds.h ---
 #include "core/io/net_socket.h"
-
-class ResourceFormatDDS final : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-
-	ResourceFormatDDS();
-
-	virtual ~ResourceFormatDDS() {}
-};
 
 Error save_dds(const String &p_path, const Ref<Image> &p_img);
 Vector<uint8_t> save_dds_buffer(const Ref<Image> &p_img);
-// --- End modules/dds/texture_loader_dds.h ---
 
-// --- Folded from modules/noise/fastnoise_lite.h ---
 #include <thirdparty/misc/FastNoiseLite.h>
 #include "core/io/net_socket.h"
 
@@ -34339,9 +33002,6 @@ public:
 
 template <> uint8_t FastNoiseLite::_alpha_blend<uint8_t>(uint8_t p_bg, uint8_t p_fg, int p_alpha) const;
 
-
-
-
 class NoiseTexture2D final : public Texture2D
 {
 private:
@@ -34491,9 +33151,6 @@ public:
 	NoiseTexture3D();
 	virtual ~NoiseTexture3D() = default;
 };
-// --- End modules/noise/fastnoise_lite.h ---
-// --- End scene/resources/image_texture.h ---
-// --- End scene/resources/material.h ---
 
 class ShaderPreprocessor
 {
@@ -34697,14 +33354,6 @@ public:
 	~ShaderPreprocessor() = default;
 };
 
-
-
-// --- End servers/rendering/shader_preprocessor.h ---
-
-// --- Folded from servers/rendering/shader_types.h ---
-
-
-
 class ShaderTypes
 {
 public:
@@ -34733,10 +33382,6 @@ public:
     static void finalize();
 };
 
-
-// --- End servers/rendering/shader_types.h ---
-
-// --- Folded from servers/rendering/shader_include_db.h ---
 #include "core/io/ip.h"
 
 class ShaderIncludeDB
@@ -34755,43 +33400,121 @@ public:
 	static String parse_include_files(const String& p_code);
 };
 
-
-
-// --- End servers/rendering/shader_include_db.h ---
-// --- End servers/rendering/shader_compiler.h ---
-// --- End servers/rendering/shader_language.h ---
-
-// --- Folded from servers/rendering/dummy/rasterizer_dummy.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 
-
-
-
-
-
 class DependencyTracker;
 class Image;
 
-namespace RendererDummy
-{
+class RasterizerSceneDummy;
 
-class Fog final
+class RasterizerDummy final
 {
 public:
-	Fog() = delete;
-	~Fog() = delete;
-	Fog(const Fog&) = delete;
-	Fog& operator=(const Fog&) = delete;
+	struct Lightmap {};
+	struct LightmapInstance { RID lightmap; };
+	struct DummyShader { HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms; };
+	struct DummyMaterial { RID shader; RID next_pass; };
+	struct DummyMesh
+	{
+		Vector<RenderingServerTypes::SurfaceData> surfaces;
+		int blend_shape_count = 0;
+		RSE::BlendShapeMode blend_shape_mode = RSE::BLEND_SHAPE_MODE_NORMALIZED;
+		PackedFloat32Array blend_shape_values;
+		Dependency dependency;
+	};
+	struct DummyMultiMesh { PackedFloat32Array buffer; };
+	struct DummyTexture
+	{
+		String path;
+		int width = 0;
+		int height = 0;
+		int depth = 0;
+		int layers = 0;
+		Image::Format format = Image::FORMAT_L8;
+		Ref<Image> image;
+	};
+	struct DummyRenderTarget
+	{
+		Point2i position;
+		Size2i size;
+		RID texture;
+		bool direct_to_screen = false;
+		bool is_transparent = false;
+		bool was_used = false;
+		bool clear_requested = false;
+		Color clear_color;
+		RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
+		bool use_hdr = false;
+	};
+	struct DummyCanvasTexture
+	{
+		RID diffuse;
+		RID normal_map;
+		RID specular;
+		Color specular_color = Color(1, 1, 1, 1);
+		real_t shininess = 1.0;
+		RSE::CanvasItemTextureFilter filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
+		RSE::CanvasItemTextureRepeat repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
+	};
 
-	static void initialize() {}
+private:
+	struct Data
+	{
+		RID_Owner<Lightmap, true> lightmap_owner;
+		RID_Owner<LightmapInstance> lightmap_instance_owner;
+		HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
+		RID_Owner<DummyShader> shader_owner;
+		ShaderCompiler* dummy_compiler = nullptr;
+		HashSet<RID> dummy_embedded_set;
+		RID_Owner<DummyMaterial> material_owner;
+		RID_Owner<DummyMesh> mesh_owner;
+		RID_Owner<DummyMultiMesh> multimesh_owner;
+		RID_Owner<DummyTexture> texture_owner;
+		RID_Owner<DummyRenderTarget> render_target_owner;
+		RID_Owner<DummyCanvasTexture> canvas_texture_owner;
+		Color default_clear_color = Color(0, 0, 0, 1);
+	};
 
-	static void finalize() {}
+	static inline Data* data = nullptr;
+	static inline uint64_t frame = 1;
+	static inline double delta = 0.0;
+	static inline double time = 0.0;
+	static inline RasterizerSceneDummy* scene = nullptr;
 
-	static bool is_initialized() { return true; }
+	static void _ensure_data();
+	_FORCE_INLINE_ static Data* _get_data()
+	{
+		if (unlikely(!data)) {
+			_ensure_data();
+		}
+		return data;
+	}
 
-	static bool free(RID p_rid) { return false; }
+public:
+	static void _noop() {}
+	static bool _noop_free(RID) { return false; }
+
+	static RendererSceneRender* get_scene();
+	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true) {}
+	static void initialize();
+	static void begin_frame(double frame_step);
+	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount) {}
+	_ALWAYS_INLINE_ static bool is_opengl() { return false; }
+	_ALWAYS_INLINE_ static void gl_end_frame(bool p_swap_buffers) {}
+	static void end_frame(bool p_present);
+	static void finalize();
+	static bool is_initialized() { return data != nullptr; }
+	static bool free(RID p_rid);
+	static Error _create_current() { initialize(); return OK; }
+	static void make_current();
+	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
+	_ALWAYS_INLINE_ static double get_frame_delta_time() { return delta; }
+	_ALWAYS_INLINE_ static double get_total_time() { return time; }
+	_ALWAYS_INLINE_ static bool can_create_resources_async() { return false; }
 
 	/* FOG VOLUMES */
 
@@ -34815,23 +33538,6 @@ public:
 	{
 		return RSE::FOG_VOLUME_SHAPE_ELLIPSOID;
 	}
-};
-
-class GI final
-{
-public:
-	GI() = delete;
-	~GI() = delete;
-	GI(const GI&) = delete;
-	GI& operator=(const GI&) = delete;
-
-	static void initialize() {}
-
-	static void finalize() {}
-
-	static bool is_initialized() { return true; }
-
-	static bool free(RID p_rid) { return false; }
 
 	/* VOXEL GI API */
 
@@ -34899,47 +33605,6 @@ public:
 	static uint32_t voxel_gi_get_version(RID p_voxel_gi) { return 0; }
 
 	static void sdfgi_reset() {}
-};
-
-class LightStorage final
-{
-public:
-	struct Lightmap
-	{
-		// dummy lightmap, no data
-	};
-
-	struct LightmapInstance
-	{
-		RID lightmap;
-	};
-
-private:
-	struct Data
-	{
-		RID_Owner<Lightmap, true> lightmap_owner;
-		RID_Owner<LightmapInstance> lightmap_instance_owner;
-	};
-
-	static inline Data* data = nullptr;
-
-	_FORCE_INLINE_ static Data* _get_data()
-	{
-		if (unlikely(!data)) {
-			initialize();
-		}
-		return data;
-	}
-
-public:
-	LightStorage() = delete;
-	LightStorage(const LightStorage&) = delete;
-	LightStorage& operator=(const LightStorage&) = delete;
-	~LightStorage() = delete;
-
-	static void initialize();
-	static void finalize();
-	static bool free(RID p_rid);
 
 	/* Light API */
 	static RID directional_light_allocate() { return RID(); }
@@ -35285,49 +33950,6 @@ public:
 	static int get_directional_light_shadow_size(RID p_light_instance) { return 0; }
 
 	static void set_directional_shadow_count(int p_count) {}
-};
-
-class MaterialStorage final
-{
-private:
-	struct DummyShader
-	{
-		HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms;
-	};
-
-	struct DummyMaterial
-	{
-		RID shader;
-		RID next_pass;
-	};
-
-	struct Data
-	{
-		HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
-		RID_Owner<DummyShader> shader_owner;
-		ShaderCompiler* dummy_compiler = nullptr;
-		HashSet<RID> dummy_embedded_set;
-		RID_Owner<DummyMaterial> material_owner;
-	};
-
-	static inline Data* data = nullptr;
-
-	_FORCE_INLINE_ static Data* _get_data()
-	{
-		if (unlikely(!data)) {
-			initialize();
-		}
-		return data;
-	}
-
-public:
-	MaterialStorage() = delete;
-	MaterialStorage(const MaterialStorage&) = delete;
-	MaterialStorage& operator=(const MaterialStorage&) = delete;
-	~MaterialStorage() = delete;
-
-	static void initialize();
-	static void finalize();
 
 	/* GLOBAL SHADER UNIFORM API */
 	static void global_shader_parameter_remove(const String& p_name);
@@ -35404,61 +34026,6 @@ public:
 		RID p_material, List<InstanceShaderParam>* r_parameters);
 
 	static void material_update_dependency(RID p_material, DependencyTracker* p_instance) {}
-};
-
-struct DummyMesh
-{
-	Vector<RenderingServerTypes::SurfaceData> surfaces;
-	int blend_shape_count = 0;
-	RSE::BlendShapeMode blend_shape_mode = RSE::BLEND_SHAPE_MODE_NORMALIZED;
-	PackedFloat32Array blend_shape_values;
-	Dependency dependency;
-};
-
-class MeshStorage final
-{
-private:
-	struct DummyMultiMesh
-	{
-		PackedFloat32Array buffer;
-	};
-
-	struct Data
-	{
-		RID_Owner<DummyMesh> mesh_owner;
-		RID_Owner<DummyMultiMesh> multimesh_owner;
-	};
-
-	static inline Data* data = nullptr;
-
-	_FORCE_INLINE_ static Data* _get_data()
-	{
-		if (unlikely(!data)) {
-			data = memnew(Data);
-		}
-		return data;
-	}
-
-public:
-	MeshStorage() = delete;
-	MeshStorage(const MeshStorage&) = delete;
-	MeshStorage& operator=(const MeshStorage&) = delete;
-	~MeshStorage() = delete;
-
-	static void initialize()
-	{
-		if (!data) {
-			data = memnew(Data);
-		}
-	}
-
-	static void finalize()
-	{
-		if (data) {
-			memdelete(data);
-			data = nullptr;
-		}
-	}
 
 	/* MESH API */
 	static _FORCE_INLINE_ DummyMesh* get_mesh(RID p_rid)
@@ -35713,23 +34280,6 @@ public:
 	}
 
 	static void skeleton_update_dependency(RID p_base, DependencyTracker* p_instance) {}
-};
-
-class ParticlesStorage final
-{
-public:
-	ParticlesStorage() = delete;
-	~ParticlesStorage() = delete;
-	ParticlesStorage(const ParticlesStorage&) = delete;
-	ParticlesStorage& operator=(const ParticlesStorage&) = delete;
-
-	static void initialize() {}
-
-	static void finalize() {}
-
-	static bool is_initialized() { return true; }
-
-	static bool free(RID p_rid) { return false; }
 
 	/* PARTICLES */
 
@@ -35931,85 +34481,6 @@ public:
 	static void particles_collision_instance_set_active(RID p_collision_instance, bool p_active) {}
 
 	static bool particles_is_inactive(RID p_particles) { return false; }
-};
-
-struct DummyTexture
-{
-	String path;
-	int width = 0;
-	int height = 0;
-	int depth = 0;
-	int layers = 0;
-	Image::Format format = Image::FORMAT_L8;
-	Ref<Image> image;
-};
-
-struct DummyRenderTarget
-{
-	Point2i position;
-	Size2i size;
-	RID texture;
-	bool direct_to_screen = false;
-	bool is_transparent = false;
-	bool was_used = false;
-	bool clear_requested = false;
-	Color clear_color;
-	RSE::ViewportMSAA msaa = RSE::VIEWPORT_MSAA_DISABLED;
-	bool use_hdr = false;
-};
-
-struct DummyCanvasTexture
-{
-	RID diffuse;
-	RID normal_map;
-	RID specular;
-	Color specular_color = Color(1, 1, 1, 1);
-	real_t shininess = 1.0;
-	RSE::CanvasItemTextureFilter filter = RSE::CANVAS_ITEM_TEXTURE_FILTER_DEFAULT;
-	RSE::CanvasItemTextureRepeat repeat = RSE::CANVAS_ITEM_TEXTURE_REPEAT_DEFAULT;
-};
-
-class TextureStorage final
-{
-private:
-	struct Data
-	{
-		RID_Owner<DummyTexture> texture_owner;
-		RID_Owner<DummyRenderTarget> render_target_owner;
-		RID_Owner<DummyCanvasTexture> canvas_texture_owner;
-		Color default_clear_color = Color(0, 0, 0, 1);
-	};
-
-	static inline Data* data = nullptr;
-
-	_FORCE_INLINE_ static Data* _get_data()
-	{
-		if (unlikely(!data)) {
-			data = memnew(Data);
-		}
-		return data;
-	}
-
-public:
-	TextureStorage() = delete;
-	TextureStorage(const TextureStorage&) = delete;
-	TextureStorage& operator=(const TextureStorage&) = delete;
-	~TextureStorage() = delete;
-
-	static void initialize()
-	{
-		if (!data) {
-			data = memnew(Data);
-		}
-	}
-
-	static void finalize()
-	{
-		if (data) {
-			memdelete(data);
-			data = nullptr;
-		}
-	}
 
 	static bool owns_texture(RID p_rid) { return data && data->texture_owner.owns(p_rid); }
 	static bool owns_render_target(RID p_rid)
@@ -36562,21 +35033,8 @@ public:
 	}
 
 	static Color get_default_clear_color() { return _get_data()->default_clear_color; }
-};
-
-class Utilities final
-{
-public:
-	Utilities() = delete;
-	Utilities(const Utilities&) = delete;
-	Utilities& operator=(const Utilities&) = delete;
-	~Utilities() = delete;
-
-	static void initialize() {}
-	static void finalize() {}
 
 	static RSE::InstanceType get_base_type(RID p_rid);
-	static bool free(RID p_rid);
 
 	static void base_update_dependency(RID p_base, DependencyTracker* p_instance);
 
@@ -36621,22 +35079,10 @@ public:
 	static uint32_t get_maximum_shader_varyings() { return 31; }
 
 	static uint64_t get_maximum_uniform_buffer_size() { return 65536; }
-};
-
-} // namespace RendererDummy
-
-class RasterizerCanvasDummy final
-{
-public:
-	static void initialize() {}
-
-	static void finalize() {}
 
 	static void set_time(double p_time) {}
 
 	static void update() {}
-
-	static bool free(RID p_rid) { return false; }
 
 	static PolygonID request_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
 		const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
@@ -36698,8 +35144,149 @@ public:
 
 	static void set_shadow_texture_size(int p_size) {}
 
-	RasterizerCanvasDummy() = delete;
-	~RasterizerCanvasDummy() = delete;
+	static void bind_mesh_storage()
+	{
+		RendererMeshStorage::mesh_allocate = &RasterizerDummy::mesh_allocate;
+		RendererMeshStorage::mesh_initialize = &RasterizerDummy::mesh_initialize;
+		RendererMeshStorage::mesh_free = &RasterizerDummy::mesh_free;
+		RendererMeshStorage::mesh_set_blend_shape_count =
+			&RasterizerDummy::mesh_set_blend_shape_count;
+		RendererMeshStorage::mesh_needs_instance = &RasterizerDummy::mesh_needs_instance;
+		RendererMeshStorage::mesh_add_surface = &RasterizerDummy::mesh_add_surface;
+		RendererMeshStorage::mesh_get_blend_shape_count =
+			&RasterizerDummy::mesh_get_blend_shape_count;
+		RendererMeshStorage::mesh_set_blend_shape_mode =
+			&RasterizerDummy::mesh_set_blend_shape_mode;
+		RendererMeshStorage::mesh_get_blend_shape_mode =
+			&RasterizerDummy::mesh_get_blend_shape_mode;
+		RendererMeshStorage::mesh_surface_update_vertex_region =
+			&RasterizerDummy::mesh_surface_update_vertex_region;
+		RendererMeshStorage::mesh_surface_update_attribute_region =
+			&RasterizerDummy::mesh_surface_update_attribute_region;
+		RendererMeshStorage::mesh_surface_update_skin_region =
+			&RasterizerDummy::mesh_surface_update_skin_region;
+		RendererMeshStorage::mesh_surface_update_index_region =
+			&RasterizerDummy::mesh_surface_update_index_region;
+		RendererMeshStorage::mesh_surface_set_material =
+			&RasterizerDummy::mesh_surface_set_material;
+		RendererMeshStorage::mesh_surface_get_material =
+			&RasterizerDummy::mesh_surface_get_material;
+		RendererMeshStorage::mesh_get_surface = &RasterizerDummy::mesh_get_surface;
+		RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
+			&RasterizerDummy::mesh_surface_get_vertex_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
+			&RasterizerDummy::mesh_surface_get_attribute_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
+			&RasterizerDummy::mesh_surface_get_skin_buffer_rd_rid;
+		RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
+			&RasterizerDummy::mesh_surface_get_index_buffer_rd_rid;
+		RendererMeshStorage::mesh_get_surface_count =
+			&RasterizerDummy::mesh_get_surface_count;
+		RendererMeshStorage::mesh_set_custom_aabb =
+			&RasterizerDummy::mesh_set_custom_aabb;
+		RendererMeshStorage::mesh_get_custom_aabb =
+			&RasterizerDummy::mesh_get_custom_aabb;
+		RendererMeshStorage::mesh_get_aabb = &RasterizerDummy::mesh_get_aabb;
+		RendererMeshStorage::mesh_set_path = &RasterizerDummy::mesh_set_path;
+		RendererMeshStorage::mesh_get_path = &RasterizerDummy::mesh_get_path;
+		RendererMeshStorage::mesh_set_shadow_mesh =
+			&RasterizerDummy::mesh_set_shadow_mesh;
+		RendererMeshStorage::mesh_clear = &RasterizerDummy::mesh_clear;
+		RendererMeshStorage::mesh_surface_remove = &RasterizerDummy::mesh_surface_remove;
+		RendererMeshStorage::mesh_debug_usage = &RasterizerDummy::mesh_debug_usage;
+
+		RendererMeshStorage::mesh_instance_create =
+			&RasterizerDummy::mesh_instance_create;
+		RendererMeshStorage::mesh_instance_free = &RasterizerDummy::mesh_instance_free;
+		RendererMeshStorage::mesh_instance_set_skeleton =
+			&RasterizerDummy::mesh_instance_set_skeleton;
+		RendererMeshStorage::mesh_instance_set_blend_shape_weight =
+			&RasterizerDummy::mesh_instance_set_blend_shape_weight;
+		RendererMeshStorage::mesh_instance_check_for_update =
+			&RasterizerDummy::mesh_instance_check_for_update;
+		RendererMeshStorage::mesh_instance_set_canvas_item_transform =
+			&RasterizerDummy::mesh_instance_set_canvas_item_transform;
+		RendererMeshStorage::update_mesh_instances =
+			&RasterizerDummy::update_mesh_instances;
+
+		RendererMeshStorage::_multimesh_allocate = &RasterizerDummy::_multimesh_allocate;
+		RendererMeshStorage::_multimesh_initialize =
+			&RasterizerDummy::_multimesh_initialize;
+		RendererMeshStorage::_multimesh_free = &RasterizerDummy::_multimesh_free;
+		RendererMeshStorage::_multimesh_allocate_data =
+			&RasterizerDummy::_multimesh_allocate_data;
+		RendererMeshStorage::_multimesh_get_instance_count =
+			&RasterizerDummy::_multimesh_get_instance_count;
+		RendererMeshStorage::_multimesh_set_mesh = &RasterizerDummy::_multimesh_set_mesh;
+		RendererMeshStorage::_multimesh_instance_set_transform =
+			&RasterizerDummy::_multimesh_instance_set_transform;
+		RendererMeshStorage::_multimesh_instance_set_transform_2d =
+			&RasterizerDummy::_multimesh_instance_set_transform_2d;
+		RendererMeshStorage::_multimesh_instance_set_color =
+			&RasterizerDummy::_multimesh_instance_set_color;
+		RendererMeshStorage::_multimesh_instance_set_custom_data =
+			&RasterizerDummy::_multimesh_instance_set_custom_data;
+		RendererMeshStorage::_multimesh_set_custom_aabb =
+			&RasterizerDummy::_multimesh_set_custom_aabb;
+		RendererMeshStorage::_multimesh_get_custom_aabb =
+			&RasterizerDummy::_multimesh_get_custom_aabb;
+		RendererMeshStorage::_multimesh_get_mesh = &RasterizerDummy::_multimesh_get_mesh;
+		RendererMeshStorage::_multimesh_instance_get_transform =
+			&RasterizerDummy::_multimesh_instance_get_transform;
+		RendererMeshStorage::_multimesh_instance_get_transform_2d =
+			&RasterizerDummy::_multimesh_instance_get_transform_2d;
+		RendererMeshStorage::_multimesh_instance_get_color =
+			&RasterizerDummy::_multimesh_instance_get_color;
+		RendererMeshStorage::_multimesh_instance_get_custom_data =
+			&RasterizerDummy::_multimesh_instance_get_custom_data;
+		RendererMeshStorage::_multimesh_set_buffer =
+			&RasterizerDummy::_multimesh_set_buffer;
+		RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
+			&RasterizerDummy::_multimesh_get_command_buffer_rd_rid;
+		RendererMeshStorage::_multimesh_get_buffer_rd_rid =
+			&RasterizerDummy::_multimesh_get_buffer_rd_rid;
+		RendererMeshStorage::_multimesh_get_buffer =
+			&RasterizerDummy::_multimesh_get_buffer;
+		RendererMeshStorage::_multimesh_set_visible_instances =
+			&RasterizerDummy::_multimesh_set_visible_instances;
+		RendererMeshStorage::_multimesh_get_visible_instances =
+			&RasterizerDummy::_multimesh_get_visible_instances;
+		RendererMeshStorage::_multimesh_get_aabb = &RasterizerDummy::_multimesh_get_aabb;
+		RendererMeshStorage::_multimesh_get_interpolator =
+			&RasterizerDummy::_multimesh_get_interpolator;
+
+		RendererMeshStorage::skeleton_allocate = &RasterizerDummy::skeleton_allocate;
+		RendererMeshStorage::skeleton_initialize = &RasterizerDummy::skeleton_initialize;
+		RendererMeshStorage::skeleton_free = &RasterizerDummy::skeleton_free;
+		RendererMeshStorage::skeleton_allocate_data =
+			&RasterizerDummy::skeleton_allocate_data;
+		RendererMeshStorage::skeleton_set_base_transform_2d =
+			&RasterizerDummy::skeleton_set_base_transform_2d;
+		RendererMeshStorage::skeleton_get_bone_count =
+			&RasterizerDummy::skeleton_get_bone_count;
+		RendererMeshStorage::skeleton_bone_set_transform =
+			&RasterizerDummy::skeleton_bone_set_transform;
+		RendererMeshStorage::skeleton_bone_get_transform =
+			&RasterizerDummy::skeleton_bone_get_transform;
+		RendererMeshStorage::skeleton_bone_set_transform_2d =
+			&RasterizerDummy::skeleton_bone_set_transform_2d;
+		RendererMeshStorage::skeleton_bone_get_transform_2d =
+			&RasterizerDummy::skeleton_bone_get_transform_2d;
+		RendererMeshStorage::skeleton_update_dependency =
+			&RasterizerDummy::skeleton_update_dependency;
+	}
+	static void bind_texture_storage() { RendererTextureStorage::bind<RasterizerDummy>(); }
+	static void bind_material_storage();
+	static void bind_canvas();
+	static void bind_light_storage() { RendererLightStorage::bind<RasterizerDummy>(); }
+	static void bind_particles_storage() { RendererParticlesStorage::bind<RasterizerDummy>(); }
+	static void bind_utilities();
+	static void bind_gi() { RendererGI::bind<RasterizerDummy>(); }
+	static void bind_fog() { RendererFog::bind<RasterizerDummy>(); }
+
+	RasterizerDummy() = delete;
+	RasterizerDummy(const RasterizerDummy&) = delete;
+	~RasterizerDummy() = delete;
 };
 
 class RasterizerSceneDummy final : public RendererSceneRender
@@ -36721,7 +35308,7 @@ public:
 public:
 	RenderGeometryInstance* geometry_instance_create(RID p_base) override
 	{
-		RSE::InstanceType type = RendererDummy::Utilities::get_base_type(p_base);
+		RSE::InstanceType type = RasterizerDummy::get_base_type(p_base);
 		ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
 		GeometryInstanceDummy* ginstance = geometry_instance_alloc.alloc();
@@ -36939,244 +35526,18 @@ public:
 	~RasterizerSceneDummy() {}
 };
 
-class RasterizerDummy final
-{
-private:
-	static inline uint64_t frame = 1;
-	static inline double delta = 0.0;
-	static inline double time = 0.0;
-
-	static inline RasterizerCanvasDummy* canvas = nullptr;
-	static inline RasterizerSceneDummy* scene = nullptr;
-
-	static inline RendererDummy::Fog* fog = nullptr;
-	static inline RendererDummy::GI* gi = nullptr;
-	static inline RendererDummy::LightStorage* light_storage = nullptr;
-	static inline RendererDummy::MaterialStorage* material_storage = nullptr;
-	static inline RendererDummy::MeshStorage* mesh_storage = nullptr;
-	static inline RendererDummy::ParticlesStorage* particles_storage = nullptr;
-	static inline RendererDummy::TextureStorage* texture_storage = nullptr;
-	static inline RendererDummy::Utilities* utilities = nullptr;
-
-public:
-	static RendererSceneRender* get_scene();
-
-	static RendererFog* get_fog();
-
-	static RendererDummy::Utilities* get_utilities();
-
-	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
-		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter = true)
-	{
-	}
-
-	static void initialize();
-
-	static void begin_frame(double frame_step);
-
-	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
-		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount)
-	{
-	}
-
-	_ALWAYS_INLINE_ static bool is_opengl() { return false; }
-
-	_ALWAYS_INLINE_ static void gl_end_frame(bool p_swap_buffers) {}
-
-	static void end_frame(bool p_present);
-
-	static void finalize();
-
-	static Error _create_current()
-	{
-		RasterizerDummy::initialize();
-		return OK;
-	}
-
-	static void make_current();
-
-	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
-
-	_ALWAYS_INLINE_ static double get_frame_delta_time() { return delta; }
-
-	_ALWAYS_INLINE_ static double get_total_time() { return time; }
-
-	_ALWAYS_INLINE_ static bool can_create_resources_async() { return false; }
-
-public:
-	static void bind_mesh_storage()
-	{
-		RendererMeshStorage::mesh_allocate = &RendererDummy::MeshStorage::mesh_allocate;
-		RendererMeshStorage::mesh_initialize = &RendererDummy::MeshStorage::mesh_initialize;
-		RendererMeshStorage::mesh_free = &RendererDummy::MeshStorage::mesh_free;
-		RendererMeshStorage::mesh_set_blend_shape_count =
-			&RendererDummy::MeshStorage::mesh_set_blend_shape_count;
-		RendererMeshStorage::mesh_needs_instance = &RendererDummy::MeshStorage::mesh_needs_instance;
-		RendererMeshStorage::mesh_add_surface = &RendererDummy::MeshStorage::mesh_add_surface;
-		RendererMeshStorage::mesh_get_blend_shape_count =
-			&RendererDummy::MeshStorage::mesh_get_blend_shape_count;
-		RendererMeshStorage::mesh_set_blend_shape_mode =
-			&RendererDummy::MeshStorage::mesh_set_blend_shape_mode;
-		RendererMeshStorage::mesh_get_blend_shape_mode =
-			&RendererDummy::MeshStorage::mesh_get_blend_shape_mode;
-		RendererMeshStorage::mesh_surface_update_vertex_region =
-			&RendererDummy::MeshStorage::mesh_surface_update_vertex_region;
-		RendererMeshStorage::mesh_surface_update_attribute_region =
-			&RendererDummy::MeshStorage::mesh_surface_update_attribute_region;
-		RendererMeshStorage::mesh_surface_update_skin_region =
-			&RendererDummy::MeshStorage::mesh_surface_update_skin_region;
-		RendererMeshStorage::mesh_surface_update_index_region =
-			&RendererDummy::MeshStorage::mesh_surface_update_index_region;
-		RendererMeshStorage::mesh_surface_set_material =
-			&RendererDummy::MeshStorage::mesh_surface_set_material;
-		RendererMeshStorage::mesh_surface_get_material =
-			&RendererDummy::MeshStorage::mesh_surface_get_material;
-		RendererMeshStorage::mesh_get_surface = &RendererDummy::MeshStorage::mesh_get_surface;
-		RendererMeshStorage::mesh_surface_get_vertex_buffer_rd_rid =
-			&RendererDummy::MeshStorage::mesh_surface_get_vertex_buffer_rd_rid;
-		RendererMeshStorage::mesh_surface_get_attribute_buffer_rd_rid =
-			&RendererDummy::MeshStorage::mesh_surface_get_attribute_buffer_rd_rid;
-		RendererMeshStorage::mesh_surface_get_skin_buffer_rd_rid =
-			&RendererDummy::MeshStorage::mesh_surface_get_skin_buffer_rd_rid;
-		RendererMeshStorage::mesh_surface_get_index_buffer_rd_rid =
-			&RendererDummy::MeshStorage::mesh_surface_get_index_buffer_rd_rid;
-		RendererMeshStorage::mesh_get_surface_count =
-			&RendererDummy::MeshStorage::mesh_get_surface_count;
-		RendererMeshStorage::mesh_set_custom_aabb =
-			&RendererDummy::MeshStorage::mesh_set_custom_aabb;
-		RendererMeshStorage::mesh_get_custom_aabb =
-			&RendererDummy::MeshStorage::mesh_get_custom_aabb;
-		RendererMeshStorage::mesh_get_aabb = &RendererDummy::MeshStorage::mesh_get_aabb;
-		RendererMeshStorage::mesh_set_path = &RendererDummy::MeshStorage::mesh_set_path;
-		RendererMeshStorage::mesh_get_path = &RendererDummy::MeshStorage::mesh_get_path;
-		RendererMeshStorage::mesh_set_shadow_mesh =
-			&RendererDummy::MeshStorage::mesh_set_shadow_mesh;
-		RendererMeshStorage::mesh_clear = &RendererDummy::MeshStorage::mesh_clear;
-		RendererMeshStorage::mesh_surface_remove = &RendererDummy::MeshStorage::mesh_surface_remove;
-		RendererMeshStorage::mesh_debug_usage = &RendererDummy::MeshStorage::mesh_debug_usage;
-
-		RendererMeshStorage::mesh_instance_create =
-			&RendererDummy::MeshStorage::mesh_instance_create;
-		RendererMeshStorage::mesh_instance_free = &RendererDummy::MeshStorage::mesh_instance_free;
-		RendererMeshStorage::mesh_instance_set_skeleton =
-			&RendererDummy::MeshStorage::mesh_instance_set_skeleton;
-		RendererMeshStorage::mesh_instance_set_blend_shape_weight =
-			&RendererDummy::MeshStorage::mesh_instance_set_blend_shape_weight;
-		RendererMeshStorage::mesh_instance_check_for_update =
-			&RendererDummy::MeshStorage::mesh_instance_check_for_update;
-		RendererMeshStorage::mesh_instance_set_canvas_item_transform =
-			&RendererDummy::MeshStorage::mesh_instance_set_canvas_item_transform;
-		RendererMeshStorage::update_mesh_instances =
-			&RendererDummy::MeshStorage::update_mesh_instances;
-
-		RendererMeshStorage::_multimesh_allocate = &RendererDummy::MeshStorage::_multimesh_allocate;
-		RendererMeshStorage::_multimesh_initialize =
-			&RendererDummy::MeshStorage::_multimesh_initialize;
-		RendererMeshStorage::_multimesh_free = &RendererDummy::MeshStorage::_multimesh_free;
-		RendererMeshStorage::_multimesh_allocate_data =
-			&RendererDummy::MeshStorage::_multimesh_allocate_data;
-		RendererMeshStorage::_multimesh_get_instance_count =
-			&RendererDummy::MeshStorage::_multimesh_get_instance_count;
-		RendererMeshStorage::_multimesh_set_mesh = &RendererDummy::MeshStorage::_multimesh_set_mesh;
-		RendererMeshStorage::_multimesh_instance_set_transform =
-			&RendererDummy::MeshStorage::_multimesh_instance_set_transform;
-		RendererMeshStorage::_multimesh_instance_set_transform_2d =
-			&RendererDummy::MeshStorage::_multimesh_instance_set_transform_2d;
-		RendererMeshStorage::_multimesh_instance_set_color =
-			&RendererDummy::MeshStorage::_multimesh_instance_set_color;
-		RendererMeshStorage::_multimesh_instance_set_custom_data =
-			&RendererDummy::MeshStorage::_multimesh_instance_set_custom_data;
-		RendererMeshStorage::_multimesh_set_custom_aabb =
-			&RendererDummy::MeshStorage::_multimesh_set_custom_aabb;
-		RendererMeshStorage::_multimesh_get_custom_aabb =
-			&RendererDummy::MeshStorage::_multimesh_get_custom_aabb;
-		RendererMeshStorage::_multimesh_get_mesh = &RendererDummy::MeshStorage::_multimesh_get_mesh;
-		RendererMeshStorage::_multimesh_instance_get_transform =
-			&RendererDummy::MeshStorage::_multimesh_instance_get_transform;
-		RendererMeshStorage::_multimesh_instance_get_transform_2d =
-			&RendererDummy::MeshStorage::_multimesh_instance_get_transform_2d;
-		RendererMeshStorage::_multimesh_instance_get_color =
-			&RendererDummy::MeshStorage::_multimesh_instance_get_color;
-		RendererMeshStorage::_multimesh_instance_get_custom_data =
-			&RendererDummy::MeshStorage::_multimesh_instance_get_custom_data;
-		RendererMeshStorage::_multimesh_set_buffer =
-			&RendererDummy::MeshStorage::_multimesh_set_buffer;
-		RendererMeshStorage::_multimesh_get_command_buffer_rd_rid =
-			&RendererDummy::MeshStorage::_multimesh_get_command_buffer_rd_rid;
-		RendererMeshStorage::_multimesh_get_buffer_rd_rid =
-			&RendererDummy::MeshStorage::_multimesh_get_buffer_rd_rid;
-		RendererMeshStorage::_multimesh_get_buffer =
-			&RendererDummy::MeshStorage::_multimesh_get_buffer;
-		RendererMeshStorage::_multimesh_set_visible_instances =
-			&RendererDummy::MeshStorage::_multimesh_set_visible_instances;
-		RendererMeshStorage::_multimesh_get_visible_instances =
-			&RendererDummy::MeshStorage::_multimesh_get_visible_instances;
-		RendererMeshStorage::_multimesh_get_aabb = &RendererDummy::MeshStorage::_multimesh_get_aabb;
-		RendererMeshStorage::_multimesh_get_interpolator =
-			&RendererDummy::MeshStorage::_multimesh_get_interpolator;
-
-		RendererMeshStorage::skeleton_allocate = &RendererDummy::MeshStorage::skeleton_allocate;
-		RendererMeshStorage::skeleton_initialize = &RendererDummy::MeshStorage::skeleton_initialize;
-		RendererMeshStorage::skeleton_free = &RendererDummy::MeshStorage::skeleton_free;
-		RendererMeshStorage::skeleton_allocate_data =
-			&RendererDummy::MeshStorage::skeleton_allocate_data;
-		RendererMeshStorage::skeleton_set_base_transform_2d =
-			&RendererDummy::MeshStorage::skeleton_set_base_transform_2d;
-		RendererMeshStorage::skeleton_get_bone_count =
-			&RendererDummy::MeshStorage::skeleton_get_bone_count;
-		RendererMeshStorage::skeleton_bone_set_transform =
-			&RendererDummy::MeshStorage::skeleton_bone_set_transform;
-		RendererMeshStorage::skeleton_bone_get_transform =
-			&RendererDummy::MeshStorage::skeleton_bone_get_transform;
-		RendererMeshStorage::skeleton_bone_set_transform_2d =
-			&RendererDummy::MeshStorage::skeleton_bone_set_transform_2d;
-		RendererMeshStorage::skeleton_bone_get_transform_2d =
-			&RendererDummy::MeshStorage::skeleton_bone_get_transform_2d;
-		RendererMeshStorage::skeleton_update_dependency =
-			&RendererDummy::MeshStorage::skeleton_update_dependency;
-	}
-
-	static void bind_texture_storage();
-
-	static void bind_material_storage();
-
-	static void bind_canvas();
-
-	static void bind_light_storage() { RendererLightStorage::bind<RendererDummy::LightStorage>(); }
-
-	static void bind_particles_storage();
-
-	static void bind_utilities();
-
-	static void bind_gi() { RendererGI::bind<RendererDummy::GI>(); }
-
-	static void bind_fog() { RendererFog::bind<RendererDummy::Fog>(); }
-
-	RasterizerDummy() = delete;
-	RasterizerDummy(const RasterizerDummy&) = delete;
-	~RasterizerDummy() = delete;
-};
-
 using RDummy = RasterizerDummy;
-// --- End servers/rendering/dummy/rasterizer_dummy.h ---
 
-// --- Folded from servers/rendering/renderer_rd/renderer_compositor_rd.h ---
 #include "core/io/net_socket.h"
 
-// --- Inlined/Folded from servers/rendering/renderer_rd/environment/rd_environment.h ---
 #include "core/io/ip.h"
 #define DEFINE_RD_SHADERS_GEN
 #include "main/splash.gen.h"
-// --- Folded from servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "main/splash.gen.h"
-
-
-
-
 
 namespace RendererRD
 {
@@ -37971,15 +36332,8 @@ public:
 };
 
 } // namespace RendererRD
-// --- End servers/rendering/renderer_rd/storage_rd/texture_storage.h ---
 
-// --- Folded from servers/rendering/renderer_rd/storage_rd/material_storage.h ---
 #include "core/io/ip.h"
-
-
-
-
-
 
 struct Projection;
 
@@ -38471,15 +36825,11 @@ public:
 };
 
 } // namespace RendererRD
-// --- End servers/rendering/renderer_rd/storage_rd/material_storage.h ---
-
-
 
 #include "core/string/ustring.h"
 
 #include "main/splash.gen.h"
 
-// --- Folded from servers/rendering/renderer_rd/rd_caches.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
@@ -38488,7 +36838,6 @@ public:
 #include "core/templates/rb_set.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
-
 
 class FramebufferCacheRD final
 {
@@ -39323,7 +37672,6 @@ public:
 
 	~PipelineHashMapRD() { clear_pipelines(); }
 };
-// --- End servers/rendering/renderer_rd/rd_caches.h ---
 
 // Forward declare RendererSceneRenderRD so we can pass it into some of our methods, these classes
 // are pretty tightly bound
@@ -40401,7 +38749,6 @@ public:
 
 	static int sdfgi_get_lightprobe_octahedron_size() { return SDFGI::LIGHTPROBE_OCT_SIZE; }
 
-
 static void sdfgi_reset();
 
 	struct SDFGIData
@@ -40946,13 +39293,9 @@ public:
 
 } // namespace RendererRD
 
-// --- Folded from servers/rendering/renderer_rd/renderer_canvas_render_rd.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from servers/rendering/renderer_rd/renderer_scene_render_rd.h ---
 
-// --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from servers/rendering/renderer_rd/effects/copy_effects.h ---
 
 #include "main/splash.gen.h"
 
@@ -40977,20 +39320,15 @@ public:
 	CopyEffects& operator=(const CopyEffects&) = delete;
 
 private:
-	// Blur raster shader
-
 	enum BlurRasterMode
 	{
 		BLUR_MIPMAP,
-
 		BLUR_MODE_GAUSSIAN_BLUR,
 		BLUR_MODE_GAUSSIAN_GLOW_GATHER,
 		BLUR_MODE_GAUSSIAN_GLOW_DOWNSAMPLE,
 		BLUR_MODE_GAUSSIAN_GLOW_UPSAMPLE,
 		BLUR_MODE_COPY,
-
 		BLUR_MODE_SET_COLOR,
-
 		BLUR_MODE_MAX
 	};
 
@@ -41003,33 +39341,18 @@ private:
 	{
 		float dest_pixel_size[2];
 		float source_pixel_size[2];
-
 		float pad[2];
 		uint32_t flags;
 		float level;
-
-		// glow
 		float glow_strength;
 		float glow_bloom;
 		float glow_hdr_threshold;
 		float glow_hdr_scale;
-
 		float glow_exposure;
 		float glow_white;
 		float glow_luminance_cap;
 		float luminance_multiplier;
 	};
-
-	struct BlurRaster
-	{
-		BlurRasterPushConstant push_constant;
-		ShaderRD shader{BlurRasterShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[BLUR_MODE_MAX];
-		RID glow_sampler;
-	};
-
-	// Copy shader
 
 	enum CopyMode
 	{
@@ -41047,7 +39370,6 @@ private:
 		COPY_MODE_OCTMAP_TO_PANORAMA,
 		COPY_MODE_OCTMAP_ARRAY_TO_PANORAMA,
 		COPY_MODE_MAX,
-
 	};
 
 	enum
@@ -41070,34 +39392,19 @@ private:
 		int32_t target[2];
 		uint32_t flags;
 		float luminance_multiplier;
-		// Glow.
 		float glow_strength;
 		float glow_bloom;
 		float glow_hdr_threshold;
 		float glow_hdr_scale;
-
 		float glow_exposure;
 		float glow_white;
 		float glow_luminance_cap;
 		float glow_auto_exposure_scale;
-		// DOF.
 		float camera_z_far;
 		float camera_z_near;
-		// Octmap.
 		float octmap_border_size[2];
-		// SET color
 		float set_color[4];
 	};
-
-	struct Copy
-	{
-		CopyPushConstant push_constant;
-		ShaderRD shader{CopyShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD pipelines[COPY_MODE_MAX];
-	};
-
-	// Copy to FB shader
 
 	enum CopyToFBMode
 	{
@@ -41105,12 +39412,8 @@ private:
 		COPY_TO_FB_COPY_PANORAMA_TO_DP,
 		COPY_TO_FB_COPY2,
 		COPY_TO_FB_SET_COLOR,
-
-		// These variants are disabled unless XR shaders are enabled.
-		// They should be listed last.
 		COPY_TO_FB_MULTIVIEW,
 		COPY_TO_FB_MULTIVIEW_WITH_DEPTH,
-
 		COPY_TO_FB_MAX,
 	};
 
@@ -41133,19 +39436,8 @@ private:
 		float pixel_size[2];
 		float luminance_multiplier;
 		uint32_t flags;
-
 		float set_color[4];
 	};
-
-	struct CopyToFb
-	{
-		CopyToFbPushConstant push_constant;
-		ShaderRD shader{CopyToFbShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[COPY_TO_FB_MAX];
-	};
-
-	// Copy to DP
 
 	struct CopyToDPPushConstant
 	{
@@ -41154,30 +39446,11 @@ private:
 		float texel_size[2];
 	};
 
-	struct CopyToDP
-	{
-		ShaderRD shader{CubeToDpShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipeline;
-	};
-
-	// Copy to Octmap
-
 	struct CopyToOctmapPushConstant
 	{
 		float border_size;
 		uint32_t pad[3];
 	};
-
-	struct CopyToOctmap
-	{
-		CopyToOctmapPushConstant push_constant;
-		ShaderRD shader{CubeToOctmapShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipeline;
-	};
-
-	// Octmap effects
 
 	struct OctmapDownsamplerPushConstant
 	{
@@ -41189,19 +39462,8 @@ private:
 	enum OctmapDownsamplerMode
 	{
 		DOWNSAMPLER_MODE_FLAG_RGB10_A2 = (1 << 0),
-
 		DOWNSAMPLER_MODE_COMPUTE_MAX = (DOWNSAMPLER_MODE_FLAG_RGB10_A2 + 1),
 		DOWNSAMPLER_MODE_RASTER_MAX = 1,
-	};
-
-	struct OctmapDownsampler
-	{
-		OctmapDownsamplerPushConstant push_constant;
-		ShaderRD compute_shader{OctmapDownsamplerShaderRD()};
-		ShaderRD raster_shader{OctmapDownsamplerRasterShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD compute_pipelines[DOWNSAMPLER_MODE_COMPUTE_MAX];
-		PipelineCacheRD raster_pipeline;
 	};
 
 	enum OctmapFilterMode
@@ -41209,10 +39471,7 @@ private:
 		FILTER_MODE_FLAG_HIGH_QUALITY = (1 << 0),
 		FILTER_MODE_FLAG_ARRAY = (1 << 1),
 		FILTER_MODE_FLAG_RGB10_A2 = (1 << 2),
-
-		FILTER_MODE_COMPUTE_MAX =
-			((FILTER_MODE_FLAG_HIGH_QUALITY | FILTER_MODE_FLAG_ARRAY | FILTER_MODE_FLAG_RGB10_A2) +
-				1),
+		FILTER_MODE_COMPUTE_MAX = ((FILTER_MODE_FLAG_HIGH_QUALITY | FILTER_MODE_FLAG_ARRAY | FILTER_MODE_FLAG_RGB10_A2) + 1),
 		FILTER_MODE_RASTER_MAX = (FILTER_MODE_FLAG_HIGH_QUALITY + 1),
 	};
 
@@ -41230,19 +39489,6 @@ private:
 		uint32_t pad;
 	};
 
-	struct OctmapFilter
-	{
-		ShaderRD compute_shader{OctmapFilterShaderRD()};
-		ShaderRD raster_shader{OctmapFilterRasterShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD compute_pipelines[FILTER_MODE_COMPUTE_MAX];
-		PipelineCacheRD raster_pipelines[FILTER_MODE_RASTER_MAX];
-
-		RID uniform_set;
-		RID coefficient_buffer;
-		bool use_high_quality = false;
-	};
-
 	enum OctmapRoughnessMode
 	{
 		ROUGHNESS_MODE_RGBA16F,
@@ -41256,23 +39502,10 @@ private:
 		float roughness;
 		uint32_t source_size;
 		uint32_t dest_size;
-
 		float border_size[2];
 		uint32_t use_direct_write;
 		uint32_t pad;
 	};
-
-	struct OctmapRoughness
-	{
-		OctmapRoughnessPushConstant push_constant;
-		ShaderRD compute_shader{OctmapRoughnessShaderRD()};
-		ShaderRD raster_shader{OctmapRoughnessRasterShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD compute_pipelines[ROUGHNESS_MODE_MAX];
-		PipelineCacheRD raster_pipeline;
-	};
-
-	// Merge specular
 
 	enum SpecularMergeMode
 	{
@@ -41280,38 +39513,68 @@ private:
 		SPECULAR_MERGE_SSR,
 		SPECULAR_MERGE_ADDITIVE_ADD,
 		SPECULAR_MERGE_ADDITIVE_SSR,
-
 		SPECULAR_MERGE_ADD_MULTIVIEW,
 		SPECULAR_MERGE_SSR_MULTIVIEW,
 		SPECULAR_MERGE_ADDITIVE_ADD_MULTIVIEW,
 		SPECULAR_MERGE_ADDITIVE_SSR_MULTIVIEW,
-
 		SPECULAR_MERGE_MAX
-	};
-
-	/* Specular merge must be done using raster, rather than compute
-	 * because it must continue the existing color buffer
-	 */
-
-	struct SpecularMerge
-	{
-		ShaderRD shader{SpecularMergeShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[SPECULAR_MERGE_MAX];
 	};
 
 	struct Data
 	{
 		uint32_t raster_effects = 0;
-		BlurRaster blur_raster;
-		Copy copy;
-		CopyToFb copy_to_fb;
-		CopyToDP cube_to_dp;
-		CopyToOctmap cube_to_octmap;
-		OctmapDownsampler octmap_downsampler;
-		OctmapFilter filter;
-		OctmapRoughness roughness;
-		SpecularMerge specular_merge;
+
+		BlurRasterPushConstant blur_raster_push_constant;
+		ShaderRD blur_raster_shader{BlurRasterShaderRD()};
+		RID blur_raster_shader_version;
+		PipelineCacheRD blur_raster_pipelines[BLUR_MODE_MAX];
+		RID blur_raster_glow_sampler;
+
+		CopyPushConstant copy_push_constant;
+		ShaderRD copy_shader{CopyShaderRD()};
+		RID copy_shader_version;
+		PipelineDeferredRD copy_pipelines[COPY_MODE_MAX];
+
+		CopyToFbPushConstant copy_to_fb_push_constant;
+		ShaderRD copy_to_fb_shader{CopyToFbShaderRD()};
+		RID copy_to_fb_shader_version;
+		PipelineCacheRD copy_to_fb_pipelines[COPY_TO_FB_MAX];
+
+		ShaderRD cube_to_dp_shader{CubeToDpShaderRD()};
+		RID cube_to_dp_shader_version;
+		PipelineCacheRD cube_to_dp_pipeline;
+
+		CopyToOctmapPushConstant cube_to_octmap_push_constant;
+		ShaderRD cube_to_octmap_shader{CubeToOctmapShaderRD()};
+		RID cube_to_octmap_shader_version;
+		PipelineCacheRD cube_to_octmap_pipeline;
+
+		OctmapDownsamplerPushConstant octmap_downsampler_push_constant;
+		ShaderRD octmap_downsampler_compute_shader{OctmapDownsamplerShaderRD()};
+		ShaderRD octmap_downsampler_raster_shader{OctmapDownsamplerRasterShaderRD()};
+		RID octmap_downsampler_shader_version;
+		PipelineDeferredRD octmap_downsampler_compute_pipelines[DOWNSAMPLER_MODE_COMPUTE_MAX];
+		PipelineCacheRD octmap_downsampler_raster_pipeline;
+
+		ShaderRD filter_compute_shader{OctmapFilterShaderRD()};
+		ShaderRD filter_raster_shader{OctmapFilterRasterShaderRD()};
+		RID filter_shader_version;
+		PipelineDeferredRD filter_compute_pipelines[FILTER_MODE_COMPUTE_MAX];
+		PipelineCacheRD filter_raster_pipelines[FILTER_MODE_RASTER_MAX];
+		RID filter_uniform_set;
+		RID filter_coefficient_buffer;
+		bool filter_use_high_quality = false;
+
+		OctmapRoughnessPushConstant roughness_push_constant;
+		ShaderRD roughness_compute_shader{OctmapRoughnessShaderRD()};
+		ShaderRD roughness_raster_shader{OctmapRoughnessRasterShaderRD()};
+		RID roughness_shader_version;
+		PipelineDeferredRD roughness_compute_pipelines[ROUGHNESS_MODE_MAX];
+		PipelineCacheRD roughness_raster_pipeline;
+
+		ShaderRD specular_merge_shader{SpecularMergeShaderRD()};
+		RID specular_merge_shader_version;
+		PipelineCacheRD specular_merge_pipelines[SPECULAR_MERGE_MAX];
 	};
 
 	static inline Data* data = nullptr;
@@ -41415,21 +39678,15 @@ private:
 		RESOLVE_MODE_MAX
 	};
 
-	struct ResolveShader
-	{
-		ResolvePushConstant push_constant;
-		ShaderRD shader{ResolveShaderRD()};
-		RID shader_version;
-		RID pipelines[RESOLVE_MODE_MAX]; // 3 quality levels
-	} resolve;
+	ResolvePushConstant resolve_push_constant;
+	ShaderRD resolve_shader{ResolveShaderRD()};
+	RID resolve_shader_version;
+	RID resolve_pipelines[RESOLVE_MODE_MAX];
 
-	struct ResolveRasterShader
-	{
-		ResolvePushConstant push_constant;
-		ShaderRD shader{ResolveRasterShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipeline;
-	} resolve_raster;
+	ResolvePushConstant resolve_raster_push_constant;
+	ShaderRD resolve_raster_shader{ResolveRasterShaderRD()};
+	RID resolve_raster_shader_version;
+	PipelineCacheRD resolve_raster_pipeline;
 
 public:
 	Resolve(bool p_prefer_raster_effects);
@@ -41440,30 +39697,6 @@ public:
 		int p_samples);
 	void resolve_depth(RID p_source_depth, RID p_dest_depth, Vector2i p_screen_size, int p_samples);
 	void resolve_depth_raster(RID p_source_rd_texture, RID p_dest_framebuffer, int p_samples);
-};
-
-// Note, this logic is unused at the time of writing. It should be re-incorporated into the renderer
-// at some point.
-class RoughnessLimiter final
-{
-private:
-	struct RoughnessLimiterPushConstant
-	{
-		int32_t screen_size[2];
-		float curve;
-		uint32_t pad;
-	};
-
-	RoughnessLimiterPushConstant push_constant;
-	ShaderRD shader{RoughnessLimiterShaderRD()};
-	RID shader_version;
-	RID pipeline;
-
-public:
-	RoughnessLimiter();
-	~RoughnessLimiter();
-
-	void roughness_limit(RID p_source_normal, RID p_roughness, const Size2i& p_size, float p_curve);
 };
 
 class SortEffects final
@@ -41519,7 +39752,6 @@ public:
 
 } // namespace RendererRD
 
-// --- Folded from servers/rendering/renderer_rd/effects/post_effects.h ---
 #include "core/io/ip.h"
 
 #include "main/splash.gen.h"
@@ -41587,15 +39819,12 @@ private:
 		BOKEH_MAX
 	};
 
-	struct Bokeh
-	{
-		BokehPushConstant push_constant;
-		ShaderRD compute_shader{BokehDofShaderRD()};
-		ShaderRD raster_shader{BokehDofRasterShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD compute_pipelines[BOKEH_MAX];
-		PipelineCacheRD raster_pipelines[BOKEH_MAX];
-	} bokeh;
+	BokehPushConstant push_constant;
+	ShaderRD compute_shader{BokehDofShaderRD()};
+	ShaderRD raster_shader{BokehDofRasterShaderRD()};
+	RID shader_version;
+	PipelineDeferredRD compute_pipelines[BOKEH_MAX];
+	PipelineCacheRD raster_pipelines[BOKEH_MAX];
 
 public:
 	struct BokehBuffers
@@ -41744,21 +39973,15 @@ private:
 	 * better to do using the raster pipeline rather than
 	 * compute, as that framebuffer might be in different formats
 	 */
-	struct Tonemap
-	{
-		TonemapPushConstant push_constant;
-		ShaderRD shader{TonemapShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[TONEMAP_MODE_MAX];
-	} tonemap;
+	TonemapPushConstant tonemap_push_constant;
+	ShaderRD tonemap_shader{TonemapShaderRD()};
+	RID tonemap_shader_version;
+	PipelineCacheRD tonemap_pipelines[TONEMAP_MODE_MAX];
 
-	struct TonemapMobile
-	{
-		TonemapPushConstantMobile push_constant;
-		ShaderRD shader{TonemapMobileShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[TONEMAP_MOBILE_MODE_MAX];
-	} tonemap_mobile;
+	TonemapPushConstantMobile tonemap_mobile_push_constant;
+	ShaderRD tonemap_mobile_shader{TonemapMobileShaderRD()};
+	RID tonemap_mobile_shader_version;
+	PipelineCacheRD tonemap_mobile_pipelines[TONEMAP_MOBILE_MODE_MAX];
 
 public:
 	ToneMapper(bool p_use_mobile_version);
@@ -41843,12 +40066,9 @@ private:
 		float pad[3];
 	};
 
-	struct LuminanceReduce
-	{
-		ShaderRD shader{LuminanceReduceShaderRD()};
-		RID shader_version;
-		RID pipelines[LUMINANCE_REDUCE_MAX];
-	} luminance_reduce;
+	ShaderRD luminance_reduce_shader{LuminanceReduceShaderRD()};
+	RID luminance_reduce_shader_version;
+	RID luminance_reduce_pipelines[LUMINANCE_REDUCE_MAX];
 
 	enum LuminanceReduceRasterMode
 	{
@@ -41868,12 +40088,9 @@ private:
 		uint32_t pad1;
 	};
 
-	struct LuminanceReduceFragment
-	{
-		ShaderRD shader{LuminanceReduceRasterShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[LUMINANCE_REDUCE_FRAGMENT_MAX];
-	} luminance_reduce_raster;
+	ShaderRD luminance_reduce_raster_shader{LuminanceReduceRasterShaderRD()};
+	RID luminance_reduce_raster_shader_version;
+	PipelineCacheRD luminance_reduce_raster_pipelines[LUMINANCE_REDUCE_FRAGMENT_MAX];
 
 public:
 	class LuminanceBuffers final : public RefCounted
@@ -41940,27 +40157,19 @@ private:
 		SMAA_BLEND_FLAG_USE_10_BIT_DEBANDING = (1 << 1),
 	};
 
-	struct SMAAEffect
-	{
-		SMAAEdgePushConstant edge_push_constant;
-		ShaderRD edge_shader{SmaaEdgeDetectionShaderRD()};
-		RID edge_shader_version;
-
-		SMAAWeightPushConstant weight_push_constant;
-		ShaderRD weight_shader{SmaaWeightCalculationShaderRD()};
-		RID weight_shader_version;
-
-		SMAABlendPushConstant blend_push_constant;
-		ShaderRD blend_shader{SmaaBlendingShaderRD()};
-		RID blend_shader_version;
-
-		RID search_tex;
-		RID area_tex;
-
-		RDC::DataFormat stencil_format;
-
-		PipelineCacheRD pipelines[SMAA_MAX];
-	} smaa;
+	SMAAEdgePushConstant edge_push_constant;
+	ShaderRD edge_shader{SmaaEdgeDetectionShaderRD()};
+	RID edge_shader_version;
+	SMAAWeightPushConstant weight_push_constant;
+	ShaderRD weight_shader{SmaaWeightCalculationShaderRD()};
+	RID weight_shader_version;
+	SMAABlendPushConstant blend_push_constant;
+	ShaderRD blend_shader{SmaaBlendingShaderRD()};
+	RID blend_shader_version;
+	RID search_tex;
+	RID area_tex;
+	RDC::DataFormat stencil_format;
+	PipelineCacheRD pipelines[SMAA_MAX];
 
 	float edge_detection_threshold;
 
@@ -41976,18 +40185,13 @@ public:
 class DebugEffects final
 {
 private:
-	struct
-	{
-		RD::VertexFormatID vertex_format;
-		RID vertex_buffer;
-		RID vertex_array;
-
-		RID index_buffer;
-		RID index_array;
-
-		RID lines_buffer;
-		RID lines_array;
-	} frustum;
+	RD::VertexFormatID frustum_vertex_format;
+	RID frustum_vertex_buffer;
+	RID frustum_vertex_array;
+	RID frustum_index_buffer;
+	RID frustum_index_array;
+	RID frustum_lines_buffer;
+	RID frustum_lines_array;
 
 	struct ShadowFrustumPushConstant
 	{
@@ -42002,12 +40206,9 @@ private:
 		SFP_MAX
 	};
 
-	struct
-	{
-		ShaderRD shader{ShadowFrustumShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[SFP_MAX];
-	} shadow_frustum;
+	ShaderRD shadow_frustum_shader{ShadowFrustumShaderRD()};
+	RID shadow_frustum_shader_version;
+	PipelineCacheRD shadow_frustum_pipelines[SFP_MAX];
 
 	struct MotionVectorsPushConstant
 	{
@@ -42017,13 +40218,10 @@ private:
 		uint32_t pad;
 	};
 
-	struct
-	{
-		ShaderRD shader{MotionVectorsShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipeline;
-		MotionVectorsPushConstant push_constant;
-	} motion_vectors;
+	ShaderRD motion_vectors_shader{MotionVectorsShaderRD()};
+	RID motion_vectors_shader_version;
+	PipelineCacheRD motion_vectors_pipeline;
+	MotionVectorsPushConstant motion_vectors_push_constant;
 
 	void _create_frustum_arrays();
 
@@ -42051,21 +40249,9 @@ private:
 		VRS_MAX,
 	};
 
-	struct VRSPushConstant
-	{
-		float max_texel_factor; // 4x8, 8x4 and 8x8 are only available on some GPUs.
-		float res1;
-		float res2;
-		float res3;
-	};
-
-	struct VRSShader
-	{
-		// VRSPushConstant push_constant;
-		ShaderRD shader{VrsShaderRD()};
-		RID shader_version;
-		PipelineCacheRD pipelines[VRS_MAX];
-	} vrs_shader;
+	ShaderRD shader{VrsShaderRD()};
+	RID shader_version;
+	PipelineCacheRD pipelines[VRS_MAX];
 
 public:
 	VRS();
@@ -42078,10 +40264,6 @@ public:
 };
 
 } // namespace RendererRD
-
-// --- End servers/rendering/renderer_rd/effects/post_effects.h ---
-
-// --- Folded from servers/rendering/renderer_rd/effects/ss_effects.h ---
 
 #include "main/splash.gen.h"
 
@@ -42251,22 +40433,6 @@ private:
 		float rotation_matrices[80]; // 5 vec4s * 4
 	};
 
-	struct SSEffectsShader
-	{
-		SSEffectsDownsamplePushConstant downsample_push_constant;
-		ShaderRD downsample_shader{SsEffectsDownsampleShaderRD()};
-		RID downsample_shader_version;
-		bool used_half_size_last_frame = false;
-		bool used_mips_last_frame = false;
-		bool used_full_mips_last_frame = false;
-
-		RID gather_constants_buffer;
-
-		RID mirror_sampler;
-
-		PipelineDeferredRD pipelines[SS_EFFECTS_MAX];
-	};
-
 	/* SSIL */
 
 	enum SSILMode
@@ -42345,30 +40511,6 @@ private:
 	struct SSILProjectionUniforms
 	{
 		float inv_last_frame_projection_matrix[16];
-	};
-
-	struct SSIL
-	{
-		SSILGatherPushConstant gather_push_constant;
-		ShaderRD gather_shader{SsilShaderRD()};
-		RID gather_shader_version;
-		RID projection_uniform_buffer;
-
-		SSILImportanceMapPushConstant importance_map_push_constant;
-		ShaderRD importance_map_shader{SsilImportanceMapShaderRD()};
-		RID importance_map_shader_version;
-		RID importance_map_load_counter;
-		RID counter_uniform_set;
-
-		SSILBlurPushConstant blur_push_constant;
-		ShaderRD blur_shader{SsilBlurShaderRD()};
-		RID blur_shader_version;
-
-		SSILInterleavePushConstant interleave_push_constant;
-		ShaderRD interleave_shader{SsilInterleaveShaderRD()};
-		RID interleave_shader_version;
-
-		PipelineDeferredRD pipelines[SSIL_MAX];
 	};
 
 	static void gather_ssil(RD::ComputeListID p_compute_list, const RID* p_ssil_slices,
@@ -42450,29 +40592,6 @@ private:
 		float pixel_size[2];
 	};
 
-	struct SSAO
-	{
-		SSAOGatherPushConstant gather_push_constant;
-		ShaderRD gather_shader{SsaoShaderRD()};
-		RID gather_shader_version;
-
-		SSAOImportanceMapPushConstant importance_map_push_constant;
-		ShaderRD importance_map_shader{SsaoImportanceMapShaderRD()};
-		RID importance_map_shader_version;
-		RID importance_map_load_counter;
-		RID counter_uniform_set;
-
-		SSAOBlurPushConstant blur_push_constant;
-		ShaderRD blur_shader{SsaoBlurShaderRD()};
-		RID blur_shader_version;
-
-		SSAOInterleavePushConstant interleave_push_constant;
-		ShaderRD interleave_shader{SsaoInterleaveShaderRD()};
-		RID interleave_shader_version;
-
-		PipelineDeferredRD pipelines[SSAO_MAX];
-	};
-
 	static void gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_slices,
 		const SSAOSettings& p_settings, bool p_adaptive_base_pass, RID p_gather_uniform_set,
 		RID p_importance_map_uniform_set);
@@ -42543,30 +40662,6 @@ private:
 		int32_t pad[2];
 	};
 
-	struct ScreenSpaceReflection
-	{
-		ShaderRD downsample_shader{ScreenSpaceReflectionDownsampleShaderRD()};
-		RID downsample_shader_version;
-		PipelineDeferredRD downsample_pipelines[SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX];
-
-		ShaderRD hiz_shader{ScreenSpaceReflectionHizShaderRD()};
-		RID hiz_shader_version;
-		PipelineDeferredRD hiz_pipelines[SCREEN_SPACE_REFLECTION_HIZ_MAX];
-
-		ShaderRD ssr_shader{ScreenSpaceReflectionShaderRD()};
-		RID ssr_shader_version;
-		PipelineDeferredRD ssr_pipeline;
-		RID ubo;
-
-		ShaderRD filter_shader{ScreenSpaceReflectionFilterShaderRD()};
-		RID filter_shader_version;
-		PipelineDeferredRD filter_pipeline;
-
-		ShaderRD resolve_shader{ScreenSpaceReflectionResolveShaderRD()};
-		RID resolve_shader_version;
-		PipelineDeferredRD resolve_pipeline;
-	};
-
 	/* Subsurface scattering */
 
 	enum SSSMode
@@ -42592,14 +40687,6 @@ private:
 		uint32_t pad[3];
 	};
 
-	struct SubSurfaceScattering
-	{
-		SubSurfaceScatteringPushConstant push_constant;
-		ShaderRD shader{SubsurfaceScatteringShaderRD()};
-		RID shader_version;
-		PipelineDeferredRD pipelines[SUBSURFACE_SCATTERING_MODE_MAX];
-	};
-
 	struct Data
 	{
 		RSE::EnvironmentSSAOQuality ssao_quality = RSE::ENV_SSAO_QUALITY_MEDIUM;
@@ -42622,11 +40709,70 @@ private:
 		float sss_scale = 0.05f;
 		float sss_depth_scale = 0.01f;
 
-		SSEffectsShader ss_effects;
-		SSIL ssil;
-		SSAO ssao;
-		ScreenSpaceReflection ssr;
-		SubSurfaceScattering sss;
+		SSEffectsDownsamplePushConstant ss_effects_downsample_push_constant;
+		ShaderRD ss_effects_downsample_shader{SsEffectsDownsampleShaderRD()};
+		RID ss_effects_downsample_shader_version;
+		bool ss_effects_used_half_size_last_frame = false;
+		bool ss_effects_used_mips_last_frame = false;
+		bool ss_effects_used_full_mips_last_frame = false;
+		RID ss_effects_gather_constants_buffer;
+		RID ss_effects_mirror_sampler;
+		PipelineDeferredRD ss_effects_pipelines[SS_EFFECTS_MAX];
+
+		SSILGatherPushConstant ssil_gather_push_constant;
+		ShaderRD ssil_gather_shader{SsilShaderRD()};
+		RID ssil_gather_shader_version;
+		RID ssil_projection_uniform_buffer;
+		SSILImportanceMapPushConstant ssil_importance_map_push_constant;
+		ShaderRD ssil_importance_map_shader{SsilImportanceMapShaderRD()};
+		RID ssil_importance_map_shader_version;
+		RID ssil_importance_map_load_counter;
+		RID ssil_counter_uniform_set;
+		SSILBlurPushConstant ssil_blur_push_constant;
+		ShaderRD ssil_blur_shader{SsilBlurShaderRD()};
+		RID ssil_blur_shader_version;
+		SSILInterleavePushConstant ssil_interleave_push_constant;
+		ShaderRD ssil_interleave_shader{SsilInterleaveShaderRD()};
+		RID ssil_interleave_shader_version;
+		PipelineDeferredRD ssil_pipelines[SSIL_MAX];
+
+		SSAOGatherPushConstant ssao_gather_push_constant;
+		ShaderRD ssao_gather_shader{SsaoShaderRD()};
+		RID ssao_gather_shader_version;
+		SSAOImportanceMapPushConstant ssao_importance_map_push_constant;
+		ShaderRD ssao_importance_map_shader{SsaoImportanceMapShaderRD()};
+		RID ssao_importance_map_shader_version;
+		RID ssao_importance_map_load_counter;
+		RID ssao_counter_uniform_set;
+		SSAOBlurPushConstant ssao_blur_push_constant;
+		ShaderRD ssao_blur_shader{SsaoBlurShaderRD()};
+		RID ssao_blur_shader_version;
+		SSAOInterleavePushConstant ssao_interleave_push_constant;
+		ShaderRD ssao_interleave_shader{SsaoInterleaveShaderRD()};
+		RID ssao_interleave_shader_version;
+		PipelineDeferredRD ssao_pipelines[SSAO_MAX];
+
+		ShaderRD ssr_downsample_shader{ScreenSpaceReflectionDownsampleShaderRD()};
+		RID ssr_downsample_shader_version;
+		PipelineDeferredRD ssr_downsample_pipelines[SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX];
+		ShaderRD ssr_hiz_shader{ScreenSpaceReflectionHizShaderRD()};
+		RID ssr_hiz_shader_version;
+		PipelineDeferredRD ssr_hiz_pipelines[SCREEN_SPACE_REFLECTION_HIZ_MAX];
+		ShaderRD ssr_ssr_shader{ScreenSpaceReflectionShaderRD()};
+		RID ssr_ssr_shader_version;
+		PipelineDeferredRD ssr_ssr_pipeline;
+		RID ssr_ubo;
+		ShaderRD ssr_filter_shader{ScreenSpaceReflectionFilterShaderRD()};
+		RID ssr_filter_shader_version;
+		PipelineDeferredRD ssr_filter_pipeline;
+		ShaderRD ssr_resolve_shader{ScreenSpaceReflectionResolveShaderRD()};
+		RID ssr_resolve_shader_version;
+		PipelineDeferredRD ssr_resolve_pipeline;
+
+		SubSurfaceScatteringPushConstant sss_push_constant;
+		ShaderRD sss_shader{SubsurfaceScatteringShaderRD()};
+		RID sss_shader_version;
+		PipelineDeferredRD sss_pipelines[SUBSURFACE_SCATTERING_MODE_MAX];
 	};
 
 	static inline Data* data = nullptr;
@@ -42634,12 +40780,6 @@ private:
 
 } // namespace RendererRD
 
-// --- End servers/rendering/renderer_rd/effects/ss_effects.h ---
-
-
-
-
-// --- Inlined/Folded from servers/rendering/renderer_rd/effects/upscale_effects.h ---
 #include "core/io/ip.h"
 
 #include "main/splash.gen.h"
@@ -42650,8 +40790,6 @@ private:
 
 #ifdef METAL_ENABLED
 #include "core/io/ip.h"
-
-
 
 namespace MTLFX
 {
@@ -42812,25 +40950,11 @@ public:
 class FSR2Effect final
 {
 public:
-	struct RootSignature
-	{
-		// Proxy structure to store the shader required by RD that uses the terminology used by the
-		// FSR2 API.
-		RID shader_rid;
-	};
-
-	struct Pipeline
-	{
-		RID pipeline_rid;
-	};
-
 	struct Pass
 	{
 		ShaderRD* shader;
 		RID shader_version;
-		RootSignature root_signature;
 		uint32_t shader_variant = 0;
-		Pipeline pipeline;
 		Vector<FfxResourceBinding> sampled_bindings;
 		Vector<FfxResourceBinding> storage_bindings;
 		Vector<FfxResourceBinding> uniform_bindings;
@@ -42870,18 +40994,15 @@ public:
 	void upscale(const Parameters& p_params);
 
 private:
-	struct
-	{
-		ShaderRD depth_clip{Fsr2DepthClipPassShaderRD()};
-		ShaderRD reconstruct_previous_depth{Fsr2ReconstructPreviousDepthPassShaderRD()};
-		ShaderRD lock{Fsr2LockPassShaderRD()};
-		ShaderRD accumulate{Fsr2AccumulatePassShaderRD()};
-		ShaderRD accumulate_sharpen{Fsr2AccumulatePassShaderRD()};
-		ShaderRD rcas{Fsr2RcasPassShaderRD()};
-		ShaderRD compute_luminance_pyramid{Fsr2ComputeLuminancePyramidPassShaderRD()};
-		ShaderRD autogen_reactive{Fsr2AutogenReactivePassShaderRD()};
-		ShaderRD tcr_autogen{Fsr2TcrAutogenPassShaderRD()};
-	} shaders;
+	ShaderRD shader_depth_clip{Fsr2DepthClipPassShaderRD()};
+	ShaderRD shader_reconstruct_previous_depth{Fsr2ReconstructPreviousDepthPassShaderRD()};
+	ShaderRD shader_lock{Fsr2LockPassShaderRD()};
+	ShaderRD shader_accumulate{Fsr2AccumulatePassShaderRD()};
+	ShaderRD shader_accumulate_sharpen{Fsr2AccumulatePassShaderRD()};
+	ShaderRD shader_rcas{Fsr2RcasPassShaderRD()};
+	ShaderRD shader_compute_luminance_pyramid{Fsr2ComputeLuminancePyramidPassShaderRD()};
+	ShaderRD shader_autogen_reactive{Fsr2AutogenReactivePassShaderRD()};
+	ShaderRD shader_tcr_autogen{Fsr2TcrAutogenPassShaderRD()};
 
 	Device device;
 };
@@ -43593,10 +41714,8 @@ public:
 	WeightBuffers weight_buffers[4]; // Only used in raster
 };
 
-// --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/light_storage.h ---
 #include "core/io/ip.h"
 
-// --- Folded from servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
 #include <cstdint>
 
 class RendererSceneRenderRD;
@@ -43659,11 +41778,6 @@ public:
 };
 
 } // namespace RendererRD
-
-
-
-// --- End servers/rendering/renderer_rd/storage_rd/forward_id_storage.h ---
-
 
 class ClusterBuilderRD;
 class ClusterBuilderSharedDataRD;
@@ -44888,10 +43002,6 @@ public:
 };
 
 } // namespace RendererRD
-// --- Folded from servers/rendering/renderer_rd/storage_rd/render_data_rd.h ---
-
-// --- Folded from servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h ---
-
 
 // This is a container for data related to rendering a single frame of a viewport where we load this
 // data into a UBO that can be used by the main scene shader but also by various effects.
@@ -45057,11 +43167,6 @@ private:
 	};
 };
 
-
-
-// --- End servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.h ---
-
-
 class RenderDataRD
 {
 public:
@@ -45130,16 +43235,7 @@ public:
 	uint32_t voxel_gi_count = 0;
 };
 
-
-
-// --- End servers/rendering/renderer_rd/storage_rd/render_data_rd.h ---
-
-
-
-
 #include "main/splash.gen.h"
-
-
 
 class ClusterBuilderSharedDataRD final {
 	friend class ClusterBuilderRD;
@@ -45969,9 +44065,6 @@ public:
 	~RendererSceneRenderRD() = delete;
 };
 
-// --- Folded from servers/rendering/multi_uma_buffer.h ---
-
-
 enum class MultiUmaBufferType : uint8_t
 {
 	UNIFORM,
@@ -46355,21 +44448,11 @@ public:
 	}
 };
 
-
-
-// --- End servers/rendering/multi_uma_buffer.h ---
-
-// --- Folded from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h ---
 #include "main/splash.gen.h"
-
 
 #include "core/io/ip.h"
 
-
-
-
 #include "main/splash.gen.h"
-
 
 namespace RendererSceneRenderImplementation
 {
@@ -46824,7 +44907,6 @@ class RenderForwardClustered final
 		RENDER_LIST_MAX
 	};
 
-
 public:
 	/* Framebuffer */
 
@@ -46974,7 +45056,6 @@ public:
 
 private:
 	static void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers);
-
 
 	static void _update_render_base_uniform_set();
 	static RID _setup_sdfgi_render_pass_uniform_set(RID p_albedo_texture, RID p_emission_texture,
@@ -47339,7 +45420,6 @@ private:
 		PassMode p_pass_mode, bool p_using_sdfgi = false, bool p_using_opaque_gi = false,
 		bool p_using_motion_pass = false, bool p_append = false);
 
-
 	struct GeometryInstanceData;
 	class GeometryInstanceForwardClustered;
 
@@ -47489,7 +45569,6 @@ private:
 	static void _geometry_instance_dependency_deleted(
 		const RID& p_dependency, DependencyTracker* p_tracker);
 
-
 	struct SurfacePipelineData
 	{
 		void* mesh_surface = nullptr;
@@ -47527,7 +45606,6 @@ private:
 			};
 		};
 	};
-
 
 	typedef Pair<SceneShaderForwardClustered::ShaderData*,
 		SceneShaderForwardClustered::ShaderData::PipelineKey>
@@ -47645,9 +45723,7 @@ private:
 		}
 	};
 
-
 	static void _update_shader_quality_settings();
-
 
 	/* SDFGI */
 	static void _update_sdfgi(RenderDataRD* p_render_data);
@@ -47838,16 +45914,9 @@ public:
 };
 } // namespace RendererSceneRenderImplementation
 
-// --- End servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.h ---
-
-// --- Folded from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
 #include "main/splash.gen.h"
 
-
 #include "core/io/ip.h"
-
-
-
 
 namespace RendererSceneRenderImplementation
 {
@@ -48296,7 +46365,6 @@ private:
 		RENDER_LIST_MAX
 	};
 
-
 	/* Render Buffer */
 
 	class RenderBufferDataForwardMobile final : public RefCounted
@@ -48420,7 +46488,6 @@ private:
 		bool p_use_directional_shadow_atlas = false, uint32_t p_pass_offset = 0u);
 	static void _pre_opaque_render(RenderDataRD* p_render_data);
 
-
 	static void _update_render_base_uniform_set();
 
 	static void _fill_instance_data(RenderListType p_render_list, uint32_t p_offset = 0,
@@ -48433,7 +46500,6 @@ private:
 		bool p_opaque_render_buffers = false, bool p_pancake_shadows = false);
 	static void _setup_lightmaps(const RenderDataRD* p_render_data, const PagedArray<RID>& p_lightmaps,
 		const Transform3D& p_cam_transform);
-
 
 	/* Light map */
 
@@ -48717,7 +46783,6 @@ private:
 		const Vector<Color>& p_clear_color_values = Vector<Color>(),
 		float p_clear_depth_value = 0.0, uint32_t p_clear_stencil_value = 0,
 		const Rect2& p_region = Rect2());
-
 
 protected:
 	/* setup */
@@ -49029,7 +47094,6 @@ public:
 	static void _geometry_instance_dependency_deleted(
 		const RID& p_dependency, DependencyTracker* p_tracker);
 
-
 	struct SurfacePipelineData
 	{
 		void* mesh_surface = nullptr;
@@ -49069,7 +47133,6 @@ public:
 			};
 		};
 	};
-
 
 	typedef Pair<SceneShaderForwardMobile::ShaderData*,
 		SceneShaderForwardMobile::ShaderData::PipelineKey>
@@ -49166,13 +47229,7 @@ public:
 };
 } // namespace RendererSceneRenderImplementation
 
-// --- End servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.h ---
-
-
 #include "main/splash.gen.h"
-
-
-
 
 typedef uint64_t PolygonID;
 
@@ -49409,7 +47466,6 @@ struct InstanceData
 	uint32_t instance_uniforms_ofs;
 	uint32_t lights[4];
 };
-
 
 struct PolygonBuffers
 {
@@ -49956,19 +48012,12 @@ public:
 	~RendererCanvasRenderRD();
 };
 
-
-
-// --- End servers/rendering/renderer_rd/renderer_canvas_render_rd.h ---
-
 #include "main/splash.gen.h"
 
-
-// --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/mesh_storage.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
 #include "main/splash.gen.h"
-
 
 namespace RendererRD
 {
@@ -50830,14 +48879,10 @@ public:
 };
 
 } // namespace RendererRD
-// --- Inlined/Folded from servers/rendering/renderer_rd/storage_rd/particles_storage.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
 #include "main/splash.gen.h"
-
-
-
 
 namespace RendererRD
 {
@@ -51476,11 +49521,7 @@ public:
 
 } // namespace RendererRD
 
-// --- Folded from servers/rendering/renderer_rd/storage_rd/utilities.h ---
 #include "core/io/ip.h"
-
-
-
 
 namespace RendererRD
 {
@@ -51576,9 +49617,6 @@ public:
 };
 
 } // namespace RendererRD
-
-// --- End servers/rendering/renderer_rd/storage_rd/utilities.h ---
-
 
 class RendererCompositorRD final
 {
@@ -51736,13 +49774,10 @@ public:
 };
 
 using RCRD = RendererCompositorRD;
-// --- End servers/rendering/renderer_rd/renderer_compositor_rd.h ---
 
-// --- Folded from modules/openxr/openxr_api.h ---
 #if defined(MODULE_OPENXR_ENABLED)
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
-// --- Folded from modules/openxr/action_map/openxr_action_map.h ---
 #include <openxr/openxr.h>
 #include "core/io/ip.h"
 
@@ -52080,7 +50115,6 @@ public:
 	~OpenXRActionMap() = default;
 };
 
-// --- End modules/openxr/action_map/openxr_action_map.h ---
 #include "core/typedefs.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -52090,7 +50124,6 @@ public:
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 ///////////////////////////////////////////////////////////////////////////
 // OpenXR Function Pointer & Enum Macros
@@ -53025,9 +51058,7 @@ public:
 	OpenXRAPIExtension();
 };
 #endif // defined(MODULE_OPENXR_ENABLED)
-// --- End modules/openxr/openxr_api.h ---
 
-// --- Folded from drivers/gles3/shader_gles3.h ---
 #if defined(GLES3_ENABLED)
 #ifdef GLES3_ENABLED
 // --- Unified from platform/*/platform_gl.h ---
@@ -53077,7 +51108,6 @@ public:
 #define glGetProcAddress(n) static_assert(false, "Usage of glGetProcessAddress() on the web is a bug.")
 #define eglGetProcAddress(n) static_assert(false, "Usage of eglGetProcessAddress() on the web is a bug.")
 
-// --- Inlined/Folded from platform/web/godot_webgl2.h ---
 #include <GLES3/gl3.h>
 #include <webgl/webgl2.h>
 
@@ -53101,11 +51131,9 @@ void godot_webgl2_glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr 
 }
 #endif
 #endif
-// --- End platform/*/platform_gl.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 class StringBuilder;
 
@@ -53358,7 +51386,6 @@ public:
 #include "main/splash.gen.h"
 #endif // GLES3_ENABLED
 
-// --- Folded from drivers/egl/egl_manager.h ---
 #ifdef EGL_ENABLED
 
 #include "core/string/ustring.h"
@@ -53386,7 +51413,6 @@ public:
 #undef KHRONOS_STATIC
 #endif
 #endif
-// --- End platform/*/platform_egl.h ---
 
 class EGLManager {
 private:
@@ -53468,12 +51494,8 @@ public:
 };
 
 #endif // EGL_ENABLED
-// --- End drivers/egl/egl_manager.h ---
-
-// --- Folded from drivers/gles3/rasterizer_gles3.h ---
 
 #ifdef GLES3_ENABLED
-// --- Folded from drivers/gles3/storage/utilities.h ---
 #include <cstdint>
 
 class RasterizerUtilGLES3 final
@@ -53491,42 +51513,54 @@ public:
 
 #ifdef GLES3_ENABLED
 
-
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-// --- Folded from drivers/gles3/effects/gles3_effects.h ---
 #ifdef GLES3_ENABLED
-
-
-
 namespace GLES3
 {
 
-class CopyEffects final
+class Effects final
 {
 public:
-	CopyEffects() = delete;
-	~CopyEffects() = delete;
-	CopyEffects(const CopyEffects&) = delete;
-	CopyEffects& operator=(const CopyEffects&) = delete;
+	Effects() = delete;
+	~Effects() = delete;
+	Effects(const Effects&) = delete;
+	Effects& operator=(const Effects&) = delete;
 
-private:
-	struct Copy
+	struct GlowLevel
 	{
-		CopyShaderGLES3 shader;
-		RID shader_version;
+		Size2i size;
+		GLuint color = 0;
+		GLuint fbo = 0;
 	};
 
+private:
 	struct Data
 	{
-		Copy copy;
+		CopyShaderGLES3 copy_shader;
+		RID copy_shader_version;
 
-		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
-		// pixel overdraw along the diagonal.
+		CubemapFilterShaderGLES3 cubemap_filter_shader;
+		RID cubemap_filter_shader_version;
+		uint32_t ggx_samples = 128;
+
+		FeedShaderGLES3 feed_shader;
+		RID feed_shader_version;
+
+		GlowShaderGLES3 glow_shader;
+		RID glow_shader_version;
+		float luminance_multiplier = 1.0f;
+		float glow_intensity = 1.0f;
+		float glow_bloom = 0.0f;
+		float glow_hdr_bleed_threshold = 1.0f;
+		float glow_hdr_bleed_scale = 2.0f;
+		float glow_hdr_luminance_cap = 12.0f;
+
+		PostShaderGLES3 post_shader;
+		RID post_shader_version;
+
 		GLuint screen_triangle = 0;
 		GLuint screen_triangle_array = 0;
-
-		// Use for rect-based effects.
 		GLuint quad = 0;
 		GLuint quad_array = 0;
 	};
@@ -53538,8 +51572,6 @@ public:
 	static void finalize();
 	static bool is_initialized() { return data != nullptr; }
 
-	// These functions assume that a framebuffer and texture are bound already. They only manage the
-	// shader, uniforms, and vertex array.
 	static void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
 	static void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
 		bool p_linear_to_srgb = false);
@@ -53557,128 +51589,11 @@ public:
 	static void set_color(const Color& p_color, const Rect2i& p_region);
 	static void draw_screen_triangle();
 	static void draw_screen_quad();
-};
-
-class CubemapFilter final
-{
-public:
-	CubemapFilter() = delete;
-	~CubemapFilter() = delete;
-	CubemapFilter(const CubemapFilter&) = delete;
-	CubemapFilter& operator=(const CubemapFilter&) = delete;
-
-private:
-	struct CMF
-	{
-		CubemapFilterShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	struct Data
-	{
-		CMF cubemap_filter;
-
-		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
-		// pixel overdraw along the diagonal.
-		GLuint screen_triangle = 0;
-		GLuint screen_triangle_array = 0;
-
-		uint32_t ggx_samples = 128;
-	};
-
-	static inline Data* data = nullptr;
-
-public:
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
 
 	static void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
 		GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
-};
 
-class FeedEffects final
-{
-public:
-	FeedEffects() = delete;
-	~FeedEffects() = delete;
-	FeedEffects(const FeedEffects&) = delete;
-	FeedEffects& operator=(const FeedEffects&) = delete;
-
-private:
-	struct Feed
-	{
-		FeedShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	struct Data
-	{
-		Feed feed;
-		GLuint screen_triangle = 0;
-		GLuint screen_triangle_array = 0;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void draw_screen_triangle();
-
-public:
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
-
-	static void draw();
-};
-
-class Glow final
-{
-public:
-	Glow() = delete;
-	~Glow() = delete;
-	Glow(const Glow&) = delete;
-	Glow& operator=(const Glow&) = delete;
-
-	struct Level
-	{
-		Size2i size;
-		GLuint color = 0;
-		GLuint fbo = 0;
-	};
-
-private:
-	struct GlowShader
-	{
-		GlowShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	struct Data
-	{
-		GlowShader glow;
-
-		float luminance_multiplier = 1.0;
-
-		float glow_intensity = 1.0;
-		float glow_bloom = 0.0;
-		float glow_hdr_bleed_threshold = 1.0;
-		float glow_hdr_bleed_scale = 2.0;
-		float glow_hdr_luminance_cap = 12.0;
-
-		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
-		// pixel overdraw along the diagonal.
-		GLuint screen_triangle = 0;
-		GLuint screen_triangle_array = 0;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void _draw_screen_triangle();
-
-public:
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	static void draw_feed();
 
 	static void set_intensity(float p_value)
 	{
@@ -53686,95 +51601,49 @@ public:
 			data->glow_intensity = p_value;
 		}
 	}
-
 	static void set_luminance_multiplier(float p_luminance_multiplier)
 	{
 		if (data) {
 			data->luminance_multiplier = p_luminance_multiplier;
 		}
 	}
-
 	static void set_glow_bloom(float p_bloom)
 	{
 		if (data) {
 			data->glow_bloom = p_bloom;
 		}
 	}
-
 	static void set_glow_hdr_bleed_threshold(float p_threshold)
 	{
 		if (data) {
 			data->glow_hdr_bleed_threshold = p_threshold;
 		}
 	}
-
 	static void set_glow_hdr_bleed_scale(float p_scale)
 	{
 		if (data) {
 			data->glow_hdr_bleed_scale = p_scale;
 		}
 	}
-
 	static void set_glow_hdr_luminance_cap(float p_cap)
 	{
 		if (data) {
 			data->glow_hdr_luminance_cap = p_cap;
 		}
 	}
-
-	static void process_glow(GLuint p_source_color, Size2i p_size, const Level* p_glow_buffers,
+	static void process_glow(GLuint p_source_color, Size2i p_size, const GlowLevel* p_glow_buffers,
 		uint32_t p_view = 0, bool p_use_multiview = false);
-};
-
-class PostEffects final
-{
-public:
-	PostEffects() = delete;
-	~PostEffects() = delete;
-	PostEffects(const PostEffects&) = delete;
-	PostEffects& operator=(const PostEffects&) = delete;
-
-private:
-	struct Post
-	{
-		PostShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	struct Data
-	{
-		Post post;
-
-		// Use for full-screen effects. Slightly more efficient than screen_quad as this eliminates
-		// pixel overdraw along the diagonal.
-		GLuint screen_triangle = 0;
-		GLuint screen_triangle_array = 0;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void _draw_screen_triangle();
-
-public:
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
 
 	static void post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
 		GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
 		float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
-		const Glow::Level* p_glow_buffers, float p_glow_intensity, float p_srgb_white,
+		const GlowLevel* p_glow_buffers, float p_glow_intensity, float p_srgb_white,
 		uint32_t p_view = 0, bool p_use_multiview = false, uint64_t p_spec_constants = 0,
 		bool p_bilinear_filtering = true);
 };
 
 } // namespace GLES3
-
 #endif // GLES3_ENABLED
-
-// --- End drivers/gles3/effects/gles3_effects.h ---
-
-
 
 #undef ConnectFlags // Defined by windows.h through egl.h, breaks object.h.
 
@@ -53929,7 +51798,7 @@ public:
 	// Buffers for our glow implementation
 	struct GLOW
 	{
-		GLES3::Glow::Level levels[4];
+		GLES3::Effects::GlowLevel levels[4];
 	} glow;
 
 private:
@@ -54020,7 +51889,7 @@ public:
 
 	GLuint get_backbuffer_depth() const { return backbuffer3d.depth; }
 
-	const GLES3::Glow::Level* get_glow_buffers() const { return &glow.levels[0]; }
+	const GLES3::Effects::GlowLevel* get_glow_buffers() const { return &glow.levels[0]; }
 
 	// Getters
 
@@ -54265,19 +52134,11 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-// --- End drivers/gles3/storage/utilities.h ---
-// --- Folded from drivers/gles3/rasterizer_canvas_gles3.h ---
-// --- Folded from drivers/gles3/storage/texture_storage.h ---
 #ifdef GLES3_ENABLED
-
 
 #include "core/io/net_socket.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
-
-
-
 
 #ifndef _GL_TEXTURE_EXTERNAL_OES
 #define _GL_TEXTURE_EXTERNAL_OES 0x8D65
@@ -55105,16 +52966,11 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-// --- End drivers/gles3/storage/texture_storage.h ---
 #ifdef GLES3_ENABLED
 
-
-// --- Inlined/Folded from drivers/gles3/storage/material_storage.h ---
 #ifdef GLES3_ENABLED
 
 #include "core/io/ip.h"
-
-
 
 namespace GLES3
 {
@@ -55598,16 +53454,10 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-// --- Folded from drivers/gles3/storage/mesh_storage.h ---
 #ifdef GLES3_ENABLED
-
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
-
-
-
 
 namespace GLES3
 {
@@ -56338,10 +54188,6 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-// --- End drivers/gles3/storage/mesh_storage.h ---
-
-
-
 
 namespace GLES3
 {
@@ -56357,7 +54203,6 @@ struct PolygonBuffers
 	HashMap<PolygonID, PolygonBuffers> polygons;
 	PolygonID last_id = 0;
 };
-
 
 struct Data
 {
@@ -56616,7 +54461,6 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender
 		RID shader_version;
 	} shadow_render;
 
-
 	static_assert(
 		sizeof(GLES3::LightUniform) % 16 == 0, "2D light UBO size must be a multiple of 16 bytes");
 
@@ -56665,7 +54509,6 @@ public:
 	static_assert(sizeof(GLES3::InstanceData) == 128, "2D instance data struct size must be 128 bytes");
 
 	static inline GLES3::Data data;
-
 
 	// DataBuffer contains our per-frame data. I.e. the resources that are updated each frame.
 	// We track them and ensure that they don't get reused until at least 2 frames have passed
@@ -56763,22 +54606,13 @@ public:
 
 #endif // GLES3_ENABLED
 
-
-
-// --- End drivers/gles3/rasterizer_canvas_gles3.h ---
-// --- Folded from drivers/gles3/rasterizer_scene_gles3.h ---
 #ifdef GLES3_ENABLED
 
 #include "core/io/ip.h"
-// --- Inlined/Folded from drivers/gles3/storage/light_storage.h ---
 #ifdef GLES3_ENABLED
-
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
-
-
 
 namespace GLES3
 {
@@ -57772,11 +55606,6 @@ public:
 } // namespace GLES3
 
 #endif // GLES3_ENABLED
-
-
-
-
-
 
 namespace GLES3
 {
@@ -58968,20 +56797,9 @@ public:
 
 #endif // GLES3_ENABLED
 
-
-
-// --- End drivers/gles3/rasterizer_scene_gles3.h ---
-
-
-
-// --- Inlined/Folded from drivers/gles3/storage/particles_storage.h ---
 #ifdef GLES3_ENABLED
 
 #include "core/io/ip.h"
-
-
-
-
 
 namespace GLES3 {
 
@@ -59434,9 +57252,6 @@ public:
 
 #endif // GLES3_ENABLED
 
-
-
-
 class RasterizerGLES3 final
 {
 private:
@@ -59520,23 +57335,16 @@ public:
 using RGLES3 = RasterizerGLES3;
 
 #endif // GLES3_ENABLED
-// --- End drivers/gles3/rasterizer_gles3.h ---
 #endif // defined(GLES3_ENABLED)
-// --- End drivers/gles3/shader_gles3.h ---
 
-// --- Folded from drivers/d3d12/rendering_context_driver_d3d12.h ---
 #if defined(D3D12_ENABLED)
-// --- Folded from drivers/d3d12/rendering_device_driver_d3d12.h ---
 #include "core/io/ip.h"
-// --- Folded from drivers/d3d12/rendering_shader_container_d3d12.h ---
-
 
 #define NIR_ENABLED 1
 
 #ifdef SHADER_BAKER_RUNTIME_ENABLED
 #undef NIR_ENABLED
 #endif
-// --- Folded from drivers/d3d12/d3d12_godot_nir_bridge.h ---
 #ifndef __cplusplus
 #include <stddef.h>
 #include <stdint.h>
@@ -59570,8 +57378,6 @@ extern void godot_nir_free(void *p_block);
 #ifdef __cplusplus
 }
 #endif
-
-// --- End drivers/d3d12/d3d12_godot_nir_bridge.h ---
 
 #define D3D12_BITCODE_OFFSETS_NUM_STAGES 3
 
@@ -59742,12 +57548,6 @@ public:
 	virtual ~RenderingShaderContainerFormatD3D12();
 };
 
-
-
-// --- End drivers/d3d12/rendering_shader_container_d3d12.h ---
-
-
-// --- Inlined/Folded from drivers/d3d12/godot_d3dx12.h ---
 #include "core/typedefs.h"
 
 #if !defined(_MSC_VER) && !defined(__REQUIRED_RPCNDR_H_VERSION__)
@@ -59763,7 +57563,6 @@ GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
 VLTR_GCC_WARNING_POP
 GODOT_CLANG_WARNING_POP
 
-// --- Folded from drivers/d3d12/godot_d3d12ma.h ---
 #include "core/typedefs.h"
 
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor")
@@ -60701,12 +58500,6 @@ public:
 	virtual ~RenderingDeviceDriverD3D12();
 };
 
-// --- End drivers/d3d12/rendering_device_driver_d3d12.h ---
-
-
-
-
-
 #ifdef DCOMP_ENABLED
 #include <dcomp.h>
 #endif
@@ -60797,9 +58590,6 @@ public:
 	virtual ~RenderingContextDriverD3D12() override;
 };
 
-// --- Folded from drivers/d3d12/d3d12_hooks.h ---
-
-
 class D3D12Hooks final
 {
 private:
@@ -60839,20 +58629,13 @@ public:
 	~D3D12Hooks() = delete;
 };
 
-// --- End drivers/d3d12/d3d12_hooks.h ---
-
-// --- Folded from drivers/d3d12/dxil_hash.h ---
 #include <windows.h>
 
 void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash);
 
-// --- End drivers/d3d12/dxil_hash.h ---
 #endif // defined(D3D12_ENABLED)
-// --- End drivers/d3d12/rendering_context_driver_d3d12.h ---
 
-// --- Folded from drivers/metal/rendering_device_driver_metal3.h ---
 #if defined(METAL_ENABLED)
-// --- Inlined/Folded from drivers/metal/metal3_objects.h ---
 /**************************************************************************/
 /*                                                                        */
 /* Portions of this code were derived from MoltenVK.                      */
@@ -60872,9 +58655,6 @@ void compute_dxil_hash(const BYTE *pData, UINT byteCount, BYTE *pOutHash);
 /* implied. See the License for the specific language governing           */
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
-
-
-
 
 #include <Metal/Metal.hpp>
 
@@ -61410,9 +59190,6 @@ _FORCE_INLINE_ static MTL::Size mipmapLevelSizeFromTexture(MTL::Texture *p_tex, 
 	lvlSize.depth = MAX(p_tex->depth() >> p_level, 1UL);
 	return lvlSize;
 }
-// --- Inlined/Folded from drivers/metal/rendering_device_driver_metal.h ---
-// --- Inlined/Folded from drivers/metal/metal_objects_shared.h ---
-// --- Inlined/Folded from drivers/metal/pixel_formats.h ---
 /**************************************************************************/
 /*                                                                        */
 /* Portions of this code were derived from MoltenVK.                      */
@@ -61436,7 +59213,6 @@ _FORCE_INLINE_ static MTL::Size mipmapLevelSizeFromTexture(MTL::Texture *p_tex, 
 #include "core/typedefs.h"
 
 GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations")
-// --- Folded from drivers/metal/inflection_map.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 
@@ -61530,8 +59306,6 @@ protected:
 	IndexValue _linear_indexes[LinearCount];
 };
 
-// --- End drivers/metal/inflection_map.h ---
-// --- Folded from drivers/metal/metal_device_properties.h ---
 /**************************************************************************/
 /*                                                                        */
 /* Portions of this code were derived from MoltenVK.                      */
@@ -61551,8 +59325,6 @@ protected:
 /* implied. See the License for the specific language governing           */
 /* permissions and limitations under the License.                         */
 /**************************************************************************/
-
-
 
 #include <Metal/Metal.hpp>
 
@@ -61701,9 +59473,6 @@ public:
 private:
 	static const SampleCount sample_count[RDD::TextureSamples::TEXTURE_SAMPLES_MAX];
 };
-
-// --- End drivers/metal/metal_device_properties.h ---
-
 
 #ifdef __OBJC__
 #include <Metal/Metal.h>
@@ -62063,7 +59832,6 @@ protected:
 };
 
 GODOT_CLANG_WARNING_POP
-// --- Inlined/Folded from drivers/metal/metal_utils.h ---
 #include "core/typedefs.h"
 
 #include <os/log.h>
@@ -62197,7 +59965,6 @@ constexpr uint32_t MSL_VERSION_40 = make_msl_version(4, 0);
  * |---------|---------|---------|
  */
 
-// --- Folded from drivers/metal/sha256_digest.h ---
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
 
@@ -62249,8 +60016,6 @@ struct HashMapComparatorDefault<SHA256Digest> {
 		return memcmp(p_lhs.data, p_rhs.data, CC_SHA256_DIGEST_LENGTH) == 0;
 	}
 };
-
-// --- End drivers/metal/sha256_digest.h ---
 
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -63307,7 +61072,6 @@ public:
 	~MDComputePipeline() final = default;
 };
 
-// --- Folded from drivers/metal/metal_device_profile.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -63446,11 +61210,6 @@ private:
 
 	static HashMap<ProfileKey, MetalDeviceProfile> profiles;
 };
-
-// --- End drivers/metal/metal_device_profile.h ---
-
-// --- Folded from drivers/metal/rendering_shader_container_metal.h ---
-
 
 constexpr uint32_t R32UI_ALIGNMENT_CONSTANT_ID = 65535;
 /// Metal buffer index for the view mask when rendering multi-view.
@@ -63652,7 +61411,6 @@ public:
 	RenderingShaderContainerFormatMetal(const MetalDeviceProfile *p_device_profile, bool p_export = false);
 	virtual ~RenderingShaderContainerFormatMetal() = default;
 };
-
 
 #include <Metal/Metal.hpp>
 
@@ -64270,10 +62028,7 @@ public:
 
 } // namespace MTL3
 
-// --- Folded from drivers/metal/rendering_context_driver_metal.h ---
 #ifdef METAL_ENABLED
-
-
 
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
@@ -64378,18 +62133,13 @@ public:
 };
 
 #endif // METAL_ENABLED
-// --- End drivers/metal/rendering_context_driver_metal.h ---
 #endif // defined(METAL_ENABLED)
-// --- End drivers/metal/rendering_device_driver_metal3.h ---
-// --- End servers/rendering/renderer.h ---
 
-// --- Folded from drivers/vulkan/rendering_context_driver_vulkan.h ---
 #if defined(VULKAN_ENABLED)
 #ifdef VULKAN_ENABLED
 
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
-
 
 #if defined(DEBUG_ENABLED)
 #define VK_TRACK_DRIVER_MEMORY
@@ -64609,7 +62359,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-// --- Folded from drivers/vulkan/vulkan_hooks.h ---
 #include <drivers/vulkan/godot_vulkan.h>
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
@@ -64689,13 +62438,6 @@ public:
 	~VulkanHooks() = delete;
 };
 
-
-
-// --- End drivers/vulkan/vulkan_hooks.h ---
-
-// --- Folded from drivers/vulkan/rendering_shader_container_vulkan.h ---
-
-
 class RenderingShaderContainerVulkan : public RenderingShaderContainer
 {
 public:
@@ -64732,13 +62474,8 @@ public:
 	virtual ~RenderingShaderContainerFormatVulkan();
 };
 
-
-
-// --- End drivers/vulkan/rendering_shader_container_vulkan.h ---
 #endif // defined(VULKAN_ENABLED)
-// --- End drivers/vulkan/rendering_context_driver_vulkan.h ---
 
-// --- Folded from drivers/unix/os_unix.h ---
 #ifdef UNIX_ENABLED
 
 #include <sys/types.h>
@@ -64861,15 +62598,8 @@ public:
 	static String expand_path(const String& p_path);
 };
 
-class UnixTerminalLogger : public StdLogger
-{
-public:
-	virtual ~UnixTerminalLogger();
-};
-
 #endif // UNIX_ENABLED
 
-// --- Folded from drivers/unix/file_access_unix.h ---
 #if defined(UNIX_ENABLED)
 
 #include <cstdio>
@@ -64950,11 +62680,6 @@ public:
 
 #endif // UNIX_ENABLED
 
-
-
-// --- End drivers/unix/file_access_unix.h ---
-
-// --- Folded from drivers/unix/net_socket_unix.h ---
 #if defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE)
 
 #include <sys/socket.h>
@@ -65047,11 +62772,6 @@ public:
 
 #endif // UNIX_ENABLED && !UNIX_SOCKET_UNAVAILABLE
 
-
-
-// --- End drivers/unix/net_socket_unix.h ---
-
-// --- Folded from drivers/unix/dir_access_unix.h ---
 #if defined(UNIX_ENABLED)
 
 #include <dirent.h>
@@ -65123,13 +62843,9 @@ public:
 };
 
 #endif // UNIX_ENABLED
-// --- End drivers/unix/dir_access_unix.h ---
 
-// --- Folded from drivers/coreaudio/audio_driver_coreaudio.h ---
 #if defined(COREAUDIO_ENABLED)
 #ifdef COREAUDIO_ENABLED
-
-
 
 #import <AudioUnit/AudioUnit.h>
 #ifdef MACOS_ENABLED
@@ -65223,33 +62939,6 @@ public:
 
 #endif // COREAUDIO_ENABLED
 
-// --- Folded from drivers/apple/os_log_logger.h ---
-#include "core/os/os.h"
-
-#include <os/log.h>
-
-/**
- * @brief Apple unified logging system integration for Godot Engine.
- */
-class OsLogLogger : public Logger {
-	os_log_t log;
-	os_log_t error_log;
-	os_log_t warning_log;
-	os_log_t script_log;
-	os_log_t shader_log;
-
-public:
-	void logv(const char *p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
-	void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify = false, ErrorType p_type = ERR_ERROR, const Vector<Ref<ScriptBacktrace>> &p_script_backtraces = {}) override;
-
-	/**
-	 * @brief Constructs an OsLogLogger with the specified subsystem identifier, which is normally the bundle identifier.
-	 */
-	OsLogLogger(const char *p_subsystem);
-};
-// --- End drivers/apple/os_log_logger.h ---
-
-// --- Folded from drivers/apple/foundation_helpers.h ---
 #ifdef __OBJC__
 #import <Foundation/NSString.h>
 #else
@@ -65305,16 +62994,11 @@ String to_string(NS::String *p_str);
 #endif
 
 } //namespace conv
-// --- End drivers/apple/foundation_helpers.h ---
 #endif // defined(COREAUDIO_ENABLED)
-// --- End drivers/coreaudio/audio_driver_coreaudio.h ---
 
-// --- Folded from platform/web/os_web.h ---
 #ifdef WEB_ENABLED
 #include <emscripten/html5.h>
-// --- Folded from platform/web/audio_driver_web.h ---
 #include "core/os/mutex.h"
-// --- Inlined/Folded from platform/web/godot_js.h ---
 #define WASM_EXPORT __attribute__((visibility("default")))
 
 #include <cstdint>
@@ -65423,7 +63107,6 @@ extern void godot_js_display_vk_hide();
 #ifdef __cplusplus
 }
 #endif
-
 
 class AudioDriverWeb : public AudioDriver
 {
@@ -65586,14 +63269,7 @@ public:
 	AudioDriverScriptProcessor() {}
 };
 
-
-
-// --- End platform/web/audio_driver_web.h ---
 #include "core/os/os.h"
-
-
-// --- Folded from platform/web/webmidi_driver.h ---
-
 
 #include "core/os/os.h"
 
@@ -65622,8 +63298,6 @@ public:
 	static void _on_midi_message(
 		int p_device_index, int p_status, const PackedByteArray& p_data, int p_data_len);
 };
-
-// --- End platform/web/webmidi_driver.h ---
 
 class OS_Web final
 {
@@ -65708,11 +63382,7 @@ public:
 	static void resume_audio();
 };
 
-// --- Folded from platform/web/display_server_web.h ---
-
-
 #include "core/os/os.h"
-
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -65972,10 +63642,8 @@ public:
 	~DisplayServerWeb();
 };
 
-// --- End platform/web/display_server_web.h ---
 #endif // WEB_ENABLED
 
-// --- Folded from platform/web/api/javascript_bridge_singleton.h ---
 #include "core/io/ip.h"
 
 class JavaScriptBridge final
@@ -65993,12 +63661,7 @@ public:
 	~JavaScriptBridge() = delete;
 };
 
-// --- End platform/web/api/javascript_bridge_singleton.h ---
-// --- End platform/web/os_web.h ---
-
-// --- Folded from platform/macos/os_macos.h ---
 #if defined(MACOS_ENABLED)
-// --- Inlined/Folded from platform/macos/crash_handler_macos.h ---
 class CrashHandler {
 	bool disabled;
 
@@ -66015,7 +63678,6 @@ public:
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
-// --- Inlined/Folded from drivers/coremidi/midi_driver_coremidi.h ---
 #ifdef COREMIDI_ENABLED
 
 #include "core/os/os.h"
@@ -66065,8 +63727,6 @@ public:
 };
 
 #endif // COREMIDI_ENABLED
-
-
 
 class JoypadSDL;
 
@@ -66242,10 +63902,7 @@ public:
 
 #endif
 
-// --- Folded from platform/macos/dir_access_macos.h ---
 #if defined(UNIX_ENABLED)
-
-
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -66270,7 +63927,6 @@ protected:
 
 #endif // UNIX ENABLED
 
-// --- Folded from platform/macos/godot_application.h ---
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 #import <IOKit/hidsystem/ev_keymap.h>
@@ -66288,7 +63944,6 @@ extern "C" GodotApplication *GodotApp;
 - (void)activateApplication;
 @end
 
-// --- Folded from platform/macos/godot_application_delegate.h ---
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -66304,12 +63959,9 @@ class OS_MacOS_NSApp;
 - (bool)getVoiceOver;
 @end
 
-// --- Folded from platform/macos/display_server_macos.h ---
 #if defined(MACOS_ENABLED)
-// --- Inlined/Folded from platform/macos/display_server_macos_base.h ---
 #include "core/os/os.h"
 #include "core/typedefs.h" // IWYU pragma: keep. Prevent macOS `MAX`/`MIN` from being defined.
-
 
 #define FontVariation __FontVariation
 
@@ -66463,7 +64115,6 @@ public:
 	~DisplayServerMacOSBase();
 };
 
-// --- Folded from platform/macos/macos_quartz_core_spi.h ---
 // Copyright 2014 The Chromium Authors. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -66527,10 +64178,7 @@ extern "C" CGSConnectionID CGSMainConnectionID(void);
 
 extern "C" NSString *const kCAContextCIFilterBehavior;
 
-// --- Folded from platform/macos/rendering_context_driver_vulkan_macos.h ---
 #ifdef VULKAN_ENABLED
-
-
 
 #import <QuartzCore/CAMetalLayer.h>
 
@@ -66552,7 +64200,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-// --- Folded from platform/macos/tts_macos.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/list.h"
@@ -66995,12 +64642,9 @@ public:
 	~DisplayServerMacOS();
 };
 
-// --- Folded from platform/macos/gl_manager_macos_angle.h ---
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/string/ustring.h"
-
-
 
 // Suppress redefinition conflicts
 #define FontVariation __FontVariation
@@ -67030,14 +64674,10 @@ public:
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 
-// --- Folded from platform/macos/gl_manager_macos_legacy.h ---
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
-
-
 
 #include "core/typedefs.h"
 #include "core/io/ip.h"
-
 
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -67095,7 +64735,6 @@ GODOT_CLANG_WARNING_PUSH
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 
-// --- Folded from platform/macos/godot_core_cursor.h ---
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -67110,7 +64749,6 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 
 @end
 
-// --- Folded from platform/macos/godot_open_save_delegate.h ---
 #include "core/io/ip.h"
 
 #import <AppKit/AppKit.h>
@@ -67144,9 +64782,6 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 
 @end
 
-// --- Folded from platform/macos/godot_progress_view.h ---
-
-
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -67159,7 +64794,6 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 - (void)setState:(DisplayServerEnums::ProgressState)state;
 @end
 
-// --- Folded from platform/macos/godot_status_item.h ---
 #include "core/os/os.h"
 
 #import <AppKit/AppKit.h>
@@ -67175,9 +64809,6 @@ constexpr int32_t GDCoreCursorWindowMove = 39;
 
 @end
 
-// --- Folded from platform/macos/godot_window_delegate.h ---
-
-
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -67190,9 +64821,6 @@ class DisplayServerMacOS;
 - (instancetype)initWithDisplayServer:(DisplayServerMacOS *)p_ds;
 
 @end
-
-// --- Folded from platform/macos/godot_window.h ---
-
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -67207,7 +64835,6 @@ class DisplayServerMacOS;
 
 @end
 
-// --- Folded from platform/macos/godot_button_view.h ---
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -67229,10 +64856,8 @@ class DisplayServerMacOS;
 
 @end
 
-// --- Folded from platform/macos/godot_content_view.h ---
 #include "core/os/os.h"
 #include "core/typedefs.h"
-
 
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
@@ -67282,7 +64907,6 @@ GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is de
 
 GODOT_CLANG_WARNING_POP
 
-// --- Folded from platform/macos/display_server_macos_embedded.h ---
 @class CAContext;
 @class CALayer;
 class InputEvent;
@@ -67468,7 +65092,6 @@ public:
 	~DisplayServerMacOSEmbedded();
 };
 
-// --- Folded from platform/macos/embedded_debugger.h ---
 #include "core/io/ip.h"
 
 class DisplayServerMacOSEmbedded;
@@ -67509,13 +65132,11 @@ public:
 #endif
 };
 
-// --- Folded from platform/macos/embedded_gl_manager.h ---
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
-
 
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -67604,7 +65225,6 @@ GODOT_CLANG_WARNING_PUSH
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 
-// --- Folded from platform/macos/key_mapping_macos.h ---
 #include "core/os/os.h"
 
 class KeyMappingMacOS {
@@ -67626,9 +65246,7 @@ public:
 	static unsigned int keycode_get_native_mask(Key p_keycode);
 };
 
-// --- Folded from platform/macos/native_menu_macos.h ---
 #include "core/io/ip.h"
-
 
 #import <AppKit/AppKit.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -67763,7 +65381,6 @@ public:
 	~NativeMenuMacOS();
 };
 
-// --- Folded from platform/macos/godot_menu_delegate.h ---
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
@@ -67774,7 +65391,6 @@ public:
 
 @end
 
-// --- Folded from platform/macos/godot_menu_item.h ---
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
 
@@ -67809,16 +65425,12 @@ enum GlobalMenuCheckType {
 
 @end
 #endif // defined(MACOS_ENABLED)
-// --- End platform/macos/display_server_macos.h ---
 #endif // defined(MACOS_ENABLED)
-// --- End platform/macos/os_macos.h ---
 
-// --- Folded from drivers/apple_embedded/os_apple_embedded.h ---
 #if defined(APPLE_EMBEDDED_ENABLED)
 #ifdef APPLE_EMBEDDED_ENABLED
 
 #include "core/os/os.h"
-// --- Folded from drivers/apple_embedded/apple_embedded.h ---
 #import <CoreHaptics/CoreHaptics.h>
 
 class AppleEmbedded
@@ -67844,7 +65456,6 @@ public:
 	AppleEmbedded();
 };
 
-// --- Folded from drivers/apple_embedded/display_layer_apple_embedded.h ---
 #import <QuartzCore/CAMetalLayer.h>
 
 @protocol GDTDisplayLayer <NSObject>
@@ -67855,14 +65466,8 @@ public:
 - (void)layoutDisplayLayer;
 
 @end
-// --- End drivers/apple_embedded/apple_embedded.h ---
-
-
-
-
 
 #if defined(RD_ENABLED)
-
 
 #if defined(VULKAN_ENABLED)
 
@@ -67986,8 +65591,6 @@ public:
 	}
 };
 
-
-// --- Folded from drivers/apple_embedded/godot_view_apple_embedded.h ---
 #import <UIKit/UIKit.h>
 
 class String;
@@ -68029,7 +65632,6 @@ class String;
 // Implemented in subclasses
 extern GDTView *GDTViewCreate();
 
-// --- Folded from drivers/apple_embedded/godot_view_renderer.h ---
 #import <UIKit/UIKit.h>
 
 @protocol GDTViewRendererProtocol <NSObject>
@@ -68044,10 +65646,7 @@ extern GDTView *GDTViewCreate();
 @interface GDTViewRenderer : NSObject <GDTViewRendererProtocol>
 
 @end
-// --- End drivers/apple_embedded/godot_view_apple_embedded.h ---
 
-
-// --- Folded from drivers/apple_embedded/godot_view_controller.h ---
 #import <UIKit/UIKit.h>
 
 @class GDTView;
@@ -68063,10 +65662,7 @@ extern GDTView *GDTViewCreate();
 #endif
 
 @end
-// --- End drivers/apple_embedded/godot_view_controller.h ---
 
-
-// --- Folded from drivers/apple_embedded/app_delegate_service.h ---
 #import <UIKit/UIKit.h>
 
 @class GDTViewController;
@@ -68076,10 +65672,7 @@ extern GDTView *GDTViewCreate();
 @property(strong, class, nonatomic) GDTViewController *viewController;
 
 @end
-// --- End drivers/apple_embedded/app_delegate_service.h ---
 
-
-// --- Folded from drivers/apple_embedded/godot_app_delegate.h ---
 #import <UIKit/UIKit.h>
 
 typedef NSObject<UIApplicationDelegate, UIWindowSceneDelegate> GDTAppDelegateServiceProtocol;
@@ -68092,25 +65685,16 @@ typedef NSObject<UIApplicationDelegate, UIWindowSceneDelegate> GDTAppDelegateSer
 
 @end
 
-// --- Folded from drivers/apple_embedded/main_utilities.h ---
 void change_to_launch_dir(char **p_args);
 
 int process_args(int p_argc, char **p_args, char **r_args);
-// --- End drivers/apple_embedded/godot_app_delegate.h ---
 
-
-// --- Folded from drivers/apple_embedded/display_server_apple_embedded.h ---
 #include "core/os/os.h"
-
 
 #if defined(RD_ENABLED)
 
-
 #if defined(VULKAN_ENABLED)
-// --- Inlined/Folded from drivers/apple_embedded/rendering_context_driver_vulkan_apple_embedded.h ---
 #ifdef VULKAN_ENABLED
-
-
 
 #import <QuartzCore/CAMetalLayer.h>
 
@@ -68352,7 +65936,6 @@ public:
 	virtual void set_icon(const Ref<Image> &p_icon) override;
 };
 
-// --- Folded from drivers/apple_embedded/godot_keyboard_input_view.h ---
 #import <UIKit/UIKit.h>
 
 @interface GDTKeyboardInputView : UITextView
@@ -68361,7 +65944,6 @@ public:
 
 @end
 
-// --- Folded from drivers/apple_embedded/key_mapping_apple_embedded.h ---
 #include "core/os/os.h"
 
 #import <UIKit/UIKit.h>
@@ -68375,7 +65957,6 @@ public:
 	static KeyLocation key_location(CFIndex p_keycode);
 };
 
-// --- Folded from drivers/apple_embedded/tts_apple_embedded.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/list.h"
@@ -68404,16 +65985,12 @@ struct TTSUtterance;
 - (void)speak:(const String &)text voice:(const String &)voice volume:(int)volume pitch:(float)pitch rate:(float)rate utterance_id:(int64_t)utterance_id interrupt:(bool)interrupt;
 - (Array)getVoices;
 @end
-// --- End drivers/apple_embedded/display_server_apple_embedded.h ---
 
 #endif // APPLE_EMBEDDED_ENABLED
 #endif // defined(APPLE_EMBEDDED_ENABLED)
-// --- End drivers/apple_embedded/os_apple_embedded.h ---
 
-// --- Folded from platform/linuxbsd/os_linuxbsd.h ---
 #if defined(LINUXBSD_ENABLED)
 #include "core/os/os.h"
-// --- Folded from platform/linuxbsd/crash_handler_linuxbsd.h ---
 class CrashHandler {
 	bool disabled;
 
@@ -68427,13 +66004,10 @@ public:
 	~CrashHandler();
 };
 
-// --- End platform/linuxbsd/crash_handler_linuxbsd.h ---
-// --- Folded from drivers/alsa/audio_driver_alsa.h ---
 #ifdef ALSA_ENABLED
 
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
-
 
 typedef struct _snd_pcm snd_pcm_t;
 typedef unsigned long snd_pcm_uframes_t;
@@ -68490,8 +66064,6 @@ public:
 
 #endif // ALSA_ENABLED
 
-// --- End drivers/alsa/audio_driver_alsa.h ---
-// --- Folded from drivers/alsamidi/midi_driver_alsamidi.h ---
 #ifdef ALSAMIDI_ENABLED
 
 #include "core/os/os.h"
@@ -68546,16 +66118,12 @@ public:
 
 #endif // ALSAMIDI_ENABLED
 
-// --- End drivers/alsamidi/midi_driver_alsamidi.h ---
-// --- Folded from drivers/pulseaudio/audio_driver_pulseaudio.h ---
 #ifdef PULSEAUDIO_ENABLED
 
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
 
-
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from drivers/pulseaudio/pulse-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_PULSE
 #define DYLIBLOAD_WRAPPER_PULSE
 // This file is generated. Do not edit!
@@ -70067,9 +67635,6 @@ public:
 
 #endif // PULSEAUDIO_ENABLED
 
-// --- End drivers/pulseaudio/audio_driver_pulseaudio.h ---
-
-
 class JoypadSDL;
 
 #ifdef FONTCONFIG_ENABLED
@@ -70176,7 +67741,6 @@ public:
 #endif
 };
 
-// --- Folded from platform/linuxbsd/freedesktop_at_spi_monitor.h ---
 #ifdef DBUS_ENABLED
 
 #include "core/os/mutex.h"
@@ -70203,9 +67767,6 @@ public:
 
 #endif // DBUS_ENABLED
 
-// --- End platform/linuxbsd/freedesktop_at_spi_monitor.h ---
-
-// --- Folded from platform/linuxbsd/freedesktop_portal_desktop.h ---
 #ifdef DBUS_ENABLED
 
 #include "core/os/mutex.h"
@@ -70314,11 +67875,6 @@ public:
 
 #endif // DBUS_ENABLED
 
-
-
-// --- End platform/linuxbsd/freedesktop_portal_desktop.h ---
-
-// --- Folded from platform/linuxbsd/freedesktop_screensaver.h ---
 #ifdef DBUS_ENABLED
 
 #include <cstdint>
@@ -70336,16 +67892,12 @@ public:
 
 #endif // DBUS_ENABLED
 
-// --- End platform/linuxbsd/freedesktop_screensaver.h ---
-
-// --- Folded from platform/linuxbsd/tts_linux.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/list.h"
 
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from platform/linuxbsd/speechd-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_SPEECHD
 #define DYLIBLOAD_WRAPPER_SPEECHD
 // This file is generated. Do not edit!
@@ -70722,9 +68274,6 @@ public:
 	static void stop();
 };
 
-// --- End platform/linuxbsd/tts_linux.h ---
-
-// --- Folded from platform/linuxbsd/dbus-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_DBUS
 #define DYLIBLOAD_WRAPPER_DBUS
 // This file is generated. Do not edit!
@@ -71696,14 +69245,10 @@ int initialize_dbus(int verbose);
 #endif
 #endif
 #endif // defined(LINUXBSD_ENABLED)
-// --- End platform/linuxbsd/os_linuxbsd.h ---
 
-// --- Folded from platform/android/os_android.h ---
 #if defined(ANDROID_ENABLED)
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/audio_driver_opensl.h ---
 #include "core/os/mutex.h"
-
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -71779,10 +69324,7 @@ public:
 	AudioDriverOpenSL();
 };
 
-// --- End platform/android/audio_driver_opensl.h ---
-
 #include "core/os/os.h"
-
 
 class GodotJavaWrapper;
 class GodotIOJavaWrapper;
@@ -71956,9 +69498,6 @@ public:
 	static bool _check_internal_feature_support(const String& p_feature);
 };
 
-// --- Folded from platform/android/dir_access_jandroid.h ---
-
-
 #include <jni.h>
 
 /// Android implementation of the DirAccess interface used to provide access to
@@ -72028,9 +69567,6 @@ private:
 	String get_absolute_path(String p_path);
 };
 
-// --- End platform/android/dir_access_jandroid.h ---
-
-// --- Folded from platform/android/file_access_android.h ---
 #include "core/io/file_access.h"
 
 #include <android/asset_manager.h>
@@ -72096,9 +69632,6 @@ public:
 	~FileAccessAndroid();
 };
 
-// --- End platform/android/file_access_android.h ---
-
-// --- Folded from platform/android/file_access_filesystem_jandroid.h ---
 #include "core/io/file_access.h"
 
 #include <jni.h>
@@ -72178,11 +69711,6 @@ public:
 	~FileAccessFilesystemJAndroid();
 };
 
-// --- End platform/android/file_access_filesystem_jandroid.h ---
-
-// --- Folded from platform/android/net_socket_android.h ---
-
-
 #include <jni.h>
 
 /**
@@ -72226,9 +69754,6 @@ public:
 	~NetSocketAndroid();
 };
 
-// --- End platform/android/net_socket_android.h ---
-
-// --- Folded from platform/android/android_keys_utils.h ---
 #include "core/os/os.h"
 
 #include <android/input.h>
@@ -72395,9 +69920,6 @@ static AndroidGodotLocationPair android_godot_location_pairs[] = {
 
 KeyLocation godot_location_from_android_code(unsigned int p_code);
 
-// --- End platform/android/android_keys_utils.h ---
-
-// --- Folded from platform/android/android_input_handler.h ---
 #include "core/os/os.h"
 
 // This class encapsulates all the handling of input events that come from the Android UI thread.
@@ -72474,9 +69996,6 @@ public:
 	void process_key_event(int p_physical_keycode, int p_unicode, int p_key_label, bool p_pressed, bool p_echo);
 };
 
-// --- End platform/android/android_input_handler.h ---
-
-// --- Folded from platform/android/tts_android.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -72527,12 +70046,7 @@ public:
 	static void stop();
 };
 
-// --- End platform/android/tts_android.h ---
-
-// --- Folded from platform/android/rendering_context_driver_vulkan_android.h ---
 #ifdef VULKAN_ENABLED
-
-
 
 struct ANativeWindow;
 
@@ -72555,9 +70069,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-// --- End platform/android/rendering_context_driver_vulkan_android.h ---
-
-// --- Folded from platform/android/plugin/godot_plugin_jni.h ---
 #include <android/log.h>
 #include <jni.h>
 
@@ -72570,12 +70081,9 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeRegis
 JNIEXPORT void JNICALL Java_org_godotengine_godot_plugin_GodotPlugin_nativeEmitSignal(JNIEnv *env, jclass clazz, jstring j_plugin_name, jstring j_signal_name, jobjectArray j_signal_params);
 }
 
-// --- End platform/android/plugin/godot_plugin_jni.h ---
 #endif // ANDROID_ENABLED
 
-// --- Folded from platform/android/api/jni_singleton.h ---
 #include "core/io/ip.h"
-
 
 class JNISingleton
 {
@@ -72586,13 +70094,7 @@ public:
 	~JNISingleton() { wrapped_object.unref(); }
 };
 
-
-
-// --- End platform/android/api/jni_singleton.h ---
-
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/display_server_android.h ---
-
 
 class InputEvent;
 
@@ -72837,7 +70339,6 @@ public:
 #endif // ANDROID_ENABLED
 
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/java_godot_io_wrapper.h ---
 #include "core/io/ip.h"
 
 #include <android/log.h>
@@ -72901,8 +70402,6 @@ public:
 #endif // ANDROID_ENABLED
 
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/java_godot_wrapper.h ---
-// --- Folded from platform/android/java_godot_view_wrapper.h ---
 #include "core/math/vector2.h"
 
 #include <android/log.h>
@@ -72936,8 +70435,6 @@ public:
 
 	~GodotJavaViewWrapper();
 };
-
-// --- End platform/android/java_godot_view_wrapper.h ---
 
 #include "core/math/vector2.h"
 #include "core/templates/list.h"
@@ -73076,7 +70573,6 @@ public:
 #endif // ANDROID_ENABLED
 
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/thread_jandroid.h ---
 #include <jni.h>
 
 void init_thread_jandroid(JavaVM *p_jvm, JNIEnv *p_env);
@@ -73086,7 +70582,6 @@ JNIEnv *get_jni_env();
 #endif // ANDROID_ENABLED
 
 #ifdef ANDROID_ENABLED
-// --- Folded from platform/android/jni_utils.h ---
 #include "core/string/ustring.h"
 
 #include <jni.h>
@@ -73160,13 +70655,10 @@ void cleanup_android_class_loader();
 jclass jni_find_class(JNIEnv *p_env, const char *p_class_name);
 #endif // ANDROID_ENABLED
 #endif // defined(ANDROID_ENABLED)
-// --- End platform/android/os_android.h ---
 
-// --- Folded from platform/windows/os_windows.h ---
 #if defined(_WIN32)
 #ifdef _WIN32
 #include "core/os/os.h"
-// --- Folded from platform/windows/crash_handler_windows.h ---
 #include <windows.h>
 
 // Crash handler exception only enabled with MSVC
@@ -73194,16 +70686,10 @@ public:
 	~CrashHandler();
 };
 
-
-
-
-// --- End platform/windows/crash_handler_windows.h ---
-// --- Folded from drivers/wasapi/audio_driver_wasapi.h ---
 #ifdef WASAPI_ENABLED
 
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
-
 
 #include <windows.h>
 
@@ -73291,8 +70777,6 @@ public:
 
 #endif // WASAPI_ENABLED
 
-// --- End drivers/wasapi/audio_driver_wasapi.h ---
-// --- Folded from drivers/winmidi/midi_driver_winmidi.h ---
 #ifdef WINMIDI_ENABLED
 
 #include "core/os/os.h"
@@ -73330,13 +70814,9 @@ public:
 
 #endif // WINMIDI_ENABLED
 
-// --- End drivers/winmidi/midi_driver_winmidi.h ---
-
 #ifdef XAUDIO2_ENABLED
-// --- Folded from drivers/xaudio2/audio_driver_xaudio2.h ---
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
-
 
 #include <windows.h>
 
@@ -73416,7 +70896,6 @@ public:
 	~AudioDriverXAudio2() {}
 };
 
-// --- End drivers/xaudio2/audio_driver_xaudio2.h ---
 #endif
 
 #include <dwrite.h>
@@ -73676,7 +71155,6 @@ public:
 
 #endif // _WIN32
 
-// --- Folded from drivers/windows/file_access_windows.h ---
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/file_access.h"
@@ -73751,7 +71229,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- Folded from drivers/windows/dir_access_windows.h ---
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/net_socket.h"
@@ -73820,9 +71297,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- End drivers/windows/dir_access_windows.h ---
-
-// --- Folded from drivers/windows/file_access_windows_pipe.h ---
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/file_access.h"
@@ -73884,9 +71358,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- End drivers/windows/file_access_windows_pipe.h ---
-
-// --- Folded from drivers/windows/ip_windows.h ---
 #if defined(WINDOWS_ENABLED)
 
 #include "core/io/ip.h"
@@ -73908,9 +71379,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- End drivers/windows/ip_windows.h ---
-
-// --- Folded from drivers/windows/net_socket_winsock.h ---
 #ifdef WINDOWS_ENABLED
 
 #include "core/io/net_socket.h"
@@ -73980,36 +71448,12 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- End drivers/windows/net_socket_winsock.h ---
-
-// --- Folded from drivers/windows/thread_windows.h ---
 #ifdef WINDOWS_ENABLED
 
 void init_thread_win();
 
 #endif // WINDOWS_ENABLED
 
-// --- End drivers/windows/thread_windows.h ---
-
-// --- End drivers/windows/file_access_windows.h ---
-
-// --- Folded from platform/windows/windows_terminal_logger.h ---
-#ifdef WINDOWS_ENABLED
-
-#include "core/os/os.h"
-
-class WindowsTerminalLogger : public StdLogger {
-public:
-	virtual void logv(const char *p_format, va_list p_list, bool p_err) override;
-	virtual void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify = false, ErrorType p_type = ERR_ERROR, const Vector<Ref<ScriptBacktrace>> &p_script_backtraces = {}) override;
-	virtual ~WindowsTerminalLogger();
-};
-
-#endif // WINDOWS_ENABLED
-
-// --- End platform/windows/windows_terminal_logger.h ---
-
-// --- Folded from platform/windows/windows_utils.h ---
 #ifdef WINDOWS_ENABLED
 
 #include "core/string/ustring.h"
@@ -74025,9 +71469,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-// --- End platform/windows/windows_utils.h ---
-
-// --- Folded from platform/windows/winrt_utils.h ---
 #include "core/typedefs.h"
 
 #include <windows.h>
@@ -74049,16 +71490,11 @@ public:
 	static void destroy_wd(WinRTWindowData *p_data);
 };
 
-// --- End platform/windows/winrt_utils.h ---
-
-// --- Folded from platform/windows/display_server_windows.h ---
 #if defined(WINDOWS_ENABLED)
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/os/os.h"
 #include "core/io/ip.h"
-
-
 
 #ifdef XAUDIO2_ENABLED
 
@@ -74070,11 +71506,7 @@ public:
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-// --- Folded from platform/windows/gl_manager_windows_angle.h ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
-
-
-
 
 #include <windows.h>
 
@@ -74095,14 +71527,11 @@ public:
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
 
-// --- End platform/windows/gl_manager_windows_angle.h ---
 #endif // ANGLE_ENABLED
-// --- Folded from platform/windows/gl_manager_windows_native.h ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
 
 #include <windows.h>
 
@@ -74172,7 +71601,6 @@ public:
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
 
-// --- End platform/windows/gl_manager_windows_native.h ---
 #endif // GLES3_ENABLED
 
 #include <windows.h>
@@ -74910,9 +72338,6 @@ public:
 	~DisplayServerWindows();
 };
 
-// --- Folded from platform/windows/drop_target_windows.h ---
-
-
 #include <shlobj.h>
 
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wnon-virtual-dtor") // Silence warning due to a COM API weirdness.
@@ -74948,9 +72373,6 @@ public:
 
 VLTR_GCC_WARNING_POP
 
-// --- End platform/windows/drop_target_windows.h ---
-
-// --- Folded from platform/windows/key_mapping_windows.h ---
 #include "core/os/os.h"
 
 #include <windows.h>
@@ -74970,12 +72392,8 @@ public:
 	static KeyLocation get_location(unsigned int p_code, bool p_extended);
 };
 
-// --- End platform/windows/key_mapping_windows.h ---
-
-// --- Folded from platform/windows/native_menu_windows.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
-
 
 #include <windows.h>
 
@@ -75094,12 +72512,7 @@ public:
 	~NativeMenuWindows();
 };
 
-// --- End platform/windows/native_menu_windows.h ---
-
-// --- Folded from platform/windows/rendering_context_driver_vulkan_windows.h ---
 #ifdef VULKAN_ENABLED
-
-
 
 #include <windows.h>
 
@@ -75122,9 +72535,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-// --- End platform/windows/rendering_context_driver_vulkan_windows.h ---
-
-// --- Folded from platform/windows/tts_driver.h ---
 class TTSDriver
 {
 public:
@@ -75146,13 +72556,6 @@ public:
 
 	virtual ~TTSDriver() {}
 };
-
-
-
-// --- End platform/windows/tts_driver.h ---
-
-// --- Folded from platform/windows/tts_driver_onecore.h ---
-
 
 VLTR_GCC_WARNING_PUSH
 VLTR_GCC_WARNING_IGNORE("-Wnon-virtual-dtor")
@@ -75226,11 +72629,6 @@ public:
 	~TTSDriverOneCore();
 };
 
-// --- End platform/windows/tts_driver_onecore.h ---
-
-// --- Folded from platform/windows/tts_driver_sapi.h ---
-
-
 #include <windows.h>
 
 #include <objbase.h>
@@ -75273,9 +72671,6 @@ public:
 	~TTSDriverSAPI();
 };
 
-// --- End platform/windows/tts_driver_sapi.h ---
-
-// --- Folded from platform/windows/tts_windows.h ---
 #include "core/string/ustring.h"
 
 class TTSDriver;
@@ -75312,9 +72707,6 @@ public:
 	static void process_events();
 };
 
-// --- End platform/windows/tts_windows.h ---
-
-// --- Folded from platform/windows/wgl_detect_version.h ---
 #if defined(WINDOWS_ENABLED) && defined(GLES3_ENABLED)
 
 class Dictionary;
@@ -75323,16 +72715,11 @@ Dictionary detect_wgl();
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
 
-// --- End platform/windows/wgl_detect_version.h ---
 #endif // defined(WINDOWS_ENABLED)
-// --- End platform/windows/display_server_windows.h ---
 #endif // defined(_WIN32)
-// --- End platform/windows/os_windows.h ---
-// --- End drivers/unix/os_unix.h ---
 
 #endif // SERVERS_DISPLAY_SERVER_H
 
-// --- Folded from scene/main/scene_tree.h ---
 #ifdef WANT_SCENE_TREE_H
 #undef WANT_SCENE_TREE_H
 #ifndef SCENE_TREE_H_EMITTED
@@ -75340,9 +72727,7 @@ Dictionary detect_wgl();
 #include <cstdlib>
 #include "core/os/os.h"
 #include "core/io/ip.h"
-// --- Folded from scene/animation/animation_mixer.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from scene/animation/tween.h ---
 #include "core/io/ip.h"
 
 class Tweener;
@@ -75547,9 +72932,7 @@ private:
 	bool relative = false;
 	bool received = false;
 };
-// --- Folded from scene/main/node.h ---
 #include "core/os/os.h"
-// --- Folded from core/templates/iterable.h ---
 #include <utility>
 
 template <typename I>
@@ -75567,8 +72950,6 @@ public:
 			_begin(p_begin), _end(p_end) {}
 };
 
-// --- End core/templates/iterable.h ---
-// --- Folded from core/templates/mem_unique_ptr.h ---
 #ifndef MEM_UNIQUE_PTR_H
 #define MEM_UNIQUE_PTR_H
 
@@ -75595,10 +72976,7 @@ template <typename T, typename... Args> mem_unique_ptr<T> mem_make_unique(Args&&
 
 #endif // MEM_UNIQUE_PTR_H
 
-
-// --- End core/templates/mem_unique_ptr.h ---
 class PackedScene;
-// --- Inlined/Folded from scene/scene_string_names.h ---
 #include "core/os/memory.h"
 #include "core/string/ustring.h"
 
@@ -76675,12 +74053,8 @@ template <typename... VarArgs> Error Node::rpc(const String& p_method, VarArgs..
 	warnings.push_back(RTR("This node is marked as experimental and may be subject to removal or " \
 						   "major changes in future versions."));
 
-// --- Folded from scene/property_utils.h ---
-
-// --- Folded from scene/resources/packed_scene.h ---
 #include "core/io/ip.h"
 #include "core/typedefs.h"
-
 
 class PackedScene;
 
@@ -76888,7 +74262,6 @@ public:
 	SceneState() = default;
 };
 
-
 class PackedScene : public Resource
 {
 	Ref<SceneState> state;
@@ -76930,11 +74303,9 @@ public:
 	PackedScene();
 };
 
-// --- Folded from scene/resources/resource_format_text.h ---
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
-
 
 class ResourceLoaderText
 {
@@ -77116,12 +74487,6 @@ public:
 	ResourceFormatSaverText() = default;
 };
 
-
-
-// --- End scene/resources/resource_format_text.h ---
-
-// --- Folded from scene/resources/video_stream.h ---
-
 class VideoStreamPlayback : public Resource
 {
 public:
@@ -77183,23 +74548,6 @@ public:
 	~VideoStream();
 };
 
-// --- End scene/resources/video_stream.h ---
-// --- End scene/resources/packed_scene.h ---
-
-class PropertyUtils
-{
-public:
-	// Gets the instance/inheritance states of this node, in order of precedence,
-	// that is, from the topmost (the most able to override values) to the lowermost
-	// (Note that in nested instantiation, the one with the greatest precedence is the furthest
-	// in the tree, since every owner found while traversing towards the root gets a chance
-	// to override property values.)
-	static Vector<SceneState::PackState> get_node_states_stack(
-		const Node* p_node, const Node* p_owner = nullptr, bool* r_instantiated_by_owner = nullptr);
-};
-// --- End scene/property_utils.h ---
-// --- End scene/main/node.h ---
-// --- Folded from scene/resources/animation.h ---
 #include <memory>
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
@@ -77714,8 +75062,6 @@ public:
 	~Animation();
 };
 
-// --- Folded from scene/resources/skeleton_profile.h ---
-
 class SkeletonProfile : public Resource
 {
 public:
@@ -77808,13 +75154,6 @@ public:
 	~SkeletonProfile();
 };
 
-
-
-// --- End scene/resources/skeleton_profile.h ---
-
-// --- Folded from scene/resources/bone_map.h ---
-
-
 class BoneMap : public Resource
 {
 	Ref<SkeletonProfile> profile;
@@ -77841,13 +75180,7 @@ public:
 	~BoneMap();
 };
 
-
-
-// --- End scene/resources/bone_map.h ---
-// --- End scene/resources/animation.h ---
-// --- Folded from scene/resources/animation_library.h ---
 #include "core/io/ip.h"
-
 
 class AnimationLibrary : public Resource
 {
@@ -77876,10 +75209,6 @@ public:
 
 	AnimationLibrary();
 };
-
-
-
-// --- End scene/resources/animation_library.h ---
 
 class AnimatedValuesBackup;
 
@@ -78259,10 +75588,6 @@ public:
 
 	~AnimatedValuesBackup() { clear_data(); }
 };
-
-// --- Folded from scene/animation/animation_tree.h ---
-
-
 
 /**
  * 31540000 seconds mean 1 year... is it too long? It must be longer than any Animation
@@ -78765,9 +76090,6 @@ public:
 	~AnimationTree();
 };
 
-// --- Folded from scene/animation/animation_blend_tree.h ---
-
-
 class AnimationNodeBlendNode final : public AnimationNode
 {
 public:
@@ -79065,13 +76387,7 @@ public:
 	~AnimationNodeBlendTree() = default;
 };
 
-// --- End scene/animation/animation_blend_tree.h ---
-
-// --- End scene/animation/animation_tree.h ---
-
-// --- Folded from scene/audio/audio_stream_player.h ---
 #include "core/os/memory.h"
-
 
 struct AudioFrame;
 class AudioStream;
@@ -79214,13 +76530,6 @@ public:
 	AudioStreamPlayer();
 	~AudioStreamPlayer();
 };
-
-
-
-// --- End scene/audio/audio_stream_player.h ---
-
-// --- Folded from scene/animation/animation_player.h ---
-
 
 class AnimationPlayer : public AnimationMixer
 {
@@ -79470,10 +76779,7 @@ public:
 	AnimationPlayer();
 	~AnimationPlayer();
 };
-// --- End scene/animation/animation_mixer.h ---
-// --- Inlined/Folded from scene/main/multiplayer_api.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from scene/main/multiplayer_peer.h ---
 #include "core/io/net_socket.h"
 
 class MultiplayerPeer : public PacketPeer
@@ -79533,23 +76839,6 @@ public:
 	virtual ConnectionStatus get_connection_status() const = 0;
 
 	uint32_t generate_unique_id() const;
-};
-
-class MultiplayerPeerExtension : public MultiplayerPeer
-{
-protected:
-
-	PackedByteArray script_buffer;
-
-public:
-	/* PacketPeer extension */
-	virtual Error get_packet(const uint8_t** r_buffer,
-		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-	/* MultiplayerPeer extension */
-	virtual void set_refuse_new_connections(bool p_enable) override;
-	virtual bool is_refusing_new_connections() const override;
-	virtual bool is_server_relay_supported() const override;
 };
 
 class MultiplayerAPI : public RefCounted
@@ -79673,7 +76962,6 @@ public:
 	MultiplayerAPI();
 	~MultiplayerAPI();
 };
-// --- Folded from scene/main/scene_tree_fti.h ---
 #include "core/os/mutex.h"
 #include "core/string/ustring.h"
 
@@ -79847,8 +77135,6 @@ public:
 };
 
 #endif // ndef _3D_DISABLED
-
-// --- End scene/main/scene_tree_fti.h ---
 
 class ArrayMesh;
 struct InputEvent;
@@ -80260,9 +77546,6 @@ public:
 #endif
 };
 
-// --- Folded from scene/main/instance_placeholder.h ---
-
-
 class PackedScene;
 
 class InstancePlaceholder : public Node
@@ -80282,47 +77565,6 @@ public:
 
 	InstancePlaceholder();
 };
-
-
-
-// --- End scene/main/instance_placeholder.h ---
-
-// --- Folded from scene/main/missing_node.h ---
-
-
-class MissingNode : public Node
-{
-	String original_class;
-	String original_scene;
-	bool recording_properties = false;
-	bool recording_signals = false;
-
-protected:
-
-public:
-	void set_original_class(const String& p_class);
-	String get_original_class() const;
-
-	void set_original_scene(const String& p_scene);
-	String get_original_scene() const;
-
-	void set_recording_properties(bool p_enable);
-	bool is_recording_properties() const;
-
-	void set_recording_signals(bool p_enable);
-	bool is_recording_signals() const;
-
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	MissingNode();
-};
-
-
-
-// --- End scene/main/missing_node.h ---
-
-// --- Folded from scene/main/timer.h ---
-
 
 class Timer : public Node
 {
@@ -80373,11 +77615,9 @@ private:
 	void _set_process(bool p_process, bool p_force = false);
 };
 
-// --- Folded from modules/multiplayer/scene_multiplayer.h ---
 #include "core/io/ip.h"
 #include "core/io/net_socket.h"
 #include "core/templates/rb_set.h"
-
 
 class Node;
 class MultiplayerSynchronizer;
@@ -80735,10 +77975,7 @@ struct MultiplayerAPI::SceneData
 	Ref<SceneRPCInterface> rpc;
 };
 
-// --- Folded from modules/multiplayer/multiplayer_synchronizer.h ---
 #include "core/string/ustring.h"
-
-
 
 class MultiplayerSynchronizer final : public Node
 {
@@ -80873,14 +78110,6 @@ public:
 
 	MultiplayerSynchronizer();
 };
-
-// --- End modules/multiplayer/multiplayer_synchronizer.h ---
-// --- End modules/multiplayer/scene_multiplayer.h ---
-
-// --- Folded from scene/2d/node_2d.h ---
-// --- Folded from scene/gui/control.h ---
-// --- Folded from scene/main/canvas_item.h ---
-
 
 class CanvasLayer;
 class Font;
@@ -81400,9 +78629,6 @@ public:
 	~CanvasItem();
 };
 
-// --- Folded from scene/main/canvas_layer.h ---
-
-
 class Viewport;
 
 class CanvasLayer : public Node
@@ -81526,7 +78752,6 @@ public:
 	CanvasLayer(bool p_parallax = false);
 	~CanvasLayer();
 };
-// --- End scene/main/canvas_item.h ---
 
 class Label;
 class Panel;
@@ -81850,7 +79075,6 @@ private:
 		NodePath focus_neighbor[4];
 		NodePath focus_next;
 		NodePath focus_prev;
-
 
 		// Accessibility.
 
@@ -82444,7 +79668,6 @@ public:
 	from->set_drag_forwarding(callable_mp(this, &to::_get_drag_data_fw).bind(from),                \
 		callable_mp(this, &to::_can_drop_data_fw).bind(from),                                      \
 		callable_mp(this, &to::_drop_data_fw).bind(from));
-// --- End scene/gui/control.h ---
 
 struct CollisionState2D;
 
@@ -82524,7 +79747,6 @@ public:
 	Node2D() = default;
 };
 
-// --- Folded from scene/2d/camera_2d.h ---
 class Camera2D : public Node2D
 {
 public:
@@ -82701,8 +79923,6 @@ public:
 	Camera2D();
 };
 
-// --- Folded from scene/2d/audio_listener_2d.h ---
-
 class AudioListener2D : public Node2D
 {
 private:
@@ -82720,12 +79940,6 @@ public:
 
 	AudioListener2D();
 };
-
-
-
-// --- End scene/2d/audio_listener_2d.h ---
-
-// --- Folded from scene/2d/audio_stream_player_2d.h ---
 
 struct AudioFrame;
 class AudioStream;
@@ -82834,12 +80048,6 @@ public:
 	~AudioStreamPlayer2D();
 };
 
-
-
-// --- End scene/2d/audio_stream_player_2d.h ---
-
-// --- Folded from scene/2d/canvas_group.h ---
-
 class CanvasGroup : public Node2D
 {
 	real_t fit_margin = 10.0;
@@ -82863,12 +80071,6 @@ public:
 	CanvasGroup();
 	~CanvasGroup();
 };
-
-
-
-// --- End scene/2d/canvas_group.h ---
-
-// --- Folded from scene/2d/visible_on_screen_notifier_2d.h ---
 
 class Viewport;
 
@@ -82928,12 +80130,8 @@ public:
 	VisibleOnScreenNotifier2D(bool p_enabler = false);
 };
 
-// --- End scene/2d/visible_on_screen_notifier_2d.h ---
-
-// --- Folded from scene/2d/physics/collision_object_2d.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-// --- Inlined/Folded from scene/resources/2d/shape_2d.h ---
 #include "core/io/ip.h"
 
 class Shape2D : public Resource
@@ -83057,11 +80255,9 @@ public:
 	Shape2D(ShapeType p_type = SHAPE_RECTANGLE);
 	~Shape2D();
 };
-// --- Folded from scene/resources/mesh.h ---
 #include "core/io/ip.h"
 
 #ifndef PHYSICS_3D_DISABLED
-// --- Folded from scene/resources/3d/shape_3d.h ---
 #include "core/io/ip.h"
 
 class ArrayMesh;
@@ -83231,7 +80427,6 @@ public:
 	Shape3D(ShapeType p_type = SHAPE_BOX);
 	~Shape3D();
 };
-// --- End scene/resources/3d/shape_3d.h ---
 
 class Shape3D;
 #endif // PHYSICS_3D_DISABLED
@@ -83514,7 +80709,6 @@ protected:
 
 	virtual void reset_state() override;
 
-
 public:
 	void add_surface(uint32_t p_format, PrimitiveType p_primitive,
 		const Vector<uint8_t>& p_array, const Vector<uint8_t>& p_attribute_array,
@@ -83628,9 +80822,7 @@ public:
 	~PlaceholderMesh();
 };
 
-// --- Folded from scene/resources/immediate_mesh.h ---
 #include "core/string/ustring.h"
-
 
 class ImmediateMesh : public Mesh
 {
@@ -83710,14 +80902,8 @@ public:
 	~ImmediateMesh();
 };
 
-
-
-// --- End scene/resources/immediate_mesh.h ---
-
-// --- Folded from scene/resources/surface_tool.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
-
 
 class SurfaceTool : public RefCounted
 {
@@ -83954,11 +81140,8 @@ public:
 
 	SurfaceTool();
 };
-// --- End scene/resources/surface_tool.h ---
 
-// --- Folded from scene/resources/navigation_mesh.h ---
 #include "core/os/mutex.h"
-
 
 class NavigationMesh : public Resource
 {
@@ -84125,10 +81308,7 @@ public:
 #endif // DEBUG_ENABLED
 };
 
-// --- Folded from scene/resources/3d/importer_mesh.h ---
 #include "core/io/ip.h"
-
-
 
 #ifndef PHYSICS_3D_DISABLED
 
@@ -84228,13 +81408,8 @@ public:
 	static Ref<ImporterMesh> from_mesh(const Ref<Mesh>& p_mesh);
 	void clear();
 };
-// --- End scene/resources/3d/importer_mesh.h ---
-// --- End scene/resources/navigation_mesh.h ---
 
-// --- Folded from scene/resources/3d/primitive_meshes.h ---
 #include <memory>
-
-
 
 /**
 	Parameterized procedural single-surface mesh covering box, capsule, cylinder,
@@ -84629,11 +81804,7 @@ public:
 	Point2 get_offset() const;
 };
 
-// --- Folded from scene/resources/3d/mesh_library.h ---
 #include "core/io/ip.h"
-
-
-
 
 #ifndef PHYSICS_3D_DISABLED
 
@@ -84730,15 +81901,6 @@ public:
 	MeshLibrary();
 };
 
-
-
-// --- End scene/resources/3d/mesh_library.h ---
-// --- End scene/resources/3d/primitive_meshes.h ---
-// --- End scene/resources/mesh.h ---
-// --- Folded from servers/physics_2d/physics_server_2d.h ---
-// --- Folded from servers/physics_2d/direct_states/physics_direct_body_state_2d.h ---
-// --- Folded from servers/physics_2d/direct_states/physics_direct_space_state_2d.h ---
-// --- Folded from servers/physics_2d/physics_server_2d_types.h ---
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -84847,61 +82009,11 @@ struct MotionResult
 // Alias to make it easier to use.
 #define PS2DT PhysicsServer2DTypes
 
-
-
-// --- End servers/physics_2d/physics_server_2d_types.h ---
-// --- Folded from servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
 #include "core/io/ip.h"
-
 
 template <typename T> class TypedArray;
 
-class PhysicsRayQueryParameters2D : public RefCounted
-{
-	PS2DT::RayParameters parameters;
-
-protected:
-
-public:
-	static Ref<PhysicsRayQueryParameters2D> create(
-		Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude);
-
-	const PS2DT::RayParameters& get_parameters() const { return parameters; }
-
-	void set_from(const Vector2& p_from) { parameters.from = p_from; }
-
-	const Vector2& get_from() const { return parameters.from; }
-
-	void set_to(const Vector2& p_to) { parameters.to = p_to; }
-
-	const Vector2& get_to() const { return parameters.to; }
-
-	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
-
-	uint32_t get_collision_mask() const { return parameters.collision_mask; }
-
-	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
-
-	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
-
-	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
-
-	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
-
-	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
-
-	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
-
-	void set_exclude(const TypedArray<RID>& p_exclude);
-	TypedArray<RID> get_exclude() const;
-};
-
-
-
-// --- End servers/physics_2d/queries/physics_ray_query_parameters_2d.h ---
-// --- Folded from servers/physics_2d/queries/physics_shape_query_parameters_2d.h ---
 #include "core/io/ip.h"
-
 
 class Resource;
 template <typename T> class Ref;
@@ -84945,10 +82057,6 @@ public:
 	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
 };
 
-
-
-// --- End servers/physics_2d/queries/physics_shape_query_parameters_2d.h ---
-
 class GodotSpace2D;
 
 class PhysicsDirectSpaceState2D final
@@ -84978,8 +82086,6 @@ public:
 
 	GodotSpace2D& get_space() const { return *space; }
 };
-
-// --- End servers/physics_2d/direct_states/physics_direct_space_state_2d.h ---
 
 class GodotBody2D;
 
@@ -85057,9 +82163,6 @@ public:
 	PhysicsDirectSpaceState2D* get_space_state();
 };
 
-// --- End servers/physics_2d/direct_states/physics_direct_body_state_2d.h ---
-
-// --- Folded from servers/physics_2d/physics_server_2d_enums.h ---
 namespace PhysicsServer2DEnums {
 
 /* SHAPE API */
@@ -85211,12 +82314,7 @@ enum ProcessInfo {
 // Alias to make it easier to use.
 #define PS2DE PhysicsServer2DEnums
 
-// --- End servers/physics_2d/physics_server_2d_enums.h ---
-
-
-// --- Folded from servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
 #include "core/io/ip.h"
-
 
 class PhysicsTestMotionParameters2D : public RefCounted
 {
@@ -85250,11 +82348,6 @@ public:
 	}
 };
 
-
-
-// --- End servers/physics_2d/queries/physics_testmotion_query_parameters_2d.h ---
-// --- Folded from servers/physics_2d/queries/physics_testmotion_query_result_2d.h ---
-
 #include "core/io/ip.h"
 
 class PhysicsTestMotionResult2D : public RefCounted
@@ -85279,10 +82372,6 @@ public:
 	real_t get_collision_safe_fraction() const;
 	real_t get_collision_unsafe_fraction() const;
 };
-
-
-
-// --- End servers/physics_2d/queries/physics_testmotion_query_result_2d.h ---
 
 class GodotPhysicsServer2D;
 class PhysicsDirectSpaceState2D;
@@ -85439,7 +82528,6 @@ public:
 	~PhysicsServer2D() = delete;
 };
 
-// --- Folded from servers/physics_2d/physics_server_2d_constants.h ---
 namespace PhysicsServer2DConstants {
 
 constexpr int MAX_CONTACTS_REPORTED_2D_MAX = 4096;
@@ -85449,23 +82537,16 @@ constexpr int MAX_CONTACTS_REPORTED_2D_MAX = 4096;
 // Alias to make it easier to use.
 #define PS2DC PhysicsServer2DConstants
 
-// --- End servers/physics_2d/physics_server_2d_constants.h ---
-
-// --- Folded from modules/godot_physics_2d/godot_physics_server_2d.h ---
 #include "core/io/ip.h"
-// --- Folded from modules/godot_physics_2d/godot_constraints_2d.h ---
-// --- Folded from modules/godot_physics_2d/godot_objects_2d.h ---
 #include "core/io/ip.h"
 #include "core/templates/list.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-// --- Folded from modules/godot_physics_2d/godot_shape_2d.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
-
 
 class GodotCollisionObject2D;
 
@@ -85849,9 +82930,6 @@ public:
 	~GodotShape2D();
 };
 
-// --- Folded from modules/godot_physics_2d/godot_collision_solver_2d.h ---
-
-
 class GodotCollisionSolver2D {
 public:
 	typedef void (*CallbackResult)(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_userdata);
@@ -85865,11 +82943,6 @@ private:
 public:
 	static bool solve(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
 };
-
-// --- End modules/godot_physics_2d/godot_collision_solver_2d.h ---
-
-// --- End modules/godot_physics_2d/godot_shape_2d.h ---
-
 
 class GodotSpace2D;
 class GodotArea2D;
@@ -86668,8 +83741,6 @@ _FORCE_INLINE_ void GodotBody2D::add_contact(const Vector2& p_local_pos, const V
 	c[idx].impulse = p_impulse;
 }
 
-// --- End modules/godot_physics_2d/godot_objects_2d.h ---
-
 class GodotConstraint2D {
 	GodotBody2D **_body_ptr;
 	int _body_count;
@@ -86764,48 +83835,19 @@ public:
 	virtual bool pre_solve(real_t p_step) override;
 	virtual void solve(real_t p_step) override;
 
-	GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
-	virtual ~GodotBodyPair2D() override;
-};
-
-class GodotAreaPair2D final : public GodotConstraint2D {
-	GodotBody2D *body = nullptr;
-	GodotArea2D *area = nullptr;
-	int body_shape = 0;
-	int area_shape = 0;
-	bool colliding = false;
-	bool has_space_override = false;
-	bool process_collision = false;
-	bool body_has_attached_area = false;
-
-public:
-	virtual void solve(real_t p_step) override;
-	virtual bool setup(real_t p_step) override;
-	virtual bool pre_solve(real_t p_step) override;
-
-	GodotAreaPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape);
-	virtual ~GodotAreaPair2D() override = default;
-};
-
-class GodotArea2Pair2D final : public GodotConstraint2D {
+	enum PairMode {
+		PAIR_BODY_BODY,
+		PAIR_BODY_AREA,
+		PAIR_AREA_AREA,
+	};
+	PairMode pair_mode = PAIR_BODY_BODY;
 	GodotArea2D *area_a = nullptr;
 	GodotArea2D *area_b = nullptr;
-	int shape_a = 0;
-	int shape_b = 0;
-	bool colliding_a = false;
-	bool colliding_b = false;
-	bool process_collision_a = false;
-	bool process_collision_b = false;
-	bool area_a_monitorable = false;
-	bool area_b_monitorable = false;
 
-public:
-	virtual void solve(real_t p_step) override;
-	virtual bool setup(real_t p_step) override;
-	virtual bool pre_solve(real_t p_step) override;
-
-	GodotArea2Pair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
-	virtual ~GodotArea2Pair2D() override = default;
+	GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
+	GodotBodyPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape);
+	GodotBodyPair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
+	virtual ~GodotBodyPair2D() override;
 };
 
 class GodotJoint2D final : public GodotConstraint2D {
@@ -86937,10 +83979,6 @@ public:
 	}
 };
 
-// --- End modules/godot_physics_2d/godot_constraints_2d.h ---
-
-// --- Folded from modules/godot_physics_2d/godot_space_2d.h ---
-// --- Folded from core/math/bvh.h ---
 // BVH
 // This class provides a wrapper around BVH tree, which contains most of the functionality
 // for a dynamic BVH with templated leaf size.
@@ -86960,7 +83998,6 @@ public:
 // TYPE_AREA,
 // TYPE_BODY
 // and pairable_mask is either 0 if static, or set to all if non static
-// --- Folded from core/math/bvh_tree.h ---
 // BVH Tree
 // This is an implementation of a dynamic BVH with templated leaf size.
 // This differs from most dynamic BVH in that it can handle more than 1 object
@@ -86970,7 +84007,6 @@ public:
 // Note that MAX_CHILDREN should be fixed at 2 for now.
 
 #include "core/io/ip.h"
-// --- Folded from core/math/bvh_abb.h ---
 #include "core/io/ip.h"
 
 #include <cfloat> // FLT_MAX
@@ -87233,7 +84269,6 @@ struct BVH_ABB {
 	}
 };
 
-// --- End core/math/bvh_abb.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 
@@ -87267,6 +84302,46 @@ struct BVH_ABB {
 #define VERBOSE_PRINT(a)
 #endif
 
+template <typename T>
+class BVH_IterativeInfo {
+public:
+	constexpr static const size_t ALLOCA_STACK_SIZE = 128;
+
+	int32_t depth = 1;
+	int32_t threshold = ALLOCA_STACK_SIZE - 2;
+	T *stack;
+	LocalVector<T> aux_stack;
+	int32_t get_alloca_stacksize() const { return ALLOCA_STACK_SIZE * sizeof(T); }
+
+	T *get_first() const {
+		return &stack[0];
+	}
+
+	bool pop(T &r_value) {
+		if (!depth) {
+			return false;
+		}
+
+		depth--;
+		r_value = stack[depth];
+		return true;
+	}
+
+	T *request() {
+		if (depth > threshold) {
+			if (aux_stack.is_empty()) {
+				aux_stack.resize(ALLOCA_STACK_SIZE * 2);
+				memcpy(aux_stack.ptr(), stack, get_alloca_stacksize());
+			} else {
+				aux_stack.resize(aux_stack.size() * 2);
+			}
+			stack = aux_stack.ptr();
+			threshold = aux_stack.size() - 2;
+		}
+		return &stack[depth++];
+	}
+};
+
 // really just a namespace
 struct BVHCommon {
 	// these could possibly also be the same constant,
@@ -87296,49 +84371,6 @@ struct BVHHandle {
 };
 
 // helper class to make iterative versions of recursive functions
-template <typename T>
-class BVH_IterativeInfo {
-public:
-	constexpr static const size_t ALLOCA_STACK_SIZE = 128;
-
-	int32_t depth = 1;
-	int32_t threshold = ALLOCA_STACK_SIZE - 2;
-	T *stack;
-	//only used in rare occasions when you run out of alloca memory
-	// because tree is too unbalanced.
-	LocalVector<T> aux_stack;
-	int32_t get_alloca_stacksize() const { return ALLOCA_STACK_SIZE * sizeof(T); }
-
-	T *get_first() const {
-		return &stack[0];
-	}
-
-	// pop the last member of the stack, or return false
-	bool pop(T &r_value) {
-		if (!depth) {
-			return false;
-		}
-
-		depth--;
-		r_value = stack[depth];
-		return true;
-	}
-
-	// request new addition to stack
-	T *request() {
-		if (depth > threshold) {
-			if (aux_stack.is_empty()) {
-				aux_stack.resize(ALLOCA_STACK_SIZE * 2);
-				memcpy(aux_stack.ptr(), stack, get_alloca_stacksize());
-			} else {
-				aux_stack.resize(aux_stack.size() * 2);
-			}
-			stack = aux_stack.ptr();
-			threshold = aux_stack.size() - 2;
-		}
-		return &stack[depth++];
-	}
-};
 
 template <typename T>
 class BVH_DummyPairTestFunction {
@@ -87645,7 +84677,6 @@ private:
 
 #undef VERBOSE_PRINT
 
-// --- End core/math/bvh_tree.h ---
 #include "core/os/mutex.h"
 
 #include <climits> // INT_MAX
@@ -88398,13 +85429,10 @@ private:
 
 #undef BVHTREE_CLASS
 
-// --- End core/math/bvh.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
-
-
 
 class GodotConstraint2D;
 
@@ -88693,9 +85721,6 @@ public:
 	~GodotStep2D();
 };
 
-// --- End modules/godot_physics_2d/godot_space_2d.h ---
-
-
 class GodotPhysicsServer2D final
 {
 	friend class PhysicsDirectSpaceState2D;
@@ -88964,9 +85989,7 @@ public:
 		finish();
 	}
 };
-// --- End modules/godot_physics_2d/godot_physics_server_2d.h ---
 
-// --- Folded from servers/navigation_2d/navigation_server_2d.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/os/os.h"
@@ -88975,7 +85998,6 @@ public:
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-// --- Inlined/Folded from scene/resources/2d/navigation_mesh_source_geometry_data_2d.h ---
 #include "core/io/ip.h"
 #include "core/os/mutex.h"
 
@@ -89047,8 +86069,6 @@ public:
 
 	~NavigationMeshSourceGeometryData2D() { clear(); }
 };
-// --- Inlined/Folded from scene/resources/2d/navigation_polygon.h ---
-
 
 class NavigationPolygon : public Resource
 {
@@ -89744,7 +86764,6 @@ public:
 	~NavigationServer2D() = delete;
 };
 
-// --- Folded from servers/nav_heap.h ---
 #include "core/string/ustring.h"
 
 // This file contains Heap which is used by both 2D and 3D navigation.
@@ -89873,1044 +86892,6 @@ private:
 		}
 	}
 };
-// --- End servers/nav_heap.h ---
-
-// --- Folded from modules/navigation_2d/nav_map_2d.h ---
-#include <cfloat>
-
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-
-
-
-#include "thirdparty/rvo2/rvo2_2d/Agent2d.h"
-#include "thirdparty/rvo2/rvo2_2d/KdTree2d.h"
-#include "thirdparty/rvo2/rvo2_2d/RVOSimulator2d.h"
-
-class NavIteration2D;
-class NavMap2D;
-class NavRegion2D;
-class NavLink2D;
-class NavAgent2D;
-class NavObstacle2D;
-struct NavMapIteration2D;
-struct NavMapIterationBuild2D;
-struct NavRegionIterationBuild2D;
-
-struct Triangle2
-{
-	Vector2 vertex[3];
-
-	real_t get_area() const
-	{
-		return Math::abs((vertex[0] - vertex[1]).cross(vertex[0] - vertex[2])) * 0.5f;
-	}
-
-	Vector2 get_random_point_inside() const;
-
-	Vector2 get_closest_point_to(const Vector2& p_point) const;
-
-	Triangle2() {}
-	Triangle2(const Vector2& p_v1, const Vector2& p_v2, const Vector2& p_v3)
-	{
-		vertex[0] = p_v1;
-		vertex[1] = p_v2;
-		vertex[2] = p_v3;
-	}
-};
-
-namespace Nav2D {
-
-struct Polygon;
-
-union PointKey {
-	struct {
-		int64_t x : 32;
-		int64_t y : 32;
-	};
-
-	uint64_t key = 0;
-};
-
-struct EdgeKey {
-	PointKey a;
-	PointKey b;
-
-	static uint32_t hash(const EdgeKey& p_val)
-	{
-		return hash_one_uint64(p_val.a.key) ^ hash_one_uint64(p_val.b.key);
-	}
-
-	bool operator==(const EdgeKey& p_key) const
-	{
-		return (a.key == p_key.a.key) && (b.key == p_key.b.key);
-	}
-
-	EdgeKey(const PointKey& p_a = PointKey(), const PointKey& p_b = PointKey()) : a(p_a), b(p_b)
-	{
-		if (a.key > b.key) {
-			SWAP(a, b);
-		}
-	}
-};
-
-struct ConnectableEdge {
-	EdgeKey ek;
-	uint32_t polygon_index;
-	int edge = -1;
-	Vector2 pathway_start;
-	Vector2 pathway_end;
-};
-
-struct Connection {
-	Polygon* polygon = nullptr;
-	int edge = -1;
-	Vector2 pathway_start;
-	Vector2 pathway_end;
-};
-
-struct Polygon {
-	uint32_t id = UINT32_MAX;
-	const NavIteration2D* owner = nullptr;
-	LocalVector<Vector2> vertices;
-	real_t surface_area = 0.0;
-};
-
-struct NavigationPoly {
-	const Polygon* poly = nullptr;
-	uint32_t traversable_poly_index = UINT32_MAX;
-
-	int back_navigation_poly_id = -1;
-	int back_navigation_edge = -1;
-	Vector2 back_navigation_edge_pathway_start;
-	Vector2 back_navigation_edge_pathway_end;
-
-	Vector2 entry;
-	real_t traveled_distance = 0.0;
-	real_t distance_to_destination = 0.0;
-
-	real_t total_travel_cost() const { return traveled_distance + distance_to_destination; }
-
-	bool operator==(const NavigationPoly& p_other) const { return poly == p_other.poly; }
-
-	bool operator!=(const NavigationPoly& p_other) const { return !(*this == p_other); }
-
-	void reset()
-	{
-		poly = nullptr;
-		traversable_poly_index = UINT32_MAX;
-		back_navigation_poly_id = -1;
-		back_navigation_edge = -1;
-		traveled_distance = FLT_MAX;
-		distance_to_destination = 0.0;
-	}
-};
-
-struct NavPolyTravelCostGreaterThan {
-	bool operator()(const NavigationPoly* p_poly_a, const NavigationPoly* p_poly_b) const
-	{
-		real_t f_cost_a = p_poly_a->total_travel_cost();
-		real_t h_cost_a = p_poly_a->distance_to_destination;
-		real_t f_cost_b = p_poly_b->total_travel_cost();
-		real_t h_cost_b = p_poly_b->distance_to_destination;
-
-		if (f_cost_a != f_cost_b) {
-			return f_cost_a > f_cost_b;
-		}
-		else {
-			return h_cost_a > h_cost_b;
-		}
-	}
-};
-
-struct NavPolyHeapIndexer {
-	void operator()(NavigationPoly* p_poly, uint32_t p_heap_index) const
-	{
-		p_poly->traversable_poly_index = p_heap_index;
-	}
-};
-
-struct ClosestPointQueryResult {
-	Vector2 point;
-	RID owner;
-};
-
-struct EdgeConnectionPair {
-	Connection connections[2];
-	int size = 0;
-};
-
-struct PerformanceData {
-	int pm_region_count = 0;
-	int pm_agent_count = 0;
-	int pm_link_count = 0;
-	int pm_polygon_count = 0;
-	int pm_edge_count = 0;
-	int pm_edge_merge_count = 0;
-	int pm_edge_connection_count = 0;
-	int pm_edge_free_count = 0;
-	int pm_obstacle_count = 0;
-
-	void reset()
-	{
-		pm_region_count = 0;
-		pm_agent_count = 0;
-		pm_link_count = 0;
-		pm_polygon_count = 0;
-		pm_edge_count = 0;
-		pm_edge_merge_count = 0;
-		pm_edge_connection_count = 0;
-		pm_edge_free_count = 0;
-		pm_obstacle_count = 0;
-	}
-};
-
-} // namespace Nav2D
-
-class NavIteration2D final : public RefCounted
-{
-public:
-	bool enabled = true;
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-	NavigationEnums2D::PathSegmentType owner_type = NavigationEnums2D::PATH_SEGMENT_TYPE_REGION;
-	RID owner_rid;
-	bool owner_use_edge_connections = false;
-	LocalVector<Nav2D::Polygon> navmesh_polygons;
-	LocalVector<LocalVector<Nav2D::Connection>> internal_connections;
-
-	// Region iteration data.
-	Transform2D transform;
-	real_t surface_area = 0.0;
-	Rect2 bounds;
-	LocalVector<Nav2D::ConnectableEdge> external_edges;
-
-	// Link iteration data.
-	bool bidirectional = true;
-	Vector2 start_position;
-	Vector2 end_position;
-
-	bool get_enabled() const { return enabled; }
-	NavigationEnums2D::PathSegmentType get_type() const { return owner_type; }
-	RID get_self() const { return owner_rid; }
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-	real_t get_enter_cost() const { return enter_cost; }
-	real_t get_travel_cost() const { return travel_cost; }
-	bool get_use_edge_connections() const { return owner_use_edge_connections; }
-
-	const LocalVector<Nav2D::Polygon>& get_navmesh_polygons() const { return navmesh_polygons; }
-	const LocalVector<LocalVector<Nav2D::Connection>>& get_internal_connections() const
-	{
-		return internal_connections;
-	}
-
-	const Transform2D& get_transform() const { return transform; }
-	real_t get_surface_area() const { return surface_area; }
-	Rect2 get_bounds() const { return bounds; }
-	const LocalVector<Nav2D::ConnectableEdge>& get_external_edges() const { return external_edges; }
-
-	Vector2 get_start_position() const { return start_position; }
-	Vector2 get_end_position() const { return end_position; }
-	bool is_bidirectional() const { return bidirectional; }
-
-	~NavIteration2D() override
-	{
-		external_edges.clear();
-		navmesh_polygons.clear();
-		internal_connections.clear();
-	}
-};
-
-struct NavRegionIterationBuild2D
-{
-	Nav2D::PerformanceData performance_data;
-
-	NavRegion2D* region = nullptr;
-
-	Vector2 map_cell_size;
-	Transform2D region_transform;
-
-	struct NavMeshData
-	{
-		Vector<Vector2> vertices;
-		Vector<Vector<int>> polygons;
-
-		void clear()
-		{
-			vertices.clear();
-			polygons.clear();
-		}
-	} navmesh_data;
-
-	Ref<NavIteration2D> region_iteration;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey> iter_connection_pairs_map;
-
-	void reset()
-	{
-		performance_data.reset();
-
-		navmesh_data.clear();
-		region_iteration = Ref<NavIteration2D>();
-		iter_connection_pairs_map.clear();
-	}
-};
-
-class NavMeshQueries2D final
-{
-public:
-	struct PathQuerySlot
-	{
-		LocalVector<Nav2D::NavigationPoly> path_corridor;
-		Heap<Nav2D::NavigationPoly*, Nav2D::NavPolyTravelCostGreaterThan, Nav2D::NavPolyHeapIndexer>
-			traversable_polys;
-		bool in_use = false;
-		uint32_t slot_index = 0;
-		AHashMap<const Nav2D::Polygon*, uint32_t> poly_to_id;
-	};
-
-	struct NavMeshPathQueryTask2D
-	{
-		enum TaskStatus
-		{
-			QUERY_STARTED,
-			QUERY_FINISHED,
-			QUERY_FAILED,
-			CALLBACK_DISPATCHED,
-			CALLBACK_FAILED,
-		};
-
-		Vector2 start_position;
-		Vector2 target_position;
-		uint32_t navigation_layers;
-		uint32_t metadata_flags = NavigationEnums2D::PathMetadataFlags::PATH_INCLUDE_ALL;
-		NavigationEnums2D::PathfindingAlgorithm pathfinding_algorithm =
-			NavigationEnums2D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
-		NavigationEnums2D::PathPostProcessing path_postprocessing =
-			NavigationEnums2D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
-		bool simplify_path = false;
-		real_t simplify_epsilon = 0.0;
-
-		bool exclude_regions = false;
-		bool include_regions = false;
-		LocalVector<RID> excluded_regions;
-		LocalVector<RID> included_regions;
-
-		float path_return_max_length = 0.0;
-		float path_return_max_radius = 0.0;
-		int path_search_max_polygons = NavigationDefaults2D::path_search_max_polygons;
-		float path_search_max_distance = 0.0;
-
-		Vector2 begin_position;
-		Vector2 end_position;
-		const Nav2D::Polygon* begin_polygon = nullptr;
-		const Nav2D::Polygon* end_polygon = nullptr;
-		uint32_t least_cost_id = 0;
-
-		NavMap2D* map = nullptr;
-		PathQuerySlot* path_query_slot = nullptr;
-
-		LocalVector<Vector2> path_points;
-		LocalVector<int32_t> path_meta_point_types;
-		LocalVector<RID> path_meta_point_rids;
-		LocalVector<int64_t> path_meta_point_owners;
-		float path_length = 0.0;
-
-		Ref<NavigationPathQueryParameters2D> query_parameters;
-		Ref<NavigationPathQueryResult2D> query_result;
-		NavMeshPathQueryTask2D::TaskStatus status =
-			NavMeshPathQueryTask2D::TaskStatus::QUERY_STARTED;
-
-		void path_clear()
-		{
-			path_points.clear();
-			path_meta_point_types.clear();
-			path_meta_point_rids.clear();
-			path_meta_point_owners.clear();
-		}
-
-		void path_reverse()
-		{
-			path_points.reverse();
-			path_meta_point_types.reverse();
-			path_meta_point_rids.reverse();
-			path_meta_point_owners.reverse();
-		}
-	};
-
-	static Vector2 polygons_get_random_point(const LocalVector<Nav2D::Polygon>& p_polygons,
-		uint32_t p_navigation_layers, bool p_uniformly);
-
-	static Vector2 polygons_get_closest_point(
-		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
-	static Nav2D::ClosestPointQueryResult polygons_get_closest_point_info(
-		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
-	static RID polygons_get_closest_point_owner(
-		const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point);
-
-	static Vector2 map_iteration_get_closest_point(
-		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
-	static RID map_iteration_get_closest_point_owner(
-		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
-	static Nav2D::ClosestPointQueryResult map_iteration_get_closest_point_info(
-		const NavMapIteration2D& p_map_iteration, const Vector2& p_point);
-	static Vector2 map_iteration_get_random_point(
-		const NavMapIteration2D& p_map_iteration, uint32_t p_navigation_layers, bool p_uniformly);
-
-	static void query_task_map_iteration_get_path(
-		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
-	static void _query_task_push_back_point_with_metadata(NavMeshPathQueryTask2D& p_query_task,
-		const Vector2& p_point, const Nav2D::Polygon* p_point_polygon);
-	static void _query_task_find_start_end_positions(
-		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
-	static void _query_task_build_path_corridor(
-		NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration);
-	static void _query_task_post_process_corridorfunnel(NavMeshPathQueryTask2D& p_query_task);
-	static void _query_task_post_process_edgecentered(NavMeshPathQueryTask2D& p_query_task);
-	static void _query_task_post_process_nopostprocessing(NavMeshPathQueryTask2D& p_query_task);
-	static void _query_task_clip_path(NavMeshPathQueryTask2D& p_query_task,
-		const Nav2D::NavigationPoly* p_from_poly, const Vector2& p_to_point,
-		const Nav2D::NavigationPoly* p_to_poly);
-	static void _query_task_simplified_path_points(NavMeshPathQueryTask2D& p_query_task);
-	static bool _query_task_is_connection_owner_usable(
-		const NavMeshPathQueryTask2D& p_query_task, const NavIteration2D* p_owner);
-	static void _query_task_process_path_result_limits(NavMeshPathQueryTask2D& p_query_task);
-
-	static void _query_task_search_polygon_connections(NavMeshPathQueryTask2D& p_query_task,
-		const Nav2D::Connection& p_connection, uint32_t p_least_cost_id,
-		const Nav2D::NavigationPoly& p_least_cost_poly, real_t p_poly_enter_cost,
-		const Vector2& p_end_point);
-
-	static void simplify_path_segment(int p_start_inx, int p_end_inx,
-		const LocalVector<Vector2>& p_points, real_t p_epsilon,
-		LocalVector<uint32_t>& r_simplified_path_indices);
-	static LocalVector<uint32_t> get_simplified_path_indices(
-		const LocalVector<Vector2>& p_path, real_t p_epsilon);
-
-	static float _calculate_path_length(
-		const LocalVector<Vector2>& p_path, uint32_t p_start_index, uint32_t p_end_index);
-};
-
-struct NavMapIterationBuild2D
-{
-	Vector2 merge_rasterizer_cell_size;
-	bool use_edge_connections = true;
-	real_t edge_connection_margin;
-	real_t link_connection_radius;
-	Nav2D::PerformanceData performance_data;
-	int polygon_count = 0;
-	int free_edge_count = 0;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey> iter_connection_pairs_map;
-	LocalVector<Nav2D::Connection> iter_free_edges;
-
-	NavMapIteration2D* map_iteration = nullptr;
-
-	int navmesh_polygon_count = 0;
-
-	void reset()
-	{
-		performance_data.reset();
-
-		iter_connection_pairs_map.clear();
-		iter_free_edges.clear();
-		polygon_count = 0;
-		free_edge_count = 0;
-
-		navmesh_polygon_count = 0;
-	}
-};
-
-struct NavMapIteration2D
-{
-	mutable SafeNumeric<uint32_t> users;
-	RWLock rwlock;
-
-	LocalVector<Ref<NavIteration2D>> region_iterations;
-	LocalVector<Ref<NavIteration2D>> link_iterations;
-
-	int navmesh_polygon_count = 0;
-
-	HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>> external_region_connections;
-	HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>
-		navbases_polygons_external_connections;
-
-	LocalVector<Nav2D::Polygon> navlink_polygons;
-
-	HashMap<NavRegion2D*, Ref<NavIteration2D>> region_ptr_to_region_iteration;
-
-	LocalVector<NavMeshQueries2D::PathQuerySlot> path_query_slots;
-	Mutex path_query_slots_mutex;
-	Semaphore path_query_slots_semaphore;
-
-	void clear()
-	{
-		navmesh_polygon_count = 0;
-
-		region_iterations.clear();
-		link_iterations.clear();
-		external_region_connections.clear();
-		navbases_polygons_external_connections.clear();
-		navlink_polygons.clear();
-		region_ptr_to_region_iteration.clear();
-	}
-};
-
-class NavMapIterationRead2D final
-{
-	const NavMapIteration2D& map_iteration;
-
-public:
-	_ALWAYS_INLINE_ NavMapIterationRead2D(const NavMapIteration2D& p_iteration)
-		: map_iteration(p_iteration)
-	{
-		map_iteration.rwlock.read_lock();
-		map_iteration.users.increment();
-	}
-
-	_ALWAYS_INLINE_ ~NavMapIterationRead2D()
-	{
-		map_iteration.users.decrement();
-		map_iteration.rwlock.read_unlock();
-	}
-};
-
-class NavMapBuilder2D final
-{
-	static void _build_step_gather_region_polygons(NavMapIterationBuild2D& r_build);
-	static void _build_step_find_edge_connection_pairs(NavMapIterationBuild2D& r_build);
-	static void _build_step_merge_edge_connection_pairs(NavMapIterationBuild2D& r_build);
-	static void _build_step_edge_connection_margin_connections(NavMapIterationBuild2D& r_build);
-	static void _build_step_navlink_connections(NavMapIterationBuild2D& r_build);
-	static void _build_update_map_iteration(NavMapIterationBuild2D& r_build);
-
-public:
-	static Nav2D::PointKey get_point_key(const Vector2& p_pos, const Vector2& p_cell_size);
-
-	static void build_navmap_iteration(NavMapIterationBuild2D& r_build);
-};
-
-class NavRegionBuilder2D final
-{
-	static void _build_step_process_navmesh_data(NavRegionIterationBuild2D& r_build);
-	static void _build_step_find_edge_connection_pairs(NavRegionIterationBuild2D& r_build);
-	static void _build_step_merge_edge_connection_pairs(NavRegionIterationBuild2D& r_build);
-	static void _build_update_iteration(NavRegionIterationBuild2D& r_build);
-
-public:
-	static Nav2D::PointKey get_point_key(const Vector2& p_pos, const Vector2& p_cell_size);
-	static Nav2D::EdgeKey get_edge_key(
-		const Vector2& p_vertex1, const Vector2& p_vertex2, const Vector2& p_cell_size);
-
-	static void build_iteration(NavRegionIterationBuild2D& r_build);
-};
-
-class NavAgent2D final
-{
-	RID self;
-
-	Vector2 position;
-	Vector2 target_position;
-	Vector2 velocity;
-	Vector2 velocity_forced;
-	real_t radius = NavigationDefaults2D::AVOIDANCE_AGENT_RADIUS;
-	real_t max_speed = NavigationDefaults2D::AVOIDANCE_AGENT_MAX_SPEED;
-	real_t time_horizon_agents = NavigationDefaults2D::AVOIDANCE_AGENT_TIME_HORIZON_AGENTS;
-	real_t time_horizon_obstacles = NavigationDefaults2D::AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES;
-	int max_neighbors = NavigationDefaults2D::AVOIDANCE_AGENT_MAX_NEIGHBORS;
-	real_t neighbor_distance = NavigationDefaults2D::AVOIDANCE_AGENT_NEIGHBOR_DISTANCE;
-	Vector2 safe_velocity;
-	bool clamp_speed = true;
-
-	NavMap2D* map = nullptr;
-
-	RVO2D::Agent2D rvo_agent;
-	bool avoidance_enabled = false;
-
-	uint32_t avoidance_layers = 1;
-	uint32_t avoidance_mask = 1;
-	real_t avoidance_priority = 1.0;
-
-	bool agent_dirty = true;
-
-	uint32_t last_map_iteration_id = 0;
-	bool paused = false;
-
-	SelfList<NavAgent2D> sync_dirty_request_list_element;
-
-public:
-	NavAgent2D();
-	~NavAgent2D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	void set_avoidance_enabled(bool p_enabled);
-	bool is_avoidance_enabled() { return avoidance_enabled; }
-
-	void set_map(NavMap2D* p_map);
-	NavMap2D* get_map() { return map; }
-
-	bool is_map_changed();
-
-	RVO2D::Agent2D* get_rvo_agent() { return &rvo_agent; }
-
-	bool has_avoidance_callback() const;
-	void dispatch_avoidance_callback();
-
-	void set_neighbor_distance(real_t p_neighbor_distance);
-	real_t get_neighbor_distance() const { return neighbor_distance; }
-
-	void set_max_neighbors(int p_max_neighbors);
-	int get_max_neighbors() const { return max_neighbors; }
-
-	void set_time_horizon_agents(real_t p_time_horizon);
-	real_t get_time_horizon_agents() const { return time_horizon_agents; }
-
-	void set_time_horizon_obstacles(real_t p_time_horizon);
-	real_t get_time_horizon_obstacles() const { return time_horizon_obstacles; }
-
-	void set_radius(real_t p_radius);
-	real_t get_radius() const { return radius; }
-
-	void set_max_speed(real_t p_max_speed);
-	real_t get_max_speed() const { return max_speed; }
-
-	void set_position(const Vector2& p_position);
-	Vector2 get_position() const { return position; }
-
-	void set_target_position(const Vector2& p_target_position);
-	Vector2 get_target_position() const { return target_position; }
-
-	void set_velocity(const Vector2& p_velocity);
-	Vector2 get_velocity() const { return velocity; }
-
-	void set_velocity_forced(const Vector2& p_velocity);
-	Vector2 get_velocity_forced() const { return velocity_forced; }
-
-	void set_avoidance_layers(uint32_t p_layers);
-	uint32_t get_avoidance_layers() const { return avoidance_layers; }
-
-	void set_avoidance_mask(uint32_t p_mask);
-	uint32_t get_avoidance_mask() const { return avoidance_mask; }
-
-	void set_avoidance_priority(real_t p_priority);
-	real_t get_avoidance_priority() const { return avoidance_priority; }
-
-	void set_paused(bool p_paused);
-	bool get_paused() const;
-
-	bool is_dirty() const;
-	void sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	void update();
-
-private:
-	void _update_rvo_agent_properties();
-};
-
-class NavObstacle2D final
-{
-	RID self;
-
-	NavAgent2D* agent = nullptr;
-	NavMap2D* map = nullptr;
-	Vector2 velocity;
-	Vector2 position;
-	Vector<Vector2> vertices;
-
-	real_t radius = 0.0;
-
-	bool avoidance_enabled = false;
-	uint32_t avoidance_layers = 1;
-
-	bool obstacle_dirty = true;
-
-	uint32_t last_map_iteration_id = 0;
-	bool paused = false;
-
-	SelfList<NavObstacle2D> sync_dirty_request_list_element;
-
-public:
-	NavObstacle2D();
-	~NavObstacle2D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	void set_avoidance_enabled(bool p_enabled);
-	bool is_avoidance_enabled() { return avoidance_enabled; }
-
-	void set_map(NavMap2D* p_map);
-	NavMap2D* get_map() { return map; }
-
-	void set_agent(NavAgent2D* p_agent);
-	NavAgent2D* get_agent() { return agent; }
-
-	void set_position(const Vector2& p_position);
-	Vector2 get_position() const { return position; }
-
-	void set_radius(real_t p_radius);
-	real_t get_radius() const { return radius; }
-
-	void set_velocity(const Vector2& p_velocity);
-	Vector2 get_velocity() const { return velocity; }
-
-	void set_vertices(const Vector<Vector2>& p_vertices);
-	const Vector<Vector2>& get_vertices() const { return vertices; }
-
-	bool is_map_changed();
-
-	void set_avoidance_layers(uint32_t p_layers);
-	uint32_t get_avoidance_layers() const { return avoidance_layers; }
-
-	void set_paused(bool p_paused);
-	bool get_paused() const;
-
-	bool is_dirty() const;
-	void sync();
-	void request_sync();
-	void cancel_sync_request();
-
-private:
-	void internal_update_agent();
-};
-
-class NavLink2D final
-{
-	RID self;
-
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-
-	NavMap2D* map = nullptr;
-	bool bidirectional = true;
-	Vector2 start_position;
-	Vector2 end_position;
-	bool enabled = true;
-
-	SelfList<NavLink2D> sync_dirty_request_list_element;
-
-	uint32_t iteration_id = 0;
-
-	mutable RWLock iteration_rwlock;
-	Ref<NavIteration2D> iteration;
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavLink2D();
-	~NavLink2D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	NavigationEnums2D::PathSegmentType get_type() const
-	{
-		return NavigationEnums2D::PATH_SEGMENT_TYPE_LINK;
-	}
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void set_map(NavMap2D* p_map);
-	NavMap2D* get_map() const { return map; }
-
-	void set_enabled(bool p_enabled);
-	bool get_enabled() const { return enabled; }
-
-	void set_bidirectional(bool p_bidirectional);
-	bool is_bidirectional() const { return bidirectional; }
-
-	void set_start_position(Vector2 p_position);
-	Vector2 get_start_position() const { return start_position; }
-
-	void set_end_position(Vector2 p_position);
-	Vector2 get_end_position() const { return end_position; }
-
-	void set_navigation_layers(uint32_t p_navigation_layers);
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-
-	void set_enter_cost(real_t p_enter_cost);
-	real_t get_enter_cost() const { return enter_cost; }
-
-	void set_travel_cost(real_t p_travel_cost);
-	real_t get_travel_cost() const { return travel_cost; }
-
-	bool sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	Ref<NavIteration2D> get_iteration();
-};
-
-class NavRegion2D final
-{
-	RID self;
-
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-
-	RWLock region_rwlock;
-
-	NavMap2D* map = nullptr;
-	Transform2D transform;
-	bool enabled = true;
-
-	bool use_edge_connections = true;
-
-	Rect2 bounds;
-
-	Ref<NavigationPolygon> navmesh;
-
-	Nav2D::PerformanceData performance_data;
-
-	uint32_t iteration_id = 0;
-
-	SelfList<NavRegion2D> sync_dirty_request_list_element;
-	mutable RWLock iteration_rwlock;
-	Ref<NavIteration2D> iteration;
-
-	NavRegionIterationBuild2D iteration_build;
-	bool use_async_iterations = true;
-	SelfList<NavRegion2D> async_list_element;
-	static void _build_iteration_threaded(void* p_arg);
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavRegion2D();
-	~NavRegion2D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	NavigationEnums2D::PathSegmentType get_type() const
-	{
-		return NavigationEnums2D::PATH_SEGMENT_TYPE_REGION;
-	}
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void scratch_polygons();
-
-	void set_enabled(bool p_enabled);
-	bool get_enabled() const { return enabled; }
-
-	void set_map(NavMap2D* p_map);
-	NavMap2D* get_map() const { return map; }
-
-	void set_use_edge_connections(bool p_enabled);
-	bool get_use_edge_connections() const { return use_edge_connections; }
-
-	void set_transform(Transform2D transform);
-	const Transform2D& get_transform() const { return transform; }
-
-	void set_navigation_mesh(Ref<NavigationPolygon> p_navigation_mesh);
-	Ref<NavigationPolygon> get_navigation_mesh() const { return navmesh; }
-
-	const LocalVector<Nav2D::Polygon>& get_polygons() const;
-
-	Nav2D::ClosestPointQueryResult get_closest_point_info(const Vector2& p_point) const;
-	Vector2 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
-
-	real_t get_surface_area() const;
-	Rect2 get_bounds() const;
-
-	void set_navigation_layers(uint32_t p_navigation_layers);
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-
-	void set_enter_cost(real_t p_enter_cost);
-	real_t get_enter_cost() const { return enter_cost; }
-
-	void set_travel_cost(real_t p_travel_cost);
-	real_t get_travel_cost() const { return travel_cost; }
-
-	bool sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	void sync_async_tasks();
-	void request_async_thread_join();
-	void cancel_async_thread_join();
-
-	Ref<NavIteration2D> get_iteration();
-
-	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
-	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
-	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
-
-	void set_use_async_iterations(bool p_enabled);
-	bool get_use_async_iterations() const;
-};
-
-class NavMap2D final
-{
-	RID self;
-
-	real_t cell_size = NavigationDefaults2D::NAV_MESH_CELL_SIZE;
-	Vector2 merge_rasterizer_cell_size = Vector2(cell_size, cell_size);
-	float merge_rasterizer_cell_scale = 0.1;
-
-	bool use_edge_connections = true;
-	real_t edge_connection_margin = NavigationDefaults2D::EDGE_CONNECTION_MARGIN;
-	real_t link_connection_radius = NavigationDefaults2D::LINK_CONNECTION_RADIUS;
-
-	bool map_settings_dirty = true;
-
-	LocalVector<NavRegion2D*> regions;
-	LocalVector<NavLink2D*> links;
-
-	RVO2D::RVOSimulator2D rvo_simulation;
-
-	LocalVector<NavAgent2D*> active_avoidance_agents;
-	bool agents_dirty = true;
-	LocalVector<NavAgent2D*> agents;
-
-	LocalVector<NavObstacle2D*> obstacles;
-	bool obstacles_dirty = true;
-
-	uint32_t iteration_id = 0;
-
-	bool use_threads = true;
-	bool avoidance_use_multiple_threads = true;
-	bool avoidance_use_high_priority_threads = true;
-
-	Nav2D::PerformanceData performance_data;
-
-	int path_query_slots_max = 4;
-
-	bool use_async_iterations = true;
-
-	uint32_t iteration_slot_index = 0;
-	LocalVector<NavMapIteration2D> iteration_slots;
-	mutable RWLock iteration_slot_rwlock;
-
-	NavMapIterationBuild2D iteration_build;
-	static void _build_iteration_threaded(void* p_arg);
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavMap2D();
-	~NavMap2D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void set_cell_size(real_t p_cell_size);
-	real_t get_cell_size() const { return cell_size; }
-
-	void set_merge_rasterizer_cell_scale(float p_value);
-	float get_merge_rasterizer_cell_scale() const { return merge_rasterizer_cell_scale; }
-
-	void set_use_edge_connections(bool p_enabled);
-	bool get_use_edge_connections() const { return use_edge_connections; }
-
-	void set_edge_connection_margin(real_t p_edge_connection_margin);
-	real_t get_edge_connection_margin() const { return edge_connection_margin; }
-
-	void set_link_connection_radius(real_t p_link_connection_radius);
-	real_t get_link_connection_radius() const { return link_connection_radius; }
-
-	Nav2D::PointKey get_point_key(const Vector2& p_pos) const;
-	const Vector2& get_merge_rasterizer_cell_size() const;
-
-	void query_path(NavMeshQueries2D::NavMeshPathQueryTask2D& p_query_task);
-
-	Vector2 get_closest_point(const Vector2& p_point) const;
-	Nav2D::ClosestPointQueryResult get_closest_point_info(const Vector2& p_point) const;
-	RID get_closest_point_owner(const Vector2& p_point) const;
-
-	void add_region(NavRegion2D* p_region);
-	void remove_region(NavRegion2D* p_region);
-	const LocalVector<NavRegion2D*>& get_regions() const { return regions; }
-
-	void add_link(NavLink2D* p_link);
-	void remove_link(NavLink2D* p_link);
-	const LocalVector<NavLink2D*>& get_links() const { return links; }
-
-	bool has_agent(NavAgent2D* p_agent) const;
-	void add_agent(NavAgent2D* p_agent);
-	void remove_agent(NavAgent2D* p_agent);
-	const LocalVector<NavAgent2D*>& get_agents() const { return agents; }
-
-	void set_agent_as_controlled(NavAgent2D* p_agent);
-	void remove_agent_as_controlled(NavAgent2D* p_agent);
-
-	bool has_obstacle(NavObstacle2D* p_obstacle) const;
-	void add_obstacle(NavObstacle2D* p_obstacle);
-	void remove_obstacle(NavObstacle2D* p_obstacle);
-	const LocalVector<NavObstacle2D*>& get_obstacles() const { return obstacles; }
-
-	Vector2 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
-
-	void sync();
-	void step(double p_delta_time);
-	void dispatch_callbacks();
-
-	int get_pm_region_count() const { return performance_data.pm_region_count; }
-	int get_pm_agent_count() const { return performance_data.pm_agent_count; }
-	int get_pm_link_count() const { return performance_data.pm_link_count; }
-	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
-	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
-	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
-	int get_pm_edge_connection_count() const { return performance_data.pm_edge_connection_count; }
-	int get_pm_edge_free_count() const { return performance_data.pm_edge_free_count; }
-	int get_pm_obstacle_count() const { return performance_data.pm_obstacle_count; }
-
-	int get_region_connections_count(NavRegion2D* p_region) const;
-	Vector2 get_region_connection_pathway_start(NavRegion2D* p_region, int p_connection_id) const;
-	Vector2 get_region_connection_pathway_end(NavRegion2D* p_region, int p_connection_id) const;
-
-	void set_use_async_iterations(bool p_enabled);
-	bool get_use_async_iterations() const;
-
-private:
-	void _sync_dirty_map_update_requests();
-	void _sync_dirty_avoidance_update_requests();
-	void _sync_async_tasks();
-
-	void compute_single_step(uint32_t p_index, NavAgent2D** p_agent);
-	void compute_single_avoidance_step(uint32_t p_index, NavAgent2D** p_agent);
-
-	void _sync_avoidance();
-	void _update_rvo_simulation();
-	void _update_rvo_obstacles_tree();
-	void _update_rvo_agents_tree();
-
-	void _update_merge_rasterizer_cell_dimensions();
-};
 
 #ifdef CLIPPER2_ENABLED
 
@@ -90984,9 +86965,6 @@ public:
 };
 
 #endif // CLIPPER2_ENABLED
-// --- End modules/navigation_2d/nav_map_2d.h ---
-// --- End servers/navigation_2d/navigation_server_2d.h ---
-// --- End servers/physics_2d/physics_server_2d.h ---
 
 // Plain non-virtual composed component for 2D collision state (shared by PhysicsBody2D and Area2D).
 // Supports both inline ShapeSlots directly on the body/area and child CollisionShape2D/CollisionPolygon2D owners.
@@ -91104,9 +87082,7 @@ struct CollisionState2D {
 	bool has_any_shapes() const { return !shapes.is_empty(); }
 };
 
-// --- Folded from scene/2d/physics/area_2d.h ---
 #include "core/string/ustring.h"
-
 
 class Area2D : public Node2D {
 public:
@@ -91234,11 +87210,6 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
 
-// --- End scene/2d/physics/area_2d.h ---
-
-// --- Folded from scene/2d/physics/collision_shape_2d.h ---
-
-
 class CollisionShape2D : public Node2D {
 	Ref<Shape2D> shape;
 	Rect2 rect = Rect2(-Point2(10, 10), Point2(20, 20));
@@ -91292,11 +87263,7 @@ public:
 	CollisionShape2D();
 };
 
-// --- End scene/2d/physics/collision_shape_2d.h ---
-
-// --- Folded from scene/2d/physics/kinematic_collision_2d.h ---
 #include "core/io/ip.h"
-
 
 class PhysicsBody2D;
 
@@ -91318,15 +87285,6 @@ public:
 	int get_collider_shape_index() const;
 	Vector2 get_collider_velocity() const;
 };
-
-
-
-// --- End scene/2d/physics/kinematic_collision_2d.h ---
-
-// --- Folded from scene/2d/physics/physics_body_2d.h ---
-
-
-
 
 class Joint2D;
 class Skeleton2D;
@@ -91652,10 +87610,6 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
 
-// --- End scene/2d/physics/physics_body_2d.h ---
-
-// --- Folded from scene/2d/sprite_2d.h ---
-
 class Sprite2D : public Node2D
 {
 	Ref<Texture2D> texture;
@@ -91686,7 +87640,6 @@ class Sprite2D : public Node2D
 
 protected:
 	void _notification(int p_what);
-
 
 public:
 #ifdef DEBUG_ENABLED
@@ -91741,8 +87694,6 @@ public:
 
 	Sprite2D();
 };
-
-// --- Folded from scene/2d/polygon_2d.h ---
 
 class NavigationPolygon;
 class NavigationMeshSourceGeometryData2D;
@@ -91873,13 +87824,6 @@ public:
 	~Polygon2D();
 };
 
-
-
-// --- End scene/2d/polygon_2d.h ---
-
-// --- Folded from scene/2d/skeleton_2d.h ---
-// --- Folded from scene/resources/2d/skeleton/skeleton_modification_2d.h ---
-// --- Folded from scene/resources/2d/skeleton/skeleton_modification_stack_2d.h ---
 #include "core/io/ip.h"
 
 ///////////////////////////////////////
@@ -91940,10 +87884,6 @@ public:
 
 	SkeletonModificationStack2D();
 };
-
-
-
-// --- End scene/resources/2d/skeleton/skeleton_modification_stack_2d.h ---
 
 class Bone2D;
 class Node2D;
@@ -92182,8 +88122,6 @@ public:
 	Ref<SkeletonModificationStack2D> get_held_modification_stack() const;
 };
 
-// --- End scene/resources/2d/skeleton/skeleton_modification_2d.h ---
-
 class Skeleton2D;
 
 class Bone2D : public Node2D
@@ -92317,13 +88255,6 @@ public:
 	~Skeleton2D();
 };
 
-
-
-// --- End scene/2d/skeleton_2d.h ---
-
-// --- Folded from scene/2d/line_2d.h ---
-
-
 class Line2D : public Node2D
 {
 public:
@@ -92413,7 +88344,6 @@ protected:
 	void _notification(int p_what);
 	void _draw();
 
-
 private:
 	void _gradient_changed();
 	void _curve_changed();
@@ -92434,9 +88364,6 @@ private:
 	int _round_precision = 8;
 	bool _antialiased = false;
 };
-
-// --- Folded from scene/2d/light_occluder_2d.h ---
-
 
 class OccluderPolygon2D : public Resource
 {
@@ -92478,7 +88405,6 @@ public:
 	~OccluderPolygon2D();
 };
 
-
 class LightOccluder2D : public Node2D
 {
 	RID occluder;
@@ -92513,13 +88439,6 @@ public:
 	LightOccluder2D();
 	~LightOccluder2D();
 };
-
-
-
-// --- End scene/2d/light_occluder_2d.h ---
-
-// --- Folded from scene/2d/parallax_2d.h ---
-
 
 class Parallax2D : public Node2D
 {
@@ -92583,13 +88502,6 @@ public:
 	Parallax2D() = default;
 };
 
-
-
-// --- End scene/2d/parallax_2d.h ---
-
-// --- Folded from scene/2d/parallax_layer.h ---
-
-
 class ParallaxLayer : public Node2D
 {
 	Point2 orig_offset;
@@ -92617,13 +88529,6 @@ public:
 	PackedStringArray get_configuration_warnings() const override;
 	ParallaxLayer() = default;
 };
-
-
-
-// --- End scene/2d/parallax_layer.h ---
-
-// --- Folded from scene/2d/path_2d.h ---
-
 
 class Timer;
 
@@ -92698,15 +88603,6 @@ public:
 
 	PackedStringArray get_configuration_warnings() const override;
 };
-
-
-
-// --- End scene/2d/path_2d.h ---
-
-// --- Folded from scene/2d/navigation/navigation_2d.h ---
-
-
-
 
 class NavigationMeshSourceGeometryData2D;
 
@@ -93222,13 +89118,10 @@ private:
 	void _region_update_transform();
 };
 
-// --- Folded from scene/resources/2d/tile_set.h ---
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "core/templates/rb_set.h"
-
-
 
 #ifndef PHYSICS_2D_DISABLED
 
@@ -94272,9 +90165,6 @@ public:
 		bool p_flip_h, bool p_flip_v, bool p_transpose, bool p_preserve_winding_order = false);
 };
 
-// --- Folded from scene/2d/tile_map_layer.h ---
-
-
 #ifndef NAVIGATION_2D_DISABLED
 class NavigationMeshSourceGeometryData2D;
 #endif // NAVIGATION_2D_DISABLED
@@ -94410,14 +90300,6 @@ struct CellData
 };
 
 // We use another comparator for Y-sorted layers with reversed X drawing order.
-struct CellDataYSortedXReversedComparator
-{
-	_FORCE_INLINE_ bool operator()(const CellData& p_a, const CellData& p_b) const
-	{
-		return p_a.coords.x == p_b.coords.x ? (p_a.coords.y < p_b.coords.y)
-											: (p_a.coords.x > p_b.coords.x);
-	}
-};
 
 #ifdef DEBUG_ENABLED
 class DebugQuadrant : public RefCounted
@@ -94767,7 +90649,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-
 	virtual void _update_self_texture_filter(
 		RSE::CanvasItemTextureFilter p_texture_filter) override;
 	virtual void _update_self_texture_repeat(
@@ -94932,17 +90813,7 @@ public:
 	~TileMapLayer();
 };
 
-
-
-// --- End scene/2d/tile_map_layer.h ---
-// --- End scene/2d/line_2d.h ---
-// --- End scene/2d/node_2d.h ---
-
-// --- Folded from scene/3d/node_3d.h ---
-
-// --- Inlined/Folded from scene/resources/3d/world_3d.h ---
 #include "core/io/ip.h"
-
 
 class CameraAttributes;
 class Camera3D;
@@ -95368,13 +91239,6 @@ public:
 	~Node3D();
 };
 
-// --- Folded from scene/3d/navigation/navigation_3d.h ---
-
-
-// --- Folded from servers/physics_3d/physics_server_3d.h ---
-// --- Folded from servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
-// --- Folded from servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
-// --- Folded from servers/physics_3d/physics_server_3d_types.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -95502,86 +91366,11 @@ struct MotionResult
 // Alias to make it easier to use.
 #define PS3DT PhysicsServer3DTypes
 
-
-
-// --- End servers/physics_3d/physics_server_3d_types.h ---
-// --- Folded from servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
+#include "core/io/ip.h"
 
 #include "core/io/ip.h"
 
-class PhysicsPointQueryParameters3D : public RefCounted
-{
-	PS3DT::PointParameters parameters;
-
-public:
-	const PS3DT::PointParameters& get_parameters() const { return parameters; }
-
-	void set_position(const Vector3& p_position) { parameters.position = p_position; }
-
-	const Vector3& get_position() const { return parameters.position; }
-
-	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
-
-	uint32_t get_collision_mask() const { return parameters.collision_mask; }
-
-	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
-
-	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
-
-	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
-
-	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
-};
-
-
-
-// --- End servers/physics_3d/queries/physics_point_query_parameters_3d.h ---
-// --- Folded from servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
-
 #include "core/io/ip.h"
-
-class PhysicsRayQueryParameters3D : public RefCounted
-{
-	PS3DT::RayParameters parameters;
-
-public:
-	const PS3DT::RayParameters& get_parameters() const { return parameters; }
-
-	void set_from(const Vector3& p_from) { parameters.from = p_from; }
-
-	const Vector3& get_from() const { return parameters.from; }
-
-	void set_to(const Vector3& p_to) { parameters.to = p_to; }
-
-	const Vector3& get_to() const { return parameters.to; }
-
-	void set_collision_mask(uint32_t p_mask) { parameters.collision_mask = p_mask; }
-
-	uint32_t get_collision_mask() const { return parameters.collision_mask; }
-
-	void set_collide_with_bodies(bool p_enable) { parameters.collide_with_bodies = p_enable; }
-
-	bool is_collide_with_bodies_enabled() const { return parameters.collide_with_bodies; }
-
-	void set_collide_with_areas(bool p_enable) { parameters.collide_with_areas = p_enable; }
-
-	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
-
-	void set_hit_from_inside(bool p_enable) { parameters.hit_from_inside = p_enable; }
-
-	bool is_hit_from_inside_enabled() const { return parameters.hit_from_inside; }
-
-	void set_hit_back_faces(bool p_enable) { parameters.hit_back_faces = p_enable; }
-
-	bool is_hit_back_faces_enabled() const { return parameters.hit_back_faces; }
-};
-
-
-
-// --- End servers/physics_3d/queries/physics_ray_query_parameters_3d.h ---
-// --- Folded from servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
-#include "core/io/ip.h"
-
 
 class Resource;
 
@@ -95628,10 +91417,6 @@ public:
 	bool is_collide_with_areas_enabled() const { return parameters.collide_with_areas; }
 };
 
-
-
-// --- End servers/physics_3d/queries/physics_shape_query_parameters_3d.h ---
-
 class JoltBody3D;
 class JoltSpace3D;
 
@@ -95665,8 +91450,6 @@ public:
 
 	JoltSpace3D& get_space() const { return *space; }
 };
-
-// --- End servers/physics_3d/direct_states/physics_direct_space_state_3d.h ---
 
 class JoltBody3D;
 
@@ -95746,9 +91529,6 @@ public:
 	PhysicsDirectSpaceState3D* get_space_state();
 };
 
-// --- End servers/physics_3d/direct_states/physics_direct_body_state_3d.h ---
-
-// --- Folded from servers/physics_3d/physics_server_3d_enums.h ---
 namespace PhysicsServer3DEnums
 {
 
@@ -96009,10 +91789,6 @@ enum ProcessInfo
 // Alias to make it easier to use.
 #define PS3DE PhysicsServer3DEnums
 
-
-
-// --- End servers/physics_3d/physics_server_3d_enums.h ---
-// --- Folded from servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
@@ -96046,11 +91822,7 @@ public:
 	void set_aabb(const AABB& p_aabb);
 };
 
-// --- End servers/physics_3d/physics_server_3d_rendering_server_handler.h ---
-
-// --- Folded from servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
 #include "core/io/ip.h"
-
 
 class PhysicsTestMotionParameters3D : public RefCounted
 {
@@ -96090,12 +91862,7 @@ public:
 	}
 };
 
-
-
-// --- End servers/physics_3d/queries/physics_testmotion_query_parameters_3d.h ---
-// --- Folded from servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
 #include "core/io/ip.h"
-
 
 class PhysicsTestMotionResult3D : public RefCounted
 {
@@ -96121,10 +91888,6 @@ public:
 	int get_collision_local_shape(int p_collision_index = 0) const;
 	real_t get_collision_depth(int p_collision_index = 0) const;
 };
-
-
-
-// --- End servers/physics_3d/queries/physics_testmotion_query_result_3d.h ---
 
 class JoltPhysicsServer3D;
 class PhysicsDirectSpaceState3D;
@@ -96342,7 +92105,6 @@ public:
 	~PhysicsServer3D() = delete;
 };
 
-// --- Folded from servers/physics_3d/physics_server_3d_constants.h ---
 namespace PhysicsServer3DConstants {
 
 constexpr int MAX_CONTACTS_REPORTED_3D_MAX = 4096;
@@ -96352,11 +92114,7 @@ constexpr int MAX_CONTACTS_REPORTED_3D_MAX = 4096;
 // Alias to make it easier to use.
 #define PS3DC PhysicsServer3DConstants
 
-// --- End servers/physics_3d/physics_server_3d_constants.h ---
-
-// --- Folded from modules/jolt_physics/jolt_physics_server_3d.h ---
 #include "core/io/ip.h"
-
 
 class JoltArea3D;
 class JoltBody3D;
@@ -96846,7 +92604,6 @@ public:
 	float generic_6dof_joint_get_applied_torque(RID p_joint);
 };
 
-// --- Folded from modules/jolt_physics/jolt_globals.h ---
 void jolt_initialize();
 void jolt_deinitialize();
 bool jolt_is_initialized();
@@ -96992,48 +92749,10 @@ _FORCE_INLINE_ JPH::RMat44 to_jolt_r(const Transform3D &p_transform) {
 
 #ifdef DEBUG_ENABLED
 
-class JoltStreamOutputWrapper final : public JPH::StreamOut {
-	Ref<FileAccess> file_access;
-
-public:
-	explicit JoltStreamOutputWrapper(const Ref<FileAccess> &p_file_access) :
-			file_access(p_file_access) {}
-
-	virtual void WriteBytes(const void *p_data, size_t p_bytes) override {
-		file_access->store_buffer(static_cast<const uint8_t *>(p_data), static_cast<uint64_t>(p_bytes));
-	}
-
-	virtual bool IsFailed() const override {
-		return file_access->get_error() != OK;
-	}
-};
-
-class JoltStreamInputWrapper final : public JPH::StreamIn {
-	Ref<FileAccess> file_access;
-
-public:
-	explicit JoltStreamInputWrapper(const Ref<FileAccess> &p_file_access) :
-			file_access(p_file_access) {}
-
-	virtual void ReadBytes(void *p_data, size_t p_bytes) override {
-		file_access->get_buffer(static_cast<uint8_t *>(p_data), static_cast<uint64_t>(p_bytes));
-	}
-
-	virtual bool IsEOF() const override {
-		return file_access->eof_reached();
-	}
-
-	virtual bool IsFailed() const override {
-		return file_access->get_error() != OK;
-	}
-};
-
 #endif // DEBUG_ENABLED
 
 #endif // GODOT_MODULE
-// --- End modules/jolt_physics/jolt_physics_server_3d.h ---
 
-// --- Folded from servers/navigation_3d/navigation_server_3d.h ---
 #include "core/io/ip.h"
 #include "core/os/os.h"
 #include "core/string/ustring.h"
@@ -97041,9 +92760,7 @@ public:
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-// --- Inlined/Folded from scene/resources/3d/navigation_mesh_source_geometry_data_3d.h ---
 #include "core/os/mutex.h"
-
 
 class NavigationMeshSourceGeometryData3D : public Resource
 {
@@ -97116,7 +92833,6 @@ public:
 
 	~NavigationMeshSourceGeometryData3D() { clear(); }
 };
-
 
 namespace NavigationEnums3D {
 
@@ -97755,8 +93471,6 @@ public:
 	NavigationServer3D& operator=(const NavigationServer3D&) = delete;
 	~NavigationServer3D() = delete;
 };
-// --- End servers/navigation_3d/navigation_server_3d.h ---
-// --- End servers/physics_3d/physics_server_3d.h ---
 
 class ArrayMesh;
 class NavigationMeshSourceGeometryData3D;
@@ -98284,8 +93998,6 @@ private:
 	void _region_update_transform();
 };
 
-// --- Folded from scene/3d/path_3d.h ---
-
 class ArrayMesh;
 
 class Path3D : public Node3D
@@ -98343,7 +94055,6 @@ private:
 protected:
 	void _notification(int p_what);
 
-
 public:
 	void set_progress(real_t p_progress);
 	real_t get_progress() const;
@@ -98378,8 +94089,6 @@ public:
 	static Transform3D correct_posture(
 		Transform3D p_transform, PathFollow3D::RotationMode p_rotation_mode);
 };
-
-// --- Folded from scene/3d/xr/xr_nodes.h ---
 
 /*
 	XRNode3D is a consolidated helper node that binds to an XRTracker
@@ -98489,9 +94198,6 @@ public:
 	void set_current(bool p_enabled);
 	bool is_current() const;
 };
-
-// --- Folded from scene/3d/visual_instance_3d.h ---
-
 
 class TriangleMesh;
 
@@ -98623,9 +94329,6 @@ struct RenderInstance3D
 	~RenderInstance3D();
 };
 
-// --- Folded from scene/3d/decal.h ---
-
-
 class Decal : public Node3D
 {
 public:
@@ -98706,13 +94409,6 @@ public:
 	Decal();
 	~Decal();
 };
-
-
-
-// --- End scene/3d/decal.h ---
-
-// --- Folded from scene/3d/label_3d.h ---
-
 
 class Label3D : public Node3D
 {
@@ -98950,13 +94646,6 @@ public:
 	~Label3D();
 };
 
-
-
-// --- End scene/3d/label_3d.h ---
-
-// --- Folded from scene/3d/occluder_instance_3d.h ---
-
-
 class ArrayMesh;
 
 class Occluder3D : public Resource
@@ -99085,14 +94774,6 @@ public:
 	~OccluderInstance3D();
 };
 
-
-
-// --- End scene/3d/occluder_instance_3d.h ---
-
-// --- Folded from scene/3d/sprite_3d.h ---
-
-// --- Folded from scene/resources/sprite_frames.h ---
-
 static const float SPRITE_FRAME_MINIMUM_DURATION = 0.01;
 
 class SpriteFrames : public Resource
@@ -99187,10 +94868,6 @@ public:
 
 	SpriteFrames();
 };
-
-
-
-// --- End scene/resources/sprite_frames.h ---
 
 class Sprite3D : public Node3D
 {
@@ -99415,11 +95092,6 @@ public:
 	~Sprite3D();
 };
 
-// --- End scene/3d/sprite_3d.h ---
-
-// --- Folded from scene/3d/light_3d.h ---
-
-
 class Light3D : public Node3D
 {
 public:
@@ -99607,9 +95279,6 @@ public:
 	~Light3D();
 };
 
-// --- End scene/3d/light_3d.h ---
-
-// --- Folded from scene/3d/lightmapper.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 
@@ -99792,13 +95461,6 @@ public:
 	~Lightmapper();
 };
 
-// --- End scene/3d/lightmapper.h ---
-
-// --- Folded from scene/3d/multimesh_instance_3d.h ---
-
-// --- Inlined/Folded from scene/resources/multimesh.h ---
-
-
 class MultiMesh : public Resource
 {
 public:
@@ -99947,10 +95609,6 @@ public:
 	~MultiMeshInstance3D() = default;
 };
 
-// --- End scene/3d/multimesh_instance_3d.h ---
-
-// --- Folded from scene/3d/camera_3d.h ---
-// --- Folded from core/templates/interpolated_property.h ---
 struct Vector2;
 
 namespace InterpolatedPropertyFuncs {
@@ -100039,9 +95697,6 @@ public:
 	}
 };
 
-// --- End core/templates/interpolated_property.h ---
-
-// --- Folded from scene/3d/velocity_tracker_3d.h ---
 #include "core/io/ip.h"
 
 class VelocityTracker3D : public RefCounted
@@ -100065,10 +95720,6 @@ public:
 
 	VelocityTracker3D();
 };
-
-
-
-// --- End scene/3d/velocity_tracker_3d.h ---
 
 class Camera3D : public Node3D
 {
@@ -100240,10 +95891,6 @@ public:
 	~Camera3D();
 };
 
-// --- Folded from scene/3d/audio_listener_3d.h ---
-
-
-
 class AudioListener3D : public Node3D
 {
 public:
@@ -100288,13 +95935,7 @@ protected:
 
 };
 
-
-
-// --- End scene/3d/audio_listener_3d.h ---
-
-// --- Folded from scene/3d/audio_stream_player_3d.h ---
 #include "core/string/ustring.h"
-
 
 #ifndef PHYSICS_3D_DISABLED
 class Area3D;
@@ -100478,13 +96119,6 @@ public:
 	~AudioStreamPlayer3D();
 };
 
-
-
-// --- End scene/3d/audio_stream_player_3d.h ---
-
-// --- Folded from scene/3d/world_environment.h ---
-
-
 class WorldEnvironment : public Node
 {
 	Ref<Environment> environment;
@@ -100510,16 +96144,8 @@ public:
 	WorldEnvironment();
 };
 
-
-
-// --- End scene/3d/world_environment.h ---
-// --- End scene/3d/camera_3d.h ---
-// --- End scene/3d/visual_instance_3d.h ---
-
-// --- Folded from scene/3d/skeleton_3d.h ---
 #include "core/io/ip.h"
 
-// --- Inlined/Folded from scene/resources/3d/skin.h ---
 #include "core/io/ip.h"
 
 class Skin : public Resource
@@ -100867,9 +96493,6 @@ public:
 	~Skeleton3D();
 };
 
-// --- Folded from scene/3d/skeleton_modifier_3d.h ---
-
-
 class SkeletonModifier3D : public Node3D
 {
 	void rebind();
@@ -100986,9 +96609,6 @@ public:
 
 	SkeletonModifier3D();
 };
-
-// --- Folded from scene/3d/bone_constraint_3d.h ---
-
 
 class BoneConstraint3D : public SkeletonModifier3D {
 public:
@@ -101305,9 +96925,6 @@ public:
 	int get_joint_count(int p_index) const;
 };
 
-// --- End scene/3d/bone_constraint_3d.h ---
-
-// --- Folded from scene/resources/3d/joint_limitation_3d.h ---
 #include "core/io/ip.h"
 
 #ifdef TOOLS_ENABLED
@@ -101336,14 +96953,8 @@ public:
 #endif // TOOLS_ENABLED
 };
 
-// --- End scene/resources/3d/joint_limitation_3d.h ---
-
-// --- Folded from scene/3d/physics/collision_object_3d.h ---
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
-
-
-
 
 // Plain non-virtual composed component for 3D collision state (shared by PhysicsBody3D and Area3D).
 // Supports both inline ShapeSlots directly on the body/area and child CollisionShape3D/CollisionPolygon3D owners.
@@ -101457,9 +97068,6 @@ struct CollisionState3D {
 	bool has_any_shapes() const { return !shapes.is_empty(); }
 };
 
-// --- Folded from scene/3d/physics/kinematic_collision_3d.h ---
-
-
 class KinematicCollision3D : public RefCounted
 {
 	friend class PhysicsBody3D;
@@ -101480,15 +97088,6 @@ public:
 	int get_collider_shape_index(int p_collision_index = 0) const;
 	Vector3 get_collider_velocity(int p_collision_index = 0) const;
 };
-
-
-
-// --- End scene/3d/physics/kinematic_collision_3d.h ---
-
-// --- Folded from scene/3d/physics/physics_body_3d.h ---
-
-
-
 
 class PhysicsBody3D;
 class PhysicalBoneSimulator3D;
@@ -102131,10 +97730,6 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
 
-// --- End scene/3d/physics/physics_body_3d.h ---
-
-// --- Folded from scene/3d/physics/physical_bone_simulator_3d.h ---
-
 class PhysicsBody3D;
 
 class PhysicalBoneSimulator3D : public SkeletonModifier3D {
@@ -102175,11 +97770,7 @@ public:
 	PhysicalBoneSimulator3D() = default;
 };
 
-// --- End scene/3d/physics/physical_bone_simulator_3d.h ---
-
-// --- Folded from scene/3d/physics/area_3d.h ---
 #include "core/string/ustring.h"
-
 
 class Area3D : public Node3D {
 public:
@@ -102340,12 +97931,6 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
 
-// --- End scene/3d/physics/area_3d.h ---
-
-// --- Folded from scene/3d/physics/collision_shape_3d.h ---
-
-
-
 class CollisionShape3D : public Node3D {
 	Ref<Shape3D> shape;
 
@@ -102391,9 +97976,6 @@ public:
 	~CollisionShape3D();
 };
 
-// --- End scene/3d/physics/collision_shape_3d.h ---
-
-// --- Folded from scene/3d/bone_attachment_3d.h ---
 class BoneAttachment3D : public Node3D
 {
 	bool bound = false;
@@ -102450,10 +98032,6 @@ public:
 	BoneAttachment3D() = default;
 };
 
-// --- Folded from scene/3d/importer_mesh_instance_3d.h ---
-
-
-
 class ImporterMesh;
 
 class ImporterMeshInstance3D : public Node3D
@@ -102499,11 +98077,7 @@ public:
 	RenderInstance3D::VisibilityRangeFadeMode get_visibility_range_fade_mode() const;
 };
 
-// --- Folded from scene/3d/mesh_instance_3d.h ---
 #include "core/string/ustring.h"
-
-
-
 
 #ifndef NAVIGATION_3D_DISABLED
 class NavigationMesh;
@@ -102626,13 +98200,6 @@ public:
 
 	MeshInstance3D();
 };
-// --- End scene/3d/mesh_instance_3d.h ---
-// --- End scene/3d/skeleton_3d.h ---
-// --- End scene/3d/node_3d.h ---
-
-// --- Folded from scene/main/window.h ---
-// --- Folded from scene/main/viewport.h ---
-
 
 class AudioListener2D;
 class Camera2D;
@@ -103584,7 +99151,6 @@ public:
 	SubViewport();
 };
 
-// --- Folded from scene/resources/world_2d.h ---
 #include "core/io/ip.h"
 
 #ifndef PHYSICS_2D_DISABLED
@@ -103629,7 +99195,6 @@ public:
 	World2D();
 	~World2D();
 };
-// --- End scene/main/viewport.h ---
 
 class Font;
 class StyleBox;
@@ -104171,12 +99736,8 @@ public:
 	Window();
 	~Window() = default;
 };
-// --- End scene/main/window.h ---
 
-// --- Folded from scene/gui/dialogs.h ---
-// --- Inlined/Folded from scene/gui/button.h ---
 #include "core/os/os.h"
-
 
 class Button;
 class ButtonGroup;
@@ -104536,12 +100097,8 @@ public:
 	ButtonGroup();
 };
 
-// --- Folded from scene/gui/menu_bar.h ---
-// --- Inlined/Folded from scene/gui/popup_menu.h ---
 #include "core/os/os.h"
-// --- Inlined/Folded from scene/gui/popup.h ---
 #include "core/string/ustring.h"
-
 
 class Panel;
 
@@ -104620,11 +100177,7 @@ public:
 	Popup(bool p_panel = false);
 	~Popup();
 };
-// --- Folded from scene/gui/scroll_container.h ---
 
-// --- Inlined/Folded from scene/gui/scroll_bar.h ---
-
-// --- Inlined/Folded from scene/gui/range.h ---
 #include "core/io/ip.h"
 
 struct NumericRange
@@ -104652,10 +100205,6 @@ struct NumericRange
 
 	void append_configuration_warnings(PackedStringArray& r_warnings) const;
 };
-
-// --- Folded from scene/gui/slider.h ---
-
-
 
 class Slider : public Control
 {
@@ -104814,10 +100363,6 @@ public:
 	Slider(Orientation p_orientation = HORIZONTAL);
 };
 
-// --- Folded from scene/gui/texture_progress_bar.h ---
-
-
-
 class TextureProgressBar : public Control
 {
 	Ref<Texture2D> under;
@@ -104973,10 +100518,6 @@ private:
 	void draw_nine_patch_stretched(
 		const Ref<Texture2D>& p_texture, FillMode p_mode, double p_ratio, const Color& p_modulate);
 };
-
-// --- End scene/gui/texture_progress_bar.h ---
-
-// --- End scene/gui/slider.h ---
 
 class ScrollBar : public Control
 {
@@ -105311,9 +100852,6 @@ public:
 	ScrollContainer() = default;
 };
 
-// --- Folded from scene/gui/foldable_container.h ---
-
-
 class FoldableGroup;
 class TextLine;
 
@@ -105460,13 +100998,6 @@ public:
 	FoldableGroup();
 };
 
-
-
-// --- End scene/gui/foldable_container.h ---
-
-// --- Folded from scene/gui/separator.h ---
-
-
 class Separator : public Control
 {
 	struct ThemeCache
@@ -105496,11 +101027,6 @@ public:
 	Separator(Orientation p_orientation = HORIZONTAL);
 	~Separator();
 };
-
-// --- End scene/gui/separator.h ---
-
-// --- Folded from scene/gui/split_container.h ---
-
 
 class TextureRect;
 class SplitContainer;
@@ -105707,13 +101233,6 @@ public:
 	SplitContainer(bool p_vertical = false);
 };
 
-
-
-// --- End scene/gui/split_container.h ---
-
-// --- Folded from scene/gui/subviewport_container.h ---
-
-
 class SubViewportContainer : public Control
 {
 	bool stretch = false;
@@ -105754,14 +101273,6 @@ public:
 
 	SubViewportContainer();
 };
-
-
-
-// --- End scene/gui/subviewport_container.h ---
-
-// --- Folded from scene/gui/tab_bar.h ---
-
-
 
 class Timer;
 
@@ -105930,13 +101441,11 @@ private:
 	void _draw_tab(Ref<StyleBox>& p_tab_style, const Color& p_font_color, const Color& p_icon_color,
 		int p_index, float p_x, bool p_focus);
 
-
 protected:
 	bool _property_can_revert(const String& p_name) const
 	{
 		return property_helper.property_can_revert(p_name);
 	}
-
 
 	void _notification(int p_what);
 
@@ -106055,15 +101564,6 @@ public:
 
 	TabBar();
 };
-
-
-
-// --- End scene/gui/tab_bar.h ---
-
-// --- Folded from scene/gui/tab_container.h ---
-
-
-
 
 class Button;
 class Popup;
@@ -106238,7 +101738,6 @@ public:
 	void set_tab_hidden(int p_tab, bool p_hidden);
 	bool is_tab_hidden(int p_tab) const;
 
-
 	void set_tab_button_icon(int p_tab, const Ref<Texture2D>& p_icon);
 	Ref<Texture2D> get_tab_button_icon(int p_tab) const;
 
@@ -106279,12 +101778,6 @@ public:
 
 	TabContainer();
 };
-
-
-
-// --- End scene/gui/tab_container.h ---
-// --- End scene/gui/scroll_container.h ---
-
 
 class Panel;
 class LineEdit;
@@ -106882,16 +102375,6 @@ public:
 	~MenuBar() = default;
 };
 
-
-
-// --- End scene/gui/menu_bar.h ---
-
-// --- Folded from scene/gui/menu_button.h ---
-
-
-
-
-
 class MenuButton : public Control
 {
 	bool switch_on_hover = false;
@@ -106958,14 +102441,6 @@ public:
 	MenuButton(const String& p_text = String());
 	~MenuButton();
 };
-
-// --- End scene/gui/menu_button.h ---
-
-// --- Folded from scene/gui/option_button.h ---
-
-
-
-
 
 class OptionButton : public Control
 {
@@ -107106,11 +102581,6 @@ public:
 	~OptionButton();
 };
 
-// --- End scene/gui/option_button.h ---
-
-// --- Folded from scene/gui/texture_rect.h ---
-
-
 class TextureRect : public Control
 {
 public:
@@ -107170,15 +102640,7 @@ public:
 	~TextureRect();
 };
 
-
-
-// --- End scene/gui/texture_rect.h ---
-
-// --- Inlined/Folded from scene/gui/label.h ---
-
-// --- Folded from scene/resources/label_settings.h ---
 #include "core/io/ip.h"
-
 
 /*************************************************************************/
 
@@ -107288,10 +102750,6 @@ public:
 
 	LabelSettings() {}
 };
-
-
-
-// --- End scene/resources/label_settings.h ---
 
 class Label : public Control
 {
@@ -107532,11 +102990,6 @@ public:
 		}
 	}
 };
-
-// --- Folded from scene/gui/item_list.h ---
-
-
-
 
 class ItemList : public Control
 {
@@ -107852,13 +103305,6 @@ public:
 	~ItemList();
 };
 
-
-
-// --- End scene/gui/item_list.h ---
-
-// --- Folded from scene/gui/nine_patch_rect.h ---
-
-
 class NinePatchRect : public Control
 {
 public:
@@ -107906,13 +103352,6 @@ public:
 	~NinePatchRect();
 };
 
-
-
-// --- End scene/gui/nine_patch_rect.h ---
-
-// --- Folded from scene/gui/reference_rect.h ---
-
-
 class ReferenceRect : public Control {
 
 	Color border_color = Color(1, 0, 0);
@@ -107932,10 +103371,6 @@ public:
 	void set_editor_only(const bool &p_enabled);
 	bool get_editor_only() const;
 };
-
-// --- End scene/gui/reference_rect.h ---
-// --- Folded from scene/gui/panel.h ---
-
 
 class Panel : public Control
 {
@@ -107957,9 +103392,6 @@ public:
 
 	Panel(bool p_fit_children = false);
 };
-
-// --- End scene/gui/panel.h ---
-
 
 class LineEdit;
 
@@ -108083,10 +103515,7 @@ public:
 	~Dialog() = default;
 };
 
-// --- Folded from scene/gui/file_dialog.h ---
 #include "core/io/net_socket.h"
-
-
 
 class DirAccess;
 class ItemList;
@@ -108578,15 +104007,7 @@ public:
 	~FileDialog();
 };
 
-
-
-// --- End scene/gui/file_dialog.h ---
-
-// --- Folded from scene/gui/graph_edit.h ---
 #include "core/io/ip.h"
-
-// --- Folded from scene/gui/graph_node.h ---
-
 
 class Label;
 
@@ -108834,8 +104255,6 @@ public:
 
 	GraphNode(Mode p_mode = MODE_NODE);
 };
-
-// --- End scene/gui/graph_node.h ---
 
 class Button;
 class GraphEdit;
@@ -109432,15 +104851,6 @@ public:
 	GraphEdit();
 };
 
-
-
-// --- End scene/gui/graph_edit.h ---
-
-// --- Folded from scene/gui/color_picker.h ---
-
-
-
-
 class ColorMode;
 class ColorPickerShape;
 class FileDialog;
@@ -109824,9 +105234,6 @@ public:
 	ColorPickerButton(const String& p_text = String());
 };
 
-// --- Folded from scene/gui/color_rect.h ---
-
-
 class ColorRect : public Control
 {
 	Color color = Color(1, 1, 1);
@@ -109849,11 +105256,6 @@ public:
 	void queue_redraw();
 };
 
-
-
-// --- End scene/gui/color_rect.h ---
-
-// --- Folded from scene/resources/color_palette.h ---
 #include "core/io/ip.h"
 
 class ColorPalette : public Resource
@@ -109868,18 +105270,9 @@ public:
 	PackedColorArray get_colors() const;
 };
 
-
-
-// --- End scene/resources/color_palette.h ---
-
-// --- End scene/gui/color_picker.h ---
-
-// --- Folded from scene/gui/rich_text_label.h ---
 #include "core/io/ip.h"
 
-
 #ifdef TOOLS_ENABLED
-// --- Folded from editor/settings/editor_settings.h ---
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
@@ -110061,7 +105454,6 @@ void ED_SHORTCUT_OVERRIDE_ARRAY(const String& p_path, const String& p_feature,
 	const PackedInt32Array& p_keycodes, bool p_physical = false);
 Ref<Shortcut> ED_GET_SHORTCUT(const String& p_path);
 
-// --- Folded from editor/translations/editor_translation.h ---
 #include "core/string/ustring.h"
 
 Vector<String> get_editor_locales();
@@ -110069,9 +105461,6 @@ void load_editor_translations(const String &p_locale);
 void load_doc_translations(const String &p_locale);
 Vector<Vector<String>> get_extractable_message_list();
 
-// --- End editor/translations/editor_translation.h ---
-
-// --- Folded from editor/file_system/editor_paths.h ---
 #include "core/string/ustring.h"
 
 class EditorPaths final
@@ -110123,13 +105512,11 @@ public:
 	~EditorPaths() = delete;
 };
 
-// --- Folded from editor/file_system/editor_file_system.h ---
 #include "core/io/net_socket.h"
 #include "core/os/mutex.h"
 #include "core/os/os.h"
 #include "core/io/ip.h"
 #include "core/os/memory.h"
-
 
 class ResourceFormatImporter;
 class FileAccess;
@@ -110173,7 +105560,6 @@ class EditorFileSystemDirectory
 	};
 
 	Vector<FileInfo*> files;
-
 
 	friend class EditorFileSystem;
 
@@ -110270,8 +105656,6 @@ class EditorFileSystem : public Node
 	void _save_late_updated_files();
 
 	EditorFileSystemDirectory* filesystem = nullptr;
-
-
 
 	using ScriptClassInfo = EditorFileSystemDirectory::FileInfo::ScriptClassInfo;
 
@@ -110444,7 +105828,6 @@ public:
 	~EditorFileSystem();
 };
 
-// --- Folded from editor/themes/editor_scale.h ---
 class EditorScale {
 	static float _scale;
 
@@ -110454,8 +105837,6 @@ public:
 };
 
 #define EDSCALE (EditorScale::get_scale())
-// --- End editor/file_system/editor_paths.h ---
-// --- End editor/settings/editor_settings.h ---
 #endif
 
 class PopupMenu;
@@ -111286,14 +106667,6 @@ public:
 	~RichTextLabel() = default;
 };
 
-
-
-// --- End scene/gui/rich_text_label.h ---
-
-// --- Folded from scene/gui/line_edit.h ---
-
-
-
 class LineEdit : public Control
 {
 public:
@@ -111727,12 +107100,6 @@ public:
 	~LineEdit();
 };
 
-// --- Folded from scene/gui/spin_box.h ---
-
-
-
-
-
 class SpinBox : public Control
 {
 	LineEdit* line_edit = nullptr;
@@ -111959,16 +107326,8 @@ public:
 	SpinBox();
 };
 
-// --- End scene/gui/spin_box.h ---
-
-// --- Folded from scene/gui/text_edit.h ---
 #include <type_traits>
 
-
-
-
-
-// --- Folded from scene/resources/syntax_highlighter.h ---
 #include "core/io/ip.h"
 
 class TextEdit;
@@ -112044,8 +107403,6 @@ public:
 
 	void set_uint_suffix_enabled(bool p_enabled);
 };
-
-// --- End scene/resources/syntax_highlighter.h ---
 
 class TextEdit : public Control
 {
@@ -113630,9 +108987,6 @@ public:
 	~TextEdit();
 };
 
-// --- Folded from scene/gui/tree.h ---
-
-
 class LineEdit;
 class Popup;
 class PopupMenu;
@@ -114543,17 +109897,11 @@ public:
 	Tree() = default;
 	~Tree();
 };
-// --- End scene/gui/dialogs.h ---
 
-// --- Folded from modules/gltf/gltf_document.h ---
-// --- Inlined/Folded from modules/gltf/gltf_state.h ---
-// --- Inlined/Folded from modules/gltf/gltf_extensions.h ---
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
 
-// --- Inlined/Folded from modules/gltf/gltf_structures.h ---
 #include "core/io/ip.h"
-// --- Inlined/Folded from modules/gltf/gltf_defines.h ---
 // This file should only be included by other headers.
 
 // GLTF classes.
@@ -114592,10 +109940,6 @@ using GLTFTextureSamplerIndex = int;
 
 class Camera3D;
 template <typename T> class TypedArray;
-
-
-
-
 
 class GLTFTextureSampler final : public Resource
 {
@@ -115288,7 +110632,6 @@ public:
 	void set_json_pointers(const Vector<PackedStringArray>& p_json_pointers);
 };
 
-
 class Light3D;
 
 // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual
@@ -115361,8 +110704,6 @@ public:
 	void set_spec_gloss_img(Ref<Image> p_spec_gloss_img);
 };
 
-
-
 class GLTFDocumentExtension : public Resource
 {
 public:
@@ -115391,37 +110732,7 @@ public:
 	virtual Error export_post(Ref<GLTFState> p_state);
 };
 
-class GLTFDocumentExtensionTexture final : public GLTFDocumentExtension
-{
-public:
-	enum Format
-	{
-		FORMAT_KTX,
-		FORMAT_WEBP,
-	};
-
-private:
-	Format format = FORMAT_KTX;
-
-public:
-	explicit GLTFDocumentExtensionTexture(Format p_format = FORMAT_KTX) : format(p_format) {}
-
-	Format get_format() const { return format; }
-
-	// Import process.
-	Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions) override;
-	Vector<String> get_supported_extensions() override;
-	Error parse_image_data(Ref<GLTFState> p_state, const PackedByteArray& p_image_data,
-		const String& p_mime_type, Ref<Image> r_image) override;
-	String get_image_file_extension() override;
-	// Export process.
-	Vector<String> get_saveable_image_formats() override;
-	Error save_image_at_path(Ref<GLTFState> p_state, Ref<Image> p_image, const String& p_file_path,
-		const String& p_image_format, float p_lossy_quality) override;
-};
-
 #ifndef PHYSICS_3D_DISABLED
-
 
 // GLTFPhysicsBody is an intermediary between Godot's physics body nodes
 // and the OMI_physics_body extension.
@@ -115529,25 +110840,7 @@ public:
 	Ref<Shape3D> to_resource(bool p_cache_shapes = false);
 };
 
-class GLTFDocumentExtensionPhysics final : public GLTFDocumentExtension
-{
-public:
-	// Import process.
-	Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions) override;
-	Vector<String> get_supported_extensions() override;
-	Ref<GLTFObjectModelProperty> import_object_model_property(Ref<GLTFState> p_state,
-		const PackedStringArray& p_split_json_pointer,
-		const TypedArray<NodePath>& p_partial_paths) override;
-	Node3D* generate_scene_node(
-		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_parent) override;
-	// Export process.
-	void convert_scene_node(
-		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_node) override;
-	Error export_preserialize(Ref<GLTFState> p_state) override;
-};
 #endif // PHYSICS_3D_DISABLED
-
-
 
 class GLTFState final : public Resource
 {
@@ -115782,9 +111075,6 @@ public:
 
 	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
 };
-
-
-
 
 class CSGShape3D;
 class GridMap;
@@ -116137,13 +111427,8 @@ public:
 };
 
 #ifdef TOOLS_ENABLED
-// --- Folded from editor/import/3d/resource_importer_scene.h ---
 #include "core/typedefs.h"
 #include "core/io/net_socket.h"
-
-
-
-
 
 class AnimationPlayer;
 class ImporterMesh;
@@ -116168,18 +111453,6 @@ public:
 	virtual void get_extensions(List<String>* r_extensions) const;
 	virtual void get_import_options(
 		const String& p_path, List<ResourceImporter::ImportOption>* r_options);
-};
-
-class EditorScenePostImport : public RefCounted
-{
-	String source_file;
-
-protected:
-
-public:
-	String get_source_file() const;
-	virtual Node* post_import(Node* p_scene);
-	virtual void init(const String& p_source_file);
 };
 
 class EditorScenePostImportPlugin : public RefCounted
@@ -116370,12 +111643,6 @@ public:
 		const Ref<ImporterMesh>& p_mesh, const M& p_options, float p_applied_root_scale);
 
 	template <typename M> static Transform3D get_collision_shapes_transform(const M& p_options);
-};
-
-class EditorSceneFormatImporterESCN : public EditorSceneFormatImporter
-{
-public:
-	virtual void get_extensions(List<String>* r_extensions) const override;
 };
 
 template <typename M>
@@ -116617,30 +111884,8 @@ Transform3D ResourceImporterScene::get_collision_shapes_transform(const M& p_opt
 	return transform;
 }
 
-// --- Folded from editor/import/editor_import_plugin.h ---
 #include "core/io/net_socket.h"
 
-class EditorImportPlugin : public ResourceImporter
-{
-protected:
-
-public:
-	virtual String get_importer_name() const override;
-	virtual String get_visible_name() const override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual String get_preset_name(int p_idx) const override;
-	virtual int get_preset_count() const override;
-	virtual String get_save_extension() const override;
-	virtual String get_resource_type() const override;
-	virtual float get_priority() const override;
-	virtual int get_import_order() const override;
-	virtual int get_format_version() const override;
-	virtual void get_import_options(
-		const String& p_path, List<ImportOption>* r_options, int p_preset) const override;
-	virtual bool can_import_threaded() const override;
-};
-
-// --- Folded from editor/import/resource_importer_csv_translation.h ---
 #include "core/io/net_socket.h"
 
 class ResourceImporterCSVTranslation : public ResourceImporter
@@ -116661,11 +111906,6 @@ public:
 	virtual bool can_import_threaded() const override { return true; }
 };
 
-
-
-// --- End editor/import/resource_importer_csv_translation.h ---
-
-// --- Folded from editor/import/resource_importer_texture.h ---
 #include "core/io/file_access.h"
 #include "core/io/net_socket.h"
 
@@ -116855,9 +112095,6 @@ public:
 	~ResourceImporterTexture();
 };
 
-// --- End editor/import/resource_importer_texture.h ---
-// --- End editor/import/3d/resource_importer_scene.h ---
-
 class Animation;
 class Node;
 
@@ -116870,7 +112107,6 @@ public:
 };
 #endif // TOOLS_ENABLED
 
-// --- Folded from modules/csg/csg_shape.h ---
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
@@ -116907,8 +112143,6 @@ struct CSGBrush
 		const Vector<bool>& p_invert_faces);
 	void copy_from(const CSGBrush& p_brush, const Transform3D& p_xform);
 };
-
-
 
 #ifndef PHYSICS_3D_DISABLED
 
@@ -117241,10 +112475,6 @@ public:
 	CSGShape3D(ShapeType p_type = SHAPE_BOX);
 	~CSGShape3D();
 };
-
-// --- Folded from modules/gridmap/grid_map.h ---
-
-
 
 class NavigationMesh;
 class NavigationMeshSourceGeometryData3D;
@@ -117603,14 +112833,9 @@ public:
 	GridMap();
 	~GridMap();
 };
-// --- End modules/gridmap/grid_map.h ---
-// --- End modules/csg/csg_shape.h ---
-// --- End modules/gltf/gltf_document.h ---
 #endif // SCENE_TREE_H_EMITTED
 #endif // WANT_SCENE_TREE_H
-// --- End scene/main/scene_tree.h ---
 
-// --- Folded from modules/openxr/openxr_platform_inc.h ---
 #ifdef WANT_OPENXR_PLATFORM_INC
 #undef WANT_OPENXR_PLATFORM_INC
 #ifndef OPENXR_PLATFORM_INC_EMITTED
@@ -117713,7 +112938,6 @@ public:
 
 // IWYU pragma: end_keep
 
-// --- Folded from modules/openxr/extensions/platform/openxr_android_extension.h ---
 #if defined(ANDROID_ENABLED)
 
 #include <jni.h>
@@ -117753,17 +112977,13 @@ public:
 	~OpenXRAndroidExtension() = delete;
 };
 #endif // defined(ANDROID_ENABLED)
-// --- End modules/openxr/extensions/platform/openxr_android_extension.h ---
 
-// --- Folded from modules/openxr/extensions/platform/openxr_d3d12_extension.h ---
 #if defined(D3D12_ENABLED)
 #ifdef D3D12_ENABLED
-
 
 #include "core/string/ustring.h"
 
 // Always include this as late as possible.
-
 
 class OpenXRD3D12Extension final
 {
@@ -117828,15 +113048,12 @@ public:
 
 #endif // D3D12_ENABLED
 #endif // defined(D3D12_ENABLED)
-// --- End modules/openxr/extensions/platform/openxr_d3d12_extension.h ---
 
-// --- Folded from modules/openxr/extensions/platform/openxr_metal_extension.h ---
 #if defined(METAL_ENABLED)
 
 #include "core/string/ustring.h"
 
 // Always include this as late as possible.
-
 
 class OpenXRMetalExtension : public OpenXRGraphicsExtensionWrapper {
 public:
@@ -117868,7 +113085,5 @@ private:
 	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t), p_image_capacity_input, (uint32_t *), p_image_count_output, (XrSwapchainImageBaseHeader *), p_images)
 };
 #endif // defined(METAL_ENABLED)
-// --- End modules/openxr/extensions/platform/openxr_metal_extension.h ---
 #endif // OPENXR_PLATFORM_INC_EMITTED
 #endif // WANT_OPENXR_PLATFORM_INC
-// --- End modules/openxr/openxr_platform_inc.h ---

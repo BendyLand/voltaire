@@ -34,12 +34,9 @@
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from tests/test_macros.h ---
 #include "core/io/ip.h"
-#include "core/io/ip.h" // IWYU pragma: keep. Used in macro.
 
 #if defined(_MSC_VER) && !defined(DOCTEST_THREAD_LOCAL)
 // NOTE: We must disable the THREAD_LOCAL entirely in doctest to prevent crashes on debugging.
@@ -184,7 +181,6 @@ int register_test_command(String p_command, TestFunc p_function);
 		} \
 	} while (false)
 
-// --- Folded from tests/test_utils.h ---
 class String;
 
 namespace TestUtils {
@@ -202,7 +198,6 @@ public:
 	static String &resource_path();
 };
 
-// --- Folded from tests/test_tools.h ---
 #include "core/typedefs.h"
 
 struct ErrorDetector {
@@ -229,11 +224,6 @@ struct ErrorDetector {
 	ErrorHandlerList eh;
 	bool has_error = false;
 };
-// --- End tests/test_tools.h ---
-// --- End tests/test_utils.h ---
-
-// --- Folded from tests/signal_watcher.h ---
-
 
 // Utility class / macros for testing signals
 //
@@ -299,9 +289,7 @@ public:
 	CHECK(SignalWatcher::check(m_signal, m_args));
 #define SIGNAL_CHECK_FALSE(m_signal) CHECK(SignalWatcher::check_false(m_signal));
 #define SIGNAL_DISCARD(m_signal) SignalWatcher::discard_signal(m_signal);
-// --- End tests/signal_watcher.h ---
 
-// --- Folded from tests/display_server_mock.h ---
 #include "servers/display/display_server.h"
 
 // Specialized DisplayServer for unittests based on DisplayServerHeadless, that
@@ -463,8 +451,6 @@ public:
 		_CREATE_GUI_TOUCH_EVENT(m_screen_pos, m_pressed, m_double) \
 		_SEND_DISPLAYSERVER_EVENT(event); \
 	}
-// --- End tests/display_server_mock.h ---
-// --- End tests/test_macros.h ---
 
 #ifdef TOOLS_ENABLED
 #include "servers/display/display_server.h"
@@ -483,7 +469,6 @@ public:
 #ifndef PHYSICS_3D_DISABLED
 #include "servers/display/display_server.h"
 #endif // PHYSICS_3D_DISABLED
-
 
 namespace ForceLink {
 	void force_link_tests();
@@ -523,7 +508,6 @@ int test_main(int argc, char *argv[]) {
 	}
 	OS::set_cmdline("", args, List<String>());
 	DisplayServerMock::register_mock_driver();
-
 
 	{
 		const String test_path = TestUtils::get_temp_path("");
@@ -780,40 +764,6 @@ private:
 
 REGISTER_LISTENER("GodotTestCaseListener", 1, GodotTestCaseListener);
 
-// === Merged from tests/display_server_mock.cpp ===
-/*  display_server_mock.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 Vector<String> DisplayServerMock::get_rendering_drivers_func() {
@@ -875,39 +825,6 @@ void DisplayServerMock::simulate_event(Ref<InputEvent> p_event) {
 	}
 	Input::parse_input_event(event);
 }
-
-// === Merged from tests/signal_watcher.cpp ===
-/*  signal_watcher.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
 
 void SignalWatcher::_add_signal_entry(const Array &p_args, const String &p_name) {
 	ERR_FAIL_NULL(data);
@@ -1049,39 +966,7 @@ void SignalWatcher::finalize() {
 	}
 }
 
-// === Merged from tests/test_macros.cpp ===
-/*  test_macros.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #define DOCTEST_CONFIG_IMPLEMENT
-
 
 HashMap<String, TestFunc> *test_commands = nullptr;
 
@@ -1092,43 +977,6 @@ int register_test_command(String p_command, TestFunc p_function) {
 	test_commands->insert(p_command, p_function);
 	return 0;
 }
-
-// === Merged from tests/test_utils.cpp ===
-/*  test_utils.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 
 String TestUtils::get_data_path(const String &p_file) {
 	String data_path = "../tests/data";
@@ -1149,44 +997,7 @@ String &TestProjectSettingsInternalsAccessor::resource_path() {
 	return ProjectSettings::resource_path;
 }
 
-// === Merged from tests/core/test_core.cpp ===
-// === Merged from tests/core/config/test_project_settings.cpp ===
-/*  test_project_settings.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 #include "core/io/packet_peer_udp.h"
-#include "core/io/net_socket.h"
 
 namespace TestProjectSettings {
 
@@ -1349,42 +1160,6 @@ TEST_CASE("[ProjectSettings] No tracking when setting same value") {
 }
 
 } // namespace TestProjectSettings
-
-// === Merged from tests/core/crypto/test_aes_context.cpp ===
-/*  test_aes_context.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestAes_context {
 
@@ -1685,42 +1460,6 @@ TEST_CASE("[AESContext] CBC encrypt/decrypt") {
 
 } // namespace TestAes_context
 
-// === Merged from tests/core/crypto/test_crypto.cpp ===
-/*  test_crypto.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 namespace TestCrypto {
 
 PackedByteArray raw_to_pba(const uint8_t *arr, size_t len) {
@@ -1745,42 +1484,6 @@ TEST_CASE("[Crypto] PackedByteArray constant time compare") {
 }
 
 } // namespace TestCrypto
-
-// === Merged from tests/core/crypto/test_hashing_context.cpp ===
-/*  test_hashing_context.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestHashingContext {
 
@@ -1909,43 +1612,6 @@ TEST_CASE("[HashingContext] Invalid use of finish") {
 
 } // namespace TestHashingContext
 
-// === Merged from tests/core/input/test_input_event.cpp ===
-/*  test_input_event.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-#include "core/io/ip.h"
-
 namespace TestInputEvent {
 
 TEST_CASE("[InputEvent] Signal is emitted when device is changed") {
@@ -2020,42 +1686,6 @@ TEST_CASE("[InputEvent] Test xformed_by") {
 }
 
 } // namespace TestInputEvent
-
-// === Merged from tests/core/input/test_input_event_key.cpp ===
-/*  test_input_event_key.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 
 namespace TestInputEventKey {
 
@@ -2397,42 +2027,6 @@ TEST_CASE("[IsMatch] Keys are correctly matched") {
 
 } // namespace TestInputEventKey
 
-// === Merged from tests/core/input/test_input_event_mouse.cpp ===
-/*  test_input_event_mouse.cpp                                            */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-
 namespace TestInputEventMouse {
 
 TEST_CASE("[InputEventMouse] Mouse button mask is set correctly") {
@@ -2477,42 +2071,6 @@ TEST_CASE("[InputEventMouse] Setting the global mouse position works correctly")
 }
 
 } // namespace TestInputEventMouse
-
-// === Merged from tests/core/input/test_shortcut.cpp ===
-/*  test_shortcut.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 
 namespace TestShortcut {
 
@@ -2692,42 +2250,6 @@ TEST_CASE("[Shortcut] Equal arrays should be recognized as such.") {
 }
 
 } // namespace TestShortcut
-
-// === Merged from tests/core/object/test_class_db.cpp ===
-/*  test_class_db.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 
 namespace TestClassDB {
 
@@ -3583,41 +3105,6 @@ TEST_SUITE("[ClassDB]") {
 
 } // namespace TestClassDB
 
-// === Merged from tests/core/object/test_method_bind.cpp ===
-/*  test_method_bind.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-
 namespace TestMethodBind
 {
 
@@ -3754,41 +3241,6 @@ TEST_CASE("[MethodBind] check all method binds")
 
 } // namespace TestMethodBind
 
-// === Merged from tests/core/object/test_object.cpp ===
-/*  test_object.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-
 namespace TestObject
 {
 
@@ -3875,40 +3327,6 @@ public:
 
 } // namespace TestObject
 
-// === Merged from tests/core/object/test_undo_redo.cpp ===
-/*  test_undo_redo.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 namespace TestUndoRedo
 {
 
@@ -3927,42 +3345,6 @@ public:
 };
 
 } // namespace TestUndoRedo
-
-// === Merged from tests/core/os/test_os.cpp ===
-/*  test_os.cpp                                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 
 namespace TestOS {
 
@@ -4132,42 +3514,7 @@ TEST_CASE("[OS] Execute") {
 
 } // namespace TestOS
 
-// === Merged from tests/core/string/test_fuzzy_search.cpp ===
-/*  test_fuzzy_search.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/io/file_access.h"
-#include "core/os/os.h"
 
 namespace TestFuzzySearch {
 
@@ -4212,42 +3559,6 @@ TEST_CASE("[FuzzySearch] Test fuzzy search results") {
 }
 
 } // namespace TestFuzzySearch
-
-// === Merged from tests/core/string/test_node_path.cpp ===
-/*  test_node_path.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestNodePath {
 
@@ -4438,40 +3749,6 @@ TEST_CASE("[NodePath] Slice") {
 }
 
 } // namespace TestNodePath
-
-// === Merged from tests/core/string/test_string.cpp ===
-/*  test_string.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/string/ustring.h"
 
@@ -6696,47 +5973,9 @@ TEST_CASE("[String][URL] Parse URL") {
 
 } // namespace TestString
 
-// === Merged from tests/core/string/test_translation.cpp ===
-/*  test_translation.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-
 #ifdef TOOLS_ENABLED
 #include "servers/display/display_server.h"
 #endif
-
 
 namespace TestTranslation {
 
@@ -6961,42 +6200,6 @@ TEST_CASE("[TranslationCSV] CSV import") {
 
 } // namespace TestTranslation
 
-// === Merged from tests/core/string/test_translation_server.cpp ===
-/*  test_translation_server.cpp                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-
 namespace TestTranslationServer {
 
 TEST_CASE("[TranslationServer] Translation operations") {
@@ -7201,42 +6404,6 @@ TEST_CASE("[TranslationServer] Comparing locales") {
 
 } // namespace TestTranslationServer
 
-// === Merged from tests/core/test_time.cpp ===
-/*  test_time.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-
 namespace TestTime {
 
 #define YEAR_KEY "year"
@@ -7298,42 +6465,6 @@ TEST_CASE("[Time] System time methods") {
 }
 
 } // namespace TestTime
-
-// === Merged from tests/core/test_validate_testing.cpp ===
-/*  test_validate_testing.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestValidateTesting {
 
@@ -7503,41 +6634,6 @@ TEST_SUITE("Validate tests") {
 }
 
 } // namespace TestValidateTesting
-
-// === Merged from tests/core/variant/test_array.cpp ===
-/*  test_array.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 
 namespace TestArray {
 
@@ -8294,41 +7390,6 @@ TEST_CASE("[Array] Test typed arrays") {
 
 } // namespace TestArray
 
-// === Merged from tests/core/variant/test_dictionary.cpp ===
-/*  test_dictionary.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-
 namespace TestDictionary {
 
 TEST_CASE("[Dictionary] Assignment using bracket notation ([])") {
@@ -9046,41 +8107,6 @@ TEST_CASE("[Dictionary] RefCounted value init") {
 
 } // namespace TestDictionary
 
-// === Merged from tests/core/variant/test_variant_initialization.cpp ===
-/*  test_variant_initialization.cpp                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-
 namespace TestVariantInitialization {
 
 TEST_CASE("[VariantInitialization] change_and_reset") {
@@ -9694,41 +8720,6 @@ TEST_CASE("[VariantInitialization] change_and_reset") {
 
 } // namespace TestVariantInitialization
 
-// === Merged from tests/core/variant/test_variant_utility.cpp ===
-/*  test_variant_utility.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-
 namespace TestVariantUtility {
 
 TEST_CASE("[VariantUtility] Type conversion") {
@@ -9826,43 +8817,6 @@ TEST_CASE("[VariantUtility] Type conversion") {
 } // namespace TestVariantUtility
 
 TEST_FORCE_LINK(test_core)
-
-// === Merged from tests/core/io/test_file_access.cpp ===
-/*  test_file_access.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
 
 namespace TestFileAccess {
 
@@ -10127,44 +9081,7 @@ TEST_CASE("[FileAccess] Cursor positioning") {
 
 } // namespace TestFileAccess
 
-// === Merged from tests/core/io/test_config_file.cpp ===
-/*  test_config_file.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 #ifdef WINDOWS_ENABLED
-#include "core/os/os.h"
 #endif
 
 namespace TestConfigFile {
@@ -10293,42 +9210,6 @@ antiAliasing=false
 
 } // namespace TestConfigFile
 
-// === Merged from tests/core/io/test_http_client.cpp ===
-/*  test_http_client.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 #include "core/version_generated.gen.h" // For mbedtls.
 
 namespace TestHTTPClient {
@@ -10397,43 +9278,6 @@ TEST_CASE("[HTTPClient] connect_to_host") {
 #endif // defined(MODULE_MBEDTLS_ENABLED) || defined(WEB_ENABLED)
 
 } // namespace TestHTTPClient
-
-// === Merged from tests/core/io/test_image.cpp ===
-/*  test_image.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 
 #include "core/version_generated.gen.h" // For bmp, jpg, svg, webp, tga.
 
@@ -10890,42 +9734,6 @@ TEST_CASE("[Image] Convert image") {
 
 } // namespace TestImage
 
-// === Merged from tests/core/io/test_ip.cpp ===
-/*  test_ip.cpp                                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestIP {
 
 TEST_CASE("[IP] resolve_hostname") {
@@ -10938,42 +9746,6 @@ TEST_CASE("[IP] resolve_hostname") {
 }
 
 } // namespace TestIP
-
-// === Merged from tests/core/io/test_ip_address.cpp ===
-/*  test_ip_address.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestIPAddress {
 
@@ -11227,42 +9999,6 @@ TEST_CASE("[IPAddress] IPv6 Parsing") {
 }
 
 } // namespace TestIPAddress
-
-// === Merged from tests/core/io/test_json.cpp ===
-/*  test_json.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 #include <cfloat> // DBL_MAX
 
@@ -11658,42 +10394,6 @@ TEST_CASE("[JSON] Serialization") {
 
 } // namespace TestJSON
 
-// === Merged from tests/core/io/test_json_native.cpp ===
-/*  test_json_native.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 namespace TestJSONNative {
 
 String encode(const Variant &p_variant, bool p_full_objects = false) {
@@ -11870,45 +10570,6 @@ TEST_CASE("[JSON][Native] Conversion between native and JSON formats") {
 
 } // namespace TestJSONNative
 
-// === Merged from tests/core/io/test_logger.cpp ===
-/*  test_logger.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-
 namespace TestLogger {
 
 constexpr int sleep_duration = 1200000;
@@ -12039,42 +10700,6 @@ TEST_CASE("[Logger][CompositeLogger] Logs the same into multiple loggers") {
 }
 
 } // namespace TestLogger
-
-// === Merged from tests/core/io/test_marshalls.cpp ===
-/*  test_marshalls.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestMarshalls {
 
@@ -12533,42 +11158,6 @@ TEST_CASE("[Marshalls] Typed dictionary decoding") {
 
 } // namespace TestMarshalls
 
-// === Merged from tests/core/io/test_packet_peer.cpp ===
-/*  test_packet_peer.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 namespace TestPacketPeer {
 
 TEST_CASE("[PacketPeer][PacketPeerStream] Encode buffer max size") {
@@ -12736,43 +11325,6 @@ TEST_CASE("[PacketPeer][PacketPeerStream] Put packet buffer when is empty") {
 
 } // namespace TestPacketPeer
 
-// === Merged from tests/core/io/test_pck_packer.cpp ===
-/*  test_pck_packer.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-
 namespace TestPCKPacker {
 
 TEST_CASE("[PCKPacker] Pack an empty PCK file") {
@@ -12858,73 +11410,6 @@ TEST_CASE("[PCKPacker] Pack a PCK file with some files and directories") {
 
 } // namespace TestPCKPacker
 
-// === Merged from tests/core/io/test_resource.cpp ===
-/*  test_resource.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-// === Merged from tests/core/io/test_resource_uid.cpp ===
-/*  test_resource_uid.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestResourceUID {
 
 TEST_CASE("[ResourceUID] Must encode/decode maximum/minimum UID correctly") {
@@ -12953,42 +11438,6 @@ TEST_CASE("[ResourceUID] Must encode and decode various UIDs correctly") {
 }
 
 } // namespace TestResourceUID
-
-// === Merged from tests/core/io/test_stream_peer.cpp ===
-/*  test_stream_peer.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestStreamPeer {
 
@@ -13264,42 +11713,6 @@ TEST_CASE("[StreamPeer] Get UTF8 string when there is no string") {
 
 } // namespace TestStreamPeer
 
-// === Merged from tests/core/io/test_stream_peer_buffer.cpp ===
-/*  test_stream_peer_buffer.cpp                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 namespace TestStreamPeerBuffer {
 
 TEST_CASE("[StreamPeerBuffer] Initialization") {
@@ -13447,42 +11860,6 @@ TEST_CASE("[StreamPeerBuffer] Get data with invalid size returns an error") {
 }
 
 } // namespace TestStreamPeerBuffer
-
-// === Merged from tests/core/io/test_stream_peer_gzip.cpp ===
-/*  test_stream_peer_gzip.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestStreamPeerGZIP {
 
@@ -13644,42 +12021,6 @@ TEST_CASE("[StreamPeerGZIP] Fails to get if nothing was compress/decompress") {
 }
 
 } // namespace TestStreamPeerGZIP
-
-// === Merged from tests/core/io/test_stream_peer_tcp.cpp ===
-/*  test_stream_peer_tcp.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 
 namespace TestStreamPeerTCP {
 
@@ -13956,43 +12297,6 @@ TEST_CASE("[StreamPeerTCP] Data") {
 
 } // namespace TestStreamPeerTCP
 
-// === Merged from tests/core/io/test_tcp_server.cpp ===
-/*  test_tcp_server.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-
 #include <functional>
 
 namespace TestTCPServer {
@@ -14203,43 +12507,6 @@ TEST_CASE("[TCPServer] Should disconnect client") {
 
 } // namespace TestTCPServer
 
-// === Merged from tests/core/io/test_udp_server.cpp ===
-/*  test_udp_server.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/packet_peer_udp.h"
-#include "core/os/os.h"
-
 #include <functional>
 
 namespace TestUDPServer {
@@ -14423,46 +12690,7 @@ TEST_CASE("[UDPServer] Should not accept new connections after stop") {
 
 } // namespace TestUDPServer
 
-// === Merged from tests/core/io/test_uds_server.cpp ===
-/*  test_uds_server.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifdef UNIX_ENABLED
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 
 #include <functional>
 
@@ -14728,42 +12956,6 @@ TEST_CASE("[UDSServer] Test with different socket paths") {
 
 #endif // UNIX_ENABLED
 
-// === Merged from tests/core/io/test_xml_parser.cpp ===
-/*  test_xml_parser.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-
 namespace TestXMLParser {
 
 TEST_CASE("[XMLParser] End-to-end") {
@@ -14964,43 +13156,6 @@ TEST_CASE("[XMLParser] CDATA") {
 } // namespace TestXMLParser
 
 TEST_FORCE_LINK(test_file_access)
-
-// === Merged from tests/core/math/test_math.cpp ===
-// === Merged from tests/core/math/test_aabb.cpp ===
-/*  test_aabb.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestAABB {
 
@@ -15449,40 +13604,6 @@ TEST_CASE("[AABB] Finite number checks") {
 
 } // namespace TestAABB
 
-// === Merged from tests/core/math/test_astar.cpp ===
-/*  test_astar.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestAStar {
@@ -15686,42 +13807,6 @@ TEST_CASE("[AStar3D] Path from disabled point is empty") {
 }
 
 } // namespace TestAStar
-
-// === Merged from tests/core/math/test_basis.cpp ===
-/*  test_basis.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestBasis {
 
@@ -16089,40 +14174,6 @@ TEST_CASE("[Basis] Is rotation checks") {
 
 } // namespace TestBasis
 
-// === Merged from tests/core/math/test_color.cpp ===
-/*  test_color.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/math/vector2.h"
 
 namespace TestColor {
@@ -16325,42 +14376,6 @@ TEST_CASE("[Color] Manipulation methods") {
 }
 
 } // namespace TestColor
-
-// === Merged from tests/core/math/test_expression.cpp ===
-/*  test_expression.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestExpression {
 
@@ -16817,40 +14832,6 @@ TEST_CASE("[Expression] Unusual expressions") {
 }
 
 } // namespace TestExpression
-
-// === Merged from tests/core/math/test_geometry_2d.cpp ===
-/*  test_geometry_2d.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -17712,40 +15693,6 @@ TEST_CASE("[Geometry2D] Bresenham line") {
 
 } // namespace TestGeometry2D
 
-// === Merged from tests/core/math/test_geometry_3d.cpp ===
-/*  test_geometry_3d.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestGeometry3D {
@@ -17917,41 +15864,6 @@ TEST_CASE("[Geometry3D] Triangle and Sphere Intersect") {
 }
 
 } // namespace TestGeometry3D
-
-// === Merged from tests/core/math/test_math_funcs.cpp ===
-/*  test_math_funcs.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/io/ip.h"
-
-
 
 namespace TestMathFuncs {
 
@@ -18594,42 +16506,6 @@ TEST_CASE_TEMPLATE("[Math] bezier_interpolate", T, float, double) {
 
 } // namespace TestMathFuncs
 
-// === Merged from tests/core/math/test_plane.cpp ===
-/*  test_plane.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestPlane {
 
 TEST_CASE("[Plane] Constructor methods") {
@@ -18784,42 +16660,6 @@ TEST_CASE("[Plane] Finite number checks") {
 }
 
 } // namespace TestPlane
-
-// === Merged from tests/core/math/test_projection.cpp ===
-/*  test_projection.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestProjection {
 
@@ -19477,43 +17317,6 @@ TEST_CASE("[Projection] Pixels per meter") {
 
 } // namespace TestProjection
 
-// === Merged from tests/core/math/test_quaternion.cpp ===
-/*  test_quaternion.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-
 namespace TestQuaternion {
 
 Quaternion quat_euler_yxz_deg(Vector3 angle) {
@@ -19942,42 +17745,6 @@ TEST_CASE("[Quaternion] Finite number checks") {
 
 } // namespace TestQuaternion
 
-// === Merged from tests/core/math/test_random_number_generator.cpp ===
-/*  test_random_number_generator.cpp                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestRandomNumberGenerator {
 
 TEST_CASE("[RandomNumberGenerator] Float") {
@@ -20216,42 +17983,6 @@ TEST_CASE_MAY_FAIL("[RandomNumberGenerator] randi_range bias check") {
 }
 
 } // namespace TestRandomNumberGenerator
-
-// === Merged from tests/core/math/test_rect2.cpp ===
-/*  test_rect2.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestRect2 {
 
@@ -20661,42 +18392,6 @@ TEST_CASE("[Rect2] Finite number checks") {
 
 } // namespace TestRect2
 
-// === Merged from tests/core/math/test_rect2i.cpp ===
-/*  test_rect2i.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestRect2i {
 
 TEST_CASE("[Rect2i] Constructor methods") {
@@ -20971,42 +18666,6 @@ TEST_CASE("[Rect2i] Merging") {
 
 } // namespace TestRect2i
 
-// === Merged from tests/core/math/test_transform_2d.cpp ===
-/*  test_transform_2d.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestTransform2D {
 
 Transform2D create_dummy_transform() {
@@ -21218,42 +18877,6 @@ TEST_CASE("[Transform2D] Is conformal checks") {
 
 } // namespace TestTransform2D
 
-// === Merged from tests/core/math/test_transform_3d.cpp ===
-/*  test_transform_3d.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestTransform3D {
 
 Transform3D create_dummy_transform() {
@@ -21358,40 +18981,6 @@ TEST_CASE("[Transform3D] Rotate in-place (local rotation)") {
 
 } // namespace TestTransform3D
 
-// === Merged from tests/core/math/test_triangle_mesh.cpp ===
-/*  test_triangle_mesh.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -21445,42 +19034,6 @@ TEST_CASE("[SceneTree][TriangleMesh] BVH creation and intersection") {
 } // namespace TestTriangleMesh
 
 #endif // _3D_DISABLED
-
-// === Merged from tests/core/math/test_vector2.cpp ===
-/*  test_vector2.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/math/vector2.h"
 
 namespace TestVector2 {
 
@@ -21946,42 +19499,6 @@ TEST_CASE("[Vector2] Finite number checks") {
 
 } // namespace TestVector2
 
-// === Merged from tests/core/math/test_vector2i.cpp ===
-/*  test_vector2i.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/math/vector2.h"
-
 namespace TestVector2i {
 
 TEST_CASE("[Vector2i] Constructor methods") {
@@ -22115,42 +19632,6 @@ TEST_CASE("[Vector2i] Abs and sign methods") {
 }
 
 } // namespace TestVector2i
-
-// === Merged from tests/core/math/test_vector3.cpp ===
-/*  test_vector3.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestVector3 {
 
@@ -22651,42 +20132,6 @@ TEST_CASE("[Vector3] Finite number checks") {
 
 } // namespace TestVector3
 
-// === Merged from tests/core/math/test_vector3i.cpp ===
-/*  test_vector3i.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestVector3i {
 
 TEST_CASE("[Vector3i] Constructor methods") {
@@ -22820,42 +20265,6 @@ TEST_CASE("[Vector3i] Abs and sign methods") {
 }
 
 } // namespace TestVector3i
-
-// === Merged from tests/core/math/test_vector4.cpp ===
-/*  test_vector4.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestVector4 {
 
@@ -23223,42 +20632,6 @@ TEST_CASE("[Vector4] Finite number checks") {
 
 } // namespace TestVector4
 
-// === Merged from tests/core/math/test_vector4i.cpp ===
-/*  test_vector4i.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestVector4i {
 
 TEST_CASE("[Vector4i] Constructor methods") {
@@ -23398,43 +20771,6 @@ TEST_CASE("[Vector4i] Abs and sign methods") {
 } // namespace TestVector4i
 
 TEST_FORCE_LINK(test_math)
-
-// === Merged from tests/core/templates/test_templates.cpp ===
-// === Merged from tests/core/templates/test_a_hash_map.cpp ===
-/*  test_a_hash_map.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestAHashMap {
 
@@ -23715,41 +21051,6 @@ TEST_CASE("[AHashMap] Array methods") {
 
 } // namespace TestAHashMap
 
-// === Merged from tests/core/templates/test_command_queue.cpp ===
-/*  test_command_queue.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
 #include "core/os/mutex.h"
 #include "core/os/condition_variable.h"
 
@@ -24024,7 +21325,6 @@ TEST_CASE("[CommandQueue] Test Queue Basics") {
 	test_command_queue_basic();
 }
 
-
 TEST_CASE("[CommandQueue] Test Queue Wrapping to same spot.") {
 	const char *COMMAND_QUEUE_SETTING = "memory/limits/command_queue/multithreading_queue_size_kb";
 	ProjectSettings::set_setting(COMMAND_QUEUE_SETTING, 1);
@@ -24213,42 +21513,6 @@ TEST_CASE("[CommandQueue] Test Parameter Passing Semantics") {
 
 } // namespace TestCommandQueue
 
-// === Merged from tests/core/templates/test_fixed_vector.cpp ===
-/*  test_fixed_vector.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/string/ustring.h"
-
 namespace TestFixedVector {
 
 struct MoveOnly {
@@ -24349,42 +21613,6 @@ TEST_CASE("[FixedVector] Alignment Checks") {
 }
 
 } // namespace TestFixedVector
-
-// === Merged from tests/core/templates/test_hash_map.cpp ===
-/*  test_hash_map.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestHashMap {
 
@@ -24527,42 +21755,6 @@ TEST_CASE("[HashMap] Sort") {
 }
 
 } // namespace TestHashMap
-
-// === Merged from tests/core/templates/test_hash_set.cpp ===
-/*  test_hash_set.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestHashSet {
 
@@ -24786,40 +21978,6 @@ TEST_CASE("[HashSet] Equality") {
 }
 
 } // namespace TestHashSet
-
-// === Merged from tests/core/templates/test_list.cpp ===
-/*  test_list.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/templates/list.h"
 
@@ -25337,42 +22495,6 @@ TEST_CASE("[List] Swap adjacent back and front (reverse order of elements)") {
 
 } // namespace TestList
 
-// === Merged from tests/core/templates/test_local_vector.cpp ===
-/*  test_local_vector.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/string/ustring.h"
-
 namespace TestLocalVector {
 
 TEST_CASE("[LocalVector] List Initialization.") {
@@ -25602,42 +22724,6 @@ TEST_CASE("[LocalVector] Size / Resize / Reserve.") {
 
 } // namespace TestLocalVector
 
-// === Merged from tests/core/templates/test_lru.cpp ===
-/*  test_lru.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestLRU {
 
 TEST_CASE("[LRU] Store and read") {
@@ -25699,42 +22785,6 @@ TEST_CASE("[LRU] Resize and clear") {
 }
 
 } // namespace TestLRU
-
-// === Merged from tests/core/templates/test_paged_array.cpp ===
-/*  test_paged_array.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
 
 namespace TestPagedArray {
 
@@ -25899,46 +22949,6 @@ TEST_CASE("[PagedArray] Extensive merge_unordered() test") {
 }
 
 } // namespace TestPagedArray
-
-// === Merged from tests/core/templates/test_rid.cpp ===
-/*  test_rid.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h"
-#include "core/os/mutex.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
 
 #ifdef TSAN_ENABLED
 #include <sanitizer/tsan_interface.h>
@@ -26147,42 +23157,6 @@ TEST_CASE("[RID_Owner] Thread safety") {
 
 } // namespace TestRID
 
-// === Merged from tests/core/templates/test_self_list.cpp ===
-/*  test_self_list.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/ip.h"
-
 namespace TestSelfList {
 
 TEST_CASE("[SelfList] Sort") {
@@ -26220,42 +23194,6 @@ TEST_CASE("[SelfList] Sort") {
 }
 
 } // namespace TestSelfList
-
-// === Merged from tests/core/templates/test_span.cpp ===
-/*  test_span.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/string/ustring.h"
 
 namespace TestSpan {
 
@@ -26295,42 +23233,6 @@ TEST_CASE("[Span] Constexpr Validators") {
 }
 
 } // namespace TestSpan
-
-// === Merged from tests/core/templates/test_vector.cpp ===
-/*  test_vector.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/string/ustring.h"
 
 namespace TestVector {
 
@@ -27007,42 +23909,6 @@ TEST_CASE("[Vector] Cyclic Reference") {
 
 } // namespace TestVector
 
-// === Merged from tests/core/templates/test_vset.cpp ===
-/*  test_vset.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/string/ustring.h"
-
 namespace TestVSet {
 
 template <typename T>
@@ -27108,41 +23974,6 @@ TEST_CASE("[VSet] _find and _find_exact correctness.") {
 } // namespace TestVSet
 
 TEST_FORCE_LINK(test_templates)
-
-// === Merged from tests/servers/test_servers.cpp ===
-// === Merged from tests/servers/rendering/test_shader_preprocessor.cpp ===
-/*  test_shader_preprocessor.cpp                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -27441,40 +24272,6 @@ TEST_CASE("[ShaderPreprocessor] Invalid concatenations") {
 
 } // namespace TestShaderPreprocessor
 
-// === Merged from tests/servers/test_nav_heap.cpp ===
-/*  test_nav_heap.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestNavHeap {
@@ -27639,40 +24436,6 @@ TEST_CASE("[Heap] clear") {
 }
 
 } // namespace TestNavHeap
-
-// === Merged from tests/servers/test_navigation_server_2d.cpp ===
-/*  test_navigation_server_2d.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/version_generated.gen.h" // For navigation 2D.
 
@@ -28494,40 +25257,6 @@ TEST_SUITE("[Navigation2D]")
 } // namespace TestNavigationServer2D
 
 #endif // MODULE_NAVIGATION_2D_ENABLED
-
-// === Merged from tests/servers/test_navigation_server_3d.cpp ===
-/*  test_navigation_server_3d.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/version_generated.gen.h" // For navigation 3D.
 
@@ -29457,40 +26186,6 @@ TEST_SUITE("[Navigation3D]")
 } // namespace TestNavigationServer3D
 
 #endif // MODULE_NAVIGATION_3D_ENABLED
-
-// === Merged from tests/servers/test_text_server.cpp ===
-/*  test_text_server.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifdef TOOLS_ENABLED
 
@@ -30480,40 +27175,6 @@ TEST_SUITE("[TextServer]") {
 
 #endif // TOOLS_ENABLED
 
-// === Merged from tests/servers/test_triangle2.cpp ===
-/*  test_triangle2.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/version_generated.gen.h" // For navigation 2D.
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
@@ -30561,42 +27222,6 @@ TEST_SUITE("[Triangle2]") {
 
 TEST_FORCE_LINK(test_servers)
 
-// === Merged from tests/scene/test_scene_gui.cpp ===
-// === Merged from tests/scene/test_aspect_ratio_container.cpp ===
-/*  test_aspect_ratio_container.cpp                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "scene/gui/aspect_ratio_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestAspectRatioContainer {
@@ -30919,41 +27544,6 @@ TEST_CASE("[SceneTree][AspectRatioContainer] Container Sizing Flags") {
 
 } // namespace TestAspectRatioContainer
 
-// === Merged from tests/scene/test_box_container.cpp ===
-/*  test_box_container.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "scene/gui/box_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestBoxContainer {
@@ -31543,40 +28133,6 @@ TEST_CASE("[SceneTree][BoxContainer] VBoxContainer") {
 
 } // namespace TestBoxContainer
 
-// === Merged from tests/scene/test_button.cpp ===
-/*  test_button.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestButton {
@@ -31608,41 +28164,6 @@ TEST_CASE("[SceneTree][Button] is_hovered()") {
 
 } // namespace TestButton
 
-// === Merged from tests/scene/test_center_container.cpp ===
-/*  test_center_container.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "scene/gui/center_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestCenterContainer {
@@ -31777,43 +28298,8 @@ TEST_CASE("[SceneTree][CenterContainer] Multiple children") {
 
 } // namespace TestCenterContainer
 
-// === Merged from tests/scene/test_code_edit.cpp ===
-/*  test_code_edit.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 namespace TestCodeEdit {
@@ -37472,40 +33958,6 @@ func _ready():
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_color_picker.cpp ===
-/*  test_color_picker.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "servers/display/display_server.h"
@@ -37535,41 +33987,6 @@ TEST_CASE("[SceneTree][ColorPicker]") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_control.cpp ===
-/*  test_control.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_ACTION` macro.
 #include "servers/display/display_server.h"
 
 namespace TestControl {
@@ -38819,42 +35236,7 @@ TEST_CASE("[SceneTree][Control] Grow direction") {
 
 } // namespace TestControl
 
-// === Merged from tests/scene/test_flow_container.cpp ===
-/*  test_flow_container.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
-#include "scene/gui/flow_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestFlowContainer {
@@ -39395,40 +35777,6 @@ TEST_CASE("[SceneTree][FlowContainer] VFlowContainer") {
 
 } // namespace TestFlowContainer
 
-// === Merged from tests/scene/test_foldable_container.cpp ===
-/*  test_foldable_container.cpp                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "servers/display/display_server.h"
@@ -39663,40 +36011,6 @@ TEST_CASE("[SceneTree][FoldableContainer] FoldableGroup behavior") {
 
 #endif
 
-// === Merged from tests/scene/test_graph_node.cpp ===
-/*  test_graph_node.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "servers/display/display_server.h"
@@ -39746,42 +36060,7 @@ TEST_CASE("[GraphNode][SceneTree]") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_grid_container.cpp ===
-/*  test_grid_container.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
-#include "scene/gui/grid_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestGridContainer {
@@ -40011,40 +36290,6 @@ TEST_CASE("[SceneTree][GridContainer] RTL placement") {
 
 } // namespace TestGridContainer
 
-// === Merged from tests/scene/test_label.cpp ===
-/*  test_label.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/version_generated.gen.h" // IWYU pragma: keep. Needed for MODULE_TEXT_SERVER_FB_ENABLED and MODULE_TEXT_SERVER_ADV_ENABLED definitions.
 
 #if defined(MODULE_TEXT_SERVER_FB_ENABLED) || defined(MODULE_TEXT_SERVER_ADV_ENABLED)
@@ -40273,42 +36518,7 @@ TEST_CASE("[SceneTree][Label] Sizing") {
 
 #endif // MODULE_TEXT_SERVER_FB_ENABLED || MODULE_TEXT_SERVER_ADV_ENABLED
 
-// === Merged from tests/scene/test_margin_container.cpp ===
-/*  test_margin_container.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
-#include "scene/gui/margin_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestMarginContainer {
@@ -40418,40 +36628,6 @@ TEST_CASE("[SceneTree][MarginContainer] Multiple children use maximum minimum si
 }
 
 } // namespace TestMarginContainer
-
-// === Merged from tests/scene/test_nine_patch_rect.cpp ===
-/*  test_nine_patch_rect.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -40672,40 +36848,6 @@ TEST_CASE("[SceneTree][NinePatchRect] Axis stretch modes") {
 
 } // namespace TestNinePatchRect
 
-// === Merged from tests/scene/test_option_button.cpp ===
-/*  test_option_button.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "servers/display/display_server.h"
@@ -40835,42 +36977,7 @@ TEST_CASE("[SceneTree][OptionButton] Many items") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_panel_container.cpp ===
-/*  test_panel_container.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
-#include "scene/gui/panel_container.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -40948,40 +37055,6 @@ TEST_CASE("[SceneTree][PanelContainer] Multiple children use maximum minimum siz
 }
 
 } // namespace TestPanelContainer
-
-// === Merged from tests/scene/test_rich_text_label.cpp ===
-/*  test_rich_text_label.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef ADVANCED_GUI_DISABLED
 
@@ -41089,40 +37162,6 @@ TEST_CASE("[SceneTree][RichTextLabel] Sizing with fit content") {
 } // namespace TestRichTextLabel
 
 #endif // ADVANCED_GUI_DISABLED
-
-// === Merged from tests/scene/test_scroll_container.cpp ===
-/*  test_scroll_container.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -41597,43 +37636,8 @@ TEST_CASE("[SceneTree][ScrollContainer] Configuration warnings") {
 
 } // namespace TestScrollContainer
 
-// === Merged from tests/scene/test_spin_box.cpp ===
-/*  test_spin_box.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 namespace TestSpinBox {
@@ -41772,40 +37776,6 @@ TEST_CASE("[SceneTree][SpinBox] Combined minimum size in tree") {
 } // namespace TestSpinBox
 
 #endif // ADVANCED_GUI_DISABLED
-
-// === Merged from tests/scene/test_split_container.cpp ===
-/*  test_split_container.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef ADVANCED_GUI_DISABLED
 
@@ -43812,40 +39782,6 @@ TEST_CASE("[SceneTree][SplitContainer] More children") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_tab_bar.cpp ===
-/*  test_tab_bar.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
 #include "servers/display/display_server.h"
@@ -44962,43 +40898,8 @@ TEST_CASE("[SceneTree][TabBar] Mouse interaction") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_tab_container.cpp ===
-/*  test_tab_container.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "scene/gui/box_container.h"
 #include "servers/display/display_server.h"
 
 namespace TestTabContainer {
@@ -45481,7 +41382,6 @@ TEST_CASE("[SceneTree][TabContainer] layout and offset") {
 	tab_container->add_child(tab1);
 	tab_container->add_child(tab2);
 
-
 	Size2 all_tabs_size = tab_container->get_size();
 	const float side_margin = tab_container->get_theme_constant("side_margin");
 
@@ -45610,7 +41510,6 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 	tab_container->add_child(tab0);
 	tab_container->add_child(tab1);
 	tab_container->add_child(tab2);
-
 
 	const float side_margin = tab_container->get_theme_constant("side_margin");
 
@@ -45860,43 +41759,8 @@ TEST_CASE("[SceneTree][TabContainer] Mouse interaction") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_text_edit.cpp ===
-/*  test_text_edit.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef ADVANCED_GUI_DISABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 namespace TestTextEdit {
@@ -47023,7 +42887,6 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			text_edit->add_caret(2, 0);
 			text_edit->add_caret(2, 2);
 			CHECK(text_edit->get_caret_count() == 3);
-
 
 			SIGNAL_DISCARD("text_set");
 			SIGNAL_DISCARD("text_changed");
@@ -51604,7 +47467,6 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 			text_edit->add_caret(4, 7);
 			CHECK(text_edit->get_caret_count() == 2);
 
-
 			// Lines 3 and 7 are wrapped into 2 parts: 'this is ' and 'some'.
 			CHECK(text_edit->is_line_wrapped(3));
 			SIGNAL_DISCARD("text_set");
@@ -51699,7 +47561,6 @@ TEST_CASE("[SceneTree][TextEdit] text entry") {
 
 			text_edit->add_caret(3, 2);
 			CHECK(text_edit->get_caret_count() == 2);
-
 
 			CHECK(text_edit->is_line_wrapped(0));
 			SIGNAL_DISCARD("text_set");
@@ -53915,42 +49776,6 @@ TEST_CASE("[SceneTree][TextEdit] gutters") {
 
 #endif // ADVANCED_GUI_DISABLED
 
-// === Merged from tests/scene/test_texture_button.cpp ===
-/*  test_texture_button.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
-#include "scene/gui/texture_button.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -54266,40 +50091,6 @@ TEST_CASE("[SceneTree][TextureButton] has_point with click mask and stretch keep
 
 } // namespace TestTextureButton
 
-// === Merged from tests/scene/test_texture_progress_bar.cpp ===
-/*  test_texture_progress_bar.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestTextureProgressBar {
@@ -54356,41 +50147,6 @@ TEST_CASE("[SceneTree][TextureProgressBar]") {
 
 } // namespace TestTextureProgressBar
 
-// === Merged from tests/scene/test_texture_rect.cpp ===
-/*  test_texture_rect.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -54575,40 +50331,6 @@ TEST_CASE("[SceneTree][TextureRect] Configuration warnings") {
 }
 
 } // namespace TestTextureRect
-
-// === Merged from tests/scene/test_tree.cpp ===
-/*  test_tree.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef ADVANCED_GUI_DISABLED
 
@@ -54880,41 +50602,6 @@ TEST_CASE("[SceneTree][Tree]") {
 #endif // ADVANCED_GUI_DISABLED
 
 TEST_FORCE_LINK(test_scene_gui)
-
-// === Merged from tests/scene/test_scene_resources.cpp ===
-// === Merged from tests/scene/test_animation.cpp ===
-/*  test_animation.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -55194,40 +50881,6 @@ TEST_CASE("[Animation] Create Bezier track") {
 
 } // namespace TestAnimation
 
-// === Merged from tests/scene/test_animation_blend_tree.cpp ===
-/*  test_animation_blend_tree.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestAnimationBlendTree {
@@ -55279,40 +50932,6 @@ TEST_CASE("[SceneTree][AnimationBlendTree] Create AnimationBlendTree and add Ani
 
 } // namespace TestAnimationBlendTree
 
-// === Merged from tests/scene/test_animation_player.cpp ===
-/*  test_animation_player.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestAnimationPlayer {
@@ -55344,43 +50963,6 @@ TEST_CASE("[AnimationPlayer] get & set blend_time") {
 
 } // namespace TestAnimationPlayer
 
-// === Merged from tests/scene/test_audio_stream_wav.cpp ===
-/*  test_audio_stream_wav.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 namespace TestAudioStreamWAV {
@@ -55563,40 +51145,6 @@ TEST_CASE("[Audio][AudioStreamWAV] Saving IMA ADPCM is not supported") {
 }
 
 } // namespace TestAudioStreamWAV
-
-// === Merged from tests/scene/test_bit_map.cpp ===
-/*  test_bit_map.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -56067,41 +51615,6 @@ TEST_CASE("[BitMap] Clip to polygon") {
 
 } // namespace TestBitMap
 
-// === Merged from tests/scene/test_curve.cpp ===
-/*  test_curve.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 namespace TestCurve {
@@ -56500,41 +52013,6 @@ TEST_CASE("[Curve3D] Linear sampling should return exact value") {
 
 } // namespace TestCurve
 
-// === Merged from tests/scene/test_curve_2d.cpp ===
-/*  test_curve_2d.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 namespace TestCurve2D {
@@ -56800,41 +52278,6 @@ TEST_CASE("[Curve2D] Even length tessellation") {
 
 } // namespace TestCurve2D
 
-// === Merged from tests/scene/test_curve_3d.cpp ===
-/*  test_curve_3d.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 namespace TestCurve3D {
@@ -57097,40 +52540,6 @@ TEST_CASE("[Curve3D] Even length tessellation") {
 
 } // namespace TestCurve3D
 
-// === Merged from tests/scene/test_fontfile.cpp ===
-/*  test_fontfile.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h" // For freetype.
@@ -57225,40 +52634,6 @@ TEST_CASE("[FontFile] Create font file and check data") {
 }
 
 } // namespace TestFontFile
-
-// === Merged from tests/scene/test_gradient.cpp ===
-/*  test_gradient.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -57371,40 +52746,6 @@ TEST_CASE("[Gradient] Custom gradient (points specified out-of-order)") {
 
 } // namespace TestGradient
 
-// === Merged from tests/scene/test_gradient_texture.cpp ===
-/*  test_gradient_texture.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestGradientTexture {
@@ -57459,41 +52800,6 @@ TEST_CASE("[SceneTree][GradientTexture2D] Create GradientTexture2D") {
 
 } // namespace TestGradientTexture
 
-// === Merged from tests/scene/test_image_texture.cpp ===
-/*  test_image_texture.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 namespace TestImageTexture {
@@ -57567,41 +52873,6 @@ TEST_CASE("[SceneTree][ImageTexture] set_path") {
 
 } // namespace TestImageTexture
 
-// === Merged from tests/scene/test_image_texture_3d.cpp ===
-/*  test_image_texture_3d.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 namespace TestImageTexture3D {
@@ -57664,40 +52935,6 @@ TEST_CASE("[SceneTree][ImageTexture3D] set_path") {
 }
 
 } // namespace TestImageTexture3D
-
-// === Merged from tests/scene/test_packed_scene.cpp ===
-/*  test_packed_scene.cpp                                                 */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -57950,40 +53187,6 @@ TEST_CASE("[PackedScene] Recreate State") {
 
 } // namespace TestPackedScene
 
-// === Merged from tests/scene/test_sky.cpp ===
-/*  test_sky.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -58174,40 +53377,6 @@ TEST_CASE("[SceneTree][Sky] RID generation") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_style_box_empty.cpp ===
-/*  test_style_box_empty.cpp                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestStyleBoxEmpty {
@@ -58276,40 +53445,6 @@ TEST_CASE("[StyleBox] STYLE_EMPTY set_content_margin, set_content_margin_all, se
 
 } // namespace TestStyleBoxEmpty
 
-// === Merged from tests/scene/test_style_box_line.cpp ===
-/*  test_style_box_line.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestStyleBoxLine {
@@ -58363,40 +53498,6 @@ TEST_CASE("[StyleBox] STYLE_LINE set_grow_begin, get_grow_begin, set_grow_end, g
 }
 
 } // namespace TestStyleBoxLine
-
-// === Merged from tests/scene/test_style_box_texture.cpp ===
-/*  test_style_box_texture.cpp                                            */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -58556,40 +53657,6 @@ TEST_CASE("[StyleBox] STYLE_TEXTURE get_draw_rect") {
 }
 
 } // namespace TestStyleBoxTexture
-
-// === Merged from tests/scene/test_theme.cpp ===
-/*  test_theme.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -58826,41 +53893,6 @@ TEST_CASE_FIXTURE(Fixture, "[Theme] Bad theme item names") {
 } // namespace TestTheme
 
 TEST_FORCE_LINK(test_scene_resources)
-
-// === Merged from tests/scene/test_scene_nodes.cpp ===
-// === Merged from tests/scene/test_arraymesh.cpp ===
-/*  test_arraymesh.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef _3D_DISABLED
 
@@ -59279,40 +54311,6 @@ TEST_CASE("[SceneTree][ArrayMesh] Get/Set mesh metadata and actions") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_camera_2d.cpp ===
-/*  test_camera_2d.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestCamera2D {
@@ -59593,40 +54591,6 @@ TEST_CASE("[SceneTree][Camera2D] Transforms") {
 }
 
 } // namespace TestCamera2D
-
-// === Merged from tests/scene/test_camera_3d.cpp ===
-/*  test_camera_3d.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef _3D_DISABLED
 
@@ -59969,43 +54933,8 @@ TEST_CASE("[SceneTree][Camera3D] Project ray") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_convert_transform_modifier_3d.cpp ===
-/*  test_convert_transform_modifier_3d.cpp                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 namespace TestConvertTransformModifier3D {
@@ -60232,43 +55161,8 @@ TEST_CASE("[SceneTree][ConvertTransformModifier3D]") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_copy_transform_modifier_3d.cpp ===
-/*  test_copy_transform_modifier_3d.cpp                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 namespace TestCopyTransformModifier3D {
@@ -60766,40 +55660,6 @@ TEST_CASE("[SceneTree][CopyTransformModifier3D]") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_decal.cpp ===
-/*  test_decal.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -60905,43 +55765,8 @@ TEST_CASE("[SceneTree][Decal] Getters/Setters") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_generic_6dof_joint_3d.cpp ===
-/*  test_generic_6dof_joint_3d.cpp                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef PHYSICS_3D_DISABLED
 
-#include "scene/3d/physics/joints/generic_6dof_joint_3d.h"
 #include "servers/display/display_server.h"
 
 #include <cfloat>
@@ -61141,46 +55966,11 @@ TEST_CASE("[SceneTree][Generic6DOFJoint3D] Default joint configuration does not 
 
 #endif // PHYSICS_3D_DISABLED
 
-// === Merged from tests/scene/test_gltf_document.cpp ===
-/*  test_gltf_document.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "core/version_generated.gen.h" // For gltf.
 
 #ifdef MODULE_GLTF_ENABLED
-
 
 #include "servers/display/display_server.h"
 
@@ -61398,43 +56188,8 @@ TEST_CASE("[SceneTree][GLTFDocument] Load suzanne.glb") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_height_map_shape_3d.cpp ===
-/*  test_height_map_shape_3d.cpp                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef PHYSICS_3D_DISABLED
 
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 namespace TestHeightMapShape3D {
@@ -61521,41 +56276,6 @@ TEST_CASE("[SceneTree][HeightMapShape3D] update_map_data_from_image") {
 
 #endif // PHYSICS_3D_DISABLED
 
-// === Merged from tests/scene/test_instance_placeholder.cpp ===
-/*  test_instance_placeholder.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 namespace TestInstancePlaceholder {
@@ -62054,40 +56774,6 @@ TEST_CASE("[SceneTree][InstancePlaceholder] Instance a PackedScene containing an
 
 } // namespace TestInstancePlaceholder
 
-// === Merged from tests/scene/test_navigation_agent_2d.cpp ===
-/*  test_navigation_agent_2d.cpp                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/version_generated.gen.h" // For navigation 2D.
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
@@ -62126,40 +56812,6 @@ TEST_SUITE("[Navigation2D]") {
 } // namespace TestNavigationAgent2D
 
 #endif // MODULE_NAVIGATION_2D_ENABLED
-
-// === Merged from tests/scene/test_navigation_agent_3d.cpp ===
-/*  test_navigation_agent_3d.cpp                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/version_generated.gen.h" // For navigation 3D.
 
@@ -62200,40 +56852,6 @@ TEST_SUITE("[Navigation3D]") {
 
 #endif // MODULE_NAVIGATION_3D_ENABLED
 
-// === Merged from tests/scene/test_navigation_obstacle_2d.cpp ===
-/*  test_navigation_obstacle_2d.cpp                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/version_generated.gen.h" // For navigation 2D.
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
@@ -62271,40 +56889,6 @@ TEST_SUITE("[Navigation2D]") {
 } // namespace TestNavigationObstacle2D
 
 #endif // MODULE_NAVIGATION_2D_ENABLED
-
-// === Merged from tests/scene/test_navigation_obstacle_3d.cpp ===
-/*  test_navigation_obstacle_3d.cpp                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/version_generated.gen.h" // For navigation 3D.
 
@@ -62344,40 +56928,6 @@ TEST_SUITE("[Navigation3D]") {
 
 #endif // MODULE_NAVIGATION_3D_ENABLED
 
-// === Merged from tests/scene/test_navigation_region_2d.cpp ===
-/*  test_navigation_region_2d.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "core/version_generated.gen.h" // For navigation 2D.
 
 #ifdef MODULE_NAVIGATION_2D_ENABLED
@@ -62397,40 +56947,6 @@ TEST_SUITE("[Navigation2D]") {
 } // namespace TestNavigationRegion2D
 
 #endif // MODULE_NAVIGATION_2D_ENABLED
-
-// === Merged from tests/scene/test_navigation_region_3d.cpp ===
-/*  test_navigation_region_3d.cpp                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "core/version_generated.gen.h" // For navigation 3D.
 
@@ -62483,42 +56999,6 @@ TEST_SUITE("[Navigation3D]") {
 
 #endif // MODULE_NAVIGATION_3D_ENABLED
 
-// === Merged from tests/scene/test_node.cpp ===
-/*  test_node.cpp                                                         */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 namespace TestNode {
@@ -63399,40 +57879,6 @@ TEST_CASE("[SceneTree][Node] Test the process priority") {
 
 } // namespace TestNode
 
-// === Merged from tests/scene/test_node_2d.cpp ===
-/*  test_node_2d.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestNode2D {
@@ -63612,40 +58058,6 @@ TEST_CASE("[SceneTree][Node2D] Utility methods") {
 
 } // namespace TestNode2D
 
-// === Merged from tests/scene/test_parallax_2d.cpp ===
-/*  test_parallax_2d.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 // Test cases for the Parallax2D class to ensure its properties are set and retrieved correctly.
@@ -63742,40 +58154,6 @@ TEST_CASE("[SceneTree][Parallax2D] Ignore Camera Scroll") {
 
 } // namespace TestParallax2D
 
-// === Merged from tests/scene/test_path_2d.cpp ===
-/*  test_path_2d.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestPath2D {
@@ -63849,40 +58227,6 @@ TEST_CASE("[SceneTree][Path2D] Curve setter and getter") {
 
 } // namespace TestPath2D
 
-// === Merged from tests/scene/test_path_3d.cpp ===
-/*  test_path_3d.cpp                                                      */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -63934,40 +58278,6 @@ TEST_CASE("[Path3D] Curve setter and getter") {
 } // namespace TestPath3D
 
 #endif // _3D_DISABLED
-
-// === Merged from tests/scene/test_path_follow_2d.cpp ===
-/*  test_path_follow_2d.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -64190,40 +58500,6 @@ TEST_CASE("[SceneTree][PathFollow2D] Progress out of range") {
 }
 
 } // namespace TestPathFollow2D
-
-// === Merged from tests/scene/test_path_follow_3d.cpp ===
-/*  test_path_follow_3d.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef _3D_DISABLED
 
@@ -64535,40 +58811,6 @@ TEST_CASE("[SceneTree][PathFollow3D] Calculate forward vector with degenerate cu
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_physics_material.cpp ===
-/*  test_physics_material.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef PHYSICS_3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -64644,40 +58886,6 @@ TEST_CASE("[Physics_material] Absorbent") {
 } // namespace TestPhysicsMaterial
 
 #endif // PHYSICS_3D_DISABLED
-
-// === Merged from tests/scene/test_primitives.cpp ===
-/*  test_primitives.cpp                                                   */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #ifndef _3D_DISABLED
 
@@ -65225,40 +59433,6 @@ TEST_CASE("[SceneTree][Primitive][Text] Text Primitive") {
 
 #endif // _3D_DISABLED
 
-// === Merged from tests/scene/test_reference_rect.cpp ===
-/*  test_reference_rect.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestReferenceRect {
@@ -65350,40 +59524,6 @@ TEST_CASE("[SceneTree][ReferenceRect] Minimum size on tree") {
 
 } // namespace TestReferenceRect
 
-// === Merged from tests/scene/test_skeleton_3d.cpp ===
-/*  test_skeleton_3d.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #ifndef _3D_DISABLED
 
 #include "servers/display/display_server.h"
@@ -65430,40 +59570,6 @@ TEST_CASE("[Skeleton3D] Test per-bone meta") {
 } // namespace TestSkeleton3D
 
 #endif // _3D_DISABLED
-
-// === Merged from tests/scene/test_sprite_2d.cpp ===
-/*  test_sprite_2d.cpp                                                    */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -65698,40 +59804,6 @@ TEST_CASE("[SceneTree][Sprite2D] Offset") {
 
 } // namespace TestSprite2D
 
-// === Merged from tests/scene/test_sprite_frames.cpp ===
-/*  test_sprite_frames.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestSpriteFrames {
@@ -65952,40 +60024,6 @@ TEST_CASE("[SpriteFrames] Frame addition, removal, and retrieval") {
 
 } // namespace TestSpriteFrames
 
-// === Merged from tests/scene/test_timer.cpp ===
-/*  test_timer.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
 #include "servers/display/display_server.h"
 
 namespace TestTimer {
@@ -66156,40 +60194,6 @@ TEST_CASE("[SceneTree][Timer] Check Timer timeout signal") {
 }
 
 } // namespace TestTimer
-
-// === Merged from tests/scene/test_viewport.cpp ===
-/*  test_viewport.cpp                                                     */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
 
 #include "servers/display/display_server.h"
 
@@ -68142,41 +62146,6 @@ TEST_CASE("[SceneTree][Viewport] Embedded Windows") {
 
 } // namespace TestViewport
 
-// === Merged from tests/scene/test_window.cpp ===
-/*  test_window.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
-
-
-#include "core/os/os.h" // IWYU pragma: keep // Used by `SEND_GUI_MOUSE_MOTION_EVENT` macro.
 #include "servers/display/display_server.h"
 
 namespace TestWindow {
@@ -68237,43 +62206,9 @@ TEST_CASE("[SceneTree][Window]") {
 
 TEST_FORCE_LINK(test_scene_nodes)
 
-// === Merged from tests/test_modules.cpp ===
 #include "core/version_generated.gen.h"
 
-// === Merged from modules/mbedtls/tests/test_crypto_mbedtls.cpp ===
 #ifdef MODULE_MBEDTLS_ENABLED
-/*  test_crypto_mbedtls.cpp                                               */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-// --- Inlined from modules/mbedtls/tests/test_crypto_mbedtls.h ---
-#include "core/io/net_socket.h"
 
 namespace TestCryptoMbedTLS {
 
@@ -68475,10 +62410,6 @@ TEST_CASE("[Crypto] Crypto decrypt well-known") {
 }
 
 } // namespace TestCryptoMbedTLS
-// --- End modules/mbedtls/tests/test_crypto_mbedtls.h ---
-
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
 
 namespace TestCryptoMbedTLS {
 
@@ -68628,41 +62559,7 @@ void crypto_decrypt_test(const String &p_in_priv_path, const Vector<uint8_t> &p_
 } // namespace TestCryptoMbedTLS
 #endif // MODULE_MBEDTLS_ENABLED
 
-// === Merged from modules/zip/tests/test_zip.cpp ===
 #ifdef MODULE_ZIP_ENABLED
-/*  test_zip.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-// --- Inlined from modules/zip/tests/test_zip.h ---
-#include "core/io/net_socket.h"
-
 
 namespace TestZip {
 
@@ -68731,7 +62628,6 @@ TEST_CASE("[ZIPReader] read files") {
 }
 
 } // namespace TestZip
-// --- End modules/zip/tests/test_zip.h ---
 
 namespace TestZip {
 
@@ -68744,10 +62640,8 @@ void check_file_size(const String &p_path, int p_expected_size) {
 } // namespace TestZip
 #endif // MODULE_ZIP_ENABLED
 
-// === Merged from modules/csg/tests/test_csg.h ===
 #ifdef MODULE_CSG_ENABLED
 #include "servers/display/display_server.h"
-
 
 namespace TestCSG {
 
@@ -68824,9 +62718,7 @@ TEST_CASE("[SceneTree][CSG] CSGPolygon3D") {
 
 } // namespace TestCSG
 
-// --- Folded from modules/gridmap/tests/test_grid_map.h ---
 #include "servers/display/display_server.h"
-
 
 namespace TestGridMap {
 
@@ -68911,17 +62803,10 @@ TEST_CASE("[SceneTree][GridMap][MeshLibrary] Octant querying") {
 }
 
 } // namespace TestGridMap
-// --- End modules/gridmap/tests/test_grid_map.h ---
 #endif // MODULE_CSG_ENABLED
 
-// === Merged from modules/dds/tests/test_dds.h ===
 #ifdef MODULE_DDS_ENABLED
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 
 namespace TestDDS {
 String init(const String &p_test, const String &p_copy_target = String()) {
@@ -69045,15 +62930,12 @@ TEST_CASE("[SceneTree][DDSSaver] Save DDS - Save valid uncompressed image") {
 } //namespace TestDDS
 #endif // MODULE_DDS_ENABLED
 
-// === Merged from modules/gltf/tests/test_gltf.h ===
 #ifdef MODULE_GLTF_ENABLED
 
 #ifdef TOOLS_ENABLED
 
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -69075,9 +62957,9 @@ static Node *gltf_import(const String &p_file) {
 	ResourceFormatImporter::add_importer(import_texture);
 
 	// Once editor import convert pngs to ctex, we will need to load it as ctex resource.
-	Ref<ResourceFormatLoaderCompressedTexture> resource_loader_stream_texture;
+	Ref<ResourceFormatLoader> resource_loader_stream_texture;
 	if constexpr (GD_IS_CLASS_ENABLED(CompressedTexture2D)) {
-		resource_loader_stream_texture.instantiate();
+		resource_loader_stream_texture = ResourceFormatLoader::create_compressed_texture_loader();
 		ResourceLoader::add_resource_format_loader(resource_loader_stream_texture);
 	}
 
@@ -69174,9 +63056,6 @@ void init(const String &p_test, const String &p_copy_target = String()) {
 
 #endif // TOOLS_ENABLED
 
-// --- Folded from modules/gltf/tests/test_gltf_emissive.h ---
-
-
 #ifdef TOOLS_ENABLED
 
 namespace TestGltf {
@@ -69211,10 +63090,6 @@ TEST_CASE("[SceneTree][Node] GLTF emissiveTexture without emissiveFactor uses wh
 } // namespace TestGltf
 
 #endif // TOOLS_ENABLED
-// --- End modules/gltf/tests/test_gltf_emissive.h ---
-
-// --- Folded from modules/gltf/tests/test_gltf_extras.h ---
-
 
 #ifdef TOOLS_ENABLED
 
@@ -69347,12 +63222,8 @@ TEST_CASE("[SceneTree][Node] GLTF test skeleton and bone export and import") {
 } //namespace TestGltf
 
 #endif // TOOLS_ENABLED
-// --- End modules/gltf/tests/test_gltf_extras.h ---
 
-// --- Folded from modules/gltf/tests/test_gltf_images.h ---
 #ifdef TOOLS_ENABLED
-
-
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -69489,14 +63360,11 @@ TEST_CASE("[SceneTree][Node][Editor] Import GLTF with embedded texture, check ho
 } //namespace TestGltf
 
 #endif // TOOLS_ENABLED
-// --- End modules/gltf/tests/test_gltf_images.h ---
 #endif // MODULE_GLTF_ENABLED
 
-// === Merged from modules/multiplayer/tests/test_scene_multiplayer.h ===
 #ifdef MODULE_MULTIPLAYER_ENABLED
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 namespace TestSceneMultiplayer {
@@ -69579,7 +63447,6 @@ TEST_CASE("[Multiplayer][MultiplayerAPI] Authentication validation") {
 
 } // namespace TestSceneMultiplayer
 
-// --- Folded from modules/multiplayer/tests/test_multiplayer_spawner.h ---
 #include "servers/display/display_server.h"
 
 namespace TestMultiplayerSpawner
@@ -69614,13 +63481,10 @@ public:
 };
 
 } // namespace TestMultiplayerSpawner
-// --- End modules/multiplayer/tests/test_multiplayer_spawner.h ---
 #endif // MODULE_MULTIPLAYER_ENABLED
 
-// === Merged from modules/noise/tests/test_fastnoise_lite.h ===
 #ifdef MODULE_NOISE_ENABLED
 #include "servers/display/display_server.h"
-
 
 namespace TestFastNoiseLite {
 
@@ -70221,9 +64085,7 @@ TEST_CASE("[FastNoiseLite] Generating seamless 2D images (11x11px) and compare t
 
 } //namespace TestFastNoiseLite
 
-// --- Folded from modules/noise/tests/test_noise_texture_2d.h ---
 #include "servers/display/display_server.h"
-
 
 namespace TestNoiseTexture2D {
 
@@ -70451,11 +64313,8 @@ TEST_CASE("[NoiseTexture2D][SceneTree] Generating a seamless noise texture") {
 }
 
 } //namespace TestNoiseTexture2D
-// --- End modules/noise/tests/test_noise_texture_2d.h ---
 
-// --- Folded from modules/noise/tests/test_noise_texture_3d.h ---
 #include "servers/display/display_server.h"
-
 
 namespace TestNoiseTexture3D {
 
@@ -70652,14 +64511,9 @@ TEST_CASE("[NoiseTexture3D][SceneTree] Generating a seamless noise texture") {
 }
 
 } //namespace TestNoiseTexture3D
-// --- End modules/noise/tests/test_noise_texture_3d.h ---
 #endif // MODULE_NOISE_ENABLED
 
-// === Merged from modules/regex/tests/test_regex.h ===
 #ifdef MODULE_REGEX_ENABLED
-#include "core/os/os.h"
-
-#include "core/string/ustring.h"
 
 namespace TestRegEx {
 

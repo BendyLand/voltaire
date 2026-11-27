@@ -392,7 +392,7 @@ void OS::initialize_core() {
 void OS::initialize() {
 	OS_Web::initialize();
 	Vector<Logger *> loggers;
-	loggers.push_back(memnew(StdLogger));
+	loggers.push_back(memnew(Logger));
 	_set_logger(memnew(CompositeLogger(loggers)));
 	_initialized = true;
 }

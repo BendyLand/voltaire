@@ -33,9 +33,7 @@
 
 #include "core/os/os.h"
 #include "servers/display/display_server.h"
-// --- Folded from platform/linuxbsd/wayland/wayland_thread.h ---
 #ifdef WAYLAND_ENABLED
-// --- Folded from platform/linuxbsd/wayland/key_mapping_xkb.h ---
 #include "core/os/os.h"
 #include "core/io/ip.h"
 
@@ -64,11 +62,8 @@ public:
 	static KeyLocation get_location(unsigned int p_code);
 };
 
-// --- End platform/linuxbsd/wayland/key_mapping_xkb.h ---
-
 #ifdef SOWRAP_ENABLED
 #include "platform/linuxbsd/xkbcommon-so_wrap.h"
-// --- Inlined/Folded from platform/linuxbsd/wayland/dynwrappers/wayland-cursor-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_WAYLAND_CURSOR
 #define DYLIBLOAD_WRAPPER_WAYLAND_CURSOR
 // This file is generated. Do not edit!
@@ -111,7 +106,6 @@ int initialize_wayland_cursor(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/wayland/dynwrappers/wayland-egl-core-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_WAYLAND_EGL
 #define DYLIBLOAD_WRAPPER_WAYLAND_EGL
 // This file is generated. Do not edit!
@@ -177,7 +171,6 @@ int initialize_wayland_egl(int verbose);
 
 #ifdef LIBDECOR_ENABLED
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from platform/linuxbsd/wayland/dynwrappers/libdecor-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_LIBDECOR
 #define DYLIBLOAD_WRAPPER_LIBDECOR
 // This file is generated. Do not edit!
@@ -368,7 +361,6 @@ int initialize_libdecor(int verbose);
 #include "core/os/os.h"
 #include "core/os/mutex.h"
 #include "servers/display/display_server.h"
-// --- Folded from platform/linuxbsd/wayland/wayland_embedder.h ---
 #ifdef WAYLAND_ENABLED
 
 #ifdef TOOLS_ENABLED
@@ -1034,8 +1026,6 @@ public:
 
 #endif // WAYLAND_ENABLED
 
-// --- End platform/linuxbsd/wayland/wayland_embedder.h ---
-
 class Image;
 
 class WaylandThread
@@ -1052,74 +1042,35 @@ public:
 		float reference_luminance = 0;
 	};
 
-	// Messages used for exchanging information between Godot's and Wayland's thread.
-	class Message : public RefCounted
+	// Unified message exchanged between engine and Wayland threads.
+	class Message final : public RefCounted
 	{
 	public:
-		Message() {}
+		enum Type
+		{
+			TYPE_NONE,
+			TYPE_WINDOW_RECT,
+			TYPE_WINDOW_EVENT,
+			TYPE_INPUT_EVENT,
+			TYPE_DROP_FILES,
+			TYPE_IME_UPDATE,
+			TYPE_IME_COMMIT,
+			TYPE_COLOR_PROFILE,
+		};
 
-		virtual ~Message() = default;
-	};
-
-	class WindowMessage : public Message
-	{
-	public:
+		Type type = TYPE_NONE;
 		DisplayServerEnums::WindowID id = DisplayServerEnums::INVALID_WINDOW_ID;
-	};
-
-	// Message data for window rect changes.
-	class WindowRectMessage : public WindowMessage
-	{
-	public:
-		// The window size in "absolute units" (pre-scaled). Basically the desired
-		// resolution of the underlying buffer.
 		Rect2i rect;
-
-		// Used to synchronize buffer size and scale together, otherwise we risk a
-		// protocol error. Note that this doesn't control scaling in general, only the
-		// concept of "surface buffer scale". See the protocol documentation of
-		// `wl_surface::set_buffer_scale` for more details.
-		//
-		// Defaults to 0 so that we can catch malformed messages.
 		int buffer_scale = 0;
-	};
-
-	class WindowEventMessage : public WindowMessage
-	{
-	public:
-		DisplayServerEnums::WindowEvent event;
-	};
-
-	class InputEventMessage : public Message
-	{
-	public:
+		DisplayServerEnums::WindowEvent window_event = DisplayServerEnums::WINDOW_EVENT_MOUSE_ENTER;
 		InputEvent event;
-	};
-
-	class DropFilesEventMessage : public WindowMessage
-	{
-	public:
 		Vector<String> files;
-	};
-
-	class IMEUpdateEventMessage : public WindowMessage
-	{
-	public:
 		String text;
 		Vector2i selection;
-	};
-
-	class IMECommitEventMessage : public WindowMessage
-	{
-	public:
-		String text;
-	};
-
-	class ColorProfileMessage : public WindowMessage
-	{
-	public:
-		WaylandThread* wayland_thread;
+		WaylandThread* wayland_thread = nullptr;
 		ColorProfile color_profile;
+
+		explicit Message(Type p_type = TYPE_NONE) : type(p_type) {}
 	};
 
 	struct RegistryState
@@ -2532,10 +2483,6 @@ public:
 
 #endif // WAYLAND_ENABLED
 
-
-
-// --- End platform/linuxbsd/wayland/wayland_thread.h ---
-
 struct InputEvent;
 
 #ifdef RD_ENABLED
@@ -2765,7 +2712,6 @@ public:
 	virtual DisplayServerEnums::WindowID get_window_at_screen_position(
 		const Point2i& p_position) const override;
 
-
 	virtual void window_set_title(const String& p_title,
 		DisplayServerEnums::WindowID p_window_id = DisplayServerEnums::MAIN_WINDOW_ID) override;
 	virtual void window_set_mouse_passthrough(const Vector<Vector2>& p_region,
@@ -2944,7 +2890,6 @@ public:
 
 #endif // WAYLAND_ENABLED
 
-// --- Folded from platform/linuxbsd/wayland/detect_prime_egl.h ---
 #ifdef GLES3_ENABLED
 #ifdef EGL_ENABLED
 
@@ -2998,9 +2943,6 @@ public:
 #endif // GLES3_ENABLED
 #endif // EGL_ENABLED
 
-// --- End platform/linuxbsd/wayland/detect_prime_egl.h ---
-
-// --- Folded from platform/linuxbsd/wayland/egl_manager_wayland.h ---
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED
 #ifdef GLES3_ENABLED
@@ -3020,7 +2962,6 @@ public:
 #endif // EGL_ENABLED
 #endif // WAYLAND_ENABLED
 
-// --- Folded from platform/linuxbsd/wayland/egl_manager_wayland_gles.h ---
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED
 #ifdef GLES3_ENABLED
@@ -3040,11 +2981,6 @@ public:
 #endif // EGL_ENABLED
 #endif // WAYLAND_ENABLED
 
-// --- End platform/linuxbsd/wayland/egl_manager_wayland_gles.h ---
-
-// --- End platform/linuxbsd/wayland/egl_manager_wayland.h ---
-
-// --- Folded from platform/linuxbsd/wayland/rendering_context_driver_vulkan_wayland.h ---
 #ifdef VULKAN_ENABLED
 
 #include "servers/display/display_server.h"
@@ -3070,9 +3006,6 @@ public:
 };
 
 #endif // VULKAN_ENABLED
-
-// --- End platform/linuxbsd/wayland/rendering_context_driver_vulkan_wayland.h ---
-// --- End platform/linuxbsd/wayland/display_server_wayland.h ---
 
 #ifdef WAYLAND_ENABLED
 
@@ -4879,50 +4812,42 @@ void DisplayServerWayland::process_events()
 
 	while (wayland_thread.has_message()) {
 		Ref<WaylandThread::Message> msg = wayland_thread.pop_message();
-		Ref<WaylandThread::WindowMessage> win_msg = msg;
-		if (win_msg.is_valid()) {
-			ERR_CONTINUE_MSG(win_msg->id == DisplayServerEnums::INVALID_WINDOW_ID,
-				"Invalid window ID received from Wayland thread.");
+		if (msg.is_null()) {
+			continue;
+		}
 
-			if (!windows.has(win_msg->id)) {
+		if (msg->type != WaylandThread::Message::TYPE_INPUT_EVENT) {
+			ERR_CONTINUE_MSG(msg->id == DisplayServerEnums::INVALID_WINDOW_ID,
+				"Invalid window ID received from Wayland thread.");
+			if (!windows.has(msg->id)) {
 				continue;
 			}
 		}
 
-		Ref<WaylandThread::WindowRectMessage> winrect_msg = msg;
-		if (winrect_msg.is_valid()) {
-			int scale = winrect_msg->buffer_scale;
-
-			WaylandThread::WindowState* ws = wayland_thread.window_get_state(winrect_msg->id);
+		switch (msg->type) {
+		case WaylandThread::Message::TYPE_WINDOW_RECT: {
+			int scale = msg->buffer_scale;
+			WaylandThread::WindowState* ws = wayland_thread.window_get_state(msg->id);
 			ERR_CONTINUE(ws == nullptr);
-
 			if (scale == 0) {
 				ERR_PRINT("Wayland Thread did not report buffer scale at the time of resize.");
 				scale = wayland_thread.window_state_get_preferred_buffer_scale(ws);
 			}
-
 			wayland_thread.window_state_set_buffer_scale(ws, scale);
-			_update_window_rect(winrect_msg->rect, winrect_msg->id);
-			continue;
-		}
-
-		Ref<WaylandThread::WindowEventMessage> winev_msg = msg;
-		if (winev_msg.is_valid() && windows.has(winev_msg->id)) {
-			_send_window_event(winev_msg->event, winev_msg->id);
-
-			if (winev_msg->event == DisplayServerEnums::WINDOW_EVENT_FOCUS_IN) {
-				AccessibilityServer::set_window_focused(winev_msg->id, true);
+			_update_window_rect(msg->rect, msg->id);
+		} break;
+		case WaylandThread::Message::TYPE_WINDOW_EVENT: {
+			_send_window_event(msg->window_event, msg->id);
+			if (msg->window_event == DisplayServerEnums::WINDOW_EVENT_FOCUS_IN) {
+				AccessibilityServer::set_window_focused(msg->id, true);
 			}
-			else if (winev_msg->event == DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT) {
-				AccessibilityServer::set_window_focused(winev_msg->id, false);
+			else if (msg->window_event == DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT) {
+				AccessibilityServer::set_window_focused(msg->id, false);
 				Input::release_pressed_events();
 			}
-			continue;
-		}
-
-		Ref<WaylandThread::InputEventMessage> inputev_msg = msg;
-		if (inputev_msg.is_valid()) {
-			const InputEvent& ev = inputev_msg->event;
+		} break;
+		case WaylandThread::Message::TYPE_INPUT_EVENT: {
+			const InputEvent& ev = msg->event;
 			bool process_popups = false;
 			Point2 position;
 			DisplayServerEnums::WindowID window_id = DisplayServerEnums::INVALID_WINDOW_ID;
@@ -4932,95 +4857,70 @@ void DisplayServerWayland::process_events()
 								  ev.mouse_button.button_mask != last_mouse_monitor_mask);
 				position = ev.mouse_button.position;
 				window_id = ev.window_id;
-
 				last_mouse_monitor_mask = ev.mouse_button.button_mask;
 			}
 			else if (ev.type == InputEventType::SCREEN_TOUCH) {
 				process_popups = ev.is_pressed() && (ev.is_pressed() != last_touch_monitor_pressed);
 				position = ev.touch.position;
 				window_id = ev.window_id;
-
 				last_touch_monitor_pressed = ev.is_pressed();
 			}
 
 			bool handled = false;
-
 			if (!popup_menu_list.is_empty() && process_popups) {
 				List<DisplayServerEnums::WindowID>::Element* E = popup_menu_list.back();
 				List<DisplayServerEnums::WindowID>::Element* C = nullptr;
-
 				Point2 global_pos = position + window_get_position(window_id);
-
 				while (E) {
 					WindowData& wd = windows[E->get()];
-					if (wd.rect.has_point(global_pos)) {
+					if (wd.rect.has_point(global_pos) || wd.safe_rect.has_point(global_pos)) {
 						break;
 					}
-					else if (wd.safe_rect.has_point(global_pos)) {
-						break;
-					}
-
 					C = E;
 					E = E->prev();
 				}
-
 				if (C) {
 					handled = true;
 					_send_window_event(DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST, C->get());
 				}
 			}
-
 			if (!handled) {
 				Input::parse_input_event(ev);
 			}
-
-			continue;
-		}
-
-		Ref<WaylandThread::DropFilesEventMessage> dropfiles_msg = msg;
-		if (dropfiles_msg.is_valid()) {
-			continue;
-		}
-
-		Ref<WaylandThread::IMECommitEventMessage> ime_commit_msg = msg;
-		if (ime_commit_msg.is_valid()) {
-			for (int i = 0; i < ime_commit_msg->text.length(); i++) {
-				const char32_t codepoint = ime_commit_msg->text[i];
-
+		} break;
+		case WaylandThread::Message::TYPE_DROP_FILES: {
+		} break;
+		case WaylandThread::Message::TYPE_IME_COMMIT: {
+			for (int i = 0; i < msg->text.length(); i++) {
+				const char32_t codepoint = msg->text[i];
 				InputEvent ke = InputEvent::make_key();
-				ke.window_id = ime_commit_msg->id;
+				ke.window_id = msg->id;
 				ke.pressed = true;
 				ke.key.echo = false;
 				ke.key.keycode = Key::NONE;
 				ke.key.physical_keycode = Key::NONE;
 				ke.key.key_label = Key::NONE;
 				ke.key.unicode = codepoint;
-
 				Input::parse_input_event(ke);
 			}
 			ime_text = String();
 			ime_selection = Vector2i();
-			continue;
-		}
-
-		Ref<WaylandThread::IMEUpdateEventMessage> ime_update_msg = msg;
-		if (ime_update_msg.is_valid()) {
-			if (ime_text != ime_update_msg->text || ime_selection != ime_update_msg->selection) {
-				ime_text = ime_update_msg->text;
-				ime_selection = ime_update_msg->selection;
+		} break;
+		case WaylandThread::Message::TYPE_IME_UPDATE: {
+			if (ime_text != msg->text || ime_selection != msg->selection) {
+				ime_text = msg->text;
+				ime_selection = msg->selection;
 			}
-			continue;
-		}
-
-		Ref<WaylandThread::ColorProfileMessage> color_profile_msg = msg;
-		if (color_profile_msg.is_valid()) {
-			WindowData& wd = windows[color_profile_msg->id];
-			wd.color_profile = color_profile_msg->color_profile;
-
+		} break;
+		case WaylandThread::Message::TYPE_COLOR_PROFILE: {
+			WindowData& wd = windows[msg->id];
+			wd.color_profile = msg->color_profile;
 			_window_update_hdr_state(wd);
 			_send_window_event(
 				DisplayServerEnums::WINDOW_EVENT_OUTPUT_MAX_LINEAR_VALUE_CHANGED, wd.id);
-			continue;
+		} break;
+		default:
+			break;
 		}
 	}
 
@@ -5530,14 +5430,8 @@ void DisplayServerWayland::register_wayland_driver()
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/detect_prime_egl.cpp
-// ============================================================================
-
 #ifdef GLES3_ENABLED
 #ifdef EGL_ENABLED
-
-
 
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
@@ -5790,12 +5684,6 @@ int DetectPrimeEGL::detect_prime(EGLenum p_platform_enum) {
 #ifdef Below
 #undef Below
 #endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/key_mapping_xkb.cpp
-// ============================================================================
-
-
 
 #ifdef SOWRAP_ENABLED
 #include "platform/linuxbsd/xkbcommon-so_wrap.h"
@@ -6232,12 +6120,6 @@ KeyLocation KeyMappingXKB::get_location(unsigned int p_code) {
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/wayland_thread.cpp
-// ============================================================================
-
-
-
 #ifdef WAYLAND_ENABLED
 
 #include "core/os/os.h"
@@ -6558,8 +6440,7 @@ void WaylandThread::_seat_state_handle_xkb_keycode(
 				k.key.unicode = decoded_str[i];
 				k.key.echo = p_echo;
 
-				Ref<InputEventMessage> msg;
-				msg.instantiate();
+				Ref<Message> msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 				msg->event = k;
 				wayland_thread->push_message(msg);
 
@@ -6573,8 +6454,7 @@ void WaylandThread::_seat_state_handle_xkb_keycode(
 		if (k.is_valid()) {
 			k.key.echo = p_echo;
 
-			Ref<InputEventMessage> msg;
-			msg.instantiate();
+			Ref<Message> msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 			msg->event = k;
 			wayland_thread->push_message(msg);
 
@@ -6585,8 +6465,7 @@ void WaylandThread::_seat_state_handle_xkb_keycode(
 	if (last_key != Key::NONE) {
 		InputEvent uk = _seat_state_get_unstuck_key_event(p_ss, p_xkb_keycode, p_pressed, last_key);
 		if (uk.is_valid()) {
-			Ref<InputEventMessage> u_msg;
-			u_msg.instantiate();
+			Ref<Message> u_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 			u_msg->event = uk;
 			wayland_thread->push_message(u_msg);
 		}
@@ -7774,10 +7653,9 @@ void WaylandThread::_xdg_toplevel_on_close(void* data, struct xdg_toplevel* xdg_
 	WindowState* ws = (WindowState*)data;
 	ERR_FAIL_NULL(ws);
 
-	Ref<WindowEventMessage> msg;
-	msg.instantiate();
+	Ref<Message> msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 	msg->id = ws->id;
-	msg->event = DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST;
+	msg->window_event = DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST;
 	ws->wayland_thread->push_message(msg);
 }
 
@@ -7861,8 +7739,7 @@ void WaylandThread::_xdg_popup_on_configure(
 
 		ws->rect.position = pos;
 
-		Ref<WindowRectMessage> rect_msg;
-		rect_msg.instantiate();
+		Ref<Message> rect_msg = memnew(Message(Message::TYPE_WINDOW_RECT));
 		rect_msg->id = ws->id;
 		rect_msg->rect.position = scale_vector2i(ws->rect.position, parent_scale);
 		rect_msg->rect.size = scale_vector2i(ws->rect.size, parent_scale);
@@ -7880,10 +7757,9 @@ void WaylandThread::_xdg_popup_on_popup_done(void* data, struct xdg_popup* xdg_p
 	WindowState* ws = (WindowState*)data;
 	ERR_FAIL_NULL(ws);
 
-	Ref<WindowEventMessage> ev_msg;
-	ev_msg.instantiate();
+	Ref<Message> ev_msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 	ev_msg->id = ws->id;
-	ev_msg->event = DisplayServerEnums::WINDOW_EVENT_FORCE_CLOSE;
+	ev_msg->window_event = DisplayServerEnums::WINDOW_EVENT_FORCE_CLOSE;
 
 	ws->wayland_thread->push_message(ev_msg);
 }
@@ -8014,10 +7890,9 @@ void WaylandThread::libdecor_frame_on_close(struct libdecor_frame* frame, void* 
 	WindowState* ws = (WindowState*)user_data;
 	ERR_FAIL_NULL(ws);
 
-	Ref<WindowEventMessage> winevent_msg;
-	winevent_msg.instantiate();
+	Ref<Message> winevent_msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 	winevent_msg->id = ws->id;
-	winevent_msg->event = DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST;
+	winevent_msg->window_event = DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST;
 
 	ws->wayland_thread->push_message(winevent_msg);
 
@@ -8434,10 +8309,9 @@ void WaylandThread::_wl_keyboard_on_enter(void* data, struct wl_keyboard* wl_key
 
 	wayland_thread->_set_current_seat(ss->wl_seat);
 
-	Ref<WindowEventMessage> msg;
-	msg.instantiate();
+	Ref<Message> msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 	msg->id = ws->id;
-	msg->event = DisplayServerEnums::WINDOW_EVENT_FOCUS_IN;
+	msg->window_event = DisplayServerEnums::WINDOW_EVENT_FOCUS_IN;
 	wayland_thread->push_message(msg);
 
 	DEBUG_LOG_WAYLAND_THREAD(vformat("Keyboard focused window %d.", ws->id));
@@ -8472,10 +8346,9 @@ void WaylandThread::_wl_keyboard_on_leave(
 
 	ss->focused_id = DisplayServerEnums::INVALID_WINDOW_ID;
 
-	Ref<WindowEventMessage> msg;
-	msg.instantiate();
+	Ref<Message> msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 	msg->id = ws->id;
-	msg->event = DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT;
+	msg->window_event = DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT;
 	wayland_thread->push_message(msg);
 
 	ss->shift_pressed = false;
@@ -8649,8 +8522,7 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 			st.window_id = tp.touched_id;
 			st.pressed = false;
 
-			Ref<InputEventMessage> iev_msg;
-			iev_msg.instantiate();
+			Ref<Message> iev_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 			iev_msg->event = st;
 
 			wayland_thread->push_message(iev_msg);
@@ -8678,8 +8550,7 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 			st.window_id = tp.touched_id;
 			st.pressed = true;
 
-			Ref<InputEventMessage> iev_msg;
-			iev_msg.instantiate();
+			Ref<Message> iev_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 			iev_msg->event = st;
 
 			wayland_thread->push_message(iev_msg);
@@ -8705,8 +8576,7 @@ void WaylandThread::_wl_touch_on_frame(void* data, struct wl_touch* wl_touch)
 			sd.screen_drag.relative = (tp.position - tp_old.position) * scale;
 			sd.screen_drag.screen_relative = sd.screen_drag.relative;
 
-			Ref<InputEventMessage> iev_msg;
-			iev_msg.instantiate();
+			Ref<Message> iev_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 			iev_msg->event = sd;
 
 			wayland_thread->push_message(iev_msg);
@@ -8744,8 +8614,7 @@ void WaylandThread::_wl_touch_on_cancel(void* data, struct wl_touch* wl_touch)
 		st.pressed = false;
 		st.canceled = true;
 
-		Ref<InputEventMessage> cancel_msg;
-		cancel_msg.instantiate();
+		Ref<Message> cancel_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 		cancel_msg->event = st;
 
 		wayland_thread->push_message(cancel_msg);
@@ -8828,8 +8697,7 @@ void WaylandThread::_wl_data_device_on_drop(void* data, struct wl_data_device* w
 	ERR_FAIL_NULL(os);
 
 	if (os) {
-		Ref<DropFilesEventMessage> msg;
-		msg.instantiate();
+		Ref<Message> msg = memnew(Message(Message::TYPE_DROP_FILES));
 		msg->id = ss->dnd_id;
 
 		Vector<uint8_t> list_data =
@@ -9062,7 +8930,7 @@ void WaylandThread::_wp_image_description_on_ready2(void* data,
 	if (image_info != nullptr) {
 		// The wp_image_description_info_v1 listener takes ownership of this msg.
 		// We need to add a virtual reference so this msg is not freed when we leave the scope.
-		Ref<ColorProfileMessage> msg = memnew(ColorProfileMessage);
+		Ref<Message> msg = memnew(Message(Message::TYPE_COLOR_PROFILE));
 		msg->reference();
 		msg->id = ws->id;
 		msg->wayland_thread = ws->wayland_thread;
@@ -9080,7 +8948,7 @@ void WaylandThread::_wp_image_description_info_on_done(
 
 	ERR_FAIL_NULL(data);
 	// Now that we have claimed ownership of the msg, remove the virtual reference.
-	Ref<ColorProfileMessage> msg = (ColorProfileMessage*)data;
+	Ref<Message> msg = (Message*)data;
 	msg->unreference();
 
 	msg->wayland_thread->push_message(msg);
@@ -9102,7 +8970,7 @@ void WaylandThread::_wp_image_description_info_on_primaries(void* data,
 void WaylandThread::_wp_image_description_info_on_primaries_named(void* data,
 	struct wp_image_description_info_v1* wp_image_description_info_v1, uint32_t primaries)
 {
-	ColorProfileMessage* msg = (ColorProfileMessage*)data;
+	Message* msg = (Message*)data;
 	ERR_FAIL_NULL(msg);
 
 	msg->color_profile.named_primary = primaries;
@@ -9116,7 +8984,7 @@ void WaylandThread::_wp_image_description_info_on_tf_power(
 void WaylandThread::_wp_image_description_info_on_tf_named(
 	void* data, struct wp_image_description_info_v1* wp_image_description_info_v1, uint32_t tf)
 {
-	ColorProfileMessage* msg = (ColorProfileMessage*)data;
+	Message* msg = (Message*)data;
 	ERR_FAIL_NULL(msg);
 
 	msg->color_profile.named_transfer_function = tf;
@@ -9126,7 +8994,7 @@ void WaylandThread::_wp_image_description_info_on_luminances(void* data,
 	struct wp_image_description_info_v1* wp_image_description_info_v1, uint32_t min_lum,
 	uint32_t max_lum, uint32_t reference_lum)
 {
-	ColorProfileMessage* msg = (ColorProfileMessage*)data;
+	Message* msg = (Message*)data;
 	ERR_FAIL_NULL(msg);
 
 	msg->color_profile.reference_luminance = reference_lum;
@@ -9142,7 +9010,7 @@ void WaylandThread::_wp_image_description_info_on_target_luminance(void* data,
 	struct wp_image_description_info_v1* wp_image_description_info_v1, uint32_t min_lum,
 	uint32_t max_lum)
 {
-	ColorProfileMessage* msg = (ColorProfileMessage*)data;
+	Message* msg = (Message*)data;
 	ERR_FAIL_NULL(msg);
 
 	// The uint32 is multiplied by 10000 for precision.
@@ -9231,8 +9099,7 @@ void WaylandThread::_wp_pointer_gesture_pinch_on_update(void* data,
 		wl_fixed_t scale_delta = scale - ss->old_pinch_scale;
 		mg.gesture.factor = 1 + wl_fixed_to_double(scale_delta);
 
-		Ref<InputEventMessage> magnify_msg;
-		magnify_msg.instantiate();
+		Ref<Message> magnify_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 		magnify_msg->event = mg;
 
 		InputEvent pg = InputEvent::make_pan_gesture();
@@ -9244,8 +9111,7 @@ void WaylandThread::_wp_pointer_gesture_pinch_on_update(void* data,
 		pg.gesture.position = pd.position * win_scale;
 		pg.gesture.delta = Vector2(wl_fixed_to_double(dx), wl_fixed_to_double(dy));
 
-		Ref<InputEventMessage> pan_msg;
-		pan_msg.instantiate();
+		Ref<Message> pan_msg = memnew(Message(Message::TYPE_INPUT_EVENT));
 		pan_msg->event = pg;
 
 		wayland_thread->push_message(magnify_msg);
@@ -9528,8 +9394,7 @@ void WaylandThread::_wp_text_input_on_leave(
 		return;
 	}
 
-	Ref<IMEUpdateEventMessage> msg;
-	msg.instantiate();
+	Ref<Message> msg = memnew(Message(Message::TYPE_IME_UPDATE));
 	msg->id = ss->ime_window_id;
 	msg->text = String();
 	msg->selection = Vector2i();
@@ -9638,15 +9503,13 @@ void WaylandThread::_wp_text_input_on_done(
 	}
 
 	if (!ss->ime_text_commit.is_empty()) {
-		Ref<IMECommitEventMessage> msg;
-		msg.instantiate();
+		Ref<Message> msg = memnew(Message(Message::TYPE_IME_COMMIT));
 		msg->id = ss->ime_window_id;
 		msg->text = ss->ime_text_commit;
 		ss->wayland_thread->push_message(msg);
 	}
 	else {
-		Ref<IMEUpdateEventMessage> msg;
-		msg.instantiate();
+		Ref<Message> msg = memnew(Message(Message::TYPE_IME_UPDATE));
 		msg->id = ss->ime_window_id;
 		msg->text = ss->ime_text;
 		msg->selection = ss->ime_cursor;
@@ -10091,8 +9954,7 @@ void WaylandThread::window_state_update_size(WindowState* p_ws, int p_width, int
 		// FIXME: Actually resize the hint instead of centering it.
 		p_ws->wayland_thread->pointer_set_hint(scaled_size / 2);
 
-		Ref<WindowRectMessage> rect_msg;
-		rect_msg.instantiate();
+		Ref<Message> rect_msg = memnew(Message(Message::TYPE_WINDOW_RECT));
 		rect_msg->id = p_ws->id;
 		rect_msg->rect.position = scale_vector2i(p_ws->rect.position, win_scale);
 		rect_msg->rect.size = scaled_size;
@@ -10101,10 +9963,9 @@ void WaylandThread::window_state_update_size(WindowState* p_ws, int p_width, int
 	}
 
 	if (scale_changed) {
-		Ref<WindowEventMessage> dpi_msg;
-		dpi_msg.instantiate();
+		Ref<Message> dpi_msg = memnew(Message(Message::TYPE_WINDOW_EVENT));
 		dpi_msg->id = p_ws->id;
-		dpi_msg->event = DisplayServerEnums::WINDOW_EVENT_DPI_CHANGE;
+		dpi_msg->window_event = DisplayServerEnums::WINDOW_EVENT_DPI_CHANGE;
 		p_ws->wayland_thread->push_message(dpi_msg);
 	}
 }
@@ -12614,12 +12475,6 @@ bool WaylandThread::window_is_ready(DisplayServerEnums::WindowID p_window_id) co
 #ifdef Below
 #undef Below
 #endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/wayland_embedder.cpp
-// ============================================================================
-
-
 
 #ifdef WAYLAND_ENABLED
 
@@ -16165,13 +16020,7 @@ WaylandEmbedder::~WaylandEmbedder() {
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/rendering_context_driver_vulkan_wayland.cpp
-// ============================================================================
-
 #ifdef VULKAN_ENABLED
-
-
 
 #include <drivers/vulkan/godot_vulkan.h>
 
@@ -16205,10 +16054,6 @@ RenderingContextDriverVulkanWayland::~RenderingContextDriverVulkanWayland() {
 }
 
 #endif // VULKAN_ENABLED
-
-
-// --- Merged from platform/linuxbsd/wayland/egl_manager_wayland.cpp ---
-
 
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED
@@ -16294,12 +16139,6 @@ Vector<EGLint> EGLManagerWayland::_get_platform_context_attribs() const {
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/wayland/egl_manager_wayland_gles.cpp
-// ============================================================================
-
-
-
 #ifdef WAYLAND_ENABLED
 #ifdef EGL_ENABLED
 #ifdef GLES3_ENABLED
@@ -16383,37 +16222,6 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 #endif
 #endif // WAYLAND_ENABLED
 
-/**************************************************************************/
-/*  os_linuxbsd.cpp                                                       */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "main/splash.gen.h"
 #include "core/io/net_socket.h"
 #include "core/io/file_access.h"
@@ -16421,20 +16229,15 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 #include "servers/display/display_server.h"
 
 #ifdef SDL_ENABLED
-#include "core/os/os.h"
 #endif
 
 #ifdef X11_ENABLED
 #define Glyph X11Glyph
 #define Font X11Font
-// --- Inlined from platform/linuxbsd/x11/display_server_x11.h ---
 #ifdef X11_ENABLED
 
-#include "core/os/os.h"
 #include "core/os/mutex.h"
-#include "core/os/os.h"
 #include "core/os/mutex.h"
-#include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
@@ -16444,7 +16247,6 @@ Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
 #define Glyph X11Glyph
 
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xcursor-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XCURSOR
 #define DYLIBLOAD_WRAPPER_XCURSOR
 // This file is generated. Do not edit!
@@ -16699,7 +16501,6 @@ int initialize_xcursor(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xinput2-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XINPUT2
 #define DYLIBLOAD_WRAPPER_XINPUT2
 // This file is generated. Do not edit!
@@ -16854,7 +16655,6 @@ int initialize_xinput2(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xlib-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XLIB
 #define DYLIBLOAD_WRAPPER_XLIB
 // This file is generated. Do not edit!
@@ -19291,7 +19091,6 @@ int initialize_xlib(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xrandr-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XRANDR
 #define DYLIBLOAD_WRAPPER_XRANDR
 // This file is generated. Do not edit!
@@ -20024,7 +19823,6 @@ public:
 	virtual int64_t window_get_native_handle(DisplayServerEnums::HandleType p_handle_type,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) const override;
 
-
 	virtual void window_set_title(const String& p_title,
 		DisplayServerEnums::WindowID p_window = DisplayServerEnums::MAIN_WINDOW_ID) override;
 	virtual void window_set_mouse_passthrough(const Vector<Vector2>& p_region,
@@ -20165,7 +19963,6 @@ public:
 
 #endif // X11_ENABLED
 
-// --- Folded from platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---
 #ifdef VULKAN_ENABLED
 
 #include "servers/display/display_server.h"
@@ -20191,9 +19988,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-// --- End platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.h ---
-
-// --- Folded from platform/linuxbsd/x11/gl_manager_x11.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 #include "core/math/vector2.h"
@@ -20309,7 +20103,6 @@ public:
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-// --- Folded from platform/linuxbsd/x11/gl_manager_x11_egl.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 #include "servers/display/display_server.h"
@@ -20333,9 +20126,6 @@ public:
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-// --- End platform/linuxbsd/x11/gl_manager_x11_egl.h ---
-
-// --- Folded from platform/linuxbsd/x11/detect_prime_x11.h ---
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 class DetectPrimeX11 {
@@ -20365,9 +20155,6 @@ public:
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-// --- End platform/linuxbsd/x11/detect_prime_x11.h ---
-// --- End platform/linuxbsd/x11/display_server_x11.h ---
-
 #undef Font
 #undef Glyph
 #undef None
@@ -20381,12 +20168,10 @@ public:
 
 #ifdef WAYLAND_ENABLED
 
-
 #endif
 
 #include "core/version_generated.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
-#include "core/os/os.h"
 #endif
 
 #if defined(RD_ENABLED)
@@ -20423,7 +20208,6 @@ public:
 
 #ifdef FONTCONFIG_ENABLED
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from platform/linuxbsd/fontconfig-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_FONTCONFIG
 #define DYLIBLOAD_WRAPPER_FONTCONFIG
 // This file is generated. Do not edit!
@@ -21339,7 +21123,7 @@ void OS::initialize()
 {
 	OS_LinuxBSD::initialize();
 	Vector<Logger*> loggers;
-	loggers.push_back(memnew(StdLogger));
+	loggers.push_back(memnew(Logger));
 	_set_logger(memnew(CompositeLogger(loggers)));
 	_initialized = true;
 }
@@ -22854,13 +22638,6 @@ void OS::finalize()
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/crash_handler_linuxbsd.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "core/string/ustring.h"
 #include "core/typedefs.h"
 #include "servers/display/display_server.h"
@@ -22903,7 +22680,6 @@ inline String find_addr2line_executable()
 	// Fallback guess if none of the above returned a definitive result.
 	return String("addr2line");
 }
-
 
 #endif
 
@@ -22977,18 +22753,10 @@ void CrashHandler::initialize() {}
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/freedesktop_portal_desktop.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef DBUS_ENABLED
 
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
@@ -23579,15 +23347,9 @@ void FreeDesktopPortalDesktop::_thread_monitor(void* p_userdata) {}
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/freedesktop_screensaver.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef DBUS_ENABLED
-
-#include "core/os/os.h"
 
 #ifdef SOWRAP_ENABLED
 #include "servers/display/display_server.h"
@@ -23638,8 +23400,6 @@ void FreeDesktopScreenSaver::uninhibit()
 FreeDesktopScreenSaver::FreeDesktopScreenSaver() {}
 
 #endif // DBUS_ENABLED
-
-
 
 void FreeDesktopScreenSaver::inhibit() {}
 
@@ -23700,10 +23460,6 @@ void FreeDesktopScreenSaver::inhibit() {}
 #ifdef Below
 #undef Below
 #endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/freedesktop_at_spi_monitor.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -23909,13 +23665,8 @@ FreeDesktopAtSPIMonitor::~FreeDesktopAtSPIMonitor() {
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from platform/linuxbsd/tts_linux.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void TTS_Linux::_speech_index_mark(int p_msg_id, int p_type, const String& p_index_mark)
@@ -24131,8 +23882,6 @@ void TTS_Linux::finalize()
 
 void TTS_Linux::speech_init_thread_func(void* p_userdata) {}
 
-
-// --- Merged from platform/linuxbsd/godot_linuxbsd.cpp ---
 #if !defined(LIBGODOT_ENABLED)
 #include <clocale>
 #include <cstdio>
@@ -24246,8 +23995,6 @@ int main(int argc, char* argv[])
 }
 #endif // !defined(LIBGODOT_ENABLED)
 
-
-// --- Merged from platform/linuxbsd/libgodot_linuxbsd.cpp ---
 #if defined(LIBGODOT_ENABLED)
 #include "servers/display/display_server.h"
 
@@ -24291,54 +24038,14 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 }
 #endif // defined(LIBGODOT_ENABLED)
 
-// === Merged from platform/linuxbsd/x11/display_server_x11.cpp ===
-/*  display_server_x11.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-
 #ifdef X11_ENABLED
 
 #include <X11/Xatom.h>
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/io/net_socket.h"
 #pragma push_macro("Status")
 #undef Status
 #include "servers/display/display_server.h"
 #pragma pop_macro("Status")
 #include "servers/display/display_server.h"
-// --- Inlined from platform/linuxbsd/x11/key_mapping_x11.h ---
-#include "core/os/os.h"
 #include "core/io/ip.h"
 
 #ifdef KEY_0
@@ -24459,10 +24166,7 @@ public:
 	static KeyLocation get_location(unsigned int p_code);
 };
 
-// --- End platform/linuxbsd/x11/key_mapping_x11.h ---
-
 #ifdef SOWRAP_ENABLED
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xext-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XEXT
 #define DYLIBLOAD_WRAPPER_XEXT
 // This file is generated. Do not edit!
@@ -24526,7 +24230,6 @@ int initialize_xext(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xinerama-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XINERAMA
 #define DYLIBLOAD_WRAPPER_XINERAMA
 // This file is generated. Do not edit!
@@ -24561,7 +24264,6 @@ int initialize_xinerama(int verbose);
 }
 #endif
 #endif
-// --- Inlined/Folded from platform/linuxbsd/x11/dynwrappers/xrender-so_wrap.h ---
 #ifndef DYLIBLOAD_WRAPPER_XRENDER
 #define DYLIBLOAD_WRAPPER_XRENDER
 // This file is generated. Do not edit!
@@ -31347,13 +31049,10 @@ void DisplayServerX11::process_events()
 #ifdef ABSDIFF
 #undef ABSDIFF
 #endif
-// --- Merged from platform/linuxbsd/x11/gl_manager_x11.cpp ---
-#include "core/os/os.h"
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 #include <thirdparty/glad/glad/glx.h>
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #ifdef SOWRAP_ENABLED
@@ -31787,11 +31486,6 @@ GLManager_X11::~GLManager_X11() { release_current(); }
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-// ============================================================================
-// Merged from platform/linuxbsd/x11/gl_manager_x11_egl.cpp
-// ============================================================================
-
-
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 const char *GLManagerEGL_X11::_get_platform_extension_name() const {
@@ -31821,10 +31515,6 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-// ============================================================================
-// Merged from platform/linuxbsd/x11/detect_prime_x11.cpp
-// ============================================================================
-
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
 #define glXCreateContextAttribsARB glad_glXCreateContextAttribsARB
@@ -31832,7 +31522,6 @@ Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
 #include "servers/display/display_server.h"
 #include <thirdparty/glad/glad/glx.h>
 #include "core/io/ip.h"
-#include "core/string/ustring.h"
 #include "core/io/ip.h"
 
 #ifdef SOWRAP_ENABLED
@@ -32114,11 +31803,6 @@ int DetectPrimeX11::detect_prime()
 #ifdef Below
 #undef Below
 #endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/x11/key_mapping_x11.cpp
-// ============================================================================
-
 
 void KeyMappingX11::initialize() {
 	// X11 Keysym to Godot Key map.
@@ -33383,10 +33067,6 @@ KeyLocation KeyMappingX11::get_location(unsigned int p_code) {
 #ifdef Below
 #undef Below
 #endif
-
-// ============================================================================
-// Merged from platform/linuxbsd/x11/rendering_context_driver_vulkan_x11.cpp
-// ============================================================================
 
 #ifdef VULKAN_ENABLED
 

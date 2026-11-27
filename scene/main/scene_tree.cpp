@@ -34,7 +34,6 @@
 
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -1066,15 +1065,9 @@ bool SceneTree::process(double p_time)
 	return data ? data->_quit : true;
 }
 
-// ==========================================================================
-// Merged from scene/main/scene_tree_fti.cpp
-// ==========================================================================
-
 #ifndef _3D_DISABLED
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #ifdef GODOT_SCENE_TREE_FTI_VERIFY
@@ -1486,10 +1479,6 @@ void SceneTreeFTI::_reset_flags(Node*) {}
 
 #endif // ndef _3D_DISABLED
 
-// ==========================================================================
-// Merged from scene/main/scene_tree_fti_tests.cpp
-// ==========================================================================
-
 #ifndef _3D_DISABLED
 
 #ifdef GODOT_SCENE_TREE_FTI_VERIFY
@@ -1733,13 +1722,8 @@ SceneTreeFTITests::SceneTreeFTITests()
 
 #endif // ndef _3D_DISABLED
 
-// ==========================================================================
-// Merged from scene/main/multiplayer_api.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/io/net_socket.h"
 #include "core/version_generated.gen.h"
 
 String MultiplayerAPI::default_interface;
@@ -1829,11 +1813,6 @@ int MultiplayerAPI::get_max_delta_packet_size() const { return 0; }
 
 #endif // MODULE_MULTIPLAYER_ENABLED
 
-// ==========================================================================
-// Merged from scene/main/multiplayer_peer.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 uint32_t MultiplayerPeer::generate_unique_id() const
@@ -1871,58 +1850,10 @@ bool MultiplayerPeer::is_refusing_new_connections() const { return refuse_connec
 
 bool MultiplayerPeer::is_server_relay_supported() const { return false; }
 
-
 /*************/
 
-Error MultiplayerPeerExtension::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	if (script_buffer.is_empty()) {
-		return Error::ERR_UNAVAILABLE;
-	}
-
-	*r_buffer = script_buffer.ptr();
-	r_buffer_size = script_buffer.size();
-
-	return Error::OK;
-}
-
-Error MultiplayerPeerExtension::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_COND_V(p_buffer_size < 0, ERR_INVALID_PARAMETER);
-	PackedByteArray a;
-	a.resize(p_buffer_size);
-	memcpy(a.ptrw(), p_buffer, p_buffer_size);
-
-	WARN_PRINT_ONCE("MultiplayerPeerExtension::_put_packet_native is unimplemented!");
-	return FAILED;
-}
-
-void MultiplayerPeerExtension::set_refuse_new_connections(bool p_enable)
-{
-	MultiplayerPeer::set_refuse_new_connections(p_enable);
-}
-
-bool MultiplayerPeerExtension::is_refusing_new_connections() const
-{
-	return MultiplayerPeer::is_refusing_new_connections();
-}
-
-bool MultiplayerPeerExtension::is_server_relay_supported() const
-{
-	return MultiplayerPeer::is_server_relay_supported();
-}
-
-// ==========================================================================
-// Merged from scene/main/http_request.cpp
-// ==========================================================================
-
-#include "core/io/net_socket.h"
 #include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "core/os/mutex.h"
-// --- Inlined from scene/main/http_request.h ---
-#include "core/io/net_socket.h"
 #include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
@@ -2070,9 +2001,6 @@ public:
 	HTTPRequest();
 };
 
-
-
-// --- End scene/main/http_request.h ---
 #include "servers/display/display_server.h"
 
 Error HTTPRequest::_request()
@@ -2674,18 +2602,10 @@ void HTTPRequest::set_tls_options(const Ref<TLSOptions>& p_options)
 void HTTPRequest::_defer_done(int p_status, int p_code, const PackedStringArray& p_headers,
 	const PackedByteArray& p_data) {}
 
-// ============================================================================
-// Merged from scene/main/node.cpp
-// ============================================================================
-
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -4697,11 +4617,6 @@ void Node::_add_child_nocheck(Node* p_child, const String& p_name, InternalMode 
 	notification(NOTIFICATION_CHILD_ORDER_CHANGED);
 }
 
-// ==========================================================================
-// Merged from scene/main/instance_placeholder.cpp
-// ==========================================================================
-
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 void InstancePlaceholder::set_instance_path(const String& p_name) { path = p_name; }
@@ -4723,63 +4638,9 @@ Node* InstancePlaceholder::try_get_node(
 
 InstancePlaceholder::InstancePlaceholder() {}
 
-// ==========================================================================
-// Merged from scene/main/missing_node.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-void MissingNode::set_original_class(const String& p_class) { original_class = p_class; }
-
-String MissingNode::get_original_class() const { return original_class; }
-
-void MissingNode::set_original_scene(const String& p_scene) { original_scene = p_scene; }
-
-String MissingNode::get_original_scene() const { return original_scene; }
-
-void MissingNode::set_recording_properties(bool p_enable) { recording_properties = p_enable; }
-
-bool MissingNode::is_recording_properties() const { return recording_properties; }
-
-void MissingNode::set_recording_signals(bool p_enable) { recording_signals = p_enable; }
-
-bool MissingNode::is_recording_signals() const { return recording_signals; }
-
-PackedStringArray MissingNode::get_configuration_warnings() const
-{
-	// The mere existence of this node is warning.
-	PackedStringArray warnings = Node::get_configuration_warnings();
-	if (!original_scene.is_empty()) {
-		warnings.push_back(vformat(RTR("This node was an instance of scene '%s', which was no "
-									   "longer available when this scene was loaded."),
-			original_scene));
-		warnings.push_back(
-			vformat(RTR("Saving current scene will discard instance and all its properties, "
-						"including editable children edits (if existing).")));
-	}
-	else if (!original_class.is_empty()) {
-		warnings.push_back(vformat(RTR("This node was saved as class type '%s', which was no "
-									   "longer available when this scene was loaded."),
-			original_class));
-		warnings.push_back(
-			RTR("Data from the original node is kept as a placeholder until this type of node is "
-				"available again. It can hence be safely re-saved without risk of data loss."));
-	}
-	else {
-		warnings.push_back(
-			RTR("Unrecognized missing node. Check scene dependency errors for details."));
-	}
-	return warnings;
-}
-
-MissingNode::MissingNode() {}
-
-// ==========================================================================
-// Merged from scene/main/resource_preloader.cpp
-// ==========================================================================
-
 #include "core/templates/rb_set.h"
-// --- Inlined from scene/main/resource_preloader.h ---
 #include "servers/display/display_server.h"
 
 class ResourcePreloader : public Node
@@ -4801,10 +4662,6 @@ public:
 
 	ResourcePreloader();
 };
-
-
-
-// --- End scene/main/resource_preloader.h ---
 
 void ResourcePreloader::rename_resource(const String& p_from_name, const String& p_to_name)
 {
@@ -4847,20 +4704,12 @@ void ResourcePreloader::get_resource_list(List<String>* p_list)
 	}
 }
 
-
 ResourcePreloader::ResourcePreloader() {}
-
-
 
 void ResourcePreloader::add_resource(String const&, Ref<Resource> const&) {}
 
-// ==========================================================================
-// Merged from scene/main/shader_globals_override.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/main/shader_globals_override.h ---
 #include "servers/display/display_server.h"
 
 class ShaderGlobalsOverride : public Node {
@@ -4878,8 +4727,6 @@ protected:
 public:
 	PackedStringArray get_configuration_warnings() const override;
 };
-
-// --- End scene/main/shader_globals_override.h ---
 
 String* ShaderGlobalsOverride::_remap(const String& p_name) const
 {
@@ -4909,11 +4756,6 @@ PackedStringArray ShaderGlobalsOverride::get_configuration_warnings() const
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/main/timer.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void Timer::set_wait_time(double p_time)
@@ -5016,13 +4858,8 @@ PackedStringArray Timer::get_configuration_warnings() const
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/main/status_indicator.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/main/status_indicator.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -5054,8 +4891,6 @@ public:
 
 	Rect2 get_rect() const;
 };
-
-// --- End scene/main/status_indicator.h ---
 
 void StatusIndicator::set_icon(const Ref<Texture2D>& p_icon)
 {
@@ -5090,10 +4925,6 @@ Rect2 StatusIndicator::get_rect() const
 	}
 	return DisplayServer::status_indicator_get_rect(iid);
 }
-
-// ============================================================================
-// Merged from scene/main/canvas_item.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -6278,10 +6109,6 @@ void CanvasItem::_bind_compatibility_methods() {}
 
 #undef ERR_DRAW_GUARD
 
-// ==========================================================================
-// Merged from scene/main/canvas_layer.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -6634,17 +6461,10 @@ void CanvasLayer::set_visible(bool) {}
 
 void CanvasLayer::set_custom_viewport(Node*) {}
 
-// ============================================================================
-// Merged from scene/main/viewport.cpp
-// ============================================================================
-
 #include <execinfo.h>
 #include <unistd.h>
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "core/math/vector2.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -9210,14 +9030,7 @@ void Viewport::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-
-
-// ============================================================================
-// Merged from scene/main/window.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -10898,7 +10711,6 @@ void Window::_notify_theme_override_changed() {}
 
 bool Window::is_layout_rtl() const {}
 
-
 void Window::set_visible(bool) {}
 
 Ref<Font> Window::get_theme_font(String const&, String const&) const {}
@@ -10931,8 +10743,6 @@ void Window::_accessibility_notify_enter(Node*) {}
 
 Size2 Window::_get_contents_minimum_size() const { return Size2(); }
 
-
-// --- Merged from scene/register_scene_types.cpp ---
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
@@ -10942,20 +10752,11 @@ Size2 Window::_get_contents_minimum_size() const { return Size2(); }
 static Ref<ResourceFormatSaverText> resource_saver_text;
 static Ref<ResourceFormatLoaderText> resource_loader_text;
 
-static Ref<ResourceFormatLoaderCompressedTexture> resource_loader_compressed_texture;
-
-static Ref<ResourceFormatSaverShader> resource_saver_shader;
-static Ref<ResourceFormatLoaderShader> resource_loader_shader;
-
 void unregister_scene_types() { SceneStrings::finalize(); }
 
 void register_scene_types() { SceneStrings::initialize(); }
 
 void register_scene_singletons() {}
-
-// ==========================================================================
-// Merged from scene/property_list_helper.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -11006,13 +10807,6 @@ bool PropertyListHelper::is_property_valid(const String& p_property, int* r_inde
 
 void PropertyListHelper::clear() {}
 
-// ==========================================================================
-// Merged from scene/property_utils.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 // Like SceneState::PackState, but using a raw pointer to avoid the cost of
@@ -11052,10 +10846,6 @@ static bool _collect_inheritance_chain(const Ref<SceneState>& p_state, const Nod
 
 	return found;
 }
-
-// ============================================================================
-// Merged from scene/audio/audio_stream_player.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -11230,11 +11020,6 @@ void AudioStreamPlayerInternal::process() {}
 
 void AudioStreamPlayerInternal::notification(int) {}
 
-// ==========================================================================
-// Merged from scene/audio/audio_stream_player_internal.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -11359,21 +11144,13 @@ String AudioStreamPlayerInternal::get_bus() const
 	return SceneString(Master);
 }
 
-// ============================================================================
-// Merged from scene/theme/theme_db.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/theme/default_theme.h ---
 #include "servers/display/display_server.h"
 
 void fill_default_theme(Ref<Theme> &theme, const Ref<Font> &default_font, const Ref<Font> &bold_font, const Ref<Font> &bold_italics_font, const Ref<Font> &italics_font, Ref<Texture2D> &default_icon, Ref<StyleBox> &default_style, float p_scale);
 void make_default_theme(float p_scale, Ref<Font> p_font, TextServer::SubpixelPositioning p_font_subpixel = TextServer::SUBPIXEL_POSITIONING_AUTO, TextServer::Hinting p_font_hinting = TextServer::HINTING_LIGHT, TextServer::FontAntialiasing p_font_antialiased = TextServer::FONT_ANTIALIASING_GRAY, bool p_font_msdf = false, bool p_font_generate_mipmaps = false);
 
-// --- End scene/theme/default_theme.h ---
 #include "servers/display/display_server.h"
 
 void ThemeDB::initialize()
@@ -11855,8 +11632,6 @@ int ThemeOwner::get_theme_default_font_size()
 	return ThemeDB::get_fallback_font_size();
 }
 
-
-
 void ThemeOwner::set_owner_node(Node*) {}
 
 void ThemeOwner::set_owner_context(ThemeContext*, bool) {}
@@ -11866,8 +11641,6 @@ void ThemeOwner::propagate_theme_changed(Node*, Node*, bool, bool) {}
 void ThemeContext::set_themes(Vector<Ref<Theme>>&) {}
 
 // --- default_theme.cpp ---
-
-#include "core/io/net_socket.h"
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -11989,8 +11762,6 @@ void fill_default_theme(Ref<Theme>& r_theme, const Ref<Font>& p_font, const Ref<
 {
 }
 
-
-// --- Merged from scene/animation/animation_tree.cpp ---
 // --- animation_tree.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
@@ -12018,7 +11789,6 @@ void AnimationTree::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 thread_local AnimationNode::ProcessState* AnimationNode::tls_process_state = nullptr;
@@ -12642,10 +12412,6 @@ void AnimationNode::get_argument_options(
 {
 }
 
-// ==========================================================================
-// Merged from scene/animation/animation_blend_space.cpp
-// ==========================================================================
-// --- Inlined from scene/animation/animation_blend_space.h ---
 #include "servers/display/display_server.h"
 
 class AnimationNodeBlendSpace final : public AnimationNode
@@ -12838,7 +12604,6 @@ public:
 	}
 };
 
-// --- End scene/animation/animation_blend_space.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -13457,12 +13222,7 @@ void AnimationNodeBlendSpace::_update_triangles() {}
 
 void AnimationNodeBlendSpace::_queue_auto_triangles() {}
 
-// ==========================================================================
-// Merged from scene/animation/animation_blend_tree.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 LocalVector<String> (*AnimationNodeBlendNode::get_editable_animation_list)() = nullptr;
@@ -14045,11 +13805,6 @@ AnimationNodeBlendTree::AnimationNodeBlendTree()
 
 void AnimationNodeBlendTree::reset_state() {}
 
-// ==========================================================================
-// Merged from scene/animation/animation_node_state_machine.cpp
-// ==========================================================================
-// --- Inlined from scene/animation/animation_node_state_machine.h ---
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -14381,11 +14136,6 @@ public:
 
 	AnimationNodeStateMachinePlayback();
 };
-
-
-
-// --- End scene/animation/animation_node_state_machine.h ---
-#include "core/os/os.h"
 
 /////////////////////////////////////////////////
 
@@ -15683,13 +15433,7 @@ AnimationNode::NodeTimeInfo AnimationNodeStateMachine::_process(
 	return AnimationNode::NodeTimeInfo();
 }
 
-// ============================================================================
-// Merged from scene/animation/animation_mixer.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -16253,10 +15997,6 @@ uint32_t AnimationMixer::_get_libraries_property_usage() const { return 0; }
 
 void AnimationMixer::_blend_post_process() {}
 
-// ==========================================================================
-// Merged from scene/animation/animation_player.cpp
-// ==========================================================================
-
 // --- animation_player.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
@@ -16321,7 +16061,6 @@ void AnimationPlayer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void AnimationPlayer::_notification(int p_what)
@@ -17007,14 +16746,8 @@ bool AnimationPlayer::_blend_pre_process(
 
 void AnimationPlayer::_blend_post_process() {}
 
-// ==========================================================================
-// Merged from scene/animation/root_motion_view.cpp
-// ==========================================================================
-
 #ifndef _3D_DISABLED
 
-#include "core/os/os.h"
-// --- Inlined from scene/animation/root_motion_view.h ---
 #include "servers/display/display_server.h"
 
 class RootMotionView : public Node3D {
@@ -17065,7 +16798,6 @@ public:
 	~RootMotionView();
 };
 
-// --- End scene/animation/root_motion_view.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -17110,7 +16842,6 @@ AABB RootMotionView::get_aabb() const
 	return AABB(Vector3(-radius, 0, -radius), Vector3(radius * 2, 0.001, radius * 2));
 }
 
-
 void RootMotionView::_notification(int p_what)
 {
 	render_instance.notification(this, p_what);
@@ -17134,12 +16865,7 @@ RootMotionView::~RootMotionView() { set_base(RID()); }
 
 #endif // _3D_DISABLED
 
-// ============================================================================
-// Merged from scene/animation/tween.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-// --- Inlined from scene/animation/easing_equations.h ---
 #include "core/typedefs.h"
 
 /*
@@ -17553,7 +17279,6 @@ inline real_t out_in(real_t t, real_t b, real_t c, real_t d) {
 }
 }; // namespace Spring
 
-// --- End scene/animation/easing_equations.h ---
 #include "servers/display/display_server.h"
 
 #define CHECK_VALID()                                                                              \
@@ -18029,52 +17754,16 @@ Tweener::Tweener(Type p_type, double p_duration) : type(p_type), duration(p_dura
 
 Tweener::Tweener(const Ref<Tween>& p_subtween) : subtween(p_subtween), type(TWEENER_SUBTWEEN) {}
 
-// === Merged from scene/gui/dialogs.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
-#include "core/os/os.h"
 #endif
 
 void DialogChrome::init_controls(Window* p_owner)
@@ -19000,7 +18689,6 @@ void FileDialog::_item_menu_id_pressed(int p_id) {}
 // --- file_dialog.compat.inc ---
 
 #ifndef DISABLE_DEPRECATED
-
 
 void FileDialog::_add_filter_bind_compat_111439(const String& p_filter, const String& p_description)
 {
@@ -20661,7 +20349,6 @@ void PopupMenu::add_child_notify(Node* p_child) {}
 
 #ifndef DISABLE_DEPRECATED
 
-
 void PopupMenu::_add_shortcut_bind_compat_36493(
 	const Ref<Shortcut>& p_shortcut, int p_id, bool p_global)
 {
@@ -20710,26 +20397,17 @@ void PopupMenu::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from scene/gui/color_picker.cpp
-// ============================================================================
-
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/math/vector2.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include <thirdparty/misc/ok_color_shader.h>
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifdef MACOS_ENABLED
-#include "core/os/os.h"
 #endif
 
 // --- color_mode (flattened internal helper) ---
@@ -22635,18 +22313,10 @@ void ColorRect::set_color(const Color& p_color)
 	queue_redraw(); // Statically calls ColorRect::queue_redraw()
 }
 
-// ============================================================================
-// Merged from scene/gui/graph_edit.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include <cfloat>
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -23292,7 +22962,6 @@ Vector<String> GraphEdit::get_attached_nodes_of_frame(const String& p_graph_fram
 
 #ifndef DISABLE_DEPRECATED
 
-
 bool GraphEdit::_is_arrange_nodes_button_hidden_bind_compat_81582() const
 {
 	return !is_showing_arrange_button();
@@ -23418,8 +23087,6 @@ HashMap<int, Vector<String>> GraphEditArranger::_layering(
 	return l;
 }
 
-
-
 void GraphEditArranger::arrange_nodes() {}
 
 // --- view_panner.cpp ---
@@ -23478,8 +23145,6 @@ bool ViewPanner::is_panning() const
 }
 
 void ViewPanner::set_force_drag(bool p_force) { force_drag = p_force; }
-
-
 
 bool ViewPanner::gui_input(const InputEvent&, Rect2) { return false; }
 
@@ -24149,14 +23814,7 @@ void GraphNode::_resort()
 	}
 }
 
-// ============================================================================
-// Merged from scene/gui/tree.cpp
-// ============================================================================
-
 #include <climits>
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -27463,8 +27121,6 @@ void Tree::update_item_cell(TreeItem* p_item, int p_col) const {}
 
 void Tree::clear() {}
 
-
-
 void Tree::set_column_title(int, String const&) {}
 
 void Tree::item_selected(int, TreeItem*, bool) {}
@@ -27505,28 +27161,20 @@ void Tree::_determine_hovered_item() {}
 
 #ifndef DISABLE_DEPRECATED
 
-
 void TreeItem::_select_bind_compat_119367(int p_column) { select(p_column, true); }
 
 void TreeItem::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from scene/gui/label.cpp
-// ============================================================================
-
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/gui/video_stream_player.h ---
+#include "servers/display/display_server.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -27617,10 +27265,6 @@ public:
 	~VideoStreamPlayer();
 };
 
-
-
-// --- End scene/gui/video_stream_player.h ---
-// --- Inlined from scene/gui/virtual_joystick.h ---
 #include "servers/display/display_server.h"
 
 class VirtualJoystick : public Control
@@ -27712,10 +27356,6 @@ public:
 	void set_visibility_mode(VisibilityMode p_mode);
 	VisibilityMode get_visibility_mode() const;
 };
-
-
-
-// --- End scene/gui/virtual_joystick.h ---
 
 #ifdef TOOLS_ENABLED
 #include "servers/display/display_server.h"
@@ -29646,7 +29286,6 @@ void LineEdit::delete_text(int p_from_column, int p_to_column) {}
 
 void LineEdit::_shape() {}
 
-
 void LineEdit::set_right_icon(Ref<Texture2D> const&) {}
 
 void LineEdit::set_placeholder(String) {}
@@ -29678,7 +29317,6 @@ String LineEdit::_get_accessibility_name() const { return String(); }
 // --- line_edit.compat.inc ---
 
 #ifndef DISABLE_DEPRECATED
-
 
 void LineEdit::_edit_bind_compat_111117() { edit(false); }
 
@@ -30076,7 +29714,6 @@ ItemList::~ItemList() {}
 void ItemList::set_item_icon(int p_idx, const Ref<Texture2D>& p_icon) {}
 
 void ItemList::deselect_all() {}
-
 
 void ItemList::set_scroll_hint_mode(ItemList::ScrollHintMode) {}
 
@@ -30549,8 +30186,6 @@ VideoStreamPlayer::~VideoStreamPlayer()
 	resampler.clear();
 }
 
-
-
 void VideoStreamPlayer::_notification(int) {}
 
 // --- virtual_joystick.cpp ---
@@ -30680,18 +30315,8 @@ void VirtualJoystick::set_visibility_mode(VisibilityMode p_mode) { visibility = 
 
 VirtualJoystick::VisibilityMode VirtualJoystick::get_visibility_mode() const { return visibility; }
 
-// ============================================================================
-// Merged from scene/gui/rich_text_label.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "core/version_generated.gen.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/gui/rich_text_effect.h ---
-#include "core/io/ip.h"
 
 class CharFXTransform : public RefCounted
 {
@@ -30769,14 +30394,10 @@ public:
 	RichTextEffect();
 };
 
-
-
-// --- End scene/gui/rich_text_effect.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifdef MODULE_REGEX_ENABLED
-#include "core/os/os.h"
 #endif
 
 RichTextLabel::ImageData::~ImageData() = default;
@@ -33264,7 +32885,6 @@ Control::CursorShape RichTextLabel::get_cursor_shape(const Vector2& p_pos) const
 
 #ifndef DISABLE_DEPRECATED
 
-
 void RichTextLabel::_push_font_bind_compat_79053(const Ref<Font>& p_font, int p_size)
 {
 	push_font(p_font, p_size);
@@ -33280,10 +32900,6 @@ RichTextEffect::RichTextEffect() {}
 
 bool RichTextEffect::_process_effect_impl(Ref<CharFXTransform> p_cfx) { return false; }
 
-
-// --- Merged from scene/gui/text_edit.cpp ---
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -39519,7 +39135,6 @@ void TextEdit::_code_text_changed() {}
 
 #ifndef DISABLE_DEPRECATED
 
-
 void TextEdit::_set_selection_mode_bind_compat_86978(
 	SelectionMode p_mode, int p_line, int p_column, int p_caret)
 {
@@ -39536,39 +39151,7 @@ void TextEdit::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// === Merged from scene/resources/mesh.cpp ===
-/*  mesh.cpp                                                              */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -41069,7 +40652,6 @@ AABB ImmediateMesh::get_aabb() const
 	return aabb;
 }
 
-
 RID ImmediateMesh::get_rid() const { return mesh; }
 
 ImmediateMesh::ImmediateMesh() { mesh = Renderer::mesh_create(); }
@@ -41479,7 +41061,6 @@ void MultiMesh::set_transform_format(TransformFormat p_transform_format)
 
 MultiMesh::TransformFormat MultiMesh::get_transform_format() const { return transform_format; }
 
-
 MultiMesh::MultiMesh() { multimesh = Renderer::multimesh_create(); }
 
 MultiMesh::~MultiMesh()
@@ -41489,7 +41070,6 @@ MultiMesh::~MultiMesh()
 }
 
 // --- mesh_data_tool.cpp ---
-// --- Inlined from scene/resources/mesh_data_tool.h ---
 #include "servers/display/display_server.h"
 
 class MeshDataTool : public RefCounted
@@ -41587,10 +41167,6 @@ public:
 
 	MeshDataTool();
 };
-
-
-
-// --- End scene/resources/mesh_data_tool.h ---
 
 void MeshDataTool::clear()
 {
@@ -41769,8 +41345,6 @@ void MeshDataTool::set_material(const Ref<Material>& p_material) { material = p_
 
 MeshDataTool::MeshDataTool() { clear(); }
 
-
-
 Error MeshDataTool::commit_to_surface(Ref<ArrayMesh> const&, unsigned long) {}
 
 // --- mesh_data_tool.compat.inc ---
@@ -41787,7 +41361,6 @@ void MeshDataTool::_bind_compatibility_methods() {}
 
 // --- surface_tool.cpp ---
 
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #define EQ_VERTEX_DIST 0.00001
@@ -42598,8 +42171,6 @@ SurfaceTool::SurfaceTool()
 	}
 }
 
-
-
 void SurfaceTool::_create_list(Ref<Mesh> const&, int, LocalVector<SurfaceTool::Vertex, unsigned int, false, false>*, LocalVector<int, unsigned int, false, false>*, unsigned long&) {}
 
 Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}
@@ -42608,14 +42179,6 @@ Ref<ArrayMesh> SurfaceTool::commit(Ref<ArrayMesh> const&, unsigned long) {}
 #undef EQ_VERTEX_DIST
 #endif
 
-// ============================================================================
-// Merged from scene/resources/packed_scene.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifndef _3D_DISABLED
@@ -43226,8 +42789,6 @@ void PackedScene::reload_from_file() {}
 
 // --- resource_format_text.cpp ---
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 void ResourceLoaderText::_printerr()
@@ -43606,7 +43167,6 @@ Error ResourceFormatSaverTextInstance::save(String const&, Ref<Resource> const&,
 // --- audio_stream_wav.cpp ---
 
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
 
 const float TRIM_DB_LIMIT = -50;
 const int TRIM_FADE_OUT_FRAMES = 500;
@@ -44276,15 +43836,7 @@ int VideoStreamPlayback::get_mix_rate() const { return 0; }
 
 #endif // MODULE_THEORA_ENABLED
 
-// ============================================================================
-// Merged from scene/resources/2d/tile_set.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
-#include "core/templates/rb_set.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -48662,13 +48214,8 @@ void TileData::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from scene/resources/2d/skeleton/skeleton_modification_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 // --- Per-mode payload structs ---
@@ -50503,7 +50050,6 @@ Ref<SkeletonModificationStack2D> SkeletonModification2D::get_held_modification_s
 
 #include "servers/display/display_server.h"
 
-
 void SkeletonModificationStack2D::setup() {
 	if (is_setup) {
 		return;
@@ -50673,12 +50219,7 @@ void Skeleton2D::execute_modifications(real_t p_delta, int p_execution_mode) {
 	modification_stack->execute(p_delta, p_execution_mode);
 }
 
-// ============================================================================
-// Merged from scene/resources/animation.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
 
 void Animation::reset_state() { clear(); }
 
@@ -53619,7 +53160,6 @@ void AnimationLibrary::get_argument_options(
 // --- bone_map.cpp ---
 
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 
 Ref<SkeletonProfile> BoneMap::get_profile() const { return profile; }
 
@@ -53701,13 +53241,10 @@ BoneMap::BoneMap() { _validate_bone_map(); }
 
 BoneMap::~BoneMap() {}
 
-
-
 void BoneMap::set_skeleton_bone_name(String const&, String const&) {}
 
 // --- skeleton_profile.cpp ---
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 String SkeletonProfile::get_root_bone() { return root_bone; }
@@ -54222,8 +53759,6 @@ SkeletonProfile::~SkeletonProfile() {}
 
 //////////////////////////////////////
 
-
-
 void SkeletonProfile::set_reference_pose(int, Transform3D const&) {}
 
 void SkeletonProfile::set_handle_offset(int, Vector2 const&) {}
@@ -54236,16 +53771,11 @@ void SkeletonProfile::set_bone_parent(int, String const&) {}
 
 void SkeletonProfile::set_bone_name(int, String const&) {}
 
-
-// --- Merged from scene/resources/3d/primitive_meshes.cpp ---
 #if !defined(_3D_DISABLED)
 #include "servers/display/display_server.h"
 
 #include <thirdparty/misc/polypartition.h>
 
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #define PADDING_REF_SIZE 1024.0
@@ -55358,8 +54888,6 @@ bool PrimitiveMesh::is_uppercase() const { return _get_text_state().uppercase; }
 
 // --- importer_mesh.cpp ---
 
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
@@ -55854,8 +55382,6 @@ int MeshLibrary::get_last_unused_item_id() const
 
 void MeshLibrary::reset_state() { clear(); }
 
-
-
 void MeshLibrary::create_item(int) {}
 
 void MeshLibrary::clear() {}
@@ -55915,11 +55441,6 @@ void Skin::reset_state() { clear_binds(); }
 
 void Skin::set_bind_name(int p_index, const String& p_name) {}
 
-// ============================================================================
-// Merged from scene/resources/3d/sky_material.cpp
-// ============================================================================
-// --- Inlined from scene/resources/3d/sky_material.h ---
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 
 class SkyMaterial final : public Material
@@ -56110,10 +55631,6 @@ public:
 	virtual ~SkyMaterial();
 };
 
-// --- End scene/resources/3d/sky_material.h ---
-
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 Mutex SkyMaterial::shader_mutex;
@@ -56658,7 +56175,6 @@ uniform float height_falloff = 0.0;
 uniform float edge_fade = 0.1;
 uniform sampler3D density_texture: hint_default_white;
 
-
 void fog() {
     DENSITY = density * clamp(exp2(-height_falloff * (WORLD_POSITION.y - OBJECT_POSITION.y)), 0.0, 1.0);
     DENSITY *= texture(density_texture, UVW).r;
@@ -56719,8 +56235,6 @@ SkyMaterial::~SkyMaterial()
 // --- joint_limitation_3d.cpp ---
 
 #include "servers/display/display_server.h"
-
-#include "core/string/ustring.h"
 
 void JointLimitation3D::set_angle(real_t p_angle)
 {
@@ -56892,7 +56406,6 @@ void JointLimitation3D::draw_shape(Ref<SurfaceTool>& p_surface_tool, const Trans
 
 // --- world_3d.cpp ---
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -56978,7 +56491,6 @@ PhysicsDirectSpaceState3D* World3D::get_direct_space_state()
 }
 #endif // PHYSICS_3D_DISABLED
 
-
 World3D::World3D() { scenario = Renderer::scenario_create(); }
 
 World3D::~World3D()
@@ -57017,35 +56529,6 @@ RID World3D::get_space() const
 	return RID();
 }
 #endif // !defined(_3D_DISABLED)
-
-// === Merged from scene/resources/texture.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "servers/display/display_server.h"
 
@@ -57547,7 +57030,6 @@ Texture3D::~Texture3D()
 
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 AtlasTexture::AnimData* AtlasTexture::_ensure_anim()
@@ -58016,11 +57498,9 @@ AtlasTexture::~AtlasTexture()
 
 #include "servers/display/display_server.h"
 
-#include "core/io/net_socket.h"
 #include "core/version_generated.gen.h" // For svg.
 #include "servers/display/display_server.h"
 #ifdef MODULE_SVG_ENABLED
-#include "core/io/net_socket.h"
 #endif
 
 Mutex ImageTexture::svg_mutex;
@@ -58132,7 +57612,7 @@ RID ImageTexture::_svg_load_at_scale(double p_scale, bool p_set_size) const
 	const bool upsample = !Math::is_equal_approx(
 		Math::round(p_scale * svg_data->base_scale), p_scale * svg_data->base_scale);
 
-	Error err = ImageLoaderSVG::create_image_from_string(
+	Error err = ImageLoader::create_image_from_string(
 		img, svg_data->source, p_scale * svg_data->base_scale, upsample, svg_data->cmap);
 	if (err != OK) {
 		return RID();
@@ -58818,7 +58298,6 @@ ImageTexture3D::~ImageTexture3D()
 }
 
 // --- external_texture.cpp ---
-// --- Inlined from scene/resources/external_texture.h ---
 #include "servers/display/display_server.h"
 
 // External textures as defined by OES_EGL_image_external (GLES),
@@ -58875,8 +58354,6 @@ public:
 	explicit ExternalTexture(SourceMode p_mode = SOURCE_EXTERNAL_BUFFER);
 	~ExternalTexture();
 };
-
-// --- End scene/resources/external_texture.h ---
 
 #include "servers/display/display_server.h"
 
@@ -59069,7 +58546,6 @@ ExternalTexture::~ExternalTexture()
 }
 
 // --- drawable_texture_2d.cpp ---
-// --- Inlined from scene/resources/drawable_texture_2d.h ---
 #include "servers/display/display_server.h"
 
 class Material;
@@ -59135,9 +58611,6 @@ public:
 	~DrawableTexture2D();
 };
 
-
-
-// --- End scene/resources/drawable_texture_2d.h ---
 #include "servers/display/display_server.h"
 
 DrawableTexture2D::DrawableTexture2D()
@@ -59167,13 +58640,9 @@ void DrawableTexture2D::_initialize()
 	}
 }
 
-
-
 int DrawableTexture2D::get_width() const { return width; }
 
 int DrawableTexture2D::get_height() const { return height; }
-
-
 
 DrawableTexture2D::DrawableFormat DrawableTexture2D::get_drawable_format() const { return format; }
 
@@ -59192,8 +58661,6 @@ Image::Format DrawableTexture2D::get_format() const
 		return Image::FORMAT_RGBA8;
 	}
 }
-
-
 
 bool DrawableTexture2D::get_use_mipmaps() const { return mipmaps; }
 
@@ -59257,7 +58724,6 @@ void DrawableTexture2D::generate_mipmaps()
 // --- curve_texture.cpp ---
 
 #include "servers/display/display_server.h"
-
 
 CurveTexture::CurveTexture(TextureMode p_mode) :
 	texture_mode(p_mode), _current_texture_mode(p_mode)
@@ -59500,7 +58966,6 @@ CurveTexture::~CurveTexture()
 // --- gradient_texture.cpp ---
 
 #include "servers/display/display_server.h"
-
 
 GradientTexture2D::GradientTexture2D(bool p_1d) : is_1d(p_1d)
 {
@@ -60580,15 +60045,8 @@ SpriteFrames::SpriteFrames() { add_animation(SceneString(default_)); }
 void SpriteFrames::get_argument_options(
 	const String& p_function, int p_idx, List<String>* r_options) const {}
 
-// ============================================================================
-// Merged from scene/resources/compressed_texture.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 static const char* compression_mode_names[7] = {
@@ -61586,10 +61044,9 @@ CompressedTextureLayered::~CompressedTextureLayered()
 
 #include "servers/display/display_server.h"
 
-
-Ref<Resource> ResourceFormatLoaderCompressedTexture::load(const String& p_path,
+static Ref<Resource> _ctex_res_load(const String& p_path,
 	const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress,
-	CacheMode p_cache_mode)
+	ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	if (p_path.has_extension("ctex")) {
 		Ref<CompressedTexture2D> st;
@@ -61645,23 +61102,13 @@ Ref<Resource> ResourceFormatLoaderCompressedTexture::load(const String& p_path,
 	return Ref<Resource>();
 }
 
-void ResourceFormatLoaderCompressedTexture::get_recognized_extensions(
-	List<String>* p_extensions) const
-{
-	p_extensions->push_back("ctex");
-	p_extensions->push_back("ctexarray");
-	p_extensions->push_back("ccube");
-	p_extensions->push_back("ccubearray");
-	p_extensions->push_back("ctex3d");
-}
-
-bool ResourceFormatLoaderCompressedTexture::handles_type(const String& p_type) const
+static bool _ctex_res_handles_type(const String& p_type)
 {
 	return p_type == "CompressedTexture2D" || p_type == "CompressedTextureLayered" ||
 		   p_type == "CompressedTexture3D";
 }
 
-String ResourceFormatLoaderCompressedTexture::get_resource_type(const String& p_path) const
+static String _ctex_res_get_type(const String& p_path)
 {
 	if (p_path.has_extension("ctex")) {
 		return "CompressedTexture2D";
@@ -61676,12 +61123,15 @@ String ResourceFormatLoaderCompressedTexture::get_resource_type(const String& p_
 	return "";
 }
 
-// ============================================================================
-// Merged from scene/resources/curve.cpp
-// ============================================================================
+static const char* const _ctex_res_exts[] = { "ctex", "ctexarray", "ccube", "ccubearray", "ctex3d", nullptr };
+
+Ref<ResourceFormatLoader> ResourceFormatLoader::create_compressed_texture_loader()
+{
+	return Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(
+		_ctex_res_load, _ctex_res_exts, _ctex_res_handles_type, _ctex_res_get_type)));
+}
 
 #include <cfloat> // FLT_EPSILON
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 const char* Curve::SIGNAL_RANGE_CHANGED = "range_changed";
@@ -63690,7 +63140,6 @@ Curve2D::Curve2D() {}
 
 // --- gradient.cpp ---
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 Gradient::Gradient()
@@ -63832,14 +63281,6 @@ void ColorPalette::set_colors(const PackedColorArray& p_colors) { colors = p_col
 
 PackedColorArray ColorPalette::get_colors() const { return colors; }
 
-// ============================================================================
-// Merged from scene/resources/font.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 /*************************************************************************/
@@ -65907,7 +65348,6 @@ TextLine::~TextLine() { TS->free_rid(rid); }
 
 void TextLine::_shape() const {}
 
-
 TextLine::TextLine(String const&, Ref<Font> const&, int, String const&, TextServer::Direction, TextServer::Orientation) {}
 
 // --- text_line.compat.inc ---
@@ -67010,11 +66450,6 @@ int LabelSettings::get_stacked_shadow_outline_size(int p_index) const
 
 // --- text_file.cpp ---
 
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-// --- Inlined from scene/resources/text_file.h ---
-#include "core/io/ip.h"
-
 class TextFile : public Resource
 {
 private:
@@ -67035,10 +66470,6 @@ public:
 	Error load_text(const String& p_path);
 };
 
-
-
-// --- End scene/resources/text_file.h ---
-
 bool TextFile::has_text() const { return !text.is_empty(); }
 
 String TextFile::get_text() const { return text; }
@@ -67046,8 +66477,6 @@ String TextFile::get_text() const { return text; }
 void TextFile::set_text(const String& p_code) { text = p_code; }
 
 void TextFile::reload_from_file() { load_text(path); }
-
-
 
 Error TextFile::load_text(String const&) {}
 
@@ -67166,10 +66595,6 @@ void CodeHighlighter::set_member_variable_color(Color p_color)
 }
 
 Color CodeHighlighter::get_member_variable_color() const { return member_color; }
-
-// ============================================================================
-// Merged from scene/resources/theme.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -68718,8 +68143,6 @@ Theme::Theme() {}
 
 Theme::~Theme() {}
 
-
-
 void Theme::set_icon(String const&, String const&, Ref<Texture2D> const&) {}
 
 void Theme::set_font(String const&, String const&, Ref<Font> const&) {}
@@ -68745,7 +68168,6 @@ void Theme::clear() {}
 #include "servers/display/display_server.h"
 
 #include <cfloat> // FLT_EPSILON
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -69729,13 +69151,6 @@ void StyleBox::_draw_line(RID p_canvas_item, const Rect2& p_rect) const
 	Renderer::canvas_item_add_rect(p_canvas_item, r, color);
 }
 
-
-// --- Merged from scene/resources/material.cpp ---
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -72162,7 +71577,6 @@ void StandardMaterial3D::set_uv2_scale(Vector3 const&) {}
 
 void StandardMaterial3D::set_uv2_offset(Vector3 const&) {}
 
-
 void StandardMaterial3D::set_uv1_triplanar_blend_sharpness(float) {}
 
 void StandardMaterial3D::set_uv1_scale(Vector3 const&) {}
@@ -72240,7 +71654,6 @@ void StandardMaterial3D::_check_material_rid() {}
 // --- canvas_item_material.cpp ---
 
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 Mutex CanvasItemMaterial::material_mutex;
@@ -72612,8 +72025,6 @@ CanvasItemMaterial::~CanvasItemMaterial()
 
 // --- particle_process_material.cpp ---
 
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 Mutex ParticleProcessMaterial::dirty_materials_mutex;
@@ -73126,8 +72537,6 @@ void ParticleProcessMaterial::set_param_min(Parameter p_param, float p_value) {}
 
 void ParticleProcessMaterial::set_param_max(Parameter p_param, float p_value) {}
 
-
-
 void ParticleProcessMaterial::_update_shader() {}
 
 void ParticleProcessMaterial::set_use_scale_3d(bool) {}
@@ -73208,8 +72617,6 @@ void ParticleProcessMaterial::set_collision_bounce(float) {}
 
 #if !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
-
-
 void PhysicsMaterial::set_friction(real_t p_val)
 {
 	friction = p_val;
@@ -73235,18 +72642,12 @@ void PhysicsMaterial::set_absorbent(bool p_val)
 }
 #endif // !defined(PHYSICS_2D_DISABLED) || !defined(PHYSICS_3D_DISABLED)
 
-// ============================================================================
-// Merged from scene/resources/shader.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
 #include "core/version_generated.gen.h" // For regex.
 #ifdef MODULE_REGEX_ENABLED
-#include "core/os/os.h"
 #endif
 #endif
 
@@ -73286,7 +72687,6 @@ void Shader::set_include_path(const String& p_path)
 	// for example during loading stage or when created by code.
 	include_path = p_path;
 }
-
 
 void Shader::set_code(const String& p_code)
 {
@@ -73407,161 +72807,8 @@ void ShaderInclude::set_code(const String& p_code) {}
 
 #include "servers/display/display_server.h"
 
-#include "core/io/file_access.h"
 #include "servers/display/display_server.h"
 
-Ref<Resource> ResourceFormatLoaderShader::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
-{
-	(void)p_original_path;
-	(void)p_use_sub_threads;
-	(void)r_progress;
-	(void)p_cache_mode;
-
-	if (r_error) {
-		*r_error = ERR_FILE_CANT_OPEN;
-	}
-
-	const bool is_include = p_path.has_extension("gdshaderinc");
-
-	Error error = OK;
-	Vector<uint8_t> buffer = FileAccess::get_file_as_bytes(p_path, &error);
-	ERR_FAIL_COND_V_MSG(error, nullptr,
-		(is_include ? "Cannot load shader include: " : "Cannot load shader: ") + p_path);
-
-	String str;
-	if (buffer.size() > 0) {
-		error = str.append_utf8((const char*)buffer.ptr(), buffer.size());
-		ERR_FAIL_COND_V_MSG(error, nullptr,
-			(is_include ? "Cannot parse shader include: " : "Cannot parse shader: ") + p_path);
-	}
-
-	if (is_include) {
-		Ref<ShaderInclude> shader_inc;
-		shader_inc.instantiate();
-
-		shader_inc->set_include_path(p_path);
-		shader_inc->set_code(str);
-
-		if (r_error) {
-			*r_error = OK;
-		}
-
-		return shader_inc;
-	}
-
-	Ref<Shader> shader;
-	shader.instantiate();
-
-	shader->set_include_path(p_path);
-	shader->set_code(str);
-
-	if (r_error) {
-		*r_error = OK;
-	}
-
-	return shader;
-}
-
-void ResourceFormatLoaderShader::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("gdshader");
-	p_extensions->push_back("shader");
-	p_extensions->push_back("gdshaderinc");
-}
-
-void ResourceFormatLoaderShader::get_recognized_extensions_for_type(
-	const String& p_type, List<String>* p_extensions) const
-{
-	if (p_type.is_empty()) {
-		get_recognized_extensions(p_extensions);
-		return;
-	}
-	if (p_type == "Shader") {
-		p_extensions->push_back("gdshader");
-		p_extensions->push_back("shader");
-	}
-	else if (p_type == "ShaderInclude") {
-		p_extensions->push_back("gdshaderinc");
-	}
-}
-
-bool ResourceFormatLoaderShader::handles_type(const String& p_type) const
-{
-	return (p_type == "Shader" || p_type == "ShaderInclude");
-}
-
-String ResourceFormatLoaderShader::get_resource_type(const String& p_path) const
-{
-	if (p_path.has_extension("gdshader") || p_path.has_extension("shader")) {
-		return "Shader";
-	}
-	if (p_path.has_extension("gdshaderinc")) {
-		return "ShaderInclude";
-	}
-	return "";
-}
-
-Error ResourceFormatSaverShader::save(
-	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
-{
-	(void)p_flags;
-
-	Ref<Shader> shader = p_resource;
-	Ref<ShaderInclude> shader_inc = p_resource;
-	ERR_FAIL_COND_V(shader.is_null() && shader_inc.is_null(), ERR_INVALID_PARAMETER);
-
-	String source = shader.is_valid() ? shader->get_code() : shader_inc->get_code();
-
-	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
-
-	ERR_FAIL_COND_V_MSG(err, err,
-		(shader_inc.is_valid() ? "Cannot save shader include '" : "Cannot save shader '") + p_path +
-			"'.");
-
-	file->store_string(source);
-	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
-		return ERR_CANT_CREATE;
-	}
-
-	return OK;
-}
-
-bool ResourceFormatSaverShader::recognize(const Ref<Resource>& p_resource) const
-{
-	if (p_resource.is_null()) {
-		return false;
-	}
-	Ref<Shader> shader = p_resource;
-	if (shader.is_valid()) {
-		return shader->is_text_shader();
-	}
-	Ref<ShaderInclude> shader_inc = p_resource;
-	return shader_inc.is_valid();
-}
-
-void ResourceFormatSaverShader::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-	if (p_resource.is_null()) {
-		return;
-	}
-	Ref<Shader> shader = p_resource;
-	if (shader.is_valid() && shader->is_text_shader()) {
-		p_extensions->push_back("gdshader");
-	}
-	Ref<ShaderInclude> shader_inc = p_resource;
-	if (shader_inc.is_valid()) {
-		p_extensions->push_back("gdshaderinc");
-	}
-}
-
-// ============================================================================
-// Merged from scene/resources/environment.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 RID Environment::get_rid() const { return environment; }
@@ -73648,7 +72895,6 @@ void Environment::set_camera_feed_id(int p_id)
 
 int Environment::get_camera_feed_id() const { return bg_camera_feed_id; }
 
-
 void Environment::set_ambient_light_color(const Color& p_color)
 {
 	ambient_color = p_color;
@@ -73730,7 +72976,6 @@ void Environment::_update_tonemap()
 		tone_mapper == TONE_MAPPER_AGX ? tonemap_agx_white : tonemap_white);
 }
 
-
 void Environment::set_ssr_enabled(bool p_enabled)
 {
 	ssr_enabled = p_enabled;
@@ -73776,7 +73021,6 @@ void Environment::_update_ssr()
 	Renderer::environment_set_ssr(
 		environment, ssr_enabled, ssr_max_steps, ssr_fade_in, ssr_fade_out, ssr_depth_tolerance);
 }
-
 
 void Environment::set_ssao_enabled(bool p_enabled)
 {
@@ -73857,7 +73101,6 @@ void Environment::_update_ssao()
 		ssao_direct_light_affect, ssao_ao_channel_affect);
 }
 
-
 void Environment::set_ssil_enabled(bool p_enabled)
 {
 	ssil_enabled = p_enabled;
@@ -73903,7 +73146,6 @@ void Environment::_update_ssil()
 	Renderer::environment_set_ssil(environment, ssil_enabled, ssil_radius,
 		ssil_intensity, ssil_sharpness, ssil_normal_rejection);
 }
-
 
 void Environment::set_sdfgi_enabled(bool p_enabled)
 {
@@ -74022,7 +73264,6 @@ void Environment::_update_sdfgi()
 		sdfgi_bounce_feedback, sdfgi_read_sky_light, sdfgi_energy, sdfgi_normal_bias,
 		sdfgi_probe_bias);
 }
-
 
 void Environment::set_glow_enabled(bool p_enabled)
 {
@@ -74164,7 +73405,6 @@ void Environment::_update_glow()
 		glow_hdr_bleed_scale, glow_hdr_luminance_cap, _glow_map_strength, glow_map_rid);
 }
 
-
 void Environment::set_fog_enabled(bool p_enabled)
 {
 	fog_enabled = p_enabled;
@@ -74246,7 +73486,6 @@ void Environment::_update_fog()
 		fog_aerial_perspective, fog_sky_affect, RSE::EnvironmentFogMode(fog_mode));
 }
 
-
 void Environment::set_fog_depth_curve(float p_curve)
 {
 	fog_depth_curve = p_curve;
@@ -74282,7 +73521,6 @@ void Environment::_update_fog_depth()
 	Renderer::environment_set_fog_depth(
 		environment, fog_depth_curve, fog_depth_begin, fog_depth_end);
 }
-
 
 void Environment::_update_volumetric_fog()
 {
@@ -74411,7 +73649,6 @@ float Environment::get_volumetric_fog_temporal_reprojection_amount() const
 	return volumetric_fog_temporal_reproject_amount;
 }
 
-
 void Environment::set_adjustment_enabled(bool p_enabled)
 {
 	adjustment_enabled = p_enabled;
@@ -74465,14 +73702,11 @@ Environment::~Environment()
 	Renderer::free_rid(environment);
 }
 
-
-
 void Environment::set_tonemapper(Environment::ToneMapper) {}
 
 // --- camera_attributes.cpp ---
 
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void CameraAttributes::set_exposure_multiplier(float p_multiplier)
@@ -74524,7 +73758,6 @@ void CameraAttributes::set_auto_exposure_scale(float p_auto_exposure_scale)
 float CameraAttributes::get_auto_exposure_scale() const { return auto_exposure_scale; }
 
 RID CameraAttributes::get_rid() const { return camera_attributes; }
-
 
 CameraAttributes::CameraAttributes()
 {
@@ -74880,7 +74113,6 @@ CompositorEffect::~CompositorEffect()
 
 /* Compositor */
 
-
 Compositor::Compositor()
 {
 	if (Renderer::data != nullptr) {
@@ -74937,7 +74169,6 @@ Ref<Material> Sky::get_material() const { return sky_material; }
 
 RID Sky::get_rid() const { return sky; }
 
-
 Sky::Sky() { sky = Renderer::sky_create(); }
 
 Sky::~Sky()
@@ -74948,7 +74179,6 @@ Sky::~Sky()
 
 // --- world_2d.cpp ---
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -75004,7 +74234,6 @@ RID World2D::get_space() const { return RID(); }
 // --- navigation_mesh.cpp ---
 
 #include "servers/display/display_server.h"
-
 
 NavigationMesh::NavigationMesh() :
 		cell_size(NavigationDefaults3D::NAV_MESH_CELL_SIZE),
@@ -75274,37 +74503,6 @@ void NavigationMesh::get_data(Vector<Vector3>& r_vertices, Vector<Vector<int>>& 
 }
 
 void NavigationMesh::set_vertices(const Vector<Vector3>& p_vertices) {}
-
-// === Merged from scene/2d/node_2d.cpp ===
-/*  node_2d.cpp                                                           */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "servers/display/display_server.h"
 #include "core/io/packet_peer_udp.h"
@@ -75635,18 +74833,11 @@ Point2 Node2D::to_global(const Point2& p_local) const
 	return get_global_transform().xform(p_local);
 }
 
-
-
 void Node2D::_update_transform() {}
 
 void Node2D::set_transform(Transform2D const&) {}
 
-// ==========================================================================
-// Merged from scene/2d/camera_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void Camera2D::_update_process_callback()
@@ -75977,10 +75168,6 @@ void Camera2D::clear_current() {}
 
 Transform2D Camera2D::get_camera_transform() { return Transform2D(); }
 
-// ==========================================================================
-// Merged from scene/2d/canvas_group.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -76012,10 +75199,6 @@ PackedStringArray CanvasGroup::get_configuration_warnings() const { return Packe
 
 void CanvasGroup::set_fit_margin(float) {}
 
-// ==========================================================================
-// Merged from scene/2d/canvas_modulate.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/canvas_modulate.h ---
 #include "servers/display/display_server.h"
 
 class CanvasModulate : public Node2D
@@ -76043,9 +75226,6 @@ public:
 	~CanvasModulate();
 };
 
-
-
-// --- End scene/2d/canvas_modulate.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -76067,7 +75247,6 @@ void CanvasModulate::_notification(int p_what)
 			_on_in_canvas_visibility_changed(false);
 		}
 	} break;
-
 
 	case NOTIFICATION_VISIBILITY_CHANGED: {
 		if (!is_in_canvas) {
@@ -76118,14 +75297,8 @@ CanvasModulate::CanvasModulate() {}
 
 CanvasModulate::~CanvasModulate() {}
 
-
-
 void CanvasModulate::_on_in_canvas_visibility_changed(bool) {}
 
-// ==========================================================================
-// Merged from scene/2d/back_buffer_copy.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/back_buffer_copy.h ---
 #include "servers/display/display_server.h"
 
 class BackBufferCopy : public Node2D
@@ -76161,10 +75334,6 @@ public:
 	~BackBufferCopy();
 };
 
-
-
-// --- End scene/2d/back_buffer_copy.h ---
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void BackBufferCopy::_update_copy_mode()
@@ -76216,12 +75385,6 @@ BackBufferCopy::BackBufferCopy()
 
 BackBufferCopy::~BackBufferCopy() {}
 
-// ==========================================================================
-// Merged from scene/2d/marker_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/2d/marker_2d.h ---
 #include "servers/display/display_server.h"
 
 class Marker2D : public Node2D
@@ -76244,10 +75407,6 @@ public:
 
 	Marker2D();
 };
-
-
-
-// --- End scene/2d/marker_2d.h ---
 
 void Marker2D::_draw_cross()
 {
@@ -76310,10 +75469,6 @@ real_t Marker2D::get_gizmo_extents() const { return gizmo_extents; }
 
 Marker2D::Marker2D() { set_hide_clip_children(true); }
 
-// ==========================================================================
-// Merged from scene/2d/remote_transform_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/remote_transform_2d.h ---
 #include "servers/display/display_server.h"
 
 class RemoteTransform2D : public Node2D
@@ -76352,10 +75507,6 @@ public:
 
 	RemoteTransform2D();
 };
-
-
-
-// --- End scene/2d/remote_transform_2d.h ---
 
 NodePath RemoteTransform2D::get_remote_node() const { return remote_node; }
 
@@ -76417,19 +75568,12 @@ RemoteTransform2D::RemoteTransform2D()
 	set_hide_clip_children(true);
 }
 
-
-
 void RemoteTransform2D::_update_remote() {}
 
 void RemoteTransform2D::_update_cache() {}
 
-// ==========================================================================
-// Merged from scene/2d/visible_on_screen_notifier_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
@@ -76540,10 +75684,6 @@ VisibleOnScreenNotifier2D::VisibleOnScreenNotifier2D(bool p_enabler) : enabler_e
 	set_hide_clip_children(true);
 }
 
-// ==========================================================================
-// Merged from scene/2d/audio_listener_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
 void AudioListener2D::_notification(int p_what)
@@ -76599,10 +75739,6 @@ bool AudioListener2D::is_current() const
 
 AudioListener2D::AudioListener2D() { set_hide_clip_children(true); }
 
-// ==========================================================================
-// Merged from scene/2d/audio_stream_player_2d.cpp
-// ==========================================================================
-
 // --- audio_stream_player_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
@@ -76614,9 +75750,7 @@ void AudioStreamPlayer2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -76895,20 +76029,11 @@ void AudioStreamPlayer2D::set_playback_type(AudioServer::PlaybackType p_playback
 
 AudioStreamPlayer2D::~AudioStreamPlayer2D() { memdelete(internal); }
 
-
-
 String AudioStreamPlayer2D::_get_actual_bus() {}
 
-// ============================================================================
-// Merged from scene/2d/cpu_particles_2d.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 // --- cpu_particles_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
-// --- Inlined from scene/2d/cpu_particles_2d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -77215,10 +76340,6 @@ public:
 	~CPUParticles2D();
 };
 
-
-
-// --- End scene/2d/cpu_particles_2d.h ---
-
 void CPUParticles2D::_restart_bind_compat_92089() { restart(false); }
 
 void CPUParticles2D::_request_particles_process_bind_compat_109142(real_t p_time)
@@ -77230,7 +76351,6 @@ void CPUParticles2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// --- Inlined from scene/2d/gpu_particles_2d.h ---
 #include "servers/display/display_server.h"
 
 class GPUParticles2D : public Node2D
@@ -77401,9 +76521,6 @@ public:
 	~GPUParticles2D();
 };
 
-
-
-// --- End scene/2d/gpu_particles_2d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -78376,14 +77493,8 @@ void CPUParticles2D::_set_do_redraw(bool p_do_redraw) {}
 
 PackedStringArray CPUParticles2D::get_configuration_warnings() const { return PackedStringArray(); }
 
-// ==========================================================================
-// Merged from scene/2d/gpu_particles_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 // --- gpu_particles_2d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
-
 
 void GPUParticles2D::_restart_bind_compat_92089() { restart(false); }
 
@@ -78395,7 +77506,6 @@ void GPUParticles2D::_request_particles_process_bind_compat_109142(real_t p_time
 void GPUParticles2D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 #include "servers/display/display_server.h"
 
@@ -78793,10 +77903,6 @@ PackedStringArray GPUParticles2D::get_configuration_warnings() const { return Pa
 
 void GPUParticles2D::set_visibility_rect(const Rect2& p_visibility_rect) {}
 
-// ============================================================================
-// Merged from scene/2d/line_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 // --- line_builder.h ---
@@ -78940,13 +78046,7 @@ int Line2D::get_round_precision() const { return _round_precision; }
 
 bool Line2D::get_antialiased() const { return _antialiased; }
 
-
-
 void Line2D::_draw() {}
-
-// ==========================================================================
-// Merged from scene/2d/line_builder.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -79515,11 +78615,6 @@ void LineBuilder::new_arc(Vector2 center, Vector2 vbegin, float angle_delta, Col
 	}
 }
 
-// ==========================================================================
-// Merged from scene/2d/path_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -79743,15 +78838,8 @@ void PathFollow2D::set_loop(bool p_loop) { loop = p_loop; }
 
 bool PathFollow2D::has_loop() const { return loop; }
 
-
-
 void Path2D::_debug_update() {}
 
-// ==========================================================================
-// Merged from scene/2d/parallax_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -79966,11 +79054,6 @@ void Parallax2D::set_ignore_camera_scroll(bool p_ignore) { ignore_camera_scroll 
 
 bool Parallax2D::is_ignore_camera_scroll() { return ignore_camera_scroll; }
 
-// ==========================================================================
-// Merged from scene/2d/parallax_layer.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -80071,10 +79154,6 @@ PackedStringArray ParallaxLayer::get_configuration_warnings() const
 
 void ParallaxLayer::_update_mirroring() {}
 
-// ==========================================================================
-// Merged from scene/2d/light_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/light_2d.h ---
 #include "servers/display/display_server.h"
 
 class Light2D : public Node2D
@@ -80224,9 +79303,6 @@ public:
 	~Light2D();
 };
 
-// --- End scene/2d/light_2d.h ---
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -80552,11 +79628,6 @@ Light2D::~Light2D()
 	}
 }
 
-// ==========================================================================
-// Merged from scene/2d/light_occluder_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -80727,13 +79798,7 @@ void LightOccluder2D::set_occluder_polygon(Ref<OccluderPolygon2D> const&) {}
 
 #undef LINE_GRAB_WIDTH
 
-// ============================================================================
-// Merged from scene/2d/sprite_2d.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -80964,14 +80029,8 @@ Rect2 Sprite2D::get_rect() const
 	return Rect2(ofs, s);
 }
 
-
-
 void Sprite2D::set_frame(int) {}
 
-// ==========================================================================
-// Merged from scene/2d/animated_sprite_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/animated_sprite_2d.h ---
 #include "servers/display/display_server.h"
 
 class AnimatedSprite2D : public Node2D
@@ -81058,12 +80117,7 @@ public:
 	AnimatedSprite2D();
 };
 
-
-
-// --- End scene/2d/animated_sprite_2d.h ---
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_ENABLED
@@ -81210,14 +80264,8 @@ void AnimatedSprite2D::get_argument_options(
 
 AnimatedSprite2D::AnimatedSprite2D() {}
 
-
-
 void AnimatedSprite2D::_stop_internal(bool) {}
 
-// ==========================================================================
-// Merged from scene/2d/mesh_instance_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/mesh_instance_2d.h ---
 #include "servers/display/display_server.h"
 
 class NavigationPolygon;
@@ -81257,10 +80305,6 @@ public:
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
 
-
-
-// --- End scene/2d/mesh_instance_2d.h ---
-
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
 #include "servers/display/display_server.h"
@@ -81279,13 +80323,7 @@ void MeshInstance2D::_notification(int p_what)
 	}
 }
 
-
-
-
-
 Ref<Mesh> MeshInstance2D::get_mesh() const { return mesh; }
-
-
 
 Ref<Texture2D> MeshInstance2D::get_texture() const { return texture; }
 
@@ -81313,10 +80351,6 @@ PackedStringArray MeshInstance2D::get_configuration_warnings() const
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/2d/multimesh_instance_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/multimesh_instance_2d.h ---
 #include "servers/display/display_server.h"
 
 class NavigationPolygon;
@@ -81358,10 +80392,6 @@ public:
 	MultiMeshInstance2D() = default;
 	~MultiMeshInstance2D() = default;
 };
-
-
-
-// --- End scene/2d/multimesh_instance_2d.h ---
 
 #ifndef NAVIGATION_2D_DISABLED
 #include <thirdparty/clipper2/include/clipper2/clipper.h>
@@ -81415,11 +80445,6 @@ Rect2 MultiMeshInstance2D::_edit_get_rect() const
 }
 #endif // DEBUG_ENABLED
 
-// ==========================================================================
-// Merged from scene/2d/polygon_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -81547,11 +80572,6 @@ bool Polygon2D::_edit_is_selected_on_click(const Vector2& p_point, double p_tole
 	return false;
 }
 
-// ==========================================================================
-// Merged from scene/2d/skeleton_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -81853,15 +80873,7 @@ Skeleton2D::~Skeleton2D()
 
 void Skeleton2D::_update_bone_setup() {}
 
-// ============================================================================
-// Merged from scene/2d/tile_map_layer.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
-// --- Inlined from scene/2d/tile_map.h ---
 #include "servers/display/display_server.h"
 
 class Control;
@@ -82106,9 +81118,6 @@ public:
 	TileMap();
 };
 
-
-
-// --- End scene/2d/tile_map.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -84075,15 +83084,8 @@ void TileMapLayer::set_self_modulate(const Color& p_self_modulate) {}
 
 void TileMapLayer::set_light_mask(int p_light_mask) {}
 
-// ==========================================================================
-// Merged from scene/2d/tile_map.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 // --- tile_map.compat.inc ---
 #ifndef DISABLE_DEPRECATED
-
 
 Rect2i TileMap::_get_used_rect_bind_compat_78328() { return get_used_rect(); }
 
@@ -84109,7 +83111,6 @@ TileMap::VisibilityMode TileMap::_get_navigation_visibility_mode_bind_compat_871
 void TileMap::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 #ifndef NAVIGATION_2D_DISABLED
 #include "servers/display/display_server.h"
@@ -84682,20 +83683,14 @@ PackedStringArray TileMap::get_configuration_warnings() const
 #undef TILEMAP_CALL_FOR_LAYER
 #undef TILEMAP_CALL_FOR_LAYER_V
 
-
-
 int TileMap::get_cell_alternative_tile(int, Vector2i const&, bool) const {}
 
 void TileMap::_emit_changed() {}
 
 void TileMap::_set_tile_map_data_using_compatibility_format(int, TileMapDataFormat, Vector<int> const&) {}
 
-
-// --- Merged from scene/2d/physics/physics_body_2d.cpp ---
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-// --- Inlined from scene/2d/physics/joints/joint_2d.h ---
 #include "servers/display/display_server.h"
 
 class PhysicsBody2D;
@@ -84793,7 +83788,6 @@ public:
 	RID get_rid() const { return joint; }
 };
 
-// --- End scene/2d/physics/joints/joint_2d.h ---
 #include "servers/display/display_server.h"
 
 PhysicsBody2D::PhysicsBody2D(BodyMode p_mode) :
@@ -85329,10 +84323,6 @@ PackedStringArray PhysicsBody2D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/2d/physics/kinematic_collision_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
 Vector2 KinematicCollision2D::get_position() const { return result.collision_point; }
@@ -85357,12 +84347,7 @@ int KinematicCollision2D::get_collider_shape_index() const { return result.colli
 
 Vector2 KinematicCollision2D::get_collider_velocity() const { return result.collider_velocity; }
 
-// ============================================================================
-// Merged from scene/2d/physics/collision_object_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
 
 void CollisionState2D::init(bool p_area, PS2DE::BodyMode p_mode) {
 	area = p_area;
@@ -85837,13 +84822,8 @@ uint32_t CollisionState2D::shape_find_owner(int p_shape_index) const {
 	ERR_FAIL_V_MSG(UINT32_MAX, "Can't find owner for shape index " + itos(p_shape_index) + ".");
 }
 
-// ==========================================================================
-// Merged from scene/2d/physics/area_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -86028,13 +85008,8 @@ PackedStringArray Area2D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/2d/physics/collision_shape_2d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void CollisionShape2D::_update_in_shape_owner(bool p_xform_only) {
@@ -86190,10 +85165,6 @@ PackedStringArray CollisionShape2D::get_configuration_warnings() const {
 	return PackedStringArray();
 }
 
-// ==========================================================================
-// Merged from scene/2d/physics/collision_polygon_2d.cpp
-// ==========================================================================
-// --- Inlined from scene/2d/physics/collision_polygon_2d.h ---
 #include "servers/display/display_server.h"
 
 class CollisionPolygon2D : public Node2D {
@@ -86249,9 +85220,6 @@ public:
 	CollisionPolygon2D();
 };
 
-// --- End scene/2d/physics/collision_polygon_2d.h ---
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -86433,12 +85401,6 @@ PackedStringArray CollisionPolygon2D::get_configuration_warnings() const {
 	return PackedStringArray();
 }
 
-// ==========================================================================
-// Merged from scene/2d/physics/ray_cast_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/2d/physics/ray_cast_2d.h ---
 #include "servers/display/display_server.h"
 
 class RayCast2D : public Node2D
@@ -86508,9 +85470,6 @@ public:
 	RayCast2D();
 };
 
-
-
-// --- End scene/2d/physics/ray_cast_2d.h ---
 #include "servers/display/display_server.h"
 
 Vector2 RayCast2D::get_target_position() const { return target_position; }
@@ -86630,17 +85589,9 @@ bool RayCast2D::is_hit_from_inside_enabled() const { return hit_from_inside; }
 
 RayCast2D::RayCast2D() { set_hide_clip_children(true); }
 
-
-
 void RayCast2D::_update_raycast_state() {}
 
-// ==========================================================================
-// Merged from scene/2d/physics/shape_cast_2d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/2d/physics/shape_cast_2d.h ---
 #include "servers/display/display_server.h"
 
 class ShapeCast2D : public Node2D
@@ -86724,10 +85675,6 @@ public:
 
 	ShapeCast2D();
 };
-
-
-
-// --- End scene/2d/physics/shape_cast_2d.h ---
 
 Vector2 ShapeCast2D::get_target_position() const { return target_position; }
 
@@ -86854,19 +85801,10 @@ PackedStringArray ShapeCast2D::get_configuration_warnings() const
 
 ShapeCast2D::ShapeCast2D() { set_hide_clip_children(true); }
 
-
-
 void ShapeCast2D::_update_shapecast_state() {}
 
-// ==========================================================================
-// Merged from scene/2d/physics/touch_screen_button.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/2d/physics/touch_screen_button.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -86944,10 +85882,6 @@ public:
 
 	TouchScreenButton();
 };
-
-
-
-// --- End scene/2d/physics/touch_screen_button.h ---
 
 Ref<Texture2D> TouchScreenButton::get_texture_normal() const { return texture_normal; }
 
@@ -87045,12 +85979,6 @@ TouchScreenButton::TouchScreenButton()
 
 void TouchScreenButton::input(const InputEvent& p_event) {}
 
-// ============================================================================
-// Merged from scene/2d/physics/joints/joint_2d.cpp
-// ============================================================================
-
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 Joint2D::Joint2D(JointType p_type) :
@@ -87334,13 +86262,8 @@ PackedStringArray Joint2D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ============================================================================
-// Merged from scene/resources/2d/shape_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -87966,14 +86889,10 @@ Shape2D::~Shape2D()
 	PhysicsServer2D::free_rid(shape);
 }
 
-
-// --- Merged from scene/2d/navigation/navigation_2d.cpp ---
 #if !defined(NAVIGATION_2D_DISABLED)
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -88697,14 +87616,11 @@ void NavigationAgent2D::_update_debug_path()
 }
 #endif // DEBUG_ENABLED
 
-
-
 void NavigationAgent2D::_update_navigation() {}
 
 void NavigationAgent2D::set_agent_parent(Node*) {}
 
 void NavigationAgent2D::_trigger_waypoint_reached() {}
-
 
 void NavigationLink2D::_notification(int p_what)
 {
@@ -88978,7 +87894,6 @@ void NavigationLink2D::_link_update_transform() {}
 
 void NavigationLink2D::_link_enter_navigation_map() {}
 
-
 RID NavigationObstacle2D::_navmesh_source_geometry_parser;
 
 void NavigationObstacle2D::_notification(int p_what)
@@ -89251,14 +88166,11 @@ void NavigationObstacle2D::_update_fake_agent_radius_debug()
 }
 #endif // DEBUG_ENABLED
 
-
-
 void NavigationObstacle2D::_update_transform() {}
 
 #ifdef DEBUG_ENABLED
 void NavigationObstacle2D::_update_static_obstacle_debug() {}
 #endif // DEBUG_ENABLED
-
 
 RID NavigationRegion2D::get_rid() const { return region; }
 
@@ -89530,8 +88442,6 @@ void NavigationRegion2D::_update_bounds()
 	bounds = new_bounds;
 }
 
-
-
 #ifdef DEBUG_ENABLED
 void NavigationRegion2D::_update_debug_mesh() {}
 #endif // DEBUG_ENABLED
@@ -89542,13 +88452,8 @@ void NavigationRegion2D::_region_update_transform() {}
 
 void NavigationRegion2D::_region_enter_navigation_map() {}
 
-// ============================================================================
-// Merged from scene/resources/2d/navigation_polygon.cpp
-// ============================================================================
-
 #include <thirdparty/misc/polypartition.h>
 #include "servers/display/display_server.h"
-#include "core/os/mutex.h"
 #include "servers/display/display_server.h"
 
 NavigationPolygon::NavigationPolygon() :
@@ -90017,8 +88922,6 @@ void NavigationPolygon::set_baking_rect_offset(const Vector2& p_rect_offset)
 
 Vector2 NavigationPolygon::get_baking_rect_offset() const { return baking_rect_offset; }
 
-
-
 bool NavigationPolygon::_edit_is_selected_on_click(Vector2 const&, double) const { return false; }
 
 // --- navigation_mesh_source_geometry_data_2d.cpp ---
@@ -90256,8 +89159,6 @@ Rect2 NavigationMeshSourceGeometryData2D::get_bounds()
 // --- polygon_path_finder.cpp ---
 
 #include "servers/display/display_server.h"
-// --- Inlined from scene/resources/2d/polygon_path_finder.h ---
-#include "core/io/ip.h"
 
 class PolygonPathFinder : public Resource {
 
@@ -90313,8 +89214,6 @@ public:
 
 	PolygonPathFinder();
 };
-
-// --- End scene/resources/2d/polygon_path_finder.h ---
 
 bool PolygonPathFinder::_is_point_inside(const Vector2& p_point) const
 {
@@ -90738,42 +89637,9 @@ float PolygonPathFinder::get_point_penalty(int p_point) const
 PolygonPathFinder::PolygonPathFinder() {}
 #endif // !defined(NAVIGATION_2D_DISABLED)
 
-// === Merged from scene/gui/control.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -93050,7 +91916,6 @@ Vector<int> Control::get_allowed_size_flags_vertical() const
 
 #ifndef DISABLE_DEPRECATED
 
-
 bool Control::_has_focus_bind_compat_110250() const { return has_focus(false); }
 
 void Control::_grab_focus_bind_compat_110250() { return grab_focus(false); }
@@ -93059,15 +91924,9 @@ void Control::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from scene/gui/button.cpp
-// ============================================================================
-
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
+#include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -94545,16 +93404,9 @@ void MenuBar::remove_child_notify(Node* p_child) {}
 
 void MenuBar::move_child_notify(Node* p_child) {}
 
-// ============================================================================
-// Merged from scene/gui/range.cpp
-// ============================================================================
-
 #include <cmath>
 #include <thirdparty/misc/r128.h>
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-// --- Inlined from scene/gui/progress_bar.h ---
 #include "servers/display/display_server.h"
 
 class ProgressBar : public Control
@@ -94681,14 +93533,10 @@ private:
 	FillMode mode = FILL_BEGIN_TO_END;
 };
 
-// --- End scene/gui/progress_bar.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 double NumericRange::snapped_r128(double p_value, double p_step)
@@ -95398,8 +94246,6 @@ Point2 TextureProgressBar::get_radial_center_offset() { return rad_center_off; }
 
 TextureProgressBar::TextureProgressBar() { set_mouse_filter(MOUSE_FILTER_PASS); }
 
-
-
 void TextureProgressBar::_set_texture(Ref<Texture2D>*, Ref<Texture2D> const&) {}
 
 void TextureProgressBar::set_tint_under(Color const&) {}
@@ -95844,8 +94690,6 @@ void SpinBox::_value_changed(double p_value)
 
 void SpinBox::_update_text(bool p_only_update_if_value_changed) {}
 
-
-
 void SpinBox::_text_submitted(String const&) {}
 
 void SpinBox::set_editable(bool) {}
@@ -96032,22 +94876,14 @@ ScrollBar::ScrollBar(Orientation p_orientation)
 
 ScrollBar::~ScrollBar() {}
 
-// ============================================================================
-// Merged from scene/gui/scroll_container.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include <cfloat>
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 Size2 ScrollContainer::get_minimum_size() const { return _get_minimum_size(false); }
@@ -96256,8 +95092,6 @@ bool ScrollContainer::child_has_focus()
 	const Control* focus_owner = get_viewport() ? get_viewport()->gui_get_focus_owner() : nullptr;
 	return focus_owner && focus_owner->has_focus(true) && is_ancestor_of(focus_owner);
 }
-
-
 
 Size2 ScrollContainer::_get_minimum_size(bool) const { return Size2(); }
 
@@ -96715,7 +95549,6 @@ Control::CursorShape SplitContainerDragger::get_cursor_shape(const Vector2& p_po
 // --- split_container.compat.inc ---
 
 #ifndef DISABLE_DEPRECATED
-
 
 void SplitContainer::_clamp_split_offset_bind_compat_90411() { clamp_split_offset(0); }
 
@@ -97558,8 +96391,6 @@ bool TabBar::get_deselect_enabled() const { return deselect_enabled; }
 
 void TabBar::set_current_tab(int p_current) {}
 
-
-
 void TabBar::_update_hover() {}
 
 void TabBar::set_tab_button_icon(int, Ref<Texture2D> const&) {}
@@ -98384,37 +97215,8 @@ Separator::Separator(Orientation p_orientation) : orientation(p_orientation) {}
 
 Separator::~Separator() {}
 
-// === Merged from scene/3d/node_3d.cpp ===
 #ifndef _3D_DISABLED
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -99270,8 +98072,6 @@ Transform3D Node3D::get_global_transform_interpolated()
 	return Transform3D();
 }
 
-
-
 void Node3D::_update_visibility_parent(bool) {}
 
 void Node3D::set_subgizmo_selection(Ref<Node3DGizmo>, int, Transform3D) {}
@@ -99286,13 +98086,7 @@ void Node3D::_propagate_transform_changed(Node3D*) {}
 
 void Node3D::clear_subgizmo_selection() {}
 
-// ==========================================================================
-// Merged from scene/3d/camera_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -99897,10 +98691,6 @@ Camera3D::~Camera3D()
 #endif // PHYSICS_3D_DISABLED
 }
 
-// ==========================================================================
-// Merged from scene/3d/marker_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/marker_3d.h ---
 #include "servers/display/display_server.h"
 
 class Marker3D : public Node3D
@@ -99915,19 +98705,10 @@ public:
 	Marker3D();
 };
 
-
-
-// --- End scene/3d/marker_3d.h ---
-
 real_t Marker3D::get_gizmo_extents() const { return gizmo_extents; }
 
 Marker3D::Marker3D() {}
 
-// ==========================================================================
-// Merged from scene/3d/path_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -100049,7 +98830,6 @@ Transform3D PathFollow3D::correct_posture(
 	return t;
 }
 
-
 void PathFollow3D::set_progress(real_t p_progress)
 {
 	ERR_FAIL_COND(!std::isfinite(p_progress));
@@ -100157,16 +98937,10 @@ void PathFollow3D::set_tilt_enabled(bool p_enabled)
 
 bool PathFollow3D::is_tilt_enabled() const { return tilt_enabled; }
 
-
-
 void Path3D::_update_debug_path_material() {}
 
 void Path3D::_update_debug_mesh() {}
 
-// ==========================================================================
-// Merged from scene/3d/remote_transform_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/remote_transform_3d.h ---
 #include "servers/display/display_server.h"
 
 class RemoteTransform3D : public Node3D
@@ -100205,10 +98979,6 @@ public:
 
 	RemoteTransform3D();
 };
-
-
-
-// --- End scene/3d/remote_transform_3d.h ---
 
 NodePath RemoteTransform3D::get_remote_node() const { return remote_node; }
 
@@ -100268,21 +99038,13 @@ RemoteTransform3D::RemoteTransform3D()
 	set_notify_local_transform(!use_global_coordinates);
 }
 
-
-
 void RemoteTransform3D::_update_remote() {}
 
 PackedStringArray RemoteTransform3D::get_configuration_warnings() const { return PackedStringArray(); }
 
 void RemoteTransform3D::_update_cache() {}
 
-// ==========================================================================
-// Merged from scene/3d/velocity_tracker_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 void VelocityTracker3D::set_track_physics_step(bool p_track_physics_step) {
 	physics_step = p_track_physics_step;
@@ -100372,10 +99134,6 @@ void VelocityTracker3D::reset(const Vector3 &p_new_pos) {
 VelocityTracker3D::VelocityTracker3D() {
 	position_history.resize(4); // should be configurable
 }
-
-// ==========================================================================
-// Merged from scene/3d/audio_listener_3d.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -100483,7 +99241,6 @@ AudioListener3D::DopplerTracking AudioListener3D::get_doppler_tracking() const
 	return doppler_tracking;
 }
 
-
 Vector3 AudioListener3D::get_doppler_tracked_velocity() const
 {
 	if (doppler_tracking != DOPPLER_TRACKING_DISABLED) {
@@ -100502,10 +99259,6 @@ AudioListener3D::AudioListener3D()
 
 AudioListener3D::~AudioListener3D() {}
 
-// ==========================================================================
-// Merged from scene/3d/audio_stream_player_3d.cpp
-// ==========================================================================
-
 // --- audio_stream_player_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
 
@@ -100517,9 +99270,7 @@ void AudioStreamPlayer3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifndef PHYSICS_3D_DISABLED
@@ -101280,13 +100031,7 @@ void AudioStreamPlayer3D::set_playback_type(AudioServer::PlaybackType p_playback
 
 AudioStreamPlayer3D::~AudioStreamPlayer3D() { memdelete(internal); }
 
-
-
 Area3D* AudioStreamPlayer3D::_get_overriding_area() {}
-
-// ==========================================================================
-// Merged from scene/3d/world_environment.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -101380,17 +100125,11 @@ PackedStringArray WorldEnvironment::get_configuration_warnings() const
 
 WorldEnvironment::WorldEnvironment() {}
 
-
-
 void WorldEnvironment::_update_current_environment() {}
 
 void WorldEnvironment::_update_current_camera_attributes() {}
 
 void WorldEnvironment::_update_current_compositor() {}
-
-// ============================================================================
-// Merged from scene/3d/skeleton_3d.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 // --- skeleton_3d.compat.inc ---
@@ -102164,11 +100903,6 @@ void Skeleton3D::remove_child_notify(Node* p_child) {}
 
 void Skeleton3D::move_child_notify(Node* p_child) {}
 
-// ==========================================================================
-// Merged from scene/3d/skeleton_modifier_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 bool SkeletonModifier3D::should_check_node_path()
@@ -102422,13 +101156,7 @@ void SkeletonModifier3D::_validate_bone_names() {}
 
 void SkeletonModifier3D::_process_modification(double p_delta) {}
 
-
-
 void SkeletonModifier3D::process_modification(double) {}
-
-// ==========================================================================
-// Merged from scene/3d/bone_attachment_3d.cpp
-// ==========================================================================
 
 // --- bone_attachment_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
@@ -102444,7 +101172,6 @@ void BoneAttachment3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 
 void BoneAttachment3D::_transform_changed()
 {
@@ -102584,12 +101311,6 @@ PackedStringArray BoneAttachment3D::get_configuration_warnings() const
 	return PackedStringArray();
 }
 
-// ==========================================================================
-// Merged from scene/3d/look_at_modifier_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/3d/look_at_modifier_3d.h ---
 #include "servers/display/display_server.h"
 
 class LookAtModifier3D : public SkeletonModifier3D
@@ -102744,9 +101465,6 @@ public:
 	static Vector2 get_projection_vector(const Vector3& p_vector, Vector3::Axis p_axis);
 };
 
-
-
-// --- End scene/3d/look_at_modifier_3d.h ---
 #include "servers/display/display_server.h"
 
 PackedStringArray LookAtModifier3D::get_configuration_warnings() const
@@ -103150,10 +101868,6 @@ void LookAtModifier3D::init_transition()
 
 void LookAtModifier3D::_process_modification(double p_delta) {}
 
-// ==========================================================================
-// Merged from scene/3d/retarget_modifier_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/retarget_modifier_3d.h ---
 #include "servers/display/display_server.h"
 
 class RetargetModifier3D : public SkeletonModifier3D
@@ -103241,10 +101955,6 @@ public:
 	RetargetModifier3D();
 	virtual ~RetargetModifier3D();
 };
-
-
-
-// --- End scene/3d/retarget_modifier_3d.h ---
 
 PackedStringArray RetargetModifier3D::get_configuration_warnings() const
 {
@@ -103336,10 +102046,6 @@ void RetargetModifier3D::_skeleton_changed(Skeleton3D* p_old_skeleton, Skeleton3
 {
 }
 
-// ==========================================================================
-// Merged from scene/3d/spring_bone_collision_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/spring_bone_collision_3d.h ---
 #include "servers/display/display_server.h"
 
 class SpringBoneCollision3D : public Node3D {
@@ -103407,10 +102113,6 @@ public:
 	Vector3 collide(const Transform3D &p_center, float p_bone_radius, float p_bone_length, const Vector3 &p_current) const;
 };
 
-// --- End scene/3d/spring_bone_collision_3d.h ---
-
-#include "core/os/os.h"
-// --- Inlined from scene/3d/spring_bone_simulator_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -103683,10 +102385,6 @@ public:
 	~SpringBoneSimulator3D();
 };
 
-
-
-// --- End scene/3d/spring_bone_simulator_3d.h ---
-
 SpringBoneCollision3D::SpringBoneCollision3D(ShapeType p_shape_type) :
 		shape_type(p_shape_type) {
 }
@@ -103879,15 +102577,8 @@ PackedStringArray SpringBoneCollision3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/3d/spring_bone_simulator_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-
 // --- spring_bone_simulator_3d.compat.inc ---
 #ifndef DISABLE_DEPRECATED
-
 
 namespace compat::SpringBoneSimulator3D
 {
@@ -103956,7 +102647,6 @@ void SpringBoneSimulator3D::_set_joint_rotation_axis_bind_compat_110120(
 void SpringBoneSimulator3D::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
 
 // Original VRM Spring Bone movement logic was distributed by (c) VRM Consortium. Licensed under the
 // MIT license.
@@ -104521,12 +103211,7 @@ void SpringBoneSimulator3D::_skeleton_changed(
 
 void SpringBoneSimulator3D::_process_modification(double p_delta) {}
 
-// ============================================================================
-// Merged from scene/3d/bone_constraint_3d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/ik_modifier_3d.h ---
 #include "servers/display/display_server.h"
 
 class Curve3D;
@@ -104798,9 +103483,6 @@ public:
 	static Quaternion get_local_pose_rotation(Skeleton3D *p_skeleton, int p_bone, const Quaternion &p_global_pose_rotation);
 	static Vector3 get_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, BoneDirection p_direction, bool p_mutable_bone_axes);
 };
-
-// --- End scene/3d/ik_modifier_3d.h ---
-
 
 BoneConstraint3D::BoneConstraint3D(ConstraintType p_type) :
 		constraint_type(p_type) {
@@ -106095,12 +104777,6 @@ void BoneConstraint3D::_process_copy(int p_index, Skeleton3D *p_skeleton, int p_
 	}
 }
 
-// ============================================================================
-// Merged from scene/3d/ik_modifier_3d.cpp
-// ============================================================================
-
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 // --- JointSetting ---
@@ -107945,12 +106621,9 @@ void IKModifier3D::_process_two_bone_joints(double p_delta, Skeleton3D *p_skelet
 	p_skeleton->set_bone_pose_rotation(p_setting->middle_bone.bone, get_local_pose_rotation(p_skeleton, p_setting->middle_bone.bone, p_setting->mid_joint_solver_info->current_gpose));
 }
 
-
-// --- Merged from scene/3d/physics/physics_body_3d.cpp ---
 #if !defined(_3D_DISABLED)
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 namespace {
@@ -107979,9 +106652,7 @@ struct VehicleJacobianEntry {
 
 } // namespace
 
-// ============================================================================
 // VehicleWheel3D
-// ============================================================================
 
 void VehicleWheel3D::FTIData::update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction) {
 	if (!unset) {
@@ -108063,9 +106734,7 @@ PackedStringArray VehicleWheel3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ============================================================================
 // PhysicsBody3D
-// ============================================================================
 
 PhysicsBody3D::PhysicsBody3D(BodyMode p_mode) :
 		mode(p_mode) {
@@ -108472,9 +107141,7 @@ Vector3 PhysicsBody3D::get_constant_torque() const {
 	return PhysicsServer3D::body_get_constant_torque(get_rid());
 }
 
-// ============================================================================
 // CharacterMover3D
-// ============================================================================
 
 void PhysicsBody3D::_set_collision_direction(const PS3DT::MotionResult &p_result, CharacterMover3D::FloorFlags &r_state, CharacterMover3D::FloorFlags p_apply_state) {
 	r_state = CharacterMover3D::FloorFlags();
@@ -108641,9 +107308,7 @@ void PhysicsBody3D::set_floor_snap_length(real_t p_floor_snap_length) {
 	character.floor_snap_length = p_floor_snap_length;
 }
 
-// ============================================================================
 // VehicleRig3D
-// ============================================================================
 
 PhysicsBody3D::VehicleWheelContactPoint::VehicleWheelContactPoint(PhysicsDirectBodyState3D *s,
 		PhysicsBody3D *body1, const Vector3 &frictionPosWorld, const Vector3 &frictionDirectionWorld,
@@ -108959,9 +107624,7 @@ void PhysicsBody3D::set_steering(real_t p_steering) {
 	}
 }
 
-// ============================================================================
 // PhysicalBoneState3D
-// ============================================================================
 
 PhysicalBoneSimulator3D *PhysicsBody3D::get_simulator() const {
 	return dynamic_cast<PhysicalBoneSimulator3D *>(get_parent());
@@ -109044,10 +107707,6 @@ PackedStringArray PhysicsBody3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/kinematic_collision_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
 Vector3 KinematicCollision3D::get_travel() const { return result.travel; }
@@ -109095,13 +107754,8 @@ Vector3 KinematicCollision3D::get_collider_velocity(int p_collision_index) const
 	return result.collisions[p_collision_index].collider_velocity;
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/physical_bone_simulator_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void PhysicalBoneSimulator3D::_bone_pose_updated(Skeleton3D *p_skeleton, int p_bone_id) {
@@ -109171,13 +107825,8 @@ void PhysicalBoneSimulator3D::set_bone_global_pose(int p_bone, const Transform3D
 
 void PhysicalBoneSimulator3D::_skeleton_changed(Skeleton3D *p_old_skeleton, Skeleton3D *p_new_skeleton) {}
 
-// ============================================================================
-// Merged from scene/3d/physics/collision_object_3d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -109644,13 +108293,8 @@ uint32_t CollisionState3D::shape_find_owner(int p_shape_index) const {
 	ERR_FAIL_V_MSG(UINT32_MAX, "Can't find owner for shape index " + itos(p_shape_index) + ".");
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/area_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 Area3D::Area3D() {
@@ -109912,12 +108556,7 @@ PackedStringArray Area3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/collision_shape_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-
 
 void CollisionShape3D::_update_in_shape_owner(bool p_xform_only) {
 	if (!collision_state) {
@@ -110057,10 +108696,6 @@ PackedStringArray CollisionShape3D::get_configuration_warnings() const {
 	return PackedStringArray();
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/collision_polygon_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/physics/collision_polygon_3d.h ---
 #include "servers/display/display_server.h"
 
 class CollisionPolygon3D : public Node3D {
@@ -110100,8 +108735,6 @@ public:
 
 	CollisionPolygon3D();
 };
-
-// --- End scene/3d/physics/collision_polygon_3d.h ---
 
 #include "servers/display/display_server.h"
 
@@ -110198,12 +108831,6 @@ PackedStringArray CollisionPolygon3D::get_configuration_warnings() const {
 	return PackedStringArray();
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/ray_cast_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/3d/physics/ray_cast_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -110303,9 +108930,6 @@ public:
 	RayCast3D() = default;
 };
 
-
-
-// --- End scene/3d/physics/ray_cast_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -110506,14 +109130,8 @@ void RayCast3D::_clear_debug_shape()
 
 void RayCast3D::_update_raycast_state() {}
 
-// ==========================================================================
-// Merged from scene/3d/physics/shape_cast_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/physics/shape_cast_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -110617,10 +109235,6 @@ public:
 
 	virtual PackedStringArray get_configuration_warnings() const override;
 };
-
-
-
-// --- End scene/3d/physics/shape_cast_3d.h ---
 
 bool ShapeCast3D::is_enabled() const { return enabled; }
 
@@ -110897,13 +109511,7 @@ void ShapeCast3D::_clear_debug_shape()
 	}
 }
 
-// ==========================================================================
-// Merged from scene/3d/physics/spring_arm_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/physics/spring_arm_3d.h ---
 #include "servers/display/display_server.h"
 
 class SpringArm3D : public Node3D
@@ -110935,10 +109543,6 @@ private:
 	void process_spring();
 };
 
-
-
-// --- End scene/3d/physics/spring_arm_3d.h ---
-
 void SpringArm3D::_notification(int p_what)
 {
 	switch (p_what) {
@@ -110959,7 +109563,6 @@ void SpringArm3D::_notification(int p_what)
 	} break;
 	}
 }
-
 
 real_t SpringArm3D::get_length() const { return spring_length; }
 
@@ -110983,14 +109586,8 @@ void SpringArm3D::clear_excluded_objects() { excluded_objects.clear(); }
 
 real_t SpringArm3D::get_hit_length() { return current_spring_length; }
 
-
-
 void SpringArm3D::process_spring() {}
 
-// ============================================================================
-// Merged from scene/3d/physics/joints/joint_3d.cpp
-// ============================================================================
-// --- Inlined from scene/3d/physics/joints/joint_3d.h ---
 #include "servers/display/display_server.h"
 
 class Joint3D : public Node3D {
@@ -111120,8 +109717,6 @@ public:
 
 	RID get_rid() const { return joint; }
 };
-
-// --- End scene/3d/physics/joints/joint_3d.h ---
 
 void Joint3D::_init_defaults() {
 	pin_params[PS3DE::PIN_JOINT_BIAS] = 0.3f;
@@ -111529,14 +110124,8 @@ PackedStringArray Joint3D::get_configuration_warnings() const {
 	return warnings;
 }
 
-// ============================================================================
-// Merged from scene/3d/physics/soft_body_3d.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/physics/soft_body_3d.h ---
 #include "servers/display/display_server.h"
 
 class MeshInstance3D;
@@ -111687,8 +110276,6 @@ private:
 	int _get_pinned_point(int p_point_index, PinnedPoint*& r_point) const;
 	int _has_pinned_point(int p_point_index) const;
 };
-
-// --- End scene/3d/physics/soft_body_3d.h ---
 
 SoftBody3D::PinnedPoint::PinnedPoint() {}
 
@@ -112135,15 +110722,10 @@ void SoftBody3D::_add_pinned_point(int, NodePath const&, int) {}
 
 void SoftBody3D::add_collision_exception_with(Node*) {}
 
-// ============================================================================
-// Merged from scene/resources/3d/shape_3d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include <cfloat> // FLT_MAX
 
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 RID Shape3D::_create_shape_rid(ShapeType p_type)
@@ -112817,13 +111399,10 @@ Ref<ArrayMesh> Shape3D::get_debug_mesh()
 }
 #endif // !defined(_3D_DISABLED)
 
-
-// --- Merged from scene/3d/visual_instance_3d.cpp ---
 #if !defined(_3D_DISABLED)
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -113187,10 +111766,6 @@ RenderInstance3D::~RenderInstance3D()
 	}
 }
 
-// ==========================================================================
-// Merged from scene/3d/mesh_instance_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -113466,10 +112041,6 @@ MeshInstance3D* MeshInstance3D::create_debug_tangents_node()
 	return nullptr;
 }
 
-// ==========================================================================
-// Merged from scene/3d/multimesh_instance_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -113528,10 +112099,6 @@ AABB MultiMeshInstance3D::get_aabb() const
 		return multimesh->get_aabb();
 	}
 }
-
-// ==========================================================================
-// Merged from scene/3d/importer_mesh_instance_3d.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -113604,13 +112171,8 @@ ImporterMeshInstance3D::get_visibility_range_fade_mode() const
 	return visibility_range_fade_mode;
 }
 
-// ==========================================================================
-// Merged from scene/3d/sprite_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 Color Sprite3D::_get_color_accum()
@@ -114242,11 +112804,6 @@ Sprite3D::~Sprite3D()
 	}
 }
 
-// ==========================================================================
-// Merged from scene/3d/label_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -114688,14 +113245,8 @@ Label3D::~Label3D()
 
 void Label3D::_queue_update() {}
 
-
 Ref<Font> Label3D::_get_font_or_default() const { return Ref<Font>(); }
 
-// ==========================================================================
-// Merged from scene/3d/decal.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -114842,13 +113393,6 @@ Decal::~Decal()
 	Renderer::free_rid(decal);
 }
 
-// ==========================================================================
-// Merged from scene/3d/fog_volume.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/3d/fog_volume.h ---
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -114889,7 +113433,6 @@ public:
 	~FogVolume();
 };
 
-// --- End scene/3d/fog_volume.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -114949,12 +113492,6 @@ FogVolume::~FogVolume()
 	Renderer::free_rid(volume);
 }
 
-// ==========================================================================
-// Merged from scene/3d/occluder_instance_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -115378,7 +113915,6 @@ bool OccluderInstance3D::_is_editable_3d_polygon() const
 
 Ref<Resource> OccluderInstance3D::_get_editable_3d_polygon_resource() const { return occluder; }
 
-
 void OccluderInstance3D::_notification(int p_what)
 {
 	render_instance.notification(this, p_what);
@@ -115393,16 +113929,10 @@ OccluderInstance3D::OccluderInstance3D() {}
 
 OccluderInstance3D::~OccluderInstance3D() {}
 
-
-
 void OccluderInstance3D::set_occluder(Ref<Occluder3D> const&) {}
 
 void OccluderInstance3D::_bake_node(Node*, Vector<Vector3>&, Vector<int>&) {}
 
-// ==========================================================================
-// Merged from scene/3d/visible_on_screen_notifier_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/visible_on_screen_notifier_3d.h ---
 #include "servers/display/display_server.h"
 
 class VisibleOnScreenNotifier3D : public Node3D
@@ -115455,9 +113985,6 @@ public:
 	~VisibleOnScreenNotifier3D();
 };
 
-// --- End scene/3d/visible_on_screen_notifier_3d.h ---
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void VisibleOnScreenNotifier3D::set_aabb(const AABB& p_aabb) { aabb = p_aabb; }
@@ -115558,13 +114085,6 @@ VisibleOnScreenNotifier3D::~VisibleOnScreenNotifier3D()
 	}
 }
 
-// ============================================================================
-// Merged from scene/3d/cpu_particles_3d.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/ip.h"
-// --- Inlined from scene/3d/cpu_particles_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -115875,11 +114395,7 @@ public:
 	~CPUParticles3D();
 };
 
-
-
-// --- End scene/3d/cpu_particles_3d.h ---
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/gpu_particles_3d.h ---
 #include "servers/display/display_server.h"
 
 class Mesh;
@@ -116071,9 +114587,6 @@ public:
 	~GPUParticles3D();
 };
 
-
-
-// --- End scene/3d/gpu_particles_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -116677,13 +115190,6 @@ void CPUParticles3D::_particles_process(double p_delta) {}
 
 PackedStringArray CPUParticles3D::get_configuration_warnings() const { return PackedStringArray(); }
 
-// ==========================================================================
-// Merged from scene/3d/gpu_particles_3d.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -117028,11 +115534,6 @@ void GPUParticles3D::set_transform_align(GPUParticles3D::TransformAlign) {}
 
 void GPUParticles3D::set_draw_passes(int) {}
 
-// ==========================================================================
-// Merged from scene/3d/gpu_particles_collision_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/gpu_particles_collision_3d.h ---
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 class Mesh;
@@ -117230,10 +115731,7 @@ public:
 	~GPUParticlesAttractor3D();
 };
 
-// --- End scene/3d/gpu_particles_collision_3d.h ---
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -117567,13 +116065,8 @@ GPUParticlesAttractor3D::~GPUParticlesAttractor3D()
 	}
 }
 
-// ============================================================================
-// Merged from scene/3d/light_3d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -117973,12 +116466,6 @@ Light3D::~Light3D()
 	_free_light_rid();
 }
 
-// ==========================================================================
-// Merged from scene/3d/voxelizer.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 // --- voxelizer.h ---
 #include "servers/display/display_server.h"
@@ -118959,16 +117446,7 @@ Transform3D Voxelizer::get_to_cell_space_xform() const { return to_cell_space; }
 
 Voxelizer::Voxelizer() {}
 
-// ==========================================================================
-// Merged from scene/3d/lightmap_gi.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/lightmap_gi.h ---
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 class CameraAttributes;
@@ -119306,12 +117784,8 @@ public:
 	LightmapGI();
 };
 
-
-
-// --- End scene/3d/lightmap_gi.h ---
 #include "core/version_generated.gen.h" // IWYU pragma: keep. For lightmapper_rd.
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/lightmap_probe.h ---
 #include "servers/display/display_server.h"
 
 class LightmapProbe : public Node3D
@@ -119320,9 +117794,6 @@ public:
 	LightmapProbe();
 };
 
-
-
-// --- End scene/3d/lightmap_probe.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -119331,7 +117802,6 @@ public:
 #endif
 
 #if defined(ANDROID_ENABLED) || defined(APPLE_EMBEDDED_ENABLED)
-#include "core/os/os.h"
 #endif
 
 void LightmapGIData::add_user(
@@ -120055,25 +118525,14 @@ PackedStringArray LightmapGI::get_configuration_warnings() const
 
 LightmapGI::LightmapGI() {}
 
-
-
 bool LightmapGIData::has_shadowmask_textures() { return false; }
 
 void LightmapGI::_clear_lightmaps() {}
 
 void LightmapGI::_assign_lightmaps() {}
 
-// ==========================================================================
-// Merged from scene/3d/lightmap_probe.cpp
-// ==========================================================================
-
-
 LightmapProbe::LightmapProbe() {
 }
-
-// ==========================================================================
-// Merged from scene/3d/lightmapper.cpp
-// ==========================================================================
 
 #include "servers/display/display_server.h"
 
@@ -120192,12 +118651,6 @@ Vector<Color> Lightmapper::get_bake_probe_sh(int p_probe) const { return Vector<
 
 #endif // MODULE_LIGHTMAPPER_RD_ENABLED
 
-// ==========================================================================
-// Merged from scene/3d/reflection_probe.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
-// --- Inlined from scene/3d/reflection_probe.h ---
 #include "servers/display/display_server.h"
 
 class ReflectionProbe : public Node3D
@@ -120298,9 +118751,6 @@ public:
 	~ReflectionProbe();
 };
 
-
-
-// --- End scene/3d/reflection_probe.h ---
 #include "servers/display/display_server.h"
 
 void ReflectionProbe::set_intensity(float p_intensity)
@@ -120433,14 +118883,8 @@ ReflectionProbe::~ReflectionProbe()
 	Renderer::free_rid(probe);
 }
 
-// ==========================================================================
-// Merged from scene/3d/voxel_gi.cpp
-// ==========================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/voxel_gi.h ---
 #include "servers/display/display_server.h"
 
 class CameraAttributes;
@@ -120579,10 +119023,6 @@ public:
 	VoxelGI();
 	~VoxelGI();
 };
-
-
-
-// --- End scene/3d/voxel_gi.h ---
 
 void VoxelGIData::allocate(const Transform3D& p_to_cell_xform, const AABB& p_aabb,
 	const Vector3& p_octree_size, const Vector<uint8_t>& p_octree_cells,
@@ -120812,14 +119252,10 @@ VoxelGI::~VoxelGI()
 void VoxelGI::bake(Node*, bool) {}
 #endif // !defined(_3D_DISABLED)
 
-
-// --- Merged from scene/3d/navigation/navigation_3d.cpp ---
 #if !defined(_3D_DISABLED) && !defined(NAVIGATION_3D_DISABLED)
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -120931,17 +119367,7 @@ void NavigationAgent3D::_notification(int p_what)
 	}
 }
 
-
-
-
-
-
-
-
-
 bool NavigationAgent3D::get_avoidance_enabled() const { return avoidance_enabled; }
-
-
 
 void NavigationAgent3D::set_navigation_layers(uint32_t p_navigation_layers)
 {
@@ -121136,8 +119562,6 @@ void NavigationAgent3D::set_path_height_offset(real_t p_path_height_offset)
 	path_height_offset = p_path_height_offset;
 }
 
-
-
 void NavigationAgent3D::set_keep_y_velocity(bool p_enabled)
 {
 	keep_y_velocity = p_enabled;
@@ -121296,12 +119720,6 @@ void NavigationAgent3D::set_velocity(const Vector3 p_velocity)
 	velocity_submitted = true;
 }
 
-
-
-
-
-
-
 void NavigationAgent3D::_advance_waypoints(const Vector3& p_origin)
 {
 	if (last_waypoint_reached) {
@@ -121347,12 +119765,6 @@ bool NavigationAgent3D::_is_within_target_distance(const Vector3& p_origin) cons
 {
 	return p_origin.distance_to(target_position) < target_desired_distance;
 }
-
-
-
-
-
-
 
 void NavigationAgent3D::set_avoidance_layers(uint32_t p_layers)
 {
@@ -121497,8 +119909,6 @@ float NavigationAgent3D::get_debug_path_custom_point_size() const
 void NavigationAgent3D::_navigation_debug_changed() { debug_path_dirty = true; }
 #endif // DEBUG_ENABLED
 
-
-
 void NavigationAgent3D::_update_navigation() {}
 
 void NavigationAgent3D::set_agent_parent(Node*) {}
@@ -121508,7 +119918,6 @@ void NavigationAgent3D::_update_debug_path() {}
 #endif // DEBUG_ENABLED
 
 void NavigationAgent3D::_trigger_waypoint_reached() {}
-
 
 void NavigationLink3D::_notification(int p_what)
 {
@@ -121724,12 +120133,9 @@ void NavigationLink3D::_link_update_transform()
 #endif // DEBUG_ENABLED
 }
 
-
-
 #ifdef DEBUG_ENABLED
 void NavigationLink3D::_update_debug_mesh() {}
 #endif // DEBUG_ENABLED
-
 
 RID NavigationObstacle3D::_navmesh_source_geometry_parser;
 
@@ -122095,7 +120501,6 @@ void NavigationObstacle3D::_update_static_obstacle_debug() {}
 void NavigationObstacle3D::_update_fake_agent_radius_debug() {}
 #endif // DEBUG_ENABLED
 
-
 RID NavigationRegion3D::get_rid() const { return region; }
 
 bool NavigationRegion3D::is_enabled() const { return enabled; }
@@ -122335,19 +120740,12 @@ void NavigationRegion3D::_update_bounds()
 	bounds = new_bounds;
 }
 
-
-
 #ifdef DEBUG_ENABLED
 void NavigationRegion3D::_update_debug_mesh() {}
 
 void NavigationRegion3D::_update_debug_edge_connections_mesh() {}
 #endif // DEBUG_ENABLED
 
-// ============================================================================
-// Merged from scene/resources/3d/navigation_mesh_source_geometry_data_3d.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 void NavigationMeshSourceGeometryData3D::set_vertices(const Vector<float>& p_vertices)
@@ -122592,16 +120990,10 @@ AABB NavigationMeshSourceGeometryData3D::get_bounds()
 	return bounds;
 }
 
-
-
 void NavigationMeshSourceGeometryData3D::_add_mesh(Ref<Mesh> const&, Transform3D const&) {}
 #endif // !defined(_3D_DISABLED) && !defined(NAVIGATION_3D_DISABLED)
 
-
-// --- Merged from scene/3d/xr/xr_nodes.cpp ---
 #if !defined(_3D_DISABLED) && !defined(XR_DISABLED)
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -122984,10 +121376,6 @@ PackedStringArray XROrigin3D::get_configuration_warnings() const
 	return warnings;
 }
 
-// ==========================================================================
-// Merged from scene/3d/xr/xr_body_modifier_3d.cpp
-// ==========================================================================
-// --- Inlined from scene/3d/xr/xr_body_modifier_3d.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -123068,8 +121456,6 @@ private:
 	void _process_hand_modification(Skeleton3D *p_skeleton);
 	void _tracker_changed(const String &p_tracker_name, XRServer::TrackerType p_tracker_type);
 };
-
-// --- End scene/3d/xr/xr_body_modifier_3d.h ---
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -123592,13 +121978,7 @@ void XRBodyModifier3D::_process_hand_modification(Skeleton3D *p_skeleton) {
 	has_stored_previous_transforms = true;
 }
 
-// ==========================================================================
-// Merged from scene/3d/xr/xr_face_modifier_3d.cpp
-// ==========================================================================
-
 #include "servers/display/display_server.h"
-// --- Inlined from scene/3d/xr/xr_face_modifier_3d.h ---
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 /**
@@ -123634,8 +122014,6 @@ public:
 
 	void _notification(int p_what);
 };
-
-// --- End scene/3d/xr/xr_face_modifier_3d.h ---
 
 // This method takes the name of a mesh blend shape and returns the
 // corresponding XRFaceTracker blend shape. If no match is
@@ -123976,7 +122354,6 @@ static void remove_driven_unified_blend_shapes(RBMap<int, int>& p_blend_mapping)
 	}
 }
 
-
 void XRFaceModifier3D::set_face_tracker(const String& p_tracker_name)
 {
 	tracker_name = p_tracker_name;
@@ -124079,13 +122456,10 @@ void XRFaceModifier3D::_notification(int p_what)
 	}
 }
 
-
-
 MeshInstance3D* XRFaceModifier3D::get_mesh_instance() const { return nullptr; }
 #endif // !defined(_3D_DISABLED) && !defined(XR_DISABLED)
 #endif // _3D_DISABLED
 
-// === Merged from modules/multiplayer/scene_multiplayer.cpp ===
 extern "C" {
 #include <mbedtls/psa_util.h>
 }
@@ -124094,8 +122468,6 @@ extern "C" {
 #if defined(MODULE_MULTIPLAYER_ENABLED)
 #include "servers/display/display_server.h"
 
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 // SceneReplicationConfig
@@ -124837,10 +123209,6 @@ void MultiplayerAPI::clear()
 
 Error MultiplayerAPI::poll() { return OK; }
 
-// ============================================================================
-// Merged from modules/multiplayer/register_types.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
@@ -124858,14 +123226,8 @@ void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)
 	MultiplayerDebugger::deinitialize();
 }
 
-// ============================================================================
-// Merged from modules/multiplayer/multiplayer_synchronizer.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 void MultiplayerSynchronizer::reset()
@@ -125117,12 +123479,8 @@ void MultiplayerSynchronizer::_start() {}
 void MultiplayerSynchronizer::_update_process() {}
 #endif // defined(MODULE_MULTIPLAYER_ENABLED)
 
-
-// --- Merged from modules/enet/enet_connection.cpp ---
 #if defined(MODULE_ENET_ENABLED)
-// --- Inlined from modules/enet/enet_connection.h ---
 #include <enet/enet.h>
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 template <typename T> class TypedArray;
@@ -125414,12 +123772,7 @@ public:
 	~ENetMultiplayerPeer();
 };
 
-// --- End modules/enet/enet_connection.h ---
 #include "servers/display/display_server.h"
-
-#include "core/typedefs.h"
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
 
 // ENetPacketPeer
 
@@ -126495,18 +124848,13 @@ void uninitialize_enet_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_ENET_ENABLED)
 
-
-// --- Merged from modules/mbedtls/crypto_mbedtls.cpp ---
 #if defined(MODULE_MBEDTLS_ENABLED)
-// --- Inlined from modules/mbedtls/crypto_mbedtls.h ---
 #include <mbedtls/debug.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ssl_cookie.h>
 #include <mbedtls/timing.h>
 
-#include "core/io/net_socket.h"
 #include "core/io/packet_peer_dtls.h"
-#include "core/io/net_socket.h"
 
 #if MBEDTLS_VERSION_MAJOR < 4
 int godot_mbedtls_random_compat(void* p_rng, unsigned char* r_output, size_t p_output_len);
@@ -126667,8 +125015,6 @@ struct DTLSServer::Data
 	}
 };
 
-// --- End modules/mbedtls/crypto_mbedtls.h ---
-// --- Inlined/Folded from modules/mbedtls/mbedtls_cpp_compat.h ---
 #include <mbedtls/psa_util.h>
 
 #ifdef MBEDTLS_ECDSA_DER_MAX_LEN
@@ -126697,11 +125043,7 @@ int godot_mbedtls_ecdsa_der_to_raw(size_t bits, const unsigned char *der, size_t
 #include <mbedtls/psa_util.h>
 #include <psa/crypto.h>
 
-#include "core/os/os.h"
 #include "main/splash.gen.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 
 #ifdef TOOLS_ENABLED
 #include "servers/display/display_server.h"
@@ -128346,10 +126688,6 @@ void uninitialize_mbedtls_module(ModuleInitializationLevel p_level)
 	godot_mbedtls_initialized = false;
 }
 
-
-// --- Merged from modules/mbedtls/mbedtls_cpp_compat.c ---
-
-
 int godot_mbedtls_ecdsa_raw_to_der(size_t bits, const unsigned char *raw, size_t raw_len, unsigned char *der, size_t der_size, size_t *der_len) {
 	return mbedtls_ecdsa_raw_to_der(bits, raw, raw_len, der, der_size, der_len);
 }
@@ -128358,11 +126696,7 @@ int godot_mbedtls_ecdsa_der_to_raw(size_t bits, const unsigned char *der, size_t
 }
 #endif // defined(MODULE_MBEDTLS_ENABLED)
 
-
-// --- Merged from modules/upnp/upnp.cpp ---
 #if defined(MODULE_UPNP_ENABLED)
-// --- Inlined from modules/upnp/upnp.h ---
-#include "core/io/ip.h"
 
 struct UPNPDev;
 
@@ -128511,7 +126845,6 @@ public:
 	~UPNP() {}
 };
 
-// --- End modules/upnp/upnp.h ---
 #include "servers/display/display_server.h"
 
 #ifndef WEB_ENABLED
@@ -128949,12 +127282,7 @@ void uninitialize_upnp_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_UPNP_ENABLED)
 
-
-// --- Merged from modules/webrtc/webrtc_peer_connection.cpp ---
 #if defined(MODULE_WEBRTC_ENABLED)
-// --- Inlined from modules/webrtc/webrtc_peer_connection.h ---
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 class WebRTCDataChannel final : public PacketPeer
@@ -129188,10 +127516,7 @@ public:
 	virtual ConnectionStatus get_connection_status() const override;
 };
 
-// --- End modules/webrtc/webrtc_peer_connection.h ---
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 #ifdef WEB_ENABLED
 #include <emscripten.h>
@@ -129872,15 +128197,8 @@ void uninitialize_webrtc_module(ModuleInitializationLevel p_level)
 void initialize_webrtc_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_WEBRTC_ENABLED)
 
-
-// --- Merged from modules/websocket/websocket_peer.cpp ---
 #if defined(MODULE_WEBSOCKET_ENABLED)
-// --- Inlined from modules/websocket/websocket_peer.h ---
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
 #include "core/templates/list.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #ifdef WEB_ENABLED
@@ -129901,7 +128219,6 @@ extern void godot_js_websocket_destroy(int p_id);
 }
 #else
 #include <wslay/wslay.h>
-#include "core/io/net_socket.h"
 
 #define WSL_MAX_HEADER_SIZE 4096
 #endif
@@ -130309,14 +128626,7 @@ public:
 	RemoteDebuggerPeerWebSocket(const Ref<WebSocketPeer>& p_peer = Ref<WebSocketPeer>());
 };
 
-// --- End modules/websocket/websocket_peer.h ---
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
 
 // WebSocketPeer (shared configuration)
 
@@ -131676,12 +129986,9 @@ void uninitialize_websocket_module(ModuleInitializationLevel p_level)
 void initialize_websocket_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_WEBSOCKET_ENABLED)
 
-// === Merged from modules/interactive_music/audio_stream_interactive.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_INTERACTIVE_MUSIC_ENABLED)
-// --- Inlined from modules/interactive_music/audio_stream_interactive.h ---
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 class AudioStreamPlaybackInteractive;
@@ -131989,10 +130296,7 @@ public:
 	~AudioStreamPlaybackInteractive();
 };
 
-// --- End modules/interactive_music/audio_stream_interactive.h ---
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 
 AudioStreamInteractive::AudioStreamInteractive() {}
 
@@ -133497,17 +131801,13 @@ void uninitialize_interactive_music_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_INTERACTIVE_MUSIC_ENABLED)
 
-
-// --- Merged from modules/mp3/audio_stream_mp3.cpp ---
 #if defined(MODULE_MP3_ENABLED)
 #define DR_MP3_FLOAT_OUTPUT
 #define DR_MP3_IMPLEMENTATION
 #define DR_MP3_NO_STDIO
 
 #include <thirdparty/dr_libs/dr_bridge.h>
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-// --- Inlined from modules/mp3/audio_stream_mp3.h ---
 #include <thirdparty/dr_libs/dr_mp3.h>
 #include "servers/display/display_server.h"
 
@@ -133614,8 +131914,6 @@ public:
 	virtual Ref<AudioSample> generate_sample() const override;
 };
 
-#include "core/io/net_socket.h"
-
 class ResourceImporterMP3 final : public ResourceImporter
 {
 public:
@@ -133640,9 +131938,6 @@ public:
 
 	ResourceImporterMP3() = default;
 };
-
-// --- End modules/mp3/audio_stream_mp3.h ---
-#include "core/io/file_access.h"
 
 int AudioStreamPlaybackMP3::_mix_internal(AudioFrame* p_buffer, int p_frames)
 {
@@ -133933,12 +132228,8 @@ void initialize_mp3_module(ModuleInitializationLevel p_level)
 void uninitialize_mp3_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_MP3_ENABLED)
 
-
-// --- Merged from modules/ogg/ogg_packet_sequence.cpp ---
 #if defined(MODULE_OGG_ENABLED)
-// --- Inlined/Folded from modules/ogg/ogg_packet_sequence.h ---
 #include <ogg/ogg.h>
-#include "core/io/ip.h"
 
 class OggPacketSequencePlayback;
 
@@ -134097,7 +132388,6 @@ Ref<OggPacketSequencePlayback> OggPacketSequence::instantiate_playback()
 	return playback;
 }
 
-
 bool OggPacketSequencePlayback::next_ogg_packet(ogg_packet** p_packet) const
 {
 	ERR_FAIL_COND_V(data_version != ogg_packet_sequence->data_version, false);
@@ -134227,13 +132517,9 @@ void uninitialize_ogg_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_OGG_ENABLED)
 
-
-// --- Merged from modules/vorbis/audio_stream_ogg_vorbis.cpp ---
 #if defined(MODULE_VORBIS_ENABLED)
 #include <ogg/ogg.h>
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-// --- Inlined from modules/vorbis/audio_stream_ogg_vorbis.h ---
 #include <vorbis/codec.h>
 
 #include "servers/display/display_server.h"
@@ -134364,8 +132650,6 @@ public:
 	virtual Ref<AudioSample> generate_sample() const override;
 };
 
-#include "core/io/net_socket.h"
-
 class ResourceImporterOggVorbis final : public ResourceImporter
 {
 protected:
@@ -134395,10 +132679,6 @@ public:
 
 	ResourceImporterOggVorbis();
 };
-
-// --- End modules/vorbis/audio_stream_ogg_vorbis.h ---
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
 
 int AudioStreamPlaybackOggVorbis::_mix_internal(AudioFrame* p_buffer, int p_frames)
 {
@@ -135048,94 +133328,37 @@ void initialize_vorbis_module(ModuleInitializationLevel p_level)
 void uninitialize_vorbis_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_VORBIS_ENABLED)
 
-
-// --- Merged from modules/theora/video_stream_theora.cpp ---
 #if defined(MODULE_THEORA_ENABLED)
-// --- Inlined from modules/theora/video_stream_theora.h ---
-#include "core/io/net_socket.h"
-
-class ResourceFormatLoaderTheora final : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-};
 
 #ifdef TOOLS_ENABLED
 #include <theora/theoraenc.h>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
-#include "core/io/file_access.h"
 #include "servers/display/display_server.h"
 
-class MovieWriterOGV final : public MovieWriter
+struct MovieWriter::OGVState
 {
-	uint32_t mix_rate = 48000;
-	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
-	String base_path;
-	uint32_t frame_count = 0;
-	uint32_t fps = 0;
 	uint32_t audio_ch = 0;
 	uint32_t audio_frames = 0;
-
-	Ref<FileAccess> f;
-
-	// Vorbis quality -0.1 to 1 (-0.1 yields smallest files but lowest fidelity; 1 yields highest
-	// fidelity but large files. '0.2' is a reasonable default).
-	float audio_quality = 0.5;
-
-	// Bitrate target for Theora video.
+	float audio_quality = 0.5f;
 	int video_bitrate = 0;
-
-	// Theora quality selector from 0 to 1.0 (0 yields smallest files but lowest video quality. 1.0
-	// yields highest fidelity but large files).
-	float video_quality = 0.75;
-
-	// Video stream keyframe frequency (one every N frames).
+	float video_quality = 0.75f;
 	ogg_uint32_t keyframe_frequency = 64;
-
-	// Sets the encoder speed level. Higher speed levels favor quicker encoding over better quality
-	// per bit. Depending on the encoding mode, and the internal algorithms used, quality may
-	// actually improve with higher speeds, but in this case bitrate will also likely increase. The
-	// maximum value, and the meaning of each value, are implementation-specific and may change
-	// depending on the current encoding mode.
 	int speed = 4;
 
-	// Take physical pages, weld into a logical stream of packets.
 	ogg_stream_state to;
-
-	// Take physical pages, weld into a logical stream of packets.
 	ogg_stream_state vo;
-
-	// Theora encoding context.
-	th_enc_ctx* td;
-
-	// Theora bitstream information.
+	th_enc_ctx* td = nullptr;
 	th_info ti;
-
-	// Theora comment information.
 	th_comment tc;
-
-	// Vorbis bitstream information.
 	vorbis_info vi;
-
-	// Vorbis comment information.
 	vorbis_comment vc;
-
-	// Central working state for the packet->PCM decoder.
 	vorbis_dsp_state vd;
-
-	// Local working space for packet->PCM decode.
 	vorbis_block vb;
-
-	// Video buffer.
-	uint8_t *y, *u, *v;
+	uint8_t* y = nullptr;
+	uint8_t* u = nullptr;
+	uint8_t* v = nullptr;
 	th_ycbcr_buffer ycbcr;
-
 	bool audio_flag = false;
 	bool video_flag = false;
 	ogg_page audio_page;
@@ -135144,46 +133367,18 @@ class MovieWriterOGV final : public MovieWriter
 	unsigned int backup_page_size = 0;
 	unsigned char* backup_page_data = nullptr;
 
-	void write_to_file(bool p_finish = false);
+	void write_to_file(Ref<FileAccess>& f, bool p_finish = false);
 	void push_audio(const int32_t* p_audio_data);
 	void push_video(const Ref<Image>& p_image);
 	void pull_audio(bool p_last = false);
 	void pull_video(bool p_last = false);
 	void save_page(ogg_page page);
 	void restore_page(ogg_page* page);
-
-	inline int ilog(unsigned _v)
-	{
-		int ret;
-		for (ret = 0; _v; ret++) {
-			_v >>= 1;
-		}
-		return ret;
-	}
-
-protected:
-	virtual uint32_t get_audio_mix_rate() const override;
-	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
-	virtual void get_supported_extensions(List<String>* r_extensions) const override;
-
-	virtual Error write_begin(
-		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path) override;
-	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data) override;
-	virtual void write_end() override;
-
-	virtual bool handles_file(const String& p_path) const override;
-
-public:
-	MovieWriterOGV();
 };
 #endif // TOOLS_ENABLED
 
-// --- End modules/theora/video_stream_theora.h ---
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -136027,8 +134222,8 @@ Ref<VideoStreamPlayback> VideoStream::instantiate_playback()
 	return pb;
 }
 
-Ref<Resource> ResourceFormatLoaderTheora::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+static Ref<Resource> _theora_res_load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
 	if (f.is_null()) {
@@ -136037,35 +134232,17 @@ Ref<Resource> ResourceFormatLoaderTheora::load(const String& p_path, const Strin
 		}
 		return Ref<Resource>();
 	}
-
 	Ref<VideoStream> stream;
 	stream.instantiate();
 	stream->set_file(p_path);
-
 	if (r_error) {
 		*r_error = OK;
 	}
-
 	return stream;
 }
-
-void ResourceFormatLoaderTheora::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("ogv");
-}
-
-bool ResourceFormatLoaderTheora::handles_type(const String& p_type) const
-{
-	return p_type == "VideoStream";
-}
-
-String ResourceFormatLoaderTheora::get_resource_type(const String& p_path) const
-{
-	if (p_path.has_extension("ogv")) {
-		return "VideoStream";
-	}
-	return "";
-}
+static bool _theora_res_handles_type(const String& p_type) { return p_type == "VideoStream"; }
+static String _theora_res_get_type(const String& p_path) { return p_path.has_extension("ogv") ? "VideoStream" : ""; }
+static const char* const _theora_res_exts[] = { "ogv", nullptr };
 
 #ifdef TOOLS_ENABLED
 #include <cstdlib>
@@ -136115,7 +134292,7 @@ static void rgba2yuv420(uint8_t *y, uint8_t *u, uint8_t *v, uint8_t *rgba, size_
 
 #include <cstdlib>
 
-void MovieWriterOGV::push_audio(const int32_t* p_audio_data)
+void MovieWriter::OGVState::push_audio(const int32_t* p_audio_data)
 {
 	// Read and process more audio.
 	float** vorbis_buffer = vorbis_analysis_buffer(&vd, audio_frames);
@@ -136132,7 +134309,7 @@ void MovieWriterOGV::push_audio(const int32_t* p_audio_data)
 	vorbis_analysis_wrote(&vd, audio_frames);
 }
 
-void MovieWriterOGV::pull_audio(bool p_last)
+void MovieWriter::OGVState::pull_audio(bool p_last)
 {
 	ogg_packet op;
 
@@ -136153,7 +134330,7 @@ void MovieWriterOGV::pull_audio(bool p_last)
 	}
 }
 
-void MovieWriterOGV::push_video(const Ref<Image>& p_image)
+void MovieWriter::OGVState::push_video(const Ref<Image>& p_image)
 {
 	PackedByteArray data = p_image->get_data();
 	if (p_image->get_format() == Image::FORMAT_RGBA8) {
@@ -136165,7 +134342,7 @@ void MovieWriterOGV::push_video(const Ref<Image>& p_image)
 	th_encode_ycbcr_in(td, ycbcr);
 }
 
-void MovieWriterOGV::pull_video(bool p_last)
+void MovieWriter::OGVState::pull_video(bool p_last)
 {
 	ogg_packet op;
 
@@ -136178,254 +134355,7 @@ void MovieWriterOGV::pull_video(bool p_last)
 	} while (ret > 0);
 }
 
-uint32_t MovieWriterOGV::get_audio_mix_rate() const { return mix_rate; }
-
-AudioServer::SpeakerMode MovieWriterOGV::get_audio_speaker_mode() const { return speaker_mode; }
-
-bool MovieWriterOGV::handles_file(const String& p_path) const
-{
-	return p_path.has_extension("ogv");
-}
-
-void MovieWriterOGV::get_supported_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("ogv");
-}
-
-Error MovieWriterOGV::write_begin(
-	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
-{
-	ERR_FAIL_COND_V_MSG((p_movie_size.width & 1) || (p_movie_size.height & 1), ERR_UNAVAILABLE,
-		"Both video dimensions must be even.");
-	base_path = p_base_path.get_basename();
-	if (base_path.is_relative_path()) {
-		base_path = "res://" + base_path;
-	}
-	base_path += ".ogv";
-
-	f = FileAccess::open(base_path, FileAccess::WRITE_READ);
-	ERR_FAIL_COND_V(f.is_null(), ERR_CANT_OPEN);
-
-	fps = p_fps;
-
-	audio_ch = 2;
-	switch (speaker_mode) {
-	case AudioServer::SPEAKER_MODE_STEREO:
-		audio_ch = 2;
-		break;
-	case AudioServer::SPEAKER_SURROUND_31:
-		audio_ch = 4;
-		break;
-	case AudioServer::SPEAKER_SURROUND_51:
-		audio_ch = 6;
-		break;
-	case AudioServer::SPEAKER_SURROUND_71:
-		audio_ch = 8;
-		break;
-	}
-	audio_frames = mix_rate / fps;
-
-	// Set up Ogg output streams.
-	srand(time(nullptr));
-	ogg_stream_init(&to, rand()); // Video.
-	ogg_stream_init(&vo, rand()); // Audio.
-
-	// Initialize Vorbis audio encoding.
-	vorbis_info_init(&vi);
-	int ret = vorbis_encode_init_vbr(&vi, audio_ch, mix_rate, audio_quality);
-	ERR_FAIL_COND_V_MSG(ret, ERR_UNAVAILABLE,
-		"The Ogg Vorbis encoder couldn't set up a mode according to the requested quality or "
-		"bitrate.");
-
-	vorbis_comment_init(&vc);
-	vorbis_analysis_init(&vd, &vi);
-	vorbis_block_init(&vd, &vb);
-
-	// Set up Theora encoder.
-	// Theora has a divisible-by-16 restriction for the encoded frame size
-	// scale the picture size up to the nearest /16 and calculate offsets.
-	int pic_w = p_movie_size.width;
-	int pic_h = p_movie_size.height;
-	int frame_w = (pic_w + 15) & ~0xF;
-	int frame_h = (pic_h + 15) & ~0xF;
-	// Force the offsets to be even so that chroma samples line up like we expect.
-	int pic_x = (frame_w - pic_w) / 2 & ~1;
-	int pic_y = (frame_h - pic_h) / 2 & ~1;
-
-	y = (uint8_t*)memalloc(pic_w * pic_h);
-	u = (uint8_t*)memalloc(pic_w * pic_h / 4);
-	v = (uint8_t*)memalloc(pic_w * pic_h / 4);
-
-	// We submit the buffer using the size of the picture region.
-	// libtheora will pad the picture region out to the full frame size for us,
-	// whether we pass in a full frame or not.
-	ycbcr[0].width = pic_w;
-	ycbcr[0].height = pic_h;
-	ycbcr[0].stride = pic_w;
-	ycbcr[0].data = y;
-	ycbcr[1].width = pic_w / 2;
-	ycbcr[1].height = pic_h / 2;
-	ycbcr[1].stride = pic_w / 2;
-	ycbcr[1].data = u;
-	ycbcr[2].width = pic_w / 2;
-	ycbcr[2].height = pic_h / 2;
-	ycbcr[2].stride = pic_w / 2;
-	ycbcr[2].data = v;
-
-	th_info_init(&ti);
-	ti.frame_width = frame_w;
-	ti.frame_height = frame_h;
-	ti.pic_width = pic_w;
-	ti.pic_height = pic_h;
-	ti.pic_x = pic_x;
-	ti.pic_y = pic_y;
-	ti.fps_numerator = fps;
-	ti.fps_denominator = 1;
-	ti.aspect_numerator = 1;
-	ti.aspect_denominator = 1;
-	ti.colorspace = TH_CS_UNSPECIFIED;
-	// Account for the Ogg page overhead.
-	// This is 1 byte per 255 for lacing values, plus 26 bytes per 4096 bytes for
-	// the page header, plus approximately 1/2 byte per packet (not accounted for here).
-	ti.target_bitrate = (int)(64870 * (ogg_int64_t)video_bitrate >> 16);
-	ti.quality = video_quality * 63;
-	ti.pixel_fmt = TH_PF_420;
-	td = th_encode_alloc(&ti);
-	th_info_clear(&ti);
-	ERR_FAIL_NULL_V_MSG(td, ERR_UNCONFIGURED,
-		"Couldn't create a Theora encoder instance. Check that the video parameters are valid.");
-
-	// Setting just the granule shift only allows power-of-two keyframe spacing.
-	// Set the actual requested spacing.
-	ret = th_encode_ctl(td, TH_ENCCTL_SET_KEYFRAME_FREQUENCY_FORCE, &keyframe_frequency,
-		sizeof(keyframe_frequency));
-	if (ret < 0) {
-		ERR_PRINT("Couldn't set keyframe interval.");
-	}
-
-	// Speed should also be set after the current encoder mode is established,
-	// since the available speed levels may change depending on the encoder mode.
-	if (speed >= 0) {
-		int speed_max;
-		ret = th_encode_ctl(td, TH_ENCCTL_GET_SPLEVEL_MAX, &speed_max, sizeof(speed_max));
-		if (ret < 0) {
-			WARN_PRINT("Couldn't determine maximum speed level.");
-			speed_max = 0;
-		}
-		ret = th_encode_ctl(td, TH_ENCCTL_SET_SPLEVEL, &speed, sizeof(speed));
-		if (ret < 0) {
-			if (ret < 0) {
-				WARN_PRINT(vformat("Couldn't set speed level to %d of %d.", speed, speed_max));
-			}
-			if (speed > speed_max) {
-				WARN_PRINT(vformat("Setting speed level to %d instead.", speed_max));
-			}
-			ret = th_encode_ctl(td, TH_ENCCTL_SET_SPLEVEL, &speed_max, sizeof(speed_max));
-			if (ret < 0) {
-				WARN_PRINT(vformat("Couldn't set speed level to %d of %d.", speed_max, speed_max));
-			}
-		}
-	}
-
-	// Write the bitstream header packets with proper page interleave.
-	th_comment_init(&tc);
-	// The first packet will get its own page automatically.
-	ogg_packet op;
-	if (th_encode_flushheader(td, &tc, &op) <= 0) {
-		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Theora library error.");
-	}
-
-	ogg_stream_packetin(&to, &op);
-	if (ogg_stream_pageout(&to, &video_page) != 1) {
-		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-	}
-	f->store_buffer(video_page.header, video_page.header_len);
-	f->store_buffer(video_page.body, video_page.body_len);
-
-	// Create the remaining Theora headers.
-	while (true) {
-		ret = th_encode_flushheader(td, &tc, &op);
-		if (ret < 0) {
-			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Theora library error.");
-		}
-		else if (ret == 0) {
-			break;
-		}
-		ogg_stream_packetin(&to, &op);
-	}
-
-	// Vorbis streams start with 3 standard header packets.
-	ogg_packet id;
-	ogg_packet comment;
-	ogg_packet code;
-	if (vorbis_analysis_headerout(&vd, &vc, &id, &comment, &code) < 0) {
-		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Vorbis library error.");
-	}
-
-	// ID header is automatically placed in its own page.
-	ogg_stream_packetin(&vo, &id);
-	if (ogg_stream_pageout(&vo, &audio_page) != 1) {
-		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-	}
-	f->store_buffer(audio_page.header, audio_page.header_len);
-	f->store_buffer(audio_page.body, audio_page.body_len);
-
-	// Append remaining Vorbis header packets.
-	ogg_stream_packetin(&vo, &comment);
-	ogg_stream_packetin(&vo, &code);
-
-	// Flush the rest of our headers. This ensures the actual data in each stream will start on a
-	// new page, as per spec.
-	while (true) {
-		ret = ogg_stream_flush(&to, &video_page);
-		if (ret < 0) {
-			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-		}
-		else if (ret == 0) {
-			break;
-		}
-		f->store_buffer(video_page.header, video_page.header_len);
-		f->store_buffer(video_page.body, video_page.body_len);
-	}
-
-	while (true) {
-		ret = ogg_stream_flush(&vo, &audio_page);
-		if (ret < 0) {
-			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
-		}
-		else if (ret == 0) {
-			break;
-		}
-		f->store_buffer(audio_page.header, audio_page.header_len);
-		f->store_buffer(audio_page.body, audio_page.body_len);
-	}
-
-	return OK;
-}
-
-// The order of the operations has been chosen so we're one frame behind writing to the stream so we
-// can put the eos mark in the last frame. Flushing streams to the file every X frames is done to
-// improve audio/video page interleaving thus avoiding large runs of video or audio pages.
-Error MovieWriterOGV::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
-{
-	ERR_FAIL_COND_V(f.is_null() || td == nullptr, ERR_UNCONFIGURED);
-
-	frame_count++;
-
-	pull_audio();
-	pull_video();
-
-	if ((frame_count % 8) == 0) {
-		write_to_file();
-	}
-
-	push_audio(p_audio_data);
-	push_video(p_image);
-
-	return OK;
-}
-
-void MovieWriterOGV::save_page(ogg_page page)
+void MovieWriter::OGVState::save_page(ogg_page page)
 {
 	unsigned int page_size = page.header_len + page.body_len;
 	if (page_size > backup_page_size) {
@@ -136440,7 +134370,7 @@ void MovieWriterOGV::save_page(ogg_page page)
 	memcpy(backup_page.body, page.body, page.body_len);
 }
 
-void MovieWriterOGV::restore_page(ogg_page* page)
+void MovieWriter::OGVState::restore_page(ogg_page* page)
 {
 	page->header = backup_page.header;
 	page->header_len = backup_page.header_len;
@@ -136452,7 +134382,7 @@ void MovieWriterOGV::restore_page(ogg_page* page)
 // order. libOgg doesn't allow checking the next page granulepos without requesting the page, and
 // once requested it can't be returned, thus, we need to save it so that it doesn't get erased by
 // the next `ogg_stream_packetin` call.
-void MovieWriterOGV::write_to_file(bool p_finish)
+void MovieWriter::OGVState::write_to_file(Ref<FileAccess>& f, bool p_finish)
 {
 	if (audio_flag) {
 		restore_page(&audio_page);
@@ -136496,47 +134426,196 @@ void MovieWriterOGV::write_to_file(bool p_finish)
 	}
 }
 
-void MovieWriterOGV::write_end()
+Error MovieWriter::_write_begin_ogv(
+	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
 {
-	pull_audio(true);
-	pull_video(true);
-	write_to_file(true);
+	ERR_FAIL_COND_V_MSG((p_movie_size.width & 1) || (p_movie_size.height & 1), ERR_UNAVAILABLE,
+		"Both video dimensions must be even.");
+	if (!ogv) {
+		ogv = memnew(OGVState);
+	}
+	base_path = p_base_path.get_basename();
+	if (base_path.is_relative_path()) {
+		base_path = "res://" + base_path;
+	}
+	base_path += ".ogv";
 
-	th_encode_free(td);
+	f = FileAccess::open(base_path, FileAccess::WRITE_READ);
+	ERR_FAIL_COND_V(f.is_null(), ERR_CANT_OPEN);
 
-	ogg_stream_clear(&vo);
-	vorbis_block_clear(&vb);
-	vorbis_dsp_clear(&vd);
-	vorbis_comment_clear(&vc);
-	vorbis_info_clear(&vi);
+	fps = p_fps;
+	ogv->audio_ch = 2;
+	switch (speaker_mode) {
+	case AudioServer::SPEAKER_MODE_STEREO: ogv->audio_ch = 2; break;
+	case AudioServer::SPEAKER_SURROUND_31: ogv->audio_ch = 4; break;
+	case AudioServer::SPEAKER_SURROUND_51: ogv->audio_ch = 6; break;
+	case AudioServer::SPEAKER_SURROUND_71: ogv->audio_ch = 8; break;
+	}
+	ogv->audio_frames = mix_rate / fps;
 
-	ogg_stream_clear(&to);
-	th_comment_clear(&tc);
+	srand(time(nullptr));
+	ogg_stream_init(&ogv->to, rand());
+	ogg_stream_init(&ogv->vo, rand());
 
-	memfree(y);
-	memfree(u);
-	memfree(v);
+	vorbis_info_init(&ogv->vi);
+	int ret = vorbis_encode_init_vbr(&ogv->vi, ogv->audio_ch, mix_rate, ogv->audio_quality);
+	ERR_FAIL_COND_V_MSG(ret, ERR_UNAVAILABLE,
+		"The Ogg Vorbis encoder couldn't set up a mode according to the requested quality or bitrate.");
 
-	if (backup_page_data != nullptr) {
-		memfree(backup_page_data);
+	vorbis_comment_init(&ogv->vc);
+	vorbis_analysis_init(&ogv->vd, &ogv->vi);
+	vorbis_block_init(&ogv->vd, &ogv->vb);
+
+	int pic_w = p_movie_size.width;
+	int pic_h = p_movie_size.height;
+	int frame_w = (pic_w + 15) & ~0xF;
+	int frame_h = (pic_h + 15) & ~0xF;
+	int pic_x = (frame_w - pic_w) / 2 & ~1;
+	int pic_y = (frame_h - pic_h) / 2 & ~1;
+
+	ogv->y = (uint8_t*)memalloc(pic_w * pic_h);
+	ogv->u = (uint8_t*)memalloc(pic_w * pic_h / 4);
+	ogv->v = (uint8_t*)memalloc(pic_w * pic_h / 4);
+
+	ogv->ycbcr[0].width = pic_w; ogv->ycbcr[0].height = pic_h; ogv->ycbcr[0].stride = pic_w; ogv->ycbcr[0].data = ogv->y;
+	ogv->ycbcr[1].width = pic_w / 2; ogv->ycbcr[1].height = pic_h / 2; ogv->ycbcr[1].stride = pic_w / 2; ogv->ycbcr[1].data = ogv->u;
+	ogv->ycbcr[2].width = pic_w / 2; ogv->ycbcr[2].height = pic_h / 2; ogv->ycbcr[2].stride = pic_w / 2; ogv->ycbcr[2].data = ogv->v;
+
+	th_info_init(&ogv->ti);
+	ogv->ti.frame_width = frame_w;
+	ogv->ti.frame_height = frame_h;
+	ogv->ti.pic_width = pic_w;
+	ogv->ti.pic_height = pic_h;
+	ogv->ti.pic_x = pic_x;
+	ogv->ti.pic_y = pic_y;
+	ogv->ti.fps_numerator = fps;
+	ogv->ti.fps_denominator = 1;
+	ogv->ti.aspect_numerator = 1;
+	ogv->ti.aspect_denominator = 1;
+	ogv->ti.colorspace = TH_CS_UNSPECIFIED;
+	ogv->ti.target_bitrate = (int)(64870 * (ogg_int64_t)ogv->video_bitrate >> 16);
+	ogv->ti.quality = ogv->video_quality * 63;
+	ogv->ti.pixel_fmt = TH_PF_420;
+	ogv->td = th_encode_alloc(&ogv->ti);
+	th_info_clear(&ogv->ti);
+	ERR_FAIL_NULL_V_MSG(ogv->td, ERR_UNCONFIGURED, "Couldn't create a Theora encoder instance.");
+
+	ret = th_encode_ctl(ogv->td, TH_ENCCTL_SET_KEYFRAME_FREQUENCY_FORCE, &ogv->keyframe_frequency, sizeof(ogv->keyframe_frequency));
+	if (ret < 0) {
+		ERR_PRINT("Couldn't set keyframe interval.");
+	}
+	if (ogv->speed >= 0) {
+		int speed_max = 0;
+		if (th_encode_ctl(ogv->td, TH_ENCCTL_GET_SPLEVEL_MAX, &speed_max, sizeof(speed_max)) < 0) {
+			speed_max = 0;
+		}
+		if (th_encode_ctl(ogv->td, TH_ENCCTL_SET_SPLEVEL, &ogv->speed, sizeof(ogv->speed)) < 0) {
+			th_encode_ctl(ogv->td, TH_ENCCTL_SET_SPLEVEL, &speed_max, sizeof(speed_max));
+		}
 	}
 
+	th_comment_init(&ogv->tc);
+	ogg_packet op;
+	if (th_encode_flushheader(ogv->td, &ogv->tc, &op) <= 0) {
+		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Theora library error.");
+	}
+	ogg_stream_packetin(&ogv->to, &op);
+	if (ogg_stream_pageout(&ogv->to, &ogv->video_page) != 1) {
+		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
+	}
+	f->store_buffer(ogv->video_page.header, ogv->video_page.header_len);
+	f->store_buffer(ogv->video_page.body, ogv->video_page.body_len);
+
+	while (true) {
+		ret = th_encode_flushheader(ogv->td, &ogv->tc, &op);
+		if (ret < 0) {
+			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Theora library error.");
+		}
+		if (ret == 0) {
+			break;
+		}
+		ogg_stream_packetin(&ogv->to, &op);
+	}
+
+	ogg_packet id, comment, code;
+	if (vorbis_analysis_headerout(&ogv->vd, &ogv->vc, &id, &comment, &code) < 0) {
+		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Vorbis library error.");
+	}
+	ogg_stream_packetin(&ogv->vo, &id);
+	if (ogg_stream_pageout(&ogv->vo, &ogv->audio_page) != 1) {
+		ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
+	}
+	f->store_buffer(ogv->audio_page.header, ogv->audio_page.header_len);
+	f->store_buffer(ogv->audio_page.body, ogv->audio_page.body_len);
+	ogg_stream_packetin(&ogv->vo, &comment);
+	ogg_stream_packetin(&ogv->vo, &code);
+
+	while ((ret = ogg_stream_flush(&ogv->to, &ogv->video_page)) != 0) {
+		if (ret < 0) {
+			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
+		}
+		f->store_buffer(ogv->video_page.header, ogv->video_page.header_len);
+		f->store_buffer(ogv->video_page.body, ogv->video_page.body_len);
+	}
+	while ((ret = ogg_stream_flush(&ogv->vo, &ogv->audio_page)) != 0) {
+		if (ret < 0) {
+			ERR_FAIL_V_MSG(ERR_UNCONFIGURED, "Internal Ogg library error.");
+		}
+		f->store_buffer(ogv->audio_page.header, ogv->audio_page.header_len);
+		f->store_buffer(ogv->audio_page.body, ogv->audio_page.body_len);
+	}
+	return OK;
+}
+
+Error MovieWriter::_write_frame_ogv(const Ref<Image>& p_image, const int32_t* p_audio_data)
+{
+	ERR_FAIL_COND_V(f.is_null() || ogv == nullptr || ogv->td == nullptr, ERR_UNCONFIGURED);
+	frame_count++;
+	ogv->pull_audio();
+	ogv->pull_video();
+	if ((frame_count % 8) == 0) {
+		ogv->write_to_file(f, false);
+	}
+	ogv->push_audio(p_audio_data);
+	ogv->push_video(p_image);
+	return OK;
+}
+
+void MovieWriter::_write_end_ogv()
+{
+	if (!ogv) {
+		return;
+	}
+	if (ogv->td) {
+		ogv->pull_audio(true);
+		ogv->pull_video(true);
+		ogv->write_to_file(f, true);
+		th_encode_free(ogv->td);
+		ogv->td = nullptr;
+		ogg_stream_clear(&ogv->vo);
+		vorbis_block_clear(&ogv->vb);
+		vorbis_dsp_clear(&ogv->vd);
+		vorbis_comment_clear(&ogv->vc);
+		vorbis_info_clear(&ogv->vi);
+		ogg_stream_clear(&ogv->to);
+		th_comment_clear(&ogv->tc);
+	}
+	if (ogv->y) { memfree(ogv->y); ogv->y = nullptr; }
+	if (ogv->u) { memfree(ogv->u); ogv->u = nullptr; }
+	if (ogv->v) { memfree(ogv->v); ogv->v = nullptr; }
+	if (ogv->backup_page_data) { memfree(ogv->backup_page_data); ogv->backup_page_data = nullptr; }
 	if (f.is_valid()) {
 		f.unref();
 	}
 }
-
-
-
-MovieWriterOGV::MovieWriterOGV() {}
 #endif // TOOLS_ENABLED
 
 #ifdef TOOLS_ENABLED
 #endif
 
-static Ref<ResourceFormatLoaderTheora> resource_loader_theora;
+static Ref<ResourceFormatLoader> resource_loader_theora;
 #ifdef TOOLS_ENABLED
-static MovieWriterOGV* writer_ogv = nullptr;
+static MovieWriter* writer_ogv = nullptr;
 #endif
 
 void initialize_theora_module(ModuleInitializationLevel p_level)
@@ -136544,13 +134623,13 @@ void initialize_theora_module(ModuleInitializationLevel p_level)
 	switch (p_level) {
 	case MODULE_INITIALIZATION_LEVEL_SERVERS: {
 #ifdef TOOLS_ENABLED
-		writer_ogv = memnew(MovieWriterOGV);
+		writer_ogv = memnew(MovieWriter(MovieWriter::FORMAT_OGV));
 		MovieWriter::add_writer(writer_ogv);
 #endif
 	} break;
 
 	case MODULE_INITIALIZATION_LEVEL_SCENE: {
-		resource_loader_theora.instantiate();
+		resource_loader_theora = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_theora_res_load, _theora_res_exts, _theora_res_handles_type, _theora_res_get_type)));
 		ResourceLoader::add_resource_format_loader(resource_loader_theora, true);
 	} break;
 	default:
@@ -136577,14 +134656,10 @@ void uninitialize_theora_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_THEORA_ENABLED)
 
-// === Merged from modules/mobile_vr/mobile_vr_interface.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_MOBILE_VR_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-// --- Inlined from modules/mobile_vr/mobile_vr_interface.h ---
 #include "servers/display/display_server.h"
 
 /**
@@ -136736,9 +134811,6 @@ public:
 	~MobileVRInterface();
 };
 
-
-
-// --- End modules/mobile_vr/mobile_vr_interface.h ---
 #include "servers/display/display_server.h"
 
 String MobileVRInterface::get_name() const { return "Native mobile"; }
@@ -136933,7 +135005,6 @@ void MobileVRInterface::set_position_from_sensors()
 
 	last_ticks = ticks;
 }
-
 
 void MobileVRInterface::set_eye_height(const double p_eye_height) { eye_height = p_eye_height; }
 
@@ -137293,16 +135364,10 @@ void uninitialize_mobile_vr_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_MOBILE_VR_ENABLED)
 
-
-// --- Merged from modules/webxr/webxr_interface.cpp ---
 #if defined(MODULE_WEBXR_ENABLED)
-// --- Inlined from modules/webxr/webxr_interface.h ---
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 #ifdef WEB_ENABLED
-#include "core/io/ip.h"
 
 namespace GLES3 {
 class TextureStorage;
@@ -137547,11 +135612,9 @@ public:
 #endif // WEB_ENABLED
 };
 
-// --- End modules/webxr/webxr_interface.h ---
 #include "servers/display/display_server.h"
 
 #ifndef DISABLE_DEPRECATED
-
 
 Ref<XRTracker> WebXRInterface::_get_input_source_tracker_bind_compat_90645(
 	int p_input_source_id) const
@@ -137563,9 +135626,7 @@ void WebXRInterface::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
 
-
 #ifdef WEB_ENABLED
-// --- Inlined from modules/webxr/godot_webxr.h ---
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -137634,12 +135695,8 @@ extern int godot_webxr_get_supported_frame_rates(float **r_frame_rates);
 }
 #endif
 
-// --- End modules/webxr/godot_webxr.h ---
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #include <emscripten.h>
@@ -138483,7 +136540,6 @@ void WebXRInterface::uninitialize() {}
 #ifdef WEB_ENABLED
 #endif
 
-
 #ifdef WEB_ENABLED
 static Ref<WebXRInterface> webxr;
 #endif
@@ -138526,21 +136582,13 @@ void uninitialize_webxr_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_WEBXR_ENABLED)
 
-// === Merged from modules/camera/register_types.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_CAMERA_ENABLED)
 #include "servers/display/display_server.h"
 
 #if defined(LINUXBSD_ENABLED)
-// --- Inlined/Folded from modules/camera/camera_linux.h ---
-#include "core/os/mutex.h"
-#include "core/os/memory.h"
 #include "servers/display/display_server.h"
-
-
-#include "core/io/net_socket.h"
-#include "core/string/ustring.h"
 
 class CameraFeed;
 
@@ -138550,85 +136598,36 @@ struct StreamingBuffer
 	size_t length = 0;
 };
 
-class BufferDecoder
+class BufferDecoder final
 {
-protected:
+public:
+	enum Mode
+	{
+		MODE_NONE,
+		MODE_SEPARATE_YUYV,
+		MODE_YUYV_TO_GRAYSCALE,
+		MODE_YUYV_TO_RGB,
+		MODE_COPY_RGBA,
+		MODE_COPY_LA,
+		MODE_JPEG,
+	};
+
+private:
+	Mode mode = MODE_NONE;
 	CameraFeed* camera_feed = nullptr;
 	Ref<Image> image;
-	int width = 0;
-	int height = 0;
-
-public:
-	virtual void decode(StreamingBuffer p_buffer);
-
-	BufferDecoder() = default;
-	BufferDecoder(CameraFeed* p_camera_feed);
-
-	virtual ~BufferDecoder();
-};
-
-class AbstractYuyvBufferDecoder : public BufferDecoder
-{
-protected:
-	int* component_indexes = nullptr;
-
-public:
-	AbstractYuyvBufferDecoder(CameraFeed* p_camera_feed);
-	~AbstractYuyvBufferDecoder();
-};
-
-class SeparateYuyvBufferDecoder final : public AbstractYuyvBufferDecoder
-{
-private:
-	Vector<uint8_t> y_image_data;
-	Vector<uint8_t> cbcr_image_data;
 	Ref<Image> y_image;
 	Ref<Image> cbcr_image;
-
-public:
-	SeparateYuyvBufferDecoder(CameraFeed* p_camera_feed);
-	virtual void decode(StreamingBuffer p_buffer) override;
-};
-
-class YuyvToGrayscaleBufferDecoder final : public AbstractYuyvBufferDecoder
-{
-private:
 	Vector<uint8_t> image_data;
+	Vector<uint8_t> cbcr_image_data;
+	int width = 0;
+	int height = 0;
+	int component_indexes[4] = { 0, 2, 1, 3 };
 
 public:
-	YuyvToGrayscaleBufferDecoder(CameraFeed* p_camera_feed);
-	virtual void decode(StreamingBuffer p_buffer) override;
-};
-
-class YuyvToRgbBufferDecoder final : public AbstractYuyvBufferDecoder
-{
-private:
-	Vector<uint8_t> image_data;
-
-public:
-	YuyvToRgbBufferDecoder(CameraFeed* p_camera_feed);
-	virtual void decode(StreamingBuffer p_buffer) override;
-};
-
-class CopyBufferDecoder final : public BufferDecoder
-{
-private:
-	Vector<uint8_t> image_data;
-	bool rgba = false;
-
-public:
-	CopyBufferDecoder(CameraFeed* p_camera_feed, bool p_rgba);
-	virtual void decode(StreamingBuffer p_buffer) override;
-};
-
-class JpegBufferDecoder final : public BufferDecoder
-{
-private:
-	Vector<uint8_t> image_data;
-
-public:
-	JpegBufferDecoder(CameraFeed* p_camera_feed);
-	virtual void decode(StreamingBuffer p_buffer) override;
+	BufferDecoder() = default;
+	BufferDecoder(CameraFeed* p_camera_feed, Mode p_mode = MODE_NONE);
+	void decode(StreamingBuffer p_buffer);
 };
 
 #include <linux/videodev2.h>
@@ -138643,7 +136642,7 @@ private:
 	int file_descriptor = -1;
 	StreamingBuffer* buffers = nullptr;
 	unsigned int buffer_count = 0;
-	BufferDecoder* buffer_decoder = nullptr;
+	BufferDecoder buffer_decoder;
 
 	static void update_buffer_thread_func(void* p_func);
 
@@ -138656,7 +136655,7 @@ private:
 	void _read_frame();
 	void _stop_capturing();
 	void _unmap_buffers(unsigned int p_count);
-	BufferDecoder* _create_buffer_decoder();
+	BufferDecoder _create_buffer_decoder();
 	void _start_thread();
 
 public:
@@ -138706,7 +136705,6 @@ public:
 };
 #endif
 #if defined(WINDOWS_ENABLED)
-// --- Inlined/Folded from modules/camera/camera_win.h ---
 #include "servers/display/display_server.h"
 
 class CameraWindows final
@@ -138737,9 +136735,6 @@ public:
 #include "servers/display/display_server.h"
 #endif
 #if defined(ANDROID_ENABLED)
-// --- Inlined/Folded from modules/camera/camera_android.h ---
-#include "core/os/mutex.h"
-#include "core/os/memory.h"
 #include "servers/display/display_server.h"
 
 #include <camera/NdkCameraDevice.h>
@@ -138882,15 +136877,12 @@ void uninitialize_camera_module(ModuleInitializationLevel p_level) {
 	}
 }
 
-
-// --- Merged from modules/camera/camera_linux.cpp ---
 #if defined(LINUXBSD_ENABLED)
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
 
 void CameraLinux::camera_thread_func(void* p_userdata)
 {
@@ -139065,198 +137057,133 @@ void CameraLinux::set_monitoring_feeds(bool p_monitoring_feeds)
 	}
 }
 
-void BufferDecoder::decode(StreamingBuffer p_buffer) {}
-
-BufferDecoder::~BufferDecoder() {}
-
-BufferDecoder::BufferDecoder(CameraFeed* p_camera_feed)
+BufferDecoder::BufferDecoder(CameraFeed* p_camera_feed, Mode p_mode) :
+	mode(p_mode), camera_feed(p_camera_feed)
 {
-	camera_feed = p_camera_feed;
+	if (!camera_feed || mode == MODE_NONE) {
+		return;
+	}
 	width = camera_feed->get_format().width;
 	height = camera_feed->get_format().height;
 	image.instantiate();
-}
 
-AbstractYuyvBufferDecoder::AbstractYuyvBufferDecoder(CameraFeed* p_camera_feed)
-	: BufferDecoder(p_camera_feed)
-{
 	switch (camera_feed->get_format().pixel_format) {
 	case V4L2_PIX_FMT_YYUV:
-		component_indexes = new int[4]{0, 1, 2, 3};
+		component_indexes[0] = 0; component_indexes[1] = 1; component_indexes[2] = 2; component_indexes[3] = 3;
 		break;
 	case V4L2_PIX_FMT_YVYU:
-		component_indexes = new int[4]{0, 2, 3, 1};
+		component_indexes[0] = 0; component_indexes[1] = 2; component_indexes[2] = 3; component_indexes[3] = 1;
 		break;
 	case V4L2_PIX_FMT_UYVY:
-		component_indexes = new int[4]{1, 3, 0, 2};
+		component_indexes[0] = 1; component_indexes[1] = 3; component_indexes[2] = 0; component_indexes[3] = 2;
 		break;
 	case V4L2_PIX_FMT_VYUY:
-		component_indexes = new int[4]{1, 3, 2, 0};
+		component_indexes[0] = 1; component_indexes[1] = 3; component_indexes[2] = 2; component_indexes[3] = 0;
 		break;
 	default:
-		component_indexes = new int[4]{0, 2, 1, 3};
+		component_indexes[0] = 0; component_indexes[1] = 2; component_indexes[2] = 1; component_indexes[3] = 3;
+		break;
+	}
+
+	switch (mode) {
+	case MODE_SEPARATE_YUYV:
+		image_data.resize(width * height);
+		cbcr_image_data.resize(width * height);
+		y_image.instantiate();
+		cbcr_image.instantiate();
+		break;
+	case MODE_YUYV_TO_GRAYSCALE:
+		image_data.resize(width * height);
+		break;
+	case MODE_YUYV_TO_RGB:
+		image_data.resize(width * height * 3);
+		break;
+	case MODE_COPY_RGBA:
+		image_data.resize(width * height * 4);
+		break;
+	case MODE_COPY_LA:
+		image_data.resize(width * height * 2);
+		break;
+	default:
+		break;
 	}
 }
 
-AbstractYuyvBufferDecoder::~AbstractYuyvBufferDecoder() { delete[] component_indexes; }
-
-SeparateYuyvBufferDecoder::SeparateYuyvBufferDecoder(CameraFeed* p_camera_feed)
-	: AbstractYuyvBufferDecoder(p_camera_feed)
+void BufferDecoder::decode(StreamingBuffer p_buffer)
 {
-	y_image_data.resize(width * height);
-	cbcr_image_data.resize(width * height);
-	y_image.instantiate();
-	cbcr_image.instantiate();
-}
-
-void SeparateYuyvBufferDecoder::decode(StreamingBuffer p_buffer)
-{
-	uint8_t* y_dst = (uint8_t*)y_image_data.ptrw();
-	uint8_t* uv_dst = (uint8_t*)cbcr_image_data.ptrw();
+	if (!camera_feed || mode == MODE_NONE) {
+		return;
+	}
 	uint8_t* src = (uint8_t*)p_buffer.start;
-	uint8_t* y0_src = src + component_indexes[0];
-	uint8_t* y1_src = src + component_indexes[1];
-	uint8_t* u_src = src + component_indexes[2];
-	uint8_t* v_src = src + component_indexes[3];
-
-	for (int i = 0; i < width * height; i += 2) {
-		*y_dst++ = *y0_src;
-		*y_dst++ = *y1_src;
-		*uv_dst++ = *u_src;
-		*uv_dst++ = *v_src;
-
-		y0_src += 4;
-		y1_src += 4;
-		u_src += 4;
-		v_src += 4;
-	}
-
-	if (y_image.is_valid()) {
-		y_image->set_data(width, height, false, Image::FORMAT_L8, y_image_data);
-	}
-	else {
-		y_image.instantiate(width, height, false, Image::FORMAT_RGB8, y_image_data);
-	}
-	if (cbcr_image.is_valid()) {
-		cbcr_image->set_data(width, height, false, Image::FORMAT_L8, cbcr_image_data);
-	}
-	else {
-		cbcr_image.instantiate(width, height, false, Image::FORMAT_RGB8, cbcr_image_data);
-	}
-
-	camera_feed->set_ycbcr_images(y_image, cbcr_image);
-}
-
-YuyvToGrayscaleBufferDecoder::YuyvToGrayscaleBufferDecoder(CameraFeed* p_camera_feed)
-	: AbstractYuyvBufferDecoder(p_camera_feed)
-{
-	image_data.resize(width * height);
-}
-
-void YuyvToGrayscaleBufferDecoder::decode(StreamingBuffer p_buffer)
-{
-	uint8_t* dst = (uint8_t*)image_data.ptrw();
-	uint8_t* src = (uint8_t*)p_buffer.start;
-	uint8_t* y0_src = src + component_indexes[0];
-	uint8_t* y1_src = src + component_indexes[1];
-
-	for (int i = 0; i < width * height; i += 2) {
-		*dst++ = *y0_src;
-		*dst++ = *y1_src;
-
-		y0_src += 4;
-		y1_src += 4;
-	}
-
-	if (image.is_valid()) {
+	switch (mode) {
+	case MODE_SEPARATE_YUYV: {
+		uint8_t* y_dst = (uint8_t*)image_data.ptrw();
+		uint8_t* uv_dst = (uint8_t*)cbcr_image_data.ptrw();
+		uint8_t* y0_src = src + component_indexes[0];
+		uint8_t* y1_src = src + component_indexes[1];
+		uint8_t* u_src = src + component_indexes[2];
+		uint8_t* v_src = src + component_indexes[3];
+		for (int i = 0; i < width * height; i += 2) {
+			*y_dst++ = *y0_src;
+			*y_dst++ = *y1_src;
+			*uv_dst++ = *u_src;
+			*uv_dst++ = *v_src;
+			y0_src += 4; y1_src += 4; u_src += 4; v_src += 4;
+		}
+		y_image->set_data(width, height, false, Image::FORMAT_L8, image_data);
+		cbcr_image->set_data(width, height, false, Image::FORMAT_LA8, cbcr_image_data);
+		camera_feed->set_ycbcr_images(y_image, cbcr_image);
+	} break;
+	case MODE_YUYV_TO_GRAYSCALE: {
+		uint8_t* dst = (uint8_t*)image_data.ptrw();
+		uint8_t* y0_src = src + component_indexes[0];
+		uint8_t* y1_src = src + component_indexes[1];
+		for (int i = 0; i < width * height; i += 2) {
+			*dst++ = *y0_src;
+			*dst++ = *y1_src;
+			y0_src += 4; y1_src += 4;
+		}
 		image->set_data(width, height, false, Image::FORMAT_L8, image_data);
-	}
-	else {
-		image.instantiate(width, height, false, Image::FORMAT_RGB8, image_data);
-	}
-
-	camera_feed->set_rgb_image(image);
-}
-
-YuyvToRgbBufferDecoder::YuyvToRgbBufferDecoder(CameraFeed* p_camera_feed)
-	: AbstractYuyvBufferDecoder(p_camera_feed)
-{
-	image_data.resize(width * height * 3);
-}
-
-void YuyvToRgbBufferDecoder::decode(StreamingBuffer p_buffer)
-{
-	uint8_t* src = (uint8_t*)p_buffer.start;
-	uint8_t* y0_src = src + component_indexes[0];
-	uint8_t* y1_src = src + component_indexes[1];
-	uint8_t* u_src = src + component_indexes[2];
-	uint8_t* v_src = src + component_indexes[3];
-	uint8_t* dst = (uint8_t*)image_data.ptrw();
-
-	for (int i = 0; i < width * height; i += 2) {
-		int u = *u_src;
-		int v = *v_src;
-		int u1 = (((u - 128) << 7) + (u - 128)) >> 6;
-		int rg = (((u - 128) << 1) + (u - 128) + ((v - 128) << 2) + ((v - 128) << 1)) >> 3;
-		int v1 = (((v - 128) << 1) + (v - 128)) >> 1;
-
-		*dst++ = CLAMP(*y0_src + v1, 0, 255);
-		*dst++ = CLAMP(*y0_src - rg, 0, 255);
-		*dst++ = CLAMP(*y0_src + u1, 0, 255);
-
-		*dst++ = CLAMP(*y1_src + v1, 0, 255);
-		*dst++ = CLAMP(*y1_src - rg, 0, 255);
-		*dst++ = CLAMP(*y1_src + u1, 0, 255);
-
-		y0_src += 4;
-		y1_src += 4;
-		u_src += 4;
-		v_src += 4;
-	}
-
-	if (image.is_valid()) {
-		image->set_data(width, height, false, Image::FORMAT_RGB8, image_data);
-	}
-	else {
-		image.instantiate(width, height, false, Image::FORMAT_RGB8, image_data);
-	}
-
-	camera_feed->set_rgb_image(image);
-}
-
-CopyBufferDecoder::CopyBufferDecoder(CameraFeed* p_camera_feed, bool p_rgba)
-	: BufferDecoder(p_camera_feed)
-{
-	rgba = p_rgba;
-	image_data.resize(width * height * (rgba ? 4 : 2));
-}
-
-void CopyBufferDecoder::decode(StreamingBuffer p_buffer)
-{
-	uint8_t* dst = (uint8_t*)image_data.ptrw();
-	memcpy(dst, p_buffer.start, p_buffer.length);
-
-	if (image.is_valid()) {
-		image->set_data(
-			width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
-	}
-	else {
-		image.instantiate(
-			width, height, false, rgba ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
-	}
-
-	camera_feed->set_rgb_image(image);
-}
-
-JpegBufferDecoder::JpegBufferDecoder(CameraFeed* p_camera_feed) : BufferDecoder(p_camera_feed) {}
-
-void JpegBufferDecoder::decode(StreamingBuffer p_buffer)
-{
-	image_data.resize(p_buffer.length);
-	uint8_t* dst = (uint8_t*)image_data.ptrw();
-	memcpy(dst, p_buffer.start, p_buffer.length);
-	if (image->load_jpg_from_buffer(image_data) == OK) {
 		camera_feed->set_rgb_image(image);
+	} break;
+	case MODE_YUYV_TO_RGB: {
+		uint8_t* y0_src = src + component_indexes[0];
+		uint8_t* y1_src = src + component_indexes[1];
+		uint8_t* u_src = src + component_indexes[2];
+		uint8_t* v_src = src + component_indexes[3];
+		uint8_t* dst = (uint8_t*)image_data.ptrw();
+		for (int i = 0; i < width * height; i += 2) {
+			int u = *u_src;
+			int v = *v_src;
+			int u1 = (((u - 128) << 7) + (u - 128)) >> 6;
+			int rg = (((u - 128) << 1) + (u - 128) + ((v - 128) << 2) + ((v - 128) << 1)) >> 3;
+			int v1 = (((v - 128) << 1) + (v - 128)) >> 1;
+			*dst++ = CLAMP(*y0_src + v1, 0, 255);
+			*dst++ = CLAMP(*y0_src - rg, 0, 255);
+			*dst++ = CLAMP(*y0_src + u1, 0, 255);
+			*dst++ = CLAMP(*y1_src + v1, 0, 255);
+			*dst++ = CLAMP(*y1_src - rg, 0, 255);
+			*dst++ = CLAMP(*y1_src + u1, 0, 255);
+			y0_src += 4; y1_src += 4; u_src += 4; v_src += 4;
+		}
+		image->set_data(width, height, false, Image::FORMAT_RGB8, image_data);
+		camera_feed->set_rgb_image(image);
+	} break;
+	case MODE_COPY_RGBA:
+	case MODE_COPY_LA: {
+		memcpy(image_data.ptrw(), p_buffer.start, MIN((size_t)image_data.size(), p_buffer.length));
+		image->set_data(width, height, false, mode == MODE_COPY_RGBA ? Image::FORMAT_RGBA8 : Image::FORMAT_LA8, image_data);
+		camera_feed->set_rgb_image(image);
+	} break;
+	case MODE_JPEG: {
+		image_data.resize(p_buffer.length);
+		memcpy(image_data.ptrw(), p_buffer.start, p_buffer.length);
+		if (image->load_jpg_from_buffer(image_data) == OK) {
+			camera_feed->set_rgb_image(image);
+		}
+	} break;
+	default:
+		break;
 	}
 }
 
@@ -139435,7 +137362,7 @@ void CameraFeedLinux::_read_frame()
 		return;
 	}
 
-	buffer_decoder->decode(buffers[buffer.index]);
+	buffer_decoder.decode(buffers[buffer.index]);
 
 	if (ioctl(file_descriptor, VIDIOC_QBUF, &buffer) == -1) {
 		print_error(vformat("ioctl(VIDIOC_QBUF) error: %d.", errno));
@@ -139502,17 +137429,13 @@ CameraFeedLinux::~CameraFeedLinux()
 
 void CameraFeedLinux::deactivate_feed() {}
 
-BufferDecoder* CameraFeedLinux::_create_buffer_decoder()
+BufferDecoder CameraFeedLinux::_create_buffer_decoder()
 {
-	BufferDecoder bd = BufferDecoder();
-	return &bd;
+	return BufferDecoder(this, BufferDecoder::MODE_NONE);
 }
 #endif // defined(LINUXBSD_ENABLED)
 
-
-// --- Merged from modules/camera/camera_win.cpp ---
 #if defined(WINDOWS_ENABLED)
-
 
 #include "servers/display/display_server.h"
 
@@ -139580,12 +137503,7 @@ void CameraWindows::initialize() {
 }
 #endif // defined(WINDOWS_ENABLED)
 
-
-// --- Merged from modules/camera/camera_android.cpp ---
 #if defined(ANDROID_ENABLED)
-
-
-#include "core/os/os.h"
 
 #include "servers/display/display_server.h"
 
@@ -140503,14 +138421,10 @@ int CameraFeedAndroid::get_app_orientation() {
 #endif // defined(ANDROID_ENABLED)
 #endif // defined(MODULE_CAMERA_ENABLED)
 
-
-// --- Merged from modules/glslang/register_types.cpp ---
 #if defined(MODULE_GLSLANG_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #ifdef D3D12_ENABLED
-#include "core/os/os.h"
 #endif
 
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wshadow")
@@ -140644,10 +138558,7 @@ void uninitialize_glslang_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_GLSLANG_ENABLED)
 
-
-// --- Merged from modules/raycast/raycast_occlusion_cull.cpp ---
 #if defined(MODULE_RAYCAST_ENABLED)
-// --- Inlined from modules/raycast/raycast_occlusion_cull.h ---
 #include "servers/display/display_server.h"
 
 struct Projection;
@@ -140700,18 +138611,8 @@ public:
 	~RaycastOcclusionCull() = delete;
 };
 
-// --- End modules/raycast/raycast_occlusion_cull.h ---
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 #include <embree4/rtcore.h>
 
@@ -141373,9 +139274,6 @@ void RaycastOcclusionCull::finalize()
 
 #ifdef TOOLS_ENABLED
 
-
-
-
 #ifdef __SSE2__
 #endif
 
@@ -141578,7 +139476,6 @@ LightmapRaycaster::~LightmapRaycaster()
 
 #ifdef TOOLS_ENABLED
 
-
 #ifdef __SSE2__
 #endif
 
@@ -141728,20 +139625,13 @@ void uninitialize_raycast_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_RAYCAST_ENABLED)
 
-// === Merged from modules/jolt_physics/jolt_physics_server_3d.cpp ===
 #ifndef PHYSICS_3D_DISABLED
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_JOLT_PHYSICS_ENABLED)
-// --- Inlined from modules/jolt_physics/shapes/jolt_shape_3d.h ---
 #include <Jolt/Jolt.h>
 #include <Jolt/Physics/Collision/Shape/Shape.h>
 
-#include "core/io/ip.h"
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 class JoltObject3D;
@@ -141967,9 +139857,6 @@ public:
 		(m_scale) = valid_scale;                                                                   \
 	} else                                                                                         \
 		((void)0)
-
-// --- Folded from modules/jolt_physics/shapes/jolt_custom_shapes.h ---
-#include "core/typedefs.h"
 
 #include <Jolt/Jolt.h>
 
@@ -142275,15 +140162,6 @@ public:
 	void set_motion(JPH::Vec3Arg p_motion) { motion = p_motion; }
 };
 
-// --- End modules/jolt_physics/shapes/jolt_custom_shapes.h ---
-
-// --- Folded from modules/jolt_physics/objects/jolt_objects_3d.h ---
-
-
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 #include <Jolt/Jolt.h>
@@ -143067,18 +140945,8 @@ public:
 	void apply_central_force(const Vector3 &p_force);
 };
 
-// --- End modules/jolt_physics/objects/jolt_objects_3d.h ---
-
-// --- Folded from modules/jolt_physics/spaces/jolt_space_3d.h ---
 #include "servers/display/display_server.h"
 
-#include "core/io/ip.h"
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 // includes must stay...
@@ -143117,9 +140985,7 @@ class JoltSoftBody3D;
 class JoltSpace3D;
 class PhysicsDirectSpaceState3D;
 
-// ============================================================================
 // JoltBroadPhaseLayer
-// ============================================================================
 
 namespace JoltBroadPhaseLayer {
 
@@ -143133,219 +140999,110 @@ constexpr uint32_t COUNT = 5;
 
 } // namespace JoltBroadPhaseLayer
 
-// ============================================================================
 // Query Collectors
-// ============================================================================
 
-template <typename TBase, int TDefaultCapacity>
-class JoltQueryCollectorAll : public TBase {
+enum class JoltQueryMode
+{
+	ALL,
+	ANY,
+	ANY_MULTI,
+	CLOSEST,
+};
+
+template <typename TBase, JoltQueryMode TMode, int TDefaultCapacity = 1>
+class JoltQueryCollector final : public TBase
+{
 public:
 	typedef typename TBase::ResultType Hit;
 	typedef JPH::Array<Hit, JPH::STLLocalAllocator<Hit, TDefaultCapacity>> HitArray;
 
 private:
 	HitArray hits;
-
-public:
-	JoltQueryCollectorAll() {
-		hits.reserve(TDefaultCapacity);
-	}
-
-	bool had_hit() const { return !hits.is_empty(); }
-	int get_hit_count() const { return hits.size(); }
-	const Hit &get_hit(int p_index) const { return hits[p_index]; }
-
-	void reset() { Reset(); }
-
-	virtual void Reset() override {
-		TBase::Reset();
-		hits.clear();
-	}
-
-	virtual void AddHit(const Hit &p_hit) override {
-		hits.push_back(p_hit);
-	}
-};
-
-template <typename TBase>
-class JoltQueryCollectorAny : public TBase {
-public:
-	typedef typename TBase::ResultType Hit;
-
-private:
-	Hit hit;
+	Hit single_hit;
+	int max_hits = TDefaultCapacity;
 	bool valid = false;
 
 public:
-	bool had_hit() const { return valid; }
-	const Hit &get_hit() const { return hit; }
+	explicit JoltQueryCollector(int p_max_hits = TDefaultCapacity) : max_hits(p_max_hits)
+	{
+		if constexpr (TMode == JoltQueryMode::ALL || TMode == JoltQueryMode::ANY_MULTI) {
+			hits.reserve(TDefaultCapacity);
+		}
+	}
+
+	bool had_hit() const
+	{
+		if constexpr (TMode == JoltQueryMode::ANY || TMode == JoltQueryMode::CLOSEST) {
+			return valid;
+		}
+		else {
+			return !hits.empty();
+		}
+	}
+
+	int get_hit_count() const
+	{
+		if constexpr (TMode == JoltQueryMode::ANY || TMode == JoltQueryMode::CLOSEST) {
+			return valid ? 1 : 0;
+		}
+		else {
+			return hits.size();
+		}
+	}
+
+	const Hit& get_hit(int p_index = 0) const
+	{
+		if constexpr (TMode == JoltQueryMode::ANY || TMode == JoltQueryMode::CLOSEST) {
+			return single_hit;
+		}
+		else {
+			return hits[p_index];
+		}
+	}
 
 	void reset() { Reset(); }
 
-	virtual void Reset() override {
+	virtual void Reset() override
+	{
 		TBase::Reset();
-		valid = false;
+		if constexpr (TMode == JoltQueryMode::ANY || TMode == JoltQueryMode::CLOSEST) {
+			valid = false;
+		}
+		else {
+			hits.clear();
+		}
 	}
 
-	virtual void AddHit(const Hit &p_hit) override {
-		hit = p_hit;
-		valid = true;
-
-		TBase::ForceEarlyOut();
-	}
-};
-
-template <typename TBase, int TDefaultCapacity>
-class JoltQueryCollectorAnyMulti : public TBase {
-public:
-	typedef typename TBase::ResultType Hit;
-	typedef JPH::Array<Hit, JPH::STLLocalAllocator<Hit, TDefaultCapacity>> HitArray;
-
-private:
-	HitArray hits;
-	int max_hits = 0;
-
-public:
-	explicit JoltQueryCollectorAnyMulti(int p_max_hits = TDefaultCapacity) :
-			max_hits(p_max_hits) {
-		hits.reserve(TDefaultCapacity);
-	}
-
-	bool had_hit() const { return hits.size() > 0; }
-	int get_hit_count() const { return hits.size(); }
-	const Hit &get_hit(int p_index) const { return hits[p_index]; }
-
-	void reset() { Reset(); }
-
-	virtual void Reset() override {
-		TBase::Reset();
-		hits.clear();
-	}
-
-	virtual void AddHit(const Hit &p_hit) override {
-		if ((int)hits.size() < max_hits) {
+	virtual void AddHit(const Hit& p_hit) override
+	{
+		if constexpr (TMode == JoltQueryMode::ALL) {
 			hits.push_back(p_hit);
 		}
-
-		if ((int)hits.size() == max_hits) {
+		else if constexpr (TMode == JoltQueryMode::ANY) {
+			single_hit = p_hit;
+			valid = true;
 			TBase::ForceEarlyOut();
 		}
-	}
-};
-
-template <typename TBase>
-class JoltQueryCollectorClosest : public TBase {
-public:
-	typedef typename TBase::ResultType Hit;
-
-private:
-	Hit hit;
-	bool valid = false;
-
-public:
-	bool had_hit() const { return valid; }
-	const Hit &get_hit() const { return hit; }
-
-	void reset() { Reset(); }
-
-	virtual void Reset() override {
-		TBase::Reset();
-		valid = false;
-	}
-
-	virtual void AddHit(const Hit &p_hit) override {
-		const float early_out = p_hit.GetEarlyOutFraction();
-
-		if (!valid || early_out < hit.GetEarlyOutFraction()) {
-			TBase::UpdateEarlyOutFraction(early_out);
-
-			hit = p_hit;
-			valid = true;
-		}
-	}
-};
-
-template <typename TBase, int TDefaultCapacity>
-class JoltQueryCollectorClosestMulti : public TBase {
-public:
-	typedef typename TBase::ResultType Hit;
-	typedef JPH::Array<Hit, JPH::STLLocalAllocator<Hit, TDefaultCapacity + 1>> HitArray;
-
-private:
-	HitArray hits;
-	int max_hits = 0;
-
-public:
-	explicit JoltQueryCollectorClosestMulti(int p_max_hits = TDefaultCapacity) :
-			max_hits(p_max_hits) {
-		hits.reserve(TDefaultCapacity + 1);
-	}
-
-	bool had_hit() const { return hits.size() > 0; }
-	int get_hit_count() const { return hits.size(); }
-	const Hit &get_hit(int p_index) const { return hits[p_index]; }
-
-	void reset() { Reset(); }
-
-	virtual void Reset() override {
-		TBase::Reset();
-		hits.clear();
-	}
-
-	virtual void AddHit(const Hit &p_hit) override {
-		typename HitArray::const_iterator E = hits.cbegin();
-		for (; E != hits.cend(); ++E) {
-			if (p_hit.GetEarlyOutFraction() < E->GetEarlyOutFraction()) {
-				break;
+		else if constexpr (TMode == JoltQueryMode::ANY_MULTI) {
+			if ((int)hits.size() < max_hits) {
+				hits.push_back(p_hit);
+			}
+			if ((int)hits.size() == max_hits) {
+				TBase::ForceEarlyOut();
 			}
 		}
-
-		hits.insert(E, p_hit);
-
-		if ((int)hits.size() > max_hits) {
-			hits.resize(max_hits);
-		}
-	}
-};
-
-template <typename TCollector, int TDefaultCapacity>
-class JoltQueryCollectorMotion final : public JoltQueryCollectorClosestMulti<TCollector, TDefaultCapacity> {
-public:
-	typedef JoltQueryCollectorClosestMulti<TCollector, TDefaultCapacity> Base;
-	typedef typename Base::Hit Hit;
-
-private:
-	Vector3 direction;
-	float distance_sq = 0.0f;
-	float margin = 0.0f;
-
-public:
-	JoltQueryCollectorMotion(const Vector3 &p_motion, float p_margin, int p_max_hits = TDefaultCapacity) :
-			Base(p_max_hits),
-			direction(p_motion.normalized()),
-			distance_sq(p_motion.length_squared()),
-			margin(p_margin) {}
-
-	virtual void AddHit(const Hit &p_hit) override {
-		const float penetration_depth = p_hit.mPenetrationDepth + margin;
-		if (penetration_depth <= 0.0f) {
-			return;
-		}
-
-		if (distance_sq > 0) {
-			const Vector3 normal = to_godot(-p_hit.mPenetrationAxis.Normalized());
-			if (direction.dot(normal) >= -CMP_EPSILON) {
-				return;
+		else if constexpr (TMode == JoltQueryMode::CLOSEST) {
+			const float early_out = p_hit.GetEarlyOutFraction();
+			if (!valid || early_out < single_hit.GetEarlyOutFraction()) {
+				TBase::UpdateEarlyOutFraction(early_out);
+				single_hit = p_hit;
+				valid = true;
 			}
 		}
-
-		Base::AddHit(p_hit);
 	}
 };
 
-// ============================================================================
 // Space Subsystems (Allocator, JobSystem, Layers, Listeners, Filters)
-// ============================================================================
 
 class JoltTempAllocator final : public JPH::TempAllocator {
 	uint64_t capacity = 0;
@@ -143584,9 +141341,7 @@ public:
 	virtual bool ShouldCollideLocked(const JPH::Body &p_body) const override;
 };
 
-// ============================================================================
 // JoltSpace3D
-// ============================================================================
 
 class JoltSpace3D final {
 	Mutex pending_objects_mutex;
@@ -143701,13 +141456,8 @@ public:
 #endif
 };
 
-// --- End modules/jolt_physics/spaces/jolt_space_3d.h ---
-
-// --- Folded from modules/jolt_physics/joints/jolt_joint_3d.h ---
 #include "servers/display/display_server.h"
 
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 
 #include <Jolt/Jolt.h>
@@ -143994,13 +141744,7 @@ public:
 	void set_6dof_jolt_flag(Vector3::Axis p_axis, JoltPhysicsServer3D::G6DOFJointAxisFlagJolt p_flag, bool p_enabled);
 };
 
-// --- End modules/jolt_physics/joints/jolt_joint_3d.h ---
-
-// --- End modules/jolt_physics/shapes/jolt_shape_3d.h ---
 #include "servers/display/display_server.h"
-
-
-
 
 JoltPhysicsServer3D::JoltPhysicsServer3D(bool p_on_separate_thread)
 	: on_separate_thread(p_on_separate_thread)
@@ -146035,12 +143779,6 @@ int JoltPhysicsServer3D::body_get_shape_count(RID p_body) const { return 0; }
 
 void JoltPhysicsServer3D::soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions) {}
 
-
-
-// ============================================================================
-// Merged from modules/jolt_physics/register_types.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
@@ -146059,17 +143797,7 @@ void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level)
 
 void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {}
 
-
-
-// ============================================================================
-// Merged from modules/jolt_physics/jolt_globals.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
-
-
-#include "core/os/memory.h"
 
 #include <Jolt/Jolt.h>
 
@@ -146199,15 +143927,8 @@ void jolt_deinitialize() {
 	jolt_initialized = false;
 }
 
-// ============================================================================
-// Merged from modules/jolt_physics/objects/jolt_objects_3d.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
 
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -146218,9 +143939,7 @@ void jolt_deinitialize() {
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/SoftBody/SoftBodyMotionProperties.h>
 
-// ============================================================================
 // JoltGroupFilter
-// ============================================================================
 
 bool JoltGroupFilter::CanCollide(const JPH::CollisionGroup &p_group1, const JPH::CollisionGroup &p_group2) const {
 	const JoltObject3D *object1 = decode_object(p_group1.GetGroupID(), p_group1.GetSubGroupID());
@@ -146245,9 +143964,7 @@ static_assert(sizeof(JoltObject3D *) <= 8, "Pointer size greater than expected."
 static_assert(sizeof(JPH::CollisionGroup::GroupID) == 4, "Size of Jolt's collision group ID has changed.");
 static_assert(sizeof(JPH::CollisionGroup::SubGroupID) == 4, "Size of Jolt's collision sub-group ID has changed.");
 
-// ============================================================================
 // JoltObject3D
-// ============================================================================
 
 void JoltObject3D::_remove_from_space() {
 	if (!in_space()) {
@@ -146546,9 +144263,7 @@ void JoltObject3D::remove_shape(const JoltShape3D *) {}
 AABB JoltObject3D::get_aabb() const { return AABB(); }
 int JoltObject3D::find_shape_index(unsigned int) const { return -1; }
 
-// ============================================================================
 // JoltArea3D
-// ============================================================================
 
 JPH::BroadPhaseLayer JoltArea3D::_get_broad_phase_layer() const {
 	return monitorable ? JoltBroadPhaseLayer::AREA_DETECTABLE : JoltBroadPhaseLayer::AREA_UNDETECTABLE;
@@ -146771,9 +144486,7 @@ void JoltArea3D::call_queries() {}
 void JoltArea3D::area_shape_entered(const JPH::BodyID &, const JPH::SubShapeID &, const JPH::SubShapeID &) {}
 void JoltArea3D::_add_to_space() {}
 
-// ============================================================================
 // JoltBody3D
-// ============================================================================
 
 JPH::BroadPhaseLayer JoltBody3D::_get_broad_phase_layer() const {
 	switch (mode) {
@@ -147839,9 +145552,7 @@ void JoltBody3D::_on_wake_up() {}
 void JoltBody3D::call_queries() {}
 void JoltBody3D::pre_step(float p_step) {}
 
-// ============================================================================
 // JoltSoftBody3D
-// ============================================================================
 
 namespace {
 
@@ -148171,9 +145882,7 @@ void JoltSoftBody3D::add_area(JoltArea3D *) {}
 void JoltSoftBody3D::_add_to_space() {}
 void JoltSoftBody3D::_space_changing() {}
 
-// ============================================================================
 // PhysicsDirectBodyState3D
-// ============================================================================
 
 PhysicsDirectBodyState3D::PhysicsDirectBodyState3D(JoltBody3D *p_body) :
 		body(p_body) {}
@@ -148440,15 +146149,7 @@ PhysicsDirectSpaceState3D *PhysicsDirectBodyState3D::get_space_state() {
 	return body->get_space()->get_direct_state();
 }
 
-// ============================================================================
-// Merged from modules/jolt_physics/joints/jolt_joint_3d.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
-
-
-#include "core/os/os.h"
 
 #include <Jolt/Physics/Constraints/FixedConstraint.h>
 #include <Jolt/Physics/Constraints/HingeConstraint.h>
@@ -150638,18 +148339,8 @@ void JoltJoint3D::_rebuild_6dof() {
 	_update_6dof_angular_target_rotation();
 }
 
-// ============================================================================
-// Merged from modules/jolt_physics/spaces/jolt_space_3d.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
 
-
-#include "core/typedefs.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 // must stay last
@@ -150668,9 +148359,7 @@ void JoltJoint3D::_rebuild_6dof() {
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/Physics/SoftBody/SoftBodyManifold.h>
 
-// ============================================================================
 // JoltTempAllocator
-// ============================================================================
 
 namespace {
 
@@ -150729,9 +148418,7 @@ void JoltTempAllocator::Free(void *p_ptr, uint32_t p_size) {
 	top = new_top;
 }
 
-// ============================================================================
 // JoltJobSystem
-// ============================================================================
 
 void JoltJobSystem::Job::_execute(void *p_user_data) {
 	Job *job = static_cast<Job *>(p_user_data);
@@ -150842,9 +148529,7 @@ JoltJobSystem::Job::~Job() {}
 void JoltJobSystem::flush_timings() {}
 #endif
 
-// ============================================================================
 // JoltLayers
-// ============================================================================
 
 static_assert(sizeof(JPH::ObjectLayer) == 2, "Size of Jolt's object layer has changed.");
 static_assert(sizeof(JPH::BroadPhaseLayer::Type) == 1, "Size of Jolt's broadphase layer has changed.");
@@ -151028,9 +148713,7 @@ void JoltLayers::from_object_layer(JPH::ObjectLayer p_encoded_layer, JPH::BroadP
 	decode_collision(collision, r_collision_layer, r_collision_mask);
 }
 
-// ============================================================================
 // JoltBodyActivationListener3D
-// ============================================================================
 
 void JoltBodyActivationListener3D::OnBodyActivated(const JPH::BodyID &p_body_id, JPH::uint64 p_body_user_data) {
 	if (JoltBody3D *body = reinterpret_cast<JoltObject3D *>(p_body_user_data)->as_body()) {
@@ -151038,9 +148721,7 @@ void JoltBodyActivationListener3D::OnBodyActivated(const JPH::BodyID &p_body_id,
 	}
 }
 
-// ============================================================================
 // JoltContactListener3D
-// ============================================================================
 
 void JoltContactListener3D::OnContactAdded(const JPH::Body &p_body1, const JPH::Body &p_body2, const JPH::ContactManifold &p_manifold, JPH::ContactSettings &p_settings) {
 	_try_override_collision_response(p_body1, p_body2, p_settings);
@@ -151561,9 +149242,7 @@ void JoltContactListener3D::post_step() {
 	_flush_area_enters();
 }
 
-// ============================================================================
 // JoltMotionFilter3D / JoltQueryFilter3D
-// ============================================================================
 
 bool JoltMotionFilter3D::ShouldCollide(JPH::BroadPhaseLayer p_broad_phase_layer) const {
 	const JPH::BroadPhaseLayer::Type broad_phase_layer = (JPH::BroadPhaseLayer::Type)p_broad_phase_layer;
@@ -151676,9 +149355,7 @@ bool JoltQueryFilter3D::ShouldCollideLocked(const JPH::Body &p_body) const {
 	return (!picking || object->is_pickable()) && !excluded.has(object->get_rid());
 }
 
-// ============================================================================
 // JoltSpace3D
-// ============================================================================
 
 namespace {
 
@@ -152059,9 +149736,7 @@ void JoltSpace3D::step(float) {}
 JoltSpace3D::JoltSpace3D(JPH::JobSystem *, JPH::TempAllocator *) {}
 JPH::Body *JoltSpace3D::add_object(const JoltObject3D &, const JPH::BodyCreationSettings &, bool) { return nullptr; }
 
-// ============================================================================
 // PhysicsDirectSpaceState3D
-// ============================================================================
 
 namespace {
 
@@ -152088,7 +149763,7 @@ bool _cast_motion_impl(JoltSpace3D *p_space, const JPH::Shape &p_jolt_shape, con
 	aabb_translated.Translate(motion);
 	aabb.Encapsulate(aabb_translated);
 
-	JoltQueryCollectorAnyMulti<JPH::CollideShapeBodyCollector, 1024> aabb_collector;
+	JoltQueryCollector<JPH::CollideShapeBodyCollector, JoltQueryMode::ANY_MULTI, 1024> aabb_collector;
 	p_space->get_broad_phase_query().CollideAABox(aabb, aabb_collector, p_broad_phase_layer_filter, p_object_layer_filter);
 
 	if (!aabb_collector.had_hit()) {
@@ -152104,7 +149779,7 @@ bool _cast_motion_impl(JoltSpace3D *p_space, const JPH::Shape &p_jolt_shape, con
 
 		const JPH::TransformedShape other_shape = p_other_body.GetTransformedShape();
 
-		JoltQueryCollectorAny<JPH::CollideShapeCollector> collector;
+		JoltQueryCollector<JPH::CollideShapeCollector, JoltQueryMode::ANY> collector;
 
 		if (p_use_edge_removal) {
 			JPH::CollideShapeSettings eier_settings = p_settings;
@@ -152239,7 +149914,7 @@ bool PhysicsDirectSpaceState3D::collide_shape(const PS3DT::ShapeParameters &p_pa
 	const Vector3 &base_offset = transform_com.origin;
 
 	const JoltQueryFilter3D query_filter(*this, p_parameters.collision_mask, p_parameters.collide_with_bodies, p_parameters.collide_with_areas, p_parameters.exclude);
-	JoltQueryCollectorAnyMulti<JPH::CollideShapeCollector, 32> collector(p_result_max);
+	JoltQueryCollector<JPH::CollideShapeCollector, JoltQueryMode::ANY_MULTI, 32> collector(p_result_max);
 	_collide_shape_queries(space, jolt_shape, to_jolt(scale), to_jolt_r(transform_com), settings, to_jolt_r(base_offset), collector, query_filter, query_filter, query_filter);
 
 	if (!collector.had_hit()) {
@@ -152297,7 +149972,7 @@ Vector3 PhysicsDirectSpaceState3D::get_closest_point_to_object_volume(RID p_obje
 	ERR_FAIL_NULL_V(object, Vector3());
 	ERR_FAIL_COND_V(object->get_space() != space, Vector3());
 
-	JoltQueryCollectorAll<JPH::TransformedShapeCollector, 32> collector;
+	JoltQueryCollector<JPH::TransformedShapeCollector, JoltQueryMode::ALL, 32> collector;
 	const JPH::TransformedShape root_shape = object->get_jolt_body()->GetTransformedShape();
 	root_shape.CollectTransformedShapes(object->get_jolt_body()->GetWorldSpaceBounds(), collector);
 
@@ -152382,13 +150057,7 @@ bool PhysicsDirectSpaceState3D::rest_info(const PS3DT::ShapeParameters &p_shape_
 	return false;
 }
 
-// ============================================================================
-// Merged from modules/jolt_physics/shapes/jolt_shape_3d.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
-
 
 // keep includes...
 #include <Jolt/Jolt.h>
@@ -152408,9 +150077,7 @@ bool PhysicsDirectSpaceState3D::rest_info(const PS3DT::ShapeParameters &p_shape_
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 
-// ============================================================================
 // JoltShapeInstance3D
-// ============================================================================
 
 JoltShapeInstance3D::ShapeReference::ShapeReference(JoltObject3D *p_parent, JoltShape3D *p_shape) :
 		parent(p_parent),
@@ -152476,9 +150143,7 @@ bool JoltShapeInstance3D::try_build() {
 	return true;
 }
 
-// ============================================================================
 // JoltShape3D
-// ============================================================================
 
 namespace {
 
@@ -153061,14 +150726,6 @@ bool JoltShape3D::is_scale_valid(const Vector3 &p_scale, const Vector3 &p_valid_
 			Math::is_equal_approx(p_scale.z, p_valid_scale.z, p_tolerance);
 }
 
-// ============================================================================
-// Merged from modules/jolt_physics/shapes/jolt_custom_shapes.cpp
-// ============================================================================
-
-
-
-#include "core/typedefs.h"
-
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Collision/CollisionDispatch.h>
 #include <Jolt/Physics/Collision/RayCast.h>
@@ -153220,7 +150877,7 @@ void collide_ray_vs_shape(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2
 	ray_cast_settings.mTreatConvexAsSolid = false;
 	ray_cast_settings.mBackFaceModeTriangles = p_collide_shape_settings.mBackFaceMode;
 
-	JoltQueryCollectorClosest<JPH::CastRayCollector> ray_collector;
+	JoltQueryCollector<JPH::CastRayCollector, JoltQueryMode::CLOSEST> ray_collector;
 
 	p_shape2->CastRay(ray_cast, ray_cast_settings, p_sub_shape_id_creator2, ray_collector);
 
@@ -153453,8 +151110,6 @@ const JPH::ConvexShape::Support *JoltCustomMotionShape::GetSupportFunction(JPH::
 }
 #endif // defined(MODULE_JOLT_PHYSICS_ENABLED)
 
-
-// --- Merged from modules/vhacd/register_types.cpp ---
 #if defined(MODULE_VHACD_ENABLED)
 #include "servers/display/display_server.h"
 
@@ -153538,37 +151193,8 @@ void uninitialize_vhacd_module(ModuleInitializationLevel p_level) {
 
 #endif // PHYSICS_3D_DISABLED
 
-// === Merged from modules/godot_physics_2d/godot_physics_server_2d.cpp ===
 #ifndef PHYSICS_2D_DISABLED
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #define FLUSH_QUERY_CHECK(m_object)                                                                \
@@ -154853,15 +152479,7 @@ GodotPhysicsServer2D::GodotPhysicsServer2D(bool p_using_threads)
 
 void GodotPhysicsServer2D::flush_queries() {}
 
-
-
-// ============================================================================
-// Merged from modules/godot_physics_2d/register_types.cpp
-// ============================================================================
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -154874,20 +152492,11 @@ void uninitialize_godot_physics_2d_module(ModuleInitializationLevel p_level)
 
 void initialize_godot_physics_2d_module(ModuleInitializationLevel p_level) {}
 
-
-
-// ============================================================================
-// Merged from modules/godot_physics_2d/godot_space_2d.cpp
-// ============================================================================
+#include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-
-// ============================================================================
 // GodotBroadPhase2D
-// ============================================================================
 
 GodotBroadPhase2D::ID GodotBroadPhase2D::create(GodotCollisionObject2D* p_object, int p_subindex, const Rect2& p_aabb, bool p_static)
 {
@@ -154991,9 +152600,7 @@ GodotBroadPhase2D::GodotBroadPhase2D()
 	bvh.set_unpair_callback(_unpair_callback, this);
 }
 
-// ============================================================================
 // PhysicsDirectSpaceState2D / GodotSpace2D
-// ============================================================================
 
 #define TEST_MOTION_MARGIN_MIN_VALUE 0.0001
 #define TEST_MOTION_MIN_CONTACT_DEPTH_FACTOR 0.05
@@ -155270,24 +152877,11 @@ void* GodotSpace2D::_broadphase_pair(GodotCollisionObject2D* A, int p_subindex_A
 	if (type_A == GodotCollisionObject2D::TYPE_AREA) {
 		GodotArea2D* area = static_cast<GodotArea2D*>(A);
 		if (type_B == GodotCollisionObject2D::TYPE_AREA) {
-			GodotArea2D* area_b = static_cast<GodotArea2D*>(B);
-			GodotArea2Pair2D* area2_pair =
-				memnew(GodotArea2Pair2D(area_b, p_subindex_B, area, p_subindex_A));
-			return area2_pair;
+			return memnew(GodotBodyPair2D(static_cast<GodotArea2D*>(B), p_subindex_B, area, p_subindex_A));
 		}
-		else {
-			GodotBody2D* body = static_cast<GodotBody2D*>(B);
-			GodotAreaPair2D* area_pair =
-				memnew(GodotAreaPair2D(body, p_subindex_B, area, p_subindex_A));
-			return area_pair;
-		}
-
+		return memnew(GodotBodyPair2D(static_cast<GodotBody2D*>(B), p_subindex_B, area, p_subindex_A));
 	}
-	else {
-		GodotBodyPair2D* b = memnew(GodotBodyPair2D(static_cast<GodotBody2D*>(A), p_subindex_A,
-			static_cast<GodotBody2D*>(B), p_subindex_B));
-		return b;
-	}
+	return memnew(GodotBodyPair2D(static_cast<GodotBody2D*>(A), p_subindex_A, static_cast<GodotBody2D*>(B), p_subindex_B));
 }
 
 void GodotSpace2D::_broadphase_unpair(GodotCollisionObject2D* A, int p_subindex_A,
@@ -155533,9 +153127,7 @@ bool PhysicsDirectSpaceState2D::rest_info(
 	return false;
 }
 
-// ============================================================================
 // GodotStep2D
-// ============================================================================
 
 #define BODY_ISLAND_COUNT_RESERVE 128
 #define BODY_ISLAND_SIZE_RESERVE 512
@@ -155813,12 +153405,7 @@ GodotStep2D::GodotStep2D()
 
 GodotStep2D::~GodotStep2D() {}
 
-// ============================================================================
-// Merged from modules/godot_physics_2d/godot_objects_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
 
 // --- GodotCollisionObject2D ---
 
@@ -156704,12 +154291,7 @@ void PhysicsDirectBodyState2D::integrate_forces()
 	set_angular_velocity(av);
 }
 
-// ============================================================================
-// Merged from modules/godot_physics_2d/godot_shape_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 void GodotShape2D::configure(const Rect2& p_aabb)
@@ -157593,14 +155175,9 @@ void GodotShape2D::cull(
 	}
 }
 
-// ============================================================================
-// Merged from modules/godot_physics_2d/godot_collision_solver_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
 
 struct _CollectorCallback2D {
 	GodotCollisionSolver2D::CallbackResult callback = nullptr;
@@ -159211,83 +156788,9 @@ bool GodotCollisionSolver2D::solve(const GodotShape2D *p_shape_A, const Transfor
 	}
 }
 
-// ============================================================================
-// Merged from modules/godot_physics_2d/godot_constraints_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-
-// ============================================================================
-// GodotAreaPair2D / GodotArea2Pair2D
-// ============================================================================
-
-void GodotAreaPair2D::solve(real_t p_step) {
-	// Nothing to do.
-}
-
-GodotAreaPair2D::GodotAreaPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape) {
-	body = p_body;
-	area = p_area;
-	body_shape = p_body_shape;
-	area_shape = p_area_shape;
-	body->add_constraint(this, 0);
-	area->add_constraint(this);
-	if (p_body->get_mode() == PS2DE::BODY_MODE_KINEMATIC) { // need to be active to process pair
-		p_body->set_active(true);
-	}
-}
-
-bool GodotAreaPair2D::setup(real_t p_step) {
-	return false;
-}
-
-bool GodotAreaPair2D::pre_solve(real_t p_step) {
-	return false;
-}
-
-bool GodotArea2Pair2D::setup(real_t p_step) {
-	return false;
-}
-
-bool GodotArea2Pair2D::pre_solve(real_t p_step) {
-	if (process_collision_a) {
-		if (colliding_a) {
-			area_a->add_area_to_query(area_b, shape_b, shape_a);
-		} else {
-			area_a->remove_area_from_query(area_b, shape_b, shape_a);
-		}
-	}
-
-	if (process_collision_b) {
-		if (colliding_b) {
-			area_b->add_area_to_query(area_a, shape_a, shape_b);
-		} else {
-			area_b->remove_area_from_query(area_a, shape_a, shape_b);
-		}
-	}
-
-	return false; // Never do any post solving.
-}
-
-void GodotArea2Pair2D::solve(real_t p_step) {
-	// Nothing to do.
-}
-
-GodotArea2Pair2D::GodotArea2Pair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b) {
-	area_a = p_area_a;
-	area_b = p_area_b;
-	shape_a = p_shape_a;
-	shape_b = p_shape_b;
-	area_a_monitorable = area_a->is_monitorable();
-	area_b_monitorable = area_b->is_monitorable();
-	area_a->add_constraint(this);
-	area_b->add_constraint(this);
-}
-
-// ============================================================================
 // GodotBodyPair2D
-// ============================================================================
 
 #define ACCUMULATE_IMPULSES
 
@@ -159480,6 +156983,9 @@ static real_t combine_friction(GodotBody2D *A, GodotBody2D *B) {
 }
 
 bool GodotBodyPair2D::setup(real_t p_step) {
+	if (pair_mode != PAIR_BODY_BODY) {
+		return false;
+	}
 	check_ccd = false;
 
 	if (!A->interacts_with(B) || A->has_exception(B->get_self()) || B->has_exception(A->get_self())) {
@@ -159592,6 +157098,9 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 }
 
 bool GodotBodyPair2D::pre_solve(real_t p_step) {
+	if (pair_mode != PAIR_BODY_BODY) {
+		return false;
+	}
 	if (oneway_disabled) {
 		return false;
 	}
@@ -159726,6 +157235,9 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 }
 
 void GodotBodyPair2D::solve(real_t p_step) {
+	if (pair_mode != PAIR_BODY_BODY) {
+		return;
+	}
 	if (!collided || oneway_disabled) {
 		return;
 	}
@@ -159825,14 +157337,53 @@ GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p
 	B->add_constraint(this, 1);
 }
 
+GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape) :
+		GodotConstraint2D(nullptr, 0), pair_mode(PAIR_BODY_AREA), area_a(p_area) {
+	A = p_body;
+	B = nullptr;
+	shape_A = p_body_shape;
+	shape_B = p_area_shape;
+	p_body->add_constraint(this, 0);
+	p_area->add_constraint(this);
+	if (p_body->get_mode() == PS2DE::BODY_MODE_KINEMATIC) {
+		p_body->set_active(true);
+	}
+}
+
+GodotBodyPair2D::GodotBodyPair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b) :
+		GodotConstraint2D(nullptr, 0), pair_mode(PAIR_AREA_AREA), area_a(p_area_a), area_b(p_area_b) {
+	A = nullptr;
+	B = nullptr;
+	shape_A = p_shape_a;
+	shape_B = p_shape_b;
+	p_area_a->add_constraint(this);
+	p_area_b->add_constraint(this);
+}
+
 GodotBodyPair2D::~GodotBodyPair2D() {
+	if (pair_mode == PAIR_BODY_AREA) {
+		if (A) {
+			A->remove_constraint(this, 0);
+		}
+		if (area_a) {
+			area_a->remove_constraint(this);
+		}
+		return;
+	}
+	if (pair_mode == PAIR_AREA_AREA) {
+		if (area_a) {
+			area_a->remove_constraint(this);
+		}
+		if (area_b) {
+			area_b->remove_constraint(this);
+		}
+		return;
+	}
 	A->remove_constraint(this, 0);
 	B->remove_constraint(this, 1);
 }
 
-// ============================================================================
 // GodotJoint2D (based on Chipmunk joint constraints)
-// ============================================================================
 
 /* Copyright (c) 2007 Scott Lembcke
  *
@@ -160430,1158 +157981,7 @@ GodotJoint2D::GodotJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b,
 }
 #endif // PHYSICS_2D_DISABLED
 
-// === Merged from modules/navigation_3d/nav_map_3d.cpp ===
 #ifndef NAVIGATION_3D_DISABLED
-/*  nav_map_3d.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-// --- Inlined from modules/navigation_3d/nav_map_3d.h ---
-#include <cfloat>
-
-#include "core/io/ip.h"
-#include "core/typedefs.h"
-#include "core/io/ip.h"
-#include "core/os/mutex.h"
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
-#include "core/io/ip.h"
-#include "servers/display/display_server.h"
-#include "thirdparty/rvo2/rvo2_2d/Agent2d.h"
-#include "thirdparty/rvo2/rvo2_2d/KdTree2d.h"
-#include "thirdparty/rvo2/rvo2_2d/RVOSimulator2d.h"
-#include "thirdparty/rvo2/rvo2_3d/Agent3d.h"
-#include "thirdparty/rvo2/rvo2_3d/KdTree3d.h"
-#include "thirdparty/rvo2/rvo2_3d/RVOSimulator3d.h"
-
-class NavIteration3D;
-class NavMap3D;
-class NavRegion3D;
-class NavLink3D;
-class NavAgent3D;
-class NavObstacle3D;
-struct NavMapIteration3D;
-struct NavMapIterationBuild3D;
-struct NavRegionIterationBuild3D;
-
-namespace Nav3D {
-
-struct Polygon;
-
-union PointKey {
-	struct {
-		int64_t x : 21;
-		int64_t y : 22;
-		int64_t z : 21;
-	};
-
-	uint64_t key = 0;
-};
-
-struct EdgeKey {
-	PointKey a;
-	PointKey b;
-
-	static uint32_t hash(const EdgeKey& p_val)
-	{
-		return hash_one_uint64(p_val.a.key) ^ hash_one_uint64(p_val.b.key);
-	}
-
-	bool operator==(const EdgeKey& p_key) const
-	{
-		return (a.key == p_key.a.key) && (b.key == p_key.b.key);
-	}
-
-	EdgeKey(const PointKey& p_a = PointKey(), const PointKey& p_b = PointKey()) : a(p_a), b(p_b)
-	{
-		if (a.key > b.key) {
-			SWAP(a, b);
-		}
-	}
-};
-
-struct ConnectableEdge {
-	EdgeKey ek;
-	uint32_t polygon_index;
-	int edge = -1;
-	Vector3 pathway_start;
-	Vector3 pathway_end;
-};
-
-struct Connection {
-	Nav3D::Polygon* polygon = nullptr;
-	int edge = -1;
-	Vector3 pathway_start;
-	Vector3 pathway_end;
-};
-
-struct Polygon {
-	uint32_t id = UINT32_MAX;
-	const NavIteration3D* owner = nullptr;
-	LocalVector<Vector3> vertices;
-	real_t surface_area = 0.0;
-};
-
-struct NavigationPoly {
-	const Nav3D::Polygon* poly = nullptr;
-	uint32_t traversable_poly_index = UINT32_MAX;
-
-	int back_navigation_poly_id = -1;
-	int back_navigation_edge = -1;
-	Vector3 back_navigation_edge_pathway_start;
-	Vector3 back_navigation_edge_pathway_end;
-
-	Vector3 entry;
-	real_t traveled_distance = 0.0;
-	real_t distance_to_destination = 0.0;
-
-	real_t total_travel_cost() const { return traveled_distance + distance_to_destination; }
-
-	bool operator==(const NavigationPoly& p_other) const { return poly == p_other.poly; }
-
-	bool operator!=(const NavigationPoly& p_other) const { return !(*this == p_other); }
-
-	void reset()
-	{
-		poly = nullptr;
-		traversable_poly_index = UINT32_MAX;
-		back_navigation_poly_id = -1;
-		back_navigation_edge = -1;
-		traveled_distance = FLT_MAX;
-		distance_to_destination = 0.0;
-	}
-};
-
-struct NavPolyTravelCostGreaterThan {
-	bool operator()(const NavigationPoly* p_poly_a, const NavigationPoly* p_poly_b) const
-	{
-		real_t f_cost_a = p_poly_a->total_travel_cost();
-		real_t h_cost_a = p_poly_a->distance_to_destination;
-		real_t f_cost_b = p_poly_b->total_travel_cost();
-		real_t h_cost_b = p_poly_b->distance_to_destination;
-
-		if (f_cost_a != f_cost_b) {
-			return f_cost_a > f_cost_b;
-		}
-		else {
-			return h_cost_a > h_cost_b;
-		}
-	}
-};
-
-struct NavPolyHeapIndexer {
-	void operator()(NavigationPoly* p_poly, uint32_t p_heap_index) const
-	{
-		p_poly->traversable_poly_index = p_heap_index;
-	}
-};
-
-struct ClosestPointQueryResult {
-	Vector3 point;
-	Vector3 normal;
-	RID owner;
-};
-
-struct EdgeConnectionPair {
-	Connection connections[2];
-	int size = 0;
-};
-
-struct PerformanceData {
-	int pm_region_count = 0;
-	int pm_agent_count = 0;
-	int pm_link_count = 0;
-	int pm_polygon_count = 0;
-	int pm_edge_count = 0;
-	int pm_edge_merge_count = 0;
-	int pm_edge_connection_count = 0;
-	int pm_edge_free_count = 0;
-	int pm_obstacle_count = 0;
-
-	void reset()
-	{
-		pm_region_count = 0;
-		pm_agent_count = 0;
-		pm_link_count = 0;
-		pm_polygon_count = 0;
-		pm_edge_count = 0;
-		pm_edge_merge_count = 0;
-		pm_edge_connection_count = 0;
-		pm_edge_free_count = 0;
-		pm_obstacle_count = 0;
-	}
-};
-
-} // namespace Nav3D
-
-class NavIteration3D final : public RefCounted
-{
-public:
-	bool enabled = true;
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-	NavigationEnums3D::PathSegmentType owner_type = NavigationEnums3D::PATH_SEGMENT_TYPE_REGION;
-	RID owner_rid;
-	bool owner_use_edge_connections = false;
-	LocalVector<Nav3D::Polygon> navmesh_polygons;
-	LocalVector<LocalVector<Nav3D::Connection>> internal_connections;
-
-	// Region iteration data.
-	Transform3D transform;
-	real_t surface_area = 0.0;
-	AABB bounds;
-	LocalVector<Nav3D::ConnectableEdge> external_edges;
-
-	// Link iteration data.
-	bool bidirectional = true;
-	Vector3 start_position;
-	Vector3 end_position;
-
-	bool get_enabled() const { return enabled; }
-	NavigationEnums3D::PathSegmentType get_type() const { return owner_type; }
-	RID get_self() const { return owner_rid; }
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-	real_t get_enter_cost() const { return enter_cost; }
-	real_t get_travel_cost() const { return travel_cost; }
-	bool get_use_edge_connections() const { return owner_use_edge_connections; }
-
-	const LocalVector<Nav3D::Polygon>& get_navmesh_polygons() const { return navmesh_polygons; }
-	const LocalVector<LocalVector<Nav3D::Connection>>& get_internal_connections() const
-	{
-		return internal_connections;
-	}
-
-	const Transform3D& get_transform() const { return transform; }
-	real_t get_surface_area() const { return surface_area; }
-	AABB get_bounds() const { return bounds; }
-	const LocalVector<Nav3D::ConnectableEdge>& get_external_edges() const { return external_edges; }
-
-	Vector3 get_start_position() const { return start_position; }
-	Vector3 get_end_position() const { return end_position; }
-	bool is_bidirectional() const { return bidirectional; }
-
-	~NavIteration3D() override
-	{
-		external_edges.clear();
-		navmesh_polygons.clear();
-		internal_connections.clear();
-	}
-};
-
-struct NavRegionIterationBuild3D
-{
-	Nav3D::PerformanceData performance_data;
-
-	NavRegion3D* region = nullptr;
-
-	Vector3 map_cell_size;
-	Transform3D region_transform;
-
-	struct NavMeshData
-	{
-		Vector<Vector3> vertices;
-		Vector<Vector<int>> polygons;
-
-		void clear()
-		{
-			vertices.clear();
-			polygons.clear();
-		}
-	} navmesh_data;
-
-	Ref<NavIteration3D> region_iteration;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey> iter_connection_pairs_map;
-
-	void reset()
-	{
-		performance_data.reset();
-
-		navmesh_data.clear();
-		region_iteration = Ref<NavIteration3D>();
-		iter_connection_pairs_map.clear();
-	}
-};
-
-class NavMeshQueries3D final
-{
-public:
-	struct PathQuerySlot
-	{
-		LocalVector<Nav3D::NavigationPoly> path_corridor;
-		Heap<Nav3D::NavigationPoly*, Nav3D::NavPolyTravelCostGreaterThan, Nav3D::NavPolyHeapIndexer>
-			traversable_polys;
-		bool in_use = false;
-		uint32_t slot_index = 0;
-		AHashMap<const Nav3D::Polygon*, uint32_t> poly_to_id;
-	};
-
-	struct NavMeshPathQueryTask3D
-	{
-		enum TaskStatus
-		{
-			QUERY_STARTED,
-			QUERY_FINISHED,
-			QUERY_FAILED,
-			CALLBACK_DISPATCHED,
-			CALLBACK_FAILED,
-		};
-
-		Vector3 start_position;
-		Vector3 target_position;
-		uint32_t navigation_layers;
-		uint32_t metadata_flags = NavigationEnums3D::PathMetadataFlags::PATH_INCLUDE_ALL;
-		NavigationEnums3D::PathfindingAlgorithm pathfinding_algorithm =
-			NavigationEnums3D::PathfindingAlgorithm::PATHFINDING_ALGORITHM_ASTAR;
-		NavigationEnums3D::PathPostProcessing path_postprocessing =
-			NavigationEnums3D::PathPostProcessing::PATH_POSTPROCESSING_CORRIDORFUNNEL;
-		bool simplify_path = false;
-		real_t simplify_epsilon = 0.0;
-
-		bool exclude_regions = false;
-		bool include_regions = false;
-		LocalVector<RID> excluded_regions;
-		LocalVector<RID> included_regions;
-
-		float path_return_max_length = 0.0;
-		float path_return_max_radius = 0.0;
-		int path_search_max_polygons = NavigationDefaults3D::path_search_max_polygons;
-		float path_search_max_distance = 0.0;
-
-		Vector3 begin_position;
-		Vector3 end_position;
-		const Nav3D::Polygon* begin_polygon = nullptr;
-		const Nav3D::Polygon* end_polygon = nullptr;
-		uint32_t least_cost_id = 0;
-
-		Vector3 map_up;
-		NavMap3D* map = nullptr;
-		PathQuerySlot* path_query_slot = nullptr;
-
-		LocalVector<Vector3> path_points;
-		LocalVector<int32_t> path_meta_point_types;
-		LocalVector<RID> path_meta_point_rids;
-		LocalVector<int64_t> path_meta_point_owners;
-		float path_length = 0.0;
-
-		Ref<NavigationPathQueryParameters3D> query_parameters;
-		Ref<NavigationPathQueryResult3D> query_result;
-		NavMeshPathQueryTask3D::TaskStatus status =
-			NavMeshPathQueryTask3D::TaskStatus::QUERY_STARTED;
-
-		void path_clear()
-		{
-			path_points.clear();
-			path_meta_point_types.clear();
-			path_meta_point_rids.clear();
-			path_meta_point_owners.clear();
-		}
-
-		void path_reverse()
-		{
-			path_points.reverse();
-			path_meta_point_types.reverse();
-			path_meta_point_rids.reverse();
-			path_meta_point_owners.reverse();
-		}
-	};
-
-	static Vector3 polygons_get_random_point(const LocalVector<Nav3D::Polygon>& p_polygons,
-		uint32_t p_navigation_layers, bool p_uniformly);
-
-	static Vector3 polygons_get_closest_point_to_segment(
-		const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_from, const Vector3& p_to,
-		const bool p_use_collision);
-	static Vector3 polygons_get_closest_point(
-		const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point);
-	static Vector3 polygons_get_closest_point_normal(
-		const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point);
-	static Nav3D::ClosestPointQueryResult polygons_get_closest_point_info(
-		const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point);
-	static RID polygons_get_closest_point_owner(
-		const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point);
-
-	static Vector3 map_iteration_get_closest_point_to_segment(
-		const NavMapIteration3D& p_map_iteration, const Vector3& p_from, const Vector3& p_to,
-		const bool p_use_collision);
-	static Vector3 map_iteration_get_closest_point(
-		const NavMapIteration3D& p_map_iteration, const Vector3& p_point);
-	static Vector3 map_iteration_get_closest_point_normal(
-		const NavMapIteration3D& p_map_iteration, const Vector3& p_point);
-	static RID map_iteration_get_closest_point_owner(
-		const NavMapIteration3D& p_map_iteration, const Vector3& p_point);
-	static Nav3D::ClosestPointQueryResult map_iteration_get_closest_point_info(
-		const NavMapIteration3D& p_map_iteration, const Vector3& p_point);
-	static Vector3 map_iteration_get_random_point(
-		const NavMapIteration3D& p_map_iteration, uint32_t p_navigation_layers, bool p_uniformly);
-
-	static void query_task_map_iteration_get_path(
-		NavMeshPathQueryTask3D& p_query_task, const NavMapIteration3D& p_map_iteration);
-	static void _query_task_push_back_point_with_metadata(NavMeshPathQueryTask3D& p_query_task,
-		const Vector3& p_point, const Nav3D::Polygon* p_point_polygon);
-	static void _query_task_find_start_end_positions(
-		NavMeshPathQueryTask3D& p_query_task, const NavMapIteration3D& p_map_iteration);
-	static void _query_task_build_path_corridor(
-		NavMeshPathQueryTask3D& p_query_task, const NavMapIteration3D& p_map_iteration);
-	static void _query_task_post_process_corridorfunnel(NavMeshPathQueryTask3D& p_query_task);
-	static void _query_task_post_process_edgecentered(NavMeshPathQueryTask3D& p_query_task);
-	static void _query_task_post_process_nopostprocessing(NavMeshPathQueryTask3D& p_query_task);
-	static void _query_task_clip_path(NavMeshPathQueryTask3D& p_query_task,
-		const Nav3D::NavigationPoly* from_poly, const Vector3& p_to_point,
-		const Nav3D::NavigationPoly* p_to_poly);
-	static void _query_task_simplified_path_points(NavMeshPathQueryTask3D& p_query_task);
-	static bool _query_task_is_connection_owner_usable(
-		const NavMeshPathQueryTask3D& p_query_task, const NavIteration3D* p_owner);
-	static void _query_task_process_path_result_limits(NavMeshPathQueryTask3D& p_query_task);
-
-	static void _query_task_search_polygon_connections(NavMeshPathQueryTask3D& p_query_task,
-		const Nav3D::Connection& p_connection, uint32_t p_least_cost_id,
-		const Nav3D::NavigationPoly& p_least_cost_poly, real_t p_poly_enter_cost,
-		const Vector3& p_end_point);
-
-	static void simplify_path_segment(int p_start_inx, int p_end_inx,
-		const LocalVector<Vector3>& p_points, real_t p_epsilon,
-		LocalVector<uint32_t>& r_simplified_path_indices);
-	static LocalVector<uint32_t> get_simplified_path_indices(
-		const LocalVector<Vector3>& p_path, real_t p_epsilon);
-
-	static float _calculate_path_length(
-		const LocalVector<Vector3>& p_path, uint32_t p_start_index, uint32_t p_end_index);
-};
-
-struct NavMapIterationBuild3D
-{
-	Vector3 merge_rasterizer_cell_size;
-	bool use_edge_connections = true;
-	real_t edge_connection_margin;
-	real_t link_connection_radius;
-	Nav3D::PerformanceData performance_data;
-	int polygon_count = 0;
-	int free_edge_count = 0;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey> iter_connection_pairs_map;
-	LocalVector<Nav3D::Connection> iter_free_edges;
-
-	NavMapIteration3D* map_iteration = nullptr;
-
-	int navmesh_polygon_count = 0;
-
-	void reset()
-	{
-		performance_data.reset();
-
-		iter_connection_pairs_map.clear();
-		iter_free_edges.clear();
-		polygon_count = 0;
-		free_edge_count = 0;
-
-		navmesh_polygon_count = 0;
-	}
-};
-
-struct NavMapIteration3D
-{
-	mutable SafeNumeric<uint32_t> users;
-	RWLock rwlock;
-
-	Vector3 map_up;
-
-	LocalVector<Ref<NavIteration3D>> region_iterations;
-	LocalVector<Ref<NavIteration3D>> link_iterations;
-
-	int navmesh_polygon_count = 0;
-
-	HashMap<const NavIteration3D*, LocalVector<Nav3D::Connection>> external_region_connections;
-	HashMap<const NavIteration3D*, LocalVector<LocalVector<Nav3D::Connection>>>
-		navbases_polygons_external_connections;
-
-	LocalVector<Nav3D::Polygon> navlink_polygons;
-
-	HashMap<NavRegion3D*, Ref<NavIteration3D>> region_ptr_to_region_iteration;
-
-	LocalVector<NavMeshQueries3D::PathQuerySlot> path_query_slots;
-	Mutex path_query_slots_mutex;
-	Semaphore path_query_slots_semaphore;
-
-	void clear()
-	{
-		map_up = Vector3();
-		navmesh_polygon_count = 0;
-
-		region_iterations.clear();
-		link_iterations.clear();
-		external_region_connections.clear();
-		navbases_polygons_external_connections.clear();
-		navlink_polygons.clear();
-		region_ptr_to_region_iteration.clear();
-	}
-};
-
-class NavMapIterationRead3D final
-{
-	const NavMapIteration3D& map_iteration;
-
-public:
-	_ALWAYS_INLINE_ NavMapIterationRead3D(const NavMapIteration3D& p_iteration)
-		: map_iteration(p_iteration)
-	{
-		map_iteration.rwlock.read_lock();
-		map_iteration.users.increment();
-	}
-
-	_ALWAYS_INLINE_ ~NavMapIterationRead3D()
-	{
-		map_iteration.users.decrement();
-		map_iteration.rwlock.read_unlock();
-	}
-};
-
-class NavMapBuilder3D final
-{
-	static void _build_step_gather_region_polygons(NavMapIterationBuild3D& r_build);
-	static void _build_step_find_edge_connection_pairs(NavMapIterationBuild3D& r_build);
-	static void _build_step_merge_edge_connection_pairs(NavMapIterationBuild3D& r_build);
-	static void _build_step_edge_connection_margin_connections(NavMapIterationBuild3D& r_build);
-	static void _build_step_navlink_connections(NavMapIterationBuild3D& r_build);
-	static void _build_update_map_iteration(NavMapIterationBuild3D& r_build);
-
-public:
-	static Nav3D::PointKey get_point_key(const Vector3& p_pos, const Vector3& p_cell_size);
-
-	static void build_navmap_iteration(NavMapIterationBuild3D& r_build);
-};
-
-class NavRegionBuilder3D final
-{
-	static void _build_step_process_navmesh_data(NavRegionIterationBuild3D& r_build);
-	static void _build_step_find_edge_connection_pairs(NavRegionIterationBuild3D& r_build);
-	static void _build_step_merge_edge_connection_pairs(NavRegionIterationBuild3D& r_build);
-	static void _build_update_iteration(NavRegionIterationBuild3D& r_build);
-
-public:
-	static Nav3D::PointKey get_point_key(const Vector3& p_pos, const Vector3& p_cell_size);
-	static Nav3D::EdgeKey get_edge_key(
-		const Vector3& p_vertex1, const Vector3& p_vertex2, const Vector3& p_cell_size);
-
-	static void build_iteration(NavRegionIterationBuild3D& r_build);
-};
-
-class NavAgent3D final
-{
-	RID self;
-
-	Vector3 position;
-	Vector3 target_position;
-	Vector3 velocity;
-	Vector3 velocity_forced;
-	real_t height = NavigationDefaults3D::AVOIDANCE_AGENT_HEIGHT;
-	real_t radius = NavigationDefaults3D::AVOIDANCE_AGENT_RADIUS;
-	real_t max_speed = NavigationDefaults3D::AVOIDANCE_AGENT_MAX_SPEED;
-	real_t time_horizon_agents = NavigationDefaults3D::AVOIDANCE_AGENT_TIME_HORIZON_AGENTS;
-	real_t time_horizon_obstacles = NavigationDefaults3D::AVOIDANCE_AGENT_TIME_HORIZON_OBSTACLES;
-	int max_neighbors = NavigationDefaults3D::AVOIDANCE_AGENT_MAX_NEIGHBORS;
-	real_t neighbor_distance = NavigationDefaults3D::AVOIDANCE_AGENT_NEIGHBOR_DISTANCE;
-	Vector3 safe_velocity;
-	bool clamp_speed = true;
-
-	NavMap3D* map = nullptr;
-
-	RVO2D::Agent2D rvo_agent_2d;
-	RVO3D::Agent3D rvo_agent_3d;
-	bool use_3d_avoidance = false;
-	bool avoidance_enabled = false;
-
-	uint32_t avoidance_layers = 1;
-	uint32_t avoidance_mask = 1;
-	real_t avoidance_priority = 1.0;
-
-	bool agent_dirty = true;
-
-	uint32_t last_map_iteration_id = 0;
-	bool paused = false;
-
-	SelfList<NavAgent3D> sync_dirty_request_list_element;
-
-public:
-	NavAgent3D();
-	~NavAgent3D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	void set_avoidance_enabled(bool p_enabled);
-	bool is_avoidance_enabled() { return avoidance_enabled; }
-
-	void set_use_3d_avoidance(bool p_enabled);
-	bool get_use_3d_avoidance() { return use_3d_avoidance; }
-
-	void set_map(NavMap3D* p_map);
-	NavMap3D* get_map() { return map; }
-
-	bool is_map_changed();
-
-	RVO2D::Agent2D* get_rvo_agent_2d() { return &rvo_agent_2d; }
-	RVO3D::Agent3D* get_rvo_agent_3d() { return &rvo_agent_3d; }
-
-	bool has_avoidance_callback() const;
-	void dispatch_avoidance_callback();
-
-	void set_neighbor_distance(real_t p_neighbor_distance);
-	real_t get_neighbor_distance() const { return neighbor_distance; }
-
-	void set_max_neighbors(int p_max_neighbors);
-	int get_max_neighbors() const { return max_neighbors; }
-
-	void set_time_horizon_agents(real_t p_time_horizon);
-	real_t get_time_horizon_agents() const { return time_horizon_agents; }
-
-	void set_time_horizon_obstacles(real_t p_time_horizon);
-	real_t get_time_horizon_obstacles() const { return time_horizon_obstacles; }
-
-	void set_radius(real_t p_radius);
-	real_t get_radius() const { return radius; }
-
-	void set_height(real_t p_height);
-	real_t get_height() const { return height; }
-
-	void set_max_speed(real_t p_max_speed);
-	real_t get_max_speed() const { return max_speed; }
-
-	void set_position(const Vector3 p_position);
-	const Vector3& get_position() const { return position; }
-
-	void set_target_position(const Vector3 p_target_position);
-	const Vector3& get_target_position() const { return target_position; }
-
-	void set_velocity(const Vector3 p_velocity);
-	const Vector3& get_velocity() const { return velocity; }
-
-	void set_velocity_forced(const Vector3 p_velocity);
-	const Vector3& get_velocity_forced() const { return velocity_forced; }
-
-	void set_avoidance_layers(uint32_t p_layers);
-	uint32_t get_avoidance_layers() const { return avoidance_layers; }
-
-	void set_avoidance_mask(uint32_t p_mask);
-	uint32_t get_avoidance_mask() const { return avoidance_mask; }
-
-	void set_avoidance_priority(real_t p_priority);
-	real_t get_avoidance_priority() const { return avoidance_priority; }
-
-	void set_paused(bool p_paused);
-	bool get_paused() const;
-
-	bool is_dirty() const;
-	void sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	void update();
-
-private:
-	void _update_rvo_agent_properties();
-};
-
-class NavObstacle3D final
-{
-	RID self;
-
-	NavAgent3D* agent = nullptr;
-	NavMap3D* map = nullptr;
-	Vector3 velocity;
-	Vector3 position;
-	Vector<Vector3> vertices;
-
-	real_t radius = 0.0;
-	real_t height = 0.0;
-
-	bool avoidance_enabled = false;
-	bool use_3d_avoidance = false;
-	uint32_t avoidance_layers = 1;
-
-	bool obstacle_dirty = true;
-
-	uint32_t last_map_iteration_id = 0;
-	bool paused = false;
-
-	SelfList<NavObstacle3D> sync_dirty_request_list_element;
-
-public:
-	NavObstacle3D();
-	~NavObstacle3D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	void set_avoidance_enabled(bool p_enabled);
-	bool is_avoidance_enabled() { return avoidance_enabled; }
-
-	void set_use_3d_avoidance(bool p_enabled);
-	bool get_use_3d_avoidance() { return use_3d_avoidance; }
-
-	void set_map(NavMap3D* p_map);
-	NavMap3D* get_map() { return map; }
-
-	void set_agent(NavAgent3D* p_agent);
-	NavAgent3D* get_agent() { return agent; }
-
-	void set_position(const Vector3 p_position);
-	const Vector3& get_position() const { return position; }
-
-	void set_radius(real_t p_radius);
-	real_t get_radius() const { return radius; }
-
-	void set_height(const real_t p_height);
-	real_t get_height() const { return height; }
-
-	void set_velocity(const Vector3 p_velocity);
-	const Vector3& get_velocity() const { return velocity; }
-
-	void set_vertices(const Vector<Vector3>& p_vertices);
-	const Vector<Vector3>& get_vertices() const { return vertices; }
-
-	bool is_map_changed();
-
-	void set_avoidance_layers(uint32_t p_layers);
-	uint32_t get_avoidance_layers() const { return avoidance_layers; }
-
-	void set_paused(bool p_paused);
-	bool get_paused() const;
-
-	bool is_dirty() const;
-	void sync();
-	void request_sync();
-	void cancel_sync_request();
-
-private:
-	void internal_update_agent();
-};
-
-class NavLink3D final
-{
-	RID self;
-
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-
-	NavMap3D* map = nullptr;
-	bool bidirectional = true;
-	Vector3 start_position;
-	Vector3 end_position;
-	bool enabled = true;
-
-	SelfList<NavLink3D> sync_dirty_request_list_element;
-
-	uint32_t iteration_id = 0;
-
-	mutable RWLock iteration_rwlock;
-	Ref<NavIteration3D> iteration;
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavLink3D();
-	~NavLink3D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	NavigationEnums3D::PathSegmentType get_type() const
-	{
-		return NavigationEnums3D::PATH_SEGMENT_TYPE_LINK;
-	}
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void set_map(NavMap3D* p_map);
-	NavMap3D* get_map() const { return map; }
-
-	void set_enabled(bool p_enabled);
-	bool get_enabled() const { return enabled; }
-
-	void set_bidirectional(bool p_bidirectional);
-	bool is_bidirectional() const { return bidirectional; }
-
-	void set_start_position(Vector3 p_position);
-	Vector3 get_start_position() const { return start_position; }
-
-	void set_end_position(Vector3 p_position);
-	Vector3 get_end_position() const { return end_position; }
-
-	void set_navigation_layers(uint32_t p_navigation_layers);
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-
-	void set_enter_cost(real_t p_enter_cost);
-	real_t get_enter_cost() const { return enter_cost; }
-
-	void set_travel_cost(real_t p_travel_cost);
-	real_t get_travel_cost() const { return travel_cost; }
-
-	bool sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	Ref<NavIteration3D> get_iteration();
-};
-
-class NavRegion3D final
-{
-	RID self;
-
-	uint32_t navigation_layers = 1;
-	real_t enter_cost = 0.0;
-	real_t travel_cost = 1.0;
-
-	RWLock region_rwlock;
-
-	NavMap3D* map = nullptr;
-	Transform3D transform;
-	bool enabled = true;
-
-	bool use_edge_connections = true;
-
-	AABB bounds;
-
-	Ref<NavigationMesh> navmesh;
-
-	Nav3D::PerformanceData performance_data;
-
-	uint32_t iteration_id = 0;
-
-	SelfList<NavRegion3D> sync_dirty_request_list_element{this};
-	mutable RWLock iteration_rwlock;
-	Ref<NavIteration3D> iteration;
-
-	NavRegionIterationBuild3D iteration_build;
-	bool use_async_iterations = true;
-	SelfList<NavRegion3D> async_list_element{this};
-	static void _build_iteration_threaded(void* p_arg);
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavRegion3D();
-	~NavRegion3D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	NavigationEnums3D::PathSegmentType get_type() const
-	{
-		return NavigationEnums3D::PATH_SEGMENT_TYPE_REGION;
-	}
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void scratch_polygons();
-
-	void set_enabled(bool p_enabled);
-	bool get_enabled() const { return enabled; }
-
-	void set_map(NavMap3D* p_map);
-	NavMap3D* get_map() const { return map; }
-
-	void set_use_edge_connections(bool p_enabled);
-	bool get_use_edge_connections() const { return use_edge_connections; }
-
-	void set_transform(Transform3D transform);
-	const Transform3D& get_transform() const { return transform; }
-
-	void set_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh);
-	Ref<NavigationMesh> get_navigation_mesh() const { return navmesh; }
-
-	const LocalVector<Nav3D::Polygon>& get_polygons() const;
-
-	Vector3 get_closest_point_to_segment(
-		const Vector3& p_from, const Vector3& p_to, bool p_use_collision) const;
-	Nav3D::ClosestPointQueryResult get_closest_point_info(const Vector3& p_point) const;
-	Vector3 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
-
-	real_t get_surface_area() const;
-	AABB get_bounds() const;
-
-	void set_navigation_layers(uint32_t p_navigation_layers);
-	uint32_t get_navigation_layers() const { return navigation_layers; }
-
-	void set_enter_cost(real_t p_enter_cost);
-	real_t get_enter_cost() const { return enter_cost; }
-
-	void set_travel_cost(real_t p_travel_cost);
-	real_t get_travel_cost() const { return travel_cost; }
-
-	bool sync();
-	void request_sync();
-	void cancel_sync_request();
-
-	void sync_async_tasks();
-	void request_async_thread_join();
-	void cancel_async_thread_join();
-
-	Ref<NavIteration3D> get_iteration();
-
-	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
-	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
-	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
-
-	void set_use_async_iterations(bool p_enabled);
-	bool get_use_async_iterations() const;
-};
-
-class NavMap3D final
-{
-	RID self;
-
-	Vector3 up = Vector3(0, 1, 0);
-
-	real_t cell_size = NavigationDefaults3D::NAV_MESH_CELL_SIZE;
-	real_t cell_height = NavigationDefaults3D::NAV_MESH_CELL_HEIGHT;
-
-	Vector3 merge_rasterizer_cell_size = Vector3(cell_size, cell_height, cell_size);
-	float merge_rasterizer_cell_scale = 0.1;
-
-	bool use_edge_connections = true;
-	real_t edge_connection_margin = NavigationDefaults3D::EDGE_CONNECTION_MARGIN;
-	real_t link_connection_radius = NavigationDefaults3D::LINK_CONNECTION_RADIUS;
-
-	bool map_settings_dirty = true;
-
-	LocalVector<NavRegion3D*> regions;
-	LocalVector<NavLink3D*> links;
-
-	RVO2D::RVOSimulator2D rvo_simulation_2d;
-	RVO3D::RVOSimulator3D rvo_simulation_3d;
-
-	LocalVector<NavAgent3D*> active_2d_avoidance_agents;
-	LocalVector<NavAgent3D*> active_3d_avoidance_agents;
-
-	bool agents_dirty = true;
-	LocalVector<NavAgent3D*> agents;
-
-	LocalVector<NavObstacle3D*> obstacles;
-	bool obstacles_dirty = true;
-
-	uint32_t iteration_id = 0;
-
-	bool use_threads = true;
-	bool avoidance_use_multiple_threads = true;
-	bool avoidance_use_high_priority_threads = true;
-
-	Nav3D::PerformanceData performance_data;
-
-	struct
-	{
-		struct
-		{
-			RWLock rwlock;
-			SelfList<NavRegion3D>::List list;
-		} regions;
-
-		struct
-		{
-			RWLock rwlock;
-			SelfList<NavLink3D>::List list;
-		} links;
-
-		struct
-		{
-			RWLock rwlock;
-			SelfList<NavAgent3D>::List list;
-		} agents;
-
-		struct
-		{
-			RWLock rwlock;
-			SelfList<NavObstacle3D>::List list;
-		} obstacles;
-	} sync_dirty_requests;
-
-	struct
-	{
-		struct
-		{
-			RWLock rwlock;
-			SelfList<NavRegion3D>::List list;
-		} regions;
-	} async_dirty_requests;
-
-	int path_query_slots_max = 4;
-
-	bool use_async_iterations = true;
-
-	uint32_t iteration_slot_index = 0;
-	LocalVector<NavMapIteration3D> iteration_slots;
-	mutable RWLock iteration_slot_rwlock;
-
-	NavMapIterationBuild3D iteration_build;
-	static void _build_iteration_threaded(void* p_arg);
-
-	bool iteration_dirty = true;
-	bool iteration_building = false;
-	bool iteration_ready = false;
-
-	void _build_iteration();
-	void _sync_iteration();
-
-public:
-	NavMap3D();
-	~NavMap3D();
-
-	_FORCE_INLINE_ void set_self(const RID& p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	uint32_t get_iteration_id() const { return iteration_id; }
-
-	void set_up(Vector3 p_up);
-	Vector3 get_up() const { return up; }
-
-	void set_cell_size(real_t p_cell_size);
-	real_t get_cell_size() const { return cell_size; }
-
-	void set_cell_height(real_t p_cell_height);
-	real_t get_cell_height() const { return cell_height; }
-
-	void set_merge_rasterizer_cell_scale(float p_value);
-	float get_merge_rasterizer_cell_scale() const { return merge_rasterizer_cell_scale; }
-
-	void set_use_edge_connections(bool p_enabled);
-	bool get_use_edge_connections() const { return use_edge_connections; }
-
-	void set_edge_connection_margin(real_t p_edge_connection_margin);
-	real_t get_edge_connection_margin() const { return edge_connection_margin; }
-
-	void set_link_connection_radius(real_t p_link_connection_radius);
-	real_t get_link_connection_radius() const { return link_connection_radius; }
-
-	Nav3D::PointKey get_point_key(const Vector3& p_pos) const;
-	const Vector3& get_merge_rasterizer_cell_size() const;
-
-	void query_path(NavMeshQueries3D::NavMeshPathQueryTask3D& p_query_task);
-
-	Vector3 get_closest_point_to_segment(
-		const Vector3& p_from, const Vector3& p_to, const bool p_use_collision) const;
-	Vector3 get_closest_point(const Vector3& p_point) const;
-	Vector3 get_closest_point_normal(const Vector3& p_point) const;
-	Nav3D::ClosestPointQueryResult get_closest_point_info(const Vector3& p_point) const;
-	RID get_closest_point_owner(const Vector3& p_point) const;
-
-	void add_region(NavRegion3D* p_region);
-	void remove_region(NavRegion3D* p_region);
-	const LocalVector<NavRegion3D*>& get_regions() const { return regions; }
-
-	void add_link(NavLink3D* p_link);
-	void remove_link(NavLink3D* p_link);
-	const LocalVector<NavLink3D*>& get_links() const { return links; }
-
-	bool has_agent(NavAgent3D* agent) const;
-	void add_agent(NavAgent3D* agent);
-	void remove_agent(NavAgent3D* agent);
-	const LocalVector<NavAgent3D*>& get_agents() const { return agents; }
-
-	void set_agent_as_controlled(NavAgent3D* agent);
-	void remove_agent_as_controlled(NavAgent3D* agent);
-
-	bool has_obstacle(NavObstacle3D* obstacle) const;
-	void add_obstacle(NavObstacle3D* obstacle);
-	void remove_obstacle(NavObstacle3D* obstacle);
-	const LocalVector<NavObstacle3D*>& get_obstacles() const { return obstacles; }
-
-	Vector3 get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const;
-
-	void sync();
-	void step(double p_delta_time);
-	void dispatch_callbacks();
-
-	int get_pm_region_count() const { return performance_data.pm_region_count; }
-	int get_pm_agent_count() const { return performance_data.pm_agent_count; }
-	int get_pm_link_count() const { return performance_data.pm_link_count; }
-	int get_pm_polygon_count() const { return performance_data.pm_polygon_count; }
-	int get_pm_edge_count() const { return performance_data.pm_edge_count; }
-	int get_pm_edge_merge_count() const { return performance_data.pm_edge_merge_count; }
-	int get_pm_edge_connection_count() const { return performance_data.pm_edge_connection_count; }
-	int get_pm_edge_free_count() const { return performance_data.pm_edge_free_count; }
-	int get_pm_obstacle_count() const { return performance_data.pm_obstacle_count; }
-
-	int get_region_connections_count(NavRegion3D* p_region) const;
-	Vector3 get_region_connection_pathway_start(NavRegion3D* p_region, int p_connection_id) const;
-	Vector3 get_region_connection_pathway_end(NavRegion3D* p_region, int p_connection_id) const;
-
-	void add_region_async_thread_join_request(SelfList<NavRegion3D>* p_async_request);
-	void remove_region_async_thread_join_request(SelfList<NavRegion3D>* p_async_request);
-
-	void add_region_sync_dirty_request(SelfList<NavRegion3D>* p_sync_request);
-	void add_link_sync_dirty_request(SelfList<NavLink3D>* p_sync_request);
-	void add_agent_sync_dirty_request(SelfList<NavAgent3D>* p_sync_request);
-	void add_obstacle_sync_dirty_request(SelfList<NavObstacle3D>* p_sync_request);
-
-	void remove_region_sync_dirty_request(SelfList<NavRegion3D>* p_sync_request);
-	void remove_link_sync_dirty_request(SelfList<NavLink3D>* p_sync_request);
-	void remove_agent_sync_dirty_request(SelfList<NavAgent3D>* p_sync_request);
-	void remove_obstacle_sync_dirty_request(SelfList<NavObstacle3D>* p_sync_request);
-
-	void set_use_async_iterations(bool p_enabled);
-	bool get_use_async_iterations() const;
-
-private:
-	void _sync_dirty_map_update_requests();
-	void _sync_dirty_avoidance_update_requests();
-	void _sync_async_tasks();
-
-	void compute_single_step(uint32_t index, NavAgent3D** agent);
-
-	void compute_single_avoidance_step_2d(uint32_t index, NavAgent3D** agent);
-	void compute_single_avoidance_step_3d(uint32_t index, NavAgent3D** agent);
-
-	void _sync_avoidance();
-	void _update_rvo_simulation();
-	void _update_rvo_obstacles_tree_2d();
-	void _update_rvo_agents_tree_2d();
-	void _update_rvo_agents_tree_3d();
-
-	void _update_merge_rasterizer_cell_dimensions();
-};
-
-class Node;
-class NavigationMeshSourceGeometryData3D;
-
 class NavMeshGenerator3D final
 {
 	static inline bool _initialized = false;
@@ -161683,3662 +158083,7 @@ public:
 };
 #endif // DISABLE_DEPRECATED
 
-// --- End modules/navigation_3d/nav_map_3d.h ---
-#include "core/os/os.h"
-#include "core/os/mutex.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
 #include "thirdparty/recastnavigation/Recast/Include/Recast.h"
-
-#include "core/os/os.h"
-#include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "servers/display/display_server.h"
-#include "thirdparty/rvo2/rvo2_2d/Obstacle2d.h"
-
-
-void NavAgent3D::set_avoidance_enabled(bool p_enabled)
-{
-	avoidance_enabled = p_enabled;
-	_update_rvo_agent_properties();
-}
-
-void NavAgent3D::set_use_3d_avoidance(bool p_enabled)
-{
-	use_3d_avoidance = p_enabled;
-	_update_rvo_agent_properties();
-}
-
-void NavAgent3D::_update_rvo_agent_properties()
-{
-	if (use_3d_avoidance) {
-		rvo_agent_3d.neighborDist_ = neighbor_distance;
-		rvo_agent_3d.maxNeighbors_ = max_neighbors;
-		rvo_agent_3d.timeHorizon_ = time_horizon_agents;
-		rvo_agent_3d.timeHorizonObst_ = time_horizon_obstacles;
-		rvo_agent_3d.radius_ = radius;
-		rvo_agent_3d.maxSpeed_ = max_speed;
-		rvo_agent_3d.position_ = RVO3D::Vector3(position.x, position.y, position.z);
-		// Replacing the internal velocity directly causes major jitter / bugs due to unpredictable
-		// velocity jumps, left line here for testing.
-		// rvo_agent_3d.velocity_ = RVO3D::Vector3(velocity.x, velocity.y ,velocity.z);
-		rvo_agent_3d.prefVelocity_ = RVO3D::Vector3(velocity.x, velocity.y, velocity.z);
-		rvo_agent_3d.height_ = height;
-		rvo_agent_3d.avoidance_layers_ = avoidance_layers;
-		rvo_agent_3d.avoidance_mask_ = avoidance_mask;
-		rvo_agent_3d.avoidance_priority_ = avoidance_priority;
-	}
-	else {
-		rvo_agent_2d.neighborDist_ = neighbor_distance;
-		rvo_agent_2d.maxNeighbors_ = max_neighbors;
-		rvo_agent_2d.timeHorizon_ = time_horizon_agents;
-		rvo_agent_2d.timeHorizonObst_ = time_horizon_obstacles;
-		rvo_agent_2d.radius_ = radius;
-		rvo_agent_2d.maxSpeed_ = max_speed;
-		rvo_agent_2d.position_ = RVO2D::Vector2(position.x, position.z);
-		rvo_agent_2d.elevation_ = position.y;
-		// Replacing the internal velocity directly causes major jitter / bugs due to unpredictable
-		// velocity jumps, left line here for testing.
-		// rvo_agent_2d.velocity_ = RVO2D::Vector2(velocity.x, velocity.z);
-		rvo_agent_2d.prefVelocity_ = RVO2D::Vector2(velocity.x, velocity.z);
-		rvo_agent_2d.height_ = height;
-		rvo_agent_2d.avoidance_layers_ = avoidance_layers;
-		rvo_agent_2d.avoidance_mask_ = avoidance_mask;
-		rvo_agent_2d.avoidance_priority_ = avoidance_priority;
-	}
-
-	if (map != nullptr) {
-		if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-		else {
-			map->remove_agent_as_controlled(this);
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_map(NavMap3D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_agent(this);
-	}
-
-	map = p_map;
-	agent_dirty = true;
-
-	if (map) {
-		map->add_agent(this);
-		if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-
-		request_sync();
-	}
-}
-
-bool NavAgent3D::is_map_changed()
-{
-	if (map) {
-		bool is_changed = map->get_iteration_id() != last_map_iteration_id;
-		last_map_iteration_id = map->get_iteration_id();
-		return is_changed;
-	}
-	else {
-		return false;
-	}
-}
-
-void NavAgent3D::set_neighbor_distance(real_t p_neighbor_distance)
-{
-	neighbor_distance = p_neighbor_distance;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.neighborDist_ = neighbor_distance;
-	}
-	else {
-		rvo_agent_2d.neighborDist_ = neighbor_distance;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_max_neighbors(int p_max_neighbors)
-{
-	max_neighbors = p_max_neighbors;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.maxNeighbors_ = max_neighbors;
-	}
-	else {
-		rvo_agent_2d.maxNeighbors_ = max_neighbors;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_time_horizon_agents(real_t p_time_horizon)
-{
-	time_horizon_agents = p_time_horizon;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.timeHorizon_ = time_horizon_agents;
-	}
-	else {
-		rvo_agent_2d.timeHorizon_ = time_horizon_agents;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_time_horizon_obstacles(real_t p_time_horizon)
-{
-	time_horizon_obstacles = p_time_horizon;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.timeHorizonObst_ = time_horizon_obstacles;
-	}
-	else {
-		rvo_agent_2d.timeHorizonObst_ = time_horizon_obstacles;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.radius_ = radius;
-	}
-	else {
-		rvo_agent_2d.radius_ = radius;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_height(real_t p_height)
-{
-	height = p_height;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.height_ = height;
-	}
-	else {
-		rvo_agent_2d.height_ = height;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_max_speed(real_t p_max_speed)
-{
-	max_speed = p_max_speed;
-	if (avoidance_enabled) {
-		if (use_3d_avoidance) {
-			rvo_agent_3d.maxSpeed_ = max_speed;
-		}
-		else {
-			rvo_agent_2d.maxSpeed_ = max_speed;
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_position(const Vector3 p_position)
-{
-	position = p_position;
-	if (avoidance_enabled) {
-		if (use_3d_avoidance) {
-			rvo_agent_3d.position_ = RVO3D::Vector3(p_position.x, p_position.y, p_position.z);
-		}
-		else {
-			rvo_agent_2d.elevation_ = p_position.y;
-			rvo_agent_2d.position_ = RVO2D::Vector2(p_position.x, p_position.z);
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_target_position(const Vector3 p_target_position)
-{
-	target_position = p_target_position;
-}
-
-void NavAgent3D::set_velocity(const Vector3 p_velocity)
-{
-	// Sets the "wanted" velocity for an agent as a suggestion
-	// This velocity is not guaranteed, RVO simulation will only try to fulfill it
-	velocity = p_velocity;
-	if (avoidance_enabled) {
-		if (use_3d_avoidance) {
-			rvo_agent_3d.prefVelocity_ = RVO3D::Vector3(velocity.x, velocity.y, velocity.z);
-		}
-		else {
-			rvo_agent_2d.prefVelocity_ = RVO2D::Vector2(velocity.x, velocity.z);
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_velocity_forced(const Vector3 p_velocity)
-{
-	// This function replaces the internal rvo simulation velocity
-	// should only be used after the agent was teleported
-	// as it destroys consistency in movement in cramped situations
-	// use velocity instead to update with a safer "suggestion"
-	velocity_forced = p_velocity;
-	if (avoidance_enabled) {
-		if (use_3d_avoidance) {
-			rvo_agent_3d.velocity_ = RVO3D::Vector3(p_velocity.x, p_velocity.y, p_velocity.z);
-		}
-		else {
-			rvo_agent_2d.velocity_ = RVO2D::Vector2(p_velocity.x, p_velocity.z);
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::update()
-{
-	// Updates this agent with the calculated results from the rvo simulation
-	if (avoidance_enabled) {
-		if (use_3d_avoidance) {
-			velocity = Vector3(
-				rvo_agent_3d.velocity_.x(), rvo_agent_3d.velocity_.y(), rvo_agent_3d.velocity_.z());
-		}
-		else {
-			velocity = Vector3(rvo_agent_2d.velocity_.x(), 0.0, rvo_agent_2d.velocity_.y());
-		}
-	}
-}
-
-void NavAgent3D::set_avoidance_mask(uint32_t p_mask)
-{
-	avoidance_mask = p_mask;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.avoidance_mask_ = avoidance_mask;
-	}
-	else {
-		rvo_agent_2d.avoidance_mask_ = avoidance_mask;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_avoidance_layers(uint32_t p_layers)
-{
-	avoidance_layers = p_layers;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.avoidance_layers_ = avoidance_layers;
-	}
-	else {
-		rvo_agent_2d.avoidance_layers_ = avoidance_layers;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent3D::set_avoidance_priority(real_t p_priority)
-{
-	ERR_FAIL_COND_MSG(
-		p_priority < 0.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_priority > 1.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
-	avoidance_priority = p_priority;
-	if (use_3d_avoidance) {
-		rvo_agent_3d.avoidance_priority_ = avoidance_priority;
-	}
-	else {
-		rvo_agent_2d.avoidance_priority_ = avoidance_priority;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-bool NavAgent3D::is_dirty() const { return agent_dirty; }
-
-void NavAgent3D::sync() { agent_dirty = false; }
-
-void NavAgent3D::set_paused(bool p_paused)
-{
-	if (paused == p_paused) {
-		return;
-	}
-
-	paused = p_paused;
-
-	if (map) {
-		if (paused) {
-			map->remove_agent_as_controlled(this);
-		}
-		else if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-	}
-}
-
-bool NavAgent3D::get_paused() const { return paused; }
-
-void NavAgent3D::request_sync()
-{
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_agent_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavAgent3D::cancel_sync_request()
-{
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_agent_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-NavAgent3D::NavAgent3D() : sync_dirty_request_list_element(this) {}
-
-NavAgent3D::~NavAgent3D() { cancel_sync_request(); }
-
-
-
-void NavAgent3D::dispatch_avoidance_callback() {}
-
-bool NavAgent3D::has_avoidance_callback() const { return false; }
-
-
-void NavObstacle3D::set_agent(NavAgent3D *p_agent) {
-	if (agent == p_agent) {
-		return;
-	}
-
-	agent = p_agent;
-
-	internal_update_agent();
-
-	request_sync();
-}
-
-void NavObstacle3D::set_avoidance_enabled(bool p_enabled) {
-	if (avoidance_enabled == p_enabled) {
-		return;
-	}
-
-	avoidance_enabled = p_enabled;
-	obstacle_dirty = true;
-
-	internal_update_agent();
-
-	request_sync();
-}
-
-void NavObstacle3D::set_use_3d_avoidance(bool p_enabled) {
-	if (use_3d_avoidance == p_enabled) {
-		return;
-	}
-
-	use_3d_avoidance = p_enabled;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_use_3d_avoidance(use_3d_avoidance);
-	}
-
-	request_sync();
-}
-
-void NavObstacle3D::set_map(NavMap3D *p_map) {
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_obstacle(this);
-		if (agent) {
-			agent->set_map(nullptr);
-		}
-	}
-
-	map = p_map;
-	obstacle_dirty = true;
-
-	if (map) {
-		map->add_obstacle(this);
-		internal_update_agent();
-
-		request_sync();
-	}
-}
-
-void NavObstacle3D::set_position(const Vector3 p_position) {
-	if (position == p_position) {
-		return;
-	}
-
-	position = p_position;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_position(position);
-	}
-
-	request_sync();
-}
-
-void NavObstacle3D::set_radius(real_t p_radius) {
-	if (radius == p_radius) {
-		return;
-	}
-
-	radius = p_radius;
-
-	if (agent) {
-		agent->set_radius(radius);
-	}
-}
-
-void NavObstacle3D::set_height(const real_t p_height) {
-	if (height == p_height) {
-		return;
-	}
-
-	height = p_height;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_height(height);
-	}
-
-	request_sync();
-}
-
-void NavObstacle3D::set_velocity(const Vector3 p_velocity) {
-	velocity = p_velocity;
-
-	if (agent) {
-		agent->set_velocity(velocity);
-	}
-}
-
-void NavObstacle3D::set_vertices(const Vector<Vector3> &p_vertices) {
-	if (vertices == p_vertices) {
-		return;
-	}
-
-	vertices = p_vertices;
-	obstacle_dirty = true;
-
-	request_sync();
-}
-
-bool NavObstacle3D::is_map_changed() {
-	if (map) {
-		bool is_changed = map->get_iteration_id() != last_map_iteration_id;
-		last_map_iteration_id = map->get_iteration_id();
-		return is_changed;
-	} else {
-		return false;
-	}
-}
-
-void NavObstacle3D::set_avoidance_layers(uint32_t p_layers) {
-	if (avoidance_layers == p_layers) {
-		return;
-	}
-
-	avoidance_layers = p_layers;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_avoidance_layers(avoidance_layers);
-	}
-
-	request_sync();
-}
-
-bool NavObstacle3D::is_dirty() const {
-	return obstacle_dirty;
-}
-
-void NavObstacle3D::sync() {
-	obstacle_dirty = false;
-}
-
-void NavObstacle3D::internal_update_agent() {
-	if (agent) {
-		agent->set_neighbor_distance(0.0);
-		agent->set_max_neighbors(0.0);
-		agent->set_time_horizon_agents(0.0);
-		agent->set_time_horizon_obstacles(0.0);
-		agent->set_avoidance_mask(0.0);
-		agent->set_neighbor_distance(0.0);
-		agent->set_avoidance_priority(1.0);
-		agent->set_map(map);
-		agent->set_paused(paused);
-		agent->set_radius(radius);
-		agent->set_height(height);
-		agent->set_position(position);
-		agent->set_avoidance_layers(avoidance_layers);
-		agent->set_avoidance_enabled(avoidance_enabled);
-		agent->set_use_3d_avoidance(use_3d_avoidance);
-	}
-}
-
-void NavObstacle3D::set_paused(bool p_paused) {
-	if (paused == p_paused) {
-		return;
-	}
-
-	paused = p_paused;
-
-	if (map) {
-		if (paused) {
-			map->remove_obstacle(this);
-		} else {
-			map->add_obstacle(this);
-		}
-	}
-	internal_update_agent();
-}
-
-bool NavObstacle3D::get_paused() const {
-	return paused;
-}
-
-void NavObstacle3D::request_sync() {
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_obstacle_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavObstacle3D::cancel_sync_request() {
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_obstacle_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-NavObstacle3D::NavObstacle3D() :
-		sync_dirty_request_list_element(this) {
-}
-
-NavObstacle3D::~NavObstacle3D() {
-	cancel_sync_request();
-}
-
-
-void NavLink3D::set_map(NavMap3D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_link(this);
-	}
-
-	map = p_map;
-	iteration_dirty = true;
-
-	if (map) {
-		map->add_link(this);
-		request_sync();
-	}
-}
-
-void NavLink3D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-	enabled = p_enabled;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_bidirectional(bool p_bidirectional)
-{
-	if (bidirectional == p_bidirectional) {
-		return;
-	}
-	bidirectional = p_bidirectional;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_start_position(const Vector3 p_position)
-{
-	if (start_position == p_position) {
-		return;
-	}
-	start_position = p_position;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_end_position(const Vector3 p_position)
-{
-	if (end_position == p_position) {
-		return;
-	}
-	end_position = p_position;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_navigation_layers(uint32_t p_navigation_layers)
-{
-	if (navigation_layers == p_navigation_layers) {
-		return;
-	}
-	navigation_layers = p_navigation_layers;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_enter_cost(real_t p_enter_cost)
-{
-	real_t new_enter_cost = MAX(p_enter_cost, 0.0);
-	if (enter_cost == new_enter_cost) {
-		return;
-	}
-	enter_cost = new_enter_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink3D::set_travel_cost(real_t p_travel_cost)
-{
-	real_t new_travel_cost = MAX(p_travel_cost, 0.0);
-	if (travel_cost == new_travel_cost) {
-		return;
-	}
-	travel_cost = new_travel_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-bool NavLink3D::sync()
-{
-	bool requires_map_update = false;
-	if (!map) {
-		return requires_map_update;
-	}
-
-	if (iteration_dirty && !iteration_building && !iteration_ready) {
-		_build_iteration();
-		iteration_ready = false;
-		requires_map_update = true;
-	}
-
-	return requires_map_update;
-}
-
-void NavLink3D::_build_iteration()
-{
-	if (!iteration_dirty || iteration_building || iteration_ready) {
-		return;
-	}
-
-	iteration_dirty = false;
-	iteration_building = true;
-	iteration_ready = false;
-
-	Ref<NavIteration3D> new_iteration;
-	new_iteration.instantiate();
-
-	new_iteration->navigation_layers = get_navigation_layers();
-	new_iteration->enter_cost = get_enter_cost();
-	new_iteration->travel_cost = get_travel_cost();
-	new_iteration->owner_type = get_type();
-	new_iteration->owner_rid = get_self();
-
-	new_iteration->enabled = get_enabled();
-	new_iteration->start_position = get_start_position();
-	new_iteration->end_position = get_end_position();
-	new_iteration->bidirectional = is_bidirectional();
-
-	RWLockWrite write_lock(iteration_rwlock);
-	ERR_FAIL_COND(iteration.is_null());
-	iteration = Ref<NavIteration3D>();
-	DEV_ASSERT(iteration.is_null());
-	iteration = new_iteration;
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	iteration_building = false;
-	iteration_ready = true;
-}
-
-void NavLink3D::request_sync()
-{
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_link_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavLink3D::cancel_sync_request()
-{
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_link_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-Ref<NavIteration3D> NavLink3D::get_iteration()
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration;
-}
-
-NavLink3D::NavLink3D() : sync_dirty_request_list_element(this)
-{
-	iteration.instantiate();
-}
-
-NavLink3D::~NavLink3D()
-{
-	cancel_sync_request();
-
-	iteration = Ref<NavIteration3D>();
-}
-
-
-void NavRegion3D::set_map(NavMap3D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_async_thread_join();
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_region(this);
-	}
-
-	map = p_map;
-	iteration_dirty = true;
-
-	if (map) {
-		map->add_region(this);
-		request_sync();
-	}
-}
-
-void NavRegion3D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-	enabled = p_enabled;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion3D::set_use_edge_connections(bool p_enabled)
-{
-	if (use_edge_connections != p_enabled) {
-		use_edge_connections = p_enabled;
-		iteration_dirty = true;
-	}
-
-	request_sync();
-}
-
-void NavRegion3D::set_transform(Transform3D p_transform)
-{
-	if (transform == p_transform) {
-		return;
-	}
-	transform = p_transform;
-	iteration_dirty = true;
-
-	request_sync();
-
-#ifdef DEBUG_ENABLED
-	if (map && Math::rad_to_deg(map->get_up().angle_to(transform.basis.get_column(1))) >= 90.0f) {
-		ERR_PRINT_ONCE("Attempted to update a navigation region transform rotated 90 degrees or "
-					   "more away from the current navigation map UP orientation.");
-	}
-#endif // DEBUG_ENABLED
-}
-
-void NavRegion3D::set_navigation_mesh(Ref<NavigationMesh> p_navigation_mesh)
-{
-#ifdef DEBUG_ENABLED
-	if (map && p_navigation_mesh.is_valid() &&
-		GLOBAL_GET_CACHED(bool, "navigation/3d/warnings/navmesh_cell_size_mismatch")) {
-		const double map_cell_size = double(map->get_cell_size());
-		const double map_cell_height = double(map->get_cell_height());
-		const double navmesh_cell_size = double(p_navigation_mesh->get_cell_size());
-		const double navmesh_cell_height = double(p_navigation_mesh->get_cell_height());
-
-		if (map_cell_size > navmesh_cell_size) {
-			WARN_PRINT(vformat(
-				"A navigation mesh that uses a `cell_size` of %s was assigned to a navigation map "
-				"set to a larger `cell_size` of %s.\nThis mismatch in cell size can cause "
-				"rasterization errors with navigation mesh edges on the navigation map.\nThe cell "
-				"size for navigation maps can be changed by using the NavigationServer "
-				"map_set_cell_size() function.\nThe cell size for default navigation maps can also "
-				"be changed in the project settings.\nThis warning can be toggled under "
-				"'navigation/3d/warnings/navmesh_cell_size_mismatch' in the project settings.",
-				navmesh_cell_size, map_cell_size));
-		}
-		if (map_cell_height > navmesh_cell_height) {
-			WARN_PRINT(vformat(
-				"A navigation mesh that uses a `cell_height` of %s was assigned to a navigation "
-				"map set to a larger `cell_height` of %s.\nThis mismatch in cell height can cause "
-				"rasterization errors with navigation mesh edges on the navigation map.\nThe cell "
-				"height for navigation maps can be changed by using the NavigationServer "
-				"map_set_cell_height() function.\nThe cell height for default navigation maps can "
-				"also be changed in the project settings.\nThis warning can be toggled under "
-				"'navigation/3d/warnings/navmesh_cell_size_mismatch' in the project settings.",
-				navmesh_cell_height, map_cell_height));
-		}
-	}
-#endif // DEBUG_ENABLED
-
-	navmesh = p_navigation_mesh;
-
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-Vector3 NavRegion3D::get_closest_point_to_segment(
-	const Vector3& p_from, const Vector3& p_to, bool p_use_collision) const
-{
-	RWLockRead read_lock(region_rwlock);
-
-	return NavMeshQueries3D::polygons_get_closest_point_to_segment(
-		get_polygons(), p_from, p_to, p_use_collision);
-}
-
-Nav3D::ClosestPointQueryResult NavRegion3D::get_closest_point_info(const Vector3& p_point) const
-{
-	RWLockRead read_lock(region_rwlock);
-
-	return NavMeshQueries3D::polygons_get_closest_point_info(get_polygons(), p_point);
-}
-
-Vector3 NavRegion3D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const
-{
-	RWLockRead read_lock(region_rwlock);
-
-	if (!get_enabled()) {
-		return Vector3();
-	}
-
-	return NavMeshQueries3D::polygons_get_random_point(
-		get_polygons(), p_navigation_layers, p_uniformly);
-}
-
-void NavRegion3D::set_navigation_layers(uint32_t p_navigation_layers)
-{
-	if (navigation_layers == p_navigation_layers) {
-		return;
-	}
-	navigation_layers = p_navigation_layers;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion3D::set_enter_cost(real_t p_enter_cost)
-{
-	real_t new_enter_cost = MAX(p_enter_cost, 0.0);
-	if (enter_cost == new_enter_cost) {
-		return;
-	}
-	enter_cost = new_enter_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion3D::set_travel_cost(real_t p_travel_cost)
-{
-	real_t new_travel_cost = MAX(p_travel_cost, 0.0);
-	if (travel_cost == new_travel_cost) {
-		return;
-	}
-	travel_cost = new_travel_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion3D::scratch_polygons()
-{
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-real_t NavRegion3D::get_surface_area() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_surface_area();
-}
-
-AABB NavRegion3D::get_bounds() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_bounds();
-}
-
-const LocalVector<Nav3D::Polygon>& NavRegion3D::get_polygons() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_navmesh_polygons();
-}
-
-bool NavRegion3D::sync()
-{
-	bool requires_map_update = false;
-	if (!map) {
-		return requires_map_update;
-	}
-
-	if (iteration_dirty && !iteration_building && !iteration_ready) {
-		_build_iteration();
-	}
-
-	if (iteration_ready) {
-		_sync_iteration();
-		requires_map_update = true;
-	}
-
-	return requires_map_update;
-}
-
-void NavRegion3D::_build_iteration_threaded(void* p_arg)
-{
-	NavRegionIterationBuild3D* _iteration_build = static_cast<NavRegionIterationBuild3D*>(p_arg);
-
-	NavRegionBuilder3D::build_iteration(*_iteration_build);
-}
-
-void NavRegion3D::_sync_iteration()
-{
-	if (iteration_building || !iteration_ready) {
-		return;
-	}
-
-	performance_data.pm_polygon_count = iteration_build.performance_data.pm_polygon_count;
-	performance_data.pm_edge_count = iteration_build.performance_data.pm_edge_count;
-	performance_data.pm_edge_merge_count = iteration_build.performance_data.pm_edge_merge_count;
-
-	RWLockWrite write_lock(iteration_rwlock);
-	ERR_FAIL_COND(iteration.is_null());
-	iteration = Ref<NavIteration3D>();
-	DEV_ASSERT(iteration.is_null());
-	iteration = iteration_build.region_iteration;
-	iteration_build.region_iteration = Ref<NavIteration3D>();
-	DEV_ASSERT(iteration_build.region_iteration.is_null());
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	iteration_ready = false;
-
-	cancel_async_thread_join();
-}
-
-Ref<NavIteration3D> NavRegion3D::get_iteration()
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration;
-}
-
-void NavRegion3D::request_async_thread_join()
-{
-	DEV_ASSERT(map);
-	if (map && !async_list_element.in_list()) {
-		map->add_region_async_thread_join_request(&async_list_element);
-	}
-}
-
-void NavRegion3D::cancel_async_thread_join()
-{
-	if (map && async_list_element.in_list()) {
-		map->remove_region_async_thread_join_request(&async_list_element);
-	}
-}
-
-void NavRegion3D::request_sync()
-{
-	if (map && !sync_dirty_request_list_element.in_list()) {
-		map->add_region_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavRegion3D::cancel_sync_request()
-{
-	if (map && sync_dirty_request_list_element.in_list()) {
-		map->remove_region_sync_dirty_request(&sync_dirty_request_list_element);
-	}
-}
-
-void NavRegion3D::set_use_async_iterations(bool p_enabled)
-{
-	if (use_async_iterations == p_enabled) {
-		return;
-	}
-#ifdef THREADS_ENABLED
-	use_async_iterations = p_enabled;
-#endif
-}
-
-bool NavRegion3D::get_use_async_iterations() const { return use_async_iterations; }
-
-
-
-NavRegion3D::~NavRegion3D() {}
-
-void NavRegion3D::sync_async_tasks() {}
-
-NavRegion3D::NavRegion3D() {}
-
-void NavRegion3D::_build_iteration() {}
-
-
-#ifdef DEBUG_ENABLED
-#define NAVMAP_ITERATION_ZERO_ERROR_MSG()                                                          \
-	ERR_PRINT_ONCE(                                                                                \
-		"NavigationServer navigation map query failed because it was made before first map synchronization.\n\
-	NavigationServer 'map_changed' signal can be used to receive update notifications.\n\
-	NavigationServer 'map_get_iteration_id()' can be used to check if a map has finished its newest iteration.");
-#else
-#define NAVMAP_ITERATION_ZERO_ERROR_MSG()
-#endif // DEBUG_ENABLED
-
-#define GET_MAP_ITERATION()                                                                        \
-	iteration_slot_rwlock.read_lock();                                                             \
-	NavMapIteration3D& map_iteration = iteration_slots[iteration_slot_index];                      \
-	NavMapIterationRead3D iteration_read_lock(map_iteration);                                      \
-	iteration_slot_rwlock.read_unlock();
-
-#define GET_MAP_ITERATION_CONST()                                                                  \
-	iteration_slot_rwlock.read_lock();                                                             \
-	const NavMapIteration3D& map_iteration = iteration_slots[iteration_slot_index];                \
-	NavMapIterationRead3D iteration_read_lock(map_iteration);                                      \
-	iteration_slot_rwlock.read_unlock();
-
-void NavMap3D::set_up(Vector3 p_up)
-{
-	if (up == p_up) {
-		return;
-	}
-	up = p_up;
-	map_settings_dirty = true;
-}
-
-void NavMap3D::set_cell_size(real_t p_cell_size)
-{
-	if (cell_size == p_cell_size) {
-		return;
-	}
-	cell_size = MAX(p_cell_size, NavigationDefaults3D::NAV_MESH_CELL_SIZE_MIN);
-	_update_merge_rasterizer_cell_dimensions();
-	map_settings_dirty = true;
-}
-
-void NavMap3D::set_cell_height(real_t p_cell_height)
-{
-	if (cell_height == p_cell_height) {
-		return;
-	}
-	cell_height = MAX(p_cell_height, NavigationDefaults3D::NAV_MESH_CELL_SIZE_MIN);
-	_update_merge_rasterizer_cell_dimensions();
-	map_settings_dirty = true;
-}
-
-void NavMap3D::set_merge_rasterizer_cell_scale(float p_value)
-{
-	if (merge_rasterizer_cell_scale == p_value) {
-		return;
-	}
-	merge_rasterizer_cell_scale =
-		MAX(MIN(p_value, 0.1), NavigationDefaults3D::NAV_MESH_CELL_SIZE_MIN);
-	_update_merge_rasterizer_cell_dimensions();
-	map_settings_dirty = true;
-}
-
-void NavMap3D::set_use_edge_connections(bool p_enabled)
-{
-	if (use_edge_connections == p_enabled) {
-		return;
-	}
-	use_edge_connections = p_enabled;
-	iteration_dirty = true;
-}
-
-void NavMap3D::set_edge_connection_margin(real_t p_edge_connection_margin)
-{
-	if (edge_connection_margin == p_edge_connection_margin) {
-		return;
-	}
-	edge_connection_margin = p_edge_connection_margin;
-	iteration_dirty = true;
-}
-
-void NavMap3D::set_link_connection_radius(real_t p_link_connection_radius)
-{
-	if (link_connection_radius == p_link_connection_radius) {
-		return;
-	}
-	link_connection_radius = p_link_connection_radius;
-	iteration_dirty = true;
-}
-
-const Vector3& NavMap3D::get_merge_rasterizer_cell_size() const
-{
-	return merge_rasterizer_cell_size;
-}
-
-Nav3D::PointKey NavMap3D::get_point_key(const Vector3& p_pos) const
-{
-	const int x = static_cast<int>(Math::floor(p_pos.x / merge_rasterizer_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / merge_rasterizer_cell_size.y));
-	const int z = static_cast<int>(Math::floor(p_pos.z / merge_rasterizer_cell_size.z));
-
-	Nav3D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	p.z = z;
-	return p;
-}
-
-void NavMap3D::query_path(NavMeshQueries3D::NavMeshPathQueryTask3D& p_query_task)
-{
-	if (iteration_id == 0) {
-		return;
-	}
-
-	GET_MAP_ITERATION();
-
-	map_iteration.path_query_slots_semaphore.wait();
-
-	map_iteration.path_query_slots_mutex.lock();
-	for (NavMeshQueries3D::PathQuerySlot& p_path_query_slot : map_iteration.path_query_slots) {
-		if (!p_path_query_slot.in_use) {
-			p_path_query_slot.in_use = true;
-			p_query_task.path_query_slot = &p_path_query_slot;
-			break;
-		}
-	}
-	map_iteration.path_query_slots_mutex.unlock();
-
-	if (p_query_task.path_query_slot == nullptr) {
-		map_iteration.path_query_slots_semaphore.post();
-		ERR_FAIL_NULL_MSG(p_query_task.path_query_slot,
-			"No unused NavMap3D path query slot found! This should never happen :(.");
-	}
-
-	p_query_task.map_up = map_iteration.map_up;
-
-	NavMeshQueries3D::query_task_map_iteration_get_path(p_query_task, map_iteration);
-
-	map_iteration.path_query_slots_mutex.lock();
-	uint32_t used_slot_index = p_query_task.path_query_slot->slot_index;
-	map_iteration.path_query_slots[used_slot_index].in_use = false;
-	p_query_task.path_query_slot = nullptr;
-	map_iteration.path_query_slots_mutex.unlock();
-
-	map_iteration.path_query_slots_semaphore.post();
-}
-
-Vector3 NavMap3D::get_closest_point_to_segment(
-	const Vector3& p_from, const Vector3& p_to, const bool p_use_collision) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return Vector3();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_closest_point_to_segment(
-		map_iteration, p_from, p_to, p_use_collision);
-}
-
-Vector3 NavMap3D::get_closest_point(const Vector3& p_point) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return Vector3();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_closest_point(map_iteration, p_point);
-}
-
-Vector3 NavMap3D::get_closest_point_normal(const Vector3& p_point) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return Vector3();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_closest_point_normal(map_iteration, p_point);
-}
-
-RID NavMap3D::get_closest_point_owner(const Vector3& p_point) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return RID();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_closest_point_owner(map_iteration, p_point);
-}
-
-Nav3D::ClosestPointQueryResult NavMap3D::get_closest_point_info(const Vector3& p_point) const
-{
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_closest_point_info(map_iteration, p_point);
-}
-
-void NavMap3D::add_region(NavRegion3D* p_region)
-{
-	DEV_ASSERT(!regions.has(p_region));
-
-	regions.push_back(p_region);
-	iteration_dirty = true;
-}
-
-void NavMap3D::remove_region(NavRegion3D* p_region)
-{
-	if (regions.erase_unordered(p_region)) {
-		iteration_dirty = true;
-	}
-}
-
-void NavMap3D::add_link(NavLink3D* p_link)
-{
-	DEV_ASSERT(!links.has(p_link));
-
-	links.push_back(p_link);
-	iteration_dirty = true;
-}
-
-void NavMap3D::remove_link(NavLink3D* p_link)
-{
-	if (links.erase_unordered(p_link)) {
-		iteration_dirty = true;
-	}
-}
-
-bool NavMap3D::has_agent(NavAgent3D* agent) const { return agents.has(agent); }
-
-void NavMap3D::add_agent(NavAgent3D* agent)
-{
-	if (!has_agent(agent)) {
-		agents.push_back(agent);
-		agents_dirty = true;
-	}
-}
-
-void NavMap3D::remove_agent(NavAgent3D* agent)
-{
-	remove_agent_as_controlled(agent);
-	if (agents.erase_unordered(agent)) {
-		agents_dirty = true;
-	}
-}
-
-bool NavMap3D::has_obstacle(NavObstacle3D* obstacle) const { return obstacles.has(obstacle); }
-
-void NavMap3D::add_obstacle(NavObstacle3D* obstacle)
-{
-	if (obstacle->get_paused()) {
-		// No point in adding a paused obstacle, it will add itself when unpaused again.
-		return;
-	}
-
-	if (!has_obstacle(obstacle)) {
-		obstacles.push_back(obstacle);
-		obstacles_dirty = true;
-	}
-}
-
-void NavMap3D::remove_obstacle(NavObstacle3D* obstacle)
-{
-	if (obstacles.erase_unordered(obstacle)) {
-		obstacles_dirty = true;
-	}
-}
-
-void NavMap3D::set_agent_as_controlled(NavAgent3D* agent)
-{
-	remove_agent_as_controlled(agent);
-
-	if (agent->get_paused()) {
-		// No point in adding a paused agent, it will add itself when unpaused again.
-		return;
-	}
-
-	if (agent->get_use_3d_avoidance()) {
-		int64_t agent_3d_index = active_3d_avoidance_agents.find(agent);
-		if (agent_3d_index < 0) {
-			active_3d_avoidance_agents.push_back(agent);
-			agents_dirty = true;
-		}
-	}
-	else {
-		int64_t agent_2d_index = active_2d_avoidance_agents.find(agent);
-		if (agent_2d_index < 0) {
-			active_2d_avoidance_agents.push_back(agent);
-			agents_dirty = true;
-		}
-	}
-}
-
-void NavMap3D::remove_agent_as_controlled(NavAgent3D* agent)
-{
-	if (active_3d_avoidance_agents.erase_unordered(agent)) {
-		agents_dirty = true;
-	}
-	if (active_2d_avoidance_agents.erase_unordered(agent)) {
-		agents_dirty = true;
-	}
-}
-
-Vector3 NavMap3D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const
-{
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries3D::map_iteration_get_random_point(
-		map_iteration, p_navigation_layers, p_uniformly);
-}
-
-void NavMap3D::_build_iteration_threaded(void* p_arg)
-{
-	NavMapIterationBuild3D* _iteration_build = static_cast<NavMapIterationBuild3D*>(p_arg);
-
-	NavMapBuilder3D::build_navmap_iteration(*_iteration_build);
-}
-
-void NavMap3D::_sync_iteration()
-{
-	if (iteration_building || !iteration_ready) {
-		return;
-	}
-
-	performance_data.pm_edge_connection_count =
-		iteration_build.performance_data.pm_edge_connection_count;
-	performance_data.pm_edge_free_count = iteration_build.performance_data.pm_edge_free_count;
-
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	// Finally ping-pong switch the iteration slot.
-	iteration_slot_rwlock.write_lock();
-	uint32_t next_iteration_slot_index = (iteration_slot_index + 1) % 2;
-	iteration_slot_index = next_iteration_slot_index;
-	iteration_slot_rwlock.write_unlock();
-
-	iteration_ready = false;
-}
-
-void NavMap3D::_sync_avoidance()
-{
-	_sync_dirty_avoidance_update_requests();
-
-	if (obstacles_dirty || agents_dirty) {
-		_update_rvo_simulation();
-	}
-
-	obstacles_dirty = false;
-	agents_dirty = false;
-}
-
-void NavMap3D::_update_rvo_obstacles_tree_2d()
-{
-	int obstacle_vertex_count = 0;
-	for (NavObstacle3D* obstacle : obstacles) {
-		obstacle_vertex_count += obstacle->get_vertices().size();
-	}
-
-	// Cleaning old obstacles.
-	for (size_t i = 0; i < rvo_simulation_2d.obstacles_.size(); ++i) {
-		delete rvo_simulation_2d.obstacles_[i];
-	}
-	rvo_simulation_2d.obstacles_.clear();
-
-	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree
-	std::vector<RVO2D::Obstacle2D*>& raw_obstacles = rvo_simulation_2d.obstacles_;
-	raw_obstacles.reserve(obstacle_vertex_count);
-
-	// The following block is modified copy from RVO2D::AddObstacle()
-	// Obstacles are linked and depend on all other obstacles.
-	for (NavObstacle3D* obstacle : obstacles) {
-		if (!obstacle->is_avoidance_enabled()) {
-			continue;
-		}
-		const Vector3& _obstacle_position = obstacle->get_position();
-		const Vector<Vector3>& _obstacle_vertices = obstacle->get_vertices();
-
-		if (_obstacle_vertices.size() < 2) {
-			continue;
-		}
-
-		std::vector<RVO2D::Vector2> rvo_2d_vertices;
-		rvo_2d_vertices.reserve(_obstacle_vertices.size());
-
-		uint32_t _obstacle_avoidance_layers = obstacle->get_avoidance_layers();
-		real_t _obstacle_height = obstacle->get_height();
-
-		for (const Vector3& _obstacle_vertex : _obstacle_vertices) {
-#ifdef TOOLS_ENABLED
-			if (_obstacle_vertex.y != 0) {
-				WARN_PRINT_ONCE("Y coordinates of static obstacle vertices are ignored. Please use "
-								"obstacle position Y to change elevation of obstacle.");
-			}
-#endif
-			rvo_2d_vertices.push_back(RVO2D::Vector2(_obstacle_vertex.x + _obstacle_position.x,
-				_obstacle_vertex.z + _obstacle_position.z));
-		}
-
-		const size_t obstacleNo = raw_obstacles.size();
-
-		for (size_t i = 0; i < rvo_2d_vertices.size(); i++) {
-			RVO2D::Obstacle2D* rvo_2d_obstacle = new RVO2D::Obstacle2D();
-			rvo_2d_obstacle->point_ = rvo_2d_vertices[i];
-			rvo_2d_obstacle->height_ = _obstacle_height;
-			rvo_2d_obstacle->elevation_ = _obstacle_position.y;
-
-			rvo_2d_obstacle->avoidance_layers_ = _obstacle_avoidance_layers;
-
-			if (i != 0) {
-				rvo_2d_obstacle->prevObstacle_ = raw_obstacles.back();
-				rvo_2d_obstacle->prevObstacle_->nextObstacle_ = rvo_2d_obstacle;
-			}
-
-			if (i == rvo_2d_vertices.size() - 1) {
-				rvo_2d_obstacle->nextObstacle_ = raw_obstacles[obstacleNo];
-				rvo_2d_obstacle->nextObstacle_->prevObstacle_ = rvo_2d_obstacle;
-			}
-
-			rvo_2d_obstacle->unitDir_ =
-				normalize(rvo_2d_vertices[(i == rvo_2d_vertices.size() - 1 ? 0 : i + 1)] -
-						  rvo_2d_vertices[i]);
-
-			if (rvo_2d_vertices.size() == 2) {
-				rvo_2d_obstacle->isConvex_ = true;
-			}
-			else {
-				rvo_2d_obstacle->isConvex_ =
-					(leftOf(rvo_2d_vertices[(i == 0 ? rvo_2d_vertices.size() - 1 : i - 1)],
-						 rvo_2d_vertices[i],
-						 rvo_2d_vertices[(i == rvo_2d_vertices.size() - 1 ? 0 : i + 1)]) >= 0.0f);
-			}
-
-			rvo_2d_obstacle->id_ = raw_obstacles.size();
-
-			raw_obstacles.push_back(rvo_2d_obstacle);
-		}
-	}
-
-	rvo_simulation_2d.kdTree_->buildObstacleTree(raw_obstacles);
-}
-
-void NavMap3D::_update_rvo_agents_tree_2d()
-{
-	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree.
-	std::vector<RVO2D::Agent2D*> raw_agents;
-	raw_agents.reserve(active_2d_avoidance_agents.size());
-	for (NavAgent3D* agent : active_2d_avoidance_agents) {
-		raw_agents.push_back(agent->get_rvo_agent_2d());
-	}
-	rvo_simulation_2d.kdTree_->buildAgentTree(raw_agents);
-}
-
-void NavMap3D::_update_rvo_agents_tree_3d()
-{
-	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree.
-	std::vector<RVO3D::Agent3D*> raw_agents;
-	raw_agents.reserve(active_3d_avoidance_agents.size());
-	for (NavAgent3D* agent : active_3d_avoidance_agents) {
-		raw_agents.push_back(agent->get_rvo_agent_3d());
-	}
-	rvo_simulation_3d.kdTree_->buildAgentTree(raw_agents);
-}
-
-void NavMap3D::_update_rvo_simulation()
-{
-	if (obstacles_dirty) {
-		_update_rvo_obstacles_tree_2d();
-	}
-	if (agents_dirty) {
-		_update_rvo_agents_tree_2d();
-		_update_rvo_agents_tree_3d();
-	}
-}
-
-void NavMap3D::compute_single_avoidance_step_2d(uint32_t index, NavAgent3D** agent)
-{
-	(*(agent + index))->get_rvo_agent_2d()->computeNeighbors(&rvo_simulation_2d);
-	(*(agent + index))->get_rvo_agent_2d()->computeNewVelocity(&rvo_simulation_2d);
-	(*(agent + index))->get_rvo_agent_2d()->update(&rvo_simulation_2d);
-	(*(agent + index))->update();
-}
-
-void NavMap3D::compute_single_avoidance_step_3d(uint32_t index, NavAgent3D** agent)
-{
-	(*(agent + index))->get_rvo_agent_3d()->computeNeighbors(&rvo_simulation_3d);
-	(*(agent + index))->get_rvo_agent_3d()->computeNewVelocity(&rvo_simulation_3d);
-	(*(agent + index))->get_rvo_agent_3d()->update(&rvo_simulation_3d);
-	(*(agent + index))->update();
-}
-
-void NavMap3D::dispatch_callbacks()
-{
-	for (NavAgent3D* agent : active_2d_avoidance_agents) {
-		agent->dispatch_avoidance_callback();
-	}
-
-	for (NavAgent3D* agent : active_3d_avoidance_agents) {
-		agent->dispatch_avoidance_callback();
-	}
-}
-
-void NavMap3D::_update_merge_rasterizer_cell_dimensions()
-{
-	merge_rasterizer_cell_size.x = cell_size * merge_rasterizer_cell_scale;
-	merge_rasterizer_cell_size.y = cell_height * merge_rasterizer_cell_scale;
-	merge_rasterizer_cell_size.z = cell_size * merge_rasterizer_cell_scale;
-}
-
-int NavMap3D::get_region_connections_count(NavRegion3D* p_region) const
-{
-	ERR_FAIL_NULL_V(p_region, 0);
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion3D*, Ref<NavIteration3D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration3D*, LocalVector<Nav3D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			return found_connections->value.size();
-		}
-	}
-
-	return 0;
-}
-
-Vector3 NavMap3D::get_region_connection_pathway_start(
-	NavRegion3D* p_region, int p_connection_id) const
-{
-	ERR_FAIL_NULL_V(p_region, Vector3());
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion3D*, Ref<NavIteration3D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration3D*, LocalVector<Nav3D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector3());
-			return found_connections->value[p_connection_id].pathway_start;
-		}
-	}
-
-	return Vector3();
-}
-
-Vector3 NavMap3D::get_region_connection_pathway_end(
-	NavRegion3D* p_region, int p_connection_id) const
-{
-	ERR_FAIL_NULL_V(p_region, Vector3());
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion3D*, Ref<NavIteration3D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration3D*, LocalVector<Nav3D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector3());
-			return found_connections->value[p_connection_id].pathway_end;
-		}
-	}
-
-	return Vector3();
-}
-
-void NavMap3D::add_region_sync_dirty_request(SelfList<NavRegion3D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.regions.rwlock);
-	sync_dirty_requests.regions.list.add(p_sync_request);
-}
-
-void NavMap3D::add_link_sync_dirty_request(SelfList<NavLink3D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.links.rwlock);
-	sync_dirty_requests.links.list.add(p_sync_request);
-}
-
-void NavMap3D::add_agent_sync_dirty_request(SelfList<NavAgent3D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.agents.list.add(p_sync_request);
-}
-
-void NavMap3D::add_obstacle_sync_dirty_request(SelfList<NavObstacle3D>* p_sync_request)
-{
-	if (p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.obstacles.list.add(p_sync_request);
-}
-
-void NavMap3D::remove_region_sync_dirty_request(SelfList<NavRegion3D>* p_sync_request)
-{
-	if
- (!p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.regions.rwlock);
-	sync_dirty_requests.regions.list.remove(p_sync_request);
-}
-
-void NavMap3D::remove_link_sync_dirty_request(SelfList<NavLink3D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(sync_dirty_requests.links.rwlock);
-	sync_dirty_requests.links.list.remove(p_sync_request);
-}
-
-void NavMap3D::remove_agent_sync_dirty_request(SelfList<NavAgent3D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.agents.list.remove(p_sync_request);
-}
-
-void NavMap3D::remove_obstacle_sync_dirty_request(SelfList<NavObstacle3D>* p_sync_request)
-{
-	if (!p_sync_request->in_list()) {
-		return;
-	}
-	sync_dirty_requests.obstacles.list.remove(p_sync_request);
-}
-
-void NavMap3D::_sync_dirty_map_update_requests()
-{
-	// If entire map settings changed make all regions dirty.
-	if (map_settings_dirty) {
-		for (NavRegion3D* region : regions) {
-			region->scratch_polygons();
-		}
-		iteration_dirty = true;
-	}
-
-	// Sync NavRegions.
-	RWLockWrite write_lock_regions(sync_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion3D>* element = sync_dirty_requests.regions.list.first(); element;
-		 element = element->next()) {
-		bool requires_map_update = element->self()->sync();
-		if (requires_map_update) {
-			iteration_dirty = true;
-		}
-	}
-	sync_dirty_requests.regions.list.clear();
-
-	// Sync NavLinks.
-	RWLockWrite write_lock_links(sync_dirty_requests.links.rwlock);
-	for (SelfList<NavLink3D>* element = sync_dirty_requests.links.list.first(); element;
-		 element = element->next()) {
-		bool requires_map_update = element->self()->sync();
-		if (requires_map_update) {
-			iteration_dirty = true;
-		}
-	}
-	sync_dirty_requests.links.list.clear();
-}
-
-void NavMap3D::_sync_dirty_avoidance_update_requests()
-{
-	// Sync NavAgents.
-	if (!agents_dirty) {
-		agents_dirty = sync_dirty_requests.agents.list.first();
-	}
-	for (SelfList<NavAgent3D>* element = sync_dirty_requests.agents.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync();
-	}
-	sync_dirty_requests.agents.list.clear();
-
-	// Sync NavObstacles.
-	if (!obstacles_dirty) {
-		obstacles_dirty = sync_dirty_requests.obstacles.list.first();
-	}
-	for (SelfList<NavObstacle3D>* element = sync_dirty_requests.obstacles.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync();
-	}
-	sync_dirty_requests.obstacles.list.clear();
-}
-
-void NavMap3D::add_region_async_thread_join_request(SelfList<NavRegion3D>* p_async_request)
-{
-	if (p_async_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(async_dirty_requests.regions.rwlock);
-	async_dirty_requests.regions.list.add(p_async_request);
-}
-
-void NavMap3D::remove_region_async_thread_join_request(SelfList<NavRegion3D>* p_async_request)
-{
-	if (!p_async_request->in_list()) {
-		return;
-	}
-	RWLockWrite write_lock(async_dirty_requests.regions.rwlock);
-	async_dirty_requests.regions.list.remove(p_async_request);
-}
-
-void NavMap3D::_sync_async_tasks()
-{
-	// Sync NavRegions that run async thread tasks.
-	RWLockWrite write_lock_regions(async_dirty_requests.regions.rwlock);
-	for (SelfList<NavRegion3D>* element = async_dirty_requests.regions.list.first(); element;
-		 element = element->next()) {
-		element->self()->sync_async_tasks();
-	}
-}
-
-void NavMap3D::set_use_async_iterations(bool p_enabled)
-{
-	if (use_async_iterations == p_enabled) {
-		return;
-	}
-#ifdef THREADS_ENABLED
-	use_async_iterations = p_enabled;
-#endif
-}
-
-bool NavMap3D::get_use_async_iterations() const { return use_async_iterations; }
-
-
-
-NavMap3D::~NavMap3D() {}
-
-void NavMap3D::sync() {}
-
-void NavMap3D::step(double) {}
-
-NavMap3D::NavMap3D() {}
-
-#undef NAVMAP_ITERATION_ZERO_ERROR_MSG
-#undef GET_MAP_ITERATION
-#undef GET_MAP_ITERATION_CONST
-
-
-Nav3D::PointKey NavMapBuilder3D::get_point_key(const Vector3 &p_pos, const Vector3 &p_cell_size) {
-	const int x = static_cast<int>(Math::floor(p_pos.x / p_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / p_cell_size.y));
-	const int z = static_cast<int>(Math::floor(p_pos.z / p_cell_size.z));
-
-	Nav3D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	p.z = z;
-	return p;
-}
-
-void NavMapBuilder3D::build_navmap_iteration(NavMapIterationBuild3D &r_build) {
-	Nav3D::PerformanceData &performance_data = r_build.performance_data;
-
-	performance_data.pm_polygon_count = 0;
-	performance_data.pm_edge_count = 0;
-	performance_data.pm_edge_merge_count = 0;
-	performance_data.pm_edge_connection_count = 0;
-	performance_data.pm_edge_free_count = 0;
-
-	_build_step_gather_region_polygons(r_build);
-
-	_build_step_find_edge_connection_pairs(r_build);
-
-	_build_step_merge_edge_connection_pairs(r_build);
-
-	_build_step_edge_connection_margin_connections(r_build);
-
-	_build_step_navlink_connections(r_build);
-
-	_build_update_map_iteration(r_build);
-}
-
-void NavMapBuilder3D::_build_step_gather_region_polygons(NavMapIterationBuild3D &r_build) {
-	Nav3D::PerformanceData &performance_data = r_build.performance_data;
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-
-	const LocalVector<Ref<NavIteration3D>> &regions = map_iteration->region_iterations;
-	HashMap<const NavIteration3D *, LocalVector<Nav3D::Connection>> &region_external_connections = map_iteration->external_region_connections;
-
-	map_iteration->navbases_polygons_external_connections.clear();
-
-	// Remove regions connections.
-	region_external_connections.clear();
-
-	// Copy all region polygons in the map.
-	int polygon_count = 0;
-	for (const Ref<NavIteration3D> &region : regions) {
-		const uint32_t polygons_size = region->navmesh_polygons.size();
-		polygon_count += polygons_size;
-
-		region_external_connections[region.ptr()] = LocalVector<Nav3D::Connection>();
-		map_iteration->navbases_polygons_external_connections[region.ptr()] = LocalVector<LocalVector<Nav3D::Connection>>();
-		map_iteration->navbases_polygons_external_connections[region.ptr()].resize(polygons_size);
-	}
-
-	performance_data.pm_polygon_count = polygon_count;
-	r_build.polygon_count = polygon_count;
-}
-
-void NavMapBuilder3D::_build_step_find_edge_connection_pairs(NavMapIterationBuild3D &r_build) {
-	Nav3D::PerformanceData &performance_data = r_build.performance_data;
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-	int polygon_count = r_build.polygon_count;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey> &connection_pairs_map = r_build.iter_connection_pairs_map;
-
-	// Group all edges per key.
-	connection_pairs_map.clear();
-	connection_pairs_map.reserve(polygon_count);
-	int free_edges_count = 0; // How many ConnectionPairs have only one Nav3D::Connection.
-	int edge_merge_error_count = 0;
-
-	for (const Ref<NavIteration3D> &region : map_iteration->region_iterations) {
-		for (const Nav3D::ConnectableEdge &connectable_edge : region->get_external_edges()) {
-			const Nav3D::EdgeKey &ek = connectable_edge.ek;
-
-			HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey>::Iterator pair_it = connection_pairs_map.find(ek);
-			if (!pair_it) {
-				pair_it = connection_pairs_map.insert(ek, Nav3D::EdgeConnectionPair());
-				performance_data.pm_edge_count += 1;
-				++free_edges_count;
-			}
-			Nav3D::EdgeConnectionPair &pair = pair_it->value;
-			if (pair.size < 2) {
-				// Add the polygon/edge tuple to this key.
-				Nav3D::Connection new_connection;
-				new_connection.polygon = &region->navmesh_polygons[connectable_edge.polygon_index];
-				new_connection.edge = connectable_edge.edge;
-				new_connection.pathway_start = connectable_edge.pathway_start;
-				new_connection.pathway_end = connectable_edge.pathway_end;
-
-				pair.connections[pair.size] = new_connection;
-				++pair.size;
-				if (pair.size == 2) {
-					--free_edges_count;
-				}
-
-			} else {
-				// The edge is already connected with another edge, skip.
-				edge_merge_error_count++;
-			}
-		}
-	}
-
-	if (edge_merge_error_count > 0 && GLOBAL_GET_CACHED(bool, "navigation/3d/warnings/navmesh_edge_merge_errors")) {
-		WARN_PRINT("Navigation map synchronization had " + itos(edge_merge_error_count) + " edge error(s).\nMore than 2 edges tried to occupy the same map rasterization space.\nThis causes a logical error in the navigation mesh geometry and is commonly caused by overlap or too densely placed edges.\nConsider baking with a higher 'cell_size', greater geometry margin, and less detailed bake objects to cause fewer edges.\nConsider lowering the 'navigation/3d/merge_rasterizer_cell_scale' in the project settings.\nThis warning can be toggled under 'navigation/3d/warnings/navmesh_edge_merge_errors' in the project settings.");
-	}
-
-	r_build.free_edge_count = free_edges_count;
-}
-
-void NavMapBuilder3D::_build_step_merge_edge_connection_pairs(NavMapIterationBuild3D &r_build) {
-	Nav3D::PerformanceData &performance_data = r_build.performance_data;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey> &connection_pairs_map = r_build.iter_connection_pairs_map;
-	LocalVector<Nav3D::Connection> &free_edges = r_build.iter_free_edges;
-	int free_edges_count = r_build.free_edge_count;
-	bool use_edge_connections = r_build.use_edge_connections;
-
-	free_edges.clear();
-	free_edges.reserve(free_edges_count);
-
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-
-	HashMap<const NavIteration3D *, LocalVector<LocalVector<Nav3D::Connection>>> &navbases_polygons_external_connections = map_iteration->navbases_polygons_external_connections;
-
-	for (const KeyValue<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair> &pair_it : connection_pairs_map) {
-		const Nav3D::EdgeConnectionPair &pair = pair_it.value;
-		if (pair.size == 2) {
-			// Connect edge that are shared in different polygons.
-			const Nav3D::Connection &c1 = pair.connections[0];
-			const Nav3D::Connection &c2 = pair.connections[1];
-
-			navbases_polygons_external_connections[c1.polygon->owner][c1.polygon->id].push_back(c2);
-			navbases_polygons_external_connections[c2.polygon->owner][c2.polygon->id].push_back(c1);
-			performance_data.pm_edge_connection_count += 1;
-
-		} else {
-			CRASH_COND_MSG(pair.size != 1, vformat("Number of connection != 1. Found: %d", pair.size));
-			if (use_edge_connections && pair.connections[0].polygon->owner->get_use_edge_connections()) {
-				free_edges.push_back(pair.connections[0]);
-			}
-		}
-	}
-}
-
-void NavMapBuilder3D::_build_step_edge_connection_margin_connections(NavMapIterationBuild3D &r_build) {
-	Nav3D::PerformanceData &performance_data = r_build.performance_data;
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-
-	real_t edge_connection_margin = r_build.edge_connection_margin;
-
-	LocalVector<Nav3D::Connection> &free_edges = r_build.iter_free_edges;
-	HashMap<const NavIteration3D *, LocalVector<Nav3D::Connection>> &region_external_connections = map_iteration->external_region_connections;
-
-	HashMap<const NavIteration3D *, LocalVector<LocalVector<Nav3D::Connection>>> &navbases_polygons_external_connections = map_iteration->navbases_polygons_external_connections;
-
-	// Find the compatible near edges.
-	//
-	// Note:
-	// Considering that the edges must be compatible (for obvious reasons)
-	// to be connected, create new polygons to remove that small gap is
-	// not really useful and would result in wasteful computation during
-	// connection, integration and path finding.
-	performance_data.pm_edge_free_count = free_edges.size();
-
-	const real_t edge_connection_margin_squared = edge_connection_margin * edge_connection_margin;
-
-	for (uint32_t i = 0; i < free_edges.size(); i++) {
-		const Nav3D::Connection &free_edge = free_edges[i];
-		const Vector3 &edge_p1 = free_edge.pathway_start;
-		const Vector3 &edge_p2 = free_edge.pathway_end;
-
-		for (uint32_t j = 0; j < free_edges.size(); j++) {
-			const Nav3D::Connection &other_edge = free_edges[j];
-			if (i == j || free_edge.polygon->owner == other_edge.polygon->owner) {
-				continue;
-			}
-
-			const Vector3 &other_edge_p1 = other_edge.pathway_start;
-			const Vector3 &other_edge_p2 = other_edge.pathway_end;
-
-			// Compute the projection of the opposite edge on the current one
-			Vector3 edge_vector = edge_p2 - edge_p1;
-			real_t projected_p1_ratio = edge_vector.dot(other_edge_p1 - edge_p1) / (edge_vector.length_squared());
-			real_t projected_p2_ratio = edge_vector.dot(other_edge_p2 - edge_p1) / (edge_vector.length_squared());
-			if ((projected_p1_ratio < 0.0 && projected_p2_ratio < 0.0) || (projected_p1_ratio > 1.0 && projected_p2_ratio > 1.0)) {
-				continue;
-			}
-
-			// Check if the two edges are close to each other enough and compute a pathway between the two regions.
-			Vector3 self1 = edge_vector * CLAMP(projected_p1_ratio, 0.0, 1.0) + edge_p1;
-			Vector3 other1;
-			if (projected_p1_ratio >= 0.0 && projected_p1_ratio <= 1.0) {
-				other1 = other_edge_p1;
-			} else {
-				other1 = other_edge_p1.lerp(other_edge_p2, (1.0 - projected_p1_ratio) / (projected_p2_ratio - projected_p1_ratio));
-			}
-			if (other1.distance_squared_to(self1) > edge_connection_margin_squared) {
-				continue;
-			}
-
-			Vector3 self2 = edge_vector * CLAMP(projected_p2_ratio, 0.0, 1.0) + edge_p1;
-			Vector3 other2;
-			if (projected_p2_ratio >= 0.0 && projected_p2_ratio <= 1.0) {
-				other2 = other_edge_p2;
-			} else {
-				other2 = other_edge_p1.lerp(other_edge_p2, (0.0 - projected_p1_ratio) / (projected_p2_ratio - projected_p1_ratio));
-			}
-			if (other2.distance_squared_to(self2) > edge_connection_margin_squared) {
-				continue;
-			}
-
-			// The edges can now be connected.
-			Nav3D::Connection new_connection = other_edge;
-			new_connection.pathway_start = (self1 + other1) / 2.0;
-			new_connection.pathway_end = (self2 + other2) / 2.0;
-			//free_edge.polygon->connections.push_back(new_connection);
-
-			// Add the connection to the region_connection map.
-			region_external_connections[free_edge.polygon->owner].push_back(new_connection);
-			navbases_polygons_external_connections[free_edge.polygon->owner][free_edge.polygon->id].push_back(new_connection);
-			performance_data.pm_edge_connection_count += 1;
-		}
-	}
-}
-
-void NavMapBuilder3D::_build_step_navlink_connections(NavMapIterationBuild3D &r_build) {
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-
-	real_t link_connection_radius = r_build.link_connection_radius;
-
-	const LocalVector<Ref<NavIteration3D>> &links = map_iteration->link_iterations;
-
-	int polygon_count = r_build.polygon_count;
-
-	real_t link_connection_radius_sqr = link_connection_radius * link_connection_radius;
-
-	HashMap<const NavIteration3D *, LocalVector<LocalVector<Nav3D::Connection>>> &navbases_polygons_external_connections = map_iteration->navbases_polygons_external_connections;
-	LocalVector<Nav3D::Polygon> &navlink_polygons = map_iteration->navlink_polygons;
-	navlink_polygons.clear();
-	navlink_polygons.resize(links.size());
-	uint32_t navlink_index = 0;
-
-	// Search for polygons within range of a nav link.
-	for (const Ref<NavIteration3D> &link : links) {
-		polygon_count++;
-		Nav3D::Polygon &new_polygon = navlink_polygons[navlink_index++];
-
-		new_polygon.id = 0;
-		new_polygon.owner = link.ptr();
-
-		const Vector3 link_start_pos = link->get_start_position();
-		const Vector3 link_end_pos = link->get_end_position();
-
-		Nav3D::Polygon *closest_start_polygon = nullptr;
-		real_t closest_start_sqr_dist = link_connection_radius_sqr;
-		Vector3 closest_start_point;
-
-		Nav3D::Polygon *closest_end_polygon = nullptr;
-		real_t closest_end_sqr_dist = link_connection_radius_sqr;
-		Vector3 closest_end_point;
-
-		for (const Ref<NavIteration3D> &region : map_iteration->region_iterations) {
-			AABB region_bounds = region->get_bounds().grow(link_connection_radius);
-			if (!region_bounds.has_point(link_start_pos) && !region_bounds.has_point(link_end_pos)) {
-				continue;
-			}
-
-			for (Nav3D::Polygon &polyon : region->navmesh_polygons) {
-				for (uint32_t point_id = 2; point_id < polyon.vertices.size(); point_id += 1) {
-					const Face3 face(polyon.vertices[0], polyon.vertices[point_id - 1], polyon.vertices[point_id]);
-
-					{
-						const Vector3 start_point = face.get_closest_point_to(link_start_pos);
-						const real_t sqr_dist = start_point.distance_squared_to(link_start_pos);
-
-						// Pick the polygon that is within our radius and is closer than anything we've seen yet.
-						if (sqr_dist < closest_start_sqr_dist) {
-							closest_start_sqr_dist = sqr_dist;
-							closest_start_point = start_point;
-							closest_start_polygon = &polyon;
-						}
-					}
-
-					{
-						const Vector3 end_point = face.get_closest_point_to(link_end_pos);
-						const real_t sqr_dist = end_point.distance_squared_to(link_end_pos);
-
-						// Pick the polygon that is within our radius and is closer than anything we've seen yet.
-						if (sqr_dist < closest_end_sqr_dist) {
-							closest_end_sqr_dist = sqr_dist;
-							closest_end_point = end_point;
-							closest_end_polygon = &polyon;
-						}
-					}
-				}
-			}
-		}
-
-		// If we have both a start and end point, then create a synthetic polygon to route through.
-		if (closest_start_polygon && closest_end_polygon) {
-			new_polygon.vertices.resize(4);
-
-			// Build a set of vertices that create a thin polygon going from the start to the end point.
-			new_polygon.vertices[0] = closest_start_point;
-			new_polygon.vertices[1] = closest_start_point;
-			new_polygon.vertices[2] = closest_end_point;
-			new_polygon.vertices[3] = closest_end_point;
-
-			// Setup connections to go forward in the link.
-			{
-				Nav3D::Connection entry_connection;
-				entry_connection.polygon = &new_polygon;
-				entry_connection.edge = -1;
-				entry_connection.pathway_start = new_polygon.vertices[0];
-				entry_connection.pathway_end = new_polygon.vertices[1];
-				navbases_polygons_external_connections[closest_start_polygon->owner][closest_start_polygon->id].push_back(entry_connection);
-
-				Nav3D::Connection exit_connection;
-				exit_connection.polygon = closest_end_polygon;
-				exit_connection.edge = -1;
-				exit_connection.pathway_start = new_polygon.vertices[2];
-				exit_connection.pathway_end = new_polygon.vertices[3];
-				navbases_polygons_external_connections[link.ptr()].push_back(LocalVector<Nav3D::Connection>());
-				navbases_polygons_external_connections[link.ptr()][new_polygon.id].push_back(exit_connection);
-			}
-
-			// If the link is bi-directional, create connections from the end to the start.
-			if (link->is_bidirectional()) {
-				Nav3D::Connection entry_connection;
-				entry_connection.polygon = &new_polygon;
-				entry_connection.edge = -1;
-				entry_connection.pathway_start = new_polygon.vertices[2];
-				entry_connection.pathway_end = new_polygon.vertices[3];
-				navbases_polygons_external_connections[closest_end_polygon->owner][closest_end_polygon->id].push_back(entry_connection);
-
-				Nav3D::Connection exit_connection;
-				exit_connection.polygon = closest_start_polygon;
-				exit_connection.edge = -1;
-				exit_connection.pathway_start = new_polygon.vertices[0];
-				exit_connection.pathway_end = new_polygon.vertices[1];
-				navbases_polygons_external_connections[link.ptr()].push_back(LocalVector<Nav3D::Connection>());
-				navbases_polygons_external_connections[link.ptr()][new_polygon.id].push_back(exit_connection);
-			}
-		}
-	}
-
-	r_build.polygon_count = polygon_count;
-}
-
-void NavMapBuilder3D::_build_update_map_iteration(NavMapIterationBuild3D &r_build) {
-	NavMapIteration3D *map_iteration = r_build.map_iteration;
-
-	map_iteration->navmesh_polygon_count = r_build.polygon_count;
-
-	uint32_t navmesh_polygon_count = r_build.polygon_count;
-	uint32_t total_polygon_count = navmesh_polygon_count;
-
-	map_iteration->path_query_slots_mutex.lock();
-	for (NavMeshQueries3D::PathQuerySlot &p_path_query_slot : map_iteration->path_query_slots) {
-		p_path_query_slot.traversable_polys.clear();
-		p_path_query_slot.traversable_polys.reserve(navmesh_polygon_count * 0.25);
-		p_path_query_slot.path_corridor.clear();
-
-		p_path_query_slot.path_corridor.resize(total_polygon_count);
-
-		p_path_query_slot.poly_to_id.clear();
-		p_path_query_slot.poly_to_id.reserve(total_polygon_count);
-
-		int polygon_id = 0;
-		for (Ref<NavIteration3D> &region : map_iteration->region_iterations) {
-			for (const Nav3D::Polygon &polygon : region->navmesh_polygons) {
-				p_path_query_slot.poly_to_id[&polygon] = polygon_id;
-				polygon_id++;
-			}
-		}
-
-		for (const Nav3D::Polygon &polygon : map_iteration->navlink_polygons) {
-			p_path_query_slot.poly_to_id[&polygon] = polygon_id;
-			polygon_id++;
-		}
-
-		DEV_ASSERT(p_path_query_slot.path_corridor.size() == p_path_query_slot.poly_to_id.size());
-	}
-
-	map_iteration->path_query_slots_mutex.unlock();
-}
-
-
-void NavRegionBuilder3D::build_iteration(NavRegionIterationBuild3D& r_build)
-{
-	Nav3D::PerformanceData& performance_data = r_build.performance_data;
-
-	performance_data.pm_polygon_count = 0;
-	performance_data.pm_edge_count = 0;
-	performance_data.pm_edge_merge_count = 0;
-	performance_data.pm_edge_connection_count = 0;
-	performance_data.pm_edge_free_count = 0;
-
-	_build_step_process_navmesh_data(r_build);
-
-	_build_step_find_edge_connection_pairs(r_build);
-
-	_build_step_merge_edge_connection_pairs(r_build);
-
-	_build_update_iteration(r_build);
-}
-
-void NavRegionBuilder3D::_build_step_process_navmesh_data(NavRegionIterationBuild3D& r_build)
-{
-	Vector<Vector3> _navmesh_vertices = r_build.navmesh_data.vertices;
-	Vector<Vector<int>> _navmesh_polygons = r_build.navmesh_data.polygons;
-
-	if (_navmesh_vertices.is_empty() || _navmesh_polygons.is_empty()) {
-		return;
-	}
-
-	Nav3D::PerformanceData& performance_data = r_build.performance_data;
-	Ref<NavIteration3D> region_iteration = r_build.region_iteration;
-
-	const Transform3D& region_transform = region_iteration->transform;
-	LocalVector<Nav3D::Polygon>& navmesh_polygons = region_iteration->navmesh_polygons;
-
-	const int vertex_count = _navmesh_vertices.size();
-
-	const Vector3* vertices_ptr = _navmesh_vertices.ptr();
-	const Vector<int>* polygons_ptr = _navmesh_polygons.ptr();
-
-	navmesh_polygons.resize(_navmesh_polygons.size());
-
-	real_t _new_region_surface_area = 0.0;
-	AABB _new_region_bounds;
-
-	bool first_vertex = true;
-
-	for (uint32_t i = 0; i < navmesh_polygons.size(); i++) {
-		Nav3D::Polygon& polygon = navmesh_polygons[i];
-		polygon.id = i;
-		polygon.owner = region_iteration.ptr();
-		polygon.surface_area = 0.0;
-
-		Vector<int> polygon_indices = polygons_ptr[i];
-
-		int polygon_size = polygon_indices.size();
-		if (polygon_size < 3) {
-			continue;
-		}
-
-		const int* indices_ptr = polygon_indices.ptr();
-
-		bool polygon_valid = true;
-
-		polygon.vertices.resize(polygon_size);
-
-		{
-			real_t _new_polygon_surface_area = 0.0;
-
-			for (int j(2); j < polygon_size; j++) {
-				const Face3 face = Face3(region_transform.xform(vertices_ptr[indices_ptr[0]]),
-					region_transform.xform(vertices_ptr[indices_ptr[j - 1]]),
-					region_transform.xform(vertices_ptr[indices_ptr[j]]));
-
-				_new_polygon_surface_area += face.get_area();
-			}
-
-			polygon.surface_area = _new_polygon_surface_area;
-			_new_region_surface_area += _new_polygon_surface_area;
-		}
-
-		for (int j(0); j < polygon_size; j++) {
-			int vertex_index = indices_ptr[j];
-			if (vertex_index < 0 || vertex_index >= vertex_count) {
-				polygon_valid = false;
-				break;
-			}
-
-			const Vector3 point_position = region_transform.xform(vertices_ptr[vertex_index]);
-			polygon.vertices[j] = point_position;
-
-			if (first_vertex) {
-				first_vertex = false;
-				_new_region_bounds.position = point_position;
-			}
-			else {
-				_new_region_bounds.expand_to(point_position);
-			}
-		}
-
-		if (!polygon_valid) {
-			polygon.surface_area = 0.0;
-			polygon.vertices.clear();
-			ERR_FAIL_COND_MSG(!polygon_valid, "Corrupted navigation mesh set on region. The "
-											  "indices of a polygon are out of range.");
-		}
-	}
-
-	region_iteration->surface_area = _new_region_surface_area;
-	region_iteration->bounds = _new_region_bounds;
-
-	performance_data.pm_polygon_count = navmesh_polygons.size();
-}
-
-Nav3D::PointKey NavRegionBuilder3D::get_point_key(const Vector3& p_pos, const Vector3& p_cell_size)
-{
-	const int x = static_cast<int>(Math::floor(p_pos.x / p_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / p_cell_size.y));
-	const int z = static_cast<int>(Math::floor(p_pos.z / p_cell_size.z));
-
-	Nav3D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	p.z = z;
-	return p;
-}
-
-Nav3D::EdgeKey NavRegionBuilder3D::get_edge_key(
-	const Vector3& p_vertex1, const Vector3& p_vertex2, const Vector3& p_cell_size)
-{
-	Nav3D::EdgeKey ek(get_point_key(p_vertex1, p_cell_size), get_point_key(p_vertex2, p_cell_size));
-	return ek;
-}
-
-void NavRegionBuilder3D::_build_step_find_edge_connection_pairs(NavRegionIterationBuild3D& r_build)
-{
-	Nav3D::PerformanceData& performance_data = r_build.performance_data;
-
-	const Vector3& map_cell_size = r_build.map_cell_size;
-	Ref<NavIteration3D> region_iteration = r_build.region_iteration;
-	LocalVector<Nav3D::Polygon>& navmesh_polygons = region_iteration->navmesh_polygons;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-	connection_pairs_map.clear();
-
-	region_iteration->internal_connections.clear();
-	region_iteration->internal_connections.resize(navmesh_polygons.size());
-
-	region_iteration->external_edges.clear();
-
-	int free_edges_count = 0;
-	int edge_merge_error_count = 0;
-
-	for (Nav3D::Polygon& poly : region_iteration->navmesh_polygons) {
-		for (uint32_t p = 0; p < poly.vertices.size(); p++) {
-			const int next_point = (p + 1) % poly.vertices.size();
-			const Nav3D::EdgeKey ek =
-				get_edge_key(poly.vertices[p], poly.vertices[next_point], map_cell_size);
-
-			HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey>::Iterator pair_it =
-				connection_pairs_map.find(ek);
-			if (!pair_it) {
-				pair_it = connection_pairs_map.insert(ek, Nav3D::EdgeConnectionPair());
-				performance_data.pm_edge_count += 1;
-				++free_edges_count;
-			}
-			Nav3D::EdgeConnectionPair& pair = pair_it->value;
-			if (pair.size < 2) {
-				// Add the polygon/edge tuple to this key.
-				Nav3D::Connection new_connection;
-				new_connection.polygon = &poly;
-				new_connection.edge = p;
-				new_connection.pathway_start = poly.vertices[p];
-				new_connection.pathway_end = poly.vertices[next_point];
-
-				pair.connections[pair.size] = new_connection;
-				++pair.size;
-				if (pair.size == 2) {
-					--free_edges_count;
-				}
-
-			}
-			else {
-				// The edge is already connected with another edge, skip.
-				edge_merge_error_count++;
-			}
-		}
-	}
-
-	if (edge_merge_error_count > 0 &&
-		GLOBAL_GET_CACHED(bool, "navigation/3d/warnings/navmesh_edge_merge_errors")) {
-		WARN_PRINT(
-			"Navigation region synchronization had " + itos(edge_merge_error_count) +
-			" edge error(s).\nMore than 2 edges tried to occupy the same map rasterization "
-			"space.\nThis causes a logical error in the navigation mesh geometry and is commonly "
-			"caused by overlap or too densely placed edges.\nConsider baking with a higher "
-			"'cell_size', greater geometry margin, and less detailed bake objects to cause fewer "
-			"edges.\nConsider lowering the 'navigation/3d/merge_rasterizer_cell_scale' in the "
-			"project settings.\nThis warning can be toggled under "
-			"'navigation/3d/warnings/navmesh_edge_merge_errors' in the project settings.");
-	}
-
-	performance_data.pm_edge_free_count = free_edges_count;
-}
-
-void NavRegionBuilder3D::_build_step_merge_edge_connection_pairs(NavRegionIterationBuild3D& r_build)
-{
-	Nav3D::PerformanceData& performance_data = r_build.performance_data;
-
-	Ref<NavIteration3D> region_iteration = r_build.region_iteration;
-
-	HashMap<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair, Nav3D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-
-	for (const KeyValue<Nav3D::EdgeKey, Nav3D::EdgeConnectionPair>& pair_it : connection_pairs_map) {
-		const Nav3D::EdgeConnectionPair& pair = pair_it.value;
-		if (pair.size == 2) {
-			// Connect edge that are shared in different polygons.
-			const Nav3D::Connection& c1 = pair.connections[0];
-			const Nav3D::Connection& c2 = pair.connections[1];
-			region_iteration->internal_connections[c1.polygon->id].push_back(c2);
-			region_iteration->internal_connections[c2.polygon->id].push_back(c1);
-			performance_data.pm_edge_merge_count += 1;
-
-		}
-		else {
-			ERR_FAIL_COND_MSG(
-				pair.size != 1, vformat("Number of connection != 1. Found: %d", pair.size));
-
-			const Nav3D::Connection& connection = pair.connections[0];
-
-			Nav3D::ConnectableEdge ce;
-			ce.ek = pair_it.key;
-			ce.polygon_index = connection.polygon->id;
-			ce.edge = connection.edge;
-			ce.pathway_start = connection.pathway_start;
-			ce.pathway_end = connection.pathway_end;
-
-			region_iteration->external_edges.push_back(ce);
-		}
-	}
-}
-
-void NavRegionBuilder3D::_build_update_iteration(NavRegionIterationBuild3D& r_build)
-{
-	ERR_FAIL_NULL(r_build.region);
-	// Stub. End of the build.
-}
-
-
-#define THREE_POINTS_CROSS_PRODUCT(m_a, m_b, m_c) (((m_c) - (m_a)).cross((m_b) - (m_a)))
-
-Vector3 NavMeshQueries3D::polygons_get_random_point(
-	const LocalVector<Nav3D::Polygon>& p_polygons, uint32_t p_navigation_layers, bool p_uniformly)
-{
-	const LocalVector<Nav3D::Polygon>& region_polygons = p_polygons;
-
-	if (region_polygons.is_empty()) {
-		return Vector3();
-	}
-
-	if (p_uniformly) {
-		real_t accumulated_area = 0;
-		RBMap<real_t, uint32_t> region_area_map;
-
-		for (uint32_t rp_index = 0; rp_index < region_polygons.size(); rp_index++) {
-			const Nav3D::Polygon& region_polygon = region_polygons[rp_index];
-			real_t polyon_area = region_polygon.surface_area;
-
-			if (polyon_area == 0.0) {
-				continue;
-			}
-			region_area_map[accumulated_area] = rp_index;
-			accumulated_area += polyon_area;
-		}
-		if (region_area_map.is_empty() || accumulated_area == 0) {
-			// All polygons have no real surface / no area.
-			return Vector3();
-		}
-
-		real_t region_area_map_pos = Math::random(real_t(0), accumulated_area);
-
-		RBMap<real_t, uint32_t>::Iterator region_E =
-			region_area_map.find_closest(region_area_map_pos);
-		ERR_FAIL_COND_V(!region_E, Vector3());
-		uint32_t rrp_polygon_index = region_E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(rrp_polygon_index, region_polygons.size(), Vector3());
-
-		const Nav3D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
-
-		real_t accumulated_polygon_area = 0;
-		RBMap<real_t, uint32_t> polygon_area_map;
-
-		for (uint32_t rpp_index = 2; rpp_index < rr_polygon.vertices.size(); rpp_index++) {
-			real_t face_area = Face3(rr_polygon.vertices[0], rr_polygon.vertices[rpp_index - 1],
-				rr_polygon.vertices[rpp_index])
-								   .get_area();
-
-			if (face_area == 0.0) {
-				continue;
-			}
-			polygon_area_map[accumulated_polygon_area] = rpp_index;
-			accumulated_polygon_area += face_area;
-		}
-		if (polygon_area_map.is_empty() || accumulated_polygon_area == 0) {
-			// All faces have no real surface / no area.
-			return Vector3();
-		}
-
-		real_t polygon_area_map_pos = Math::random(real_t(0), accumulated_polygon_area);
-
-		RBMap<real_t, uint32_t>::Iterator polygon_E =
-			polygon_area_map.find_closest(polygon_area_map_pos);
-		ERR_FAIL_COND_V(!polygon_E, Vector3());
-		uint32_t rrp_face_index = polygon_E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(rrp_face_index, rr_polygon.vertices.size(), Vector3());
-
-		const Face3 face(rr_polygon.vertices[0], rr_polygon.vertices[rrp_face_index - 1],
-			rr_polygon.vertices[rrp_face_index]);
-
-		Vector3 face_random_position = face.get_random_point_inside();
-		return face_random_position;
-
-	}
-	else {
-		uint32_t rrp_polygon_index = Math::random(int(0), region_polygons.size() - 1);
-
-		const Nav3D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
-
-		uint32_t rrp_face_index = Math::random(int(2), rr_polygon.vertices.size() - 1);
-
-		const Face3 face(rr_polygon.vertices[0], rr_polygon.vertices[rrp_face_index - 1],
-			rr_polygon.vertices[rrp_face_index]);
-
-		Vector3 face_random_position = face.get_random_point_inside();
-		return face_random_position;
-	}
-}
-
-void NavMeshQueries3D::_query_task_find_start_end_positions(
-	NavMeshPathQueryTask3D& p_query_task, const NavMapIteration3D& p_map_iteration)
-{
-	real_t begin_d = FLT_MAX;
-	real_t end_d = FLT_MAX;
-
-	const LocalVector<Ref<NavIteration3D>>& regions = p_map_iteration.region_iterations;
-
-	for (const Ref<NavIteration3D>& region : regions) {
-		if (!_query_task_is_connection_owner_usable(p_query_task, region.ptr())) {
-			continue;
-		}
-
-		// Find the initial poly and the end poly on this map.
-		for (const Nav3D::Polygon& p : region->get_navmesh_polygons()) {
-			// Only consider the polygon if it in a region with compatible layers.
-			if ((p_query_task.navigation_layers & p.owner->get_navigation_layers()) == 0) {
-				continue;
-			}
-
-			// For each face check the distance between the origin/destination.
-			for (uint32_t point_id = 2; point_id < p.vertices.size(); point_id++) {
-				const Face3 face(p.vertices[0], p.vertices[point_id - 1], p.vertices[point_id]);
-
-				Vector3 point = face.get_closest_point_to(p_query_task.start_position);
-				real_t distance_to_point = point.distance_to(p_query_task.start_position);
-				if (distance_to_point < begin_d) {
-					begin_d = distance_to_point;
-					p_query_task.begin_polygon = &p;
-					p_query_task.begin_position = point;
-				}
-
-				point = face.get_closest_point_to(p_query_task.target_position);
-				distance_to_point = point.distance_to(p_query_task.target_position);
-				if (distance_to_point < end_d) {
-					end_d = distance_to_point;
-					p_query_task.end_polygon = &p;
-					p_query_task.end_position = point;
-				}
-			}
-		}
-	}
-}
-
-void NavMeshQueries3D::_query_task_search_polygon_connections(NavMeshPathQueryTask3D& p_query_task,
-	const Nav3D::Connection& p_connection, uint32_t p_least_cost_id,
-	const Nav3D::NavigationPoly& p_least_cost_poly, real_t p_poly_enter_cost, const Vector3& p_end_point)
-{
-	const NavIteration3D* connection_owner = p_connection.polygon->owner;
-	ERR_FAIL_NULL(connection_owner);
-	const bool owner_is_usable =
-		_query_task_is_connection_owner_usable(p_query_task, connection_owner);
-	if (!owner_is_usable) {
-		return;
-	}
-
-	Heap<Nav3D::NavigationPoly*, Nav3D::NavPolyTravelCostGreaterThan, Nav3D::NavPolyHeapIndexer>& traversable_polys =
-		p_query_task.path_query_slot->traversable_polys;
-	LocalVector<Nav3D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	real_t poly_travel_cost = p_least_cost_poly.poly->owner->get_travel_cost();
-
-	Vector3 new_entry = Geometry3D::get_closest_point_to_segment(
-		p_least_cost_poly.entry, p_connection.pathway_start, p_connection.pathway_end);
-	real_t new_traveled_distance =
-		p_least_cost_poly.entry.distance_to(new_entry) * poly_travel_cost + p_poly_enter_cost +
-		p_least_cost_poly.traveled_distance;
-
-	// Check if the neighbor polygon has already been processed.
-	Nav3D::NavigationPoly& neighbor_poly =
-		navigation_polys[p_query_task.path_query_slot->poly_to_id[p_connection.polygon]];
-	if (new_traveled_distance < neighbor_poly.traveled_distance) {
-		// Add the polygon to the heap of polygons to traverse next.
-		neighbor_poly.back_navigation_poly_id = p_least_cost_id;
-		neighbor_poly.back_navigation_edge = p_connection.edge;
-		neighbor_poly.back_navigation_edge_pathway_start = p_connection.pathway_start;
-		neighbor_poly.back_navigation_edge_pathway_end = p_connection.pathway_end;
-		neighbor_poly.traveled_distance = new_traveled_distance;
-		neighbor_poly.distance_to_destination =
-			new_entry.distance_to(p_end_point) * connection_owner->get_travel_cost();
-		neighbor_poly.entry = new_entry;
-
-		if (neighbor_poly.traversable_poly_index != traversable_polys.INVALID_INDEX) {
-			traversable_polys.shift(neighbor_poly.traversable_poly_index);
-		}
-		else {
-			neighbor_poly.poly = p_connection.polygon;
-			traversable_polys.push(&neighbor_poly);
-		}
-	}
-}
-
-void NavMeshQueries3D::_query_task_build_path_corridor(
-	NavMeshPathQueryTask3D& p_query_task, const NavMapIteration3D& p_map_iteration)
-{
-	const Vector3 p_target_position = p_query_task.target_position;
-	const Nav3D::Polygon* begin_poly = p_query_task.begin_polygon;
-	const Nav3D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector3 begin_point = p_query_task.begin_position;
-	Vector3 end_point = p_query_task.end_position;
-
-	// Heap of polygons to travel next.
-	Heap<Nav3D::NavigationPoly*, Nav3D::NavPolyTravelCostGreaterThan, Nav3D::NavPolyHeapIndexer>& traversable_polys =
-		p_query_task.path_query_slot->traversable_polys;
-	traversable_polys.clear();
-
-	LocalVector<Nav3D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-	for (Nav3D::NavigationPoly& polygon : navigation_polys) {
-		polygon.reset();
-	}
-
-	// Initialize the matching navigation polygon.
-	Nav3D::NavigationPoly& begin_navigation_poly =
-		navigation_polys[p_query_task.path_query_slot->poly_to_id[begin_poly]];
-	begin_navigation_poly.poly = begin_poly;
-	begin_navigation_poly.entry = begin_point;
-	begin_navigation_poly.back_navigation_edge_pathway_start = begin_point;
-	begin_navigation_poly.back_navigation_edge_pathway_end = begin_point;
-	begin_navigation_poly.traveled_distance = 0.f;
-
-	// This is an implementation of the A* algorithm.
-	uint32_t least_cost_id = p_query_task.path_query_slot->poly_to_id[begin_poly];
-	bool found_route = false;
-
-	const Nav3D::Polygon* reachable_end = nullptr;
-	real_t distance_to_reachable_end = FLT_MAX;
-	bool is_reachable = true;
-	real_t poly_enter_cost = 0.0;
-
-	const HashMap<const NavIteration3D*, LocalVector<LocalVector<Nav3D::Connection>>>&
-		navbases_polygons_external_connections =
-			p_map_iteration.navbases_polygons_external_connections;
-
-	// True if we reached the max polygon search count or distance from the begin position.
-	bool path_search_max_reached = false;
-
-	const float path_search_max_distance_sqr =
-		p_query_task.path_search_max_distance * p_query_task.path_search_max_distance;
-	bool has_path_search_max_distance = path_search_max_distance_sqr > 0.0;
-
-	int processed_polygon_count = 0;
-	bool has_path_search_max_polygons = p_query_task.path_search_max_polygons > 0;
-
-	bool has_path_search_max =
-		p_query_task.path_search_max_polygons > 0 || path_search_max_distance_sqr > 0.0;
-
-	while (true) {
-		const Nav3D::NavigationPoly& least_cost_poly = navigation_polys[least_cost_id];
-
-		const NavIteration3D* least_cost_navbase = least_cost_poly.poly->owner;
-
-		processed_polygon_count += 1;
-
-		const uint32_t navbase_local_polygon_id = least_cost_poly.poly->id;
-		const LocalVector<LocalVector<Nav3D::Connection>>& navbase_polygons_to_connections =
-			least_cost_poly.poly->owner->get_internal_connections();
-
-		if (navbase_polygons_to_connections.size() > 0) {
-			const LocalVector<Nav3D::Connection>& polygon_connections =
-				navbase_polygons_to_connections[navbase_local_polygon_id];
-
-			for (const Nav3D::Connection& connection : polygon_connections) {
-				_query_task_search_polygon_connections(p_query_task, connection, least_cost_id,
-					least_cost_poly, poly_enter_cost, end_point);
-			}
-		}
-
-		// Search region external navmesh polygon connections, aka connections to other regions
-		// created by outline edge merge or links.
-		for (const Nav3D::Connection& connection :
-			navbases_polygons_external_connections[least_cost_navbase][navbase_local_polygon_id]) {
-			_query_task_search_polygon_connections(p_query_task, connection, least_cost_id,
-				least_cost_poly, poly_enter_cost, end_point);
-		}
-
-		if (has_path_search_max && !path_search_max_reached) {
-			if (has_path_search_max_polygons &&
-				processed_polygon_count >= p_query_task.path_search_max_polygons) {
-				path_search_max_reached = true;
-				traversable_polys.clear();
-			}
-			else if (has_path_search_max_distance &&
-					   begin_point.distance_squared_to(least_cost_poly.entry) >
-						   path_search_max_distance_sqr) {
-				path_search_max_reached = true;
-				traversable_polys.clear();
-			}
-		}
-
-		poly_enter_cost = 0;
-		// When the heap of traversable polygons is empty at this point it means the end polygon is
-		// unreachable.
-		if (traversable_polys.is_empty()) {
-			// Thus use the further reachable polygon
-			ERR_BREAK_MSG(is_reachable == false,
-				"Invalid navigation index or connection pointers. Check "
-				"preceding navmesh geometry or placement errors.");
-			is_reachable = false;
-			if (reachable_end == nullptr) {
-				// The path is not found and there is not a way out.
-				break;
-			}
-
-			// Set as end point the furthest reachable point.
-			end_poly = reachable_end;
-			real_t end_d = FLT_MAX;
-
-			for (uint32_t point_id = 2; point_id < end_poly->vertices.size(); point_id++) {
-				Face3 f(end_poly->vertices[0], end_poly->vertices[point_id - 1],
-					end_poly->vertices[point_id]);
-				Vector3 spoint = f.get_closest_point_to(p_target_position);
-				real_t dpoint = spoint.distance_squared_to(p_target_position);
-				if (dpoint < end_d) {
-					end_point = spoint;
-					end_d = dpoint;
-				}
-			}
-
-			// Search all faces of start polygon as well.
-			bool closest_point_on_start_poly = false;
-
-			for (uint32_t point_id = 2; point_id < begin_poly->vertices.size(); point_id++) {
-				Face3 f(begin_poly->vertices[0], begin_poly->vertices[point_id - 1],
-					begin_poly->vertices[point_id]);
-				Vector3 spoint = f.get_closest_point_to(p_target_position);
-				real_t dpoint = spoint.distance_squared_to(p_target_position);
-				if (dpoint < end_d) {
-					end_point = spoint;
-					end_d = dpoint;
-					closest_point_on_start_poly = true;
-				}
-			}
-
-			if (closest_point_on_start_poly) {
-				// No point to run PostProcessing when start and end convex polygon is the same.
-				p_query_task.path_clear();
-
-				_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-				_query_task_push_back_point_with_metadata(p_query_task, end_point, begin_poly);
-				p_query_task.status = NavMeshPathQueryTask3D::TaskStatus::QUERY_FINISHED;
-				return;
-			}
-
-			for (Nav3D::NavigationPoly& nav_poly : navigation_polys) {
-				nav_poly.poly = nullptr;
-				nav_poly.traveled_distance = FLT_MAX;
-			}
-			uint32_t _bp_id = p_query_task.path_query_slot->poly_to_id[begin_poly];
-			navigation_polys[_bp_id].poly = begin_poly;
-			navigation_polys[_bp_id].traveled_distance = 0;
-			least_cost_id = _bp_id;
-			reachable_end = nullptr;
-		}
-		else {
-			// Pop the polygon with the lowest travel cost from the heap of traversable polygons.
-			least_cost_id = p_query_task.path_query_slot->poly_to_id[traversable_polys.pop()->poly];
-
-			// Store the farthest reachable end polygon in case our goal is not reachable.
-			if (is_reachable) {
-				real_t distance =
-					navigation_polys[least_cost_id].entry.distance_squared_to(p_target_position);
-				if (distance_to_reachable_end > distance) {
-					distance_to_reachable_end = distance;
-					reachable_end = navigation_polys[least_cost_id].poly;
-				}
-			}
-
-			// Check if we reached the end
-			if (navigation_polys[least_cost_id].poly == end_poly) {
-				found_route = true;
-				break;
-			}
-
-			if (navigation_polys[least_cost_id].poly->owner->get_self() !=
-				least_cost_poly.poly->owner->get_self()) {
-				ERR_FAIL_NULL(least_cost_poly.poly->owner);
-				poly_enter_cost = least_cost_poly.poly->owner->get_enter_cost();
-			}
-		}
-	}
-
-	// We did not find a route but we have both a start polygon and an end polygon at this point.
-	// Usually this happens because there was not a single external or internal connected edge, e.g.
-	// our start polygon is an isolated, single convex polygon.
-	if (!found_route) {
-		real_t end_d = FLT_MAX;
-		// Search all faces of the start polygon for the closest point to our target position.
-
-		for (uint32_t point_id = 2; point_id < begin_poly->vertices.size(); point_id++) {
-			Face3 f(begin_poly->vertices[0], begin_poly->vertices[point_id - 1],
-				begin_poly->vertices[point_id]);
-			Vector3 spoint = f.get_closest_point_to(p_target_position);
-			real_t dpoint = spoint.distance_squared_to(p_target_position);
-			if (dpoint < end_d) {
-				end_point = spoint;
-				end_d = dpoint;
-			}
-		}
-
-		p_query_task.path_clear();
-
-		_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-		_query_task_push_back_point_with_metadata(p_query_task, end_point, begin_poly);
-		p_query_task.status = NavMeshPathQueryTask3D::TaskStatus::QUERY_FINISHED;
-	}
-	else {
-		p_query_task.end_position = end_point;
-		p_query_task.end_polygon = end_poly;
-		p_query_task.begin_position = begin_point;
-		p_query_task.begin_polygon = begin_poly;
-		p_query_task.least_cost_id = least_cost_id;
-	}
-}
-
-float NavMeshQueries3D::_calculate_path_length(
-	const LocalVector<Vector3>& p_path, uint32_t p_start_index, uint32_t p_end_index)
-{
-	const uint32_t path_size = p_path.size();
-	if (path_size < 2) {
-		return 0.0;
-	}
-
-	ERR_FAIL_COND_V(p_start_index >= p_end_index, 0.0);
-	ERR_FAIL_COND_V(p_start_index >= path_size - 1, 0.0);
-	ERR_FAIL_COND_V(p_end_index >= path_size, 0.0);
-
-	const Vector3* path_ptr = p_path.ptr();
-
-	float path_length = 0.0;
-
-	for (uint32_t i = p_start_index; i < p_end_index; i++) {
-		const Vector3& vertex1 = path_ptr[i];
-		const Vector3& vertex2 = path_ptr[i + 1];
-		float edge_length = vertex1.distance_to(vertex2);
-		path_length += edge_length;
-	}
-
-	return path_length;
-}
-
-void NavMeshQueries3D::_query_task_post_process_corridorfunnel(NavMeshPathQueryTask3D& p_query_task)
-{
-	Vector3 end_point = p_query_task.end_position;
-	const Nav3D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector3 begin_point = p_query_task.begin_position;
-	const Nav3D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav3D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-	Vector3 p_map_up = p_query_task.map_up;
-
-	// Set the apex poly/point to the end point
-	Nav3D::NavigationPoly* apex_poly = &navigation_polys[least_cost_id];
-
-	const Vector3 back_edge_closest_point = Geometry3D::get_closest_point_to_segment(end_point,
-		apex_poly->back_navigation_edge_pathway_start, apex_poly->back_navigation_edge_pathway_end);
-	if (end_point.is_equal_approx(back_edge_closest_point)) {
-		// The end point is basically on top of the last crossed edge, funneling around the corners
-		// would at best do nothing. At worst it would add an unwanted path point before the last
-		// point due to precision issues so skip to the next polygon.
-		if (apex_poly->back_navigation_poly_id != -1) {
-			apex_poly = &navigation_polys[apex_poly->back_navigation_poly_id];
-		}
-	}
-
-	Vector3 apex_point = end_point;
-
-	Nav3D::NavigationPoly* left_poly = apex_poly;
-	Vector3 left_portal = apex_point;
-	Nav3D::NavigationPoly* right_poly = apex_poly;
-	Vector3 right_portal = apex_point;
-
-	Nav3D::NavigationPoly* p = apex_poly;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	while (p) {
-		// Set left and right points of the pathway between polygons.
-		Vector3 left = p->back_navigation_edge_pathway_start;
-		Vector3 right = p->back_navigation_edge_pathway_end;
-		if (THREE_POINTS_CROSS_PRODUCT(apex_point, left, right).dot(p_map_up) < 0) {
-			SWAP(left, right);
-		}
-
-		bool skip = false;
-		if (THREE_POINTS_CROSS_PRODUCT(apex_point, left_portal, left).dot(p_map_up) >= 0) {
-			// process
-			if (left_portal == apex_point ||
-				THREE_POINTS_CROSS_PRODUCT(apex_point, left, right_portal).dot(p_map_up) > 0) {
-				left_poly = p;
-				left_portal = left;
-			}
-			else {
-				_query_task_clip_path(p_query_task, apex_poly, right_portal, right_poly);
-
-				apex_point = right_portal;
-				p = right_poly;
-				left_poly = p;
-				apex_poly = p;
-				left_portal = apex_point;
-				right_portal = apex_point;
-
-				_query_task_push_back_point_with_metadata(
-					p_query_task, apex_point, apex_poly->poly);
-				skip = true;
-			}
-		}
-
-		if (!skip &&
-			THREE_POINTS_CROSS_PRODUCT(apex_point, right_portal, right).dot(p_map_up) <= 0) {
-			// process
-			if (right_portal == apex_point ||
-				THREE_POINTS_CROSS_PRODUCT(apex_point, right, left_portal).dot(p_map_up) < 0) {
-				right_poly = p;
-				right_portal = right;
-			}
-			else {
-				_query_task_clip_path(p_query_task, apex_poly, left_portal, left_poly);
-
-				apex_point = left_portal;
-				p = left_poly;
-				right_poly = p;
-				apex_poly = p;
-				right_portal = apex_point;
-				left_portal = apex_point;
-
-				_query_task_push_back_point_with_metadata(
-					p_query_task, apex_point, apex_poly->poly);
-			}
-		}
-
-		// Go to the previous polygon.
-		if (p->back_navigation_poly_id != -1) {
-			p = &navigation_polys[p->back_navigation_poly_id];
-		}
-		else {
-			// The end
-			p = nullptr;
-		}
-	}
-
-	// If the last point is not the begin point, add it to the list.
-	if (p_query_task.path_points[p_query_task.path_points.size() - 1] != begin_point) {
-		_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-	}
-}
-
-void NavMeshQueries3D::_query_task_post_process_edgecentered(NavMeshPathQueryTask3D& p_query_task)
-{
-	Vector3 end_point = p_query_task.end_position;
-	const Nav3D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector3 begin_point = p_query_task.begin_position;
-	const Nav3D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav3D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	// Add mid points
-	int np_id = least_cost_id;
-	while (np_id != -1 && navigation_polys[np_id].back_navigation_poly_id != -1) {
-		if (navigation_polys[np_id].back_navigation_edge != -1) {
-			int prev = navigation_polys[np_id].back_navigation_edge;
-			int prev_n = (navigation_polys[np_id].back_navigation_edge + 1) %
-						 navigation_polys[np_id].poly->vertices.size();
-			Vector3 point = (navigation_polys[np_id].poly->vertices[prev] +
-								navigation_polys[np_id].poly->vertices[prev_n]) *
-							0.5;
-
-			_query_task_push_back_point_with_metadata(
-				p_query_task, point, navigation_polys[np_id].poly);
-		}
-		else {
-			_query_task_push_back_point_with_metadata(
-				p_query_task, navigation_polys[np_id].entry, navigation_polys[np_id].poly);
-		}
-
-		np_id = navigation_polys[np_id].back_navigation_poly_id;
-	}
-
-	_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-}
-
-void NavMeshQueries3D::_query_task_post_process_nopostprocessing(
-	NavMeshPathQueryTask3D& p_query_task)
-{
-	Vector3 end_point = p_query_task.end_position;
-	const Nav3D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector3 begin_point = p_query_task.begin_position;
-	const Nav3D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav3D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	// Add mid points
-	int np_id = least_cost_id;
-	while (np_id != -1 && navigation_polys[np_id].back_navigation_poly_id != -1) {
-		_query_task_push_back_point_with_metadata(
-			p_query_task, navigation_polys[np_id].entry, navigation_polys[np_id].poly);
-
-		np_id = navigation_polys[np_id].back_navigation_poly_id;
-	}
-
-	_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-}
-
-Vector3 NavMeshQueries3D::map_iteration_get_closest_point_to_segment(
-	const NavMapIteration3D& p_map_iteration, const Vector3& p_from, const Vector3& p_to,
-	const bool p_use_collision)
-{
-	bool use_collision = p_use_collision;
-	Vector3 closest_point;
-	real_t closest_point_distance = FLT_MAX;
-
-	const LocalVector<Ref<NavIteration3D>>& regions = p_map_iteration.region_iterations;
-	for (const Ref<NavIteration3D>& region : regions) {
-		for (const Nav3D::Polygon& polygon : region->get_navmesh_polygons()) {
-			// For each face check the distance to the segment.
-			for (uint32_t point_id = 2; point_id < polygon.vertices.size(); point_id += 1) {
-				const Face3 face(polygon.vertices[0], polygon.vertices[point_id - 1],
-					polygon.vertices[point_id]);
-				Vector3 intersection_point;
-				if (face.intersects_segment(p_from, p_to, &intersection_point)) {
-					const real_t d = p_from.distance_to(intersection_point);
-					if (!use_collision) {
-						closest_point = intersection_point;
-						use_collision = true;
-						closest_point_distance = d;
-					}
-					else if (closest_point_distance > d) {
-						closest_point = intersection_point;
-						closest_point_distance = d;
-					}
-				}
-				// If segment does not itersect face, check the distance from segment's endpoints.
-				else if (!use_collision) {
-					const Vector3 p_from_closest = face.get_closest_point_to(p_from);
-					const real_t d_p_from = p_from.distance_to(p_from_closest);
-					if (closest_point_distance > d_p_from) {
-						closest_point = p_from_closest;
-						closest_point_distance = d_p_from;
-					}
-
-					const Vector3 p_to_closest = face.get_closest_point_to(p_to);
-					const real_t d_p_to = p_to.distance_to(p_to_closest);
-					if (closest_point_distance > d_p_to) {
-						closest_point = p_to_closest;
-						closest_point_distance = d_p_to;
-					}
-				}
-			}
-			// Finally, check for a case when shortest distance is between some point located on a
-			// face's edge and some point located on a line segment.
-			if (!use_collision) {
-				for (uint32_t point_id = 0; point_id < polygon.vertices.size(); point_id += 1) {
-					Vector3 a, b;
-
-					Geometry3D::get_closest_points_between_segments(p_from, p_to,
-						polygon.vertices[point_id],
-						polygon.vertices[(point_id + 1) % polygon.vertices.size()], a, b);
-
-					const real_t d = a.distance_to(b);
-					if (d < closest_point_distance) {
-						closest_point_distance = d;
-						closest_point = b;
-					}
-				}
-			}
-		}
-	}
-
-	return closest_point;
-}
-
-Vector3 NavMeshQueries3D::map_iteration_get_closest_point(
-	const NavMapIteration3D& p_map_iteration, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = map_iteration_get_closest_point_info(p_map_iteration, p_point);
-	return cp.point;
-}
-
-Vector3 NavMeshQueries3D::map_iteration_get_closest_point_normal(
-	const NavMapIteration3D& p_map_iteration, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = map_iteration_get_closest_point_info(p_map_iteration, p_point);
-	return cp.normal;
-}
-
-RID NavMeshQueries3D::map_iteration_get_closest_point_owner(
-	const NavMapIteration3D& p_map_iteration, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = map_iteration_get_closest_point_info(p_map_iteration, p_point);
-	return cp.owner;
-}
-
-Nav3D::ClosestPointQueryResult NavMeshQueries3D::map_iteration_get_closest_point_info(
-	const NavMapIteration3D& p_map_iteration, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult result;
-	real_t closest_point_distance_squared = FLT_MAX;
-
-	const LocalVector<Ref<NavIteration3D>>& regions = p_map_iteration.region_iterations;
-	for (const Ref<NavIteration3D>& region : regions) {
-		for (const Nav3D::Polygon& polygon : region->get_navmesh_polygons()) {
-			Vector3 plane_normal = (polygon.vertices[1] - polygon.vertices[0])
-									   .cross(polygon.vertices[2] - polygon.vertices[0]);
-			Vector3 closest_on_polygon;
-			real_t closest = FLT_MAX;
-			bool inside = true;
-			Vector3 previous = polygon.vertices[polygon.vertices.size() - 1];
-			for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
-				Vector3 edge = polygon.vertices[point_id] - previous;
-				Vector3 to_point = p_point - previous;
-				Vector3 edge_to_point_pormal = edge.cross(to_point);
-				bool clockwise = edge_to_point_pormal.dot(plane_normal) > 0;
-				// If we are not clockwise, the point will never be inside the polygon and so the
-				// closest point will be on an edge.
-				if (!clockwise) {
-					inside = false;
-					real_t point_projected_on_edge = edge.dot(to_point);
-					real_t edge_square = edge.length_squared();
-
-					if (point_projected_on_edge > edge_square) {
-						real_t distance = polygon.vertices[point_id].distance_squared_to(p_point);
-						if (distance < closest) {
-							closest_on_polygon = polygon.vertices[point_id];
-							closest = distance;
-						}
-					}
-					else if (point_projected_on_edge < 0.f) {
-						real_t distance = previous.distance_squared_to(p_point);
-						if (distance < closest) {
-							closest_on_polygon = previous;
-							closest = distance;
-						}
-					}
-					else {
-						// If we project on this edge, this will be the closest point.
-						real_t percent = point_projected_on_edge / edge_square;
-						closest_on_polygon = previous + percent * edge;
-						break;
-					}
-				}
-				previous = polygon.vertices[point_id];
-			}
-
-			if (inside) {
-				Vector3 plane_normalized = plane_normal.normalized();
-				real_t distance = plane_normalized.dot(p_point - polygon.vertices[0]);
-				real_t distance_squared = distance * distance;
-				if (distance_squared < closest_point_distance_squared) {
-					closest_point_distance_squared = distance_squared;
-					result.point = p_point - plane_normalized * distance;
-					result.normal = plane_normalized;
-					result.owner = polygon.owner->get_self();
-
-					if (Math::is_zero_approx(distance)) {
-						break;
-					}
-				}
-			}
-			else {
-				real_t distance = closest_on_polygon.distance_squared_to(p_point);
-				if (distance < closest_point_distance_squared) {
-					closest_point_distance_squared = distance;
-					result.point = closest_on_polygon;
-					result.normal = plane_normal.normalized();
-					result.owner = polygon.owner->get_self();
-				}
-			}
-		}
-	}
-
-	return result;
-}
-
-Vector3 NavMeshQueries3D::map_iteration_get_random_point(
-	const NavMapIteration3D& p_map_iteration, uint32_t p_navigation_layers, bool p_uniformly)
-{
-	if (p_map_iteration.region_iterations.is_empty()) {
-		return Vector3();
-	}
-
-	LocalVector<uint32_t> accessible_regions;
-	accessible_regions.reserve(p_map_iteration.region_iterations.size());
-
-	for (uint32_t i = 0; i < p_map_iteration.region_iterations.size(); i++) {
-		const Ref<NavIteration3D>& region = p_map_iteration.region_iterations[i];
-		if (!region->get_enabled() ||
-			(p_navigation_layers & region->get_navigation_layers()) == 0) {
-			continue;
-		}
-		accessible_regions.push_back(i);
-	}
-
-	if (accessible_regions.is_empty()) {
-		// All existing region polygons are disabled.
-		return Vector3();
-	}
-
-	if (p_uniformly) {
-		real_t accumulated_region_surface_area = 0;
-		RBMap<real_t, uint32_t> accessible_regions_area_map;
-
-		for (uint32_t accessible_region_index = 0;
-			 accessible_region_index < accessible_regions.size(); accessible_region_index++) {
-			const Ref<NavIteration3D>& region =
-				p_map_iteration.region_iterations[accessible_regions[accessible_region_index]];
-
-			real_t region_surface_area = region->surface_area;
-
-			if (region_surface_area == 0.0f) {
-				continue;
-			}
-
-			accessible_regions_area_map[accumulated_region_surface_area] = accessible_region_index;
-			accumulated_region_surface_area += region_surface_area;
-		}
-		if (accessible_regions_area_map.is_empty() || accumulated_region_surface_area == 0) {
-			// All faces have no real surface / no area.
-			return Vector3();
-		}
-
-		real_t random_accessible_regions_area_map =
-			Math::random(real_t(0), accumulated_region_surface_area);
-
-		RBMap<real_t, uint32_t>::Iterator E =
-			accessible_regions_area_map.find_closest(random_accessible_regions_area_map);
-		ERR_FAIL_COND_V(!E, Vector3());
-		uint32_t random_region_index = E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(random_region_index, accessible_regions.size(), Vector3());
-
-		const Ref<NavIteration3D>& random_region =
-			p_map_iteration.region_iterations[accessible_regions[random_region_index]];
-
-		return NavMeshQueries3D::polygons_get_random_point(
-			random_region->navmesh_polygons, p_navigation_layers, p_uniformly);
-
-	}
-	else {
-		uint32_t random_region_index = Math::random(int(0), accessible_regions.size() - 1);
-
-		const Ref<NavIteration3D>& random_region =
-			p_map_iteration.region_iterations[accessible_regions[random_region_index]];
-
-		return NavMeshQueries3D::polygons_get_random_point(
-			random_region->navmesh_polygons, p_navigation_layers, p_uniformly);
-	}
-}
-
-Vector3 NavMeshQueries3D::polygons_get_closest_point_to_segment(
-	const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_from, const Vector3& p_to,
-	const bool p_use_collision)
-{
-	bool use_collision = p_use_collision;
-	Vector3 closest_point;
-	real_t closest_point_distance = FLT_MAX;
-
-	for (const Nav3D::Polygon& polygon : p_polygons) {
-		// For each face check the distance to the segment.
-		for (uint32_t point_id = 2; point_id < polygon.vertices.size(); point_id += 1) {
-			const Face3 face(
-				polygon.vertices[0], polygon.vertices[point_id - 1], polygon.vertices[point_id]);
-			Vector3 intersection_point;
-			if (face.intersects_segment(p_from, p_to, &intersection_point)) {
-				const real_t d = p_from.distance_to(intersection_point);
-				if (!use_collision) {
-					closest_point = intersection_point;
-					use_collision = true;
-					closest_point_distance = d;
-				}
-				else if (closest_point_distance > d) {
-					closest_point = intersection_point;
-					closest_point_distance = d;
-				}
-			}
-			// If segment does not itersect face, check the distance from segment's endpoints.
-			else if (!use_collision) {
-				const Vector3 p_from_closest = face.get_closest_point_to(p_from);
-				const real_t d_p_from = p_from.distance_to(p_from_closest);
-				if (closest_point_distance > d_p_from) {
-					closest_point = p_from_closest;
-					closest_point_distance = d_p_from;
-				}
-
-				const Vector3 p_to_closest = face.get_closest_point_to(p_to);
-				const real_t d_p_to = p_to.distance_to(p_to_closest);
-				if (closest_point_distance > d_p_to) {
-					closest_point = p_to_closest;
-					closest_point_distance = d_p_to;
-				}
-			}
-		}
-		// Finally, check for a case when shortest distance is between some point located on a
-		// face's edge and some point located on a line segment.
-		if (!use_collision) {
-			for (uint32_t point_id = 0; point_id < polygon.vertices.size(); point_id += 1) {
-				Vector3 a, b;
-
-				Geometry3D::get_closest_points_between_segments(p_from, p_to,
-					polygon.vertices[point_id],
-					polygon.vertices[(point_id + 1) % polygon.vertices.size()], a, b);
-
-				const real_t d = a.distance_to(b);
-				if (d < closest_point_distance) {
-					closest_point_distance = d;
-					closest_point = b;
-				}
-			}
-		}
-	}
-
-	return closest_point;
-}
-
-Vector3 NavMeshQueries3D::polygons_get_closest_point(
-	const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
-	return cp.point;
-}
-
-Vector3 NavMeshQueries3D::polygons_get_closest_point_normal(
-	const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
-	return cp.normal;
-}
-
-Nav3D::ClosestPointQueryResult NavMeshQueries3D::polygons_get_closest_point_info(
-	const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult result;
-	real_t closest_point_distance_squared = FLT_MAX;
-
-	for (const Nav3D::Polygon& polygon : p_polygons) {
-		Vector3 plane_normal = (polygon.vertices[1] - polygon.vertices[0])
-								   .cross(polygon.vertices[2] - polygon.vertices[0]);
-		Vector3 closest_on_polygon;
-		real_t closest = FLT_MAX;
-		bool inside = true;
-		Vector3 previous = polygon.vertices[polygon.vertices.size() - 1];
-		for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
-			Vector3 edge = polygon.vertices[point_id] - previous;
-			Vector3 to_point = p_point - previous;
-			Vector3 edge_to_point_pormal = edge.cross(to_point);
-			bool clockwise = edge_to_point_pormal.dot(plane_normal) > 0;
-			// If we are not clockwise, the point will never be inside the polygon and so the
-			// closest point will be on an edge.
-			if (!clockwise) {
-				inside = false;
-				real_t point_projected_on_edge = edge.dot(to_point);
-				real_t edge_square = edge.length_squared();
-
-				if (point_projected_on_edge > edge_square) {
-					real_t distance = polygon.vertices[point_id].distance_squared_to(p_point);
-					if (distance < closest) {
-						closest_on_polygon = polygon.vertices[point_id];
-						closest = distance;
-					}
-				}
-				else if (point_projected_on_edge < 0.f) {
-					real_t distance = previous.distance_squared_to(p_point);
-					if (distance < closest) {
-						closest_on_polygon = previous;
-						closest = distance;
-					}
-				}
-				else {
-					// If we project on this edge, this will be the closest point.
-					real_t percent = point_projected_on_edge / edge_square;
-					closest_on_polygon = previous + percent * edge;
-					break;
-				}
-			}
-			previous = polygon.vertices[point_id];
-		}
-
-		if (inside) {
-			Vector3 plane_normalized = plane_normal.normalized();
-			real_t distance = plane_normalized.dot(p_point - polygon.vertices[0]);
-			real_t distance_squared = distance * distance;
-			if (distance_squared < closest_point_distance_squared) {
-				closest_point_distance_squared = distance_squared;
-				result.point = p_point - plane_normalized * distance;
-				result.normal = plane_normal;
-				result.owner = polygon.owner->get_self();
-
-				if (Math::is_zero_approx(distance)) {
-					break;
-				}
-			}
-		}
-		else {
-			real_t distance = closest_on_polygon.distance_squared_to(p_point);
-			if (distance < closest_point_distance_squared) {
-				closest_point_distance_squared = distance;
-				result.point = closest_on_polygon;
-				result.normal = plane_normal;
-				result.owner = polygon.owner->get_self();
-			}
-		}
-	}
-
-	return result;
-}
-
-RID NavMeshQueries3D::polygons_get_closest_point_owner(
-	const LocalVector<Nav3D::Polygon>& p_polygons, const Vector3& p_point)
-{
-	Nav3D::ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
-	return cp.owner;
-}
-
-void NavMeshQueries3D::_query_task_clip_path(NavMeshPathQueryTask3D& p_query_task,
-	const Nav3D::NavigationPoly* from_poly, const Vector3& p_to_point, const Nav3D::NavigationPoly* p_to_poly)
-{
-	Vector3 from = p_query_task.path_points[p_query_task.path_points.size() - 1];
-	const LocalVector<Nav3D::NavigationPoly>& p_navigation_polys =
-		p_query_task.path_query_slot->path_corridor;
-	const Vector3 p_map_up = p_query_task.map_up;
-
-	if (from.is_equal_approx(p_to_point)) {
-		return;
-	}
-
-	Plane cut_plane;
-	cut_plane.normal = (from - p_to_point).cross(p_map_up);
-	if (cut_plane.normal == Vector3()) {
-		return;
-	}
-	cut_plane.normal.normalize();
-	cut_plane.d = cut_plane.normal.dot(from);
-
-	while (from_poly != p_to_poly) {
-		Vector3 pathway_start = from_poly->back_navigation_edge_pathway_start;
-		Vector3 pathway_end = from_poly->back_navigation_edge_pathway_end;
-
-		ERR_FAIL_COND(from_poly->back_navigation_poly_id == -1);
-		from_poly = &p_navigation_polys[from_poly->back_navigation_poly_id];
-
-		if (!pathway_start.is_equal_approx(pathway_end)) {
-			Vector3 inters;
-			if (cut_plane.intersects_segment(pathway_start, pathway_end, &inters)) {
-				if (!inters.is_equal_approx(p_to_point) &&
-					!inters.is_equal_approx(
-						p_query_task.path_points[p_query_task.path_points.size() - 1])) {
-					_query_task_push_back_point_with_metadata(
-						p_query_task, inters, from_poly->poly);
-				}
-			}
-		}
-	}
-}
-
-bool NavMeshQueries3D::_query_task_is_connection_owner_usable(
-	const NavMeshPathQueryTask3D& p_query_task, const NavIteration3D* p_owner)
-{
-	ERR_FAIL_NULL_V(p_owner, false);
-
-	bool owner_usable = true;
-
-	if (!p_owner->get_enabled()) {
-		owner_usable = false;
-		return owner_usable;
-	}
-
-	if ((p_query_task.navigation_layers & p_owner->get_navigation_layers()) == 0) {
-		// Not usable. No matching bit between task filter bitmask and owner bitmask.
-		owner_usable = false;
-		return owner_usable;
-	}
-
-	if (p_query_task.exclude_regions || p_query_task.include_regions) {
-		switch (p_owner->get_type()) {
-		case NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_REGION: {
-			if (p_query_task.exclude_regions &&
-				p_query_task.excluded_regions.has(p_owner->get_self())) {
-				// Not usable. Exclude region filter is active and this region is excluded.
-				owner_usable = false;
-			}
-			else if (p_query_task.include_regions &&
-					   !p_query_task.included_regions.has(p_owner->get_self())) {
-				// Not usable. Include region filter is active and this region is not included.
-				owner_usable = false;
-			}
-		} break;
-		case NavigationEnums3D::PathSegmentType::PATH_SEGMENT_TYPE_LINK: {
-			const LocalVector<Nav3D::Polygon>& link_polygons = p_owner->get_navmesh_polygons();
-			if (link_polygons.size() != 2) {
-				// Not usable. Whatever this is, it is not a valid connected link.
-				owner_usable = false;
-			}
-			else {
-				const RID link_start_region = link_polygons[0].owner->get_self();
-				const RID link_end_region = link_polygons[1].owner->get_self();
-				if (p_query_task.exclude_regions &&
-					(p_query_task.excluded_regions.has(link_start_region) ||
-						p_query_task.excluded_regions.has(link_end_region))) {
-					// Not usable. Exclude region filter is active and at least one region of the
-					// link is excluded.
-					owner_usable = false;
-				}
-				if (p_query_task.include_regions &&
-					(!p_query_task.included_regions.has(link_start_region) ||
-						!p_query_task.excluded_regions.has(link_end_region))) {
-					// Not usable. Include region filter is active and not both regions of the links
-					// are included.
-					owner_usable = false;
-				}
-			}
-		} break;
-		}
-	}
-
-	return owner_usable;
-}
-
-LocalVector<uint32_t> NavMeshQueries3D::get_simplified_path_indices(
-	const LocalVector<Vector3>& p_path, real_t p_epsilon)
-{
-	p_epsilon = MAX(0.0, p_epsilon);
-	real_t squared_epsilon = p_epsilon * p_epsilon;
-
-	LocalVector<uint32_t> simplified_path_indices;
-	simplified_path_indices.reserve(p_path.size());
-	simplified_path_indices.push_back(0);
-	simplify_path_segment(0, p_path.size() - 1, p_path, squared_epsilon, simplified_path_indices);
-	simplified_path_indices.push_back(p_path.size() - 1);
-
-	return simplified_path_indices;
-}
-
-void NavMeshQueries3D::simplify_path_segment(int p_start_inx, int p_end_inx,
-	const LocalVector<Vector3>& p_points, real_t p_epsilon,
-	LocalVector<uint32_t>& r_simplified_path_indices)
-{
-	const Vector3 path_segment_a = p_points[p_start_inx];
-	const Vector3 path_segment_b = p_points[p_end_inx];
-
-	real_t point_max_distance = 0.0;
-	int point_max_index = 0;
-
-	for (int i = p_start_inx; i < p_end_inx; i++) {
-		const Vector3& checked_point = p_points[i];
-
-		const Vector3 closest_point =
-			Geometry3D::get_closest_point_to_segment(checked_point, path_segment_a, path_segment_b);
-		real_t distance_squared = closest_point.distance_squared_to(checked_point);
-
-		if (distance_squared > point_max_distance) {
-			point_max_index = i;
-			point_max_distance = distance_squared;
-		}
-	}
-
-	if (point_max_distance > p_epsilon) {
-		simplify_path_segment(
-			p_start_inx, point_max_index, p_points, p_epsilon, r_simplified_path_indices);
-		r_simplified_path_indices.push_back(point_max_index);
-		simplify_path_segment(
-			point_max_index, p_end_inx, p_points, p_epsilon, r_simplified_path_indices);
-	}
-}
-
-void NavMeshQueries3D::_query_task_push_back_point_with_metadata(
-	NavMeshPathQueryTask3D& p_query_task, const Vector3& p_point,
-	const Nav3D::Polygon* p_point_polygon)
-{
-}
-
-void NavMeshQueries3D::query_task_map_iteration_get_path(
-	NavMeshQueries3D::NavMeshPathQueryTask3D& p_task, const NavMapIteration3D& p_map_iteration)
-{
-}
-
-#undef THREE_POINTS_CROSS_PRODUCT
 
 Mutex NavMeshGenerator3D::baking_navmesh_mutex;
 Mutex NavMeshGenerator3D::generator_task_mutex;
@@ -165796,41 +158541,7 @@ void initialize_navigation_3d_module(ModuleInitializationLevel p_level)
 }
 #endif // NAVIGATION_3D_DISABLED
 
-// === Merged from servers/rendering/renderer.cpp ===
-/*  renderer.cpp                                                          */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 RID Renderer::get_test_texture()
@@ -168687,58 +161398,24 @@ void Renderer::draw(bool p_swap_buffers, double frame_step)
 	RendererCompositor::end_frame(p_swap_buffers);
 }
 
-// ============================================================================
 // Merged from servers/rendering/dummy/rasterizer_dummy.cpp
-// ============================================================================
 
-#include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "servers/display/display_server.h"
-
-/* LightStorage */
-
-void RendererDummy::LightStorage::initialize()
+void RasterizerDummy::_ensure_data()
 {
 	if (!data) {
 		data = memnew(Data);
 	}
-}
-
-void RendererDummy::LightStorage::finalize()
-{
-	if (data) {
-		memdelete(data);
-		data = nullptr;
+	if (!data->dummy_compiler) {
+		data->dummy_compiler = memnew(ShaderCompiler);
+		ShaderCompiler::DefaultIdentifierActions actions;
+		data->dummy_compiler->initialize(actions);
 	}
 }
 
-bool RendererDummy::LightStorage::free(RID p_rid)
-{
-	if (owns_lightmap(p_rid)) {
-		lightmap_free(p_rid);
-		return true;
-	}
-	else if (owns_lightmap_instance(p_rid)) {
-		lightmap_instance_free(p_rid);
-		return true;
-	}
+RID RasterizerDummy::lightmap_allocate() { return _get_data()->lightmap_owner.allocate_rid(); }
+void RasterizerDummy::lightmap_initialize(RID p_lightmap) { _get_data()->lightmap_owner.initialize_rid(p_lightmap, Lightmap()); }
 
-	return false;
-}
-
-RID RendererDummy::LightStorage::lightmap_allocate()
-{
-	return _get_data()->lightmap_owner.allocate_rid();
-}
-
-void RendererDummy::LightStorage::lightmap_initialize(RID p_lightmap)
-{
-	_get_data()->lightmap_owner.initialize_rid(p_lightmap, Lightmap());
-}
-
-void RendererDummy::LightStorage::lightmap_free(RID p_rid)
+void RasterizerDummy::lightmap_free(RID p_rid)
 {
 	if (!data) {
 		return;
@@ -168747,14 +161424,14 @@ void RendererDummy::LightStorage::lightmap_free(RID p_rid)
 	data->lightmap_owner.free(p_rid);
 }
 
-RID RendererDummy::LightStorage::lightmap_instance_create(RID p_lightmap)
+RID RasterizerDummy::lightmap_instance_create(RID p_lightmap)
 {
 	LightmapInstance li;
 	li.lightmap = p_lightmap;
 	return _get_data()->lightmap_instance_owner.make_rid(li);
 }
 
-void RendererDummy::LightStorage::lightmap_instance_free(RID p_lightmap)
+void RasterizerDummy::lightmap_instance_free(RID p_lightmap)
 {
 	if (!data) {
 		return;
@@ -168762,19 +161439,15 @@ void RendererDummy::LightStorage::lightmap_instance_free(RID p_lightmap)
 	data->lightmap_instance_owner.free(p_lightmap);
 }
 
-/* MaterialStorage */
-
-void RendererDummy::MaterialStorage::global_shader_parameter_remove(const String& p_name)
+void RasterizerDummy::global_shader_parameter_remove(const String& p_name)
 {
 	Data* d = _get_data();
-	if (!d->global_shader_variables.has(p_name)) {
-		return;
+	if (d->global_shader_variables.has(p_name)) {
+		d->global_shader_variables.erase(p_name);
 	}
-
-	d->global_shader_variables.erase(p_name);
 }
 
-Vector<String> RendererDummy::MaterialStorage::global_shader_parameter_get_list()
+Vector<String> RasterizerDummy::global_shader_parameter_get_list()
 {
 	Data* d = _get_data();
 	Vector<String> names;
@@ -168785,28 +161458,20 @@ Vector<String> RendererDummy::MaterialStorage::global_shader_parameter_get_list(
 	return names;
 }
 
-RID RendererDummy::MaterialStorage::shader_allocate()
-{
-	return _get_data()->shader_owner.allocate_rid();
-}
+RID RasterizerDummy::shader_allocate() { return _get_data()->shader_owner.allocate_rid(); }
+void RasterizerDummy::shader_initialize(RID p_rid, bool p_embedded) { _get_data()->shader_owner.initialize_rid(p_rid, DummyShader()); }
 
-void RendererDummy::MaterialStorage::shader_initialize(RID p_rid, bool p_embedded)
-{
-	_get_data()->shader_owner.initialize_rid(p_rid, DummyShader());
-}
-
-void RendererDummy::MaterialStorage::shader_free(RID p_rid)
+void RasterizerDummy::shader_free(RID p_rid)
 {
 	if (!data) {
 		return;
 	}
 	DummyShader* shader = data->shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
-
 	data->shader_owner.free(p_rid);
 }
 
-void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String& p_code)
+void RasterizerDummy::shader_set_code(RID p_shader, const String& p_code)
 {
 	Data* d = _get_data();
 	DummyShader* shader = d->shader_owner.get_or_null(p_shader);
@@ -168816,7 +161481,6 @@ void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String&
 	}
 
 	String mode_string = ShaderLanguage::get_shader_type(p_code);
-
 	RSE::ShaderMode new_mode;
 	if (mode_string == "canvas_item") {
 		new_mode = RSE::SHADER_CANVAS_ITEM;
@@ -168837,153 +161501,108 @@ void RendererDummy::MaterialStorage::shader_set_code(RID p_shader, const String&
 		new_mode = RSE::SHADER_TEXTURE_BLIT;
 	}
 	else {
-		new_mode = RSE::SHADER_MAX;
 		ERR_FAIL_MSG("Shader type " + mode_string + " not supported in Dummy renderer.");
 	}
 	ShaderCompiler::IdentifierActions actions;
 	actions.uniforms = &shader->uniforms;
 	ShaderCompiler::GeneratedCode gen_code;
-
 	Error err = d->dummy_compiler->compile(new_mode, p_code, &actions, "", gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 }
 
-RID RendererDummy::MaterialStorage::material_allocate()
-{
-	return _get_data()->material_owner.allocate_rid();
-}
+RID RasterizerDummy::material_allocate() { return _get_data()->material_owner.allocate_rid(); }
+void RasterizerDummy::material_initialize(RID p_rid) { _get_data()->material_owner.initialize_rid(p_rid, DummyMaterial()); }
 
-void RendererDummy::MaterialStorage::material_initialize(RID p_rid)
-{
-	_get_data()->material_owner.initialize_rid(p_rid, DummyMaterial());
-}
-
-void RendererDummy::MaterialStorage::material_free(RID p_rid)
+void RasterizerDummy::material_free(RID p_rid)
 {
 	if (!data) {
 		return;
 	}
 	DummyMaterial* material = data->material_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(material);
-
 	data->material_owner.free(p_rid);
 }
 
-void RendererDummy::MaterialStorage::material_set_shader(RID p_material, RID p_shader)
+void RasterizerDummy::material_set_shader(RID p_material, RID p_shader)
 {
 	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
-
 	material->shader = p_shader;
 }
 
-void RendererDummy::MaterialStorage::material_set_next_pass(RID p_material, RID p_next_material)
+void RasterizerDummy::material_set_next_pass(RID p_material, RID p_next_material)
 {
 	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
-
 	material->next_pass = p_next_material;
 }
 
-RSE::GlobalShaderParameterType RendererDummy::MaterialStorage::global_shader_parameter_get_type(
-	const String& p_name)
+RSE::GlobalShaderParameterType RasterizerDummy::global_shader_parameter_get_type(const String& p_name) { return RSE::GLOBAL_VAR_TYPE_MAX; }
+void RasterizerDummy::global_shader_parameters_load_settings(bool p_load_uniforms) {}
+void RasterizerDummy::material_get_instance_shader_parameters(RID p_material, List<InstanceShaderParam>* r_parameters) {}
+
+RSE::InstanceType RasterizerDummy::get_base_type(RID p_rid)
 {
-	return RSE::GLOBAL_VAR_TYPE_MAX;
-}
-
-void RendererDummy::MaterialStorage::global_shader_parameters_load_settings(bool p_load_uniforms) {}
-
-void RendererDummy::MaterialStorage::material_get_instance_shader_parameters(
-	RID p_material, List<InstanceShaderParam>* r_parameters)
-{
-}
-
-void RendererDummy::MaterialStorage::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-	if (!data->dummy_compiler) {
-		data->dummy_compiler = memnew(ShaderCompiler);
-		ShaderCompiler::DefaultIdentifierActions actions;
-		data->dummy_compiler->initialize(actions);
-	}
-}
-
-void RendererDummy::MaterialStorage::finalize()
-{
-	if (!data) {
-		return;
-	}
-	if (data->dummy_compiler) {
-		memdelete(data->dummy_compiler);
-		data->dummy_compiler = nullptr;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-/* Utilities */
-
-RSE::InstanceType RendererDummy::Utilities::get_base_type(RID p_rid)
-{
-	if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {
+	if (owns_mesh(p_rid)) {
 		return RSE::INSTANCE_MESH;
 	}
-	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
+	else if (owns_multimesh(p_rid)) {
 		return RSE::INSTANCE_MULTIMESH;
 	}
-	else if (RendererDummy::LightStorage::owns_lightmap(p_rid)) {
+	else if (owns_lightmap(p_rid)) {
 		return RSE::INSTANCE_LIGHTMAP;
 	}
 	return RSE::INSTANCE_NONE;
 }
 
-bool RendererDummy::Utilities::free(RID p_rid)
+bool RasterizerDummy::free(RID p_rid)
 {
-	if (RendererDummy::LightStorage::free(p_rid)) {
+	if (owns_lightmap(p_rid)) {
+		lightmap_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::TextureStorage::owns_texture(p_rid)) {
-		RendererDummy::TextureStorage::texture_free(p_rid);
+	else if (owns_lightmap_instance(p_rid)) {
+		lightmap_instance_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::TextureStorage::owns_canvas_texture(p_rid)) {
-		RendererDummy::TextureStorage::canvas_texture_free(p_rid);
+	else if (owns_texture(p_rid)) {
+		texture_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::TextureStorage::owns_render_target(p_rid)) {
-		RendererDummy::TextureStorage::render_target_free(p_rid);
+	else if (owns_canvas_texture(p_rid)) {
+		canvas_texture_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MeshStorage::owns_mesh(p_rid)) {
-		RendererDummy::MeshStorage::mesh_free(p_rid);
+	else if (owns_render_target(p_rid)) {
+		render_target_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MeshStorage::owns_multimesh(p_rid)) {
-		RendererDummy::MeshStorage::multimesh_free(p_rid);
+	else if (owns_mesh(p_rid)) {
+		mesh_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MaterialStorage::owns_shader(p_rid)) {
-		RendererDummy::MaterialStorage::shader_free(p_rid);
+	else if (owns_multimesh(p_rid)) {
+		multimesh_free(p_rid);
 		return true;
 	}
-	else if (RendererDummy::MaterialStorage::owns_material(p_rid)) {
-		RendererDummy::MaterialStorage::material_free(p_rid);
+	else if (owns_shader(p_rid)) {
+		shader_free(p_rid);
+		return true;
+	}
+	else if (owns_material(p_rid)) {
+		material_free(p_rid);
 		return true;
 	}
 	return false;
 }
 
-void RendererDummy::Utilities::base_update_dependency(RID p_base, DependencyTracker* p_instance)
+void RasterizerDummy::base_update_dependency(RID p_base, DependencyTracker* p_instance)
 {
-	if (RendererDummy::MeshStorage::owns_mesh(p_base)) {
-		DummyMesh* mesh = RendererDummy::MeshStorage::get_mesh(p_base);
+	if (owns_mesh(p_base)) {
+		DummyMesh* mesh = get_mesh(p_base);
 		p_instance->update_dependency(&mesh->dependency);
 	}
 }
-
-/* RasterizerSceneDummy */
 
 bool RasterizerSceneDummy::free(RID p_rid)
 {
@@ -169003,25 +161622,12 @@ bool RasterizerSceneDummy::free(RID p_rid)
 		RendererCameraAttributes::camera_attributes_free(p_rid);
 		return true;
 	}
-	else {
-		return false;
-	}
+	return false;
 }
-
-/* RasterizerDummy */
 
 void RasterizerDummy::initialize()
 {
-	RendererDummy::Utilities::initialize();
-	RendererDummy::TextureStorage::initialize();
-	RendererDummy::MaterialStorage::initialize();
-	RendererDummy::MeshStorage::initialize();
-	RendererDummy::LightStorage::initialize();
-	RendererDummy::ParticlesStorage::initialize();
-	RendererDummy::GI::initialize();
-	RendererDummy::Fog::initialize();
-	RasterizerCanvasDummy::initialize();
-
+	_ensure_data();
 	if (!scene) {
 		scene = memnew(RasterizerSceneDummy);
 	}
@@ -169060,16 +161666,14 @@ void RasterizerDummy::finalize()
 		memdelete(scene);
 		scene = nullptr;
 	}
-
-	RasterizerCanvasDummy::finalize();
-	RendererDummy::Fog::finalize();
-	RendererDummy::GI::finalize();
-	RendererDummy::ParticlesStorage::finalize();
-	RendererDummy::LightStorage::finalize();
-	RendererDummy::MeshStorage::finalize();
-	RendererDummy::MaterialStorage::finalize();
-	RendererDummy::TextureStorage::finalize();
-	RendererDummy::Utilities::finalize();
+	if (data) {
+		if (data->dummy_compiler) {
+			memdelete(data->dummy_compiler);
+			data->dummy_compiler = nullptr;
+		}
+		memdelete(data);
+		data = nullptr;
+	}
 }
 
 void RasterizerDummy::make_current()
@@ -169078,96 +161682,60 @@ void RasterizerDummy::make_current()
 	RendererCompositor::bind_compositor<RasterizerDummy>();
 }
 
-void RasterizerDummy::bind_texture_storage()
-{
-	RendererTextureStorage::bind<RendererDummy::TextureStorage>();
-}
-
 void RasterizerDummy::bind_material_storage()
 {
-	RendererMaterialStorage::bind<RendererDummy::MaterialStorage>();
+	RendererMaterialStorage::bind<RasterizerDummy>();
 }
 
 void RasterizerDummy::bind_canvas()
 {
-	RendererCanvasRender::bind<RasterizerCanvasDummy>();
-	RendererCanvasRender::initialize = &RasterizerCanvasDummy::initialize;
-	RendererCanvasRender::finalize = &RasterizerCanvasDummy::finalize;
-	RendererCanvasRender::set_time = &RasterizerCanvasDummy::set_time;
-	RendererCanvasRender::update = &RasterizerCanvasDummy::update;
-	RendererCanvasRender::free = &RasterizerCanvasDummy::free;
-}
-
-void RasterizerDummy::bind_particles_storage()
-{
-	RendererParticlesStorage::bind<RendererDummy::ParticlesStorage>();
+	RendererCanvasRender::bind<RasterizerDummy>();
+	RendererCanvasRender::initialize = &RasterizerDummy::_noop;
+	RendererCanvasRender::finalize = &RasterizerDummy::_noop;
+	RendererCanvasRender::set_time = &RasterizerDummy::set_time;
+	RendererCanvasRender::update = &RasterizerDummy::update;
+	RendererCanvasRender::free = &RasterizerDummy::_noop_free;
 }
 
 void RasterizerDummy::bind_utilities()
 {
-	RendererUtilities::visibility_notifier_allocate =
-		&RendererDummy::Utilities::visibility_notifier_allocate;
-	RendererUtilities::visibility_notifier_initialize =
-		&RendererDummy::Utilities::visibility_notifier_initialize;
-	RendererUtilities::visibility_notifier_free =
-		&RendererDummy::Utilities::visibility_notifier_free;
-	RendererUtilities::visibility_notifier_set_aabb =
-		&RendererDummy::Utilities::visibility_notifier_set_aabb;
-	RendererUtilities::visibility_notifier_get_aabb =
-		&RendererDummy::Utilities::visibility_notifier_get_aabb;
-	RendererUtilities::visibility_notifier_call =
-		&RendererDummy::Utilities::visibility_notifier_call;
+	RendererUtilities::visibility_notifier_allocate = &RasterizerDummy::visibility_notifier_allocate;
+	RendererUtilities::visibility_notifier_initialize = &RasterizerDummy::visibility_notifier_initialize;
+	RendererUtilities::visibility_notifier_free = &RasterizerDummy::visibility_notifier_free;
+	RendererUtilities::visibility_notifier_set_aabb = &RasterizerDummy::visibility_notifier_set_aabb;
+	RendererUtilities::visibility_notifier_get_aabb = &RasterizerDummy::visibility_notifier_get_aabb;
+	RendererUtilities::visibility_notifier_call = &RasterizerDummy::visibility_notifier_call;
 
-	RendererUtilities::free = &RendererDummy::Utilities::free;
-	RendererUtilities::get_base_type = &RendererDummy::Utilities::get_base_type;
-	RendererUtilities::base_update_dependency = &RendererDummy::Utilities::base_update_dependency;
+	RendererUtilities::free = &RasterizerDummy::free;
+	RendererUtilities::get_base_type = &RasterizerDummy::get_base_type;
+	RendererUtilities::base_update_dependency = &RasterizerDummy::base_update_dependency;
 
-	RendererUtilities::capture_timestamps_begin =
-		&RendererDummy::Utilities::capture_timestamps_begin;
-	RendererUtilities::capture_timestamp = &RendererDummy::Utilities::capture_timestamp;
-	RendererUtilities::get_captured_timestamps_count =
-		&RendererDummy::Utilities::get_captured_timestamps_count;
-	RendererUtilities::get_captured_timestamps_frame =
-		&RendererDummy::Utilities::get_captured_timestamps_frame;
-	RendererUtilities::get_captured_timestamp_gpu_time =
-		&RendererDummy::Utilities::get_captured_timestamp_gpu_time;
-	RendererUtilities::get_captured_timestamp_cpu_time =
-		&RendererDummy::Utilities::get_captured_timestamp_cpu_time;
-	RendererUtilities::get_captured_timestamp_name =
-		&RendererDummy::Utilities::get_captured_timestamp_name;
+	RendererUtilities::capture_timestamps_begin = &RasterizerDummy::capture_timestamps_begin;
+	RendererUtilities::capture_timestamp = &RasterizerDummy::capture_timestamp;
+	RendererUtilities::get_captured_timestamps_count = &RasterizerDummy::get_captured_timestamps_count;
+	RendererUtilities::get_captured_timestamps_frame = &RasterizerDummy::get_captured_timestamps_frame;
+	RendererUtilities::get_captured_timestamp_gpu_time = &RasterizerDummy::get_captured_timestamp_gpu_time;
+	RendererUtilities::get_captured_timestamp_cpu_time = &RasterizerDummy::get_captured_timestamp_cpu_time;
+	RendererUtilities::get_captured_timestamp_name = &RasterizerDummy::get_captured_timestamp_name;
 
-	RendererUtilities::update_dirty_resources = &RendererDummy::Utilities::update_dirty_resources;
-	RendererUtilities::set_debug_generate_wireframes =
-		&RendererDummy::Utilities::set_debug_generate_wireframes;
-	RendererUtilities::has_os_feature = &RendererDummy::Utilities::has_os_feature;
-	RendererUtilities::update_memory_info = &RendererDummy::Utilities::update_memory_info;
+	RendererUtilities::update_dirty_resources = &RasterizerDummy::update_dirty_resources;
+	RendererUtilities::set_debug_generate_wireframes = &RasterizerDummy::set_debug_generate_wireframes;
+	RendererUtilities::has_os_feature = &RasterizerDummy::has_os_feature;
+	RendererUtilities::update_memory_info = &RasterizerDummy::update_memory_info;
 
-	RendererUtilities::get_rendering_info = &RendererDummy::Utilities::get_rendering_info;
-	RendererUtilities::get_video_adapter_name = &RendererDummy::Utilities::get_video_adapter_name;
-	RendererUtilities::get_video_adapter_vendor =
-		&RendererDummy::Utilities::get_video_adapter_vendor;
-	RendererUtilities::get_video_adapter_type = &RendererDummy::Utilities::get_video_adapter_type;
-	RendererUtilities::get_video_adapter_api_version =
-		&RendererDummy::Utilities::get_video_adapter_api_version;
+	RendererUtilities::get_rendering_info = &RasterizerDummy::get_rendering_info;
+	RendererUtilities::get_video_adapter_name = &RasterizerDummy::get_video_adapter_name;
+	RendererUtilities::get_video_adapter_vendor = &RasterizerDummy::get_video_adapter_vendor;
+	RendererUtilities::get_video_adapter_type = &RasterizerDummy::get_video_adapter_type;
+	RendererUtilities::get_video_adapter_api_version = &RasterizerDummy::get_video_adapter_api_version;
 
-	RendererUtilities::get_maximum_viewport_size =
-		&RendererDummy::Utilities::get_maximum_viewport_size;
-	RendererUtilities::get_maximum_shader_varyings =
-		&RendererDummy::Utilities::get_maximum_shader_varyings;
-	RendererUtilities::get_maximum_uniform_buffer_size =
-		&RendererDummy::Utilities::get_maximum_uniform_buffer_size;
+	RendererUtilities::get_maximum_viewport_size = &RasterizerDummy::get_maximum_viewport_size;
+	RendererUtilities::get_maximum_shader_varyings = &RasterizerDummy::get_maximum_shader_varyings;
+	RendererUtilities::get_maximum_uniform_buffer_size = &RasterizerDummy::get_maximum_uniform_buffer_size;
 }
 
 RendererSceneRender* RasterizerDummy::get_scene() { return scene; }
 
-RendererDummy::Utilities* RasterizerDummy::get_utilities() { return utilities; }
-
-// ============================================================================
-// Merged from servers/rendering/renderer_canvas_cull.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 // Use the same antialiasing feather size as flat StyleBox's default
@@ -172045,17 +164613,7 @@ z_last_list = nullptr;
 
 void RendererCanvasCull::finalize() {}
 
-
-
-// ============================================================================
-// Merged from servers/rendering/renderer_viewport.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifndef XR_DISABLED
@@ -173829,12 +166387,7 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 	}
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_scene_render.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 
 #if defined(RD_ENABLED)
 #include "servers/display/display_server.h"
@@ -173847,13 +166400,9 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 #include "servers/display/display_server.h"
 
 #ifndef XR_DISABLED
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #endif // XR_DISABLED
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/renderer_scene_render.cpp ---
 
 void RendererSceneRender::CameraData::set_camera(const Transform3D p_transform,
 	const Projection p_projection, bool p_is_orthogonal, bool p_vaspect,
@@ -174925,8 +167474,6 @@ void RendererSceneRender::material_set_use_debanding(bool p_enable) {}
 
 void RendererSceneRender::update() {}
 
-// --- Merged from servers/rendering/renderer_compositor.cpp ---
-
 Error RendererCompositor::create()
 {
 	String driver_name = "";
@@ -175022,8 +167569,6 @@ void RendererCompositorRD::bind_utilities()
 	RendererUtilities::get_maximum_uniform_buffer_size =
 		&RendererRD::Utilities::get_maximum_uniform_buffer_size;
 }
-
-// --- Merged from servers/rendering/renderer_canvas_render.cpp ---
 
 const Rect2& RCR::Item::get_rect() const
 {
@@ -175134,7 +167679,6 @@ RCR::Item::CommandMesh::~CommandMesh()
 	}
 }
 
-
 void Polygon::create(const Vector<int>& p_indices, const Vector<Point2>& p_points,
 	const Vector<Color>& p_colors, const Vector<Point2>& p_uvs,
 	const Vector<int>& p_bones,
@@ -175161,8 +167705,6 @@ Polygon::~Polygon()
 		RendererCanvasRender::free_polygon(polygon_id);
 	}
 }
-
-// --- Merged from servers/rendering/renderer_geometry_instance.cpp ---
 
 void RenderGeometryInstance::set_skeleton(RID p_skeleton) {
 	if (!data) {
@@ -175302,27 +167844,17 @@ AABB RenderGeometryInstance::get_aabb() {
 	return data ? data->aabb : AABB();
 }
 
-// ============================================================================
-// Merged from servers/rendering/storage/renderer_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_ENABLED
-#include "core/os/os.h"
 #endif
 #include "servers/display/display_server.h"
 
 #ifdef DEBUG_ENABLED
-#include "core/os/os.h"
 #endif
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/storage/camera_attributes_storage.cpp ---
 
 void RendererCameraAttributes::initialize()
 {
@@ -175523,8 +168055,6 @@ uint64_t RendererCameraAttributes::camera_attributes_get_auto_exposure_version(
 	return cam_attributes->auto_exposure_version;
 }
 
-// --- Merged from servers/rendering/storage/compositor_storage.cpp ---
-
 void RendererCompositorStorage::initialize()
 {
 	if (_initialized) {
@@ -175630,8 +168160,6 @@ bool RendererCompositorStorage::compositor_effect_get_flag(
 }
 
 void RendererCompositorStorage::compositor_effect_free(RID p_effect) {}
-
-// --- Merged from servers/rendering/storage/environment_storage.cpp ---
 
 // Storage
 
@@ -176551,8 +169079,6 @@ RID RendererEnvironmentStorage::environment_get_color_correction(RID p_env) {
 	return env->color_correction;
 }
 
-// --- Merged from servers/rendering/storage/mesh_storage.cpp ---
-
 void RendererMeshStorage::multimesh_allocate_data(RID p_multimesh, int p_instances,
 	RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data,
 	bool p_use_indirect)
@@ -177089,12 +169615,6 @@ void RendererMeshStorage::update_interpolation_frame(bool p_process)
 	}
 }
 
-// --- Merged from servers/rendering/storage/render_scene_buffers.cpp ---
-
-
-
-// --- Merged from servers/rendering/storage/utilities.cpp ---
-
 void Dependency::changed_notify(DependencyChangedNotification p_notification) {
 	for (const KeyValue<DependencyTracker *, uint32_t> &E : instances) {
 		if (E.key->changed_callback) {
@@ -177126,12 +169646,6 @@ Dependency::~Dependency() {
 #endif
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_scene_cull.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifndef XR_DISABLED
@@ -177140,19 +169654,13 @@ Dependency::~Dependency() {
 
 // #define DEBUG_CULL_TIME
 #ifdef DEBUG_CULL_TIME
-#include "core/os/os.h"
 #endif
 
-#include "core/io/ip.h"
-
 #ifdef LIGHT_CULLER_DEBUG_FLASH
-#include "core/os/os.h"
 #endif
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h"
-
-// --- Merged from servers/rendering/renderer_scene_cull.cpp ---
 
 /* HALTON SEQUENCE */
 
@@ -180642,8 +173150,6 @@ void RendererSceneCull::render_camera(const Ref<RenderSceneBuffers>& p_render_bu
 
 bool RendererSceneCull::free(RID p_rid) { return false; }
 
-// --- Merged from servers/rendering/instance_uniforms.cpp ---
-
 void InstanceUniforms::free(RID p_self)
 {
 	ERR_FAIL_COND(p_self.is_null());
@@ -180664,8 +173170,6 @@ void InstanceUniforms::_invalidate_items()
 		kv.value.index = -1;
 	}
 }
-
-// --- Merged from servers/rendering/rendering_light_culler.cpp ---
 
 #ifdef RENDERING_LIGHT_CULLER_DEBUG_STRINGS
 const char *RenderingLightCuller::Data::string_planes[] = {
@@ -181904,8 +174408,6 @@ void RenderingLightCuller::get_corners_of_planes(PlaneOrder p_plane_a, PlaneOrde
 
 #endif
 
-// --- Merged from servers/rendering/renderer_scene_occlusion_cull.cpp ---
-
 bool RendererSceneOcclusionCull::HZBuffer::occlusion_jitter_enabled = false;
 
 void RendererSceneOcclusionCull::HZBuffer::_clear_mips()
@@ -182084,39 +174586,6 @@ RendererSceneOcclusionCull::HZBuffer::~HZBuffer() {}
 
 #endif // MODULE_RAYCAST_ENABLED
 
-// === Merged from servers/rendering/renderer_rd/renderer_compositor_rd.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
@@ -182674,14 +175143,7 @@ RendererCompositorRD::BlitPipelines RendererCompositorRD::_get_blit_pipelines_fo
 	return pipelines;
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/rd_caches.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/memory.h"
-
-// --- Merged from servers/rendering/renderer_rd/framebuffer_cache_rd.cpp ---
 
 void FramebufferCacheRD::_invalidate(Cache* p_cache)
 {
@@ -182729,8 +175191,6 @@ void FramebufferCacheRD::finalize()
 	memdelete(data);
 	data = nullptr;
 }
-
-// --- Merged from servers/rendering/renderer_rd/pipeline_cache_rd.cpp ---
 
 RID PipelineCacheRD::_generate_version(RD::VertexFormatID p_vertex_format_id,
 	RD::FramebufferFormatID p_framebuffer_format_id, bool p_wireframe, uint32_t p_render_pass,
@@ -182840,8 +175300,6 @@ PipelineCacheRD::PipelineCacheRD()
 
 PipelineCacheRD::~PipelineCacheRD() { _clear(); }
 
-// --- Merged from servers/rendering/renderer_rd/uniform_set_cache_rd.cpp ---
-
 void UniformSetCacheRD::_invalidate(Cache* p_cache)
 {
 	if (!data) {
@@ -182889,16 +175347,8 @@ void UniformSetCacheRD::finalize()
 	data = nullptr;
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/renderer_canvas_render_rd.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 void RendererCanvasRenderRD::_update_transform_2d_to_mat4(
@@ -186270,18 +178720,8 @@ void RendererRD::CanvasShaderData::set_code(const String& p_code)
 	texture_uniforms = gen_code.texture_uniforms;
 }
 
-
-
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/environment/rd_environment.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/renderer_rd/environment/sky.cpp ---
 
 using namespace RendererRD;
 
@@ -187485,8 +179925,6 @@ void sky() {
 #undef RB_SCOPE_SKY
 #undef RB_HALF_TEXTURE
 #undef RB_QUARTER_TEXTURE
-
-// --- Merged from servers/rendering/renderer_rd/environment/gi.cpp ---
 
 using namespace RendererRD;
 
@@ -188872,10 +181310,7 @@ void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 	_initialized = true;
 }
 
-// --- Merged from servers/rendering/renderer_rd/environment/fog.cpp ---
-
 using namespace RendererRD;
-
 
 void Fog::initialize() {}
 
@@ -189292,12 +181727,8 @@ Vector3i Fog::_point_get_position_in_froxel_volume(const Vector3& p_point, float
 	return Vector3i(fog_position);
 }
 
-
-// --- Merged from servers/rendering/renderer_rd/effects/copy_effects.cpp ---
 #include <thirdparty/misc/cubemap_coeffs.h>
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -189320,90 +181751,90 @@ void CopyEffects::finalize()
 	}
 
 	for (int i = 0; i < BLUR_MODE_MAX; i++) {
-		data->blur_raster.pipelines[i].clear();
+		data->blur_raster_pipelines[i].clear();
 	}
-	if (data->blur_raster.shader_version.is_valid()) {
-		data->blur_raster.shader.version_free(data->blur_raster.shader_version);
+	if (data->blur_raster_shader_version.is_valid()) {
+		data->blur_raster_shader.version_free(data->blur_raster_shader_version);
 	}
-	if (data->blur_raster.glow_sampler.is_valid()) {
-		RD::free_rid(data->blur_raster.glow_sampler);
+	if (data->blur_raster_glow_sampler.is_valid()) {
+		RD::free_rid(data->blur_raster_glow_sampler);
 	}
 
 	for (int i = 0; i < COPY_MODE_MAX; i++) {
-		data->copy.pipelines[i].free();
+		data->copy_pipelines[i].free();
 	}
-	if (data->copy.shader_version.is_valid()) {
-		data->copy.shader.version_free(data->copy.shader_version);
+	if (data->copy_shader_version.is_valid()) {
+		data->copy_shader.version_free(data->copy_shader_version);
 	}
 
 	for (int i = 0; i < COPY_TO_FB_MAX; i++) {
-		data->copy_to_fb.pipelines[i].clear();
+		data->copy_to_fb_pipelines[i].clear();
 	}
-	if (data->copy_to_fb.shader_version.is_valid()) {
-		data->copy_to_fb.shader.version_free(data->copy_to_fb.shader_version);
-	}
-
-	data->cube_to_dp.pipeline.clear();
-	if (data->cube_to_dp.shader_version.is_valid()) {
-		data->cube_to_dp.shader.version_free(data->cube_to_dp.shader_version);
+	if (data->copy_to_fb_shader_version.is_valid()) {
+		data->copy_to_fb_shader.version_free(data->copy_to_fb_shader_version);
 	}
 
-	data->cube_to_octmap.pipeline.clear();
-	if (data->cube_to_octmap.shader_version.is_valid()) {
-		data->cube_to_octmap.shader.version_free(data->cube_to_octmap.shader_version);
+	data->cube_to_dp_pipeline.clear();
+	if (data->cube_to_dp_shader_version.is_valid()) {
+		data->cube_to_dp_shader.version_free(data->cube_to_dp_shader_version);
 	}
 
-	if (data->octmap_downsampler.shader_version.is_valid()) {
+	data->cube_to_octmap_pipeline.clear();
+	if (data->cube_to_octmap_shader_version.is_valid()) {
+		data->cube_to_octmap_shader.version_free(data->cube_to_octmap_shader_version);
+	}
+
+	if (data->octmap_downsampler_shader_version.is_valid()) {
 		if (data->raster_effects & RASTER_EFFECT_OCTMAP) {
-			data->octmap_downsampler.raster_pipeline.clear();
-			data->octmap_downsampler.raster_shader.version_free(
-				data->octmap_downsampler.shader_version);
+			data->octmap_downsampler_raster_pipeline.clear();
+			data->octmap_downsampler_raster_shader.version_free(
+				data->octmap_downsampler_shader_version);
 		}
 		else {
 			for (int i = 0; i < DOWNSAMPLER_MODE_COMPUTE_MAX; i++) {
-				data->octmap_downsampler.compute_pipelines[i].free();
+				data->octmap_downsampler_compute_pipelines[i].free();
 			}
-			data->octmap_downsampler.compute_shader.version_free(
-				data->octmap_downsampler.shader_version);
+			data->octmap_downsampler_compute_shader.version_free(
+				data->octmap_downsampler_shader_version);
 		}
 	}
 
-	if (data->filter.shader_version.is_valid()) {
+	if (data->filter_shader_version.is_valid()) {
 		if (data->raster_effects & RASTER_EFFECT_OCTMAP) {
 			for (int i = 0; i < FILTER_MODE_RASTER_MAX; i++) {
-				data->filter.raster_pipelines[i].clear();
+				data->filter_raster_pipelines[i].clear();
 			}
-			data->filter.raster_shader.version_free(data->filter.shader_version);
+			data->filter_raster_shader.version_free(data->filter_shader_version);
 		}
 		else {
 			for (int i = 0; i < FILTER_MODE_COMPUTE_MAX; i++) {
-				data->filter.compute_pipelines[i].free();
+				data->filter_compute_pipelines[i].free();
 			}
-			data->filter.compute_shader.version_free(data->filter.shader_version);
+			data->filter_compute_shader.version_free(data->filter_shader_version);
 		}
 	}
-	if (data->filter.coefficient_buffer.is_valid()) {
-		RD::free_rid(data->filter.coefficient_buffer);
+	if (data->filter_coefficient_buffer.is_valid()) {
+		RD::free_rid(data->filter_coefficient_buffer);
 	}
 
-	if (data->roughness.shader_version.is_valid()) {
+	if (data->roughness_shader_version.is_valid()) {
 		if (data->raster_effects & RASTER_EFFECT_OCTMAP) {
-			data->roughness.raster_pipeline.clear();
-			data->roughness.raster_shader.version_free(data->roughness.shader_version);
+			data->roughness_raster_pipeline.clear();
+			data->roughness_raster_shader.version_free(data->roughness_shader_version);
 		}
 		else {
 			for (int i = 0; i < ROUGHNESS_MODE_MAX; i++) {
-				data->roughness.compute_pipelines[i].free();
+				data->roughness_compute_pipelines[i].free();
 			}
-			data->roughness.compute_shader.version_free(data->roughness.shader_version);
+			data->roughness_compute_shader.version_free(data->roughness_shader_version);
 		}
 	}
 
 	for (int i = 0; i < SPECULAR_MERGE_MAX; i++) {
-		data->specular_merge.pipelines[i].clear();
+		data->specular_merge_pipelines[i].clear();
 	}
-	if (data->specular_merge.shader_version.is_valid()) {
-		data->specular_merge.shader.version_free(data->specular_merge.shader_version);
+	if (data->specular_merge_shader_version.is_valid()) {
+		data->specular_merge_shader.version_free(data->specular_merge_shader_version);
 	}
 
 	memdelete(data);
@@ -189569,10 +182000,10 @@ void CopyEffects::merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_b
 Resolve::~Resolve()
 {
 	if (prefer_raster_effects) {
-		resolve_raster.shader.version_free(resolve_raster.shader_version);
+		resolve_raster_shader.version_free(resolve_raster_shader_version);
 	}
 	else {
-		resolve.shader.version_free(resolve.shader_version);
+		resolve_shader.version_free(resolve_shader_version);
 	}
 }
 
@@ -189594,8 +182025,8 @@ Resolve::Resolve(bool p_prefer_raster_effects)
 		Vector<String> modes;
 		modes.push_back("\n");
 
-		resolve_raster.shader.initialize(modes);
-		resolve_raster.shader_version = resolve_raster.shader.version_create();
+		resolve_raster_shader.initialize(modes);
+		resolve_raster_shader_version = resolve_raster_shader.version_create();
 	}
 	else {
 		Vector<String> modes;
@@ -189603,14 +182034,10 @@ Resolve::Resolve(bool p_prefer_raster_effects)
 		modes.push_back("\n#define MODE_GI\n#define MODE_VOXEL_GI\n");
 		modes.push_back("\n#define MODE_DEPTH\n");
 
-		resolve.shader.initialize(modes);
-		resolve.shader_version = resolve.shader.version_create();
+		resolve_shader.initialize(modes);
+		resolve_shader_version = resolve_shader.version_create();
 	}
 }
-
-/* RoughnessLimiter */
-
-RoughnessLimiter::~RoughnessLimiter() { shader.version_free(shader_version); }
 
 /* SortEffects */
 
@@ -189629,13 +182056,7 @@ MotionVectorsStore::MotionVectorsStore()
 
 MotionVectorsStore::~MotionVectorsStore() { motion_shader.version_free(shader_version); }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/effects/post_effects.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
@@ -189651,14 +182072,14 @@ using namespace RendererRD;
 BokehDOF::~BokehDOF()
 {
 	for (int i = 0; i < BOKEH_MAX; i++) {
-		bokeh.compute_pipelines[i].free();
+		compute_pipelines[i].free();
 	}
 
 	if (prefer_raster_effects) {
-		bokeh.raster_shader.version_free(bokeh.shader_version);
+		raster_shader.version_free(shader_version);
 	}
 	else {
-		bokeh.compute_shader.version_free(bokeh.shader_version);
+		compute_shader.version_free(shader_version);
 	}
 }
 
@@ -189681,12 +182102,12 @@ BokehDOF::BokehDOF(bool p_prefer_raster_effects)
 	modes.push_back("\n#define MODE_COMPOSITE\n");
 
 	if (prefer_raster_effects) {
-		bokeh.raster_shader.initialize(modes);
-		bokeh.shader_version = bokeh.raster_shader.version_create();
+		raster_shader.initialize(modes);
+		shader_version = raster_shader.version_create();
 	}
 	else {
-		bokeh.compute_shader.initialize(modes);
-		bokeh.shader_version = bokeh.compute_shader.version_create();
+		compute_shader.initialize(modes);
+		shader_version = compute_shader.version_create();
 	}
 }
 
@@ -189695,10 +182116,10 @@ BokehDOF::BokehDOF(bool p_prefer_raster_effects)
 ToneMapper::~ToneMapper()
 {
 	if (using_mobile_version) {
-		tonemap_mobile.shader.version_free(tonemap_mobile.shader_version);
+		tonemap_mobile_shader.version_free(tonemap_mobile_shader_version);
 	}
 	else {
-		tonemap.shader.version_free(tonemap.shader_version);
+		tonemap_shader.version_free(tonemap_shader_version);
 	}
 }
 
@@ -189727,8 +182148,8 @@ ToneMapper::ToneMapper(bool p_use_mobile_version)
 		modes.push_back("\n#define SUBPASS\n#define USE_MULTIVIEW\n");
 		modes.push_back("\n#define SUBPASS\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
 
-		tonemap_mobile.shader.initialize(modes);
-		tonemap_mobile.shader_version = tonemap_mobile.shader.version_create();
+		tonemap_mobile_shader.initialize(modes);
+		tonemap_mobile_shader_version = tonemap_mobile_shader.version_create();
 	}
 	else {
 		Vector<String> modes;
@@ -189742,8 +182163,8 @@ ToneMapper::ToneMapper(bool p_use_mobile_version)
 		modes.push_back(
 			"\n#define GLOW_BICUBIC_FILTER\n#define USE_1D_LUT\n#define USE_MULTIVIEW\n");
 
-		tonemap.shader.initialize(modes);
-		tonemap.shader_version = tonemap.shader.version_create();
+		tonemap_shader.initialize(modes);
+		tonemap_shader_version = tonemap_shader.version_create();
 	}
 }
 
@@ -189752,10 +182173,10 @@ ToneMapper::ToneMapper(bool p_use_mobile_version)
 Luminance::~Luminance()
 {
 	if (prefer_raster_effects) {
-		luminance_reduce_raster.shader.version_free(luminance_reduce_raster.shader_version);
+		luminance_reduce_raster_shader.version_free(luminance_reduce_raster_shader_version);
 	}
 	else {
-		luminance_reduce.shader.version_free(luminance_reduce.shader_version);
+		luminance_reduce_shader.version_free(luminance_reduce_shader_version);
 	}
 }
 
@@ -189859,8 +182280,8 @@ Luminance::Luminance(bool p_prefer_raster_effects)
 		modes.push_back("\n");
 		modes.push_back("\n#define WRITE_FINAL\n");
 
-		luminance_reduce_raster.shader.initialize(modes);
-		luminance_reduce_raster.shader_version = luminance_reduce_raster.shader.version_create();
+		luminance_reduce_raster_shader.initialize(modes);
+		luminance_reduce_raster_shader_version = luminance_reduce_raster_shader.version_create();
 	}
 	else {
 		Vector<String> modes;
@@ -189868,12 +182289,12 @@ Luminance::Luminance(bool p_prefer_raster_effects)
 		modes.push_back("\n");
 		modes.push_back("\n#define WRITE_FINAL\n");
 
-		luminance_reduce.shader.initialize(modes);
-		luminance_reduce.shader_version = luminance_reduce.shader.version_create();
+		luminance_reduce_shader.initialize(modes);
+		luminance_reduce_shader_version = luminance_reduce_shader.version_create();
 
 		for (int i = 0; i < LUMINANCE_REDUCE_MAX; i++) {
-			luminance_reduce.pipelines[i] = RD::compute_pipeline_create(
-				luminance_reduce.shader.version_get_shader(luminance_reduce.shader_version, i));
+			luminance_reduce_pipelines[i] = RD::compute_pipeline_create(
+				luminance_reduce_shader.version_get_shader(luminance_reduce_shader_version, i));
 		}
 	}
 }
@@ -189882,12 +182303,12 @@ Luminance::Luminance(bool p_prefer_raster_effects)
 
 SMAA::~SMAA()
 {
-	RD::free_rid(smaa.search_tex);
-	RD::free_rid(smaa.area_tex);
+	RD::free_rid(search_tex);
+	RD::free_rid(area_tex);
 
-	smaa.edge_shader.version_free(smaa.edge_shader_version);
-	smaa.weight_shader.version_free(smaa.weight_shader_version);
-	smaa.blend_shader.version_free(smaa.blend_shader_version);
+	edge_shader.version_free(edge_shader_version);
+	weight_shader.version_free(weight_shader_version);
+	blend_shader.version_free(blend_shader_version);
 }
 
 void SMAA::allocate_render_targets(Ref<RenderSceneBuffersRD> p_render_buffers)
@@ -189908,7 +182329,7 @@ void SMAA::allocate_render_targets(Ref<RenderSceneBuffersRD> p_render_buffers)
 	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_BLEND, RDC::DATA_FORMAT_R8G8B8A8_UNORM,
 		RDC::TEXTURE_USAGE_SAMPLING_BIT | RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT,
 		RDC::TEXTURE_SAMPLES_1, full_size, 1, 1, true, true);
-	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_STENCIL, smaa.stencil_format,
+	p_render_buffers->create_texture(RB_SCOPE_SMAA, RB_STENCIL, stencil_format,
 		RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, RDC::TEXTURE_SAMPLES_1, full_size, 1, 1,
 		true, true);
 }
@@ -189927,22 +182348,22 @@ SMAA::SMAA()
 	edge_modes.push_back("\n#define COLOR_EDGE_DETECTION\n");
 	edge_modes.push_back("\n#define LUMA_EDGE_DETECTION\n");
 
-	smaa.edge_shader.initialize(edge_modes);
-	smaa.edge_shader_version = smaa.edge_shader.version_create();
+	edge_shader.initialize(edge_modes);
+	edge_shader_version = edge_shader.version_create();
 
 	Vector<String> empty_modes;
 	empty_modes.push_back("\n");
 
-	smaa.weight_shader.initialize(empty_modes);
-	smaa.weight_shader_version = smaa.weight_shader.version_create();
+	weight_shader.initialize(empty_modes);
+	weight_shader_version = weight_shader.version_create();
 
 	Vector<String> blend_modes;
 	blend_modes.push_back("\n");
 	blend_modes.push_back("\n#define USE_8_BIT_DEBANDING\n");
 	blend_modes.push_back("\n#define USE_10_BIT_DEBANDING\n");
 
-	smaa.blend_shader.initialize(blend_modes);
-	smaa.blend_shader_version = smaa.blend_shader.version_create();
+	blend_shader.initialize(blend_modes);
+	blend_shader_version = blend_shader.version_create();
 
 	// 2. Load precomputed search texture from embedded PNG
 	{
@@ -189962,7 +182383,7 @@ SMAA::SMAA()
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.search_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
+		search_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 
 	// 3. Load precomputed area texture from embedded PNG
@@ -189983,7 +182404,7 @@ SMAA::SMAA()
 		Vector<Vector<uint8_t>> data_slices;
 		data_slices.push_back(img->get_data());
 
-		smaa.area_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
+		area_tex = RD::texture_create(tf, RDD::TextureView(), data_slices);
 	}
 }
 
@@ -189991,9 +182412,9 @@ SMAA::SMAA()
 
 void DebugEffects::_create_frustum_arrays()
 {
-	if (frustum.vertex_buffer.is_null()) {
+	if (frustum_vertex_buffer.is_null()) {
 		// Create vertex buffer, but don't put data in it yet
-		frustum.vertex_buffer = RD::vertex_buffer_create(8 * sizeof(float) * 3, Vector<uint8_t>());
+		frustum_vertex_buffer = RD::vertex_buffer_create(8 * sizeof(float) * 3, Vector<uint8_t>());
 
 		Vector<RDC::VertexAttribute> attributes;
 		Vector<RID> buffers;
@@ -190004,13 +182425,13 @@ void DebugEffects::_create_frustum_arrays()
 		vd.format = RDC::DATA_FORMAT_R32G32B32_SFLOAT;
 
 		attributes.push_back(vd);
-		buffers.push_back(frustum.vertex_buffer);
+		buffers.push_back(frustum_vertex_buffer);
 
-		frustum.vertex_format = RD::vertex_format_create(attributes);
-		frustum.vertex_array = RD::vertex_array_create(8, frustum.vertex_format, buffers);
+		frustum_vertex_format = RD::vertex_format_create(attributes);
+		frustum_vertex_array = RD::vertex_array_create(8, frustum_vertex_format, buffers);
 	}
 
-	if (frustum.index_buffer.is_null()) {
+	if (frustum_index_buffer.is_null()) {
 		uint16_t indices[6 * 2 * 3] = {
 			// Far
 			0, 1, 2, // FLT, FLB, FRT
@@ -190043,12 +182464,12 @@ void DebugEffects::_create_frustum_arrays()
 				p16++;
 			}
 		}
-		frustum.index_buffer =
+		frustum_index_buffer =
 			RD::index_buffer_create(6 * 2 * 3, RDC::INDEX_BUFFER_FORMAT_UINT16, data);
-		frustum.index_array = RD::index_array_create(frustum.index_buffer, 0, 6 * 2 * 3);
+		frustum_index_array = RD::index_array_create(frustum_index_buffer, 0, 6 * 2 * 3);
 	}
 
-	if (frustum.lines_buffer.is_null()) {
+	if (frustum_lines_buffer.is_null()) {
 		uint16_t indices[12 * 2] = {
 			0, 1, // FLT - FLB
 			1, 3, // FLB - FRB
@@ -190077,9 +182498,9 @@ void DebugEffects::_create_frustum_arrays()
 				p16++;
 			}
 		}
-		frustum.lines_buffer =
+		frustum_lines_buffer =
 			RD::index_buffer_create(12 * 2, RDC::INDEX_BUFFER_FORMAT_UINT16, data);
-		frustum.lines_array = RD::index_array_create(frustum.lines_buffer, 0, 12 * 2);
+		frustum_lines_array = RD::index_array_create(frustum_lines_buffer, 0, 12 * 2);
 	}
 }
 
@@ -190093,37 +182514,37 @@ DebugEffects::DebugEffects()
 	shadow_frustum_modes.push_back("\n#define MODE_TRANSPARENT\n");
 	shadow_frustum_modes.push_back("\n#define MODE_WIREFRAME\n");
 
-	shadow_frustum.shader.initialize(shadow_frustum_modes);
-	shadow_frustum.shader_version = shadow_frustum.shader.version_create();
+	shadow_frustum_shader.initialize(shadow_frustum_modes);
+	shadow_frustum_shader_version = shadow_frustum_shader.version_create();
 
 	// 3. Motion vectors shader & version
 	Vector<String> motion_vectors_modes;
 	motion_vectors_modes.push_back("\n");
 
-	motion_vectors.shader.initialize(motion_vectors_modes);
-	motion_vectors.shader_version = motion_vectors.shader.version_create();
+	motion_vectors_shader.initialize(motion_vectors_modes);
+	motion_vectors_shader_version = motion_vectors_shader.version_create();
 }
 
 DebugEffects::~DebugEffects()
 {
-	shadow_frustum.shader.version_free(shadow_frustum.shader_version);
+	shadow_frustum_shader.version_free(shadow_frustum_shader_version);
 
 	// Destroy vertex buffer and array.
-	if (frustum.vertex_buffer.is_valid()) {
-		RD::free_rid(frustum.vertex_buffer); // Array gets freed as dependency.
+	if (frustum_vertex_buffer.is_valid()) {
+		RD::free_rid(frustum_vertex_buffer); // Array gets freed as dependency.
 	}
 
 	// Destroy index buffer and array,
-	if (frustum.index_buffer.is_valid()) {
-		RD::free_rid(frustum.index_buffer); // Array gets freed as dependency.
+	if (frustum_index_buffer.is_valid()) {
+		RD::free_rid(frustum_index_buffer); // Array gets freed as dependency.
 	}
 
 	// Destroy lines buffer and array.
-	if (frustum.lines_buffer.is_valid()) {
-		RD::free_rid(frustum.lines_buffer); // Array gets freed as dependency.
+	if (frustum_lines_buffer.is_valid()) {
+		RD::free_rid(frustum_lines_buffer); // Array gets freed as dependency.
 	}
 
-	motion_vectors.shader.version_free(motion_vectors.shader_version);
+	motion_vectors_shader.version_free(motion_vectors_shader_version);
 }
 
 void RendererRD::DebugEffects::draw_shadow_frustum(RID p_dest_framebuffer,
@@ -190133,7 +182554,7 @@ void RendererRD::DebugEffects::draw_shadow_frustum(RID p_dest_framebuffer,
 
 /* VRS */
 
-VRS::~VRS() { vrs_shader.shader.version_free(vrs_shader.shader_version); }
+VRS::~VRS() { shader.version_free(shader_version); }
 
 Size2i VRS::get_vrs_texture_size(const Size2i p_base_size) const
 {
@@ -190200,16 +182621,10 @@ VRS::VRS()
 {
 	Vector<String> modes;
 	modes.push_back("\n");
-	vrs_shader.shader.initialize(modes);
-	vrs_shader.shader_version = vrs_shader.shader.version_create();
+	shader.initialize(modes);
+	shader_version = shader.version_create();
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/effects/ss_effects.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -190240,114 +182655,114 @@ void SSEffects::finalize()
 	{
 		// Cleanup SS Reflections
 		for (int i = 0; i < SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX; i++) {
-			data->ssr.downsample_pipelines[i].free();
+			data->ssr_downsample_pipelines[i].free();
 		}
 		for (int i = 0; i < SCREEN_SPACE_REFLECTION_HIZ_MAX; i++) {
-			data->ssr.hiz_pipelines[i].free();
+			data->ssr_hiz_pipelines[i].free();
 		}
-		data->ssr.ssr_pipeline.free();
-		data->ssr.filter_pipeline.free();
-		data->ssr.resolve_pipeline.free();
+		data->ssr_ssr_pipeline.free();
+		data->ssr_filter_pipeline.free();
+		data->ssr_resolve_pipeline.free();
 
-		if (data->ssr.downsample_shader_version.is_valid()) {
-			data->ssr.downsample_shader.version_free(data->ssr.downsample_shader_version);
+		if (data->ssr_downsample_shader_version.is_valid()) {
+			data->ssr_downsample_shader.version_free(data->ssr_downsample_shader_version);
 		}
-		if (data->ssr.hiz_shader_version.is_valid()) {
-			data->ssr.hiz_shader.version_free(data->ssr.hiz_shader_version);
+		if (data->ssr_hiz_shader_version.is_valid()) {
+			data->ssr_hiz_shader.version_free(data->ssr_hiz_shader_version);
 		}
-		if (data->ssr.ssr_shader_version.is_valid()) {
-			data->ssr.ssr_shader.version_free(data->ssr.ssr_shader_version);
+		if (data->ssr_ssr_shader_version.is_valid()) {
+			data->ssr_ssr_shader.version_free(data->ssr_ssr_shader_version);
 		}
-		if (data->ssr.filter_shader_version.is_valid()) {
-			data->ssr.filter_shader.version_free(data->ssr.filter_shader_version);
+		if (data->ssr_filter_shader_version.is_valid()) {
+			data->ssr_filter_shader.version_free(data->ssr_filter_shader_version);
 		}
-		if (data->ssr.resolve_shader_version.is_valid()) {
-			data->ssr.resolve_shader.version_free(data->ssr.resolve_shader_version);
+		if (data->ssr_resolve_shader_version.is_valid()) {
+			data->ssr_resolve_shader.version_free(data->ssr_resolve_shader_version);
 		}
 
-		if (data->ssr.ubo.is_valid()) {
-			RD::free_rid(data->ssr.ubo);
+		if (data->ssr_ubo.is_valid()) {
+			RD::free_rid(data->ssr_ubo);
 		}
 	}
 
 	{
 		// Cleanup SS downsampler
 		for (int i = 0; i < SS_EFFECTS_MAX; i++) {
-			data->ss_effects.pipelines[i].free();
+			data->ss_effects_pipelines[i].free();
 		}
 
-		if (data->ss_effects.downsample_shader_version.is_valid()) {
-			data->ss_effects.downsample_shader.version_free(
-				data->ss_effects.downsample_shader_version);
+		if (data->ss_effects_downsample_shader_version.is_valid()) {
+			data->ss_effects_downsample_shader.version_free(
+				data->ss_effects_downsample_shader_version);
 		}
 
-		if (data->ss_effects.mirror_sampler.is_valid()) {
-			RD::free_rid(data->ss_effects.mirror_sampler);
+		if (data->ss_effects_mirror_sampler.is_valid()) {
+			RD::free_rid(data->ss_effects_mirror_sampler);
 		}
-		if (data->ss_effects.gather_constants_buffer.is_valid()) {
-			RD::free_rid(data->ss_effects.gather_constants_buffer);
+		if (data->ss_effects_gather_constants_buffer.is_valid()) {
+			RD::free_rid(data->ss_effects_gather_constants_buffer);
 		}
 	}
 
 	{
 		// Cleanup SSIL
 		for (int i = 0; i < SSIL_MAX; i++) {
-			data->ssil.pipelines[i].free();
+			data->ssil_pipelines[i].free();
 		}
 
-		if (data->ssil.blur_shader_version.is_valid()) {
-			data->ssil.blur_shader.version_free(data->ssil.blur_shader_version);
+		if (data->ssil_blur_shader_version.is_valid()) {
+			data->ssil_blur_shader.version_free(data->ssil_blur_shader_version);
 		}
-		if (data->ssil.gather_shader_version.is_valid()) {
-			data->ssil.gather_shader.version_free(data->ssil.gather_shader_version);
+		if (data->ssil_gather_shader_version.is_valid()) {
+			data->ssil_gather_shader.version_free(data->ssil_gather_shader_version);
 		}
-		if (data->ssil.interleave_shader_version.is_valid()) {
-			data->ssil.interleave_shader.version_free(data->ssil.interleave_shader_version);
+		if (data->ssil_interleave_shader_version.is_valid()) {
+			data->ssil_interleave_shader.version_free(data->ssil_interleave_shader_version);
 		}
-		if (data->ssil.importance_map_shader_version.is_valid()) {
-			data->ssil.importance_map_shader.version_free(data->ssil.importance_map_shader_version);
+		if (data->ssil_importance_map_shader_version.is_valid()) {
+			data->ssil_importance_map_shader.version_free(data->ssil_importance_map_shader_version);
 		}
 
-		if (data->ssil.importance_map_load_counter.is_valid()) {
-			RD::free_rid(data->ssil.importance_map_load_counter);
+		if (data->ssil_importance_map_load_counter.is_valid()) {
+			RD::free_rid(data->ssil_importance_map_load_counter);
 		}
-		if (data->ssil.projection_uniform_buffer.is_valid()) {
-			RD::free_rid(data->ssil.projection_uniform_buffer);
+		if (data->ssil_projection_uniform_buffer.is_valid()) {
+			RD::free_rid(data->ssil_projection_uniform_buffer);
 		}
 	}
 
 	{
 		// Cleanup SSAO
 		for (int i = 0; i < SSAO_MAX; i++) {
-			data->ssao.pipelines[i].free();
+			data->ssao_pipelines[i].free();
 		}
 
-		if (data->ssao.blur_shader_version.is_valid()) {
-			data->ssao.blur_shader.version_free(data->ssao.blur_shader_version);
+		if (data->ssao_blur_shader_version.is_valid()) {
+			data->ssao_blur_shader.version_free(data->ssao_blur_shader_version);
 		}
-		if (data->ssao.gather_shader_version.is_valid()) {
-			data->ssao.gather_shader.version_free(data->ssao.gather_shader_version);
+		if (data->ssao_gather_shader_version.is_valid()) {
+			data->ssao_gather_shader.version_free(data->ssao_gather_shader_version);
 		}
-		if (data->ssao.interleave_shader_version.is_valid()) {
-			data->ssao.interleave_shader.version_free(data->ssao.interleave_shader_version);
+		if (data->ssao_interleave_shader_version.is_valid()) {
+			data->ssao_interleave_shader.version_free(data->ssao_interleave_shader_version);
 		}
-		if (data->ssao.importance_map_shader_version.is_valid()) {
-			data->ssao.importance_map_shader.version_free(data->ssao.importance_map_shader_version);
+		if (data->ssao_importance_map_shader_version.is_valid()) {
+			data->ssao_importance_map_shader.version_free(data->ssao_importance_map_shader_version);
 		}
 
-		if (data->ssao.importance_map_load_counter.is_valid()) {
-			RD::free_rid(data->ssao.importance_map_load_counter);
+		if (data->ssao_importance_map_load_counter.is_valid()) {
+			RD::free_rid(data->ssao_importance_map_load_counter);
 		}
 	}
 
 	{
 		// Cleanup Subsurface scattering
 		for (int i = 0; i < SUBSURFACE_SCATTERING_MODE_MAX; i++) {
-			data->sss.pipelines[i].free();
+			data->sss_pipelines[i].free();
 		}
 
-		if (data->sss.shader_version.is_valid()) {
-			data->sss.shader.version_free(data->sss.shader_version);
+		if (data->sss_shader_version.is_valid()) {
+			data->sss_shader.version_free(data->sss_shader_version);
 		}
 	}
 
@@ -190687,12 +183102,6 @@ void SSEffects::gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_sl
 	RID p_importance_map_uniform_set)
 {
 }
-
-
-
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/effects/upscale_effects.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -191143,7 +183552,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_DEPTH_CLIP];
-		pass.shader = &shaders.depth_clip;
+		pass.shader = &shader_depth_clip;
 		pass.shader->initialize(modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported ? 1 : 0;
@@ -191169,7 +183578,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_RECONSTRUCT_PREVIOUS_DEPTH];
-		pass.shader = &shaders.reconstruct_previous_depth;
+		pass.shader = &shader_reconstruct_previous_depth;
 		pass.shader->initialize(modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported ? 1 : 0;
@@ -191194,7 +183603,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_LOCK];
-		pass.shader = &shaders.lock;
+		pass.shader = &shader_lock;
 		pass.shader->initialize(modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported ? 1 : 0;
@@ -191219,7 +183628,7 @@ FSR2Effect::FSR2Effect()
 		// and high VRAM throughput.
 		const bool fp16_path_supported = RD::get_device_vendor_name() != "NVIDIA";
 		Pass& pass = device.passes[FFX_FSR2_PASS_ACCUMULATE];
-		pass.shader = &shaders.accumulate;
+		pass.shader = &shader_accumulate;
 		pass.shader->initialize(accumulate_modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported && fp16_path_supported ? 2 : 0;
@@ -191252,7 +183661,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_RCAS];
-		pass.shader = &shaders.rcas;
+		pass.shader = &shader_rcas;
 		pass.shader->initialize(modes_single, general_defines);
 		pass.shader_version = pass.shader->version_create();
 
@@ -191267,7 +183676,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_COMPUTE_LUMINANCE_PYRAMID];
-		pass.shader = &shaders.compute_luminance_pyramid;
+		pass.shader = &shader_compute_luminance_pyramid;
 		pass.shader->initialize(modes_single, general_defines);
 		pass.shader_version = pass.shader->version_create();
 
@@ -191284,7 +183693,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_GENERATE_REACTIVE];
-		pass.shader = &shaders.autogen_reactive;
+		pass.shader = &shader_autogen_reactive;
 		pass.shader->initialize(modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported ? 1 : 0;
@@ -191300,7 +183709,7 @@ FSR2Effect::FSR2Effect()
 
 	{
 		Pass& pass = device.passes[FFX_FSR2_PASS_TCR_AUTOGENERATE];
-		pass.shader = &shaders.tcr_autogen;
+		pass.shader = &shader_tcr_autogen;
 		pass.shader->initialize(modes_with_fp16, general_defines);
 		pass.shader_version = pass.shader->version_create();
 		pass.shader_variant = capabilities.fp16Supported ? 1 : 0;
@@ -191676,16 +184085,9 @@ void MFXTemporalEffect::callback(
 
 #endif // METAL_ENABLED
 
-
-// --- Merged from servers/rendering/renderer_rd/renderer_scene_render_rd.cpp ---
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/memory.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h" // IWYU pragma: keep. RENDER_TIMESTAMP macro uses RSG.
-
-// --- Merged from servers/rendering/renderer_rd/renderer_scene_render_rd.cpp ---
 
 void get_vogel_disk(float* r_kernel, int p_sample_count)
 {
@@ -193694,8 +186096,6 @@ void RendererRD::Fog::volumetric_fog_update(
 {
 }
 
-// --- Merged from servers/rendering/renderer_rd/cluster_builder_rd.cpp ---
-
 ClusterBuilderSharedDataRD::ClusterBuilderSharedDataRD() {}
 
 ClusterBuilderSharedDataRD::~ClusterBuilderSharedDataRD()
@@ -193929,24 +186329,12 @@ ClusterBuilderRD::~ClusterBuilderRD()
 	RD::free_rid(state_uniform);
 }
 
-
-
 void ClusterBuilderRD::debug(ClusterBuilderRD::ElementType) {}
 
 ClusterBuilderRD::ClusterBuilderRD() {}
 
 void ClusterBuilderRD::bake_cluster() {}
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/shader_rd.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 
 #define ENABLE_SHADER_CACHE 1
@@ -195138,14 +187526,6 @@ void ShaderRD::_compile_variant(uint32_t p_variant, CompileData p_data)
 	}
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/storage_rd/material_storage.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -196620,43 +189000,6 @@ void RendererRD::MaterialStorage::material_free(RID p_rid)
 	material_owner.free(p_rid);
 }
 
-// === Merged from servers/rendering/rendering_device.cpp ===
-/*  rendering_device.cpp                                                  */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 #include "servers/display/display_server.h"
 #include "core/version_generated.gen.h"
 #include "servers/display/display_server.h"
@@ -204827,10 +197170,6 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 		p_texture->driver_id, p_texture->draw_tracker, p_depth, p_stencil, range);
 }
 
-// ============================================================================
-// Merged from servers/rendering/rendering_device_commons.cpp
-// ============================================================================
-
 #include "core/version_generated.gen.h" // For glslang.
 #include "servers/display/display_server.h"
 #ifdef MODULE_GLSLANG_ENABLED
@@ -204838,10 +197177,7 @@ void RenderingDevice::_texture_clear_depth_stencil(RID p_texture_rid, Texture* p
 #endif
 
 #include <thirdparty/spirv-reflect/spirv_reflect.h>
-#include "core/io/file_access.h"
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/rendering_device_commons.cpp ---
 
 /*****************/
 /**** GENERIC ****/
@@ -205827,8 +198163,6 @@ const char* RenderingDeviceCommons::SHADER_STAGE_NAMES[SHADER_STAGE_MAX] = {
 	"Compute",
 };
 
-// --- Merged from servers/rendering/rendering_device_binds.cpp ---
-
 Error RDShaderFile::parse_versions_from_text(const String& p_text, const String p_defines,
 	OpenIncludeFunction p_include_func, void* p_include_func_userdata)
 {
@@ -206036,8 +198370,6 @@ Error RDShaderFile::parse_versions_from_text(const String& p_text, const String 
 	}
 }
 
-// --- Merged from servers/rendering/rendering_device_driver.cpp ---
-
 /**************/
 /**** MISC ****/
 /**************/
@@ -206070,8 +198402,6 @@ uint64_t RenderingDeviceDriver::api_trait_get(ApiTrait p_trait)
 }
 
 RenderingDeviceDriver::~RenderingDeviceDriver() {}
-
-// --- Merged from servers/rendering/rendering_context_driver.cpp ---
 
 RenderingContextDriver::~RenderingContextDriver() {}
 
@@ -206311,8 +198641,6 @@ uint64_t RenderingContextDriver::get_device_allocation_count() const { return 0;
 uint64_t RenderingContextDriver::get_device_memory_by_object_type(uint32_t) const { return 0; }
 
 uint64_t RenderingContextDriver::get_device_allocs_by_object_type(uint32_t) const { return 0; }
-
-// --- Merged from servers/rendering/rendering_shader_container.cpp ---
 
 static inline uint32_t aligned_to(uint32_t p_size, uint32_t p_alignment)
 {
@@ -207499,10 +199827,6 @@ void RenderingShaderContainer::ReflectSymbol<T>::set_spv_reflect(
 {
 }
 
-// ============================================================================
-// Merged from servers/rendering/rendering_device_graph.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #define PRINT_RENDER_GRAPH 0
@@ -207708,14 +200032,14 @@ bool RenderingDeviceGraph::_check_command_intersection(ResourceTracker* p_resour
 
 	const uint32_t previous_command_data_offset = command_data_offsets[p_previous_command_index];
 	const uint32_t current_command_data_offset = command_data_offsets[p_command_index];
-	const RecordedDrawListCommand& previous_draw_list_command =
-		*reinterpret_cast<const RecordedDrawListCommand*>(
+	const RecordedCommand& previous_draw_list_command =
+		*reinterpret_cast<const RecordedCommand*>(
 			&command_data[previous_command_data_offset]);
-	const RecordedDrawListCommand& current_draw_list_command =
-		*reinterpret_cast<const RecordedDrawListCommand*>(
+	const RecordedCommand& current_draw_list_command =
+		*reinterpret_cast<const RecordedCommand*>(
 			&command_data[current_command_data_offset]);
-	if (previous_draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST ||
-		current_draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST) {
+	if (previous_draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST ||
+		current_draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST) {
 		// We don't check possible intersections if both commands aren't draw lists.
 		return true;
 	}
@@ -207734,9 +200058,9 @@ bool RenderingDeviceGraph::_check_command_partial_coverage(
 	}
 
 	const uint32_t command_data_offset = command_data_offsets[p_command_index];
-	const RecordedDrawListCommand& draw_list_command =
-		*reinterpret_cast<const RecordedDrawListCommand*>(&command_data[command_data_offset]);
-	if (draw_list_command.header.type != RecordedCommand::TYPE_DRAW_LIST) {
+	const RecordedCommand& draw_list_command =
+		*reinterpret_cast<const RecordedCommand*>(&command_data[command_data_offset]);
+	if (draw_list_command.type != RecordedCommand::TYPE_DRAW_LIST) {
 		// We don't check for partial coverage on commands that aren't draw lists.
 		return false;
 	}
@@ -207851,9 +200175,9 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 	// Check if the command is a a draw list that clears the attachment completely. If it is, we
 	// don't need to modify the previous draw list.
 	uint32_t command_offset = command_data_offsets[p_command_index];
-	RecordedDrawListCommand* draw_list_command =
-		reinterpret_cast<RecordedDrawListCommand*>(&command_data[command_offset]);
-	if (draw_list_command->header.type == RecordedCommand::TYPE_DRAW_LIST) {
+	RecordedCommand* draw_list_command =
+		reinterpret_cast<RecordedCommand*>(&command_data[command_offset]);
+	if (draw_list_command->type == RecordedCommand::TYPE_DRAW_LIST) {
 		ResourceTracker** trackers = draw_list_command->trackers();
 		for (uint32_t i = 0; i < draw_list_command->trackers_count; i++) {
 			if (trackers[i] == p_resource_tracker &&
@@ -207865,9 +200189,9 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 
 	// Check if the previous command is a draw list.
 	uint32_t previous_command_offset = command_data_offsets[p_previous_command_index];
-	RecordedDrawListCommand* previous_draw_list_command =
-		reinterpret_cast<RecordedDrawListCommand*>(&command_data[previous_command_offset]);
-	if (previous_draw_list_command->header.type != RecordedCommand::TYPE_DRAW_LIST) {
+	RecordedCommand* previous_draw_list_command =
+		reinterpret_cast<RecordedCommand*>(&command_data[previous_command_offset]);
+	if (previous_draw_list_command->type != RecordedCommand::TYPE_DRAW_LIST) {
 		return;
 	}
 
@@ -207904,50 +200228,50 @@ void RenderingDeviceGraph::_run_raytracing_list_command(RDD::CommandBufferID p_c
 				&p_instruction_data[instruction_data_cursor]);
 		switch (instruction->type) {
 		case RaytracingListInstruction::TYPE_BIND_PIPELINE: {
-			const RaytracingListBindPipelineInstruction* bind_pipeline_instruction =
-				reinterpret_cast<const RaytracingListBindPipelineInstruction*>(instruction);
+			const RaytracingListInstruction* bind_pipeline_instruction =
+				reinterpret_cast<const RaytracingListInstruction*>(instruction);
 			driver->command_bind_raytracing_pipeline(
 				p_command_buffer, bind_pipeline_instruction->pipeline);
-			instruction_data_cursor += sizeof(RaytracingListBindPipelineInstruction);
+			instruction_data_cursor += sizeof(RaytracingListInstruction);
 		} break;
 		case RaytracingListInstruction::TYPE_BIND_UNIFORM_SET: {
-			const RaytracingListBindUniformSetInstruction* bind_uniform_set_instruction =
-				reinterpret_cast<const RaytracingListBindUniformSetInstruction*>(instruction);
+			const RaytracingListInstruction* bind_uniform_set_instruction =
+				reinterpret_cast<const RaytracingListInstruction*>(instruction);
 			driver->command_bind_raytracing_uniform_set(p_command_buffer,
 				bind_uniform_set_instruction->uniform_set, bind_uniform_set_instruction->shader,
 				bind_uniform_set_instruction->set_index);
-			instruction_data_cursor += sizeof(RaytracingListBindUniformSetInstruction);
+			instruction_data_cursor += sizeof(RaytracingListInstruction);
 		} break;
 		case RaytracingListInstruction::TYPE_TRACE_RAYS: {
-			const RaytracingListTraceRaysInstruction* trace_rays_instruction =
-				reinterpret_cast<const RaytracingListTraceRaysInstruction*>(instruction);
+			const RaytracingListInstruction* trace_rays_instruction =
+				reinterpret_cast<const RaytracingListInstruction*>(instruction);
 			driver->command_trace_rays(p_command_buffer, trace_rays_instruction->raygen_sbt,
 				trace_rays_instruction->miss_sbt, trace_rays_instruction->hit_sbt,
 				trace_rays_instruction->width, trace_rays_instruction->height,
 				trace_rays_instruction->depth);
-			instruction_data_cursor += sizeof(RaytracingListTraceRaysInstruction);
+			instruction_data_cursor += sizeof(RaytracingListInstruction);
 		} break;
 		case RaytracingListInstruction::TYPE_SET_PUSH_CONSTANT: {
-			const RaytracingListSetPushConstantInstruction* set_push_constant_instruction =
-				reinterpret_cast<const RaytracingListSetPushConstantInstruction*>(instruction);
+			const RaytracingListInstruction* set_push_constant_instruction =
+				reinterpret_cast<const RaytracingListInstruction*>(instruction);
 			const VectorView push_constant_data_view(
 				reinterpret_cast<const uint32_t*>(set_push_constant_instruction->data()),
 				set_push_constant_instruction->size / sizeof(uint32_t));
 			driver->command_bind_push_constants(p_command_buffer,
 				set_push_constant_instruction->shader, 0, push_constant_data_view);
-			instruction_data_cursor += sizeof(RaytracingListSetPushConstantInstruction);
+			instruction_data_cursor += sizeof(RaytracingListInstruction);
 			instruction_data_cursor += set_push_constant_instruction->size;
 		} break;
 		case RaytracingListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE: {
-			const RaytracingListUniformSetPrepareForUseInstruction*
+			const RaytracingListInstruction*
 				uniform_set_prepare_for_use_instruction =
-					reinterpret_cast<const RaytracingListUniformSetPrepareForUseInstruction*>(
+					reinterpret_cast<const RaytracingListInstruction*>(
 						instruction);
 			driver->command_uniform_set_prepare_for_use(p_command_buffer,
 				uniform_set_prepare_for_use_instruction->uniform_set,
 				uniform_set_prepare_for_use_instruction->shader,
 				uniform_set_prepare_for_use_instruction->set_index);
-			instruction_data_cursor += sizeof(RaytracingListUniformSetPrepareForUseInstruction);
+			instruction_data_cursor += sizeof(RaytracingListInstruction);
 		} break;
 		default:
 			DEV_ASSERT(false && "Unknown raytracing list instruction type.");
@@ -207968,15 +200292,15 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
 			&p_instruction_data[instruction_data_cursor]);
 		switch (instruction->type) {
 		case ComputeListInstruction::TYPE_BIND_PIPELINE: {
-			const ComputeListBindPipelineInstruction* bind_pipeline_instruction =
-				reinterpret_cast<const ComputeListBindPipelineInstruction*>(instruction);
+			const ComputeListInstruction* bind_pipeline_instruction =
+				reinterpret_cast<const ComputeListInstruction*>(instruction);
 			driver->command_bind_compute_pipeline(
 				p_command_buffer, bind_pipeline_instruction->pipeline);
-			instruction_data_cursor += sizeof(ComputeListBindPipelineInstruction);
+			instruction_data_cursor += sizeof(ComputeListInstruction);
 		} break;
 		case ComputeListInstruction::TYPE_BIND_UNIFORM_SETS: {
-			const ComputeListBindUniformSetsInstruction* bind_uniform_sets_instruction =
-				reinterpret_cast<const ComputeListBindUniformSetsInstruction*>(instruction);
+			const ComputeListInstruction* bind_uniform_sets_instruction =
+				reinterpret_cast<const ComputeListInstruction*>(instruction);
 			driver->command_bind_compute_uniform_sets(p_command_buffer,
 				VectorView<RDD::UniformSetID>(bind_uniform_sets_instruction->uniform_set_ids(),
 					bind_uniform_sets_instruction->set_count),
@@ -207985,44 +200309,44 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
 				bind_uniform_sets_instruction->set_count,
 				bind_uniform_sets_instruction->dynamic_offsets_mask);
 			instruction_data_cursor +=
-				sizeof(ComputeListBindUniformSetsInstruction) +
+				sizeof(ComputeListInstruction) +
 				sizeof(RDD::UniformSetID) * bind_uniform_sets_instruction->set_count;
 		} break;
 		case ComputeListInstruction::TYPE_DISPATCH: {
-			const ComputeListDispatchInstruction* dispatch_instruction =
-				reinterpret_cast<const ComputeListDispatchInstruction*>(instruction);
+			const ComputeListInstruction* dispatch_instruction =
+				reinterpret_cast<const ComputeListInstruction*>(instruction);
 			driver->command_compute_dispatch(p_command_buffer, dispatch_instruction->x_groups,
 				dispatch_instruction->y_groups, dispatch_instruction->z_groups);
-			instruction_data_cursor += sizeof(ComputeListDispatchInstruction);
+			instruction_data_cursor += sizeof(ComputeListInstruction);
 		} break;
 		case ComputeListInstruction::TYPE_DISPATCH_INDIRECT: {
-			const ComputeListDispatchIndirectInstruction* dispatch_indirect_instruction =
-				reinterpret_cast<const ComputeListDispatchIndirectInstruction*>(instruction);
+			const ComputeListInstruction* dispatch_indirect_instruction =
+				reinterpret_cast<const ComputeListInstruction*>(instruction);
 			driver->command_compute_dispatch_indirect(p_command_buffer,
 				dispatch_indirect_instruction->buffer, dispatch_indirect_instruction->offset);
-			instruction_data_cursor += sizeof(ComputeListDispatchIndirectInstruction);
+			instruction_data_cursor += sizeof(ComputeListInstruction);
 		} break;
 		case ComputeListInstruction::TYPE_SET_PUSH_CONSTANT: {
-			const ComputeListSetPushConstantInstruction* set_push_constant_instruction =
-				reinterpret_cast<const ComputeListSetPushConstantInstruction*>(instruction);
+			const ComputeListInstruction* set_push_constant_instruction =
+				reinterpret_cast<const ComputeListInstruction*>(instruction);
 			const VectorView push_constant_data_view(
 				reinterpret_cast<const uint32_t*>(set_push_constant_instruction->data()),
 				set_push_constant_instruction->size / sizeof(uint32_t));
 			driver->command_bind_push_constants(p_command_buffer,
 				set_push_constant_instruction->shader, 0, push_constant_data_view);
-			instruction_data_cursor += sizeof(ComputeListSetPushConstantInstruction);
+			instruction_data_cursor += sizeof(ComputeListInstruction);
 			instruction_data_cursor += set_push_constant_instruction->size;
 		} break;
 		case ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE: {
-			const ComputeListUniformSetPrepareForUseInstruction*
+			const ComputeListInstruction*
 				uniform_set_prepare_for_use_instruction =
-					reinterpret_cast<const ComputeListUniformSetPrepareForUseInstruction*>(
+					reinterpret_cast<const ComputeListInstruction*>(
 						instruction);
 			driver->command_uniform_set_prepare_for_use(p_command_buffer,
 				uniform_set_prepare_for_use_instruction->uniform_set,
 				uniform_set_prepare_for_use_instruction->shader,
 				uniform_set_prepare_for_use_instruction->set_index);
-			instruction_data_cursor += sizeof(ComputeListUniformSetPrepareForUseInstruction);
+			instruction_data_cursor += sizeof(ComputeListInstruction);
 		} break;
 		default:
 			DEV_ASSERT(false && "Unknown compute list instruction type.");
@@ -208034,7 +200358,7 @@ void RenderingDeviceGraph::_run_compute_list_command(RDD::CommandBufferID p_comm
 }
 
 void RenderingDeviceGraph::_get_draw_list_render_pass_and_framebuffer(
-	const RecordedDrawListCommand* p_draw_list_command, RDD::RenderPassID& r_render_pass,
+	const RecordedCommand* p_draw_list_command, RDD::RenderPassID& r_render_pass,
 	RDD::FramebufferID& r_framebuffer)
 {
 	DEV_ASSERT(p_draw_list_command->trackers_count <= 21 &&
@@ -208093,23 +200417,23 @@ void RenderingDeviceGraph::_run_draw_list_command(RDD::CommandBufferID p_command
 			&p_instruction_data[instruction_data_cursor]);
 		switch (instruction->type) {
 		case DrawListInstruction::TYPE_BIND_INDEX_BUFFER: {
-			const DrawListBindIndexBufferInstruction* bind_index_buffer_instruction =
-				reinterpret_cast<const DrawListBindIndexBufferInstruction*>(instruction);
+			const DrawListInstruction* bind_index_buffer_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_bind_index_buffer(p_command_buffer,
 				bind_index_buffer_instruction->buffer, bind_index_buffer_instruction->format,
 				bind_index_buffer_instruction->offset);
-			instruction_data_cursor += sizeof(DrawListBindIndexBufferInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_BIND_PIPELINE: {
-			const DrawListBindPipelineInstruction* bind_pipeline_instruction =
-				reinterpret_cast<const DrawListBindPipelineInstruction*>(instruction);
+			const DrawListInstruction* bind_pipeline_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_bind_render_pipeline(
 				p_command_buffer, bind_pipeline_instruction->pipeline);
-			instruction_data_cursor += sizeof(DrawListBindPipelineInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_BIND_UNIFORM_SETS: {
-			const DrawListBindUniformSetsInstruction* bind_uniform_sets_instruction =
-				reinterpret_cast<const DrawListBindUniformSetsInstruction*>(instruction);
+			const DrawListInstruction* bind_uniform_sets_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_bind_render_uniform_sets(p_command_buffer,
 				VectorView<RDD::UniformSetID>(bind_uniform_sets_instruction->uniform_set_ids(),
 					bind_uniform_sets_instruction->set_count),
@@ -208118,26 +200442,26 @@ void RenderingDeviceGraph::_run_draw_list_command(RDD::CommandBufferID p_command
 				bind_uniform_sets_instruction->set_count,
 				bind_uniform_sets_instruction->dynamic_offsets_mask);
 			instruction_data_cursor +=
-				sizeof(DrawListBindUniformSetsInstruction) +
+				sizeof(DrawListInstruction) +
 				sizeof(RDD::UniformSetID) * bind_uniform_sets_instruction->set_count;
 		} break;
 		case DrawListInstruction::TYPE_BIND_VERTEX_BUFFERS: {
-			const DrawListBindVertexBuffersInstruction* bind_vertex_buffers_instruction =
-				reinterpret_cast<const DrawListBindVertexBuffersInstruction*>(instruction);
+			const DrawListInstruction* bind_vertex_buffers_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_bind_vertex_buffers(p_command_buffer,
 				bind_vertex_buffers_instruction->vertex_buffers_count,
 				bind_vertex_buffers_instruction->vertex_buffers(),
 				bind_vertex_buffers_instruction->vertex_buffer_offsets(),
-				bind_vertex_buffers_instruction->dynamic_offsets_mask);
-			instruction_data_cursor += sizeof(DrawListBindVertexBuffersInstruction);
+				bind_vertex_buffers_instruction->vertex_buffers_dynamic_offsets_mask);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 			instruction_data_cursor +=
 				sizeof(RDD::BufferID) * bind_vertex_buffers_instruction->vertex_buffers_count;
 			instruction_data_cursor +=
 				sizeof(uint64_t) * bind_vertex_buffers_instruction->vertex_buffers_count;
 		} break;
 		case DrawListInstruction::TYPE_CLEAR_ATTACHMENTS: {
-			const DrawListClearAttachmentsInstruction* clear_attachments_instruction =
-				reinterpret_cast<const DrawListClearAttachmentsInstruction*>(instruction);
+			const DrawListInstruction* clear_attachments_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			const VectorView attachments_clear_view(
 				clear_attachments_instruction->attachments_clear(),
 				clear_attachments_instruction->attachments_clear_count);
@@ -208146,106 +200470,106 @@ void RenderingDeviceGraph::_run_draw_list_command(RDD::CommandBufferID p_command
 				clear_attachments_instruction->attachments_clear_rect_count);
 			driver->command_render_clear_attachments(
 				p_command_buffer, attachments_clear_view, attachments_clear_rect_view);
-			instruction_data_cursor += sizeof(DrawListClearAttachmentsInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 			instruction_data_cursor += sizeof(RDD::AttachmentClear) *
 									   clear_attachments_instruction->attachments_clear_count;
 			instruction_data_cursor +=
 				sizeof(Rect2i) * clear_attachments_instruction->attachments_clear_rect_count;
 		} break;
 		case DrawListInstruction::TYPE_DRAW: {
-			const DrawListDrawInstruction* draw_instruction =
-				reinterpret_cast<const DrawListDrawInstruction*>(instruction);
+			const DrawListInstruction* draw_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_draw(p_command_buffer, draw_instruction->vertex_count,
 				draw_instruction->instance_count, 0, 0);
-			instruction_data_cursor += sizeof(DrawListDrawInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_DRAW_INDEXED: {
-			const DrawListDrawIndexedInstruction* draw_indexed_instruction =
-				reinterpret_cast<const DrawListDrawIndexedInstruction*>(instruction);
+			const DrawListInstruction* draw_indexed_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_draw_indexed(p_command_buffer,
 				draw_indexed_instruction->index_count, draw_indexed_instruction->instance_count,
 				draw_indexed_instruction->first_index, 0, 0);
-			instruction_data_cursor += sizeof(DrawListDrawIndexedInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_DRAW_INDIRECT: {
-			const DrawListDrawIndirectInstruction* draw_indirect_instruction =
-				reinterpret_cast<const DrawListDrawIndirectInstruction*>(instruction);
+			const DrawListInstruction* draw_indirect_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_draw_indirect(p_command_buffer,
 				draw_indirect_instruction->buffer, draw_indirect_instruction->offset,
 				draw_indirect_instruction->draw_count, draw_indirect_instruction->stride);
-			instruction_data_cursor += sizeof(DrawListDrawIndirectInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_DRAW_INDEXED_INDIRECT: {
-			const DrawListDrawIndexedIndirectInstruction* draw_indexed_indirect_instruction =
-				reinterpret_cast<const DrawListDrawIndexedIndirectInstruction*>(instruction);
+			const DrawListInstruction* draw_indexed_indirect_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_draw_indexed_indirect(p_command_buffer,
 				draw_indexed_indirect_instruction->buffer,
 				draw_indexed_indirect_instruction->offset,
 				draw_indexed_indirect_instruction->draw_count,
 				draw_indexed_indirect_instruction->stride);
-			instruction_data_cursor += sizeof(DrawListDrawIndexedIndirectInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_EXECUTE_COMMANDS: {
-			const DrawListExecuteCommandsInstruction* execute_commands_instruction =
-				reinterpret_cast<const DrawListExecuteCommandsInstruction*>(instruction);
+			const DrawListInstruction* execute_commands_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_buffer_execute_secondary(
 				p_command_buffer, execute_commands_instruction->command_buffer);
-			instruction_data_cursor += sizeof(DrawListExecuteCommandsInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_NEXT_SUBPASS: {
-			const DrawListNextSubpassInstruction* next_subpass_instruction =
-				reinterpret_cast<const DrawListNextSubpassInstruction*>(instruction);
+			const DrawListInstruction* next_subpass_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_next_render_subpass(
 				p_command_buffer, next_subpass_instruction->command_buffer_type);
-			instruction_data_cursor += sizeof(DrawListNextSubpassInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_SET_BLEND_CONSTANTS: {
-			const DrawListSetBlendConstantsInstruction* set_blend_constants_instruction =
-				reinterpret_cast<const DrawListSetBlendConstantsInstruction*>(instruction);
+			const DrawListInstruction* set_blend_constants_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_set_blend_constants(
 				p_command_buffer, set_blend_constants_instruction->color);
-			instruction_data_cursor += sizeof(DrawListSetBlendConstantsInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_SET_LINE_WIDTH: {
-			const DrawListSetLineWidthInstruction* set_line_width_instruction =
-				reinterpret_cast<const DrawListSetLineWidthInstruction*>(instruction);
+			const DrawListInstruction* set_line_width_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_set_line_width(
 				p_command_buffer, set_line_width_instruction->width);
-			instruction_data_cursor += sizeof(DrawListSetLineWidthInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_SET_PUSH_CONSTANT: {
-			const DrawListSetPushConstantInstruction* set_push_constant_instruction =
-				reinterpret_cast<const DrawListSetPushConstantInstruction*>(instruction);
+			const DrawListInstruction* set_push_constant_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			const VectorView push_constant_data_view(
 				reinterpret_cast<const uint32_t*>(set_push_constant_instruction->data()),
 				set_push_constant_instruction->size / sizeof(uint32_t));
 			driver->command_bind_push_constants(p_command_buffer,
 				set_push_constant_instruction->shader, 0, push_constant_data_view);
-			instruction_data_cursor += sizeof(DrawListSetPushConstantInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 			instruction_data_cursor += set_push_constant_instruction->size;
 		} break;
 		case DrawListInstruction::TYPE_SET_SCISSOR: {
-			const DrawListSetScissorInstruction* set_scissor_instruction =
-				reinterpret_cast<const DrawListSetScissorInstruction*>(instruction);
+			const DrawListInstruction* set_scissor_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_set_scissor(p_command_buffer, set_scissor_instruction->rect);
-			instruction_data_cursor += sizeof(DrawListSetScissorInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_SET_VIEWPORT: {
-			const DrawListSetViewportInstruction* set_viewport_instruction =
-				reinterpret_cast<const DrawListSetViewportInstruction*>(instruction);
+			const DrawListInstruction* set_viewport_instruction =
+				reinterpret_cast<const DrawListInstruction*>(instruction);
 			driver->command_render_set_viewport(p_command_buffer, set_viewport_instruction->rect);
-			instruction_data_cursor += sizeof(DrawListSetViewportInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		case DrawListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE: {
-			const DrawListUniformSetPrepareForUseInstruction*
+			const DrawListInstruction*
 				uniform_set_prepare_for_use_instruction =
-					reinterpret_cast<const DrawListUniformSetPrepareForUseInstruction*>(
+					reinterpret_cast<const DrawListInstruction*>(
 						instruction);
 			driver->command_uniform_set_prepare_for_use(p_command_buffer,
 				uniform_set_prepare_for_use_instruction->uniform_set,
 				uniform_set_prepare_for_use_instruction->shader,
 				uniform_set_prepare_for_use_instruction->set_index);
-			instruction_data_cursor += sizeof(DrawListUniformSetPrepareForUseInstruction);
+			instruction_data_cursor += sizeof(DrawListInstruction);
 		} break;
 		default:
 			DEV_ASSERT(false && "Unknown draw list instruction type.");
@@ -208312,40 +200636,40 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 
 		switch (command->type) {
 		case RecordedCommand::TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE_BUILD: {
-			const RecordedBottomLevelAccelerationStructureBuildCommand* blas_build_command =
-				reinterpret_cast<const RecordedBottomLevelAccelerationStructureBuildCommand*>(
+			const RecordedCommand* blas_build_command =
+				reinterpret_cast<const RecordedCommand*>(
 					command);
 			driver->command_build_blas(r_command_buffer, blas_build_command->acceleration_structure,
 				blas_build_command->scratch_buffer);
 		} break;
 		case RecordedCommand::TYPE_TOP_LEVEL_ACCELERATION_STRUCTURE_BUILD: {
-			const RecordedTopLevelAccelerationStructureBuildCommand* tlas_build_command =
-				reinterpret_cast<const RecordedTopLevelAccelerationStructureBuildCommand*>(command);
+			const RecordedCommand* tlas_build_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_build_tlas(r_command_buffer, tlas_build_command->acceleration_structure,
 				tlas_build_command->scratch_buffer, tlas_build_command->instance_buffer,
 				tlas_build_command->instance_offset, tlas_build_command->instance_count);
 		} break;
 		case RecordedCommand::TYPE_BUFFER_CLEAR: {
-			const RecordedBufferClearCommand* buffer_clear_command =
-				reinterpret_cast<const RecordedBufferClearCommand*>(command);
+			const RecordedCommand* buffer_clear_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_clear_buffer(r_command_buffer, buffer_clear_command->buffer,
 				buffer_clear_command->offset, buffer_clear_command->size);
 		} break;
 		case RecordedCommand::TYPE_BUFFER_COPY: {
-			const RecordedBufferCopyCommand* buffer_copy_command =
-				reinterpret_cast<const RecordedBufferCopyCommand*>(command);
+			const RecordedCommand* buffer_copy_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_copy_buffer(r_command_buffer, buffer_copy_command->source,
-				buffer_copy_command->destination, buffer_copy_command->region);
+				buffer_copy_command->destination, buffer_copy_command->buffer_copy_region);
 		} break;
 		case RecordedCommand::TYPE_BUFFER_GET_DATA: {
-			const RecordedBufferGetDataCommand* buffer_get_data_command =
-				reinterpret_cast<const RecordedBufferGetDataCommand*>(command);
+			const RecordedCommand* buffer_get_data_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_copy_buffer(r_command_buffer, buffer_get_data_command->source,
-				buffer_get_data_command->destination, buffer_get_data_command->region);
+				buffer_get_data_command->destination, buffer_get_data_command->buffer_copy_region);
 		} break;
 		case RecordedCommand::TYPE_BUFFER_UPDATE: {
-			const RecordedBufferUpdateCommand* buffer_update_command =
-				reinterpret_cast<const RecordedBufferUpdateCommand*>(command);
+			const RecordedCommand* buffer_update_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			const RecordedBufferCopy* command_buffer_copies =
 				buffer_update_command->buffer_copies();
 			for (uint32_t j = 0; j < buffer_update_command->buffer_copies_count; j++) {
@@ -208354,14 +200678,14 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 			}
 		} break;
 		case RecordedCommand::TYPE_DRIVER_CALLBACK: {
-			const RecordedDriverCallbackCommand* driver_callback_command =
-				reinterpret_cast<const RecordedDriverCallbackCommand*>(command);
+			const RecordedCommand* driver_callback_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver_callback_command->callback(
 				driver, r_command_buffer, driver_callback_command->userdata);
 		} break;
 		case RecordedCommand::TYPE_RAYTRACING_LIST: {
-			const RecordedRaytracingListCommand* raytracing_list_command =
-				reinterpret_cast<const RecordedRaytracingListCommand*>(command);
+			const RecordedCommand* raytracing_list_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			_run_raytracing_list_command(r_command_buffer,
 				raytracing_list_command->instruction_data(),
 				raytracing_list_command->instruction_data_size);
@@ -208389,8 +200713,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				driver->command_buffer_begin(r_command_buffer);
 			}
 
-			const RecordedComputeListCommand* compute_list_command =
-				reinterpret_cast<const RecordedComputeListCommand*>(command);
+			const RecordedCommand* compute_list_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			_run_compute_list_command(r_command_buffer, compute_list_command->instruction_data(),
 				compute_list_command->instruction_data_size);
 		} break;
@@ -208400,8 +200724,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				workarounds_state.draw_list_found = true;
 			}
 
-			const RecordedDrawListCommand* draw_list_command =
-				reinterpret_cast<const RecordedDrawListCommand*>(command);
+			const RecordedCommand* draw_list_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 
 			if (draw_list_command->split_cmd_buffer) {
 				// Create or reuse a command buffer and finish recording the current one.
@@ -208441,21 +200765,21 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				driver->command_begin_render_pass(r_command_buffer, render_pass, framebuffer,
 					draw_list_command->command_buffer_type, draw_list_command->region,
 					clear_values);
-				_run_draw_list_command(r_command_buffer, draw_list_command->instruction_data(),
+				_run_draw_list_command(r_command_buffer, draw_list_command->draw_list_instruction_data(),
 					draw_list_command->instruction_data_size);
 				driver->command_end_render_pass(r_command_buffer);
 			}
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_CLEAR_COLOR: {
-			const RecordedTextureClearColorCommand* texture_clear_color_command =
-				reinterpret_cast<const RecordedTextureClearColorCommand*>(command);
+			const RecordedCommand* texture_clear_color_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_clear_color_texture(r_command_buffer,
 				texture_clear_color_command->texture, RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL,
 				texture_clear_color_command->color, texture_clear_color_command->range);
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_CLEAR_DEPTH_STENCIL: {
-			const RecordedTextureClearDepthStencilCommand* texture_clear_depth_stencil_command =
-				reinterpret_cast<const RecordedTextureClearDepthStencilCommand*>(command);
+			const RecordedCommand* texture_clear_depth_stencil_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_clear_depth_stencil_texture(r_command_buffer,
 				texture_clear_depth_stencil_command->texture, RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL,
 				texture_clear_depth_stencil_command->depth,
@@ -208463,8 +200787,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				texture_clear_depth_stencil_command->range);
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_COPY: {
-			const RecordedTextureCopyCommand* texture_copy_command =
-				reinterpret_cast<const RecordedTextureCopyCommand*>(command);
+			const RecordedCommand* texture_copy_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			const VectorView<RDD::TextureCopyRegion> command_texture_copy_regions_view(
 				texture_copy_command->texture_copy_regions(),
 				texture_copy_command->texture_copy_regions_count);
@@ -208473,8 +200797,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				RDD::TEXTURE_LAYOUT_COPY_DST_OPTIMAL, command_texture_copy_regions_view);
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_GET_DATA: {
-			const RecordedTextureGetDataCommand* texture_get_data_command =
-				reinterpret_cast<const RecordedTextureGetDataCommand*>(command);
+			const RecordedCommand* texture_get_data_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			const VectorView<RDD::BufferTextureCopyRegion> command_buffer_texture_copy_regions_view(
 				texture_get_data_command->buffer_texture_copy_regions(),
 				texture_get_data_command->buffer_texture_copy_regions_count);
@@ -208483,8 +200807,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				texture_get_data_command->to_buffer, command_buffer_texture_copy_regions_view);
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_RESOLVE: {
-			const RecordedTextureResolveCommand* texture_resolve_command =
-				reinterpret_cast<const RecordedTextureResolveCommand*>(command);
+			const RecordedCommand* texture_resolve_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_resolve_texture(r_command_buffer, texture_resolve_command->from_texture,
 				RDD::TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL, texture_resolve_command->src_layer,
 				texture_resolve_command->src_mipmap, texture_resolve_command->to_texture,
@@ -208492,8 +200816,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				texture_resolve_command->dst_mipmap);
 		} break;
 		case RecordedCommand::TYPE_TEXTURE_UPDATE: {
-			const RecordedTextureUpdateCommand* texture_update_command =
-				reinterpret_cast<const RecordedTextureUpdateCommand*>(command);
+			const RecordedCommand* texture_update_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			const RecordedBufferToTextureCopy* command_buffer_to_texture_copies =
 				texture_update_command->buffer_to_texture_copies();
 			for (uint32_t j = 0; j < texture_update_command->buffer_to_texture_copies_count; j++) {
@@ -208504,8 +200828,8 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 			}
 		} break;
 		case RecordedCommand::TYPE_CAPTURE_TIMESTAMP: {
-			const RecordedCaptureTimestampCommand* texture_capture_timestamp_command =
-				reinterpret_cast<const RecordedCaptureTimestampCommand*>(command);
+			const RecordedCommand* texture_capture_timestamp_command =
+				reinterpret_cast<const RecordedCommand*>(command);
 			driver->command_timestamp_write(r_command_buffer,
 				texture_capture_timestamp_command->pool, texture_capture_timestamp_command->index);
 		} break;
@@ -208713,11 +201037,11 @@ void RenderingDeviceGraph::add_blas_build(RDD::AccelerationStructureID p_acceler
 	VectorView<ResourceTracker*> p_src_trackers)
 {
 	int32_t command_index;
-	RecordedBottomLevelAccelerationStructureBuildCommand* command =
-		reinterpret_cast<RecordedBottomLevelAccelerationStructureBuildCommand*>(_allocate_command(
-			sizeof(RecordedBottomLevelAccelerationStructureBuildCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE_BUILD;
-	command->header.self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
+	RecordedCommand* command =
+		reinterpret_cast<RecordedCommand*>(_allocate_command(
+			sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE_BUILD;
+	command->self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
 	command->acceleration_structure = p_acceleration_structure;
 	command->scratch_buffer = p_scratch_buffer;
 
@@ -208738,7 +201062,7 @@ void RenderingDeviceGraph::add_blas_build(RDD::AccelerationStructureID p_acceler
 	usages[resource_count - 1] = RESOURCE_USAGE_ACCELERATION_STRUCTURE_READ_WRITE;
 
 	_add_command_to_graph(
-		trackers.ptr(), usages.ptr(), usages.size(), command_index, &command->header);
+		trackers.ptr(), usages.ptr(), usages.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceleration_structure,
@@ -208747,11 +201071,11 @@ void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceler
 	VectorView<ResourceTracker*> p_src_trackers)
 {
 	int32_t command_index;
-	RecordedTopLevelAccelerationStructureBuildCommand* command =
-		reinterpret_cast<RecordedTopLevelAccelerationStructureBuildCommand*>(_allocate_command(
-			sizeof(RecordedTopLevelAccelerationStructureBuildCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_TOP_LEVEL_ACCELERATION_STRUCTURE_BUILD;
-	command->header.self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
+	RecordedCommand* command =
+		reinterpret_cast<RecordedCommand*>(_allocate_command(
+			sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_TOP_LEVEL_ACCELERATION_STRUCTURE_BUILD;
+	command->self_stages = RDD::PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT;
 	command->acceleration_structure = p_acceleration_structure;
 	command->scratch_buffer = p_scratch_buffer;
 	command->instance_buffer = p_instance_buffer;
@@ -208775,7 +201099,7 @@ void RenderingDeviceGraph::add_tlas_build(RDD::AccelerationStructureID p_acceler
 	usages[resource_count - 1] = RESOURCE_USAGE_ACCELERATION_STRUCTURE_READ_WRITE;
 
 	_add_command_to_graph(
-		trackers.ptr(), usages.ptr(), usages.size(), command_index, &command->header);
+		trackers.ptr(), usages.ptr(), usages.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_buffer_clear(
@@ -208784,26 +201108,26 @@ void RenderingDeviceGraph::add_buffer_clear(
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedBufferClearCommand* command = reinterpret_cast<RecordedBufferClearCommand*>(
-		_allocate_command(sizeof(RecordedBufferClearCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_BUFFER_CLEAR;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_BUFFER_CLEAR;
 	command->buffer = p_dst;
 	command->offset = p_offset;
 	command->size = p_size;
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
 		// If the driver is uncapable of using the copy engine for clearing the buffer (e.g. D3D12),
 		// we must transition it to storage buffer read/write usage.
-		command->header.self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
+		command->self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
 		usage = RESOURCE_USAGE_STORAGE_BUFFER_READ_WRITE;
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
 }
 
 void RenderingDeviceGraph::add_buffer_copy(RDD::BufferID p_src, ResourceTracker* p_src_tracker,
@@ -208813,18 +201137,18 @@ void RenderingDeviceGraph::add_buffer_copy(RDD::BufferID p_src, ResourceTracker*
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedBufferCopyCommand* command = reinterpret_cast<RecordedBufferCopyCommand*>(
-		_allocate_command(sizeof(RecordedBufferCopyCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_BUFFER_COPY;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_BUFFER_COPY;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->source = p_src;
 	command->destination = p_dst;
-	command->region = p_region;
+	command->buffer_copy_region = p_region;
 
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
 	_add_command_to_graph(
-		trackers, usages, p_src_tracker != nullptr ? 2 : 1, command_index, &command->header);
+		trackers, usages, p_src_tracker != nullptr ? 2 : 1, command_index, command);
 }
 
 void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTracker* p_src_tracker,
@@ -208832,20 +201156,20 @@ void RenderingDeviceGraph::add_buffer_get_data(RDD::BufferID p_src, ResourceTrac
 {
 	// Source tracker is allowed to be null as it could be a read-only buffer.
 	int32_t command_index;
-	RecordedBufferGetDataCommand* command = reinterpret_cast<RecordedBufferGetDataCommand*>(
-		_allocate_command(sizeof(RecordedBufferGetDataCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_BUFFER_GET_DATA;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_BUFFER_GET_DATA;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->source = p_src;
 	command->destination = p_dst;
-	command->region = p_region;
+	command->buffer_copy_region = p_region;
 
 	if (p_src_tracker != nullptr) {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_FROM;
-		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, &command->header);
+		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, command);
 	}
 	else {
-		_add_command_to_graph(nullptr, nullptr, 0, command_index, &command->header);
+		_add_command_to_graph(nullptr, nullptr, 0, command_index, command);
 	}
 }
 
@@ -208855,12 +201179,12 @@ void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracke
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	size_t buffer_copies_size = p_buffer_copies.size() * sizeof(RecordedBufferCopy);
-	uint64_t command_size = sizeof(RecordedBufferUpdateCommand) + buffer_copies_size;
+	uint64_t command_size = sizeof(RecordedCommand) + buffer_copies_size;
 	int32_t command_index;
-	RecordedBufferUpdateCommand* command = reinterpret_cast<RecordedBufferUpdateCommand*>(
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_BUFFER_UPDATE;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->type = RecordedCommand::TYPE_BUFFER_UPDATE;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->destination = p_dst;
 	command->buffer_copies_count = p_buffer_copies.size();
 
@@ -208870,7 +201194,7 @@ void RenderingDeviceGraph::add_buffer_update(RDD::BufferID p_dst, ResourceTracke
 	}
 
 	ResourceUsage buffer_usage = RESOURCE_USAGE_COPY_TO;
-	_add_command_to_graph(&p_dst_tracker, &buffer_usage, 1, command_index, &command->header);
+	_add_command_to_graph(&p_dst_tracker, &buffer_usage, 1, command_index, command);
 }
 
 void RenderingDeviceGraph::add_driver_callback(RDD::DriverCallback p_callback, void* p_userdata,
@@ -208880,13 +201204,13 @@ void RenderingDeviceGraph::add_driver_callback(RDD::DriverCallback p_callback, v
 	DEV_ASSERT(p_trackers.size() == p_usages.size());
 
 	int32_t command_index;
-	RecordedDriverCallbackCommand* command = reinterpret_cast<RecordedDriverCallbackCommand*>(
-		_allocate_command(sizeof(RecordedDriverCallbackCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_DRIVER_CALLBACK;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_DRIVER_CALLBACK;
 	command->callback = p_callback;
 	command->userdata = p_userdata;
 	_add_command_to_graph((ResourceTracker**)p_trackers.ptr(), (ResourceUsage*)p_usages.ptr(),
-		p_trackers.size(), command_index, &command->header);
+		p_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_raytracing_list_begin()
@@ -208897,10 +201221,10 @@ void RenderingDeviceGraph::add_raytracing_list_begin()
 
 void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipelineID p_pipeline)
 {
-	RaytracingListBindPipelineInstruction* instruction =
-		reinterpret_cast<RaytracingListBindPipelineInstruction*>(
-			_allocate_raytracing_list_instruction(sizeof(RaytracingListBindPipelineInstruction)));
-	instruction->header.type = RaytracingListInstruction::TYPE_BIND_PIPELINE;
+	RaytracingListInstruction* instruction =
+		reinterpret_cast<RaytracingListInstruction*>(
+			_allocate_raytracing_list_instruction(sizeof(RaytracingListInstruction)));
+	instruction->type = RaytracingListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
 	raytracing_instruction_list.list.stages |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
 }
@@ -208908,10 +201232,10 @@ void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipe
 void RenderingDeviceGraph::add_raytracing_list_bind_uniform_set(
 	RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index)
 {
-	RaytracingListBindUniformSetInstruction* instruction =
-		reinterpret_cast<RaytracingListBindUniformSetInstruction*>(
-			_allocate_raytracing_list_instruction(sizeof(RaytracingListBindUniformSetInstruction)));
-	instruction->header.type = RaytracingListInstruction::TYPE_BIND_UNIFORM_SET;
+	RaytracingListInstruction* instruction =
+		reinterpret_cast<RaytracingListInstruction*>(
+			_allocate_raytracing_list_instruction(sizeof(RaytracingListInstruction)));
+	instruction->type = RaytracingListInstruction::TYPE_BIND_UNIFORM_SET;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -208920,11 +201244,11 @@ void RenderingDeviceGraph::add_raytracing_list_bind_uniform_set(
 void RenderingDeviceGraph::add_raytracing_list_set_push_constant(
 	RDD::ShaderID p_shader, const void* p_data, uint32_t p_data_size)
 {
-	uint32_t instruction_size = sizeof(RaytracingListSetPushConstantInstruction) + p_data_size;
-	RaytracingListSetPushConstantInstruction* instruction =
-		reinterpret_cast<RaytracingListSetPushConstantInstruction*>(
+	uint32_t instruction_size = sizeof(RaytracingListInstruction) + p_data_size;
+	RaytracingListInstruction* instruction =
+		reinterpret_cast<RaytracingListInstruction*>(
 			_allocate_raytracing_list_instruction(instruction_size));
-	instruction->header.type = RaytracingListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->type = RaytracingListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -208934,10 +201258,10 @@ void RenderingDeviceGraph::add_raytracing_list_trace_rays(
 	const RDD::ShaderBindingTable& p_raygen_sbt, const RDD::ShaderBindingTable& p_miss_sbt,
 	const RDD::ShaderBindingTable& p_hit_sbt, uint32_t p_width, uint32_t p_height, uint32_t p_depth)
 {
-	RaytracingListTraceRaysInstruction* instruction =
-		reinterpret_cast<RaytracingListTraceRaysInstruction*>(
-			_allocate_raytracing_list_instruction(sizeof(RaytracingListTraceRaysInstruction)));
-	instruction->header.type = RaytracingListInstruction::TYPE_TRACE_RAYS;
+	RaytracingListInstruction* instruction =
+		reinterpret_cast<RaytracingListInstruction*>(
+			_allocate_raytracing_list_instruction(sizeof(RaytracingListInstruction)));
+	instruction->type = RaytracingListInstruction::TYPE_TRACE_RAYS;
 	instruction->raygen_sbt = p_raygen_sbt;
 	instruction->miss_sbt = p_miss_sbt;
 	instruction->hit_sbt = p_hit_sbt;
@@ -208949,11 +201273,11 @@ void RenderingDeviceGraph::add_raytracing_list_trace_rays(
 void RenderingDeviceGraph::add_raytracing_list_uniform_set_prepare_for_use(
 	RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index)
 {
-	RaytracingListUniformSetPrepareForUseInstruction* instruction =
-		reinterpret_cast<RaytracingListUniformSetPrepareForUseInstruction*>(
+	RaytracingListInstruction* instruction =
+		reinterpret_cast<RaytracingListInstruction*>(
 			_allocate_raytracing_list_instruction(
-				sizeof(RaytracingListUniformSetPrepareForUseInstruction)));
-	instruction->header.type = RaytracingListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+				sizeof(RaytracingListInstruction)));
+	instruction->type = RaytracingListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -208996,17 +201320,17 @@ void RenderingDeviceGraph::add_raytracing_list_end()
 {
 	int32_t command_index;
 	uint32_t instruction_data_size = raytracing_instruction_list.list.data.size();
-	uint32_t command_size = sizeof(RecordedRaytracingListCommand) + instruction_data_size;
-	RecordedRaytracingListCommand* command = reinterpret_cast<RecordedRaytracingListCommand*>(
+	uint32_t command_size = sizeof(RecordedCommand) + instruction_data_size;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_RAYTRACING_LIST;
-	command->header.self_stages = raytracing_instruction_list.list.stages;
+	command->type = RecordedCommand::TYPE_RAYTRACING_LIST;
+	command->self_stages = raytracing_instruction_list.list.stages;
 	command->instruction_data_size = instruction_data_size;
 	memcpy(command->instruction_data(), raytracing_instruction_list.list.data.ptr(),
 		instruction_data_size);
 	_add_command_to_graph(raytracing_instruction_list.list.command_trackers.ptr(),
 		raytracing_instruction_list.list.command_tracker_usages.ptr(),
-		raytracing_instruction_list.list.command_trackers.size(), command_index, &command->header);
+		raytracing_instruction_list.list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_compute_list_begin(
@@ -209021,10 +201345,10 @@ void RenderingDeviceGraph::add_compute_list_begin(
 
 void RenderingDeviceGraph::add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline)
 {
-	ComputeListBindPipelineInstruction* instruction =
-		reinterpret_cast<ComputeListBindPipelineInstruction*>(
-			_allocate_compute_list_instruction(sizeof(ComputeListBindPipelineInstruction)));
-	instruction->header.type = ComputeListInstruction::TYPE_BIND_PIPELINE;
+	ComputeListInstruction* instruction =
+		reinterpret_cast<ComputeListInstruction*>(
+			_allocate_compute_list_instruction(sizeof(ComputeListInstruction)));
+	instruction->type = ComputeListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
 	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 }
@@ -209041,11 +201365,11 @@ void RenderingDeviceGraph::add_compute_list_bind_uniform_sets(RDD::ShaderID p_sh
 	DEV_ASSERT(p_uniform_sets.size() >= p_set_count);
 
 	uint32_t instruction_size =
-		sizeof(ComputeListBindUniformSetsInstruction) + sizeof(RDD::UniformSetID) * p_set_count;
-	ComputeListBindUniformSetsInstruction* instruction =
-		reinterpret_cast<ComputeListBindUniformSetsInstruction*>(
+		sizeof(ComputeListInstruction) + sizeof(RDD::UniformSetID) * p_set_count;
+	ComputeListInstruction* instruction =
+		reinterpret_cast<ComputeListInstruction*>(
 			_allocate_compute_list_instruction(instruction_size));
-	instruction->header.type = ComputeListInstruction::TYPE_BIND_UNIFORM_SETS;
+	instruction->type = ComputeListInstruction::TYPE_BIND_UNIFORM_SETS;
 	instruction->shader = p_shader;
 	instruction->first_set_index = p_first_set_index;
 	instruction->set_count = p_set_count;
@@ -209061,9 +201385,9 @@ void RenderingDeviceGraph::add_compute_list_bind_uniform_sets(RDD::ShaderID p_sh
 void RenderingDeviceGraph::add_compute_list_dispatch(
 	uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups)
 {
-	ComputeListDispatchInstruction* instruction = reinterpret_cast<ComputeListDispatchInstruction*>(
-		_allocate_compute_list_instruction(sizeof(ComputeListDispatchInstruction)));
-	instruction->header.type = ComputeListInstruction::TYPE_DISPATCH;
+	ComputeListInstruction* instruction = reinterpret_cast<ComputeListInstruction*>(
+		_allocate_compute_list_instruction(sizeof(ComputeListInstruction)));
+	instruction->type = ComputeListInstruction::TYPE_DISPATCH;
 	instruction->x_groups = p_x_groups;
 	instruction->y_groups = p_y_groups;
 	instruction->z_groups = p_z_groups;
@@ -209072,10 +201396,10 @@ void RenderingDeviceGraph::add_compute_list_dispatch(
 void RenderingDeviceGraph::add_compute_list_dispatch_indirect(
 	RDD::BufferID p_buffer, uint32_t p_offset)
 {
-	ComputeListDispatchIndirectInstruction* instruction =
-		reinterpret_cast<ComputeListDispatchIndirectInstruction*>(
-			_allocate_compute_list_instruction(sizeof(ComputeListDispatchIndirectInstruction)));
-	instruction->header.type = ComputeListInstruction::TYPE_DISPATCH_INDIRECT;
+	ComputeListInstruction* instruction =
+		reinterpret_cast<ComputeListInstruction*>(
+			_allocate_compute_list_instruction(sizeof(ComputeListInstruction)));
+	instruction->type = ComputeListInstruction::TYPE_DISPATCH_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
 	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
@@ -209084,11 +201408,11 @@ void RenderingDeviceGraph::add_compute_list_dispatch_indirect(
 void RenderingDeviceGraph::add_compute_list_set_push_constant(
 	RDD::ShaderID p_shader, const void* p_data, uint32_t p_data_size)
 {
-	uint32_t instruction_size = sizeof(ComputeListSetPushConstantInstruction) + p_data_size;
-	ComputeListSetPushConstantInstruction* instruction =
-		reinterpret_cast<ComputeListSetPushConstantInstruction*>(
+	uint32_t instruction_size = sizeof(ComputeListInstruction) + p_data_size;
+	ComputeListInstruction* instruction =
+		reinterpret_cast<ComputeListInstruction*>(
 			_allocate_compute_list_instruction(instruction_size));
-	instruction->header.type = ComputeListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->type = ComputeListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -209097,11 +201421,11 @@ void RenderingDeviceGraph::add_compute_list_set_push_constant(
 void RenderingDeviceGraph::add_compute_list_uniform_set_prepare_for_use(
 	RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index)
 {
-	ComputeListUniformSetPrepareForUseInstruction* instruction =
-		reinterpret_cast<ComputeListUniformSetPrepareForUseInstruction*>(
+	ComputeListInstruction* instruction =
+		reinterpret_cast<ComputeListInstruction*>(
 			_allocate_compute_list_instruction(
-				sizeof(ComputeListUniformSetPrepareForUseInstruction)));
-	instruction->header.type = ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+				sizeof(ComputeListInstruction)));
+	instruction->type = ComputeListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -209142,17 +201466,17 @@ void RenderingDeviceGraph::add_compute_list_end()
 {
 	int32_t command_index;
 	uint32_t instruction_data_size = compute_instruction_list.list.data.size();
-	uint32_t command_size = sizeof(RecordedComputeListCommand) + instruction_data_size;
-	RecordedComputeListCommand* command = reinterpret_cast<RecordedComputeListCommand*>(
+	uint32_t command_size = sizeof(RecordedCommand) + instruction_data_size;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_COMPUTE_LIST;
-	command->header.self_stages = compute_instruction_list.list.stages;
+	command->type = RecordedCommand::TYPE_COMPUTE_LIST;
+	command->self_stages = compute_instruction_list.list.stages;
 	command->instruction_data_size = instruction_data_size;
 	memcpy(command->instruction_data(), compute_instruction_list.list.data.ptr(),
 		instruction_data_size);
 	_add_command_to_graph(compute_instruction_list.list.command_trackers.ptr(),
 		compute_instruction_list.list.command_tracker_usages.ptr(),
-		compute_instruction_list.list.command_trackers.size(), command_index, &command->header);
+		compute_instruction_list.list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_draw_list_begin(FramebufferCache* p_framebuffer_cache,
@@ -209178,10 +201502,10 @@ void RenderingDeviceGraph::add_draw_list_begin(RDD::RenderPassID p_render_pass,
 void RenderingDeviceGraph::add_draw_list_bind_index_buffer(
 	RDD::BufferID p_buffer, RenderingDeviceCommons::IndexBufferFormat p_format, uint32_t p_offset)
 {
-	DrawListBindIndexBufferInstruction* instruction =
-		reinterpret_cast<DrawListBindIndexBufferInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListBindIndexBufferInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_BIND_INDEX_BUFFER;
 	instruction->buffer = p_buffer;
 	instruction->format = p_format;
 	instruction->offset = p_offset;
@@ -209191,10 +201515,10 @@ void RenderingDeviceGraph::add_draw_list_bind_index_buffer(
 void RenderingDeviceGraph::add_draw_list_bind_pipeline(
 	RDD::PipelineID p_pipeline, uint32_t p_pipeline_stage_bits)
 {
-	DrawListBindPipelineInstruction* instruction =
-		reinterpret_cast<DrawListBindPipelineInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListBindPipelineInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_BIND_PIPELINE;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
 	draw_instruction_list.list.stages = draw_instruction_list.list.stages | p_pipeline_stage_bits;
 }
@@ -209211,11 +201535,11 @@ void RenderingDeviceGraph::add_draw_list_bind_uniform_sets(RDD::ShaderID p_shade
 	DEV_ASSERT(p_uniform_sets.size() >= p_set_count);
 
 	uint32_t instruction_size =
-		sizeof(DrawListBindUniformSetsInstruction) + sizeof(RDD::UniformSetID) * p_set_count;
-	DrawListBindUniformSetsInstruction* instruction =
-		reinterpret_cast<DrawListBindUniformSetsInstruction*>(
+		sizeof(DrawListInstruction) + sizeof(RDD::UniformSetID) * p_set_count;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->header.type = DrawListInstruction::TYPE_BIND_UNIFORM_SETS;
+	instruction->type = DrawListInstruction::TYPE_BIND_UNIFORM_SETS;
 	instruction->shader = p_shader;
 	instruction->first_set_index = p_first_index;
 	instruction->set_count = p_set_count;
@@ -209232,15 +201556,15 @@ void RenderingDeviceGraph::add_draw_list_bind_vertex_buffers(
 {
 	DEV_ASSERT(p_vertex_buffers.size() == p_vertex_buffer_offsets.size());
 
-	uint32_t instruction_size = sizeof(DrawListBindVertexBuffersInstruction) +
+	uint32_t instruction_size = sizeof(DrawListInstruction) +
 								sizeof(RDD::BufferID) * p_vertex_buffers.size() +
 								sizeof(uint64_t) * p_vertex_buffer_offsets.size();
-	DrawListBindVertexBuffersInstruction* instruction =
-		reinterpret_cast<DrawListBindVertexBuffersInstruction*>(
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->header.type = DrawListInstruction::TYPE_BIND_VERTEX_BUFFERS;
+	instruction->type = DrawListInstruction::TYPE_BIND_VERTEX_BUFFERS;
 	instruction->vertex_buffers_count = p_vertex_buffers.size();
-	instruction->dynamic_offsets_mask = driver->buffer_get_dynamic_offsets(p_vertex_buffers);
+	instruction->vertex_buffers_dynamic_offsets_mask = driver->buffer_get_dynamic_offsets(p_vertex_buffers);
 
 	RDD::BufferID* vertex_buffers = instruction->vertex_buffers();
 	uint64_t* vertex_buffer_offsets = instruction->vertex_buffer_offsets();
@@ -209258,13 +201582,13 @@ void RenderingDeviceGraph::add_draw_list_clear_attachments(
 	VectorView<RDD::AttachmentClear> p_attachments_clear,
 	VectorView<Rect2i> p_attachments_clear_rect)
 {
-	uint32_t instruction_size = sizeof(DrawListClearAttachmentsInstruction) +
+	uint32_t instruction_size = sizeof(DrawListInstruction) +
 								sizeof(RDD::AttachmentClear) * p_attachments_clear.size() +
 								sizeof(Rect2i) * p_attachments_clear_rect.size();
-	DrawListClearAttachmentsInstruction* instruction =
-		reinterpret_cast<DrawListClearAttachmentsInstruction*>(
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->header.type = DrawListInstruction::TYPE_CLEAR_ATTACHMENTS;
+	instruction->type = DrawListInstruction::TYPE_CLEAR_ATTACHMENTS;
 	instruction->attachments_clear_count = p_attachments_clear.size();
 	instruction->attachments_clear_rect_count = p_attachments_clear_rect.size();
 
@@ -209281,9 +201605,9 @@ void RenderingDeviceGraph::add_draw_list_clear_attachments(
 
 void RenderingDeviceGraph::add_draw_list_draw(uint32_t p_vertex_count, uint32_t p_instance_count)
 {
-	DrawListDrawInstruction* instruction = reinterpret_cast<DrawListDrawInstruction*>(
-		_allocate_draw_list_instruction(sizeof(DrawListDrawInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_DRAW;
+	DrawListInstruction* instruction = reinterpret_cast<DrawListInstruction*>(
+		_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_DRAW;
 	instruction->vertex_count = p_vertex_count;
 	instruction->instance_count = p_instance_count;
 }
@@ -209291,9 +201615,9 @@ void RenderingDeviceGraph::add_draw_list_draw(uint32_t p_vertex_count, uint32_t 
 void RenderingDeviceGraph::add_draw_list_draw_indexed(
 	uint32_t p_index_count, uint32_t p_instance_count, uint32_t p_first_index)
 {
-	DrawListDrawIndexedInstruction* instruction = reinterpret_cast<DrawListDrawIndexedInstruction*>(
-		_allocate_draw_list_instruction(sizeof(DrawListDrawIndexedInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDEXED;
+	DrawListInstruction* instruction = reinterpret_cast<DrawListInstruction*>(
+		_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_DRAW_INDEXED;
 	instruction->index_count = p_index_count;
 	instruction->instance_count = p_instance_count;
 	instruction->first_index = p_first_index;
@@ -209302,10 +201626,10 @@ void RenderingDeviceGraph::add_draw_list_draw_indexed(
 void RenderingDeviceGraph::add_draw_list_draw_indirect(
 	RDD::BufferID p_buffer, uint32_t p_offset, uint32_t p_draw_count, uint32_t p_stride)
 {
-	DrawListDrawIndirectInstruction* instruction =
-		reinterpret_cast<DrawListDrawIndirectInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListDrawIndirectInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDIRECT;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_DRAW_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
@@ -209316,10 +201640,10 @@ void RenderingDeviceGraph::add_draw_list_draw_indirect(
 void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
 	RDD::BufferID p_buffer, uint32_t p_offset, uint32_t p_draw_count, uint32_t p_stride)
 {
-	DrawListDrawIndexedIndirectInstruction* instruction =
-		reinterpret_cast<DrawListDrawIndexedIndirectInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListDrawIndexedIndirectInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_DRAW_INDEXED_INDIRECT;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_DRAW_INDEXED_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
@@ -209329,47 +201653,47 @@ void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
 
 void RenderingDeviceGraph::add_draw_list_execute_commands(RDD::CommandBufferID p_command_buffer)
 {
-	DrawListExecuteCommandsInstruction* instruction =
-		reinterpret_cast<DrawListExecuteCommandsInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListExecuteCommandsInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_EXECUTE_COMMANDS;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_EXECUTE_COMMANDS;
 	instruction->command_buffer = p_command_buffer;
 }
 
 void RenderingDeviceGraph::add_draw_list_next_subpass(RDD::CommandBufferType p_command_buffer_type)
 {
-	DrawListNextSubpassInstruction* instruction = reinterpret_cast<DrawListNextSubpassInstruction*>(
-		_allocate_draw_list_instruction(sizeof(DrawListNextSubpassInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_NEXT_SUBPASS;
+	DrawListInstruction* instruction = reinterpret_cast<DrawListInstruction*>(
+		_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_NEXT_SUBPASS;
 	instruction->command_buffer_type = p_command_buffer_type;
 }
 
 void RenderingDeviceGraph::add_draw_list_set_blend_constants(const Color& p_color)
 {
-	DrawListSetBlendConstantsInstruction* instruction =
-		reinterpret_cast<DrawListSetBlendConstantsInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListSetBlendConstantsInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_SET_BLEND_CONSTANTS;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_SET_BLEND_CONSTANTS;
 	instruction->color = p_color;
 }
 
 void RenderingDeviceGraph::add_draw_list_set_line_width(float p_width)
 {
-	DrawListSetLineWidthInstruction* instruction =
-		reinterpret_cast<DrawListSetLineWidthInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListSetLineWidthInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_SET_LINE_WIDTH;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_SET_LINE_WIDTH;
 	instruction->width = p_width;
 }
 
 void RenderingDeviceGraph::add_draw_list_set_push_constant(
 	RDD::ShaderID p_shader, const void* p_data, uint32_t p_data_size)
 {
-	uint32_t instruction_size = sizeof(DrawListSetPushConstantInstruction) + p_data_size;
-	DrawListSetPushConstantInstruction* instruction =
-		reinterpret_cast<DrawListSetPushConstantInstruction*>(
+	uint32_t instruction_size = sizeof(DrawListInstruction) + p_data_size;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
 			_allocate_draw_list_instruction(instruction_size));
-	instruction->header.type = DrawListInstruction::TYPE_SET_PUSH_CONSTANT;
+	instruction->type = DrawListInstruction::TYPE_SET_PUSH_CONSTANT;
 	instruction->size = p_data_size;
 	instruction->shader = p_shader;
 	memcpy(instruction->data(), p_data, p_data_size);
@@ -209377,27 +201701,27 @@ void RenderingDeviceGraph::add_draw_list_set_push_constant(
 
 void RenderingDeviceGraph::add_draw_list_set_scissor(Rect2i p_rect)
 {
-	DrawListSetScissorInstruction* instruction = reinterpret_cast<DrawListSetScissorInstruction*>(
-		_allocate_draw_list_instruction(sizeof(DrawListSetScissorInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_SET_SCISSOR;
+	DrawListInstruction* instruction = reinterpret_cast<DrawListInstruction*>(
+		_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_SET_SCISSOR;
 	instruction->rect = p_rect;
 }
 
 void RenderingDeviceGraph::add_draw_list_set_viewport(Rect2i p_rect)
 {
-	DrawListSetViewportInstruction* instruction = reinterpret_cast<DrawListSetViewportInstruction*>(
-		_allocate_draw_list_instruction(sizeof(DrawListSetViewportInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_SET_VIEWPORT;
+	DrawListInstruction* instruction = reinterpret_cast<DrawListInstruction*>(
+		_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_SET_VIEWPORT;
 	instruction->rect = p_rect;
 }
 
 void RenderingDeviceGraph::add_draw_list_uniform_set_prepare_for_use(
 	RDD::ShaderID p_shader, RDD::UniformSetID p_uniform_set, uint32_t set_index)
 {
-	DrawListUniformSetPrepareForUseInstruction* instruction =
-		reinterpret_cast<DrawListUniformSetPrepareForUseInstruction*>(
-			_allocate_draw_list_instruction(sizeof(DrawListUniformSetPrepareForUseInstruction)));
-	instruction->header.type = DrawListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
+	DrawListInstruction* instruction =
+		reinterpret_cast<DrawListInstruction*>(
+			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
+	instruction->type = DrawListInstruction::TYPE_UNIFORM_SET_PREPARE_FOR_USE;
 	instruction->shader = p_shader;
 	instruction->uniform_set = p_uniform_set;
 	instruction->set_index = set_index;
@@ -209443,12 +201767,12 @@ void RenderingDeviceGraph::add_draw_list_end()
 										 sizeof(RDD::AttachmentStoreOp)) *
 									 trackers_count;
 	uint32_t instruction_data_size = draw_instruction_list.list.data.size();
-	uint32_t command_size = sizeof(RecordedDrawListCommand) + clear_values_size +
+	uint32_t command_size = sizeof(RecordedCommand) + clear_values_size +
 							trackers_and_ops_size + instruction_data_size;
-	RecordedDrawListCommand* command =
-		reinterpret_cast<RecordedDrawListCommand*>(_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_DRAW_LIST;
-	command->header.self_stages = draw_instruction_list.list.stages;
+	RecordedCommand* command =
+		reinterpret_cast<RecordedCommand*>(_allocate_command(command_size, command_index));
+	command->type = RecordedCommand::TYPE_DRAW_LIST;
+	command->self_stages = draw_instruction_list.list.stages;
 	command->framebuffer_cache = framebuffer_cache;
 	command->render_pass = draw_instruction_list.render_pass;
 	command->framebuffer = draw_instruction_list.framebuffer;
@@ -209510,10 +201834,10 @@ void RenderingDeviceGraph::add_draw_list_end()
 	}
 
 	memcpy(
-		command->instruction_data(), draw_instruction_list.list.data.ptr(), instruction_data_size);
+		command->draw_list_instruction_data(), draw_instruction_list.list.data.ptr(), instruction_data_size);
 	_add_command_to_graph(draw_instruction_list.list.command_trackers.ptr(),
 		draw_instruction_list.list.command_tracker_usages.ptr(),
-		draw_instruction_list.list.command_trackers.size(), command_index, &command->header);
+		draw_instruction_list.list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
@@ -209523,16 +201847,16 @@ void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedTextureClearColorCommand* command = reinterpret_cast<RecordedTextureClearColorCommand*>(
-		_allocate_command(sizeof(RecordedTextureClearColorCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_CLEAR_COLOR;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_TEXTURE_CLEAR_COLOR;
 	command->texture = p_dst;
 	command->color = p_color;
 	command->range = p_range;
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
@@ -209540,16 +201864,16 @@ void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
 		// we must either transition the resource to a render target or a storage image as that's
 		// the only two ways it can perform the operation.
 		if (p_dst_tracker->texture_usage & RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT) {
-			command->header.self_stages = RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			command->self_stages = RDD::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			usage = RESOURCE_USAGE_ATTACHMENT_COLOR_READ_WRITE;
 		}
 		else {
-			command->header.self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
+			command->self_stages = RDD::PIPELINE_STAGE_CLEAR_STORAGE_BIT;
 			usage = RESOURCE_USAGE_STORAGE_IMAGE_READ_WRITE;
 		}
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
@@ -209559,10 +201883,10 @@ void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedTextureClearDepthStencilCommand* command =
-		reinterpret_cast<RecordedTextureClearDepthStencilCommand*>(
-			_allocate_command(sizeof(RecordedTextureClearDepthStencilCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_CLEAR_DEPTH_STENCIL;
+	RecordedCommand* command =
+		reinterpret_cast<RecordedCommand*>(
+			_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_TEXTURE_CLEAR_DEPTH_STENCIL;
 	command->texture = p_dst;
 	command->depth = p_depth;
 	command->stencil = p_stencil;
@@ -209570,19 +201894,19 @@ void RenderingDeviceGraph::add_texture_clear_depth_stencil(RDD::TextureID p_dst,
 
 	ResourceUsage usage;
 	if (driver_clears_with_copy_engine) {
-		command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+		command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 		usage = RESOURCE_USAGE_COPY_TO;
 	}
 	else {
 		// If the driver is uncapable of using the copy engine for clearing the image (e.g. D3D12),
 		// we must transition the resource to a depth stencil as that's the only way it can perform
 		// the operation.
-		command->header.self_stages = RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+		command->self_stages = RDD::PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
 									  RDD::PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		usage = RESOURCE_USAGE_ATTACHMENT_DEPTH_STENCIL_READ_WRITE;
 	}
 
-	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
+	_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracker* p_src_tracker,
@@ -209593,12 +201917,12 @@ void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracke
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	uint64_t command_size = sizeof(RecordedTextureCopyCommand) +
+	uint64_t command_size = sizeof(RecordedCommand) +
 							p_texture_copy_regions.size() * sizeof(RDD::TextureCopyRegion);
-	RecordedTextureCopyCommand* command = reinterpret_cast<RecordedTextureCopyCommand*>(
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_COPY;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->type = RecordedCommand::TYPE_TEXTURE_COPY;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->from_texture = p_src;
 	command->to_texture = p_dst;
 	command->texture_copy_regions_count = p_texture_copy_regions.size();
@@ -209610,7 +201934,7 @@ void RenderingDeviceGraph::add_texture_copy(RDD::TextureID p_src, ResourceTracke
 
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
-	_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
+	_add_command_to_graph(trackers, usages, 2, command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
@@ -209622,12 +201946,12 @@ void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
 
 	int32_t command_index;
 	uint64_t command_size =
-		sizeof(RecordedTextureGetDataCommand) +
+		sizeof(RecordedCommand) +
 		p_buffer_texture_copy_regions.size() * sizeof(RDD::BufferTextureCopyRegion);
-	RecordedTextureGetDataCommand* command = reinterpret_cast<RecordedTextureGetDataCommand*>(
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_GET_DATA;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->type = RecordedCommand::TYPE_TEXTURE_GET_DATA;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->from_texture = p_src;
 	command->to_buffer = p_dst;
 	command->buffer_texture_copy_regions_count = p_buffer_texture_copy_regions.size();
@@ -209642,11 +201966,11 @@ void RenderingDeviceGraph::add_texture_get_data(RDD::TextureID p_src,
 		// Add the optional destination tracker if it was provided.
 		ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 		ResourceUsage usages[2] = {RESOURCE_USAGE_COPY_TO, RESOURCE_USAGE_COPY_FROM};
-		_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
+		_add_command_to_graph(trackers, usages, 2, command_index, command);
 	}
 	else {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_FROM;
-		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, &command->header);
+		_add_command_to_graph(&p_src_tracker, &usage, 1, command_index, command);
 	}
 }
 
@@ -209658,10 +201982,10 @@ void RenderingDeviceGraph::add_texture_resolve(RDD::TextureID p_src, ResourceTra
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	RecordedTextureResolveCommand* command = reinterpret_cast<RecordedTextureResolveCommand*>(
-		_allocate_command(sizeof(RecordedTextureResolveCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_RESOLVE;
-	command->header.self_stages = RDD::PIPELINE_STAGE_RESOLVE_BIT;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_TEXTURE_RESOLVE;
+	command->self_stages = RDD::PIPELINE_STAGE_RESOLVE_BIT;
 	command->from_texture = p_src;
 	command->to_texture = p_dst;
 	command->src_layer = p_src_layer;
@@ -209671,7 +201995,7 @@ void RenderingDeviceGraph::add_texture_resolve(RDD::TextureID p_src, ResourceTra
 
 	ResourceTracker* trackers[2] = {p_dst_tracker, p_src_tracker};
 	ResourceUsage usages[2] = {RESOURCE_USAGE_RESOLVE_TO, RESOURCE_USAGE_RESOLVE_FROM};
-	_add_command_to_graph(trackers, usages, 2, command_index, &command->header);
+	_add_command_to_graph(trackers, usages, 2, command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTracker* p_dst_tracker,
@@ -209681,12 +202005,12 @@ void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTrac
 	DEV_ASSERT(p_dst_tracker != nullptr);
 
 	int32_t command_index;
-	uint64_t command_size = sizeof(RecordedTextureUpdateCommand) +
+	uint64_t command_size = sizeof(RecordedCommand) +
 							p_buffer_copies.size() * sizeof(RecordedBufferToTextureCopy);
-	RecordedTextureUpdateCommand* command = reinterpret_cast<RecordedTextureUpdateCommand*>(
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
-	command->header.type = RecordedCommand::TYPE_TEXTURE_UPDATE;
-	command->header.self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
+	command->type = RecordedCommand::TYPE_TEXTURE_UPDATE;
+	command->self_stages = RDD::PIPELINE_STAGE_COPY_BIT;
 	command->to_texture = p_dst;
 	command->buffer_to_texture_copies_count = p_buffer_copies.size();
 
@@ -209710,24 +202034,24 @@ void RenderingDeviceGraph::add_texture_update(RDD::TextureID p_dst, ResourceTrac
 		usages.push_back(RESOURCE_USAGE_COPY_TO);
 
 		_add_command_to_graph(
-			trackers.ptr(), usages.ptr(), trackers.size(), command_index, &command->header);
+			trackers.ptr(), usages.ptr(), trackers.size(), command_index, command);
 	}
 	else {
 		ResourceUsage usage = RESOURCE_USAGE_COPY_TO;
-		_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, &command->header);
+		_add_command_to_graph(&p_dst_tracker, &usage, 1, command_index, command);
 	}
 }
 
 void RenderingDeviceGraph::add_capture_timestamp(RDD::QueryPoolID p_query_pool, uint32_t p_index)
 {
 	int32_t command_index;
-	RecordedCaptureTimestampCommand* command = reinterpret_cast<RecordedCaptureTimestampCommand*>(
-		_allocate_command(sizeof(RecordedCaptureTimestampCommand), command_index));
-	command->header.type = RecordedCommand::TYPE_CAPTURE_TIMESTAMP;
-	command->header.self_stages = 0;
+	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
+		_allocate_command(sizeof(RecordedCommand), command_index));
+	command->type = RecordedCommand::TYPE_CAPTURE_TIMESTAMP;
+	command->self_stages = 0;
 	command->pool = p_query_pool;
 	command->index = p_index;
-	_add_command_to_graph(nullptr, nullptr, 0, command_index, &command->header);
+	_add_command_to_graph(nullptr, nullptr, 0, command_index, command);
 }
 
 void RenderingDeviceGraph::add_synchronization()
@@ -210785,38 +203109,6 @@ void RenderingDeviceGraph::initialize(RDD* p_driver,
 		driver->api_trait_get(RDD::API_TRAIT_BUFFERS_REQUIRE_TRANSITIONS);
 }
 
-// === Merged from servers/rendering/shader_language.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/templates/rb_set.h"
 #include "servers/display/display_server.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
@@ -215045,7 +207337,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 						// This is an implicit conversion.
 						ConstantNode* constant =
 							static_cast<ConstantNode*>(p_func->arguments[i + 1]);
-						ConstantNode* conversion = alloc_node<ConstantNode>();
+						ConstantNode* conversion = alloc_node(Node::NODE_TYPE_CONSTANT);
 
 						conversion->datatype = builtin_func_defs[idx].args[i];
 						conversion->values.resize(1);
@@ -215242,7 +207534,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 
 				// this is an implicit conversion
 				ConstantNode* constant = static_cast<ConstantNode*>(p_func->arguments[k + 1]);
-				ConstantNode* conversion = alloc_node<ConstantNode>();
+				ConstantNode* conversion = alloc_node(Node::NODE_TYPE_CONSTANT);
 
 				conversion->datatype = pfunc->arguments[k].type;
 				conversion->values.resize(1);
@@ -216302,7 +208594,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_array_constructor(
 		}
 	}
 
-	ArrayConstructNode* an = alloc_node<ArrayConstructNode>();
+	ArrayConstructNode* an = alloc_node(Node::NODE_TYPE_ARRAY_CONSTRUCT);
 
 	if (tk.type == TK_PARENTHESIS_OPEN || auto_size) { // initialization
 		int idx = 0;
@@ -216449,7 +208741,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_array_constructor(BlockNode* p_bloc
 		}
 	}
 
-	ArrayConstructNode* an = alloc_node<ArrayConstructNode>();
+	ArrayConstructNode* an = alloc_node(Node::NODE_TYPE_ARRAY_CONSTRUCT);
 	an->datatype = p_type;
 	an->struct_name = p_struct_name;
 
@@ -216539,7 +208831,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 		}
 		else if (tk.type == TK_FLOAT_CONSTANT) {
-			ConstantNode* constant = alloc_node<ConstantNode>();
+			ConstantNode* constant = alloc_node(Node::NODE_TYPE_CONSTANT);
 			Scalar v;
 			v.real = tk.constant;
 			constant->values.push_back(v);
@@ -216548,7 +208840,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 		}
 		else if (tk.type == TK_INT_CONSTANT) {
-			ConstantNode* constant = alloc_node<ConstantNode>();
+			ConstantNode* constant = alloc_node(Node::NODE_TYPE_CONSTANT);
 			Scalar v;
 			v.sint = tk.constant;
 			constant->values.push_back(v);
@@ -216557,7 +208849,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 		}
 		else if (tk.type == TK_UINT_CONSTANT) {
-			ConstantNode* constant = alloc_node<ConstantNode>();
+			ConstantNode* constant = alloc_node(Node::NODE_TYPE_CONSTANT);
 			Scalar v;
 			v.uint = tk.constant;
 			constant->values.push_back(v);
@@ -216567,7 +208859,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 		}
 		else if (tk.type == TK_TRUE) {
 			// handle true constant
-			ConstantNode* constant = alloc_node<ConstantNode>();
+			ConstantNode* constant = alloc_node(Node::NODE_TYPE_CONSTANT);
 			Scalar v;
 			v.boolean = true;
 			constant->values.push_back(v);
@@ -216577,7 +208869,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 		}
 		else if (tk.type == TK_FALSE) {
 			// handle false constant
-			ConstantNode* constant = alloc_node<ConstantNode>();
+			ConstantNode* constant = alloc_node(Node::NODE_TYPE_CONSTANT);
 			Scalar v;
 			v.boolean = false;
 			constant->values.push_back(v);
@@ -216627,14 +208919,14 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					}
 					// basic type constructor
 
-					OperatorNode* func = alloc_node<OperatorNode>();
+					OperatorNode* func = alloc_node(Node::NODE_TYPE_OPERATOR);
 					func->op = OP_CONSTRUCT;
 
 					if (precision != PRECISION_DEFAULT) {
 						func->return_precision_cache = precision;
 					}
 
-					VariableNode* funcname = alloc_node<VariableNode>();
+					VariableNode* funcname = alloc_node(Node::NODE_TYPE_VARIABLE);
 					funcname->name = get_datatype_name(datatype);
 					func->arguments.push_back(funcname);
 
@@ -216686,11 +208978,11 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 					const String& name = identifier;
 
-					OperatorNode* func = alloc_node<OperatorNode>();
+					OperatorNode* func = alloc_node(Node::NODE_TYPE_OPERATOR);
 					func->op = OP_STRUCT;
 					func->struct_name = name;
 					func->return_cache = TYPE_STRUCT;
-					VariableNode* funcname = alloc_node<VariableNode>();
+					VariableNode* funcname = alloc_node(Node::NODE_TYPE_VARIABLE);
 					funcname->name = name;
 					func->arguments.push_back(funcname);
 
@@ -216747,10 +209039,10 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					const String& rname = identifier;
 					String name = identifier;
 
-					OperatorNode* func = alloc_node<OperatorNode>();
+					OperatorNode* func = alloc_node(Node::NODE_TYPE_OPERATOR);
 					func->op = OP_CALL;
 
-					VariableNode* funcname = alloc_node<VariableNode>();
+					VariableNode* funcname = alloc_node(Node::NODE_TYPE_VARIABLE);
 					funcname->name = name;
 					funcname->rname = name;
 
@@ -217396,7 +209688,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 						_set_tkpos(prepos);
 					}
 
-					ArrayNode* arrname = alloc_node<ArrayNode>();
+					ArrayNode* arrname = alloc_node(Node::NODE_TYPE_ARRAY);
 					arrname->name = identifier;
 					arrname->datatype_cache = data_type;
 					arrname->struct_name = struct_name;
@@ -217409,7 +209701,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					expr = arrname;
 				}
 				else {
-					VariableNode* varname = alloc_node<VariableNode>();
+					VariableNode* varname = alloc_node(Node::NODE_TYPE_VARIABLE);
 					varname->name = identifier;
 					varname->datatype_cache = data_type;
 					varname->is_const = is_const;
@@ -217457,7 +209749,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				valid = true;
 				_set_tkpos(prepos);
 
-				OperatorNode* func = alloc_node<OperatorNode>();
+				OperatorNode* func = alloc_node(Node::NODE_TYPE_OPERATOR);
 				func->op = OP_EMPTY;
 				expr = func;
 			}
@@ -217470,7 +209762,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				else {
 					_set_tkpos(prepos);
 
-					OperatorNode* func = alloc_node<OperatorNode>();
+					OperatorNode* func = alloc_node(Node::NODE_TYPE_OPERATOR);
 					func->op = OP_EMPTY;
 					expr = func;
 				}
@@ -217803,7 +210095,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					return nullptr;
 				}
 
-				MemberNode* mn = alloc_node<MemberNode>();
+				MemberNode* mn = alloc_node(Node::NODE_TYPE_MEMBER);
 				mn->basetype = dt;
 				mn->basetype_const = is_const;
 				mn->datatype = member_type;
@@ -218046,7 +210338,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					}
 					}
 				}
-				OperatorNode* op = alloc_node<OperatorNode>();
+				OperatorNode* op = alloc_node(Node::NODE_TYPE_OPERATOR);
 				op->op = OP_INDEX;
 				op->return_cache = member_type;
 				op->struct_name = member_struct_name;
@@ -218062,7 +210354,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 			}
 			else if (tk.type == TK_OP_INCREMENT || tk.type == TK_OP_DECREMENT) {
-				OperatorNode* op = alloc_node<OperatorNode>();
+				OperatorNode* op = alloc_node(Node::NODE_TYPE_OPERATOR);
 				op->op = tk.type == TK_OP_DECREMENT ? OP_POST_DECREMENT : OP_POST_INCREMENT;
 				op->arguments.push_back(expr);
 
@@ -218405,7 +210697,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 			// consecutively do unary operators
 			for (int i = expr_pos - 1; i >= next_op; i--) {
-				OperatorNode* op = alloc_node<OperatorNode>();
+				OperatorNode* op = alloc_node(Node::NODE_TYPE_OPERATOR);
 				op->op = expression[i].op;
 
 				String error;
@@ -218459,7 +210751,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				return nullptr;
 			}
 
-			OperatorNode* op = alloc_node<OperatorNode>();
+			OperatorNode* op = alloc_node(Node::NODE_TYPE_OPERATOR);
 			op->op = expression[next_op].op;
 			op->arguments.push_back(expression[next_op - 1].node);
 			op->arguments.push_back(expression[next_op + 1].node);
@@ -218506,7 +210798,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 				ERR_FAIL_V(nullptr);
 			}
 
-			OperatorNode* op = alloc_node<OperatorNode>();
+			OperatorNode* op = alloc_node(Node::NODE_TYPE_OPERATOR);
 			op->op = expression[next_op].op;
 
 			if (expression[next_op - 1].is_op) {
@@ -218659,7 +210951,7 @@ ShaderLanguage::Node* ShaderLanguage::_reduce_expression(
 			return p_node;
 		}
 
-		ConstantNode* cn = alloc_node<ConstantNode>();
+		ConstantNode* cn = alloc_node(Node::NODE_TYPE_CONSTANT);
 		cn->datatype = op->get_datatype();
 		cn->values = values;
 		return cn;
@@ -218843,7 +211135,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			bool fixed_array_size = false;
 			bool first = true;
 
-			VariableDeclarationNode* vdnode = alloc_node<VariableDeclarationNode>();
+			VariableDeclarationNode* vdnode = alloc_node(Node::NODE_TYPE_VARIABLE_DECLARATION);
 			vdnode->precision = precision;
 			if (is_struct) {
 				vdnode->struct_name = struct_name;
@@ -219247,7 +211539,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_IF;
 #ifdef DEBUG_ENABLED
 			keyword_completion_context = CF_IF_DECL;
@@ -219304,7 +211596,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				_set_expected_after_error("(", "switch");
 				return ERR_PARSE_ERROR;
 			}
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_SWITCH;
 			Node* n = _parse_and_reduce_expression(p_block, p_function_info);
 			if (!n) {
@@ -219427,7 +211719,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 					return ERR_PARSE_ERROR;
 				}
 
-				VariableNode* vn = alloc_node<VariableNode>();
+				VariableNode* vn = alloc_node(Node::NODE_TYPE_VARIABLE);
 				vn->name = tk.text;
 				{
 					Vector<Scalar> v;
@@ -219453,7 +211745,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				n = vn;
 			}
 			else {
-				ConstantNode* cn = alloc_node<ConstantNode>();
+				ConstantNode* cn = alloc_node(Node::NODE_TYPE_CONSTANT);
 				Scalar v;
 				if (p_block->expected_type == TYPE_UINT) {
 					if (tk.type != TK_UINT_CONSTANT) {
@@ -219492,7 +211784,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_CASE;
 
 			BlockNode* case_block = alloc_node<BlockNode>();
@@ -219529,7 +211821,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_DEFAULT;
 
 			BlockNode* default_block = alloc_node<BlockNode>();
@@ -219574,7 +211866,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			if (is_do) {
 				cf->flow_op = FLOW_OP_DO;
 			}
@@ -219623,7 +211915,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* cf = alloc_node<ControlFlowNode>();
+			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_FOR;
 
 			BlockNode* init_block = alloc_node<BlockNode>();
@@ -219705,7 +211997,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				array_size_string = "[" + itos(b->parent_function->return_array_size) + "]";
 			}
 
-			ControlFlowNode* flow = alloc_node<ControlFlowNode>();
+			ControlFlowNode* flow = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			flow->flow_op = FLOW_OP_RETURN;
 
 			pos = _get_tkpos();
@@ -219801,7 +212093,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* flow = alloc_node<ControlFlowNode>();
+			ControlFlowNode* flow = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			flow->flow_op = FLOW_OP_DISCARD;
 
 			pos = _get_tkpos();
@@ -219825,7 +212117,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* flow = alloc_node<ControlFlowNode>();
+			ControlFlowNode* flow = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			flow->flow_op = FLOW_OP_BREAK;
 
 			pos = _get_tkpos();
@@ -219853,7 +212145,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			ControlFlowNode* flow = alloc_node<ControlFlowNode>();
+			ControlFlowNode* flow = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			flow->flow_op = FLOW_OP_CONTINUE;
 
 			pos = _get_tkpos();
@@ -220224,7 +212516,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 				return ERR_PARSE_ERROR;
 			}
 
-			StructNode* st_node = alloc_node<StructNode>();
+			StructNode* st_node = alloc_node(Node::NODE_TYPE_STRUCT);
 			st.shader_struct = st_node;
 
 			int member_count = 0;
@@ -220319,7 +212611,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 							return ERR_PARSE_ERROR;
 						}
 
-						MemberNode* member = alloc_node<MemberNode>();
+						MemberNode* member = alloc_node(Node::NODE_TYPE_MEMBER);
 						member->precision = precision;
 						member->datatype = type;
 						member->struct_name = struct_name;
@@ -221624,7 +213916,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 
 							array_size = constant.array_size;
 
-							ConstantNode* expr = memnew(ConstantNode);
+							ConstantNode* expr = alloc_node(Node::NODE_TYPE_CONSTANT);
 
 							expr->datatype = constant.type;
 
@@ -222579,23 +214871,13 @@ void ShaderLanguage::_check_warning_accums() {}
 
 void ShaderLanguage::finish() { global_func_set.clear(); }
 
-
-// ============================================================================
-// Merged from servers/rendering/shader_compiler.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifdef DEV_ENABLED
 #include "servers/display/display_server.h"
 #endif
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/shader_compiler.cpp ---
 
 #define SL ShaderLanguage
 
@@ -224459,8 +216741,6 @@ void ShaderCompiler::initialize(DefaultIdentifierActions p_actions)
 ShaderCompiler::ShaderCompiler() {}
 #undef SL
 
-// --- Merged from servers/rendering/shader_preprocessor.cpp ---
-
 const char32_t CURSOR = 0xFFFF;
 
 // Tokenizer
@@ -225799,8 +218079,6 @@ void ShaderPreprocessor::process_if(ShaderPreprocessor::Tokenizer* p_tokenizer) 
 
 void ShaderPreprocessor::process_elif(ShaderPreprocessor::Tokenizer* p_tokenizer) {}
 
-// --- Merged from servers/rendering/shader_types.cpp ---
-
 const HashMap<String, ShaderLanguage::FunctionInfo>& ShaderTypes::get_functions(
 	RSE::ShaderMode p_mode)
 {
@@ -226685,8 +218963,6 @@ void ShaderTypes::finalize()
     shader_types_list.clear();
 }
 
-// --- Merged from servers/rendering/shader_warnings.cpp ---
-
 #ifdef DEBUG_ENABLED
 
 ShaderWarning::Code ShaderWarning::get_code() const { return code; }
@@ -226805,10 +219081,7 @@ ShaderWarning::CodeFlags ShaderWarning::get_flags_from_codemap(const HashMap<Cod
 
 #endif // DEBUG_ENABLED
 
-// --- Merged from servers/rendering/shader_include_db.cpp ---
-
 HashMap<String, String> ShaderIncludeDB::built_in_includes;
-
 
 void ShaderIncludeDB::register_built_in_include_file(
 	const String& p_filename, const String& p_shader_code)
@@ -226896,38 +219169,6 @@ String ShaderIncludeDB::parse_include_files(const String& p_code)
 	return parsed_code;
 }
 
-// === Merged from servers/register_server_types.cpp ===
-/*  register_server_types.cpp                                             */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 // 2D physics and navigation.
@@ -226962,8 +219203,6 @@ static bool has_server_feature_callback(const String& p_feature)
 	return false;
 }
 
-static MovieWriterPNGWAV* writer_pngwav = nullptr;
-
 void unregister_server_types()
 {
 	ShaderTypes::finalize();
@@ -226973,12 +219212,6 @@ void register_server_types()
 {
 	ShaderTypes::initialize();
 }
-
-
-
-// ============================================================================
-// Merged from servers/camera/camera_server.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -227127,12 +219360,6 @@ RID CameraServer::feed_texture(int p_id, CameraServer::FeedImage p_texture)
 	return feed->get_texture(p_texture);
 }
 
-
-
-// ============================================================================
-// Merged from servers/camera/camera_feed.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 int CameraFeed::get_id() const { return id; }
@@ -227238,20 +219465,24 @@ void CameraFeed::set_rgb_image(Ref<Image> const&) {}
 
 void CameraFeed::set_ycbcr_images(Ref<Image> const&, Ref<Image> const&) {}
 
-// ============================================================================
-// Merged from servers/movie_writer/movie_writer.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/templates/rb_set.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
 MovieWriter* MovieWriter::writers[MovieWriter::MAX_WRITERS];
 uint32_t MovieWriter::writer_count = 0;
+
+MovieWriter::MovieWriter(Format p_format) : format(p_format) {}
+
+MovieWriter::~MovieWriter()
+{
+#if defined(MODULE_THEORA_ENABLED) && defined(TOOLS_ENABLED)
+	if (ogv) {
+		memdelete(ogv);
+		ogv = nullptr;
+	}
+#endif
+}
 
 void MovieWriter::add_writer(MovieWriter* p_writer)
 {
@@ -227261,7 +219492,7 @@ void MovieWriter::add_writer(MovieWriter* p_writer)
 
 MovieWriter* MovieWriter::find_writer_for_file(const String& p_file)
 {
-	for (int32_t i = writer_count - 1; i >= 0; i--) { // More recent last, to have override ability.
+	for (int32_t i = writer_count - 1; i >= 0; i--) {
 		if (writers[i]->handles_file(p_file)) {
 			return writers[i];
 		}
@@ -227269,36 +219500,174 @@ MovieWriter* MovieWriter::find_writer_for_file(const String& p_file)
 	return nullptr;
 }
 
-uint32_t MovieWriter::get_audio_mix_rate() const
+bool MovieWriter::handles_file(const String& p_path) const
 {
-	uint32_t ret = 48000;
-	return ret;
+	switch (format) {
+	case FORMAT_PNG_WAV:
+		return p_path.has_extension("png");
+	case FORMAT_OGV:
+		return p_path.has_extension("ogv");
+	case FORMAT_MJPEG:
+		return p_path.has_extension("avi");
+	}
+	return false;
 }
 
-AudioServer::SpeakerMode MovieWriter::get_audio_speaker_mode() const
+void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
 {
-	AudioServer::SpeakerMode ret = AudioServer::SPEAKER_MODE_STEREO;
-	return ret;
+	switch (format) {
+	case FORMAT_PNG_WAV:
+		r_extensions->push_back("png");
+		break;
+	case FORMAT_OGV:
+		r_extensions->push_back("ogv");
+		break;
+	case FORMAT_MJPEG:
+		r_extensions->push_back("avi");
+		break;
+	}
+}
+
+String MovieWriter::zeros_str(uint32_t p_index)
+{
+	char zeros[MAX_TRAILING_ZEROS + 1];
+	for (uint32_t i = 0; i < MAX_TRAILING_ZEROS; i++) {
+		uint32_t idx = MAX_TRAILING_ZEROS - i - 1;
+		uint32_t digit = (p_index / uint32_t(Math::pow(double(10), double(idx)))) % 10;
+		zeros[i] = '0' + digit;
+	}
+	zeros[MAX_TRAILING_ZEROS] = 0;
+	return zeros;
 }
 
 Error MovieWriter::write_begin(
 	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
 {
-	Error ret = ERR_UNCONFIGURED;
-	return ret;
+	switch (format) {
+	case FORMAT_OGV:
+#if defined(MODULE_THEORA_ENABLED) && defined(TOOLS_ENABLED)
+		return _write_begin_ogv(p_movie_size, p_fps, p_base_path);
+#else
+		return ERR_UNAVAILABLE;
+#endif
+	case FORMAT_MJPEG:
+#if defined(MODULE_JPG_ENABLED)
+		return _write_begin_mjpeg(p_movie_size, p_fps, p_base_path);
+#else
+		return ERR_UNAVAILABLE;
+#endif
+	case FORMAT_PNG_WAV:
+		break;
+	}
+
+	base_path = p_base_path.get_basename();
+	if (base_path.is_relative_path()) {
+		base_path = "res://" + base_path;
+	}
+	{
+		uint32_t idx = 0;
+		Ref<DirAccess> d = DirAccess::open(base_path.get_base_dir());
+		ERR_FAIL_COND_V(d.is_null(), FAILED);
+		String file = base_path.get_file();
+		while (true) {
+			String path = file + zeros_str(idx) + ".png";
+			if (d->remove(path) != OK) {
+				break;
+			}
+			idx++;
+		}
+	}
+
+	f = FileAccess::open(base_path + ".wav", FileAccess::WRITE_READ);
+	ERR_FAIL_COND_V(f.is_null(), ERR_CANT_OPEN);
+	fps = p_fps;
+
+	f->store_buffer((const uint8_t*)"RIFF", 4);
+	int total_size = 4 + 8 + 16 + 8;
+	f->store_32(total_size);
+	f->store_buffer((const uint8_t*)"WAVE", 4);
+	f->store_buffer((const uint8_t*)"fmt ", 4);
+
+	uint32_t channels = 2;
+	switch (speaker_mode) {
+	case AudioServer::SPEAKER_MODE_STEREO: channels = 2; break;
+	case AudioServer::SPEAKER_SURROUND_31: channels = 4; break;
+	case AudioServer::SPEAKER_SURROUND_51: channels = 6; break;
+	case AudioServer::SPEAKER_SURROUND_71: channels = 8; break;
+	}
+
+	f->store_32(16);
+	f->store_16(1);
+	f->store_16(channels);
+	f->store_32(mix_rate);
+
+	int bits_per_sample = 32;
+	int blockalign = bits_per_sample / 8 * channels;
+	int bytes_per_sec = mix_rate * blockalign;
+	audio_block_size = (mix_rate / fps) * blockalign;
+
+	f->store_32(bytes_per_sec);
+	f->store_16(blockalign);
+	f->store_16(bits_per_sample);
+	f->store_buffer((const uint8_t*)"data", 4);
+	f->store_32(0);
+	wav_data_size_pos = f->get_position();
+	return OK;
 }
 
 Error MovieWriter::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
 {
-	Error ret = ERR_UNCONFIGURED;
-	return ret;
+	switch (format) {
+	case FORMAT_OGV:
+#if defined(MODULE_THEORA_ENABLED) && defined(TOOLS_ENABLED)
+		return _write_frame_ogv(p_image, p_audio_data);
+#else
+		return ERR_UNAVAILABLE;
+#endif
+	case FORMAT_MJPEG:
+#if defined(MODULE_JPG_ENABLED)
+		return _write_frame_mjpeg(p_image, p_audio_data);
+#else
+		return ERR_UNAVAILABLE;
+#endif
+	case FORMAT_PNG_WAV:
+		break;
+	}
+
+	ERR_FAIL_COND_V(f.is_null(), ERR_UNCONFIGURED);
+	Vector<uint8_t> png_buffer = p_image->save_png_to_buffer();
+	Ref<FileAccess> fi = FileAccess::open(base_path + zeros_str(frame_count) + ".png", FileAccess::WRITE);
+	fi->store_buffer(png_buffer.ptr(), png_buffer.size());
+	f->store_buffer((const uint8_t*)p_audio_data, audio_block_size);
+	frame_count++;
+	return OK;
 }
 
-void MovieWriter::get_supported_extensions(List<String>* r_extensions) const
+void MovieWriter::write_end()
 {
-	Vector<String> exts;
-	for (int i = 0; i < exts.size(); i++) {
-		r_extensions->push_back(exts[i]);
+	switch (format) {
+	case FORMAT_OGV:
+#if defined(MODULE_THEORA_ENABLED) && defined(TOOLS_ENABLED)
+		_write_end_ogv();
+#endif
+		return;
+	case FORMAT_MJPEG:
+#if defined(MODULE_JPG_ENABLED)
+		_write_end_mjpeg();
+#endif
+		return;
+	case FORMAT_PNG_WAV:
+		break;
+	}
+
+	if (f.is_valid()) {
+		uint32_t total_size = 4 + 8 + 16 + 8;
+		uint32_t datasize = f->get_position() - wav_data_size_pos;
+		f->seek(4);
+		f->store_32(total_size + datasize);
+		f->seek(0x28);
+		f->store_32(datasize);
+		f.unref();
 	}
 }
 
@@ -227374,175 +219743,10 @@ void MovieWriter::add_frame()
 	encoding_time_usec += encoding_end_usec - encoding_start_usec;
 }
 
-void MovieWriter::write_end() {}
-
-bool MovieWriter::handles_file(const String& p_path) const { return true; }
-
-void MovieWriter::end() {}
-
-
-
-// ============================================================================
-// Merged from servers/movie_writer/movie_writer_pngwav.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "servers/display/display_server.h"
-
-uint32_t MovieWriterPNGWAV::get_audio_mix_rate() const { return mix_rate; }
-
-AudioServer::SpeakerMode MovieWriterPNGWAV::get_audio_speaker_mode() const { return speaker_mode; }
-
-void MovieWriterPNGWAV::get_supported_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("png");
-}
-
-bool MovieWriterPNGWAV::handles_file(const String& p_path) const
-{
-	return p_path.has_extension("png");
-}
-
-String MovieWriterPNGWAV::zeros_str(uint32_t p_index)
-{
-	char zeros[MAX_TRAILING_ZEROS + 1];
-	for (uint32_t i = 0; i < MAX_TRAILING_ZEROS; i++) {
-		uint32_t idx = MAX_TRAILING_ZEROS - i - 1;
-		uint32_t digit = (p_index / uint32_t(Math::pow(double(10), double(idx)))) % 10;
-		zeros[i] = '0' + digit;
-	}
-	zeros[MAX_TRAILING_ZEROS] = 0;
-	return zeros;
-}
-
-Error MovieWriterPNGWAV::write_begin(
-	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
-{
-	// Quick & Dirty PNGWAV Code based on -
-	// https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference
-
-	base_path = p_base_path.get_basename();
-	if (base_path.is_relative_path()) {
-		base_path = "res://" + base_path;
-	}
-
-	{
-		// Remove existing files before writing anew
-		uint32_t idx = 0;
-		Ref<DirAccess> d = DirAccess::open(base_path.get_base_dir());
-		ERR_FAIL_COND_V(d.is_null(), FAILED);
-
-		String file = base_path.get_file();
-		while (true) {
-			String path = file + zeros_str(idx) + ".png";
-			if (d->remove(path) != OK) {
-				break;
-			}
-		}
-	}
-
-	f_wav = FileAccess::open(base_path + ".wav", FileAccess::WRITE_READ);
-	ERR_FAIL_COND_V(f_wav.is_null(), ERR_CANT_OPEN);
-
-	fps = p_fps;
-
-	f_wav->store_buffer((const uint8_t*)"RIFF", 4);
-	int total_size = 4 /* WAVE */ + 8 /* fmt+size */ + 16 /* format */ + 8 /* data+size */;
-	f_wav->store_32(total_size); // will store final later
-	f_wav->store_buffer((const uint8_t*)"WAVE", 4);
-
-	/* FORMAT CHUNK */
-
-	f_wav->store_buffer((const uint8_t*)"fmt ", 4);
-
-	uint32_t channels = 2;
-	switch (speaker_mode) {
-	case AudioServer::SPEAKER_MODE_STEREO:
-		channels = 2;
-		break;
-	case AudioServer::SPEAKER_SURROUND_31:
-		channels = 4;
-		break;
-	case AudioServer::SPEAKER_SURROUND_51:
-		channels = 6;
-		break;
-	case AudioServer::SPEAKER_SURROUND_71:
-		channels = 8;
-		break;
-	}
-
-	f_wav->store_32(16);	   // standard format, no extra fields
-	f_wav->store_16(1);		   // compression code, standard PCM
-	f_wav->store_16(channels); // CHANNELS: 2
-
-	f_wav->store_32(mix_rate);
-
-	/* useless stuff the format asks for */
-
-	int bits_per_sample = 32;
-	int blockalign = bits_per_sample / 8 * channels;
-	int bytes_per_sec = mix_rate * blockalign;
-
-	audio_block_size = (mix_rate / fps) * blockalign;
-
-	f_wav->store_32(bytes_per_sec);
-	f_wav->store_16(blockalign); // block align (unused)
-	f_wav->store_16(bits_per_sample);
-
-	/* DATA CHUNK */
-
-	f_wav->store_buffer((const uint8_t*)"data", 4);
-
-	f_wav->store_32(0); // data size... wooh
-	wav_data_size_pos = f_wav->get_position();
-
-	return OK;
-}
-
-Error MovieWriterPNGWAV::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
-{
-	ERR_FAIL_COND_V(f_wav.is_null(), ERR_UNCONFIGURED);
-
-	Vector<uint8_t> png_buffer = p_image->save_png_to_buffer();
-
-	Ref<FileAccess> fi =
-		FileAccess::open(base_path + zeros_str(frame_count) + ".png", FileAccess::WRITE);
-	fi->store_buffer(png_buffer.ptr(), png_buffer.size());
-	f_wav->store_buffer((const uint8_t*)p_audio_data, audio_block_size);
-
-	frame_count++;
-
-	return OK;
-}
-
-void MovieWriterPNGWAV::write_end()
-{
-	if (f_wav.is_valid()) {
-		uint32_t total_size = 4 /* WAVE */ + 8 /* fmt+size */ + 16 /* format */ + 8 /* data+size */;
-		uint32_t datasize = f_wav->get_position() - wav_data_size_pos;
-		f_wav->seek(4);
-		f_wav->store_32(total_size + datasize);
-		f_wav->seek(0x28);
-		f_wav->store_32(datasize);
-	}
-}
-
-
-
-// ============================================================================
-// Merged from servers/audio/audio_server.cpp
-// ============================================================================
+void MovieWriter::end() { write_end(); }
 
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-#include "core/math/vector2.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -229112,13 +221316,7 @@ void AudioServer::get_argument_options(
 #undef MARK_EDITED
 #endif
 
-// ============================================================================
-// Merged from servers/audio/audio_driver_dummy.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 Error AudioDriverDummy::init() {
 	active.clear();
@@ -229233,13 +221431,7 @@ void AudioDriverDummy::finish() {
 
 AudioDriverDummy::AudioDriverDummy() {}
 
-// ============================================================================
-// Merged from servers/audio/audio_filter_sw.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/typedefs.h"
 
 void AudioFilterSW::set_mode(Mode p_mode) {
 	mode = p_mode;
@@ -229470,14 +221662,7 @@ void AudioFilterSW::Processor::process(float *p_samples, int p_amount, int p_str
 	}
 }
 
-// ============================================================================
-// Merged from servers/audio/audio_rb_resampler.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
-#include "core/io/ip.h"
-#include "core/os/memory.h"
 
 int AudioRBResampler::get_channel_count() const {
 	if (!rb) {
@@ -229705,19 +221890,9 @@ AudioRBResampler::~AudioRBResampler() {
 	}
 }
 
-// ============================================================================
-// Merged from servers/audio/audio_effect.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-// --- Inlined from servers/audio/effects/audio_effects.h ---
-#include "core/os/mutex.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
-// --- Folded from servers/audio/effects/eq_filter.h ---
-#include "core/string/ustring.h"
 
 class EQ {
 public:
@@ -229784,8 +221959,6 @@ inline void EQ::BandProcess::process_one(float &p_data) {
 	history.b2 = history.b1;
 }
 
-// --- End servers/audio/effects/eq_filter.h ---
-// --- Folded from servers/audio/effects/reverb_filter.h ---
 class Reverb {
 public:
 	enum {
@@ -229870,20 +222043,203 @@ public:
 	~Reverb();
 };
 
-// --- End servers/audio/effects/reverb_filter.h ---
-
-// ============================================================================
-// 1. Amplify
-// ============================================================================
-
-struct AudioEffectAmplifyConfig
+struct AudioEffectConfig
 {
+	static constexpr int32_t CHORUS_MAX_DELAY_MS = 50;
+	static constexpr int32_t CHORUS_MAX_DEPTH_MS = 20;
+	static constexpr int32_t CHORUS_MAX_WIDTH_MS = 50;
+	static constexpr int32_t CHORUS_MAX_VOICES = 4;
+	static constexpr int32_t CYCLES_FRAC = 16;
+	static constexpr int32_t CYCLES_MASK = (1 << CYCLES_FRAC) - 1;
+	static constexpr int32_t MAX_CHANNELS = 4;
+	static constexpr int32_t MS_CUTOFF_MAX = 16000;
+	static constexpr int32_t DELAY_MAX_DELAY_MS = 3000;
+	static constexpr int32_t DELAY_MAX_TAPS = 2;
+	static constexpr int32_t RECORD_IO_BUFFER_SIZE_MS = 1500;
+
+	enum DistortionMode
+	{
+		DISTORTION_MODE_CLIP,
+		DISTORTION_MODE_ATAN,
+		DISTORTION_MODE_LOFI,
+		DISTORTION_MODE_OVERDRIVE,
+		DISTORTION_MODE_WAVESHAPE,
+	};
+
+	enum FilterDB
+	{
+		FILTER_6DB,
+		FILTER_12DB,
+		FILTER_18DB,
+		FILTER_24DB,
+	};
+
+	enum FFTSize : unsigned int
+	{
+		FFT_SIZE_256,
+		FFT_SIZE_512,
+		FFT_SIZE_1024,
+		FFT_SIZE_2048,
+		FFT_SIZE_4096,
+		FFT_SIZE_MAX
+	};
+
+	struct ChorusVoice
+	{
+		float delay = 12.0f;
+		float rate = 1.0f;
+		float depth = 0.0f;
+		float level = 0.0f;
+		float cutoff = MS_CUTOFF_MAX;
+		float pan = 0.0f;
+	};
+
+	// Amplify / StereoEnhance
 	float volume_db = 0.0f;
 
-	void set_volume_db(float p_volume);
-	float get_volume_db() const;
-	void set_volume_linear(float p_volume);
-	float get_volume_linear() const;
+	// Capture
+	RingBuffer<AudioFrame> buffer;
+	SafeNumeric<uint64_t> discarded_frames;
+	SafeNumeric<uint64_t> pushed_frames;
+	float buffer_length_seconds = 0.1f;
+	bool buffer_initialized = false;
+
+	// Chorus
+	ChorusVoice voice[CHORUS_MAX_VOICES];
+	int voice_count = 2;
+	float chorus_wet = 0.5f;
+	float chorus_dry = 1.0f;
+
+	// Compressor
+	float comp_threshold = 0.0f;
+	float ratio = 4.0f;
+	float comp_gain = 0.0f;
+	float attack_us = 20.0f;
+	float release_ms = 250.0f;
+	float mix = 1.0f;
+	String sidechain;
+
+	// Delay
+	float delay_dry = 1.0f;
+	bool tap_1_active = true;
+	float tap_1_delay_ms = 250.0f;
+	float tap_1_level = -6.0f;
+	float tap_1_pan = 0.2f;
+	bool tap_2_active = true;
+	float tap_2_delay_ms = 500.0f;
+	float tap_2_level = -12.0f;
+	float tap_2_pan = -0.4f;
+	bool feedback_active = false;
+	float feedback_delay_ms = 340.0f;
+	float feedback_level = -6.0f;
+	float feedback_lowpass = 16000.0f;
+
+	// Distortion
+	DistortionMode distortion_mode = DISTORTION_MODE_CLIP;
+	float distortion_pre_gain = 0.0f;
+	float post_gain = 0.0f;
+	float keep_hf_hz = 16000.0f;
+	float drive = 0.0f;
+
+	// EQ
+	EQ eq;
+	Vector<float> eq_gain;
+	HashMap<String, int> prop_band_map;
+	Vector<String> band_names;
+
+	// Filter
+	AudioFilterSW::Mode filter_mode = AudioFilterSW::LOWPASS;
+	float cutoff = 2000.0f;
+	float resonance = 0.5f;
+	float filter_gain = 1.0f;
+	FilterDB db = FILTER_6DB;
+
+	// HardLimiter
+	float hard_limiter_pre_gain = 0.0f;
+	float hard_limiter_ceiling = -0.3f;
+	float sustain = 0.02f;
+	float release = 0.1f;
+	float attack = 0.002f;
+
+	// Limiter
+	float limiter_threshold = 0.0f;
+	float limiter_ceiling = -0.1f;
+	float soft_clip = 2.0f;
+	float soft_clip_ratio = 10.0f;
+
+	// Panner
+	float pan = 0.0f;
+
+	// Phaser
+	float range_min = 440.0f;
+	float range_max = 1600.0f;
+	float rate = 0.5f;
+	float feedback = 0.7f;
+	float depth = 1.0f;
+
+	// PitchShift
+	float pitch_scale = 1.0f;
+	int oversampling = 4;
+	FFTSize pitch_fft_size = FFT_SIZE_2048;
+	float pitch_wet = 0.0f;
+	float pitch_dry = 0.0f;
+	bool filter = false;
+
+	// Record
+	Ref<AudioEffectInstance> current_instance;
+	AudioStreamWAV::Format format = AudioStreamWAV::FORMAT_16_BITS;
+
+	// Reverb
+	float predelay = 150.0f;
+	float predelay_fb = 0.4f;
+	float hpf = 0.0f;
+	float room_size = 0.8f;
+	float damping = 0.5f;
+	float spread = 1.0f;
+	float reverb_dry = 1.0f;
+	float reverb_wet = 0.5f;
+
+	// SpectrumAnalyzer
+	float spectrum_buffer_length = 2.0f;
+	FFTSize spectrum_fft_size = FFT_SIZE_1024;
+
+	// StereoEnhance
+	float pan_pullout = 1.0f;
+	float time_pullout = 0.0f;
+	float surround = 0.0f;
+
+	void clear_buffer();
+	void ensure_thread_stopped();
+	void set_eq_preset(EQ::Preset p_preset);
+
+	explicit AudioEffectConfig(AudioEffect::Type p_type);
+	~AudioEffectConfig() { ensure_thread_stopped(); }
+};
+
+class SMBPitchShift
+{
+	enum
+	{
+		MAX_FRAME_LENGTH = 8192
+	};
+
+	float gInFIFO[MAX_FRAME_LENGTH] = {};
+	float gOutFIFO[MAX_FRAME_LENGTH] = {};
+	float gFFTworksp[2 * MAX_FRAME_LENGTH] = {};
+	float gLastPhase[MAX_FRAME_LENGTH / 2 + 1] = {};
+	float gSumPhase[MAX_FRAME_LENGTH / 2 + 1] = {};
+	float gOutputAccum[2 * MAX_FRAME_LENGTH] = {};
+	float gAnaFreq[MAX_FRAME_LENGTH] = {};
+	float gAnaMagn[MAX_FRAME_LENGTH] = {};
+	float gSynFreq[MAX_FRAME_LENGTH] = {};
+	float gSynMagn[MAX_FRAME_LENGTH] = {};
+	long gRover = 0;
+
+	void smbFft(float* fftBuffer, long fftFrameSize, long sign);
+
+public:
+	void PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize, long osamp,
+		float sampleRate, float* indata, float* outdata, int stride);
 };
 
 struct AudioEffectAmplifyState
@@ -229896,31 +222252,6 @@ struct AudioEffectAmplifyState
 
 using AudioEffectAmplifyInstance = AudioEffectAmplifyState;
 
-// ============================================================================
-// 2. Capture
-// ============================================================================
-
-struct AudioEffectCaptureConfig
-{
-	RingBuffer<AudioFrame> buffer;
-	SafeNumeric<uint64_t> discarded_frames;
-	SafeNumeric<uint64_t> pushed_frames;
-	float buffer_length_seconds = 0.1f;
-	bool buffer_initialized = false;
-
-	void set_buffer_length(float p_buffer_length_seconds);
-	float get_buffer_length() const;
-
-	bool can_get_buffer(int p_frames) const;
-	PackedVector2Array get_buffer(int p_frames);
-	void clear_buffer();
-
-	int get_frames_available() const;
-	int64_t get_discarded_frames() const;
-	int get_buffer_length_frames() const;
-	int64_t get_pushed_frames() const;
-};
-
 struct AudioEffectCaptureState
 {
 	Ref<AudioEffect> base;
@@ -229930,66 +222261,6 @@ struct AudioEffectCaptureState
 };
 
 using AudioEffectCaptureInstance = AudioEffectCaptureState;
-
-// ============================================================================
-// 3. Chorus
-// ============================================================================
-
-struct AudioEffectChorusConfig
-{
-	static constexpr int32_t MAX_DELAY_MS = 50;
-	static constexpr int32_t MAX_DEPTH_MS = 20;
-	static constexpr int32_t MAX_WIDTH_MS = 50;
-	static constexpr int32_t MAX_VOICES = 4;
-	static constexpr int32_t CYCLES_FRAC = 16;
-	static constexpr int32_t CYCLES_MASK = (1 << CYCLES_FRAC) - 1;
-	static constexpr int32_t MAX_CHANNELS = 4;
-	static constexpr int32_t MS_CUTOFF_MAX = 16000;
-
-	struct Voice
-	{
-		float delay = 12.0f;
-		float rate = 1.0f;
-		float depth = 0.0f;
-		float level = 0.0f;
-		float cutoff = MS_CUTOFF_MAX;
-		float pan = 0.0f;
-	};
-
-	Voice voice[MAX_VOICES];
-	int voice_count = 2;
-	float wet = 0.5f;
-	float dry = 1.0f;
-
-	void set_voice_count(int p_voices);
-	int get_voice_count() const;
-
-	void set_voice_delay_ms(int p_voice, float p_delay_ms);
-	float get_voice_delay_ms(int p_voice) const;
-
-	void set_voice_rate_hz(int p_voice, float p_rate_hz);
-	float get_voice_rate_hz(int p_voice) const;
-
-	void set_voice_depth_ms(int p_voice, float p_depth_ms);
-	float get_voice_depth_ms(int p_voice) const;
-
-	void set_voice_level_db(int p_voice, float p_level_db);
-	float get_voice_level_db(int p_voice) const;
-
-	void set_voice_cutoff_hz(int p_voice, float p_cutoff_hz);
-	float get_voice_cutoff_hz(int p_voice) const;
-
-	void set_voice_pan(int p_voice, float p_pan);
-	float get_voice_pan(int p_voice) const;
-
-	void set_wet(float p_amount);
-	float get_wet() const;
-
-	void set_dry(float p_amount);
-	float get_dry() const;
-
-	AudioEffectChorusConfig();
-};
 
 struct AudioEffectChorusState
 {
@@ -230007,42 +222278,6 @@ struct AudioEffectChorusState
 };
 
 using AudioEffectChorusInstance = AudioEffectChorusState;
-
-// ============================================================================
-// 4. Compressor
-// ============================================================================
-
-struct AudioEffectCompressorConfig
-{
-	float threshold = 0.0f;
-	float ratio = 4.0f;
-	float gain = 0.0f;
-	float attack_us = 20.0f;
-	float release_ms = 250.0f;
-	float mix = 1.0f;
-	String sidechain;
-
-	void set_threshold(float p_threshold);
-	float get_threshold() const;
-
-	void set_ratio(float p_ratio);
-	float get_ratio() const;
-
-	void set_gain(float p_gain);
-	float get_gain() const;
-
-	void set_attack_us(float p_attack_us);
-	float get_attack_us() const;
-
-	void set_release_ms(float p_release_ms);
-	float get_release_ms() const;
-
-	void set_mix(float p_mix);
-	float get_mix() const;
-
-	void set_sidechain(const String& p_sidechain);
-	String get_sidechain() const;
-};
 
 struct AudioEffectCompressorState
 {
@@ -230063,75 +222298,6 @@ struct AudioEffectCompressorState
 
 using AudioEffectCompressorInstance = AudioEffectCompressorState;
 
-// ============================================================================
-// 5. Delay
-// ============================================================================
-
-struct AudioEffectDelayConfig
-{
-	enum
-	{
-		MAX_DELAY_MS = 3000,
-		MAX_TAPS = 2
-	};
-
-	float dry = 1.0f;
-
-	bool tap_1_active = true;
-	float tap_1_delay_ms = 250.0f;
-	float tap_1_level = -6.0f;
-	float tap_1_pan = 0.2f;
-
-	bool tap_2_active = true;
-	float tap_2_delay_ms = 500.0f;
-	float tap_2_level = -12.0f;
-	float tap_2_pan = -0.4f;
-
-	bool feedback_active = false;
-	float feedback_delay_ms = 340.0f;
-	float feedback_level = -6.0f;
-	float feedback_lowpass = 16000.0f;
-
-	void set_dry(float p_dry);
-	float get_dry() const;
-
-	void set_tap1_active(bool p_active);
-	bool is_tap1_active() const;
-
-	void set_tap1_delay_ms(float p_delay_ms);
-	float get_tap1_delay_ms() const;
-
-	void set_tap1_level_db(float p_level_db);
-	float get_tap1_level_db() const;
-
-	void set_tap1_pan(float p_pan);
-	float get_tap1_pan() const;
-
-	void set_tap2_active(bool p_active);
-	bool is_tap2_active() const;
-
-	void set_tap2_delay_ms(float p_delay_ms);
-	float get_tap2_delay_ms() const;
-
-	void set_tap2_level_db(float p_level_db);
-	float get_tap2_level_db() const;
-
-	void set_tap2_pan(float p_pan);
-	float get_tap2_pan() const;
-
-	void set_feedback_active(bool p_active);
-	bool is_feedback_active() const;
-
-	void set_feedback_delay_ms(float p_delay_ms);
-	float get_feedback_delay_ms() const;
-
-	void set_feedback_level_db(float p_level_db);
-	float get_feedback_level_db() const;
-
-	void set_feedback_lowpass(float p_lowpass);
-	float get_feedback_lowpass() const;
-};
-
 struct AudioEffectDelayState
 {
 	Ref<AudioEffect> base;
@@ -230151,43 +222317,6 @@ struct AudioEffectDelayState
 
 using AudioEffectDelayInstance = AudioEffectDelayState;
 
-// ============================================================================
-// 6. Distortion
-// ============================================================================
-
-struct AudioEffectDistortionConfig
-{
-	enum Mode
-	{
-		MODE_CLIP,
-		MODE_ATAN,
-		MODE_LOFI,
-		MODE_OVERDRIVE,
-		MODE_WAVESHAPE,
-	};
-
-	Mode mode = MODE_CLIP;
-	float pre_gain = 0.0f;
-	float post_gain = 0.0f;
-	float keep_hf_hz = 16000.0f;
-	float drive = 0.0f;
-
-	void set_mode(Mode p_mode);
-	Mode get_mode() const;
-
-	void set_pre_gain(float p_pre_gain);
-	float get_pre_gain() const;
-
-	void set_keep_hf_hz(float p_keep_hf_hz);
-	float get_keep_hf_hz() const;
-
-	void set_drive(float p_drive);
-	float get_drive() const;
-
-	void set_post_gain(float p_post_gain);
-	float get_post_gain() const;
-};
-
 struct AudioEffectDistortionState
 {
 	Ref<AudioEffect> base;
@@ -230197,25 +222326,6 @@ struct AudioEffectDistortionState
 };
 
 using AudioEffectDistortionInstance = AudioEffectDistortionState;
-
-// ============================================================================
-// 7. EQ
-// ============================================================================
-
-struct AudioEffectEQConfig
-{
-	EQ eq;
-	Vector<float> gain;
-	HashMap<String, int> prop_band_map;
-	Vector<String> band_names;
-
-	void set_preset(EQ::Preset p_preset);
-	void set_band_gain_db(int p_band, float p_volume);
-	float get_band_gain_db(int p_band) const;
-	int get_band_count() const;
-
-	AudioEffectEQConfig(EQ::Preset p_preset = EQ::PRESET_6_BANDS);
-};
 
 struct AudioEffectEQState
 {
@@ -230228,44 +222338,6 @@ struct AudioEffectEQState
 };
 
 using AudioEffectEQInstance = AudioEffectEQState;
-
-// ============================================================================
-// 8. Filter
-// ============================================================================
-
-struct AudioEffectFilterConfig
-{
-	enum FilterDB
-	{
-		FILTER_6DB,
-		FILTER_12DB,
-		FILTER_18DB,
-		FILTER_24DB,
-	};
-
-	AudioFilterSW::Mode mode = AudioFilterSW::LOWPASS;
-	float cutoff = 2000.0f;
-	float resonance = 0.5f;
-	float gain = 1.0f;
-	FilterDB db = FILTER_6DB;
-
-	void set_filter_mode(AudioFilterSW::Mode p_mode);
-	AudioFilterSW::Mode get_filter_mode() const;
-
-	void set_cutoff(float p_freq);
-	float get_cutoff() const;
-
-	void set_resonance(float p_amount);
-	float get_resonance() const;
-
-	void set_gain(float p_amount);
-	float get_gain() const;
-
-	void set_db(FilterDB p_db);
-	FilterDB get_db() const;
-
-	AudioEffectFilterConfig(AudioFilterSW::Mode p_mode = AudioFilterSW::LOWPASS);
-};
 
 struct AudioEffectFilterState
 {
@@ -230283,28 +222355,6 @@ struct AudioEffectFilterState
 };
 
 using AudioEffectFilterInstance = AudioEffectFilterState;
-
-// ============================================================================
-// 9. HardLimiter
-// ============================================================================
-
-struct AudioEffectHardLimiterConfig
-{
-	float pre_gain = 0.0f;
-	float ceiling = -0.3f;
-	float sustain = 0.02f;
-	float release = 0.1f;
-	float attack = 0.002f;
-
-	void set_ceiling_db(float p_ceiling);
-	float get_ceiling_db() const;
-
-	void set_release(float p_release);
-	float get_release() const;
-
-	void set_pre_gain_db(float p_pre_gain);
-	float get_pre_gain_db() const;
-};
 
 struct AudioEffectHardLimiterState
 {
@@ -230330,30 +222380,6 @@ struct AudioEffectHardLimiterState
 
 using AudioEffectHardLimiterInstance = AudioEffectHardLimiterState;
 
-// ============================================================================
-// 10. Limiter
-// ============================================================================
-
-struct AudioEffectLimiterConfig
-{
-	float threshold = 0.0f;
-	float ceiling = -0.1f;
-	float soft_clip = 2.0f;
-	float soft_clip_ratio = 10.0f;
-
-	void set_threshold_db(float p_threshold);
-	float get_threshold_db() const;
-
-	void set_ceiling_db(float p_ceiling);
-	float get_ceiling_db() const;
-
-	void set_soft_clip_db(float p_soft_clip);
-	float get_soft_clip_db() const;
-
-	void set_soft_clip_ratio(float p_soft_clip);
-	float get_soft_clip_ratio() const;
-};
-
 struct AudioEffectLimiterState
 {
 	Ref<AudioEffect> base;
@@ -230364,18 +222390,6 @@ struct AudioEffectLimiterState
 
 using AudioEffectLimiterInstance = AudioEffectLimiterState;
 
-// ============================================================================
-// 11. Panner
-// ============================================================================
-
-struct AudioEffectPannerConfig
-{
-	float pan = 0.0f;
-
-	void set_pan(float p_cpanume);
-	float get_pan() const;
-};
-
 struct AudioEffectPannerState
 {
 	Ref<AudioEffect> base;
@@ -230384,34 +222398,6 @@ struct AudioEffectPannerState
 };
 
 using AudioEffectPannerInstance = AudioEffectPannerState;
-
-// ============================================================================
-// 12. Phaser
-// ============================================================================
-
-struct AudioEffectPhaserConfig
-{
-	float range_min = 440.0f;
-	float range_max = 1600.0f;
-	float rate = 0.5f;
-	float feedback = 0.7f;
-	float depth = 1.0f;
-
-	void set_range_min_hz(float p_hz);
-	float get_range_min_hz() const;
-
-	void set_range_max_hz(float p_hz);
-	float get_range_max_hz() const;
-
-	void set_rate_hz(float p_hz);
-	float get_rate_hz() const;
-
-	void set_feedback(float p_fbk);
-	float get_feedback() const;
-
-	void set_depth(float p_depth);
-	float get_depth() const;
-};
 
 struct AudioEffectPhaserState
 {
@@ -230446,65 +222432,6 @@ struct AudioEffectPhaserState
 
 using AudioEffectPhaserInstance = AudioEffectPhaserState;
 
-// ============================================================================
-// 13. PitchShift
-// ============================================================================
-
-class SMBPitchShift
-{
-	enum
-	{
-		MAX_FRAME_LENGTH = 8192
-	};
-
-	float gInFIFO[MAX_FRAME_LENGTH] = {};
-	float gOutFIFO[MAX_FRAME_LENGTH] = {};
-	float gFFTworksp[2 * MAX_FRAME_LENGTH] = {};
-	float gLastPhase[MAX_FRAME_LENGTH / 2 + 1] = {};
-	float gSumPhase[MAX_FRAME_LENGTH / 2 + 1] = {};
-	float gOutputAccum[2 * MAX_FRAME_LENGTH] = {};
-	float gAnaFreq[MAX_FRAME_LENGTH] = {};
-	float gAnaMagn[MAX_FRAME_LENGTH] = {};
-	float gSynFreq[MAX_FRAME_LENGTH] = {};
-	float gSynMagn[MAX_FRAME_LENGTH] = {};
-	long gRover = 0;
-
-	void smbFft(float* fftBuffer, long fftFrameSize, long sign);
-
-public:
-	void PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize, long osamp,
-		float sampleRate, float* indata, float* outdata, int stride);
-};
-
-struct AudioEffectPitchShiftConfig
-{
-	enum FFTSize : unsigned int
-	{
-		FFT_SIZE_256,
-		FFT_SIZE_512,
-		FFT_SIZE_1024,
-		FFT_SIZE_2048,
-		FFT_SIZE_4096,
-		FFT_SIZE_MAX
-	};
-
-	float pitch_scale = 1.0f;
-	int oversampling = 4;
-	FFTSize fft_size = FFT_SIZE_2048;
-	float wet = 0.0f;
-	float dry = 0.0f;
-	bool filter = false;
-
-	void set_pitch_scale(float p_pitch_scale);
-	float get_pitch_scale() const;
-
-	void set_oversampling(int p_oversampling);
-	int get_oversampling() const;
-
-	void set_fft_size(FFTSize p_fft_size);
-	FFTSize get_fft_size() const;
-};
-
 struct AudioEffectPitchShiftState
 {
 	Ref<AudioEffect> base;
@@ -230517,10 +222444,6 @@ struct AudioEffectPitchShiftState
 };
 
 using AudioEffectPitchShiftInstance = AudioEffectPitchShiftState;
-
-// ============================================================================
-// 14. Record
-// ============================================================================
 
 struct AudioEffectRecordState
 {
@@ -230550,60 +222473,6 @@ struct AudioEffectRecordState
 
 using AudioEffectRecordInstance = AudioEffectRecordState;
 
-struct AudioEffectRecordConfig
-{
-	enum
-	{
-		IO_BUFFER_SIZE_MS = 1500
-	};
-
-	Ref<AudioEffectInstance> current_instance;
-	AudioStreamWAV::Format format = AudioStreamWAV::FORMAT_16_BITS;
-
-	void ensure_thread_stopped();
-	void set_recording_active(bool p_record);
-	bool is_recording_active() const;
-	void set_format(AudioStreamWAV::Format p_format);
-	AudioStreamWAV::Format get_format() const;
-	Ref<AudioStreamWAV> get_recording() const;
-
-	~AudioEffectRecordConfig() { ensure_thread_stopped(); }
-};
-
-// ============================================================================
-// 15. Reverb
-// ============================================================================
-
-struct AudioEffectReverbConfig
-{
-	float predelay = 150.0f;
-	float predelay_fb = 0.4f;
-	float hpf = 0.0f;
-	float room_size = 0.8f;
-	float damping = 0.5f;
-	float spread = 1.0f;
-	float dry = 1.0f;
-	float wet = 0.5f;
-
-	void set_predelay_msec(float p_msec);
-	void set_predelay_feedback(float p_feedback);
-	void set_room_size(float p_size);
-	void set_damping(float p_damping);
-	void set_spread(float p_spread);
-	void set_dry(float p_dry);
-	void set_wet(float p_wet);
-	void set_hpf(float p_hpf);
-
-	float get_predelay_msec() const;
-	float get_predelay_feedback() const;
-	float get_room_size() const;
-	float get_damping() const;
-	float get_spread() const;
-	float get_dry() const;
-	float get_wet() const;
-	float get_hpf() const;
-};
-
 struct AudioEffectReverbState
 {
 	Ref<AudioEffect> base;
@@ -230618,32 +222487,6 @@ struct AudioEffectReverbState
 };
 
 using AudioEffectReverbInstance = AudioEffectReverbState;
-
-// ============================================================================
-// 16. SpectrumAnalyzer
-// ============================================================================
-
-struct AudioEffectSpectrumAnalyzerConfig
-{
-	enum FFTSize
-	{
-		FFT_SIZE_256,
-		FFT_SIZE_512,
-		FFT_SIZE_1024,
-		FFT_SIZE_2048,
-		FFT_SIZE_4096,
-		FFT_SIZE_MAX
-	};
-
-	float buffer_length = 2.0f;
-	FFTSize fft_size = FFT_SIZE_1024;
-
-	void set_buffer_length(float p_seconds);
-	float get_buffer_length() const;
-
-	void set_fft_size(FFTSize p_fft_size);
-	FFTSize get_fft_size() const;
-};
 
 struct AudioEffectSpectrumAnalyzerState
 {
@@ -230670,27 +222513,6 @@ struct AudioEffectSpectrumAnalyzerState
 
 using AudioEffectSpectrumAnalyzerInstance = AudioEffectSpectrumAnalyzerState;
 
-// ============================================================================
-// 17. StereoEnhance
-// ============================================================================
-
-struct AudioEffectStereoEnhanceConfig
-{
-	float volume_db = 0.0f;
-	float pan_pullout = 1.0f;
-	float time_pullout = 0.0f;
-	float surround = 0.0f;
-
-	void set_pan_pullout(float p_amount);
-	float get_pan_pullout() const;
-
-	void set_time_pullout(float p_amount);
-	float get_time_pullout() const;
-
-	void set_surround(float p_amount);
-	float get_surround() const;
-};
-
 struct AudioEffectStereoEnhanceState
 {
 	Ref<AudioEffect> base;
@@ -230711,124 +222533,17 @@ struct AudioEffectStereoEnhanceState
 
 using AudioEffectStereoEnhanceInstance = AudioEffectStereoEnhanceState;
 
-// --- End servers/audio/effects/audio_effects.h ---
-
 void AudioEffect::_init_config(Type p_type)
 {
-	switch (p_type) {
-	case EFFECT_AMPLIFY:
-		config = memnew(AudioEffectAmplifyConfig);
-		break;
-	case EFFECT_CAPTURE:
-		config = memnew(AudioEffectCaptureConfig);
-		break;
-	case EFFECT_CHORUS:
-		config = memnew(AudioEffectChorusConfig);
-		break;
-	case EFFECT_COMPRESSOR:
-		config = memnew(AudioEffectCompressorConfig);
-		break;
-	case EFFECT_DELAY:
-		config = memnew(AudioEffectDelayConfig);
-		break;
-	case EFFECT_DISTORTION:
-		config = memnew(AudioEffectDistortionConfig);
-		break;
-	case EFFECT_EQ:
-		config = memnew(AudioEffectEQConfig);
-		break;
-	case EFFECT_FILTER:
-		config = memnew(AudioEffectFilterConfig);
-		break;
-	case EFFECT_HARD_LIMITER:
-		config = memnew(AudioEffectHardLimiterConfig);
-		break;
-	case EFFECT_LIMITER:
-		config = memnew(AudioEffectLimiterConfig);
-		break;
-	case EFFECT_PANNER:
-		config = memnew(AudioEffectPannerConfig);
-		break;
-	case EFFECT_PHASER:
-		config = memnew(AudioEffectPhaserConfig);
-		break;
-	case EFFECT_PITCH_SHIFT:
-		config = memnew(AudioEffectPitchShiftConfig);
-		break;
-	case EFFECT_RECORD:
-		config = memnew(AudioEffectRecordConfig);
-		break;
-	case EFFECT_REVERB:
-		config = memnew(AudioEffectReverbConfig);
-		break;
-	case EFFECT_SPECTRUM_ANALYZER:
-		config = memnew(AudioEffectSpectrumAnalyzerConfig);
-		break;
-	case EFFECT_STEREO_ENHANCE:
-		config = memnew(AudioEffectStereoEnhanceConfig);
-		break;
-	}
+	config = memnew(AudioEffectConfig(p_type));
 }
 
 void AudioEffect::_free_config()
 {
-	if (!config) {
-		return;
+	if (config) {
+		memdelete(config);
+		config = nullptr;
 	}
-	switch (effect_type) {
-	case EFFECT_AMPLIFY:
-		memdelete(static_cast<AudioEffectAmplifyConfig*>(config));
-		break;
-	case EFFECT_CAPTURE:
-		memdelete(static_cast<AudioEffectCaptureConfig*>(config));
-		break;
-	case EFFECT_CHORUS:
-		memdelete(static_cast<AudioEffectChorusConfig*>(config));
-		break;
-	case EFFECT_COMPRESSOR:
-		memdelete(static_cast<AudioEffectCompressorConfig*>(config));
-		break;
-	case EFFECT_DELAY:
-		memdelete(static_cast<AudioEffectDelayConfig*>(config));
-		break;
-	case EFFECT_DISTORTION:
-		memdelete(static_cast<AudioEffectDistortionConfig*>(config));
-		break;
-	case EFFECT_EQ:
-		memdelete(static_cast<AudioEffectEQConfig*>(config));
-		break;
-	case EFFECT_FILTER:
-		memdelete(static_cast<AudioEffectFilterConfig*>(config));
-		break;
-	case EFFECT_HARD_LIMITER:
-		memdelete(static_cast<AudioEffectHardLimiterConfig*>(config));
-		break;
-	case EFFECT_LIMITER:
-		memdelete(static_cast<AudioEffectLimiterConfig*>(config));
-		break;
-	case EFFECT_PANNER:
-		memdelete(static_cast<AudioEffectPannerConfig*>(config));
-		break;
-	case EFFECT_PHASER:
-		memdelete(static_cast<AudioEffectPhaserConfig*>(config));
-		break;
-	case EFFECT_PITCH_SHIFT:
-		memdelete(static_cast<AudioEffectPitchShiftConfig*>(config));
-		break;
-	case EFFECT_RECORD:
-		memdelete(static_cast<AudioEffectRecordConfig*>(config));
-		break;
-	case EFFECT_REVERB:
-		memdelete(static_cast<AudioEffectReverbConfig*>(config));
-		break;
-	case EFFECT_SPECTRUM_ANALYZER:
-		memdelete(static_cast<AudioEffectSpectrumAnalyzerConfig*>(config));
-		break;
-	case EFFECT_STEREO_ENHANCE:
-		memdelete(static_cast<AudioEffectStereoEnhanceConfig*>(config));
-		break;
-	}
-	config = nullptr;
 }
 
 AudioEffect::AudioEffect(Type p_type) : effect_type(p_type)
@@ -230855,26 +222570,24 @@ void AudioEffect::set_effect_type(Type p_type)
 
 Ref<AudioEffectInstance> AudioEffect::instantiate()
 {
+	ERR_FAIL_NULL_V(config, Ref<AudioEffectInstance>());
+	static const int fft_sizes[AudioEffectConfig::FFT_SIZE_MAX] = { 256, 512, 1024, 2048, 4096 };
 	switch (effect_type) {
 	case EFFECT_AMPLIFY: {
-		AudioEffectAmplifyConfig* cfg = get_amplify_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectAmplifyState* state = memnew(AudioEffectAmplifyState);
 		state->base = Ref<AudioEffect>(this);
-		state->mix_volume_db = cfg->volume_db;
+		state->mix_volume_db = config->volume_db;
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_CAPTURE: {
-		AudioEffectCaptureConfig* cfg = get_capture_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
-		if (!cfg->buffer_initialized) {
-			float target_buffer_size = AudioServer::get_mix_rate() * cfg->buffer_length_seconds;
+		if (!config->buffer_initialized) {
+			float target_buffer_size = AudioServer::get_mix_rate() * config->buffer_length_seconds;
 			ERR_FAIL_COND_V(
 				target_buffer_size <= 0 || target_buffer_size >= (1 << 27), Ref<AudioEffectInstance>());
-			cfg->buffer.resize(Math::nearest_shift((uint32_t)target_buffer_size));
-			cfg->buffer_initialized = true;
+			config->buffer.resize(Math::nearest_shift((uint32_t)target_buffer_size));
+			config->buffer_initialized = true;
 		}
-		cfg->clear_buffer();
+		config->clear_buffer();
 		AudioEffectCaptureState* state = memnew(AudioEffectCaptureState);
 		state->base = Ref<AudioEffect>(this);
 		return AudioEffectInstance::create(state);
@@ -230886,14 +222599,12 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 			state->filter_h[i] = AudioFrame(0, 0);
 			state->cycles[i] = 0;
 		}
-
-		float ring_buffer_max_size = AudioEffectChorusConfig::MAX_DELAY_MS +
-									 AudioEffectChorusConfig::MAX_DEPTH_MS +
-									 AudioEffectChorusConfig::MAX_WIDTH_MS;
+		float ring_buffer_max_size = AudioEffectConfig::CHORUS_MAX_DELAY_MS +
+									 AudioEffectConfig::CHORUS_MAX_DEPTH_MS +
+									 AudioEffectConfig::CHORUS_MAX_WIDTH_MS;
 		ring_buffer_max_size *= 2;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
-
 		int ringbuff_size = ring_buffer_max_size;
 		int bits = 0;
 		while (ringbuff_size > 0) {
@@ -230917,11 +222628,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 	case EFFECT_DELAY: {
 		AudioEffectDelayState* state = memnew(AudioEffectDelayState);
 		state->base = Ref<AudioEffect>(this);
-
-		float ring_buffer_max_size = AudioEffectDelayConfig::MAX_DELAY_MS + 100;
+		float ring_buffer_max_size = AudioEffectConfig::DELAY_MAX_DELAY_MS + 100;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
-
 		int ringbuff_size = ring_buffer_max_size;
 		int bits = 0;
 		while (ringbuff_size > 0) {
@@ -230943,15 +222652,13 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_EQ: {
-		AudioEffectEQConfig* cfg = get_eq_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectEQState* state = memnew(AudioEffectEQState);
 		state->base = Ref<AudioEffect>(this);
-		state->gains.resize(cfg->eq.get_band_count());
+		state->gains.resize(config->eq.get_band_count());
 		for (int i = 0; i < 2; i++) {
-			state->bands[i].resize(cfg->eq.get_band_count());
+			state->bands[i].resize(config->eq.get_band_count());
 			for (int j = 0; j < state->bands[i].size(); j++) {
-				state->bands[i].write[j] = cfg->eq.get_band_processor(j);
+				state->bands[i].write[j] = config->eq.get_band_processor(j);
 			}
 		}
 		return AudioEffectInstance::create(state);
@@ -230962,18 +222669,15 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_HARD_LIMITER: {
-		AudioEffectHardLimiterConfig* cfg = get_hard_limiter_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectHardLimiterState* state = memnew(AudioEffectHardLimiterState);
 		state->base = Ref<AudioEffect>(this);
-
 		float mix_rate = AudioServer::get_mix_rate();
-		for (int i = 0; i < (int)Math::ceil(mix_rate * cfg->attack) + 1; i++) {
+		for (int i = 0; i < (int)Math::ceil(mix_rate * config->attack) + 1; i++) {
 			state->sample_buffer_left.push_back(0.0f);
 			state->sample_buffer_right.push_back(0.0f);
 		}
-		state->gain_samples_to_store = (int)Math::ceil(mix_rate * (cfg->attack + cfg->sustain) + 1);
-		state->gain_bucket_size = (int)(mix_rate * cfg->attack);
+		state->gain_samples_to_store = (int)Math::ceil(mix_rate * (config->attack + config->sustain) + 1);
+		state->gain_bucket_size = (int)(mix_rate * config->attack);
 		for (int i = 0; i < state->gain_samples_to_store; i += state->gain_bucket_size) {
 			state->gain_buckets.push_back(1.0f);
 		}
@@ -230997,24 +222701,17 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_PITCH_SHIFT: {
-		AudioEffectPitchShiftConfig* cfg = get_pitch_shift_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectPitchShiftState* state = memnew(AudioEffectPitchShiftState);
 		state->base = Ref<AudioEffect>(this);
-		static const int fft_sizes[AudioEffectPitchShiftConfig::FFT_SIZE_MAX] = { 256, 512, 1024, 2048, 4096 };
-		state->fft_size = fft_sizes[cfg->fft_size];
+		state->fft_size = fft_sizes[config->pitch_fft_size];
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_RECORD: {
-		AudioEffectRecordConfig* cfg = get_record_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectRecordState* state = memnew(AudioEffectRecordState);
 		state->is_recording = false;
-
-		float ring_buffer_max_size = AudioEffectRecordConfig::IO_BUFFER_SIZE_MS;
+		float ring_buffer_max_size = AudioEffectConfig::RECORD_IO_BUFFER_SIZE_MS;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
-
 		int ringbuff_size = ring_buffer_max_size;
 		int bits = 0;
 		while (ringbuff_size > 0) {
@@ -231027,10 +222724,10 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		state->ring_buffer.resize(ringbuff_size);
 		state->ring_buffer_read_pos = 0;
 
-		cfg->ensure_thread_stopped();
+		config->ensure_thread_stopped();
 		bool is_currently_recording = false;
-		if (cfg->current_instance.is_valid()) {
-			if (const AudioEffectRecordState* prev = cfg->current_instance->get_state<AudioEffectRecordState>()) {
+		if (config->current_instance.is_valid()) {
+			if (const AudioEffectRecordState* prev = config->current_instance->get_state<AudioEffectRecordState>()) {
 				is_currently_recording = prev->is_recording;
 			}
 		}
@@ -231038,7 +222735,7 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 			state->init();
 		}
 		Ref<AudioEffectInstance> ins = AudioEffectInstance::create(state);
-		cfg->current_instance = ins;
+		config->current_instance = ins;
 		return ins;
 	}
 	case EFFECT_REVERB: {
@@ -231047,14 +222744,11 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		return AudioEffectInstance::create(state);
 	}
 	case EFFECT_SPECTRUM_ANALYZER: {
-		AudioEffectSpectrumAnalyzerConfig* cfg = get_spectrum_analyzer_config();
-		ERR_FAIL_NULL_V(cfg, Ref<AudioEffectInstance>());
 		AudioEffectSpectrumAnalyzerState* state = memnew(AudioEffectSpectrumAnalyzerState);
 		state->base = Ref<AudioEffect>(this);
-		static const int fft_sizes[AudioEffectSpectrumAnalyzerConfig::FFT_SIZE_MAX] = { 256, 512, 1024, 2048, 4096 };
-		state->fft_size = fft_sizes[cfg->fft_size];
+		state->fft_size = fft_sizes[config->spectrum_fft_size];
 		state->mix_rate = AudioServer::get_mix_rate();
-		state->fft_count = (cfg->buffer_length / (float(state->fft_size) / state->mix_rate)) + 1;
+		state->fft_count = (config->spectrum_buffer_length / (float(state->fft_size) / state->mix_rate)) + 1;
 		state->fft_pos = 0;
 		state->fft_history.resize(state->fft_count);
 		state->temporal_fft.resize(state->fft_size * 8);
@@ -231070,11 +222764,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 	case EFFECT_STEREO_ENHANCE: {
 		AudioEffectStereoEnhanceState* state = memnew(AudioEffectStereoEnhanceState);
 		state->base = Ref<AudioEffect>(this);
-
 		float ring_buffer_max_size = AudioEffectStereoEnhanceState::MAX_DELAY_MS + 2;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
-
 		int ringbuff_size = (int)ring_buffer_max_size;
 		int bits = 0;
 		while (ringbuff_size > 0) {
@@ -231091,13 +222783,7 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 	return Ref<AudioEffectInstance>();
 }
 
-// ============================================================================
-// Merged from servers/audio/audio_stream.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
 
 constexpr uint64_t POLYPHONIC_ID_MASK = 0xFFFFFFFF;
 constexpr uint64_t POLYPHONIC_INDEX_SHIFT = 32;
@@ -232219,27 +223905,17 @@ AudioStreamPlaybackPolyphonic::~AudioStreamPlaybackPolyphonic()
 	}
 }
 
-// ============================================================================
-// Merged from servers/audio/effects/audio_effects.cpp
-// ============================================================================
-
-
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #include <cmath>
 #include <cstring>
 
-// ============================================================================
 // 1. Amplify
-// ============================================================================
 
 void AudioEffectAmplifyState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectAmplifyConfig* cfg = base.is_valid() ? base->get_amplify_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	float volume_db = cfg->volume_db;
@@ -232253,83 +223929,12 @@ void AudioEffectAmplifyState::process(
 	mix_volume_db = volume_db;
 }
 
-void AudioEffectAmplifyConfig::set_volume_db(float p_volume) { volume_db = p_volume; }
-
-float AudioEffectAmplifyConfig::get_volume_db() const { return volume_db; }
-
-void AudioEffectAmplifyConfig::set_volume_linear(float p_volume)
-{
-	set_volume_db(Math::linear_to_db(p_volume));
-}
-
-float AudioEffectAmplifyConfig::get_volume_linear() const
-{
-	return Math::db_to_linear(get_volume_db());
-}
-
-// ============================================================================
 // 2. Capture
-// ============================================================================
-
-bool AudioEffectCaptureConfig::can_get_buffer(int p_frames) const
-{
-	return buffer.data_left() >= p_frames;
-}
-
-PackedVector2Array AudioEffectCaptureConfig::get_buffer(int p_frames)
-{
-	ERR_FAIL_COND_V(!buffer_initialized, PackedVector2Array());
-	ERR_FAIL_INDEX_V(p_frames, buffer.size(), PackedVector2Array());
-	int data_left = buffer.data_left();
-	if (data_left < p_frames || p_frames == 0) {
-		return PackedVector2Array();
-	}
-
-	PackedVector2Array ret;
-	ret.resize(p_frames);
-
-	Vector<AudioFrame> streaming_data;
-	streaming_data.resize(p_frames);
-	buffer.read(streaming_data.ptrw(), p_frames);
-	for (int32_t i = 0; i < p_frames; i++) {
-		ret.write[i] = Vector2(streaming_data[i].left, streaming_data[i].right);
-	}
-	return ret;
-}
-
-void AudioEffectCaptureConfig::clear_buffer()
-{
-	const int32_t data_left = buffer.data_left();
-	buffer.advance_read(data_left);
-}
-
-void AudioEffectCaptureConfig::set_buffer_length(float p_buffer_length_seconds)
-{
-	buffer_length_seconds = p_buffer_length_seconds;
-}
-
-float AudioEffectCaptureConfig::get_buffer_length() const { return buffer_length_seconds; }
-
-int AudioEffectCaptureConfig::get_frames_available() const
-{
-	ERR_FAIL_COND_V(!buffer_initialized, 0);
-	return buffer.data_left();
-}
-
-int64_t AudioEffectCaptureConfig::get_discarded_frames() const { return discarded_frames.get(); }
-
-int AudioEffectCaptureConfig::get_buffer_length_frames() const
-{
-	ERR_FAIL_COND_V(!buffer_initialized, 0);
-	return buffer.size();
-}
-
-int64_t AudioEffectCaptureConfig::get_pushed_frames() const { return pushed_frames.get(); }
 
 void AudioEffectCaptureState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	AudioEffectCaptureConfig* cfg = base.is_valid() ? base->get_capture_config() : nullptr;
+	AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	RingBuffer<AudioFrame>& buffer = cfg->buffer;
@@ -232351,9 +223956,7 @@ void AudioEffectCaptureState::process(
 
 bool AudioEffectCaptureState::process_silence() const { return true; }
 
-// ============================================================================
 // 3. Chorus
-// ============================================================================
 
 void AudioEffectChorusState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
@@ -232375,18 +223978,18 @@ void AudioEffectChorusState::process(
 void AudioEffectChorusState::_process_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectChorusConfig* cfg = base.is_valid() ? base->get_chorus_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	for (int i = 0; i < p_frame_count; i++) {
 		audio_buffer.write[(buffer_pos + i) & buffer_mask] = p_src_frames[i];
-		p_dst_frames[i] = p_src_frames[i] * cfg->dry;
+		p_dst_frames[i] = p_src_frames[i] * cfg->chorus_dry;
 	}
 
 	float mix_rate = AudioServer::get_mix_rate();
 
 	for (int vc = 0; vc < cfg->voice_count; vc++) {
-		const AudioEffectChorusConfig::Voice& v = cfg->voice[vc];
+		const AudioEffectConfig::ChorusVoice& v = cfg->voice[vc];
 
 		double time_to_mix = (float)p_frame_count / mix_rate;
 		double cycles_to_mix = time_to_mix * v.rate;
@@ -232401,7 +224004,7 @@ void AudioEffectChorusState::_process_chunk(
 
 		uint64_t local_cycles = cycles[vc];
 		uint64_t increment = std::rint(
-			cycles_to_mix / (double)p_frame_count * (double)(1 << AudioEffectChorusConfig::CYCLES_FRAC));
+			cycles_to_mix / (double)p_frame_count * (double)(1 << AudioEffectConfig::CYCLES_FRAC));
 
 		if ((((unsigned int)max_depth_frames) + 10) > delay_frames) {
 			delay_frames += (int)max_depth_frames - delay_frames;
@@ -232415,18 +224018,18 @@ void AudioEffectChorusState::_process_chunk(
 		float c1 = 1.0 - auxlp;
 		float c2 = auxlp;
 		AudioFrame h = filter_h[vc];
-		if (v.cutoff >= AudioEffectChorusConfig::MS_CUTOFF_MAX) {
+		if (v.cutoff >= AudioEffectConfig::MS_CUTOFF_MAX) {
 			c1 = 1.0;
 			c2 = 0.0;
 		}
 
-		AudioFrame vol_modifier = AudioFrame(cfg->wet, cfg->wet) * Math::db_to_linear(v.level);
+		AudioFrame vol_modifier = AudioFrame(cfg->chorus_wet, cfg->chorus_wet) * Math::db_to_linear(v.level);
 		vol_modifier.left *= CLAMP(1.0 - v.pan, 0, 1);
 		vol_modifier.right *= CLAMP(1.0 + v.pan, 0, 1);
 
 		for (int i = 0; i < p_frame_count; i++) {
-			float phase = (float)(local_cycles & AudioEffectChorusConfig::CYCLES_MASK) /
-						  (float)(1 << AudioEffectChorusConfig::CYCLES_FRAC);
+			float phase = (float)(local_cycles & AudioEffectConfig::CYCLES_MASK) /
+						  (float)(1 << AudioEffectConfig::CYCLES_FRAC);
 
 			float wave_delay = std::sin(phase * Math::TAU) * max_depth_frames;
 
@@ -232453,128 +224056,21 @@ void AudioEffectChorusState::_process_chunk(
 
 		filter_h[vc] = h;
 		cycles[vc] +=
-			Math::fast_ftoi(cycles_to_mix * (double)(1 << AudioEffectChorusConfig::CYCLES_FRAC));
+			Math::fast_ftoi(cycles_to_mix * (double)(1 << AudioEffectConfig::CYCLES_FRAC));
 	}
 
 	buffer_pos += p_frame_count;
 }
 
-void AudioEffectChorusConfig::set_voice_count(int p_voices)
-{
-	ERR_FAIL_COND(p_voices < 1 || p_voices > MAX_VOICES);
-	voice_count = p_voices;
-}
-
-int AudioEffectChorusConfig::get_voice_count() const { return voice_count; }
-
-void AudioEffectChorusConfig::set_voice_delay_ms(int p_voice, float p_delay_ms)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].delay = p_delay_ms;
-}
-
-float AudioEffectChorusConfig::get_voice_delay_ms(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].delay;
-}
-
-void AudioEffectChorusConfig::set_voice_rate_hz(int p_voice, float p_rate_hz)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].rate = p_rate_hz;
-}
-
-float AudioEffectChorusConfig::get_voice_rate_hz(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].rate;
-}
-
-void AudioEffectChorusConfig::set_voice_depth_ms(int p_voice, float p_depth_ms)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].depth = p_depth_ms;
-}
-
-float AudioEffectChorusConfig::get_voice_depth_ms(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].depth;
-}
-
-void AudioEffectChorusConfig::set_voice_level_db(int p_voice, float p_level_db)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].level = p_level_db;
-}
-
-float AudioEffectChorusConfig::get_voice_level_db(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].level;
-}
-
-void AudioEffectChorusConfig::set_voice_cutoff_hz(int p_voice, float p_cutoff_hz)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].cutoff = MAX(p_cutoff_hz, 1.0f);
-}
-
-float AudioEffectChorusConfig::get_voice_cutoff_hz(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].cutoff;
-}
-
-void AudioEffectChorusConfig::set_voice_pan(int p_voice, float p_pan)
-{
-	ERR_FAIL_INDEX(p_voice, MAX_VOICES);
-	voice[p_voice].pan = p_pan;
-}
-
-float AudioEffectChorusConfig::get_voice_pan(int p_voice) const
-{
-	ERR_FAIL_INDEX_V(p_voice, MAX_VOICES, 0);
-	return voice[p_voice].pan;
-}
-
-void AudioEffectChorusConfig::set_wet(float p_amount) { wet = p_amount; }
-
-float AudioEffectChorusConfig::get_wet() const { return wet; }
-
-void AudioEffectChorusConfig::set_dry(float p_amount) { dry = p_amount; }
-
-float AudioEffectChorusConfig::get_dry() const { return dry; }
-
-AudioEffectChorusConfig::AudioEffectChorusConfig()
-{
-	voice_count = 2;
-	voice[0].delay = 15.0f;
-	voice[1].delay = 20.0f;
-	voice[0].rate = 0.8f;
-	voice[1].rate = 1.2f;
-	voice[0].depth = 2.0f;
-	voice[1].depth = 3.0f;
-	voice[0].cutoff = 8000.0f;
-	voice[1].cutoff = 8000.0f;
-	voice[0].pan = -0.5f;
-	voice[1].pan = 0.5f;
-	wet = 0.5f;
-	dry = 1.0f;
-}
-
-// ============================================================================
 // 4. Compressor
-// ============================================================================
 
 void AudioEffectCompressorState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectCompressorConfig* cfg = base.is_valid() ? base->get_compressor_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
-	float threshold = Math::db_to_linear(cfg->threshold);
+	float threshold = Math::db_to_linear(cfg->comp_threshold);
 	float sample_rate = AudioServer::get_mix_rate();
 
 	float ratatcoef = std::exp(-1 / (0.00001f * sample_rate));
@@ -232584,7 +224080,7 @@ void AudioEffectCompressorState::process(
 	float atcoef = std::exp(-1 / (attime * sample_rate));
 	float relcoef = std::exp(-1 / (reltime * sample_rate));
 
-	float makeup = Math::db_to_linear(cfg->gain);
+	float makeup = Math::db_to_linear(cfg->comp_gain);
 
 	float mix = cfg->mix;
 	float gr_meter_decay = std::exp(1 / (1 * sample_rate));
@@ -232647,42 +224143,7 @@ void AudioEffectCompressorState::process(
 	}
 }
 
-void AudioEffectCompressorConfig::set_threshold(float p_threshold) { threshold = p_threshold; }
-
-float AudioEffectCompressorConfig::get_threshold() const { return threshold; }
-
-void AudioEffectCompressorConfig::set_ratio(float p_ratio) { ratio = p_ratio; }
-
-float AudioEffectCompressorConfig::get_ratio() const { return ratio; }
-
-void AudioEffectCompressorConfig::set_gain(float p_gain) { gain = p_gain; }
-
-float AudioEffectCompressorConfig::get_gain() const { return gain; }
-
-void AudioEffectCompressorConfig::set_attack_us(float p_attack_us) { attack_us = p_attack_us; }
-
-float AudioEffectCompressorConfig::get_attack_us() const { return attack_us; }
-
-void AudioEffectCompressorConfig::set_release_ms(float p_release_ms) { release_ms = p_release_ms; }
-
-float AudioEffectCompressorConfig::get_release_ms() const { return release_ms; }
-
-void AudioEffectCompressorConfig::set_mix(float p_mix) { mix = p_mix; }
-
-float AudioEffectCompressorConfig::get_mix() const { return mix; }
-
-void AudioEffectCompressorConfig::set_sidechain(const String& p_sidechain)
-{
-	AudioServer::lock();
-	sidechain = p_sidechain;
-	AudioServer::unlock();
-}
-
-String AudioEffectCompressorConfig::get_sidechain() const { return sidechain; }
-
-// ============================================================================
 // 5. Delay
-// ============================================================================
 
 void AudioEffectDelayState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
@@ -232704,10 +224165,10 @@ void AudioEffectDelayState::process(
 void AudioEffectDelayState::_process_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectDelayConfig* cfg = base.is_valid() ? base->get_delay_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
-	float main_level_f = cfg->dry;
+	float main_level_f = cfg->delay_dry;
 	float mix_rate = AudioServer::get_mix_rate();
 
 	float tap_1_level_f = cfg->tap_1_active ? Math::db_to_linear(cfg->tap_1_level) : 0.0f;
@@ -232763,69 +224224,12 @@ void AudioEffectDelayState::_process_chunk(
 	}
 }
 
-void AudioEffectDelayConfig::set_dry(float p_dry) { dry = p_dry; }
-
-float AudioEffectDelayConfig::get_dry() const { return dry; }
-
-void AudioEffectDelayConfig::set_tap1_active(bool p_active) { tap_1_active = p_active; }
-
-bool AudioEffectDelayConfig::is_tap1_active() const { return tap_1_active; }
-
-void AudioEffectDelayConfig::set_tap1_delay_ms(float p_delay_ms) { tap_1_delay_ms = p_delay_ms; }
-
-float AudioEffectDelayConfig::get_tap1_delay_ms() const { return tap_1_delay_ms; }
-
-void AudioEffectDelayConfig::set_tap1_level_db(float p_level_db) { tap_1_level = p_level_db; }
-
-float AudioEffectDelayConfig::get_tap1_level_db() const { return tap_1_level; }
-
-void AudioEffectDelayConfig::set_tap1_pan(float p_pan) { tap_1_pan = p_pan; }
-
-float AudioEffectDelayConfig::get_tap1_pan() const { return tap_1_pan; }
-
-void AudioEffectDelayConfig::set_tap2_active(bool p_active) { tap_2_active = p_active; }
-
-bool AudioEffectDelayConfig::is_tap2_active() const { return tap_2_active; }
-
-void AudioEffectDelayConfig::set_tap2_delay_ms(float p_delay_ms) { tap_2_delay_ms = p_delay_ms; }
-
-float AudioEffectDelayConfig::get_tap2_delay_ms() const { return tap_2_delay_ms; }
-
-void AudioEffectDelayConfig::set_tap2_level_db(float p_level_db) { tap_2_level = p_level_db; }
-
-float AudioEffectDelayConfig::get_tap2_level_db() const { return tap_2_level; }
-
-void AudioEffectDelayConfig::set_tap2_pan(float p_pan) { tap_2_pan = p_pan; }
-
-float AudioEffectDelayConfig::get_tap2_pan() const { return tap_2_pan; }
-
-void AudioEffectDelayConfig::set_feedback_active(bool p_active) { feedback_active = p_active; }
-
-bool AudioEffectDelayConfig::is_feedback_active() const { return feedback_active; }
-
-void AudioEffectDelayConfig::set_feedback_delay_ms(float p_delay_ms) { feedback_delay_ms = p_delay_ms; }
-
-float AudioEffectDelayConfig::get_feedback_delay_ms() const { return feedback_delay_ms; }
-
-void AudioEffectDelayConfig::set_feedback_level_db(float p_level_db) { feedback_level = p_level_db; }
-
-float AudioEffectDelayConfig::get_feedback_level_db() const { return feedback_level; }
-
-void AudioEffectDelayConfig::set_feedback_lowpass(float p_lowpass)
-{
-	feedback_lowpass = MAX(p_lowpass, 1.0f);
-}
-
-float AudioEffectDelayConfig::get_feedback_lowpass() const { return feedback_lowpass; }
-
-// ============================================================================
 // 6. Distortion
-// ============================================================================
 
 void AudioEffectDistortionState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectDistortionConfig* cfg = base.is_valid() ? base->get_distortion_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	const float* src = (const float*)p_src_frames;
@@ -232835,7 +224239,7 @@ void AudioEffectDistortionState::process(
 	float lpf_ic = 1.0f - lpf_c;
 
 	float drive_f = cfg->drive;
-	float pregain_f = Math::db_to_linear(cfg->pre_gain);
+	float pregain_f = Math::db_to_linear(cfg->distortion_pre_gain);
 	float postgain_f = Math::db_to_linear(cfg->post_gain);
 
 	float atan_mult = std::pow(10.0f, drive_f * drive_f * 3.0f) - 1.0f + 0.001f;
@@ -232850,8 +224254,8 @@ void AudioEffectDistortionState::process(
 		float ha = src[i] - out;
 		a *= pregain_f;
 
-		switch (cfg->mode) {
-		case AudioEffectDistortionConfig::MODE_CLIP: {
+		switch (cfg->distortion_mode) {
+		case AudioEffectConfig::DISTORTION_MODE_CLIP: {
 			float a_sign = a < 0 ? -1.0f : 1.0f;
 			a = std::pow(std::abs(a), 1.0001f - drive_f) * a_sign;
 			if (a > 1.0f) {
@@ -232861,18 +224265,18 @@ void AudioEffectDistortionState::process(
 				a = -1.0f;
 			}
 		} break;
-		case AudioEffectDistortionConfig::MODE_ATAN: {
+		case AudioEffectConfig::DISTORTION_MODE_ATAN: {
 			a = std::atan(a * atan_mult) * atan_div;
 		} break;
-		case AudioEffectDistortionConfig::MODE_LOFI: {
+		case AudioEffectConfig::DISTORTION_MODE_LOFI: {
 			a = std::floor(a * lofi_mult + 0.5f) / lofi_mult;
 		} break;
-		case AudioEffectDistortionConfig::MODE_OVERDRIVE: {
+		case AudioEffectConfig::DISTORTION_MODE_OVERDRIVE: {
 			const double x = a * 0.686306;
 			const double z = 1 + std::exp(std::sqrt(std::abs(x)) * -0.75);
 			a = (std::exp(x) - std::exp(-x * z)) / (std::exp(x) + std::exp(-x));
 		} break;
-		case AudioEffectDistortionConfig::MODE_WAVESHAPE: {
+		case AudioEffectConfig::DISTORTION_MODE_WAVESHAPE: {
 			float x = a;
 			float k = 2 * drive_f / (1.00001f - drive_f);
 			a = (1.0f + k) * x / (1.0f + k * std::abs(x));
@@ -232883,37 +224287,12 @@ void AudioEffectDistortionState::process(
 	}
 }
 
-void AudioEffectDistortionConfig::set_mode(Mode p_mode) { mode = p_mode; }
-
-AudioEffectDistortionConfig::Mode AudioEffectDistortionConfig::get_mode() const { return mode; }
-
-void AudioEffectDistortionConfig::set_pre_gain(float p_pre_gain) { pre_gain = p_pre_gain; }
-
-float AudioEffectDistortionConfig::get_pre_gain() const { return pre_gain; }
-
-void AudioEffectDistortionConfig::set_keep_hf_hz(float p_keep_hf_hz)
-{
-	keep_hf_hz = MAX(p_keep_hf_hz, 1.0f);
-}
-
-float AudioEffectDistortionConfig::get_keep_hf_hz() const { return keep_hf_hz; }
-
-void AudioEffectDistortionConfig::set_drive(float p_drive) { drive = p_drive; }
-
-float AudioEffectDistortionConfig::get_drive() const { return drive; }
-
-void AudioEffectDistortionConfig::set_post_gain(float p_post_gain) { post_gain = p_post_gain; }
-
-float AudioEffectDistortionConfig::get_post_gain() const { return post_gain; }
-
-// ============================================================================
 // 7. EQ
-// ============================================================================
 
 void AudioEffectEQState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectEQConfig* cfg = base.is_valid() ? base->get_eq_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	int band_count = bands[0].size();
@@ -232921,7 +224300,7 @@ void AudioEffectEQState::process(
 	EQ::BandProcess* proc_r = bands[1].ptrw();
 	float* bgain = gains.ptrw();
 	for (int i = 0; i < band_count; i++) {
-		bgain[i] = Math::db_to_linear(cfg->gain[i]);
+		bgain[i] = Math::db_to_linear(cfg->eq_gain[i]);
 	}
 
 	for (int i = 0; i < p_frame_count; i++) {
@@ -232943,45 +224322,7 @@ void AudioEffectEQState::process(
 	}
 }
 
-void AudioEffectEQConfig::set_preset(EQ::Preset p_preset)
-{
-	eq = EQ();
-	eq.set_mix_rate(AudioServer::get_mix_rate());
-	eq.set_preset_band_mode(p_preset);
-	gain.clear();
-	prop_band_map.clear();
-	band_names.clear();
-	gain.resize(eq.get_band_count());
-	for (int i = 0; i < gain.size(); i++) {
-		gain.write[i] = 0.0f;
-		String band_name = "band_db/" + itos(eq.get_band_frequency(i)) + "_hz";
-		prop_band_map[band_name] = i;
-		band_names.push_back(band_name);
-	}
-}
-
-void AudioEffectEQConfig::set_band_gain_db(int p_band, float p_volume)
-{
-	ERR_FAIL_INDEX(p_band, gain.size());
-	gain.write[p_band] = p_volume;
-}
-
-float AudioEffectEQConfig::get_band_gain_db(int p_band) const
-{
-	ERR_FAIL_INDEX_V(p_band, gain.size(), 0);
-	return gain[p_band];
-}
-
-int AudioEffectEQConfig::get_band_count() const { return gain.size(); }
-
-AudioEffectEQConfig::AudioEffectEQConfig(EQ::Preset p_preset)
-{
-	set_preset(p_preset);
-}
-
-// ============================================================================
 // 8. Filter
-// ============================================================================
 
 template <int S>
 void AudioEffectFilterState::_process_filter(
@@ -233021,13 +224362,13 @@ void AudioEffectFilterState::_process_filter(
 void AudioEffectFilterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectFilterConfig* cfg = base.is_valid() ? base->get_filter_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	filter.set_cutoff(cfg->cutoff);
-	filter.set_gain(cfg->gain);
+	filter.set_gain(cfg->filter_gain);
 	filter.set_resonance(cfg->resonance);
-	filter.set_mode(cfg->mode);
+	filter.set_mode(cfg->filter_mode);
 	int stages = int(cfg->db) + 1;
 	filter.set_stages(stages);
 	filter.set_sampling_rate(AudioServer::get_mix_rate());
@@ -233061,44 +224402,20 @@ AudioEffectFilterState::AudioEffectFilterState()
 	}
 }
 
-void AudioEffectFilterConfig::set_filter_mode(AudioFilterSW::Mode p_mode) { mode = p_mode; }
-
-AudioFilterSW::Mode AudioEffectFilterConfig::get_filter_mode() const { return mode; }
-
-void AudioEffectFilterConfig::set_cutoff(float p_freq) { cutoff = MAX(p_freq, 1.0f); }
-
-float AudioEffectFilterConfig::get_cutoff() const { return cutoff; }
-
-void AudioEffectFilterConfig::set_resonance(float p_amount) { resonance = p_amount; }
-
-float AudioEffectFilterConfig::get_resonance() const { return resonance; }
-
-void AudioEffectFilterConfig::set_gain(float p_amount) { gain = p_amount; }
-
-float AudioEffectFilterConfig::get_gain() const { return gain; }
-
-void AudioEffectFilterConfig::set_db(FilterDB p_db) { db = p_db; }
-
-AudioEffectFilterConfig::FilterDB AudioEffectFilterConfig::get_db() const { return db; }
-
-AudioEffectFilterConfig::AudioEffectFilterConfig(AudioFilterSW::Mode p_mode) : mode(p_mode) {}
-
-// ============================================================================
 // 9. HardLimiter
-// ============================================================================
 
 void AudioEffectHardLimiterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectHardLimiterConfig* cfg = base.is_valid() ? base->get_hard_limiter_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	float sample_rate = AudioServer::get_mix_rate();
 
-	float ceiling = Math::db_to_linear(cfg->ceiling);
+	float ceiling = Math::db_to_linear(cfg->hard_limiter_ceiling);
 	float release = cfg->release;
 	float attack = cfg->attack;
-	float pre_gain = Math::db_to_linear(cfg->pre_gain);
+	float pre_gain = Math::db_to_linear(cfg->hard_limiter_pre_gain);
 
 	for (int i = 0; i < p_frame_count; i++) {
 		float sample_left = p_src_frames[i].left * pre_gain;
@@ -233150,31 +224467,17 @@ void AudioEffectHardLimiterState::process(
 	}
 }
 
-void AudioEffectHardLimiterConfig::set_ceiling_db(float p_ceiling) { ceiling = p_ceiling; }
-
-float AudioEffectHardLimiterConfig::get_ceiling_db() const { return ceiling; }
-
-float AudioEffectHardLimiterConfig::get_pre_gain_db() const { return pre_gain; }
-
-void AudioEffectHardLimiterConfig::set_pre_gain_db(float p_pre_gain) { pre_gain = p_pre_gain; }
-
-float AudioEffectHardLimiterConfig::get_release() const { return release; }
-
-void AudioEffectHardLimiterConfig::set_release(float p_release) { release = p_release; }
-
-// ============================================================================
 // 10. Limiter
-// ============================================================================
 
 void AudioEffectLimiterState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectLimiterConfig* cfg = base.is_valid() ? base->get_limiter_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
-	float threshdb = cfg->threshold;
-	float ceiling = Math::db_to_linear(cfg->ceiling);
-	float ceildb = cfg->ceiling;
+	float threshdb = cfg->limiter_threshold;
+	float ceiling = Math::db_to_linear(cfg->limiter_ceiling);
+	float ceildb = cfg->limiter_ceiling;
 	float makeup = Math::db_to_linear(ceildb - threshdb);
 	float sc = -cfg->soft_clip;
 	float scv = Math::db_to_linear(sc);
@@ -233206,30 +224509,12 @@ void AudioEffectLimiterState::process(
 	}
 }
 
-void AudioEffectLimiterConfig::set_threshold_db(float p_threshold) { threshold = p_threshold; }
-
-float AudioEffectLimiterConfig::get_threshold_db() const { return threshold; }
-
-void AudioEffectLimiterConfig::set_ceiling_db(float p_ceiling) { ceiling = p_ceiling; }
-
-float AudioEffectLimiterConfig::get_ceiling_db() const { return ceiling; }
-
-void AudioEffectLimiterConfig::set_soft_clip_db(float p_soft_clip) { soft_clip = p_soft_clip; }
-
-float AudioEffectLimiterConfig::get_soft_clip_db() const { return soft_clip; }
-
-void AudioEffectLimiterConfig::set_soft_clip_ratio(float p_soft_clip) { soft_clip_ratio = p_soft_clip; }
-
-float AudioEffectLimiterConfig::get_soft_clip_ratio() const { return soft_clip_ratio; }
-
-// ============================================================================
 // 11. Panner
-// ============================================================================
 
 void AudioEffectPannerState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectPannerConfig* cfg = base.is_valid() ? base->get_panner_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	float lvol = CLAMP(1.0f - cfg->pan, 0.0f, 1.0f);
@@ -233241,18 +224526,12 @@ void AudioEffectPannerState::process(
 	}
 }
 
-void AudioEffectPannerConfig::set_pan(float p_cpanume) { pan = p_cpanume; }
-
-float AudioEffectPannerConfig::get_pan() const { return pan; }
-
-// ============================================================================
 // 12. Phaser
-// ============================================================================
 
 void AudioEffectPhaserState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectPhaserConfig* cfg = base.is_valid() ? base->get_phaser_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	float sampling_rate = AudioServer::get_mix_rate();
@@ -233289,29 +224568,7 @@ void AudioEffectPhaserState::process(
 	}
 }
 
-void AudioEffectPhaserConfig::set_range_min_hz(float p_hz) { range_min = p_hz; }
-
-float AudioEffectPhaserConfig::get_range_min_hz() const { return range_min; }
-
-void AudioEffectPhaserConfig::set_range_max_hz(float p_hz) { range_max = p_hz; }
-
-float AudioEffectPhaserConfig::get_range_max_hz() const { return range_max; }
-
-void AudioEffectPhaserConfig::set_rate_hz(float p_hz) { rate = p_hz; }
-
-float AudioEffectPhaserConfig::get_rate_hz() const { return rate; }
-
-void AudioEffectPhaserConfig::set_feedback(float p_fbk) { feedback = p_fbk; }
-
-float AudioEffectPhaserConfig::get_feedback() const { return feedback; }
-
-void AudioEffectPhaserConfig::set_depth(float p_depth) { depth = p_depth; }
-
-float AudioEffectPhaserConfig::get_depth() const { return depth; }
-
-// ============================================================================
 // 13. PitchShift
-// ============================================================================
 
 /* clang-format off */
 void SMBPitchShift::PitchShift(float pitchShift, long numSampsToProcess, long fftFrameSize, long osamp, float sampleRate, float *indata, float *outdata, int stride)
@@ -233487,7 +224744,7 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 void AudioEffectPitchShiftState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectPitchShiftConfig* cfg = base.is_valid() ? base->get_pitch_shift_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	if (Math::is_equal_approx(cfg->pitch_scale, 1.0f)) {
@@ -233511,36 +224768,7 @@ void AudioEffectPitchShiftState::process(
 		in_r, out_r, 2);
 }
 
-void AudioEffectPitchShiftConfig::set_pitch_scale(float p_pitch_scale)
-{
-	ERR_FAIL_COND(!(p_pitch_scale > 0.0f));
-	pitch_scale = p_pitch_scale;
-}
-
-float AudioEffectPitchShiftConfig::get_pitch_scale() const { return pitch_scale; }
-
-void AudioEffectPitchShiftConfig::set_oversampling(int p_oversampling)
-{
-	ERR_FAIL_COND(p_oversampling < 4);
-	oversampling = p_oversampling;
-}
-
-int AudioEffectPitchShiftConfig::get_oversampling() const { return oversampling; }
-
-void AudioEffectPitchShiftConfig::set_fft_size(FFTSize p_fft_size)
-{
-	ERR_FAIL_INDEX(p_fft_size, FFT_SIZE_MAX);
-	fft_size = p_fft_size;
-}
-
-AudioEffectPitchShiftConfig::FFTSize AudioEffectPitchShiftConfig::get_fft_size() const
-{
-	return fft_size;
-}
-
-// ============================================================================
 // 14. Record
-// ============================================================================
 
 void AudioEffectRecordState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
@@ -233624,143 +224852,12 @@ void AudioEffectRecordState::finish()
 	}
 }
 
-void AudioEffectRecordConfig::ensure_thread_stopped()
-{
-	if (current_instance.is_valid()) {
-		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
-			state->finish();
-		}
-	}
-}
-
-void AudioEffectRecordConfig::set_recording_active(bool p_record)
-{
-	if (p_record) {
-		if (current_instance.is_null()) {
-			WARN_PRINT("Recording should not be set as active before Godot has initialized.");
-			return;
-		}
-		ensure_thread_stopped();
-		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
-			state->init();
-		}
-	}
-	else {
-		if (current_instance.is_valid()) {
-			if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
-				state->is_recording = false;
-			}
-		}
-	}
-}
-
-bool AudioEffectRecordConfig::is_recording_active() const
-{
-	if (current_instance.is_null()) {
-		return false;
-	}
-	const AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>();
-	return state ? state->is_recording : false;
-}
-
-void AudioEffectRecordConfig::set_format(AudioStreamWAV::Format p_format) { format = p_format; }
-
-AudioStreamWAV::Format AudioEffectRecordConfig::get_format() const { return format; }
-
-Ref<AudioStreamWAV> AudioEffectRecordConfig::get_recording() const
-{
-	AudioStreamWAV::Format dst_format = format;
-	bool stereo = true;
-
-	Vector<uint8_t> dst_data;
-
-	ERR_FAIL_COND_V(current_instance.is_null(), nullptr);
-	const AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>();
-	ERR_FAIL_COND_V(!state || state->recording_data.is_empty(), nullptr);
-
-	if (dst_format == AudioStreamWAV::FORMAT_8_BITS) {
-		int data_size = state->recording_data.size();
-		dst_data.resize(data_size);
-		uint8_t* w = dst_data.ptrw();
-
-		for (int i = 0; i < data_size; i++) {
-			int8_t v = CLAMP(state->recording_data[i] * 128, -128, 127);
-			w[i] = v;
-		}
-	}
-	else if (dst_format == AudioStreamWAV::FORMAT_16_BITS) {
-		int data_size = state->recording_data.size();
-		dst_data.resize(data_size * 2);
-		uint8_t* w = dst_data.ptrw();
-
-		for (int i = 0; i < data_size; i++) {
-			int16_t v = CLAMP(state->recording_data[i] * 32768, -32768, 32767);
-			encode_uint16(v, &w[i * 2]);
-		}
-	}
-	else if (dst_format == AudioStreamWAV::FORMAT_IMA_ADPCM) {
-		Vector<float> left;
-		Vector<float> right;
-
-		int tframes = state->recording_data.size() / 2;
-		left.resize(tframes);
-		right.resize(tframes);
-
-		for (int i = 0; i < tframes; i++) {
-			left.set(i, state->recording_data[i * 2 + 0]);
-			right.set(i, state->recording_data[i * 2 + 1]);
-		}
-
-		Vector<uint8_t> bleft;
-		Vector<uint8_t> bright;
-
-		AudioStreamWAV::_compress_ima_adpcm(left, bleft);
-		AudioStreamWAV::_compress_ima_adpcm(right, bright);
-
-		int dl = bleft.size();
-		dst_data.resize(dl * 2);
-
-		uint8_t* w = dst_data.ptrw();
-		const uint8_t* rl = bleft.ptr();
-		const uint8_t* rr = bright.ptr();
-
-		for (int i = 0; i < dl; i++) {
-			w[i * 2 + 0] = rl[i];
-			w[i * 2 + 1] = rr[i];
-		}
-	}
-	else if (dst_format == AudioStreamWAV::FORMAT_QOA) {
-		qoa_desc desc = {};
-		desc.samples = state->recording_data.size() / 2;
-		desc.samplerate = AudioServer::get_mix_rate();
-		desc.channels = 2;
-		AudioStreamWAV::_compress_qoa(state->recording_data, dst_data, &desc);
-	}
-	else {
-		ERR_PRINT("Format not implemented.");
-	}
-
-	Ref<AudioStreamWAV> sample;
-	sample.instantiate();
-	sample->set_data(dst_data);
-	sample->set_format(dst_format);
-	sample->set_mix_rate(AudioServer::get_mix_rate());
-	sample->set_loop_mode(AudioStreamWAV::LOOP_DISABLED);
-	sample->set_loop_begin(0);
-	sample->set_loop_end(0);
-	sample->set_stereo(stereo);
-
-	return sample;
-}
-
-// ============================================================================
 // 15. Reverb
-// ============================================================================
 
 void AudioEffectReverbState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectReverbConfig* cfg = base.is_valid() ? base->get_reverb_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	for (int i = 0; i < 2; i++) {
@@ -233772,8 +224869,8 @@ void AudioEffectReverbState::process(
 		r.set_room_size(cfg->room_size);
 		r.set_damp(cfg->damping);
 		r.set_extra_spread(cfg->spread);
-		r.set_wet(cfg->wet);
-		r.set_dry(cfg->dry);
+		r.set_wet(cfg->reverb_wet);
+		r.set_dry(cfg->reverb_dry);
 	}
 
 	int todo = p_frame_count;
@@ -233812,44 +224909,7 @@ AudioEffectReverbState::AudioEffectReverbState()
 	reverb[1].set_extra_spread_base(0.000521f);
 }
 
-void AudioEffectReverbConfig::set_predelay_msec(float p_msec) { predelay = p_msec; }
-
-void AudioEffectReverbConfig::set_predelay_feedback(float p_feedback)
-{
-	predelay_fb = CLAMP(p_feedback, 0.0f, 0.98f);
-}
-
-void AudioEffectReverbConfig::set_room_size(float p_size) { room_size = p_size; }
-
-void AudioEffectReverbConfig::set_damping(float p_damping) { damping = p_damping; }
-
-void AudioEffectReverbConfig::set_spread(float p_spread) { spread = p_spread; }
-
-void AudioEffectReverbConfig::set_dry(float p_dry) { dry = p_dry; }
-
-void AudioEffectReverbConfig::set_wet(float p_wet) { wet = p_wet; }
-
-void AudioEffectReverbConfig::set_hpf(float p_hpf) { hpf = p_hpf; }
-
-float AudioEffectReverbConfig::get_predelay_msec() const { return predelay; }
-
-float AudioEffectReverbConfig::get_predelay_feedback() const { return predelay_fb; }
-
-float AudioEffectReverbConfig::get_room_size() const { return room_size; }
-
-float AudioEffectReverbConfig::get_damping() const { return damping; }
-
-float AudioEffectReverbConfig::get_spread() const { return spread; }
-
-float AudioEffectReverbConfig::get_dry() const { return dry; }
-
-float AudioEffectReverbConfig::get_wet() const { return wet; }
-
-float AudioEffectReverbConfig::get_hpf() const { return hpf; }
-
-// ============================================================================
 // 16. SpectrumAnalyzer
-// ============================================================================
 
 static void _spectrum_smb_fft(float* fftBuffer, long fftFrameSize, long sign)
 {
@@ -233987,32 +225047,12 @@ Vector2 AudioEffectSpectrumAnalyzerState::get_magnitude_for_frequency_range(
 	}
 }
 
-void AudioEffectSpectrumAnalyzerConfig::set_buffer_length(float p_seconds)
-{
-	buffer_length = p_seconds;
-}
-
-float AudioEffectSpectrumAnalyzerConfig::get_buffer_length() const { return buffer_length; }
-
-void AudioEffectSpectrumAnalyzerConfig::set_fft_size(FFTSize p_fft_size)
-{
-	ERR_FAIL_INDEX(p_fft_size, FFT_SIZE_MAX);
-	fft_size = p_fft_size;
-}
-
-AudioEffectSpectrumAnalyzerConfig::FFTSize AudioEffectSpectrumAnalyzerConfig::get_fft_size() const
-{
-	return fft_size;
-}
-
-// ============================================================================
 // 17. StereoEnhance
-// ============================================================================
 
 void AudioEffectStereoEnhanceState::process(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	const AudioEffectStereoEnhanceConfig* cfg = base.is_valid() ? base->get_stereo_enhance_config() : nullptr;
+	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
 
 	float intensity = cfg->pan_pullout;
@@ -234054,24 +225094,59 @@ AudioEffectStereoEnhanceState::~AudioEffectStereoEnhanceState()
 	memdelete_arr(delay_ringbuff);
 }
 
-void AudioEffectStereoEnhanceConfig::set_pan_pullout(float p_amount) { pan_pullout = p_amount; }
+void AudioEffectConfig::clear_buffer()
+{
+	const int32_t to_read = buffer.data_left();
+	buffer.advance_read(to_read);
+	pushed_frames.set(0);
+	discarded_frames.set(0);
+}
 
-float AudioEffectStereoEnhanceConfig::get_pan_pullout() const { return pan_pullout; }
+void AudioEffectConfig::ensure_thread_stopped()
+{
+	if (current_instance.is_valid()) {
+		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
+			state->finish();
+		}
+	}
+}
 
-void AudioEffectStereoEnhanceConfig::set_time_pullout(float p_amount) { time_pullout = p_amount; }
+void AudioEffectConfig::set_eq_preset(EQ::Preset p_preset)
+{
+	eq.set_preset_band_mode(p_preset);
+	eq_gain.clear();
+	eq_gain.resize(eq.get_band_count());
+	for (int i = 0; i < eq_gain.size(); i++) {
+		eq_gain.write[i] = 0.0f;
+	}
+	prop_band_map.clear();
+	band_names.clear();
+	for (int i = 0; i < eq.get_band_count(); i++) {
+		String band_name = "band_db/" +itos(eq.get_band_frequency(i)) + "_hz";
+		prop_band_map[band_name] = i;
+		band_names.push_back(band_name);
+	}
+}
 
-float AudioEffectStereoEnhanceConfig::get_time_pullout() const { return time_pullout; }
-
-void AudioEffectStereoEnhanceConfig::set_surround(float p_amount) { surround = p_amount; }
-
-float AudioEffectStereoEnhanceConfig::get_surround() const { return surround; }
-
-// ============================================================================
-// Merged from servers/audio/effects/eq_filter.cpp
-// ============================================================================
-
-
-#include "core/typedefs.h"
+AudioEffectConfig::AudioEffectConfig(AudioEffect::Type p_type)
+{
+	if (p_type == AudioEffect::EFFECT_CHORUS) {
+		voice[0].delay = 15.0f;
+		voice[1].delay = 20.0f;
+		voice[0].rate = 0.8f;
+		voice[1].rate = 1.2f;
+		voice[0].depth = 2.0f;
+		voice[1].depth = 3.0f;
+		voice[0].cutoff = 8000.0f;
+		voice[1].cutoff = 8000.0f;
+		voice[0].pan = -0.5f;
+		voice[1].pan = 0.5f;
+	}
+	else if (p_type == AudioEffect::EFFECT_EQ) {
+		eq.set_mix_rate(AudioServer::get_mix_rate());
+		set_eq_preset(EQ::PRESET_6_BANDS);
+	}
+}
 
 #define POW2(v) ((v) * (v))
 
@@ -234250,13 +225325,7 @@ EQ::~EQ() {
 #undef PUSH_BANDS
 #endif
 
-// ============================================================================
-// Merged from servers/audio/effects/reverb_filter.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
-#include "core/os/memory.h"
 
 const float Reverb::comb_tunings[MAX_COMBS] = {
 	//freeverb comb tunings
@@ -234366,7 +225435,6 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 	in=sample;	\
 	sample=-in+aux;	\
 	ap->pos++;
-
 
 		PROCESS_ALLPASS(0);
 		PROCESS_ALLPASS(1);
@@ -234568,12 +225636,6 @@ Reverb::~Reverb() {
 #undef PROCESS_ALLPASS
 #endif
 
-// ============================================================================
-// Merged from servers/text/text_server.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 // Inlined servers/text/text_server.compat.inc
 #ifndef DISABLE_DEPRECATED
@@ -234609,12 +225671,9 @@ void TextServer::_shaped_text_draw_outline_bind_compat_104872(const RID& p_shape
 
 #endif // DISABLE_DEPRECATED
 
-
-
 #include "servers/display/display_server.h"
 
 #ifndef DISABLE_DEPRECATED
-#include "core/os/os.h"
 #endif // DISABLE_DEPRECATED
 
 void TextServerManager::initialize()
@@ -235873,12 +226932,6 @@ void TextServerManager::set_primary_interface(const Ref<TextServer>& p_interface
 	data->primary_interface = p_interface;
 }
 
-
-
-// ============================================================================
-// Merged from servers/display/display_server.cpp
-// ============================================================================
-
 // Inlined servers/display/display_server.compat.inc
 #ifndef DISABLE_DEPRECATED
 
@@ -235893,10 +226946,7 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 
 #endif // DISABLE_DEPRECATED
 
-
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 #if defined(RD_ENABLED)
@@ -235937,7 +226987,6 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 #if defined(METAL_ENABLED)
 #include "servers/display/display_server.h"
 #endif
-
 
 bool DisplayServer::window_early_clear_override_enabled = false;
 Color DisplayServer::window_early_clear_override_color = Color(0, 0, 0, 0);
@@ -236995,7 +228044,6 @@ Ref<Image> DisplayServerDriver::_get_cursor_image_from_resource(
 		"Cursor image too big. Max supported size is 256x256.");
 	return image;
 }
-
 
 uint32_t DisplayServerDriver::mouse_get_button_state() const { return 0; }
 
@@ -238649,12 +229697,7 @@ void DisplayServer::accessibility_update_set_foreground_color(const RID& p_id, c
 }
 #endif // DISABLE_DEPRECATED
 
-// ============================================================================
-// Merged from servers/display/accessibility_server.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-// --- Inlined from servers/display/accessibility_server_dummy.h ---
 #include "servers/display/display_server.h"
 
 class AccessibilityServerDummy : public AccessibilityServerDriver
@@ -238885,10 +229928,6 @@ public:
 
 	virtual ~AccessibilityServerDummy() {}
 };
-
-
-
-// --- End servers/display/accessibility_server_dummy.h ---
 
 AccessibilityServerDriver::AccessibilityServerDriver()
 {
@@ -239515,13 +230554,8 @@ void AccessibilityServer::update_set_foreground_color(const RID& p_id, const Col
 	}
 }
 
-// ============================================================================
-// Merged from servers/display/display_server_headless.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 DisplayServerDriver* DisplayServerHeadless::create_func(const String& p_rendering_driver,
@@ -239555,10 +230589,6 @@ DisplayServerHeadless::~DisplayServerHeadless()
 }
 
 void DisplayServerHeadless::_dispatch_input_event(const InputEvent&) {}
-
-// ============================================================================
-// Merged from servers/display/native_menu.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -240304,8 +231334,6 @@ void NativeMenu::clear(const RID& p_rid)
 	}
 }
 
-
-// --- Merged from servers/physics_2d/physics_server_2d.cpp ---
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h"
@@ -241177,10 +232205,6 @@ int PhysicsServer2D::get_process_info(PS2DE::ProcessInfo p_info) { return 0; }
 
 #endif // MODULE_GODOT_PHYSICS_2D_ENABLED
 
-// ============================================================================
-// Merged from servers/physics_2d/direct_states/physics_direct_body_state_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h"
@@ -241257,10 +232281,6 @@ PhysicsDirectSpaceState2D* PhysicsDirectBodyState2D::get_space_state() { return 
 
 #endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
 
-// ============================================================================
-// Merged from servers/physics_2d/direct_states/physics_direct_space_state_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h"
@@ -241328,33 +232348,8 @@ bool PhysicsDirectSpaceState2D::rest_info(
 
 #endif // !MODULE_GODOT_PHYSICS_2D_ENABLED
 
-// ============================================================================
-// Merged from servers/physics_2d/queries/physics_ray_query_parameters_2d.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
-Ref<PhysicsRayQueryParameters2D> PhysicsRayQueryParameters2D::create(
-	Vector2 p_from, Vector2 p_to, uint32_t p_mask, const TypedArray<RID>& p_exclude)
-{
-	Ref<PhysicsRayQueryParameters2D> params;
-	params.instantiate();
-	params->set_from(p_from);
-	params->set_to(p_to);
-	params->set_collision_mask(p_mask);
-	params->set_exclude(p_exclude);
-	return params;
-}
-
-
-
-void PhysicsRayQueryParameters2D::set_exclude(TypedArray<RID> const&) {}
-
-// ============================================================================
-// Merged from servers/physics_2d/queries/physics_shape_query_parameters_2d.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 Ref<Resource> PhysicsShapeQueryParameters2D::get_shape() const { return shape_ref; }
@@ -241373,12 +232368,6 @@ void PhysicsShapeQueryParameters2D::set_shape_rid(const RID& p_shape)
 		parameters.shape_rid = p_shape;
 	}
 }
-
-
-
-// ============================================================================
-// Merged from servers/physics_2d/queries/physics_testmotion_query_result_2d.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -241416,8 +232405,6 @@ real_t PhysicsTestMotionResult2D::get_collision_unsafe_fraction() const
 	return result.collision_unsafe_fraction;
 }
 
-
-// --- Merged from servers/physics_3d/physics_server_3d.cpp ---
 #include "servers/display/display_server.h"
 
 #include "core/version_generated.gen.h"
@@ -242718,10 +233705,6 @@ int PhysicsServer3D::get_process_info(PS3DE::ProcessInfo p_info) { return 0; }
 
 #endif // MODULE_JOLT_PHYSICS_ENABLED
 
-// ============================================================================
-// Merged from servers/physics_3d/physics_server_3d_rendering_server_handler.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
@@ -242798,10 +233781,6 @@ void PhysicsServer3DRenderingServerHandler::set_aabb(const AABB& p_aabb)
 {
 	Renderer::mesh_set_custom_aabb(mesh, p_aabb);
 }
-
-// ============================================================================
-// Merged from servers/physics_3d/direct_states/physics_direct_body_state_3d.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -242880,10 +233859,6 @@ void PhysicsDirectBodyState3D::integrate_forces() {}
 PhysicsDirectSpaceState3D* PhysicsDirectBodyState3D::get_space_state() { return nullptr; }
 
 #endif // !MODULE_JOLT_PHYSICS_ENABLED
-
-// ============================================================================
-// Merged from servers/physics_3d/direct_states/physics_direct_space_state_3d.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -242964,11 +233939,6 @@ bool PhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D& p_body,
 
 #endif // !MODULE_JOLT_PHYSICS_ENABLED
 
-// ============================================================================
-// Merged from servers/physics_3d/queries/physics_shape_query_parameters_3d.cpp
-// ============================================================================
-
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 Ref<Resource> PhysicsShapeQueryParameters3D::get_shape() const { return shape_ref; }
@@ -242987,12 +233957,6 @@ void PhysicsShapeQueryParameters3D::set_shape_rid(const RID& p_shape)
 		parameters.shape_rid = p_shape;
 	}
 }
-
-
-
-// ============================================================================
-// Merged from servers/physics_3d/queries/physics_testmotion_query_result_3d.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -243054,12 +234018,9 @@ real_t PhysicsTestMotionResult3D::get_collision_depth(int p_collision_index) con
 	return result.collisions[p_collision_index].depth;
 }
 
-
-// --- Merged from servers/navigation_2d/navigation_server_2d.cpp ---
 #if !defined(NAVIGATION_2D_DISABLED)
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
 
 ////////////////////////////////////////////////////////////////////////////
@@ -243670,12 +234631,9 @@ void NavigationServer2D::agent_set_avoidance_priority(RID p_agent, real_t p_prio
 void NavigationServer2D::agent_set_paused(RID p_agent, bool p_paused) {}
 #endif // !defined(NAVIGATION_2D_DISABLED)
 
-
-// --- Merged from servers/navigation_3d/navigation_server_3d.cpp ---
 #if !defined(NAVIGATION_3D_DISABLED)
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h" // IWYU pragma: keep. Needed to bind `Node *` arg.
 
 ////////////////////////////////////////////////////////////////////////////
@@ -244437,11 +235395,7 @@ void NavigationServer3D::agent_set_avoidance_priority(RID p_agent, real_t p_prio
 void NavigationServer3D::agent_set_paused(RID p_agent, bool p_paused) {}
 #endif // !defined(NAVIGATION_3D_DISABLED)
 
-
-// --- Merged from servers/xr/xr_server.cpp ---
 #if !defined(XR_DISABLED)
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 // Inlined servers/xr/xr_server.compat.inc
 #ifndef DISABLE_DEPRECATED
@@ -244466,8 +235420,6 @@ Ref<XRTracker> XRServer::_get_tracker_bind_compat_90645(const String& p_name)
 void XRServer::_bind_compatibility_methods() {}
 
 #endif // DISABLE_DEPRECATED
-
-
 
 #include "servers/display/display_server.h"
 
@@ -244588,10 +235540,6 @@ void XRServer::_process() {}
 void XRServer::clear_reference_frame() {}
 
 void XRServer::add_interface(const Ref<XRInterface>& p_interface) {}
-
-// ============================================================================
-// Merged from servers/xr/xr_interface.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -244858,12 +235806,6 @@ RID XRVRS::make_vrs_texture(const Size2& p_target_size, const Vector<Vector2>& p
 
 	return vrs_texture;
 }
-
-
-
-// ============================================================================
-// Merged from servers/xr/xr_tracker.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -245258,37 +236200,6 @@ XRTracker::~XRTracker()
 }
 #endif // !defined(XR_DISABLED)
 
-// === Merged from servers/rendering/renderer_rd/storage_rd/texture_storage.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -249715,15 +240626,7 @@ void RendererRD::TextureStorage::texture_drawable_initialize(RID p_texture, int 
 
 void RendererRD::TextureStorage::texture_set_format(RID p_texture, Image::Format p_format) {}
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/storage_rd/light_storage.cpp
-// ============================================================================
-
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -252825,12 +243728,6 @@ void RendererRD::LightStorage::finalize()
 
 bool RendererRD::LightStorage::has_directional_shadows(unsigned int p_index) { return false; }
 
-
-
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/storage_rd/mesh_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -255263,10 +246160,6 @@ void RendererRD::MeshStorage::finalize()
 	}
 }
 
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/storage_rd/particles_storage.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 
 using namespace RendererRD;
@@ -256801,17 +247694,9 @@ void RendererRD::ParticlesStorage::update_particles() {}
 
 void RendererRD::ParticlesStorage::ParticlesShaderData::set_code(const String& p_code) {}
 
-
-
-// ============================================================================
-// Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h" // IWYU pragma: keep // Needed to bind RSE enums.
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.cpp ---
 
 RenderSceneBuffersRD::RenderSceneBuffersRD() {}
 
@@ -257609,8 +248494,6 @@ RID RenderSceneBuffersRD::create_texture_view(
 {
 }
 
-// --- Merged from servers/rendering/renderer_rd/storage_rd/render_scene_data_rd.cpp ---
-
 Transform3D RenderSceneDataRD::get_cam_transform() const { return cam_transform; }
 
 Projection RenderSceneDataRD::get_cam_projection() const
@@ -257925,8 +248808,6 @@ void RenderSceneDataRD::update_ubo(RID p_uniform_buffer, RSE::ViewportDebugDraw 
 
 RID RenderSceneDataRD::get_uniform_buffer() const { return uniform_buffer; }
 
-// --- Merged from servers/rendering/renderer_rd/storage_rd/utilities.cpp ---
-
 using namespace RendererRD;
 
 RSE::InstanceType Utilities::get_base_type(RID p_rid)
@@ -258239,45 +249120,11 @@ void RendererRD::Utilities::visibility_notifier_call(
 {
 }
 
-// === Merged from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/renderer_rd/forward_clustered/render_forward_clustered.cpp ---
 
 using namespace RendererSceneRenderImplementation;
 
@@ -260216,7 +251063,6 @@ void RenderForwardClustered::_render_scene(
 	RenderDataRD* p_render_data, const Color& p_default_bg_color)
 {
 	data->scene_state.used_uniform_buffer_count = 0;
-
 
 	ERR_FAIL_NULL(p_render_data);
 
@@ -264319,8 +255165,6 @@ void RendererRD::GI::SDFGI::create(RID p_env, const Vector3& p_world_position,
 #undef FADE_ALPHA_PASS_THRESHOLD
 #undef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
 
-// --- Merged from servers/rendering/renderer_rd/forward_clustered/scene_shader_forward_clustered.cpp ---
-
 using namespace RendererSceneRenderImplementation;
 
 bool SceneShaderForwardClustered::ShaderData::is_animated() const
@@ -265219,20 +256063,13 @@ void RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData:
 #undef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
 #endif
 
-
-// --- Merged from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp ---
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/packet_peer_udp.h"
 #include "servers/display/display_server.h"
 
 #ifndef XR_DISABLED
 #include "servers/display/display_server.h"
 #endif
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
-
-// --- Merged from servers/rendering/renderer_rd/forward_mobile/render_forward_mobile.cpp ---
 
 #define PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION 1
 
@@ -268211,8 +259048,6 @@ void RendererSceneRenderImplementation::RenderForwardMobile::enable_features(
 }
 #undef PRELOAD_PIPELINES_ON_SURFACE_CACHE_CONSTRUCTION
 
-// --- Merged from servers/rendering/renderer_rd/forward_mobile/scene_shader_forward_mobile.cpp ---
-
 using namespace RendererSceneRenderImplementation;
 
 bool SceneShaderForwardMobile::ShaderData::is_animated() const
@@ -268650,25 +259485,20 @@ void RendererSceneRenderImplementation::SceneShaderForwardMobile::ShaderData::se
 {
 }
 
-// === Merged from modules/svg/image_loader_svg.cpp ===
 #include "core/version_generated.gen.h"
-#include "core/io/packet_peer_udp.h"
 
 #if defined(MODULE_SVG_ENABLED)
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 #include <thorvg.h>
 
-HashMap<Color, Color> ImageLoaderSVG::forced_color_map = HashMap<Color, Color>();
+HashMap<Color, Color> ImageLoader::svg_forced_color_map = HashMap<Color, Color>();
 
-void ImageLoaderSVG::set_forced_color_map(const HashMap<Color, Color> &p_color_map) {
-	forced_color_map = p_color_map;
+void ImageLoader::set_forced_color_map(const HashMap<Color, Color> &p_color_map) {
+	svg_forced_color_map = p_color_map;
 }
 
-void ImageLoaderSVG::_replace_color_property(const HashMap<Color, Color> &p_color_map, const String &p_prefix, String &r_string) {
+void ImageLoader::_svg_replace_color_property(const HashMap<Color, Color> &p_color_map, const String &p_prefix, String &r_string) {
 	// Replace colors in the SVG based on what is passed in `p_color_map`.
 	// Used to change the colors of editor icons based on the used theme.
 	// The strings being replaced are typically of the form:
@@ -268694,18 +259524,18 @@ void ImageLoaderSVG::_replace_color_property(const HashMap<Color, Color> &p_colo
 	}
 }
 
-Ref<Image> ImageLoaderSVG::load_mem_svg(const uint8_t *p_svg, int p_size, float p_scale) {
+Ref<Image> ImageLoader::load_mem_svg(const uint8_t *p_svg, int p_size, float p_scale) {
 	Ref<Image> img;
 	img.instantiate();
 
 	Error err = create_image_from_utf8_buffer(img, p_svg, p_size, p_scale, false);
-	ERR_FAIL_COND_V_MSG(err != OK, Ref<Image>(), vformat("ImageLoaderSVG: Failed to create SVG from buffer, error code %d.", err));
+	ERR_FAIL_COND_V_MSG(err != OK, Ref<Image>(), vformat("ImageLoader: Failed to create SVG from buffer, error code %d.", err));
 
 	return img;
 }
 
-Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const uint8_t *p_buffer, int p_buffer_size, float p_scale, bool p_upsample) {
-	ERR_FAIL_COND_V_MSG(Math::is_zero_approx(p_scale), ERR_INVALID_PARAMETER, "ImageLoaderSVG: Can't load SVG with a scale of 0.");
+Error ImageLoader::create_image_from_utf8_buffer(Ref<Image> p_image, const uint8_t *p_buffer, int p_buffer_size, float p_scale, bool p_upsample) {
+	ERR_FAIL_COND_V_MSG(Math::is_zero_approx(p_scale), ERR_INVALID_PARAMETER, "ImageLoader: Can't load SVG with a scale of 0.");
 
 	tvg::Picture *picture = tvg::Picture::gen();
 
@@ -268723,7 +259553,7 @@ Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const ui
 	const uint32_t max_dimension = 16384;
 	if (width > max_dimension || height > max_dimension) {
 		WARN_PRINT(vformat(
-				String::utf8("ImageLoaderSVG: Target canvas dimensions %d×%d (with scale %.2f) exceed the max supported dimensions %d×%d. The target canvas will be scaled down."),
+				String::utf8("ImageLoader: Target canvas dimensions %d×%d (with scale %.2f) exceed the max supported dimensions %d×%d. The target canvas will be scaled down."),
 				width, height, p_scale, max_dimension, max_dimension));
 		width = MIN(width, max_dimension);
 		height = MIN(height, max_dimension);
@@ -268740,22 +259570,22 @@ Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const ui
 	tvg::Result res = sw_canvas->target((uint32_t *)buffer.ptrw(), width, width, height, tvg::ColorSpace::ABGR8888S);
 	if (res != tvg::Result::Success) {
 		tvg::Paint::rel(picture);
-		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoaderSVG: Couldn't set target on ThorVG canvas, error code %d.", res));
+		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoader: Couldn't set target on ThorVG canvas, error code %d.", res));
 	}
 
 	res = sw_canvas->add(picture);
 	if (res != tvg::Result::Success) {
-		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoaderSVG: Couldn't insert ThorVG picture on canvas, error code %d.", res));
+		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoader: Couldn't insert ThorVG picture on canvas, error code %d.", res));
 	}
 
 	res = sw_canvas->draw(true);
 	if (res != tvg::Result::Success) {
-		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoaderSVG: Couldn't draw ThorVG pictures on canvas, error code %d.", res));
+		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoader: Couldn't draw ThorVG pictures on canvas, error code %d.", res));
 	}
 
 	res = sw_canvas->sync();
 	if (res != tvg::Result::Success) {
-		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoaderSVG: Couldn't sync ThorVG canvas, error code %d.", res));
+		ERR_FAIL_V_MSG(FAILED, vformat("ImageLoader: Couldn't sync ThorVG canvas, error code %d.", res));
 	}
 
 	p_image->set_data(width, height, false, Image::FORMAT_RGBA8, buffer);
@@ -268763,15 +259593,15 @@ Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const ui
 	return OK;
 }
 
-Error ImageLoaderSVG::create_image_from_utf8_buffer(Ref<Image> p_image, const PackedByteArray &p_buffer, float p_scale, bool p_upsample) {
+Error ImageLoader::create_image_from_utf8_buffer(Ref<Image> p_image, const PackedByteArray &p_buffer, float p_scale, bool p_upsample) {
 	return create_image_from_utf8_buffer(p_image, p_buffer.ptr(), p_buffer.size(), p_scale, p_upsample);
 }
 
-Error ImageLoaderSVG::create_image_from_string(Ref<Image> p_image, String p_string, float p_scale, bool p_upsample, const HashMap<Color, Color> &p_color_map) {
+Error ImageLoader::create_image_from_string(Ref<Image> p_image, String p_string, float p_scale, bool p_upsample, const HashMap<Color, Color> &p_color_map) {
 	if (p_color_map.size()) {
-		_replace_color_property(p_color_map, "stop-color=\"", p_string);
-		_replace_color_property(p_color_map, "fill=\"", p_string);
-		_replace_color_property(p_color_map, "stroke=\"", p_string);
+		_svg_replace_color_property(p_color_map, "stop-color=\"", p_string);
+		_svg_replace_color_property(p_color_map, "fill=\"", p_string);
+		_svg_replace_color_property(p_color_map, "stroke=\"", p_string);
 	}
 
 	PackedByteArray bytes = p_string.to_utf8_buffer();
@@ -268779,11 +259609,7 @@ Error ImageLoaderSVG::create_image_from_string(Ref<Image> p_image, String p_stri
 	return create_image_from_utf8_buffer(p_image, bytes, p_scale, p_upsample);
 }
 
-void ImageLoaderSVG::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("svg");
-}
-
-Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess, uint32_t p_flags, float p_scale) {
+static Error _svg_load_image(Ref<Image> p_image, Ref<FileAccess> p_fileaccess, uint32_t p_flags, float p_scale) {
 	const uint64_t len = p_fileaccess->get_length() - p_fileaccess->get_position();
 	Vector<uint8_t> buffer;
 	buffer.resize(len);
@@ -268795,10 +259621,10 @@ Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileacces
 		return err;
 	}
 
-	if (p_flags & FLAG_CONVERT_COLORS) {
-		err = create_image_from_string(p_image, svg, p_scale, false, forced_color_map);
+	if (p_flags & ImageFormatLoader::FLAG_CONVERT_COLORS) {
+		err = ImageLoader::create_image_from_string(p_image, svg, p_scale, false, ImageLoader::svg_forced_color_map);
 	} else {
-		err = create_image_from_string(p_image, svg, p_scale, false, HashMap<Color, Color>());
+		err = ImageLoader::create_image_from_string(p_image, svg, p_scale, false, HashMap<Color, Color>());
 	}
 
 	if (err != OK) {
@@ -268807,14 +259633,10 @@ Error ImageLoaderSVG::load_image(Ref<Image> p_image, Ref<FileAccess> p_fileacces
 		return ERR_INVALID_DATA;
 	}
 
-	if (p_flags & FLAG_FORCE_LINEAR) {
+	if (p_flags & ImageFormatLoader::FLAG_FORCE_LINEAR) {
 		p_image->srgb_to_linear();
 	}
 	return OK;
-}
-
-ImageLoaderSVG::ImageLoaderSVG() {
-	Image::_svg_scalable_mem_loader_func = load_mem_svg;
 }
 
 #ifdef THREADS_ENABLED
@@ -268823,7 +259645,8 @@ ImageLoaderSVG::ImageLoaderSVG() {
 #define TVG_THREADS 0
 #endif
 
-static Ref<ImageLoaderSVG> image_loader_svg;
+static const char *const _svg_exts[] = { "svg", nullptr };
+static Ref<ImageFormatLoader> image_loader_svg;
 
 void initialize_svg_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -268834,7 +259657,8 @@ void initialize_svg_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	image_loader_svg.instantiate();
+	Image::_svg_scalable_mem_loader_func = ImageLoader::load_mem_svg;
+	image_loader_svg = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_svg_load_image, _svg_exts)));
 	ImageLoader::add_image_format_loader(image_loader_svg);
 }
 
@@ -268854,14 +259678,8 @@ void uninitialize_svg_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_SVG_ENABLED)
 
-
-// --- Merged from modules/bmp/image_loader_bmp.cpp ---
 #if defined(MODULE_BMP_ENABLED)
-// --- Inlined from modules/bmp/image_loader_bmp.h ---
-#include "core/io/net_socket.h"
 
-class ImageLoaderBMP : public ImageFormatLoader {
-protected:
 	static const unsigned BITMAP_SIGNATURE = 0x4d42;
 
 	static const unsigned BITMAP_FILE_HEADER_SIZE = 14; // bmp_file_header_s
@@ -268922,22 +259740,13 @@ protected:
 		} bmp_bitfield;
 	};
 
-	static Error bmp_convert_to_image(Ref<Image> p_image,
+	static Error _bmp_convert_to_image(Ref<Image> p_image,
 			const uint8_t *p_buffer,
 			const uint8_t *p_color_buffer,
 			const uint32_t color_table_size,
 			const bmp_header_s &p_header);
 
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderBMP();
-};
-
-// --- End modules/bmp/image_loader_bmp.h ---
 #include "servers/display/display_server.h"
-
-#include "core/io/net_socket.h"
 
 static uint8_t get_mask_width(uint16_t mask) {
 	// Returns number of ones in the binary value of the parameter: mask.
@@ -268949,7 +259758,7 @@ static uint8_t get_mask_width(uint16_t mask) {
 	return c;
 }
 
-Error ImageLoaderBMP::bmp_convert_to_image(Ref<Image> p_image,
+static Error _bmp_convert_to_image(Ref<Image> p_image,
 		const uint8_t *p_buffer,
 		const uint8_t *p_color_buffer,
 		const uint32_t color_table_size,
@@ -269113,7 +259922,7 @@ Error ImageLoaderBMP::bmp_convert_to_image(Ref<Image> p_image,
 	return err;
 }
 
-Error ImageLoaderBMP::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+static Error _bmp_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	bmp_header_s bmp_header;
 	Error err = ERR_INVALID_DATA;
 
@@ -269210,16 +260019,12 @@ Error ImageLoaderBMP::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 
 				const uint8_t *bmp_buffer_r = bmp_buffer.ptr();
 				const uint8_t *bmp_color_table_r = bmp_color_table.ptr();
-				err = bmp_convert_to_image(p_image, bmp_buffer_r,
+				err = _bmp_convert_to_image(p_image, bmp_buffer_r,
 						bmp_color_table_r, color_table_size, bmp_header);
 			}
 		}
 	}
 	return err;
-}
-
-void ImageLoaderBMP::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("bmp");
 }
 
 static Ref<Image> _bmp_mem_loader_func(const uint8_t *p_bmp, int p_size) {
@@ -269230,23 +260035,21 @@ static Ref<Image> _bmp_mem_loader_func(const uint8_t *p_bmp, int p_size) {
 
 	Ref<Image> img;
 	img.instantiate();
-	Error load_error = ImageLoaderBMP().load_image(img, memfile, false, 1.0f);
+	Error load_error = _bmp_load_image(img, memfile, false, 1.0f);
 	ERR_FAIL_COND_V_MSG(load_error, Ref<Image>(), "Failed to load BMP image.");
 	return img;
 }
 
-ImageLoaderBMP::ImageLoaderBMP() {
-	Image::_bmp_mem_loader_func = _bmp_mem_loader_func;
-}
-
-static Ref<ImageLoaderBMP> image_loader_bmp;
+static const char *const _bmp_exts[] = { "bmp", nullptr };
+static Ref<ImageFormatLoader> image_loader_bmp;
 
 void initialize_bmp_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	image_loader_bmp.instantiate();
+	Image::_bmp_mem_loader_func = _bmp_mem_loader_func;
+	image_loader_bmp = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_bmp_load_image, _bmp_exts)));
 	ImageLoader::add_image_format_loader(image_loader_bmp);
 }
 
@@ -269260,11 +260063,7 @@ void uninitialize_bmp_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_BMP_ENABLED)
 
-
-// --- Merged from modules/dds/texture_loader_dds.cpp ---
 #if defined(MODULE_DDS_ENABLED)
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 
 #define PF_FOURCC(m_s) ((uint32_t)(((m_s)[3] << 24U) | ((m_s)[2] << 16U) | ((m_s)[1] << 8U) | ((m_s)[0])))
@@ -270244,26 +261043,14 @@ static Ref<Resource> _dds_load_from_file(const String& p_path, Error* r_error)
 	return _dds_load_from_buffer(f, r_error, p_path);
 }
 
-Ref<Resource> ResourceFormatDDS::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+static Ref<Resource> _dds_res_load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	return _dds_load_from_file(p_path, r_error);
 }
-
-void ResourceFormatDDS::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("dds");
-}
-
-bool ResourceFormatDDS::handles_type(const String& p_type) const { return true; }
-
-String ResourceFormatDDS::get_resource_type(const String& p_path) const
-{
-	if (p_path.has_extension("dds")) {
-		return "Texture";
-	}
-	return "";
-}
+static bool _dds_res_handles_type(const String& p_type) { return true; }
+static String _dds_res_get_type(const String& p_path) { return p_path.has_extension("dds") ? "Texture" : ""; }
+static const char* const _dds_res_exts[] = { "dds", nullptr };
 
 Ref<Image> load_mem_dds(const uint8_t* p_dds, int p_size)
 {
@@ -270284,8 +261071,6 @@ Ref<Image> load_mem_dds(const uint8_t* p_dds, int p_size)
 
 	return images[0];
 }
-
-ResourceFormatDDS::ResourceFormatDDS() { Image::_dds_mem_loader_func = load_mem_dds; }
 
 Error save_dds(const String &p_path, const Ref<Image> &p_img) {
 	Vector<uint8_t> buffer = save_dds_buffer(p_img);
@@ -270773,7 +261558,7 @@ Vector<uint8_t> save_dds_buffer(const Ref<Image> &p_img) {
 	return stream_buffer->get_data_array();
 }
 
-static Ref<ResourceFormatDDS> resource_loader_dds;
+static Ref<ResourceFormatLoader> resource_loader_dds;
 
 void initialize_dds_module(ModuleInitializationLevel p_level)
 {
@@ -270784,7 +261569,8 @@ void initialize_dds_module(ModuleInitializationLevel p_level)
 	Image::save_dds_func = save_dds;
 	Image::save_dds_buffer_func = save_dds_buffer;
 
-	resource_loader_dds.instantiate();
+	Image::_dds_mem_loader_func = load_mem_dds;
+	resource_loader_dds = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_dds_res_load, _dds_res_exts, _dds_res_handles_type, _dds_res_get_type)));
 	ResourceLoader::add_resource_format_loader(resource_loader_dds);
 }
 
@@ -270802,24 +261588,11 @@ void uninitialize_dds_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_DDS_ENABLED)
 
-
-// --- Merged from modules/hdr/image_loader_hdr.cpp ---
 #if defined(MODULE_HDR_ENABLED)
-// --- Inlined from modules/hdr/image_loader_hdr.h ---
-#include "core/io/net_socket.h"
 
-class ImageLoaderHDR : public ImageFormatLoader {
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-
-	ImageLoaderHDR();
-};
-
-// --- End modules/hdr/image_loader_hdr.h ---
 #include "servers/display/display_server.h"
 
-Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+static Error _hdr_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	String header = f->get_token();
 
 	ERR_FAIL_COND_V_MSG(header != "#?RADIANCE" && header != "#?RGBE", ERR_FILE_UNRECOGNIZED, "Unsupported header information in HDR: " + header + ".");
@@ -270911,7 +261684,7 @@ Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 			}
 		}
 
-		const bool force_linear = p_flags & FLAG_FORCE_LINEAR;
+		const bool force_linear = p_flags & ImageFormatLoader::FLAG_FORCE_LINEAR;
 
 		//convert
 		for (int i = 0; i < width * height; i++) {
@@ -270941,21 +261714,15 @@ Error ImageLoaderHDR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 	return OK;
 }
 
-void ImageLoaderHDR::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("hdr");
-}
-
-ImageLoaderHDR::ImageLoaderHDR() {
-}
-
-static Ref<ImageLoaderHDR> image_loader_hdr;
+static const char *const _hdr_exts[] = { "hdr", nullptr };
+static Ref<ImageFormatLoader> image_loader_hdr;
 
 void initialize_hdr_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	image_loader_hdr.instantiate();
+	image_loader_hdr = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_hdr_load_image, _hdr_exts)));
 	ImageLoader::add_image_format_loader(image_loader_hdr);
 }
 
@@ -270969,64 +261736,11 @@ void uninitialize_hdr_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_HDR_ENABLED)
 
-
-// --- Merged from modules/jpg/image_loader_libjpeg_turbo.cpp ---
 #if defined(MODULE_JPG_ENABLED)
 #include <turbojpeg.h>
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "servers/display/display_server.h"
-// --- Inlined from modules/jpg/image_loader_libjpeg_turbo.h ---
-#include "core/io/net_socket.h"
-
-class ImageLoaderLibJPEGTurbo final : public ImageFormatLoader {
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderLibJPEGTurbo() = default;
-};
-
 #include "servers/display/display_server.h"
 
-class MovieWriterMJPEG final : public MovieWriter
-{
-	uint32_t mix_rate = 48000;
-	AudioServer::SpeakerMode speaker_mode = AudioServer::SPEAKER_MODE_STEREO;
-	uint32_t audio_bit_depth = 16;
-	String base_path;
-	uint32_t frame_count = 0;
-	uint32_t fps = 0;
-	float quality = 0.75;
-
-	uint32_t audio_block_size = 0;
-
-	Vector<uint32_t> jpg_frame_sizes;
-
-	uint64_t total_frames_ofs = 0;
-	uint64_t total_frames_ofs2 = 0;
-	uint64_t total_frames_ofs3 = 0;
-	uint64_t total_audio_frames_ofs4 = 0;
-	uint64_t movi_data_ofs = 0;
-
-	Ref<FileAccess> f;
-
-protected:
-	virtual uint32_t get_audio_mix_rate() const override;
-	virtual AudioServer::SpeakerMode get_audio_speaker_mode() const override;
-	virtual void get_supported_extensions(List<String>* r_extensions) const override;
-
-	virtual Error write_begin(
-		const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path) override;
-	virtual Error write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data) override;
-	virtual void write_end() override;
-
-	virtual bool handles_file(const String& p_path) const override;
-
-public:
-	MovieWriterMJPEG();
-};
-
-// --- End modules/jpg/image_loader_libjpeg_turbo.h ---
+#include "servers/display/display_server.h"
 
 Error jpeg_turbo_load_image_from_buffer(Image* p_image, const uint8_t* p_buffer, int p_buffer_len)
 {
@@ -271087,28 +261801,17 @@ Error jpeg_turbo_load_image_from_buffer(Image* p_image, const uint8_t* p_buffer,
 	return OK;
 }
 
-Error ImageLoaderLibJPEGTurbo::load_image(
-	Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
+static Error _jpg_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
 {
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
 	src_image.resize(src_image_len);
-
 	uint8_t* w = src_image.ptrw();
-
 	f->get_buffer(&w[0], src_image_len);
-
-	Error err = jpeg_turbo_load_image_from_buffer(p_image.ptr(), w, src_image_len);
-
-	return err;
+	return jpeg_turbo_load_image_from_buffer(p_image.ptr(), w, src_image_len);
 }
-
-void ImageLoaderLibJPEGTurbo::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("jpg");
-	p_extensions->push_back("jpeg");
-}
+static const char *const _jpg_exts[] = { "jpg", "jpeg", nullptr };
 
 static Ref<Image> _jpeg_turbo_mem_loader_func(const uint8_t* p_data, int p_size)
 {
@@ -271119,21 +261822,7 @@ static Ref<Image> _jpeg_turbo_mem_loader_func(const uint8_t* p_data, int p_size)
 	return img;
 }
 
-uint32_t MovieWriterMJPEG::get_audio_mix_rate() const { return mix_rate; }
-
-AudioServer::SpeakerMode MovieWriterMJPEG::get_audio_speaker_mode() const { return speaker_mode; }
-
-bool MovieWriterMJPEG::handles_file(const String& p_path) const
-{
-	return p_path.has_extension("avi");
-}
-
-void MovieWriterMJPEG::get_supported_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("avi");
-}
-
-Error MovieWriterMJPEG::write_begin(
+Error MovieWriter::_write_begin_mjpeg(
 	const Size2i& p_movie_size, uint32_t p_fps, const String& p_base_path)
 {
 	// Quick & Dirty MJPEG Code based on -
@@ -271281,7 +261970,7 @@ Error MovieWriterMJPEG::write_begin(
 	return OK;
 }
 
-Error MovieWriterMJPEG::write_frame(const Ref<Image>& p_image, const int32_t* p_audio_data)
+Error MovieWriter::_write_frame_mjpeg(const Ref<Image>& p_image, const int32_t* p_audio_data)
 {
 	ERR_FAIL_COND_V(f.is_null(), ERR_UNCONFIGURED);
 
@@ -271318,7 +262007,7 @@ Error MovieWriterMJPEG::write_frame(const Ref<Image>& p_image, const int32_t* p_
 	return OK;
 }
 
-void MovieWriterMJPEG::write_end()
+void MovieWriter::_write_end_mjpeg()
 {
 	if (f.is_valid()) {
 		// Finalize the file (frame indices)
@@ -271361,22 +262050,18 @@ void MovieWriterMJPEG::write_end()
 	}
 }
 
-
-
-MovieWriterMJPEG::MovieWriterMJPEG() {}
-
-static Ref<ImageLoaderLibJPEGTurbo> image_loader_libjpeg_turbo;
-static MovieWriterMJPEG *writer_mjpeg = nullptr;
+static Ref<ImageFormatLoader> image_loader_libjpeg_turbo;
+static MovieWriter *writer_mjpeg = nullptr;
 
 void initialize_jpg_module(ModuleInitializationLevel p_level) {
 	switch (p_level) {
 		case MODULE_INITIALIZATION_LEVEL_SERVERS: {
-			writer_mjpeg = memnew(MovieWriterMJPEG);
+			writer_mjpeg = memnew(MovieWriter(MovieWriter::FORMAT_MJPEG));
 			MovieWriter::add_writer(writer_mjpeg);
 		} break;
 
 		case MODULE_INITIALIZATION_LEVEL_SCENE: {
-			image_loader_libjpeg_turbo.instantiate();
+			image_loader_libjpeg_turbo = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_jpg_load_image, _jpg_exts)));
 			ImageLoader::add_image_format_loader(image_loader_libjpeg_turbo);
 		} break;
 
@@ -271402,8 +262087,6 @@ void uninitialize_jpg_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_JPG_ENABLED)
 
-
-// --- Merged from modules/ktx/texture_loader_ktx.cpp ---
 #if defined(MODULE_KTX_ENABLED)
 #ifdef VULKAN_ENABLED
 #ifdef X11_ENABLED
@@ -271423,32 +262106,8 @@ void uninitialize_jpg_module(ModuleInitializationLevel p_level) {
 #endif
 #include <ktx.h>
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
 #include <vk_format.h>
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-// --- Inlined from modules/ktx/texture_loader_ktx.h ---
-#include "core/io/net_socket.h"
-
-class ResourceFormatKTX : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override;
-	virtual bool handles_type(const String& p_type) const override;
-	virtual String get_resource_type(const String& p_path) const override;
-
-	virtual ~ResourceFormatKTX() {}
-
-	ResourceFormatKTX();
-};
-
-
-
-// --- End modules/ktx/texture_loader_ktx.h ---
 
 KTX_error_code ktx_read(ktxStream* stream, void* dst, const ktx_size_t count)
 {
@@ -272010,8 +262669,8 @@ static Ref<Image> load_from_file_access(Ref<FileAccess> f, Error* r_error)
 	return img;
 }
 
-Ref<Resource> ResourceFormatKTX::load(const String& p_path, const String& p_original_path,
-	Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode)
+static Ref<Resource> _ktx_res_load(const String& p_path, const String& p_original_path,
+	Error* r_error, bool p_use_sub_threads, float* r_progress, ResourceFormatLoader::CacheMode p_cache_mode)
 {
 	if (r_error) {
 		*r_error = ERR_CANT_OPEN;
@@ -272046,25 +262705,16 @@ static Ref<Image> _ktx_mem_loader_func(const uint8_t* p_ktx, int p_size)
 	return img;
 }
 
-void ResourceFormatKTX::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("ktx");
-	p_extensions->push_back("ktx2");
-}
-
-bool ResourceFormatKTX::handles_type(const String& p_type) const { return true; }
-
-String ResourceFormatKTX::get_resource_type(const String& p_path) const
+static bool _ktx_res_handles_type(const String& p_type) { return true; }
+static String _ktx_res_get_type(const String& p_path)
 {
 	if (p_path.has_extension("ktx") || p_path.has_extension("ktx2")) {
 		return "ImageTexture";
 	}
 	return "";
 }
-
-ResourceFormatKTX::ResourceFormatKTX() { Image::_ktx_mem_loader_func = _ktx_mem_loader_func; }
-
-static Ref<ResourceFormatKTX> resource_loader_ktx;
+static const char* const _ktx_res_exts[] = { "ktx", "ktx2", nullptr };
+static Ref<ResourceFormatLoader> resource_loader_ktx;
 
 void initialize_ktx_module(ModuleInitializationLevel p_level)
 {
@@ -272072,7 +262722,8 @@ void initialize_ktx_module(ModuleInitializationLevel p_level)
 		return;
 	}
 
-	resource_loader_ktx.instantiate();
+	Image::_ktx_mem_loader_func = _ktx_mem_loader_func;
+	resource_loader_ktx = Ref<ResourceFormatLoader>(memnew(ResourceFormatLoader(_ktx_res_load, _ktx_res_exts, _ktx_res_handles_type, _ktx_res_get_type)));
 	ResourceLoader::add_resource_format_loader(resource_loader_ktx);
 }
 
@@ -272087,15 +262738,10 @@ void uninitialize_ktx_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_KTX_ENABLED)
 
-
-// --- Merged from modules/tga/image_loader_tga.cpp ---
 #if defined(MODULE_TGA_ENABLED)
-// --- Inlined from modules/tga/image_loader_tga.h ---
-#include "core/io/net_socket.h"
 
 #define TGA_IMAGE_DESCRIPTOR_ALPHA_MASK 0xf
 
-class ImageLoaderTGA : public ImageFormatLoader {
 	enum tga_type_e {
 		TGA_TYPE_NO_DATA = 0,
 		TGA_TYPE_INDEXED = 1,
@@ -272131,22 +262777,12 @@ class ImageLoaderTGA : public ImageFormatLoader {
 		uint8_t pixel_depth = 0;
 		uint8_t image_descriptor = 0;
 	};
-	static Error decode_tga_rle(const uint8_t *p_compressed_buffer, size_t p_pixel_size, uint8_t *p_uncompressed_buffer, size_t p_output_size, size_t p_input_size);
-	static Error convert_to_image(Ref<Image> p_image, const uint8_t *p_buffer, const tga_header_s &p_header, const uint8_t *p_palette, const bool p_is_monochrome, size_t p_input_size);
+	static Error _tga_decode_rle(const uint8_t *p_compressed_buffer, size_t p_pixel_size, uint8_t *p_uncompressed_buffer, size_t p_output_size, size_t p_input_size);
+	static Error _tga_convert_to_image(Ref<Image> p_image, const uint8_t *p_buffer, const tga_header_s &p_header, const uint8_t *p_palette, const bool p_is_monochrome, size_t p_input_size);
 
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderTGA();
-};
-
-// --- End modules/tga/image_loader_tga.h ---
 #include "servers/display/display_server.h"
 
-#include "core/typedefs.h"
-#include "core/io/net_socket.h"
-
-Error ImageLoaderTGA::decode_tga_rle(const uint8_t *p_compressed_buffer, size_t p_pixel_size, uint8_t *p_uncompressed_buffer, size_t p_output_size, size_t p_input_size) {
+static Error _tga_decode_rle(const uint8_t *p_compressed_buffer, size_t p_pixel_size, uint8_t *p_uncompressed_buffer, size_t p_output_size, size_t p_input_size) {
 	Error error;
 
 	Vector<uint8_t> pixels;
@@ -272200,7 +262836,7 @@ Error ImageLoaderTGA::decode_tga_rle(const uint8_t *p_compressed_buffer, size_t 
 	return OK;
 }
 
-Error ImageLoaderTGA::convert_to_image(Ref<Image> p_image, const uint8_t *p_buffer, const tga_header_s &p_header, const uint8_t *p_palette, const bool p_is_monochrome, size_t p_input_size) {
+static Error _tga_convert_to_image(Ref<Image> p_image, const uint8_t *p_buffer, const tga_header_s &p_header, const uint8_t *p_palette, const bool p_is_monochrome, size_t p_input_size) {
 #define TGA_PUT_PIXEL(r, g, b, a) \
 	int image_data_ofs = ((y * width) + x); \
 	image_data_w[image_data_ofs * 4 + 0] = r; \
@@ -272362,7 +262998,7 @@ Error ImageLoaderTGA::convert_to_image(Ref<Image> p_image, const uint8_t *p_buff
 	return OK;
 }
 
-Error ImageLoaderTGA::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+static Error _tga_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
@@ -272451,7 +263087,7 @@ Error ImageLoaderTGA::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 		const uint8_t *buffer = nullptr;
 
 		if (is_encoded) {
-			err = decode_tga_rle(src_image_r, pixel_size, uncompressed_buffer_w, buffer_size, src_image_len);
+			err = _tga_decode_rle(src_image_r, pixel_size, uncompressed_buffer_w, buffer_size, src_image_len);
 
 			if (err == OK) {
 				uncompressed_buffer_r = uncompressed_buffer.ptr();
@@ -272464,15 +263100,11 @@ Error ImageLoaderTGA::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t
 
 		if (err == OK) {
 			const uint8_t *palette_r = palette.ptr();
-			err = convert_to_image(p_image, buffer, tga_header, palette_r, is_monochrome, buffer_size);
+			err = _tga_convert_to_image(p_image, buffer, tga_header, palette_r, is_monochrome, buffer_size);
 		}
 	}
 
 	return err;
-}
-
-void ImageLoaderTGA::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("tga");
 }
 
 static Ref<Image> _tga_mem_loader_func(const uint8_t *p_tga, int p_size) {
@@ -272483,23 +263115,21 @@ static Ref<Image> _tga_mem_loader_func(const uint8_t *p_tga, int p_size) {
 
 	Ref<Image> img;
 	img.instantiate();
-	Error load_error = ImageLoaderTGA().load_image(img, memfile, false, 1.0f);
+	Error load_error = _tga_load_image(img, memfile, false, 1.0f);
 	ERR_FAIL_COND_V_MSG(load_error, Ref<Image>(), "Failed to load TGA image.");
 	return img;
 }
 
-ImageLoaderTGA::ImageLoaderTGA() {
-	Image::_tga_mem_loader_func = _tga_mem_loader_func;
-}
-
-static Ref<ImageLoaderTGA> image_loader_tga;
+static const char *const _tga_exts[] = { "tga", nullptr };
+static Ref<ImageFormatLoader> image_loader_tga;
 
 void initialize_tga_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	image_loader_tga.instantiate();
+	Image::_tga_mem_loader_func = _tga_mem_loader_func;
+	image_loader_tga = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_tga_load_image, _tga_exts)));
 	ImageLoader::add_image_format_loader(image_loader_tga);
 }
 
@@ -272513,35 +263143,19 @@ void uninitialize_tga_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_TGA_ENABLED)
 
-
-// --- Merged from modules/tinyexr/image_loader_tinyexr.cpp ---
 #if defined(MODULE_TINYEXR_ENABLED)
-// --- Inlined from modules/tinyexr/image_loader_tinyexr.h ---
-#include "core/io/net_socket.h"
-
-class ImageLoaderTinyEXR final : public ImageFormatLoader {
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderTinyEXR();
-};
 
 Error save_exr(const String &p_path, const Ref<Image> &p_img, bool p_grayscale, bool p_color_image, float p_max_value);
 Vector<uint8_t> save_exr_buffer(const Ref<Image> &p_img, bool p_grayscale, bool p_color_image, float p_max_value);
 
-// --- End modules/tinyexr/image_loader_tinyexr.h ---
-#include "core/io/file_access.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 #include <cstdlib>
-
-#include "core/io/net_socket.h"
 
 #include <zlib.h>
 // zlib should come before including tinyexr.
 #include <thirdparty/tinyexr/tinyexr.h>
 
-Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
+static Error _tinyexr_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale) {
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
@@ -272735,7 +263349,7 @@ Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint
 							color.a = *a_channel++;
 						}
 
-						if (p_flags & FLAG_FORCE_LINEAR) {
+						if (p_flags & ImageFormatLoader::FLAG_FORCE_LINEAR) {
 							color = color.srgb_to_linear();
 						}
 
@@ -272766,7 +263380,7 @@ Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint
 							color.a = *a_channel++;
 						}
 
-						if (p_flags & FLAG_FORCE_LINEAR) {
+						if (p_flags & ImageFormatLoader::FLAG_FORCE_LINEAR) {
 							color = color.srgb_to_linear();
 						}
 
@@ -272794,10 +263408,6 @@ Error ImageLoaderTinyEXR::load_image(Ref<Image> p_image, Ref<FileAccess> f, uint
 	return OK;
 }
 
-void ImageLoaderTinyEXR::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("exr");
-}
-
 static Ref<Image> _tinyexr_mem_loader_func(const uint8_t *p_exr, int p_size) {
 	Ref<FileAccessMemory> memfile;
 	memfile.instantiate();
@@ -272806,17 +263416,12 @@ static Ref<Image> _tinyexr_mem_loader_func(const uint8_t *p_exr, int p_size) {
 
 	Ref<Image> img;
 	img.instantiate();
-	Error load_error = ImageLoaderTinyEXR().load_image(img, memfile, false, 1.0f);
+	Error load_error = _tinyexr_load_image(img, memfile, false, 1.0f);
 	ERR_FAIL_COND_V_MSG(load_error, Ref<Image>(), "Failed to load EXR image.");
 	return img;
 }
 
-ImageLoaderTinyEXR::ImageLoaderTinyEXR() {
-	Image::_exr_mem_loader_func = _tinyexr_mem_loader_func;
-}
-
 // zlib should come before including tinyexr.
-
 
 static bool is_supported_format(Image::Format p_format) {
 	// This is checked before anything else.
@@ -273101,14 +263706,16 @@ Error save_exr(const String &p_path, const Ref<Image> &p_img, bool p_grayscale, 
 	return OK;
 }
 
-static Ref<ImageLoaderTinyEXR> image_loader_tinyexr;
+static const char *const _exr_exts[] = { "exr", nullptr };
+static Ref<ImageFormatLoader> image_loader_tinyexr;
 
 void initialize_tinyexr_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	image_loader_tinyexr.instantiate();
+	Image::_exr_mem_loader_func = _tinyexr_mem_loader_func;
+	image_loader_tinyexr = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_tinyexr_load_image, _exr_exts)));
 	ImageLoader::add_image_format_loader(image_loader_tinyexr);
 
 	Image::save_exr_func = save_exr;
@@ -273127,24 +263734,10 @@ void uninitialize_tinyexr_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_TINYEXR_ENABLED)
 
-
-// --- Merged from modules/webp/image_loader_webp.cpp ---
 #if defined(MODULE_WEBP_ENABLED)
 #include <webp/decode.h>
-#include "core/os/os.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
 #include <webp/encode.h>
-// --- Inlined from modules/webp/image_loader_webp.h ---
-#include "core/io/net_socket.h"
-
-class ImageLoaderWebP final : public ImageFormatLoader {
-public:
-	virtual Error load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale);
-	virtual void get_recognized_extensions(List<String> *p_extensions) const;
-	ImageLoaderWebP();
-};
 
 namespace WebPCommon {
 // Given an image, pack this data into a WebP file.
@@ -273157,27 +263750,6 @@ Ref<Image> _webp_unpack(const Vector<uint8_t> &p_buffer);
 Error webp_load_image_from_buffer(Image *p_image, const uint8_t *p_buffer, int p_buffer_len);
 } //namespace WebPCommon
 
-#include "core/io/net_socket.h"
-
-class ResourceSaverWebP final : public ResourceFormatSaver
-{
-public:
-	static Error save_image(const String& p_path, const Ref<Image>& p_img,
-		const bool p_lossy = false, const float p_quality = 0.75f);
-	static Vector<uint8_t> save_image_to_buffer(
-		const Ref<Image>& p_img, const bool p_lossy = false, const float p_quality = 0.75f);
-
-	virtual Error save(
-		const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags = 0) override;
-	virtual bool recognize(const Ref<Resource>& p_resource) const override;
-	virtual void get_recognized_extensions(
-		const Ref<Resource>& p_resource, List<String>* p_extensions) const override;
-
-	ResourceSaverWebP();
-};
-
-// --- End modules/webp/image_loader_webp.h ---
-
 static Ref<Image> _webp_mem_loader_func(const uint8_t* p_webp_data, int p_size)
 {
 	Ref<Image> img;
@@ -273187,35 +263759,17 @@ static Ref<Image> _webp_mem_loader_func(const uint8_t* p_webp_data, int p_size)
 	return img;
 }
 
-Error ImageLoaderWebP::load_image(
-	Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
+static Error _webp_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_flags, float p_scale)
 {
 	Vector<uint8_t> src_image;
 	uint64_t src_image_len = f->get_length();
 	ERR_FAIL_COND_V(src_image_len == 0, ERR_FILE_CORRUPT);
 	src_image.resize(src_image_len);
-
 	uint8_t* w = src_image.ptrw();
-
 	f->get_buffer(&w[0], src_image_len);
-
-	Error err = WebPCommon::webp_load_image_from_buffer(p_image.ptr(), w, src_image_len);
-
-	return err;
+	return WebPCommon::webp_load_image_from_buffer(p_image.ptr(), w, src_image_len);
 }
-
-void ImageLoaderWebP::get_recognized_extensions(List<String>* p_extensions) const
-{
-	p_extensions->push_back("webp");
-}
-
-ImageLoaderWebP::ImageLoaderWebP()
-{
-	Image::_webp_mem_loader_func = _webp_mem_loader_func;
-	Image::webp_lossy_packer = WebPCommon::_webp_lossy_pack;
-	Image::webp_lossless_packer = WebPCommon::_webp_lossless_pack;
-	Image::webp_unpacker = WebPCommon::_webp_unpack;
-}
+static const char *const _webp_exts[] = { "webp", nullptr };
 
 Vector<uint8_t> WebPCommon::_webp_lossless_pack(const Ref<Image>& p_image)
 {
@@ -273306,79 +263860,56 @@ Error webp_load_image_from_buffer(Image* p_image, const uint8_t* p_buffer, int p
 }
 } // namespace WebPCommon
 
-Error ResourceSaverWebP::save(
-	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
+static Vector<uint8_t> _webp_save_image_to_buffer(
+	const Ref<Image>& p_img, const bool p_lossy, const float p_quality)
 {
-	Ref<ImageTexture> texture = p_resource;
-
-	ERR_FAIL_COND_V_MSG(
-		texture.is_null(), ERR_INVALID_PARAMETER, "Can't save invalid texture as WebP.");
-	ERR_FAIL_COND_V_MSG(
-		!texture->get_width(), ERR_INVALID_PARAMETER, "Can't save empty texture as WebP.");
-
-	Ref<Image> img = texture->get_image();
-
-	Error err = save_image(p_path, img);
-
-	return err;
+	if (p_lossy) {
+		return WebPCommon::_webp_lossy_pack(p_img, p_quality);
+	}
+	return WebPCommon::_webp_lossless_pack(p_img);
 }
 
-Error ResourceSaverWebP::save_image(
+static Error _webp_save_image(
 	const String& p_path, const Ref<Image>& p_img, const bool p_lossy, const float p_quality)
 {
-	Vector<uint8_t> buffer = save_image_to_buffer(p_img, p_lossy, p_quality);
+	Vector<uint8_t> buffer = _webp_save_image_to_buffer(p_img, p_lossy, p_quality);
 	Error err;
 	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
 	ERR_FAIL_COND_V_MSG(err, err, vformat("Can't save WebP at path: '%s'.", p_path));
-
-	const uint8_t* reader = buffer.ptr();
-
-	file->store_buffer(reader, buffer.size());
+	file->store_buffer(buffer.ptr(), buffer.size());
 	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
 		return ERR_CANT_CREATE;
 	}
-
 	return OK;
 }
 
-Vector<uint8_t> ResourceSaverWebP::save_image_to_buffer(
-	const Ref<Image>& p_img, const bool p_lossy, const float p_quality)
+static Error _webp_save_resource(
+	const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags)
 {
-	Vector<uint8_t> buffer;
-	if (p_lossy) {
-		buffer = WebPCommon::_webp_lossy_pack(p_img, p_quality);
-	}
-	else {
-		buffer = WebPCommon::_webp_lossless_pack(p_img);
-	}
-	return buffer;
+	Ref<ImageTexture> texture = p_resource;
+	ERR_FAIL_COND_V_MSG(texture.is_null(), ERR_INVALID_PARAMETER, "Can't save invalid texture as WebP.");
+	ERR_FAIL_COND_V_MSG(!texture->get_width(), ERR_INVALID_PARAMETER, "Can't save empty texture as WebP.");
+	return _webp_save_image(p_path, texture->get_image(), false, 0.75f);
 }
 
-ResourceSaverWebP::ResourceSaverWebP()
-{
-	Image::save_webp_func = &save_image;
-	Image::save_webp_buffer_func = &save_image_to_buffer;
-}
-
-bool ResourceSaverWebP::recognize(const Ref<Resource>& p_resource) const { return false; }
-
-void ResourceSaverWebP::get_recognized_extensions(
-	const Ref<Resource>& p_resource, List<String>* p_extensions) const
-{
-}
-
-static Ref<ImageLoaderWebP> image_loader_webp;
-static Ref<ResourceSaverWebP> resource_saver_webp;
+static Ref<ImageFormatLoader> image_loader_webp;
+static Ref<ResourceFormatSaver> resource_saver_webp;
 
 void initialize_webp_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 
-	image_loader_webp.instantiate();
+	Image::_webp_mem_loader_func = _webp_mem_loader_func;
+	Image::webp_lossy_packer = WebPCommon::_webp_lossy_pack;
+	Image::webp_lossless_packer = WebPCommon::_webp_lossless_pack;
+	Image::webp_unpacker = WebPCommon::_webp_unpack;
+	image_loader_webp = Ref<ImageFormatLoader>(memnew(ImageFormatLoader(_webp_load_image, _webp_exts)));
 	ImageLoader::add_image_format_loader(image_loader_webp);
 
-	resource_saver_webp.instantiate();
+	Image::save_webp_func = &_webp_save_image;
+	Image::save_webp_buffer_func = &_webp_save_image_to_buffer;
+	resource_saver_webp = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(_webp_save_resource)));
 	ResourceSaver::add_resource_format_saver(resource_saver_webp);
 }
 
@@ -273395,12 +263926,9 @@ void uninitialize_webp_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_WEBP_ENABLED)
 
-// === Merged from modules/astcenc/image_compress_astcenc.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_ASTCENC_ENABLED)
-// --- Inlined from modules/astcenc/image_compress_astcenc.h ---
-#include "core/io/net_socket.h"
 
 #ifdef TOOLS_ENABLED
 void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::CompressProfile p_profile);
@@ -273408,11 +263936,7 @@ void _compress_astc(Image *r_img, Image::UsedChannels p_channels, Image::Compres
 
 void _decompress_astc(Image *r_img);
 
-// --- End modules/astcenc/image_compress_astcenc.h ---
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #include <astcenc.h>
 
@@ -273718,16 +264242,8 @@ void uninitialize_astcenc_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_ASTCENC_ENABLED)
 
-
-// --- Merged from modules/basis_universal/image_compress_basisu.cpp ---
 #if defined(MODULE_BASIS_UNIVERSAL_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-// --- Inlined from modules/basis_universal/image_compress_basisu.h ---
-#include "core/io/net_socket.h"
 
 enum BasisDecompressFormat
 {
@@ -273757,9 +264273,6 @@ struct BasisRGBAF
 Ref<Image> basis_universal_unpacker_ptr(const uint8_t* p_data, int p_size);
 Ref<Image> basis_universal_unpacker(const Vector<uint8_t>& p_buffer);
 
-
-
-// --- End modules/basis_universal/image_compress_basisu.h ---
 #include "servers/display/display_server.h"
 
 VLTR_GCC_WARNING_PUSH
@@ -274094,11 +264607,7 @@ void uninitialize_basis_universal_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_BASIS_UNIVERSAL_ENABLED)
 
-
-// --- Merged from modules/bcdec/image_decompress_bcdec.cpp ---
 #if defined(MODULE_BCDEC_ENABLED)
-// --- Inlined from modules/bcdec/image_decompress_bcdec.h ---
-#include "core/io/net_socket.h"
 
 enum BCdecFormat {
 	BCdec_BC1,
@@ -274113,11 +264622,7 @@ enum BCdecFormat {
 
 void image_decompress_bcdec(Image *p_image);
 
-// --- End modules/bcdec/image_decompress_bcdec.h ---
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #define BCDEC_IMPLEMENTATION
 #include <thirdparty/misc/bcdec.h>
@@ -274404,11 +264909,7 @@ void uninitialize_bcdec_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_BCDEC_ENABLED)
 
-
-// --- Merged from modules/etcpak/image_compress_etcpak.cpp ---
 #if defined(MODULE_ETCPAK_ENABLED)
-// --- Inlined from modules/etcpak/image_compress_etcpak.h ---
-#include "core/io/net_socket.h"
 
 #ifdef TOOLS_ENABLED
 
@@ -274443,13 +264944,9 @@ enum EtcpakFormat {
 
 void _decompress_etc(Image *p_image);
 
-// --- End modules/etcpak/image_compress_etcpak.h ---
 #include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
-
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #include <ProcessDxtc.hpp>
 #include <ProcessRGB.hpp>
@@ -274723,9 +265220,6 @@ void _compress_etcpak(EtcpakType p_compress_type, Image *r_img) {
 }
 #endif // TOOLS_ENABLED
 
-#include "core/os/os.h"
-#include "core/string/ustring.h"
-
 #include <DecodeRGB.hpp>
 
 #define ETCPAK_R_BLOCK_SIZE 8
@@ -274959,13 +265453,11 @@ void uninitialize_etcpak_module(ModuleInitializationLevel p_level) {
 }
 #endif // defined(MODULE_ETCPAK_ENABLED)
 
-// === Merged from modules/noise/fastnoise_lite.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_NOISE_ENABLED)
 #include <cfloat> // FLT_MAX
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 
 _FastNoiseLite::FractalType FastNoiseLite::_convert_domain_warp_fractal_type_enum(
@@ -275802,12 +266294,8 @@ void uninitialize_noise_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_NOISE_ENABLED)
 
-
-// --- Merged from modules/regex/regex.cpp ---
 #if defined(MODULE_REGEX_ENABLED)
-#include "core/os/memory.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 
 extern "C"
 {
@@ -276111,7 +266599,6 @@ RegEx::~RegEx()
 
 #ifndef DISABLE_DEPRECATED
 
-
 Ref<RegEx> RegEx::_create_from_string_bind_compat_95212(const String& p_pattern)
 {
 	return create_from_string(p_pattern, true);
@@ -276141,15 +266628,8 @@ void uninitialize_regex_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_REGEX_ENABLED)
 
-
-// --- Merged from modules/zip/zip_reader.cpp ---
 #if defined(MODULE_ZIP_ENABLED)
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-
-#include "core/typedefs.h"
-#include "core/io/file_access.h"
-#include "core/os/os.h"
 
 // ZIPPacker
 
@@ -276384,53 +266864,14 @@ void uninitialize_zip_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_ZIP_ENABLED)
 
-// === Merged from modules/text_server_adv/text_server_adv.cpp ===
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
-#include "core/io/file_access.h"
-#include "core/io/ip.h"
-#include "core/os/os.h"
 #include "core/version_generated.gen.h" // For freetype, msdfgen, svg.
 #include "servers/display/display_server.h"
-// --- Inlined from modules/text_server_adv/text_server_adv.h ---
 /*************************************************************************/
 /* ICU/HarfBuzz/Graphite backed Text Server implementation with BiDi,    */
 /* shaping and advanced font features support.                           */
 /*************************************************************************/
 
-#include "core/os/os.h"
-#include "core/io/ip.h"
-#include "core/os/memory.h"
 #include "core/version_generated.gen.h" // For freetype, msdfgen, svg.
 #include "servers/display/display_server.h"
 
@@ -278081,8 +268522,6 @@ SVG_RendererHooks *get_tvg_svg_in_ot_hooks();
 
 #endif // MODULE_FREETYPE_ENABLED
 #endif // MODULE_SVG_ENABLED
-
-// --- End modules/text_server_adv/text_server_adv.h ---
 
 // Built-in ICU data.
 
@@ -284498,45 +274937,12 @@ void uninitialize_text_server_adv_module(ModuleInitializationLevel p_level)
 	}
 }
 
-// === Merged from modules/navigation_2d/nav_map_2d.cpp ===
 #ifndef NAVIGATION_2D_DISABLED
-/*  nav_map_2d.cpp                                                        */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "thirdparty/rvo2/rvo2_2d/Obstacle2d.h"
 
@@ -284872,3220 +275278,6 @@ void NavMeshGenerator2D::cleanup() {}
 
 #endif // CLIPPER2_ENABLED
 
-
-Vector2 Triangle2::get_random_point_inside() const {
-	real_t a = Math::random(0.0, 1.0);
-	real_t b = Math::random(0.0, 1.0);
-	if (a > b) {
-		SWAP(a, b);
-	}
-
-	return vertex[0] * a + vertex[1] * (b - a) + vertex[2] * (1.0f - b);
-}
-
-Vector2 Triangle2::get_closest_point_to(const Vector2 &p_point) const {
-	Vector2 edge0 = vertex[1] - vertex[0];
-	Vector2 edge1 = vertex[2] - vertex[0];
-	Vector2 v0 = vertex[0] - p_point;
-
-	real_t a = edge0.dot(edge0);
-	real_t b = edge0.dot(edge1);
-	real_t c = edge1.dot(edge1);
-	real_t d = edge0.dot(v0);
-	real_t e = edge1.dot(v0);
-
-	real_t det = a * c - b * b;
-	real_t s = b * e - c * d;
-	real_t t = b * d - a * e;
-
-	if (s + t < det) {
-		if (s < 0.f) {
-			if (t < 0.f) {
-				if (d < 0.f) {
-					s = CLAMP(-d / a, 0.f, 1.f);
-					t = 0.f;
-				} else {
-					s = 0.f;
-					t = CLAMP(-e / c, 0.f, 1.f);
-				}
-			} else {
-				s = 0.f;
-				t = CLAMP(-e / c, 0.f, 1.f);
-			}
-		} else if (t < 0.f) {
-			s = CLAMP(-d / a, 0.f, 1.f);
-			t = 0.f;
-		} else {
-			real_t inv_det = 1.f / det;
-			s *= inv_det;
-			t *= inv_det;
-		}
-	} else {
-		if (s < 0.f) {
-			real_t tmp0 = b + d;
-			real_t tmp1 = c + e;
-			if (tmp1 > tmp0) {
-				real_t numer = tmp1 - tmp0;
-				real_t denom = a - 2 * b + c;
-				s = CLAMP(numer / denom, 0.f, 1.f);
-				t = 1 - s;
-			} else {
-				t = CLAMP(-e / c, 0.f, 1.f);
-				s = 0.f;
-			}
-		} else if (t < 0.f) {
-			if (a + d > b + e) {
-				real_t numer = c + e - b - d;
-				real_t denom = a - 2 * b + c;
-				s = CLAMP(numer / denom, 0.f, 1.f);
-				t = 1 - s;
-			} else {
-				s = CLAMP(-d / a, 0.f, 1.f);
-				t = 0.f;
-			}
-		} else {
-			real_t numer = c + e - b - d;
-			real_t denom = a - 2 * b + c;
-			s = CLAMP(numer / denom, 0.f, 1.f);
-			t = 1.f - s;
-		}
-	}
-
-	return vertex[0] + s * edge0 + t * edge1;
-}
-
-
-void NavAgent2D::set_avoidance_enabled(bool p_enabled)
-{
-	avoidance_enabled = p_enabled;
-	_update_rvo_agent_properties();
-}
-
-void NavAgent2D::_update_rvo_agent_properties()
-{
-	rvo_agent.neighborDist_ = neighbor_distance;
-	rvo_agent.maxNeighbors_ = max_neighbors;
-	rvo_agent.timeHorizon_ = time_horizon_agents;
-	rvo_agent.timeHorizonObst_ = time_horizon_obstacles;
-	rvo_agent.radius_ = radius;
-	rvo_agent.maxSpeed_ = max_speed;
-	rvo_agent.position_ = RVO2D::Vector2(position.x, position.y);
-	// Replacing the internal velocity directly causes major jitter / bugs due to unpredictable
-	// velocity jumps, left line here for testing.
-	// rvo_agent.velocity_ = RVO2D::Vector2(velocity.x, velocity.y);
-	rvo_agent.prefVelocity_ = RVO2D::Vector2(velocity.x, velocity.y);
-	rvo_agent.avoidance_layers_ = avoidance_layers;
-	rvo_agent.avoidance_mask_ = avoidance_mask;
-	rvo_agent.avoidance_priority_ = avoidance_priority;
-
-	if (map != nullptr) {
-		if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-		else {
-			map->remove_agent_as_controlled(this);
-		}
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_map(NavMap2D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_agent(this);
-	}
-
-	map = p_map;
-	agent_dirty = true;
-
-	if (map) {
-		map->add_agent(this);
-		if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-
-		request_sync();
-	}
-}
-
-bool NavAgent2D::is_map_changed()
-{
-	if (map) {
-		bool is_changed = map->get_iteration_id() != last_map_iteration_id;
-		last_map_iteration_id = map->get_iteration_id();
-		return is_changed;
-	}
-	else {
-		return false;
-	}
-}
-
-void NavAgent2D::set_neighbor_distance(real_t p_neighbor_distance)
-{
-	neighbor_distance = p_neighbor_distance;
-	rvo_agent.neighborDist_ = neighbor_distance;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_max_neighbors(int p_max_neighbors)
-{
-	max_neighbors = p_max_neighbors;
-	rvo_agent.maxNeighbors_ = max_neighbors;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_time_horizon_agents(real_t p_time_horizon)
-{
-	time_horizon_agents = p_time_horizon;
-	rvo_agent.timeHorizon_ = time_horizon_agents;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_time_horizon_obstacles(real_t p_time_horizon)
-{
-	time_horizon_obstacles = p_time_horizon;
-	rvo_agent.timeHorizonObst_ = time_horizon_obstacles;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_radius(real_t p_radius)
-{
-	radius = p_radius;
-	rvo_agent.radius_ = radius;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_max_speed(real_t p_max_speed)
-{
-	max_speed = p_max_speed;
-	if (avoidance_enabled) {
-		rvo_agent.maxSpeed_ = max_speed;
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_position(const Vector2& p_position)
-{
-	position = p_position;
-	if (avoidance_enabled) {
-		rvo_agent.position_ = RVO2D::Vector2(p_position.x, p_position.y);
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_target_position(const Vector2& p_target_position)
-{
-	target_position = p_target_position;
-}
-
-void NavAgent2D::set_velocity(const Vector2& p_velocity)
-{
-	// Sets the "wanted" velocity for an agent as a suggestion
-	// This velocity is not guaranteed, RVO simulation will only try to fulfill it
-	velocity = p_velocity;
-	if (avoidance_enabled) {
-		rvo_agent.prefVelocity_ = RVO2D::Vector2(velocity.x, velocity.y);
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_velocity_forced(const Vector2& p_velocity)
-{
-	// This function replaces the internal rvo simulation velocity
-	// should only be used after the agent was teleported
-	// as it destroys consistency in movement in cramped situations
-	// use velocity instead to update with a safer "suggestion"
-	velocity_forced = p_velocity;
-	if (avoidance_enabled) {
-		rvo_agent.velocity_ = RVO2D::Vector2(p_velocity.x, p_velocity.y);
-	}
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::update()
-{
-	// Updates this agent with the calculated results from the rvo simulation
-	if (avoidance_enabled) {
-		velocity = Vector2(rvo_agent.velocity_.x(), rvo_agent.velocity_.y());
-	}
-}
-
-void NavAgent2D::set_avoidance_mask(uint32_t p_mask)
-{
-	avoidance_mask = p_mask;
-	rvo_agent.avoidance_mask_ = avoidance_mask;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_avoidance_layers(uint32_t p_layers)
-{
-	avoidance_layers = p_layers;
-	rvo_agent.avoidance_layers_ = avoidance_layers;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-void NavAgent2D::set_avoidance_priority(real_t p_priority)
-{
-	ERR_FAIL_COND_MSG(
-		p_priority < 0.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
-	ERR_FAIL_COND_MSG(
-		p_priority > 1.0, "Avoidance priority must be between 0.0 and 1.0 inclusive.");
-	avoidance_priority = p_priority;
-	rvo_agent.avoidance_priority_ = avoidance_priority;
-	agent_dirty = true;
-
-	request_sync();
-}
-
-bool NavAgent2D::is_dirty() const { return agent_dirty; }
-
-void NavAgent2D::sync() { agent_dirty = false; }
-
-void NavAgent2D::set_paused(bool p_paused)
-{
-	if (paused == p_paused) {
-		return;
-	}
-
-	paused = p_paused;
-
-	if (map) {
-		if (paused) {
-			map->remove_agent_as_controlled(this);
-		}
-		else if (avoidance_enabled) {
-			map->set_agent_as_controlled(this);
-		}
-	}
-}
-
-bool NavAgent2D::get_paused() const { return paused; }
-
-NavAgent2D::NavAgent2D() : sync_dirty_request_list_element(this) {}
-
-NavAgent2D::~NavAgent2D() { cancel_sync_request(); }
-
-void NavAgent2D::request_sync() {}
-
-
-void NavAgent2D::cancel_sync_request() {}
-
-bool NavAgent2D::has_avoidance_callback() const { return false; }
-
-void NavAgent2D::dispatch_avoidance_callback() {}
-
-
-void NavObstacle2D::set_agent(NavAgent2D* p_agent)
-{
-	if (agent == p_agent) {
-		return;
-	}
-
-	agent = p_agent;
-
-	internal_update_agent();
-
-	request_sync();
-}
-
-void NavObstacle2D::set_avoidance_enabled(bool p_enabled)
-{
-	if (avoidance_enabled == p_enabled) {
-		return;
-	}
-
-	avoidance_enabled = p_enabled;
-	obstacle_dirty = true;
-
-	internal_update_agent();
-
-	request_sync();
-}
-
-void NavObstacle2D::set_map(NavMap2D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_obstacle(this);
-		if (agent) {
-			agent->set_map(nullptr);
-		}
-	}
-
-	map = p_map;
-	obstacle_dirty = true;
-
-	if (map) {
-		map->add_obstacle(this);
-		internal_update_agent();
-
-		request_sync();
-	}
-}
-
-void NavObstacle2D::set_position(const Vector2& p_position)
-{
-	if (position == p_position) {
-		return;
-	}
-
-	position = p_position;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_position(position);
-	}
-
-	request_sync();
-}
-
-void NavObstacle2D::set_radius(real_t p_radius)
-{
-	if (radius == p_radius) {
-		return;
-	}
-
-	radius = p_radius;
-
-	if (agent) {
-		agent->set_radius(radius);
-	}
-}
-
-void NavObstacle2D::set_velocity(const Vector2& p_velocity)
-{
-	velocity = p_velocity;
-
-	if (agent) {
-		agent->set_velocity(velocity);
-	}
-}
-
-void NavObstacle2D::set_vertices(const Vector<Vector2>& p_vertices)
-{
-	if (vertices == p_vertices) {
-		return;
-	}
-
-	vertices = p_vertices;
-	obstacle_dirty = true;
-
-	request_sync();
-}
-
-bool NavObstacle2D::is_map_changed()
-{
-	if (map) {
-		bool is_changed = map->get_iteration_id() != last_map_iteration_id;
-		last_map_iteration_id = map->get_iteration_id();
-		return is_changed;
-	}
-	else {
-		return false;
-	}
-}
-
-void NavObstacle2D::set_avoidance_layers(uint32_t p_layers)
-{
-	if (avoidance_layers == p_layers) {
-		return;
-	}
-
-	avoidance_layers = p_layers;
-	obstacle_dirty = true;
-
-	if (agent) {
-		agent->set_avoidance_layers(avoidance_layers);
-	}
-
-	request_sync();
-}
-
-bool NavObstacle2D::is_dirty() const { return obstacle_dirty; }
-
-void NavObstacle2D::sync() { obstacle_dirty = false; }
-
-void NavObstacle2D::internal_update_agent()
-{
-	if (agent) {
-		agent->set_neighbor_distance(0.0);
-		agent->set_max_neighbors(0.0);
-		agent->set_time_horizon_agents(0.0);
-		agent->set_time_horizon_obstacles(0.0);
-		agent->set_avoidance_mask(0.0);
-		agent->set_neighbor_distance(0.0);
-		agent->set_avoidance_priority(1.0);
-		agent->set_map(map);
-		agent->set_paused(paused);
-		agent->set_radius(radius);
-		agent->set_position(position);
-		agent->set_avoidance_layers(avoidance_layers);
-		agent->set_avoidance_enabled(avoidance_enabled);
-	}
-}
-
-void NavObstacle2D::set_paused(bool p_paused)
-{
-	if (paused == p_paused) {
-		return;
-	}
-
-	paused = p_paused;
-
-	if (map) {
-		if (paused) {
-			map->remove_obstacle(this);
-		}
-		else {
-			map->add_obstacle(this);
-		}
-	}
-	internal_update_agent();
-}
-
-bool NavObstacle2D::get_paused() const { return paused; }
-
-NavObstacle2D::NavObstacle2D() : sync_dirty_request_list_element(this) {}
-
-NavObstacle2D::~NavObstacle2D() { cancel_sync_request(); }
-
-void NavObstacle2D::request_sync() {}
-
-
-
-void NavObstacle2D::cancel_sync_request() {}
-
-
-void NavLink2D::set_map(NavMap2D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_link(this);
-	}
-
-	map = p_map;
-	iteration_dirty = true;
-
-	if (map) {
-		map->add_link(this);
-		request_sync();
-	}
-}
-
-void NavLink2D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-	enabled = p_enabled;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_bidirectional(bool p_bidirectional)
-{
-	if (bidirectional == p_bidirectional) {
-		return;
-	}
-	bidirectional = p_bidirectional;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_start_position(const Vector2 p_position)
-{
-	if (start_position == p_position) {
-		return;
-	}
-	start_position = p_position;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_end_position(const Vector2 p_position)
-{
-	if (end_position == p_position) {
-		return;
-	}
-	end_position = p_position;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_navigation_layers(uint32_t p_navigation_layers)
-{
-	if (navigation_layers == p_navigation_layers) {
-		return;
-	}
-	navigation_layers = p_navigation_layers;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_enter_cost(real_t p_enter_cost)
-{
-	real_t new_enter_cost = MAX(p_enter_cost, 0.0);
-	if (enter_cost == new_enter_cost) {
-		return;
-	}
-	enter_cost = new_enter_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavLink2D::set_travel_cost(real_t p_travel_cost)
-{
-	real_t new_travel_cost = MAX(p_travel_cost, 0.0);
-	if (travel_cost == new_travel_cost) {
-		return;
-	}
-	travel_cost = new_travel_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-bool NavLink2D::sync()
-{
-	bool requires_map_update = false;
-	if (!map) {
-		return requires_map_update;
-	}
-
-	if (iteration_dirty && !iteration_building && !iteration_ready) {
-		_build_iteration();
-		iteration_ready = false;
-		requires_map_update = true;
-	}
-
-	return requires_map_update;
-}
-
-void NavLink2D::_build_iteration()
-{
-	if (!iteration_dirty || iteration_building || iteration_ready) {
-		return;
-	}
-
-	iteration_dirty = false;
-	iteration_building = true;
-	iteration_ready = false;
-
-	Ref<NavIteration2D> new_iteration;
-	new_iteration.instantiate();
-
-	new_iteration->navigation_layers = get_navigation_layers();
-	new_iteration->enter_cost = get_enter_cost();
-	new_iteration->travel_cost = get_travel_cost();
-	new_iteration->owner_type = get_type();
-	new_iteration->owner_rid = get_self();
-
-	new_iteration->enabled = get_enabled();
-	new_iteration->start_position = get_start_position();
-	new_iteration->end_position = get_end_position();
-	new_iteration->bidirectional = is_bidirectional();
-
-	RWLockWrite write_lock(iteration_rwlock);
-	ERR_FAIL_COND(iteration.is_null());
-	iteration = Ref<NavIteration2D>();
-	DEV_ASSERT(iteration.is_null());
-	iteration = new_iteration;
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	iteration_building = false;
-	iteration_ready = true;
-}
-
-Ref<NavIteration2D> NavLink2D::get_iteration()
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration;
-}
-
-NavLink2D::NavLink2D() : sync_dirty_request_list_element(this)
-{
-	iteration.instantiate();
-}
-
-NavLink2D::~NavLink2D()
-{
-	cancel_sync_request();
-
-	iteration = Ref<NavIteration2D>();
-}
-
-void NavLink2D::request_sync() {}
-
-
-void NavLink2D::cancel_sync_request() {}
-
-
-void NavRegion2D::set_map(NavMap2D* p_map)
-{
-	if (map == p_map) {
-		return;
-	}
-
-	cancel_async_thread_join();
-	cancel_sync_request();
-
-	if (map) {
-		map->remove_region(this);
-	}
-
-	map = p_map;
-	iteration_dirty = true;
-
-	if (map) {
-		map->add_region(this);
-		request_sync();
-	}
-}
-
-void NavRegion2D::set_enabled(bool p_enabled)
-{
-	if (enabled == p_enabled) {
-		return;
-	}
-	enabled = p_enabled;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion2D::set_use_edge_connections(bool p_enabled)
-{
-	if (use_edge_connections != p_enabled) {
-		use_edge_connections = p_enabled;
-		iteration_dirty = true;
-	}
-
-	request_sync();
-}
-
-void NavRegion2D::set_transform(Transform2D p_transform)
-{
-	if (transform == p_transform) {
-		return;
-	}
-	transform = p_transform;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-Nav2D::ClosestPointQueryResult NavRegion2D::get_closest_point_info(const Vector2& p_point) const
-{
-	RWLockRead read_lock(region_rwlock);
-
-	return NavMeshQueries2D::polygons_get_closest_point_info(get_polygons(), p_point);
-}
-
-Vector2 NavRegion2D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const
-{
-	RWLockRead read_lock(region_rwlock);
-
-	if (!get_enabled()) {
-		return Vector2();
-	}
-
-	return NavMeshQueries2D::polygons_get_random_point(
-		get_polygons(), p_navigation_layers, p_uniformly);
-}
-
-void NavRegion2D::set_navigation_layers(uint32_t p_navigation_layers)
-{
-	if (navigation_layers == p_navigation_layers) {
-		return;
-	}
-	navigation_layers = p_navigation_layers;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion2D::set_enter_cost(real_t p_enter_cost)
-{
-	real_t new_enter_cost = MAX(p_enter_cost,
- 0.0);
-	if (enter_cost == new_enter_cost) {
-		return;
-	}
-	enter_cost = new_enter_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion2D::set_travel_cost(real_t p_travel_cost)
-{
-	real_t new_travel_cost = MAX(p_travel_cost, 0.0);
-	if (travel_cost == new_travel_cost) {
-		return;
-	}
-	travel_cost = new_travel_cost;
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-void NavRegion2D::scratch_polygons()
-{
-	iteration_dirty = true;
-
-	request_sync();
-}
-
-real_t NavRegion2D::get_surface_area() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_surface_area();
-}
-
-Rect2 NavRegion2D::get_bounds() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_bounds();
-}
-
-const LocalVector<Nav2D::Polygon>& NavRegion2D::get_polygons() const
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration->get_navmesh_polygons();
-}
-
-bool NavRegion2D::sync()
-{
-	bool requires_map_update = false;
-	if (!map) {
-		return requires_map_update;
-	}
-
-	if (iteration_dirty && !iteration_building && !iteration_ready) {
-		_build_iteration();
-	}
-
-	if (iteration_ready) {
-		_sync_iteration();
-		requires_map_update = true;
-	}
-
-	return requires_map_update;
-}
-
-void NavRegion2D::_build_iteration_threaded(void* p_arg)
-{
-	NavRegionIterationBuild2D* _iteration_build = static_cast<NavRegionIterationBuild2D*>(p_arg);
-
-	NavRegionBuilder2D::build_iteration(*_iteration_build);
-}
-
-void NavRegion2D::_sync_iteration()
-{
-	if (iteration_building || !iteration_ready) {
-		return;
-	}
-
-	performance_data.pm_polygon_count = iteration_build.performance_data.pm_polygon_count;
-	performance_data.pm_edge_count = iteration_build.performance_data.pm_edge_count;
-	performance_data.pm_edge_merge_count = iteration_build.performance_data.pm_edge_merge_count;
-
-	RWLockWrite write_lock(iteration_rwlock);
-	ERR_FAIL_COND(iteration.is_null());
-	iteration = Ref<NavIteration2D>();
-	DEV_ASSERT(iteration.is_null());
-	iteration = iteration_build.region_iteration;
-	iteration_build.region_iteration = Ref<NavIteration2D>();
-	DEV_ASSERT(iteration_build.region_iteration.is_null());
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	iteration_ready = false;
-
-	cancel_async_thread_join();
-}
-
-Ref<NavIteration2D> NavRegion2D::get_iteration()
-{
-	RWLockRead read_lock(iteration_rwlock);
-	return iteration;
-}
-
-void NavRegion2D::set_use_async_iterations(bool p_enabled)
-{
-	if (use_async_iterations == p_enabled) {
-		return;
-	}
-#ifdef THREADS_ENABLED
-	use_async_iterations = p_enabled;
-#endif
-}
-
-bool NavRegion2D::get_use_async_iterations() const { return use_async_iterations; }
-
-NavRegion2D::NavRegion2D() : sync_dirty_request_list_element(this), async_list_element(this)
-{
-	iteration_build.region = this;
-	iteration.instantiate();
-
-#ifndef THREADS_ENABLED
-	use_async_iterations = false;
-#endif
-}
-
-NavRegion2D::~NavRegion2D()
-{
-	cancel_async_thread_join();
-	cancel_sync_request();
-
-	iteration_build.region = nullptr;
-	iteration_build.region_iteration = Ref<NavIteration2D>();
-	iteration = Ref<NavIteration2D>();
-}
-
-void NavRegion2D::request_sync() {}
-
-
-
-void NavRegion2D::cancel_async_thread_join() {}
-
-void NavRegion2D::cancel_sync_request() {}
-
-void NavRegion2D::set_navigation_mesh(Ref<NavigationPolygon>) {}
-
-void NavRegion2D::_build_iteration() {}
-
-
-#ifdef DEBUG_ENABLED
-#define NAVMAP_ITERATION_ZERO_ERROR_MSG()                                                          \
-	ERR_PRINT_ONCE(                                                                                \
-		"NavigationServer navigation map query failed because it was made before first map synchronization.\n\
-	NavigationServer 'map_changed' signal can be used to receive update notifications.\n\
-	NavigationServer 'map_get_iteration_id()' can be used to check if a map has finished its newest iteration.");
-#else
-#define NAVMAP_ITERATION_ZERO_ERROR_MSG()
-#endif // DEBUG_ENABLED
-
-#define GET_MAP_ITERATION()                                                                        \
-	iteration_slot_rwlock.read_lock();                                                             \
-	NavMapIteration2D& map_iteration = iteration_slots[iteration_slot_index];                      \
-	NavMapIterationRead2D iteration_read_lock(map_iteration);                                      \
-	iteration_slot_rwlock.read_unlock();
-
-#define GET_MAP_ITERATION_CONST()                                                                  \
-	iteration_slot_rwlock.read_lock();                                                             \
-	const NavMapIteration2D& map_iteration = iteration_slots[iteration_slot_index];                \
-	NavMapIterationRead2D iteration_read_lock(map_iteration);                                      \
-	iteration_slot_rwlock.read_unlock();
-
-void NavMap2D::set_cell_size(real_t p_cell_size)
-{
-	if (cell_size == p_cell_size) {
-		return;
-	}
-	cell_size = MAX(p_cell_size, NavigationDefaults2D::NAV_MESH_CELL_SIZE_MIN);
-	_update_merge_rasterizer_cell_dimensions();
-	map_settings_dirty = true;
-}
-
-void NavMap2D::set_merge_rasterizer_cell_scale(float p_value)
-{
-	if (merge_rasterizer_cell_scale == p_value) {
-		return;
-	}
-	merge_rasterizer_cell_scale =
-		MAX(MIN(p_value, 0.1), NavigationDefaults2D::NAV_MESH_CELL_SIZE_MIN);
-	_update_merge_rasterizer_cell_dimensions();
-	map_settings_dirty = true;
-}
-
-void NavMap2D::set_use_edge_connections(bool p_enabled)
-{
-	if (use_edge_connections == p_enabled) {
-		return;
-	}
-	use_edge_connections = p_enabled;
-	iteration_dirty = true;
-}
-
-void NavMap2D::set_edge_connection_margin(real_t p_edge_connection_margin)
-{
-	if (edge_connection_margin == p_edge_connection_margin) {
-		return;
-	}
-	edge_connection_margin = p_edge_connection_margin;
-	iteration_dirty = true;
-}
-
-void NavMap2D::set_link_connection_radius(real_t p_link_connection_radius)
-{
-	if (link_connection_radius == p_link_connection_radius) {
-		return;
-	}
-	link_connection_radius = p_link_connection_radius;
-	iteration_dirty = true;
-}
-
-const Vector2& NavMap2D::get_merge_rasterizer_cell_size() const
-{
-	return merge_rasterizer_cell_size;
-}
-
-Nav2D::PointKey NavMap2D::get_point_key(const Vector2& p_pos) const
-{
-	const int x = static_cast<int>(Math::floor(p_pos.x / merge_rasterizer_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / merge_rasterizer_cell_size.y));
-
-	Nav2D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	return p;
-}
-
-void NavMap2D::query_path(NavMeshQueries2D::NavMeshPathQueryTask2D& p_query_task)
-{
-	if (iteration_id == 0) {
-		return;
-	}
-
-	GET_MAP_ITERATION();
-
-	map_iteration.path_query_slots_semaphore.wait();
-
-	map_iteration.path_query_slots_mutex.lock();
-	for (NavMeshQueries2D::PathQuerySlot& p_path_query_slot : map_iteration.path_query_slots) {
-		if (!p_path_query_slot.in_use) {
-			p_path_query_slot.in_use = true;
-			p_query_task.path_query_slot = &p_path_query_slot;
-			break;
-		}
-	}
-	map_iteration.path_query_slots_mutex.unlock();
-
-	if (p_query_task.path_query_slot == nullptr) {
-		map_iteration.path_query_slots_semaphore.post();
-		ERR_FAIL_NULL_MSG(p_query_task.path_query_slot,
-			"No unused NavMap2D path query slot found! This should never happen :(.");
-	}
-
-	NavMeshQueries2D::query_task_map_iteration_get_path(p_query_task, map_iteration);
-
-	map_iteration.path_query_slots_mutex.lock();
-	uint32_t used_slot_index = p_query_task.path_query_slot->slot_index;
-	map_iteration.path_query_slots[used_slot_index].in_use = false;
-	p_query_task.path_query_slot = nullptr;
-	map_iteration.path_query_slots_mutex.unlock();
-
-	map_iteration.path_query_slots_semaphore.post();
-}
-
-Vector2 NavMap2D::get_closest_point(const Vector2& p_point) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return Vector2();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries2D::map_iteration_get_closest_point(map_iteration, p_point);
-}
-
-RID NavMap2D::get_closest_point_owner(const Vector2& p_point) const
-{
-	if (iteration_id == 0) {
-		NAVMAP_ITERATION_ZERO_ERROR_MSG();
-		return RID();
-	}
-
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries2D::map_iteration_get_closest_point_owner(map_iteration, p_point);
-}
-
-Nav2D::ClosestPointQueryResult NavMap2D::get_closest_point_info(const Vector2& p_point) const
-{
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries2D::map_iteration_get_closest_point_info(map_iteration, p_point);
-}
-
-void NavMap2D::add_region(NavRegion2D* p_region)
-{
-	DEV_ASSERT(!regions.has(p_region));
-
-	regions.push_back(p_region);
-	iteration_dirty = true;
-}
-
-void NavMap2D::remove_region(NavRegion2D* p_region)
-{
-	if (regions.erase_unordered(p_region)) {
-		iteration_dirty = true;
-	}
-}
-
-void NavMap2D::add_link(NavLink2D* p_link)
-{
-	DEV_ASSERT(!links.has(p_link));
-
-	links.push_back(p_link);
-	iteration_dirty = true;
-}
-
-void NavMap2D::remove_link(NavLink2D* p_link)
-{
-	if (links.erase_unordered(p_link)) {
-		iteration_dirty = true;
-	}
-}
-
-bool NavMap2D::has_agent(NavAgent2D* p_agent) const { return agents.has(p_agent); }
-
-void NavMap2D::add_agent(NavAgent2D* p_agent)
-{
-	if (!has_agent(p_agent)) {
-		agents.push_back(p_agent);
-		agents_dirty = true;
-	}
-}
-
-void NavMap2D::remove_agent(NavAgent2D* p_agent)
-{
-	remove_agent_as_controlled(p_agent);
-	if (agents.erase_unordered(p_agent)) {
-		agents_dirty = true;
-	}
-}
-
-bool NavMap2D::has_obstacle(NavObstacle2D* p_obstacle) const { return obstacles.has(p_obstacle); }
-
-void NavMap2D::add_obstacle(NavObstacle2D* p_obstacle)
-{
-	if (p_obstacle->get_paused()) {
-		// No point in adding a paused obstacle, it will add itself when unpaused again.
-		return;
-	}
-
-	if (!has_obstacle(p_obstacle)) {
-		obstacles.push_back(p_obstacle);
-		obstacles_dirty = true;
-	}
-}
-
-void NavMap2D::remove_obstacle(NavObstacle2D* p_obstacle)
-{
-	if (obstacles.erase_unordered(p_obstacle)) {
-		obstacles_dirty = true;
-	}
-}
-
-void NavMap2D::set_agent_as_controlled(NavAgent2D* p_agent)
-{
-	remove_agent_as_controlled(p_agent);
-
-	if (p_agent->get_paused()) {
-		// No point in adding a paused agent, it will add itself when unpaused again.
-		return;
-	}
-
-	int64_t agent_index = active_avoidance_agents.find(p_agent);
-	if (agent_index < 0) {
-		active_avoidance_agents.push_back(p_agent);
-		agents_dirty = true;
-	}
-}
-
-void NavMap2D::remove_agent_as_controlled(NavAgent2D* p_agent)
-{
-	if (active_avoidance_agents.erase_unordered(p_agent)) {
-		agents_dirty = true;
-	}
-}
-
-Vector2 NavMap2D::get_random_point(uint32_t p_navigation_layers, bool p_uniformly) const
-{
-	GET_MAP_ITERATION_CONST();
-
-	return NavMeshQueries2D::map_iteration_get_random_point(
-		map_iteration, p_navigation_layers, p_uniformly);
-}
-
-void NavMap2D::_build_iteration()
-{
-	if (!iteration_dirty || iteration_building || iteration_ready) {
-		return;
-	}
-
-	// Get the next free iteration slot that should be potentially unused.
-	iteration_slot_rwlock.read_lock();
-	NavMapIteration2D& next_map_iteration = iteration_slots[(iteration_slot_index + 1) % 2];
-	// Check if the iteration slot is truly free or still used by an external thread.
-	bool iteration_is_free = next_map_iteration.users.get() == 0;
-	iteration_slot_rwlock.read_unlock();
-
-	if (!iteration_is_free) {
-		// A long running pathfinding thread or something is still reading
-		// from this older iteration and needs to finish first.
-		// Return and wait for the next sync cycle to check again.
-		return;
-	}
-
-	// Iteration slot is free and no longer used by anything, let's build.
-
-	iteration_dirty = false;
-	iteration_building = true;
-	iteration_ready = false;
-
-	// We don't need to hold any lock because at this point nothing else can touch it.
-	// All new queries are already forwarded to the other iteration slot.
-
-	iteration_build.reset();
-
-	iteration_build.merge_rasterizer_cell_size = get_merge_rasterizer_cell_size();
-	iteration_build.use_edge_connections = get_use_edge_connections();
-	iteration_build.edge_connection_margin = get_edge_connection_margin();
-	iteration_build.link_connection_radius = get_link_connection_radius();
-
-	next_map_iteration.clear();
-
-	next_map_iteration.region_iterations.resize(regions.size());
-	next_map_iteration.link_iterations.resize(links.size());
-
-	uint32_t region_id_count = 0;
-	uint32_t link_id_count = 0;
-
-	for (NavRegion2D* region : regions) {
-		const Ref<NavIteration2D> region_iteration = region->get_iteration();
-		next_map_iteration.region_iterations[region_id_count++] = region_iteration;
-		next_map_iteration.region_ptr_to_region_iteration[region] = region_iteration;
-	}
-	for (NavLink2D* link : links) {
-		const Ref<NavIteration2D> link_iteration = link->get_iteration();
-		next_map_iteration.link_iterations[link_id_count++] = link_iteration;
-	}
-
-	iteration_build.map_iteration = &next_map_iteration;
-
-	NavMapBuilder2D::build_navmap_iteration(iteration_build);
-
-	iteration_building = false;
-	iteration_ready = true;
-}
-
-void NavMap2D::_build_iteration_threaded(void* p_arg)
-{
-	NavMapIterationBuild2D* _iteration_build = static_cast<NavMapIterationBuild2D*>(p_arg);
-
-	NavMapBuilder2D::build_navmap_iteration(*_iteration_build);
-}
-
-void NavMap2D::_sync_iteration()
-{
-	if (iteration_building || !iteration_ready) {
-		return;
-	}
-
-	performance_data.pm_edge_connection_count =
-		iteration_build.performance_data.pm_edge_connection_count;
-	performance_data.pm_edge_free_count = iteration_build.performance_data.pm_edge_free_count;
-
-	iteration_id = iteration_id % UINT32_MAX + 1;
-
-	// Finally ping-pong switch the iteration slot.
-	iteration_slot_rwlock.write_lock();
-	uint32_t next_iteration_slot_index = (iteration_slot_index + 1) % 2;
-	iteration_slot_index = next_iteration_slot_index;
-	iteration_slot_rwlock.write_unlock();
-
-	iteration_ready = false;
-}
-
-void NavMap2D::_sync_avoidance()
-{
-	_sync_dirty_avoidance_update_requests();
-
-	if (obstacles_dirty || agents_dirty) {
-		_update_rvo_simulation();
-	}
-
-	obstacles_dirty = false;
-	agents_dirty = false;
-}
-
-void NavMap2D::_update_rvo_obstacles_tree()
-{
-	int obstacle_vertex_count = 0;
-	for (NavObstacle2D* obstacle : obstacles) {
-		obstacle_vertex_count += obstacle->get_vertices().size();
-	}
-
-	// Cleaning old obstacles.
-	for (size_t i = 0; i < rvo_simulation.obstacles_.size(); ++i) {
-		delete rvo_simulation.obstacles_[i];
-	}
-	rvo_simulation.obstacles_.clear();
-
-	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree
-	std::vector<RVO2D::Obstacle2D*>& raw_obstacles = rvo_simulation.obstacles_;
-	raw_obstacles.reserve(obstacle_vertex_count);
-
-	// The following block is modified copy from RVO2D::AddObstacle()
-	// Obstacles are linked and depend on all other obstacles.
-	for (NavObstacle2D* obstacle : obstacles) {
-		if (!obstacle->is_avoidance_enabled()) {
-			continue;
-		}
-		const Vector2& _obstacle_position = obstacle->get_position();
-		const Vector<Vector2>& _obstacle_vertices = obstacle->get_vertices();
-
-		if (_obstacle_vertices.size() < 2) {
-			continue;
-		}
-
-		std::vector<RVO2D::Vector2> rvo_vertices;
-		rvo_vertices.reserve(_obstacle_vertices.size());
-
-		uint32_t _obstacle_avoidance_layers = obstacle->get_avoidance_layers();
-
-		for (const Vector2& _obstacle_vertex : _obstacle_vertices) {
-			rvo_vertices.push_back(RVO2D::Vector2(_obstacle_vertex.x + _obstacle_position.x,
-				_obstacle_vertex.y + _obstacle_position.y));
-		}
-
-		const size_t obstacleNo = raw_obstacles.size();
-
-		for (size_t i = 0; i < rvo_vertices.size(); i++) {
-			RVO2D::Obstacle2D* rvo_obstacle = new RVO2D::Obstacle2D();
-			rvo_obstacle->point_ = rvo_vertices[i];
-
-			rvo_obstacle->avoidance_layers_ = _obstacle_avoidance_layers;
-
-			if (i != 0) {
-				rvo_obstacle->prevObstacle_ = raw_obstacles.back();
-				rvo_obstacle->prevObstacle_->nextObstacle_ = rvo_obstacle;
-			}
-
-			if (i == rvo_vertices.size() - 1) {
-				rvo_obstacle->nextObstacle_ = raw_obstacles[obstacleNo];
-				rvo_obstacle->nextObstacle_->prevObstacle_ = rvo_obstacle;
-			}
-
-			rvo_obstacle->unitDir_ = normalize(
-				rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)] - rvo_vertices[i]);
-
-			if (rvo_vertices.size() == 2) {
-				rvo_obstacle->isConvex_ = true;
-			}
-			else {
-				rvo_obstacle->isConvex_ =
-					(leftOf(rvo_vertices[(i == 0 ? rvo_vertices.size() - 1 : i - 1)],
-						 rvo_vertices[i],
-						 rvo_vertices[(i == rvo_vertices.size() - 1 ? 0 : i + 1)]) >= 0.0f);
-			}
-
-			rvo_obstacle->id_ = raw_obstacles.size();
-
-			raw_obstacles.push_back(rvo_obstacle);
-		}
-	}
-
-	rvo_simulation.kdTree_->buildObstacleTree(raw_obstacles);
-}
-
-void NavMap2D::_update_rvo_agents_tree()
-{
-	// Cannot use LocalVector here as RVO library expects std::vector to build KdTree.
-	std::vector<RVO2D::Agent2D*> raw_agents;
-	raw_agents.reserve(active_avoidance_agents.size());
-	for (NavAgent2D* agent : active_avoidance_agents) {
-		raw_agents.push_back(agent->get_rvo_agent());
-	}
-	rvo_simulation.kdTree_->buildAgentTree(raw_agents);
-}
-
-void NavMap2D::_update_rvo_simulation()
-{
-	if (obstacles_dirty) {
-		_update_rvo_obstacles_tree();
-	}
-	if (agents_dirty) {
-		_update_rvo_agents_tree();
-	}
-}
-
-void NavMap2D::compute_single_avoidance_step(uint32_t p_index, NavAgent2D** p_agent)
-{
-	(*(p_agent + p_index))->get_rvo_agent()->computeNeighbors(&rvo_simulation);
-	(*(p_agent + p_index))->get_rvo_agent()->computeNewVelocity(&rvo_simulation);
-	(*(p_agent + p_index))->get_rvo_agent()->update(&rvo_simulation);
-	(*(p_agent + p_index))->update();
-}
-
-void NavMap2D::dispatch_callbacks()
-{
-	for (NavAgent2D* agent : active_avoidance_agents) {
-		agent->dispatch_avoidance_callback();
-	}
-}
-
-void NavMap2D::_update_merge_rasterizer_cell_dimensions()
-{
-	merge_rasterizer_cell_size.x = cell_size * merge_rasterizer_cell_scale;
-	merge_rasterizer_cell_size.y = cell_size * merge_rasterizer_cell_scale;
-}
-
-int NavMap2D::get_region_connections_count(NavRegion2D* p_region) const
-{
-	ERR_FAIL_NULL_V(p_region, 0);
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion2D*, Ref<NavIteration2D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			return found_connections->value.size();
-		}
-	}
-
-	return 0;
-}
-
-Vector2 NavMap2D::get_region_connection_pathway_start(
-	NavRegion2D* p_region, int p_connection_id) const
-{
-	ERR_FAIL_NULL_V(p_region, Vector2());
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion2D*, Ref<NavIteration2D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector2());
-			return found_connections->value[p_connection_id].pathway_start;
-		}
-	}
-
-	return Vector2();
-}
-
-Vector2 NavMap2D::get_region_connection_pathway_end(
-	NavRegion2D* p_region, int p_connection_id) const
-{
-	ERR_FAIL_NULL_V(p_region, Vector2());
-
-	GET_MAP_ITERATION_CONST();
-
-	HashMap<NavRegion2D*, Ref<NavIteration2D>>::ConstIterator found_id =
-		map_iteration.region_ptr_to_region_iteration.find(p_region);
-	if (found_id) {
-		HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>>::ConstIterator
-			found_connections =
-				map_iteration.external_region_connections.find(found_id->value.ptr());
-		if (found_connections) {
-			ERR_FAIL_INDEX_V(p_connection_id, int(found_connections->value.size()), Vector2());
-			return found_connections->value[p_connection_id].pathway_end;
-		}
-	}
-
-	return Vector2();
-}
-
-void NavMap2D::set_use_async_iterations(bool p_enabled)
-{
-	if (use_async_iterations == p_enabled) {
-		return;
-	}
-#ifdef THREADS_ENABLED
-	use_async_iterations = p_enabled;
-#endif
-}
-
-bool NavMap2D::get_use_async_iterations() const { return use_async_iterations; }
-
-
-
-NavMap2D::~NavMap2D() {}
-
-void NavMap2D::sync() {}
-
-void NavMap2D::_sync_dirty_avoidance_update_requests() {}
-
-void NavMap2D::step(double) {}
-
-NavMap2D::NavMap2D() {}
-
-#undef NAVMAP_ITERATION_ZERO_ERROR_MSG
-#undef GET_MAP_ITERATION
-#undef GET_MAP_ITERATION_CONST
-
-
-Nav2D::PointKey NavMapBuilder2D::get_point_key(const Vector2& p_pos, const Vector2& p_cell_size)
-{
-	const int x = static_cast<int>(Math::floor(p_pos.x / p_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / p_cell_size.y));
-
-	Nav2D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	return p;
-}
-
-void NavMapBuilder2D::build_navmap_iteration(NavMapIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-
-	performance_data.pm_polygon_count = 0;
-	performance_data.pm_edge_count = 0;
-	performance_data.pm_edge_merge_count = 0;
-	performance_data.pm_edge_connection_count = 0;
-	performance_data.pm_edge_free_count = 0;
-
-	_build_step_gather_region_polygons(r_build);
-
-	_build_step_find_edge_connection_pairs(r_build);
-
-	_build_step_merge_edge_connection_pairs(r_build);
-
-	_build_step_edge_connection_margin_connections(r_build);
-
-	_build_step_navlink_connections(r_build);
-
-	_build_update_map_iteration(r_build);
-}
-
-void NavMapBuilder2D::_build_step_gather_region_polygons(NavMapIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-
-	const LocalVector<Ref<NavIteration2D>>& regions = map_iteration->region_iterations;
-	HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>>& region_external_connections =
-		map_iteration->external_region_connections;
-
-	map_iteration->navbases_polygons_external_connections.clear();
-
-	// Remove regions connections.
-	region_external_connections.clear();
-
-	// Copy all region polygons in the map.
-	int polygon_count = 0;
-	for (const Ref<NavIteration2D>& region : regions) {
-		const uint32_t polygons_size = region->navmesh_polygons.size();
-		polygon_count += polygons_size;
-
-		region_external_connections[region.ptr()] = LocalVector<Nav2D::Connection>();
-		map_iteration->navbases_polygons_external_connections[region.ptr()] =
-			LocalVector<LocalVector<Nav2D::Connection>>();
-		map_iteration->navbases_polygons_external_connections[region.ptr()].resize(polygons_size);
-	}
-
-	performance_data.pm_polygon_count = polygon_count;
-	r_build.polygon_count = polygon_count;
-}
-
-void NavMapBuilder2D::_build_step_find_edge_connection_pairs(NavMapIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-	int polygon_count = r_build.polygon_count;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-
-	// Group all edges per key.
-	connection_pairs_map.clear();
-	connection_pairs_map.reserve(polygon_count);
-	int free_edges_count = 0; // How many ConnectionPairs have only one Nav2D::Connection.
-	int edge_merge_error_count = 0;
-
-	for (const Ref<NavIteration2D>& region : map_iteration->region_iterations) {
-		for (const Nav2D::ConnectableEdge& connectable_edge : region->get_external_edges()) {
-			const Nav2D::EdgeKey& ek = connectable_edge.ek;
-
-			HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>::Iterator pair_it =
-				connection_pairs_map.find(ek);
-			if (!pair_it) {
-				pair_it = connection_pairs_map.insert(ek, Nav2D::EdgeConnectionPair());
-				performance_data.pm_edge_count += 1;
-				++free_edges_count;
-			}
-			Nav2D::EdgeConnectionPair& pair = pair_it->value;
-			if (pair.size < 2) {
-				// Add the polygon/edge tuple to this key.
-				Nav2D::Connection new_connection;
-				new_connection.polygon = &region->navmesh_polygons[connectable_edge.polygon_index];
-				new_connection.edge = connectable_edge.edge;
-				new_connection.pathway_start = connectable_edge.pathway_start;
-				new_connection.pathway_end = connectable_edge.pathway_end;
-
-				pair.connections[pair.size] = new_connection;
-				++pair.size;
-				if (pair.size == 2) {
-					--free_edges_count;
-				}
-
-			}
-			else {
-				// The edge is already connected with another edge, skip.
-				edge_merge_error_count++;
-			}
-		}
-	}
-
-	if (edge_merge_error_count > 0) {
-		WARN_PRINT(
-			"Navigation map synchronization had " + itos(edge_merge_error_count) +
-			" edge error(s).\nMore than 2 edges tried to occupy the same map rasterization "
-			"space.\nThis causes a logical error in the navigation mesh geometry and is commonly "
-			"caused by overlap or too densely placed edges.\nConsider baking with a higher "
-			"'cell_size', greater geometry margin, and less detailed bake objects to cause fewer "
-			"edges.\nConsider lowering the 'navigation/2d/merge_rasterizer_cell_scale' in the "
-			"project settings.\nThis warning can be toggled under "
-			"'navigation/2d/warnings/navmesh_edge_merge_errors' in the project settings.");
-	}
-
-	r_build.free_edge_count = free_edges_count;
-}
-
-void NavMapBuilder2D::_build_step_merge_edge_connection_pairs(NavMapIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-	LocalVector<Nav2D::Connection>& free_edges = r_build.iter_free_edges;
-	int free_edges_count = r_build.free_edge_count;
-	bool use_edge_connections = r_build.use_edge_connections;
-
-	free_edges.clear();
-	free_edges.reserve(free_edges_count);
-
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-
-	HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>&
-		navbases_polygons_external_connections =
-			map_iteration->navbases_polygons_external_connections;
-
-	for (const KeyValue<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair>& pair_it : connection_pairs_map) {
-		const Nav2D::EdgeConnectionPair& pair = pair_it.value;
-		if (pair.size == 2) {
-			// Connect edge that are shared in different polygons.
-			const Nav2D::Connection& c1 = pair.connections[0];
-			const Nav2D::Connection& c2 = pair.connections[1];
-
-			navbases_polygons_external_connections[c1.polygon->owner][c1.polygon->id].push_back(c2);
-			navbases_polygons_external_connections[c2.polygon->owner][c2.polygon->id].push_back(c1);
-			performance_data.pm_edge_connection_count += 1;
-
-		}
-		else {
-			CRASH_COND_MSG(
-				pair.size != 1, vformat("Number of connection != 1. Found: %d", pair.size));
-			if (use_edge_connections &&
-				pair.connections[0].polygon->owner->get_use_edge_connections()) {
-				free_edges.push_back(pair.connections[0]);
-			}
-		}
-	}
-}
-
-void NavMapBuilder2D::_build_step_edge_connection_margin_connections(
-	NavMapIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-
-	real_t edge_connection_margin = r_build.edge_connection_margin;
-
-	LocalVector<Nav2D::Connection>& free_edges = r_build.iter_free_edges;
-	HashMap<const NavIteration2D*, LocalVector<Nav2D::Connection>>& region_external_connections =
-		map_iteration->external_region_connections;
-
-	HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>&
-		navbases_polygons_external_connections =
-			map_iteration->navbases_polygons_external_connections;
-
-	// Find the compatible near edges.
-	//
-	// Note:
-	// Considering that the edges must be compatible (for obvious reasons)
-	// to be connected, create new polygons to remove that small gap is
-	// not really useful and would result in wasteful computation during
-	// connection, integration and path finding.
-	performance_data.pm_edge_free_count = free_edges.size();
-
-	const real_t edge_connection_margin_squared = edge_connection_margin * edge_connection_margin;
-
-	for (uint32_t i = 0; i < free_edges.size(); i++) {
-		const Nav2D::Connection& free_edge = free_edges[i];
-		const Vector2& edge_p1 = free_edge.pathway_start;
-		const Vector2& edge_p2 = free_edge.pathway_end;
-
-		for (uint32_t j = 0; j < free_edges.size(); j++) {
-			const Nav2D::Connection& other_edge = free_edges[j];
-			if (i == j || free_edge.polygon->owner == other_edge.polygon->owner) {
-				continue;
-			}
-
-			const Vector2& other_edge_p1 = other_edge.pathway_start;
-			const Vector2& other_edge_p2 = other_edge.pathway_end;
-
-			// Compute the projection of the opposite edge on the current one
-			Vector2 edge_vector = edge_p2 - edge_p1;
-			real_t projected_p1_ratio =
-				edge_vector.dot(other_edge_p1 - edge_p1) / (edge_vector.length_squared());
-			real_t projected_p2_ratio =
-				edge_vector.dot(other_edge_p2 - edge_p1) / (edge_vector.length_squared());
-			if ((projected_p1_ratio < 0.0 && projected_p2_ratio < 0.0) ||
-				(projected_p1_ratio > 1.0 && projected_p2_ratio > 1.0)) {
-				continue;
-			}
-
-			// Check if the two edges are close to each other enough and compute a pathway between
-			// the two regions.
-			Vector2 self1 = edge_vector * CLAMP(projected_p1_ratio, 0.0, 1.0) + edge_p1;
-			Vector2 other1;
-			if (projected_p1_ratio >= 0.0 && projected_p1_ratio <= 1.0) {
-				other1 = other_edge_p1;
-			}
-			else {
-				other1 = other_edge_p1.lerp(other_edge_p2,
-					(1.0 - projected_p1_ratio) / (projected_p2_ratio - projected_p1_ratio));
-			}
-			if (other1.distance_squared_to(self1) > edge_connection_margin_squared) {
-				continue;
-			}
-
-			Vector2 self2 = edge_vector * CLAMP(projected_p2_ratio, 0.0, 1.0) + edge_p1;
-			Vector2 other2;
-			if (projected_p2_ratio >= 0.0 && projected_p2_ratio <= 1.0) {
-				other2 = other_edge_p2;
-			}
-			else {
-				other2 = other_edge_p1.lerp(other_edge_p2,
-					(0.0 - projected_p1_ratio) / (projected_p2_ratio - projected_p1_ratio));
-			}
-			if (other2.distance_squared_to(self2) > edge_connection_margin_squared) {
-				continue;
-			}
-
-			// The edges can now be connected.
-			Nav2D::Connection new_connection = other_edge;
-			new_connection.pathway_start = (self1 + other1) / 2.0;
-			new_connection.pathway_end = (self2 + other2) / 2.0;
-			// free_edge.polygon->connections.push_back(new_connection);
-
-			// Add the connection to the region_connection map.
-			region_external_connections[free_edge.polygon->owner].push_back(new_connection);
-			navbases_polygons_external_connections[free_edge.polygon->owner][free_edge.polygon->id]
-				.push_back(new_connection);
-			performance_data.pm_edge_connection_count += 1;
-		}
-	}
-}
-
-void NavMapBuilder2D::_build_step_navlink_connections(NavMapIterationBuild2D& r_build)
-{
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-
-	real_t link_connection_radius = r_build.link_connection_radius;
-
-	const LocalVector<Ref<NavIteration2D>>& links = map_iteration->link_iterations;
-
-	int polygon_count = r_build.polygon_count;
-
-	real_t link_connection_radius_sqr = link_connection_radius * link_connection_radius;
-
-	HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>&
-		navbases_polygons_external_connections =
-			map_iteration->navbases_polygons_external_connections;
-	LocalVector<Nav2D::Polygon>& navlink_polygons = map_iteration->navlink_polygons;
-	navlink_polygons.clear();
-	navlink_polygons.resize(links.size());
-	uint32_t navlink_index = 0;
-
-	// Search for polygons within range of a nav link.
-	for (const Ref<NavIteration2D>& link : links) {
-		polygon_count++;
-		Nav2D::Polygon& new_polygon = navlink_polygons[navlink_index++];
-
-		new_polygon.id = 0;
-		new_polygon.owner = link.ptr();
-
-		const Vector2 link_start_pos = link->get_start_position();
-		const Vector2 link_end_pos = link->get_end_position();
-
-		Nav2D::Polygon* closest_start_polygon = nullptr;
-		real_t closest_start_sqr_dist = link_connection_radius_sqr;
-		Vector2 closest_start_point;
-
-		Nav2D::Polygon* closest_end_polygon = nullptr;
-		real_t closest_end_sqr_dist = link_connection_radius_sqr;
-		Vector2 closest_end_point;
-
-		for (const Ref<NavIteration2D>& region : map_iteration->region_iterations) {
-			Rect2 region_bounds = region->get_bounds().grow(link_connection_radius);
-			if (!region_bounds.has_point(link_start_pos) &&
-				!region_bounds.has_point(link_end_pos)) {
-				continue;
-			}
-
-			for (Nav2D::Polygon& polyon : region->navmesh_polygons) {
-				for (uint32_t point_id = 2; point_id < polyon.vertices.size(); point_id += 1) {
-					const Triangle2 triangle(polyon.vertices[0], polyon.vertices[point_id - 1],
-						polyon.vertices[point_id]);
-
-					{
-						const Vector2 start_point = triangle.get_closest_point_to(link_start_pos);
-						const real_t sqr_dist = start_point.distance_squared_to(link_start_pos);
-
-						// Pick the polygon that is within our radius and is closer than anything
-						// we've seen yet.
-						if (sqr_dist < closest_start_sqr_dist) {
-							closest_start_sqr_dist = sqr_dist;
-							closest_start_point = start_point;
-							closest_start_polygon = &polyon;
-						}
-					}
-
-					{
-						const Vector2 end_point = triangle.get_closest_point_to(link_end_pos);
-						const real_t sqr_dist = end_point.distance_squared_to(link_end_pos);
-
-						// Pick the polygon that is within our radius and is closer than anything
-						// we've seen yet.
-						if (sqr_dist < closest_end_sqr_dist) {
-							closest_end_sqr_dist = sqr_dist;
-							closest_end_point = end_point;
-							closest_end_polygon = &polyon;
-						}
-					}
-				}
-			}
-		}
-
-		// If we have both a start and end point, then create a synthetic polygon to route through.
-		if (closest_start_polygon && closest_end_polygon) {
-			new_polygon.vertices.resize(4);
-
-			// Build a set of vertices that create a thin polygon going from the start to the end
-			// point.
-			new_polygon.vertices[0] = closest_start_point;
-			new_polygon.vertices[1] = closest_start_point;
-			new_polygon.vertices[2] = closest_end_point;
-			new_polygon.vertices[3] = closest_end_point;
-
-			// Setup connections to go forward in the link.
-			{
-				Nav2D::Connection entry_connection;
-				entry_connection.polygon = &new_polygon;
-				entry_connection.edge = -1;
-				entry_connection.pathway_start = new_polygon.vertices[0];
-				entry_connection.pathway_end = new_polygon.vertices[1];
-				navbases_polygons_external_connections[closest_start_polygon->owner]
-													  [closest_start_polygon->id]
-														  .push_back(entry_connection);
-
-				Nav2D::Connection exit_connection;
-				exit_connection.polygon = closest_end_polygon;
-				exit_connection.edge = -1;
-				exit_connection.pathway_start = new_polygon.vertices[2];
-				exit_connection.pathway_end = new_polygon.vertices[3];
-				navbases_polygons_external_connections[link.ptr()].push_back(
-					LocalVector<Nav2D::Connection>());
-				navbases_polygons_external_connections[link.ptr()][new_polygon.id].push_back(
-					exit_connection);
-			}
-
-			// If the link is bi-directional, create connections from the end to the start.
-			if (link->is_bidirectional()) {
-				Nav2D::Connection entry_connection;
-				entry_connection.polygon = &new_polygon;
-				entry_connection.edge = -1;
-				entry_connection.pathway_start = new_polygon.vertices[2];
-				entry_connection.pathway_end = new_polygon.vertices[3];
-				navbases_polygons_external_connections[closest_end_polygon->owner]
-													  [closest_end_polygon->id]
-														  .push_back(entry_connection);
-
-				Nav2D::Connection exit_connection;
-				exit_connection.polygon = closest_start_polygon;
-				exit_connection.edge = -1;
-				exit_connection.pathway_start = new_polygon.vertices[0];
-				exit_connection.pathway_end = new_polygon.vertices[1];
-				navbases_polygons_external_connections[link.ptr()].push_back(
-					LocalVector<Nav2D::Connection>());
-				navbases_polygons_external_connections[link.ptr()][new_polygon.id].push_back(
-					exit_connection);
-			}
-		}
-	}
-
-	r_build.polygon_count = polygon_count;
-}
-
-void NavMapBuilder2D::_build_update_map_iteration(NavMapIterationBuild2D& r_build)
-{
-	NavMapIteration2D* map_iteration = r_build.map_iteration;
-
-	map_iteration->navmesh_polygon_count = r_build.polygon_count;
-
-	uint32_t navmesh_polygon_count = r_build.polygon_count;
-	uint32_t total_polygon_count = navmesh_polygon_count;
-
-	map_iteration->path_query_slots_mutex.lock();
-	for (NavMeshQueries2D::PathQuerySlot& p_path_query_slot : map_iteration->path_query_slots) {
-		p_path_query_slot.traversable_polys.clear();
-		p_path_query_slot.traversable_polys.reserve(navmesh_polygon_count * 0.25);
-		p_path_query_slot.path_corridor.clear();
-
-		p_path_query_slot.path_corridor.resize(total_polygon_count);
-
-		p_path_query_slot.poly_to_id.clear();
-		p_path_query_slot.poly_to_id.reserve(total_polygon_count);
-
-		int polygon_id = 0;
-		for (Ref<NavIteration2D>& region : map_iteration->region_iterations) {
-			for (const Nav2D::Polygon& polygon : region->navmesh_polygons) {
-				p_path_query_slot.poly_to_id[&polygon] = polygon_id;
-				polygon_id++;
-			}
-		}
-
-		for (const Nav2D::Polygon& polygon : map_iteration->navlink_polygons) {
-			p_path_query_slot.poly_to_id[&polygon] = polygon_id;
-			polygon_id++;
-		}
-
-		DEV_ASSERT(p_path_query_slot.path_corridor.size() == p_path_query_slot.poly_to_id.size());
-	}
-
-	map_iteration->path_query_slots_mutex.unlock();
-}
-
-
-void NavRegionBuilder2D::build_iteration(NavRegionIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-
-	performance_data.pm_polygon_count = 0;
-	performance_data.pm_edge_count = 0;
-	performance_data.pm_edge_merge_count = 0;
-	performance_data.pm_edge_connection_count = 0;
-	performance_data.pm_edge_free_count = 0;
-
-	_build_step_process_navmesh_data(r_build);
-
-	_build_step_find_edge_connection_pairs(r_build);
-
-	_build_step_merge_edge_connection_pairs(r_build);
-
-	_build_update_iteration(r_build);
-}
-
-void NavRegionBuilder2D::_build_step_process_navmesh_data(NavRegionIterationBuild2D& r_build)
-{
-	Vector<Vector2> _navmesh_vertices = r_build.navmesh_data.vertices;
-	Vector<Vector<int>> _navmesh_polygons = r_build.navmesh_data.polygons;
-
-	if (_navmesh_vertices.is_empty() || _navmesh_polygons.is_empty()) {
-		return;
-	}
-
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-	Ref<NavIteration2D> region_iteration = r_build.region_iteration;
-
-	const Transform2D& region_transform = region_iteration->transform;
-	LocalVector<Nav2D::Polygon>& navmesh_polygons = region_iteration->navmesh_polygons;
-
-	const int vertex_count = _navmesh_vertices.size();
-
-	const Vector2* vertices_ptr = _navmesh_vertices.ptr();
-	const Vector<int>* polygons_ptr = _navmesh_polygons.ptr();
-
-	navmesh_polygons.resize(_navmesh_polygons.size());
-
-	real_t _new_region_surface_area = 0.0;
-	Rect2 _new_region_bounds;
-
-	bool first_vertex = true;
-
-	for (uint32_t i = 0; i < navmesh_polygons.size(); i++) {
-		Nav2D::Polygon& polygon = navmesh_polygons[i];
-		polygon.id = i;
-		polygon.owner = region_iteration.ptr();
-		polygon.surface_area = 0.0;
-
-		Vector<int> polygon_indices = polygons_ptr[i];
-
-		int polygon_size = polygon_indices.size();
-		if (polygon_size < 3) {
-			continue;
-		}
-
-		const int* indices_ptr = polygon_indices.ptr();
-
-		bool polygon_valid = true;
-
-		polygon.vertices.resize(polygon_size);
-
-		{
-			real_t _new_polygon_surface_area = 0.0;
-
-			for (int j(2); j < polygon_size; j++) {
-				const Triangle2 triangle =
-					Triangle2(region_transform.xform(vertices_ptr[indices_ptr[0]]),
-						region_transform.xform(vertices_ptr[indices_ptr[j - 1]]),
-						region_transform.xform(vertices_ptr[indices_ptr[j]]));
-
-				_new_polygon_surface_area += triangle.get_area();
-			}
-
-			polygon.surface_area = _new_polygon_surface_area;
-			_new_region_surface_area += _new_polygon_surface_area;
-		}
-
-		for (int j(0); j < polygon_size; j++) {
-			int vertex_index = indices_ptr[j];
-			if (vertex_index < 0 || vertex_index >= vertex_count) {
-				polygon_valid = false;
-				break;
-			}
-
-			const Vector2 point_position = region_transform.xform(vertices_ptr[vertex_index]);
-			polygon.vertices[j] = point_position;
-
-			if (first_vertex) {
-				first_vertex = false;
-				_new_region_bounds.position = point_position;
-			}
-			else {
-				_new_region_bounds.expand_to(point_position);
-			}
-		}
-
-		if (!polygon_valid) {
-			polygon.surface_area = 0.0;
-			polygon.vertices.clear();
-			ERR_FAIL_COND_MSG(!polygon_valid, "Corrupted navigation mesh set on region. The "
-											  "indices of a polygon are out of range.");
-		}
-	}
-
-	region_iteration->surface_area = _new_region_surface_area;
-	region_iteration->bounds = _new_region_bounds;
-
-	performance_data.pm_polygon_count = navmesh_polygons.size();
-}
-
-Nav2D::PointKey NavRegionBuilder2D::get_point_key(const Vector2& p_pos, const Vector2& p_cell_size)
-{
-	const int x = static_cast<int>(Math::floor(p_pos.x / p_cell_size.x));
-	const int y = static_cast<int>(Math::floor(p_pos.y / p_cell_size.y));
-
-	Nav2D::PointKey p;
-	p.key = 0;
-	p.x = x;
-	p.y = y;
-	return p;
-}
-
-Nav2D::EdgeKey NavRegionBuilder2D::get_edge_key(
-	const Vector2& p_vertex1, const Vector2& p_vertex2, const Vector2& p_cell_size)
-{
-	Nav2D::EdgeKey ek(get_point_key(p_vertex1, p_cell_size), get_point_key(p_vertex2, p_cell_size));
-	return ek;
-}
-
-void NavRegionBuilder2D::_build_step_find_edge_connection_pairs(NavRegionIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-
-	const Vector2& map_cell_size = r_build.map_cell_size;
-	Ref<NavIteration2D> region_iteration = r_build.region_iteration;
-	LocalVector<Nav2D::Polygon>& navmesh_polygons = region_iteration->navmesh_polygons;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-	connection_pairs_map.clear();
-
-	region_iteration->internal_connections.clear();
-	region_iteration->internal_connections.resize(navmesh_polygons.size());
-
-	region_iteration->external_edges.clear();
-
-	int free_edges_count = 0;
-	int edge_merge_error_count = 0;
-
-	for (Nav2D::Polygon& poly : region_iteration->navmesh_polygons) {
-		for (uint32_t p = 0; p < poly.vertices.size(); p++) {
-			const int next_point = (p + 1) % poly.vertices.size();
-			const Nav2D::EdgeKey ek =
-				get_edge_key(poly.vertices[p], poly.vertices[next_point], map_cell_size);
-
-			HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>::Iterator pair_it =
-				connection_pairs_map.find(ek);
-			if (!pair_it) {
-				pair_it = connection_pairs_map.insert(ek, Nav2D::EdgeConnectionPair());
-				performance_data.pm_edge_count += 1;
-				++free_edges_count;
-			}
-			Nav2D::EdgeConnectionPair& pair = pair_it->value;
-			if (pair.size < 2) {
-				// Add the polygon/edge tuple to this key.
-				Nav2D::Connection new_connection;
-				new_connection.polygon = &poly;
-				new_connection.edge = p;
-				new_connection.pathway_start = poly.vertices[p];
-				new_connection.pathway_end = poly.vertices[next_point];
-
-				pair.connections[pair.size] = new_connection;
-				++pair.size;
-				if (pair.size == 2) {
-					--free_edges_count;
-				}
-
-			}
-			else {
-				// The edge is already connected with another edge, skip.
-				edge_merge_error_count++;
-			}
-		}
-	}
-
-	if (edge_merge_error_count > 0 &&
-		GLOBAL_GET_CACHED(bool, "navigation/2d/warnings/navmesh_edge_merge_errors")) {
-		WARN_PRINT(
-			"Navigation region synchronization had " + itos(edge_merge_error_count) +
-			" edge error(s).\nMore than 2 edges tried to occupy the same map rasterization "
-			"space.\nThis causes a logical error in the navigation mesh geometry and is commonly "
-			"caused by overlap or too densely placed edges.\nConsider baking with a higher "
-			"'cell_size', greater geometry margin, and less detailed bake objects to cause fewer "
-			"edges.\nConsider lowering the 'navigation/2d/merge_rasterizer_cell_scale' in the "
-			"project settings.\nThis warning can be toggled under "
-			"'navigation/2d/warnings/navmesh_edge_merge_errors' in the project settings.");
-	}
-
-	performance_data.pm_edge_free_count = free_edges_count;
-}
-
-void NavRegionBuilder2D::_build_step_merge_edge_connection_pairs(NavRegionIterationBuild2D& r_build)
-{
-	Nav2D::PerformanceData& performance_data = r_build.performance_data;
-
-	Ref<NavIteration2D> region_iteration = r_build.region_iteration;
-
-	HashMap<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair, Nav2D::EdgeKey>& connection_pairs_map =
-		r_build.iter_connection_pairs_map;
-
-	for (const KeyValue<Nav2D::EdgeKey, Nav2D::EdgeConnectionPair>& pair_it : connection_pairs_map) {
-		const Nav2D::EdgeConnectionPair& pair = pair_it.value;
-		if (pair.size == 2) {
-			// Connect edge that are shared in different polygons.
-			const Nav2D::Connection& c1 = pair.connections[0];
-			const Nav2D::Connection& c2 = pair.connections[1];
-			region_iteration->internal_connections[c1.polygon->id].push_back(c2);
-			region_iteration->internal_connections[c2.polygon->id].push_back(c1);
-			performance_data.pm_edge_merge_count += 1;
-
-		}
-		else {
-			ERR_FAIL_COND_MSG(
-				pair.size != 1, vformat("Number of connection != 1. Found: %d", pair.size));
-
-			const Nav2D::Connection& connection = pair.connections[0];
-
-			Nav2D::ConnectableEdge ce;
-			ce.ek = pair_it.key;
-			ce.polygon_index = connection.polygon->id;
-			ce.edge = connection.edge;
-			ce.pathway_start = connection.pathway_start;
-			ce.pathway_end = connection.pathway_end;
-
-			region_iteration->external_edges.push_back(ce);
-		}
-	}
-}
-
-void NavRegionBuilder2D::_build_update_iteration(NavRegionIterationBuild2D& r_build)
-{
-	ERR_FAIL_NULL(r_build.region);
-	// Stub. End of the build.
-}
-
-
-#define THREE_POINTS_CROSS_PRODUCT(m_a, m_b, m_c) (-((m_c) - (m_a)).cross((m_b) - (m_a)))
-
-Vector2 NavMeshQueries2D::polygons_get_random_point(
-	const LocalVector<Nav2D::Polygon>& p_polygons, uint32_t p_navigation_layers, bool p_uniformly)
-{
-	const LocalVector<Nav2D::Polygon>& region_polygons = p_polygons;
-
-	if (region_polygons.is_empty()) {
-		return Vector2();
-	}
-
-	if (p_uniformly) {
-		real_t accumulated_area = 0;
-		RBMap<real_t, uint32_t> region_area_map;
-
-		for (uint32_t rp_index = 0; rp_index < region_polygons.size(); rp_index++) {
-			const Nav2D::Polygon& region_polygon = region_polygons[rp_index];
-			real_t polyon_area = region_polygon.surface_area;
-
-			if (polyon_area == 0.0) {
-				continue;
-			}
-			region_area_map[accumulated_area] = rp_index;
-			accumulated_area += polyon_area;
-		}
-		if (region_area_map.is_empty() || accumulated_area == 0) {
-			// All polygons have no real surface / no area.
-			return Vector2();
-		}
-
-		real_t region_area_map_pos = Math::random(real_t(0), accumulated_area);
-
-		RBMap<real_t, uint32_t>::Iterator region_E =
-			region_area_map.find_closest(region_area_map_pos);
-		ERR_FAIL_COND_V(!region_E, Vector2());
-		uint32_t rrp_polygon_index = region_E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(rrp_polygon_index, region_polygons.size(), Vector2());
-
-		const Nav2D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
-
-		real_t accumulated_polygon_area = 0;
-		RBMap<real_t, uint32_t> polygon_area_map;
-
-		for (uint32_t rpp_index = 2; rpp_index < rr_polygon.vertices.size(); rpp_index++) {
-			real_t triangle_area = Triangle2(rr_polygon.vertices[0],
-				rr_polygon.vertices[rpp_index - 1], rr_polygon.vertices[rpp_index])
-									   .get_area();
-
-			if (triangle_area == 0.0) {
-				continue;
-			}
-			polygon_area_map[accumulated_polygon_area] = rpp_index;
-			accumulated_polygon_area += triangle_area;
-		}
-		if (polygon_area_map.is_empty() || accumulated_polygon_area == 0) {
-			// All faces have no real surface / no area.
-			return Vector2();
-		}
-
-		real_t polygon_area_map_pos = Math::random(real_t(0), accumulated_polygon_area);
-
-		RBMap<real_t, uint32_t>::Iterator polygon_E =
-			polygon_area_map.find_closest(polygon_area_map_pos);
-		ERR_FAIL_COND_V(!polygon_E, Vector2());
-		uint32_t rrp_face_index = polygon_E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(rrp_face_index, rr_polygon.vertices.size(), Vector2());
-
-		const Triangle2 triangle(rr_polygon.vertices[0], rr_polygon.vertices[rrp_face_index - 1],
-			rr_polygon.vertices[rrp_face_index]);
-
-		Vector2 triangle_random_position = triangle.get_random_point_inside();
-		return triangle_random_position;
-
-	}
-	else {
-		uint32_t rrp_polygon_index = Math::random(int(0), region_polygons.size() - 1);
-
-		const Nav2D::Polygon& rr_polygon = region_polygons[rrp_polygon_index];
-
-		uint32_t rrp_face_index = Math::random(int(2), rr_polygon.vertices.size() - 1);
-
-		const Triangle2 triangle(rr_polygon.vertices[0], rr_polygon.vertices[rrp_face_index - 1],
-			rr_polygon.vertices[rrp_face_index]);
-
-		Vector2 triangle_random_position = triangle.get_random_point_inside();
-		return triangle_random_position;
-	}
-}
-
-void NavMeshQueries2D::_query_task_find_start_end_positions(
-	NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration)
-{
-	real_t begin_d = FLT_MAX;
-	real_t end_d = FLT_MAX;
-
-	const LocalVector<Ref<NavIteration2D>>& regions = p_map_iteration.region_iterations;
-
-	for (const Ref<NavIteration2D>& region : regions) {
-		if (!_query_task_is_connection_owner_usable(p_query_task, region.ptr())) {
-			continue;
-		}
-
-		// Find the initial poly and the end poly on this map.
-		for (const Nav2D::Polygon& p : region->get_navmesh_polygons()) {
-			// Only consider the polygon if it in a region with compatible layers.
-			if ((p_query_task.navigation_layers & p.owner->get_navigation_layers()) == 0) {
-				continue;
-			}
-
-			// For each triangle check the distance between the origin/destination.
-			for (uint32_t point_id = 2; point_id < p.vertices.size(); point_id++) {
-				const Triangle2 triangle(
-					p.vertices[0], p.vertices[point_id - 1], p.vertices[point_id]);
-
-				Vector2 point = triangle.get_closest_point_to(p_query_task.start_position);
-				real_t distance_to_point = point.distance_to(p_query_task.start_position);
-				if (distance_to_point < begin_d) {
-					begin_d = distance_to_point;
-					p_query_task.begin_polygon = &p;
-					p_query_task.begin_position = point;
-				}
-
-				point = triangle.get_closest_point_to(p_query_task.target_position);
-				distance_to_point = point.distance_to(p_query_task.target_position);
-				if (distance_to_point < end_d) {
-					end_d = distance_to_point;
-					p_query_task.end_polygon = &p;
-					p_query_task.end_position = point;
-				}
-			}
-		}
-	}
-}
-
-void NavMeshQueries2D::_query_task_search_polygon_connections(NavMeshPathQueryTask2D& p_query_task,
-	const Nav2D::Connection& p_connection, uint32_t p_least_cost_id,
-	const Nav2D::NavigationPoly& p_least_cost_poly, real_t p_poly_enter_cost, const Vector2& p_end_point)
-{
-	const NavIteration2D* connection_owner = p_connection.polygon->owner;
-	ERR_FAIL_NULL(connection_owner);
-	const bool owner_is_usable =
-		_query_task_is_connection_owner_usable(p_query_task, connection_owner);
-	if (!owner_is_usable) {
-		return;
-	}
-
-	Heap<Nav2D::NavigationPoly*, Nav2D::NavPolyTravelCostGreaterThan, Nav2D::NavPolyHeapIndexer>& traversable_polys =
-		p_query_task.path_query_slot->traversable_polys;
-	LocalVector<Nav2D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	real_t poly_travel_cost = p_least_cost_poly.poly->owner->get_travel_cost();
-
-	Vector2 new_entry = Geometry2D::get_closest_point_to_segment(
-		p_least_cost_poly.entry, p_connection.pathway_start, p_connection.pathway_end);
-	real_t new_traveled_distance =
-		p_least_cost_poly.entry.distance_to(new_entry) * poly_travel_cost + p_poly_enter_cost +
-		p_least_cost_poly.traveled_distance;
-
-	// Check if the neighbor polygon has already been processed.
-	Nav2D::NavigationPoly& neighbor_poly =
-		navigation_polys[p_query_task.path_query_slot->poly_to_id[p_connection.polygon]];
-	if (new_traveled_distance < neighbor_poly.traveled_distance) {
-		// Add the polygon to the heap of polygons to traverse next.
-		neighbor_poly.back_navigation_poly_id = p_least_cost_id;
-		neighbor_poly.back_navigation_edge = p_connection.edge;
-		neighbor_poly.back_navigation_edge_pathway_start = p_connection.pathway_start;
-		neighbor_poly.back_navigation_edge_pathway_end = p_connection.pathway_end;
-		neighbor_poly.traveled_distance = new_traveled_distance;
-		neighbor_poly.distance_to_destination =
-			new_entry.distance_to(p_end_point) * connection_owner->get_travel_cost();
-		neighbor_poly.entry = new_entry;
-
-		if (neighbor_poly.traversable_poly_index != traversable_polys.INVALID_INDEX) {
-			traversable_polys.shift(neighbor_poly.traversable_poly_index);
-		}
-		else {
-			neighbor_poly.poly = p_connection.polygon;
-			traversable_polys.push(&neighbor_poly);
-		}
-	}
-}
-
-void NavMeshQueries2D::_query_task_build_path_corridor(
-	NavMeshPathQueryTask2D& p_query_task, const NavMapIteration2D& p_map_iteration)
-{
-	const Vector2 p_target_position = p_query_task.target_position;
-	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
-	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector2 begin_point = p_query_task.begin_position;
-	Vector2 end_point = p_query_task.end_position;
-
-	// Heap of polygons to travel next.
-	Heap<Nav2D::NavigationPoly*, Nav2D::NavPolyTravelCostGreaterThan, Nav2D::NavPolyHeapIndexer>& traversable_polys =
-		p_query_task.path_query_slot->traversable_polys;
-	traversable_polys.clear();
-
-	LocalVector<Nav2D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-	for (Nav2D::NavigationPoly& polygon : navigation_polys) {
-		polygon.reset();
-	}
-
-	// Initialize the matching navigation polygon.
-	Nav2D::NavigationPoly& begin_navigation_poly =
-		navigation_polys[p_query_task.path_query_slot->poly_to_id[begin_poly]];
-	begin_navigation_poly.poly = begin_poly;
-	begin_navigation_poly.entry = begin_point;
-	begin_navigation_poly.back_navigation_edge_pathway_start = begin_point;
-	begin_navigation_poly.back_navigation_edge_pathway_end = begin_point;
-	begin_navigation_poly.traveled_distance = 0.f;
-
-	// This is an implementation of the A* algorithm.
-	uint32_t least_cost_id = p_query_task.path_query_slot->poly_to_id[begin_poly];
-	bool found_route = false;
-
-	const Nav2D::Polygon* reachable_end = nullptr;
-	real_t distance_to_reachable_end = FLT_MAX;
-	bool is_reachable = true;
-	real_t poly_enter_cost = 0.0;
-
-	const HashMap<const NavIteration2D*, LocalVector<LocalVector<Nav2D::Connection>>>&
-		navbases_polygons_external_connections =
-			p_map_iteration.navbases_polygons_external_connections;
-
-	// True if we reached the max polygon search count or distance from the begin position.
-	bool path_search_max_reached = false;
-
-	const float path_search_max_distance_sqr =
-		p_query_task.path_search_max_distance * p_query_task.path_search_max_distance;
-	bool has_path_search_max_distance = path_search_max_distance_sqr > 0.0;
-
-	int processed_polygon_count = 0;
-	bool has_path_search_max_polygons = p_query_task.path_search_max_polygons > 0;
-
-	bool has_path_search_max =
-		p_query_task.path_search_max_polygons > 0 || path_search_max_distance_sqr > 0.0;
-
-	while (true) {
-		const Nav2D::NavigationPoly& least_cost_poly = navigation_polys[least_cost_id];
-
-		const NavIteration2D* least_cost_navbase = least_cost_poly.poly->owner;
-
-		processed_polygon_count += 1;
-
-		const uint32_t navbase_local_polygon_id = least_cost_poly.poly->id;
-		const LocalVector<LocalVector<Nav2D::Connection>>& navbase_polygons_to_connections =
-			least_cost_poly.poly->owner->get_internal_connections();
-
-		if (navbase_polygons_to_connections.size() > 0) {
-			const LocalVector<Nav2D::Connection>& polygon_connections =
-				navbase_polygons_to_connections[navbase_local_polygon_id];
-
-			for (const Nav2D::Connection& connection : polygon_connections) {
-				_query_task_search_polygon_connections(p_query_task, connection, least_cost_id,
-					least_cost_poly, poly_enter_cost, end_point);
-			}
-		}
-
-		// Search region external navmesh polygon connections, aka connections to other regions
-		// created by outline edge merge or links.
-		for (const Nav2D::Connection& connection :
-			navbases_polygons_external_connections[least_cost_navbase][navbase_local_polygon_id]) {
-			_query_task_search_polygon_connections(p_query_task, connection, least_cost_id,
-				least_cost_poly, poly_enter_cost, end_point);
-		}
-
-		if (has_path_search_max && !path_search_max_reached) {
-			if (has_path_search_max_polygons &&
-				processed_polygon_count >= p_query_task.path_search_max_polygons) {
-				path_search_max_reached = true;
-				traversable_polys.clear();
-			}
-			else if (has_path_search_max_distance &&
-					   begin_point.distance_squared_to(least_cost_poly.entry) >
-						   path_search_max_distance_sqr) {
-				path_search_max_reached = true;
-				traversable_polys.clear();
-			}
-		}
-
-		poly_enter_cost = 0;
-		// When the heap of traversable polygons is empty at this point it means the end polygon is
-		// unreachable.
-		if (traversable_polys.is_empty()) {
-			// Thus use the further reachable polygon
-			ERR_BREAK_MSG(is_reachable == false,
-				"Invalid navigation index or connection pointers. Check "
-				"preceding navmesh geometry or placement errors.");
-			is_reachable = false;
-			if (reachable_end == nullptr) {
-				// The path is not found and there is not a way out.
-				break;
-			}
-
-			// Set as end point the furthest reachable point.
-			end_poly = reachable_end;
-			real_t end_d = FLT_MAX;
-
-			for (uint32_t point_id = 2; point_id < end_poly->vertices.size(); point_id++) {
-				Triangle2 t(end_poly->vertices[0], end_poly->vertices[point_id - 1],
-					end_poly->vertices[point_id]);
-				Vector2 spoint = t.get_closest_point_to(p_target_position);
-				real_t dpoint = spoint.distance_squared_to(p_target_position);
-				if (dpoint < end_d) {
-					end_point = spoint;
-					end_d = dpoint;
-				}
-			}
-
-			// Search all faces of start polygon as well.
-			bool closest_point_on_start_poly = false;
-
-			for (uint32_t point_id = 2; point_id < begin_poly->vertices.size(); point_id++) {
-				Triangle2 t(begin_poly->vertices[0], begin_poly->vertices[point_id - 1],
-					begin_poly->vertices[point_id]);
-				Vector2 spoint = t.get_closest_point_to(p_target_position);
-				real_t dpoint = spoint.distance_squared_to(p_target_position);
-				if (dpoint < end_d) {
-					end_point = spoint;
-					end_d = dpoint;
-					closest_point_on_start_poly = true;
-				}
-			}
-
-			if (closest_point_on_start_poly) {
-				// No point to run PostProcessing when start and end convex polygon is the same.
-				p_query_task.path_clear();
-
-				_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-				_query_task_push_back_point_with_metadata(p_query_task, end_point, begin_poly);
-				p_query_task.status = NavMeshPathQueryTask2D::TaskStatus::QUERY_FINISHED;
-				return;
-			}
-
-			for (Nav2D::NavigationPoly& nav_poly : navigation_polys) {
-				nav_poly.poly = nullptr;
-				nav_poly.traveled_distance = FLT_MAX;
-			}
-			uint32_t _bp_id = p_query_task.path_query_slot->poly_to_id[begin_poly];
-			navigation_polys[_bp_id].poly = begin_poly;
-			navigation_polys[_bp_id].traveled_distance = 0;
-			least_cost_id = _bp_id;
-			reachable_end = nullptr;
-		}
-		else {
-			// Pop the polygon with the lowest travel cost from the heap of traversable polygons.
-			least_cost_id = p_query_task.path_query_slot->poly_to_id[traversable_polys.pop()->poly];
-
-			// Store the farthest reachable end polygon in case our goal is not reachable.
-			if (is_reachable) {
-				real_t distance =
-					navigation_polys[least_cost_id].entry.distance_squared_to(p_target_position);
-				if (distance_to_reachable_end > distance) {
-					distance_to_reachable_end = distance;
-					reachable_end = navigation_polys[least_cost_id].poly;
-				}
-			}
-
-			// Check if we reached the end
-			if (navigation_polys[least_cost_id].poly == end_poly) {
-				found_route = true;
-				break;
-			}
-
-			if (navigation_polys[least_cost_id].poly->owner->get_self() !=
-				least_cost_poly.poly->owner->get_self()) {
-				ERR_FAIL_NULL(least_cost_poly.poly->owner);
-				poly_enter_cost = least_cost_poly.poly->owner->get_enter_cost();
-			}
-		}
-	}
-
-	// We did not find a route but we have both a start polygon and an end polygon at this point.
-	// Usually this happens because there was not a single external or internal connected edge, e.g.
-	// our start polygon is an isolated, single convex polygon.
-	if (!found_route) {
-		real_t end_d = FLT_MAX;
-		// Search all faces of the start polygon for the closest point to our target position.
-
-		for (uint32_t point_id = 2; point_id < begin_poly->vertices.size(); point_id++) {
-			Triangle2 t(begin_poly->vertices[0], begin_poly->vertices[point_id - 1],
-				begin_poly->vertices[point_id]);
-			Vector2 spoint = t.get_closest_point_to(p_target_position);
-			real_t dpoint = spoint.distance_squared_to(p_target_position);
-			if (dpoint < end_d) {
-				end_point = spoint;
-				end_d = dpoint;
-			}
-		}
-
-		p_query_task.path_clear();
-
-		_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-		_query_task_push_back_point_with_metadata(p_query_task, end_point, begin_poly);
-		p_query_task.status = NavMeshPathQueryTask2D::TaskStatus::QUERY_FINISHED;
-	}
-	else {
-		p_query_task.end_position = end_point;
-		p_query_task.end_polygon = end_poly;
-		p_query_task.begin_position = begin_point;
-		p_query_task.begin_polygon = begin_poly;
-		p_query_task.least_cost_id = least_cost_id;
-	}
-}
-
-float NavMeshQueries2D::_calculate_path_length(
-	const LocalVector<Vector2>& p_path, uint32_t p_start_index, uint32_t p_end_index)
-{
-	const uint32_t path_size = p_path.size();
-	if (path_size < 2) {
-		return 0.0;
-	}
-
-	ERR_FAIL_COND_V(p_start_index >= p_end_index, 0.0);
-	ERR_FAIL_COND_V(p_start_index >= path_size - 1, 0.0);
-	ERR_FAIL_COND_V(p_end_index >= path_size, 0.0);
-
-	const Vector2* path_ptr = p_path.ptr();
-
-	float path_length = 0.0;
-
-	for (uint32_t i = p_start_index; i < p_end_index; i++) {
-		const Vector2& vertex1 = path_ptr[i];
-		const Vector2& vertex2 = path_ptr[i + 1];
-		float edge_length = vertex1.distance_to(vertex2);
-		path_length += edge_length;
-	}
-
-	return path_length;
-}
-
-void NavMeshQueries2D::_query_task_post_process_corridorfunnel(NavMeshPathQueryTask2D& p_query_task)
-{
-	Vector2 end_point = p_query_task.end_position;
-	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector2 begin_point = p_query_task.begin_position;
-	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav2D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	// Set the apex poly/point to the end point.
-	Nav2D::NavigationPoly* apex_poly = &navigation_polys[least_cost_id];
-
-	const Vector2 back_edge_closest_point = Geometry2D::get_closest_point_to_segment(end_point,
-		apex_poly->back_navigation_edge_pathway_start, apex_poly->back_navigation_edge_pathway_end);
-	if (end_point.is_equal_approx(back_edge_closest_point)) {
-		// The end point is basically on top of the last crossed edge, funneling around the corners
-		// would at best do nothing. At worst it would add an unwanted path point before the last
-		// point due to precision issues so skip to the next polygon.
-		if (apex_poly->back_navigation_poly_id != -1) {
-			apex_poly = &navigation_polys[apex_poly->back_navigation_poly_id];
-		}
-	}
-
-	Vector2 apex_point = end_point;
-
-	Nav2D::NavigationPoly* left_poly = apex_poly;
-	Vector2 left_portal = apex_point;
-	Nav2D::NavigationPoly* right_poly = apex_poly;
-	Vector2 right_portal = apex_point;
-
-	Nav2D::NavigationPoly* p = apex_poly;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	while (p) {
-		// Set left and right points of the pathway between polygons.
-		Vector2 left = p->back_navigation_edge_pathway_start;
-		Vector2 right = p->back_navigation_edge_pathway_end;
-		if (THREE_POINTS_CROSS_PRODUCT(apex_point, left, right) < 0) {
-			SWAP(left, right);
-		}
-
-		bool skip = false;
-		if (THREE_POINTS_CROSS_PRODUCT(apex_point, left_portal, left) >= 0) {
-			// Process.
-			if (left_portal == apex_point ||
-				THREE_POINTS_CROSS_PRODUCT(apex_point, left, right_portal) > 0) {
-				left_poly = p;
-				left_portal = left;
-			}
-			else {
-				_query_task_clip_path(p_query_task, apex_poly, right_portal, right_poly);
-
-				apex_point = right_portal;
-				p = right_poly;
-				left_poly = p;
-				apex_poly = p;
-				left_portal = apex_point;
-				right_portal = apex_point;
-
-				_query_task_push_back_point_with_metadata(
-					p_query_task, apex_point, apex_poly->poly);
-				skip = true;
-			}
-		}
-
-		if (!skip && THREE_POINTS_CROSS_PRODUCT(apex_point, right_portal, right) <= 0) {
-			// Process.
-			if (right_portal == apex_point ||
-				THREE_POINTS_CROSS_PRODUCT(apex_point, right, left_portal) < 0) {
-				right_poly = p;
-				right_portal = right;
-			}
-			else {
-				_query_task_clip_path(p_query_task, apex_poly, left_portal, left_poly);
-
-				apex_point = left_portal;
-				p = left_poly;
-				right_poly = p;
-				apex_poly = p;
-				right_portal = apex_point;
-				left_portal = apex_point;
-
-				_query_task_push_back_point_with_metadata(
-					p_query_task, apex_point, apex_poly->poly);
-			}
-		}
-
-		// Go to the previous polygon.
-		if (p->back_navigation_poly_id != -1) {
-			p = &navigation_polys[p->back_navigation_poly_id];
-		}
-		else {
-			// The end
-			p = nullptr;
-		}
-	}
-
-	// If the last point is not the begin point, add it to the list.
-	if (p_query_task.path_points[p_query_task.path_points.size() - 1] != begin_point) {
-		_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-	}
-}
-
-void NavMeshQueries2D::_query_task_post_process_edgecentered(NavMeshPathQueryTask2D& p_query_task)
-{
-	Vector2 end_point = p_query_task.end_position;
-	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector2 begin_point = p_query_task.begin_position;
-	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav2D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	// Add mid points.
-	int np_id = least_cost_id;
-	while (np_id != -1 && navigation_polys[np_id].back_navigation_poly_id != -1) {
-		if (navigation_polys[np_id].back_navigation_edge != -1) {
-			int prev = navigation_polys[np_id].back_navigation_edge;
-			int prev_n = (navigation_polys[np_id].back_navigation_edge + 1) %
-						 navigation_polys[np_id].poly->vertices.size();
-			Vector2 point = (navigation_polys[np_id].poly->vertices[prev] +
-								navigation_polys[np_id].poly->vertices[prev_n]) *
-							0.5;
-
-			_query_task_push_back_point_with_metadata(
-				p_query_task, point, navigation_polys[np_id].poly);
-		}
-		else {
-			_query_task_push_back_point_with_metadata(
-				p_query_task, navigation_polys[np_id].entry, navigation_polys[np_id].poly);
-		}
-
-		np_id = navigation_polys[np_id].back_navigation_poly_id;
-	}
-
-	_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-}
-
-void NavMeshQueries2D::_query_task_post_process_nopostprocessing(
-	NavMeshPathQueryTask2D& p_query_task)
-{
-	Vector2 end_point = p_query_task.end_position;
-	const Nav2D::Polygon* end_poly = p_query_task.end_polygon;
-	Vector2 begin_point = p_query_task.begin_position;
-	const Nav2D::Polygon* begin_poly = p_query_task.begin_polygon;
-	uint32_t least_cost_id = p_query_task.least_cost_id;
-	LocalVector<Nav2D::NavigationPoly>& navigation_polys = p_query_task.path_query_slot->path_corridor;
-
-	_query_task_push_back_point_with_metadata(p_query_task, end_point, end_poly);
-
-	// Add mid points.
-	int np_id = least_cost_id;
-	while (np_id != -1 && navigation_polys[np_id].back_navigation_poly_id != -1) {
-		_query_task_push_back_point_with_metadata(
-			p_query_task, navigation_polys[np_id].entry, navigation_polys[np_id].poly);
-
-		np_id = navigation_polys[np_id].back_navigation_poly_id;
-	}
-
-	_query_task_push_back_point_with_metadata(p_query_task, begin_point, begin_poly);
-}
-
-Vector2 NavMeshQueries2D::map_iteration_get_closest_point(
-	const NavMapIteration2D& p_map_iteration, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult cp = map_iteration_get_closest_point_info(p_map_iteration, p_point);
-	return cp.point;
-}
-
-RID NavMeshQueries2D::map_iteration_get_closest_point_owner(
-	const NavMapIteration2D& p_map_iteration, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult cp = map_iteration_get_closest_point_info(p_map_iteration, p_point);
-	return cp.owner;
-}
-
-Nav2D::ClosestPointQueryResult NavMeshQueries2D::map_iteration_get_closest_point_info(
-	const NavMapIteration2D& p_map_iteration, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult result;
-	real_t closest_point_distance_squared = FLT_MAX;
-
-	// TODO: Check for further 2D improvements.
-
-	const LocalVector<Ref<NavIteration2D>>& regions = p_map_iteration.region_iterations;
-	for (const Ref<NavIteration2D>& region : regions) {
-		for (const Nav2D::Polygon& polygon : region->get_navmesh_polygons()) {
-			real_t cross = -(polygon.vertices[1] - polygon.vertices[0])
-								.cross(polygon.vertices[2] - polygon.vertices[0]);
-			Vector2 closest_on_polygon;
-			real_t closest = FLT_MAX;
-			bool inside = true;
-			Vector2 previous = polygon.vertices[polygon.vertices.size() - 1];
-			for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
-				Vector2 edge = polygon.vertices[point_id] - previous;
-				Vector2 to_point = p_point - previous;
-				real_t edge_to_point_cross = -edge.cross(to_point);
-				bool clockwise = (edge_to_point_cross * cross) > 0;
-				// If we are not clockwise, the point will never be inside the polygon and so the
-				// closest point will be on an edge.
-				if (!clockwise) {
-					inside = false;
-					real_t point_projected_on_edge = edge.dot(to_point);
-					real_t edge_square = edge.length_squared();
-
-					if (point_projected_on_edge > edge_square) {
-						real_t distance = polygon.vertices[point_id].distance_squared_to(p_point);
-						if (distance < closest) {
-							closest_on_polygon = polygon.vertices[point_id];
-							closest = distance;
-						}
-					}
-					else if (point_projected_on_edge < 0.0) {
-						real_t distance = previous.distance_squared_to(p_point);
-						if (distance < closest) {
-							closest_on_polygon = previous;
-							closest = distance;
-						}
-					}
-					else {
-						// If we project on this edge, this will be the closest point.
-						real_t percent = point_projected_on_edge / edge_square;
-						closest_on_polygon = previous + percent * edge;
-						break;
-					}
-				}
-				previous = polygon.vertices[point_id];
-			}
-
-			if (inside) {
-				closest_point_distance_squared = 0.0;
-				result.point = p_point;
-				result.owner = polygon.owner->get_self();
-
-				break;
-			}
-			else {
-				real_t distance = closest_on_polygon.distance_squared_to(p_point);
-				if (distance < closest_point_distance_squared) {
-					closest_point_distance_squared = distance;
-					result.point = closest_on_polygon;
-					result.owner = polygon.owner->get_self();
-				}
-			}
-		}
-	}
-
-	return result;
-}
-
-Vector2 NavMeshQueries2D::map_iteration_get_random_point(
-	const NavMapIteration2D& p_map_iteration, uint32_t p_navigation_layers, bool p_uniformly)
-{
-	if (p_map_iteration.region_iterations.is_empty()) {
-		return Vector2();
-	}
-
-	LocalVector<uint32_t> accessible_regions;
-	accessible_regions.reserve(p_map_iteration.region_iterations.size());
-
-	for (uint32_t i = 0; i < p_map_iteration.region_iterations.size(); i++) {
-		const Ref<NavIteration2D>& region = p_map_iteration.region_iterations[i];
-		if (!region->get_enabled() ||
-			(p_navigation_layers & region->get_navigation_layers()) == 0) {
-			continue;
-		}
-		accessible_regions.push_back(i);
-	}
-
-	if (accessible_regions.is_empty()) {
-		// All existing region polygons are disabled.
-		return Vector2();
-	}
-
-	if (p_uniformly) {
-		real_t accumulated_region_surface_area = 0;
-		RBMap<real_t, uint32_t> accessible_regions_area_map;
-
-		for (uint32_t accessible_region_index = 0;
-			 accessible_region_index < accessible_regions.size(); accessible_region_index++) {
-			const Ref<NavIteration2D>& region =
-				p_map_iteration.region_iterations[accessible_regions[accessible_region_index]];
-
-			real_t region_surface_area = region->surface_area;
-
-			if (region_surface_area == 0.0f) {
-				continue;
-			}
-
-			accessible_regions_area_map[accumulated_region_surface_area] = accessible_region_index;
-			accumulated_region_surface_area += region_surface_area;
-		}
-		if (accessible_regions_area_map.is_empty() || accumulated_region_surface_area == 0) {
-			// All faces have no real surface / no area.
-			return Vector2();
-		}
-
-		real_t random_accessible_regions_area_map =
-			Math::random(real_t(0), accumulated_region_surface_area);
-
-		RBMap<real_t, uint32_t>::Iterator E =
-			accessible_regions_area_map.find_closest(random_accessible_regions_area_map);
-		ERR_FAIL_COND_V(!E, Vector2());
-		uint32_t random_region_index = E->value;
-		ERR_FAIL_UNSIGNED_INDEX_V(random_region_index, accessible_regions.size(), Vector2());
-
-		const Ref<NavIteration2D>& random_region =
-			p_map_iteration.region_iterations[accessible_regions[random_region_index]];
-
-		return NavMeshQueries2D::polygons_get_random_point(
-			random_region->navmesh_polygons, p_navigation_layers, p_uniformly);
-
-	}
-	else {
-		uint32_t random_region_index = Math::random(int(0), accessible_regions.size() - 1);
-
-		const Ref<NavIteration2D>& random_region =
-			p_map_iteration.region_iterations[accessible_regions[random_region_index]];
-
-		return NavMeshQueries2D::polygons_get_random_point(
-			random_region->navmesh_polygons, p_navigation_layers, p_uniformly);
-	}
-}
-
-Vector2 NavMeshQueries2D::polygons_get_closest_point(
-	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
-	return cp.point;
-}
-
-Nav2D::ClosestPointQueryResult NavMeshQueries2D::polygons_get_closest_point_info(
-	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult result;
-	real_t closest_point_distance_squared = FLT_MAX;
-
-	// TODO: Check for further 2D improvements.
-
-	for (const Nav2D::Polygon& polygon : p_polygons) {
-		real_t cross = -(polygon.vertices[1] - polygon.vertices[0])
-							.cross(polygon.vertices[2] - polygon.vertices[0]);
-		Vector2 closest_on_polygon;
-		real_t closest = FLT_MAX;
-		bool inside = true;
-		Vector2 previous = polygon.vertices[polygon.vertices.size() - 1];
-		for (uint32_t point_id = 0; point_id < polygon.vertices.size(); ++point_id) {
-			Vector2 edge = polygon.vertices[point_id] - previous;
-			Vector2 to_point = p_point - previous;
-			real_t edge_to_point_cross = -edge.cross(to_point);
-			bool clockwise = (edge_to_point_cross * cross) > 0;
-			// If we are not clockwise, the point will never be inside the polygon and so the
-			// closest point will be on an edge.
-			if (!clockwise) {
-				inside = false;
-				real_t point_projected_on_edge = edge.dot(to_point);
-				real_t edge_square = edge.length_squared();
-
-				if (point_projected_on_edge > edge_square) {
-					real_t distance = polygon.vertices[point_id].distance_squared_to(p_point);
-					if (distance < closest) {
-						closest_on_polygon = polygon.vertices[point_id];
-						closest = distance;
-					}
-				}
-				else if (point_projected_on_edge < 0.0) {
-					real_t distance = previous.distance_squared_to(p_point);
-					if (distance < closest) {
-						closest_on_polygon = previous;
-						closest = distance;
-					}
-				}
-				else {
-					// If we project on this edge, this will be the closest point.
-					real_t percent = point_projected_on_edge / edge_square;
-					closest_on_polygon = previous + percent * edge;
-					break;
-				}
-			}
-			previous = polygon.vertices[point_id];
-		}
-
-		if (inside) {
-			closest_point_distance_squared = 0.0;
-			result.point = p_point;
-			result.owner = polygon.owner->get_self();
-			break;
-		}
-		else {
-			real_t distance = closest_on_polygon.distance_squared_to(p_point);
-			if (distance < closest_point_distance_squared) {
-				closest_point_distance_squared = distance;
-				result.point = closest_on_polygon;
-				result.owner = polygon.owner->get_self();
-			}
-		}
-	}
-
-	return result;
-}
-
-RID NavMeshQueries2D::polygons_get_closest_point_owner(
-	const LocalVector<Nav2D::Polygon>& p_polygons, const Vector2& p_point)
-{
-	Nav2D::ClosestPointQueryResult cp = polygons_get_closest_point_info(p_polygons, p_point);
-	return cp.owner;
-}
-
-static bool _line_intersects_segment(const Vector2& p_line_normal, real_t p_line_d,
-	const Vector2& p_segment_begin, const Vector2& p_segment_end, Vector2& r_intersection)
-{
-	Vector2 segment = p_segment_begin - p_segment_end;
-	real_t den = p_line_normal.dot(segment);
-
-	if (Math::is_zero_approx(den)) {
-		return false;
-	}
-
-	real_t dist = (p_line_normal.dot(p_segment_begin) - p_line_d) / den;
-
-	if (dist < (real_t)-CMP_EPSILON || dist > (1.0 + (real_t)CMP_EPSILON)) {
-		return false;
-	}
-
-	r_intersection = p_segment_begin - segment * dist;
-	return true;
-}
-
-void NavMeshQueries2D::_query_task_clip_path(NavMeshPathQueryTask2D& p_query_task,
-	const Nav2D::NavigationPoly* p_from_poly, const Vector2& p_to_point, const Nav2D::NavigationPoly* p_to_poly)
-{
-	Vector2 from = p_query_task.path_points[p_query_task.path_points.size() - 1];
-	const LocalVector<Nav2D::NavigationPoly>& p_navigation_polys =
-		p_query_task.path_query_slot->path_corridor;
-
-	if (from.is_equal_approx(p_to_point)) {
-		return;
-	}
-
-	// Compute line parameters (equivalent to the Plane case in 3D).
-	const Vector2 normal = -(from - p_to_point).orthogonal().normalized();
-	const real_t d = normal.dot(from);
-
-	while (p_from_poly != p_to_poly) {
-		Vector2 pathway_start = p_from_poly->back_navigation_edge_pathway_start;
-		Vector2 pathway_end = p_from_poly->back_navigation_edge_pathway_end;
-
-		ERR_FAIL_COND(p_from_poly->back_navigation_poly_id == -1);
-		p_from_poly = &p_navigation_polys[p_from_poly->back_navigation_poly_id];
-
-		if (!pathway_start.is_equal_approx(pathway_end)) {
-			Vector2 inters;
-			if (_line_intersects_segment(normal, d, pathway_start, pathway_end, inters)) {
-				if (!inters.is_equal_approx(p_to_point) &&
-					!inters.is_equal_approx(
-						p_query_task.path_points[p_query_task.path_points.size() - 1])) {
-					_query_task_push_back_point_with_metadata(
-						p_query_task, inters, p_from_poly->poly);
-				}
-			}
-		}
-	}
-}
-
-bool NavMeshQueries2D::_query_task_is_connection_owner_usable(
-	const NavMeshPathQueryTask2D& p_query_task, const NavIteration2D* p_owner)
-{
-	ERR_FAIL_NULL_V(p_owner, false);
-
-	bool owner_usable = true;
-
-	if (!p_owner->get_enabled()) {
-		owner_usable = false;
-		return owner_usable;
-	}
-
-	if ((p_query_task.navigation_layers & p_owner->get_navigation_layers()) == 0) {
-		// Not usable. No matching bit between task filter bitmask and owner bitmask.
-		owner_usable = false;
-		return owner_usable;
-	}
-
-	if (p_query_task.exclude_regions || p_query_task.include_regions) {
-		switch (p_owner->get_type()) {
-		case NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_REGION: {
-			if (p_query_task.exclude_regions &&
-				p_query_task.excluded_regions.has(p_owner->get_self())) {
-				// Not usable. Exclude region filter is active and this region is excluded.
-				owner_usable = false;
-			}
-			else if (p_query_task.include_regions &&
-					   !p_query_task.included_regions.has(p_owner->get_self())) {
-				// Not usable. Include region filter is active and this region is not included.
-				owner_usable = false;
-			}
-		} break;
-		case NavigationEnums2D::PathSegmentType::PATH_SEGMENT_TYPE_LINK: {
-			const LocalVector<Nav2D::Polygon>& link_polygons = p_owner->get_navmesh_polygons();
-			if (link_polygons.size() != 2) {
-				// Not usable. Whatever this is, it is not a valid connected link.
-				owner_usable = false;
-			}
-			else {
-				const RID link_start_region = link_polygons[0].owner->get_self();
-				const RID link_end_region = link_polygons[1].owner->get_self();
-				if (p_query_task.exclude_regions &&
-					(p_query_task.excluded_regions.has(link_start_region) ||
-						p_query_task.excluded_regions.has(link_end_region))) {
-					// Not usable. Exclude region filter is active and at least one region of the
-					// link is excluded.
-					owner_usable = false;
-				}
-				if (p_query_task.include_regions &&
-					(!p_query_task.included_regions.has(link_start_region) ||
-						!p_query_task.excluded_regions.has(link_end_region))) {
-					// Not usable. Include region filter is active and not both regions of the links
-					// are included.
-					owner_usable = false;
-				}
-			}
-		} break;
-		}
-	}
-
-	return owner_usable;
-}
-
-LocalVector<uint32_t> NavMeshQueries2D::get_simplified_path_indices(
-	const LocalVector<Vector2>& p_path, real_t p_epsilon)
-{
-	p_epsilon = MAX(0.0, p_epsilon);
-	real_t squared_epsilon = p_epsilon * p_epsilon;
-
-	LocalVector<uint32_t> simplified_path_indices;
-	simplified_path_indices.reserve(p_path.size());
-	simplified_path_indices.push_back(0);
-	simplify_path_segment(0, p_path.size() - 1, p_path, squared_epsilon, simplified_path_indices);
-	simplified_path_indices.push_back(p_path.size() - 1);
-
-	return simplified_path_indices;
-}
-
-void NavMeshQueries2D::simplify_path_segment(int p_start_inx, int p_end_inx,
-	const LocalVector<Vector2>& p_points, real_t p_epsilon,
-	LocalVector<uint32_t>& r_simplified_path_indices)
-{
-	real_t point_max_distance = 0.0;
-	int point_max_index = 0;
-
-	for (int i = p_start_inx; i < p_end_inx; i++) {
-		const Vector2& checked_point = p_points[i];
-
-		const Vector2 closest_point = Geometry2D::get_closest_point_to_segment(
-			checked_point, p_points[p_start_inx], p_points[p_end_inx]);
-		real_t distance_squared = closest_point.distance_squared_to(checked_point);
-
-		if (distance_squared > point_max_distance) {
-			point_max_index = i;
-			point_max_distance = distance_squared;
-		}
-	}
-
-	if (point_max_distance > p_epsilon) {
-		simplify_path_segment(
-			p_start_inx, point_max_index, p_points, p_epsilon, r_simplified_path_indices);
-		r_simplified_path_indices.push_back(point_max_index);
-		simplify_path_segment(
-			point_max_index, p_end_inx, p_points, p_epsilon, r_simplified_path_indices);
-	}
-}
-
-void NavMeshQueries2D::_query_task_push_back_point_with_metadata(
-	NavMeshPathQueryTask2D& p_query_task, const Vector2& p_point,
-	const Nav2D::Polygon* p_point_polygon)
-{
-}
-
-void NavMeshQueries2D::query_task_map_iteration_get_path(
-	NavMeshQueries2D::NavMeshPathQueryTask2D& p_task, const NavMapIteration2D& p_map_iteration)
-{
-}
-
-#undef THREE_POINTS_CROSS_PRODUCT
-
 #ifdef CLIPPER2_ENABLED
 #endif
 
@@ -288110,22 +275302,13 @@ void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
 }
 #endif // NAVIGATION_2D_DISABLED
 
-// === Merged from modules/gltf/gltf_document.cpp ===
 #ifndef _3D_DISABLED
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_GLTF_ENABLED)
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
-// --- Inlined from core/math/disjoint_set.h ---
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 
 /* This DisjointSet class uses Find with path compression and Union by rank */
 template <typename T, typename H = HashMapHasherDefault, typename C = HashMapComparatorDefault<T>, typename AL = DefaultAllocator>
@@ -288240,7 +275423,6 @@ void DisjointSet<T, H, C, AL>::get_members(Vector<T> &r_out_members, T p_represe
 	}
 }
 
-// --- End core/math/disjoint_set.h ---
 #include "servers/display/display_server.h"
 
 #ifdef TOOLS_ENABLED
@@ -290709,7 +277891,6 @@ String SkinTool::_sanitize_bone_name(const String& p_name)
 }
 
 #ifdef TOOLS_ENABLED
-#include "core/io/net_socket.h"
 
 void EditorSceneFormatImporterGLTF::get_extensions(List<String>* r_extensions) const
 {
@@ -290738,12 +277919,7 @@ void uninitialize_gltf_module(ModuleInitializationLevel p_level)
 
 void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 
-// ============================================================================
-// Merged from modules/gltf/gltf_extensions.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-
 
 #include <cfloat>
 
@@ -290752,9 +277928,7 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 #include "servers/display/display_server.h"
 #endif // PHYSICS_3D_DISABLED
 
-// ============================================================================
 // GLTFLight
-// ============================================================================
 
 void GLTFLight::set_cone_inner_attenuation_conversion_expressions(
 	Ref<GLTFObjectModelProperty>& r_obj_model_prop)
@@ -290807,9 +277981,7 @@ void GLTFLight::set_outer_cone_angle(float p_outer_cone_angle)
 
 Ref<GLTFLight> GLTFLight::from_node(const Light3D*) { return Ref<GLTFLight>(); }
 
-// ============================================================================
 // GLTFSpecGloss
-// ============================================================================
 
 Ref<Image> GLTFSpecGloss::get_diffuse_img() { return diffuse_img; }
 
@@ -290840,9 +278012,7 @@ void GLTFSpecGloss::set_spec_gloss_img(Ref<Image> p_spec_gloss_img)
 	spec_gloss_img = p_spec_gloss_img;
 }
 
-// ============================================================================
 // GLTFDocumentExtension
-// ============================================================================
 
 Error GLTFDocumentExtension::import_preflight(
 	Ref<GLTFState> p_state, const Vector<String>& p_extensions)
@@ -290945,85 +278115,9 @@ PackedStringArray GLTFDocumentExtension::get_saveable_image_formats()
 	return PackedStringArray();
 }
 
-// ============================================================================
-// GLTFDocumentExtensionTexture
-// ============================================================================
-
-Error GLTFDocumentExtensionTexture::import_preflight(
-	Ref<GLTFState> p_state, const Vector<String>& p_extensions)
-{
-	const String ext_name = (format == FORMAT_WEBP) ? "EXT_texture_webp" : "KHR_texture_basisu";
-	if (!p_extensions.has(ext_name)) {
-		return ERR_SKIP;
-	}
-	return OK;
-}
-
-Vector<String> GLTFDocumentExtensionTexture::get_supported_extensions()
-{
-	Vector<String> ret;
-	ret.push_back((format == FORMAT_WEBP) ? "EXT_texture_webp" : "KHR_texture_basisu");
-	return ret;
-}
-
-Error GLTFDocumentExtensionTexture::parse_image_data(Ref<GLTFState> p_state,
-	const PackedByteArray& p_image_data, const String& p_mime_type, Ref<Image> r_image)
-{
-	if (format == FORMAT_WEBP) {
-		if (p_mime_type == "image/webp") {
-			return r_image->load_webp_from_buffer(p_image_data);
-		}
-	}
-	else {
-		if (p_mime_type == "image/ktx2") {
-			return r_image->load_ktx_from_buffer(p_image_data);
-		}
-	}
-	return OK;
-}
-
-String GLTFDocumentExtensionTexture::get_image_file_extension()
-{
-	if (format == FORMAT_WEBP) {
-		return ".webp";
-	}
-	return String();
-}
-
-Vector<String> GLTFDocumentExtensionTexture::get_saveable_image_formats()
-{
-	Vector<String> ret;
-	if (format == FORMAT_WEBP) {
-		ret.push_back("Lossless WebP");
-		ret.push_back("Lossy WebP");
-	}
-	return ret;
-}
-
-Error GLTFDocumentExtensionTexture::save_image_at_path(Ref<GLTFState> p_state,
-	Ref<Image> p_image, const String& p_file_path, const String& p_image_format,
-	float p_lossy_quality)
-{
-	if (format == FORMAT_WEBP) {
-		if (p_image_format == "Lossless WebP") {
-			p_image->save_webp(p_file_path, false);
-			return OK;
-		}
-		else if (p_image_format == "Lossy WebP") {
-			p_image->save_webp(p_file_path, true, p_lossy_quality);
-			return OK;
-		}
-		return ERR_INVALID_PARAMETER;
-	}
-	return GLTFDocumentExtension::save_image_at_path(
-		p_state, p_image, p_file_path, p_image_format, p_lossy_quality);
-}
-
 #ifndef PHYSICS_3D_DISABLED
 
-// ============================================================================
 // GLTFPhysicsBody
-// ============================================================================
 
 String GLTFPhysicsBody::get_body_type() const
 {
@@ -291167,9 +278261,7 @@ Node3D* GLTFPhysicsBody::to_node() const
 	return nullptr;
 }
 
-// ============================================================================
 // GLTFPhysicsShape
-// ============================================================================
 
 String GLTFPhysicsShape::get_shape_type() const { return shape_type; }
 
@@ -291257,20 +278349,9 @@ Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
 	return _shape_cache;
 }
 
-// ============================================================================
 // GLTFDocumentExtensionPhysics
-// ============================================================================
 
 using GLTFShapeIndex = int64_t;
-
-Vector<String> GLTFDocumentExtensionPhysics::get_supported_extensions()
-{
-	Vector<String> ret;
-	ret.push_back("OMI_collider");
-	ret.push_back("OMI_physics_body");
-	ret.push_back("OMI_physics_shape");
-	return ret;
-}
 
 void _setup_shape_mesh_resource_from_index_if_needed(
 	const Ref<GLTFState>& p_state, const Ref<GLTFPhysicsShape>& p_gltf_shape)
@@ -291372,18 +278453,11 @@ GLTFMeshIndex _get_or_insert_mesh_in_state(
 
 #endif // PHYSICS_3D_DISABLED
 
-// ============================================================================
-// Merged from modules/gltf/gltf_structures.cpp
-// ============================================================================
+#include "servers/display/display_server.h"
 
 #include "servers/display/display_server.h"
 
-#include "core/io/ip.h"
-#include "servers/display/display_server.h"
-
-// ============================================================================
 // GLTFTexture
-// ============================================================================
 
 GLTFImageIndex GLTFTexture::get_src_image() const { return src_image; }
 
@@ -291393,9 +278467,7 @@ GLTFTextureSamplerIndex GLTFTexture::get_sampler() const { return sampler; }
 
 void GLTFTexture::set_sampler(GLTFTextureSamplerIndex val) { sampler = val; }
 
-// ============================================================================
 // GLTFBufferView
-// ============================================================================
 
 GLTFBufferIndex GLTFBufferView::get_buffer() const { return buffer; }
 
@@ -291504,9 +278576,7 @@ GLTFBufferViewIndex GLTFBufferView::write_new_buffer_view_into_state(
 	return buffer_view_index;
 }
 
-// ============================================================================
 // GLTFAccessor
-// ============================================================================
 
 GLTFBufferViewIndex GLTFAccessor::get_buffer_view() const { return buffer_view; }
 
@@ -292762,9 +279832,7 @@ PackedByteArray GLTFAccessor::encode_ints_as_bytes(const PackedInt64Array&)
 	return PackedByteArray();
 }
 
-// ============================================================================
 // GLTFNode
-// ============================================================================
 
 String GLTFNode::get_original_name() { return original_name; }
 
@@ -292866,9 +279934,7 @@ NodePath GLTFNode::get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_ske
 	return NodePath(path, subpath, false);
 }
 
-// ============================================================================
 // GLTFSkeleton
-// ============================================================================
 
 Vector<GLTFNodeIndex> GLTFSkeleton::get_joints() { return Vector<GLTFNodeIndex>(joints); }
 
@@ -292894,9 +279960,7 @@ BoneAttachment3D* GLTFSkeleton::get_bone_attachment(int idx)
 
 int32_t GLTFSkeleton::get_bone_attachment_count() { return bone_attachments.size(); }
 
-// ============================================================================
 // GLTFSkin
-// ============================================================================
 
 GLTFNodeIndex GLTFSkin::get_skin_root() { return skin_root; }
 
@@ -292938,9 +280002,7 @@ Ref<Skin> GLTFSkin::get_godot_skin() { return godot_skin; }
 
 void GLTFSkin::set_godot_skin(const Ref<Skin>& p_godot_skin) { godot_skin = p_godot_skin; }
 
-// ============================================================================
 // GLTFMesh
-// ============================================================================
 
 String GLTFMesh::get_original_name() { return original_name; }
 
@@ -292957,9 +280019,7 @@ void GLTFMesh::set_blend_weights(const Vector<float>& p_blend_weights)
 	blend_weights = Vector<float>(p_blend_weights);
 }
 
-// ============================================================================
 // GLTFCamera
-// ============================================================================
 
 void GLTFCamera::set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop)
 {
@@ -292995,9 +280055,7 @@ Ref<GLTFCamera> GLTFCamera::from_node(const Camera3D* p_camera)
 	return c;
 }
 
-// ============================================================================
 // GLTFAnimation
-// ============================================================================
 
 GLTFAnimation::Interpolation GLTFAnimation::godot_to_gltf_interpolation(
 	const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index)
@@ -293044,9 +280102,7 @@ HashMap<int, GLTFAnimation::NodeTrack>& GLTFAnimation::get_node_tracks() { retur
 
 GLTFAnimation::GLTFAnimation() {}
 
-// ============================================================================
 // GLTFObjectModelProperty
-// ============================================================================
 
 GLTFAccessor::GLTFAccessorType GLTFObjectModelProperty::get_accessor_type() const
 {
@@ -293113,19 +280169,9 @@ void GLTFObjectModelProperty::set_json_pointers(const Vector<PackedStringArray>&
 }
 #endif // defined(MODULE_GLTF_ENABLED)
 
-
-// --- Merged from modules/fbx/fbx_document.cpp ---
 #if defined(MODULE_FBX_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-#include "core/io/file_access.h"
-#include "core/io/net_socket.h"
-#include "core/math/vector2.h"
-// --- Inlined from modules/fbx/fbx_document.h ---
 #include <ufbx.h>
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 
 class FBXState final : public Resource
@@ -293261,7 +280307,6 @@ public:
 };
 #endif // TOOLS_ENABLED
 
-// --- End modules/fbx/fbx_document.h ---
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -293803,7 +280848,6 @@ void FBXState::set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_node
 }
 
 #ifdef TOOLS_ENABLED
-#include "core/io/net_socket.h"
 
 void EditorSceneFormatImporterFBX::get_extensions(List<String>* r_extensions) const
 {
@@ -293844,11 +280888,9 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_FBX_ENABLED)
 
-// === Merged from modules/csg/csg_shape.cpp ===
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_CSG_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -293857,7 +280899,6 @@ void initialize_fbx_module(ModuleInitializationLevel p_level)
 #endif											// PHYSICS_3D_DISABLED
 
 #ifdef DEV_ENABLED
-#include "core/io/net_socket.h"
 #endif // DEV_ENABLED
 
 #ifndef NAVIGATION_3D_DISABLED
@@ -295505,13 +282546,8 @@ void uninitialize_csg_module(ModuleInitializationLevel p_level)
 }
 #endif // defined(MODULE_CSG_ENABLED)
 
-
-// --- Merged from modules/gridmap/grid_map.cpp ---
 #if defined(MODULE_GRIDMAP_ENABLED)
-#include "core/os/os.h"
 #include "servers/display/display_server.h"
-#include "core/io/net_socket.h"
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -296347,7 +283383,6 @@ void GridMap::_debug_update_octants() {}
 
 #ifndef _3D_DISABLED
 
-
 void initialize_gridmap_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -296367,8 +283402,6 @@ void uninitialize_gridmap_module(ModuleInitializationLevel p_level)
 #endif // _3D_DISABLED
 #endif // defined(MODULE_GRIDMAP_ENABLED)
 
-
-// --- Merged from modules/meshoptimizer/register_types.cpp ---
 #if defined(MODULE_MESHOPTIMIZER_ENABLED)
 #include "servers/display/display_server.h"
 
@@ -296410,48 +283443,13 @@ void uninitialize_meshoptimizer_module(ModuleInitializationLevel p_level) {
 
 #endif // _3D_DISABLED
 
-// === Merged from modules/openxr/openxr_api.cpp ===
 #include "core/version_generated.gen.h"
 #ifdef MODULE_OPENXR_ENABLED
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
 
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/typedefs.h"
-#include "core/os/memory.h"
-#include "core/io/ip.h"
-#include "core/typedefs.h"
 #include "servers/display/display_server.h"
-// --- Inlined/Folded from modules/openxr/extensions/openxr_extensions.h ---
 #include <openxr/openxr.h>
 #include "servers/display/display_server.h"
-// --- Folded from modules/openxr/openxr_interface.h ---
 // A note on multithreading and thread safety in OpenXR.
 //
 // Most entry points will be called from the main thread in Godot
@@ -296779,7 +283777,6 @@ public:
 	~OpenXRInterface();
 };
 
-// --- Folded from modules/openxr/scene/openxr_scene.h ---
 #include <openxr/openxr.h>
 #include "core/version_generated.gen.h"
 #include "servers/display/display_server.h"
@@ -297188,12 +284185,6 @@ private:
 };
 #endif // MODULE_GLTF_ENABLED
 
-// --- End modules/openxr/scene/openxr_scene.h ---
-
-// --- End modules/openxr/openxr_interface.h ---
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 #include "core/version_generated.gen.h"
 #include "servers/display/display_server.h"
 
@@ -298303,10 +285294,8 @@ public:
 };
 #endif // MODULE_GLTF_ENABLED
 
-// --- Folded from modules/openxr/extensions/openxr_interaction_profile_extension.h ---
 #include <openxr/openxr.h>
 #include "servers/display/display_server.h"
-#include "core/io/ip.h"
 
 class OpenXRInteractionProfileExtension final
 {
@@ -298457,13 +285446,9 @@ public:
 	virtual PackedByteArray get_ip_modification() override;
 };
 
-// --- End modules/openxr/extensions/openxr_interaction_profile_extension.h ---
-
-// --- Folded from modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
 #include <openxr/openxr.h>
 #include "servers/display/display_server.h"
 
-#include "core/io/ip.h"
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
@@ -299314,24 +286299,16 @@ public:
 	~OpenXRSpatialPlaneTrackingCapability() = delete;
 };
 
-// --- End modules/openxr/extensions/spatial_entities/openxr_spatial_entities.h ---
 #include "servers/display/display_server.h"
 
 #ifdef ANDROID_ENABLED
-#include "core/os/os.h"
 #endif
-
-
-
 
 #define WANT_OPENXR_PLATFORM_INC
 #include "servers/display/display_server.h" // IWYU pragma: keep.
 
 #ifdef VULKAN_ENABLED
-// --- Inlined/Folded from modules/openxr/extensions/platform/openxr_vulkan_extension.h ---
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 // Always include this as late as possible.
 #define WANT_OPENXR_PLATFORM_INC
@@ -299428,12 +286405,9 @@ public:
 #endif
 
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
-// --- Inlined/Folded from modules/openxr/extensions/platform/openxr_opengl_extension.h ---
 #ifdef GLES3_ENABLED
 
 #include "servers/display/display_server.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 // Always include this as late as possible.
 #define WANT_OPENXR_PLATFORM_INC
@@ -301792,8 +288766,6 @@ void OpenXRAPI::allocate_view_buffers(uint32_t p_view_count, bool p_submit_depth
 
 String OpenXRAPI::get_swapchain_format_name(long p_swapchain_format) { return String(); }
 
-
-
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRUtil
 
@@ -302442,18 +289414,10 @@ OpenXRAPIExtension::OpenXRAPIExtension() {}
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from modules/openxr/register_types.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-
 
 #include "core/version_generated.gen.h"
 #include "servers/display/display_server.h"
-
-
 
 #ifdef ANDROID_ENABLED
 #define WANT_OPENXR_PLATFORM_INC
@@ -302504,15 +289468,8 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level)
 
 void initialize_openxr_module(ModuleInitializationLevel p_level) {}
 
-// ============================================================================
-// Merged from modules/openxr/openxr_interface.cpp
-// ============================================================================
-
 #include <openxr/openxr.h>
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/io/net_socket.h"
-
 
 #include "servers/display/display_server.h"
 
@@ -303544,12 +290501,6 @@ bool OpenXRInterface::initialize() { return false; }
 void OpenXRInterface::process() {}
 
 bool OpenXRInterface::is_passthrough_supported() { return false; }
-
-
-
-// ============================================================================
-// Merged from modules/openxr/action_map/openxr_action_map.cpp
-// ============================================================================
 
 #include "servers/display/display_server.h"
 
@@ -304774,14 +291725,7 @@ Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
 	return Ref<OpenXRActionSet>();
 }
 
-// ============================================================================
-// Merged from modules/openxr/scene/openxr_scene.cpp
-// ============================================================================
-
-
 #include "servers/display/display_server.h"
-
-#include "core/os/os.h"
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -305890,13 +292834,7 @@ void OpenXRRenderModelManager::_update_models() {}
 
 #endif // MODULE_GLTF_ENABLED
 
-// ============================================================================
-// Merged from modules/openxr/extensions/openxr_extensions.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
-#include "core/string/ustring.h"
 
 #include "servers/display/display_server.h"
 
@@ -306751,7 +293689,6 @@ void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
 }
 
 void OpenXRVisibilityMaskExtension::_update_mesh() {}
-
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRCompositionLayerExtension
@@ -309228,14 +296165,7 @@ HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(XrVe
 #undef Below
 #endif
 
-// ============================================================================
-// Merged from modules/openxr/extensions/openxr_interaction_profile_extension.cpp
-// ============================================================================
-
 #include "servers/display/display_server.h"
-#include "core/typedefs.h"
-#include "core/string/ustring.h"
-
 
 #ifndef XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME
 #define XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME "XR_LOGITECH_mx_ink_stylus_interaction"
@@ -309757,14 +296687,9 @@ PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
 	return ret;
 }
 
-// ============================================================================
-// Merged from modules/openxr/extensions/spatial_entities/openxr_spatial_entities.cpp
-// ============================================================================
-
 #include <cstring>
 #include <openxr/openxr.h>
 #include "servers/display/display_server.h"
-#include "core/os/os.h"
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -311110,7 +298035,6 @@ void OpenXRSpatialEntityTracker::set_marker_id(uint32_t p_id) { marker_id = p_id
 
 uint32_t OpenXRSpatialEntityTracker::get_marker_id() const { return marker_id; }
 
-
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRSpatialEntityExtension
 
@@ -312454,12 +299378,8 @@ void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
 
 void OpenXRSpatialPlaneTrackingCapability::on_process() {}
 
-
-// --- Merged from modules/openxr/extensions/platform/openxr_vulkan_extension.cpp ---
 #if defined(VULKAN_ENABLED)
 #include "servers/display/display_server.h"
-
-#include "core/string/ustring.h"
 
 #include "servers/display/display_server.h"
 
@@ -312941,10 +299861,7 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain,
 #endif
 #endif // defined(VULKAN_ENABLED)
 
-
-// --- Merged from modules/openxr/extensions/platform/openxr_opengl_extension.cpp ---
 #if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
-
 
 #ifdef GLES3_ENABLED
 
@@ -312965,7 +299882,6 @@ void OpenXROpenGLExtension::finalize()
 	memdelete(data);
 	data = nullptr;
 }
-
 
 // OpenXR requires us to submit sRGB textures so that it recognizes the content
 // as being in sRGB color space. We do fall back on "normal" textures but this

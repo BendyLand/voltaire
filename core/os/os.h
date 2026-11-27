@@ -33,8 +33,8 @@
 
 #include <cstdlib>
 // --- Folded from core/config/engine.h ---
-#include "core/string/ustring.h"
 #include "core/io/ip.h"
+#include "core/string/ustring.h"
 #include "core/templates/list.h"
 
 class Engine
@@ -46,7 +46,6 @@ private:
 	static inline uint32_t _frame_delay = 0;
 	static inline uint64_t _frame_ticks = 0;
 	static inline double _process_step = 0;
-
 	static inline int ips = 60;
 	static inline int user_ips = 60;
 	static inline double physics_jitter_fix = 0.5;
@@ -68,25 +67,19 @@ private:
 	static inline bool accurate_breadcrumbs = false;
 #endif
 	static inline int32_t gpu_idx = -1;
-
 	static inline uint64_t _process_frames = 0;
 	static inline bool _in_physics = false;
-
 	static inline bool editor_hint = false;
 	static inline bool project_manager_hint = false;
 	static inline bool extension_reloading = false;
 	static inline bool embedded_in_editor = false;
 	static inline bool recovery_mode_hint = false;
-
 	static inline bool _print_header = true;
-
 	static inline String write_movie_path;
 	static inline String shader_cache_path;
-
 	static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
 	static inline int server_syncs = 0;
 	static inline bool frame_server_synced = false;
-
 	static inline bool freeze_time_scale = false;
 
 protected:
@@ -96,23 +89,18 @@ public:
 	static void set_physics_ticks_per_second(int p_ips);
 	static int get_physics_ticks_per_second();
 	static int get_user_physics_ticks_per_second();
-
 	static void set_max_physics_steps_per_frame(int p_max_physics_steps);
 	static int get_max_physics_steps_per_frame();
 	static int get_user_max_physics_steps_per_frame();
-
 	static void set_physics_jitter_fix(double p_threshold);
 	static double get_physics_jitter_fix();
-
 	static void set_max_fps(int p_fps);
 	static int get_max_fps();
-
 	static void set_audio_output_latency(int p_msec);
 	static int get_audio_output_latency();
+	static uint64_t get_frames_drawn();
 
 	static double get_frames_per_second() { return _fps; }
-
-	static uint64_t get_frames_drawn();
 
 	static uint64_t get_physics_frames() { return _physics_frames; }
 
@@ -217,12 +205,9 @@ public:
 	Engine(const Engine&) = delete;
 	Engine& operator=(const Engine&) = delete;
 };
-// --- End core/config/engine.h ---
-// --- Inlined/Folded from core/io/logger.h ---
+
 #include <cstdarg>
 #include "core/io/file_access.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 class FileAccess;
 class RegEx;
@@ -273,29 +258,36 @@ public:
 		return "           ";
 	}
 
+	enum Backend
+	{
+		BACKEND_STD,
+		BACKEND_WINDOWS_TERMINAL,
+		BACKEND_SYSLOG,
+		BACKEND_OS_LOG,
+		BACKEND_ANDROID,
+	};
+
+protected:
+	Backend backend = BACKEND_STD;
+#ifdef __APPLE__
+	void* os_log_handle = nullptr;
+#endif
+
+public:
 	static void set_flush_stdout_on_print(bool p_value);
 
 	virtual void logv(
-		const char* p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0 = 0;
+		const char* p_format, va_list p_list, bool p_err) _PRINTF_FORMAT_ATTRIBUTE_2_0;
 
 	void logf(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 	void logf_error(const char* p_format, ...) _PRINTF_FORMAT_ATTRIBUTE_2_3;
 
-	Logger() noexcept {}
+	explicit Logger(Backend p_backend = BACKEND_STD) noexcept : backend(p_backend) {}
+#ifdef __APPLE__
+	explicit Logger(const char* p_subsystem);
+#endif
 
 	virtual ~Logger() {}
-};
-
-/**
- * Writes messages to stdout/stderr.
- */
-class StdLogger : public Logger
-{
-public:
-	virtual void logv(
-		const char* p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
-
-	virtual ~StdLogger() {}
 };
 
 /**
@@ -338,47 +330,49 @@ public:
 
 	virtual ~CompositeLogger();
 };
-// --- Folded from core/io/remote_filesystem_client.h ---
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
 
-class RemoteFilesystemClient {
+class RemoteFilesystemClient
+{
 	String cache_path;
 	HashSet<String> validated_directories;
 
 protected:
 	String _get_cache_path() { return cache_path; }
-	struct FileCache {
-		String path; // Local path (as in "folder/to/file.png")
+
+	struct FileCache
+	{
+		String path;					   // Local path (as in "folder/to/file.png")
 		uint64_t server_modified_time = 0; // MD5 checksum.
 		uint64_t modified_time = 0;
 	};
+
 	virtual bool _is_configured() { return !cache_path.is_empty(); }
+
 	// Can be re-implemented per platform. If so, feel free to ignore get_cache_path()
 	virtual Vector<FileCache> _load_cache_file();
-	virtual Error _store_file(const String &p_path, const LocalVector<uint8_t> &p_file, uint64_t &r_modified_time);
-	virtual Error _remove_file(const String &p_path);
-	virtual Error _store_cache_file(const Vector<FileCache> &p_cache);
-	virtual Error _synchronize_with_server(const String &p_host, int p_port, const String &p_password, String &r_cache_path);
+	virtual Error _store_file(
+		const String& p_path, const LocalVector<uint8_t>& p_file, uint64_t& r_modified_time);
+	virtual Error _remove_file(const String& p_path);
+	virtual Error _store_cache_file(const Vector<FileCache>& p_cache);
+	virtual Error _synchronize_with_server(
+		const String& p_host, int p_port, const String& p_password, String& r_cache_path);
 
-	virtual void _update_cache_path(String &r_cache_path);
+	virtual void _update_cache_path(String& r_cache_path);
 
 public:
-	Error synchronize_with_server(const String &p_host, int p_port, const String &p_password, String &r_cache_path);
+	Error synchronize_with_server(
+		const String& p_host, int p_port, const String& p_password, String& r_cache_path);
+
 	virtual ~RemoteFilesystemClient() {}
 };
 
-// --- End core/io/remote_filesystem_client.h ---
-// --- Folded from core/os/process_id.h ---
 #include <cstdint>
 
 typedef int64_t ProcessID;
-// --- End core/os/process_id.h ---
-// --- Folded from core/os/time_enums.h ---
 #include <cstdint>
 
-enum Month {
+enum Month
+{
 	/// Start at 1 to follow Windows SYSTEMTIME structure
 	/// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
 	MONTH_JANUARY = 1,
@@ -395,7 +389,8 @@ enum Month {
 	MONTH_DECEMBER,
 };
 
-enum Weekday : uint8_t {
+enum Weekday : uint8_t
+{
 	WEEKDAY_SUNDAY,
 	WEEKDAY_MONDAY,
 	WEEKDAY_TUESDAY,
@@ -404,12 +399,6 @@ enum Weekday : uint8_t {
 	WEEKDAY_FRIDAY,
 	WEEKDAY_SATURDAY,
 };
-
-// --- End core/os/time_enums.h ---
-#include "core/string/ustring.h"
-#include "core/templates/list.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
 
 class OS final
 {
@@ -831,9 +820,6 @@ public:
 #endif
 };
 
-// --- Folded from core/os/midi_driver.h ---
-// --- Folded from core/input/input_event.h ---
-// --- Inlined/Folded from core/input/input_enums.h ---
 #include "core/typedefs.h"
 
 enum class InputEventType
@@ -981,12 +967,11 @@ constexpr MouseButtonMask& operator|=(MouseButtonMask& p_a, MouseButtonMask p_b)
 {
 	return p_a = p_a | p_b;
 }
+
 #include "core/math/vector2.h"
-// --- Folded from core/os/keyboard.h ---
 class String;
 
 #include <cstdint>
-#include "core/io/ip.h"
 
 // Keep the values in this enum in sync with `_keycodes` in `keyboard.cpp`,
 // and the bindings in `core_constants.cpp`.
@@ -1236,8 +1221,7 @@ constexpr Key& operator-=(Key& p_left, int p_right)
 
 constexpr Key operator+(Key p_left, int p_right) { return (Key)((int)p_left + (int)p_right); }
 
-constexpr Key operator+(Key p_left, Key p_right)
- { return (Key)((int)p_left + (int)p_right); }
+constexpr Key operator+(Key p_left, Key p_right) { return (Key)((int)p_left + (int)p_right); }
 
 constexpr Key operator-(Key p_left, Key p_right) { return (Key)((int)p_left - (int)p_right); }
 
@@ -1314,53 +1298,70 @@ const char* keycode_get_name_by_index(int p_index);
 char32_t fix_unicode(char32_t p_char);
 Key fix_keycode(char32_t p_char, Key p_key);
 Key fix_key_label(char32_t p_char, Key p_key);
-// --- End core/os/keyboard.h ---
-#include "core/string/ustring.h"
-// --- Folded from core/templates/bit_field.h ---
-#include "core/typedefs.h"
-
 #include <type_traits>
 
 // TODO: Replace `typename` with enum concept once C++20 concepts/constraints are allowed.
 
-template <typename T>
-class BitField {
+template <typename T> class BitField
+{
 	static_assert(std::is_enum_v<T>);
 	uint64_t value;
 
 public:
 	_ALWAYS_INLINE_ constexpr void set_flag(BitField p_flag) { value |= p_flag.value; }
+
 	_ALWAYS_INLINE_ constexpr bool has_flag(BitField p_flag) const { return value & p_flag.value; }
+
 	_ALWAYS_INLINE_ constexpr bool is_empty() const { return value == 0; }
+
 	_ALWAYS_INLINE_ constexpr void clear_flag(BitField p_flag) { value &= ~p_flag.value; }
+
 	_ALWAYS_INLINE_ constexpr void clear() { value = 0; }
 
-	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_combined(BitField p_other) const { return BitField(value | p_other.value); }
-	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_shared(BitField p_other) const { return BitField(value & p_other.value); }
-	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_different(BitField p_other) const { return BitField(value ^ p_other.value); }
+	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_combined(BitField p_other) const
+	{
+		return BitField(value | p_other.value);
+	}
+
+	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_shared(BitField p_other) const
+	{
+		return BitField(value & p_other.value);
+	}
+
+	[[nodiscard]] _ALWAYS_INLINE_ constexpr BitField get_different(BitField p_other) const
+	{
+		return BitField(value ^ p_other.value);
+	}
 
 	_ALWAYS_INLINE_ constexpr BitField() = default;
-	_ALWAYS_INLINE_ constexpr BitField(T p_value) :
-			value(static_cast<uint64_t>(p_value)) {}
+
+	_ALWAYS_INLINE_ constexpr BitField(T p_value) : value(static_cast<uint64_t>(p_value)) {}
+
 	_ALWAYS_INLINE_ constexpr operator T() const { return static_cast<T>(value); }
 
 	// TODO: Unify as single constructor once C++20 `explicit` conditionals are allowed.
 
-	template <typename V, std::enable_if_t<std::is_arithmetic_v<V> && std::is_convertible_v<T, int>, int> = 0>
-	_ALWAYS_INLINE_ constexpr BitField(V p_value) :
-			value(static_cast<uint64_t>(p_value)) {}
-	template <typename V, std::enable_if_t<std::is_arithmetic_v<V> && !std::is_convertible_v<T, int>, int> = 0>
-	_ALWAYS_INLINE_ constexpr explicit BitField(V p_value) :
-			value(static_cast<uint64_t>(p_value)) {}
+	template <typename V,
+		std::enable_if_t<std::is_arithmetic_v<V> && std::is_convertible_v<T, int>, int> = 0>
+	_ALWAYS_INLINE_ constexpr BitField(V p_value) : value(static_cast<uint64_t>(p_value))
+	{
+	}
+
+	template <typename V,
+		std::enable_if_t<std::is_arithmetic_v<V> && !std::is_convertible_v<T, int>, int> = 0>
+	_ALWAYS_INLINE_ constexpr explicit BitField(V p_value) : value(static_cast<uint64_t>(p_value))
+	{
+	}
+
 	template <typename V, std::enable_if_t<std::is_arithmetic_v<V>, int> = 0>
-	_ALWAYS_INLINE_ constexpr explicit operator V() const { return static_cast<V>(value); }
+	_ALWAYS_INLINE_ constexpr explicit operator V() const
+	{
+		return static_cast<V>(value);
+	}
 };
 
 // Implicitly zero-constructible as a trivially-constructible type.
 static_assert(is_zero_constructible_v<BitField<Error>>);
-
-// --- End core/templates/bit_field.h ---
-#include "core/typedefs.h"
 
 class Shortcut;
 struct Transform2D;
@@ -1374,7 +1375,7 @@ struct InputEvent
 	static constexpr int DEVICE_ID_EMULATION = -1;
 	static constexpr int DEVICE_ID_INTERNAL = -2;
 	static constexpr int DEVICE_ID_KEYBOARD = 16; // IDs 0-15 are reserved for joypads.
-	static constexpr int DEVICE_ID_MOUSE = 32;    // IDs 17-31 are reserved for multiple keyboards.
+	static constexpr int DEVICE_ID_MOUSE = 32;	  // IDs 17-31 are reserved for multiple keyboards.
 
 	struct KeyData
 	{
@@ -1495,12 +1496,14 @@ struct InputEvent
 		MIDIData midi;
 		ShortcutData shortcut;
 	};
+
 	ActionData action;
 
 	InputEvent() = default;
 
 	// Factory constructors
-	static InputEvent make_key(Key p_keycode_with_modifier_masks = Key::NONE, bool p_physical = false);
+	static InputEvent make_key(
+		Key p_keycode_with_modifier_masks = Key::NONE, bool p_physical = false);
 	static InputEvent make_mouse_button();
 	static InputEvent make_mouse_motion();
 	static InputEvent make_joypad_button(JoyButton p_btn_index = (JoyButton)0, int p_device = -1);
@@ -1517,17 +1520,21 @@ struct InputEvent
 
 	// Type & state queries
 	bool is_valid() const { return type != InputEventType::INVALID; }
+
 	bool is_null() const { return type == InputEventType::INVALID; }
+
 	InputEventType get_type() const { return type; }
 
 	bool is_mouse() const
 	{
 		return type == InputEventType::MOUSE_BUTTON || type == InputEventType::MOUSE_MOTION;
 	}
+
 	bool is_gesture() const
 	{
 		return type == InputEventType::MAGNIFY_GESTURE || type == InputEventType::PAN_GESTURE;
 	}
+
 	bool is_from_window() const
 	{
 		return type == InputEventType::KEY || type == InputEventType::MOUSE_BUTTON ||
@@ -1537,16 +1544,23 @@ struct InputEvent
 	}
 
 	void set_device(int p_device) { device = p_device; }
+
 	int get_device() const { return device; }
 
 	void set_window_id(int64_t p_id) { window_id = p_id; }
+
 	int64_t get_window_id() const { return window_id; }
 
 	void set_pressed(bool p_pressed) { pressed = p_pressed; }
+
 	void set_canceled(bool p_canceled) { canceled = p_canceled; }
+
 	bool is_canceled() const { return canceled; }
+
 	bool is_pressed() const { return pressed && !canceled; }
+
 	bool is_released() const { return !pressed && !canceled; }
+
 	bool is_echo() const { return type == InputEventType::KEY && key.echo; }
 
 	// Shared mouse helpers (MOUSE_BUTTON & MOUSE_MOTION)
@@ -1564,30 +1578,35 @@ struct InputEvent
 	// Modifier helpers
 	uint32_t get_modifiers_mask() const
 	{
-		return static_cast<uint32_t>(modifiers) &
-			   (static_cast<uint32_t>(KeyModifierMask::SHIFT) |
-				   static_cast<uint32_t>(KeyModifierMask::ALT) |
-				   static_cast<uint32_t>(KeyModifierMask::CTRL) |
-				   static_cast<uint32_t>(KeyModifierMask::META));
+		return static_cast<uint32_t>(modifiers) & (static_cast<uint32_t>(KeyModifierMask::SHIFT) |
+													  static_cast<uint32_t>(KeyModifierMask::ALT) |
+													  static_cast<uint32_t>(KeyModifierMask::CTRL) |
+													  static_cast<uint32_t>(KeyModifierMask::META));
 	}
 
 	void set_command_or_control_autoremap(bool p_enabled);
+
 	bool is_command_or_control_autoremap() const
 	{
 		return modifiers.has_flag(KeyModifierMask::CMD_OR_CTRL);
 	}
+
 	bool is_command_or_control_pressed() const;
 
 	void set_shift_pressed(bool p_pressed);
+
 	bool is_shift_pressed() const { return modifiers.has_flag(KeyModifierMask::SHIFT); }
 
 	void set_alt_pressed(bool p_pressed);
+
 	bool is_alt_pressed() const { return modifiers.has_flag(KeyModifierMask::ALT); }
 
 	void set_ctrl_pressed(bool p_pressed);
+
 	bool is_ctrl_pressed() const { return modifiers.has_flag(KeyModifierMask::CTRL); }
 
 	void set_meta_pressed(bool p_pressed);
+
 	bool is_meta_pressed() const { return modifiers.has_flag(KeyModifierMask::META); }
 
 	void copy_modifiers_from(const InputEvent& p_event);
@@ -1607,8 +1626,7 @@ struct InputEvent
 	bool is_action_pressed(
 		const String& p_action, bool p_allow_echo = false, bool p_exact_match = false) const;
 	bool is_action_released(const String& p_action, bool p_exact_match = false) const;
-	bool is_action_just_pressed_or_echo(
-		const String& p_action, bool p_exact_match = false) const;
+	bool is_action_just_pressed_or_echo(const String& p_action, bool p_exact_match = false) const;
 	float get_action_strength(const String& p_action, bool p_exact_match = false) const;
 	float get_action_raw_strength(const String& p_action, bool p_exact_match = false) const;
 
@@ -1618,16 +1636,12 @@ struct InputEvent
 	bool is_match(const InputEvent& p_event, bool p_exact_match = true) const;
 
 	// Transform, accumulation, and formatting
-	InputEvent xformed_by(
-		const Transform2D& p_xform, const Vector2& p_local_ofs = Vector2()) const;
+	InputEvent xformed_by(const Transform2D& p_xform, const Vector2& p_local_ofs = Vector2()) const;
 	bool accumulate(const InputEvent& p_event);
 
 	String as_text() const;
 	String to_string() const;
 };
-
-// --- Folded from core/input/shortcut.h ---
-#include "core/io/ip.h"
 
 class Shortcut : public Resource
 {
@@ -1649,9 +1663,6 @@ public:
 	static bool is_event_array_equal(
 		const Vector<InputEvent>& p_event_array1, const Vector<InputEvent>& p_event_array2);
 };
-// --- End core/input/input_event.h ---
-#include "core/typedefs.h"
-#include "core/io/ip.h"
 
 /**
  * Multi-Platform abstraction for accessing to MIDI.
@@ -1663,8 +1674,11 @@ class MIDIDriver final
 	static inline bool _is_bound = false;
 
 	static void _default_initialize_backend() {}
+
 	static void _default_finalize_backend() {}
+
 	static Error _default_open() { return ERR_UNAVAILABLE; }
+
 	static void _default_close() {}
 
 	inline static void (*_initialize_backend)() = &_default_initialize_backend;
@@ -1737,7 +1751,9 @@ public:
 
 	static void initialize();
 	static void finalize();
+
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+
 	_FORCE_INLINE_ static bool is_bound() { return _is_bound; }
 
 	inline static Error (*open)() = &_default_open;
@@ -1764,7 +1780,6 @@ public:
 	~MIDIDriver() = delete;
 };
 
-// --- Folded from core/os/thread_safe.h ---
 #include "core/os/mutex.h" // IWYU pragma: keep // Used in macro.
 
 #define _THREAD_SAFE_CLASS_ mutable Mutex _thread_safe_;
@@ -1774,10 +1789,6 @@ public:
 
 bool is_current_thread_safe_for_nodes();
 void set_current_thread_safe_for_nodes(bool p_safe);
-// --- End core/os/thread_safe.h ---
-
-// --- Folded from core/os/main_loop.h ---
-#include "core/typedefs.h"
 
 class MainLoop final
 {
@@ -1785,20 +1796,27 @@ private:
 	static inline bool _active = false;
 
 	static void _default_initialize() {}
+
 	static void _default_iteration_prepare() {}
+
 	static bool _default_physics_process(double p_time)
 	{
 		(void)p_time;
 		return false;
 	}
+
 	static void _default_iteration_end() {}
+
 	static bool _default_process(double p_time)
 	{
 		(void)p_time;
 		return false;
 	}
+
 	static void _default_finalize() {}
+
 	static void _default_notification(int p_notification) { (void)p_notification; }
+
 	static void _default_destroy() {}
 
 public:
@@ -1845,18 +1863,10 @@ public:
 
 	static void reset_backend();
 	static void clear();
+
 	_FORCE_INLINE_ static bool is_active() { return _active; }
 };
-// --- End core/os/main_loop.h ---
 
-// --- Folded from core/input/input.h ---
-
-#include "core/io/ip.h"
-#include "core/math/vector2.h"
-
-
-#include "core/templates/list.h"
-#include "core/io/ip.h"
 #include "core/templates/rb_set.h"
 
 class GamepadMotion;
@@ -2200,6 +2210,7 @@ private:
 public:
 	static void initialize();
 	static void finalize();
+
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
 	static void set_mouse_mode(MouseMode p_mode);
@@ -2286,10 +2297,8 @@ public:
 
 	static void set_joy_motion_sensors_rate(int p_device, float p_rate);
 
-	static Vector2 get_joy_touchpad_finger_position(
-		int p_device, int p_finger, int p_touchpad = 0);
-	static float get_joy_touchpad_finger_pressure(
-		int p_device, int p_finger, int p_touchpad = 0);
+	static Vector2 get_joy_touchpad_finger_position(int p_device, int p_finger, int p_touchpad = 0);
+	static float get_joy_touchpad_finger_pressure(int p_device, int p_finger, int p_touchpad = 0);
 
 	static void start_joy_vibration(
 		int p_device, float p_weak_magnitude, float p_strong_magnitude, float p_duration = 0);
@@ -2357,16 +2366,11 @@ public:
 	~Input() = delete;
 };
 
-// --- Folded from core/input/default_controller_mappings.h ---
-class DefaultControllerMappings {
+class DefaultControllerMappings
+{
 public:
-	static const char *mappings[];
+	static const char* mappings[];
 };
-
-// --- End core/input/default_controller_mappings.h ---
-
-// --- Folded from core/input/input_event_codec.h ---
-
 
 /**
  * Encodes the input event as a byte array.
@@ -2384,17 +2388,14 @@ void encode_input_event_joypad_motion(const InputEvent& p_event, Vector<uint8_t>
 void encode_input_event_gesture_pan(const InputEvent& p_event, Vector<uint8_t>& r_data);
 void encode_input_event_gesture_magnify(const InputEvent& p_event, Vector<uint8_t>& r_data);
 
-// --- End core/input/input_event_codec.h ---
-
-// --- Folded from drivers/sdl/joypad_sdl.h ---
 #if defined(SDL_ENABLED)
-
 
 typedef uint32_t SDL_JoystickID;
 typedef struct SDL_Joystick SDL_Joystick;
 typedef struct SDL_Gamepad SDL_Gamepad;
 
-class JoypadSDL {
+class JoypadSDL
+{
 public:
 	~JoypadSDL();
 
@@ -2402,7 +2403,8 @@ public:
 	void process_events();
 
 private:
-	class Joypad : public Input::JoypadFeatures {
+	class Joypad : public Input::JoypadFeatures
+	{
 	public:
 		bool attached = false;
 		String guid;
@@ -2414,7 +2416,7 @@ private:
 		uint64_t ff_effect_timestamp = 0;
 
 		virtual bool has_joy_light() const override;
-		virtual void set_joy_light(const Color &p_color) override;
+		virtual void set_joy_light(const Color& p_color) override;
 
 		virtual bool has_joy_motion_sensors() const override;
 		virtual void set_joy_motion_sensors_enabled(bool p_enable) override;
@@ -2423,8 +2425,8 @@ private:
 
 		virtual int get_joy_num_touchpads() const override;
 
-		SDL_Joystick *get_sdl_joystick() const;
-		SDL_Gamepad *get_sdl_gamepad() const;
+		SDL_Joystick* get_sdl_joystick() const;
+		SDL_Gamepad* get_sdl_gamepad() const;
 	};
 
 	Joypad joypads[Input::JOYPADS_MAX];
@@ -2433,12 +2435,6 @@ private:
 	void close_joypad(int p_pad_idx);
 };
 #endif // defined(SDL_ENABLED)
-// --- End drivers/sdl/joypad_sdl.h ---
-
-// --- Folded from core/input/input_map.h ---
-
-#include "core/io/ip.h"
-#include "core/templates/list.h"
 
 class InputMap final
 {
@@ -2482,6 +2478,7 @@ private:
 public:
 	static void initialize();
 	static void finalize();
+
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
 	static bool has_action(const String& p_action);
@@ -2513,8 +2510,7 @@ public:
 	static String suggest_actions(const String& p_action);
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(
-		const String& p_function, int p_idx, List<String>* r_options);
+	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
 	static String get_builtin_display_name(const String& p_name);
@@ -2526,11 +2522,7 @@ public:
 	InputMap& operator=(const InputMap&) = delete;
 	~InputMap() = delete;
 };
-// --- End core/input/input_map.h ---
-// --- End core/input/input.h ---
 
-// --- Folded from core/config/project_settings.h ---
-// --- Inlined/Folded from core/config/project_format.h ---
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -2587,8 +2579,7 @@ typedef struct VoltaireProjectFile
 static_assert(sizeof(VoltaireProjectHeader) == 24, "Header must be 24 bytes");
 static_assert(sizeof(VoltaireProjectConfig) == 672, "Config must be 672 bytes");
 static_assert(sizeof(VoltaireProjectFile) == 696, "File must be 696 bytes");
-static_assert(
-	offsetof(VoltaireProjectFile, config) == 24, "Config must immediately follow header");
+static_assert(offsetof(VoltaireProjectFile, config) == 24, "Config must immediately follow header");
 
 static inline void vltr_copy_cstr(char* p_dst, size_t p_dst_cap, const char* p_src)
 {
@@ -2647,8 +2638,6 @@ static inline bool vltr_project_valid(const VoltaireProjectFile* p_file)
 		   p_file->config.icon_path[sizeof(p_file->config.icon_path) - 1] == '\0';
 }
 
-#include "core/io/ip.h"
-
 template <typename T> class TypedArray;
 
 class ProjectSettings final
@@ -2689,10 +2678,12 @@ private:
 	static Error _load_settings_binary(const String& p_path);
 	static Error _load_settings_text_or_binary(const String& p_text_path, const String& p_bin_path);
 
-	static Error _save_settings_text(const String& p_file, const RBMap<String, List<String>>& p_props,
-		const StringMap& p_custom = StringMap(), const String& p_custom_features = String());
-	static Error _save_settings_binary(const String& p_file, const RBMap<String, List<String>>& p_props,
-		const StringMap& p_custom = StringMap(), const String& p_custom_features = String());
+	static Error _save_settings_text(const String& p_file,
+		const RBMap<String, List<String>>& p_props, const StringMap& p_custom = StringMap(),
+		const String& p_custom_features = String());
+	static Error _save_settings_binary(const String& p_file,
+		const RBMap<String, List<String>>& p_props, const StringMap& p_custom = StringMap(),
+		const String& p_custom_features = String());
 
 	static Error _save_custom_bnd(const String& p_file);
 
@@ -2705,8 +2696,8 @@ private:
 	static void _convert_to_last_version(int p_from_version);
 
 	static bool load_resource_pack(const String& p_pack, bool p_replace_files, int p_offset);
-	static bool _load_resource_pack(const String& p_pack, bool p_replace_files = true, int p_offset = 0,
-		bool p_main_pack = false);
+	static bool _load_resource_pack(const String& p_pack, bool p_replace_files = true,
+		int p_offset = 0, bool p_main_pack = false);
 
 	static Error _setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
 		bool p_ignore_override = false);
@@ -2746,7 +2737,6 @@ private:
 		Vector<String> global_class_list;
 		bool is_global_class_list_loaded = false;
 		String project_data_dir_name;
-
 	};
 
 public:
@@ -2756,8 +2746,9 @@ public:
 	static void initialize();
 	static void finalize();
 
-	static const VoltaireProjectFile &get_project() { return data->project; }
-	static VoltaireProjectFile &get_project_mut() { return data->project; }
+	static const VoltaireProjectFile& get_project() { return data->project; }
+
+	static VoltaireProjectFile& get_project_mut() { return data->project; }
 
 	static void refresh_global_class_list();
 	static void store_global_class_list(const Vector<String>& p_classes);
@@ -2831,8 +2822,7 @@ public:
 	static uint32_t get_version() { return data->_version; }
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(
-		const String& p_function, int p_idx, List<String>* r_options);
+	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
 	static bool has_editor_setting_override(const String& p_setting);
@@ -2867,33 +2857,23 @@ public:
 		return _ggc_temp2;                                                                         \
 	})(m_setting_name)
 
-// --- Folded from core/core_constants.h ---
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/templates/list.h"
-
-class CoreConstants {
+class CoreConstants
+{
 public:
 	static int get_global_constant_count();
 	static String get_global_constant_enum(int p_idx);
 	static bool is_global_constant_bitfield(int p_idx);
 	static bool get_ignore_value_in_docs(int p_idx);
-	static const char *get_global_constant_name(int p_idx);
+	static const char* get_global_constant_name(int p_idx);
 	static int64_t get_global_constant_value(int p_idx);
-	static bool is_global_constant(const String &p_name);
-	static int get_global_constant_index(const String &p_name);
-	static bool is_global_enum(const String &p_enum);
-	static void get_enum_values(const String &p_enum, HashMap<String, int64_t> *r_values);
+	static bool is_global_constant(const String& p_name);
+	static int get_global_constant_index(const String& p_name);
+	static bool is_global_enum(const String& p_enum);
+	static void get_enum_values(const String& p_enum, HashMap<String, int64_t>* r_values);
 #ifdef TOOLS_ENABLED
-	static void get_global_enums(List<String> *r_values);
+	static void get_global_enums(List<String>* r_values);
 #endif
 };
-
-// --- End core/core_constants.h ---
-
-// --- Folded from core/string/translation_server.h ---
-// --- Inlined/Folded from core/string/translation.h ---
-#include "core/io/ip.h"
 
 class PluralRules;
 
@@ -2981,13 +2961,13 @@ public:
 
 	_FORCE_INLINE_ String get_locale() const { return locale; }
 
-	void add_message(const String& p_src_text, const String& p_xlated_text,
+	void add_message(
+		const String& p_src_text, const String& p_xlated_text, const String& p_context = "");
+	void add_plural_message(const String& p_src_text, const Vector<String>& p_plural_xlated_texts,
 		const String& p_context = "");
-	void add_plural_message(const String& p_src_text,
-		const Vector<String>& p_plural_xlated_texts, const String& p_context = "");
 	String get_message(const String& p_src_text, const String& p_context = "") const;
-	String get_plural_message(const String& p_src_text,
-		const String& p_plural_text, int p_n, const String& p_context = "") const;
+	String get_plural_message(const String& p_src_text, const String& p_plural_text, int p_n,
+		const String& p_context = "") const;
 	void erase_message(const String& p_src_text, const String& p_context = "");
 	void get_message_list(List<String>* r_messages) const;
 	int get_message_count() const;
@@ -3004,14 +2984,11 @@ public:
 
 	~Translation();
 };
-// --- Folded from core/string/translation_domain.h ---
-#include "core/io/ip.h"
 
 class Translation;
 
 class TranslationDomain : public RefCounted
 {
-
 	struct PseudolocalizationConfig
 	{
 		bool enabled = false;
@@ -3040,7 +3017,6 @@ class TranslationDomain : public RefCounted
 	bool _is_placeholder(const String& p_message, int p_index) const;
 
 protected:
-
 public:
 	// Methods in this section are not intended for scripting.
 	String get_message_from_translations(
@@ -3064,8 +3040,8 @@ public:
 	bool has_translation_for_locale(const String& p_locale, bool p_exact) const;
 
 	String translate(const String& p_message, const String& p_context) const;
-	String translate_plural(const String& p_message, const String& p_message_plural,
-		int p_n, const String& p_context) const;
+	String translate_plural(const String& p_message, const String& p_message_plural, int p_n,
+		const String& p_context) const;
 
 	String get_locale_override() const;
 	void set_locale_override(const String& p_locale);
@@ -3094,10 +3070,6 @@ public:
 
 	String pseudolocalize(const String& p_message) const;
 };
-
-
-
-// --- End core/string/translation_domain.h ---
 
 class TranslationServer final
 {
@@ -3168,17 +3140,30 @@ class TranslationServer final
 public:
 	static void initialize();
 	static void finalize();
+
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
 	// Built-in domain accessors. For engine code only, user code should use `get_or_add_domain()`
 	// instead.
-	static Ref<TranslationDomain> get_main_domain() { return data ? data->main_domain : Ref<TranslationDomain>(); }
+	static Ref<TranslationDomain> get_main_domain()
+	{
+		return data ? data->main_domain : Ref<TranslationDomain>();
+	}
 #ifdef TOOLS_ENABLED
-	static Ref<TranslationDomain> get_editor_domain() { return data ? data->editor_domain : Ref<TranslationDomain>(); }
+	static Ref<TranslationDomain> get_editor_domain()
+	{
+		return data ? data->editor_domain : Ref<TranslationDomain>();
+	}
 
-	static Ref<TranslationDomain> get_property_domain() { return data ? data->property_domain : Ref<TranslationDomain>(); }
+	static Ref<TranslationDomain> get_property_domain()
+	{
+		return data ? data->property_domain : Ref<TranslationDomain>();
+	}
 
-	static Ref<TranslationDomain> get_doc_domain() { return data ? data->doc_domain : Ref<TranslationDomain>(); }
+	static Ref<TranslationDomain> get_doc_domain()
+	{
+		return data ? data->doc_domain : Ref<TranslationDomain>();
+	}
 #endif // TOOLS_ENABLED
 
 	static void set_locale(const String& p_locale);
@@ -3215,8 +3200,8 @@ public:
 	static void remove_translation(const Ref<Translation>& p_translation);
 
 	static String translate(const String& p_message, const String& p_context = "");
-	static String translate_plural(const String& p_message, const String& p_message_plural,
-		int p_n, const String& p_context = "");
+	static String translate_plural(const String& p_message, const String& p_message_plural, int p_n,
+		const String& p_context = "");
 
 	static String pseudolocalize(const String& p_message);
 
@@ -3245,8 +3230,7 @@ public:
 	static void load_project_translations(Ref<TranslationDomain> p_domain);
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(
-		const String& p_function, int p_idx, List<String>* r_options);
+	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif // TOOLS_ENABLED
 
 	TranslationServer() = delete;
@@ -3254,9 +3238,6 @@ public:
 	TranslationServer& operator=(const TranslationServer&) = delete;
 	~TranslationServer() = delete;
 };
-
-// --- Folded from core/string/plural_rules.h ---
-#include "core/io/ip.h"
 
 class Expression;
 
@@ -3294,13 +3275,6 @@ public:
 
 	static PluralRules* parse(const String& p_rules);
 };
-
-
-
-// --- End core/string/plural_rules.h ---
-
-// --- Folded from core/string/fuzzy_search.h ---
-#include "core/io/ip.h"
 
 class FuzzyTokenMatch;
 
@@ -3354,7 +3328,6 @@ class FuzzySearchMatch : public RefCounted
 	void _maybe_apply_token_order_score_bonus();
 
 protected:
-
 public:
 	void set_target(const String& p_target) { target = p_target; }
 
@@ -3394,7 +3367,6 @@ class FuzzySearch : public RefCounted
 		Ref<FuzzySearchMatch>& r_result) const;
 
 protected:
-
 public:
 	void set_start_offset(int p_offset)
 	{
@@ -3453,16 +3425,6 @@ public:
 		const String& p_query, const PackedStringArray& p_targets) const;
 };
 
-
-
-// --- End core/string/fuzzy_search.h ---
-
-// --- Folded from modules/regex/regex.h ---
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-#include "core/string/ustring.h"
-#include "core/io/ip.h"
-
 class RegExMatch final : public RefCounted
 {
 	struct Range
@@ -3478,7 +3440,6 @@ class RegExMatch final : public RefCounted
 	friend class RegEx;
 
 protected:
-
 public:
 	String get_subject() const;
 	int get_group_count() const;
@@ -3492,13 +3453,12 @@ class RegEx final : public RefCounted
 	void* code = nullptr;
 	String pattern;
 
-	void _pattern_info(uint32_t what, void* where) const;
+	void _pattern_info(uint32_t p_what, void* p_where) const;
 
 	int _sub(const String& p_subject, const String& p_replacement, int p_offset, int p_end,
 		uint32_t p_flags, String& r_output) const;
 
 protected:
-
 #ifndef DISABLE_DEPRECATED
 	static Ref<RegEx> _create_from_string_bind_compat_95212(const String& p_pattern);
 	Error _compile_bind_compat_95212(const String& p_pattern);
@@ -3507,14 +3467,11 @@ protected:
 
 public:
 	static Ref<RegEx> create_from_string(const String& p_pattern, bool p_show_error = true);
-
 	void clear();
 	Error compile(const String& p_pattern, bool p_show_error = true);
-
 	Ref<RegExMatch> search(const String& p_subject, int p_offset = 0, int p_end = -1) const;
 	String sub(const String& p_subject, const String& p_replacement, bool p_all = false,
 		int p_offset = 0, int p_end = -1) const;
-
 	bool is_valid() const;
 	String get_pattern() const;
 	int get_group_count() const;
@@ -3524,6 +3481,4 @@ public:
 	RegEx(const String& p_pattern);
 	~RegEx();
 };
-// --- End modules/regex/regex.h ---
-// --- End core/string/translation_server.h ---
-// --- End core/config/project_settings.h ---
+

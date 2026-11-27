@@ -107,7 +107,6 @@ public:
 // Zero-constructing IPAddress initializes field, valid, and wildcard to 0 (and thus empty).
 template <>
 struct is_zero_constructible<IPAddress> : std::true_type {};
-// --- Folded from core/types.h ---
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -115,7 +114,6 @@ struct is_zero_constructible<IPAddress> : std::true_type {};
 #include "core/os/memory.h"
 #include "core/typedefs.h"
 #include "core/os/mutex.h"
-// --- Inlined/Folded from core/templates/ref.h ---
 #ifndef REF_H
 #define REF_H
 
@@ -318,12 +316,7 @@ template <typename T, typename... Args> _FORCE_INLINE_ Ref<T> memnew_ref(Args&&.
 #endif // REF_H
 
 // Math primitives
-// --- Folded from core/math/transform_3d.h ---
-// --- Folded from core/math/aabb.h ---
-// --- Folded from core/math/plane.h ---
-// --- Folded from core/math/vector3.h ---
 #include "core/typedefs.h"
-#include "core/string/ustring.h"
 
 struct Basis;
 struct Vector2;
@@ -895,7 +888,6 @@ Vector3 Vector3::reflect(const Vector3 &p_normal) const {
 template <>
 struct is_zero_constructible<Vector3> : std::true_type {};
 
-// --- Folded from core/math/vector3i.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 
@@ -1257,7 +1249,6 @@ void Vector3i::zero() { x = y = z = 0; }
 template <> struct is_zero_constructible<Vector3i> : std::true_type
 {
 };
-// --- End core/math/vector3.h ---
 
 struct [[nodiscard]] Plane
 {
@@ -1378,7 +1369,6 @@ constexpr bool Plane::operator!=(const Plane& p_plane) const
 template <> struct is_zero_constructible<Plane> : std::true_type
 {
 };
-// --- End core/math/plane.h ---
 #include "core/math/vector2.h"
 
 /**
@@ -1855,12 +1845,7 @@ AABB AABB::quantized(real_t p_unit) const {
 
 template <>
 struct is_zero_constructible<AABB> : std::true_type {};
-// --- End core/math/aabb.h ---
-// --- Inlined/Folded from core/math/basis.h ---
-// --- Inlined/Folded from core/math/quaternion.h ---
 #include "core/typedefs.h"
-
-#include "core/string/ustring.h"
 
 struct [[nodiscard]] Quaternion {
 	real_t x = 0.0f;
@@ -2074,7 +2059,6 @@ constexpr Quaternion Quaternion::operator*(const Quaternion &p_q) const {
 constexpr Quaternion operator*(real_t p_real, const Quaternion &p_quaternion) {
 	return p_quaternion * p_real;
 }
-
 
 struct [[nodiscard]] Basis {
 	static const Basis FLIP_X;
@@ -2396,8 +2380,6 @@ real_t Basis::determinant() const {
 			rows[2][0] * (rows[0][1] * rows[1][2] - rows[1][1] * rows[0][2]);
 }
 
-#include "core/string/ustring.h"
-
 struct [[nodiscard]] Transform3D {
 	static const Transform3D FLIP_X;
 	static const Transform3D FLIP_Y;
@@ -2676,14 +2658,8 @@ _FORCE_INLINE_ Plane Transform3D::xform_inv_fast(const Plane &p_plane, const Tra
 	real_t d = normal.dot(point);
 	return Plane(normal, d);
 }
-// --- End core/math/transform_3d.h ---
 #include "core/math/vector2.h"
 #include "core/typedefs.h"
-
-// --- Folded from core/math/face3.h ---
-
-
-
 
 struct [[nodiscard]] Face3 {
 	enum Side {
@@ -2886,8 +2862,6 @@ bool Face3::intersects_aabb2(const AABB &p_aabb) const {
 
 template <>
 struct is_zero_constructible<Face3> : std::true_type {};
-// --- End core/math/face3.h ---
-// --- Folded from core/math/rect2.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 
@@ -3298,7 +3272,6 @@ template <> struct is_zero_constructible<Rect2> : std::true_type
 {
 };
 
-// --- Folded from core/math/rect2i.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 
@@ -3536,12 +3509,9 @@ struct [[nodiscard]] Rect2i
 template <> struct is_zero_constructible<Rect2i> : std::true_type
 {
 };
-// --- End core/math/rect2.h ---
-// --- Folded from core/math/transform_2d.h ---
 #include "core/typedefs.h"
 
 #include "core/math/vector2.h"
-#include "core/string/ustring.h"
 
 class String;
 
@@ -3803,13 +3773,9 @@ Vector<Vector2> Transform2D::xform_inv(const Vector<Vector2> &p_array) const {
 	}
 	return array;
 }
-// --- End core/math/transform_2d.h ---
 
 #include "core/math/vector2.h"
 
-// --- Folded from core/math/projection.h ---
-
-// --- Inlined/Folded from core/math/vector4.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 #include "core/typedefs.h"
@@ -4098,7 +4064,6 @@ constexpr Vector4 operator*(int64_t p_scalar, const Vector4 &p_vec) {
 template <>
 struct is_zero_constructible<Vector4> : std::true_type {};
 
-// --- Folded from core/math/vector4i.h ---
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 
@@ -4439,8 +4404,6 @@ void Vector4i::zero() {
 template <>
 struct is_zero_constructible<Vector4i> : std::true_type {};
 
-// --- End core/math/vector4i.h ---
-
 template <typename T>
 class Vector;
 
@@ -4601,12 +4564,9 @@ Vector3 Projection::xform(const Vector3 &p_vec3) const {
 	real_t w = columns[0][3] * p_vec3.x + columns[1][3] * p_vec3.y + columns[2][3] * p_vec3.z + columns[3][3];
 	return ret / w;
 }
-// --- End core/math/projection.h ---
 
 // Strings & Paths
-// --- Inlined/Folded from core/string/node_path.h ---
 #include <climits>
-#include "core/string/ustring.h"
 
 // Represents a path to a node or property in a hierarchy of nodes
 // Note that NodePath is (effectively) const: If you hold a NodePath,
@@ -4689,14 +4649,11 @@ public:
 template <> struct is_zero_constructible<NodePath> : std::true_type
 {
 };
-#include "core/string/ustring.h"
 
 // Core Identifiers & Handles
 #include "core/math/vector2.h"
 
 // Native Container Templates
-#include "core/string/ustring.h"
-// --- Folded from core/templates/hash_map.h ---
 #include <initializer_list>
 #include "core/os/memory.h"
 #include "core/string/ustring.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
@@ -5428,7 +5385,6 @@ public:
 	}
 };
 
-// --- Folded from core/templates/lru.h ---
 #include "core/templates/list.h"
 
 template <typename TKey, typename TData, typename Hasher = HashMapHasherDefault, typename Comparator = HashMapComparatorDefault<TKey>, void (*BeforeEvict)(TKey &, TData &) = nullptr>
@@ -5547,7 +5503,6 @@ public:
 	}
 };
 
-// --- Folded from core/templates/rb_map.h ---
 #include "core/typedefs.h"
 #include "core/os/memory.h"
 #include "core/math/vector2.h"
@@ -6346,9 +6301,6 @@ public:
 		clear();
 	}
 };
-// --- End core/templates/rb_map.h ---
-// --- End core/templates/hash_map.h ---
-// --- Folded from core/templates/hash_set.h ---
 #include "core/os/memory.h"
 #include "core/string/ustring.h" // IWYU pragma: keep. `WARN_VERBOSE` macro.
 #include "core/math/vector2.h"
@@ -6850,13 +6802,9 @@ public:
 		}
 	}
 };
-// --- End core/templates/hash_set.h ---
 #include "core/templates/list.h"
-#include "core/string/ustring.h"
-// --- Folded from core/templates/paged_allocator.h ---
 #include <type_traits>
 #include <typeinfo> // IWYU pragma: keep // Used in macro.
-// --- Folded from core/core_globals.h ---
 // Home for state needed from global functions
 // that cannot be stored in Engine or OS due to e.g. circular includes
 
@@ -6868,8 +6816,6 @@ public:
 	static inline bool print_error_enabled = true;
 	static inline bool print_ready = false;
 };
-// --- End core/core_globals.h ---
-// --- Folded from core/math/math_funcs_binary.h ---
 #include "core/typedefs.h"
 
 namespace Math {
@@ -7026,10 +6972,8 @@ constexpr T get_num_bits(T p_x) {
 }
 
 } //namespace Math
-// --- End core/math/math_funcs_binary.h ---
 #include "core/os/memory.h"
 #include "core/os/mutex.h"
-#include "core/string/ustring.h"
 #include "core/typedefs.h"
 
 template <typename T, bool thread_safe = false, uint32_t DEFAULT_PAGE_SIZE = 4096>
@@ -7176,8 +7120,6 @@ public:
 		}
 	}
 };
-
-// --- Folded from core/templates/paged_array.h ---
 
 #include "core/os/memory.h"
 #include "core/os/mutex.h"
@@ -7520,9 +7462,6 @@ public:
 		reset();
 	}
 };
-// --- End core/templates/paged_allocator.h ---
-// --- Inlined/Folded from core/templates/ring_buffer.h ---
-#include "core/string/ustring.h"
 
 template <typename T> class _WARN_UNUSED_ RingBuffer
 {
@@ -7714,7 +7653,6 @@ public:
 
 	RingBuffer(int p_power = 0) { resize(p_power); }
 };
-#include "core/string/ustring.h"
 
 // Packed Arrays
 typedef Vector<uint8_t> PackedByteArray;
@@ -7734,9 +7672,6 @@ struct HashMapHasherDefaultImpl<Ref<T>> {
 		return hash_one_uint64(reinterpret_cast<uint64_t>(p_ref.ptr()));
 	}
 };
-
-// --- Folded from core/math/expression.h ---
-
 
 class Expression : public RefCounted
 {
@@ -7886,11 +7821,8 @@ public:
 
 	~Expression();
 };
-// --- End core/math/expression.h ---
 #include "thirdparty/openxr/include/openxr/openxr.h"
 
-
-// --- Folded from core/math/random_pcg.h ---
 #include "core/typedefs.h"
 
 #include <thirdparty/misc/pcg.h>
@@ -8000,14 +7932,10 @@ public:
 	int random(int p_from, int p_to);
 };
 
-// --- Folded from core/math/random_number_generator.h ---
-
-
 class RandomNumberGenerator : public RefCounted
 {
 protected:
 	RandomPCG randbase;
-
 
 public:
 	_FORCE_INLINE_ void set_seed(uint64_t p_seed) { randbase.seed(p_seed); }
@@ -8043,14 +7971,11 @@ public:
 
 	RandomNumberGenerator() { randbase.randomize(); }
 };
-// --- End core/math/random_pcg.h ---
 
 #endif // TYPES_H
 
-// --- Folded from core/templates/self_list.h ---
 #include "core/typedefs.h"
 #include "core/templates/list.h"
-#include "core/typedefs.h"
 
 template <typename T> class _WARN_UNUSED_ SelfList
 {
@@ -8211,13 +8136,10 @@ public:
 		}
 	}
 };
-// --- End core/templates/self_list.h ---
 
-// --- Folded from core/templates/a_hash_map.h ---
 #include <initializer_list>
 
 #include "core/os/memory.h"
-#include "core/string/ustring.h"
 #include "core/math/vector2.h"
 
 class String;
@@ -8997,16 +8919,10 @@ extern template class AHashMap<int, int>;
 extern template class AHashMap<String, int>;
 extern template class AHashMap<String, String>;
 extern template class AHashMap<String, int>;
-// --- End core/templates/a_hash_map.h ---
 
-// --- Folded from core/templates/rid_owner.h ---
 #include <cstdio>
 #include <typeinfo> // IWYU pragma: keep // Used in macro.
-#include "core/os/memory.h"
 #include "core/os/mutex.h"
-#include "core/string/ustring.h"
-#include "core/os/memory.h"
-
 
 #ifdef TSAN_ENABLED
 #include <sanitizer/tsan_interface.h>
@@ -9519,12 +9435,6 @@ public:
 	{
 	}
 };
-// --- End core/templates/rid_owner.h ---
-
-// --- Folded from core/io/resource_uid.h ---
-
-#include "core/string/ustring.h"
-
 
 class FileAccess;
 
@@ -9601,11 +9511,6 @@ public:
 	ResourceUID& operator=(const ResourceUID&) = delete;
 	~ResourceUID() = delete;
 };
-// --- End core/io/resource_uid.h ---
-
-// --- Folded from core/io/resource.h ---
-
-
 
 class Node;
 class RWLock;
@@ -9764,7 +9669,6 @@ public:
 	static int get_cached_resource_count();
 };
 
-// --- Folded from scene/property_list_helper.h ---
 class PropertyListHelper
 {
 	static HashMap<String, Vector<PropertyListHelper*>> base_helpers;
@@ -9792,9 +9696,6 @@ public:
 
 	void clear();
 };
-// --- End scene/property_list_helper.h ---
-// --- End core/io/resource.h ---
-// --- End core/types.h ---
 
 struct _IP_ResolverPrivate;
 
@@ -9891,5 +9792,4 @@ public:
 	IP& operator=(const IP&) = delete;
 	~IP() = delete;
 };
-
 
