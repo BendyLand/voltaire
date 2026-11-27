@@ -75926,15 +75926,9 @@ private:
 
 	Mutex update_mutex;
 
-	struct InterpolationData
-	{
-		// Whether this particle is non-interpolated, but following an interpolated parent.
-		bool interpolated_follow = false;
-
-		// If doing interpolated follow, we need to keep these updated per tick.
-		Transform2D global_xform_curr;
-		Transform2D global_xform_prev;
-	} _interpolation_data;
+	bool interpolated_follow = false;
+	Transform2D global_xform_curr;
+	Transform2D global_xform_prev;
 
 	void _update_render_thread();
 
@@ -76353,13 +76347,13 @@ void CPUParticles2D::_refresh_interpolation_state()
 	// This is so that particles aren't generated AHEAD of the interpolated parent.
 	bool follow = !local_coords && SceneTree::is_physics_interpolation_enabled();
 
-	if (follow == _interpolation_data.interpolated_follow) {
+	if (follow == interpolated_follow) {
 		return;
 	}
 
-	_interpolation_data.interpolated_follow = follow;
+	interpolated_follow = follow;
 
-	set_physics_process_internal(_interpolation_data.interpolated_follow);
+	set_physics_process_internal(interpolated_follow);
 }
 
 Ref<Texture2D> CPUParticles2D::get_texture() const { return texture; }
@@ -76685,12 +76679,12 @@ void CPUParticles2D::_particles_process(double p_delta)
 	Transform2D emission_xform;
 	Transform2D velocity_xform;
 	if (!local_coords) {
-		if (!_interpolation_data.interpolated_follow) {
+		if (!interpolated_follow) {
 			emission_xform = get_global_transform();
 		}
 		else {
-			TransformInterpolator::interpolate_transform_2d(_interpolation_data.global_xform_prev,
-				_interpolation_data.global_xform_curr, emission_xform,
+			TransformInterpolator::interpolate_transform_2d(global_xform_prev,
+				global_xform_curr, emission_xform,
 				Engine::get_physics_interpolation_fraction());
 		}
 		velocity_xform = emission_xform;
@@ -106356,27 +106350,6 @@ void IKModifier3D::_process_two_bone_joints(double p_delta, Skeleton3D *p_skelet
 
 namespace {
 
-struct VehicleJacobianEntry {
-	Vector3 m_linearJointAxis;
-	Vector3 m_aJ;
-	Vector3 m_bJ;
-	Vector3 m_0MinvJt;
-	Vector3 m_1MinvJt;
-	real_t m_Adiag = 0.0f;
-
-	VehicleJacobianEntry() = default;
-
-	VehicleJacobianEntry(const Basis &world2A, const Basis &world2B, const Vector3 &rel_pos1,
-			const Vector3 &rel_pos2, const Vector3 &jointAxis, const Vector3 &inertiaInvA,
-			real_t massInvA, const Vector3 &inertiaInvB, real_t massInvB) :
-			m_linearJointAxis(jointAxis) {
-		m_aJ = world2A.xform(rel_pos1.cross(m_linearJointAxis));
-		m_bJ = world2B.xform(rel_pos2.cross(-m_linearJointAxis));
-		m_0MinvJt = inertiaInvA * m_aJ;
-		m_1MinvJt = inertiaInvB * m_bJ;
-		m_Adiag = massInvA + m_0MinvJt.dot(m_aJ) + massInvB + m_1MinvJt.dot(m_bJ);
-	}
-};
 
 } // namespace
 
@@ -129935,41 +129908,28 @@ private:
 		}
 	};
 
-	struct ClipsPlayback
-	{
-		uint64_t version = 0;
-		LocalVector<ClipState> states;
-		int playback_current = -1;
-		int return_memory = -1;
-		int switch_request = -1;
-	};
-
-	struct PlaylistPlayback
-	{
-		LocalVector<Ref<AudioStreamPlayback>> playback;
-		LocalVector<int> play_order;
-		double stream_todo = 0.0;
-		int fade_index = -1;
-		double fade_volume = 1.0;
-		int play_index = 0;
-		double offset = 0.0;
-		int loop_count = 0;
-	};
-
-	struct SyncPlayback
-	{
-		LocalVector<Ref<AudioStreamPlayback>> playback;
-	};
-
 	Ref<AudioStreamInteractive> stream;
 	bool active = false;
 
 	AudioFrame mix_buffer[BUFFER_SIZE];
 	AudioFrame temp_buffer[BUFFER_SIZE];
 
-	ClipsPlayback clips;
-	PlaylistPlayback playlist;
-	SyncPlayback sync;
+	uint64_t clips_version = 0;
+	LocalVector<ClipState> clips_states;
+	int clips_playback_current = -1;
+	int clips_return_memory = -1;
+	int clips_switch_request = -1;
+
+	LocalVector<Ref<AudioStreamPlayback>> playlist_playback;
+	LocalVector<int> playlist_play_order;
+	double playlist_stream_todo = 0.0;
+	int playlist_fade_index = -1;
+	double playlist_fade_volume = 1.0;
+	int playlist_play_index = 0;
+	double playlist_offset = 0.0;
+	int playlist_loop_count = 0;
+
+	LocalVector<Ref<AudioStreamPlayback>> sync_playback;
 
 	// Clips helpers
 	void _mix_internal(int p_frames);
@@ -130528,29 +130488,29 @@ void AudioStreamPlaybackInteractive::stop()
 {
 	active = false;
 
-	for (uint32_t i = 0; i < clips.states.size(); i++) {
-		if (clips.states[i].playback.is_valid()) {
-			clips.states[i].playback->stop();
+	for (uint32_t i = 0; i < clips_states.size(); i++) {
+		if (clips_states[i].playback.is_valid()) {
+			clips_states[i].playback->stop();
 		}
-		clips.states[i].fade_speed = 0.0;
-		clips.states[i].fade_volume = 0.0;
-		clips.states[i].fade_wait = 0.0;
-		clips.states[i].reset_fade();
-		clips.states[i].active = false;
-		clips.states[i].auto_advance = -1;
-		clips.states[i].first_mix = true;
+		clips_states[i].fade_speed = 0.0;
+		clips_states[i].fade_volume = 0.0;
+		clips_states[i].fade_wait = 0.0;
+		clips_states[i].reset_fade();
+		clips_states[i].active = false;
+		clips_states[i].auto_advance = -1;
+		clips_states[i].first_mix = true;
 	}
-	clips.playback_current = -1;
+	clips_playback_current = -1;
 
-	for (uint32_t i = 0; i < playlist.playback.size(); i++) {
-		if (playlist.playback[i].is_valid()) {
-			playlist.playback[i]->stop();
+	for (uint32_t i = 0; i < playlist_playback.size(); i++) {
+		if (playlist_playback[i].is_valid()) {
+			playlist_playback[i]->stop();
 		}
 	}
 
-	for (uint32_t i = 0; i < sync.playback.size(); i++) {
-		if (sync.playback[i].is_valid()) {
-			sync.playback[i]->stop();
+	for (uint32_t i = 0; i < sync_playback.size(); i++) {
+		if (sync_playback[i].is_valid()) {
+			sync_playback[i]->stop();
 		}
 	}
 }
@@ -130558,15 +130518,15 @@ void AudioStreamPlaybackInteractive::stop()
 void AudioStreamPlaybackInteractive::_update_order()
 {
 	int count = stream->stream_count;
-	playlist.play_order.resize(count);
+	playlist_play_order.resize(count);
 	for (int i = 0; i < count; i++) {
-		playlist.play_order[i] = i;
+		playlist_play_order[i] = i;
 	}
 
 	if (stream->shuffle) {
 		for (int i = 0; i < count; i++) {
 			int swap_with = Math::rand() % uint32_t(count);
-			SWAP(playlist.play_order[i], playlist.play_order[swap_with]);
+			SWAP(playlist_play_order[i], playlist_play_order[swap_with]);
 		}
 	}
 }
@@ -130581,24 +130541,24 @@ void AudioStreamPlaybackInteractive::_update_playback_instances()
 
 	int count = stream->stream_count;
 	if (stream->mode == AudioStreamInteractive::MODE_PLAYLIST) {
-		playlist.playback.resize(count);
+		playlist_playback.resize(count);
 		for (int i = 0; i < count; i++) {
 			if ((uint32_t)i < stream->audio_streams.size() && stream->audio_streams[i].is_valid()) {
-				playlist.playback[i] = stream->audio_streams[i]->instantiate_playback();
+				playlist_playback[i] = stream->audio_streams[i]->instantiate_playback();
 			}
 			else {
-				playlist.playback[i].unref();
+				playlist_playback[i].unref();
 			}
 		}
 	}
 	else if (stream->mode == AudioStreamInteractive::MODE_SYNCHRONIZED) {
-		sync.playback.resize(count);
+		sync_playback.resize(count);
 		for (int i = 0; i < count; i++) {
 			if ((uint32_t)i < stream->audio_streams.size() && stream->audio_streams[i].is_valid()) {
-				sync.playback[i] = stream->audio_streams[i]->instantiate_playback();
+				sync_playback[i] = stream->audio_streams[i]->instantiate_playback();
 			}
 			else {
-				sync.playback[i].unref();
+				sync_playback[i].unref();
 			}
 		}
 	}
@@ -130616,34 +130576,34 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 
 	switch (stream->mode) {
 	case AudioStreamInteractive::MODE_CLIPS: {
-		if (clips.states.size() < AudioStreamInteractive::MAX_CLIPS) {
-			clips.states.resize(AudioStreamInteractive::MAX_CLIPS);
+		if (clips_states.size() < AudioStreamInteractive::MAX_CLIPS) {
+			clips_states.resize(AudioStreamInteractive::MAX_CLIPS);
 		}
-		if (clips.version != stream->version) {
+		if (clips_version != stream->version) {
 			for (int i = 0; i < AudioStreamInteractive::MAX_CLIPS; i++) {
 				Ref<AudioStream> src_stream;
 				if (i < stream->clip_count && (uint32_t)i < stream->clips.size()) {
 					src_stream = stream->clips[i].stream;
 				}
-				if (clips.states[i].stream != src_stream) {
-					clips.states[i].stream.unref();
-					clips.states[i].playback.unref();
+				if (clips_states[i].stream != src_stream) {
+					clips_states[i].stream.unref();
+					clips_states[i].playback.unref();
 
-					clips.states[i].stream = src_stream;
+					clips_states[i].stream = src_stream;
 					if (src_stream.is_valid()) {
-						clips.states[i].playback = src_stream->instantiate_playback();
+						clips_states[i].playback = src_stream->instantiate_playback();
 					}
 				}
 			}
 
-			clips.version = stream->version;
+			clips_version = stream->version;
 		}
 
 		int current = stream->initial_clip;
 		if (current < 0 || current >= stream->clip_count) {
 			return; // No playback possible.
 		}
-		if (clips.states[current].playback.is_null()) {
+		if (clips_states[current].playback.is_null()) {
 			return; // No playback possible.
 		}
 		active = true;
@@ -130652,7 +130612,7 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 	} break;
 
 	case AudioStreamInteractive::MODE_PLAYLIST: {
-		if ((int)playlist.playback.size() != stream->stream_count) {
+		if ((int)playlist_playback.size() != stream->stream_count) {
 			_update_playback_instances();
 		}
 
@@ -130668,11 +130628,11 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 
 		_update_order();
 
-		playlist.play_index = -1;
+		playlist_play_index = -1;
 
 		double play_ofs = p_from_pos;
 		for (int i = 0; i < stream->stream_count; i++) {
-			int idx = playlist.play_order[i];
+			int idx = playlist_play_order[i];
 			if ((uint32_t)idx < stream->audio_streams.size() &&
 				stream->audio_streams[idx].is_valid()) {
 				double bpm = stream->audio_streams[idx]->get_bpm();
@@ -130685,8 +130645,8 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 					length = stream->audio_streams[idx]->get_length();
 				}
 				if (play_ofs < length) {
-					playlist.play_index = i;
-					playlist.stream_todo = length - play_ofs;
+					playlist_play_index = i;
+					playlist_stream_todo = length - play_ofs;
 					break;
 				}
 				else {
@@ -130695,32 +130655,32 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 			}
 		}
 
-		if (playlist.play_index == -1) {
+		if (playlist_play_index == -1) {
 			return;
 		}
 
-		int first_idx = playlist.play_order[playlist.play_index];
-		if ((uint32_t)first_idx >= playlist.playback.size() ||
-			playlist.playback[first_idx].is_null()) {
+		int first_idx = playlist_play_order[playlist_play_index];
+		if ((uint32_t)first_idx >= playlist_playback.size() ||
+			playlist_playback[first_idx].is_null()) {
 			return;
 		}
 
-		playlist.playback[first_idx]->start(play_ofs);
-		playlist.fade_index = -1;
-		playlist.loop_count = 0;
-		playlist.offset = p_from_pos;
+		playlist_playback[first_idx]->start(play_ofs);
+		playlist_fade_index = -1;
+		playlist_loop_count = 0;
+		playlist_offset = p_from_pos;
 
 		active = true;
 	} break;
 
 	case AudioStreamInteractive::MODE_SYNCHRONIZED: {
-		if ((int)sync.playback.size() != stream->stream_count) {
+		if ((int)sync_playback.size() != stream->stream_count) {
 			_update_playback_instances();
 		}
 
 		for (int i = 0; i < stream->stream_count; i++) {
-			if ((uint32_t)i < sync.playback.size() && sync.playback[i].is_valid()) {
-				sync.playback[i]->start(p_from_pos);
+			if ((uint32_t)i < sync_playback.size() && sync_playback[i].is_valid()) {
+				sync_playback[i]->start(p_from_pos);
 				active = true;
 			}
 		}
@@ -130731,12 +130691,12 @@ void AudioStreamPlaybackInteractive::start(double p_from_pos)
 void AudioStreamPlaybackInteractive::_queue(int p_to_clip_index, bool p_is_auto_advance)
 {
 	ERR_FAIL_INDEX(p_to_clip_index, stream->clip_count);
-	ERR_FAIL_COND(clips.states[p_to_clip_index].playback.is_null());
+	ERR_FAIL_COND(clips_states[p_to_clip_index].playback.is_null());
 
-	if (clips.playback_current == -1) {
+	if (clips_playback_current == -1) {
 		// Nothing to do, start.
 		int current = p_to_clip_index;
-		ClipState& state = clips.states[current];
+		ClipState& state = clips_states[current];
 		state.active = true;
 		state.fade_wait = 0;
 		state.fade_volume = 1.0;
@@ -130745,7 +130705,7 @@ void AudioStreamPlaybackInteractive::_queue(int p_to_clip_index, bool p_is_auto_
 
 		state.playback->start(0);
 
-		clips.playback_current = current;
+		clips_playback_current = current;
 
 		if (stream->clips[current].auto_advance == AudioStreamInteractive::AUTO_ADVANCE_ENABLED &&
 			stream->clips[current].auto_advance_next_clip >= 0 &&
@@ -130758,26 +130718,26 @@ void AudioStreamPlaybackInteractive::_queue(int p_to_clip_index, bool p_is_auto_
 	}
 
 	for (int i = 0; i < stream->clip_count; i++) {
-		if (i == clips.playback_current || i == p_to_clip_index) {
+		if (i == clips_playback_current || i == p_to_clip_index) {
 			continue;
 		}
-		if (clips.states[i].active &&
-			clips.states[i].fade_wait > 0) { // Waiting to kick in, terminate because change of plans.
-			clips.states[i].playback->stop();
-			clips.states[i].reset_fade();
-			clips.states[i].active = false;
+		if (clips_states[i].active &&
+			clips_states[i].fade_wait > 0) { // Waiting to kick in, terminate because change of plans.
+			clips_states[i].playback->stop();
+			clips_states[i].reset_fade();
+			clips_states[i].active = false;
 		}
 	}
 
-	ClipState& from_state = clips.states[clips.playback_current];
-	ClipState& to_state = clips.states[p_to_clip_index];
+	ClipState& from_state = clips_states[clips_playback_current];
+	ClipState& to_state = clips_states[p_to_clip_index];
 
 	AudioStreamInteractive::Transition transition; // Use an empty transition by default
 
 	AudioStreamInteractive::TransitionKey tkeys[4] = {
-		AudioStreamInteractive::TransitionKey(clips.playback_current, p_to_clip_index),
+		AudioStreamInteractive::TransitionKey(clips_playback_current, p_to_clip_index),
 		AudioStreamInteractive::TransitionKey(
-			clips.playback_current, AudioStreamInteractive::CLIP_ANY),
+			clips_playback_current, AudioStreamInteractive::CLIP_ANY),
 		AudioStreamInteractive::TransitionKey(AudioStreamInteractive::CLIP_ANY, p_to_clip_index),
 		AudioStreamInteractive::TransitionKey(
 			AudioStreamInteractive::CLIP_ANY, AudioStreamInteractive::CLIP_ANY)};
@@ -130935,28 +130895,28 @@ void AudioStreamPlaybackInteractive::_queue(int p_to_clip_index, bool p_is_auto_
 		AudioStreamInteractive::AUTO_ADVANCE_ENABLED) {
 		int next_clip = stream->clips[p_to_clip_index].auto_advance_next_clip;
 		if (next_clip >= 0 && next_clip < (int)stream->clip_count &&
-			clips.states[next_clip].playback.is_valid() && next_clip != p_to_clip_index &&
+			clips_states[next_clip].playback.is_valid() && next_clip != p_to_clip_index &&
 			(!transition.use_filler_clip || next_clip != transition.filler_clip)) {
 			auto_advance_to = next_clip;
 		}
 	}
 
-	if (clips.return_memory != -1 && stream->clips[p_to_clip_index].auto_advance ==
+	if (clips_return_memory != -1 && stream->clips[p_to_clip_index].auto_advance ==
 										 AudioStreamInteractive::AUTO_ADVANCE_RETURN_TO_HOLD) {
-		auto_advance_to = clips.return_memory;
-		clips.return_memory = -1;
+		auto_advance_to = clips_return_memory;
+		clips_return_memory = -1;
 	}
 
 	if (transition.hold_previous) {
-		clips.return_memory = clips.playback_current;
+		clips_return_memory = clips_playback_current;
 	}
 
 	if (transition.use_filler_clip && transition.filler_clip >= 0 &&
 		transition.filler_clip < (int)stream->clip_count &&
-		clips.states[transition.filler_clip].playback.is_valid() &&
-		clips.playback_current != transition.filler_clip &&
+		clips_states[transition.filler_clip].playback.is_valid() &&
+		clips_playback_current != transition.filler_clip &&
 		p_to_clip_index != transition.filler_clip) {
-		ClipState& filler_state = clips.states[transition.filler_clip];
+		ClipState& filler_state = clips_states[transition.filler_clip];
 
 		filler_state.playback->start(0);
 		filler_state.active = true;
@@ -131025,10 +130985,10 @@ void AudioStreamPlaybackInteractive::seek(double p_time)
 		start(p_time);
 		break;
 	case AudioStreamInteractive::MODE_SYNCHRONIZED: {
-		int count = MIN(stream->stream_count, (int)sync.playback.size());
+		int count = MIN(stream->stream_count, (int)sync_playback.size());
 		for (int i = 0; i < count; i++) {
-			if (sync.playback[i].is_valid()) {
-				sync.playback[i]->seek(p_time);
+			if (sync_playback[i].is_valid()) {
+				sync_playback[i]->seek(p_time);
 			}
 		}
 	} break;
@@ -131059,15 +131019,15 @@ int AudioStreamPlaybackInteractive::mix(AudioFrame* p_buffer, float p_rate_scale
 int AudioStreamPlaybackInteractive::_mix_clips(
 	AudioFrame* p_buffer, float p_rate_scale, int p_frames)
 {
-	if (active && clips.version != stream->version) {
+	if (active && clips_version != stream->version) {
 		stop();
 	}
 
-	if (clips.switch_request != -1) {
+	if (clips_switch_request != -1) {
 		if (active) {
-			_queue(clips.switch_request, false);
+			_queue(clips_switch_request, false);
 		}
-		clips.switch_request = -1;
+		clips_switch_request = -1;
 	}
 
 	if (!active) {
@@ -131096,25 +131056,25 @@ void AudioStreamPlaybackInteractive::_mix_internal(int p_frames)
 	}
 
 	bool any_active = false;
-	int count = MIN(stream->clip_count, (int)clips.states.size());
+	int count = MIN(stream->clip_count, (int)clips_states.size());
 	for (int i = 0; i < count; i++) {
-		if (!clips.states[i].active) {
+		if (!clips_states[i].active) {
 			continue;
 		}
 
 		_mix_internal_state(i, p_frames);
 
-		any_active = clips.states[i].active || any_active;
+		any_active = clips_states[i].active || any_active;
 	}
 	if (!any_active) {
 		active = false;
-		clips.playback_current = -1;
+		clips_playback_current = -1;
 	}
 }
 
 void AudioStreamPlaybackInteractive::_mix_internal_state(int p_state_idx, int p_frames)
 {
-	ClipState& state = clips.states[p_state_idx];
+	ClipState& state = clips_states[p_state_idx];
 	double mix_rate = double(AudioServer::get_mix_rate());
 	double frame_inc = 1.0 / mix_rate;
 
@@ -131131,7 +131091,7 @@ void AudioStreamPlaybackInteractive::_mix_internal_state(int p_state_idx, int p_
 			if (state.fade_speed == 0.0) {
 				queue_next = state.auto_advance;
 			}
-			clips.playback_current = p_state_idx;
+			clips_playback_current = p_state_idx;
 			state.first_mix = false;
 		}
 		else {
@@ -131201,23 +131161,23 @@ int AudioStreamPlaybackInteractive::_mix_playlist(
 	while (todo) {
 		int to_mix = MIN(todo, MIX_BUFFER_SIZE);
 
-		playlist.playback[playlist.play_order[playlist.play_index]]->mix(mix_buffer, 1.0, to_mix);
-		if (playlist.fade_index != -1) {
-			playlist.playback[playlist.fade_index]->mix(temp_buffer, 1.0, to_mix);
+		playlist_playback[playlist_play_order[playlist_play_index]]->mix(mix_buffer, 1.0, to_mix);
+		if (playlist_fade_index != -1) {
+			playlist_playback[playlist_fade_index]->mix(temp_buffer, 1.0, to_mix);
 		}
 
-		playlist.offset += time_dec * to_mix;
+		playlist_offset += time_dec * to_mix;
 
 		for (int i = 0; i < to_mix; i++) {
 			*p_buffer = mix_buffer[i];
-			playlist.stream_todo -= time_dec;
-			if (playlist.stream_todo < 0) {
+			playlist_stream_todo -= time_dec;
+			if (playlist_stream_todo < 0) {
 				// find next stream.
-				int prev = playlist.play_order[playlist.play_index];
+				int prev = playlist_play_order[playlist_play_index];
 
 				for (int j = 0; j < stream->stream_count; j++) {
-					playlist.play_index++;
-					if (playlist.play_index >= stream->stream_count) {
+					playlist_play_index++;
+					if (playlist_play_index >= stream->stream_count) {
 						// No loop, exit.
 						if (!stream->loop) {
 							for (int k = i; k < todo - i; k++) {
@@ -131229,12 +131189,12 @@ int AudioStreamPlaybackInteractive::_mix_playlist(
 						}
 
 						_update_order();
-						playlist.play_index = 0;
-						playlist.loop_count++;
-						playlist.offset = time_dec * (to_mix - i);
+						playlist_play_index = 0;
+						playlist_loop_count++;
+						playlist_offset = time_dec * (to_mix - i);
 					}
 
-					if (playlist.playback[playlist.play_order[playlist.play_index]].is_valid()) {
+					if (playlist_playback[playlist_play_order[playlist_play_index]].is_valid()) {
 						break;
 					}
 				}
@@ -131243,20 +131203,20 @@ int AudioStreamPlaybackInteractive::_mix_playlist(
 					break;
 				}
 
-				if (playlist.playback[playlist.play_order[playlist.play_index]].is_null()) {
+				if (playlist_playback[playlist_play_order[playlist_play_index]].is_null()) {
 					todo = to_mix; // Weird error.
 					active = false;
 					break;
 				}
 
 				bool restart = true;
-				if (prev == playlist.play_order[playlist.play_index]) {
+				if (prev == playlist_play_order[playlist_play_index]) {
 					// Went back to the same one, continue loop (if it loops) or restart if it does
 					// not.
 					if (stream->audio_streams[prev]->has_loop()) {
 						restart = false;
 					}
-					playlist.fade_index = -1;
+					playlist_fade_index = -1;
 				}
 				else {
 					// Move current mixed data to fade buffer (temp_buffer).
@@ -131264,15 +131224,15 @@ int AudioStreamPlaybackInteractive::_mix_playlist(
 						temp_buffer[j] = mix_buffer[j];
 					}
 
-					playlist.fade_index = prev;
-					playlist.fade_volume = 1.0;
+					playlist_fade_index = prev;
+					playlist_fade_volume = 1.0;
 				}
 
-				int idx = playlist.play_order[playlist.play_index];
+				int idx = playlist_play_order[playlist_play_index];
 
 				if (restart) {
-					playlist.playback[idx]->start(0); // No loop, just cold-restart.
-					playlist.playback[idx]->mix(
+					playlist_playback[idx]->start(0); // No loop, just cold-restart.
+					playlist_playback[idx]->mix(
 						mix_buffer + i, 1.0, to_mix - i); // Fill rest of mix buffer
 				}
 
@@ -131281,19 +131241,19 @@ int AudioStreamPlaybackInteractive::_mix_playlist(
 				int beat_count = stream->audio_streams[idx]->get_beat_count();
 
 				if (bpm > 0.0 && beat_count > 0) {
-					playlist.stream_todo = beat_count * 60.0 / bpm;
+					playlist_stream_todo = beat_count * 60.0 / bpm;
 				}
 				else {
-					playlist.stream_todo = stream->audio_streams[idx]->get_length();
+					playlist_stream_todo = stream->audio_streams[idx]->get_length();
 				}
 			}
 
-			if (playlist.fade_index != -1) {
-				*p_buffer += temp_buffer[i] * playlist.fade_volume;
-				playlist.fade_volume -= fade_dec;
-				if (playlist.fade_volume <= 0.0) {
-					playlist.playback[playlist.fade_index]->stop();
-					playlist.fade_index = -1;
+			if (playlist_fade_index != -1) {
+				*p_buffer += temp_buffer[i] * playlist_fade_volume;
+				playlist_fade_volume -= fade_dec;
+				if (playlist_fade_volume <= 0.0) {
+					playlist_playback[playlist_fade_index]->stop();
+					playlist_fade_index = -1;
 				}
 			}
 
@@ -131314,7 +131274,7 @@ int AudioStreamPlaybackInteractive::_mix_sync(
 	}
 
 	int todo = p_frames;
-	int count = MIN(stream->stream_count, (int)sync.playback.size());
+	int count = MIN(stream->stream_count, (int)sync_playback.size());
 
 	bool any_active = false;
 	while (todo) {
@@ -131322,13 +131282,13 @@ int AudioStreamPlaybackInteractive::_mix_sync(
 
 		bool first = true;
 		for (int i = 0; i < count; i++) {
-			if (sync.playback[i].is_valid() && sync.playback[i]->is_playing()) {
+			if (sync_playback[i].is_valid() && sync_playback[i]->is_playing()) {
 				float db = (uint32_t)i < stream->audio_stream_volume_db.size()
 							   ? stream->audio_stream_volume_db[i]
 							   : 0.0f;
 				float volume = Math::db_to_linear(db);
 				if (first) {
-					sync.playback[i]->mix(p_buffer, p_rate_scale, to_mix);
+					sync_playback[i]->mix(p_buffer, p_rate_scale, to_mix);
 					for (int j = 0; j < to_mix; j++) {
 						p_buffer[j] *= volume;
 					}
@@ -131336,7 +131296,7 @@ int AudioStreamPlaybackInteractive::_mix_sync(
 					any_active = true;
 				}
 				else {
-					sync.playback[i]->mix(mix_buffer, p_rate_scale, to_mix);
+					sync_playback[i]->mix(mix_buffer, p_rate_scale, to_mix);
 					for (int j = 0; j < to_mix; j++) {
 						p_buffer[j] += mix_buffer[j] * volume;
 					}
@@ -131369,13 +131329,13 @@ void AudioStreamPlaybackInteractive::tag_used_streams()
 
 	switch (stream->mode) {
 	case AudioStreamInteractive::MODE_PLAYLIST:
-		if (active && (uint32_t)playlist.play_index < playlist.play_order.size()) {
-			int idx = playlist.play_order[playlist.play_index];
+		if (active && (uint32_t)playlist_play_index < playlist_play_order.size()) {
+			int idx = playlist_play_order[playlist_play_index];
 			if ((uint32_t)idx < stream->audio_streams.size() &&
-				stream->audio_streams[idx].is_valid() && (uint32_t)idx < playlist.playback.size() &&
-				playlist.playback[idx].is_valid()) {
+				stream->audio_streams[idx].is_valid() && (uint32_t)idx < playlist_playback.size() &&
+				playlist_playback[idx].is_valid()) {
 				stream->audio_streams[idx]->tag_used(
-					playlist.playback[idx]->get_playback_position());
+					playlist_playback[idx]->get_playback_position());
 			}
 		}
 		stream->tag_used(0);
@@ -131383,12 +131343,12 @@ void AudioStreamPlaybackInteractive::tag_used_streams()
 
 	case AudioStreamInteractive::MODE_SYNCHRONIZED:
 		if (active) {
-			int count = MIN(stream->stream_count, (int)sync.playback.size());
+			int count = MIN(stream->stream_count, (int)sync_playback.size());
 			for (int i = 0; i < count; i++) {
-				if (sync.playback[i].is_valid() && sync.playback[i]->is_playing() &&
+				if (sync_playback[i].is_valid() && sync_playback[i]->is_playing() &&
 					(uint32_t)i < stream->audio_streams.size() &&
 					stream->audio_streams[i].is_valid()) {
-					stream->audio_streams[i]->tag_used(sync.playback[i]->get_playback_position());
+					stream->audio_streams[i]->tag_used(sync_playback[i]->get_playback_position());
 				}
 			}
 			stream->tag_used(0);
@@ -131397,12 +131357,12 @@ void AudioStreamPlaybackInteractive::tag_used_streams()
 
 	case AudioStreamInteractive::MODE_CLIPS:
 	default: {
-		int count = MIN(stream->clip_count, (int)clips.states.size());
+		int count = MIN(stream->clip_count, (int)clips_states.size());
 		for (int i = 0; i < count; i++) {
-			if (clips.states[i].active && !clips.states[i].first_mix &&
-				clips.states[i].playback->is_playing()) {
-				clips.states[i].stream->tag_used(
-					clips.states[i].playback->get_playback_position());
+			if (clips_states[i].active && !clips_states[i].first_mix &&
+				clips_states[i].playback->is_playing()) {
+				clips_states[i].stream->tag_used(
+					clips_states[i].playback->get_playback_position());
 			}
 		}
 		stream->tag_used(0);
@@ -131413,7 +131373,7 @@ void AudioStreamPlaybackInteractive::tag_used_streams()
 void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const String& p_name)
 {
 	if (p_name == String()) {
-		clips.switch_request = -1;
+		clips_switch_request = -1;
 		return;
 	}
 
@@ -131421,7 +131381,7 @@ void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const String& p_name
 
 	for (int i = 0; i < stream->get_clip_count(); i++) {
 		if (stream->get_clip_name(i) == p_name) {
-			clips.switch_request = i;
+			clips_switch_request = i;
 			return;
 		}
 	}
@@ -131430,12 +131390,12 @@ void AudioStreamPlaybackInteractive::switch_to_clip_by_name(const String& p_name
 
 void AudioStreamPlaybackInteractive::switch_to_clip(int p_index)
 {
-	clips.switch_request = p_index;
+	clips_switch_request = p_index;
 }
 
 int AudioStreamPlaybackInteractive::get_current_clip_index() const
 {
-	return clips.playback_current;
+	return clips_playback_current;
 }
 
 int AudioStreamPlaybackInteractive::get_loop_count() const
@@ -131446,14 +131406,14 @@ int AudioStreamPlaybackInteractive::get_loop_count() const
 
 	switch (stream->mode) {
 	case AudioStreamInteractive::MODE_PLAYLIST:
-		return playlist.loop_count;
+		return playlist_loop_count;
 	case AudioStreamInteractive::MODE_SYNCHRONIZED: {
 		int min_loops = 0;
 		bool min_loops_found = false;
-		int count = MIN(stream->stream_count, (int)sync.playback.size());
+		int count = MIN(stream->stream_count, (int)sync_playback.size());
 		for (int i = 0; i < count; i++) {
-			if (sync.playback[i].is_valid() && sync.playback[i]->is_playing()) {
-				int loops = sync.playback[i]->get_loop_count();
+			if (sync_playback[i].is_valid() && sync_playback[i]->is_playing()) {
+				int loops = sync_playback[i]->get_loop_count();
 				if (!min_loops_found || loops < min_loops) {
 					min_loops = loops;
 					min_loops_found = true;
@@ -131476,14 +131436,14 @@ double AudioStreamPlaybackInteractive::get_playback_position() const
 
 	switch (stream->mode) {
 	case AudioStreamInteractive::MODE_PLAYLIST:
-		return playlist.offset;
+		return playlist_offset;
 	case AudioStreamInteractive::MODE_SYNCHRONIZED: {
 		float max_pos = 0;
 		bool pos_found = false;
-		int count = MIN(stream->stream_count, (int)sync.playback.size());
+		int count = MIN(stream->stream_count, (int)sync_playback.size());
 		for (int i = 0; i < count; i++) {
-			if (sync.playback[i].is_valid() && sync.playback[i]->is_playing()) {
-				float pos = sync.playback[i]->get_playback_position();
+			if (sync_playback[i].is_valid() && sync_playback[i]->is_playing()) {
+				float pos = sync_playback[i]->get_playback_position();
 				if (!pos_found || pos > max_pos) {
 					max_pos = pos;
 					pos_found = true;
@@ -139259,30 +139219,12 @@ class JoltObject3D;
 class JoltShape3D;
 
 class JoltShapeInstance3D final {
-	// This RAII helper exists solely to avoid needing to maintain move construction/assignment in `JoltShapeInstance3D`.
-	struct ShapeReference {
-		JoltObject3D *parent = nullptr;
-		JoltShape3D *shape = nullptr;
-
-		ShapeReference() = default;
-		ShapeReference(JoltObject3D *p_parent, JoltShape3D *p_shape);
-		ShapeReference(const ShapeReference &p_other) = delete;
-		ShapeReference(ShapeReference &&p_other);
-		~ShapeReference();
-
-		ShapeReference &operator=(const ShapeReference &p_other) = delete;
-		ShapeReference &operator=(ShapeReference &&p_other);
-
-		JoltShape3D *operator*() const { return shape; }
-		JoltShape3D *operator->() const { return shape; }
-		operator JoltShape3D *() const { return shape; }
-	};
-
 	inline static uint32_t next_id = 1;
 
 	Transform3D transform;
 	Vector3 scale;
-	ShapeReference shape;
+	JoltObject3D *parent = nullptr;
+	JoltShape3D *shape = nullptr;
 	JPH::ShapeRefC jolt_ref;
 	uint32_t id = next_id++;
 	bool disabled = false;
@@ -139290,6 +139232,12 @@ class JoltShapeInstance3D final {
 public:
 	JoltShapeInstance3D() = default;
 	JoltShapeInstance3D(JoltObject3D *p_parent, JoltShape3D *p_shape, const Transform3D &p_transform = Transform3D(), const Vector3 &p_scale = Vector3(1.0f, 1.0f, 1.0f), bool p_disabled = false);
+	JoltShapeInstance3D(const JoltShapeInstance3D &p_other) = delete;
+	JoltShapeInstance3D(JoltShapeInstance3D &&p_other);
+	~JoltShapeInstance3D();
+
+	JoltShapeInstance3D &operator=(const JoltShapeInstance3D &p_other) = delete;
+	JoltShapeInstance3D &operator=(JoltShapeInstance3D &&p_other);
 
 	uint32_t get_id() const { return id; }
 
@@ -139870,48 +139818,7 @@ public:
 	typedef PS3DE::AreaSpaceOverrideMode OverrideMode;
 
 private:
-	struct BodyIDHasher {
-		static uint32_t hash(const JPH::BodyID &p_id) {
-			return hash_fmix32(p_id.GetIndexAndSequenceNumber());
-		}
-	};
 
-	struct ShapeIDPair {
-		JPH::SubShapeID other;
-		JPH::SubShapeID self;
-
-		ShapeIDPair(JPH::SubShapeID p_other, JPH::SubShapeID p_self) :
-				other(p_other), self(p_self) {}
-
-		static uint32_t hash(const ShapeIDPair &p_pair) {
-			uint32_t hash = hash_murmur3_one_32(p_pair.other.GetValue());
-			hash = hash_murmur3_one_32(p_pair.self.GetValue(), hash);
-			return hash_fmix32(hash);
-		}
-
-		friend bool operator==(const ShapeIDPair &p_lhs, const ShapeIDPair &p_rhs) {
-			return (p_lhs.other == p_rhs.other) && (p_lhs.self == p_rhs.self);
-		}
-	};
-
-	struct ShapeIndexPair {
-		int other = -1;
-		int self = -1;
-
-		ShapeIndexPair() = default;
-		ShapeIndexPair(int p_other, int p_self) :
-				other(p_other), self(p_self) {}
-
-		static uint32_t hash(const ShapeIndexPair &p_pair) {
-			uint32_t hash = hash_murmur3_one_32(p_pair.other);
-			hash = hash_murmur3_one_32(p_pair.self, hash);
-			return hash_fmix32(hash);
-		}
-
-		friend bool operator==(const ShapeIndexPair &p_lhs, const ShapeIndexPair &p_rhs) {
-			return (p_lhs.other == p_rhs.other) && (p_lhs.self == p_rhs.self);
-		}
-	};
 
 	SelfList<JoltArea3D> call_queries_element;
 
@@ -140710,11 +140617,6 @@ public:
 };
 
 class JoltContactListener3D final : public JPH::ContactListener, public JPH::SoftBodyContactListener {
-	struct BodyIDHasher {
-		static uint32_t hash(const JPH::BodyID &p_id) {
-			return hash_fmix32(p_id.GetIndexAndSequenceNumber());
-		}
-	};
 
 	struct ShapePairHasher {
 		static uint32_t hash(const JPH::SubShapeIDPair &p_pair) {
@@ -149579,41 +149481,47 @@ bool PhysicsDirectSpaceState3D::rest_info(const PS3DT::ShapeParameters &p_shape_
 
 // JoltShapeInstance3D
 
-JoltShapeInstance3D::ShapeReference::ShapeReference(JoltObject3D *p_parent, JoltShape3D *p_shape) :
+JoltShapeInstance3D::JoltShapeInstance3D(JoltObject3D *p_parent, JoltShape3D *p_shape, const Transform3D &p_transform, const Vector3 &p_scale, bool p_disabled) :
+		transform(p_transform),
+		scale(p_scale),
 		parent(p_parent),
-		shape(p_shape) {
+		shape(p_shape),
+		disabled(p_disabled) {
 	if (shape != nullptr) {
 		shape->add_owner(parent);
 	}
 }
 
-JoltShapeInstance3D::ShapeReference::ShapeReference(ShapeReference &&p_other) :
+JoltShapeInstance3D::JoltShapeInstance3D(JoltShapeInstance3D &&p_other) :
+		transform(p_other.transform),
+		scale(p_other.scale),
 		parent(p_other.parent),
-		shape(p_other.shape) {
+		shape(p_other.shape),
+		jolt_ref(std::move(p_other.jolt_ref)),
+		id(p_other.id),
+		disabled(p_other.disabled) {
 	p_other.parent = nullptr;
 	p_other.shape = nullptr;
 }
 
-JoltShapeInstance3D::ShapeReference::~ShapeReference() {
+JoltShapeInstance3D::~JoltShapeInstance3D() {
 	if (shape != nullptr) {
 		shape->remove_owner(parent);
 	}
 }
 
-JoltShapeInstance3D::ShapeReference &JoltShapeInstance3D::ShapeReference::operator=(ShapeReference &&p_other) {
+JoltShapeInstance3D &JoltShapeInstance3D::operator=(JoltShapeInstance3D &&p_other) {
 	if (this != &p_other) {
+		transform = p_other.transform;
+		scale = p_other.scale;
 		SWAP(parent, p_other.parent);
 		SWAP(shape, p_other.shape);
+		jolt_ref = std::move(p_other.jolt_ref);
+		id = p_other.id;
+		disabled = p_other.disabled;
 	}
 
 	return *this;
-}
-
-JoltShapeInstance3D::JoltShapeInstance3D(JoltObject3D *p_parent, JoltShape3D *p_shape, const Transform3D &p_transform, const Vector3 &p_scale, bool p_disabled) :
-		transform(p_transform),
-		scale(p_scale),
-		shape(p_parent, p_shape),
-		disabled(p_disabled) {
 }
 
 AABB JoltShapeInstance3D::get_aabb() const {
@@ -156245,13 +156153,13 @@ bool GodotCollisionSolver2D::solve(const GodotShape2D *p_shape_A, const Transfor
 #define MIN_VELOCITY 0.001
 #define MAX_BIAS_ROTATION (Math::PI / 8)
 
-void GodotBodyPair2D::_add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self) {
+void GodotConstraint2D::_add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self) {
 	GodotBodyPair2D *self = static_cast<GodotBodyPair2D *>(p_self);
 
 	self->_contact_added_callback(p_point_A, p_point_B);
 }
 
-void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B) {
+void GodotConstraint2D::_contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B) {
 	Vector2 local_A = A->get_inv_transform().basis_xform(p_point_A);
 	Vector2 local_B = B->get_inv_transform().basis_xform(p_point_B - offset_B);
 
@@ -156325,7 +156233,7 @@ void GodotBodyPair2D::_contact_added_callback(const Vector2 &p_point_A, const Ve
 	contact_count++;
 }
 
-void GodotBodyPair2D::_validate_contacts() {
+void GodotConstraint2D::_validate_contacts() {
 	// Make sure to erase contacts that are no longer valid.
 	real_t max_separation = space->get_contact_max_separation();
 	real_t max_separation2 = max_separation * max_separation;
@@ -156366,7 +156274,7 @@ void GodotBodyPair2D::_validate_contacts() {
 	}
 }
 
-bool GodotBodyPair2D::_test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B) {
+bool GodotConstraint2D::_test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B) {
 	Vector2 motion = p_A->get_linear_velocity() * p_step;
 	real_t mlen = motion.length();
 	if (mlen < CMP_EPSILON) {
@@ -156430,7 +156338,7 @@ static real_t combine_friction(GodotBody2D *A, GodotBody2D *B) {
 	return Math::abs(MIN(A->get_friction(), B->get_friction()));
 }
 
-bool GodotBodyPair2D::setup(real_t p_step) {
+bool GodotConstraint2D::_setup_pair(real_t p_step) {
 	if (pair_mode != PAIR_BODY_BODY) {
 		return false;
 	}
@@ -156545,7 +156453,7 @@ bool GodotBodyPair2D::setup(real_t p_step) {
 	return true;
 }
 
-bool GodotBodyPair2D::pre_solve(real_t p_step) {
+bool GodotConstraint2D::_pre_solve_pair(real_t p_step) {
 	if (pair_mode != PAIR_BODY_BODY) {
 		return false;
 	}
@@ -156682,7 +156590,7 @@ bool GodotBodyPair2D::pre_solve(real_t p_step) {
 	return do_process;
 }
 
-void GodotBodyPair2D::solve(real_t p_step) {
+void GodotConstraint2D::_solve_pair(real_t p_step) {
 	if (pair_mode != PAIR_BODY_BODY) {
 		return;
 	}
@@ -156774,8 +156682,8 @@ void GodotBodyPair2D::solve(real_t p_step) {
 	}
 }
 
-GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B) :
-		GodotConstraint2D(_arr, 2) {
+GodotConstraint2D::GodotConstraint2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B) :
+		_body_ptr(_arr), _body_count(2), is_joint(false) {
 	A = p_A;
 	B = p_B;
 	shape_A = p_shape_A;
@@ -156785,8 +156693,8 @@ GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p
 	B->add_constraint(this, 1);
 }
 
-GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape) :
-		GodotConstraint2D(nullptr, 0), pair_mode(PAIR_BODY_AREA), area_a(p_area) {
+GodotConstraint2D::GodotConstraint2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape) :
+		_body_ptr(nullptr), _body_count(0), is_joint(false), pair_mode(PAIR_BODY_AREA), area_a(p_area) {
 	A = p_body;
 	B = nullptr;
 	shape_A = p_body_shape;
@@ -156798,8 +156706,8 @@ GodotBodyPair2D::GodotBodyPair2D(GodotBody2D *p_body, int p_body_shape, GodotAre
 	}
 }
 
-GodotBodyPair2D::GodotBodyPair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b) :
-		GodotConstraint2D(nullptr, 0), pair_mode(PAIR_AREA_AREA), area_a(p_area_a), area_b(p_area_b) {
+GodotConstraint2D::GodotConstraint2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b) :
+		_body_ptr(nullptr), _body_count(0), is_joint(false), pair_mode(PAIR_AREA_AREA), area_a(p_area_a), area_b(p_area_b) {
 	A = nullptr;
 	B = nullptr;
 	shape_A = p_shape_a;
@@ -156808,7 +156716,16 @@ GodotBodyPair2D::GodotBodyPair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea
 	p_area_b->add_constraint(this);
 }
 
-GodotBodyPair2D::~GodotBodyPair2D() {
+GodotConstraint2D::~GodotConstraint2D() {
+	if (is_joint) {
+		for (int i = 0; i < get_body_count(); i++) {
+			GodotBody2D *body = get_body_ptr()[i];
+			if (body) {
+				body->remove_constraint(this, i);
+			}
+		}
+		return;
+	}
 	if (pair_mode == PAIR_BODY_AREA) {
 		if (A) {
 			A->remove_constraint(this, 0);
@@ -156854,7 +156771,7 @@ GodotBodyPair2D::~GodotBodyPair2D() {
  * SOFTWARE.
  */
 
-void GodotJoint2D::copy_settings_from(GodotJoint2D *p_joint) {
+void GodotConstraint2D::copy_settings_from(GodotJoint2D *p_joint) {
 	set_self(p_joint->get_self());
 	set_max_force(p_joint->get_max_force());
 	set_bias(p_joint->get_bias());
@@ -156943,7 +156860,7 @@ static _FORCE_INLINE_ Vector2 mult_k(const Vector2 &vr, const Vector2 &k1, const
 	return Vector2(vr.dot(k1), vr.dot(k2));
 }
 
-bool GodotJoint2D::setup(real_t p_step) {
+bool GodotConstraint2D::_setup_joint(real_t p_step) {
 	switch (type) {
 		case PS2DE::JOINT_TYPE_PIN:
 			return _setup_pin(p_step);
@@ -156956,7 +156873,7 @@ bool GodotJoint2D::setup(real_t p_step) {
 	}
 }
 
-bool GodotJoint2D::pre_solve(real_t p_step) {
+bool GodotConstraint2D::_pre_solve_joint(real_t p_step) {
 	switch (type) {
 		case PS2DE::JOINT_TYPE_PIN:
 			return _pre_solve_pin(p_step);
@@ -156969,7 +156886,7 @@ bool GodotJoint2D::pre_solve(real_t p_step) {
 	}
 }
 
-void GodotJoint2D::solve(real_t p_step) {
+void GodotConstraint2D::_solve_joint(real_t p_step) {
 	switch (type) {
 		case PS2DE::JOINT_TYPE_PIN:
 			_solve_pin(p_step);
@@ -156987,7 +156904,7 @@ void GodotJoint2D::solve(real_t p_step) {
 
 // --- Pin Joint ---
 
-bool GodotJoint2D::_setup_pin(real_t p_step) {
+bool GodotConstraint2D::_setup_pin(real_t p_step) {
 	dynamic_A = (A->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 	dynamic_B = (B && B->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 
@@ -157052,7 +156969,7 @@ bool GodotJoint2D::_setup_pin(real_t p_step) {
 	return true;
 }
 
-bool GodotJoint2D::_pre_solve_pin(real_t p_step) {
+bool GodotConstraint2D::_pre_solve_pin(real_t p_step) {
 	// Apply accumulated impulse.
 	if (dynamic_A) {
 		A->apply_impulse(-P, rA);
@@ -157092,7 +157009,7 @@ bool GodotJoint2D::_pre_solve_pin(real_t p_step) {
 	return true;
 }
 
-void GodotJoint2D::_solve_pin(real_t p_step) {
+void GodotConstraint2D::_solve_pin(real_t p_step) {
 	// Compute relative velocity.
 	Vector2 vA = A->get_linear_velocity() - custom_cross(rA - A->get_center_of_mass(), A->get_angular_velocity());
 
@@ -157140,7 +157057,7 @@ void GodotJoint2D::_solve_pin(real_t p_step) {
 	P += impulse;
 }
 
-void GodotJoint2D::set_param(PS2DE::PinJointParam p_param, real_t p_value) {
+void GodotConstraint2D::set_param(PS2DE::PinJointParam p_param, real_t p_value) {
 	ERR_FAIL_COND(type != PS2DE::JOINT_TYPE_PIN);
 	switch (p_param) {
 		case PS2DE::PIN_JOINT_SOFTNESS: {
@@ -157158,7 +157075,7 @@ void GodotJoint2D::set_param(PS2DE::PinJointParam p_param, real_t p_value) {
 	}
 }
 
-real_t GodotJoint2D::get_param(PS2DE::PinJointParam p_param) const {
+real_t GodotConstraint2D::get_param(PS2DE::PinJointParam p_param) const {
 	ERR_FAIL_COND_V(type != PS2DE::JOINT_TYPE_PIN, 0);
 	switch (p_param) {
 		case PS2DE::PIN_JOINT_SOFTNESS: {
@@ -157177,7 +157094,7 @@ real_t GodotJoint2D::get_param(PS2DE::PinJointParam p_param) const {
 	ERR_FAIL_V(0);
 }
 
-void GodotJoint2D::set_flag(PS2DE::PinJointFlag p_flag, bool p_enabled) {
+void GodotConstraint2D::set_flag(PS2DE::PinJointFlag p_flag, bool p_enabled) {
 	ERR_FAIL_COND(type != PS2DE::JOINT_TYPE_PIN);
 	switch (p_flag) {
 		case PS2DE::PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED: {
@@ -157189,7 +157106,7 @@ void GodotJoint2D::set_flag(PS2DE::PinJointFlag p_flag, bool p_enabled) {
 	}
 }
 
-bool GodotJoint2D::get_flag(PS2DE::PinJointFlag p_flag) const {
+bool GodotConstraint2D::get_flag(PS2DE::PinJointFlag p_flag) const {
 	ERR_FAIL_COND_V(type != PS2DE::JOINT_TYPE_PIN, false);
 	switch (p_flag) {
 		case PS2DE::PIN_JOINT_FLAG_ANGULAR_LIMIT_ENABLED: {
@@ -157202,8 +157119,8 @@ bool GodotJoint2D::get_flag(PS2DE::PinJointFlag p_flag) const {
 	ERR_FAIL_V(false);
 }
 
-GodotJoint2D::GodotJoint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
-		GodotConstraint2D(_arr, p_body_b ? 2 : 1),
+GodotConstraint2D::GodotConstraint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
+		_body_ptr(_arr), _body_count(p_body_b ? 2 : 1), is_joint(true),
 		type(PS2DE::JOINT_TYPE_PIN) {
 	A = p_body_a;
 	B = p_body_b;
@@ -157219,7 +157136,7 @@ GodotJoint2D::GodotJoint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBod
 
 // --- Groove Joint ---
 
-bool GodotJoint2D::_setup_groove(real_t p_step) {
+bool GodotConstraint2D::_setup_groove(real_t p_step) {
 	dynamic_A = (A->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 	dynamic_B = (B->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 
@@ -157271,7 +157188,7 @@ bool GodotJoint2D::_setup_groove(real_t p_step) {
 	return true;
 }
 
-bool GodotJoint2D::_pre_solve_groove(real_t p_step) {
+bool GodotConstraint2D::_pre_solve_groove(real_t p_step) {
 	// Apply accumulated impulse.
 	if (dynamic_A) {
 		A->apply_impulse(-jn_acc, rA);
@@ -157283,7 +157200,7 @@ bool GodotJoint2D::_pre_solve_groove(real_t p_step) {
 	return true;
 }
 
-void GodotJoint2D::_solve_groove(real_t p_step) {
+void GodotConstraint2D::_solve_groove(real_t p_step) {
 	// compute impulse
 	Vector2 vr = relative_velocity(A, B, rA, rB);
 
@@ -157303,8 +157220,8 @@ void GodotJoint2D::_solve_groove(real_t p_step) {
 	}
 }
 
-GodotJoint2D::GodotJoint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
-		GodotConstraint2D(_arr, 2),
+GodotConstraint2D::GodotConstraint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
+		_body_ptr(_arr), _body_count(2), is_joint(true),
 		type(PS2DE::JOINT_TYPE_GROOVE) {
 	A = p_body_a;
 	B = p_body_b;
@@ -157320,7 +157237,7 @@ GodotJoint2D::GodotJoint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove
 
 // --- Damped Spring Joint ---
 
-bool GodotJoint2D::_setup_damped_spring(real_t p_step) {
+bool GodotConstraint2D::_setup_damped_spring(real_t p_step) {
 	dynamic_A = (A->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 	dynamic_B = (B->get_mode() > PS2DE::BODY_MODE_KINEMATIC);
 
@@ -157353,7 +157270,7 @@ bool GodotJoint2D::_setup_damped_spring(real_t p_step) {
 	return true;
 }
 
-bool GodotJoint2D::_pre_solve_damped_spring(real_t p_step) {
+bool GodotConstraint2D::_pre_solve_damped_spring(real_t p_step) {
 	// Apply spring force.
 	if (dynamic_A) {
 		A->apply_impulse(-j, rA);
@@ -157365,7 +157282,7 @@ bool GodotJoint2D::_pre_solve_damped_spring(real_t p_step) {
 	return true;
 }
 
-void GodotJoint2D::_solve_damped_spring(real_t p_step) {
+void GodotConstraint2D::_solve_damped_spring(real_t p_step) {
 	// compute relative velocity
 	real_t vrn = normal_relative_velocity(A, B, rA, rB, n) - target_vrn;
 
@@ -157382,7 +157299,7 @@ void GodotJoint2D::_solve_damped_spring(real_t p_step) {
 	}
 }
 
-void GodotJoint2D::set_param(PS2DE::DampedSpringParam p_param, real_t p_value) {
+void GodotConstraint2D::set_param(PS2DE::DampedSpringParam p_param, real_t p_value) {
 	ERR_FAIL_COND(type != PS2DE::JOINT_TYPE_DAMPED_SPRING);
 	switch (p_param) {
 		case PS2DE::DAMPED_SPRING_REST_LENGTH: {
@@ -157397,7 +157314,7 @@ void GodotJoint2D::set_param(PS2DE::DampedSpringParam p_param, real_t p_value) {
 	}
 }
 
-real_t GodotJoint2D::get_param(PS2DE::DampedSpringParam p_param) const {
+real_t GodotConstraint2D::get_param(PS2DE::DampedSpringParam p_param) const {
 	ERR_FAIL_COND_V(type != PS2DE::JOINT_TYPE_DAMPED_SPRING, 0);
 	switch (p_param) {
 		case PS2DE::DAMPED_SPRING_REST_LENGTH: {
@@ -157414,8 +157331,8 @@ real_t GodotJoint2D::get_param(PS2DE::DampedSpringParam p_param) const {
 	ERR_FAIL_V(0);
 }
 
-GodotJoint2D::GodotJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
-		GodotConstraint2D(_arr, 2),
+GodotConstraint2D::GodotConstraint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b) :
+		_body_ptr(_arr), _body_count(2), is_joint(true),
 		type(PS2DE::JOINT_TYPE_DAMPED_SPRING) {
 	A = p_body_a;
 	B = p_body_b;
@@ -161431,7 +161348,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 				// draw it?
 				RCR::Item::CommandRect* crect =
-					ci->alloc_command<RCR::Item::CommandRect>();
+					ci->alloc_command(RCR::Item::Command::TYPE_RECT);
 
 				crect->flags =
 					RendererCanvasRender::CANVAS_RECT_IS_GROUP; // so we can recognize it later
@@ -162034,7 +161951,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandPrimitive* line = canvas_item->alloc_command<Item::CommandPrimitive>();
+	Item::CommandPrimitive* line = canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 	ERR_FAIL_NULL(line);
 
 	Vector2 diff = (p_from - p_to);
@@ -162092,7 +162009,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 
 		{
 			Item::CommandPrimitive* left_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(left_border);
 
 			left_border->points[0] = begin_left;
@@ -162109,7 +162026,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* right_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(right_border);
 
 			right_border->points[0] = begin_right;
@@ -162126,7 +162043,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* top_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_border);
 
 			top_border->points[0] = begin_left;
@@ -162143,7 +162060,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* bottom_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_border);
 
 			bottom_border->points[0] = end_left;
@@ -162160,7 +162077,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* top_left_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_left_corner);
 
 			top_left_corner->points[0] = begin_left;
@@ -162177,7 +162094,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* top_right_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_right_corner);
 
 			top_right_corner->points[0] = begin_right;
@@ -162194,7 +162111,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* bottom_left_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_left_corner);
 
 			bottom_left_corner->points[0] = end_left;
@@ -162211,7 +162128,7 @@ void RendererCanvasCull::canvas_item_add_line(RID p_item, const Point2& p_from, 
 		}
 		{
 			Item::CommandPrimitive* bottom_right_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_right_corner);
 
 			bottom_right_corner->points[0] = end_right;
@@ -162292,7 +162209,7 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 	Vector<int> indices;
 	int point_count = p_points.size();
 
-	Item::CommandPolygon* pline = canvas_item->alloc_command<Item::CommandPolygon>();
+	Item::CommandPolygon* pline = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 	ERR_FAIL_NULL(pline);
 
 	if (p_antialiased) {
@@ -162308,7 +162225,7 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 		pline->primitive = RSE::PRIMITIVE_LINE_STRIP;
 
 		if (p_colors.size() == 1 || p_colors.size() == point_count) {
-			pline->polygon.create(indices, p_points, p_colors);
+			pline->create_polygon(indices, p_points, p_colors);
 		}
 		else {
 			Vector<Color> colors;
@@ -162325,7 +162242,7 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 					colors_ptr[i] = color;
 				}
 			}
-			pline->polygon.create(indices, p_points, colors);
+			pline->create_polygon(indices, p_points, colors);
 		}
 		return;
 	}
@@ -162371,10 +162288,10 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 		}
 		Color color2 = Color(1, 1, 1, 0);
 
-		Item::CommandPolygon* pline_left = canvas_item->alloc_command<Item::CommandPolygon>();
+		Item::CommandPolygon* pline_left = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 		ERR_FAIL_NULL(pline_left);
 
-		Item::CommandPolygon* pline_right = canvas_item->alloc_command<Item::CommandPolygon>();
+		Item::CommandPolygon* pline_right = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 		ERR_FAIL_NULL(pline_right);
 
 		PackedColorArray colors_left;
@@ -162508,10 +162425,10 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 		}
 
 		pline_left->primitive = RSE::PRIMITIVE_TRIANGLE_STRIP;
-		pline_left->polygon.create(indices, points_left, colors_left);
+		pline_left->create_polygon(indices, points_left, colors_left);
 
 		pline_right->primitive = RSE::PRIMITIVE_TRIANGLE_STRIP;
-		pline_right->polygon.create(indices, points_right, colors_right);
+		pline_right->create_polygon(indices, points_right, colors_right);
 	}
 	else {
 		// Makes a single triangle strip for drawing the line.
@@ -162559,7 +162476,7 @@ void RendererCanvasCull::canvas_item_add_polyline(RID p_item, const Vector<Point
 	}
 
 	pline->primitive = RSE::PRIMITIVE_TRIANGLE_STRIP;
-	pline->polygon.create(indices, points, colors);
+	pline->create_polygon(indices, points, colors);
 }
 
 void RendererCanvasCull::canvas_item_add_multiline(RID p_item, const Vector<Point2>& p_points,
@@ -162594,10 +162511,10 @@ void RendererCanvasCull::canvas_item_add_multiline(RID p_item, const Vector<Poin
 			}
 		}
 
-		Item::CommandPolygon* pline = canvas_item->alloc_command<Item::CommandPolygon>();
+		Item::CommandPolygon* pline = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 		ERR_FAIL_NULL(pline);
 		pline->primitive = RSE::PRIMITIVE_LINES;
-		pline->polygon.create(Vector<int>(), p_points, colors);
+		pline->create_polygon(Vector<int>(), p_points, colors);
 	}
 	else {
 		if (p_colors.size() == 1) {
@@ -162630,7 +162547,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 	// Adjust the rectangle size to account for the antialiasing width.
 	const Rect2& rect_adjusted = p_antialiased ? p_rect.grow(-FEATHER_SIZE * 0.25f) : p_rect;
 
-	Item::CommandRect* rect = canvas_item->alloc_command<Item::CommandRect>();
+	Item::CommandRect* rect = canvas_item->alloc_command(Item::Command::TYPE_RECT);
 	ERR_FAIL_NULL(rect);
 	rect->modulate = p_color;
 	rect->rect = rect_adjusted;
@@ -162661,7 +162578,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 
 		{
 			Item::CommandPrimitive* left_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(left_border);
 
 			left_border->points[0] = begin_left;
@@ -162678,7 +162595,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* right_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(right_border);
 
 			right_border->points[0] = begin_right;
@@ -162695,7 +162612,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* top_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_border);
 
 			top_border->points[0] = begin_left;
@@ -162712,7 +162629,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* bottom_border =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_border);
 
 			bottom_border->points[0] = end_left;
@@ -162729,7 +162646,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* top_left_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_left_corner);
 
 			top_left_corner->points[0] = begin_left;
@@ -162746,7 +162663,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* top_right_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(top_right_corner);
 
 			top_right_corner->points[0] = begin_right;
@@ -162763,7 +162680,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* bottom_left_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_left_corner);
 
 			bottom_left_corner->points[0] = end_left;
@@ -162780,7 +162697,7 @@ void RendererCanvasCull::canvas_item_add_rect(
 		}
 		{
 			Item::CommandPrimitive* bottom_right_corner =
-				canvas_item->alloc_command<Item::CommandPrimitive>();
+				canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 			ERR_FAIL_NULL(bottom_right_corner);
 
 			bottom_right_corner->points[0] = end_right;
@@ -162815,7 +162732,7 @@ void RendererCanvasCull::canvas_item_add_ellipse(RID p_item, const Point2& p_pos
 	}
 
 	{
-		Item::CommandPolygon* ellipse = canvas_item->alloc_command<Item::CommandPolygon>();
+		Item::CommandPolygon* ellipse = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 		ERR_FAIL_NULL(ellipse);
 
 		ellipse->primitive = RSE::PRIMITIVE_TRIANGLES;
@@ -162849,7 +162766,7 @@ void RendererCanvasCull::canvas_item_add_ellipse(RID p_item, const Point2& p_pos
 
 		Vector<Color> color;
 		color.push_back(p_color);
-		ellipse->polygon.create(indices, points, color);
+		ellipse->create_polygon(indices, points, color);
 	}
 
 	if (p_antialiased) {
@@ -162860,7 +162777,7 @@ void RendererCanvasCull::canvas_item_add_ellipse(RID p_item, const Point2& p_pos
 			border_size *= max_axis * 0.5f;
 		}
 
-		Item::CommandPolygon* feather = canvas_item->alloc_command<Item::CommandPolygon>();
+		Item::CommandPolygon* feather = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 		ERR_FAIL_NULL(feather);
 		feather->primitive = RSE::PRIMITIVE_TRIANGLE_STRIP;
 
@@ -162895,7 +162812,7 @@ void RendererCanvasCull::canvas_item_add_ellipse(RID p_item, const Point2& p_pos
 			colors_ptr[i * 2 + 1] = transparent;
 		}
 
-		feather->polygon.create(indices, points, colors);
+		feather->create_polygon(indices, points, colors);
 	}
 }
 
@@ -162911,7 +162828,7 @@ void RendererCanvasCull::canvas_item_add_texture_rect(RID p_item, const Rect2& p
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandRect* rect = canvas_item->alloc_command<Item::CommandRect>();
+	Item::CommandRect* rect = canvas_item->alloc_command(Item::Command::TYPE_RECT);
 	ERR_FAIL_NULL(rect);
 	rect->modulate = p_modulate;
 	rect->rect = p_rect;
@@ -162945,7 +162862,7 @@ void RendererCanvasCull::canvas_item_add_msdf_texture_rect_region(RID p_item, co
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandRect* rect = canvas_item->alloc_command<Item::CommandRect>();
+	Item::CommandRect* rect = canvas_item->alloc_command(Item::Command::TYPE_RECT);
 	ERR_FAIL_NULL(rect);
 	rect->modulate = p_modulate;
 	rect->rect = p_rect;
@@ -162981,7 +162898,7 @@ void RendererCanvasCull::canvas_item_add_lcd_texture_rect_region(RID p_item, con
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandRect* rect = canvas_item->alloc_command<Item::CommandRect>();
+	Item::CommandRect* rect = canvas_item->alloc_command(Item::Command::TYPE_RECT);
 	ERR_FAIL_NULL(rect);
 	rect->modulate = p_modulate;
 	rect->rect = p_rect;
@@ -163016,7 +162933,7 @@ void RendererCanvasCull::canvas_item_add_texture_rect_region(RID p_item, const R
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandRect* rect = canvas_item->alloc_command<Item::CommandRect>();
+	Item::CommandRect* rect = canvas_item->alloc_command(Item::Command::TYPE_RECT);
 	ERR_FAIL_NULL(rect);
 	rect->modulate = p_modulate;
 	rect->rect = p_rect;
@@ -163061,7 +162978,7 @@ void RendererCanvasCull::canvas_item_add_nine_patch(RID p_item, const Rect2& p_r
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandNinePatch* style = canvas_item->alloc_command<Item::CommandNinePatch>();
+	Item::CommandNinePatch* style = canvas_item->alloc_command(Item::Command::TYPE_NINEPATCH);
 	ERR_FAIL_NULL(style);
 
 	style->texture = p_texture;
@@ -163087,7 +163004,7 @@ void RendererCanvasCull::canvas_item_add_primitive(RID p_item, const Vector<Poin
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandPrimitive* prim = canvas_item->alloc_command<Item::CommandPrimitive>();
+	Item::CommandPrimitive* prim = canvas_item->alloc_command(Item::Command::TYPE_PRIMITIVE);
 	ERR_FAIL_NULL(prim);
 
 	for (int i = 0; i < p_points.size(); i++) {
@@ -163127,11 +163044,11 @@ void RendererCanvasCull::canvas_item_add_polygon(RID p_item, const Vector<Point2
 	Vector<int> indices = Geometry2D::triangulate_polygon(p_points);
 	ERR_FAIL_COND_MSG(indices.is_empty(), "Invalid polygon data, triangulation failed.");
 
-	Item::CommandPolygon* polygon = canvas_item->alloc_command<Item::CommandPolygon>();
+	Item::CommandPolygon* polygon = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 	ERR_FAIL_NULL(polygon);
 	polygon->primitive = RSE::PRIMITIVE_TRIANGLES;
 	polygon->texture = p_texture;
-	polygon->polygon.create(indices, p_points, p_colors, p_uvs);
+	polygon->create_polygon(indices, p_points, p_colors, p_uvs);
 }
 
 void RendererCanvasCull::canvas_item_add_triangle_array(RID p_item, const Vector<int>& p_indices,
@@ -163148,12 +163065,12 @@ void RendererCanvasCull::canvas_item_add_triangle_array(RID p_item, const Vector
 	ERR_FAIL_COND(!p_bones.is_empty() && p_bones.size() != vertex_count * 4);
 	ERR_FAIL_COND(!p_weights.is_empty() && p_weights.size() != vertex_count * 4);
 
-	Item::CommandPolygon* polygon = canvas_item->alloc_command<Item::CommandPolygon>();
+	Item::CommandPolygon* polygon = canvas_item->alloc_command(Item::Command::TYPE_POLYGON);
 	ERR_FAIL_NULL(polygon);
 
 	polygon->texture = p_texture;
 
-	polygon->polygon.create(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights, p_count);
+	polygon->create_polygon(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights, p_count);
 
 	polygon->primitive = RSE::PRIMITIVE_TRIANGLES;
 }
@@ -163163,7 +163080,7 @@ void RendererCanvasCull::canvas_item_add_set_transform(RID p_item, const Transfo
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandTransform* tr = canvas_item->alloc_command<Item::CommandTransform>();
+	Item::CommandTransform* tr = canvas_item->alloc_command(Item::Command::TYPE_TRANSFORM);
 	ERR_FAIL_NULL(tr);
 	tr->xform = p_transform;
 }
@@ -163175,7 +163092,7 @@ void RendererCanvasCull::canvas_item_add_mesh(RID p_item, const RID& p_mesh,
 	ERR_FAIL_NULL(canvas_item);
 	ERR_FAIL_COND(!p_mesh.is_valid());
 
-	Item::CommandMesh* m = canvas_item->alloc_command<Item::CommandMesh>();
+	Item::CommandMesh* m = canvas_item->alloc_command(Item::Command::TYPE_MESH);
 	ERR_FAIL_NULL(m);
 	m->mesh = p_mesh;
 	if (canvas_item->skeleton.is_valid()) {
@@ -163194,7 +163111,7 @@ void RendererCanvasCull::canvas_item_add_particles(RID p_item, RID p_particles, 
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandParticles* part = canvas_item->alloc_command<Item::CommandParticles>();
+	Item::CommandParticles* part = canvas_item->alloc_command(Item::Command::TYPE_PARTICLES);
 	ERR_FAIL_NULL(part);
 	part->particles = p_particles;
 
@@ -163210,7 +163127,7 @@ void RendererCanvasCull::canvas_item_add_multimesh(RID p_item, RID p_mesh, RID p
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandMultiMesh* mm = canvas_item->alloc_command<Item::CommandMultiMesh>();
+	Item::CommandMultiMesh* mm = canvas_item->alloc_command(Item::Command::TYPE_MULTIMESH);
 	ERR_FAIL_NULL(mm);
 	mm->multimesh = p_mesh;
 
@@ -163222,7 +163139,7 @@ void RendererCanvasCull::canvas_item_add_clip_ignore(RID p_item, bool p_ignore)
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandClipIgnore* ci = canvas_item->alloc_command<Item::CommandClipIgnore>();
+	Item::CommandClipIgnore* ci = canvas_item->alloc_command(Item::Command::TYPE_CLIP_IGNORE);
 	ERR_FAIL_NULL(ci);
 	ci->ignore = p_ignore;
 }
@@ -163233,7 +163150,7 @@ void RendererCanvasCull::canvas_item_add_animation_slice(RID p_item, double p_an
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	Item::CommandAnimationSlice* as = canvas_item->alloc_command<Item::CommandAnimationSlice>();
+	Item::CommandAnimationSlice* as = canvas_item->alloc_command(Item::Command::TYPE_ANIMATION_SLICE);
 	ERR_FAIL_NULL(as);
 	as->animation_length = p_animation_length;
 	as->slice_begin = p_slice_begin;
@@ -167069,7 +166986,7 @@ const Rect2& RCR::Item::get_rect() const
 
 		case Item::Command::TYPE_POLYGON: {
 			const Item::CommandPolygon* polygon = reinterpret_cast<const Item::CommandPolygon*>(c);
-			r = polygon->polygon.rect_cache;
+			r = polygon->rect;
 		} break;
 		case Item::Command::TYPE_PRIMITIVE: {
 			const Item::CommandPrimitive* primitive = reinterpret_cast<const Item::CommandPrimitive*>(c);
@@ -167135,14 +167052,52 @@ const Rect2& RCR::Item::get_rect() const
 	return rect;
 }
 
-RCR::Item::CommandMesh::~CommandMesh()
+void RCR::Item::clear()
 {
-	if (mesh_instance.is_valid()) {
-		RendererMeshStorage::mesh_instance_free(mesh_instance);
+	static_assert(std::is_trivially_destructible_v<Command>);
+
+	Command* c = commands;
+	while (c) {
+		Command* n = c->next;
+		switch (c->type) {
+		case Command::TYPE_POLYGON:
+			if (c->polygon_id && RendererCanvasRender::free_polygon) {
+				RendererCanvasRender::free_polygon(c->polygon_id);
+			}
+			break;
+		case Command::TYPE_MESH:
+			if (c->mesh_instance.is_valid()) {
+				RendererMeshStorage::mesh_instance_free(c->mesh_instance);
+			}
+			break;
+		default:
+			break;
+		}
+		if (c == commands) {
+			memfree(commands);
+			commands = nullptr;
+		}
+		c = n;
 	}
+	{
+		uint32_t cbc = MIN((current_block + 1), (uint32_t)blocks.size());
+		CommandBlock* blockptr = blocks.ptrw();
+		for (uint32_t i = 0; i < cbc; i++) {
+			blockptr[i].usage = 0;
+		}
+	}
+
+	last_command = nullptr;
+	commands = nullptr;
+	current_block = 0;
+	clip = false;
+	rect_dirty = true;
+	final_clip_owner = nullptr;
+	material_owner = nullptr;
+	light_masked = false;
 }
 
-void Polygon::create(const Vector<int>& p_indices, const Vector<Point2>& p_points,
+void RCR::Item::Command::create_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
 	const Vector<Color>& p_colors, const Vector<Point2>& p_uvs,
 	const Vector<int>& p_bones,
 	const Vector<float>& p_weights, int p_count)
@@ -167153,20 +167108,13 @@ void Polygon::create(const Vector<int>& p_indices, const Vector<Point2>& p_point
 	{
 		uint32_t pc = p_points.size();
 		const Vector2* v2 = p_points.ptr();
-		rect_cache.position = *v2;
+		rect.position = *v2;
 		for (uint32_t i = 1; i < pc; i++) {
-			rect_cache.expand_to(v2[i]);
+			rect.expand_to(v2[i]);
 		}
 	}
 	polygon_id = RendererCanvasRender::request_polygon(
 		p_indices, p_points, p_colors, p_uvs, p_bones, p_weights, count);
-}
-
-Polygon::~Polygon()
-{
-	if (polygon_id && RendererCanvasRender::free_polygon) {
-		RendererCanvasRender::free_polygon(polygon_id);
-	}
 }
 
 void RenderGeometryInstance::set_skeleton(RID p_skeleton) {
@@ -169145,14 +169093,14 @@ static float get_halton_value(int p_index, int p_base)
 
 void RendererSceneCull::tick()
 {
-	if (data->_interpolation_data.interpolation_enabled) {
+	if (data->interpolation_enabled) {
 		update_interpolation_tick(true);
 	}
 }
 
 void RendererSceneCull::pre_draw(bool p_will_draw)
 {
-	if (data->_interpolation_data.interpolation_enabled) {
+	if (data->interpolation_enabled) {
 		update_interpolation_frame(p_will_draw);
 	}
 }
@@ -172543,7 +172491,7 @@ void RendererSceneCull::update_interpolation_frame(bool p_process)
 
 void RendererSceneCull::set_physics_interpolation_enabled(bool p_enabled)
 {
-	data->_interpolation_data.interpolation_enabled = p_enabled;
+	data->interpolation_enabled = p_enabled;
 }
 
 void RendererSceneCull::initialize()
@@ -177209,7 +177157,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		const RCR::Item::CommandPolygon* polygon =
 			reinterpret_cast<const RCR::Item::CommandPolygon*>(p_batch->command);
 
-		RendererRD::PolygonBuffers* pb = RendererRD::polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
+		RendererRD::PolygonBuffers* pb = RendererRD::polygon_buffers.polygons.getptr(polygon->polygon_id);
 		ERR_FAIL_NULL(pb);
 
 		pipeline_key.vertex_format_id = pb->vertex_format_id;
@@ -199630,21 +199578,21 @@ RenderingDeviceGraph::RecordedCommand* RenderingDeviceGraph::_allocate_command(
 RenderingDeviceGraph::DrawListInstruction* RenderingDeviceGraph::_allocate_draw_list_instruction(
 	uint32_t p_instruction_size)
 {
-	uint32_t draw_list_data_offset = draw_instruction_list.list.data.size();
+	uint32_t draw_list_data_offset = draw_instruction_list.data.size();
 	draw_list_data_offset = GRAPH_ALIGN(draw_list_data_offset);
-	draw_instruction_list.list.data.resize(draw_list_data_offset + p_instruction_size);
+	draw_instruction_list.data.resize(draw_list_data_offset + p_instruction_size);
 	return reinterpret_cast<DrawListInstruction*>(
-		&draw_instruction_list.list.data[draw_list_data_offset]);
+		&draw_instruction_list.data[draw_list_data_offset]);
 }
 
 RenderingDeviceGraph::ComputeListInstruction*
 RenderingDeviceGraph::_allocate_compute_list_instruction(uint32_t p_instruction_size)
 {
-	uint32_t compute_list_data_offset = compute_instruction_list.list.data.size();
+	uint32_t compute_list_data_offset = compute_instruction_list.data.size();
 	compute_list_data_offset = GRAPH_ALIGN(compute_list_data_offset);
-	compute_instruction_list.list.data.resize(compute_list_data_offset + p_instruction_size);
+	compute_instruction_list.data.resize(compute_list_data_offset + p_instruction_size);
 	return reinterpret_cast<ComputeListInstruction*>(
-		&compute_instruction_list.list.data[compute_list_data_offset]);
+		&compute_instruction_list.data[compute_list_data_offset]);
 }
 
 void RenderingDeviceGraph::_check_discardable_attachment_dependency(
@@ -199691,10 +199639,10 @@ void RenderingDeviceGraph::_check_discardable_attachment_dependency(
 RenderingDeviceGraph::RaytracingListInstruction*
 RenderingDeviceGraph::_allocate_raytracing_list_instruction(uint32_t p_instruction_size)
 {
-	uint32_t raytracing_list_data_offset = raytracing_instruction_list.list.data.size();
-	raytracing_instruction_list.list.data.resize(raytracing_list_data_offset + p_instruction_size);
+	uint32_t raytracing_list_data_offset = raytracing_instruction_list.data.size();
+	raytracing_instruction_list.data.resize(raytracing_list_data_offset + p_instruction_size);
 	return reinterpret_cast<RaytracingListInstruction*>(
-		&raytracing_instruction_list.list.data[raytracing_list_data_offset]);
+		&raytracing_instruction_list.data[raytracing_list_data_offset]);
 }
 
 void RenderingDeviceGraph::_run_raytracing_list_command(RDD::CommandBufferID p_command_buffer,
@@ -200070,13 +200018,13 @@ void RenderingDeviceGraph::_add_draw_list_begin(FramebufferCache* p_framebuffer_
 {
 	DEV_ASSERT(p_attachment_operations.size() == p_attachment_clear_values.size());
 
-	draw_instruction_list.list.clear();
-	draw_instruction_list.list.index++;
+	draw_instruction_list.clear();
+	draw_instruction_list.index++;
 	draw_instruction_list.framebuffer_cache = p_framebuffer_cache;
 	draw_instruction_list.render_pass = p_render_pass;
 	draw_instruction_list.framebuffer = p_framebuffer;
 	draw_instruction_list.region = p_region;
-	draw_instruction_list.list.stages = p_stages;
+	draw_instruction_list.stages = p_stages;
 	draw_instruction_list.attachment_operations.resize(p_attachment_operations.size());
 	draw_instruction_list.attachment_clear_values.resize(p_attachment_clear_values.size());
 
@@ -200504,9 +200452,9 @@ void RenderingDeviceGraph::begin()
 	command_synchronization_pending = false;
 	command_label_index = -1;
 	frames[frame].secondary_command_buffers_used = 0;
-	draw_instruction_list.list.index = 0;
-	compute_instruction_list.list.index = 0;
-	raytracing_instruction_list.list.index = 0;
+	draw_instruction_list.index = 0;
+	compute_instruction_list.index = 0;
+	raytracing_instruction_list.index = 0;
 	tracking_frame++;
 
 #ifdef DEV_ENABLED
@@ -200697,8 +200645,8 @@ void RenderingDeviceGraph::add_driver_callback(RDD::DriverCallback p_callback, v
 
 void RenderingDeviceGraph::add_raytracing_list_begin()
 {
-	raytracing_instruction_list.list.clear();
-	raytracing_instruction_list.list.index++;
+	raytracing_instruction_list.clear();
+	raytracing_instruction_list.index++;
 }
 
 void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipelineID p_pipeline)
@@ -200708,7 +200656,7 @@ void RenderingDeviceGraph::add_raytracing_list_bind_pipeline(RDD::RaytracingPipe
 			_allocate_raytracing_list_instruction(sizeof(RaytracingListInstruction)));
 	instruction->type = RaytracingListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	raytracing_instruction_list.list.stages |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
+	raytracing_instruction_list.stages |= RDD::PIPELINE_STAGE_RAY_TRACING_SHADER_BIT;
 }
 
 void RenderingDeviceGraph::add_raytracing_list_bind_uniform_set(
@@ -200772,10 +200720,10 @@ void RenderingDeviceGraph::add_raytracing_list_usage(
 
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->raytracing_list_index != raytracing_instruction_list.list.index) {
-		raytracing_instruction_list.list.command_trackers.push_back(p_tracker);
-		raytracing_instruction_list.list.command_tracker_usages.push_back(p_usage);
-		p_tracker->raytracing_list_index = raytracing_instruction_list.list.index;
+	if (p_tracker->raytracing_list_index != raytracing_instruction_list.index) {
+		raytracing_instruction_list.command_trackers.push_back(p_tracker);
+		raytracing_instruction_list.command_tracker_usages.push_back(p_usage);
+		p_tracker->raytracing_list_index = raytracing_instruction_list.index;
 		p_tracker->raytracing_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -200801,28 +200749,28 @@ void RenderingDeviceGraph::add_raytracing_list_usages(
 void RenderingDeviceGraph::add_raytracing_list_end()
 {
 	int32_t command_index;
-	uint32_t instruction_data_size = raytracing_instruction_list.list.data.size();
+	uint32_t instruction_data_size = raytracing_instruction_list.data.size();
 	uint32_t command_size = sizeof(RecordedCommand) + instruction_data_size;
 	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
 	command->type = RecordedCommand::TYPE_RAYTRACING_LIST;
-	command->self_stages = raytracing_instruction_list.list.stages;
+	command->self_stages = raytracing_instruction_list.stages;
 	command->instruction_data_size = instruction_data_size;
-	memcpy(command->instruction_data(), raytracing_instruction_list.list.data.ptr(),
+	memcpy(command->instruction_data(), raytracing_instruction_list.data.ptr(),
 		instruction_data_size);
-	_add_command_to_graph(raytracing_instruction_list.list.command_trackers.ptr(),
-		raytracing_instruction_list.list.command_tracker_usages.ptr(),
-		raytracing_instruction_list.list.command_trackers.size(), command_index, command);
+	_add_command_to_graph(raytracing_instruction_list.command_trackers.ptr(),
+		raytracing_instruction_list.command_tracker_usages.ptr(),
+		raytracing_instruction_list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_compute_list_begin(
 	RDC::BreadcrumbMarker p_phase, uint32_t p_breadcrumb_data)
 {
-	compute_instruction_list.list.clear();
+	compute_instruction_list.clear();
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
 	compute_instruction_list.breadcrumb = p_breadcrumb_data | (p_phase & ((1 << 16) - 1));
 #endif
-	compute_instruction_list.list.index++;
+	compute_instruction_list.index++;
 }
 
 void RenderingDeviceGraph::add_compute_list_bind_pipeline(RDD::PipelineID p_pipeline)
@@ -200832,7 +200780,7 @@ void RenderingDeviceGraph::add_compute_list_bind_pipeline(RDD::PipelineID p_pipe
 			_allocate_compute_list_instruction(sizeof(ComputeListInstruction)));
 	instruction->type = ComputeListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	compute_instruction_list.stages |= RDD::PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 }
 
 void RenderingDeviceGraph::add_compute_list_bind_uniform_set(
@@ -200884,7 +200832,7 @@ void RenderingDeviceGraph::add_compute_list_dispatch_indirect(
 	instruction->type = ComputeListInstruction::TYPE_DISPATCH_INDIRECT;
 	instruction->buffer = p_buffer;
 	instruction->offset = p_offset;
-	compute_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	compute_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_compute_list_set_push_constant(
@@ -200919,10 +200867,10 @@ void RenderingDeviceGraph::add_compute_list_usage(ResourceTracker* p_tracker, Re
 
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->compute_list_index != compute_instruction_list.list.index) {
-		compute_instruction_list.list.command_trackers.push_back(p_tracker);
-		compute_instruction_list.list.command_tracker_usages.push_back(p_usage);
-		p_tracker->compute_list_index = compute_instruction_list.list.index;
+	if (p_tracker->compute_list_index != compute_instruction_list.index) {
+		compute_instruction_list.command_trackers.push_back(p_tracker);
+		compute_instruction_list.command_tracker_usages.push_back(p_usage);
+		p_tracker->compute_list_index = compute_instruction_list.index;
 		p_tracker->compute_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -200947,18 +200895,18 @@ void RenderingDeviceGraph::add_compute_list_usages(
 void RenderingDeviceGraph::add_compute_list_end()
 {
 	int32_t command_index;
-	uint32_t instruction_data_size = compute_instruction_list.list.data.size();
+	uint32_t instruction_data_size = compute_instruction_list.data.size();
 	uint32_t command_size = sizeof(RecordedCommand) + instruction_data_size;
 	RecordedCommand* command = reinterpret_cast<RecordedCommand*>(
 		_allocate_command(command_size, command_index));
 	command->type = RecordedCommand::TYPE_COMPUTE_LIST;
-	command->self_stages = compute_instruction_list.list.stages;
+	command->self_stages = compute_instruction_list.stages;
 	command->instruction_data_size = instruction_data_size;
-	memcpy(command->instruction_data(), compute_instruction_list.list.data.ptr(),
+	memcpy(command->instruction_data(), compute_instruction_list.data.ptr(),
 		instruction_data_size);
-	_add_command_to_graph(compute_instruction_list.list.command_trackers.ptr(),
-		compute_instruction_list.list.command_tracker_usages.ptr(),
-		compute_instruction_list.list.command_trackers.size(), command_index, command);
+	_add_command_to_graph(compute_instruction_list.command_trackers.ptr(),
+		compute_instruction_list.command_tracker_usages.ptr(),
+		compute_instruction_list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_draw_list_begin(FramebufferCache* p_framebuffer_cache,
@@ -200991,7 +200939,7 @@ void RenderingDeviceGraph::add_draw_list_bind_index_buffer(
 	instruction->buffer = p_buffer;
 	instruction->format = p_format;
 	instruction->offset = p_offset;
-	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
+	draw_instruction_list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_pipeline(
@@ -201002,7 +200950,7 @@ void RenderingDeviceGraph::add_draw_list_bind_pipeline(
 			_allocate_draw_list_instruction(sizeof(DrawListInstruction)));
 	instruction->type = DrawListInstruction::TYPE_BIND_PIPELINE;
 	instruction->pipeline = p_pipeline;
-	draw_instruction_list.list.stages = draw_instruction_list.list.stages | p_pipeline_stage_bits;
+	draw_instruction_list.stages = draw_instruction_list.stages | p_pipeline_stage_bits;
 }
 
 void RenderingDeviceGraph::add_draw_list_bind_uniform_set(
@@ -201056,7 +201004,7 @@ void RenderingDeviceGraph::add_draw_list_bind_vertex_buffers(
 	}
 
 	if (instruction->vertex_buffers_count > 0) {
-		draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
+		draw_instruction_list.stages |= RDD::PIPELINE_STAGE_VERTEX_INPUT_BIT;
 	}
 }
 
@@ -201116,7 +201064,7 @@ void RenderingDeviceGraph::add_draw_list_draw_indirect(
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
 	instruction->stride = p_stride;
-	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	draw_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
@@ -201130,7 +201078,7 @@ void RenderingDeviceGraph::add_draw_list_draw_indexed_indirect(
 	instruction->offset = p_offset;
 	instruction->draw_count = p_draw_count;
 	instruction->stride = p_stride;
-	draw_instruction_list.list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+	draw_instruction_list.stages |= RDD::PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 }
 
 void RenderingDeviceGraph::add_draw_list_execute_commands(RDD::CommandBufferID p_command_buffer)
@@ -201213,10 +201161,10 @@ void RenderingDeviceGraph::add_draw_list_usage(ResourceTracker* p_tracker, Resou
 {
 	p_tracker->reset_if_outdated(tracking_frame);
 
-	if (p_tracker->draw_list_index != draw_instruction_list.list.index) {
-		draw_instruction_list.list.command_trackers.push_back(p_tracker);
-		draw_instruction_list.list.command_tracker_usages.push_back(p_usage);
-		p_tracker->draw_list_index = draw_instruction_list.list.index;
+	if (p_tracker->draw_list_index != draw_instruction_list.index) {
+		draw_instruction_list.command_trackers.push_back(p_tracker);
+		draw_instruction_list.command_tracker_usages.push_back(p_usage);
+		p_tracker->draw_list_index = draw_instruction_list.index;
 		p_tracker->draw_list_usage = p_usage;
 	}
 #ifdef DEV_ENABLED
@@ -201248,13 +201196,13 @@ void RenderingDeviceGraph::add_draw_list_end()
 	uint32_t trackers_and_ops_size = (sizeof(ResourceTracker*) + sizeof(RDD::AttachmentLoadOp) +
 										 sizeof(RDD::AttachmentStoreOp)) *
 									 trackers_count;
-	uint32_t instruction_data_size = draw_instruction_list.list.data.size();
+	uint32_t instruction_data_size = draw_instruction_list.data.size();
 	uint32_t command_size = sizeof(RecordedCommand) + clear_values_size +
 							trackers_and_ops_size + instruction_data_size;
 	RecordedCommand* command =
 		reinterpret_cast<RecordedCommand*>(_allocate_command(command_size, command_index));
 	command->type = RecordedCommand::TYPE_DRAW_LIST;
-	command->self_stages = draw_instruction_list.list.stages;
+	command->self_stages = draw_instruction_list.stages;
 	command->framebuffer_cache = framebuffer_cache;
 	command->render_pass = draw_instruction_list.render_pass;
 	command->framebuffer = draw_instruction_list.framebuffer;
@@ -201316,10 +201264,10 @@ void RenderingDeviceGraph::add_draw_list_end()
 	}
 
 	memcpy(
-		command->draw_list_instruction_data(), draw_instruction_list.list.data.ptr(), instruction_data_size);
-	_add_command_to_graph(draw_instruction_list.list.command_trackers.ptr(),
-		draw_instruction_list.list.command_tracker_usages.ptr(),
-		draw_instruction_list.list.command_trackers.size(), command_index, command);
+		command->draw_list_instruction_data(), draw_instruction_list.data.ptr(), instruction_data_size);
+	_add_command_to_graph(draw_instruction_list.command_trackers.ptr(),
+		draw_instruction_list.command_tracker_usages.ptr(),
+		draw_instruction_list.command_trackers.size(), command_index, command);
 }
 
 void RenderingDeviceGraph::add_texture_clear_color(RDD::TextureID p_dst,
@@ -204032,19 +203980,19 @@ bool ShaderLanguage::_find_identifier(const BlockNode* p_block, bool p_allow_rea
 	}
 
 	if (function) {
-		for (int i = 0; i < function->arguments.size(); i++) {
-			if (function->arguments[i].name == p_identifier) {
+		for (int i = 0; i < function->func_arguments.size(); i++) {
+			if (function->func_arguments[i].name == p_identifier) {
 				if (r_data_type) {
-					*r_data_type = function->arguments[i].type;
+					*r_data_type = function->func_arguments[i].type;
 				}
 				if (r_struct_name) {
-					*r_struct_name = function->arguments[i].struct_name;
+					*r_struct_name = function->func_arguments[i].struct_name;
 				}
 				if (r_array_size) {
-					*r_array_size = function->arguments[i].array_size;
+					*r_array_size = function->func_arguments[i].array_size;
 				}
 				if (r_is_const) {
-					*r_is_const = function->arguments[i].is_const;
+					*r_is_const = function->func_arguments[i].is_const;
 				}
 				if (r_type) {
 					*r_type = IDENTIFIER_FUNCTION_ARGUMENT;
@@ -206784,8 +206732,8 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 										}
 										if (b->parent_function) {
 											for (int i = 0;
-												 i < b->parent_function->arguments.size(); i++) {
-												if (b->parent_function->arguments[i].name ==
+												 i < b->parent_function->func_arguments.size(); i++) {
+												if (b->parent_function->func_arguments[i].name ==
 													var_name) {
 													valid = true;
 													break;
@@ -206928,27 +206876,27 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 
 		FunctionNode* pfunc = shader->vfunctions[i].function;
 		arg_list.clear();
-		for (int j = 0; j < pfunc->arguments.size(); j++) {
+		for (int j = 0; j < pfunc->func_arguments.size(); j++) {
 			if (j > 0) {
 				arg_list += ", ";
 			}
 			String func_arg_name;
-			if (pfunc->arguments[j].type == TYPE_STRUCT) {
-				func_arg_name = pfunc->arguments[j].struct_name;
+			if (pfunc->func_arguments[j].type == TYPE_STRUCT) {
+				func_arg_name = pfunc->func_arguments[j].struct_name;
 			}
 			else {
-				func_arg_name = get_datatype_name(pfunc->arguments[j].type);
+				func_arg_name = get_datatype_name(pfunc->func_arguments[j].type);
 			}
-			if (pfunc->arguments[j].array_size > 0) {
+			if (pfunc->func_arguments[j].array_size > 0) {
 				func_arg_name += "[";
-				func_arg_name += itos(pfunc->arguments[j].array_size);
+				func_arg_name += itos(pfunc->func_arguments[j].array_size);
 				func_arg_name += "]";
 			}
 			arg_list += func_arg_name;
 		}
 
-		if (pfunc->arguments.size() != args.size()) {
-			last_arg_count = pfunc->arguments.size();
+		if (pfunc->func_arguments.size() != args.size()) {
+			last_arg_count = pfunc->func_arguments.size();
 			continue;
 		}
 
@@ -206959,22 +206907,22 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 			if (use_constant_conversion && get_scalar_type(args[j]) == args[j] &&
 				p_func->arguments[j + 1]->type == Node::NODE_TYPE_CONSTANT && args3[j] == 0 &&
 				convert_constant(static_cast<ConstantNode*>(p_func->arguments[j + 1]),
-					pfunc->arguments[j].type)) {
+					pfunc->func_arguments[j].type)) {
 				// all good, but it needs implicit conversion later
 			}
-			else if (args[j] != pfunc->arguments[j].type ||
-					   (args[j] == TYPE_STRUCT && args2[j] != pfunc->arguments[j].struct_name) ||
-					   args3[j] != pfunc->arguments[j].array_size) {
+			else if (args[j] != pfunc->func_arguments[j].type ||
+					   (args[j] == TYPE_STRUCT && args2[j] != pfunc->func_arguments[j].struct_name) ||
+					   args3[j] != pfunc->func_arguments[j].array_size) {
 				String func_arg_name;
-				if (pfunc->arguments[j].type == TYPE_STRUCT) {
-					func_arg_name = pfunc->arguments[j].struct_name;
+				if (pfunc->func_arguments[j].type == TYPE_STRUCT) {
+					func_arg_name = pfunc->func_arguments[j].struct_name;
 				}
 				else {
-					func_arg_name = get_datatype_name(pfunc->arguments[j].type);
+					func_arg_name = get_datatype_name(pfunc->func_arguments[j].type);
 				}
-				if (pfunc->arguments[j].array_size > 0) {
+				if (pfunc->func_arguments[j].array_size > 0) {
 					func_arg_name += "[";
-					func_arg_name += itos(pfunc->arguments[j].array_size);
+					func_arg_name += itos(pfunc->func_arguments[j].array_size);
 					func_arg_name += "]";
 				}
 				String arg_name;
@@ -207008,7 +206956,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 		if (!fail) {
 			// implicitly convert values if possible
 			for (int k = 0; k < args.size(); k++) {
-				if (get_scalar_type(args[k]) != args[k] || args[k] == pfunc->arguments[k].type ||
+				if (get_scalar_type(args[k]) != args[k] || args[k] == pfunc->func_arguments[k].type ||
 					p_func->arguments[k + 1]->type != Node::NODE_TYPE_CONSTANT) {
 					// can't do implicit conversion here
 					continue;
@@ -207018,10 +206966,10 @@ bool ShaderLanguage::_validate_function_call(BlockNode* p_block,
 				ConstantNode* constant = static_cast<ConstantNode*>(p_func->arguments[k + 1]);
 				ConstantNode* conversion = alloc_node(Node::NODE_TYPE_CONSTANT);
 
-				conversion->datatype = pfunc->arguments[k].type;
+				conversion->datatype = pfunc->func_arguments[k].type;
 				conversion->values.resize(1);
 
-				convert_constant(constant, pfunc->arguments[k].type, conversion->values.ptrw());
+				convert_constant(constant, pfunc->func_arguments[k].type, conversion->values.ptrw());
 				p_func->arguments.write[k + 1] = conversion;
 			}
 
@@ -207873,9 +207821,9 @@ bool ShaderLanguage::_propagate_function_call_sampler_uniform_settings(const Str
 {
 	for (int i = 0; i < shader->vfunctions.size(); i++) {
 		if (shader->vfunctions[i].name == p_name) {
-			ERR_FAIL_INDEX_V(p_argument, shader->vfunctions[i].function->arguments.size(), false);
+			ERR_FAIL_INDEX_V(p_argument, shader->vfunctions[i].function->func_arguments.size(), false);
 			FunctionNode::Argument* arg =
-				&shader->vfunctions[i].function->arguments.write[p_argument];
+				&shader->vfunctions[i].function->func_arguments.write[p_argument];
 			if (arg->tex_builtin_check) {
 				_set_error(vformat(RTR("Sampler argument %d of function '%s' called more than once "
 									   "using both built-ins and uniform textures, this is not "
@@ -207922,9 +207870,9 @@ bool ShaderLanguage::_propagate_function_call_sampler_builtin_reference(
 {
 	for (int i = 0; i < shader->vfunctions.size(); i++) {
 		if (shader->vfunctions[i].name == p_name) {
-			ERR_FAIL_INDEX_V(p_argument, shader->vfunctions[i].function->arguments.size(), false);
+			ERR_FAIL_INDEX_V(p_argument, shader->vfunctions[i].function->func_arguments.size(), false);
 			FunctionNode::Argument* arg =
-				&shader->vfunctions[i].function->arguments.write[p_argument];
+				&shader->vfunctions[i].function->func_arguments.write[p_argument];
 			if (arg->tex_argument_check) {
 				_set_error(vformat(RTR("Sampler argument %d of function '%s' called more than once "
 									   "using both built-ins and uniform textures, this is not "
@@ -208553,7 +208501,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 					for (int i = 0, max_valid_args = 0; i < shader->vfunctions.size(); i++) {
 						if (!shader->vfunctions[i].callable ||
 							shader->vfunctions[i].rname != rname ||
-							arg_count2 != shader->vfunctions[i].function->arguments.size()) {
+							arg_count2 != shader->vfunctions[i].function->func_arguments.size()) {
 							continue;
 						}
 
@@ -208563,7 +208511,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 						// Search for correct overload.
 						for (int j = 1; j < arg_count; j++) {
 							const FunctionNode::Argument& a =
-								shader->vfunctions[i].function->arguments[j - 1];
+								shader->vfunctions[i].function->func_arguments[j - 1];
 							Node* b = func->arguments[j];
 
 							if (a.type == b->get_datatype() &&
@@ -208726,13 +208674,13 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 
 							ERR_FAIL_NULL_V(base_function, nullptr); // Bug, wtf.
 
-							for (int i = 0; i < call_function->arguments.size(); i++) {
+							for (int i = 0; i < call_function->func_arguments.size(); i++) {
 								int argidx = i + 1;
 								if (argidx < arg_count) {
 									bool error = false;
 									Node* n = func->arguments[argidx];
 									ArgumentQualifier arg_qual =
-										call_function->arguments[i].qualifier;
+										call_function->func_arguments[i].qualifier;
 									bool is_out_arg =
 										arg_qual != ArgumentQualifier::ARGUMENT_QUALIFIER_IN;
 
@@ -208792,7 +208740,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 										}
 									}
 
-									bool is_const_arg = call_function->arguments[i].is_const;
+									bool is_const_arg = call_function->func_arguments[i].is_const;
 
 									if (is_const_arg || is_out_arg) {
 										String varname;
@@ -208849,7 +208797,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 											return nullptr;
 										}
 									}
-									if (is_sampler_type(call_function->arguments[i].type)) {
+									if (is_sampler_type(call_function->func_arguments[i].type)) {
 										// Let's see where our argument comes from.
 										String varname;
 										if (n->type == Node::NODE_TYPE_VARIABLE) {
@@ -208865,7 +208813,7 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 											// being sampler, this either comes from a uniform
 											ShaderNode::Uniform* u = &shader->uniforms[varname];
 											ERR_CONTINUE(
-												u->type != call_function->arguments[i]
+												u->type != call_function->func_arguments[i]
 															   .type); // this should have been
 																	   // validated previously
 
@@ -208918,18 +208866,18 @@ ShaderLanguage::Node* ShaderLanguage::_parse_expression(BlockNode* p_block,
 											// or this comes from an argument, but nothing else can
 											// be a sampler
 											bool found = false;
-											for (int j = 0; j < base_function->arguments.size();
+											for (int j = 0; j < base_function->func_arguments.size();
 												 j++) {
-												if (base_function->arguments[j].name == varname) {
-													if (!base_function->arguments[j]
+												if (base_function->func_arguments[j].name == varname) {
+													if (!base_function->func_arguments[j]
 															 .tex_argument_connect.has(
 																 call_function->name)) {
-														base_function->arguments.write[j]
+														base_function->func_arguments.write[j]
 															.tex_argument_connect[call_function
 																					  ->name] =
 															HashSet<int>();
 													}
-													base_function->arguments.write[j]
+													base_function->func_arguments.write[j]
 														.tex_argument_connect[call_function->name]
 														.insert(i);
 													found = true;
@@ -211006,7 +210954,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 		}
 		else if (tk.type == TK_CURLY_BRACKET_OPEN) {
 			// a sub block, just because..
-			BlockNode* block = alloc_node<BlockNode>();
+			BlockNode* block = alloc_node(Node::NODE_TYPE_BLOCK);
 			block->parent_block = p_block;
 			if (_parse_block(block, p_function_info, false, p_can_break, p_can_continue) != OK) {
 				return ERR_PARSE_ERROR;
@@ -211045,7 +210993,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 
-			BlockNode* block = alloc_node<BlockNode>();
+			BlockNode* block = alloc_node(Node::NODE_TYPE_BLOCK);
 			block->parent_block = p_block;
 			cf->expressions.push_back(n);
 			cf->blocks.push_back(block);
@@ -211059,7 +211007,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			pos = _get_tkpos();
 			tk = _get_token();
 			if (tk.type == TK_CF_ELSE) {
-				block = alloc_node<BlockNode>();
+				block = alloc_node(Node::NODE_TYPE_BLOCK);
 				block->parent_block = p_block;
 				cf->blocks.push_back(block);
 				err = _parse_block(block, p_function_info, true, p_can_break, p_can_continue);
@@ -211099,7 +211047,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				_set_expected_after_error("{", "switch");
 				return ERR_PARSE_ERROR;
 			}
-			BlockNode* switch_block = alloc_node<BlockNode>();
+			BlockNode* switch_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			switch_block->block_type = BlockNode::BLOCK_TYPE_SWITCH;
 			switch_block->parent_block = p_block;
 			switch_block->expected_type = data_type;
@@ -211269,7 +211217,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_CASE;
 
-			BlockNode* case_block = alloc_node<BlockNode>();
+			BlockNode* case_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			case_block->block_type = BlockNode::BLOCK_TYPE_CASE;
 			case_block->parent_block = p_block;
 			cf->expressions.push_back(n);
@@ -211306,7 +211254,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_DEFAULT;
 
-			BlockNode* default_block = alloc_node<BlockNode>();
+			BlockNode* default_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			default_block->block_type = BlockNode::BLOCK_TYPE_DEFAULT;
 			default_block->parent_block = p_block;
 			cf->blocks.push_back(default_block);
@@ -211327,7 +211275,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 
 			BlockNode* do_block = nullptr;
 			if (is_do) {
-				do_block = alloc_node<BlockNode>();
+				do_block = alloc_node(Node::NODE_TYPE_BLOCK);
 				do_block->parent_block = p_block;
 
 				Error err = _parse_block(do_block, p_function_info, true, true, true);
@@ -211366,7 +211314,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return ERR_PARSE_ERROR;
 			}
 			if (!is_do) {
-				BlockNode* block = alloc_node<BlockNode>();
+				BlockNode* block = alloc_node(Node::NODE_TYPE_BLOCK);
 				block->parent_block = p_block;
 				cf->expressions.push_back(n);
 				cf->blocks.push_back(block);
@@ -211400,7 +211348,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			ControlFlowNode* cf = alloc_node(Node::NODE_TYPE_CONTROL_FLOW);
 			cf->flow_op = FLOW_OP_FOR;
 
-			BlockNode* init_block = alloc_node<BlockNode>();
+			BlockNode* init_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			init_block->block_type = BlockNode::BLOCK_TYPE_FOR_INIT;
 			init_block->parent_block = p_block;
 			init_block->single_statement = true;
@@ -211417,7 +211365,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 			keyword_completion_context = CF_UNSPECIFIED;
 #endif // DEBUG_ENABLED
 
-			BlockNode* condition_block = alloc_node<BlockNode>();
+			BlockNode* condition_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			condition_block->block_type = BlockNode::BLOCK_TYPE_FOR_CONDITION;
 			condition_block->parent_block = init_block;
 			condition_block->single_statement = true;
@@ -211428,7 +211376,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return err;
 			}
 
-			BlockNode* expression_block = alloc_node<BlockNode>();
+			BlockNode* expression_block = alloc_node(Node::NODE_TYPE_BLOCK);
 			expression_block->block_type = BlockNode::BLOCK_TYPE_FOR_EXPRESSION;
 			expression_block->parent_block = init_block;
 			expression_block->single_statement = true;
@@ -211439,7 +211387,7 @@ Error ShaderLanguage::_parse_block(BlockNode* p_block, const FunctionInfo& p_fun
 				return err;
 			}
 
-			BlockNode* block = alloc_node<BlockNode>();
+			BlockNode* block = alloc_node(Node::NODE_TYPE_BLOCK);
 			block->parent_block = init_block;
 			cf->blocks.push_back(block);
 			p_block->statements.push_back(cf);
@@ -213545,7 +213493,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 			function.name = name;
 			function.rname = name;
 
-			FunctionNode* func_node = alloc_node<FunctionNode>();
+			FunctionNode* func_node = alloc_node(Node::NODE_TYPE_FUNCTION);
 			function.function = func_node;
 
 			func_node->name = name;
@@ -213570,7 +213518,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 				function_overload_count[name]++;
 			}
 
-			func_node->body = alloc_node<BlockNode>();
+			func_node->body = alloc_node(Node::NODE_TYPE_BLOCK);
 			func_node->body->parent_function = func_node;
 
 			tk = _get_token();
@@ -213804,7 +213752,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 				}
 
 				arg.array_size = arg_array_size;
-				func_node->arguments.push_back(arg);
+				func_node->func_arguments.push_back(arg);
 
 				if (tk.type == TK_COMMA) {
 					tk = _get_token();
@@ -213825,16 +213773,16 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 
 				function_index++;
 
-				if (shader->vfunctions[i].function->arguments.size() !=
-					func_node->arguments.size()) {
+				if (shader->vfunctions[i].function->func_arguments.size() !=
+					func_node->func_arguments.size()) {
 					continue;
 				}
 
 				bool is_same = true;
 
-				for (int j = 0; j < shader->vfunctions[i].function->arguments.size(); j++) {
-					FunctionNode::Argument a = func_node->arguments[j];
-					FunctionNode::Argument b = shader->vfunctions[i].function->arguments[j];
+				for (int j = 0; j < shader->vfunctions[i].function->func_arguments.size(); j++) {
+					FunctionNode::Argument a = func_node->func_arguments[j];
+					FunctionNode::Argument b = shader->vfunctions[i].function->func_arguments[j];
 
 					if (a.type == b.type && a.array_size == b.array_size) {
 						if (a.type == TYPE_STRUCT) {
@@ -213882,7 +213830,7 @@ Error ShaderLanguage::_parse_shader(const HashMap<String, FunctionInfo>& p_funct
 
 			if (p_functions.has(name)) {
 				// if one of the core functions, make sure they are of the correct form
-				if (func_node->arguments.size() > 0) {
+				if (func_node->func_arguments.size() > 0) {
 					_set_error(vformat(RTR("Function '%s' expects no arguments."), String(name)));
 					return ERR_PARSE_ERROR;
 				}
@@ -214691,25 +214639,25 @@ void ShaderCompiler::_dump_function_deps(const SL::ShaderNode* p_node, const Str
 		header += _mkid(fnode->rname);
 		header += "(";
 
-		for (int i = 0; i < fnode->arguments.size(); i++) {
+		for (int i = 0; i < fnode->func_arguments.size(); i++) {
 			if (i > 0) {
 				header += ", ";
 			}
-			header += _constr(fnode->arguments[i].is_const);
-			if (fnode->arguments[i].type == SL::TYPE_STRUCT) {
-				header += _qualstr(fnode->arguments[i].qualifier) +
-						  _mkid(fnode->arguments[i].struct_name) + " " +
-						  _mkid(fnode->arguments[i].name);
+			header += _constr(fnode->func_arguments[i].is_const);
+			if (fnode->func_arguments[i].type == SL::TYPE_STRUCT) {
+				header += _qualstr(fnode->func_arguments[i].qualifier) +
+						  _mkid(fnode->func_arguments[i].struct_name) + " " +
+						  _mkid(fnode->func_arguments[i].name);
 			}
 			else {
-				header += _qualstr(fnode->arguments[i].qualifier) +
-						  _prestr(fnode->arguments[i].precision) +
-						  _typestr(fnode->arguments[i].type) + " " +
-						  _mkid(fnode->arguments[i].name);
+				header += _qualstr(fnode->func_arguments[i].qualifier) +
+						  _prestr(fnode->func_arguments[i].precision) +
+						  _typestr(fnode->func_arguments[i].type) + " " +
+						  _mkid(fnode->func_arguments[i].name);
 			}
-			if (fnode->arguments[i].array_size > 0) {
+			if (fnode->func_arguments[i].array_size > 0) {
 				header += "[";
-				header += itos(fnode->arguments[i].array_size);
+				header += itos(fnode->func_arguments[i].array_size);
 				header += "]";
 			}
 		}
@@ -215319,7 +215267,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 		else {
 			bool param_found = false;
 			if (function) {
-				for (const SL::FunctionNode::Argument& argument : function->arguments) {
+				for (const SL::FunctionNode::Argument& argument : function->func_arguments) {
 					if (argument.name == vnode->name) {
 						param_found = true;
 						break;
@@ -215481,7 +215429,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 		else {
 			bool param_found = false;
 			if (function) {
-				for (const SL::FunctionNode::Argument& argument : function->arguments) {
+				for (const SL::FunctionNode::Argument& argument : function->func_arguments) {
 					if (argument.name == anode->name) {
 						param_found = true;
 						break;
@@ -215702,7 +215650,7 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 					is_out_qualifier = SL::is_builtin_func_out_parameter(vnode->name, i - 1);
 				}
 				else if (func != nullptr) {
-					const SL::ArgumentQualifier qualifier = func->arguments[i - 1].qualifier;
+					const SL::ArgumentQualifier qualifier = func->func_arguments[i - 1].qualifier;
 					is_out_qualifier = qualifier == SL::ARGUMENT_QUALIFIER_OUT ||
 									   qualifier == SL::ARGUMENT_QUALIFIER_INOUT;
 				}
@@ -215790,36 +215738,36 @@ String ShaderCompiler::_dump_node_code(const SL::Node* p_node, int p_level,
 							else {
 								bool found = false;
 
-								for (int j = 0; j < function->arguments.size(); j++) {
-									if (function->arguments[j].name == texture_uniform) {
-										if (function->arguments[j].tex_builtin_check) {
+								for (int j = 0; j < function->func_arguments.size(); j++) {
+									if (function->func_arguments[j].name == texture_uniform) {
+										if (function->func_arguments[j].tex_builtin_check) {
 											ERR_CONTINUE(!actions.custom_samplers.has(
-												function->arguments[j].tex_builtin));
+												function->func_arguments[j].tex_builtin));
 											sampler_name =
-												actions.custom_samplers[function->arguments[j]
+												actions.custom_samplers[function->func_arguments[j]
 																			.tex_builtin];
 											found = true;
 											break;
 										}
-										if (function->arguments[j].tex_argument_check) {
-											if (function->arguments[j].tex_hint ==
+										if (function->func_arguments[j].tex_argument_check) {
+											if (function->func_arguments[j].tex_hint ==
 												ShaderLanguage::ShaderNode::Uniform::
 													HINT_SCREEN_TEXTURE) {
 												is_screen_texture = true;
 											}
-											else if (function->arguments[j].tex_hint ==
+											else if (function->func_arguments[j].tex_hint ==
 													   ShaderLanguage::ShaderNode::Uniform::
 														   HINT_DEPTH_TEXTURE) {
 												is_depth_texture = true;
 											}
-											else if (function->arguments[j].tex_hint ==
+											else if (function->func_arguments[j].tex_hint ==
 													   ShaderLanguage::ShaderNode::Uniform::
 														   HINT_NORMAL_ROUGHNESS_TEXTURE) {
 												is_normal_roughness_texture = true;
 											}
 											sampler_name = _get_sampler_name(
-												function->arguments[j].tex_argument_filter,
-												function->arguments[j].tex_argument_repeat);
+												function->func_arguments[j].tex_argument_filter,
+												function->func_arguments[j].tex_argument_repeat);
 											found = true;
 											break;
 										}
@@ -222249,7 +222197,7 @@ AudioStreamPlayback::~AudioStreamPlayback()
 	}
 }
 
-void AudioStreamPlaybackResampled::begin_resample()
+void AudioStreamPlayback::begin_resample()
 {
 	// clear cubic interpolation history
 	internal_buffer[0] = AudioFrame(0.0, 0.0);
@@ -222261,13 +222209,17 @@ void AudioStreamPlaybackResampled::begin_resample()
 	mix_offset = 0;
 }
 
-int AudioStreamPlaybackResampled::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
+int AudioStreamPlayback::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames)
 {
+	float srate = get_stream_sampling_rate();
+	if (srate <= 0.0f) {
+		return 0;
+	}
 	float target_rate = AudioServer::get_mix_rate();
 	float playback_speed_scale = AudioServer::get_playback_speed_scale();
 
 	uint64_t mix_increment = uint64_t(
-		((get_stream_sampling_rate() * p_rate_scale * playback_speed_scale) / double(target_rate)) *
+		((srate * p_rate_scale * playback_speed_scale) / double(target_rate)) *
 		double(FP_LEN));
 
 	int mixed_frames_total = -1;
@@ -222374,19 +222326,17 @@ void AudioStreamPlayback::start(double p_from_pos) {}
 
 void AudioStreamPlayback::stop() {}
 
-int AudioStreamPlaybackResampled::_mix_internal(AudioFrame* p_buffer, int p_frames) { return 0; }
+int AudioStreamPlayback::_mix_internal(AudioFrame* p_buffer, int p_frames) { return 0; }
 
-float AudioStreamPlaybackResampled::get_stream_sampling_rate() { return 44100.0; }
+float AudioStreamPlayback::get_stream_sampling_rate() { return 0.0f; }
 
-float AudioStreamPlaybackResampled::get_stream_sampling_rate() const { return 44100.0; }
+float AudioStreamPlayback::get_stream_sampling_rate() const { return 0.0f; }
 
 int AudioStreamPlayback::get_loop_count() const { return 0; }
 
 void AudioStreamPlayback::seek(double p_time) {}
 
 void AudioStreamPlayback::tag_used_streams() {}
-
-int AudioStreamPlayback::mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) { return 0; }
 
 ///////////////////////////////////////
 // AudioStreamGenerator / AudioStreamGeneratorPlayback
@@ -266584,7 +266534,6 @@ class TextServerAdvanced final : public TextServer
 		FontForSizeAdvanced*& r_cache_for_size, bool p_silent = false,
 		uint32_t p_oversampling = 0) const;
 	_FORCE_INLINE_ bool _font_validate(const RID& p_font_rid) const;
-	static void _generateMTSDF_threaded(void* p_td, uint32_t p_y);
 
 	_FORCE_INLINE_ Vector2i _get_size(const FontAdvanced* p_font_data, int p_size) const
 	{
@@ -267040,48 +266989,6 @@ public:
 	int64_t _name_to_tag(const String& p_name) const;
 	String _tag_to_name(int64_t p_tag) const;
 
-#ifdef MODULE_MSDFGEN_ENABLED
-
-	struct MSContext
-	{
-		msdfgen::Point2 position;
-		msdfgen::Shape* shape = nullptr;
-		msdfgen::Contour* contour = nullptr;
-	};
-
-	class DistancePixelConversion
-	{
-		double invRange;
-
-	public:
-		_FORCE_INLINE_ explicit DistancePixelConversion(double range) : invRange(1 / range) {}
-
-		_FORCE_INLINE_ void operator()(
-			float* pixels, const msdfgen::MultiAndTrueDistance& distance) const
-		{
-			pixels[0] = float(invRange * distance.r + .5);
-			pixels[1] = float(invRange * distance.g + .5);
-			pixels[2] = float(invRange * distance.b + .5);
-			pixels[3] = float(invRange * distance.a + .5);
-		}
-	};
-
-	struct MSDFThreadData
-	{
-		msdfgen::Bitmap<float, 4>* output;
-		msdfgen::Shape* shape;
-		msdfgen::Projection* projection;
-		DistancePixelConversion* distancePixelConversion;
-	};
-
-	static msdfgen::Point2 ft_point2(const FT_Vector& vector);
-	static int ft_move_to(const FT_Vector* to, void* user);
-	static int ft_line_to(const FT_Vector* to, void* user);
-	static int ft_conic_to(const FT_Vector* control, const FT_Vector* to, void* user);
-	static int ft_cubic_to(
-		const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user);
-
-#endif
 
 	/*************************************************************************/
 	/* Font Cache                                                            */
@@ -268494,92 +268401,6 @@ TextServerAdvanced::find_texture_pos_for_glyph(FontForSizeAdvanced* p_data, int 
 	return ret;
 }
 
-#ifdef MODULE_MSDFGEN_ENABLED
-
-struct MSContext
-{
-	msdfgen::Point2 position;
-	msdfgen::Shape* shape = nullptr;
-	msdfgen::Contour* contour = nullptr;
-};
-
-class DistancePixelConversion
-{
-	double invRange;
-
-public:
-	_FORCE_INLINE_ explicit DistancePixelConversion(double range) : invRange(1 / range) {}
-
-	_FORCE_INLINE_ void operator()(
-		float* pixels, const msdfgen::MultiAndTrueDistance& distance) const
-	{
-		pixels[0] = float(invRange * distance.r + .5);
-		pixels[1] = float(invRange * distance.g + .5);
-		pixels[2] = float(invRange * distance.b + .5);
-		pixels[3] = float(invRange * distance.a + .5);
-	}
-};
-
-struct MSDFThreadData
-{
-	msdfgen::Bitmap<float, 4>* output;
-	msdfgen::Shape* shape;
-	msdfgen::Projection* projection;
-	DistancePixelConversion* distancePixelConversion;
-};
-
-// static msdfgen::Point2 ft_point2(const FT_Vector &vector) {
-// 	return msdfgen::Point2(vector.x / 60.0f, vector.y / 60.0f);
-// }
-
-// static int ft_move_to(const FT_Vector *to, void *user) {
-// 	MSContext *context = static_cast<MSContext *>(user);
-// 	if (!(context->contour && context->contour->edges.empty())) {
-// 		context->contour = &context->shape->addContour();
-// 	}
-// 	context->position = ft_point2(*to);
-// 	return 0;
-// }
-
-// static int ft_line_to(const FT_Vector *to, void *user) {
-// 	MSContext *context = static_cast<MSContext *>(user);
-// 	msdfgen::Point2 endpoint = ft_point2(*to);
-// 	if (endpoint != context->position) {
-// 		context->contour->addEdge(new msdfgen::LinearSegment(context->position, endpoint));
-// 		context->position = endpoint;
-// 	}
-// 	return 0;
-// }
-
-// static int ft_conic_to(const FT_Vector *control, const FT_Vector *to, void *user) {
-// 	MSContext *context = static_cast<MSContext *>(user);
-// 	context->contour->addEdge(new msdfgen::QuadraticSegment(context->position, ft_point2(*control),
-// ft_point2(*to))); 	context->position = ft_point2(*to); 	return 0;
-// }
-
-// static int ft_cubic_to(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to,
-// void *user) { 	MSContext *context = static_cast<MSContext *>(user);
-// context->contour->addEdge(new msdfgen::CubicSegment(context->position, ft_point2(*control1),
-// ft_point2(*control2), ft_point2(*to))); 	context->position = ft_point2(*to); 	return 0;
-// }
-
-void TextServerAdvanced::_generateMTSDF_threaded(void* p_td, uint32_t p_y)
-{
-	MSDFThreadData* td = static_cast<MSDFThreadData*>(p_td);
-
-	msdfgen::ShapeDistanceFinder<
-		msdfgen::OverlappingContourCombiner<msdfgen::MultiAndTrueDistanceSelector>>
-		distanceFinder(*td->shape);
-	int row = td->shape->inverseYAxis ? td->output->height() - p_y - 1 : p_y;
-	for (int col = 0; col < td->output->width(); ++col) {
-		int x = (p_y % 2) ? td->output->width() - col - 1 : col;
-		msdfgen::Point2 p = td->projection->unproject(msdfgen::Point2(x + .5, p_y + .5));
-		msdfgen::MultiAndTrueDistance distance = distanceFinder.distance(p);
-		td->distancePixelConversion->operator()(td->output->operator()(x, row), distance);
-	}
-}
-
-#endif
 
 #ifdef MODULE_FREETYPE_ENABLED
 #if HB_VERSION_ATLEAST(13, 0, 0)
@@ -273514,20 +273335,6 @@ TextServerAdvanced::~TextServerAdvanced()
 	std::atexit(u_cleanup);
 }
 
-int TextServerAdvanced::ft_move_to(const FT_Vector* to, void* user) { return 0; }
-
-int TextServerAdvanced::ft_line_to(const FT_Vector* to, void* user) { return 0; }
-
-int TextServerAdvanced::ft_conic_to(const FT_Vector* control, const FT_Vector* to, void* user)
-{
-	return 0;
-}
-
-int TextServerAdvanced::ft_cubic_to(
-	const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user)
-{
-	return 0;
-}
 
 bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced* p_font_data, const Vector2i& p_size,
 	FontForSizeAdvanced*& r_cache_for_size, bool p_silent, uint32_t p_oversampling) const
@@ -274616,3619 +274423,19 @@ void uninitialize_navigation_2d_module(ModuleInitializationLevel p_level)
 #include "core/version_generated.gen.h"
 
 #if defined(MODULE_GLTF_ENABLED)
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-/* This DisjointSet class uses Find with path compression and Union by rank */
-template <typename T, typename H = HashMapHasherDefault, typename C = HashMapComparatorDefault<T>, typename AL = DefaultAllocator>
-class DisjointSet {
-	struct Element {
-		T object;
-		Element *parent = nullptr;
-		int rank = 0;
-	};
-
-	typedef HashMap<T, Element *, H, C> MapT;
-
-	MapT elements;
-
-	Element *get_parent(Element *r_element);
-
-	_FORCE_INLINE_ Element *insert_or_get(T p_object);
-
-public:
-	~DisjointSet();
-
-	_FORCE_INLINE_ void insert(T p_object) { (void)insert_or_get(p_object); }
-
-	void create_union(T p_left, T p_right);
-
-	void get_representatives(Vector<T> &r_out_roots);
-
-	void get_members(Vector<T> &r_out_members, T p_representative);
-};
-
-/* FUNCTIONS */
-
-template <typename T, typename H, typename C, typename AL>
-DisjointSet<T, H, C, AL>::~DisjointSet() {
-	for (KeyValue<T, Element *> &E : elements) {
-		memdelete_allocator<Element, AL>(E.value);
-	}
-}
-
-template <typename T, typename H, typename C, typename AL>
-typename DisjointSet<T, H, C, AL>::Element *DisjointSet<T, H, C, AL>::get_parent(Element *r_element) {
-	if (r_element->parent != r_element) {
-		r_element->parent = get_parent(r_element->parent);
-	}
-
-	return r_element->parent;
-}
-
-template <typename T, typename H, typename C, typename AL>
-typename DisjointSet<T, H, C, AL>::Element *DisjointSet<T, H, C, AL>::insert_or_get(T p_object) {
-	typename MapT::Iterator itr = elements.find(p_object);
-	if (itr != nullptr) {
-		return itr->value;
-	}
-
-	Element *new_element = memnew_allocator(Element, AL);
-	new_element->object = p_object;
-	new_element->parent = new_element;
-	elements.insert(p_object, new_element);
-
-	return new_element;
-}
-
-template <typename T, typename H, typename C, typename AL>
-void DisjointSet<T, H, C, AL>::create_union(T p_left, T p_right) {
-	Element *x = insert_or_get(p_left);
-	Element *y = insert_or_get(p_right);
-
-	Element *x_root = get_parent(x);
-	Element *y_root = get_parent(y);
-
-	// Already in the same set
-	if (x_root == y_root) {
-		return;
-	}
-
-	// Not in the same set, merge
-	if (x_root->rank < y_root->rank) {
-		SWAP(x_root, y_root);
-	}
-
-	// Merge y_root into x_root
-	y_root->parent = x_root;
-	if (x_root->rank == y_root->rank) {
-		++x_root->rank;
-	}
-}
-
-template <typename T, typename H, typename C, typename AL>
-void DisjointSet<T, H, C, AL>::get_representatives(Vector<T> &r_out_representatives) {
-	for (KeyValue<T, Element *> &E : elements) {
-		Element *element = E.value;
-		if (element->parent == element) {
-			r_out_representatives.push_back(element->object);
-		}
-	}
-}
-
-template <typename T, typename H, typename C, typename AL>
-void DisjointSet<T, H, C, AL>::get_members(Vector<T> &r_out_members, T p_representative) {
-	typename MapT::Iterator rep_itr = elements.find(p_representative);
-	ERR_FAIL_NULL(rep_itr);
-
-	Element *rep_element = rep_itr->value;
-	ERR_FAIL_COND(rep_element->parent != rep_element);
-
-	for (KeyValue<T, Element *> &E : elements) {
-		Element *parent = get_parent(E.value);
-		if (parent == rep_element) {
-			r_out_members.push_back(E.key);
-		}
-	}
-}
-
-#include "servers/display/display_server.h"
-
-#ifdef TOOLS_ENABLED
-#include "servers/display/display_server.h"
-#endif
-
-#include "core/version_generated.gen.h" // For csg, gridmap.
-
-#ifdef MODULE_CSG_ENABLED
-#include "servers/display/display_server.h"
-#endif
-#ifdef MODULE_GRIDMAP_ENABLED
-#include "servers/display/display_server.h"
-#endif
-
-#include <cstdio>
-#include <cstdlib>
-
-Error GLTFDocument::_serialize(Ref<GLTFState> p_state)
-{
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		Error err = ext->export_preserialize(p_state);
-		ERR_CONTINUE(err != OK);
-	}
-
-	/* STEP CONVERT MESH INSTANCES */
-	_convert_mesh_instances(p_state);
-
-	/* STEP SERIALIZE CAMERAS */
-	Error err = _serialize_cameras(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP 3 CREATE SKINS */
-	err = _serialize_skins(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE MESHES (we have enough info now) */
-	err = _serialize_meshes(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE TEXTURES */
-	err = _serialize_materials(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE TEXTURE SAMPLERS */
-	err = _serialize_texture_samplers(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE ANIMATIONS */
-	err = _serialize_animations(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE IMAGES */
-	err = _serialize_images(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE TEXTURES */
-	err = _serialize_textures(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE NODES */
-	err = _serialize_nodes(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE SCENE */
-	err = _serialize_scenes(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE LIGHTS */
-	err = _serialize_lights(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE EXTENSIONS */
-	err = _serialize_gltf_extensions(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE VERSION */
-	err = _serialize_asset_header(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE ACCESSORS */
-	err = _encode_accessors(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	/* STEP SERIALIZE BUFFER VIEWS */
-	err = _encode_buffer_views(p_state);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		err = ext->export_post(p_state);
-		ERR_FAIL_COND_V(err != OK, err);
-	}
-
-	return OK;
-}
-
-static Vector<real_t> _xform_to_array(const Transform3D p_transform)
-{
-	Vector<real_t> array;
-	array.resize(16);
-	Vector3 axis_x = p_transform.get_basis().get_column(Vector3::AXIS_X);
-	array.write[0] = axis_x.x;
-	array.write[1] = axis_x.y;
-	array.write[2] = axis_x.z;
-	array.write[3] = 0.0f;
-	Vector3 axis_y = p_transform.get_basis().get_column(Vector3::AXIS_Y);
-	array.write[4] = axis_y.x;
-	array.write[5] = axis_y.y;
-	array.write[6] = axis_y.z;
-	array.write[7] = 0.0f;
-	Vector3 axis_z = p_transform.get_basis().get_column(Vector3::AXIS_Z);
-	array.write[8] = axis_z.x;
-	array.write[9] = axis_z.y;
-	array.write[10] = axis_z.z;
-	array.write[11] = 0.0f;
-	Vector3 origin = p_transform.get_origin();
-	array.write[12] = origin.x;
-	array.write[13] = origin.y;
-	array.write[14] = origin.z;
-	array.write[15] = 1.0f;
-	return array;
-}
-
-String GLTFDocument::_gen_unique_name(Ref<GLTFState> p_state, const String& p_name)
-{
-	return _gen_unique_name_static(p_state->unique_names, p_name);
-}
-
-String GLTFDocument::_sanitize_animation_name(const String& p_name)
-{
-	String anim_name = p_name.validate_node_name();
-	return AnimationLibrary::validate_library_name(anim_name);
-}
-
-String GLTFDocument::_gen_unique_animation_name(Ref<GLTFState> p_state, const String& p_name)
-{
-	const String s_name = _sanitize_animation_name(p_name);
-
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += itos(index);
-		}
-		if (!p_state->unique_animation_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	p_state->unique_animation_names.insert(u_name);
-
-	return u_name;
-}
-
-String GLTFDocument::_sanitize_bone_name(const String& p_name)
-{
-	String bone_name = p_name;
-	bone_name = bone_name.replace_chars(":/", '_');
-	return bone_name;
-}
-
-String GLTFDocument::_gen_unique_bone_name(
-	Ref<GLTFState> p_state, const GLTFSkeletonIndex p_skel_i, const String& p_name)
-{
-	String s_name = _sanitize_bone_name(p_name);
-	if (s_name.is_empty()) {
-		s_name = "bone";
-	}
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += "_" + itos(index);
-		}
-		if (!p_state->skeletons[p_skel_i]->unique_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	p_state->skeletons.write[p_skel_i]->unique_names.insert(u_name);
-
-	return u_name;
-}
-
-
-static Vector<uint8_t> _parse_base64_uri(const String& p_uri)
-{
-	int start = p_uri.find_char(',');
-	ERR_FAIL_COND_V(start == -1, Vector<uint8_t>());
-
-	CharString substr = p_uri.substr(start + 1).ascii();
-
-	int strlen = substr.length();
-
-	Vector<uint8_t> buf;
-	buf.resize(strlen / 4 * 3 + 1 + 1);
-
-	size_t len = 0;
-	ERR_FAIL_COND_V(CryptoCore::b64_decode(buf.ptrw(), buf.size(), &len,
-						(unsigned char*)substr.get_data(), strlen) != OK,
-		Vector<uint8_t>());
-
-	buf.resize(len);
-
-	return buf;
-}
-
-static inline bool _all_buffers_empty(const Vector<Vector<uint8_t>>& p_buffers, int start_idx = 0)
-{
-	for (int i = start_idx; i < p_buffers.size(); i++) {
-		if (!p_buffers[i].is_empty()) {
-			return false;
-		}
-	}
-	return true;
-}
-
-void GLTFDocument::set_naming_version(int p_version) { _naming_version = p_version; }
-
-int GLTFDocument::get_naming_version() const { return _naming_version; }
-
-
-
-
-
-
-
-
-
-Ref<Image> GLTFDocument::_parse_image_bytes_into_image(Ref<GLTFState> p_state,
-	const Vector<uint8_t>& p_bytes, const String& p_mime_type, int p_index,
-	String& r_file_extension)
-{
-	Ref<Image> r_image;
-	r_image.instantiate();
-	// Check if any GLTFDocumentExtensions want to import this data as an image.
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		Error err = ext->parse_image_data(p_state, p_bytes, p_mime_type, r_image);
-		ERR_CONTINUE_MSG(err != OK, "glTF: Encountered error " + itos(err) +
-										" when parsing image " + itos(p_index) + " in file " +
-										p_state->filename + ". Continuing.");
-		if (!r_image->is_empty()) {
-			r_file_extension = ext->get_image_file_extension();
-			return r_image;
-		}
-	}
-	// If no extension wanted to import this data as an image, try to load a PNG or JPEG.
-	// First we honor the mime types if they were defined.
-	if (p_mime_type == "image/png") { // Load buffer as PNG.
-		r_image->load_png_from_buffer(p_bytes);
-		r_file_extension = ".png";
-	}
-	else if (p_mime_type == "image/jpeg") { // Loader buffer as JPEG.
-		r_image->load_jpg_from_buffer(p_bytes);
-		r_file_extension = ".jpg";
-	}
-	// If we didn't pass the above tests, we attempt loading as PNG and then JPEG directly.
-	// This covers URIs with base64-encoded data with application/* type but
-	// no optional mimeType property, or bufferViews with a bogus mimeType
-	// (e.g. `image/jpeg` but the data is actually PNG).
-	// That's not *exactly* what the spec mandates but this lets us be
-	// lenient with bogus glb files which do exist in production.
-	if (r_image->is_empty()) { // Try PNG first.
-		r_image->load_png_from_buffer(p_bytes);
-	}
-	if (r_image->is_empty()) { // And then JPEG.
-		r_image->load_jpg_from_buffer(p_bytes);
-	}
-	// If it still can't be loaded, give up and insert an empty image as placeholder.
-	if (r_image->is_empty()) {
-		ERR_PRINT(vformat("glTF: Couldn't load image index '%d' with its given mimetype: %s.",
-			p_index, p_mime_type));
-	}
-	return r_image;
-}
-
-GLTFTextureIndex GLTFDocument::_set_texture(Ref<GLTFState> p_state, Ref<Texture2D> p_texture,
-	StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats)
-{
-	ERR_FAIL_COND_V(p_texture.is_null(), -1);
-	Ref<GLTFTexture> gltf_texture;
-	gltf_texture.instantiate();
-	ERR_FAIL_COND_V(p_texture->get_image().is_null(), -1);
-	GLTFImageIndex gltf_src_image_i = p_state->images.find(p_texture);
-	if (gltf_src_image_i == -1) {
-		gltf_src_image_i = p_state->images.size();
-		p_state->images.push_back(p_texture);
-		p_state->source_images.push_back(p_texture->get_image());
-	}
-	gltf_texture->set_src_image(gltf_src_image_i);
-	gltf_texture->set_sampler(_set_sampler_for_mode(p_state, p_filter_mode, p_repeats));
-	GLTFTextureIndex gltf_texture_i = p_state->textures.size();
-	p_state->textures.push_back(gltf_texture);
-	return gltf_texture_i;
-}
-
-GLTFTextureSamplerIndex GLTFDocument::_set_sampler_for_mode(
-	Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats)
-{
-	for (int i = 0; i < p_state->texture_samplers.size(); ++i) {
-		if (p_state->texture_samplers[i]->get_filter_mode() == p_filter_mode) {
-			return i;
-		}
-	}
-
-	GLTFTextureSamplerIndex gltf_sampler_i = p_state->texture_samplers.size();
-	Ref<GLTFTextureSampler> gltf_sampler;
-	gltf_sampler.instantiate();
-	gltf_sampler->set_filter_mode(p_filter_mode);
-	gltf_sampler->set_wrap_mode(p_repeats);
-	p_state->texture_samplers.push_back(gltf_sampler);
-	return gltf_sampler_i;
-}
-
-
-static inline void _set_material_texture_name(const Ref<Texture2D>& p_texture, const String& p_path,
-	const String& p_mat_name, const String& p_suffix)
-{
-	if (p_texture->get_name().is_empty()) {
-		if (p_path.is_empty()) {
-			p_texture->set_name(p_mat_name + p_suffix);
-		}
-		else {
-			p_texture->set_name(p_path.get_file().get_basename());
-		}
-	}
-}
-
-
-
-
-bool GLTFDocument::_skins_are_same(const Ref<Skin>& p_skin_a, const Ref<Skin>& p_skin_b)
-{
-	if (p_skin_a->get_bind_count() != p_skin_b->get_bind_count()) {
-		return false;
-	}
-
-	for (int i = 0; i < p_skin_a->get_bind_count(); ++i) {
-		if (p_skin_a->get_bind_bone(i) != p_skin_b->get_bind_bone(i)) {
-			return false;
-		}
-		if (p_skin_a->get_bind_name(i) != p_skin_b->get_bind_name(i)) {
-			return false;
-		}
-
-		Transform3D a_xform = p_skin_a->get_bind_pose(i);
-		Transform3D b_xform = p_skin_b->get_bind_pose(i);
-
-		if (a_xform != b_xform) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void GLTFDocument::_remove_duplicate_skins(Ref<GLTFState> p_state)
-{
-	for (int i = 0; i < p_state->skins.size(); ++i) {
-		for (int j = i + 1; j < p_state->skins.size(); ++j) {
-			const Ref<Skin> skin_i = p_state->skins[i]->godot_skin;
-			const Ref<Skin> skin_j = p_state->skins[j]->godot_skin;
-
-			if (_skins_are_same(skin_i, skin_j)) {
-				// replace it and delete the old
-				p_state->skins.write[j]->godot_skin = skin_i;
-			}
-		}
-	}
-}
-
-
-void GLTFDocument::_assign_node_names(Ref<GLTFState> p_state)
-{
-	for (int i = 0; i < p_state->nodes.size(); i++) {
-		Ref<GLTFNode> gltf_node = p_state->nodes[i];
-		// Any joints get unique names generated when the skeleton is made, unique to the skeleton
-		if (gltf_node->skeleton >= 0) {
-			continue;
-		}
-		String gltf_node_name = gltf_node->get_name();
-		if (gltf_node_name.is_empty()) {
-			if (_naming_version == 0) {
-				if (gltf_node->mesh >= 0) {
-					gltf_node_name = _gen_unique_name(p_state, "Mesh");
-				}
-				else if (gltf_node->camera >= 0) {
-					gltf_node_name = _gen_unique_name(p_state, "Camera3D");
-				}
-				else {
-					gltf_node_name = _gen_unique_name(p_state, "Node");
-				}
-			}
-			else {
-				if (gltf_node->mesh >= 0) {
-					gltf_node_name = "Mesh";
-				}
-				else if (gltf_node->camera >= 0) {
-					gltf_node_name = "Camera";
-				}
-				else {
-					gltf_node_name = "Node";
-				}
-			}
-		}
-		gltf_node->set_name(_gen_unique_name(p_state, gltf_node_name));
-	}
-}
-
-BoneAttachment3D* GLTFDocument::_generate_bone_attachment(
-	Skeleton3D* p_godot_skeleton, const Ref<GLTFNode>& p_bone_node)
-{
-	BoneAttachment3D* bone_attachment = memnew(BoneAttachment3D);
-	print_verbose("glTF: Creating bone attachment for: " + p_bone_node->get_name());
-	bone_attachment->set_name(p_bone_node->get_name());
-	p_godot_skeleton->add_child(bone_attachment, true);
-	bone_attachment->set_bone_name(p_bone_node->get_name());
-	return bone_attachment;
-}
-
-
-ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
-	Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(gltf_node->mesh, p_state->meshes.size(), nullptr);
-
-	ImporterMeshInstance3D* mi = memnew(ImporterMeshInstance3D);
-	print_verbose("glTF: Creating mesh for: " + gltf_node->get_name());
-
-	p_state->scene_mesh_instances.insert(p_node_index, mi);
-	Ref<GLTFMesh> mesh = p_state->meshes.write[gltf_node->mesh];
-	if (mesh.is_null()) {
-		return mi;
-	}
-	Ref<ImporterMesh> import_mesh = mesh->get_mesh();
-	if (import_mesh.is_null()) {
-		return mi;
-	}
-	mi->set_mesh(import_mesh);
-	return mi;
-}
-
-
-
-
-Node3D* GLTFDocument::_generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-
-	Node3D* spatial = memnew(Node3D);
-	print_verbose("glTF: Converting spatial: " + gltf_node->get_name());
-
-	return spatial;
-}
-
-Vector<Ref<GLTFDocumentExtension>> GLTFDocument::all_document_extensions;
-Mutex GLTFDocument::all_document_extensions_mutex;
-
-void GLTFDocument::register_gltf_document_extension(
-	Ref<GLTFDocumentExtension> p_extension, bool p_first_priority)
-{
-	MutexLock lock(all_document_extensions_mutex);
-	if (!all_document_extensions.has(p_extension)) {
-		if (p_first_priority) {
-			all_document_extensions.insert(0, p_extension);
-		}
-		else {
-			all_document_extensions.push_back(p_extension);
-		}
-	}
-}
-
-
-void GLTFDocument::unregister_all_gltf_document_extensions()
-{
-	MutexLock lock(all_document_extensions_mutex);
-	all_document_extensions.clear();
-}
-
-Vector<Ref<GLTFDocumentExtension>> GLTFDocument::get_all_gltf_document_extensions()
-{
-	MutexLock lock(all_document_extensions_mutex);
-	return all_document_extensions;
-}
-
-
-
-
-PackedByteArray GLTFDocument::generate_buffer(Ref<GLTFState> p_state)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), PackedByteArray());
-	// For buffers, set the state filename to an empty string, but
-	// don't touch the base path, in case the user set it manually.
-	p_state->filename = "";
-	Error err = _serialize(p_state);
-	ERR_FAIL_COND_V(err != OK, PackedByteArray());
-	PackedByteArray bytes = _serialize_glb_buffer(p_state, &err);
-	return bytes;
-}
-
-Error GLTFDocument::write_to_filesystem(Ref<GLTFState> p_state, const String& p_path)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	p_state->set_base_path(p_path.get_base_dir());
-	p_state->filename = p_path.get_file();
-	Error err = _serialize(p_state);
-	if (err != OK) {
-		return err;
-	}
-	err = _serialize_file(p_state, p_path);
-	if (err != OK) {
-		return Error::FAILED;
-	}
-	return OK;
-}
-
-Error GLTFDocument::append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags)
-{
-	ERR_FAIL_NULL_V(p_node, ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	p_state->use_named_skin_binds = p_flags & ImportFlags::IMPORT_FLAG_USE_NAMED_SKIN_BINDS;
-	p_state->discard_meshes_and_materials =
-		p_flags & ImportFlags::IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS;
-	p_state->force_generate_tangents = p_flags & ImportFlags::IMPORT_FLAG_GENERATE_TANGENT_ARRAYS;
-	p_state->force_disable_compression =
-		p_flags & ImportFlags::IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION;
-	if (!p_state->buffers.size()) {
-		p_state->buffers.push_back(Vector<uint8_t>());
-	}
-	// Perform export preflight for document extensions. Only extensions that
-	// return OK will be used for the rest of the export steps.
-	document_extensions.clear();
-	for (Ref<GLTFDocumentExtension> ext : get_all_gltf_document_extensions()) {
-		ERR_CONTINUE(ext.is_null());
-		Ref<GLTFDocumentExtension> ext_dup = ext;
-		Error err = ext_dup->export_preflight(p_state, p_node);
-		if (err == OK) {
-			document_extensions.push_back(ext_dup);
-		}
-	}
-	// Add the root node(s) and their descendants to the state.
-	if (_root_node_mode == RootNodeMode::ROOT_NODE_MODE_MULTI_ROOT) {
-		const int child_count = p_node->get_child_count();
-		for (int i = 0; i < child_count; i++) {
-			_convert_scene_node(p_state, p_node->get_child(i), -1, -1);
-		}
-		p_state->scene_name = p_node->get_name();
-	}
-	else {
-		if (_root_node_mode == RootNodeMode::ROOT_NODE_MODE_SINGLE_ROOT) {
-			p_state->extensions_used.append("GODOT_single_root");
-		}
-		_convert_scene_node(p_state, p_node, -1, -1);
-	}
-	// Run post-convert for each extension, in case an extension needs to do something after
-	// converting the scene.
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		Error err = ext->export_post_convert(p_state, p_node);
-		ERR_CONTINUE(err != OK);
-	}
-	return OK;
-}
-
-Error GLTFDocument::append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
-	Ref<GLTFState> p_state, uint32_t p_flags)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	// TODO Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
-	Error err = FAILED;
-	p_state->use_named_skin_binds = p_flags & ImportFlags::IMPORT_FLAG_USE_NAMED_SKIN_BINDS;
-	p_state->discard_meshes_and_materials =
-		p_flags & ImportFlags::IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS;
-	p_state->force_generate_tangents = p_flags & ImportFlags::IMPORT_FLAG_GENERATE_TANGENT_ARRAYS;
-	p_state->force_disable_compression =
-		p_flags & ImportFlags::IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION;
-
-	Ref<FileAccessMemory> file_access;
-	file_access.instantiate();
-	file_access->open_custom(p_bytes.ptr(), p_bytes.size());
-	p_state->set_base_path(p_base_path.get_base_dir());
-	err = _parse(p_state, p_state->base_path, file_access);
-	ERR_FAIL_COND_V(err != OK, err);
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		err = ext->import_post_parse(p_state);
-		ERR_FAIL_COND_V(err != OK, err);
-	}
-	return OK;
-}
-
-Error GLTFDocument::append_from_file(
-	const String& p_path, Ref<GLTFState> p_state, uint32_t p_flags, const String& p_base_path)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	// TODO Add missing texture and missing .bin file paths to r_missing_deps 2021-09-10 fire
-	p_state->set_filename(p_path.get_file().get_basename());
-	p_state->use_named_skin_binds = p_flags & ImportFlags::IMPORT_FLAG_USE_NAMED_SKIN_BINDS;
-	p_state->discard_meshes_and_materials =
-		p_flags & ImportFlags::IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS;
-	p_state->force_generate_tangents = p_flags & ImportFlags::IMPORT_FLAG_GENERATE_TANGENT_ARRAYS;
-	p_state->force_disable_compression =
-		p_flags & ImportFlags::IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION;
-
-	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ, &err);
-	ERR_FAIL_COND_V_MSG(err != OK, err, vformat(R"(Can't open file at path "%s")", p_path));
-	ERR_FAIL_COND_V(file.is_null(), ERR_FILE_CANT_OPEN);
-	String base_path = p_base_path;
-	if (base_path.is_empty()) {
-		base_path = p_path.get_base_dir();
-	}
-	p_state->set_base_path(base_path);
-	err = _parse(p_state, base_path, file);
-	ERR_FAIL_COND_V(err != OK, err);
-	for (Ref<GLTFDocumentExtension> ext : document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		err = ext->import_post_parse(p_state);
-		ERR_FAIL_COND_V(err != OK, err);
-	}
-	return OK;
-}
-
-
-
-
-void GLTFDocument::set_visibility_mode(VisibilityMode p_visibility_mode)
-{
-	_visibility_mode = p_visibility_mode;
-}
-
-GLTFDocument::VisibilityMode GLTFDocument::get_visibility_mode() const { return _visibility_mode; }
-
-String GLTFDocument::_gen_unique_name_static(HashSet<String>& r_unique_names, const String& p_name)
-{
-	const String s_name = p_name.validate_node_name();
-
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += itos(index);
-		}
-		if (!r_unique_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	r_unique_names.insert(u_name);
-
-	return u_name;
-}
-
-Error GLTFDocument::_parse(Ref<GLTFState>, String const&, Ref<FileAccess>) { return OK; }
-
-void GLTFDocument::_convert_scene_node(Ref<GLTFState>, Node*, int, int) {}
-
-Error GLTFDocument::_serialize_textures(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_texture_samplers(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_skins(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_scenes(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_nodes(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_meshes(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_materials(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_lights(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_images(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_gltf_extensions(Ref<GLTFState>) const { return OK; }
-
-PackedByteArray GLTFDocument::_serialize_glb_buffer(Ref<GLTFState>, Error*)
-{
-	return PackedByteArray();
-}
-
-Error GLTFDocument::_serialize_file(Ref<GLTFState>, String) { return OK; }
-
-Error GLTFDocument::_serialize_cameras(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_asset_header(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_serialize_animations(Ref<GLTFState>) { return OK; }
-
-
-
-Error GLTFDocument::_parse_skins(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_parse_scenes(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_parse_nodes(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_parse_meshes(Ref<GLTFState>) { return OK; }
-
-
-Error GLTFDocument::_parse_lights(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_parse_images(Ref<GLTFState>, String const&) { return OK; }
-
-
-Error GLTFDocument::_parse_cameras(Ref<GLTFState>) { return OK; }
-
-
-
-Error GLTFDocument::_parse_animations(Ref<GLTFState>) { return OK; }
-
-
-Error GLTFDocument::_encode_buffer_views(Ref<GLTFState>) { return OK; }
-
-Error GLTFDocument::_encode_accessors(Ref<GLTFState>) { return OK; }
-
-
-void GLTFDocument::_convert_mesh_instances(Ref<GLTFState>) {}
-
-Node* GLTFDocument::generate_scene(
-	Ref<GLTFState> p_state, float p_bake_fps, bool p_save_fps, bool p_trim_fps)
-{
-	return nullptr;
-}
-
-
-
-
-
-
-String GLTFState::get_copyright() const { return copyright; }
-
-
-
-
-
-
-String GLTFState::get_scene_name() const { return scene_name; }
-
-
-
-
-
-
-
-
-
-GLTFNodeIndex GLTFState::get_node_index(Node* p_node) const
-{
-	for (KeyValue<GLTFNodeIndex, Node*> x : scene_nodes) {
-		if (x.value == p_node) {
-			return x.key;
-		}
-	}
-	return -1;
-}
-
-
-AnimationPlayer* GLTFState::get_animation_player(int p_anim_player_index) const
-{
-	ERR_FAIL_INDEX_V(p_anim_player_index, animation_players.size(), nullptr);
-	return animation_players[p_anim_player_index];
-}
-
-
-
-String GLTFState::get_base_path() const { return base_path; }
-
-void GLTFState::set_base_path(const String& p_base_path)
-{
-	base_path = p_base_path;
-	if (extract_path.is_empty()) {
-		extract_path = p_base_path;
-	}
-}
-
-
-
-
-
-String GLTFState::get_filename() const { return filename; }
-
-void GLTFState::set_filename(const String& p_filename)
-{
-	filename = p_filename;
-	if (extract_prefix.is_empty()) {
-		extract_prefix = p_filename.get_basename();
-	}
-}
-
-
-
-SkinNodeIndex SkinTool::_find_highest_node(
-	Vector<Ref<GLTFNode>>& r_nodes, const Vector<GLTFNodeIndex>& p_subset)
-{
-	int highest = -1;
-	SkinNodeIndex best_node = -1;
-
-	for (int i = 0; i < p_subset.size(); ++i) {
-		const SkinNodeIndex node_i = p_subset[i];
-		const Ref<GLTFNode> node = r_nodes[node_i];
-
-		if (highest == -1 || node->height < highest) {
-			highest = node->height;
-			best_node = node_i;
-		}
-	}
-
-	return best_node;
-}
-
-bool SkinTool::_capture_nodes_in_skin(
-	const Vector<Ref<GLTFNode>>& nodes, Ref<GLTFSkin> p_skin, const SkinNodeIndex p_node_index)
-{
-	bool found_joint = false;
-	Ref<GLTFNode> current_node = nodes[p_node_index];
-
-	for (int i = 0; i < current_node->children.size(); ++i) {
-		found_joint |= _capture_nodes_in_skin(nodes, p_skin, current_node->children[i]);
-	}
-
-	if (found_joint) {
-		// Mark it if we happen to find another skins joint...
-		if (current_node->joint && !p_skin->joints.has(p_node_index)) {
-			p_skin->joints.push_back(p_node_index);
-		}
-		else if (!p_skin->non_joints.has(p_node_index)) {
-			p_skin->non_joints.push_back(p_node_index);
-		}
-	}
-
-	if (p_skin->joints.find(p_node_index) > 0) {
-		return true;
-	}
-
-	return false;
-}
-
-void SkinTool::_capture_nodes_for_multirooted_skin(
-	Vector<Ref<GLTFNode>>& r_nodes, Ref<GLTFSkin> p_skin)
-{
-	DisjointSet<SkinNodeIndex> disjoint_set;
-
-	for (int i = 0; i < p_skin->joints.size(); ++i) {
-		const SkinNodeIndex node_index = p_skin->joints[i];
-		const SkinNodeIndex parent = r_nodes[node_index]->parent;
-		disjoint_set.insert(node_index);
-
-		if (p_skin->joints.has(parent)) {
-			disjoint_set.create_union(parent, node_index);
-		}
-	}
-
-	Vector<SkinNodeIndex> roots;
-	disjoint_set.get_representatives(roots);
-
-	if (roots.size() <= 1) {
-		return;
-	}
-
-	int maxHeight = -1;
-
-	// Determine the max height rooted tree
-	for (int i = 0; i < roots.size(); ++i) {
-		const SkinNodeIndex root = roots[i];
-
-		if (maxHeight == -1 || r_nodes[root]->height < maxHeight) {
-			maxHeight = r_nodes[root]->height;
-		}
-	}
-
-	// Go up the tree till all of the multiple roots of the skin are at the same hierarchy level.
-	// This sucks, but 99% of all game engines (not just Godot) would have this same issue.
-	for (int i = 0; i < roots.size(); ++i) {
-		SkinNodeIndex current_node = roots[i];
-		while (r_nodes[current_node]->height > maxHeight) {
-			SkinNodeIndex parent = r_nodes[current_node]->parent;
-
-			if (r_nodes[parent]->joint && !p_skin->joints.has(parent)) {
-				p_skin->joints.push_back(parent);
-			}
-			else if (!p_skin->non_joints.has(parent)) {
-				p_skin->non_joints.push_back(parent);
-			}
-
-			current_node = parent;
-		}
-
-		// replace the roots
-		roots.write[i] = current_node;
-	}
-
-	// Climb up the tree until they all have the same parent
-	bool all_same;
-
-	do {
-		all_same = true;
-		const SkinNodeIndex first_parent = r_nodes[roots[0]]->parent;
-
-		for (int i = 1; i < roots.size(); ++i) {
-			all_same &= (first_parent == r_nodes[roots[i]]->parent);
-		}
-
-		if (!all_same) {
-			for (int i = 0; i < roots.size(); ++i) {
-				const SkinNodeIndex current_node = roots[i];
-				const SkinNodeIndex parent = r_nodes[current_node]->parent;
-
-				if (r_nodes[parent]->joint && !p_skin->joints.has(parent)) {
-					p_skin->joints.push_back(parent);
-				}
-				else if (!p_skin->non_joints.has(parent)) {
-					p_skin->non_joints.push_back(parent);
-				}
-
-				roots.write[i] = parent;
-			}
-		}
-
-	} while (!all_same);
-}
-
-Error SkinTool::_expand_skin(Vector<Ref<GLTFNode>>& r_nodes, Ref<GLTFSkin> p_skin)
-{
-	_capture_nodes_for_multirooted_skin(r_nodes, p_skin);
-
-	// Grab all nodes that lay in between skin joints/nodes
-	DisjointSet<GLTFNodeIndex> disjoint_set;
-
-	Vector<SkinNodeIndex> all_skin_nodes;
-	all_skin_nodes.append_array(p_skin->joints);
-	all_skin_nodes.append_array(p_skin->non_joints);
-
-	for (int i = 0; i < all_skin_nodes.size(); ++i) {
-		const SkinNodeIndex node_index = all_skin_nodes[i];
-		const SkinNodeIndex parent = r_nodes[node_index]->parent;
-		disjoint_set.insert(node_index);
-
-		if (all_skin_nodes.has(parent)) {
-			disjoint_set.create_union(parent, node_index);
-		}
-	}
-
-	Vector<SkinNodeIndex> out_owners;
-	disjoint_set.get_representatives(out_owners);
-
-	Vector<SkinNodeIndex> out_roots;
-
-	for (int i = 0; i < out_owners.size(); ++i) {
-		Vector<SkinNodeIndex> set;
-		disjoint_set.get_members(set, out_owners[i]);
-
-		const SkinNodeIndex root = _find_highest_node(r_nodes, set);
-		ERR_FAIL_COND_V(root < 0, FAILED);
-		out_roots.push_back(root);
-	}
-
-	out_roots.sort();
-
-	for (int i = 0; i < out_roots.size(); ++i) {
-		_capture_nodes_in_skin(r_nodes, p_skin, out_roots[i]);
-	}
-
-	p_skin->roots = out_roots;
-
-	return OK;
-}
-
-Error SkinTool::_verify_skin(Vector<Ref<GLTFNode>>& r_nodes, Ref<GLTFSkin> p_skin)
-{
-	// This may seem duplicated from expand_skins, but this is really a sanity check! (so it kinda
-	// is) In case additional interpolating logic is added to the skins, this will help ensure that
-	// you do not cause it to self implode into a fiery blaze
-
-	// We are going to re-calculate the root nodes and compare them to the ones saved in the skin,
-	// then ensure the multiple trees (if they exist) are on the same sublevel
-
-	// Grab all nodes that lay in between skin joints/nodes
-	DisjointSet<GLTFNodeIndex> disjoint_set;
-
-	Vector<SkinNodeIndex> all_skin_nodes;
-	all_skin_nodes.append_array(p_skin->joints);
-	all_skin_nodes.append_array(p_skin->non_joints);
-
-	for (int i = 0; i < all_skin_nodes.size(); ++i) {
-		const SkinNodeIndex node_index = all_skin_nodes[i];
-		const SkinNodeIndex parent = r_nodes[node_index]->parent;
-		disjoint_set.insert(node_index);
-
-		if (all_skin_nodes.has(parent)) {
-			disjoint_set.create_union(parent, node_index);
-		}
-	}
-
-	Vector<SkinNodeIndex> out_owners;
-	disjoint_set.get_representatives(out_owners);
-
-	Vector<SkinNodeIndex> out_roots;
-
-	for (int i = 0; i < out_owners.size(); ++i) {
-		Vector<SkinNodeIndex> set;
-		disjoint_set.get_members(set, out_owners[i]);
-
-		const SkinNodeIndex root = _find_highest_node(r_nodes, set);
-		ERR_FAIL_COND_V(root < 0, FAILED);
-		out_roots.push_back(root);
-	}
-
-	out_roots.sort();
-
-	ERR_FAIL_COND_V(out_roots.is_empty(), FAILED);
-
-	// Make sure the roots are the exact same (they better be)
-	ERR_FAIL_COND_V(out_roots.size() != p_skin->roots.size(), FAILED);
-	for (int i = 0; i < out_roots.size(); ++i) {
-		ERR_FAIL_COND_V(out_roots[i] != p_skin->roots[i], FAILED);
-	}
-
-	// Single rooted skin? Perfectly ok!
-	if (out_roots.size() == 1) {
-		return OK;
-	}
-
-	// Make sure all parents of a multi-rooted skin are the SAME
-	const SkinNodeIndex parent = r_nodes[out_roots[0]]->parent;
-	for (int i = 1; i < out_roots.size(); ++i) {
-		if (r_nodes[out_roots[i]]->parent != parent) {
-			return FAILED;
-		}
-	}
-
-	return OK;
-}
-
-void SkinTool::_recurse_children(Vector<Ref<GLTFNode>>& nodes, const SkinNodeIndex p_node_index,
-	RBSet<GLTFNodeIndex>& p_all_skin_nodes, HashSet<GLTFNodeIndex>& p_child_visited_set)
-{
-	if (p_child_visited_set.has(p_node_index)) {
-		return;
-	}
-	p_child_visited_set.insert(p_node_index);
-
-	Ref<GLTFNode> current_node = nodes[p_node_index];
-	for (int i = 0; i < current_node->children.size(); ++i) {
-		_recurse_children(nodes, current_node->children[i], p_all_skin_nodes, p_child_visited_set);
-	}
-
-	// Continue to use 'current_node' for clarity and direct access.
-	if (current_node->skin < 0 || current_node->mesh < 0 || !current_node->children.is_empty()) {
-		p_all_skin_nodes.insert(p_node_index);
-	}
-}
-
-void SkinTool::_check_if_parent_needs_to_become_joint(const Vector<Ref<GLTFNode>>& p_all_nodes,
-	const Vector<GLTFNodeIndex>& p_skeleton_node_indices, const Ref<GLTFNode>& p_gltf_node,
-	Vector<GLTFNodeIndex>& r_non_joint_indices)
-{
-	const GLTFNodeIndex parent_index = p_gltf_node->parent;
-	if (parent_index >= 0) {
-		const Ref<GLTFNode>& parent = p_all_nodes[parent_index];
-		if (!parent->joint && p_skeleton_node_indices.has(parent_index) &&
-			!r_non_joint_indices.has(parent_index)) {
-			_check_if_parent_needs_to_become_joint(
-				p_all_nodes, p_skeleton_node_indices, parent, r_non_joint_indices);
-			r_non_joint_indices.push_back(parent_index);
-		}
-	}
-}
-
-Error SkinTool::_determine_skeletons(Vector<Ref<GLTFSkin>>& skins, Vector<Ref<GLTFNode>>& nodes,
-	Vector<Ref<GLTFSkeleton>>& skeletons, const Vector<GLTFNodeIndex>& p_single_skeleton_roots,
-	bool p_turn_non_joint_descendants_into_bones)
-{
-	if (!p_single_skeleton_roots.is_empty()) {
-		Ref<GLTFSkin> skin;
-		skin.instantiate();
-		skin->set_name("godot_single_skeleton_root");
-		for (GLTFNodeIndex i = 0; i < p_single_skeleton_roots.size(); i++) {
-			skin->joints.push_back(p_single_skeleton_roots[i]);
-		}
-		skins.push_back(skin);
-	}
-
-	// Using a disjoint set, we are going to potentially combine all skins that are actually
-	// branches of a main skeleton, or treat skins defining the same set of nodes as ONE skeleton.
-	// This is another unclear issue caused by the current glTF specification.
-
-	DisjointSet<GLTFNodeIndex> skeleton_sets;
-
-	for (GLTFSkinIndex skin_i = 0; skin_i < skins.size(); ++skin_i) {
-		const Ref<GLTFSkin> skin = skins[skin_i];
-		ERR_CONTINUE(skin.is_null());
-
-		HashSet<GLTFNodeIndex> child_visited_set;
-		RBSet<GLTFNodeIndex> all_skin_nodes;
-		for (int i = 0; i < skin->joints.size(); ++i) {
-			all_skin_nodes.insert(skin->joints[i]);
-			SkinTool::_recurse_children(nodes, skin->joints[i], all_skin_nodes, child_visited_set);
-		}
-		for (int i = 0; i < skin->non_joints.size(); ++i) {
-			all_skin_nodes.insert(skin->non_joints[i]);
-			SkinTool::_recurse_children(
-				nodes, skin->non_joints[i], all_skin_nodes, child_visited_set);
-		}
-		for (GLTFNodeIndex node_index : all_skin_nodes) {
-			const GLTFNodeIndex parent = nodes[node_index]->parent;
-			skeleton_sets.insert(node_index);
-
-			if (all_skin_nodes.has(parent)) {
-				skeleton_sets.create_union(parent, node_index);
-			}
-		}
-
-		// We are going to connect the separate skin subtrees in each skin together
-		// so that the final roots are entire sets of valid skin trees
-		for (int i = 1; i < skin->roots.size(); ++i) {
-			skeleton_sets.create_union(skin->roots[0], skin->roots[i]);
-		}
-	}
-
-	{ // attempt to joint all touching subsets (siblings/parent are part of another skin)
-		Vector<SkinNodeIndex> groups_representatives;
-		skeleton_sets.get_representatives(groups_representatives);
-
-		Vector<SkinNodeIndex> highest_group_members;
-		Vector<Vector<SkinNodeIndex>> groups;
-		for (int i = 0; i < groups_representatives.size(); ++i) {
-			Vector<SkinNodeIndex> group;
-			skeleton_sets.get_members(group, groups_representatives[i]);
-			highest_group_members.push_back(SkinTool::_find_highest_node(nodes, group));
-			groups.push_back(group);
-		}
-
-		for (int i = 0; i < highest_group_members.size(); ++i) {
-			const SkinNodeIndex node_i = highest_group_members[i];
-
-			// Attach any siblings together (this needs to be done n^2/2 times)
-			for (int j = i + 1; j < highest_group_members.size(); ++j) {
-				const SkinNodeIndex node_j = highest_group_members[j];
-
-				// Even if they are siblings under the root! :)
-				if (nodes[node_i]->parent == nodes[node_j]->parent) {
-					skeleton_sets.create_union(node_i, node_j);
-				}
-			}
-
-			// Attach any parenting going on together (we need to do this n^2 times)
-			const SkinNodeIndex node_i_parent = nodes[node_i]->parent;
-			if (node_i_parent >= 0) {
-				for (int j = 0; j < groups.size() && i != j; ++j) {
-					const Vector<SkinNodeIndex>& group = groups[j];
-
-					if (group.has(node_i_parent)) {
-						const SkinNodeIndex node_j = highest_group_members[j];
-						skeleton_sets.create_union(node_i, node_j);
-					}
-				}
-			}
-		}
-	}
-
-	// At this point, the skeleton groups should be finalized
-	Vector<SkinNodeIndex> skeleton_owners;
-	skeleton_sets.get_representatives(skeleton_owners);
-
-	// Mark all the skins actual skeletons, after we have merged them
-	for (SkinSkeletonIndex skel_i = 0; skel_i < skeleton_owners.size(); ++skel_i) {
-		const SkinNodeIndex skeleton_owner = skeleton_owners[skel_i];
-		Ref<GLTFSkeleton> skeleton;
-		skeleton.instantiate();
-
-		Vector<SkinNodeIndex> skeleton_nodes;
-		skeleton_sets.get_members(skeleton_nodes, skeleton_owner);
-
-		for (GLTFSkinIndex skin_i = 0; skin_i < skins.size(); ++skin_i) {
-			Ref<GLTFSkin> skin = skins.write[skin_i];
-
-			// If any of the skeletons nodes exist in a skin, that skin now maps to the skeleton
-			for (int i = 0; i < skeleton_nodes.size(); ++i) {
-				SkinNodeIndex skel_node_i = skeleton_nodes[i];
-				if (skin->joints.has(skel_node_i) || skin->non_joints.has(skel_node_i)) {
-					skin->skeleton = skel_i;
-					continue;
-				}
-			}
-		}
-		// The nodes placed into `non_joints` will be passed to
-		// `_reparent_non_joint_skeleton_subtrees` which will add them to the skeleton and set
-		// `node->joint` to true.
-		Vector<SkinNodeIndex> non_joints;
-		for (int i = 0; i < skeleton_nodes.size(); ++i) {
-			const SkinNodeIndex node_i = skeleton_nodes[i];
-			Ref<GLTFNode> node = nodes[node_i];
-			if (node->joint) {
-				if (!p_turn_non_joint_descendants_into_bones) {
-					// If a joint node has non-joint parents, we need to make them joints as well.
-					// For example, if A/B/C/D, and A/B and D are joints, then we need to make C a
-					// joint as well. This is required to handle the "skinD" example in
-					// `Animation_Skin_09.gltf` from the glTF-Asset-Generator:
-					// https://github.com/KhronosGroup/glTF-Asset-Generator/blob/master/Output/Positive/Animation_Skin
-					_check_if_parent_needs_to_become_joint(nodes, skeleton_nodes, node, non_joints);
-				}
-				skeleton->joints.push_back(node_i);
-			}
-			else if (p_turn_non_joint_descendants_into_bones) {
-				non_joints.push_back(node_i);
-			}
-		}
-
-		skeletons.push_back(skeleton);
-
-		SkinTool::_reparent_non_joint_skeleton_subtrees(nodes, skeletons.write[skel_i], non_joints);
-	}
-
-	for (SkinSkeletonIndex skel_i = 0; skel_i < skeletons.size(); ++skel_i) {
-		Ref<GLTFSkeleton> skeleton = skeletons.write[skel_i];
-
-		for (int i = 0; i < skeleton->joints.size(); ++i) {
-			const SkinNodeIndex node_i = skeleton->joints[i];
-			Ref<GLTFNode> node = nodes[node_i];
-
-			ERR_FAIL_COND_V(!node->joint, ERR_PARSE_ERROR);
-			ERR_FAIL_COND_V(node->skeleton >= 0, ERR_PARSE_ERROR);
-			node->skeleton = skel_i;
-		}
-
-		ERR_FAIL_COND_V(
-			SkinTool::_determine_skeleton_roots(nodes, skeletons, skel_i), ERR_PARSE_ERROR);
-	}
-
-	return OK;
-}
-
-Error SkinTool::_reparent_non_joint_skeleton_subtrees(Vector<Ref<GLTFNode>>& nodes,
-	Ref<GLTFSkeleton> p_skeleton, const Vector<SkinNodeIndex>& p_non_joints)
-{
-	DisjointSet<GLTFNodeIndex> subtree_set;
-
-	// Populate the disjoint set with ONLY non joints that are in the skeleton hierarchy (non_joints
-	// vector) This way we can find any joints that lie in between joints, as the current glTF
-	// specification mentions nothing about non-joints being in between joints of the same skin.
-	// Hopefully one day we can remove this code.
-
-	// skinD depicted here explains this issue:
-	// https://github.com/KhronosGroup/glTF-Asset-Generator/blob/master/Output/Positive/Animation_Skin
-
-	for (int i = 0; i < p_non_joints.size(); ++i) {
-		const SkinNodeIndex node_i = p_non_joints[i];
-
-		subtree_set.insert(node_i);
-
-		const SkinNodeIndex parent_i = nodes[node_i]->parent;
-		if (parent_i >= 0 && p_non_joints.has(parent_i) && !nodes[parent_i]->joint) {
-			subtree_set.create_union(parent_i, node_i);
-		}
-	}
-
-	// Find all the non joint subtrees and re-parent them to a new "fake" joint
-
-	Vector<SkinNodeIndex> non_joint_subtree_roots;
-	subtree_set.get_representatives(non_joint_subtree_roots);
-
-	for (int root_i = 0; root_i < non_joint_subtree_roots.size(); ++root_i) {
-		const SkinNodeIndex subtree_root = non_joint_subtree_roots[root_i];
-
-		Vector<SkinNodeIndex> subtree_nodes;
-		subtree_set.get_members(subtree_nodes, subtree_root);
-
-		for (int subtree_i = 0; subtree_i < subtree_nodes.size(); ++subtree_i) {
-			Ref<GLTFNode> node = nodes[subtree_nodes[subtree_i]];
-			node->joint = true;
-			// Add the joint to the skeletons joints
-			p_skeleton->joints.push_back(subtree_nodes[subtree_i]);
-		}
-	}
-
-	return OK;
-}
-
-Error SkinTool::_determine_skeleton_roots(Vector<Ref<GLTFNode>>& nodes,
-	Vector<Ref<GLTFSkeleton>>& skeletons, const SkinSkeletonIndex p_skel_i)
-{
-	DisjointSet<GLTFNodeIndex> disjoint_set;
-
-	for (SkinNodeIndex i = 0; i < nodes.size(); ++i) {
-		const Ref<GLTFNode> node = nodes[i];
-
-		if (node->skeleton != p_skel_i) {
-			continue;
-		}
-
-		disjoint_set.insert(i);
-
-		if (node->parent >= 0 && nodes[node->parent]->skeleton == p_skel_i) {
-			disjoint_set.create_union(node->parent, i);
-		}
-	}
-
-	Ref<GLTFSkeleton> skeleton = skeletons.write[p_skel_i];
-
-	Vector<SkinNodeIndex> representatives;
-	disjoint_set.get_representatives(representatives);
-
-	Vector<SkinNodeIndex> roots;
-
-	for (int i = 0; i < representatives.size(); ++i) {
-		Vector<SkinNodeIndex> set;
-		disjoint_set.get_members(set, representatives[i]);
-		const SkinNodeIndex root = _find_highest_node(nodes, set);
-		ERR_FAIL_COND_V(root < 0, FAILED);
-		roots.push_back(root);
-	}
-
-	roots.sort();
-
-	skeleton->roots = roots;
-
-	if (roots.is_empty()) {
-		return FAILED;
-	}
-	else if (roots.size() == 1) {
-		return OK;
-	}
-
-	// Check that the subtrees have the same parent root
-	const SkinNodeIndex parent = nodes[roots[0]]->parent;
-	for (int i = 1; i < roots.size(); ++i) {
-		if (nodes[roots[i]]->parent != parent) {
-			return FAILED;
-		}
-	}
-
-	return OK;
-}
-
-Error SkinTool::_map_skin_joints_indices_to_skeleton_bone_indices(Vector<Ref<GLTFSkin>>& skins,
-	Vector<Ref<GLTFSkeleton>>& skeletons, Vector<Ref<GLTFNode>>& nodes)
-{
-	for (GLTFSkinIndex skin_i = 0; skin_i < skins.size(); ++skin_i) {
-		Ref<GLTFSkin> skin = skins.write[skin_i];
-		ERR_CONTINUE(skin.is_null());
-
-		Ref<GLTFSkeleton> skeleton = skeletons[skin->skeleton];
-
-		for (int joint_index = 0; joint_index < skin->joints_original.size(); ++joint_index) {
-			const SkinNodeIndex node_i = skin->joints_original[joint_index];
-			const Ref<GLTFNode> node = nodes[node_i];
-
-			const int bone_index = skeleton->godot_skeleton->find_bone(node->get_name());
-			ERR_FAIL_COND_V(bone_index < 0, FAILED);
-
-			skin->joint_i_to_bone_i.insert(joint_index, bone_index);
-		}
-	}
-
-	return OK;
-}
-
-Error SkinTool::_create_skins(Vector<Ref<GLTFSkin>>& skins, Vector<Ref<GLTFNode>>& nodes,
-	bool use_named_skin_binds, HashSet<String>& unique_names)
-{
-	for (GLTFSkinIndex skin_i = 0; skin_i < skins.size(); ++skin_i) {
-		Ref<GLTFSkin> gltf_skin = skins.write[skin_i];
-		ERR_CONTINUE(gltf_skin.is_null());
-
-		Ref<Skin> skin;
-		skin.instantiate();
-
-		// Some skins don't have IBM's! What absolute monsters!
-		const bool has_ibms = !gltf_skin->inverse_binds.is_empty();
-
-		for (int joint_i = 0; joint_i < gltf_skin->joints_original.size(); ++joint_i) {
-			SkinNodeIndex node = gltf_skin->joints_original[joint_i];
-			String bone_name = nodes[node]->get_name();
-
-			Transform3D xform;
-			if (has_ibms) {
-				xform = gltf_skin->inverse_binds[joint_i];
-			}
-
-			if (use_named_skin_binds) {
-				skin->add_named_bind(bone_name, xform);
-			}
-			else {
-				int32_t bone_i = gltf_skin->joint_i_to_bone_i[joint_i];
-				skin->add_bind(bone_i, xform);
-			}
-		}
-
-		gltf_skin->godot_skin = skin;
-	}
-
-	// Purge the duplicates!
-	_remove_duplicate_skins(skins);
-
-	// Create unique names now, after removing duplicates
-	for (GLTFSkinIndex skin_i = 0; skin_i < skins.size(); ++skin_i) {
-		ERR_CONTINUE(skins.get(skin_i).is_null());
-		Ref<Skin> skin = skins.write[skin_i]->godot_skin;
-		ERR_CONTINUE(skin.is_null());
-		if (skin->get_name().is_empty()) {
-			// Make a unique name, no node represents this skin
-			skin->set_name(_gen_unique_name(unique_names, "Skin"));
-		}
-	}
-
-	return OK;
-}
-
-// FIXME: Duplicated from FBXDocument, very similar code in GLTFDocument too,
-// and even below in this class for bone names.
-String SkinTool::_gen_unique_name(HashSet<String>& unique_names, const String& p_name)
-{
-	const String s_name = p_name.validate_node_name();
-
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += itos(index);
-		}
-		if (!unique_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	unique_names.insert(u_name);
-
-	return u_name;
-}
-
-bool SkinTool::_skins_are_same(const Ref<Skin> p_skin_a, const Ref<Skin> p_skin_b)
-{
-	if (p_skin_a->get_bind_count() != p_skin_b->get_bind_count()) {
-		return false;
-	}
-
-	for (int i = 0; i < p_skin_a->get_bind_count(); ++i) {
-		if (p_skin_a->get_bind_bone(i) != p_skin_b->get_bind_bone(i)) {
-			return false;
-		}
-		if (p_skin_a->get_bind_name(i) != p_skin_b->get_bind_name(i)) {
-			return false;
-		}
-
-		Transform3D a_xform = p_skin_a->get_bind_pose(i);
-		Transform3D b_xform = p_skin_b->get_bind_pose(i);
-
-		if (a_xform != b_xform) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void SkinTool::_remove_duplicate_skins(Vector<Ref<GLTFSkin>>& r_skins)
-{
-	for (int i = 0; i < r_skins.size(); ++i) {
-		for (int j = i + 1; j < r_skins.size(); ++j) {
-			const Ref<Skin> skin_i = r_skins[i]->godot_skin;
-			const Ref<Skin> skin_j = r_skins[j]->godot_skin;
-
-			if (_skins_are_same(skin_i, skin_j)) {
-				// replace it and delete the old
-				r_skins.write[j]->godot_skin = skin_i;
-			}
-		}
-	}
-}
-
-String SkinTool::_gen_unique_bone_name(HashSet<String>& r_unique_names, const String& p_name)
-{
-	String s_name = _sanitize_bone_name(p_name);
-	if (s_name.is_empty()) {
-		s_name = "bone";
-	}
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += "_" + itos(index);
-		}
-		if (!r_unique_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	r_unique_names.insert(u_name);
-
-	return u_name;
-}
-
-Error SkinTool::_asset_parse_skins(const Vector<SkinNodeIndex>& input_skin_indices,
-	const Vector<Ref<GLTFSkin>>& input_skins, const Vector<Ref<GLTFNode>>& input_nodes,
-	Vector<SkinNodeIndex>& output_skin_indices, Vector<Ref<GLTFSkin>>& output_skins,
-	HashMap<GLTFNodeIndex, bool>& joint_mapping)
-{
-	output_skin_indices.clear();
-	output_skins.clear();
-	joint_mapping.clear();
-
-	for (int i = 0; i < input_skin_indices.size(); ++i) {
-		SkinNodeIndex skin_index = input_skin_indices[i];
-		if (skin_index >= 0 && skin_index < input_skins.size()) {
-			output_skin_indices.push_back(skin_index);
-			output_skins.push_back(input_skins[skin_index]);
-			Ref<GLTFSkin> skin = input_skins[skin_index];
-			Vector<SkinNodeIndex> skin_joints = skin->get_joints();
-			for (int j = 0; j < skin_joints.size(); ++j) {
-				SkinNodeIndex joint_index = skin_joints[j];
-				joint_mapping[joint_index] = true;
-			}
-		}
-	}
-
-	return OK;
-}
-
-String SkinTool::_sanitize_bone_name(const String& p_name)
-{
-	String bone_name = p_name;
-	bone_name = bone_name.replace_chars(":/", '_');
-	return bone_name;
-}
-
-#ifdef TOOLS_ENABLED
-
-void EditorSceneFormatImporterGLTF::get_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("gltf");
-	r_extensions->push_back("glb");
-}
-
-void EditorSceneFormatImporterGLTF::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
-{
-}
-#endif // TOOLS_ENABLED
-
-#define GLTF_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                          \
-	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
-	extension_##m_doc_ext_class.instantiate();                                                     \
-	GLTFDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
-
-void uninitialize_gltf_module(ModuleInitializationLevel p_level)
-{
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	GLTFDocument::unregister_all_gltf_document_extensions();
-}
-
+void uninitialize_gltf_module(ModuleInitializationLevel p_level) {}
 void initialize_gltf_module(ModuleInitializationLevel p_level) {}
-
-#include "servers/display/display_server.h"
-
-#include <cfloat>
-
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#endif // PHYSICS_3D_DISABLED
-
-// GLTFLight
-
-
-Color GLTFLight::get_color() { return color; }
-
-void GLTFLight::set_color(Color p_color) { color = p_color; }
-
-float GLTFLight::get_intensity() { return intensity; }
-
-void GLTFLight::set_intensity(float p_intensity) { intensity = p_intensity; }
-
-String GLTFLight::get_light_type() { return light_type; }
-
-void GLTFLight::set_light_type(String p_light_type) { light_type = p_light_type; }
-
-float GLTFLight::get_range() { return range; }
-
-void GLTFLight::set_range(float p_range) { range = p_range; }
-
-
-
-
-
-Ref<GLTFLight> GLTFLight::from_node(const Light3D*) { return Ref<GLTFLight>(); }
-
-
-// GLTFDocumentExtension
-
-Error GLTFDocumentExtension::import_preflight(
-	Ref<GLTFState> p_state, const Vector<String>& p_extensions)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::parse_image_data(Ref<GLTFState> p_state,
-	const PackedByteArray& p_image_data, const String& p_mime_type, Ref<Image> r_image)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(r_image.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Ref<GLTFObjectModelProperty> GLTFDocumentExtension::import_object_model_property(
-	Ref<GLTFState> p_state, const PackedStringArray& p_split_json_pointer,
-	const TypedArray<NodePath>& p_partial_paths)
-{
-	Ref<GLTFObjectModelProperty> ret;
-	ERR_FAIL_COND_V(p_state.is_null(), ret);
-	return ret;
-}
-
-Error GLTFDocumentExtension::import_post_parse(Ref<GLTFState> p_state)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::import_pre_generate(Ref<GLTFState> p_state)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Node3D* GLTFDocumentExtension::generate_scene_node(
-	Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_parent)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), nullptr);
-	ERR_FAIL_COND_V(p_gltf_node.is_null(), nullptr);
-	return nullptr;
-}
-
-Error GLTFDocumentExtension::import_post(Ref<GLTFState> p_state, Node* p_root)
-{
-	ERR_FAIL_NULL_V(p_root, ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::export_preflight(Ref<GLTFState> p_state, Node* p_root)
-{
-	ERR_FAIL_NULL_V(p_root, ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-void GLTFDocumentExtension::convert_scene_node(
-	Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_node)
-{
-	ERR_FAIL_COND(p_state.is_null());
-	ERR_FAIL_COND(p_gltf_node.is_null());
-	ERR_FAIL_NULL(p_scene_node);
-}
-
-Error GLTFDocumentExtension::export_post_convert(Ref<GLTFState> p_state, Node* p_root)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_NULL_V(p_root, ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::export_preserialize(Ref<GLTFState> p_state)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::save_image_at_path(Ref<GLTFState> p_state, Ref<Image> p_image,
-	const String& p_file_path, const String& p_image_format, float p_lossy_quality)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_image.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-Error GLTFDocumentExtension::export_post(Ref<GLTFState> p_state)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	return OK;
-}
-
-PackedStringArray GLTFDocumentExtension::get_supported_extensions() { return PackedStringArray(); }
-
-String GLTFDocumentExtension::get_image_file_extension() { return String(); }
-
-PackedStringArray GLTFDocumentExtension::get_saveable_image_formats()
-{
-	return PackedStringArray();
-}
-
-#ifndef PHYSICS_3D_DISABLED
-
-// GLTFPhysicsBody
-
-String GLTFPhysicsBody::get_body_type() const
-{
-	switch (body_type) {
-	case PhysicsBodyType::STATIC:
-		return "static";
-	case PhysicsBodyType::ANIMATABLE:
-		return "animatable";
-	case PhysicsBodyType::CHARACTER:
-		return "character";
-	case PhysicsBodyType::RIGID:
-		return "rigid";
-	case PhysicsBodyType::VEHICLE:
-		return "vehicle";
-	case PhysicsBodyType::TRIGGER:
-		return "trigger";
-	}
-	return "rigid";
-}
-
-
-
-
-real_t GLTFPhysicsBody::get_mass() const { return mass; }
-
-void GLTFPhysicsBody::set_mass(real_t p_mass) { mass = p_mass; }
-
-Vector3 GLTFPhysicsBody::get_linear_velocity() const { return linear_velocity; }
-
-void GLTFPhysicsBody::set_linear_velocity(const Vector3& p_linear_velocity)
-{
-	linear_velocity = p_linear_velocity;
-}
-
-Vector3 GLTFPhysicsBody::get_angular_velocity() const { return angular_velocity; }
-
-void GLTFPhysicsBody::set_angular_velocity(const Vector3& p_angular_velocity)
-{
-	angular_velocity = p_angular_velocity;
-}
-
-Vector3 GLTFPhysicsBody::get_center_of_mass() const { return center_of_mass; }
-
-void GLTFPhysicsBody::set_center_of_mass(const Vector3& p_center_of_mass)
-{
-	center_of_mass = p_center_of_mass;
-}
-
-
-
-
-
-#ifndef DISABLE_DEPRECATED
-
-#endif // DISABLE_DEPRECATED
-
-Node3D* GLTFPhysicsBody::to_node() const
-{
-	switch (body_type) {
-	case PhysicsBodyType::CHARACTER: {
-		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_CHARACTER));
-	}
-	case PhysicsBodyType::ANIMATABLE: {
-		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_ANIMATABLE));
-	}
-	case PhysicsBodyType::VEHICLE: {
-		PhysicsBody3D* body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_VEHICLE));
-		body->set_mass(mass);
-		body->set_linear_velocity(linear_velocity);
-		body->set_angular_velocity(angular_velocity);
-		body->set_inertia(inertia_diagonal);
-		body->set_center_of_mass_mode(PhysicsBody3D::CENTER_OF_MASS_MODE_CUSTOM);
-		body->set_center_of_mass(center_of_mass);
-		return body;
-	}
-	case PhysicsBodyType::RIGID: {
-		PhysicsBody3D* body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_RIGID));
-		body->set_mass(mass);
-		body->set_linear_velocity(linear_velocity);
-		body->set_angular_velocity(angular_velocity);
-		body->set_inertia(inertia_diagonal);
-		body->set_center_of_mass_mode(PhysicsBody3D::CENTER_OF_MASS_MODE_CUSTOM);
-		body->set_center_of_mass(center_of_mass);
-		return body;
-	}
-	case PhysicsBodyType::STATIC: {
-		return memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
-	}
-	case PhysicsBodyType::TRIGGER: {
-		return memnew(Area3D);
-	}
-	}
-	return nullptr;
-}
-
-// GLTFPhysicsShape
-
-String GLTFPhysicsShape::get_shape_type() const { return shape_type; }
-
-void GLTFPhysicsShape::set_shape_type(const String& p_shape_type) { shape_type = p_shape_type; }
-
-Vector3 GLTFPhysicsShape::get_size() const { return size; }
-
-void GLTFPhysicsShape::set_size(const Vector3& p_size) { size = p_size; }
-
-real_t GLTFPhysicsShape::get_radius() const { return radius; }
-
-void GLTFPhysicsShape::set_radius(real_t p_radius) { radius = p_radius; }
-
-real_t GLTFPhysicsShape::get_height() const { return height; }
-
-void GLTFPhysicsShape::set_height(real_t p_height) { height = p_height; }
-
-bool GLTFPhysicsShape::get_is_trigger() const { return is_trigger; }
-
-
-GLTFMeshIndex GLTFPhysicsShape::get_mesh_index() const { return mesh_index; }
-
-
-Ref<ImporterMesh> GLTFPhysicsShape::get_importer_mesh() const { return importer_mesh; }
-
-void GLTFPhysicsShape::set_importer_mesh(const Ref<ImporterMesh>& p_importer_mesh)
-{
-	importer_mesh = p_importer_mesh;
-}
-
-CollisionShape3D* GLTFPhysicsShape::to_node(bool p_cache_shapes)
-{
-	CollisionShape3D* godot_shape_node = memnew(CollisionShape3D);
-	to_resource(p_cache_shapes); // Sets `_shape_cache`.
-	godot_shape_node->set_shape(_shape_cache);
-	return godot_shape_node;
-}
-
-Ref<Shape3D> GLTFPhysicsShape::to_resource(bool p_cache_shapes)
-{
-	if (!p_cache_shapes || _shape_cache.is_null()) {
-		if (shape_type == "box") {
-			Ref<Shape3D> box = memnew(Shape3D(Shape3D::SHAPE_BOX));
-			box->set_size(size);
-			_shape_cache = box;
-		}
-		else if (shape_type == "capsule") {
-			Ref<Shape3D> capsule = memnew(Shape3D(Shape3D::SHAPE_CAPSULE));
-			capsule->set_radius(radius);
-			capsule->set_height(height);
-			_shape_cache = capsule;
-		}
-		else if (shape_type == "cylinder") {
-			Ref<Shape3D> cylinder = memnew(Shape3D(Shape3D::SHAPE_CYLINDER));
-			cylinder->set_radius(radius);
-			cylinder->set_height(height);
-			_shape_cache = cylinder;
-		}
-		else if (shape_type == "sphere") {
-			Ref<Shape3D> sphere = memnew(Shape3D(Shape3D::SHAPE_SPHERE));
-			sphere->set_radius(radius);
-			_shape_cache = sphere;
-		}
-		else if (shape_type == "convex") {
-			ERR_FAIL_COND_V_MSG(importer_mesh.is_null(), _shape_cache,
-				"GLTFPhysicsShape: Error converting convex hull shape to a shape resource: The "
-				"mesh resource is null.");
-			Ref<Shape3D> convex = importer_mesh->get_mesh()->create_convex_shape();
-			_shape_cache = convex;
-		}
-		else if (shape_type == "trimesh") {
-			ERR_FAIL_COND_V_MSG(importer_mesh.is_null(), _shape_cache,
-				"GLTFPhysicsShape: Error converting concave mesh shape to a shape resource: The "
-				"mesh resource is null.");
-			Ref<Shape3D> concave = importer_mesh->create_trimesh_shape();
-			_shape_cache = concave;
-		}
-		else {
-			ERR_PRINT("GLTFPhysicsShape: Error converting to a shape resource: Shape type '" +
-					  shape_type + "' is unknown.");
-		}
-	}
-	return _shape_cache;
-}
-
-// GLTFDocumentExtensionPhysics
-
-using GLTFShapeIndex = int64_t;
-
-void _setup_shape_mesh_resource_from_index_if_needed(
-	const Ref<GLTFState>& p_state, const Ref<GLTFPhysicsShape>& p_gltf_shape)
-{
-	GLTFMeshIndex shape_mesh_index = p_gltf_shape->get_mesh_index();
-	if (shape_mesh_index == -1) {
-		return;
-	}
-	Ref<ImporterMesh> importer_mesh = p_gltf_shape->get_importer_mesh();
-	if (importer_mesh.is_valid()) {
-		return;
-	}
-	const Vector<Ref<GLTFMesh>>& state_meshes = p_state->get_meshes();
-	ERR_FAIL_INDEX_MSG(shape_mesh_index, state_meshes.size(),
-		"glTF Physics: When importing '" + p_state->get_scene_name() + "', the shape mesh index " +
-			itos(shape_mesh_index) +
-			" is not in the state meshes (size: " + itos(state_meshes.size()) + ").");
-	const Ref<GLTFMesh>& gltf_mesh = state_meshes[shape_mesh_index];
-	ERR_FAIL_COND(gltf_mesh.is_null());
-	importer_mesh = gltf_mesh->get_mesh();
-	ERR_FAIL_COND(importer_mesh.is_null());
-	p_gltf_shape->set_importer_mesh(importer_mesh);
-}
-
-#ifndef DISABLE_DEPRECATED
-Node3D* _generate_shape_with_body(Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node,
-	Ref<GLTFPhysicsShape> p_physics_shape, Ref<GLTFPhysicsBody> p_physics_body)
-{
-	print_verbose("glTF: Creating shape with body for: " + p_gltf_node->get_name());
-	bool is_trigger = p_physics_shape->get_is_trigger();
-	Node3D* body;
-	if (p_physics_body.is_valid()) {
-		body = p_physics_body->to_node();
-		if (is_trigger && (p_physics_body->get_body_type() != "trigger")) {
-			Node3D* child =
-				_generate_shape_with_body(p_state, p_gltf_node, p_physics_shape, nullptr);
-			child->set_name(
-				p_gltf_node->get_name() + (is_trigger ? String("Trigger") : String("Solid")));
-			body->add_child(child);
-			return body;
-		}
-	}
-	else if (is_trigger) {
-		body = memnew(Area3D);
-	}
-	else {
-		body = memnew(PhysicsBody3D(PhysicsBody3D::MODE_STATIC));
-	}
-	CollisionShape3D* shape = p_physics_shape->to_node();
-	shape->set_name(p_gltf_node->get_name() + "Shape");
-	body->add_child(shape);
-	return body;
-}
-#endif // DISABLE_DEPRECATED
-
-bool _are_all_faces_equal(const Vector<Face3>& p_a, const Vector<Face3>& p_b)
-{
-	if (p_a.size() != p_b.size()) {
-		return false;
-	}
-	for (int i = 0; i < p_a.size(); i++) {
-		const Vector3* a_vertices = p_a[i].vertex;
-		const Vector3* b_vertices = p_b[i].vertex;
-		for (int j = 0; j < 3; j++) {
-			if (!a_vertices[j].is_equal_approx(b_vertices[j])) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-GLTFMeshIndex _get_or_insert_mesh_in_state(
-	const Ref<GLTFState>& p_state, const Ref<ImporterMesh>& p_mesh)
-{
-	ERR_FAIL_COND_V(p_mesh.is_null(), -1);
-	Vector<Ref<GLTFMesh>> state_meshes = p_state->get_meshes();
-	Vector<Face3> mesh_faces = p_mesh->get_faces();
-	for (GLTFMeshIndex i = 0; i < state_meshes.size(); i++) {
-		const Ref<GLTFMesh>& state_gltf_mesh = state_meshes[i];
-		ERR_CONTINUE(state_gltf_mesh.is_null());
-		Ref<ImporterMesh> state_importer_mesh = state_gltf_mesh->get_mesh();
-		ERR_CONTINUE(state_importer_mesh.is_null());
-		if (state_importer_mesh == p_mesh) {
-			return i;
-		}
-		if (_are_all_faces_equal(state_importer_mesh->get_faces(), mesh_faces)) {
-			return i;
-		}
-	}
-	Ref<GLTFMesh> gltf_mesh;
-	gltf_mesh.instantiate();
-	gltf_mesh->set_mesh(p_mesh);
-	GLTFMeshIndex mesh_index = state_meshes.size();
-	state_meshes.push_back(gltf_mesh);
-	p_state->set_meshes(state_meshes);
-	return mesh_index;
-}
-
-#endif // PHYSICS_3D_DISABLED
-
-#include "servers/display/display_server.h"
-
-#include "servers/display/display_server.h"
-
-// GLTFTexture
-
-
-void GLTFTexture::set_src_image(GLTFImageIndex val) { src_image = val; }
-
-GLTFTextureSamplerIndex GLTFTexture::get_sampler() const { return sampler; }
-
-void GLTFTexture::set_sampler(GLTFTextureSamplerIndex val) { sampler = val; }
-
-// GLTFBufferView
-
-GLTFBufferIndex GLTFBufferView::get_buffer() const { return buffer; }
-
-void GLTFBufferView::set_buffer(GLTFBufferIndex p_buffer) { buffer = p_buffer; }
-
-int64_t GLTFBufferView::get_byte_offset() const { return byte_offset; }
-
-void GLTFBufferView::set_byte_offset(int64_t p_byte_offset) { byte_offset = p_byte_offset; }
-
-int64_t GLTFBufferView::get_byte_length() const { return byte_length; }
-
-void GLTFBufferView::set_byte_length(int64_t p_byte_length) { byte_length = p_byte_length; }
-
-int64_t GLTFBufferView::get_byte_stride() const { return byte_stride; }
-
-void GLTFBufferView::set_byte_stride(int64_t p_byte_stride) { byte_stride = p_byte_stride; }
-
-bool GLTFBufferView::get_indices() const { return indices; }
-
-void GLTFBufferView::set_indices(bool p_indices) { indices = p_indices; }
-
-bool GLTFBufferView::get_vertex_attributes() const { return vertex_attributes; }
-
-void GLTFBufferView::set_vertex_attributes(bool p_attributes) { vertex_attributes = p_attributes; }
-
-Vector<uint8_t> GLTFBufferView::load_buffer_view_data(const Ref<GLTFState> p_gltf_state) const
-{
-	ERR_FAIL_COND_V(p_gltf_state.is_null(), Vector<uint8_t>());
-	const Vector<PackedByteArray>& buffers = p_gltf_state->get_buffers();
-	ERR_FAIL_INDEX_V(buffer, buffers.size(), Vector<uint8_t>());
-	const PackedByteArray& buffer_data = buffers[buffer];
-	const int64_t byte_end = byte_offset + byte_length;
-	// Note that for buffer views with a byte stride, the parts of this data which get used may
-	// only be determined in combination with the accessors that reference this buffer view.
-	return buffer_data.slice(byte_offset, byte_end);
-}
-
-
-// GLTFAccessor
-
-
-
-int64_t GLTFAccessor::get_byte_offset() const { return byte_offset; }
-
-void GLTFAccessor::set_byte_offset(int64_t p_byte_offset) { byte_offset = p_byte_offset; }
-
-
-
-
-
-int64_t GLTFAccessor::get_count() const { return count; }
-
-void GLTFAccessor::set_count(int64_t p_count) { count = p_count; }
-
-
-
-int GLTFAccessor::get_type() const { return (int)accessor_type; }
-
-void GLTFAccessor::set_type(int p_accessor_type)
-{
-	accessor_type = (GLTFAccessorType)p_accessor_type;
-}
-
-Vector<double> GLTFAccessor::get_min() const { return Vector<double>(min); }
-
-void GLTFAccessor::set_min(const Vector<double>& p_min) { min = Vector<double>(p_min); }
-
-Vector<double> GLTFAccessor::get_max() const { return Vector<double>(max); }
-
-void GLTFAccessor::set_max(const Vector<double>& p_max) { max = Vector<double>(p_max); }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void GLTFAccessor::_determine_pad_skip(int64_t& r_skip_every, int64_t& r_skip_bytes) const
-{
-	// 3.6.2.4. Accessors of matrix type have data stored in column-major order. The start of each
-	// column MUST be aligned to 4-byte boundaries.
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#data-alignment
-	switch (component_type) {
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE: {
-		if (accessor_type == GLTFAccessor::TYPE_MAT2) {
-			r_skip_every = 2;
-			r_skip_bytes = 2;
-		}
-		if (accessor_type == GLTFAccessor::TYPE_MAT3) {
-			r_skip_every = 3;
-			r_skip_bytes = 1;
-		}
-	} break;
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT: {
-		if (accessor_type == GLTFAccessor::TYPE_MAT3) {
-			r_skip_every = 6;
-			r_skip_bytes = 2;
-		}
-	} break;
-	default: {
-	} break;
-	}
-}
-
-int64_t GLTFAccessor::_determine_padded_byte_count(int64_t p_raw_byte_size) const
-{
-	// 3.6.2.4. Accessors of matrix type have data stored in column-major order. The start of each
-	// column MUST be aligned to 4-byte boundaries.
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#data-alignment
-	switch (component_type) {
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE: {
-		if (accessor_type == GLTFAccessor::TYPE_MAT2) {
-			return p_raw_byte_size * 2;
-		}
-		if (accessor_type == GLTFAccessor::TYPE_MAT3) {
-			return p_raw_byte_size * 4 / 3;
-		}
-	} break;
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT: {
-		if (accessor_type == GLTFAccessor::TYPE_MAT3) {
-			return p_raw_byte_size * 4 / 3;
-		}
-	} break;
-	default: {
-	} break;
-	}
-	return p_raw_byte_size;
-}
-
-
-
-
-
-String GLTFAccessor::_get_accessor_type_name() const
-{
-	switch (accessor_type) {
-	case GLTFAccessor::TYPE_SCALAR:
-		return "SCALAR";
-	case GLTFAccessor::TYPE_VEC2:
-		return "VEC2";
-	case GLTFAccessor::TYPE_VEC3:
-		return "VEC3";
-	case GLTFAccessor::TYPE_VEC4:
-		return "VEC4";
-	case GLTFAccessor::TYPE_MAT2:
-		return "MAT2";
-	case GLTFAccessor::TYPE_MAT3:
-		return "MAT3";
-	case GLTFAccessor::TYPE_MAT4:
-		return "MAT4";
-	default:
-		break;
-	}
-	ERR_FAIL_V("SCALAR");
-}
-
-int64_t GLTFAccessor::_get_vector_size() const
-{
-	switch (accessor_type) {
-	case GLTFAccessor::TYPE_SCALAR:
-		return 1;
-	case GLTFAccessor::TYPE_VEC2:
-		return 2;
-	case GLTFAccessor::TYPE_VEC3:
-		return 3;
-	case GLTFAccessor::TYPE_VEC4:
-		return 4;
-	case GLTFAccessor::TYPE_MAT2:
-		return 4;
-	case GLTFAccessor::TYPE_MAT3:
-		return 9;
-	case GLTFAccessor::TYPE_MAT4:
-		return 16;
-	default:
-		break;
-	}
-	ERR_FAIL_V(0);
-}
-
-int64_t GLTFAccessor::_get_bytes_per_component(const GLTFComponentType p_component_type)
-{
-	switch (p_component_type) {
-	case GLTFAccessor::COMPONENT_TYPE_NONE:
-		ERR_FAIL_V(0);
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE:
-		return 1;
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT:
-	case GLTFAccessor::COMPONENT_TYPE_HALF_FLOAT:
-		return 2;
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_INT:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT:
-	case GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT:
-		return 4;
-	case GLTFAccessor::COMPONENT_TYPE_DOUBLE_FLOAT:
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_LONG:
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG:
-		return 8;
-	}
-	ERR_FAIL_V(0);
-}
-
-int64_t GLTFAccessor::_get_bytes_per_vector() const
-{
-	const int64_t raw_byte_size = _get_bytes_per_component(component_type) * _get_vector_size();
-	return _determine_padded_byte_count(raw_byte_size);
-}
-
-
-PackedInt64Array GLTFAccessor::_decode_sparse_indices(
-	const Ref<GLTFState>& p_gltf_state, const Vector<Ref<GLTFBufferView>>& p_buffer_views) const
-{
-	const int64_t bytes_per_component = _get_bytes_per_component(sparse_indices_component_type);
-	PackedInt64Array numbers;
-	ERR_FAIL_INDEX_V(sparse_indices_buffer_view, p_buffer_views.size(), numbers);
-	const Ref<GLTFBufferView> actual_buffer_view = p_buffer_views[sparse_indices_buffer_view];
-	const PackedByteArray raw_bytes = actual_buffer_view->load_buffer_view_data(p_gltf_state);
-	const int64_t min_raw_byte_size =
-		bytes_per_component * sparse_count + sparse_indices_byte_offset;
-	ERR_FAIL_COND_V_MSG(raw_bytes.size() < min_raw_byte_size, numbers,
-		"glTF import: Sparse indices buffer view did not have enough bytes to read the expected "
-		"number of indices. Returning an empty array.");
-	numbers.resize(sparse_count);
-	const uint8_t* raw_pointer = raw_bytes.ptr();
-	int64_t raw_read_offset = sparse_indices_byte_offset;
-	for (int64_t i = 0; i < sparse_count; i++) {
-		const uint8_t* raw_source = &raw_pointer[raw_read_offset];
-		int64_t number = 0;
-		switch (sparse_indices_component_type) {
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE: {
-			number = *(uint8_t*)raw_source;
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT: {
-			number = *(uint16_t*)raw_source;
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT: {
-			number = *(uint32_t*)raw_source;
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG: {
-			number = *(uint64_t*)raw_source;
-		} break;
-		default: {
-			ERR_FAIL_V_MSG(PackedInt64Array(),
-				"glTF import: Sparse indices must have an unsigned integer "
-				"component type. Failed to decode, returning an empty array.");
-		}
-		}
-		numbers.set(i, number);
-		raw_read_offset += bytes_per_component;
-	}
-	ERR_FAIL_COND_V_MSG(raw_read_offset != raw_bytes.size(), numbers,
-		"glTF import: Sparse indices buffer view size did not exactly match the expected size.");
-	return numbers;
-}
-
-template <typename T>
-Vector<T> GLTFAccessor::_decode_raw_numbers(const Ref<GLTFState>& p_gltf_state,
-	const Vector<Ref<GLTFBufferView>>& p_buffer_views, bool p_sparse_values) const
-{
-	const int64_t bytes_per_component = _get_bytes_per_component(component_type);
-	const int64_t bytes_per_vector = _get_bytes_per_vector();
-	const int64_t vector_size = _get_vector_size();
-	int64_t pad_skip_every = 0;
-	int64_t pad_skip_bytes = 0;
-	_determine_pad_skip(pad_skip_every, pad_skip_bytes);
-	int64_t raw_vector_count;
-	int64_t raw_buffer_view_index;
-	int64_t raw_read_offset_start;
-	if (p_sparse_values) {
-		raw_vector_count = sparse_count;
-		raw_buffer_view_index = sparse_values_buffer_view;
-		raw_read_offset_start = sparse_values_byte_offset;
-	}
-	else {
-		raw_vector_count = count;
-		raw_buffer_view_index = buffer_view;
-		raw_read_offset_start = byte_offset;
-	}
-	const int64_t raw_number_count = raw_vector_count * vector_size;
-	Vector<T> ret_numbers;
-	if (raw_buffer_view_index == -1) {
-		ret_numbers.resize(raw_number_count);
-		// No buffer view, so fill with zeros.
-		for (int64_t i = 0; i < raw_number_count; i++) {
-			ret_numbers.set(i, T(0));
-		}
-		return ret_numbers;
-	}
-	ERR_FAIL_INDEX_V(raw_buffer_view_index, p_buffer_views.size(), ret_numbers);
-	const Ref<GLTFBufferView> raw_buffer_view = p_buffer_views[raw_buffer_view_index];
-	if (raw_buffer_view->get_byte_offset() % bytes_per_component != 0) {
-		WARN_PRINT("glTF import: Buffer view byte offset is not a multiple of accessor component "
-				   "size. This file is invalid per the glTF specification and will not load "
-				   "correctly in some glTF viewers, but Godot will try to load it anyway.");
-	}
-	if (byte_offset % bytes_per_component != 0) {
-		WARN_PRINT("glTF import: Accessor byte offset is not a multiple of accessor component "
-				   "size. This file is invalid per the glTF specification and will not load "
-				   "correctly in some glTF viewers, but Godot will try to load it anyway.");
-	}
-	int64_t declared_byte_stride = raw_buffer_view->get_byte_stride();
-	int64_t actual_byte_stride = bytes_per_vector;
-	int64_t stride_skip_every = 0;
-	int64_t stride_skip_bytes = 0;
-	if (declared_byte_stride != -1) {
-		ERR_FAIL_COND_V_MSG(declared_byte_stride % 4 != 0, ret_numbers,
-			"glTF import: The declared buffer view byte stride " + itos(declared_byte_stride) +
-				" was not a multiple of 4 as required by glTF. Returning an empty array.");
-		if (declared_byte_stride > bytes_per_vector) {
-			actual_byte_stride = declared_byte_stride;
-			stride_skip_every = vector_size;
-			stride_skip_bytes = declared_byte_stride - bytes_per_vector;
-		}
-	}
-	else if (raw_buffer_view->get_vertex_attributes()) {
-		print_verbose("WARNING: glTF import: Buffer view byte stride should be declared for vertex "
-					  "attributes. Assuming packed data and reading anyway.");
-	}
-	const int64_t min_raw_byte_size =
-		actual_byte_stride * (raw_vector_count - 1) + bytes_per_vector + raw_read_offset_start;
-	const PackedByteArray raw_bytes = raw_buffer_view->load_buffer_view_data(p_gltf_state);
-	ERR_FAIL_COND_V_MSG(raw_bytes.size() < min_raw_byte_size, ret_numbers,
-		"glTF import: The buffer view size was smaller than the minimum required size for the "
-		"accessor. Returning an empty array.");
-	ret_numbers.resize(raw_number_count);
-	const uint8_t* raw_pointer = raw_bytes.ptr();
-	int64_t raw_read_offset = raw_read_offset_start;
-	for (int64_t i = 0; i < raw_number_count; i++) {
-		const uint8_t* raw_source = &raw_pointer[raw_read_offset];
-		T number = 0;
-		// 3.11. Implementations MUST use following equations to decode real floating-point value f
-		// from a normalized integer c and vice-versa.
-		// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#animations
-		switch (component_type) {
-		case GLTFAccessor::COMPONENT_TYPE_NONE: {
-			ERR_FAIL_V_MSG(Vector<T>(), "glTF import: Failed to decode buffer view, component type "
-										"not set. Returning an empty array.");
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE: {
-			int8_t prim = *(int8_t*)raw_source;
-			if (normalized) {
-				number = T(MAX(double(prim) / 127.0, -1.0));
-			}
-			else {
-				number = T(prim);
-			}
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE: {
-			uint8_t prim = *(uint8_t*)raw_source;
-			if (normalized) {
-				number = T((double(prim) / 255.0));
-			}
-			else {
-				number = T(prim);
-			}
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT: {
-			int16_t prim = *(int16_t*)raw_source;
-			if (normalized) {
-				number = T(MAX(double(prim) / 32767.0, -1.0));
-			}
-			else {
-				number = T(prim);
-			}
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT: {
-			uint16_t prim = *(uint16_t*)raw_source;
-			if (normalized) {
-				number = T(double(prim) / 65535.0);
-			}
-			else {
-				number = T(prim);
-			}
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_SIGNED_INT: {
-			number = T(*(int32_t*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT: {
-			number = T(*(uint32_t*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT: {
-			number = T(*(float*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_DOUBLE_FLOAT: {
-			number = T(*(double*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_HALF_FLOAT: {
-			number = Math::half_to_float(*(uint16_t*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_SIGNED_LONG: {
-			number = T(*(int64_t*)raw_source);
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG: {
-			number = T(*(uint64_t*)raw_source);
-		} break;
-		}
-		ret_numbers.set(i, number);
-		raw_read_offset += bytes_per_component;
-		// Padding and stride skipping are distinct concepts that both need to be handled.
-		// For example, a 2-in-1 interleaved MAT3 bytes accessor has both, and would look like:
-		// AAA0 AAA0 AAA0 BBB0 BBB0 BBB0 AAA0 AAA0 AAA0 BBB0 BBB0 BBB0
-		// The "0" is skipped by the padding, and the "BBB0" is skipped by the stride.
-		// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#data-alignment
-		if (unlikely(pad_skip_every > 0)) {
-			if ((i + 1) % pad_skip_every == 0) {
-				raw_read_offset += pad_skip_bytes;
-			}
-		}
-		if (unlikely(stride_skip_every > 0)) {
-			if ((i + 1) % stride_skip_every == 0) {
-				raw_read_offset += stride_skip_bytes;
-			}
-		}
-	}
-	return ret_numbers;
-}
-
-template <typename T>
-Vector<T> GLTFAccessor::_decode_as_numbers(const Ref<GLTFState>& p_gltf_state) const
-{
-	const Vector<Ref<GLTFBufferView>>& p_buffer_views = p_gltf_state->get_buffer_views();
-	Vector<T> ret_numbers = _decode_raw_numbers<T>(p_gltf_state, p_buffer_views, false);
-	if (sparse_count == 0) {
-		return ret_numbers;
-	}
-	// Handle sparse accessors.
-	PackedInt64Array sparse_indices = _decode_sparse_indices(p_gltf_state, p_buffer_views);
-	ERR_FAIL_COND_V_MSG(sparse_indices.size() != sparse_count, ret_numbers,
-		"glTF import: Sparse indices size does not match the sparse count.");
-	const int64_t vector_size = _get_vector_size();
-	Vector<T> sparse_values = _decode_raw_numbers<T>(p_gltf_state, p_buffer_views, true);
-	ERR_FAIL_COND_V_MSG(sparse_values.size() != sparse_count * vector_size, ret_numbers,
-		"glTF import: Sparse values size does not match the sparse count.");
-	for (int64_t in_sparse = 0; in_sparse < sparse_count; in_sparse++) {
-		const int64_t sparse_index = sparse_indices[in_sparse];
-		const int64_t array_offset = sparse_index * vector_size;
-		ERR_FAIL_INDEX_V_MSG(array_offset, ret_numbers.size(), ret_numbers,
-			"glTF import: Sparse indices were out of bounds for the accessor.");
-		for (int64_t in_vec = 0; in_vec < vector_size; in_vec++) {
-			ret_numbers.set(array_offset + in_vec, sparse_values[in_sparse * vector_size + in_vec]);
-		}
-	}
-	return ret_numbers;
-}
-
-PackedColorArray GLTFAccessor::decode_as_colors(const Ref<GLTFState>& p_gltf_state) const
-{
-	PackedColorArray ret;
-	PackedFloat32Array numbers = _decode_as_numbers<float>(p_gltf_state);
-	if (accessor_type == TYPE_VEC3) {
-		ERR_FAIL_COND_V_MSG(numbers.size() != count * 3, ret,
-			"glTF import: The accessor does not have the expected amount of numbers for the given "
-			"count and vector size.");
-		ret.resize(count);
-		for (int64_t i = 0; i < count; i++) {
-			const int64_t number_index = i * 3;
-			ret.set(i, Color(numbers[number_index], numbers[number_index + 1],
-						   numbers[number_index + 2], 1.0f));
-		}
-	}
-	else if (accessor_type == TYPE_VEC4) {
-		ERR_FAIL_COND_V_MSG(numbers.size() != count * 4, ret,
-			"glTF import: The accessor does not have the expected amount of numbers for the given "
-			"count and vector size.");
-		ret.resize(count);
-		for (int64_t i = 0; i < count; i++) {
-			const int64_t number_index = i * 4;
-			ret.set(i, Color(numbers[number_index], numbers[number_index + 1],
-						   numbers[number_index + 2], numbers[number_index + 3]));
-		}
-	}
-	else {
-		ERR_FAIL_V_MSG(ret,
-			"glTF import: The `decode_as_colors` function is designed to be fast and can only be "
-			"used with accessors of type \"VEC3\" or \"VEC4\", but was called with type \"" +
-				_get_accessor_type_name() + "\".");
-	}
-	return ret;
-}
-
-
-
-
-
-Vector<Quaternion> GLTFAccessor::decode_as_quaternions(const Ref<GLTFState>& p_gltf_state) const
-{
-	Vector<Quaternion> ret;
-	ERR_FAIL_COND_V_MSG(accessor_type != TYPE_VEC4, ret,
-		"glTF import: The `decode_as_quaternions` function is designed to be fast and can only be "
-		"used with accessors of type \"VEC4\", but was called with type \"" +
-			_get_accessor_type_name() + "\".");
-	PackedFloat32Array numbers = _decode_as_numbers<real_t>(p_gltf_state);
-	ERR_FAIL_COND_V_MSG(numbers.size() != count * 4, ret,
-		"glTF import: The accessor does not have the expected amount of numbers for the given "
-		"count and vector size.");
-	ret.resize(count);
-	for (int64_t i = 0; i < count; i++) {
-		const int64_t number_index = i * 4;
-		ret.set(i, Quaternion(numbers[number_index], numbers[number_index + 1],
-					   numbers[number_index + 2], numbers[number_index + 3])
-					   .normalized());
-	}
-	return ret;
-}
-
-PackedVector2Array GLTFAccessor::decode_as_vector2s(const Ref<GLTFState>& p_gltf_state) const
-{
-	PackedVector2Array ret;
-	ERR_FAIL_COND_V_MSG(accessor_type != TYPE_VEC2, ret,
-		"glTF import: The `decode_as_vector2s` function is designed to be fast and can only be "
-		"used with accessors of type \"VEC2\", but was called with type \"" +
-			_get_accessor_type_name() + "\".");
-	PackedFloat32Array numbers = _decode_as_numbers<real_t>(p_gltf_state);
-	ERR_FAIL_COND_V_MSG(numbers.size() != count * 2, ret,
-		"glTF import: The accessor does not have the expected amount of numbers for the given "
-		"count and vector size.");
-	ret.resize(count);
-	for (int64_t i = 0; i < count; i++) {
-		const int64_t number_index = i * 2;
-		ret.set(i, Vector2(numbers[number_index], numbers[number_index + 1]));
-	}
-	return ret;
-}
-
-PackedVector3Array GLTFAccessor::decode_as_vector3s(const Ref<GLTFState>& p_gltf_state) const
-{
-	PackedVector3Array ret;
-	ERR_FAIL_COND_V_MSG(accessor_type != TYPE_VEC3, ret,
-		"glTF import: The `decode_as_vector3s` function is designed to be fast and can only be "
-		"used with accessors of type \"VEC3\", but was called with type \"" +
-			_get_accessor_type_name() + "\".");
-	PackedFloat32Array numbers = _decode_as_numbers<real_t>(p_gltf_state);
-	ERR_FAIL_COND_V_MSG(numbers.size() != count * 3, ret,
-		"glTF import: The accessor does not have the expected amount of numbers for the given "
-		"count and vector size.");
-	ret.resize(count);
-	for (int64_t i = 0; i < count; i++) {
-		const int64_t number_index = i * 3;
-		ret.set(i,
-			Vector3(numbers[number_index], numbers[number_index + 1], numbers[number_index + 2]));
-	}
-	return ret;
-}
-
-PackedVector4Array GLTFAccessor::decode_as_vector4s(const Ref<GLTFState>& p_gltf_state) const
-{
-	PackedVector4Array ret;
-	ERR_FAIL_COND_V_MSG(accessor_type != TYPE_VEC4, ret,
-		"glTF import: The `decode_as_vector4s` function is designed to be fast and can only be "
-		"used with accessors of type \"VEC4\", but was called with type \"" +
-			_get_accessor_type_name() + "\".");
-	PackedFloat32Array numbers = _decode_as_numbers<real_t>(p_gltf_state);
-	ERR_FAIL_COND_V_MSG(numbers.size() != count * 4, ret,
-		"glTF import: The accessor does not have the expected amount of numbers for the given "
-		"count and vector size.");
-	ret.resize(count);
-	for (int64_t i = 0; i < count; i++) {
-		const int64_t number_index = i * 4;
-		ret.set(i, Vector4(numbers[number_index], numbers[number_index + 1],
-					   numbers[number_index + 2], numbers[number_index + 3]));
-	}
-	return ret;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// GLTFNode
-
-
-
-GLTFNodeIndex GLTFNode::get_parent() { return parent; }
-
-void GLTFNode::set_parent(GLTFNodeIndex p_parent) { parent = p_parent; }
-
-int GLTFNode::get_height() { return height; }
-
-void GLTFNode::set_height(int p_height) { height = p_height; }
-
-
-
-GLTFMeshIndex GLTFNode::get_mesh() { return mesh; }
-
-void GLTFNode::set_mesh(GLTFMeshIndex p_mesh) { mesh = p_mesh; }
-
-GLTFCameraIndex GLTFNode::get_camera() { return camera; }
-
-void GLTFNode::set_camera(GLTFCameraIndex p_camera) { camera = p_camera; }
-
-GLTFSkinIndex GLTFNode::get_skin() { return skin; }
-
-void GLTFNode::set_skin(GLTFSkinIndex p_skin) { skin = p_skin; }
-
-GLTFSkeletonIndex GLTFNode::get_skeleton() { return skeleton; }
-
-void GLTFNode::set_skeleton(GLTFSkeletonIndex p_skeleton) { skeleton = p_skeleton; }
-
-Vector3 GLTFNode::get_position() { return transform.origin; }
-
-void GLTFNode::set_position(const Vector3& p_position) { transform.origin = p_position; }
-
-Quaternion GLTFNode::get_rotation() { return transform.basis.get_rotation_quaternion(); }
-
-void GLTFNode::set_rotation(const Quaternion& p_rotation)
-{
-	transform.basis.set_quaternion_scale(p_rotation, transform.basis.get_scale());
-}
-
-Vector3 GLTFNode::get_scale() { return transform.basis.get_scale(); }
-
-void GLTFNode::set_scale(const Vector3& p_scale)
-{
-	transform.basis = transform.basis.orthonormalized() * Basis::from_scale(p_scale);
-}
-
-Vector<int> GLTFNode::get_children() { return Vector<int>(children); }
-
-
-
-GLTFLightIndex GLTFNode::get_light() { return light; }
-
-
-
-void GLTFNode::set_visible(bool p_visible) { visible = p_visible; }
-
-
-// GLTFSkeleton
-
-Vector<GLTFNodeIndex> GLTFSkeleton::get_joints() { return Vector<GLTFNodeIndex>(joints); }
-
-
-
-
-
-
-
-// GLTFSkin
-
-
-
-
-
-Vector<GLTFNodeIndex> GLTFSkin::get_joints() { return joints; }
-
-
-
-
-
-
-int GLTFSkin::get_skeleton() { return skeleton; }
-
-void GLTFSkin::set_skeleton(int p_skeleton) { skeleton = p_skeleton; }
-
-
-
-// GLTFMesh
-
-
-
-Ref<ImporterMesh> GLTFMesh::get_mesh() { return mesh; }
-
-void GLTFMesh::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
-
-
-
-// GLTFCamera
-
-
-Ref<GLTFCamera> GLTFCamera::from_node(const Camera3D* p_camera)
-{
-	Ref<GLTFCamera> c;
-	c.instantiate();
-	ERR_FAIL_NULL_V_MSG(p_camera, c,
-		"Tried to create a GLTFCamera from a Camera3D node, but the given node was null.");
-	c->set_perspective(
-		p_camera->get_projection() == Camera3D::ProjectionType::PROJECTION_PERSPECTIVE);
-	// glTF spec (yfov) is in radians, Godot's camera (fov) is in degrees.
-	c->set_fov(Math::deg_to_rad(p_camera->get_fov()));
-	// glTF spec (xmag and ymag) is a radius in meters, Godot's camera (size) is a diameter in
-	// meters.
-	c->set_size_mag(p_camera->get_size() * 0.5f);
-	c->set_depth_far(p_camera->get_far());
-	c->set_depth_near(p_camera->get_near());
-	return c;
-}
-
-// GLTFAnimation
-
-
-
-
-
-
-void GLTFAnimation::set_loop(bool p_val) { loop = p_val; }
-
-HashMap<int, GLTFAnimation::NodeTrack>& GLTFAnimation::get_node_tracks() { return node_tracks; }
-
-GLTFAnimation::GLTFAnimation() {}
-
-// GLTFObjectModelProperty
-
-
-
-
-
-
-
-
-
-
 #endif // defined(MODULE_GLTF_ENABLED)
 
 #if defined(MODULE_FBX_ENABLED)
-#include "servers/display/display_server.h"
-#include <ufbx.h>
-#include "servers/display/display_server.h"
-
-class FBXState final : public Resource
-{
-	friend class FBXDocument;
-	friend class SkinTool;
-	friend class GLTFSkin;
-
-	Ref<GLTFState> gltf_state;
-
-	// Smart pointer that holds the loaded scene.
-	ufbx_unique_ptr<ufbx_scene> scene;
-	bool allow_geometry_helper_nodes = false;
-
-	HashMap<uint64_t, Image::AlphaMode> alpha_mode_cache;
-	HashMap<Pair<uint64_t, uint64_t>, GLTFTextureIndex> albedo_transparency_textures;
-
-	Vector<GLTFSkinIndex> skin_indices;
-	Vector<GLTFSkinIndex> original_skin_indices;
-	HashSet<String> unique_mesh_names;
-
-public:
-	Ref<GLTFState> get_gltf_state() const { return gltf_state; }
-
-	bool get_allow_geometry_helper_nodes();
-	void set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_nodes);
-
-	FBXState();
-};
-#include "servers/display/display_server.h"
-
-class FBXDocument final : public Resource
-{
-	int _naming_version = 2;
-	Ref<GLTFDocument> gltf_document;
-
-public:
-	enum
-	{
-		TEXTURE_TYPE_GENERIC = 0,
-		TEXTURE_TYPE_NORMAL = 1,
-	};
-
-	Ref<GLTFDocument> get_gltf_document() const { return gltf_document; }
-
-	static Transform3D _as_xform(const ufbx_matrix& p_mat);
-	static String _as_string(const ufbx_string& p_string);
-	static Vector3 _as_vec3(const ufbx_vec3& p_vector);
-	static String _gen_unique_name(HashSet<String>& unique_names, const String& p_name);
-
-	Error append_from_file(const String& p_path, Ref<FBXState> p_state, uint32_t p_flags = 0,
-		const String& p_base_path = String());
-	Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
-		Ref<FBXState> p_state, uint32_t p_flags = 0);
-	Error append_from_scene(Node* p_node, Ref<FBXState> p_state, uint32_t p_flags = 0);
-
-	Node* generate_scene(Ref<FBXState> p_state, float p_bake_fps = 30.0f, bool p_trimming = false,
-		bool p_remove_immutable_tracks = true);
-	PackedByteArray generate_buffer(Ref<FBXState> p_state);
-	Error write_to_filesystem(Ref<FBXState> p_state, const String& p_path);
-
-	void set_naming_version(int p_version);
-	int get_naming_version() const;
-
-	FBXDocument();
-
-private:
-	String _get_texture_path(
-		const String& p_base_directory, const String& p_source_file_path) const;
-	void _process_uv_set(PackedVector2Array& uv_array);
-	void _zero_unused_elements(Vector<float>& cur_custom, int start, int end, int num_channels);
-	Error _parse_scenes(Ref<FBXState> p_state);
-	Error _parse_nodes(Ref<FBXState> p_state);
-	String _sanitize_animation_name(const String& p_name);
-	String _gen_unique_animation_name(Ref<FBXState> p_state, const String& p_name);
-	Error _parse_meshes(Ref<FBXState> p_state);
-	Ref<Image> _parse_image_bytes_into_image(Ref<FBXState> p_state, const Vector<uint8_t>& p_bytes,
-		const String& p_filename, int p_index);
-	GLTFImageIndex _parse_image_save_image(Ref<FBXState> p_state, const Vector<uint8_t>& p_bytes,
-		const String& p_file_extension, int p_index, Ref<Image> p_image);
-	Error _parse_images(Ref<FBXState> p_state, const String& p_base_path);
-	Error _parse_skins(Ref<FBXState> p_state);
-	Error _parse_animations(Ref<FBXState> p_state);
-	BoneAttachment3D* _generate_bone_attachment(Ref<FBXState> p_state, Skeleton3D* p_skeleton,
-		const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index);
-	ImporterMeshInstance3D* _generate_mesh_instance(
-		Ref<FBXState> p_state, const GLTFNodeIndex p_node_index);
-	Light3D* _generate_light(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index);
-	Node3D* _generate_spatial(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index);
-	void _assign_node_names(Ref<FBXState> p_state);
-	Error _parse_cameras(Ref<FBXState> p_state);
-	Error _parse_lights(Ref<FBXState> p_state);
-
-public:
-	Error _parse_fbx_state(Ref<FBXState> p_state, const String& p_search_path);
-	void _process_mesh_instances(Ref<FBXState> p_state, Node* p_scene_root);
-	void _generate_scene_node(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index,
-		Node* p_scene_parent, Node* p_scene_root);
-	void _generate_skeleton_bone_node(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index,
-		Node* p_scene_parent, Node* p_scene_root);
-	void _import_animation(Ref<FBXState> p_state, AnimationPlayer* p_animation_player,
-		const GLTFAnimationIndex p_index, const bool p_trimming,
-		const bool p_remove_immutable_tracks);
-	Error _parse(Ref<FBXState> p_state, const String& p_path, Ref<FileAccess> p_file);
-};
-
-#ifdef TOOLS_ENABLED
-#include "servers/display/display_server.h"
-
-class Animation;
-class Node;
-
-class EditorSceneFormatImporterFBX final : public EditorSceneFormatImporter
-{
-public:
-	enum Backend
-	{
-		BACKEND_UFBX,
-		BACKEND_FBX2GLTF,
-	};
-
-private:
-	Backend backend = BACKEND_UFBX;
-
-public:
-	explicit EditorSceneFormatImporterFBX(Backend p_backend = BACKEND_UFBX) : backend(p_backend) {}
-
-	Backend get_backend() const { return backend; }
-
-	virtual void get_extensions(List<String>* r_extensions) const override;
-	virtual void get_import_options(
-		const String& p_path, List<ResourceImporter::ImportOption>* r_options) override;
-};
-#endif // TOOLS_ENABLED
-
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-#ifdef TOOLS_ENABLED
-#include "servers/display/display_server.h"
-#endif
-
-#include <ufbx.h>
-
-FBXDocument::FBXDocument() { gltf_document.instantiate(); }
-
-String FBXDocument::_gen_unique_name(HashSet<String>& unique_names, const String& p_name)
-{
-	const String s_name = p_name.validate_node_name();
-
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += itos(index);
-		}
-		if (!unique_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	unique_names.insert(u_name);
-
-	return u_name;
-}
-
-String FBXDocument::_sanitize_animation_name(const String& p_name)
-{
-	String anim_name = p_name.validate_node_name();
-	return AnimationLibrary::validate_library_name(anim_name);
-}
-
-String FBXDocument::_gen_unique_animation_name(Ref<FBXState> p_state, const String& p_name)
-{
-	const String s_name = _sanitize_animation_name(p_name);
-
-	String u_name;
-	int index = 1;
-	while (true) {
-		u_name = s_name;
-
-		if (index > 1) {
-			u_name += itos(index);
-		}
-		if (!p_state->gltf_state->unique_animation_names.has(u_name)) {
-			break;
-		}
-		index++;
-	}
-
-	p_state->gltf_state->unique_animation_names.insert(u_name);
-
-	return u_name;
-}
-
-Error FBXDocument::_parse_scenes(Ref<FBXState> p_state)
-{
-	p_state->gltf_state->unique_names.insert("Skeleton3D"); // Reserve skeleton name.
-
-	const ufbx_scene* fbx_scene = p_state->scene.get();
-
-	// TODO: Multi-document support, would need test files for structure
-	p_state->gltf_state->scene_name = "";
-
-	// TODO: Append the root node directly if we use root-based space conversion
-	for (const ufbx_node* root_node : fbx_scene->root_node->children) {
-		p_state->gltf_state->root_nodes.push_back(int(root_node->typed_id));
-	}
-
-	return OK;
-}
-
-Ref<Image> FBXDocument::_parse_image_bytes_into_image(
-	Ref<FBXState> p_state, const Vector<uint8_t>& p_bytes, const String& p_filename, int p_index)
-{
-	Ref<Image> r_image;
-	r_image.instantiate();
-	// Try to import first based on filename.
-	String filename_lower = p_filename.to_lower();
-	if (filename_lower.ends_with(".png")) {
-		r_image->load_png_from_buffer(p_bytes);
-	}
-	else if (filename_lower.ends_with(".jpg")) {
-		r_image->load_jpg_from_buffer(p_bytes);
-	}
-	else if (filename_lower.ends_with(".tga")) {
-		r_image->load_tga_from_buffer(p_bytes);
-	}
-	// If we didn't pass the above tests, try loading as each option.
-	if (r_image->is_empty()) { // Try PNG first.
-		r_image->load_png_from_buffer(p_bytes);
-	}
-	if (r_image->is_empty()) { // And then JPEG.
-		r_image->load_jpg_from_buffer(p_bytes);
-	}
-	if (r_image->is_empty()) { // And then TGA.
-		r_image->load_tga_from_buffer(p_bytes);
-	}
-	// If it still can't be loaded, give up and insert an empty image as placeholder.
-	if (r_image->is_empty()) {
-		ERR_PRINT(vformat("FBX: Couldn't load image index '%d'", p_index));
-	}
-	return r_image;
-}
-
-Error FBXDocument::_parse_images(Ref<FBXState> p_state, const String& p_base_path)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-
-	const ufbx_scene* fbx_scene = p_state->scene.get();
-	for (int texture_i = 0; texture_i < static_cast<int>(fbx_scene->texture_files.count);
-		 texture_i++) {
-		const ufbx_texture_file& fbx_texture_file = fbx_scene->texture_files[texture_i];
-		String path = _as_string(fbx_texture_file.filename);
-		// Use only filename for absolute paths to avoid portability issues.
-		if (path.is_absolute_path()) {
-			path = path.get_file();
-		}
-		if (!p_base_path.is_empty()) {
-			path = p_base_path.path_join(path);
-		}
-		path = path.simplify_path();
-		Vector<uint8_t> data;
-		if (fbx_texture_file.content.size > 0 && fbx_texture_file.content.size <= INT_MAX) {
-			data.resize(int(fbx_texture_file.content.size));
-			memcpy(data.ptrw(), fbx_texture_file.content.data, fbx_texture_file.content.size);
-		}
-		else {
-			String base_dir = gltf_state->get_base_path();
-			Ref<Texture2D> texture =
-				ResourceLoader::load(_get_texture_path(base_dir, path), "Texture2D");
-			if (texture.is_valid()) {
-				gltf_state->images.push_back(texture);
-				gltf_state->source_images.push_back(texture->get_image());
-				continue;
-			}
-			// Fallback to loading as byte array.
-			data = FileAccess::get_file_as_bytes(path);
-			if (data.is_empty()) {
-				WARN_PRINT(vformat("FBX: Image index '%d' couldn't be loaded from path: %s because "
-								   "there was no data to load. Skipping it.",
-					texture_i, path));
-				gltf_state->images.push_back(Ref<Texture2D>()); // Placeholder to keep count.
-				gltf_state->source_images.push_back(Ref<Image>());
-				continue;
-			}
-		}
-
-		// Parse the image data from bytes into an Image resource and save if needed.
-		String file_extension;
-		Ref<Image> img = _parse_image_bytes_into_image(p_state, data, path, texture_i);
-		img->set_name(itos(texture_i));
-		_parse_image_save_image(p_state, data, file_extension, texture_i, img);
-	}
-
-	// Create a texture for each file texture.
-	for (int texture_file_i = 0; texture_file_i < static_cast<int>(fbx_scene->texture_files.count);
-		 texture_file_i++) {
-		Ref<GLTFTexture> texture;
-		texture.instantiate();
-		texture->set_src_image(GLTFImageIndex(texture_file_i));
-		gltf_state->textures.push_back(texture);
-	}
-
-	print_verbose("FBX: Total images: " + itos(gltf_state->images.size()));
-
-	return OK;
-}
-
-Error FBXDocument::_parse_cameras(Ref<FBXState> p_state)
-{
-	const ufbx_scene* fbx_scene = p_state->scene.get();
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	for (GLTFCameraIndex i = 0; i < static_cast<GLTFCameraIndex>(fbx_scene->cameras.count); i++) {
-		const ufbx_camera* fbx_camera = fbx_scene->cameras[i];
-
-		Ref<GLTFCamera> camera;
-		camera.instantiate();
-		camera->set_name(_as_string(fbx_camera->name));
-		if (fbx_camera->projection_mode == UFBX_PROJECTION_MODE_PERSPECTIVE) {
-			camera->set_perspective(true);
-			camera->set_fov(Math::deg_to_rad(real_t(fbx_camera->field_of_view_deg.y)));
-		}
-		else {
-			camera->set_perspective(false);
-			camera->set_size_mag(real_t(fbx_camera->orthographic_size.y * 0.5f));
-		}
-		if (fbx_camera->near_plane != 0.0f) {
-			camera->set_depth_near(fbx_camera->near_plane);
-		}
-		if (fbx_camera->far_plane != 0.0f) {
-			camera->set_depth_far(fbx_camera->far_plane);
-		}
-		gltf_state->cameras.push_back(camera);
-	}
-
-	print_verbose("FBX: Total cameras: " + itos(gltf_state->cameras.size()));
-
-	return OK;
-}
-
-void FBXDocument::_assign_node_names(Ref<FBXState> p_state)
-{
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	for (int i = 0; i < gltf_state->nodes.size(); i++) {
-		Ref<GLTFNode> fbx_node = gltf_state->nodes[i];
-
-		// Any joints get unique names generated when the skeleton is made, unique to the skeleton
-		if (fbx_node->skeleton >= 0) {
-			continue;
-		}
-
-		if (fbx_node->get_name().is_empty()) {
-			if (fbx_node->mesh >= 0) {
-				fbx_node->set_name(_gen_unique_name(gltf_state->unique_names, "Mesh"));
-			}
-			else if (fbx_node->camera >= 0) {
-				fbx_node->set_name(_gen_unique_name(gltf_state->unique_names, "Camera3D"));
-			}
-			else {
-				fbx_node->set_name(_gen_unique_name(gltf_state->unique_names, "Node"));
-			}
-		}
-
-		fbx_node->set_name(_gen_unique_name(gltf_state->unique_names, fbx_node->get_name()));
-	}
-}
-
-BoneAttachment3D* FBXDocument::_generate_bone_attachment(Ref<FBXState> p_state,
-	Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index)
-{
-	Ref<GLTFNode> fbx_node = p_state->gltf_state->nodes[p_node_index];
-	Ref<GLTFNode> bone_node = p_state->gltf_state->nodes[p_bone_index];
-	BoneAttachment3D* bone_attachment = memnew(BoneAttachment3D);
-	print_verbose("FBX: Creating bone attachment for: " + fbx_node->get_name());
-
-	ERR_FAIL_COND_V(!bone_node->joint, nullptr);
-
-	bone_attachment->set_bone_name(bone_node->get_name());
-
-	return bone_attachment;
-}
-
-ImporterMeshInstance3D* FBXDocument::_generate_mesh_instance(
-	Ref<FBXState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	Ref<GLTFNode> fbx_node = gltf_state->nodes[p_node_index];
-
-	ERR_FAIL_INDEX_V(fbx_node->mesh, gltf_state->meshes.size(), nullptr);
-
-	ImporterMeshInstance3D* mi = memnew(ImporterMeshInstance3D);
-	print_verbose("FBX: Creating mesh for: " + fbx_node->get_name());
-
-	gltf_state->scene_mesh_instances.insert(p_node_index, mi);
-	Ref<GLTFMesh> mesh = gltf_state->meshes.write[fbx_node->mesh];
-	if (mesh.is_null()) {
-		return mi;
-	}
-	Ref<ImporterMesh> import_mesh = mesh->get_mesh();
-	if (import_mesh.is_null()) {
-		return mi;
-	}
-	mi->set_mesh(import_mesh);
-	return mi;
-}
-
-Node3D* FBXDocument::_generate_spatial(Ref<FBXState> p_state, const GLTFNodeIndex p_node_index)
-{
-	Ref<GLTFNode> fbx_node = p_state->gltf_state->nodes[p_node_index];
-
-	Node3D* spatial = memnew(Node3D);
-	print_verbose("FBX: Converting spatial: " + fbx_node->get_name());
-
-	return spatial;
-}
-
-Error FBXDocument::append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
-	Ref<FBXState> p_state, uint32_t p_flags)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_NULL_V(p_bytes.ptr(), ERR_INVALID_DATA);
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	Error err = FAILED;
-	gltf_state->use_named_skin_binds =
-		p_flags & GLTFDocument::ImportFlags::IMPORT_FLAG_USE_NAMED_SKIN_BINDS;
-	gltf_state->discard_meshes_and_materials =
-		p_flags & GLTFDocument::ImportFlags::IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS;
-
-	Ref<FileAccessMemory> file_access;
-	file_access.instantiate();
-	file_access->open_custom(p_bytes.ptr(), p_bytes.size());
-	gltf_state->base_path = p_base_path.get_base_dir();
-	err = _parse(p_state, gltf_state->base_path, file_access);
-	ERR_FAIL_COND_V(err != OK, err);
-	for (Ref<GLTFDocumentExtension> ext : gltf_document->document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		err = ext->import_post_parse(gltf_state);
-		ERR_FAIL_COND_V(err != OK, err);
-	}
-	return OK;
-}
-
-Error FBXDocument::append_from_file(
-	const String& p_path, Ref<FBXState> p_state, uint32_t p_flags, const String& p_base_path)
-{
-	ERR_FAIL_COND_V(p_state.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_path.is_empty(), ERR_FILE_NOT_FOUND);
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	gltf_state->filename = p_path.get_file().get_basename();
-	gltf_state->use_named_skin_binds =
-		p_flags & GLTFDocument::ImportFlags::IMPORT_FLAG_USE_NAMED_SKIN_BINDS;
-	gltf_state->discard_meshes_and_materials =
-		p_flags & GLTFDocument::ImportFlags::IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS;
-	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::READ, &err);
-	ERR_FAIL_COND_V(err != OK, ERR_FILE_CANT_OPEN);
-	ERR_FAIL_COND_V(file.is_null(), ERR_FILE_CANT_OPEN);
-	String base_path = p_base_path;
-	if (base_path.is_empty()) {
-		base_path = p_path.get_base_dir();
-	}
-	gltf_state->base_path = base_path;
-	err = _parse(p_state, base_path, file);
-	ERR_FAIL_COND_V(err != OK, err);
-	for (Ref<GLTFDocumentExtension> ext : gltf_document->document_extensions) {
-		ERR_CONTINUE(ext.is_null());
-		err = ext->import_post_parse(gltf_state);
-		ERR_FAIL_COND_V(err != OK, err);
-	}
-	return OK;
-}
-
-void FBXDocument::_process_uv_set(PackedVector2Array& uv_array)
-{
-	int uv_size = uv_array.size();
-	for (int uv_i = 0; uv_i < uv_size; uv_i++) {
-		Vector2& uv = uv_array.write[uv_i];
-		uv.y = 1.0 - uv.y;
-	}
-}
-
-void FBXDocument::_zero_unused_elements(
-	Vector<float>& cur_custom, int start, int end, int num_channels)
-{
-	for (int32_t uv_i = start; uv_i < end; uv_i++) {
-		int index = uv_i * num_channels;
-		for (int channel = 0; channel < num_channels; channel++) {
-			cur_custom.write[index + channel] = 0;
-		}
-	}
-}
-
-String FBXDocument::_get_texture_path(
-	const String& p_base_dir, const String& p_source_file_path) const
-{
-	// Check if the original path exists first.
-	if (FileAccess::exists(p_source_file_path)) {
-		return p_source_file_path.strip_edges();
-	}
-	const String tex_file_name = p_source_file_path.get_file();
-	const Vector<String> subdirs = {"", "textures/", "Textures/", "images/", "Images/",
-		"materials/", "Materials/", "maps/", "Maps/", "tex/", "Tex/"};
-	String base_dir = p_base_dir;
-	const String source_file_name = tex_file_name;
-	while (!base_dir.is_empty()) {
-		String old_base_dir = base_dir;
-		for (int i = 0; i < subdirs.size(); ++i) {
-			String full_path = base_dir.path_join(subdirs[i] + source_file_name);
-			if (FileAccess::exists(full_path)) {
-				return full_path.strip_edges();
-			}
-		}
-		base_dir = base_dir.get_base_dir();
-		if (base_dir == old_base_dir) {
-			break;
-		}
-	}
-	return String();
-}
-
-Error FBXDocument::_parse_skins(Ref<FBXState> p_state)
-{
-	const ufbx_scene* fbx_scene = p_state->scene.get();
-	Ref<GLTFState> gltf_state = p_state->gltf_state;
-	HashMap<GLTFNodeIndex, bool> joint_mapping;
-
-	for (const ufbx_skin_deformer* fbx_skin : fbx_scene->skin_deformers) {
-		if (fbx_skin->clusters.count == 0 || fbx_skin->weights.count == 0) {
-			p_state->skin_indices.push_back(-1);
-			continue;
-		}
-
-		Ref<GLTFSkin> skin;
-		skin.instantiate();
-
-		skin->inverse_binds.resize(fbx_skin->clusters.count);
-		for (int skin_i = 0; skin_i < static_cast<int>(fbx_skin->clusters.count); skin_i++) {
-			const ufbx_skin_cluster* fbx_cluster = fbx_skin->clusters[skin_i];
-			skin->inverse_binds.write[skin_i] =
-				FBXDocument::_as_xform(fbx_cluster->geometry_to_bone);
-			const GLTFNodeIndex node = fbx_cluster->bone_node->typed_id;
-
-			skin->joints.push_back(node);
-			skin->joints_original.push_back(node);
-			gltf_state->nodes.write[node]->joint = true;
-		}
-
-		if (fbx_skin->name.length > 0) {
-			skin->set_name(FBXDocument::_as_string(fbx_skin->name));
-		}
-		else {
-			skin->set_name(vformat("skin_%s", itos(fbx_skin->typed_id)));
-		}
-		p_state->skin_indices.push_back(gltf_state->skins.size());
-		gltf_state->skins.push_back(skin);
-	}
-
-	for (const ufbx_bone* fbx_bone : fbx_scene->bones) {
-		for (const ufbx_node* fbx_node : fbx_bone->instances) {
-			const GLTFNodeIndex node = fbx_node->typed_id;
-			if (!gltf_state->nodes.write[node]->joint) {
-				gltf_state->nodes.write[node]->joint = true;
-
-				if (!(fbx_node->parent && fbx_node->parent->attrib_type == UFBX_ELEMENT_BONE)) {
-					Ref<GLTFSkin> skin;
-					skin.instantiate();
-					skin->joints.push_back(node);
-					skin->joints_original.push_back(node);
-					skin->set_name(vformat("skin_%s", itos(gltf_state->skins.size())));
-					p_state->skin_indices.push_back(gltf_state->skins.size());
-					gltf_state->skins.push_back(skin);
-				}
-			}
-		}
-	}
-	p_state->original_skin_indices = p_state->skin_indices.duplicate();
-	Error err =
-		SkinTool::_asset_parse_skins(p_state->original_skin_indices, gltf_state->skins.duplicate(),
-			gltf_state->nodes.duplicate(), p_state->skin_indices, gltf_state->skins, joint_mapping);
-	if (err != OK) {
-		return err;
-	}
-	for (int i = 0; i < gltf_state->skins.size(); ++i) {
-		Ref<GLTFSkin> skin = gltf_state->skins.write[i];
-		ERR_FAIL_COND_V(skin.is_null(), ERR_PARSE_ERROR);
-		// Expand and verify the skin
-		ERR_FAIL_COND_V(SkinTool::_expand_skin(gltf_state->nodes, skin), ERR_PARSE_ERROR);
-		ERR_FAIL_COND_V(SkinTool::_verify_skin(gltf_state->nodes, skin), ERR_PARSE_ERROR);
-	}
-
-	print_verbose("FBX: Total skins: " + itos(gltf_state->skins.size()));
-
-	for (HashMap<GLTFNodeIndex, bool>::Iterator it = joint_mapping.begin();
-		 it != joint_mapping.end(); ++it) {
-		GLTFNodeIndex node_index = it->key;
-		bool is_joint = it->value;
-		if (is_joint) {
-			if (gltf_state->nodes.size() > node_index) {
-				gltf_state->nodes.write[node_index]->joint = true;
-			}
-		}
-	}
-
-	return OK;
-}
-
-PackedByteArray FBXDocument::generate_buffer(Ref<FBXState> p_state) { return PackedByteArray(); }
-
-Error FBXDocument::write_to_filesystem(Ref<FBXState> p_state, const String& p_path)
-{
-	return ERR_UNAVAILABLE;
-}
-
-Error FBXDocument::append_from_scene(Node* p_node, Ref<FBXState> p_state, uint32_t p_flags)
-{
-	return ERR_UNAVAILABLE;
-}
-
-void FBXDocument::set_naming_version(int p_version) { _naming_version = p_version; }
-
-int FBXDocument::get_naming_version() const { return _naming_version; }
-
-Vector3 FBXDocument::_as_vec3(const ufbx_vec3& p_vector)
-{
-	return Vector3(real_t(p_vector.x), real_t(p_vector.y), real_t(p_vector.z));
-}
-
-String FBXDocument::_as_string(const ufbx_string& p_string)
-{
-	return String::utf8(p_string.data, (int)p_string.length);
-}
-
-Transform3D FBXDocument::_as_xform(const ufbx_matrix& p_mat)
-{
-	Transform3D xform;
-	xform.basis.set_column(Vector3::AXIS_X, _as_vec3(p_mat.cols[0]));
-	xform.basis.set_column(Vector3::AXIS_Y, _as_vec3(p_mat.cols[1]));
-	xform.basis.set_column(Vector3::AXIS_Z, _as_vec3(p_mat.cols[2]));
-	xform.set_origin(_as_vec3(p_mat.cols[3]));
-	return xform;
-}
-
-Error FBXDocument::_parse(Ref<FBXState>, String const&, Ref<FileAccess>) { return OK; }
-
-GLTFImageIndex FBXDocument::_parse_image_save_image(
-	Ref<FBXState>, Vector<unsigned char> const&, String const&, int, Ref<Image>)
-{
-	return GLTFImageIndex();
-}
-
-Node* FBXDocument::generate_scene(
-	Ref<FBXState> p_state, float p_bake_fps, bool p_trimming, bool p_remove_immutable_tracks)
-{
-	if (p_state.is_null() || p_state->gltf_state.is_null()) {
-		return nullptr;
-	}
-	return gltf_document->generate_scene(
-		p_state->gltf_state, p_bake_fps, p_trimming, p_remove_immutable_tracks);
-}
-
-FBXState::FBXState() { gltf_state.instantiate(); }
-
-bool FBXState::get_allow_geometry_helper_nodes() { return allow_geometry_helper_nodes; }
-
-void FBXState::set_allow_geometry_helper_nodes(bool p_allow_geometry_helper_nodes)
-{
-	allow_geometry_helper_nodes = p_allow_geometry_helper_nodes;
-}
-
-#ifdef TOOLS_ENABLED
-
-void EditorSceneFormatImporterFBX::get_extensions(List<String>* r_extensions) const
-{
-	r_extensions->push_back("fbx");
-}
-
-void EditorSceneFormatImporterFBX::get_import_options(
-	const String& p_path, List<ResourceImporter::ImportOption>* r_options)
-{
-}
-#endif // TOOLS_ENABLED
-
-#ifdef TOOLS_ENABLED
-#endif // TOOLS_ENABLED
-
-#define FBX_REGISTER_DOCUMENT_EXTENSION(m_doc_ext_class)                                           \
-	Ref<m_doc_ext_class> extension_##m_doc_ext_class;                                              \
-	extension_##m_doc_ext_class.instantiate();                                                     \
-	GLTFDocument::register_gltf_document_extension(extension_##m_doc_ext_class);
-
-void uninitialize_fbx_module(ModuleInitializationLevel p_level)
-{
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	GLTFDocument::unregister_all_gltf_document_extensions();
-}
+void uninitialize_fbx_module(ModuleInitializationLevel p_level) {}
 
 void initialize_fbx_module(ModuleInitializationLevel p_level)
 {
 #ifdef TOOLS_ENABLED
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
-		Ref<EditorSceneFormatImporterFBX> import_fbx;
-		import_fbx.instantiate(EditorSceneFormatImporterFBX::BACKEND_UFBX);
+		Ref<EditorSceneFormatImporter> import_fbx;
+		import_fbx.instantiate(true);
 		ResourceImporterScene::add_scene_importer(import_fbx);
 	}
 #endif // TOOLS_ENABLED
@@ -278583,29 +274790,6 @@ static void _pack_manifold(const CSGBrush* const p_mesh_merge, manifold::Manifol
 	r_manifold = manifold::Manifold(mesh);
 }
 
-struct ManifoldOperation
-{
-	manifold::Manifold manifold;
-	manifold::OpType operation;
-
-	static manifold::OpType convert_csg_op(CSGShape3D::Operation op)
-	{
-		switch (op) {
-		case CSGShape3D::OPERATION_SUBTRACTION:
-			return manifold::OpType::Subtract;
-		case CSGShape3D::OPERATION_INTERSECTION:
-			return manifold::OpType::Intersect;
-		default:
-			return manifold::OpType::Add;
-		}
-	}
-
-	ManifoldOperation() : operation(manifold::OpType::Add) {}
-
-	ManifoldOperation(const manifold::Manifold& m, manifold::OpType op) : manifold(m), operation(op)
-	{
-	}
-};
 
 static void _generate_tangents_unindexed(float* p_tangents, size_t p_count,
 	const Vector3* p_positions, const Vector3* p_normals, const Vector2* p_uvs)
@@ -278618,12 +274802,6 @@ static void _generate_tangents_unindexed(float* p_tangents, size_t p_count,
 		return;
 	}
 
-	struct TangentVertex
-	{
-		float position[3];
-		float normal[3];
-		float uv[2];
-	};
 
 	// We can't operate on input arrays directly because in double-precision builds, vectors use
 	// double components So we convert the inputs to single precision floats before generating

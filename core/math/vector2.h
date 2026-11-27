@@ -227,99 +227,28 @@ template <> struct HashMapHasherDefaultImpl<char*>
 	static _FORCE_INLINE_ uint32_t hash(const char* p_cstr) { return hash_djb2(p_cstr); }
 };
 
-template <> struct HashMapHasherDefaultImpl<wchar_t>
+template <typename T> struct HashMapHasherDefaultImpl<T, std::enable_if_t<std::is_integral_v<T>>>
 {
-	static _FORCE_INLINE_ uint32_t hash(const wchar_t p_wchar)
+	static _FORCE_INLINE_ uint32_t hash(const T p_int)
 	{
-		return hash_fmix32(uint32_t(p_wchar));
+		if constexpr (sizeof(T) == 8) {
+			return hash_one_uint64(uint64_t(p_int));
+		} else {
+			return hash_fmix32(uint32_t(p_int));
+		}
 	}
 };
 
-template <> struct HashMapHasherDefaultImpl<char16_t>
+template <typename T> struct HashMapHasherDefaultImpl<T, std::enable_if_t<std::is_floating_point_v<T>>>
 {
-	static _FORCE_INLINE_ uint32_t hash(const char16_t p_uchar)
+	static _FORCE_INLINE_ uint32_t hash(const T p_float)
 	{
-		return hash_fmix32(uint32_t(p_uchar));
+		if constexpr (sizeof(T) == 4) {
+			return hash_murmur3_one_float(float(p_float));
+		} else {
+			return hash_murmur3_one_double(double(p_float));
+		}
 	}
-};
-
-template <> struct HashMapHasherDefaultImpl<char32_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar)
-	{
-		return hash_fmix32(uint32_t(p_uchar));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<uint64_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const uint64_t p_int) { return hash_one_uint64(p_int); }
-};
-
-template <> struct HashMapHasherDefaultImpl<int64_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const int64_t p_int)
-	{
-		return hash_one_uint64(uint64_t(p_int));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<float>
-{
-	static _FORCE_INLINE_ uint32_t hash(const float p_float)
-	{
-		return hash_murmur3_one_float(p_float);
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<double>
-{
-	static _FORCE_INLINE_ uint32_t hash(const double p_double)
-	{
-		return hash_murmur3_one_double(p_double);
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<uint32_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const uint32_t p_int) { return hash_fmix32(p_int); }
-};
-
-template <> struct HashMapHasherDefaultImpl<int32_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const int32_t p_int)
-	{
-		return hash_fmix32(uint32_t(p_int));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<uint16_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const uint16_t p_int)
-	{
-		return hash_fmix32(uint32_t(p_int));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<int16_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const int16_t p_int)
-	{
-		return hash_fmix32(uint32_t(p_int));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<uint8_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const uint8_t p_int)
-	{
-		return hash_fmix32(uint32_t(p_int));
-	}
-};
-
-template <> struct HashMapHasherDefaultImpl<int8_t>
-{
-	static _FORCE_INLINE_ uint32_t hash(const int8_t p_int) { return hash_fmix32(uint32_t(p_int)); }
 };
 
 template <typename F, typename S> struct HashMapHasherDefaultImpl<Pair<F, S>>
@@ -362,17 +291,9 @@ template <typename T, typename = void> struct HashMapComparatorDefault
 	static bool compare(const T& p_lhs, const T& p_rhs) { return p_lhs == p_rhs; }
 };
 
-template <> struct HashMapComparatorDefault<float>
+template <typename T> struct HashMapComparatorDefault<T, std::enable_if_t<std::is_floating_point_v<T>>>
 {
-	static bool compare(const float& p_lhs, const float& p_rhs)
-	{
-		return Math::is_same(p_lhs, p_rhs);
-	}
-};
-
-template <> struct HashMapComparatorDefault<double>
-{
-	static bool compare(const double& p_lhs, const double& p_rhs)
+	static bool compare(const T& p_lhs, const T& p_rhs)
 	{
 		return Math::is_same(p_lhs, p_rhs);
 	}
@@ -504,9 +425,7 @@ public:
 	~RID() = default;
 };
 
-template <> struct is_zero_constructible<RID> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<RID> = true;
 // --- End core/templates/rid.h ---
 
 // --- Folded from core/math/color.h ---
@@ -1113,7 +1032,7 @@ typedef Vector2i Size2i;
 typedef Vector2i Point2i;
 
 template <>
-struct is_zero_constructible<Vector2i> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Vector2i> = true;
 // --- End core/math/vector2i.h ---
 
 // --- Folded from core/templates/pair.h ---
@@ -1169,10 +1088,7 @@ template <typename F, typename S> struct PairSort
 
 // Pair is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename F, typename S>
-struct is_zero_constructible<Pair<F, S>>
-	: std::conjunction<is_zero_constructible<F>, is_zero_constructible<S>>
-{
-};
+inline constexpr bool is_zero_constructible_v<Pair<F, S>> = is_zero_constructible_v<F> && is_zero_constructible_v<S>;
 
 template <typename K, typename V> struct KeyValue
 {
@@ -1231,10 +1147,7 @@ template <typename K, typename V> struct KeyValueSort
 
 // KeyValue is zero-constructible if and only if both constrained types are zero-constructible.
 template <typename K, typename V>
-struct is_zero_constructible<KeyValue<K, V>>
-	: std::conjunction<is_zero_constructible<K>, is_zero_constructible<V>>
-{
-};
+inline constexpr bool is_zero_constructible_v<KeyValue<K, V>> = is_zero_constructible_v<K> && is_zero_constructible_v<V>;
 // --- End core/templates/pair.h ---
 // --- End core/templates/hashfuncs.h ---
 
@@ -1597,8 +1510,6 @@ constexpr Vector2 operator*(int64_t p_scalar, const Vector2& p_vec) { return p_v
 typedef Vector2 Size2;
 typedef Vector2 Point2;
 
-template <> struct is_zero_constructible<Vector2> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<Vector2> = true;
 
 

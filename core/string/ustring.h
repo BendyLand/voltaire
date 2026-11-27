@@ -377,7 +377,7 @@ _FORCE_INLINE_ bool operator!=(const Span<LHS> &p_lhs, const Span<RHS> &p_rhs) {
 
 // Zero-constructing Span initializes _ptr and _len to 0 (and thus empty).
 template <typename T>
-struct is_zero_constructible<Span<T>> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Span<T>> = true;
 
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Warray-bounds")
 
@@ -1709,7 +1709,7 @@ VLTR_GCC_WARNING_POP
 
 // Zero-constructing CowData initializes _ptr to nullptr (and thus empty).
 template <typename T>
-struct is_zero_constructible<CowData<T>> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<CowData<T>> = true;
 
 template <typename T> class Vector;
 
@@ -2095,9 +2095,7 @@ template <typename T> void Vector<T>::fill(T p_elem)
 }
 
 // Zero-constructing Vector initializes CowData.ptr() to nullptr and thus empty.
-template <typename T> struct is_zero_constructible<Vector<T>> : std::true_type
-{
-};
+template <typename T> inline constexpr bool is_zero_constructible_v<Vector<T>> = true;
 
 template <typename T>
 class _WARN_UNUSED_ VSet {
@@ -2462,9 +2460,7 @@ protected:
 	}
 };
 
-template <typename T> struct is_zero_constructible<CharStringT<T>> : std::true_type
-{
-};
+template <typename T> inline constexpr bool is_zero_constructible_v<CharStringT<T>> = true;
 
 using CharString = CharStringT<char>;
 using Char16String = CharStringT<char16_t>;
@@ -3035,9 +3031,7 @@ public:
 };
 
 // Zero-constructing String initializes _cowdata.ptr() to nullptr and thus empty.
-template <> struct is_zero_constructible<String> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<String> = true;
 
 bool operator==(const char* p_chr, const String& p_str);
 bool operator==(const wchar_t* p_chr, const String& p_str);
@@ -3683,9 +3677,7 @@ using TightLocalVector = LocalVector<T, U, false, true>;
 
 // Zero-constructing LocalVector initializes count, capacity and data to 0 and thus empty.
 template <typename T, typename U, bool force_trivial, bool tight>
-struct is_zero_constructible<LocalVector<T, U, force_trivial, tight>> : std::true_type
-{
-};
+inline constexpr bool is_zero_constructible_v<LocalVector<T, U, force_trivial, tight>> = true;
 
 // Simple template to provide a pool with O(1) allocate and free.
 // The freelist could alternatively be a linked list placed within the unused elements

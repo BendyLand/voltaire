@@ -33,12 +33,10 @@
 
 #include "core/io/ip.h"
 
-class NetSocket : public RefCounted
+class NetSocket final : public RefCounted
 {
-protected:
-	static Ref<NetSocket> (*_create)();
-
 public:
+	static Ref<NetSocket> (*_create)();
 	static Ref<NetSocket> create();
 
 	enum PollType : int32_t
@@ -71,63 +69,148 @@ public:
 
 	public:
 		_FORCE_INLINE_ Family get_family() const { return _family; }
-
 		_FORCE_INLINE_ bool is_inet() const { return _family == Family::INET; }
-
 		_FORCE_INLINE_ bool is_unix() const { return _family == Family::UNIX; }
-
 		_FORCE_INLINE_ bool is_valid() const { return is_inet() || is_unix(); }
-
 		_FORCE_INLINE_ const IPAddress& ip() const { return _ip; }
-
 		_FORCE_INLINE_ const uint16_t& port() const { return _port; }
-
 		_FORCE_INLINE_ const CharString& get_path() const { return _path; }
 
 		Address() {}
-
-		Address(const IPAddress& p_addr, uint16_t p_port) : _family(Family::INET)
-		{
-			_ip = p_addr;
-			_port = p_port;
-		}
-
+		Address(const IPAddress& p_addr, uint16_t p_port) : _family(Family::INET), _ip(p_addr), _port(p_port) {}
 		Address(const String& p_path) : _family(Family::UNIX), _path(p_path.utf8()) {}
-
 		Address(const CharString& p_path) : _family(Family::UNIX), _path(p_path) {}
 	};
 
-	virtual Error open(Family p_family, Type p_type, IP::Type& r_ip_type) = 0;
-	virtual void close() = 0;
-	virtual Error bind(Address p_addr) = 0;
-	virtual Error listen(int p_max_pending) = 0;
-	virtual Error connect_to_host(Address p_addr) = 0;
-	virtual Error poll(PollType p_type, int p_timeout) const = 0;
-	virtual Error recv(uint8_t* p_buffer, int p_len, int& r_read) = 0;
-	virtual Error recvfrom(uint8_t* p_buffer, int p_len, int& r_read, IPAddress& r_ip,
-		uint16_t& r_port, bool p_peek = false) = 0;
-	virtual Error send(const uint8_t* p_buffer, int p_len, int& r_sent) = 0;
-	virtual Error sendto(
-		const uint8_t* p_buffer, int p_len, int& r_sent, IPAddress p_ip, uint16_t p_port) = 0;
-	virtual Ref<NetSocket> accept(Address& r_addr) = 0;
+#if defined(WINDOWS_ENABLED) || (defined(UNIX_ENABLED) && !defined(UNIX_SOCKET_UNAVAILABLE))
+private:
+	enum NetError
+	{
+		ERR_NET_WOULD_BLOCK,
+		ERR_NET_IS_CONNECTED,
+		ERR_NET_IN_PROGRESS,
+		ERR_NET_ADDRESS_INVALID_OR_UNAVAILABLE,
+		ERR_NET_UNAUTHORIZED,
+		ERR_NET_BUFFER_TOO_SMALL,
+		ERR_NET_OTHER,
+	};
 
-	virtual bool is_open() const = 0;
-	virtual int get_available_bytes() const = 0;
-	virtual Error get_socket_address(Address* r_addr) const = 0;
+#if defined(WINDOWS_ENABLED)
+	uintptr_t _sock = ~(uintptr_t)0;
+	IP::Type _ip_type = IP::TYPE_NONE;
+	bool _is_stream = false;
 
-	virtual Error set_broadcasting_enabled(
-		bool p_enabled) = 0; // Returns OK if the socket option has been set successfully.
-	virtual void set_blocking_enabled(bool p_enabled) = 0;
-	virtual void set_ipv6_only_enabled(bool p_enabled) = 0;
-	virtual void set_tcp_no_delay_enabled(bool p_enabled) = 0;
-	virtual void set_reuse_address_enabled(bool p_enabled) = 0;
-	virtual Error join_multicast_group(
-		const IPAddress& p_multi_address, const String& p_if_name) = 0;
-	virtual Error leave_multicast_group(
-		const IPAddress& p_multi_address, const String& p_if_name) = 0;
+	NetError _get_socket_error() const;
+	void _set_socket(uintptr_t p_sock, IP::Type p_ip_type, bool p_is_stream);
+	_FORCE_INLINE_ Error _change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add);
+	bool _can_use_ip(const IPAddress& p_ip, const bool p_for_bind) const;
+#else
+	int _sock = -1;
+	Family _family = Family::NONE;
+	IP::Type _ip_type = IP::TYPE_NONE;
+	bool _is_stream = false;
+	CharString _unix_path;
+	bool _unlink_on_close = false;
+	bool wants_broadcast = false;
+	int multicast_groups = 0;
 
-	virtual ~NetSocket() {}
+	NetError _get_socket_error() const;
+	void _set_socket(int p_sock, IP::Type p_ip_type, bool p_is_stream);
+	_FORCE_INLINE_ Error _change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add);
+	_FORCE_INLINE_ void _set_close_exec_enabled(bool p_enabled);
+
+	bool _can_use_ip(const IPAddress& p_ip, const bool p_for_bind) const;
+	bool _can_use_path(const CharString& p_path) const;
+
+	Error _inet_open(Type p_sock_type, IP::Type& r_ip_type);
+	Error _inet_bind(IPAddress p_addr, uint16_t p_port);
+	Error _inet_connect_to_host(IPAddress p_addr, uint16_t p_port);
+	Error _inet_get_socket_address(IPAddress* r_ip, uint16_t* r_port) const;
+	Ref<NetSocket> _inet_accept(IPAddress& r_ip, uint16_t& r_port);
+
+	Error _unix_open();
+	Error _unix_bind(const CharString& p_path);
+	Error _unix_connect_to_host(const CharString& p_path);
+	Ref<NetSocket> _unix_accept();
+#endif
+
+	static Ref<NetSocket> _create_func();
+
+public:
+	static inline void (*multicast_lock_acquire_fn)() = nullptr;
+	static inline void (*multicast_lock_release_fn)() = nullptr;
+
+	static void make_default();
+	static void cleanup();
+
+	Error open(Family p_family, Type p_type, IP::Type& r_ip_type);
+	void close();
+	Error bind(Address p_addr);
+	Error listen(int p_max_pending);
+	Error connect_to_host(Address p_addr);
+	Error poll(PollType p_type, int p_timeout) const;
+	Error recv(uint8_t* p_buffer, int p_len, int& r_read);
+	Error recvfrom(uint8_t* p_buffer, int p_len, int& r_read, IPAddress& r_ip,
+		uint16_t& r_port, bool p_peek = false);
+	Error send(const uint8_t* p_buffer, int p_len, int& r_sent);
+	Error sendto(
+		const uint8_t* p_buffer, int p_len, int& r_sent, IPAddress p_ip, uint16_t p_port);
+	Ref<NetSocket> accept(Address& r_addr);
+
+	bool is_open() const;
+	int get_available_bytes() const;
+	Error get_socket_address(Address* r_addr) const;
+
+	Error set_broadcasting_enabled(bool p_enabled);
+	void set_blocking_enabled(bool p_enabled);
+	void set_ipv6_only_enabled(bool p_enabled);
+	void set_tcp_no_delay_enabled(bool p_enabled);
+	void set_reuse_address_enabled(bool p_enabled);
+	Error join_multicast_group(const IPAddress& p_multi_address, const String& p_if_name);
+	Error leave_multicast_group(const IPAddress& p_multi_address, const String& p_if_name);
+
+	NetSocket();
+	~NetSocket();
+#else
+private:
+	static Ref<NetSocket> _create_func() { return memnew(NetSocket); }
+
+public:
+	static void make_default() { _create = _create_func; }
+	static void cleanup() { _create = nullptr; }
+
+	Error open(Family p_family, Type p_type, IP::Type& r_ip_type) { return ERR_UNAVAILABLE; }
+	void close() {}
+	Error bind(Address p_addr) { return ERR_UNAVAILABLE; }
+	Error listen(int p_max_pending) { return ERR_UNAVAILABLE; }
+	Error connect_to_host(Address p_addr) { return ERR_UNAVAILABLE; }
+	Error poll(PollType p_type, int p_timeout) const { return ERR_UNAVAILABLE; }
+	Error recv(uint8_t* p_buffer, int p_len, int& r_read) { return ERR_UNAVAILABLE; }
+	Error recvfrom(uint8_t* p_buffer, int p_len, int& r_read, IPAddress& r_ip,
+		uint16_t& r_port, bool p_peek = false) { return ERR_UNAVAILABLE; }
+	Error send(const uint8_t* p_buffer, int p_len, int& r_sent) { return ERR_UNAVAILABLE; }
+	Error sendto(const uint8_t* p_buffer, int p_len, int& r_sent, IPAddress p_ip, uint16_t p_port) { return ERR_UNAVAILABLE; }
+	Ref<NetSocket> accept(Address& r_addr) { return Ref<NetSocket>(); }
+
+	bool is_open() const { return false; }
+	int get_available_bytes() const { return -1; }
+	Error get_socket_address(Address* r_addr) const { return ERR_UNAVAILABLE; }
+
+	Error set_broadcasting_enabled(bool p_enabled) { return ERR_UNAVAILABLE; }
+	void set_blocking_enabled(bool p_enabled) {}
+	void set_ipv6_only_enabled(bool p_enabled) {}
+	void set_tcp_no_delay_enabled(bool p_enabled) {}
+	void set_reuse_address_enabled(bool p_enabled) {}
+	Error join_multicast_group(const IPAddress& p_multi_address, const String& p_if_name) { return ERR_UNAVAILABLE; }
+	Error leave_multicast_group(const IPAddress& p_multi_address, const String& p_if_name) { return ERR_UNAVAILABLE; }
+
+	NetSocket() = default;
+	~NetSocket() = default;
+#endif
 };
+
+using NetSocketUnix = NetSocket;
+using NetSocketWinSock = NetSocket;
 
 class HashingContext : public RefCounted
 {
@@ -444,9 +527,10 @@ private:
 	GetResourceTypeFn get_resource_type_fn = nullptr;
 	GetExtensionsForTypeFn get_exts_for_type_fn = nullptr;
 	bool disable_uid_file = false;
+	bool is_importer = false;
 
 public:
-	ResourceFormatLoader() = default;
+	explicit ResourceFormatLoader(bool p_is_importer = false) : is_importer(p_is_importer) {}
 	ResourceFormatLoader(LoadFn p_load_fn, const char* const* p_extensions,
 		HandlesTypeFn p_handles_fn, GetResourceTypeFn p_get_type_fn,
 		bool p_disable_uid_file = false, GetExtensionsForTypeFn p_exts_for_type_fn = nullptr) :
@@ -478,13 +562,13 @@ public:
 		const String& p_path, List<String>* p_dependencies, bool p_add_types = false);
 	virtual Error rename_dependencies(const String& p_path, const HashMap<String, String>& p_map);
 
-	virtual bool is_import_valid(const String& p_path) const { return true; }
+	virtual bool is_import_valid(const String& p_path) const;
 
-	virtual bool is_imported(const String& p_path) const { return false; }
+	virtual bool is_imported(const String& p_path) const;
 
-	virtual int get_import_order(const String& p_path) const { return 0; }
+	virtual int get_import_order(const String& p_path) const;
 
-	virtual String get_import_group_file(const String& p_path) const { return ""; } // no group
+	virtual String get_import_group_file(const String& p_path) const;
 
 	virtual ~ResourceFormatLoader() = default;
 };
@@ -1643,11 +1727,6 @@ private:
 	static Error _get_path_and_type(const String& p_path, PathAndType& r_path_and_type, bool p_load,
 		bool* r_valid = nullptr);
 
-	// need them to stay in order to compute the settings hash
-	struct SortImporterByName
-	{
-		bool operator()(const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) const;
-	};
 
 	struct Data
 	{
@@ -1723,80 +1802,6 @@ public:
 	~ResourceFormatImporter() = delete;
 };
 
-class ResourceFormatImporterLoader : public ResourceFormatLoader
-{
-public:
-	virtual Ref<Resource> load(const String& p_path, const String& p_original_path = "",
-		Error* r_error = nullptr, bool p_use_sub_threads = false, float* r_progress = nullptr,
-		CacheMode p_cache_mode = CACHE_MODE_REUSE) override
-	{
-		return ResourceFormatImporter::load(
-			p_path, p_original_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
-	}
-	virtual void get_recognized_extensions(List<String>* p_extensions) const override
-	{
-		ResourceFormatImporter::get_recognized_extensions(p_extensions);
-	}
-	virtual void get_recognized_extensions_for_type(
-		const String& p_type, List<String>* p_extensions) const override
-	{
-		ResourceFormatImporter::get_recognized_extensions_for_type(p_type, p_extensions);
-	}
-	virtual bool recognize_path(
-		const String& p_path, const String& p_for_type = String()) const override
-	{
-		return ResourceFormatImporter::recognize_path(p_path, p_for_type);
-	}
-	virtual bool handles_type(const String& p_type) const override
-	{
-		return ResourceFormatImporter::handles_type(p_type);
-	}
-	virtual String get_resource_type(const String& p_path) const override
-	{
-		return ResourceFormatImporter::get_resource_type(p_path);
-	}
-	virtual String get_resource_script_class(const String& p_path) const override
-	{
-		return ResourceFormatImporter::get_resource_script_class(p_path);
-	}
-	virtual ResourceUID::ID get_resource_uid(const String& p_path) const override
-	{
-		return ResourceFormatImporter::get_resource_uid(p_path);
-	}
-	virtual bool has_custom_uid_support() const override
-	{
-		return ResourceFormatImporter::has_custom_uid_support();
-	}
-	virtual bool is_import_valid(const String& p_path) const override
-	{
-		return ResourceFormatImporter::is_import_valid(p_path);
-	}
-	virtual void get_dependencies(
-		const String& p_path, List<String>* p_dependencies, bool p_add_types = false) override
-	{
-		ResourceFormatImporter::get_dependencies(p_path, p_dependencies, p_add_types);
-	}
-	virtual bool is_imported(const String& p_path) const override
-	{
-		return ResourceFormatImporter::is_imported(p_path);
-	}
-	virtual String get_import_group_file(const String& p_path) const override
-	{
-		return ResourceFormatImporter::get_import_group_file(p_path);
-	}
-	virtual void get_classes_used(const String& p_path, HashSet<String>* r_classes) override
-	{
-		ResourceFormatImporter::get_classes_used(p_path, r_classes);
-	}
-	virtual bool exists(const String& p_path) const override
-	{
-		return ResourceFormatImporter::exists(p_path);
-	}
-	virtual int get_import_order(const String& p_path) const override
-	{
-		return ResourceFormatImporter::get_import_order(p_path);
-	}
-};
 
 class ResourceImporter : public RefCounted
 {

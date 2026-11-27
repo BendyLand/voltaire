@@ -106,7 +106,7 @@ public:
 
 // Zero-constructing IPAddress initializes field, valid, and wildcard to 0 (and thus empty).
 template <>
-struct is_zero_constructible<IPAddress> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<IPAddress> = true;
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -886,7 +886,7 @@ Vector3 Vector3::reflect(const Vector3 &p_normal) const {
 }
 
 template <>
-struct is_zero_constructible<Vector3> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Vector3> = true;
 
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
@@ -1246,9 +1246,7 @@ constexpr bool Vector3i::operator>=(const Vector3i& p_v) const
 
 void Vector3i::zero() { x = y = z = 0; }
 
-template <> struct is_zero_constructible<Vector3i> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<Vector3i> = true;
 
 struct [[nodiscard]] Plane
 {
@@ -1366,9 +1364,7 @@ constexpr bool Plane::operator!=(const Plane& p_plane) const
 	return normal != p_plane.normal || d != p_plane.d;
 }
 
-template <> struct is_zero_constructible<Plane> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<Plane> = true;
 #include "core/math/vector2.h"
 
 /**
@@ -1844,7 +1840,7 @@ AABB AABB::quantized(real_t p_unit) const {
 }
 
 template <>
-struct is_zero_constructible<AABB> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<AABB> = true;
 #include "core/typedefs.h"
 
 struct [[nodiscard]] Quaternion {
@@ -2861,7 +2857,7 @@ bool Face3::intersects_aabb2(const AABB &p_aabb) const {
 }
 
 template <>
-struct is_zero_constructible<Face3> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Face3> = true;
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
 
@@ -3268,9 +3264,7 @@ struct [[nodiscard]] Rect2
 	constexpr Rect2(const Point2& p_pos, const Size2& p_size) : position(p_pos), size(p_size) {}
 };
 
-template <> struct is_zero_constructible<Rect2> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<Rect2> = true;
 
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
@@ -3506,9 +3500,7 @@ struct [[nodiscard]] Rect2i
 	constexpr Rect2i(const Point2i& p_pos, const Size2i& p_size) : position(p_pos), size(p_size) {}
 };
 
-template <> struct is_zero_constructible<Rect2i> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<Rect2i> = true;
 #include "core/typedefs.h"
 
 #include "core/math/vector2.h"
@@ -4062,7 +4054,7 @@ constexpr Vector4 operator*(int64_t p_scalar, const Vector4 &p_vec) {
 }
 
 template <>
-struct is_zero_constructible<Vector4> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Vector4> = true;
 
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
@@ -4402,7 +4394,7 @@ void Vector4i::zero() {
 }
 
 template <>
-struct is_zero_constructible<Vector4i> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<Vector4i> = true;
 
 template <typename T>
 class Vector;
@@ -4646,9 +4638,7 @@ public:
 };
 
 // Zero-constructing NodePath initializes data to nullptr (and thus empty).
-template <> struct is_zero_constructible<NodePath> : std::true_type
-{
-};
+template <> inline constexpr bool is_zero_constructible_v<NodePath> = true;
 
 // Core Identifiers & Handles
 #include "core/math/vector2.h"

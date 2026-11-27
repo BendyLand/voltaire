@@ -98,7 +98,7 @@ void OS_Android::initialize_core() {
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
 	DirAccess::make_default<DirAccessJAndroid>(DirAccess::ACCESS_FILESYSTEM);
 
-	NetSocketAndroid::make_default();
+	NetSocket::make_default();
 }
 
 void OS_Android::initialize() {
@@ -2592,116 +2592,43 @@ JNIEnv *get_jni_env() {
 #include "servers/display/display_server.h"
 
 
-jobject NetSocketAndroid::net_utils = nullptr;
-jclass NetSocketAndroid::cls = nullptr;
-jmethodID NetSocketAndroid::_multicast_lock_acquire = nullptr;
-jmethodID NetSocketAndroid::_multicast_lock_release = nullptr;
+static jobject _android_net_utils = nullptr;
+static jclass _android_net_cls = nullptr;
+static jmethodID _android_multicast_lock_acquire = nullptr;
+static jmethodID _android_multicast_lock_release = nullptr;
 
-void NetSocketAndroid::setup(jobject p_net_utils) {
-	JNIEnv *env = get_jni_env();
-
-	net_utils = env->NewGlobalRef(p_net_utils);
-
-	jclass c = env->GetObjectClass(net_utils);
-	cls = (jclass)env->NewGlobalRef(c);
-
-	_multicast_lock_acquire = env->GetMethodID(cls, "multicastLockAcquire", "()V");
-	_multicast_lock_release = env->GetMethodID(cls, "multicastLockRelease", "()V");
+static void _net_socket_android_multicast_acquire() {
+	if (_android_multicast_lock_acquire) {
+		JNIEnv *env = get_jni_env();
+		env->CallVoidMethod(_android_net_utils, _android_multicast_lock_acquire);
+	}
 }
 
-void NetSocketAndroid::terminate() {
+static void _net_socket_android_multicast_release() {
+	if (_android_multicast_lock_release) {
+		JNIEnv *env = get_jni_env();
+		env->CallVoidMethod(_android_net_utils, _android_multicast_lock_release);
+	}
+}
+
+static void _net_socket_android_setup(jobject p_net_utils) {
+	JNIEnv *env = get_jni_env();
+	_android_net_utils = env->NewGlobalRef(p_net_utils);
+	jclass c = env->GetObjectClass(_android_net_utils);
+	_android_net_cls = (jclass)env->NewGlobalRef(c);
+	_android_multicast_lock_acquire = env->GetMethodID(_android_net_cls, "multicastLockAcquire", "()V");
+	_android_multicast_lock_release = env->GetMethodID(_android_net_cls, "multicastLockRelease", "()V");
+	NetSocket::multicast_lock_acquire_fn = _net_socket_android_multicast_acquire;
+	NetSocket::multicast_lock_release_fn = _net_socket_android_multicast_release;
+}
+
+static void _net_socket_android_terminate() {
+	NetSocket::multicast_lock_acquire_fn = nullptr;
+	NetSocket::multicast_lock_release_fn = nullptr;
 	JNIEnv *env = get_jni_env();
 	ERR_FAIL_NULL(env);
-
-	env->DeleteGlobalRef(cls);
-	env->DeleteGlobalRef(net_utils);
-}
-
-void NetSocketAndroid::multicast_lock_acquire() {
-	if (_multicast_lock_acquire) {
-		JNIEnv *env = get_jni_env();
-		env->CallVoidMethod(net_utils, _multicast_lock_acquire);
-	}
-}
-
-void NetSocketAndroid::multicast_lock_release() {
-	if (_multicast_lock_release) {
-		JNIEnv *env = get_jni_env();
-		env->CallVoidMethod(net_utils, _multicast_lock_release);
-	}
-}
-
-Ref<NetSocket> NetSocketAndroid::_create_func() {
-	return memnew(NetSocketAndroid);
-}
-
-void NetSocketAndroid::make_default() {
-	_create = _create_func;
-}
-
-NetSocketAndroid::~NetSocketAndroid() {
-	close();
-}
-
-void NetSocketAndroid::close() {
-	NetSocketUnix::close();
-	if (wants_broadcast) {
-		multicast_lock_release();
-	}
-	if (multicast_groups) {
-		multicast_lock_release();
-	}
-	wants_broadcast = false;
-	multicast_groups = 0;
-}
-
-Error NetSocketAndroid::set_broadcasting_enabled(bool p_enabled) {
-	Error err = NetSocketUnix::set_broadcasting_enabled(p_enabled);
-	if (err != OK) {
-		return err;
-	}
-
-	if (p_enabled != wants_broadcast) {
-		if (p_enabled) {
-			multicast_lock_acquire();
-		} else {
-			multicast_lock_release();
-		}
-
-		wants_broadcast = p_enabled;
-	}
-
-	return OK;
-}
-
-Error NetSocketAndroid::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	Error err = NetSocketUnix::join_multicast_group(p_multi_address, p_if_name);
-	if (err != OK) {
-		return err;
-	}
-
-	if (!multicast_groups) {
-		multicast_lock_acquire();
-	}
-	multicast_groups++;
-
-	return OK;
-}
-
-Error NetSocketAndroid::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	Error err = NetSocketUnix::leave_multicast_group(p_multi_address, p_if_name);
-	if (err != OK) {
-		return err;
-	}
-
-	ERR_FAIL_COND_V(multicast_groups == 0, ERR_BUG);
-
-	multicast_groups--;
-	if (!multicast_groups) {
-		multicast_lock_release();
-	}
-
-	return OK;
+	env->DeleteGlobalRef(_android_net_cls);
+	env->DeleteGlobalRef(_android_net_utils);
 }
 
 // === Merged from platform/android/java_class_wrapper.cpp ===
@@ -4762,7 +4689,7 @@ static void _terminate(JNIEnv *env, bool p_restart = false) {
 	FileAccessAndroid::terminate();
 	DirAccessJAndroid::terminate();
 	FileAccessFilesystemJAndroid::terminate();
-	NetSocketAndroid::terminate();
+	_net_socket_android_terminate();
 
 	cleanup_android_class_loader();
 	godot_cleanup_profiler();
@@ -4819,7 +4746,7 @@ JNIEXPORT jboolean JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv
 	FileAccessAndroid::setup(p_asset_manager);
 	DirAccessJAndroid::setup(p_directory_access_handler);
 	FileAccessFilesystemJAndroid::setup(p_file_access_handler);
-	NetSocketAndroid::setup(p_net_utils);
+	_net_socket_android_setup(p_net_utils);
 
 	OS_Android::setup(godot_java, godot_io_java, p_use_apk_expansion);
 	OS::initialize_core();
@@ -7970,7 +7897,7 @@ bool DisplayServerAndroid::check_vulkan_global_context(bool p_vulkan_requirement
 		bool fallback_to_opengl3 = GLOBAL_GET("rendering/rendering_device/fallback_to_opengl3");
 		Error err = ERR_CANT_CREATE;
 		if (p_vulkan_requirements_met) {
-			rendering_context_global = memnew(RenderingContextDriverVulkanAndroid);
+			rendering_context_global = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 			err = rendering_context_global->initialize();
 		}
 
@@ -8019,7 +7946,7 @@ void DisplayServerAndroid::reset_window() {
 
 		union {
 #ifdef VULKAN_ENABLED
-			RenderingContextDriverVulkanAndroid::WindowPlatformData vulkan;
+			RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 		} wpd;
 #ifdef VULKAN_ENABLED
@@ -8079,7 +8006,7 @@ DisplayServerAndroid::DisplayServerAndroid(const String &p_rendering_driver, Dis
 		ANativeWindow *native_window = OS_Android::get_native_window();
 		ERR_FAIL_NULL(native_window);
 
-		RenderingContextDriverVulkanAndroid::WindowPlatformData wpd;
+		RenderingContextDriverVulkan::WindowPlatformData wpd;
 		wpd.window = native_window;
 
 		if (rendering_context_global->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &wpd) != OK) {
@@ -8780,16 +8707,16 @@ KeyLocation godot_location_from_android_code(unsigned int p_code) {
 
 #include <drivers/vulkan/godot_vulkan.h>
 
-const char *RenderingContextDriverVulkanAndroid::_get_platform_surface_extension() const {
-	return VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
+const char *RenderingContextDriverVulkan::_get_platform_surface_extension() const {
+	return surface_mode == SURFACE_NONE ? nullptr : VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 }
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanAndroid::surface_create(const void *p_platform_data) {
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(const void *p_platform_data) {
 	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
 
 	VkAndroidSurfaceCreateInfoKHR create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
-	create_info.window = wpd->window;
+	create_info.window = (ANativeWindow *)wpd->window;
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	VkResult err = vkCreateAndroidSurfaceKHR(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
@@ -8798,14 +8725,6 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanAndroid::surface_c
 	Surface *surface = memnew(Surface);
 	surface->vk_surface = vk_surface;
 	return SurfaceID(surface);
-}
-
-bool RenderingContextDriverVulkanAndroid::_use_validation_layers() const {
-	TightLocalVector<const char *> layer_names;
-	Error err = _find_validation_layers(layer_names);
-
-	// On Android, we use validation layers automatically if they were explicitly linked with the app.
-	return (err == OK) && !layer_names.is_empty();
 }
 
 #endif // VULKAN_ENABLED

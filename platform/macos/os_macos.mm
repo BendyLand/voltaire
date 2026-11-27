@@ -214,9 +214,9 @@ void OS_MacOS::wait_for_debugger(uint32_t p_msec) {
 void OS_MacOS::initialize_core() {
 	OS_Unix::initialize_core();
 
-	DirAccess::make_default<DirAccessMacOS>(DirAccess::ACCESS_RESOURCES);
-	DirAccess::make_default<DirAccessMacOS>(DirAccess::ACCESS_USERDATA);
-	DirAccess::make_default<DirAccessMacOS>(DirAccess::ACCESS_FILESYSTEM);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
 }
 
 void OS_MacOS::finalize() {
@@ -1767,7 +1767,7 @@ void CrashHandler::initialize() {
 
 #include <cerrno>
 
-String DirAccessMacOS::get_filesystem_type() const {
+String DirAccessUnix::get_filesystem_type() const {
 	struct statfs fs;
 	if (statfs(current_dir.utf8().get_data(), &fs) != 0) {
 		return "";
@@ -1775,7 +1775,7 @@ String DirAccessMacOS::get_filesystem_type() const {
 	return String::utf8(fs.f_fstypename).to_upper();
 }
 
-String DirAccessMacOS::fix_unicode_name(const char *p_name) const {
+String DirAccessUnix::fix_unicode_name(const char *p_name) const {
 	String fname;
 	if (p_name != nullptr) {
 		NSString *nsstr = [[NSString stringWithUTF8String:p_name] precomposedStringWithCanonicalMapping];
@@ -1785,14 +1785,14 @@ String DirAccessMacOS::fix_unicode_name(const char *p_name) const {
 	return fname;
 }
 
-int DirAccessMacOS::get_drive_count() {
+int DirAccessUnix::get_drive_count() {
 	NSArray *res_keys = [NSArray arrayWithObjects:NSURLVolumeURLKey, NSURLIsSystemImmutableKey, nil];
 	NSArray *vols = [[NSFileManager defaultManager] mountedVolumeURLsIncludingResourceValuesForKeys:res_keys options:NSVolumeEnumerationSkipHiddenVolumes];
 
 	return [vols count];
 }
 
-String DirAccessMacOS::get_drive(int p_drive) {
+String DirAccessUnix::get_drive(int p_drive) {
 	NSArray *res_keys = [NSArray arrayWithObjects:NSURLVolumeURLKey, NSURLIsSystemImmutableKey, nil];
 	NSArray *vols = [[NSFileManager defaultManager] mountedVolumeURLsIncludingResourceValuesForKeys:res_keys options:NSVolumeEnumerationSkipHiddenVolumes];
 	int count = [vols count];
@@ -1807,17 +1807,17 @@ String DirAccessMacOS::get_drive(int p_drive) {
 	return volname;
 }
 
-bool DirAccessMacOS::is_hidden(const String &p_name) {
+bool DirAccessUnix::is_hidden(const String &p_name) {
 	String f = get_current_dir().path_join(p_name);
 	NSURL *url = [NSURL fileURLWithPath:@(f.utf8().get_data())];
 	NSNumber *hidden = nil;
 	if (![url getResourceValue:&hidden forKey:NSURLIsHiddenKey error:nil]) {
-		return DirAccessUnix::is_hidden(p_name);
+		return p_name != "." && p_name != ".." && p_name.begins_with(".");
 	}
 	return [hidden boolValue];
 }
 
-bool DirAccessMacOS::is_case_sensitive(const String &p_path) const {
+bool DirAccessUnix::is_case_sensitive(const String &p_path) const {
 	String f = p_path;
 	if (!f.is_absolute_path()) {
 		f = get_current_dir().path_join(f);
@@ -1832,7 +1832,7 @@ bool DirAccessMacOS::is_case_sensitive(const String &p_path) const {
 	return [cs boolValue];
 }
 
-bool DirAccessMacOS::is_bundle(const String &p_file) const {
+bool DirAccessUnix::is_bundle(const String &p_file) const {
 	String f = p_file;
 	if (!f.is_absolute_path()) {
 		f = get_current_dir().path_join(f);
@@ -2705,7 +2705,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 		if (rendering_context) {
 			union {
 #ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanMacOS::WindowPlatformData vulkan;
+				RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 #ifdef METAL_ENABLED
 				RenderingContextDriverMetal::WindowPlatformData metal;
@@ -2713,7 +2713,7 @@ DisplayServerEnums::WindowID DisplayServerMacOS::_create_window(DisplayServerEnu
 			} wpd;
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
-				wpd.vulkan.layer_ptr = (CAMetalLayer *const *)&layer;
+				wpd.vulkan.layer_ptr = (void *const *)&layer;
 			}
 #endif
 #ifdef METAL_ENABLED
@@ -6394,7 +6394,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 	}
 #endif
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanMacOS);
+		rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 	}
 #endif
 #if defined(METAL_ENABLED)
@@ -8991,17 +8991,11 @@ DisplayServerMacOSBase::~DisplayServerMacOSBase() {
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
 
-struct HashMapHasherKeys {
-	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
-	static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
-	static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
-};
-
 HashSet<unsigned int> numpad_keys;
-HashMap<unsigned int, Key, HashMapHasherKeys> keysym_map;
-HashMap<Key, unsigned int, HashMapHasherKeys> keysym_map_inv;
-HashMap<Key, char32_t, HashMapHasherKeys> keycode_map;
-HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+HashMap<unsigned int, Key> keysym_map;
+HashMap<Key, unsigned int> keysym_map_inv;
+HashMap<Key, char32_t> keycode_map;
+HashMap<unsigned int, KeyLocation> location_map;
 
 void KeyMappingMacOS::initialize() {
 	numpad_keys.insert(0x41); //kVK_ANSI_KeypadDecimal
@@ -11512,16 +11506,16 @@ NativeMenuMacOS::~NativeMenuMacOS() {
 #include <vulkan/vulkan_metal.h>
 #endif
 
-const char *RenderingContextDriverVulkanMacOS::_get_platform_surface_extension() const {
-	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+const char *RenderingContextDriverVulkan::_get_platform_surface_extension() const {
+	return surface_mode == SURFACE_NONE ? nullptr : VK_EXT_METAL_SURFACE_EXTENSION_NAME;
 }
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanMacOS::surface_create(const void *p_platform_data) {
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(const void *p_platform_data) {
 	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
 
 	VkMetalSurfaceCreateInfoEXT create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-	create_info.pLayer = *wpd->layer_ptr;
+	create_info.pLayer = (CAMetalLayer *)*wpd->layer_ptr;
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
@@ -11530,14 +11524,6 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanMacOS::surface_cre
 	Surface *surface = memnew(Surface);
 	surface->vk_surface = vk_surface;
 	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanMacOS::RenderingContextDriverVulkanMacOS() {
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanMacOS::~RenderingContextDriverVulkanMacOS() {
-	// Does nothing.
 }
 
 #endif // VULKAN_ENABLED
@@ -11933,7 +11919,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 	}
 #endif
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanMacOS);
+		rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 	}
 #endif
 #if defined(METAL_ENABLED)
@@ -11999,7 +11985,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 
 		union {
 #ifdef VULKAN_ENABLED
-			RenderingContextDriverVulkanMacOS::WindowPlatformData vulkan;
+			RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 #ifdef METAL_ENABLED
 			RenderingContextDriverMetal::WindowPlatformData metal;
@@ -12007,7 +11993,7 @@ DisplayServerMacOSEmbedded::DisplayServerMacOSEmbedded(const String &p_rendering
 		} wpd;
 #ifdef VULKAN_ENABLED
 		if (rendering_driver == "vulkan") {
-			wpd.vulkan.layer_ptr = (CAMetalLayer *const *)&layer;
+			wpd.vulkan.layer_ptr = (void *const *)&layer;
 		}
 #endif
 #ifdef METAL_ENABLED

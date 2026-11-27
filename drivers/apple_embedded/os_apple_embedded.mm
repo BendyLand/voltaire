@@ -2269,7 +2269,7 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 
 	union {
 #ifdef VULKAN_ENABLED
-		RenderingContextDriverVulkanAppleEmbedded::WindowPlatformData vulkan;
+		RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 #ifdef METAL_ENABLED
 		GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wunguarded-availability")
@@ -2285,8 +2285,8 @@ DisplayServerAppleEmbedded::DisplayServerAppleEmbedded(const String &p_rendering
 		if (!layer) {
 			ERR_FAIL_MSG("Failed to create iOS Vulkan rendering layer.");
 		}
-		wpd.vulkan.layer_ptr = (CAMetalLayer *const *)&layer;
-		rendering_context = memnew(RenderingContextDriverVulkanAppleEmbedded);
+		wpd.vulkan.layer_ptr = (void *const *)&layer;
+		rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 	}
 #endif
 #ifdef METAL_ENABLED
@@ -4342,13 +4342,8 @@ static const float earth_gravity = 9.80665;
 
 #include "core/io/ip.h"
 
-struct HashMapHasherKeys {
-	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
-	static _FORCE_INLINE_ uint32_t hash(const CFIndex p_key) { return hash_fmix32(p_key); }
-};
-
-HashMap<CFIndex, Key, HashMapHasherKeys> keyusage_map;
-HashMap<CFIndex, KeyLocation, HashMapHasherKeys> location_map;
+HashMap<CFIndex, Key> keyusage_map;
+HashMap<CFIndex, KeyLocation> location_map;
 
 void KeyMappingAppleEmbedded::initialize() {
 	if (@available(iOS 13.4, *)) {
@@ -4554,16 +4549,16 @@ KeyLocation KeyMappingAppleEmbedded::key_location(CFIndex p_keycode) {
 #include <vulkan/vulkan_metal.h>
 #endif
 
-const char *RenderingContextDriverVulkanAppleEmbedded::_get_platform_surface_extension() const {
-	return VK_EXT_METAL_SURFACE_EXTENSION_NAME;
+const char *RenderingContextDriverVulkan::_get_platform_surface_extension() const {
+	return surface_mode == SURFACE_NONE ? nullptr : VK_EXT_METAL_SURFACE_EXTENSION_NAME;
 }
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanAppleEmbedded::surface_create(const void *p_platform_data) {
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(const void *p_platform_data) {
 	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
 
 	VkMetalSurfaceCreateInfoEXT create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-	create_info.pLayer = *wpd->layer_ptr;
+	create_info.pLayer = (CAMetalLayer *)*wpd->layer_ptr;
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	VkResult err = vkCreateMetalSurfaceEXT(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
@@ -4572,14 +4567,6 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanAppleEmbedded::sur
 	Surface *surface = memnew(Surface);
 	surface->vk_surface = vk_surface;
 	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanAppleEmbedded::RenderingContextDriverVulkanAppleEmbedded() {
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanAppleEmbedded::~RenderingContextDriverVulkanAppleEmbedded() {
-	// Does nothing.
 }
 
 #endif // VULKAN_ENABLED

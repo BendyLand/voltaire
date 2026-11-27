@@ -44,7 +44,7 @@
 
 static Ref<ResourceFormatSaverBinary> resource_saver_binary;
 static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
-static Ref<ResourceFormatImporterLoader> resource_format_importer;
+static Ref<ResourceFormatLoader> resource_format_importer;
 static Ref<ResourceFormatSaver> resource_format_importer_saver;
 static Ref<ResourceFormatLoader> resource_format_image;
 static Ref<ResourceFormatLoader> resource_format_po;
@@ -105,7 +105,7 @@ void register_core_types()
 	ResourceLoader::add_resource_format_loader(resource_loader_binary);
 
 	ResourceFormatImporter::initialize();
-	resource_format_importer.instantiate();
+	resource_format_importer.instantiate(true);
 	ResourceLoader::add_resource_format_loader(resource_format_importer);
 
 	resource_format_importer_saver = Ref<ResourceFormatSaver>(memnew(ResourceFormatSaver(nullptr, nullptr, nullptr, _importer_saver_set_uid)));
@@ -11177,24 +11177,11 @@ int TriangleMesh::_create_bvh(
 
 	int li = aabb.get_longest_axis_index();
 
-	switch (li) {
-	case Vector3::AXIS_X: {
-		SortArray<BVH*, BVHCmpX> sort_x;
-		sort_x.nth_element(0, p_size, p_size / 2, &p_bb[p_from]);
-		// sort_x.sort(&p_bb[p_from],p_size);
-	} break;
-	case Vector3::AXIS_Y: {
-		SortArray<BVH*, BVHCmpY> sort_y;
-		sort_y.nth_element(0, p_size, p_size / 2, &p_bb[p_from]);
-		// sort_y.sort(&p_bb[p_from],p_size);
-	} break;
-	case Vector3::AXIS_Z: {
-		SortArray<BVH*, BVHCmpZ> sort_z;
-		sort_z.nth_element(0, p_size, p_size / 2, &p_bb[p_from]);
-		// sort_z.sort(&p_bb[p_from],p_size);
-
-	} break;
-	}
+	auto bvh_cmp = [li](const BVH* p_left, const BVH* p_right) {
+		return p_left->center[li] < p_right->center[li];
+	};
+	SortArray<BVH*, decltype(bvh_cmp)> sorter{ bvh_cmp };
+	sorter.nth_element(0, p_size, p_size / 2, &p_bb[p_from]);
 
 	int left = _create_bvh(p_bvh, p_bb, p_from, p_size / 2, p_depth + 1, r_max_depth, r_max_alloc);
 	int right = _create_bvh(p_bvh, p_bb, p_from + p_size / 2, p_size - p_size / 2, p_depth + 1,
@@ -34362,6 +34349,9 @@ int ResourceLoader::loader_count = 0;
 
 bool ResourceFormatLoader::recognize_path(const String& p_path, const String& p_for_type) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::recognize_path(p_path, p_for_type);
+	}
 	List<String> extensions;
 	if (p_for_type.is_empty()) {
 		get_recognized_extensions(&extensions);
@@ -34382,6 +34372,10 @@ bool ResourceFormatLoader::recognize_path(const String& p_path, const String& p_
 
 void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<String>* r_classes)
 {
+	if (is_importer) {
+		ResourceFormatImporter::get_classes_used(p_path, r_classes);
+		return;
+	}
 	Vector<String> ret;
 	for (int i = 0; i < ret.size(); i++) {
 		r_classes->insert(ret[i]);
@@ -34395,6 +34389,9 @@ void ResourceFormatLoader::get_classes_used(const String& p_path, HashSet<String
 
 ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String& p_path) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::get_resource_uid(p_path);
+	}
 	if (disable_uid_file) {
 		return ResourceUID::INVALID_ID;
 	}
@@ -34409,6 +34406,10 @@ ResourceUID::ID ResourceFormatLoader::get_resource_uid(const String& p_path) con
 void ResourceFormatLoader::get_recognized_extensions_for_type(
 	const String& p_type, List<String>* p_extensions) const
 {
+	if (is_importer) {
+		ResourceFormatImporter::get_recognized_extensions_for_type(p_type, p_extensions);
+		return;
+	}
 	if (get_exts_for_type_fn) {
 		get_exts_for_type_fn(p_type, p_extensions);
 		return;
@@ -34428,11 +34429,18 @@ void ResourceLoader::get_recognized_extensions_for_type(
 
 bool ResourceFormatLoader::exists(const String& p_path) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::exists(p_path);
+	}
 	return FileAccess::exists(p_path); // By default just check file.
 }
 
 void ResourceFormatLoader::get_recognized_extensions(List<String>* p_extensions) const
 {
+	if (is_importer) {
+		ResourceFormatImporter::get_recognized_extensions(p_extensions);
+		return;
+	}
 	if (extensions) {
 		for (const char* const* ext = extensions; *ext != nullptr; ++ext) {
 			p_extensions->push_back(*ext);
@@ -34449,6 +34457,10 @@ Error ResourceFormatLoader::rename_dependencies(
 void ResourceFormatLoader::get_dependencies(
 	const String& p_path, List<String>* p_dependencies, bool p_add_types)
 {
+	if (is_importer) {
+		ResourceFormatImporter::get_dependencies(p_path, p_dependencies, p_add_types);
+		return;
+	}
 	PackedStringArray deps;
 	const String* r = deps.ptr();
 	for (int i = 0; i < deps.size(); ++i) {
@@ -35506,20 +35518,52 @@ ResourceLoaderImport ResourceLoader::import = nullptr;
 
 bool ResourceFormatLoader::handles_type(const String& p_type) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::handles_type(p_type);
+	}
 	return handles_type_fn ? handles_type_fn(p_type) : false;
 }
 
 String ResourceFormatLoader::get_resource_type(const String& p_path) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::get_resource_type(p_path);
+	}
 	return get_resource_type_fn ? get_resource_type_fn(p_path) : String();
 }
 
 String ResourceFormatLoader::get_resource_script_class(const String& p_path) const
 {
+	if (is_importer) {
+		return ResourceFormatImporter::get_resource_script_class(p_path);
+	}
 	return String();
 }
 
-bool ResourceFormatLoader::has_custom_uid_support() const { return disable_uid_file; }
+bool ResourceFormatLoader::has_custom_uid_support() const
+{
+	return is_importer ? ResourceFormatImporter::has_custom_uid_support() : disable_uid_file;
+}
+
+bool ResourceFormatLoader::is_import_valid(const String& p_path) const
+{
+	return is_importer ? ResourceFormatImporter::is_import_valid(p_path) : true;
+}
+
+bool ResourceFormatLoader::is_imported(const String& p_path) const
+{
+	return is_importer ? ResourceFormatImporter::is_imported(p_path) : false;
+}
+
+int ResourceFormatLoader::get_import_order(const String& p_path) const
+{
+	return is_importer ? ResourceFormatImporter::get_import_order(p_path) : 0;
+}
+
+String ResourceFormatLoader::get_import_group_file(const String& p_path) const
+{
+	return is_importer ? ResourceFormatImporter::get_import_group_file(p_path) : "";
+}
 
 void ResourceLoader::_run_load_task(void* p_userdata) {}
 
@@ -35529,6 +35573,10 @@ Ref<Resource> ResourceFormatLoader::load(const String& p_path, const String& p_o
 	Error* r_error, bool p_use_sub_threads, float* r_progress,
 	CacheMode p_cache_mode)
 {
+	if (is_importer) {
+		return ResourceFormatImporter::load(
+			p_path, p_original_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
+	}
 	if (load_fn) {
 		return load_fn(p_path, p_original_path, r_error, p_use_sub_threads, r_progress, p_cache_mode);
 	}
@@ -38198,11 +38246,6 @@ void ResourceFormatSaverBinary::get_recognized_extensions(
 	}
 }
 
-bool ResourceFormatImporter::SortImporterByName::operator()(
-	const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) const
-{
-	return p_a->get_importer_name() < p_b->get_importer_name();
-}
 
 Error ResourceFormatImporter::_get_path_and_type(
 	const String& p_path, PathAndType& r_path_and_type, bool p_load, bool* r_valid)
@@ -38650,7 +38693,10 @@ String ResourceFormatImporter::get_import_settings_hash()
 {
 	Vector<Ref<ResourceImporter>> sorted_importers = data->importers;
 
-	sorted_importers.sort_custom<SortImporterByName>();
+	auto cmp = [](const Ref<ResourceImporter>& p_a, const Ref<ResourceImporter>& p_b) {
+		return p_a->get_importer_name() < p_b->get_importer_name();
+	};
+	sorted_importers.sort_custom<decltype(cmp)>(cmp);
 
 	String hash;
 	for (int i = 0; i < sorted_importers.size(); i++) {
@@ -61708,90 +61754,6 @@ public:
 	Error load_xml(const uint8_t* p_data, int64_t p_size);
 };
 
-#ifndef DISABLE_DEPRECATED
-
-struct SourceLine {
-	String line;
-	bool is_comment;
-};
-
-class RegEx;
-template <typename T>
-class Ref;
-
-class ProjectConverter3To4 {
-	class RegExContainer;
-
-	uint64_t maximum_file_size;
-	uint64_t maximum_line_length;
-
-	void fix_tool_declaration(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	void fix_pause_mode(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-
-	void rename_colors(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	void convert_hexadecimal_colors(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_colors(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void rename_classes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_classes(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void rename_gdscript_functions(Vector<SourceLine> &source_lines, const RegExContainer &reg_container, bool builtin);
-	Vector<String> check_for_rename_gdscript_functions(Vector<String> &lines, const RegExContainer &reg_container, bool builtin);
-	void process_gdscript_line(String &line, const RegExContainer &reg_container, bool builtin);
-
-	void rename_csharp_functions(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_csharp_functions(Vector<String> &lines, const RegExContainer &reg_container);
-	void process_csharp_line(String &line, const RegExContainer &reg_container);
-
-	void rename_csharp_attributes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_csharp_attributes(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void rename_gdscript_keywords(Vector<SourceLine> &r_source_lines, const RegExContainer &p_reg_container, bool p_builtin);
-	Vector<String> check_for_rename_gdscript_keywords(Vector<String> &r_lines, const RegExContainer &p_reg_container, bool p_builtin);
-
-	void rename_input_map_scancode(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_input_map_scancode(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void rename_joypad_buttons_and_axes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_joypad_buttons_and_axes(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void rename_animation_suffixes(Vector<SourceLine> &source_lines, const RegExContainer &reg_container);
-	Vector<String> check_for_rename_animation_suffixes(Vector<String> &lines, const RegExContainer &reg_container);
-
-	void custom_rename(Vector<SourceLine> &source_lines, const String &from, const String &to);
-	Vector<String> check_for_custom_rename(Vector<String> &lines, const String &from, const String &to);
-
-	void rename_common(const char *array[][2], LocalVector<Ref<RegEx>> &cached_regexes, Vector<SourceLine> &source_lines);
-	Vector<String> check_for_rename_common(const char *array[][2], LocalVector<Ref<RegEx>> &cached_regexes, Vector<String> &lines);
-
-	Vector<String> check_for_files();
-
-	Vector<String> parse_arguments(const String &line);
-	int get_end_parenthesis(const String &line) const;
-	String connect_arguments(const Vector<String> &line, int from, int to = -1) const;
-	String get_starting_space(const String &line) const;
-	String get_object_of_execution(const String &line) const;
-	bool contains_function_call(const String &line, const String &function) const;
-
-	String line_formatter(int current_line, String from, String to, String line);
-	String simple_line_formatter(int current_line, String old_line, String line);
-	String collect_string_from_vector(Vector<SourceLine> &vector);
-	Vector<SourceLine> split_lines(const String &text);
-
-	bool test_single_array(const char *array[][2], bool ignore_second_check = false);
-	bool test_conversion_gdscript_builtin(const String &name, const String &expected, void (ProjectConverter3To4::*func)(Vector<SourceLine> &, const RegExContainer &, bool), const String &what, const RegExContainer &reg_container, bool builtin);
-	bool test_conversion_with_regex(const String &name, const String &expected, void (ProjectConverter3To4::*func)(Vector<SourceLine> &, const RegExContainer &), const String &what, const RegExContainer &reg_container);
-	bool test_conversion_basic(const String &name, const String &expected, const char *array[][2], LocalVector<Ref<RegEx>> &regex_cache, const String &what);
-	bool test_array_names();
-	bool test_conversion(RegExContainer &reg_container);
-
-public:
-	ProjectConverter3To4(int, int);
-	bool validate_conversion();
-	bool convert();
-};
-
-#endif // DISABLE_DEPRECATED
 
 class ProjectManager
 {
@@ -62068,10 +62030,6 @@ static bool auto_build_solutions = false;
 static String debug_server_uri;
 static bool wait_for_import = false;
 static bool restore_editor_window_layout = true;
-#ifndef DISABLE_DEPRECATED
-static int converter_max_kb_file = 4 * 1024; // 4MB
-static int converter_max_line_length = 100000;
-#endif // DISABLE_DEPRECATED
 
 HashMap<Main::CLIScope, Vector<String>> forwardable_cli_arguments;
 #endif
@@ -62732,7 +62690,7 @@ Error Main::test_setup()
 	TextServerManager::initialize();
 
 	if (TextServerManager::is_initialized()) {
-		Ref<TextServerDummy> ts;
+		Ref<TextServer> ts;
 		ts.instantiate();
 		TextServerManager::add_interface(ts);
 	}
@@ -63713,37 +63671,9 @@ Error Main::setup(const char* execpath, int argc, char* argv[], bool p_second_ph
 				"--export-debug / --export-pack options.\nSee the --help output for details.\n");
 			goto error;
 		}
-		else if (arg == "--convert-3to4") {
-			// Actually handling is done in start().
+		else if (arg == "--convert-3to4" || arg == "--validate-conversion-3to4") {
 			cmdline_tool = true;
 			main_args.push_back(arg);
-
-			if (N && !N->get().begins_with("-")) {
-				if (itos(N->get().to_int()) == N->get()) {
-					converter_max_kb_file = N->get().to_int();
-				}
-				if (N->next() && !N->next()->get().begins_with("-")) {
-					if (itos(N->next()->get().to_int()) == N->next()->get()) {
-						converter_max_line_length = N->next()->get().to_int();
-					}
-				}
-			}
-		}
-		else if (arg == "--validate-conversion-3to4") {
-			// Actually handling is done in start().
-			cmdline_tool = true;
-			main_args.push_back(arg);
-
-			if (N && !N->get().begins_with("-")) {
-				if (itos(N->get().to_int()) == N->get()) {
-					converter_max_kb_file = N->get().to_int();
-				}
-				if (N->next() && !N->next()->get().begins_with("-")) {
-					if (itos(N->next()->get().to_int()) == N->next()->get()) {
-						converter_max_line_length = N->next()->get().to_int();
-					}
-				}
-			}
 #endif // DISABLE_DEPRECATED
 		}
 		else if (arg == "--doctool") {
@@ -64845,7 +64775,7 @@ Error Main::setup2(bool p_show_boot_logo)
 
 	TextServerManager::initialize();
 	if (TextServerManager::is_initialized()) {
-		Ref<TextServerDummy> ts;
+		Ref<TextServer> ts;
 		ts.instantiate();
 		TextServerManager::add_interface(ts);
 	}
@@ -65718,14 +65648,8 @@ int Main::start()
 	}
 
 #ifndef DISABLE_DEPRECATED
-	if (converting_project) {
-		int ret = ProjectConverter3To4(converter_max_kb_file, converter_max_line_length).convert();
-		return ret ? EXIT_SUCCESS : EXIT_FAILURE;
-	}
-	if (validating_converting_project) {
-		bool ret = ProjectConverter3To4(converter_max_kb_file, converter_max_line_length)
-					   .validate_conversion();
-		return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+	if (converting_project || validating_converting_project) {
+		return EXIT_FAILURE;
 	}
 #endif // DISABLE_DEPRECATED
 
@@ -70362,3198 +70286,6 @@ Error DocTools::save_classes(const String& p_default_path,
 	return OK;
 }
 
-#ifndef DISABLE_DEPRECATED
-
-#include "core/templates/list.h"
-#include "editor/project_upgrade/renames_map_3_to_4.h"
-
-// Find "OS.set_property(x)", capturing x into $1.
-static String make_regex_gds_os_property_set(const String& name_set)
-{
-	return String("\\bOS\\.") + name_set + "\\s*\\((.*)\\)";
-}
-
-// Find "OS.property = x", capturing x into $1 or $2.
-static String make_regex_gds_os_property_assign(const String& name)
-{
-	return String("\\bOS\\.") + name + "\\s*=\\s*([^#]+)";
-}
-
-// Find "OS.property" OR "OS.get_property()" / "OS.is_property()".
-static String make_regex_gds_os_property_get(const String& name, const String& get)
-{
-	return String("\\bOS\\.(") + get + "_)?" + name + "(\\s*\\(\\s*\\))?";
-}
-
-class ProjectConverter3To4::RegExContainer
-{
-public:
-	// Custom GDScript.
-	RegEx reg_is_empty = RegEx("\\bempty\\(");
-	RegEx reg_super = RegEx("([\t ])\\.([a-zA-Z_])");
-	RegEx reg_json_to = RegEx("\\bto_json\\b");
-	RegEx reg_json_parse = RegEx("([\t ]{0,})([^\n]+)parse_json\\(([^\n]+)");
-	RegEx reg_json_non_new = RegEx("([\t ]{0,})([^\n]+)JSON\\.parse\\(([^\n]+)");
-	RegEx reg_json_print = RegEx("\\bJSON\\b\\.print\\(");
-	RegEx reg_export_simple = RegEx("export[ ]*\\(([a-zA-Z0-9_]+)\\)[ ]*var[ ]+([a-zA-Z0-9_]+)");
-	RegEx reg_export_typed =
-		RegEx("export[ ]*\\(([a-zA-Z0-9_]+)\\)[ ]*var[ ]+([a-zA-Z0-9_]+)[ ]*:[ ]*[a-zA-Z0-9_]+");
-	RegEx reg_export_inferred_type =
-		RegEx("export[ ]*\\([a-zA-Z0-9_]+\\)[ ]*var[ ]+([a-zA-Z0-9_]+)[ ]*:[ ]*=");
-	RegEx reg_export_advanced =
-		RegEx("export[ ]*\\(([^)^\n]+)\\)[ ]*var[ ]+([a-zA-Z0-9_]+)([^\n]+)");
-	RegEx reg_setget_setget = RegEx("var[ ]+([a-zA-Z0-9_]+)([^\n]+?)[ \t]*setget[ "
-									"\t]+([a-zA-Z0-9_]+)[ \t]*,[ \t]*([a-zA-Z0-9_]+)");
-	RegEx reg_setget_set =
-		RegEx("var[ ]+([a-zA-Z0-9_]+)([^\n]+?)[ \t]*setget[ \t]+([a-zA-Z0-9_]+)[ \t]*[,]*[^\n]*$");
-	RegEx reg_setget_get =
-		RegEx("var[ ]+([a-zA-Z0-9_]+)([^\n]+?)[ \t]*setget[ \t]+,[ \t]*([a-zA-Z0-9_]+)[ \t]*$");
-	RegEx reg_join = RegEx("([\\(\\)a-zA-Z0-9_]+)\\.join\\(([^\n^\\)]+)\\)");
-	RegEx reg_image_lock = RegEx("([a-zA-Z0-9_\\.]+)\\.lock\\(\\)");
-	RegEx reg_image_unlock = RegEx("([a-zA-Z0-9_\\.]+)\\.unlock\\(\\)");
-	RegEx reg_instantiate = RegEx("\\.instance\\(([^\\)]*)\\)");
-	// Simple OS properties with getters/setters.
-	RegEx reg_os_current_screen = RegEx("\\bOS\\.((set_|get_)?)current_screen\\b");
-	RegEx reg_os_min_window_size = RegEx("\\bOS\\.((set_|get_)?)min_window_size\\b");
-	RegEx reg_os_max_window_size = RegEx("\\bOS\\.((set_|get_)?)max_window_size\\b");
-	RegEx reg_os_window_position = RegEx("\\bOS\\.((set_|get_)?)window_position\\b");
-	RegEx reg_os_window_size = RegEx("\\bOS\\.((set_|get_)?)window_size\\b");
-	RegEx reg_os_getset_screen_orient = RegEx("\\bOS\\.(s|g)et_screen_orientation\\b");
-	// OS property getters/setters for non trivial replacements.
-	RegEx reg_os_set_window_resizable =
-		RegEx(make_regex_gds_os_property_set("set_window_resizable"));
-	RegEx reg_os_assign_window_resizable =
-		RegEx(make_regex_gds_os_property_assign("window_resizable"));
-	RegEx reg_os_is_window_resizable =
-		RegEx(make_regex_gds_os_property_get("window_resizable", "is"));
-	RegEx reg_os_set_fullscreen = RegEx(make_regex_gds_os_property_set("set_window_fullscreen"));
-	RegEx reg_os_assign_fullscreen = RegEx(make_regex_gds_os_property_assign("window_fullscreen"));
-	RegEx reg_os_is_fullscreen = RegEx(make_regex_gds_os_property_get("window_fullscreen", "is"));
-	RegEx reg_os_set_maximized = RegEx(make_regex_gds_os_property_set("set_window_maximized"));
-	RegEx reg_os_assign_maximized = RegEx(make_regex_gds_os_property_assign("window_maximized"));
-	RegEx reg_os_is_maximized = RegEx(make_regex_gds_os_property_get("window_maximized", "is"));
-	RegEx reg_os_set_minimized = RegEx(make_regex_gds_os_property_set("set_window_minimized"));
-	RegEx reg_os_assign_minimized = RegEx(make_regex_gds_os_property_assign("window_minimized"));
-	RegEx reg_os_is_minimized = RegEx(make_regex_gds_os_property_get("window_minimized", "is"));
-	RegEx reg_os_set_vsync = RegEx(make_regex_gds_os_property_set("set_use_vsync"));
-	RegEx reg_os_assign_vsync = RegEx(make_regex_gds_os_property_assign("vsync_enabled"));
-	RegEx reg_os_is_vsync = RegEx(make_regex_gds_os_property_get("vsync_enabled", "is"));
-	// OS properties specific cases & specific replacements.
-	RegEx reg_os_assign_screen_orient =
-		RegEx("^(\\s*)OS\\.screen_orientation\\s*=\\s*([^#]+)"); // $1 - indent, $2 - value
-	RegEx reg_os_set_always_on_top =
-		RegEx(make_regex_gds_os_property_set("set_window_always_on_top"));
-	RegEx reg_os_is_always_on_top = RegEx("\\bOS\\.is_window_always_on_top\\s*\\(.*\\)");
-	RegEx reg_os_set_borderless = RegEx(make_regex_gds_os_property_set("set_borderless_window"));
-	RegEx reg_os_get_borderless = RegEx("\\bOS\\.get_borderless_window\\s*\\(\\s*\\)");
-	RegEx reg_os_screen_orient_enum =
-		RegEx("\\bOS\\.SCREEN_ORIENTATION_(\\w+)\\b"); // $1 - constant suffix
-
-	// GDScript keywords.
-	RegEx keyword_gdscript_tool = RegEx("^tool");
-	RegEx keyword_gdscript_export_single = RegEx("^export");
-	RegEx keyword_gdscript_export_multi = RegEx("([\t]+)export\\b");
-	RegEx keyword_gdscript_onready = RegEx("^onready");
-	RegEx keyword_gdscript_remote = RegEx("^remote func");
-	RegEx keyword_gdscript_remotesync = RegEx("^remotesync func");
-	RegEx keyword_gdscript_sync = RegEx("^sync func");
-	RegEx keyword_gdscript_slave = RegEx("^slave func");
-	RegEx keyword_gdscript_puppet = RegEx("^puppet func");
-	RegEx keyword_gdscript_puppetsync = RegEx("^puppetsync func");
-	RegEx keyword_gdscript_master = RegEx("^master func");
-	RegEx keyword_gdscript_mastersync = RegEx("^mastersync func");
-
-	RegEx gdscript_comment = RegEx("^\\s*#");
-	RegEx csharp_comment = RegEx("^\\s*\\/\\/");
-
-	// CSharp keywords.
-	RegEx keyword_csharp_remote = RegEx("\\[Remote(Attribute)?(\\(\\))?\\]");
-	RegEx keyword_csharp_remotesync = RegEx("\\[(Remote)?Sync(Attribute)?(\\(\\))?\\]");
-	RegEx keyword_csharp_puppet = RegEx("\\[(Puppet|Slave)(Attribute)?(\\(\\))?\\]");
-	RegEx keyword_csharp_puppetsync = RegEx("\\[PuppetSync(Attribute)?(\\(\\))?\\]");
-	RegEx keyword_csharp_master = RegEx("\\[Master(Attribute)?(\\(\\))?\\]");
-	RegEx keyword_csharp_mastersync = RegEx("\\[MasterSync(Attribute)?(\\(\\))?\\]");
-
-	// Colors.
-	LocalVector<Ref<RegEx>> color_regexes;
-	LocalVector<String> color_renamed;
-
-	RegEx color_hexadecimal_short_constructor =
-		RegEx("Color\\(\"#?([a-fA-F0-9]{1})([a-fA-F0-9]{3})\\b");
-	RegEx color_hexadecimal_full_constructor =
-		RegEx("Color\\(\"#?([a-fA-F0-9]{2})([a-fA-F0-9]{6})\\b");
-
-	// Classes.
-	LocalVector<Ref<RegEx>> class_tscn_regexes;
-	LocalVector<Ref<RegEx>> class_gd_regexes;
-	LocalVector<Ref<RegEx>> class_shader_regexes;
-
-	// Keycode.
-	RegEx input_map_keycode = RegEx("\\b,\"((physical_)?)scancode\":(\\d+)\\b");
-
-	// Button index and joypad axis.
-	RegEx joypad_button_index =
-		RegEx("\\b,\"button_index\":(\\d+),(\"pressure\":\\d+\\.\\d+,\"pressed\":(false|true))\\b");
-	RegEx joypad_axis = RegEx("\\b,\"axis\":(\\d+)\\b");
-
-	// Index represents Godot 3's value, entry represents Godot 4 value equivalency.
-	// i.e: Button4(L1 - Godot3) -> joypad_button_mappings[4]=9 -> Button9(L1 - Godot4).
-	int joypad_button_mappings[23] = {0, 1, 2, 3, 9, 10, -1 /*L2*/, -1 /*R2*/, 7, 8, 4, 6, 11, 12,
-		13, 14, 5, 15, 16, 17, 18, 19, 20};
-	// Entries for L2 and R2 are -1 since they match to joypad axes and no longer to joypad buttons
-	// in Godot 4.
-
-	// Animation suffixes.
-	RegEx animation_suffix = RegEx("([\"'])([a-zA-Z0-9_-]+)(-(?:loop|cycle))([\"'])");
-
-	LocalVector<Ref<RegEx>> class_regexes;
-
-	RegEx class_temp_tscn = RegEx("\\bTEMP_RENAMED_CLASS.tscn\\b");
-	RegEx class_temp_gd = RegEx("\\bTEMP_RENAMED_CLASS.gd\\b");
-	RegEx class_temp_shader = RegEx("\\bTEMP_RENAMED_CLASS.shader\\b");
-
-	LocalVector<String> class_temp_tscn_renames;
-	LocalVector<String> class_temp_gd_renames;
-	LocalVector<String> class_temp_shader_renames;
-
-	// Common.
-	LocalVector<Ref<RegEx>> enum_regexes;
-	LocalVector<Ref<RegEx>> gdscript_function_regexes;
-	LocalVector<Ref<RegEx>> project_settings_regexes;
-	LocalVector<Ref<RegEx>> project_godot_regexes;
-	LocalVector<Ref<RegEx>> input_map_regexes;
-	LocalVector<Ref<RegEx>> gdscript_properties_regexes;
-	LocalVector<Ref<RegEx>> gdscript_signals_regexes;
-	LocalVector<Ref<RegEx>> shaders_regexes;
-	LocalVector<Ref<RegEx>> builtin_types_regexes;
-	LocalVector<Ref<RegEx>> theme_override_regexes;
-	LocalVector<Ref<RegEx>> csharp_function_regexes;
-	LocalVector<Ref<RegEx>> csharp_properties_regexes;
-	LocalVector<Ref<RegEx>> csharp_signal_regexes;
-
-	RegExContainer()
-	{
-		// Common.
-		{
-			// Enum.
-			for (unsigned int current_index = 0; RenamesMap3To4::enum_renames[current_index][0];
-				 current_index++) {
-				enum_regexes.push_back(memnew(
-					RegEx(String("\\b") + RenamesMap3To4::enum_renames[current_index][0] + "\\b")));
-			}
-			// GDScript functions.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::gdscript_function_renames[current_index][0]; current_index++) {
-				gdscript_function_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::gdscript_function_renames[current_index][0] + "\\b")));
-			}
-			// Project Settings in scripts.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::project_settings_renames[current_index][0]; current_index++) {
-				project_settings_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::project_settings_renames[current_index][0] + "\\b")));
-			}
-			// Project Settings in project.vltr.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::project_godot_renames[current_index][0]; current_index++) {
-				project_godot_regexes.push_back(
-					memnew(RegEx(String("\\b") +
-								 RenamesMap3To4::project_godot_renames[current_index][0] + "\\b")));
-			}
-			// Input Map.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::input_map_renames[current_index][0]; current_index++) {
-				input_map_regexes.push_back(memnew(RegEx(
-					String("\\b") + RenamesMap3To4::input_map_renames[current_index][0] + "\\b")));
-			}
-			// GDScript properties.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::gdscript_properties_renames[current_index][0]; current_index++) {
-				gdscript_properties_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::gdscript_properties_renames[current_index][0] + "\\b")));
-			}
-			// GDScript Signals.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::gdscript_signals_renames[current_index][0]; current_index++) {
-				gdscript_signals_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::gdscript_signals_renames[current_index][0] + "\\b")));
-			}
-			// Shaders.
-			for (unsigned int current_index = 0; RenamesMap3To4::shaders_renames[current_index][0];
-				 current_index++) {
-				shaders_regexes.push_back(memnew(RegEx(
-					String("\\b") + RenamesMap3To4::shaders_renames[current_index][0] + "\\b")));
-			}
-			// Builtin types.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::builtin_types_renames[current_index][0]; current_index++) {
-				builtin_types_regexes.push_back(
-					memnew(RegEx(String("\\b") +
-								 RenamesMap3To4::builtin_types_renames[current_index][0] + "\\b")));
-			}
-			// Theme overrides.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::theme_override_renames[current_index][0]; current_index++) {
-				theme_override_regexes.push_back(memnew(
-					RegEx(String("\\b") + RenamesMap3To4::theme_override_renames[current_index][0] +
-						  "\\b")));
-			}
-			// CSharp function renames.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::csharp_function_renames[current_index][0]; current_index++) {
-				csharp_function_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::csharp_function_renames[current_index][0] + "\\b")));
-			}
-			// CSharp properties renames.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::csharp_properties_renames[current_index][0]; current_index++) {
-				csharp_properties_regexes.push_back(memnew(
-					RegEx(String("\\b") +
-						  RenamesMap3To4::csharp_properties_renames[current_index][0] + "\\b")));
-			}
-			// CSharp signals renames.
-			for (unsigned int current_index = 0;
-				 RenamesMap3To4::csharp_signals_renames[current_index][0]; current_index++) {
-				csharp_signal_regexes.push_back(memnew(
-					RegEx(String("\\b") + RenamesMap3To4::csharp_signals_renames[current_index][0] +
-						  "\\b")));
-			}
-		}
-
-		// Colors.
-		{
-			for (unsigned int current_index = 0; RenamesMap3To4::color_renames[current_index][0];
-				 current_index++) {
-				color_regexes.push_back(
-					memnew(RegEx(String("\\bColor.") +
-								 RenamesMap3To4::color_renames[current_index][0] + "\\b")));
-				color_renamed.push_back(
-					String("Color.") + RenamesMap3To4::color_renames[current_index][1]);
-			}
-		}
-		// Classes.
-		{
-			for (unsigned int current_index = 0; RenamesMap3To4::class_renames[current_index][0];
-				 current_index++) {
-				const String class_name = RenamesMap3To4::class_renames[current_index][0];
-				class_tscn_regexes.push_back(
-					memnew(RegEx(String("\\b") + class_name + ".tscn\\b")));
-				class_gd_regexes.push_back(memnew(RegEx(String("\\b") + class_name + ".gd\\b")));
-				class_shader_regexes.push_back(
-					memnew(RegEx(String("\\b") + class_name + ".shader\\b")));
-
-				class_regexes.push_back(memnew(RegEx(String("\\b") + class_name + "\\b")));
-
-				class_temp_tscn_renames.push_back(class_name + ".tscn");
-				class_temp_gd_renames.push_back(class_name + ".gd");
-				class_temp_shader_renames.push_back(class_name + ".shader");
-			}
-		}
-	}
-};
-
-ProjectConverter3To4::ProjectConverter3To4(int p_maximum_file_size_kb, int p_maximum_line_length)
-{
-	maximum_file_size = p_maximum_file_size_kb * 1024;
-	maximum_line_length = p_maximum_line_length;
-}
-
-// Collect files which will be checked, excluding ".txt", ".mp4", ".wav" etc. files.
-Vector<String> ProjectConverter3To4::check_for_files()
-{
-	Vector<String> collected_files = Vector<String>();
-
-	Vector<String> directories_to_check = Vector<String>();
-	directories_to_check.push_back("res://");
-
-	while (!directories_to_check.is_empty()) {
-		String path = directories_to_check.get(
-			directories_to_check.size() - 1); // Is there any pop_back function?
-		directories_to_check.resize(directories_to_check.size() - 1); // Remove last element
-
-		Ref<DirAccess> dir = DirAccess::open(path);
-		if (dir.is_valid()) {
-			dir->set_include_hidden(true);
-			dir->list_dir_begin();
-			String current_dir = dir->get_current_dir();
-			String file_name = dir->_get_next();
-
-			while (file_name != "") {
-				if (file_name == ".git" || file_name == ".godot") {
-					file_name = dir->_get_next();
-					continue;
-				}
-				if (dir->current_is_dir()) {
-					directories_to_check.append(current_dir.path_join(file_name) + "/");
-				}
-				else {
-					bool proper_extension = false;
-					if (file_name.ends_with(".gd") || file_name.ends_with(".shader") ||
-						file_name.ends_with(".gdshader") || file_name.ends_with(".tscn") ||
-						file_name.ends_with(".tres") || file_name.ends_with(".godot") ||
-						file_name.ends_with(".cs") || file_name.ends_with(".csproj") ||
-						file_name.ends_with(".import")) {
-						proper_extension = true;
-					}
-
-					if (proper_extension) {
-						collected_files.append(current_dir.path_join(file_name));
-					}
-				}
-				file_name = dir->_get_next();
-			}
-		}
-		else {
-			print_verbose("Failed to open " + path);
-		}
-	}
-	return collected_files;
-}
-
-Vector<SourceLine> ProjectConverter3To4::split_lines(const String& text)
-{
-	Vector<String> lines = text.split("\n");
-	Vector<SourceLine> source_lines;
-	for (String& line : lines) {
-		SourceLine source_line;
-		source_line.line = line;
-		source_line.is_comment = false;
-
-		source_lines.append(source_line);
-	}
-	return source_lines;
-}
-
-// Test expected results of gdscript
-bool ProjectConverter3To4::test_conversion_gdscript_builtin(const String& name,
-	const String& expected,
-	void (ProjectConverter3To4::*func)(Vector<SourceLine>&, const RegExContainer&, bool),
-	const String& what, const RegExContainer& reg_container, bool builtin_script)
-{
-	Vector<SourceLine> got = split_lines(name);
-
-	(this->*func)(got, reg_container, builtin_script);
-	String got_str = collect_string_from_vector(got);
-	ERR_FAIL_COND_V_MSG(expected != got_str, false,
-		vformat("Failed to convert %s \"%s\" to \"%s\", got instead \"%s\"", what, name, expected,
-			got_str));
-
-	return true;
-}
-
-bool ProjectConverter3To4::test_conversion_with_regex(const String& name, const String& expected,
-	void (ProjectConverter3To4::*func)(Vector<SourceLine>&, const RegExContainer&),
-	const String& what, const RegExContainer& reg_container)
-{
-	Vector<SourceLine> got = split_lines(name);
-
-	(this->*func)(got, reg_container);
-	String got_str = collect_string_from_vector(got);
-	ERR_FAIL_COND_V_MSG(expected != got_str, false,
-		vformat("Failed to convert %s \"%s\" to \"%s\", got instead \"%s\"", what, name, expected,
-			got_str));
-
-	return true;
-}
-
-bool ProjectConverter3To4::test_conversion_basic(const String& name, const String& expected,
-	const char* array[][2], LocalVector<Ref<RegEx>>& regex_cache, const String& what)
-{
-	Vector<SourceLine> got = split_lines(name);
-
-	rename_common(array, regex_cache, got);
-	String got_str = collect_string_from_vector(got);
-	ERR_FAIL_COND_V_MSG(expected != got_str, false,
-		vformat("Failed to convert %s \"%s\" to \"%s\", got instead \"%s\"", what, name, expected,
-			got_str));
-
-	return true;
-}
-
-// Validate if conversions are proper.
-bool ProjectConverter3To4::test_conversion(RegExContainer& reg_container)
-{
-	bool valid = true;
-
-	valid = valid &&
-			test_conversion_with_regex("tool", "@tool", &ProjectConverter3To4::fix_tool_declaration,
-				"gdscript keyword", reg_container);
-	valid = valid &&
-			test_conversion_with_regex("\n    tool", "\n    tool",
-				&ProjectConverter3To4::fix_tool_declaration, "gdscript keyword", reg_container);
-	valid = valid &&
-			test_conversion_with_regex("\n\ntool", "@tool\n\n",
-				&ProjectConverter3To4::fix_tool_declaration, "gdscript keyword", reg_container);
-
-	valid = valid && test_conversion_with_regex("pause_mode = 2", "pause_mode = 3",
-						 &ProjectConverter3To4::fix_pause_mode, "pause_mode", reg_container);
-	valid = valid && test_conversion_with_regex("pause_mode = 1", "pause_mode = 1",
-						 &ProjectConverter3To4::fix_pause_mode, "pause_mode", reg_container);
-	valid = valid && test_conversion_with_regex("pause_mode = 3", "pause_mode = 3",
-						 &ProjectConverter3To4::fix_pause_mode, "pause_mode", reg_container);
-	valid = valid && test_conversion_with_regex("somepause_mode = 2", "somepause_mode = 2",
-						 &ProjectConverter3To4::fix_pause_mode, "pause_mode", reg_container);
-	valid = valid && test_conversion_with_regex("pause_mode_ext = 2", "pause_mode_ext = 2",
-						 &ProjectConverter3To4::fix_pause_mode, "pause_mode", reg_container);
-
-	valid = valid && test_conversion_basic("TYPE_REAL", "TYPE_FLOAT", RenamesMap3To4::enum_renames,
-						 reg_container.enum_regexes, "enum");
-
-	valid = valid && test_conversion_basic("can_instance", "can_instantiate",
-						 RenamesMap3To4::gdscript_function_renames,
-						 reg_container.gdscript_function_regexes, "gdscript function");
-
-	valid = valid && test_conversion_basic("CanInstance", "CanInstantiate",
-						 RenamesMap3To4::csharp_function_renames,
-						 reg_container.csharp_function_regexes, "csharp function");
-
-	valid = valid && test_conversion_basic("translation", "position",
-						 RenamesMap3To4::gdscript_properties_renames,
-						 reg_container.gdscript_properties_regexes, "gdscript property");
-
-	valid = valid && test_conversion_basic("Translation", "Position",
-						 RenamesMap3To4::csharp_properties_renames,
-						 reg_container.csharp_properties_regexes, "csharp property");
-
-	valid = valid && test_conversion_basic("NORMALMAP", "NORMAL_MAP",
-						 RenamesMap3To4::shaders_renames, reg_container.shaders_regexes, "shader");
-
-	valid = valid && test_conversion_basic("text_entered", "text_submitted",
-						 RenamesMap3To4::gdscript_signals_renames,
-						 reg_container.gdscript_signals_regexes, "gdscript signal");
-
-	valid = valid && test_conversion_basic("TextEntered", "TextSubmitted",
-						 RenamesMap3To4::csharp_signals_renames,
-						 reg_container.csharp_signal_regexes, "csharp signal");
-
-	valid = valid && test_conversion_basic("audio/channel_disable_threshold_db",
-						 "audio/buses/channel_disable_threshold_db",
-						 RenamesMap3To4::project_settings_renames,
-						 reg_container.project_settings_regexes, "project setting");
-
-	valid =
-		valid &&
-		test_conversion_basic(
-			"\"device\":-1,\"alt\":false,\"shift\":false,\"control\":false,\"meta\":false,"
-			"\"doubleclick\":false,\"scancode\":0,\"physical_scancode\":16777254,\"script\":null",
-			"\"device\":-1,\"alt_pressed\":false,\"shift_pressed\":false,\"ctrl_pressed\":false,"
-			"\"meta_pressed\":false,\"double_click\":false,\"keycode\":0,\"physical_keycode\":"
-			"16777254,\"script\":null",
-			RenamesMap3To4::input_map_renames, reg_container.input_map_regexes, "input map");
-
-	valid = valid &&
-			test_conversion_basic("Transform", "Transform3D", RenamesMap3To4::builtin_types_renames,
-				reg_container.builtin_types_regexes, "builtin type");
-
-	valid = valid &&
-			test_conversion_basic("custom_constants/margin_right",
-				"theme_override_constants/margin_right", RenamesMap3To4::theme_override_renames,
-				reg_container.theme_override_regexes, "theme overrides");
-
-	// Custom Renames.
-
-	valid = valid && test_conversion_with_regex("(Connect(A,B,C,D,E,F,G) != OK):",
-						 "(Connect(A, new Callable(B, C), D, E, F, G) != OK):",
-						 &ProjectConverter3To4::rename_csharp_functions, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex(
-						 "(Disconnect(A,B,C) != OK):", "(Disconnect(A, new Callable(B, C)) != OK):",
-						 &ProjectConverter3To4::rename_csharp_functions, "custom rename csharp",
-						 reg_container);
-	valid = valid &&
-			test_conversion_with_regex(
-				"(IsConnected(A,B,C) != OK):", "(IsConnected(A, new Callable(B, C)) != OK):",
-				&ProjectConverter3To4::rename_csharp_functions, "custom rename", reg_container);
-
-	valid = valid && test_conversion_with_regex("[Remote]", "[RPC(MultiplayerAPI.RPCMode.AnyPeer)]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex("[RemoteSync]",
-						 "[RPC(MultiplayerAPI.RPCMode.AnyPeer, CallLocal = true)]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex("[Sync]",
-						 "[RPC(MultiplayerAPI.RPCMode.AnyPeer, CallLocal = true)]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex("[Slave]", "[RPC]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex("[Puppet]", "[RPC]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid = valid && test_conversion_with_regex("[PuppetSync]", "[RPC(CallLocal = true)]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-	valid =
-		valid &&
-		test_conversion_with_regex("[Master]",
-			"The master and mastersync rpc behavior is not officially supported anymore. Try using "
-			"another keyword or making custom logic using Multiplayer.GetRemoteSenderId()\n[RPC]",
-			&ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp", reg_container);
-	valid = valid && test_conversion_with_regex("[MasterSync]",
-						 "The master and mastersync rpc behavior is not officially supported "
-						 "anymore. Try using another keyword or making custom logic using "
-						 "Multiplayer.GetRemoteSenderId()\n[RPC(CallLocal = true)]",
-						 &ProjectConverter3To4::rename_csharp_attributes, "custom rename csharp",
-						 reg_container);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.window_resizable: pass",
-						 "\tif (not get_window().unresizable): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.is_window_resizable(): pass",
-						 "\tif (not get_window().unresizable): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_window_resizable(Settings.resizable)",
-					 "\tget_window().unresizable = not (Settings.resizable)",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.window_resizable = Settings.resizable",
-						 "\tget_window().unresizable = not (Settings.resizable)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.window_fullscreen: pass",
-						 "\tif ((get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN) or "
-						 "(get_window().mode == Window.MODE_FULLSCREEN)): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.is_window_fullscreen(): pass",
-						 "\tif ((get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN) or "
-						 "(get_window().mode == Window.MODE_FULLSCREEN)): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_window_fullscreen(Settings.fullscreen)",
-					 "\tget_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if "
-					 "(Settings.fullscreen) else Window.MODE_WINDOWED",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.window_fullscreen = Settings.fullscreen",
-					 "\tget_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if "
-					 "(Settings.fullscreen) else Window.MODE_WINDOWED",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.window_maximized: pass",
-						 "\tif (get_window().mode == Window.MODE_MAXIMIZED): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.is_window_maximized(): pass",
-						 "\tif (get_window().mode == Window.MODE_MAXIMIZED): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_window_maximized(Settings.maximized)",
-					 "\tget_window().mode = Window.MODE_MAXIMIZED if (Settings.maximized) else "
-					 "Window.MODE_WINDOWED",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.window_maximized = Settings.maximized",
-						 "\tget_window().mode = Window.MODE_MAXIMIZED if (Settings.maximized) else "
-						 "Window.MODE_WINDOWED",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.window_minimized: pass",
-						 "\tif (get_window().mode == Window.MODE_MINIMIZED): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.is_window_minimized(): pass",
-						 "\tif (get_window().mode == Window.MODE_MINIMIZED): pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_window_minimized(Settings.minimized)",
-					 "\tget_window().mode = Window.MODE_MINIMIZED if (Settings.minimized) else "
-					 "Window.MODE_WINDOWED",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.window_minimized = Settings.minimized",
-						 "\tget_window().mode = Window.MODE_MINIMIZED if (Settings.minimized) else "
-						 "Window.MODE_WINDOWED",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid =
-		valid &&
-		test_conversion_gdscript_builtin("\tif OS.vsync_enabled: pass",
-			"\tif (DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED): pass",
-			&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-			false);
-	valid =
-		valid &&
-		test_conversion_gdscript_builtin("\tif OS.is_vsync_enabled(): pass",
-			"\tif (DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED): pass",
-			&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-			false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.set_use_vsync(Settings.vsync)",
-						 "\tDisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if "
-						 "(Settings.vsync) else DisplayServer.VSYNC_DISABLED)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.vsync_enabled = Settings.vsync",
-						 "\tDisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if "
-						 "(Settings.vsync) else DisplayServer.VSYNC_DISABLED)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin(
-				"\tif OS.screen_orientation = OS.SCREEN_ORIENTATION_VERTICAL: pass",
-				"\tif DisplayServer.screen_get_orientation() = DisplayServer.SCREEN_VERTICAL: pass",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid =
-		valid &&
-		test_conversion_gdscript_builtin(
-			"\tif OS.get_screen_orientation() = OS.SCREEN_ORIENTATION_LANDSCAPE: pass",
-			"\tif DisplayServer.screen_get_orientation() = DisplayServer.SCREEN_LANDSCAPE: pass",
-			&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-			false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_screen_orientation(Settings.orient)",
-					 "\tDisplayServer.screen_set_orientation(Settings.orient)",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tOS.screen_orientation = Settings.orient",
-						 "\tDisplayServer.screen_set_orientation(Settings.orient)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.is_window_always_on_top(): pass",
-						 "\tif get_window().always_on_top: pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\tOS.set_window_always_on_top(Settings.alwaystop)",
-				"\tget_window().always_on_top = (Settings.alwaystop)",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-
-	valid = valid && test_conversion_gdscript_builtin("\tif OS.get_borderless_window(): pass",
-						 "\tif get_window().borderless: pass",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\tOS.set_borderless_window(Settings.borderless)",
-					 "\tget_window().borderless = (Settings.borderless)",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin(
-						 "\tvar aa = roman(r.move_and_slide( a, b, c, d, e, f )) # Roman",
-						 "\tr.set_velocity(a)\n\tr.set_up_direction(b)\n\tr.set_floor_stop_on_"
-						 "slope_enabled(c)\n\tr.set_max_slides(d)\n\tr.set_floor_max_angle(e)\n\t# "
-						 "TODOConverter3To4 infinite_inertia were removed in Godot 4 - previous "
-						 "value `f`\n\tr.move_and_slide()\n\tvar aa = roman(r.velocity) # Roman",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid &&
-		test_conversion_gdscript_builtin("\tmove_and_slide( a, b, c, d, e, f ) # Roman",
-			"\tset_velocity(a)\n\tset_up_direction(b)\n\tset_floor_stop_on_slope_enabled(c)\n\tset_"
-			"max_slides(d)\n\tset_floor_max_angle(e)\n\t# TODOConverter3To4 infinite_inertia were "
-			"removed in Godot 4 - previous value `f`\n\tmove_and_slide() # Roman",
-			&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-			false);
-	valid =
-		valid && test_conversion_gdscript_builtin(
-					 "\tvar aa = roman(r.move_and_slide_with_snap( a, g, b, c, d, e, f )) # Roman",
-					 "\tr.set_velocity(a)\n\t# TODOConverter3To4 looks that snap in Godot 4 is "
-					 "float, not vector like in Godot 3 - previous value "
-					 "`g`\n\tr.set_up_direction(b)\n\tr.set_floor_stop_on_slope_enabled(c)\n\tr."
-					 "set_max_slides(d)\n\tr.set_floor_max_angle(e)\n\t# TODOConverter3To4 "
-					 "infinite_inertia were removed in Godot 4 - previous value "
-					 "`f`\n\tr.move_and_slide()\n\tvar aa = roman(r.velocity) # Roman",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin(
-					 "\tmove_and_slide_with_snap( a, g, b, c, d, e, f ) # Roman",
-					 "\tset_velocity(a)\n\t# TODOConverter3To4 looks that snap in Godot 4 is "
-					 "float, not vector like in Godot 3 - previous value "
-					 "`g`\n\tset_up_direction(b)\n\tset_floor_stop_on_slope_enabled(c)\n\tset_max_"
-					 "slides(d)\n\tset_floor_max_angle(e)\n\t# TODOConverter3To4 infinite_inertia "
-					 "were removed in Godot 4 - previous value `f`\n\tmove_and_slide() # Roman",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("remove_and_slide(a,b,c,d,e,f)",
-				"remove_and_slide(a,b,c,d,e,f)", &ProjectConverter3To4::rename_gdscript_functions,
-				"custom rename", reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("list_dir_begin( a , b )",
-						 "list_dir_begin() # TODOConverter3To4 fill missing arguments "
-						 "https://github.com/godotengine/godot/pull/40547",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("list_dir_begin( a )",
-						 "list_dir_begin() # TODOConverter3To4 fill missing arguments "
-						 "https://github.com/godotengine/godot/pull/40547",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("list_dir_begin( )",
-						 "list_dir_begin() # TODOConverter3To4 fill missing arguments "
-						 "https://github.com/godotengine/godot/pull/40547",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("sort_custom( a , b )", "sort_custom(Callable(a, b))",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-
-	valid = valid && test_conversion_gdscript_builtin("func c(var a, var b)", "func c(a, b)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("draw_line(1, 2, 3, 4, 5)",
-						 "draw_line(1, 2, 3, 4)", &ProjectConverter3To4::rename_gdscript_functions,
-						 "custom rename", reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("\timage.lock()",
-				"\tfalse # image.lock() # TODOConverter3To4, Image no longer requires locking, "
-				"`false` helps to not break one line if/else, so it can freely be removed",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\timage.unlock()",
-				"\tfalse # image.unlock() # TODOConverter3To4, Image no longer requires locking, "
-				"`false` helps to not break one line if/else, so it can freely be removed",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\troman.image.unlock()",
-				"\tfalse # roman.image.unlock() # TODOConverter3To4, Image no longer requires "
-				"locking, `false` helps to not break one line if/else, so it can freely be removed",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid && test_conversion_gdscript_builtin("\tmtx.lock()", "\tmtx.lock()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\tmutex.unlock()", "\tmutex.unlock()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_with_regex("extends CSGBox", "extends CSGBox3D",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("CSGBox", "CSGBox3D",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("Spatial", "Node3D",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("Spatial.tscn", "Spatial.tscn",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("Spatial.gd", "Spatial.gd",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("Spatial.shader", "Spatial.shader",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-	valid = valid && test_conversion_with_regex("Spatial.other", "Node3D.other",
-						 &ProjectConverter3To4::rename_classes, "classes", reg_container);
-
-	valid = valid && test_conversion_gdscript_builtin("\nonready", "\n@onready",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("onready", "@onready",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(" onready", " onready",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\nexport", "\n@export",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\texport", "\t@export",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\texport_dialog", "\texport_dialog",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("export", "@export",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(" export", " export",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("\n\nremote func", "\n\n@rpc(\"any_peer\") func",
-					 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-					 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\n\nremote func", "\n\n@rpc(\\\"any_peer\\\") func",
-				&ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword", reg_container,
-				true);
-	valid = valid && test_conversion_gdscript_builtin("\n\nremotesync func",
-						 "\n\n@rpc(\"any_peer\", \"call_local\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\n\nremotesync func",
-						 "\n\n@rpc(\\\"any_peer\\\", \\\"call_local\\\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, true);
-	valid = valid && test_conversion_gdscript_builtin("\n\nsync func",
-						 "\n\n@rpc(\"any_peer\", \"call_local\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\n\nsync func",
-						 "\n\n@rpc(\\\"any_peer\\\", \\\"call_local\\\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, true);
-	valid = valid && test_conversion_gdscript_builtin("\n\nslave func", "\n\n@rpc func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\n\npuppet func", "\n\n@rpc func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\n\npuppetsync func", "\n\n@rpc(\"call_local\") func",
-				&ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword", reg_container,
-				false);
-	valid = valid && test_conversion_gdscript_builtin("\n\npuppetsync func",
-						 "\n\n@rpc(\\\"call_local\\\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, true);
-	valid = valid && test_conversion_gdscript_builtin("\n\nmaster func",
-						 "\n\nThe master and mastersync rpc behavior is not officially supported "
-						 "anymore. Try using another keyword or making custom logic using "
-						 "get_multiplayer().get_remote_sender_id()\n@rpc func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\n\nmastersync func",
-						 "\n\nThe master and mastersync rpc behavior is not officially supported "
-						 "anymore. Try using another keyword or making custom logic using "
-						 "get_multiplayer().get_remote_sender_id()\n@rpc(\"call_local\") func",
-						 &ProjectConverter3To4::rename_gdscript_keywords, "gdscript keyword",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin(
-						 "var size: Vector2 = Vector2() setget set_function, get_function",
-						 "var size: Vector2 = Vector2(): get = get_function, set = set_function",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("var size: Vector2 = Vector2() setget set_function, ",
-				"var size: Vector2 = Vector2(): set = set_function",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("var size: Vector2 = Vector2() setget set_function",
-				"var size: Vector2 = Vector2(): set = set_function",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("var size: Vector2 = Vector2() setget , get_function",
-				"var size: Vector2 = Vector2(): get = get_function",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-
-	valid = valid && test_conversion_gdscript_builtin("get_node(@", "get_node(",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("yield(this, \"timeout\")",
-						 "await this.timeout", &ProjectConverter3To4::rename_gdscript_functions,
-						 "custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("yield(this, \\\"timeout\\\")",
-						 "await this.timeout", &ProjectConverter3To4::rename_gdscript_functions,
-						 "custom rename", reg_container, true);
-
-	valid =
-		valid && test_conversion_gdscript_builtin(" Transform.xform(Vector3(a,b,c) + Vector3.UP) ",
-					 " Transform * (Vector3(a,b,c) + Vector3.UP) ",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin(" Transform.xform_inv(Vector3(a,b,c) + Vector3.UP) ",
-				" (Vector3(a,b,c) + Vector3.UP) * Transform ",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-
-	valid = valid && test_conversion_gdscript_builtin("export(float) var lifetime = 3.0",
-						 "export var lifetime: float = 3.0",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("export (int)var spaces=1",
-					 "export var spaces: int=1", &ProjectConverter3To4::rename_gdscript_functions,
-					 "custom rename", reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin(
-				"export(String, 'AnonymousPro', 'CourierPrime') var _font_name = 'AnonymousPro'",
-				"export var _font_name = 'AnonymousPro' # (String, 'AnonymousPro', 'CourierPrime')",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false); // TODO, this is only a workaround
-	valid = valid && test_conversion_gdscript_builtin("export(PackedScene) var mob_scene",
-						 "export var mob_scene: PackedScene",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("export(float) var lifetime: float = 3.0",
-						 "export var lifetime: float = 3.0",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("export var lifetime: float = 3.0",
-						 "export var lifetime: float = 3.0",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("export var lifetime := 3.0",
-					 "export var lifetime := 3.0", &ProjectConverter3To4::rename_gdscript_functions,
-					 "custom rename", reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("export(float) var lifetime := 3.0",
-					 "export var lifetime := 3.0", &ProjectConverter3To4::rename_gdscript_functions,
-					 "custom rename", reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("var d = parse_json(roman(sfs))",
-						 "var test_json_conv = JSON.new()\ntest_json_conv.parse(roman(sfs))\nvar d "
-						 "= test_json_conv.get_data()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("to_json( AA ) szon",
-				"JSON.new().stringify( AA ) szon", &ProjectConverter3To4::rename_gdscript_functions,
-				"custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("s to_json", "s JSON.new().stringify",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("AF to_json2", "AF to_json2",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("var rr = JSON.parse(a)",
-						 "var test_json_conv = JSON.new()\ntest_json_conv.parse(a)\nvar rr = "
-						 "test_json_conv.get_data()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("empty()", "is_empty()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(".empty", ".empty",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin(").roman(", ").roman(",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\t.roman(", "\tsuper.roman(",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(" .roman(", " super.roman(",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(".1", ".1",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(" .1", " .1",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("'.'", "'.'",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("'.a'", "'.a'",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("\t._input(_event)", "\tsuper._input(_event)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin(
-						 "(connect(A,B,C) != OK):", "(connect(A, Callable(B, C)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(
-						 "(connect(A,B,C,D) != OK):", "(connect(A, Callable(B, C).bind(D)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(connect(A,B,C,[D]) != OK):",
-						 "(connect(A, Callable(B, C).bind(D)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(connect(A,B,C,[D,E]) != OK):",
-						 "(connect(A, Callable(B, C).bind(D,E)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(connect(A,B,C,[D,E],F) != OK):",
-						 "(connect(A, Callable(B, C).bind(D,E), F) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(connect(A,B,C,D,E) != OK):",
-						 "(connect(A, Callable(B, C).bind(D), E) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid =
-		valid && test_conversion_gdscript_builtin(".connect(A,B,C)", ".connect(A, Callable(B, C))",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("abc.connect(A,B,C)", "abc.connect(A, Callable(B, C))",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("\tconnect(A,B,C)", "\tconnect(A, Callable(B, C))",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid =
-		valid && test_conversion_gdscript_builtin(" connect(A,B,C)", " connect(A, Callable(B, C))",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("_connect(A,B,C)", "_connect(A,B,C)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("do_connect(A,B,C)", "do_connect(A,B,C)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("$connect(A,B,C)", "$connect(A,B,C)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("@connect(A,B,C)", "@connect(A,B,C)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("(start(A,B) != OK):",
-				"(start(Callable(A, B)) != OK):", &ProjectConverter3To4::rename_gdscript_functions,
-				"custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("func start(A,B):", "func start(A,B):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(start(A,B,C,D,E,F,G) != OK):",
-						 "(start(Callable(A, B).bind(C), D, E, F, G) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(
-						 "disconnect(A,B,C) != OK):", "disconnect(A, Callable(B, C)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(
-						 "is_connected(A,B,C) != OK):", "is_connected(A, Callable(B, C)) != OK):",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("is_connected(A,B,C))",
-						 "is_connected(A, Callable(B, C)))",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("(tween_method(A,B,C,D,E).foo())",
-						 "(tween_method(Callable(A, B), C, D, E).foo())",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(tween_method(A,B,C,D,E,[F,G]).foo())",
-						 "(tween_method(Callable(A, B).bind(F,G), C, D, E).foo())",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(tween_callback(A,B).foo())",
-						 "(tween_callback(Callable(A, B)).foo())",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("(tween_callback(A,B,[C,D]).foo())",
-						 "(tween_callback(Callable(A, B).bind(C,D)).foo())",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("func _init(", "func _init(",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(
-						 "func _init(a,b,c).(d,e,f):", "func _init(a,b,c):\n\tsuper(d,e,f)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("func _init(a,b,c).(a.b(),c.d()):",
-						 "func _init(a,b,c):\n\tsuper(a.b(),c.d())",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("func _init(p_x:int)->void:",
-					 "func _init(p_x:int)->void:", &ProjectConverter3To4::rename_gdscript_functions,
-					 "custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("func _init(a: int).(d,e,f) -> void:",
-						 "func _init(a: int) -> void:\n\tsuper(d,e,f)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("q_PackedDataContainer._iter_init(variable1)",
-						 "q_PackedDataContainer._iter_init(variable1)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid =
-		valid && test_conversion_gdscript_builtin("create_from_image(aa, bb)",
-					 "create_from_image(aa) #,bb", &ProjectConverter3To4::rename_gdscript_functions,
-					 "custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin(
-						 "q_ImageTexture.create_from_image(variable1, variable2)",
-						 "q_ImageTexture.create_from_image(variable1) #,variable2",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("set_cell_item(a, b, c, d ,e) # AA",
-						 "set_cell_item(Vector3(a, b, c), d, e) # AA",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("set_cell_item(a, b)", "set_cell_item(a, b)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("get_cell_item_orientation(a, b,c)",
-						 "get_cell_item_orientation(Vector3i(a, b, c))",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("get_cell_item(a, b,c)",
-						 "get_cell_item(Vector3i(a, b, c))",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("map_to_world(a, b,c)",
-				"map_to_local(Vector3i(a, b, c))", &ProjectConverter3To4::rename_gdscript_functions,
-				"custom rename", reg_container, false);
-
-	valid = valid && test_conversion_gdscript_builtin("PackedStringArray(req_godot).join('.')",
-						 "'.'.join(PackedStringArray(req_godot))",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("=PackedStringArray(req_godot).join('.')",
-						 "='.'.join(PackedStringArray(req_godot))",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_gdscript_builtin("apply_force(position, impulse)",
-				"apply_force(impulse, position)", &ProjectConverter3To4::rename_gdscript_functions,
-				"custom rename", reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("apply_impulse(position, impulse)",
-						 "apply_impulse(impulse, position)",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid &&
-			test_conversion_gdscript_builtin("draw_rect(a,b,c,d,e).abc",
-				"draw_rect(a, b, c, d).abc# e) TODOConverter3To4 Antialiasing argument is missing",
-				&ProjectConverter3To4::rename_gdscript_functions, "custom rename", reg_container,
-				false);
-	valid = valid && test_conversion_gdscript_builtin("get_focus_owner()",
-						 "get_viewport().gui_get_focus_owner()",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid =
-		valid && test_conversion_gdscript_builtin("button.pressed = 1", "button.button_pressed = 1",
-					 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-					 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("button.pressed=1", "button.button_pressed=1",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-	valid = valid && test_conversion_gdscript_builtin("button.pressed SF", "button.pressed SF",
-						 &ProjectConverter3To4::rename_gdscript_functions, "custom rename",
-						 reg_container, false);
-
-	valid = valid &&
-			test_conversion_with_regex("Color(\"#f47d\")", "Color(\"#47df\")",
-				&ProjectConverter3To4::convert_hexadecimal_colors, "color literals", reg_container);
-	valid = valid &&
-			test_conversion_with_regex("Color(\"#ff478cbf\")", "Color(\"#478cbfff\")",
-				&ProjectConverter3To4::convert_hexadecimal_colors, "color literals", reg_container);
-	valid = valid &&
-			test_conversion_with_regex("Color(\"#de32bf\")", "Color(\"#de32bf\")",
-				&ProjectConverter3To4::convert_hexadecimal_colors, "color literals", reg_container);
-	valid = valid && test_conversion_with_regex("AAA Color.white AF", "AAA Color.WHITE AF",
-						 &ProjectConverter3To4::rename_colors, "color constants", reg_container);
-
-	// Note: Do not change to *scancode*, it is applied before that conversion.
-	valid = valid &&
-			test_conversion_with_regex(
-				"\"device\":-1,\"scancode\":16777231,\"physical_scancode\":16777232",
-				"\"device\":-1,\"scancode\":4194319,\"physical_scancode\":4194320",
-				&ProjectConverter3To4::rename_input_map_scancode, "custom rename", reg_container);
-	valid = valid &&
-			test_conversion_with_regex("\"device\":-1,\"scancode\":65,\"physical_scancode\":66",
-				"\"device\":-1,\"scancode\":65,\"physical_scancode\":66",
-				&ProjectConverter3To4::rename_input_map_scancode, "custom rename", reg_container);
-
-	valid = valid && test_conversion_with_regex(
-						 "\"device\":0,\"button_index\":5,\"pressure\":0.0,\"pressed\":false,",
-						 "\"device\":0,\"button_index\":10,\"pressure\":0.0,\"pressed\":false,",
-						 &ProjectConverter3To4::rename_joypad_buttons_and_axes, "custom rename",
-						 reg_container);
-	valid =
-		valid &&
-		test_conversion_with_regex("\"device\":0,\"axis\":6,", "\"device\":0,\"axis\":4,",
-			&ProjectConverter3To4::rename_joypad_buttons_and_axes, "custom rename", reg_container);
-	valid =
-		valid &&
-		test_conversion_with_regex("InputEventJoypadButton,\"button_index\":7,\"pressure\":0.0,"
-								   "\"pressed\":false,\"script\":null",
-			"InputEventJoypadMotion,\"axis\":5,\"axis_value\":1.0,\"script\":null",
-			&ProjectConverter3To4::rename_joypad_buttons_and_axes, "custom rename", reg_container);
-
-	// Custom rule conversion
-	{
-		String from = "instance";
-		String to = "instantiate";
-		String name = "AA.instance()";
-
-		Vector<SourceLine> got = split_lines(name);
-
-		String expected = "AA.instantiate()";
-		custom_rename(got, from, to);
-		String got_str = collect_string_from_vector(got);
-		if (got_str != expected) {
-
-		ERR_PRINT(
-				vformat("Failed to convert custom rename \"%s\" to \"%s\", got \"%s\", instead.",
-					name, expected, got_str));
-		}
-		valid = valid && (got_str == expected);
-	}
-
-	// get_object_of_execution
-	{
-		String base = "var roman = kieliszek.";
-		String expected = "kieliszek.";
-		String got = get_object_of_execution(base);
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from get_object_of_execution. \"%s\" "
-							  "should return \"%s\"(%d), got \"%s\"(%d), instead.",
-				base, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String base = "r.";
-		String expected = "r.";
-		String got = get_object_of_execution(base);
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from get_object_of_execution. \"%s\" "
-							  "should return \"%s\"(%d), got \"%s\"(%d), instead.",
-				base, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String base = "mortadela(";
-		String expected = "";
-		String got = get_object_of_execution(base);
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from get_object_of_execution. \"%s\" "
-							  "should return \"%s\"(%d), got \"%s\"(%d), instead.",
-				base, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String base = "var node = $world/ukraine/lviv.";
-		String expected = "$world/ukraine/lviv.";
-		String got = get_object_of_execution(base);
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from get_object_of_execution. \"%s\" "
-							  "should return \"%s\"(%d), got \"%s\"(%d), instead.",
-				base, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-
-	// get_starting_space
-	{
-		String base = "\t\t\t var roman = kieliszek.";
-		String expected = "\t\t\t";
-		String got = get_starting_space(base);
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from get_object_of_execution. \"%s\" "
-							  "should return \"%s\"(%d), got \"%s\"(%d), instead.",
-				base, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-
-	// Parse Arguments
-	{
-		String line = "( )";
-		Vector<String> got_vector = parse_arguments(line);
-		String got = "";
-		String expected = "";
-		for (String& part : got_vector) {
-			got += part + "|||";
-		}
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from parse_arguments. \"%s\" should "
-							  "return \"%s\"(%d), got \"%s\"(%d), instead.",
-				line, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String line = "(a , b , c)";
-		Vector<String> got_vector = parse_arguments(line);
-		String got = "";
-		String expected = "a|||b|||c|||";
-		for (String& part : got_vector) {
-			got += part + "|||";
-		}
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from parse_arguments. \"%s\" should "
-							  "return \"%s\"(%d), got \"%s\"(%d), instead.",
-				line, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String line = "(a , \"b,\" , c)";
-		Vector<String> got_vector = parse_arguments(line);
-		String got = "";
-		String expected = "a|||\"b,\"|||c|||";
-		for (String& part : got_vector) {
-			got += part + "|||";
-		}
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from parse_arguments. \"%s\" should "
-							  "return \"%s\"(%d), got \"%s\"(%d), instead.",
-				line, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-	{
-		String line = "(a , \"(,),,,,\" , c)";
-		Vector<String> got_vector = parse_arguments(line);
-		String got = "";
-		String expected = "a|||\"(,),,,,\"|||c|||";
-		for (String& part : got_vector) {
-			got += part + "|||";
-		}
-		if (got != expected) {
-			ERR_PRINT(vformat("Failed to get proper data from parse_arguments. \"%s\" should "
-							  "return \"%s\"(%d), got \"%s\"(%d), instead.",
-				line, expected, expected.size(), got, got.size()));
-		}
-		valid = valid && (got == expected);
-	}
-
-	return valid;
-}
-
-// Validate in all arrays if names don't do cyclic renames "Node" -> "Node2D" | "Node2D" -> "2DNode"
-bool ProjectConverter3To4::test_array_names()
-{
-	bool valid = true;
-
-	// Validate if all classes are valid.
-	{
-		for (unsigned int current_index = 0; RenamesMap3To4::class_renames[current_index][0];
-			 current_index++) {
-			const String old_class = RenamesMap3To4::class_renames[current_index][0];
-			const String new_class = RenamesMap3To4::class_renames[current_index][1];
-		}
-	}
-
-	{
-		HashSet<String> all_functions;
-
-		// List of excluded functions from builtin types and global namespace, because currently it
-		// is not possible to get list of functions from them. This will be available when
-		// https://github.com/godotengine/godot/pull/49053 or similar will be included into Godot.
-		static const char* builtin_types_excluded_functions[] = {"dict_to_inst", "inst_to_dict",
-			"bytes_to_var", "bytes_to_var_with_objects", "db_to_linear", "deg_to_rad",
-			"linear_to_db", "rad_to_deg", "randf_range", "snapped", "str_to_var", "var_to_str",
-			"var_to_bytes", "var_to_bytes_with_objects", "move_toward", "uri_encode", "uri_decode",
-			"remove_at", "get_rotation_quaternion", "limit_length", "grow_side", "is_absolute_path",
-			"is_valid_int", "lerp", "to_ascii_buffer", "to_utf8_buffer", "to_utf32_buffer",
-			"to_wchar_buffer", "snapped", "remap", "rfind", nullptr};
-		for (int current_index = 0; builtin_types_excluded_functions[current_index];
-			 current_index++) {
-			all_functions.insert(builtin_types_excluded_functions[current_index]);
-		}
-
-		// for (int type = Variant::Type::NIL + 1; type < Variant::Type::VARIANT_MAX; type++) {
-		//	List<MethodInfo> method_list;
-		//	Variant::get_method_list_by_type(&method_list, Variant::Type(type));
-		//	for (MethodInfo &function_data : method_list) {
-		//		if (!all_functions.has(function_data.name)) {
-		//			all_functions.insert(function_data.name);
-		//		}
-		//	}
-		// }
-
-		int current_element = 0;
-		while (RenamesMap3To4::gdscript_function_renames[current_element][0] != nullptr) {
-			String name_3_x = RenamesMap3To4::gdscript_function_renames[current_element][0];
-			String name_4_0 = RenamesMap3To4::gdscript_function_renames[current_element][1];
-			if (!all_functions.has(name_4_0)) {
-				ERR_PRINT(vformat(
-					"Missing GDScript function in pair (%s - ===> %s <===)", name_3_x, name_4_0));
-				valid = false;
-			}
-			current_element++;
-		}
-	}
-	if (!valid) {
-		ERR_PRINT("Found function which is used in the converter, but it cannot be found in Godot "
-				  "4. Rename this element or remove its entry if it's obsolete.");
-	}
-
-	valid = valid && test_single_array(RenamesMap3To4::enum_renames);
-	valid = valid && test_single_array(RenamesMap3To4::class_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::gdscript_function_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::csharp_function_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::gdscript_properties_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::csharp_properties_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::shaders_renames, true);
-	valid = valid && test_single_array(RenamesMap3To4::gdscript_signals_renames);
-	valid = valid && test_single_array(RenamesMap3To4::project_settings_renames);
-	valid = valid && test_single_array(RenamesMap3To4::project_godot_renames);
-	valid = valid && test_single_array(RenamesMap3To4::input_map_renames);
-	valid = valid && test_single_array(RenamesMap3To4::builtin_types_renames);
-	valid = valid && test_single_array(RenamesMap3To4::color_renames);
-
-	return valid;
-}
-
-// Validates the array to prevent cyclic renames, such as `Node` -> `Node2D`, then `Node2D` ->
-// `2DNode`. Also checks if names contain leading or trailing spaces.
-bool ProjectConverter3To4::test_single_array(const char* p_array[][2], bool p_ignore_4_0_name)
-{
-	bool valid = true;
-	Vector<String> names = Vector<String>();
-
-	for (unsigned int current_index = 0; p_array[current_index][0]; current_index++) {
-		String name_3_x = p_array[current_index][0];
-		String name_4_0 = p_array[current_index][1];
-		if (name_3_x != name_3_x.strip_edges()) {
-			ERR_PRINT(
-				vformat("Invalid Entry \"%s\" contains leading or trailing spaces.", name_3_x));
-			valid = false;
-		}
-		if (names.has(name_3_x)) {
-			ERR_PRINT(vformat("Found duplicated entry, pair ( -> %s , %s)", name_3_x, name_4_0));
-			valid = false;
-		}
-		names.append(name_3_x);
-
-		if (name_4_0 != name_4_0.strip_edges()) {
-			ERR_PRINT(
-				vformat("Invalid Entry \"%s\" contains leading or trailing spaces.", name_3_x));
-			valid = false;
-		}
-		if (names.has(name_4_0)) {
-			ERR_PRINT(vformat("Found duplicated entry, pair ( -> %s , %s)", name_3_x, name_4_0));
-			valid = false;
-		}
-		if (!p_ignore_4_0_name) {
-			names.append(name_4_0);
-		}
-	}
-	return valid;
-}
-
-// Returns arguments from given function execution, this cannot be really done as regex.
-// `abc(d,e(f,g),h)` -> [d], [e(f,g)], [h]
-Vector<String> ProjectConverter3To4::parse_arguments(const String& line)
-{
-	Vector<String> parts;
-	int string_size = line.length();
-	int start_part = 0; // Index of beginning of start part.
-	int parts_counter = 0;
-	char32_t previous_character = '\0';
-	bool is_inside_string = false; // If true, it ignores these 3 characters ( , ) inside string.
-
-	ERR_FAIL_COND_V_MSG(line.count("(") != line.count(")"), parts,
-		vformat("Converter internal bug: substring should have equal number of open and close "
-				"parentheses in line - \"%s\".",
-			line));
-
-	for (int current_index = 0; current_index < string_size; current_index++) {
-		char32_t character = line.get(current_index);
-		switch (character) {
-		case '(':
-		case '[':
-		case '{': {
-			parts_counter++;
-			if (parts_counter == 1 && !is_inside_string) {
-				start_part = current_index;
-			}
-			break;
-		};
-		case ')':
-		case '}': {
-			parts_counter--;
-			if (parts_counter == 0 && !is_inside_string) {
-				parts.append(line.substr(start_part + 1, current_index - start_part - 1));
-				start_part = current_index;
-			}
-			break;
-		};
-		case ']': {
-			parts_counter--;
-			if (parts_counter == 0 && !is_inside_string) {
-				parts.append(line.substr(start_part, current_index - start_part));
-				start_part = current_index;
-			}
-			break;
-		};
-		case ',': {
-			if (parts_counter == 1 && !is_inside_string) {
-				parts.append(line.substr(start_part + 1, current_index - start_part - 1));
-				start_part = current_index;
-			}
-			break;
-		};
-		case '"': {
-			if (previous_character != '\\') {
-				is_inside_string = !is_inside_string;
-			}
-		}
-		}
-		previous_character = character;
-	}
-
-	Vector<String> clean_parts;
-	for (String& part : parts) {
-		part = part.strip_edges();
-		if (!part.is_empty()) {
-			clean_parts.append(part);
-		}
-	}
-
-	return clean_parts;
-}
-
-// Finds latest parenthesis owned by function.
-// `function(abc(a,b),DD)):` finds this parenthess `function(abc(a,b),DD => ) <= ):`
-int ProjectConverter3To4::get_end_parenthesis(const String& line) const
-{
-	int current_state = 0;
-	for (int current_index = 0; line.length() > current_index; current_index++) {
-		char32_t character = line.get(current_index);
-		if (character == '(') {
-			current_state++;
-		}
-		if (character == ')') {
-			current_state--;
-			if (current_state == 0) {
-				return current_index;
-			}
-		}
-	}
-	return -1;
-}
-
-// Merges multiple arguments into a single String.
-// Needed when after processing e.g. 2 arguments, later arguments are not changed in any way.
-String ProjectConverter3To4::connect_arguments(
-	const Vector<String>& arguments, int from, int to) const
-{
-	if (to == -1) {
-		to = arguments.size();
-	}
-
-	String value;
-	if (arguments.size() > 0 && from != 0 && from < to) {
-		value = ", ";
-	}
-
-	for (int i = from; i < to; i++) {
-		value += arguments[i];
-		if (i != to - 1) {
-			value += ", ";
-		}
-	}
-	return value;
-}
-
-// Returns the indentation (spaces and tabs) at the start of the line e.g. `\t\tmove_this` returns
-// `\t\t`.
-String ProjectConverter3To4::get_starting_space(const String& line) const
-{
-	String empty_space;
-	int current_character = 0;
-
-	if (line.is_empty()) {
-		return empty_space;
-	}
-
-	if (line[0] == ' ') {
-		while (current_character < line.size()) {
-			if (line[current_character] == ' ') {
-				empty_space += ' ';
-				current_character++;
-			}
-			else {
-				break;
-			}
-		}
-	}
-	if (line[0] == '\t') {
-		while (current_character < line.size()) {
-			if (line[current_character] == '\t') {
-				empty_space += '\t';
-				current_character++;
-			}
-			else {
-				break;
-			}
-		}
-	}
-	return empty_space;
-}
-
-// Returns the object that’s executing the function in the line.
-// e.g. Passing the line "var roman = kieliszek.funkcja()" to this function returns "kieliszek".
-String ProjectConverter3To4::get_object_of_execution(const String& line) const
-{
-	int end = line.size() - 1; // Last one is \0
-	int variable_start = end - 1;
-	int start = end - 1;
-
-	bool is_possibly_nodepath = false;
-	bool is_valid_nodepath = false;
-
-	while (start >= 0) {
-		char32_t character = line[start];
-		bool is_variable_char = (character >= 'A' && character <= 'Z') ||
-								(character >= 'a' && character <= 'z') || character == '.' ||
-								character == '_';
-		bool is_nodepath_start = character == '$';
-		bool is_nodepath_sep = character == '/';
-		if (is_variable_char || is_nodepath_start || is_nodepath_sep) {
-			if (start == 0) {
-				break;
-			}
-			else if (is_nodepath_sep) {
-				// Freeze variable_start, try to fetch more chars since this might be a Node path
-				// literal.
-				is_possibly_nodepath = true;
-			}
-			else if (is_nodepath_start) {
-				// Found $, this is a Node path literal.
-				is_valid_nodepath = true;
-				break;
-			}
-			if (!is_possibly_nodepath) {
-				variable_start--;
-			}
-			start--;
-			continue;
-		}
-		else {
-			// Abandon all hope, this is neither a variable nor a Node path literal.
-			variable_start++; // Found invalid character, needs to be ignored.
-			break;
-		}
-	}
-	if (is_valid_nodepath) {
-		variable_start = start;
-	}
-	return line.substr(variable_start, (end - variable_start));
-}
-
-void ProjectConverter3To4::rename_colors(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			if (line.contains("Color.")) {
-				for (unsigned int current_index = 0;
-					 RenamesMap3To4::color_renames[current_index][0]; current_index++) {
-					line = reg_container.color_regexes[current_index]->sub(
-						line, reg_container.color_renamed[current_index], true);
-				}
-			}
-		}
-	}
-}
-
-// Convert hexadecimal colors from ARGB to RGBA
-void ProjectConverter3To4::convert_hexadecimal_colors(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			if (line.contains("Color(\"")) {
-				line = reg_container.color_hexadecimal_short_constructor.sub(
-					line, "Color(\"#$2$1", true);
-				line = reg_container.color_hexadecimal_full_constructor.sub(
-					line, "Color(\"#$2$1", true);
-			}
-		}
-	}
-}
-
-void ProjectConverter3To4::fix_tool_declaration(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	// In godot4, "tool" became "@tool" and must be located at the top of the file.
-	for (int i = 0; i < source_lines.size(); ++i) {
-		if (source_lines[i].line == "tool") {
-			source_lines.remove_at(i);
-			source_lines.insert(0, {"@tool", false});
-			return; // assuming there's at most 1 tool declaration.
-		}
-	}
-}
-
-void ProjectConverter3To4::fix_pause_mode(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	// In Godot 3, the pause_mode 2 equals the PAUSE_MODE_PROCESS value.
-	// In Godot 4, the pause_mode PAUSE_MODE_PROCESS was renamed to PROCESS_MODE_ALWAYS and equals
-	// the number 3. We therefore convert pause_mode = 2 to pause_mode = 3.
-	for (SourceLine& source_line : source_lines) {
-		String& line = source_line.line;
-
-		if (line == "pause_mode = 2") {
-			// Note: pause_mode is renamed to process_mode later on, so no need to do it here.
-			line = "pause_mode = 3";
-		}
-	}
-}
-
-void ProjectConverter3To4::rename_classes(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			for (unsigned int current_index = 0; RenamesMap3To4::class_renames[current_index][0];
-				 current_index++) {
-				if (line.contains(RenamesMap3To4::class_renames[current_index][0])) {
-					bool found_ignored_items = false;
-					// Renaming Spatial.tscn to TEMP_RENAMED_CLASS.tscn.
-					if (line.contains(
-							String(RenamesMap3To4::class_renames[current_index][0]) + ".")) {
-						found_ignored_items = true;
-						line = reg_container.class_tscn_regexes[current_index]->sub(
-							line, "TEMP_RENAMED_CLASS.tscn", true);
-						line = reg_container.class_gd_regexes[current_index]->sub(
-							line, "TEMP_RENAMED_CLASS.gd", true);
-						line = reg_container.class_shader_regexes[current_index]->sub(
-							line, "TEMP_RENAMED_CLASS.shader", true);
-					}
-
-					// Causal renaming Spatial -> Node3D.
-					line = reg_container.class_regexes[current_index]->sub(
-						line, RenamesMap3To4::class_renames[current_index][1], true);
-
-					// Restore Spatial.tscn from TEMP_RENAMED_CLASS.tscn.
-					if (found_ignored_items) {
-						line = reg_container.class_temp_tscn.sub(
-							line, reg_container.class_temp_tscn_renames[current_index], true);
-						line = reg_container.class_temp_gd.sub(
-							line, reg_container.class_temp_gd_renames[current_index], true);
-						line = reg_container.class_temp_shader.sub(
-							line, reg_container.class_temp_shader_renames[current_index], true);
-					}
-				}
-			}
-		}
-	}
-}
-
-void ProjectConverter3To4::rename_gdscript_functions(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container, bool builtin)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			process_gdscript_line(line, reg_container, builtin);
-		}
-	}
-}
-
-Vector<String> ProjectConverter3To4::check_for_rename_gdscript_functions(
-	Vector<String>& lines, const RegExContainer& reg_container, bool builtin)
-{
-	int current_line = 1;
-
-	Vector<String> found_renames;
-
-	for (String& line : lines) {
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			String old_line = line;
-			process_gdscript_line(line, reg_container, builtin);
-			if (old_line != line) {
-				found_renames.append(simple_line_formatter(current_line, old_line, line));
-			}
-		}
-	}
-
-	return found_renames;
-}
-
-bool ProjectConverter3To4::contains_function_call(const String& line, const String& function) const
-{
-	// We want to convert the function only if it is completely standalone.
-	// For example, when we search for "connect(", we don't want to accidentally convert
-	// "reconnect(".
-	if (!line.contains(function)) {
-		return false;
-	}
-
-	int index = line.find(function);
-	if (index == 0) {
-		return true;
-	}
-
-	char32_t previous_char = line.get(index - 1);
-	return (previous_char < '0' || previous_char > '9') &&
-		   (previous_char < 'a' || previous_char > 'z') &&
-		   (previous_char < 'A' || previous_char > 'Z') && previous_char != '_' &&
-		   previous_char != '$' && previous_char != '@';
-}
-
-// TODO, this function should run only on all ".gd" files and also on lines in ".tscn" files which
-// are parts of built-in Scripts.
-void ProjectConverter3To4::process_gdscript_line(
-	String& line, const RegExContainer& reg_container, bool builtin)
-{
-	// In this and other functions, reg.sub() is used only after checking lines with str.contains().
-	// With longer lines, doing so can sometimes be significantly faster.
-
-	if ((line.contains(".lock") || line.contains(".unlock")) && !line.contains("mtx") &&
-		!line.contains("mutex") && !line.contains("Mutex")) {
-		line = reg_container.reg_image_lock.sub(line,
-			"false # $1.lock() # TODOConverter3To4, Image no longer requires locking, `false` "
-			"helps to not break one line if/else, so it can freely be removed",
-			true);
-		line = reg_container.reg_image_unlock.sub(line,
-			"false # $1.unlock() # TODOConverter3To4, Image no longer requires locking, `false` "
-			"helps to not break one line if/else, so it can freely be removed",
-			true);
-	}
-
-	// PackedStringArray(req_godot).join('.') -> '.'.join(PackedStringArray(req_godot))
-	// PoolStringArray
-	if (line.contains(".join")) {
-		line = reg_container.reg_join.sub(line, "$2.join($1)", true);
-	}
-
-	// -- empty() -> is_empty()       Pool*Array
-	if (line.contains("empty")) {
-		line = reg_container.reg_is_empty.sub(line, "is_empty(", true);
-	}
-
-	// -- \t.func() -> \tsuper.func()       Object
-	if (line.contains_char('(') && line.contains_char('.')) {
-		line = reg_container.reg_super.sub(
-			line, "$1super.$2", true); // TODO, not sure if possible, but for now this broke String
-									   // text e.g. "Chosen .gitignore" -> "Chosen super.gitignore"
-	}
-
-	// -- JSON.parse(a) -> JSON.new().parse(a) etc.    JSON
-	if (line.contains("parse")) {
-		line = reg_container.reg_json_non_new.sub(line,
-			"$1var test_json_conv = "
-			"JSON.new()\n$1test_json_conv.parse($3\n$1$2test_json_conv.get_data()",
-			true);
-	}
-
-	// -- to_json(a) -> JSON.new().stringify(a)     Object
-	if (line.contains("to_json")) {
-		line = reg_container.reg_json_to.sub(line, "JSON.new().stringify", true);
-	}
-	// -- parse_json(a) -> JSON.get_data() etc.    Object
-	if (line.contains("parse_json")) {
-		line = reg_container.reg_json_parse.sub(line,
-			"$1var test_json_conv = "
-			"JSON.new()\n$1test_json_conv.parse($3\n$1$2test_json_conv.get_data()",
-			true);
-	}
-	// -- JSON.print( -> JSON.stringify(
-	if (line.contains("JSON.print(")) {
-		line = reg_container.reg_json_print.sub(line, "JSON.stringify(", true);
-	}
-
-	// -- get_node(@ -> get_node(       Node
-	if (line.contains("get_node")) {
-		line = line.replace("get_node(@", "get_node(");
-	}
-
-	if (line.contains("export")) {
-		// 1. export(float) var lifetime: float = 3.0 -> export var lifetime: float = 3.0
-		line = reg_container.reg_export_typed.sub(line, "export var $2: $1");
-		// 2. export(float) var lifetime := 3.0 -> export var lifetime := 3.0
-		line = reg_container.reg_export_inferred_type.sub(line, "export var $1 :=");
-		// 3. export(float) var lifetime = 3.0 -> export var lifetime: float = 3.0     GDScript
-		line = reg_container.reg_export_simple.sub(line, "export var $2: $1");
-		// 4. export(String, 'AnonymousPro', 'CourierPrime') var _font_name = 'AnonymousPro' ->
-		// export var _font_name = 'AnonymousPro' #(String, 'AnonymousPro', 'CourierPrime') GDScript
-		line = reg_container.reg_export_advanced.sub(line, "export var $2$3 # ($1)");
-	}
-
-	// Setget Setget
-	if (line.contains("setget")) {
-		line = reg_container.reg_setget_setget.sub(line, "var $1$2: get = $4, set = $3", true);
-	}
-
-	// Setget set
-	if (line.contains("setget")) {
-		line = reg_container.reg_setget_set.sub(line, "var $1$2: set = $3", true);
-	}
-
-	// Setget get
-	if (line.contains("setget")) {
-		line = reg_container.reg_setget_get.sub(line, "var $1$2: get = $3", true);
-	}
-
-	if (line.contains("window_resizable")) {
-		// OS.set_window_resizable(a) -> get_window().unresizable = not (a)
-		line = reg_container.reg_os_set_window_resizable.sub(
-			line, "get_window().unresizable = not ($1)", true);
-		// OS.window_resizable = a -> same
-		line = reg_container.reg_os_assign_window_resizable.sub(
-			line, "get_window().unresizable = not ($1)", true);
-		// OS.[is_]window_resizable() -> (not get_window().unresizable)
-		line = reg_container.reg_os_is_window_resizable.sub(
-			line, "(not get_window().unresizable)", true);
-	}
-
-	if (line.contains("window_fullscreen")) {
-		// OS.window_fullscreen(a) -> get_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if (a)
-		// else Window.MODE_WINDOWED
-		line = reg_container.reg_os_set_fullscreen.sub(line,
-			"get_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if ($1) else "
-			"Window.MODE_WINDOWED",
-			true);
-		// window_fullscreen = a -> same
-		line = reg_container.reg_os_assign_fullscreen.sub(line,
-			"get_window().mode = Window.MODE_EXCLUSIVE_FULLSCREEN if ($1) else "
-			"Window.MODE_WINDOWED",
-			true);
-		// OS.[is_]window_fullscreen() -> ((get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN)
-		// or (get_window().mode == Window.MODE_FULLSCREEN))
-		line = reg_container.reg_os_is_fullscreen.sub(line,
-			"((get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN) or (get_window().mode == "
-			"Window.MODE_FULLSCREEN))",
-			true);
-	}
-
-	if (line.contains("window_maximized")) {
-		// OS.window_maximized(a) -> get_window().mode = Window.MODE_MAXIMIZED if (a) else
-		// Window.MODE_WINDOWED
-		line = reg_container.reg_os_set_maximized.sub(line,
-			"get_window().mode = Window.MODE_MAXIMIZED if ($1) else Window.MODE_WINDOWED", true);
-		// window_maximized = a -> same
-		line = reg_container.reg_os_assign_maximized.sub(line,
-			"get_window().mode = Window.MODE_MAXIMIZED if ($1) else Window.MODE_WINDOWED", true);
-		// OS.[is_]window_maximized() -> (get_window().mode == Window.MODE_MAXIMIZED)
-		line = reg_container.reg_os_is_maximized.sub(
-			line, "(get_window().mode == Window.MODE_MAXIMIZED)", true);
-	}
-
-	if (line.contains("window_minimized")) {
-		// OS.window_minimized(a) -> get_window().mode = Window.MODE_MINIMIZED if (a) else
-		// Window.MODE_WINDOWED
-		line = reg_container.reg_os_set_minimized.sub(line,
-			"get_window().mode = Window.MODE_MINIMIZED if ($1) else Window.MODE_WINDOWED", true);
-		// window_minimized = a -> same
-		line = reg_container.reg_os_assign_minimized.sub(line,
-			"get_window().mode = Window.MODE_MINIMIZED if ($1) else Window.MODE_WINDOWED", true);
-		// OS.[is_]window_minimized() -> (get_window().mode == Window.MODE_MINIMIZED)
-		line = reg_container.reg_os_is_minimized.sub(
-			line, "(get_window().mode == Window.MODE_MINIMIZED)", true);
-	}
-
-	if (line.contains("set_use_vsync")) {
-		// OS.set_use_vsync(a) -> get_window().window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if
-		// (a) else DisplayServer.VSYNC_DISABLED)
-		line = reg_container.reg_os_set_vsync.sub(line,
-			"DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if ($1) else "
-			"DisplayServer.VSYNC_DISABLED)",
-			true);
-	}
-	if (line.contains("vsync_enabled")) {
-		// vsync_enabled = a -> get_window().window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if
-		// (a) else DisplayServer.VSYNC_DISABLED)
-		line = reg_container.reg_os_assign_vsync.sub(line,
-			"DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if ($1) else "
-			"DisplayServer.VSYNC_DISABLED)",
-			true);
-		// OS.[is_]vsync_enabled() -> (DisplayServer.window_get_vsync_mode() !=
-		// DisplayServer.VSYNC_DISABLED)
-		line = reg_container.reg_os_is_vsync.sub(
-			line, "(DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED)", true);
-	}
-
-	if (line.contains("OS.screen_orientation")) { // keep "OS." at start
-		// OS.screen_orientation = a -> DisplayServer.screen_set_orientation(a)
-		line = reg_container.reg_os_assign_screen_orient.sub(
-			line, "$1DisplayServer.screen_set_orientation($2)", true); // assignment
-		line = line.replace(
-			"OS.screen_orientation", "DisplayServer.screen_get_orientation()"); // value access
-	}
-
-	if (line.contains("_window_always_on_top")) {
-		// OS.set_window_always_on_top(a) -> get_window().always_on_top = (a)
-		line = reg_container.reg_os_set_always_on_top.sub(
-			line, "get_window().always_on_top = ($1)", true);
-		// OS.is_window_always_on_top() -> get_window().always_on_top
-		line = reg_container.reg_os_is_always_on_top.sub(line, "get_window().always_on_top", true);
-	}
-
-	if (line.contains("et_borderless_window")) {
-		// OS.set_borderless_window(a) -> get_window().borderless = (a)
-		line =
-			reg_container.reg_os_set_borderless.sub(line, "get_window().borderless = ($1)", true);
-		// OS.get_borderless_window() -> get_window().borderless
-		line = reg_container.reg_os_get_borderless.sub(line, "get_window().borderless", true);
-	}
-
-	// OS.SCREEN_ORIENTATION_* -> DisplayServer.SCREEN_*
-	if (line.contains("OS.SCREEN_ORIENTATION_")) {
-		line = reg_container.reg_os_screen_orient_enum.sub(line, "DisplayServer.SCREEN_$1", true);
-	}
-
-	// OS -> Window simple replacements with optional set/get.
-	if (line.contains("current_screen")) {
-		line = reg_container.reg_os_current_screen.sub(line, "get_window().$1current_screen", true);
-	}
-	if (line.contains("min_window_size")) {
-		line = reg_container.reg_os_min_window_size.sub(line, "get_window().$1min_size", true);
-	}
-	if (line.contains("max_window_size")) {
-		line = reg_container.reg_os_max_window_size.sub(line, "get_window().$1max_size", true);
-	}
-	if (line.contains("window_position")) {
-		line = reg_container.reg_os_window_position.sub(line, "get_window().$1position", true);
-	}
-	if (line.contains("window_size")) {
-		line = reg_container.reg_os_window_size.sub(line, "get_window().$1size", true);
-	}
-	if (line.contains("et_screen_orientation")) {
-		line = reg_container.reg_os_getset_screen_orient.sub(
-			line, "DisplayServer.screen_$1et_orientation", true);
-	}
-
-	// Instantiate
-	if (contains_function_call(line, "instance")) {
-		line = reg_container.reg_instantiate.sub(line, ".instantiate($1)", true);
-	}
-
-	// -- r.move_and_slide( a, b, c, d, e )  ->  r.set_velocity(a) ... r.move_and_slide()
-	// KinematicBody
-	if (contains_function_call(line, "move_and_slide(")) {
-		int start = line.find("move_and_slide(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			String base_obj = get_object_of_execution(line.substr(0, start));
-			String starting_space = get_starting_space(line);
-
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() >= 1) {
-				String line_new;
-
-				// motion_velocity
-				line_new += starting_space + base_obj + "set_velocity(" + parts[0] + ")\n";
-
-				// up_direction
-				if (parts.size() >= 2) {
-					line_new += starting_space + base_obj + "set_up_direction(" + parts[1] + ")\n";
-				}
-
-				// stop_on_slope
-				if (parts.size() >= 3) {
-					line_new += starting_space + base_obj + "set_floor_stop_on_slope_enabled(" +
-								parts[2] + ")\n";
-				}
-
-				// max_slides
-				if (parts.size() >= 4) {
-					line_new += starting_space + base_obj + "set_max_slides(" + parts[3] + ")\n";
-				}
-
-				// floor_max_angle
-				if (parts.size() >= 5) {
-					line_new +=
-						starting_space + base_obj + "set_floor_max_angle(" + parts[4] + ")\n";
-				}
-
-				// infiinite_interia
-				if (parts.size() >= 6) {
-					line_new += starting_space +
-								"# TODOConverter3To4 infinite_inertia were removed in Godot 4 - "
-								"previous value `" +
-								parts[5] + "`\n";
-				}
-
-				line_new += starting_space + base_obj + "move_and_slide()";
-
-				if (!line.begins_with(starting_space + "move_and_slide")) {
-					line = line_new + "\n" + line.substr(0, start) + "velocity" +
-						   line.substr(end + start);
-				}
-				else {
-					line = line_new + line.substr(end + start);
-				}
-			}
-		}
-	}
-
-	// -- r.move_and_slide_with_snap( a, b, c, d, e )  ->  r.set_velocity(a) ... r.move_and_slide()
-	// KinematicBody
-	if (contains_function_call(line, "move_and_slide_with_snap(")) {
-		int start = line.find("move_and_slide_with_snap(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			String base_obj = get_object_of_execution(line.substr(0, start));
-			String starting_space = get_starting_space(line);
-
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() >= 1) {
-				String line_new;
-
-				// motion_velocity
-				line_new += starting_space + base_obj + "set_velocity(" + parts[0] + ")\n";
-
-				// snap
-				if (parts.size() >= 2) {
-					line_new += starting_space +
-								"# TODOConverter3To4 looks that snap in Godot 4 is float, not "
-								"vector like in Godot 3 - previous value `" +
-								parts[1] + "`\n";
-				}
-
-				// up_direction
-				if (parts.size() >= 3) {
-					line_new += starting_space + base_obj + "set_up_direction(" + parts[2] + ")\n";
-				}
-
-				// stop_on_slope
-				if (parts.size() >= 4) {
-					line_new += starting_space + base_obj + "set_floor_stop_on_slope_enabled(" +
-								parts[3] + ")\n";
-				}
-
-				// max_slides
-				if (parts.size() >= 5) {
-					line_new += starting_space + base_obj + "set_max_slides(" + parts[4] + ")\n";
-				}
-
-				// floor_max_angle
-				if (parts.size() >= 6) {
-					line_new +=
-						starting_space + base_obj + "set_floor_max_angle(" + parts[5] + ")\n";
-				}
-
-				// infiinite_interia
-				if (parts.size() >= 7) {
-					line_new += starting_space +
-								"# TODOConverter3To4 infinite_inertia were removed in Godot 4 - "
-								"previous value `" +
-								parts[6] + "`\n";
-				}
-
-				line_new += starting_space + base_obj + "move_and_slide()";
-
-				if (!line.begins_with(starting_space + "move_and_slide_with_snap")) {
-					line = line_new + "\n" + line.substr(0, start) + "velocity" +
-						   line.substr(end + start);
-				}
-				else {
-					line = line_new + line.substr(end + start);
-				}
-			}
-		}
-	}
-
-	// -- sort_custom( a , b )  ->  sort_custom(Callable( a , b ))            Object
-	if (contains_function_call(line, "sort_custom(")) {
-		int start = line.find("sort_custom(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				line = line.substr(0, start) + "sort_custom(Callable(" + parts[0] + ", " +
-					   parts[1] + "))" + line.substr(end + start);
-			}
-		}
-	}
-
-	// -- list_dir_begin( )  ->  list_dir_begin()            Object
-	if (contains_function_call(line, "list_dir_begin(")) {
-		int start = line.find("list_dir_begin(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			line = line.substr(0, start) + "list_dir_begin() " + line.substr(end + start) +
-				   "# TODOConverter3To4 fill missing arguments "
-				   "https://github.com/godotengine/godot/pull/40547";
-		}
-	}
-
-	// -- draw_line(1,2,3,4,5) -> draw_line(1, 2, 3, 4)            CanvasItem
-	if (contains_function_call(line, "draw_line(")) {
-		int start = line.find("draw_line(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 5) {
-				line = line.substr(0, start) + "draw_line(" + parts[0] + ", " + parts[1] + ", " +
-					   parts[2] + ", " + parts[3] + ")" + line.substr(end + start);
-			}
-		}
-	}
-
-	// -- func c(var a, var b) -> func c(a, b)
-	if (line.contains("func ") && line.contains("var ")) {
-		int start = line.find("func ");
-		start = line.substr(start).find_char('(') + start;
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-
-			String start_string = line.substr(0, start) + "(";
-			for (int i = 0; i < parts.size(); i++) {
-				start_string += parts[i].strip_edges().trim_prefix("var ");
-				if (i != parts.size() - 1) {
-					start_string += ", ";
-				}
-			}
-			line = start_string + ")" + line.substr(end + start);
-		}
-	}
-
-	// -- yield(this, \"timeout\") -> await this.timeout         GDScript
-	if (contains_function_call(line, "yield(")) {
-		int start = line.find("yield(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				if (builtin) {
-					line = line.substr(0, start) + "await " + parts[0] + "." +
-						   parts[1].replace("\\\"", "").replace("\\'", "").remove_char(' ') +
-						   line.substr(end + start);
-				}
-				else {
-					line = line.substr(0, start) + "await " + parts[0] + "." +
-						   parts[1].remove_chars("\"' ") + line.substr(end + start);
-				}
-			}
-		}
-	}
-
-	// -- parse_json( AA ) -> TODO       Object
-	if (contains_function_call(line, "parse_json(")) {
-		int start = line.find("parse_json(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			line = line.substr(0, start) + "JSON.new().stringify(" + connect_arguments(parts, 0) +
-				   ")" + line.substr(end + start);
-		}
-	}
-
-	// -- .xform(Vector3(a,b,c)) -> * Vector3(a,b,c)            Transform
-	if (line.contains(".xform(")) {
-		int start = line.find(".xform(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 1) {
-				line = line.substr(0, start) + " * (" + parts[0] + ")" + line.substr(end + start);
-			}
-		}
-	}
-
-	// -- .xform_inv(Vector3(a,b,c)) -> * Vector3(a,b,c)       Transform
-	if (line.contains(".xform_inv(")) {
-		int start = line.find(".xform_inv(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			String object_exec = get_object_of_execution(line.substr(0, start));
-			if (line.contains(object_exec + ".xform")) {
-				int start2 = line.find(object_exec + ".xform");
-				Vector<String> parts = parse_arguments(line.substr(start, end));
-				if (parts.size() == 1) {
-					line = line.substr(0, start2) + "(" + parts[0] + ") * " + object_exec +
-						   line.substr(end + start);
-				}
-			}
-		}
-	}
-
-	// -- "(connect(A,B,C,D,E) != OK):", "(connect(A, Callable(B, C).bind(D), E)      Object
-	if (contains_function_call(line, "connect(")) {
-		int start = line.find("connect(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "connect(" + parts[0] + ", Callable(" + parts[1] +
-					   ", " + parts[2] + "))" + line.substr(end + start);
-			}
-			else if (parts.size() >= 4) {
-				line = line.substr(0, start) + "connect(" + parts[0] + ", Callable(" + parts[1] +
-					   ", " + parts[2] + ").bind(" + parts[3].lstrip(" [").rstrip("] ") + ")" +
-					   connect_arguments(parts, 4) + ")" + line.substr(end + start);
-			}
-		}
-	}
-	// -- disconnect(a,b,c) -> disconnect(a,Callable(b,c))      Object
-	if (contains_function_call(line, "disconnect(")) {
-		int start = line.find("disconnect(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "disconnect(" + parts[0] + ", Callable(" + parts[1] +
-					   ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-	// -- is_connected(a,b,c) -> is_connected(a,Callable(b,c))      Object
-	if (contains_function_call(line, "is_connected(")) {
-		int start = line.find("is_connected(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "is_connected(" + parts[0] + ", Callable(" +
-					   parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-	// -- "(tween_method(A,B,C,D,E) != OK):", "(tween_method(Callable(A,B),C,D,E)      Object
-	// -- "(tween_method(A,B,C,D,E,[F,G]) != OK):", "(tween_method(Callable(A,B).bind(F,G),C,D,E)
-	// Object
-	if (contains_function_call(line, "tween_method(")) {
-		int start = line.find("tween_method(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 5) {
-				line = line.substr(0, start) + "tween_method(Callable(" + parts[0] + ", " +
-					   parts[1] + "), " + parts[2] + ", " + parts[3] + ", " + parts[4] + ")" +
-					   line.substr(end + start);
-			}
-			else if (parts.size() >= 6) {
-				line = line.substr(0, start) + "tween_method(Callable(" + parts[0] + ", " +
-					   parts[1] + ").bind(" +
-					   connect_arguments(parts, 5).substr(1).lstrip(" [").rstrip("] ") + "), " +
-					   parts[2] + ", " + parts[3] + ", " + parts[4] + ")" +
-					   line.substr(end + start);
-			}
-		}
-	}
-	// -- "(tween_callback(A,B,[C,D]) != OK):", "(connect(Callable(A,B).bind(C,D))      Object
-	if (contains_function_call(line, "tween_callback(")) {
-		int start = line.find("tween_callback(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				line = line.substr(0, start) + "tween_callback(Callable(" + parts[0] + ", " +
-					   parts[1] + "))" + line.substr(end + start);
-			}
-			else if (parts.size() >= 3) {
-				line = line.substr(0, start) + "tween_callback(Callable(" + parts[0] + ", " +
-					   parts[1] + ").bind(" +
-					   connect_arguments(parts, 2).substr(1).lstrip(" [").rstrip("] ") + "))" +
-					   line.substr(end + start);
-			}
-		}
-	}
-	// -- start(a,b) -> start(Callable(a, b))      Thread
-	// -- start(a,b,c,d) -> start(Callable(a, b).bind(c), d)      Thread
-	if (contains_function_call(line, "start(")) {
-		int start = line.find("start(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		// Protection from 'func start'
-		if (!line.begins_with("func ")) {
-			if (end > -1) {
-				Vector<String> parts = parse_arguments(line.substr(start, end));
-				if (parts.size() == 2) {
-					line = line.substr(0, start) + "start(Callable(" + parts[0] + ", " + parts[1] +
-						   "))" + line.substr(end + start);
-				}
-				else if (parts.size() >= 3) {
-					line = line.substr(0, start) + "start(Callable(" + parts[0] + ", " + parts[1] +
-						   ").bind(" + parts[2] + ")" + connect_arguments(parts, 3) + ")" +
-						   line.substr(end + start);
-				}
-			}
-		}
-	}
-	// -- func _init(p_x:int).(p_x):  -> func _init(p_x:int):\n\tsuper(p_x)    Object #
-	// https://github.com/godotengine/godot/issues/70542
-	if (line.contains(" _init(") && line.rfind_char(':') > 0) {
-		//     func _init(p_arg1).(super4, super5, super6)->void:
-		// ^--^indent            ^super_start   super_end^
-		int indent = line.count("\t", 0, line.find("func"));
-		int super_start = line.find(".(");
-		int super_end = line.rfind_char(')');
-		if (super_start > 0 && super_end > super_start) {
-			line = line.substr(0, super_start) + line.substr(super_end + 1) + "\n" +
-				   String("\t").repeat(indent + 1) + "super" +
-				   line.substr(super_start + 1, super_end - super_start);
-		}
-	}
-
-	//  create_from_image(aa, bb)  ->   create_from_image(aa) #, bb   ImageTexture
-	if (contains_function_call(line, "create_from_image(")) {
-		int start = line.find("create_from_image(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				line = line.substr(0, start) + "create_from_image(" + parts[0] + ") " + "#," +
-					   parts[1] + line.substr(end + start);
-			}
-		}
-	}
-	//  set_cell_item(a, b, c, d ,e)  ->   set_cell_item(Vector3(a, b, c), d ,e)
-	if (contains_function_call(line, "set_cell_item(")) {
-		int start = line.find("set_cell_item(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() > 2) {
-				line = line.substr(0, start) + "set_cell_item(Vector3(" + parts[0] + ", " +
-					   parts[1] + ", " + parts[2] + ")" + connect_arguments(parts, 3).lstrip(" ") +
-					   ")" + line.substr(end + start);
-			}
-		}
-	}
-	//  get_cell_item(a, b, c)  ->   get_cell_item(Vector3i(a, b, c))
-	if (contains_function_call(line, "get_cell_item(")) {
-		int start = line.find("get_cell_item(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "get_cell_item(Vector3i(" + parts[0] + ", " +
-					   parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-	//  get_cell_item_orientation(a, b, c)  ->   get_cell_item_orientation(Vector3i(a, b, c))
-	if (contains_function_call(line, "get_cell_item_orientation(")) {
-		int start = line.find("get_cell_item_orientation(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "get_cell_item_orientation(Vector3i(" + parts[0] +
-					   ", " + parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-	//  apply_impulse(A, B)  ->   apply_impulse(B, A)
-	if (contains_function_call(line, "apply_impulse(")) {
-		int start = line.find("apply_impulse(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				line = line.substr(0, start) + "apply_impulse(" + parts[1] + ", " + parts[0] + ")" +
-					   line.substr(end + start);
-			}
-		}
-	}
-	//  apply_force(A, B)  ->   apply_force(B, A)
-	if (contains_function_call(line, "apply_force(")) {
-		int start = line.find("apply_force(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 2) {
-				line = line.substr(0, start) + "apply_force(" + parts[1] + ", " + parts[0] + ")" +
-					   line.substr(end + start);
-			}
-		}
-	}
-	//  map_to_world(a, b, c)  ->   map_to_local(Vector3i(a, b, c))
-	if (contains_function_call(line, "map_to_world(")) {
-		int start = line.find("map_to_world(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "map_to_local(Vector3i(" + parts[0] + ", " +
-					   parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-			else if (parts.size() == 1) {
-				line = line.substr(0, start) + "map_to_local(" + parts[0] + ")" +
-					   line.substr(end + start);
-			}
-		}
-	}
-
-	//  set_rotating(true)  ->   set_ignore_rotation(false)
-	if (contains_function_call(line, "set_rotating(")) {
-		int start = line.find("set_rotating(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 1) {
-				String opposite = parts[0] == "true" ? "false" : "true";
-				line = line.substr(0, start) + "set_ignore_rotation(" + opposite + ")";
-			}
-		}
-	}
-
-	//  OS.get_window_safe_area()  ->   DisplayServer.get_display_safe_area()
-	if (line.contains("OS.get_window_safe_area(")) {
-		int start = line.find("OS.get_window_safe_area(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.is_empty()) {
-				line = line.substr(0, start) + "DisplayServer.get_display_safe_area()" +
-					   line.substr(end + start);
-			}
-		}
-	}
-	//  draw_rect(a,b,c,d,e)  ->   draw_rect(a,b,c,d)#e) TODOConverter3To4 Antialiasing argument is
-	//  missing
-	if (contains_function_call(line, "draw_rect(")) {
-		int start = line.find("draw_rect(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 5) {
-				line = line.substr(0, start) + "draw_rect(" + parts[0] + ", " + parts[1] + ", " +
-					   parts[2] + ", " + parts[3] + ")" + line.substr(end + start) + "# " +
-					   parts[4] + ") TODOConverter3To4 Antialiasing argument is missing";
-			}
-		}
-	}
-	// get_focus_owner() -> get_viewport().gui_get_focus_owner()
-	if (contains_function_call(line, "get_focus_owner()")) {
-		line = line.replace("get_focus_owner()", "get_viewport().gui_get_focus_owner()");
-	}
-
-	// button.pressed = 1 -> button.button_pressed = 1
-	if (line.contains(".pressed")) {
-		int start = line.find(".pressed");
-		bool foundNextEqual = false;
-		String line_to_check = line.substr(start + String(".pressed").length());
-		for (int current_index = 0; line_to_check.length() > current_index; current_index++) {
-			char32_t chr = line_to_check.get(current_index);
-			if (chr == '\t' || chr == ' ') {
-				continue;
-			}
-			else if (chr == '=') {
-				foundNextEqual = true;
-			}
-			else {
-				break;
-			}
-		}
-		if (foundNextEqual) {
-			line = line.substr(0, start) + ".button_pressed" +
-				   line.substr(start + String(".pressed").length());
-		}
-	}
-
-	// rotating = true  ->   ignore_rotation = false # reversed "rotating" for Camera2D
-	if (contains_function_call(line, "rotating")) {
-		String function_name = "rotating";
-		int start = line.find(function_name);
-		bool foundNextEqual = false;
-		String line_to_check = line.substr(start + function_name.length());
-		String assigned_value;
-		for (int current_index = 0; line_to_check.length() > current_index; current_index++) {
-			char32_t chr = line_to_check.get(current_index);
-			if (chr == '\t' || chr == ' ') {
-				continue;
-			}
-			else if (chr == '=') {
-				foundNextEqual = true;
-				assigned_value =
-					line.substr(start + function_name.length() + current_index + 1).strip_edges();
-				assigned_value = assigned_value == "true" ? "false" : "true";
-			}
-			else {
-				break;
-			}
-		}
-		if (foundNextEqual) {
-			line = line.substr(0, start) + "ignore_rotation = " + assigned_value +
-				   " # reversed \"rotating\" for Camera2D";
-		}
-	}
-
-	// OS -> Time functions
-	if (line.contains("OS.get_ticks_msec")) {
-		line = line.replace("OS.get_ticks_msec", "Time.get_ticks_msec");
-	}
-	if (line.contains("OS.get_ticks_usec")) {
-		line = line.replace("OS.get_ticks_usec", "Time.get_ticks_usec");
-	}
-	if (line.contains("OS.get_unix_time")) {
-		line = line.replace("OS.get_unix_time", "Time.get_unix_time_from_system");
-	}
-	if (line.contains("OS.get_datetime")) {
-		line = line.replace("OS.get_datetime", "Time.get_datetime_dict_from_system");
-	}
-
-	// OS -> DisplayServer
-	if (line.contains("OS.get_display_cutouts")) {
-		line = line.replace("OS.get_display_cutouts", "DisplayServer.get_display_cutouts");
-	}
-	if (line.contains("OS.get_screen_count")) {
-		line = line.replace("OS.get_screen_count", "DisplayServer.get_screen_count");
-	}
-	if (line.contains("OS.get_screen_dpi")) {
-		line = line.replace("OS.get_screen_dpi", "DisplayServer.screen_get_dpi");
-	}
-	if (line.contains("OS.get_screen_max_scale")) {
-		line = line.replace("OS.get_screen_max_scale", "DisplayServer.screen_get_max_scale");
-	}
-	if (line.contains("OS.get_screen_position")) {
-		line = line.replace("OS.get_screen_position", "DisplayServer.screen_get_position");
-	}
-	if (line.contains("OS.get_screen_refresh_rate")) {
-		line = line.replace("OS.get_screen_refresh_rate", "DisplayServer.screen_get_refresh_rate");
-	}
-	if (line.contains("OS.get_screen_scale")) {
-		line = line.replace("OS.get_screen_scale", "DisplayServer.screen_get_scale");
-	}
-	if (line.contains("OS.get_screen_size")) {
-		line = line.replace("OS.get_screen_size", "DisplayServer.screen_get_size");
-	}
-	if (line.contains("OS.set_icon")) {
-		line = line.replace("OS.set_icon", "DisplayServer.set_icon");
-	}
-	if (line.contains("OS.set_native_icon")) {
-		line = line.replace("OS.set_native_icon", "DisplayServer.set_native_icon");
-	}
-
-	// OS -> Window
-	if (line.contains("OS.window_borderless")) {
-		line = line.replace("OS.window_borderless", "get_window().borderless");
-	}
-	if (line.contains("OS.get_real_window_size")) {
-		line = line.replace("OS.get_real_window_size", "get_window().get_size_with_decorations");
-	}
-	if (line.contains("OS.is_window_focused")) {
-		line = line.replace("OS.is_window_focused", "get_window().has_focus");
-	}
-	if (line.contains("OS.move_window_to_foreground")) {
-		line = line.replace("OS.move_window_to_foreground", "get_window().grab_focus");
-	}
-	if (line.contains("OS.request_attention")) {
-		line = line.replace("OS.request_attention", "get_window().request_attention");
-	}
-	if (line.contains("OS.set_window_title")) {
-		line = line.replace("OS.set_window_title", "get_window().set_title");
-	}
-
-	// get_tree().set_input_as_handled() -> get_viewport().set_input_as_handled()
-	if (line.contains("get_tree().set_input_as_handled()")) {
-		line = line.replace(
-			"get_tree().set_input_as_handled()", "get_viewport().set_input_as_handled()");
-	}
-
-	// Fix the simple case of using _unhandled_key_input
-	// func _unhandled_key_input(event: InputEventKey) -> _unhandled_key_input(event: InputEvent)
-	if (line.contains("_unhandled_key_input(event: InputEventKey)")) {
-		line = line.replace("_unhandled_key_input(event: InputEventKey)",
-			"_unhandled_key_input(event: InputEvent)");
-	}
-
-	if (line.contains("Engine.editor_hint")) {
-		line = line.replace("Engine.editor_hint", "Engine.is_editor_hint()");
-	}
-}
-
-void ProjectConverter3To4::process_csharp_line(String& line, const RegExContainer& reg_container)
-{
-	line = line.replace("OS.GetWindowSafeArea()", "DisplayServer.ScreenGetUsableRect()");
-
-	// GetTree().SetInputAsHandled() -> GetViewport().SetInputAsHandled()
-	if (line.contains("GetTree().SetInputAsHandled()")) {
-		line = line.replace("GetTree().SetInputAsHandled()", "GetViewport().SetInputAsHandled()");
-	}
-
-	// Fix the simple case of using _UnhandledKeyInput
-	// func _UnhandledKeyInput(InputEventKey @event) -> _UnhandledKeyInput(InputEvent @event)
-	if (line.contains("_UnhandledKeyInput(InputEventKey @event)")) {
-		line = line.replace(
-			"_UnhandledKeyInput(InputEventKey @event)", "_UnhandledKeyInput(InputEvent @event)");
-	}
-
-	// -- Connect(,,,things) -> Connect(,Callable(,),things)      Object
-	if (line.contains("Connect(")) {
-		int start = line.find("Connect(");
-		// Protection from disconnect
-		if (start == 0 || line.get(start - 1) != 's') {
-			int end = get_end_parenthesis(line.substr(start)) + 1;
-			if (end > -1) {
-				Vector<String> parts = parse_arguments(line.substr(start, end));
-				if (parts.size() >= 3) {
-					line = line.substr(0, start) + "Connect(" + parts[0] + ", new Callable(" +
-						   parts[1] + ", " + parts[2] + ")" + connect_arguments(parts, 3) + ")" +
-						   line.substr(end + start);
-				}
-			}
-		}
-	}
-	// -- Disconnect(a,b,c) -> Disconnect(a,Callable(b,c))      Object
-	if (line.contains("Disconnect(")) {
-		int start = line.find("Disconnect(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "Disconnect(" + parts[0] + ", new Callable(" +
-					   parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-	// -- IsConnected(a,b,c) -> IsConnected(a,Callable(b,c))      Object
-	if (line.contains("IsConnected(")) {
-		int start = line.find("IsConnected(");
-		int end = get_end_parenthesis(line.substr(start)) + 1;
-		if (end > -1) {
-			Vector<String> parts = parse_arguments(line.substr(start, end));
-			if (parts.size() == 3) {
-				line = line.substr(0, start) + "IsConnected(" + parts[0] + ", new Callable(" +
-					   parts[1] + ", " + parts[2] + "))" + line.substr(end + start);
-			}
-		}
-	}
-}
-
-void ProjectConverter3To4::rename_csharp_functions(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			process_csharp_line(line, reg_container);
-		}
-	}
-}
-
-Vector<String> ProjectConverter3To4::check_for_rename_csharp_functions(
-	Vector<String>& lines, const RegExContainer& reg_container)
-{
-	int current_line = 1;
-
-	Vector<String> found_renames;
-
-	for (String& line : lines) {
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			String old_line = line;
-			process_csharp_line(line, reg_container);
-			if (old_line != line) {
-				found_renames.append(simple_line_formatter(current_line, old_line, line));
-			}
-		}
-	}
-
-	return found_renames;
-}
-
-void ProjectConverter3To4::rename_csharp_attributes(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container)
-{
-	static String error_message =
-		"The master and mastersync rpc behavior is not officially supported anymore. Try using "
-		"another keyword or making custom logic using Multiplayer.GetRemoteSenderId()\n";
-
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			line = reg_container.keyword_csharp_remote.sub(
-				line, "[RPC(MultiplayerAPI.RPCMode.AnyPeer)]", true);
-			line = reg_container.keyword_csharp_remotesync.sub(
-				line, "[RPC(MultiplayerAPI.RPCMode.AnyPeer, CallLocal = true)]", true);
-			line = reg_container.keyword_csharp_puppet.sub(line, "[RPC]", true);
-			line =
-				reg_container.keyword_csharp_puppetsync.sub(line, "[RPC(CallLocal = true)]", true);
-			line = reg_container.keyword_csharp_master.sub(line, error_message + "[RPC]", true);
-			line = reg_container.keyword_csharp_mastersync.sub(
-				line, error_message + "[RPC(CallLocal = true)]", true);
-		}
-	}
-}
-
-Vector<String> ProjectConverter3To4::check_for_rename_csharp_attributes(
-	Vector<String>& lines, const RegExContainer& reg_container)
-{
-	int current_line = 1;
-
-	Vector<String> found_renames;
-
-	for (String& line : lines) {
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			String old;
-			old = line;
-			line = reg_container.keyword_csharp_remote.sub(
-				line, "[RPC(MultiplayerAPI.RPCMode.AnyPeer)]", true);
-			if (old != line) {
-				found_renames.append(line_formatter(
-					current_line, "[Remote]", "[RPC(MultiplayerAPI.RPCMode.AnyPeer)]", line));
-			}
-
-			old = line;
-			line = reg_container.keyword_csharp_remotesync.sub(
-				line, "[RPC(MultiplayerAPI.RPCMode.AnyPeer, CallLocal = true)]", true);
-			if (old != line) {
-				found_renames.append(line_formatter(current_line, "[RemoteSync]",
-					"[RPC(MultiplayerAPI.RPCMode.AnyPeer, CallLocal = true)]", line));
-			}
-
-			old = line;
-			line = reg_container.keyword_csharp_puppet.sub(line, "[RPC]", true);
-			if (old != line) {
-				found_renames.append(line_formatter(current_line, "[Puppet]", "[RPC]", line));
-			}
-
-			old = line;
-			line =
-				reg_container.keyword_csharp_puppetsync.sub(line, "[RPC(CallLocal = true)]", true);
-			if (old != line) {
-				found_renames.append(
-					line_formatter(current_line, "[PuppetSync]", "[RPC(CallLocal = true)]", line));
-			}
-
-			old = line;
-			line = reg_container.keyword_csharp_master.sub(line, "[RPC]", true);
-			if (old != line) {
-				found_renames.append(line_formatter(current_line, "[Master]", "[RPC]", line));
-			}
-
-			old = line;
-			line =
-				reg_container.keyword_csharp_mastersync.sub(line, "[RPC(CallLocal = true)]", true);
-			if (old != line) {
-				found_renames.append(
-					line_formatter(current_line, "[MasterSync]", "[RPC(CallLocal = true)]", line));
-			}
-		}
-		current_line++;
-	}
-
-	return found_renames;
-}
-
-_FORCE_INLINE_ static String builtin_escape(const String& p_str, bool p_builtin)
-{
-	if (p_builtin) {
-		return p_str.replace("\"", "\\\"");
-	}
-	else {
-		return p_str;
-	}
-}
-
-void ProjectConverter3To4::rename_gdscript_keywords(
-	Vector<SourceLine>& source_lines, const RegExContainer& reg_container, bool builtin)
-{
-	static String error_message =
-		"The master and mastersync rpc behavior is not officially supported anymore. Try using "
-		"another keyword or making custom logic using get_multiplayer().get_remote_sender_id()\n";
-
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			if (line.contains("export")) {
-				line = reg_container.keyword_gdscript_export_single.sub(line, "@export", true);
-			}
-			if (line.contains("export")) {
-				line = reg_container.keyword_gdscript_export_multi.sub(line, "$1@export", true);
-			}
-			if (line.contains("onready")) {
-				line = reg_container.keyword_gdscript_onready.sub(line, "@onready", true);
-			}
-			if (line.contains("remote")) {
-				line = reg_container.keyword_gdscript_remote.sub(
-					line, builtin_escape("@rpc(\"any_peer\") func", builtin), true);
-			}
-			if (line.contains("remote")) {
-				line = reg_container.keyword_gdscript_remotesync.sub(
-					line, builtin_escape("@rpc(\"any_peer\", \"call_local\") func", builtin), true);
-			}
-			if (line.contains("sync")) {
-				line = reg_container.keyword_gdscript_sync.sub(
-					line, builtin_escape("@rpc(\"any_peer\", \"call_local\") func", builtin), true);
-			}
-			if (line.contains("slave")) {
-				line = reg_container.keyword_gdscript_slave.sub(line, "@rpc func", true);
-			}
-			if (line.contains("puppet")) {
-				line = reg_container.keyword_gdscript_puppet.sub(line, "@rpc func", true);
-			}
-			if (line.contains("puppet")) {
-				line = reg_container.keyword_gdscript_puppetsync.sub(
-					line, builtin_escape("@rpc(\"call_local\") func", builtin), true);
-			}
-			if (line.contains("master")) {
-				line = reg_container.keyword_gdscript_master.sub(
-					line, error_message + "@rpc func", true);
-			}
-			if (line.contains("master")) {
-				line = reg_container.keyword_gdscript_mastersync.sub(line,
-					error_message + builtin_escape("@rpc(\"call_local\") func", builtin), true);
-			}
-		}
-	}
-}
-
-Vector<String> ProjectConverter3To4::check_for_rename_gdscript_keywords(
-	Vector<String>& lines, const RegExContainer& reg_container, bool builtin)
-{
-	Vector<String> found_renames;
-
-	int current_line = 1;
-	for (String& line : lines) {
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			String old;
-
-			if (line.contains("tool")) {
-				old = line;
-				line = reg_container.keyword_gdscript_tool.sub(line, "@tool", true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "tool", "@tool", line));
-				}
-			}
-
-			if (line.contains("export")) {
-				old = line;
-				line = reg_container.keyword_gdscript_export_single.sub(line, "$1@export", true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "export", "@export", line));
-				}
-			}
-
-			if (line.contains("export")) {
-				old = line;
-				line = reg_container.keyword_gdscript_export_multi.sub(line, "@export", true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "export", "@export", line));
-				}
-			}
-
-			if (line.contains("onready")) {
-				old = line;
-				line = reg_container.keyword_gdscript_tool.sub(line, "@onready", true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "onready", "@onready", line));
-				}
-			}
-
-			if (line.contains("remote")) {
-				old = line;
-				line = reg_container.keyword_gdscript_remote.sub(
-					line, builtin_escape("@rpc(\"any_peer\") func", builtin), true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "remote func",
-						builtin_escape("@rpc(\"any_peer\") func", builtin), line));
-				}
-			}
-
-			if (line.contains("remote")) {
-				old = line;
-				line = reg_container.keyword_gdscript_remotesync.sub(line,
-					builtin_escape("@rpc(\"any_peer\", \"call_local\")) func", builtin), true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "remotesync func",
-						builtin_escape("@rpc(\"any_peer\", \"call_local\")) func", builtin), line));
-				}
-			}
-
-			if (line.contains("sync")) {
-				old = line;
-				line = reg_container.keyword_gdscript_sync.sub(line,
-					builtin_escape("@rpc(\"any_peer\", \"call_local\")) func", builtin), true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "sync func",
-						builtin_escape("@rpc(\"any_peer\", \"call_local\")) func", builtin), line));
-				}
-			}
-
-			if (line.contains("slave")) {
-				old = line;
-				line = reg_container.keyword_gdscript_slave.sub(line, "@rpc func", true);
-				if (old != line) {
-					found_renames.append(
-						line_formatter(current_line, "slave func", "@rpc func", line));
-				}
-			}
-
-			if (line.contains("puppet")) {
-				old = line;
-				line = reg_container.keyword_gdscript_puppet.sub(line, "@rpc func", true);
-				if (old != line) {
-					found_renames.append(
-						line_formatter(current_line, "puppet func", "@rpc func", line));
-				}
-			}
-
-			if (line.contains("puppet")) {
-				old = line;
-				line = reg_container.keyword_gdscript_puppetsync.sub(
-					line, builtin_escape("@rpc(\"call_local\") func", builtin), true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "puppetsync func",
-						builtin_escape("@rpc(\"call_local\") func", builtin), line));
-				}
-			}
-
-			if (line.contains("master")) {
-				old = line;
-				line = reg_container.keyword_gdscript_master.sub(line, "@rpc func", true);
-				if (old != line) {
-					found_renames.append(
-						line_formatter(current_line, "master func", "@rpc func", line));
-				}
-			}
-
-			if (line.contains("master")) {
-				old = line;
-				line = reg_container.keyword_gdscript_master.sub(
-					line, builtin_escape("@rpc(\"call_local\") func", builtin), true);
-				if (old != line) {
-					found_renames.append(line_formatter(current_line, "mastersync func",
-						builtin_escape("@rpc(\"call_local\") func", builtin), line));
-				}
-			}
-		}
-		current_line++;
-	}
-
-	return found_renames;
-}
-
-void ProjectConverter3To4::custom_rename(
-	Vector<SourceLine>& source_lines, const String& from, const String& to)
-{
-	RegEx reg = RegEx(String("\\b") + from + "\\b");
-	CRASH_COND(!reg.is_valid());
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			line = reg.sub(line, to, true);
-		}
-	}
-}
-
-void ProjectConverter3To4::rename_common(const char* array[][2],
-	LocalVector<Ref<RegEx>>& cached_regexes, Vector<SourceLine>& source_lines)
-{
-	for (SourceLine& source_line : source_lines) {
-		if (source_line.is_comment) {
-			continue;
-		}
-
-		String& line = source_line.line;
-		if (uint64_t(line.length()) <= maximum_line_length) {
-			for (unsigned int current_index = 0; current_index < cached_regexes.size();
-				 current_index++) {
-				if (line.contains(array[current_index][0])) {
-					line = cached_regexes[current_index]->sub(line, array[current_index][1], true);
-				}
-			}
-		}
-	}
-}
-
-// Prints full info about renamed things e.g.:
-// Line (67) remove -> remove_at  -  LINE """ doubler._blacklist.remove(0) """
-String ProjectConverter3To4::line_formatter(int current_line, String from, String to, String line)
-{
-	if (from.size() > 200) {
-		from = from.substr(0, 197) + "...";
-	}
-	if (to.size() > 200) {
-		to = to.substr(0, 197) + "...";
-	}
-	if (line.size() > 400) {
-		line = line.substr(0, 397) + "...";
-	}
-
-	from = from.strip_escapes();
-	to = to.strip_escapes();
-	line = line.remove_chars("\r\n").strip_edges();
-
-	return vformat("Line(%d), %s -> %s  -  LINE \"\"\" %s \"\"\"", current_line, from, to, line);
-}
-
-// Prints only full lines e.g.:
-// Line (1) - FULL LINES - """yield(get_tree().create_timer(3), 'timeout')"""  =====>  """ await
-// get_tree().create_timer(3).timeout """
-String ProjectConverter3To4::simple_line_formatter(
-	int current_line, String old_line, String new_line)
-{
-	if (old_line.size() > 1000) {
-		old_line = old_line.substr(0, 997) + "...";
-	}
-	if (new_line.size() > 1000) {
-		new_line = new_line.substr(0, 997) + "...";
-	}
-
-	old_line = old_line.remove_chars("\r\n").strip_edges();
-	new_line = new_line.remove_chars("\r\n").strip_edges();
-
-	return vformat("Line (%d) - FULL LINES - \"\"\" %s \"\"\"  =====>  \"\"\" %s \"\"\"",
-		current_line, old_line, new_line);
-}
-
-// Collects string from vector strings
-String ProjectConverter3To4::collect_string_from_vector(Vector<SourceLine>& vector)
-{
-	String string = "";
-	for (int i = 0; i < vector.size(); i++) {
-		string += vector[i].line;
-
-		if (i != vector.size() - 1) {
-			string += "\n";
-		}
-	}
-	return string;
-}
-
-#endif // DISABLE_DEPRECATED
-
-void ProjectConverter3To4::rename_joypad_buttons_and_axes(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
-
-void ProjectConverter3To4::rename_input_map_scancode(Vector<SourceLine>&, ProjectConverter3To4::RegExContainer const&) {}
-
-bool ProjectConverter3To4::validate_conversion() {}
-
-bool ProjectConverter3To4::convert() {}
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -74756,16 +71488,6 @@ bool ProjectManager::_read_voltaire_project(const String& p_dir, VoltaireProject
 
 // Properties
 
-struct _EVCSort
-{
-	String name;
-	int order = 0;
-	bool basic = false;
-	bool save = false;
-	bool restart_if_changed = false;
-
-	bool operator<(const _EVCSort& p_vcs) const { return order < p_vcs.order; }
-};
 
 // Default configs
 
@@ -77152,7 +73874,16 @@ void ResourceImporterScene::get_import_options(
 {
 }
 
-void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const {}
+void EditorSceneFormatImporter::get_extensions(List<String>* r_extensions) const
+{
+	if (is_fbx) {
+		r_extensions->push_back("fbx");
+	}
+	else {
+		r_extensions->push_back("gltf");
+		r_extensions->push_back("glb");
+	}
+}
 
 #include "servers/display/display_server.h"
 
@@ -90621,11 +87352,6 @@ typedef enum _NT_FILE_INFORMATION_CLASS {
 
 extern "C" NTSYSAPI LONG NTAPI NtQueryInformationFile(HANDLE FileHandle, NT_IO_STATUS_BLOCK *IoStatusBlock, PVOID FileInformation, ULONG Length, NT_FILE_INFORMATION_CLASS FileInformationClass);
 
-struct DirAccessWindowsPrivate {
-	HANDLE h; // handle for FindFirstFile.
-	WIN32_FIND_DATA f;
-	WIN32_FIND_DATAW fu; // Unicode version.
-};
 
 String DirAccessWindows::fix_path(const String &p_path) const {
 	String r_path = DirAccess::fix_path(p_path.trim_prefix(R"(\\?\)").replace_char('\\', '/'));
@@ -90652,9 +87378,9 @@ Error DirAccessWindows::list_dir_begin() {
 	_cishidden = false;
 
 	list_dir_end();
-	p->h = FindFirstFileExW((LPCWSTR)(String(current_dir + "\\*").utf16().get_data()), FindExInfoStandard, &p->fu, FindExSearchNameMatch, nullptr, 0);
+	h = FindFirstFileExW((LPCWSTR)(String(current_dir + "\\*").utf16().get_data()), FindExInfoStandard, &fu, FindExSearchNameMatch, nullptr, 0);
 
-	if (p->h == INVALID_HANDLE_VALUE) {
+	if (h == INVALID_HANDLE_VALUE) {
 		return ERR_CANT_OPEN;
 	}
 
@@ -90662,18 +87388,18 @@ Error DirAccessWindows::list_dir_begin() {
 }
 
 String DirAccessWindows::get_next() {
-	if (p->h == INVALID_HANDLE_VALUE) {
+	if (h == INVALID_HANDLE_VALUE) {
 		return "";
 	}
 
-	_cisdir = (p->fu.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-	_cishidden = (p->fu.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
+	_cisdir = (fu.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+	_cishidden = (fu.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN);
 
-	String name = String::utf16((const char16_t *)(p->fu.cFileName));
+	String name = String::utf16((const char16_t *)(fu.cFileName));
 
-	if (FindNextFileW(p->h, &p->fu) == 0) {
-		FindClose(p->h);
-		p->h = INVALID_HANDLE_VALUE;
+	if (FindNextFileW(h, &fu) == 0) {
+		FindClose(h);
+		h = INVALID_HANDLE_VALUE;
 	}
 
 	return name;
@@ -90688,9 +87414,9 @@ bool DirAccessWindows::current_is_hidden() const {
 }
 
 void DirAccessWindows::list_dir_end() {
-	if (p->h != INVALID_HANDLE_VALUE) {
-		FindClose(p->h);
-		p->h = INVALID_HANDLE_VALUE;
+	if (h != INVALID_HANDLE_VALUE) {
+		FindClose(h);
+		h = INVALID_HANDLE_VALUE;
 	}
 }
 
@@ -91106,8 +87832,7 @@ Error DirAccessWindows::create_link(String p_source, String p_target) {
 }
 
 DirAccessWindows::DirAccessWindows() {
-	p = memnew(DirAccessWindowsPrivate);
-	p->h = INVALID_HANDLE_VALUE;
+	h = INVALID_HANDLE_VALUE;
 
 	Char16String real_current_dir_name;
 	size_t str_len = GetCurrentDirectoryW(0, nullptr);
@@ -91120,8 +87845,6 @@ DirAccessWindows::DirAccessWindows() {
 
 DirAccessWindows::~DirAccessWindows() {
 	list_dir_end();
-
-	memdelete(p);
 }
 
 #endif // WINDOWS_ENABLED
@@ -91396,7 +88119,7 @@ void IPWindows::make_default()
 #define SIO_UDP_NETRESET _WSAIOW(IOC_VENDOR, 15)
 #endif
 
-size_t NetSocketWinSock::_set_addr_storage(struct sockaddr_storage *p_addr, const IPAddress &p_ip, uint16_t p_port, IP::Type p_ip_type) {
+static size_t _winsock_set_addr_storage(struct sockaddr_storage *p_addr, const IPAddress &p_ip, uint16_t p_port, IP::Type p_ip_type) {
 	memset(p_addr, 0, sizeof(struct sockaddr_storage));
 	if (p_ip_type == IP::TYPE_IPV6 || p_ip_type == IP::TYPE_ANY) { // IPv6 socket.
 
@@ -91431,7 +88154,7 @@ size_t NetSocketWinSock::_set_addr_storage(struct sockaddr_storage *p_addr, cons
 	}
 }
 
-void NetSocketWinSock::_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_ip, uint16_t *r_port) {
+static void _winsock_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_ip, uint16_t *r_port) {
 	if (p_addr->ss_family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)p_addr;
 		if (r_ip) {
@@ -91451,11 +88174,11 @@ void NetSocketWinSock::_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *
 	}
 }
 
-Ref<NetSocket> NetSocketWinSock::_create_func() {
-	return memnew(NetSocketWinSock);
+Ref<NetSocket> NetSocket::_create_func() {
+	return memnew(NetSocket);
 }
 
-void NetSocketWinSock::make_default() {
+void NetSocket::make_default() {
 	ERR_FAIL_COND(_create != nullptr);
 
 	WSADATA data;
@@ -91463,21 +88186,21 @@ void NetSocketWinSock::make_default() {
 	_create = _create_func;
 }
 
-void NetSocketWinSock::cleanup() {
+void NetSocket::cleanup() {
 	ERR_FAIL_COND(_create == nullptr);
 
 	WSACleanup();
 	_create = nullptr;
 }
 
-NetSocketWinSock::NetSocketWinSock() {
+NetSocket::NetSocket() {
 }
 
-NetSocketWinSock::~NetSocketWinSock() {
+NetSocket::~NetSocket() {
 	close();
 }
 
-NetSocketWinSock::NetError NetSocketWinSock::_get_socket_error() const {
+NetSocket::NetError NetSocket::_get_socket_error() const {
 	int err = WSAGetLastError();
 	if (err == WSAEISCONN) {
 		return ERR_NET_IS_CONNECTED;
@@ -91501,7 +88224,7 @@ NetSocketWinSock::NetError NetSocketWinSock::_get_socket_error() const {
 	return ERR_NET_OTHER;
 }
 
-bool NetSocketWinSock::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind) const {
+bool NetSocket::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind) const {
 	if (p_for_bind && !(p_ip.is_valid() || p_ip.is_wildcard())) {
 		return false;
 	} else if (!p_for_bind && !p_ip.is_valid()) {
@@ -91512,7 +88235,7 @@ bool NetSocketWinSock::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind)
 	return !(_ip_type != IP::TYPE_ANY && !p_ip.is_wildcard() && _ip_type != type);
 }
 
-_FORCE_INLINE_ Error NetSocketWinSock::_change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add) {
+_FORCE_INLINE_ Error NetSocket::_change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(!_can_use_ip(p_ip, false), ERR_INVALID_PARAMETER);
 
@@ -91566,13 +88289,13 @@ _FORCE_INLINE_ Error NetSocketWinSock::_change_multicast_group(IPAddress p_ip, S
 	return OK;
 }
 
-void NetSocketWinSock::_set_socket(SOCKET p_sock, IP::Type p_ip_type, bool p_is_stream) {
+void NetSocket::_set_socket(uintptr_t p_sock, IP::Type p_ip_type, bool p_is_stream) {
 	_sock = p_sock;
 	_ip_type = p_ip_type;
 	_is_stream = p_is_stream;
 }
 
-Error NetSocketWinSock::open(Family p_family, Type p_sock_type, IP::Type &ip_type) {
+Error NetSocket::open(Family p_family, Type p_sock_type, IP::Type &ip_type) {
 	ERR_FAIL_COND_V(p_family != Family::INET, ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(is_open(), ERR_ALREADY_IN_USE);
 	ERR_FAIL_COND_V(ip_type > IP::TYPE_ANY || ip_type < IP::TYPE_NONE, ERR_INVALID_PARAMETER);
@@ -91621,7 +88344,7 @@ Error NetSocketWinSock::open(Family p_family, Type p_sock_type, IP::Type &ip_typ
 	return OK;
 }
 
-void NetSocketWinSock::close() {
+void NetSocket::close() {
 	if (_sock != INVALID_SOCKET) {
 		closesocket(_sock);
 	}
@@ -91631,13 +88354,13 @@ void NetSocketWinSock::close() {
 	_is_stream = false;
 }
 
-Error NetSocketWinSock::bind(Address p_addr) {
+Error NetSocket::bind(Address p_addr) {
 	ERR_FAIL_COND_V(!p_addr.is_inet(), ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(!_can_use_ip(p_addr.ip(), true), ERR_INVALID_PARAMETER);
 
 	sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_addr.ip(), p_addr.port(), _ip_type);
+	size_t addr_size = _winsock_set_addr_storage(&addr, p_addr.ip(), p_addr.port(), _ip_type);
 
 	if (::bind(_sock, (struct sockaddr *)&addr, addr_size) != 0) {
 		NetError err = _get_socket_error();
@@ -91649,7 +88372,7 @@ Error NetSocketWinSock::bind(Address p_addr) {
 	return OK;
 }
 
-Error NetSocketWinSock::listen(int p_max_pending) {
+Error NetSocket::listen(int p_max_pending) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	if (::listen(_sock, p_max_pending) != 0) {
@@ -91662,13 +88385,13 @@ Error NetSocketWinSock::listen(int p_max_pending) {
 	return OK;
 }
 
-Error NetSocketWinSock::connect_to_host(Address p_addr) {
+Error NetSocket::connect_to_host(Address p_addr) {
 	ERR_FAIL_COND_V(!p_addr.is_inet(), ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(!_can_use_ip(p_addr.ip(), false), ERR_INVALID_PARAMETER);
 
 	struct sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_addr.ip(), p_addr.port(), _ip_type);
+	size_t addr_size = _winsock_set_addr_storage(&addr, p_addr.ip(), p_addr.port(), _ip_type);
 
 	if (::WSAConnect(_sock, (struct sockaddr *)&addr, addr_size, nullptr, nullptr, nullptr, nullptr) != 0) {
 		NetError err = _get_socket_error();
@@ -91691,7 +88414,7 @@ Error NetSocketWinSock::connect_to_host(Address p_addr) {
 	return OK;
 }
 
-Error NetSocketWinSock::poll(PollType p_type, int p_timeout) const {
+Error NetSocket::poll(PollType p_type, int p_timeout) const {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	bool ready = false;
@@ -91752,7 +88475,7 @@ Error NetSocketWinSock::poll(PollType p_type, int p_timeout) const {
 	return ready ? OK : ERR_BUSY;
 }
 
-Error NetSocketWinSock::recv(uint8_t *p_buffer, int p_len, int &r_read) {
+Error NetSocket::recv(uint8_t *p_buffer, int p_len, int &r_read) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	r_read = ::recv(_sock, (char *)p_buffer, p_len, 0);
@@ -91773,7 +88496,7 @@ Error NetSocketWinSock::recv(uint8_t *p_buffer, int p_len, int &r_read) {
 	return OK;
 }
 
-Error NetSocketWinSock::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek) {
+Error NetSocket::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	struct sockaddr_storage from;
@@ -91811,7 +88534,7 @@ Error NetSocketWinSock::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAd
 	return OK;
 }
 
-Error NetSocketWinSock::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
+Error NetSocket::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	int flags = 0;
@@ -91832,11 +88555,11 @@ Error NetSocketWinSock::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
 	return OK;
 }
 
-Error NetSocketWinSock::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) {
+Error NetSocket::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	struct sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_ip, p_port, _ip_type);
+	size_t addr_size = _winsock_set_addr_storage(&addr, p_ip, p_port, _ip_type);
 	r_sent = ::sendto(_sock, (const char *)p_buffer, p_len, 0, (struct sockaddr *)&addr, addr_size);
 
 	if (r_sent < 0) {
@@ -91854,7 +88577,7 @@ Error NetSocketWinSock::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, 
 	return OK;
 }
 
-Error NetSocketWinSock::set_broadcasting_enabled(bool p_enabled) {
+Error NetSocket::set_broadcasting_enabled(bool p_enabled) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	// IPv6 has no broadcast support.
 	if (_ip_type == IP::TYPE_IPV6) {
@@ -91869,7 +88592,7 @@ Error NetSocketWinSock::set_broadcasting_enabled(bool p_enabled) {
 	return OK;
 }
 
-void NetSocketWinSock::set_blocking_enabled(bool p_enabled) {
+void NetSocket::set_blocking_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 
 	int ret = 0;
@@ -91880,7 +88603,7 @@ void NetSocketWinSock::set_blocking_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketWinSock::set_ipv6_only_enabled(bool p_enabled) {
+void NetSocket::set_ipv6_only_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 	// This option is only available in IPv6 sockets.
 	ERR_FAIL_COND(_ip_type == IP::TYPE_IPV4);
@@ -91891,7 +88614,7 @@ void NetSocketWinSock::set_ipv6_only_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketWinSock::set_tcp_no_delay_enabled(bool p_enabled) {
+void NetSocket::set_tcp_no_delay_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 	ERR_FAIL_COND(!_is_stream); // Not TCP.
 
@@ -91901,18 +88624,18 @@ void NetSocketWinSock::set_tcp_no_delay_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketWinSock::set_reuse_address_enabled(bool p_enabled) {
+void NetSocket::set_reuse_address_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 
 	// On Windows, enabling SO_REUSEADDR actually would also enable reuse port, very bad on TCP. Denying...
 	// Windows does not have this option, SO_REUSEADDR in this magical world means SO_REUSEPORT
 }
 
-bool NetSocketWinSock::is_open() const {
+bool NetSocket::is_open() const {
 	return _sock != INVALID_SOCKET;
 }
 
-int NetSocketWinSock::get_available_bytes() const {
+int NetSocket::get_available_bytes() const {
 	ERR_FAIL_COND_V(!is_open(), -1);
 
 	unsigned long len;
@@ -91925,7 +88648,7 @@ int NetSocketWinSock::get_available_bytes() const {
 	return len;
 }
 
-Error NetSocketWinSock::get_socket_address(Address *r_addr) const {
+Error NetSocket::get_socket_address(Address *r_addr) const {
 	ERR_FAIL_COND_V(!is_open(), FAILED);
 
 	struct sockaddr_storage saddr;
@@ -91937,14 +88660,14 @@ Error NetSocketWinSock::get_socket_address(Address *r_addr) const {
 	}
 	IPAddress ip;
 	uint16_t port = 0;
-	_set_ip_port(&saddr, &ip, &port);
+	_winsock_set_ip_port(&saddr, &ip, &port);
 	if (r_addr) {
 		*r_addr = Address(ip, port);
 	}
 	return OK;
 }
 
-Ref<NetSocket> NetSocketWinSock::accept(Address &r_addr) {
+Ref<NetSocket> NetSocket::accept(Address &r_addr) {
 	Ref<NetSocket> out;
 	ERR_FAIL_COND_V(!is_open(), out);
 
@@ -91959,20 +88682,20 @@ Ref<NetSocket> NetSocketWinSock::accept(Address &r_addr) {
 
 	IPAddress ip;
 	uint16_t port = 0;
-	_set_ip_port(&their_addr, &ip, &port);
+	_winsock_set_ip_port(&their_addr, &ip, &port);
 	r_addr = Address(ip, port);
 
-	Ref<NetSocketWinSock> ns = memnew(NetSocketWinSock);
+	Ref<NetSocket> ns = memnew(NetSocket);
 	ns->_set_socket(fd, _ip_type, _is_stream);
 	ns->set_blocking_enabled(false);
 	return Ref<NetSocket>(ns);
 }
 
-Error NetSocketWinSock::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+Error NetSocket::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
 	return _change_multicast_group(p_multi_address, p_if_name, true);
 }
 
-Error NetSocketWinSock::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+Error NetSocket::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
 	return _change_multicast_group(p_multi_address, p_if_name, false);
 }
 
@@ -93987,6 +90710,7 @@ static void _get_drives(List<String> *list) {
 	list->sort();
 }
 
+#ifndef MACOS_ENABLED
 int DirAccessUnix::get_drive_count() {
 	List<String> list;
 	_get_drives(&list);
@@ -94002,6 +90726,7 @@ String DirAccessUnix::get_drive(int p_drive) {
 
 	return list.get(p_drive);
 }
+#endif
 
 int DirAccessUnix::get_current_drive() {
 	int drive = 0;
@@ -94226,6 +90951,7 @@ uint64_t DirAccessUnix::get_space_left() {
 	return (uint64_t)vfs.f_bavail * (uint64_t)vfs.f_frsize;
 }
 
+#ifndef MACOS_ENABLED
 String DirAccessUnix::get_filesystem_type() const {
 #ifdef __linux__
 	struct statfs fs;
@@ -94413,6 +91139,7 @@ bool DirAccessUnix::is_case_sensitive(const String &p_path) const {
 #endif
 	return true;
 }
+#endif
 
 bool DirAccessUnix::is_equivalent(const String &p_path_a, const String &p_path_b) const {
 	String f1 = fix_path(p_path_a);
@@ -95387,7 +92114,7 @@ void IPUnix::make_default()
 #define IPV6_DROP_MEMBERSHIP IPV6_LEAVE_GROUP
 #endif
 
-size_t NetSocketUnix::_set_addr_storage(struct sockaddr_storage *p_addr, const IPAddress &p_ip, uint16_t p_port, IP::Type p_ip_type) {
+static size_t _unixsock_set_addr_storage(struct sockaddr_storage *p_addr, const IPAddress &p_ip, uint16_t p_port, IP::Type p_ip_type) {
 	memset(p_addr, 0, sizeof(struct sockaddr_storage));
 	if (p_ip_type == IP::TYPE_IPV6 || p_ip_type == IP::TYPE_ANY) { // IPv6 socket.
 
@@ -95422,7 +92149,7 @@ size_t NetSocketUnix::_set_addr_storage(struct sockaddr_storage *p_addr, const I
 	}
 }
 
-socklen_t NetSocketUnix::_unix_set_sockaddr(struct sockaddr_un *p_addr, const CharString &p_path) {
+static socklen_t _unixsock_set_sockaddr(struct sockaddr_un *p_addr, const CharString &p_path) {
 	memset(p_addr, 0, sizeof(struct sockaddr_un));
 	p_addr->sun_family = AF_UNIX;
 
@@ -95436,7 +92163,7 @@ socklen_t NetSocketUnix::_unix_set_sockaddr(struct sockaddr_un *p_addr, const Ch
 	return sizeof(struct sockaddr_un);
 }
 
-void NetSocketUnix::_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_ip, uint16_t *r_port) {
+static void _unixsock_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_ip, uint16_t *r_port) {
 	if (p_addr->ss_family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)p_addr;
 		if (r_ip) {
@@ -95456,21 +92183,21 @@ void NetSocketUnix::_set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_i
 	}
 }
 
-Ref<NetSocket> NetSocketUnix::_create_func() {
-	return memnew(NetSocketUnix);
+Ref<NetSocket> NetSocket::_create_func() {
+	return memnew(NetSocket);
 }
 
-void NetSocketUnix::make_default() {
+void NetSocket::make_default() {
 	_create = _create_func;
 }
 
-void NetSocketUnix::cleanup() {
+void NetSocket::cleanup() {
 }
 
-NetSocketUnix::NetSocketUnix() {
+NetSocket::NetSocket() {
 }
 
-NetSocketUnix::~NetSocketUnix() {
+NetSocket::~NetSocket() {
 	close();
 }
 
@@ -95478,7 +92205,7 @@ NetSocketUnix::~NetSocketUnix() {
 // EAGAIN and EWOULDBLOCK have the same value on most platforms, but it's not guaranteed.
 VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wlogical-op")
 
-NetSocketUnix::NetError NetSocketUnix::_get_socket_error() const {
+NetSocket::NetError NetSocket::_get_socket_error() const {
 	if (errno == EISCONN) {
 		return ERR_NET_IS_CONNECTED;
 	}
@@ -95503,7 +92230,7 @@ NetSocketUnix::NetError NetSocketUnix::_get_socket_error() const {
 
 VLTR_GCC_WARNING_POP
 
-bool NetSocketUnix::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind) const {
+bool NetSocket::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind) const {
 	if (p_for_bind && !(p_ip.is_valid() || p_ip.is_wildcard())) {
 		return false;
 	} else if (!p_for_bind && !p_ip.is_valid()) {
@@ -95514,12 +92241,12 @@ bool NetSocketUnix::_can_use_ip(const IPAddress &p_ip, const bool p_for_bind) co
 	return !(_ip_type != IP::TYPE_ANY && !p_ip.is_wildcard() && _ip_type != type);
 }
 
-bool NetSocketUnix::_can_use_path(const CharString &p_path) const {
+bool NetSocket::_can_use_path(const CharString &p_path) const {
 	// Path must not exceed maximum path length for Unix domain socket
 	return !p_path.is_empty() && (size_t)p_path.length() < sizeof(((sockaddr_un *)nullptr)->sun_path);
 }
 
-_FORCE_INLINE_ Error NetSocketUnix::_change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add) {
+_FORCE_INLINE_ Error NetSocket::_change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(_family != Family::INET, ERR_UNAVAILABLE);
 	ERR_FAIL_COND_V(!_can_use_ip(p_ip, false), ERR_INVALID_PARAMETER);
@@ -95574,7 +92301,7 @@ _FORCE_INLINE_ Error NetSocketUnix::_change_multicast_group(IPAddress p_ip, Stri
 	return OK;
 }
 
-void NetSocketUnix::_set_socket(int p_sock, IP::Type p_ip_type, bool p_is_stream) {
+void NetSocket::_set_socket(int p_sock, IP::Type p_ip_type, bool p_is_stream) {
 	_sock = p_sock;
 	_ip_type = p_ip_type;
 	_is_stream = p_is_stream;
@@ -95582,13 +92309,13 @@ void NetSocketUnix::_set_socket(int p_sock, IP::Type p_ip_type, bool p_is_stream
 	_set_close_exec_enabled(true);
 }
 
-void NetSocketUnix::_set_close_exec_enabled(bool p_enabled) {
+void NetSocket::_set_close_exec_enabled(bool p_enabled) {
 	// Enable close on exec to avoid sharing with subprocesses. Off by default on Windows.
 	int opts = fcntl(_sock, F_GETFD);
 	fcntl(_sock, F_SETFD, opts | FD_CLOEXEC);
 }
 
-Error NetSocketUnix::_inet_open(Type p_sock_type, IP::Type &r_ip_type) {
+Error NetSocket::_inet_open(Type p_sock_type, IP::Type &r_ip_type) {
 	ERR_FAIL_COND_V(r_ip_type > IP::TYPE_ANY || r_ip_type < IP::TYPE_NONE, ERR_INVALID_PARAMETER);
 
 #if defined(__OpenBSD__)
@@ -95641,7 +92368,7 @@ Error NetSocketUnix::_inet_open(Type p_sock_type, IP::Type &r_ip_type) {
 	return OK;
 }
 
-Error NetSocketUnix::_unix_open() {
+Error NetSocket::_unix_open() {
 	_sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	ERR_FAIL_COND_V(_sock == -1, FAILED);
 
@@ -95660,7 +92387,7 @@ Error NetSocketUnix::_unix_open() {
 	return OK;
 }
 
-Error NetSocketUnix::open(NetSocket::Family p_family, NetSocket::Type p_sock_type, IP::Type &r_ip_type) {
+Error NetSocket::open(NetSocket::Family p_family, NetSocket::Type p_sock_type, IP::Type &r_ip_type) {
 	ERR_FAIL_COND_V(is_open(), ERR_ALREADY_IN_USE);
 
 	switch (p_family) {
@@ -95674,7 +92401,7 @@ Error NetSocketUnix::open(NetSocket::Family p_family, NetSocket::Type p_sock_typ
 	}
 }
 
-void NetSocketUnix::close() {
+void NetSocket::close() {
 	if (_sock != -1) {
 		::close(_sock);
 
@@ -95691,13 +92418,23 @@ void NetSocketUnix::close() {
 	_family = Family::NONE;
 	_ip_type = IP::TYPE_NONE;
 	_is_stream = false;
+	if (multicast_lock_release_fn) {
+		if (wants_broadcast) {
+			multicast_lock_release_fn();
+		}
+		if (multicast_groups) {
+			multicast_lock_release_fn();
+		}
+	}
+	wants_broadcast = false;
+	multicast_groups = 0;
 }
 
-Error NetSocketUnix::_inet_bind(IPAddress p_addr, uint16_t p_port) {
+Error NetSocket::_inet_bind(IPAddress p_addr, uint16_t p_port) {
 	ERR_FAIL_COND_V(!_can_use_ip(p_addr, true), ERR_INVALID_PARAMETER);
 
 	sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_addr, p_port, _ip_type);
+	size_t addr_size = _unixsock_set_addr_storage(&addr, p_addr, p_port, _ip_type);
 
 	if (::bind(_sock, (struct sockaddr *)&addr, addr_size) != 0) {
 		NetError err = _get_socket_error();
@@ -95709,11 +92446,11 @@ Error NetSocketUnix::_inet_bind(IPAddress p_addr, uint16_t p_port) {
 	return OK;
 }
 
-Error NetSocketUnix::_unix_bind(const CharString &p_path) {
+Error NetSocket::_unix_bind(const CharString &p_path) {
 	ERR_FAIL_COND_V(p_path.is_empty(), ERR_INVALID_PARAMETER);
 
 	struct sockaddr_un addr;
-	socklen_t addr_size = _unix_set_sockaddr(&addr, p_path);
+	socklen_t addr_size = _unixsock_set_sockaddr(&addr, p_path);
 	ERR_FAIL_COND_V(addr_size == 0, ERR_INVALID_PARAMETER);
 
 	// If the socket file exists, attempt to remove it.
@@ -95751,7 +92488,7 @@ Error NetSocketUnix::_unix_bind(const CharString &p_path) {
 	return OK;
 }
 
-Error NetSocketUnix::bind(NetSocket::Address p_addr) {
+Error NetSocket::bind(NetSocket::Address p_addr) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(_family != p_addr.get_family(), ERR_INVALID_PARAMETER);
 	switch (p_addr.get_family()) {
@@ -95768,7 +92505,7 @@ Error NetSocketUnix::bind(NetSocket::Address p_addr) {
 	}
 }
 
-Error NetSocketUnix::listen(int p_max_pending) {
+Error NetSocket::listen(int p_max_pending) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	if (::listen(_sock, p_max_pending) != 0) {
@@ -95781,11 +92518,11 @@ Error NetSocketUnix::listen(int p_max_pending) {
 	return OK;
 }
 
-Error NetSocketUnix::_inet_connect_to_host(IPAddress p_host, uint16_t p_port) {
+Error NetSocket::_inet_connect_to_host(IPAddress p_host, uint16_t p_port) {
 	ERR_FAIL_COND_V(!_can_use_ip(p_host, false), ERR_INVALID_PARAMETER);
 
 	struct sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_host, p_port, _ip_type);
+	size_t addr_size = _unixsock_set_addr_storage(&addr, p_host, p_port, _ip_type);
 
 	if (::connect(_sock, (struct sockaddr *)&addr, addr_size) != 0) {
 		NetError err = _get_socket_error();
@@ -95808,11 +92545,11 @@ Error NetSocketUnix::_inet_connect_to_host(IPAddress p_host, uint16_t p_port) {
 	return OK;
 }
 
-Error NetSocketUnix::_unix_connect_to_host(const CharString &p_path) {
+Error NetSocket::_unix_connect_to_host(const CharString &p_path) {
 	ERR_FAIL_COND_V(!_can_use_path(p_path), ERR_INVALID_PARAMETER);
 
 	struct sockaddr_un addr;
-	socklen_t addr_size = _unix_set_sockaddr(&addr, p_path);
+	socklen_t addr_size = _unixsock_set_sockaddr(&addr, p_path);
 	ERR_FAIL_COND_V(addr_size == 0, ERR_INVALID_PARAMETER);
 
 	if (::connect(_sock, (struct sockaddr *)&addr, addr_size) != 0) {
@@ -95836,7 +92573,7 @@ Error NetSocketUnix::_unix_connect_to_host(const CharString &p_path) {
 	return OK;
 }
 
-Error NetSocketUnix::connect_to_host(NetSocket::Address p_addr) {
+Error NetSocket::connect_to_host(NetSocket::Address p_addr) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(_family != p_addr.get_family(), ERR_INVALID_PARAMETER);
 
@@ -95851,7 +92588,7 @@ Error NetSocketUnix::connect_to_host(NetSocket::Address p_addr) {
 	}
 }
 
-Error NetSocketUnix::poll(PollType p_type, int p_timeout) const {
+Error NetSocket::poll(PollType p_type, int p_timeout) const {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	struct pollfd pfd;
@@ -95885,7 +92622,7 @@ Error NetSocketUnix::poll(PollType p_type, int p_timeout) const {
 	return OK;
 }
 
-Error NetSocketUnix::recv(uint8_t *p_buffer, int p_len, int &r_read) {
+Error NetSocket::recv(uint8_t *p_buffer, int p_len, int &r_read) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	r_read = ::recv(_sock, p_buffer, p_len, 0);
@@ -95906,7 +92643,7 @@ Error NetSocketUnix::recv(uint8_t *p_buffer, int p_len, int &r_read) {
 	return OK;
 }
 
-Error NetSocketUnix::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek) {
+Error NetSocket::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(_family != Family::INET, ERR_UNAVAILABLE);
 
@@ -95945,7 +92682,7 @@ Error NetSocketUnix::recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddre
 	return OK;
 }
 
-Error NetSocketUnix::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
+Error NetSocket::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 
 	int flags = 0;
@@ -95971,12 +92708,12 @@ Error NetSocketUnix::send(const uint8_t *p_buffer, int p_len, int &r_sent) {
 	return OK;
 }
 
-Error NetSocketUnix::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) {
+Error NetSocket::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(_family != Family::INET, ERR_UNAVAILABLE);
 
 	struct sockaddr_storage addr;
-	size_t addr_size = _set_addr_storage(&addr, p_ip, p_port, _ip_type);
+	size_t addr_size = _unixsock_set_addr_storage(&addr, p_ip, p_port, _ip_type);
 	r_sent = ::sendto(_sock, p_buffer, p_len, 0, (struct sockaddr *)&addr, addr_size);
 
 	if (r_sent < 0) {
@@ -95994,7 +92731,7 @@ Error NetSocketUnix::sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPA
 	return OK;
 }
 
-Error NetSocketUnix::set_broadcasting_enabled(bool p_enabled) {
+Error NetSocket::set_broadcasting_enabled(bool p_enabled) {
 	ERR_FAIL_COND_V(!is_open(), ERR_UNCONFIGURED);
 	// IPv6 has no broadcast support.
 	if (_ip_type == IP::TYPE_IPV6) {
@@ -96006,10 +92743,18 @@ Error NetSocketUnix::set_broadcasting_enabled(bool p_enabled) {
 		WARN_PRINT("Unable to change broadcast setting.");
 		return FAILED;
 	}
+	if (p_enabled != wants_broadcast) {
+		if (p_enabled && multicast_lock_acquire_fn) {
+			multicast_lock_acquire_fn();
+		} else if (!p_enabled && multicast_lock_release_fn) {
+			multicast_lock_release_fn();
+		}
+		wants_broadcast = p_enabled;
+	}
 	return OK;
 }
 
-void NetSocketUnix::set_blocking_enabled(bool p_enabled) {
+void NetSocket::set_blocking_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 
 	int ret = 0;
@@ -96025,7 +92770,7 @@ void NetSocketUnix::set_blocking_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketUnix::set_ipv6_only_enabled(bool p_enabled) {
+void NetSocket::set_ipv6_only_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 	// This option is only available in IPv6 sockets.
 	ERR_FAIL_COND(_ip_type == IP::TYPE_IPV4);
@@ -96036,7 +92781,7 @@ void NetSocketUnix::set_ipv6_only_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketUnix::set_tcp_no_delay_enabled(bool p_enabled) {
+void NetSocket::set_tcp_no_delay_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 	ERR_FAIL_COND(!_is_stream); // Not TCP.
 
@@ -96046,7 +92791,7 @@ void NetSocketUnix::set_tcp_no_delay_enabled(bool p_enabled) {
 	}
 }
 
-void NetSocketUnix::set_reuse_address_enabled(bool p_enabled) {
+void NetSocket::set_reuse_address_enabled(bool p_enabled) {
 	ERR_FAIL_COND(!is_open());
 
 	int par = p_enabled ? 1 : 0;
@@ -96055,11 +92800,11 @@ void NetSocketUnix::set_reuse_address_enabled(bool p_enabled) {
 	}
 }
 
-bool NetSocketUnix::is_open() const {
+bool NetSocket::is_open() const {
 	return _sock != -1;
 }
 
-int NetSocketUnix::get_available_bytes() const {
+int NetSocket::get_available_bytes() const {
 	ERR_FAIL_COND_V(!is_open(), -1);
 
 	int len;
@@ -96072,7 +92817,7 @@ int NetSocketUnix::get_available_bytes() const {
 	return len;
 }
 
-Error NetSocketUnix::_inet_get_socket_address(IPAddress *r_ip, uint16_t *r_port) const {
+Error NetSocket::_inet_get_socket_address(IPAddress *r_ip, uint16_t *r_port) const {
 	struct sockaddr_storage saddr;
 	socklen_t len = sizeof(saddr);
 	if (getsockname(_sock, (struct sockaddr *)&saddr, &len) != 0) {
@@ -96080,11 +92825,11 @@ Error NetSocketUnix::_inet_get_socket_address(IPAddress *r_ip, uint16_t *r_port)
 		print_verbose("Error when reading local socket address.");
 		return FAILED;
 	}
-	_set_ip_port(&saddr, r_ip, r_port);
+	_unixsock_set_ip_port(&saddr, r_ip, r_port);
 	return OK;
 }
 
-Error NetSocketUnix::get_socket_address(NetSocket::Address *r_addr) const {
+Error NetSocket::get_socket_address(NetSocket::Address *r_addr) const {
 	ERR_FAIL_COND_V(!is_open(), FAILED);
 	switch (_family) {
 		case Family::INET: {
@@ -96110,7 +92855,7 @@ Error NetSocketUnix::get_socket_address(NetSocket::Address *r_addr) const {
 	return OK;
 }
 
-Ref<NetSocket> NetSocketUnix::_inet_accept(IPAddress &r_ip, uint16_t &r_port) {
+Ref<NetSocket> NetSocket::_inet_accept(IPAddress &r_ip, uint16_t &r_port) {
 	struct sockaddr_storage their_addr;
 	socklen_t size = sizeof(their_addr);
 	int fd = ::accept(_sock, (struct sockaddr *)&their_addr, &size);
@@ -96120,16 +92865,16 @@ Ref<NetSocket> NetSocketUnix::_inet_accept(IPAddress &r_ip, uint16_t &r_port) {
 		return Ref<NetSocket>();
 	}
 
-	_set_ip_port(&their_addr, &r_ip, &r_port);
+	_unixsock_set_ip_port(&their_addr, &r_ip, &r_port);
 
-	Ref<NetSocketUnix> ns;
+	Ref<NetSocket> ns;
 	ns.instantiate();
 	ns->_set_socket(fd, _ip_type, _is_stream);
 	ns->set_blocking_enabled(false);
 	return Ref<NetSocket>(ns);
 }
 
-Ref<NetSocket> NetSocketUnix::_unix_accept() {
+Ref<NetSocket> NetSocket::_unix_accept() {
 	struct sockaddr_un addr;
 	socklen_t addr_len = sizeof(addr);
 
@@ -96140,7 +92885,7 @@ Ref<NetSocket> NetSocketUnix::_unix_accept() {
 		return Ref<NetSocket>();
 	}
 
-	Ref<NetSocketUnix> ret = memnew(NetSocketUnix);
+	Ref<NetSocket> ret = memnew(NetSocket);
 	ret->_sock = fd;
 	ret->_family = _family;
 	ret->_unix_path = _unix_path;
@@ -96148,7 +92893,7 @@ Ref<NetSocket> NetSocketUnix::_unix_accept() {
 	return Ref<NetSocket>(ret);
 }
 
-Ref<NetSocket> NetSocketUnix::accept(NetSocket::Address &r_addr) {
+Ref<NetSocket> NetSocket::accept(NetSocket::Address &r_addr) {
 	Ref<NetSocket> out;
 	ERR_FAIL_COND_V(!is_open(), out);
 
@@ -96171,12 +92916,29 @@ Ref<NetSocket> NetSocketUnix::accept(NetSocket::Address &r_addr) {
 	return out;
 }
 
-Error NetSocketUnix::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	return _change_multicast_group(p_multi_address, p_if_name, true);
+Error NetSocket::join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+	Error err = _change_multicast_group(p_multi_address, p_if_name, true);
+	if (err != OK) {
+		return err;
+	}
+	if (!multicast_groups && multicast_lock_acquire_fn) {
+		multicast_lock_acquire_fn();
+	}
+	multicast_groups++;
+	return OK;
 }
 
-Error NetSocketUnix::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
-	return _change_multicast_group(p_multi_address, p_if_name, false);
+Error NetSocket::leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) {
+	Error err = _change_multicast_group(p_multi_address, p_if_name, false);
+	if (err != OK) {
+		return err;
+	}
+	ERR_FAIL_COND_V(multicast_groups == 0, ERR_BUG);
+	multicast_groups--;
+	if (!multicast_groups && multicast_lock_release_fn) {
+		multicast_lock_release_fn();
+	}
+	return OK;
 }
 
 #endif // UNIX_ENABLED && !UNIX_SOCKET_UNAVAILABLE
@@ -106207,9 +102969,14 @@ VkAllocationCallbacks* RenderingContextDriverVulkan::get_allocation_callbacks(Vk
 #endif
 }
 
-RenderingContextDriverVulkan::RenderingContextDriverVulkan()
+RenderingContextDriverVulkan::RenderingContextDriverVulkan(SurfaceMode p_surface_mode) :
+		surface_mode(p_surface_mode)
 {
-	// Empty constructor.
+#ifdef WINDOWS_ENABLED
+	if (surface_mode != SURFACE_NONE) {
+		OS::set_environment("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
+	}
+#endif
 }
 
 RenderingContextDriverVulkan::~RenderingContextDriverVulkan()
@@ -106812,7 +103579,13 @@ Error RenderingContextDriverVulkan::_initialize_devices()
 
 bool RenderingContextDriverVulkan::_use_validation_layers() const
 {
+#ifdef ANDROID_ENABLED
+	TightLocalVector<const char*> layer_names;
+	Error err = _find_validation_layers(layer_names);
+	return (err == OK) && !layer_names.is_empty();
+#else
 	return Engine::is_validation_layers_enabled();
+#endif
 }
 
 Error RenderingContextDriverVulkan::_create_vulkan_instance(
@@ -106906,14 +103679,19 @@ void RenderingContextDriverVulkan::driver_free(RenderingDeviceDriver* p_driver)
 	memdelete(p_driver);
 }
 
+#if !defined(LINUXBSD_ENABLED) && !defined(WINDOWS_ENABLED) && !defined(ANDROID_ENABLED) && !defined(MACOS_ENABLED) && !defined(APPLE_EMBEDDED_ENABLED)
+const char* RenderingContextDriverVulkan::_get_platform_surface_extension() const
+{
+	return nullptr;
+}
+
 RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(
 	const void* p_platform_data)
 {
-	DEV_ASSERT(
-		false &&
-		"Surface creation should not be called on the platform-agnostic version of the driver.");
+	(void)p_platform_data;
 	return SurfaceID();
 }
+#endif
 
 void RenderingContextDriverVulkan::surface_set_size(
 	SurfaceID p_surface, uint32_t p_width, uint32_t p_height)
@@ -128762,7 +125540,7 @@ void RasterizerCanvasGLES3::_render_batch(
 		const RCR::Item::CommandPolygon* polygon = reinterpret_cast<const RCR::Item::CommandPolygon*>(
 			state.canvas_instance_batches[p_index].command);
 
-		GLES3::PolygonBuffers* pb = polygon_buffers.polygons.getptr(polygon->polygon.polygon_id);
+		GLES3::PolygonBuffers* pb = polygon_buffers.polygons.getptr(polygon->polygon_id);
 		ERR_FAIL_NULL(pb);
 
 		glBindVertexArray(pb->vertex_array);

@@ -41,15 +41,10 @@ typedef uint32_t xkb_keycode_t;
 typedef uint32_t xkb_keysym_t;
 
 class KeyMappingXKB {
-	struct HashMapHasherKeys {
-		static _FORCE_INLINE_ uint32_t hash(Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
-		static _FORCE_INLINE_ uint32_t hash(unsigned p_key) { return hash_fmix32(p_key); }
-	};
-
-	static inline HashMap<xkb_keycode_t, Key, HashMapHasherKeys> xkb_keycode_map;
-	static inline HashMap<unsigned int, Key, HashMapHasherKeys> scancode_map;
-	static inline HashMap<Key, unsigned int, HashMapHasherKeys> scancode_map_inv;
-	static inline HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+	static inline HashMap<xkb_keycode_t, Key> xkb_keycode_map;
+	static inline HashMap<unsigned int, Key> scancode_map;
+	static inline HashMap<Key, unsigned int> scancode_map_inv;
+	static inline HashMap<unsigned int, KeyLocation> location_map;
 
 	KeyMappingXKB() {}
 
@@ -2886,31 +2881,6 @@ public:
 #endif // EGL_ENABLED
 
 
-#ifdef VULKAN_ENABLED
-
-#include "servers/display/display_server.h"
-
-class RenderingContextDriverVulkanLinux final : public RenderingContextDriverVulkan {
-private:
-	bool is_wayland = false;
-	virtual const char *_get_platform_surface_extension() const override;
-	virtual bool is_colorspace_externally_managed() const override { return is_wayland; }
-
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override;
-
-public:
-	struct WindowPlatformData {
-		void *display;
-		struct wl_surface *wl_surface;
-		unsigned long x11_window;
-	};
-
-	explicit RenderingContextDriverVulkanLinux(bool p_is_wayland) : is_wayland(p_is_wayland) {}
-	~RenderingContextDriverVulkanLinux() override = default;
-};
-
-#endif // VULKAN_ENABLED
 
 #ifdef WAYLAND_ENABLED
 
@@ -3712,7 +3682,7 @@ void DisplayServerWayland::show_window(DisplayServerEnums::WindowID p_window_id)
 			union
 			{
 #ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanLinux::WindowPlatformData vulkan;
+				RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 			} wpd;
 #ifdef VULKAN_ENABLED
@@ -5017,7 +4987,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 #ifdef RD_ENABLED
 #ifdef VULKAN_ENABLED
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanLinux(true));
+		rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_WAYLAND));
 	}
 #endif // VULKAN_ENABLED
 
@@ -23903,18 +23873,11 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #include <X11/keysymdef.h>
 
 class KeyMappingX11 {
-	struct HashMapHasherKeys {
-		static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
-		static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
-		static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
-		static _FORCE_INLINE_ uint32_t hash(const KeySym p_key) { return hash_fmix32(p_key); }
-	};
-
-	static inline HashMap<KeySym, Key, HashMapHasherKeys> xkeysym_map;
-	static inline HashMap<unsigned int, Key, HashMapHasherKeys> scancode_map;
-	static inline HashMap<Key, unsigned int, HashMapHasherKeys> scancode_map_inv;
-	static inline HashMap<KeySym, char32_t, HashMapHasherKeys> xkeysym_unicode_map;
-	static inline HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+	static inline HashMap<KeySym, Key> xkeysym_map;
+	static inline HashMap<unsigned int, Key> scancode_map;
+	static inline HashMap<Key, unsigned int> scancode_map_inv;
+	static inline HashMap<KeySym, char32_t> xkeysym_unicode_map;
+	static inline HashMap<unsigned int, KeyLocation> location_map;
 
 	KeyMappingX11() {}
 
@@ -29853,7 +29816,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 			union
 			{
 #ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanLinux::WindowPlatformData vulkan;
+				RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 			} wpd;
 
@@ -30338,7 +30301,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 #if defined(RD_ENABLED)
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanLinux(false));
+		rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 		Error context_err = rendering_context->initialize();
 		if (context_err != OK) {
 			ERR_PRINT("Failed to initialize Vulkan X11 context driver.");
@@ -30498,7 +30461,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 #if defined(RD_ENABLED)
 	if (rendering_context) {
-		RenderingContextDriverVulkanLinux::WindowPlatformData wpd;
+		RenderingContextDriverVulkan::WindowPlatformData wpd;
 		wpd.x11_window = x11_win;
 		wpd.display = x11_display;
 
@@ -32808,10 +32771,13 @@ KeyLocation KeyMappingX11::get_location(unsigned int p_code) {
 
 #include <drivers/vulkan/godot_vulkan.h>
 
-const char* RenderingContextDriverVulkanLinux::_get_platform_surface_extension() const
+const char* RenderingContextDriverVulkan::_get_platform_surface_extension() const
 {
+	if (surface_mode == SURFACE_NONE) {
+		return nullptr;
+	}
 #ifdef WAYLAND_ENABLED
-	if (is_wayland) {
+	if (surface_mode == SURFACE_WAYLAND) {
 		return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
 	}
 #endif
@@ -32822,7 +32788,7 @@ const char* RenderingContextDriverVulkanLinux::_get_platform_surface_extension()
 #endif
 }
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanLinux::surface_create(
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(
 	const void* p_platform_data)
 {
 	const WindowPlatformData* wpd = (const WindowPlatformData*)(p_platform_data);
@@ -32830,7 +32796,7 @@ RenderingContextDriver::SurfaceID RenderingContextDriverVulkanLinux::surface_cre
 	VkResult err = VK_ERROR_INITIALIZATION_FAILED;
 
 #ifdef WAYLAND_ENABLED
-	if (is_wayland) {
+	if (surface_mode == SURFACE_WAYLAND) {
 		VkWaylandSurfaceCreateInfoKHR create_info = {};
 		create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
 		create_info.display = (struct wl_display*)wpd->display;

@@ -10827,7 +10827,7 @@ Error DisplayServerWindows::_create_rendering_context_window(DisplayServerEnums:
 
 	union {
 #ifdef VULKAN_ENABLED
-		RenderingContextDriverVulkanWindows::WindowPlatformData vulkan;
+		RenderingContextDriverVulkan::WindowPlatformData vulkan;
 #endif
 #ifdef D3D12_ENABLED
 		RenderingContextDriverD3D12::WindowPlatformData d3d12;
@@ -11404,7 +11404,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 
 #ifdef VULKAN_ENABLED
 		if (tested_rendering_driver == "vulkan") {
-			rendering_context = memnew(RenderingContextDriverVulkanWindows);
+			rendering_context = memnew(RenderingContextDriverVulkan(RenderingContextDriverVulkan::SURFACE_PLATFORM));
 			tested_drivers.set_flag(DRIVER_ID_RD_VULKAN);
 		}
 #endif
@@ -11923,17 +11923,11 @@ DisplayServerWindows::~DisplayServerWindows() {
 // See WinUser.h and the below for documentation:
 // https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 
-struct HashMapHasherKeys {
-	static _FORCE_INLINE_ uint32_t hash(const Key p_key) { return hash_fmix32(static_cast<uint32_t>(p_key)); }
-	static _FORCE_INLINE_ uint32_t hash(const char32_t p_uchar) { return hash_fmix32(p_uchar); }
-	static _FORCE_INLINE_ uint32_t hash(const unsigned p_key) { return hash_fmix32(p_key); }
-};
-
-HashMap<unsigned int, Key, HashMapHasherKeys> vk_map;
-HashMap<unsigned int, Key, HashMapHasherKeys> scansym_map;
-HashMap<Key, unsigned int, HashMapHasherKeys> scansym_map_inv;
-HashMap<unsigned int, Key, HashMapHasherKeys> scansym_map_ext;
-HashMap<unsigned int, KeyLocation, HashMapHasherKeys> location_map;
+HashMap<unsigned int, Key> vk_map;
+HashMap<unsigned int, Key> scansym_map;
+HashMap<Key, unsigned int> scansym_map_inv;
+HashMap<unsigned int, Key> scansym_map_ext;
+HashMap<unsigned int, KeyLocation> location_map;
 
 void KeyMappingWindows::initialize() {
 	// VK_LBUTTON (0x01)
@@ -14262,28 +14256,17 @@ Dictionary detect_wgl() {
 
 #include <drivers/vulkan/godot_vulkan.h>
 
-const char *RenderingContextDriverVulkanWindows::_get_platform_surface_extension() const {
-	return VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+const char *RenderingContextDriverVulkan::_get_platform_surface_extension() const {
+	return surface_mode == SURFACE_NONE ? nullptr : VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
 }
 
-RenderingContextDriverVulkanWindows::RenderingContextDriverVulkanWindows() {
-	// Workaround for Vulkan not working on setups with AMD integrated graphics + NVIDIA dedicated GPU (GH-57708).
-	// This prevents using AMD integrated graphics with Vulkan entirely, but it allows the engine to start
-	// even on outdated/broken driver setups.
-	OS::set_environment("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
-}
-
-RenderingContextDriverVulkanWindows::~RenderingContextDriverVulkanWindows() {
-	// Does nothing.
-}
-
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWindows::surface_create(const void *p_platform_data) {
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkan::surface_create(const void *p_platform_data) {
 	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
 
 	VkWin32SurfaceCreateInfoKHR create_info = {};
 	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	create_info.hinstance = wpd->instance;
-	create_info.hwnd = wpd->window;
+	create_info.hinstance = (HINSTANCE)wpd->instance;
+	create_info.hwnd = (HWND)wpd->window;
 
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
 	VkResult err = vkCreateWin32SurfaceKHR(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);

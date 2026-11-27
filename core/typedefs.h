@@ -346,24 +346,17 @@ template <size_t... Is> struct BuildIndexSequence<0, Is...> : IndexSequence<Is..
 // Whether the default value of a type is just all-0 bytes.
 // This can most commonly be exploited by using memset for these types instead of loop-construct.
 // Trivially constructible types are also zero-constructible.
-template <typename T> struct is_zero_constructible : std::is_trivially_constructible<T>
-{
-};
-
-template <typename T> struct is_zero_constructible<const T> : is_zero_constructible<T>
-{
-};
-
-template <typename T> struct is_zero_constructible<volatile T> : is_zero_constructible<T>
-{
-};
-
-template <typename T> struct is_zero_constructible<const volatile T> : is_zero_constructible<T>
-{
-};
+template <typename T>
+inline constexpr bool is_zero_constructible_v = std::is_trivially_constructible_v<T>;
 
 template <typename T>
-inline constexpr bool is_zero_constructible_v = is_zero_constructible<T>::value;
+inline constexpr bool is_zero_constructible_v<const T> = is_zero_constructible_v<T>;
+
+template <typename T>
+inline constexpr bool is_zero_constructible_v<volatile T> = is_zero_constructible_v<T>;
+
+template <typename T>
+inline constexpr bool is_zero_constructible_v<const volatile T> = is_zero_constructible_v<T>;
 
 #if VLTR_HAS_CPP_ATTRIBUTE(gnu::warn_unused)
 // https://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Attributes.html#index-warn_005funused

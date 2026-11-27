@@ -2461,7 +2461,7 @@ constexpr AudioFrame operator*(int64_t p_scalar, const AudioFrame &p_frame) {
 }
 
 template <>
-struct is_zero_constructible<AudioFrame> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<AudioFrame> = true;
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"
@@ -3678,8 +3678,25 @@ public:
 
 class AudioStreamPlayback : public RefCounted
 {
+	enum
+	{
+		FP_BITS = 16, // fixed point used for resampling
+		FP_LEN = (1 << FP_BITS),
+		FP_MASK = FP_LEN - 1,
+		INTERNAL_BUFFER_LEN = 128, // 128 warrants 3ms positional jitter at much at 44100hz
+		CUBIC_INTERP_HISTORY = 4
+	};
+
+	AudioFrame internal_buffer[INTERNAL_BUFFER_LEN + CUBIC_INTERP_HISTORY];
+	unsigned int internal_buffer_end = -1;
+	uint64_t mix_offset = 0;
+
 protected:
 	PackedVector2Array _mix_audio_bind(float p_rate_scale, int p_frames);
+
+	void begin_resample();
+	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames);
+	virtual float get_stream_sampling_rate();
 
 public:
 	virtual void start(double p_from_pos = 0.0);
@@ -3694,6 +3711,7 @@ public:
 	virtual void tag_used_streams();
 
 	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames);
+	virtual float get_stream_sampling_rate() const;
 
 	virtual void set_is_sample(bool p_is_sample) {}
 
@@ -3712,33 +3730,7 @@ public:
 	void seek_playback(double p_time);
 };
 
-class AudioStreamPlaybackResampled : public AudioStreamPlayback
-{
-	enum
-	{
-		FP_BITS = 16, // fixed point used for resampling
-		FP_LEN = (1 << FP_BITS),
-		FP_MASK = FP_LEN - 1,
-		INTERNAL_BUFFER_LEN = 128, // 128 warrants 3ms positional jitter at much at 44100hz
-		CUBIC_INTERP_HISTORY = 4
-	};
-
-	AudioFrame internal_buffer[INTERNAL_BUFFER_LEN + CUBIC_INTERP_HISTORY];
-	unsigned int internal_buffer_end = -1;
-	uint64_t mix_offset = 0;
-
-protected:
-	void begin_resample();
-	// Returns the number of frames that were mixed.
-	virtual int _mix_internal(AudioFrame* p_buffer, int p_frames);
-	virtual float get_stream_sampling_rate();
-
-public:
-	virtual int mix(AudioFrame* p_buffer, float p_rate_scale, int p_frames) override;
-	virtual float get_stream_sampling_rate() const;
-
-	AudioStreamPlaybackResampled() { mix_offset = 0; }
-};
+using AudioStreamPlaybackResampled = AudioStreamPlayback;
 
 class AudioStream : public Resource
 {
@@ -6290,9 +6282,9 @@ public:
 
 	virtual bool has_feature(Feature p_feature) const { return false; }
 
-	virtual String get_name() const { return String(); }
+	virtual String get_name() const { return "Dummy"; }
 
-	virtual String get_short_name() const { return String(); }
+	virtual String get_short_name() const { return "dummy"; }
 
 	virtual int64_t get_features() const { return 0; }
 
@@ -7120,305 +7112,6 @@ public:
 
 #include "core/os/os.h"
 
-class TextServerDummy : public TextServer
-{
-	_THREAD_SAFE_CLASS_
-
-public:
-	virtual bool has_feature(Feature p_feature) const override { return false; }
-
-	virtual String get_name() const override { return "Dummy"; }
-
-	virtual String get_short_name() const override { return "dummy"; }
-
-	virtual int64_t get_features() const override { return 0; }
-
-	virtual void free_rid(const RID& p_rid) override {}
-
-	virtual bool has(const RID& p_rid) override { return false; }
-
-	virtual RID create_font() override { return RID(); }
-
-	virtual void font_set_fixed_size(const RID& p_font_rid, int64_t p_fixed_size) override {}
-
-	virtual int64_t font_get_fixed_size(const RID& p_font_rid) const override { return 0; }
-
-	virtual void font_set_fixed_size_scale_mode(
-		const RID& p_font_rid, TextServer::FixedSizeScaleMode p_fixed_size_scale_mode) override
-	{
-	}
-
-	virtual TextServer::FixedSizeScaleMode font_get_fixed_size_scale_mode(
-		const RID& p_font_rid) const override
-	{
-		return FIXED_SIZE_SCALE_DISABLE;
-	}
-
-	virtual void font_clear_size_cache(const RID& p_font_rid) override {}
-
-	virtual void font_remove_size_cache(const RID& p_font_rid, const Vector2i& p_size) override {}
-
-	virtual void font_set_ascent(const RID& p_font_rid, int64_t p_size, double p_ascent) override {}
-
-	virtual double font_get_ascent(const RID& p_font_rid, int64_t p_size) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_descent(const RID& p_font_rid, int64_t p_size, double p_descent) override
-	{
-	}
-
-	virtual double font_get_descent(const RID& p_font_rid, int64_t p_size) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_underline_position(
-		const RID& p_font_rid, int64_t p_size, double p_underline_position) override
-	{
-	}
-
-	virtual double font_get_underline_position(const RID& p_font_rid, int64_t p_size) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_underline_thickness(
-		const RID& p_font_rid, int64_t p_size, double p_underline_thickness) override
-	{
-	}
-
-	virtual double font_get_underline_thickness(
-		const RID& p_font_rid, int64_t p_size) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_scale(const RID& p_font_rid, int64_t p_size, double p_scale) override {}
-
-	virtual double font_get_scale(const RID& p_font_rid, int64_t p_size) const override
-	{
-		return 0;
-	}
-
-	virtual int64_t font_get_texture_count(
-		const RID& p_font_rid, const Vector2i& p_size) const override
-	{
-		return 0;
-	}
-
-	virtual void font_clear_textures(const RID& p_font_rid, const Vector2i& p_size) override {}
-
-	virtual void font_remove_texture(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_texture_index) override
-	{
-	}
-
-	virtual void font_set_texture_image(const RID& p_font_rid, const Vector2i& p_size,
-		int64_t p_texture_index, const Ref<Image>& p_image) override
-	{
-	}
-
-	virtual Ref<Image> font_get_texture_image(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_texture_index) const override
-	{
-		return Ref<Image>();
-	}
-
-	virtual PackedInt32Array font_get_glyph_list(
-		const RID& p_font_rid, const Vector2i& p_size) const override
-	{
-		return PackedInt32Array();
-	}
-
-	virtual void font_clear_glyphs(const RID& p_font_rid, const Vector2i& p_size) override {}
-
-	virtual void font_remove_glyph(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) override
-	{
-	}
-
-	virtual Vector2 font_get_glyph_advance(
-		const RID& p_font_rid, int64_t p_size, int64_t p_glyph) const override
-	{
-		return Vector2();
-	}
-
-	virtual void font_set_glyph_advance(
-		const RID& p_font_rid, int64_t p_size, int64_t p_glyph, const Vector2& p_advance) override
-	{
-	}
-
-	virtual Vector2 font_get_glyph_offset(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return Vector2();
-	}
-
-	virtual void font_set_glyph_offset(const RID& p_font_rid, const Vector2i& p_size,
-		int64_t p_glyph, const Vector2& p_offset) override
-	{
-	}
-
-	virtual Vector2 font_get_glyph_size(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return Vector2();
-	}
-
-	virtual void font_set_glyph_size(const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph,
-		const Vector2& p_gl_size) override
-	{
-	}
-
-	virtual Rect2 font_get_glyph_uv_rect(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return Rect2();
-	}
-
-	virtual void font_set_glyph_uv_rect(const RID& p_font_rid, const Vector2i& p_size,
-		int64_t p_glyph, const Rect2& p_uv_rect) override
-	{
-	}
-
-	virtual int64_t font_get_glyph_texture_idx(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_glyph_texture_idx(const RID& p_font_rid, const Vector2i& p_size,
-		int64_t p_glyph, int64_t p_texture_idx) override
-	{
-	}
-
-	virtual RID font_get_glyph_texture_rid(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return RID();
-	}
-
-	virtual Size2 font_get_glyph_texture_size(
-		const RID& p_font_rid, const Vector2i& p_size, int64_t p_glyph) const override
-	{
-		return Size2();
-	}
-
-	virtual int64_t font_get_glyph_index(const RID& p_font_rid, int64_t p_size, int64_t p_char,
-		int64_t p_variation_selector) const override
-	{
-		return 0;
-	}
-
-	virtual int64_t font_get_char_from_glyph_index(
-		const RID& p_font_rid, int64_t p_size, int64_t p_glyph_index) const override
-	{
-		return 0;
-	}
-
-	virtual bool font_has_char(const RID& p_font_rid, int64_t p_char) const override
-	{
-		return false;
-	}
-
-	virtual String font_get_supported_chars(const RID& p_font_rid) const override
-	{
-		return String();
-	}
-
-	virtual PackedInt32Array font_get_supported_glyphs(const RID& p_font_rid) const override
-	{
-		return PackedInt32Array();
-	}
-
-	virtual void font_draw_glyph(const RID& p_font_rid, const RID& p_canvas, int64_t p_size,
-		const Vector2& p_pos, int64_t p_index, const Color& p_color,
-		float p_oversampling) const override
-	{
-	}
-
-	virtual void font_draw_glyph_outline(const RID& p_font_rid, const RID& p_canvas, int64_t p_size,
-		int64_t p_outline_size, const Vector2& p_pos, int64_t p_index, const Color& p_color,
-		float p_oversampling) const override
-	{
-	}
-
-	virtual RID create_shaped_text(
-		TextServer::Direction p_direction, TextServer::Orientation p_orientation) override
-	{
-		return RID();
-	}
-
-	virtual void shaped_text_clear(const RID& p_shaped) override {}
-
-	virtual RID shaped_text_duplicate(const RID& p_shaped) override { return RID(); }
-
-	virtual int64_t shaped_get_span_count(const RID& p_shaped) const override { return 0; }
-
-	virtual RID shaped_text_substr(
-		const RID& p_shaped, int64_t p_start, int64_t p_length) const override
-	{
-		return RID();
-	}
-
-	virtual RID shaped_text_get_parent(const RID& p_shaped) const override { return RID(); }
-
-	virtual bool shaped_text_shape(const RID& p_shaped) override { return false; }
-
-	virtual bool shaped_text_is_ready(const RID& p_shaped) const override { return false; }
-
-	virtual const Glyph* shaped_text_get_glyphs(const RID& p_shaped) const override
-	{
-		return nullptr;
-	}
-
-	virtual const Glyph* shaped_text_sort_logical(const RID& p_shaped) override { return nullptr; }
-
-	virtual int64_t shaped_text_get_glyph_count(const RID& p_shaped) const override { return 0; }
-
-	virtual Vector2i shaped_text_get_range(const RID& p_shaped) const override
-	{
-		return Vector2i();
-	}
-
-	virtual int64_t shaped_text_get_trim_pos(const RID& p_shaped) const override { return -1; }
-
-	virtual int64_t shaped_text_get_ellipsis_pos(const RID& p_shaped) const override { return -1; }
-
-	virtual const Glyph* shaped_text_get_ellipsis_glyphs(const RID& p_shaped) const override
-	{
-		return nullptr;
-	}
-
-	virtual int64_t shaped_text_get_ellipsis_glyph_count(const RID& p_shaped) const override
-	{
-		return -1;
-	}
-
-	virtual Size2 shaped_text_get_size(const RID& p_shaped) const override { return Size2(); }
-
-	virtual double shaped_text_get_ascent(const RID& p_shaped) const override { return 0; }
-
-	virtual double shaped_text_get_descent(const RID& p_shaped) const override { return 0; }
-
-	virtual double shaped_text_get_width(const RID& p_shaped) const override { return 0; }
-
-	virtual double shaped_text_get_underline_position(const RID& p_shaped) const override
-	{
-		return 0;
-	}
-
-	virtual double shaped_text_get_underline_thickness(const RID& p_shaped) const override
-	{
-		return 0;
-	}
-
-	virtual void font_set_transform(const RID& p_font_rid, const Transform2D& p_transform) override
-	{
-	}
-};
 
 class TextLine;
 class TextParagraph;
@@ -10353,6 +10046,7 @@ public:
 		_ALWAYS_INLINE_ ID() = default;
 
 		_ALWAYS_INLINE_ ID(uint64_t p_id) : id(p_id) {}
+		_ALWAYS_INLINE_ uint32_t hash() const { return hash_one_uint64(id); }
 	};
 
 #define DEFINE_ID(m_name)                                                                          \
@@ -12020,6 +11714,17 @@ private:
 		uint32_t stages = 0;
 		int32_t index = 0;
 
+		FramebufferCache* framebuffer_cache = nullptr;
+		RDD::RenderPassID render_pass;
+		RDD::FramebufferID framebuffer;
+		Rect2i region;
+		LocalVector<AttachmentOperation> attachment_operations;
+		LocalVector<RDD::RenderPassClearValue> attachment_clear_values;
+#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
+		uint32_t breadcrumb = 0;
+#endif
+		bool split_cmd_buffer = false;
+
 		void clear()
 		{
 			data.clear();
@@ -12027,35 +11732,6 @@ private:
 			command_tracker_usages.clear();
 			stages = 0;
 		}
-	};
-
-	struct ComputeInstructionList
-	{
-		InstructionList list;
-#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-		uint32_t breadcrumb;
-#endif
-	};
-
-	struct RaytracingInstructionList
-	{
-		InstructionList list;
-	};
-
-	struct DrawInstructionList
-	{
-		InstructionList list;
-		FramebufferCache* framebuffer_cache = nullptr;
-		RDD::RenderPassID render_pass;
-		RDD::FramebufferID framebuffer;
-		Rect2i region;
-		LocalVector<AttachmentOperation> attachment_operations;
-		LocalVector<RDD::RenderPassClearValue> attachment_clear_values;
-
-#if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-		uint32_t breadcrumb;
-#endif
-		bool split_cmd_buffer = false;
 	};
 
 	struct RecordedCommandSort
@@ -12156,9 +11832,9 @@ private:
 	LocalVector<Color> command_label_colors;
 	LocalVector<uint32_t> command_label_offsets;
 	int32_t command_label_index = -1;
-	DrawInstructionList draw_instruction_list;
-	ComputeInstructionList compute_instruction_list;
-	RaytracingInstructionList raytracing_instruction_list;
+	InstructionList draw_instruction_list;
+	InstructionList compute_instruction_list;
+	InstructionList raytracing_instruction_list;
 	uint32_t command_count = 0;
 	uint32_t command_label_count = 0;
 	LocalVector<RecordedCommandListNode> command_list_nodes;
@@ -20382,10 +20058,6 @@ public:
 	int get_max_depth() const;
 
 	/* Discouraged, but works as a reference on how it must be used */
-	struct DefaultQueryResult {
-		virtual bool operator()(void *p_data) = 0; //return true whether you want to continue the query
-		virtual ~DefaultQueryResult() {}
-	};
 
 	template <typename QueryResult>
 	_FORCE_INLINE_ void aabb_query(const AABB &p_aabb, QueryResult &r_result);
@@ -22345,29 +22017,6 @@ private:
 	Vector<Triangle> triangles;
 	Vector<Vector3> vertices;
 
-	struct BVHCmpX
-	{
-		bool operator()(const BVH* p_left, const BVH* p_right) const
-		{
-			return p_left->center.x < p_right->center.x;
-		}
-	};
-
-	struct BVHCmpY
-	{
-		bool operator()(const BVH* p_left, const BVH* p_right) const
-		{
-			return p_left->center.y < p_right->center.y;
-		}
-	};
-
-	struct BVHCmpZ
-	{
-		bool operator()(const BVH* p_left, const BVH* p_right) const
-		{
-			return p_left->center.z < p_right->center.z;
-		}
-	};
 
 	int _create_bvh(BVH* p_bvh, BVH** p_bb, int p_from, int p_size, int p_depth, int& r_max_depth,
 		int& r_max_alloc);
@@ -25760,11 +25409,6 @@ public:
 	static void render_particle_colliders();
 	static void render_probes();
 
-	struct InterpolationData
-	{
-		bool interpolation_enabled = false;
-	};
-
 	struct Data
 	{
 		RendererSceneRender* scene_render = nullptr;
@@ -25817,7 +25461,7 @@ public:
 		RenderingLightCuller* light_culler = nullptr;
 
 		Cull cull;
-		InterpolationData _interpolation_data;
+		bool interpolation_enabled = false;
 	};
 
 	static inline Data* data = nullptr;
@@ -26357,21 +26001,6 @@ class Renderer;
 
 typedef uint64_t PolygonID;
 
-struct Polygon
-{
-	PolygonID polygon_id;
-	Rect2 rect_cache;
-
-	void create(const Vector<int>& p_indices, const Vector<Point2>& p_points,
-		const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
-		const Vector<int>& p_bones = Vector<int>(),
-		const Vector<float>& p_weights = Vector<float>(), int p_count = -1);
-
-	_FORCE_INLINE_ Polygon() { polygon_id = 0; }
-
-	~Polygon();
-};
-
 namespace RCR // RendererCanvasRender
 {
 
@@ -26405,104 +26034,56 @@ struct Item
 		};
 
 		Command* next = nullptr;
-		Type type;
-	};
+		Type type = TYPE_RECT;
 
-	struct CommandRect
-	{
-		Command header{nullptr, Command::TYPE_RECT};
 		Rect2 rect;
+		Rect2 source;
 		Color modulate;
-		Rect2 source;
-		uint16_t flags = 0;
-		float outline = 0;
-		float px_range = 1;
-
-		RID texture;
-	};
-
-	struct CommandNinePatch
-	{
-		Command header{nullptr, Command::TYPE_NINEPATCH};
-		Rect2 rect;
-		Rect2 source;
-		float margin[4];
-		bool draw_center = true;
 		Color color;
-		RSE::NinePatchAxisMode axis_x;
-		RSE::NinePatchAxisMode axis_y;
-
 		RID texture;
-	};
-
-	struct CommandPolygon
-	{
-		Command header{nullptr, Command::TYPE_POLYGON};
-		RSE::PrimitiveType primitive;
-		Polygon polygon;
-
-		RID texture;
-	};
-
-	struct CommandPrimitive
-	{
-		Command header{nullptr, Command::TYPE_PRIMITIVE};
-		uint32_t point_count;
+		RID mesh;
+		RID mesh_instance;
+		RID multimesh;
+		RID particles;
+		Transform2D transform;
+		Transform2D xform;
+		PolygonID polygon_id = 0;
 		Vector2 points[4];
 		Vector2 uvs[4];
 		Color colors[4];
-
-		RID texture;
-	};
-
-	struct CommandMesh
-	{
-		Command header{nullptr, Command::TYPE_MESH};
-		RID mesh;
-		Transform2D transform;
-		Color modulate;
-		RID mesh_instance;
-
-		RID texture;
-
-		~CommandMesh();
-	};
-
-	struct CommandMultiMesh
-	{
-		Command header{nullptr, Command::TYPE_MULTIMESH};
-		RID multimesh;
-
-		RID texture;
-	};
-
-	struct CommandParticles
-	{
-		Command header{nullptr, Command::TYPE_PARTICLES};
-		RID particles;
-		RID texture;
-	};
-
-	struct CommandTransform
-	{
-		Command header{nullptr, Command::TYPE_TRANSFORM};
-		Transform2D xform;
-	};
-
-	struct CommandClipIgnore
-	{
-		Command header{nullptr, Command::TYPE_CLIP_IGNORE};
-		bool ignore = false;
-	};
-
-	struct CommandAnimationSlice
-	{
-		Command header{nullptr, Command::TYPE_ANIMATION_SLICE};
 		double animation_length = 0;
 		double slice_begin = 0;
 		double slice_end = 0;
 		double offset = 0;
+		float margin[4] = {};
+		float outline = 0;
+		float px_range = 1;
+		uint32_t point_count = 0;
+		RSE::PrimitiveType primitive = RSE::PRIMITIVE_MAX;
+		RSE::NinePatchAxisMode axis_x = RSE::NINE_PATCH_STRETCH;
+		RSE::NinePatchAxisMode axis_y = RSE::NINE_PATCH_STRETCH;
+		uint16_t flags = 0;
+		bool draw_center = true;
+		bool ignore = false;
+
+		explicit Command(Type p_type = TYPE_RECT) : type(p_type) {}
+
+		void create_polygon(const Vector<int>& p_indices, const Vector<Point2>& p_points,
+			const Vector<Color>& p_colors, const Vector<Point2>& p_uvs = Vector<Point2>(),
+			const Vector<int>& p_bones = Vector<int>(),
+			const Vector<float>& p_weights = Vector<float>(), int p_count = -1);
 	};
+
+	using CommandRect = Command;
+	using CommandNinePatch = Command;
+	using CommandPolygon = Command;
+	using CommandPrimitive = Command;
+	using CommandMesh = Command;
+	using CommandMultiMesh = Command;
+	using CommandParticles = Command;
+	using CommandTransform = Command;
+	using CommandClipIgnore = Command;
+	using CommandAnimationSlice = Command;
 
 	struct ViewportRender
 	{
@@ -26581,15 +26162,14 @@ struct Item
 	mutable double debug_redraw_time = 0;
 #endif
 
-	template <typename T> T* alloc_command()
+	Command* alloc_command(Command::Type p_type)
 	{
-		static_assert(offsetof(T, header) == 0, "Command header must be at offset 0.");
-		T* command = nullptr;
+		Command* command = nullptr;
 		if (commands == nullptr) {
-			command = memnew_placement(memalloc(sizeof(T)), T);
-			command->header.next = nullptr;
-			commands = &command->header;
-			last_command = &command->header;
+			command = memnew_placement(memalloc(sizeof(Command)), Command(p_type));
+			command->next = nullptr;
+			commands = command;
+			last_command = command;
 		}
 		else {
 			while (true) {
@@ -26602,17 +26182,17 @@ struct Item
 
 				CommandBlock* c = &blocks.write[current_block];
 				size_t space_left = CommandBlock::MAX_SIZE - c->usage;
-				if (space_left < sizeof(T)) {
+				if (space_left < sizeof(Command)) {
 					current_block++;
 					continue;
 				}
 
 				void* memory = c->memory + c->usage;
-				command = memnew_placement(memory, T);
-				command->header.next = nullptr;
-				last_command->next = &command->header;
-				last_command = &command->header;
-				c->usage += sizeof(T);
+				command = memnew_placement(memory, Command(p_type));
+				command->next = nullptr;
+				last_command->next = command;
+				last_command = command;
+				c->usage += sizeof(Command);
 				break;
 			}
 		}
@@ -26621,53 +26201,7 @@ struct Item
 		return command;
 	}
 
-	void clear()
-	{
-		static_assert(std::is_trivially_destructible_v<CommandRect>);
-		static_assert(std::is_trivially_destructible_v<CommandNinePatch>);
-		static_assert(std::is_trivially_destructible_v<CommandPrimitive>);
-		static_assert(std::is_trivially_destructible_v<CommandMultiMesh>);
-		static_assert(std::is_trivially_destructible_v<CommandParticles>);
-		static_assert(std::is_trivially_destructible_v<CommandTransform>);
-		static_assert(std::is_trivially_destructible_v<CommandClipIgnore>);
-		static_assert(std::is_trivially_destructible_v<CommandAnimationSlice>);
-
-		Command* c = commands;
-		while (c) {
-			Command* n = c->next;
-			switch (c->type) {
-			case Command::TYPE_POLYGON:
-				reinterpret_cast<CommandPolygon*>(c)->~CommandPolygon();
-				break;
-			case Command::TYPE_MESH:
-				reinterpret_cast<CommandMesh*>(c)->~CommandMesh();
-				break;
-			default:
-				break;
-			}
-			if (c == commands) {
-				memfree(commands);
-				commands = nullptr;
-			}
-			c = n;
-		}
-		{
-			uint32_t cbc = MIN((current_block + 1), (uint32_t)blocks.size());
-			CommandBlock* blockptr = blocks.ptrw();
-			for (uint32_t i = 0; i < cbc; i++) {
-				blockptr[i].usage = 0;
-			}
-		}
-
-		last_command = nullptr;
-		commands = nullptr;
-		current_block = 0;
-		clip = false;
-		rect_dirty = true;
-		final_clip_owner = nullptr;
-		material_owner = nullptr;
-		light_masked = false;
-	}
+	void clear();
 
 	RSE::CanvasItemTextureFilter texture_filter;
 	RSE::CanvasItemTextureRepeat texture_repeat;
@@ -27756,9 +27290,6 @@ public:
 		uint32_t uint;
 	};
 
-	struct FunctionNode;
-	struct BlockNode;
-
 	struct Node
 	{
 		Node* next = nullptr;
@@ -27779,6 +27310,17 @@ public:
 			NODE_TYPE_STRUCT,
 		};
 
+		enum BlockType
+		{
+			BLOCK_TYPE_STANDARD,
+			BLOCK_TYPE_FOR_INIT,
+			BLOCK_TYPE_FOR_CONDITION,
+			BLOCK_TYPE_FOR_EXPRESSION,
+			BLOCK_TYPE_SWITCH,
+			BLOCK_TYPE_CASE,
+			BLOCK_TYPE_DEFAULT,
+		};
+
 		struct Declaration
 		{
 			String name;
@@ -27788,10 +27330,39 @@ public:
 			bool single_expression = false;
 		};
 
+		struct Variable
+		{
+			DataType type;
+			String struct_name;
+			DataPrecision precision;
+			int line;
+			int array_size;
+			bool is_const;
+			Vector<Scalar> values;
+		};
+
+		struct Argument
+		{
+			ArgumentQualifier qualifier;
+			String name;
+			DataType type;
+			String struct_name;
+			DataPrecision precision;
+			bool tex_argument_check;
+			TextureFilter tex_argument_filter;
+			TextureRepeat tex_argument_repeat;
+			bool tex_builtin_check;
+			String tex_builtin;
+			int tex_hint = 0;
+			bool is_const;
+			int array_size;
+
+			HashMap<String, HashSet<int>> tex_argument_connect;
+		};
+
 		Type type;
 
-		// Unified fields for expression/statement AST nodes (Operator, Variable, VariableDeclaration,
-		// Array, ArrayConstruct, Constant, ControlFlow, Member, Struct):
+		// Expression / statement AST fields:
 		DataType return_cache = TYPE_VOID;
 		DataPrecision return_precision_cache = PRECISION_DEFAULT;
 		int return_array_size = 0;
@@ -27820,12 +27391,35 @@ public:
 		Vector<Declaration> array_declarations;
 		Vector<Node*> initializer;
 		Vector<Node*> expressions;
-		Vector<BlockNode*> blocks;
+		Vector<Node*> blocks;
 		List<Node*> members;
 
-		virtual DataType get_datatype() const
+		// Block AST fields:
+		Node* parent_function = nullptr;
+		Node* parent_block = nullptr;
+		int block_type = BLOCK_TYPE_STANDARD;
+		SubClassTag block_tag = SubClassTag::TAG_GLOBAL;
+		HashMap<String, Variable> variables;
+		List<Node*> statements;
+		bool single_statement = false;
+		bool use_comma_between_statements = false;
+		bool use_op_eval = true;
+		DataType expected_type = TYPE_VOID;
+		HashSet<int> constants;
+
+		// Function AST fields:
+		DataType return_type = TYPE_VOID;
+		String return_struct_name;
+		DataPrecision return_precision = PRECISION_DEFAULT;
+		Vector<Argument> func_arguments;
+		Node* body = nullptr;
+		bool can_discard = false;
+
+		DataType get_datatype() const
 		{
 			switch (type) {
+			case NODE_TYPE_FUNCTION:
+				return return_type;
 			case NODE_TYPE_OPERATOR:
 				return return_cache;
 			case NODE_TYPE_VARIABLE:
@@ -27843,9 +27437,11 @@ public:
 			}
 		}
 
-		virtual String get_datatype_name() const
+		String get_datatype_name() const
 		{
 			switch (type) {
+			case NODE_TYPE_FUNCTION:
+				return return_struct_name;
 			case NODE_TYPE_OPERATOR:
 			case NODE_TYPE_VARIABLE:
 			case NODE_TYPE_ARRAY_CONSTRUCT:
@@ -27859,9 +27455,10 @@ public:
 			}
 		}
 
-		virtual int get_array_size() const
+		int get_array_size() const
 		{
 			switch (type) {
+			case NODE_TYPE_FUNCTION:
 			case NODE_TYPE_OPERATOR:
 				return return_array_size;
 			case NODE_TYPE_ARRAY:
@@ -27876,7 +27473,7 @@ public:
 			}
 		}
 
-		virtual bool is_indexed() const
+		bool is_indexed() const
 		{
 			switch (type) {
 			case NODE_TYPE_OPERATOR:
@@ -27890,7 +27487,7 @@ public:
 			}
 		}
 
-		virtual Vector<Scalar> get_values() const
+		Vector<Scalar> get_values() const
 		{
 			if (type == NODE_TYPE_OPERATOR || type == NODE_TYPE_CONSTANT) {
 				return values;
@@ -27899,7 +27496,7 @@ public:
 		}
 
 		Node(Type t) : type(t) {}
-		virtual ~Node() {}
+		~Node() {}
 	};
 
 	using OperatorNode = Node;
@@ -27911,6 +27508,8 @@ public:
 	using ControlFlowNode = Node;
 	using MemberNode = Node;
 	using StructNode = Node;
+	using BlockNode = Node;
+	using FunctionNode = Node;
 
 	template <typename T> T* alloc_node()
 	{
@@ -27929,48 +27528,6 @@ public:
 	}
 
 	Node* nodes = nullptr;
-
-	struct BlockNode : public Node
-	{
-		FunctionNode* parent_function = nullptr;
-		BlockNode* parent_block = nullptr;
-
-		enum BlockType
-		{
-			BLOCK_TYPE_STANDARD,
-			BLOCK_TYPE_FOR_INIT,
-			BLOCK_TYPE_FOR_CONDITION,
-			BLOCK_TYPE_FOR_EXPRESSION,
-			BLOCK_TYPE_SWITCH,
-			BLOCK_TYPE_CASE,
-			BLOCK_TYPE_DEFAULT,
-		};
-
-		int block_type = BLOCK_TYPE_STANDARD;
-		SubClassTag block_tag = SubClassTag::TAG_GLOBAL;
-
-		struct Variable
-		{
-			DataType type;
-			String struct_name;
-			DataPrecision precision;
-			int line;
-			int array_size;
-			bool is_const;
-			Vector<Scalar> values;
-		};
-
-		HashMap<String, Variable> variables;
-		List<Node*> statements;
-		bool single_statement = false;
-		bool use_comma_between_statements = false;
-		bool use_op_eval = true;
-
-		DataType expected_type = TYPE_VOID;
-		HashSet<int> constants;
-
-		BlockNode() : Node(NODE_TYPE_BLOCK) {}
-	};
 
 	struct ShaderNode : public Node
 	{
@@ -28124,47 +27681,6 @@ public:
 		Vector<Struct> vstructs;
 
 		ShaderNode() : Node(NODE_TYPE_SHADER) {}
-	};
-
-	struct FunctionNode : public Node
-	{
-		struct Argument
-		{
-			ArgumentQualifier qualifier;
-			String name;
-			DataType type;
-			String struct_name;
-			DataPrecision precision;
-			// for passing textures as arguments
-			bool tex_argument_check;
-			TextureFilter tex_argument_filter;
-			TextureRepeat tex_argument_repeat;
-			bool tex_builtin_check;
-			String tex_builtin;
-			ShaderNode::Uniform::Hint tex_hint;
-			bool is_const;
-			int array_size;
-
-			HashMap<String, HashSet<int>> tex_argument_connect;
-		};
-
-		String name;
-		String rname;
-		DataType return_type = TYPE_VOID;
-		String return_struct_name;
-		DataPrecision return_precision = PRECISION_DEFAULT;
-		int return_array_size = 0;
-		Vector<Argument> arguments;
-		BlockNode* body = nullptr;
-		bool can_discard = false;
-
-		virtual DataType get_datatype() const override { return return_type; }
-
-		virtual String get_datatype_name() const override { return String(return_struct_name); }
-
-		virtual int get_array_size() const override { return return_array_size; }
-
-		FunctionNode() : Node(NODE_TYPE_FUNCTION) {}
 	};
 
 
@@ -49749,19 +49265,6 @@ public:
 // XrUuidEXT HashMap Helpers
 
 
-template <>
-struct HashMapComparatorDefault<XrUuidEXT>
-{
-	static bool compare(const XrUuidEXT& p_lhs, const XrUuidEXT& p_rhs)
-	{
-		for (int i = 0; i < XR_UUID_SIZE_EXT; i++) {
-			if (p_lhs.data[i] != p_rhs.data[i]) {
-				return false;
-			}
-		}
-		return true;
-	}
-};
 
 ///////////////////////////////////////////////////////////////////////////
 // OpenXRUtil
@@ -58016,7 +57519,7 @@ struct ResourceUsageEntry {
 } // namespace MTL3
 
 template <>
-struct is_zero_constructible<MTL3::ResourceUsageEntry> : std::true_type {};
+inline constexpr bool is_zero_constructible_v<MTL3::ResourceUsageEntry> = true;
 
 namespace MTL3 {
 
@@ -59321,12 +58824,9 @@ struct SHA256Digest {
 	static SHA256Digest deserialize(LocalVector<uint8_t> p_ser) {
 		return SHA256Digest((const char *)p_ser.ptr());
 	}
-};
 
-template <>
-struct HashMapComparatorDefault<SHA256Digest> {
-	static bool compare(const SHA256Digest &p_lhs, const SHA256Digest &p_rhs) {
-		return memcmp(p_lhs.data, p_rhs.data, CC_SHA256_DIGEST_LENGTH) == 0;
+	bool operator==(const SHA256Digest &p_rhs) const {
+		return memcmp(data, p_rhs.data, CC_SHA256_DIGEST_LENGTH) == 0;
 	}
 };
 
@@ -59615,40 +59115,6 @@ public:
 	virtual ~MDFrameBuffer() = default;
 };
 
-template <>
-struct HashMapComparatorDefault<RDD::ShaderID> {
-	static bool compare(const RDD::ShaderID &p_lhs, const RDD::ShaderID &p_rhs) {
-		return p_lhs.id == p_rhs.id;
-	}
-};
-
-template <>
-struct HashMapComparatorDefault<RDD::BufferID> {
-	static bool compare(const RDD::BufferID &p_lhs, const RDD::BufferID &p_rhs) {
-		return p_lhs.id == p_rhs.id;
-	}
-};
-
-template <>
-struct HashMapComparatorDefault<RDD::TextureID> {
-	static bool compare(const RDD::TextureID &p_lhs, const RDD::TextureID &p_rhs) {
-		return p_lhs.id == p_rhs.id;
-	}
-};
-
-template <>
-struct HashMapHasherDefaultImpl<RDD::BufferID> {
-	static _FORCE_INLINE_ uint32_t hash(const RDD::BufferID &p_value) {
-		return HashMapHasherDefaultImpl<uint64_t>::hash(p_value.id);
-	}
-};
-
-template <>
-struct HashMapHasherDefaultImpl<RDD::TextureID> {
-	static _FORCE_INLINE_ uint32_t hash(const RDD::TextureID &p_value) {
-		return HashMapHasherDefaultImpl<uint64_t>::hash(p_value.id);
-	}
-};
 
 namespace rid {
 
@@ -61540,10 +61006,9 @@ private:
 protected:
 	Error _find_validation_layers(TightLocalVector<const char*>& r_layer_names) const;
 
-	// Can be overridden by platform-specific drivers.
-	virtual const char* _get_platform_surface_extension() const { return nullptr; }
+	const char* _get_platform_surface_extension() const;
 
-	virtual bool _use_validation_layers() const;
+	bool _use_validation_layers() const;
 	virtual Error _create_vulkan_instance(
 		const VkInstanceCreateInfo* p_create_info, VkInstance* r_instance);
 
@@ -61581,7 +61046,7 @@ public:
 	virtual void surface_destroy(SurfaceID p_surface) override;
 	virtual bool is_debug_utils_enabled() const override;
 
-	virtual bool is_colorspace_externally_managed() const { return false; }
+	bool is_colorspace_externally_managed() const { return surface_mode == SURFACE_WAYLAND; }
 
 	bool is_colorspace_supported() const;
 
@@ -61653,7 +61118,28 @@ public:
 		const VkDeviceMemoryReportCallbackDataEXT* p_callback_data, void* p_user_data);
 #endif
 
-	RenderingContextDriverVulkan();
+	enum SurfaceMode
+	{
+		SURFACE_NONE,
+		SURFACE_PLATFORM,
+		SURFACE_WAYLAND,
+	};
+
+	struct WindowPlatformData
+	{
+		void* display;
+		struct wl_surface* wl_surface;
+		unsigned long x11_window;
+		void* const* layer_ptr;
+		void* window;
+		void* instance;
+	};
+
+private:
+	SurfaceMode surface_mode = SURFACE_NONE;
+
+public:
+	explicit RenderingContextDriverVulkan(SurfaceMode p_surface_mode = SURFACE_NONE);
 	virtual ~RenderingContextDriverVulkan() override;
 };
 
@@ -61952,89 +61438,6 @@ public:
 #include <sys/un.h>
 #include "core/io/net_socket.h"
 
-class NetSocketUnix : public NetSocket
-{
-private:
-	int _sock = -1;
-	Family _family = Family::NONE;
-	IP::Type _ip_type = IP::TYPE_NONE;
-	bool _is_stream = false;
-	CharString _unix_path;
-	// If this is Family::UNIX,
-	bool _unlink_on_close = false;
-
-	enum NetError
-	{
-		ERR_NET_WOULD_BLOCK,
-		ERR_NET_IS_CONNECTED,
-		ERR_NET_IN_PROGRESS,
-		ERR_NET_ADDRESS_INVALID_OR_UNAVAILABLE,
-		ERR_NET_UNAUTHORIZED,
-		ERR_NET_BUFFER_TOO_SMALL,
-		ERR_NET_OTHER,
-	};
-
-	NetError _get_socket_error() const;
-	void _set_socket(int p_sock, IP::Type p_ip_type, bool p_is_stream);
-	_FORCE_INLINE_ Error _change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add);
-	_FORCE_INLINE_ void _set_close_exec_enabled(bool p_enabled);
-
-protected:
-	static Ref<NetSocket> _create_func();
-
-	bool _can_use_ip(const IPAddress& p_ip, const bool p_for_bind) const;
-	bool _can_use_path(const CharString& p_path) const;
-
-	Error _inet_open(Type p_sock_type, IP::Type& r_ip_type);
-	Error _inet_bind(IPAddress p_addr, uint16_t p_port);
-	Error _inet_connect_to_host(IPAddress p_addr, uint16_t p_port);
-	Error _inet_get_socket_address(IPAddress* r_ip, uint16_t* r_port) const;
-	Ref<NetSocket> _inet_accept(IPAddress& r_ip, uint16_t& r_port);
-
-	static socklen_t _unix_set_sockaddr(struct sockaddr_un* p_addr, const CharString& p_path);
-	Error _unix_open();
-	Error _unix_bind(const CharString& p_path);
-	Error _unix_connect_to_host(const CharString& p_path);
-	Ref<NetSocket> _unix_accept();
-
-public:
-	static void make_default();
-	static void cleanup();
-	static void _set_ip_port(struct sockaddr_storage* p_addr, IPAddress* r_ip, uint16_t* r_port);
-	static size_t _set_addr_storage(struct sockaddr_storage* p_addr, const IPAddress& p_ip,
-		uint16_t p_port, IP::Type p_ip_type);
-
-	virtual Error open(Family p_family, Type p_sock_type, IP::Type& r_ip_type) override;
-	virtual void close() override;
-	virtual Error bind(Address p_addr) override;
-	virtual Error listen(int p_max_pending) override;
-	virtual Error connect_to_host(Address p_addr) override;
-	virtual Error poll(PollType p_type, int timeout) const override;
-	virtual Error recv(uint8_t* p_buffer, int p_len, int& r_read) override;
-	virtual Error recvfrom(uint8_t* p_buffer, int p_len, int& r_read, IPAddress& r_ip,
-		uint16_t& r_port, bool p_peek = false) override;
-	virtual Error send(const uint8_t* p_buffer, int p_len, int& r_sent) override;
-	virtual Error sendto(
-		const uint8_t* p_buffer, int p_len, int& r_sent, IPAddress p_ip, uint16_t p_port) override;
-	virtual Ref<NetSocket> accept(Address& r_addr) override;
-
-	virtual bool is_open() const override;
-	virtual int get_available_bytes() const override;
-	virtual Error get_socket_address(Address* r_addr) const override;
-
-	virtual Error set_broadcasting_enabled(bool p_enabled) override;
-	virtual void set_blocking_enabled(bool p_enabled) override;
-	virtual void set_ipv6_only_enabled(bool p_enabled) override;
-	virtual void set_tcp_no_delay_enabled(bool p_enabled) override;
-	virtual void set_reuse_address_enabled(bool p_enabled) override;
-	virtual Error join_multicast_group(
-		const IPAddress& p_multi_address, const String& p_if_name) override;
-	virtual Error leave_multicast_group(
-		const IPAddress& p_multi_address, const String& p_if_name) override;
-
-	NetSocketUnix();
-	~NetSocketUnix() override;
-};
 
 #endif // UNIX_ENABLED && !UNIX_SOCKET_UNAVAILABLE
 
@@ -62056,7 +61459,11 @@ class DirAccessUnix : public DirAccess
 protected:
 	String current_dir;
 
+#ifdef MACOS_ENABLED
+	virtual String fix_unicode_name(const char* p_name) const;
+#else
 	virtual String fix_unicode_name(const char* p_name) const { return String::utf8(p_name); }
+#endif
 
 	virtual bool is_hidden(const String& p_name);
 	virtual String fix_path(const String& p_path) const override;
@@ -62103,6 +61510,9 @@ public:
 	virtual uint64_t get_space_left() override;
 
 	virtual String get_filesystem_type() const override;
+#ifdef MACOS_ENABLED
+	virtual bool is_bundle(const String& p_file) const override;
+#endif
 
 	DirAccessUnix();
 	~DirAccessUnix();
@@ -63175,21 +62585,6 @@ public:
 #include <sys/types.h>
 #include <unistd.h>
 
-class DirAccessMacOS : public DirAccessUnix {
-
-protected:
-	virtual String fix_unicode_name(const char *p_name) const override;
-
-	virtual int get_drive_count() override;
-	virtual String get_drive(int p_drive) override;
-
-	virtual bool is_hidden(const String &p_name) override;
-	virtual bool is_case_sensitive(const String &p_path) const override;
-
-	virtual String get_filesystem_type() const override;
-
-	virtual bool is_bundle(const String &p_file) const override;
-};
 
 #endif // UNIX ENABLED
 
@@ -63448,21 +62843,7 @@ extern "C" NSString *const kCAContextCIFilterBehavior;
 
 #import <QuartzCore/CAMetalLayer.h>
 
-class RenderingContextDriverVulkanMacOS : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
 
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-
-public:
-	struct WindowPlatformData {
-		CAMetalLayer *const *layer_ptr;
-	};
-
-	RenderingContextDriverVulkanMacOS();
-	~RenderingContextDriverVulkanMacOS();
-};
 
 #endif // VULKAN_ENABLED
 
@@ -64964,21 +64345,7 @@ int process_args(int p_argc, char **p_args, char **r_args);
 
 #import <QuartzCore/CAMetalLayer.h>
 
-class RenderingContextDriverVulkanAppleEmbedded : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
 
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-
-public:
-	struct WindowPlatformData {
-		CAMetalLayer *const *layer_ptr;
-	};
-
-	RenderingContextDriverVulkanAppleEmbedded();
-	~RenderingContextDriverVulkanAppleEmbedded();
-};
 
 #endif // VULKAN_ENABLED
 
@@ -68988,37 +68355,6 @@ public:
  * the lock when broadcasting is enabled/disabled on a socket, or that socket
  * joins/leaves a multicast group.
  */
-class NetSocketAndroid : public NetSocketUnix {
-
-private:
-	static jobject net_utils;
-	static jclass cls;
-	static jmethodID _multicast_lock_acquire;
-	static jmethodID _multicast_lock_release;
-
-	bool wants_broadcast = false;
-	int multicast_groups = 0;
-
-	static void multicast_lock_acquire();
-	static void multicast_lock_release();
-
-protected:
-	static Ref<NetSocket> _create_func();
-
-public:
-	static void make_default();
-	static void setup(jobject p_net_utils);
-	static void terminate();
-
-	virtual void close() override;
-
-	virtual Error set_broadcasting_enabled(bool p_enabled) override;
-	virtual Error join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override;
-	virtual Error leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override;
-
-	NetSocketAndroid() {}
-	~NetSocketAndroid();
-};
 
 #include "core/os/os.h"
 
@@ -69316,22 +68652,7 @@ public:
 
 struct ANativeWindow;
 
-class RenderingContextDriverVulkanAndroid : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
 
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-	bool _use_validation_layers() const override final;
-
-public:
-	struct WindowPlatformData {
-		ANativeWindow *window;
-	};
-
-	RenderingContextDriverVulkanAndroid() = default;
-	~RenderingContextDriverVulkanAndroid() override = default;
-};
 
 #endif // VULKAN_ENABLED
 
@@ -70499,14 +69820,15 @@ public:
 
 #include "core/io/net_socket.h"
 
-struct DirAccessWindowsPrivate;
+#include <windows.h>
 
 class DirAccessWindows : public DirAccess {
 	enum {
 		MAX_DRIVES = 26
 	};
 
-	DirAccessWindowsPrivate *p = nullptr;
+	HANDLE h = INVALID_HANDLE_VALUE;
+	WIN32_FIND_DATAW fu = {};
 	/* Windows stuff */
 
 	struct DriveInfo {
@@ -70652,65 +69974,6 @@ public:
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-class NetSocketWinSock : public NetSocket {
-
-private:
-	SOCKET _sock = INVALID_SOCKET;
-	IP::Type _ip_type = IP::TYPE_NONE;
-	bool _is_stream = false;
-
-	enum NetError {
-		ERR_NET_WOULD_BLOCK,
-		ERR_NET_IS_CONNECTED,
-		ERR_NET_IN_PROGRESS,
-		ERR_NET_ADDRESS_INVALID_OR_UNAVAILABLE,
-		ERR_NET_UNAUTHORIZED,
-		ERR_NET_BUFFER_TOO_SMALL,
-		ERR_NET_OTHER,
-	};
-
-	NetError _get_socket_error() const;
-	void _set_socket(SOCKET p_sock, IP::Type p_ip_type, bool p_is_stream);
-	_FORCE_INLINE_ Error _change_multicast_group(IPAddress p_ip, String p_if_name, bool p_add);
-
-protected:
-	static Ref<NetSocket> _create_func();
-
-	bool _can_use_ip(const IPAddress &p_ip, const bool p_for_bind) const;
-
-public:
-	static void make_default();
-	static void cleanup();
-	static void _set_ip_port(struct sockaddr_storage *p_addr, IPAddress *r_ip, uint16_t *r_port);
-	static size_t _set_addr_storage(struct sockaddr_storage *p_addr, const IPAddress &p_ip, uint16_t p_port, IP::Type p_ip_type);
-
-	virtual Error open(Family p_family, Type p_sock_type, IP::Type &ip_type) override;
-	virtual void close() override;
-	virtual Error bind(Address p_addr) override;
-	virtual Error listen(int p_max_pending) override;
-	virtual Error connect_to_host(Address p_addr) override;
-	virtual Error poll(PollType p_type, int timeout) const override;
-	virtual Error recv(uint8_t *p_buffer, int p_len, int &r_read) override;
-	virtual Error recvfrom(uint8_t *p_buffer, int p_len, int &r_read, IPAddress &r_ip, uint16_t &r_port, bool p_peek = false) override;
-	virtual Error send(const uint8_t *p_buffer, int p_len, int &r_sent) override;
-	virtual Error sendto(const uint8_t *p_buffer, int p_len, int &r_sent, IPAddress p_ip, uint16_t p_port) override;
-	virtual Ref<NetSocket> accept(Address &r_addr) override;
-
-	virtual bool is_open() const override;
-	virtual int get_available_bytes() const override;
-	virtual Error get_socket_address(Address *r_addr) const override;
-
-	virtual Error set_broadcasting_enabled(bool p_enabled) override;
-	virtual void set_blocking_enabled(bool p_enabled) override;
-	virtual void set_ipv6_only_enabled(bool p_enabled) override;
-	virtual void set_tcp_no_delay_enabled(bool p_enabled) override;
-	virtual void set_reuse_address_enabled(bool p_enabled) override;
-	virtual Error join_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override;
-	virtual Error leave_multicast_group(const IPAddress &p_multi_address, const String &p_if_name) override;
-
-	NetSocketWinSock();
-	~NetSocketWinSock() override;
-};
 
 #endif // WINDOWS_ENABLED
 
@@ -71782,22 +71045,7 @@ public:
 
 #include <windows.h>
 
-class RenderingContextDriverVulkanWindows : public RenderingContextDriverVulkan {
-private:
-	const char *_get_platform_surface_extension() const override final;
 
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-
-public:
-	struct WindowPlatformData {
-		HWND window;
-		HINSTANCE instance;
-	};
-
-	RenderingContextDriverVulkanWindows();
-	~RenderingContextDriverVulkanWindows() override;
-};
 
 #endif // VULKAN_ENABLED
 
@@ -74601,13 +73849,6 @@ protected:
 	};
 
 	// Audio stream information for each audio stream placed on the track.
-	struct PlayingAudioStreamInfo
-	{
-		AudioStreamPlaybackPolyphonic::ID index =
-			-1; // ID retrieved from AudioStreamPlaybackPolyphonic.
-		double start = 0.0;
-		double len = 0.0;
-	};
 
 	// Audio track information for mixng and ending.
 
@@ -76409,23 +75650,6 @@ public:
 	};
 #endif
 
-	struct UGCall
-	{
-		String group;
-		String call;
-
-		static uint32_t hash(const UGCall& p_val) { return p_val.group.hash() ^ p_val.call.hash(); }
-
-		bool operator==(const UGCall& p_with) const
-		{
-			return group == p_with.group && call == p_with.call;
-		}
-
-		bool operator<(const UGCall& p_with) const
-		{
-			return group == p_with.group ? call < p_with.call : group < p_with.group;
-		}
-	};
 
 	struct Data
 	{
@@ -76951,13 +76175,6 @@ public:
 class SceneReplicationInterface final : public RefCounted
 {
 private:
-	struct TrackedNode
-	{
-		uint32_t net_id = 0;
-		uint32_t remote_peer = 0;
-
-		TrackedNode() {}
-	};
 
 	// Replication state.
 	uint32_t last_net_id = 0;
@@ -77074,27 +76291,8 @@ public:
 class MultiplayerDebugger final
 {
 public:
-	struct RPCNodeInfo
-	{
-		String node_path;
-		int incoming_rpc = 0;
-		int incoming_size = 0;
-		int outgoing_rpc = 0;
-		int outgoing_size = 0;
-	};
 
 
-	struct SyncInfo
-	{
-		int incoming_syncs = 0;
-		int incoming_size = 0;
-		int outgoing_syncs = 0;
-		int outgoing_size = 0;
-
-		SyncInfo() {}
-
-		SyncInfo(MultiplayerSynchronizer* p_sync);
-	};
 
 private:
 	class BandwidthProfiler
@@ -77188,12 +76386,6 @@ private:
 		Ref<PackedScene> cache;
 	};
 
-	struct SpawnInfo
-	{
-		int id = INVALID_ID;
-
-		SpawnInfo() {}
-	};
 
 	Mode mode = MODE_SYNCHRONIZER;
 
@@ -78995,16 +78187,17 @@ protected:
 
 	Camera2DProcessCallback process_callback = CAMERA2D_PROCESS_IDLE;
 
-	struct InterpolationData
+public:
+	struct Node2DInterpolationData
 	{
 		Transform2D xform_curr;
 		Transform2D xform_prev;
-		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
-
-		// Camera2D can only call get_camera_transform() without flagging warnings after setting up
-		// viewports during NOTIFICATION_ENTER_TREE, so we reject resets outside this lifetime.
+		uint32_t last_update_physics_tick = UINT32_MAX;
 		bool accepting_resets = false;
-	} _interpolation_data;
+	};
+
+private:
+	Node2DInterpolationData _interpolation_data;
 
 	void _ensure_update_interpolation_data();
 
@@ -82894,41 +82087,15 @@ _FORCE_INLINE_ void GodotBody2D::add_contact(const Vector2& p_local_pos, const V
 	c[idx].impulse = p_impulse;
 }
 
-class GodotConstraint2D {
-	GodotBody2D **_body_ptr;
-	int _body_count;
+class GodotConstraint2D final {
+	GodotBody2D **_body_ptr = nullptr;
+	int _body_count = 0;
 	uint64_t island_step = 0;
 	bool disabled_collisions_between_bodies = true;
+	bool is_joint = false;
 
 	RID self;
 
-protected:
-	GodotConstraint2D(GodotBody2D **p_body_ptr = nullptr, int p_body_count = 0) {
-		_body_ptr = p_body_ptr;
-		_body_count = p_body_count;
-	}
-
-public:
-	_FORCE_INLINE_ void set_self(const RID &p_self) { self = p_self; }
-	_FORCE_INLINE_ RID get_self() const { return self; }
-
-	_FORCE_INLINE_ uint64_t get_island_step() const { return island_step; }
-	_FORCE_INLINE_ void set_island_step(uint64_t p_step) { island_step = p_step; }
-
-	_FORCE_INLINE_ GodotBody2D **get_body_ptr() const { return _body_ptr; }
-	_FORCE_INLINE_ int get_body_count() const { return _body_count; }
-
-	_FORCE_INLINE_ void disable_collisions_between_bodies(const bool p_disabled) { disabled_collisions_between_bodies = p_disabled; }
-	_FORCE_INLINE_ bool is_disabled_collisions_between_bodies() const { return disabled_collisions_between_bodies; }
-
-	virtual bool setup(real_t p_step) = 0;
-	virtual bool pre_solve(real_t p_step) = 0;
-	virtual void solve(real_t p_step) = 0;
-
-	virtual ~GodotConstraint2D() {}
-};
-
-class GodotBodyPair2D final : public GodotConstraint2D {
 	enum {
 		MAX_CONTACTS = 2
 	};
@@ -82941,26 +82108,24 @@ class GodotBodyPair2D final : public GodotConstraint2D {
 		GodotBody2D *_arr[2] = { nullptr, nullptr };
 	};
 
+	// Body / Area pair fields
 	int shape_A = 0;
 	int shape_B = 0;
-
 	bool collide_A = false;
 	bool collide_B = false;
-
 	GodotSpace2D *space = nullptr;
 
 	struct Contact {
 		Vector2 position;
 		Vector2 normal;
 		Vector2 local_A, local_B;
-		Vector2 acc_impulse; // accumulated impulse
-		real_t acc_normal_impulse = 0.0; // accumulated normal impulse (Pn)
-		real_t acc_tangent_impulse = 0.0; // accumulated tangent impulse (Pt)
-		real_t acc_bias_impulse = 0.0; // accumulated normal impulse for position bias (Pnb)
-		real_t acc_bias_impulse_center_of_mass = 0.0; // accumulated normal impulse for position bias applied to com
+		Vector2 acc_impulse;
+		real_t acc_normal_impulse = 0.0;
+		real_t acc_tangent_impulse = 0.0;
+		real_t acc_bias_impulse = 0.0;
+		real_t acc_bias_impulse_center_of_mass = 0.0;
 		real_t mass_normal = 0.0, mass_tangent = 0.0;
 		real_t bias = 0.0;
-
 		real_t depth = 0.0;
 		bool active = false;
 		bool used = false;
@@ -82968,8 +82133,7 @@ class GodotBodyPair2D final : public GodotConstraint2D {
 		real_t bounce = 0.0;
 	};
 
-	Vector2 offset_B; //use local A coordinates to avoid numerical issues on collision detection
-
+	Vector2 offset_B;
 	Vector2 sep_axis;
 	Contact contacts[MAX_CONTACTS];
 	int contact_count = 0;
@@ -82978,51 +82142,14 @@ class GodotBodyPair2D final : public GodotConstraint2D {
 	bool oneway_disabled = false;
 	bool report_contacts_only = false;
 
-	bool _test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B);
-	void _validate_contacts();
-	static void _add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self);
-	_FORCE_INLINE_ void _contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B);
-
-public:
-	virtual bool setup(real_t p_step) override;
-	virtual bool pre_solve(real_t p_step) override;
-	virtual void solve(real_t p_step) override;
-
-	enum PairMode {
-		PAIR_BODY_BODY,
-		PAIR_BODY_AREA,
-		PAIR_AREA_AREA,
-	};
-	PairMode pair_mode = PAIR_BODY_BODY;
-	GodotArea2D *area_a = nullptr;
-	GodotArea2D *area_b = nullptr;
-
-	GodotBodyPair2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
-	GodotBodyPair2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape);
-	GodotBodyPair2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
-	virtual ~GodotBodyPair2D() override;
-};
-
-class GodotJoint2D final : public GodotConstraint2D {
+	// Joint fields
 	PS2DE::JointType type = PS2DE::JOINT_TYPE_MAX;
-
-	union {
-		struct {
-			GodotBody2D *A;
-			GodotBody2D *B;
-		};
-
-		GodotBody2D *_arr[2] = { nullptr, nullptr };
-	};
-
 	real_t bias = 0.0;
 	real_t max_bias = 3.40282e+38;
 	real_t max_force = 3.40282e+38;
-
 	bool dynamic_A = false;
 	bool dynamic_B = false;
 
-	// Shared working fields
 	Vector2 rA, rB;
 	Vector2 anchor_A;
 	Vector2 anchor_B;
@@ -83066,6 +82193,14 @@ class GodotJoint2D final : public GodotConstraint2D {
 	real_t target_vrn = 0.0;
 	real_t v_coef = 0.0;
 
+	bool _test_ccd(real_t p_step, GodotBody2D *p_A, int p_shape_A, const Transform2D &p_xform_A, GodotBody2D *p_B, int p_shape_B, const Transform2D &p_xform_B);
+	void _validate_contacts();
+	static void _add_contact(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_self);
+	_FORCE_INLINE_ void _contact_added_callback(const Vector2 &p_point_A, const Vector2 &p_point_B);
+	bool _setup_pair(real_t p_step);
+	bool _pre_solve_pair(real_t p_step);
+	void _solve_pair(real_t p_step);
+
 	bool _setup_pin(real_t p_step);
 	bool _pre_solve_pin(real_t p_step);
 	void _solve_pin(real_t p_step);
@@ -83078,59 +82213,73 @@ class GodotJoint2D final : public GodotConstraint2D {
 	bool _pre_solve_damped_spring(real_t p_step);
 	void _solve_damped_spring(real_t p_step);
 
-public:
-	_FORCE_INLINE_ PS2DE::JointType get_type() const { return type; }
+	bool _setup_joint(real_t p_step);
+	bool _pre_solve_joint(real_t p_step);
+	void _solve_joint(real_t p_step);
 
+public:
+	enum PairMode {
+		PAIR_BODY_BODY,
+		PAIR_BODY_AREA,
+		PAIR_AREA_AREA,
+	};
+	PairMode pair_mode = PAIR_BODY_BODY;
+	GodotArea2D *area_a = nullptr;
+	GodotArea2D *area_b = nullptr;
+
+	_FORCE_INLINE_ void set_self(const RID &p_self) { self = p_self; }
+	_FORCE_INLINE_ RID get_self() const { return self; }
+
+	_FORCE_INLINE_ uint64_t get_island_step() const { return island_step; }
+	_FORCE_INLINE_ void set_island_step(uint64_t p_step) { island_step = p_step; }
+
+	_FORCE_INLINE_ GodotBody2D **get_body_ptr() const { return _body_ptr; }
+	_FORCE_INLINE_ int get_body_count() const { return _body_count; }
+
+	_FORCE_INLINE_ void disable_collisions_between_bodies(const bool p_disabled) { disabled_collisions_between_bodies = p_disabled; }
+	_FORCE_INLINE_ bool is_disabled_collisions_between_bodies() const { return disabled_collisions_between_bodies; }
+
+	_FORCE_INLINE_ PS2DE::JointType get_type() const { return type; }
 	_FORCE_INLINE_ void set_max_force(real_t p_force) { max_force = p_force; }
 	_FORCE_INLINE_ real_t get_max_force() const { return max_force; }
-
 	_FORCE_INLINE_ void set_bias(real_t p_bias) { bias = p_bias; }
 	_FORCE_INLINE_ real_t get_bias() const { return bias; }
-
 	_FORCE_INLINE_ void set_max_bias(real_t p_bias) { max_bias = p_bias; }
 	_FORCE_INLINE_ real_t get_max_bias() const { return max_bias; }
 
-	void copy_settings_from(GodotJoint2D *p_joint);
+	void copy_settings_from(GodotConstraint2D *p_joint);
 
-	virtual bool setup(real_t p_step) override;
-	virtual bool pre_solve(real_t p_step) override;
-	virtual void solve(real_t p_step) override;
+	bool setup(real_t p_step) { return is_joint ? _setup_joint(p_step) : _setup_pair(p_step); }
+	bool pre_solve(real_t p_step) { return is_joint ? _pre_solve_joint(p_step) : _pre_solve_pair(p_step); }
+	void solve(real_t p_step) { if (is_joint) { _solve_joint(p_step); } else { _solve_pair(p_step); } }
 
-	// Pin joint parameters & flags
 	void set_param(PS2DE::PinJointParam p_param, real_t p_value);
 	real_t get_param(PS2DE::PinJointParam p_param) const;
 	void set_flag(PS2DE::PinJointFlag p_flag, bool p_enabled);
 	bool get_flag(PS2DE::PinJointFlag p_flag) const;
 
-	// Damped spring parameters
 	void set_param(PS2DE::DampedSpringParam p_param, real_t p_value);
 	real_t get_param(PS2DE::DampedSpringParam p_param) const;
 
-	// Empty joint (JOINT_TYPE_MAX)
-	GodotJoint2D() :
-			GodotConstraint2D(_arr, 0) {}
+	// Body / Area pair constructors
+	GodotConstraint2D(GodotBody2D *p_A, int p_shape_A, GodotBody2D *p_B, int p_shape_B);
+	GodotConstraint2D(GodotBody2D *p_body, int p_body_shape, GodotArea2D *p_area, int p_area_shape);
+	GodotConstraint2D(GodotArea2D *p_area_a, int p_shape_a, GodotArea2D *p_area_b, int p_shape_b);
 
-	// Pin joint (JOINT_TYPE_PIN)
-	GodotJoint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b = nullptr);
+	// Joint constructors
+	GodotConstraint2D() : _body_ptr(_arr), _body_count(0), is_joint(true) {}
+	GodotConstraint2D(const Vector2 &p_pos, GodotBody2D *p_body_a, GodotBody2D *p_body_b = nullptr);
+	GodotConstraint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+	GodotConstraint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
 
-	// Groove joint (JOINT_TYPE_GROOVE)
-	GodotJoint2D(const Vector2 &p_a_groove1, const Vector2 &p_a_groove2, const Vector2 &p_b_anchor, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
+	GodotConstraint2D(const GodotConstraint2D &) = delete;
+	GodotConstraint2D &operator=(const GodotConstraint2D &) = delete;
 
-	// Damped spring joint (JOINT_TYPE_DAMPED_SPRING)
-	GodotJoint2D(const Vector2 &p_anchor_a, const Vector2 &p_anchor_b, GodotBody2D *p_body_a, GodotBody2D *p_body_b);
-
-	GodotJoint2D(const GodotJoint2D &) = delete;
-	GodotJoint2D &operator=(const GodotJoint2D &) = delete;
-
-	virtual ~GodotJoint2D() override {
-		for (int i = 0; i < get_body_count(); i++) {
-			GodotBody2D *body = get_body_ptr()[i];
-			if (body) {
-				body->remove_constraint(this, i);
-			}
-		}
-	}
+	~GodotConstraint2D();
 };
+
+using GodotBodyPair2D = GodotConstraint2D;
+using GodotJoint2D = GodotConstraint2D;
 
 // BVH
 // This class provides a wrapper around BVH tree, which contains most of the functionality
@@ -87407,12 +86556,7 @@ class Skeleton2D : public Node2D
 
 	///////////////////////////////////////////////////////
 	// INTERPOLATION
-	struct InterpolationData
-	{
-		Transform2D xform_curr;
-		Transform2D xform_prev;
-		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
-	} _interpolation_data;
+	Camera2D::Node2DInterpolationData _interpolation_data;
 
 	void _update_process_mode();
 	void _ensure_update_interpolation_data();
@@ -104780,18 +103924,6 @@ class EditorFileSystem : public Node
 
 	Vector<String> _get_dependencies(const String& p_path);
 
-	struct ImportFile
-	{
-		String path;
-		String importer;
-		bool threaded = false;
-		int order = 0;
-
-		bool operator<(const ImportFile& p_if) const
-		{
-			return order == p_if.order ? (importer < p_if.importer) : (order < p_if.order);
-		}
-	};
 
 	struct ScriptClassInfoUpdate
 	{
@@ -108942,1232 +108074,6 @@ public:
 #include "core/io/ip.h"
 // This file should only be included by other headers.
 
-// GLTF classes.
-class GLTFAccessor;
-class GLTFAnimation;
-class GLTFBufferView;
-class GLTFCamera;
-class GLTFDocument;
-class GLTFDocumentExtension;
-class GLTFLight;
-class GLTFMesh;
-class GLTFNode;
-class GLTFObjectModelProperty;
-class GLTFSkeleton;
-class GLTFSkin;
-class GLTFState;
-class GLTFTexture;
-class GLTFTextureSampler;
-
-// GLTF index aliases.
-using GLTFAccessorIndex = int;
-using GLTFAnimationIndex = int;
-using GLTFBufferIndex = int;
-using GLTFBufferViewIndex = int;
-using GLTFCameraIndex = int;
-using GLTFImageIndex = int;
-using GLTFLightIndex = int;
-using GLTFMaterialIndex = int;
-using GLTFMeshIndex = int;
-using GLTFNodeIndex = int;
-using GLTFSkeletonIndex = int;
-using GLTFSkinIndex = int;
-using GLTFTextureIndex = int;
-using GLTFTextureSamplerIndex = int;
-
-class Camera3D;
-template <typename T> class TypedArray;
-
-class GLTFTextureSampler final : public Resource
-{
-public:
-	enum FilterMode
-	{
-		NEAREST = 9728,
-		LINEAR = 9729,
-		NEAREST_MIPMAP_NEAREST = 9984,
-		LINEAR_MIPMAP_NEAREST = 9985,
-		NEAREST_MIPMAP_LINEAR = 9986,
-		LINEAR_MIPMAP_LINEAR = 9987
-	};
-
-	enum WrapMode
-	{
-		CLAMP_TO_EDGE = 33071,
-		MIRRORED_REPEAT = 33648,
-		REPEAT = 10497,
-		DEFAULT = REPEAT
-	};
-
-	int get_mag_filter() const { return mag_filter; }
-
-	void set_mag_filter(const int filter_mode) { mag_filter = (FilterMode)filter_mode; }
-
-	int get_min_filter() const { return min_filter; }
-
-	void set_min_filter(const int filter_mode) { min_filter = (FilterMode)filter_mode; }
-
-	int get_wrap_s() const { return wrap_s; }
-
-	void set_wrap_s(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
-
-	int get_wrap_t() const { return wrap_t; }
-
-	void set_wrap_t(const int wrap_mode) { wrap_s = (WrapMode)wrap_mode; }
-
-	StandardMaterial3D::TextureFilter get_filter_mode() const
-	{
-		using TextureFilter = StandardMaterial3D::TextureFilter;
-
-		switch (min_filter) {
-		case NEAREST:
-			return TextureFilter::TEXTURE_FILTER_NEAREST;
-		case LINEAR:
-			return TextureFilter::TEXTURE_FILTER_LINEAR;
-		case NEAREST_MIPMAP_NEAREST:
-		case NEAREST_MIPMAP_LINEAR:
-			return TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS;
-		case LINEAR_MIPMAP_NEAREST:
-		case LINEAR_MIPMAP_LINEAR:
-		default:
-			return TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS;
-		}
-	}
-
-	void set_filter_mode(StandardMaterial3D::TextureFilter mode)
-	{
-		using TextureFilter = StandardMaterial3D::TextureFilter;
-
-		switch (mode) {
-		case TextureFilter::TEXTURE_FILTER_NEAREST:
-			min_filter = FilterMode::NEAREST;
-			mag_filter = FilterMode::NEAREST;
-			break;
-		case TextureFilter::TEXTURE_FILTER_LINEAR:
-			min_filter = FilterMode::LINEAR;
-			mag_filter = FilterMode::LINEAR;
-			break;
-		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS:
-		case TextureFilter::TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC:
-			min_filter = FilterMode::NEAREST_MIPMAP_LINEAR;
-			mag_filter = FilterMode::NEAREST;
-			break;
-		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS:
-		case TextureFilter::TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC:
-		default:
-			min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
-			mag_filter = FilterMode::LINEAR;
-			break;
-		}
-	}
-
-	bool get_wrap_mode() const
-	{
-		// StandardMaterial3D presents wrapping as a boolean property. Either the texture is repeated
-		// in both dimensions, non-mirrored, or it isn't repeated at all. This will cause oddities
-		// when people import models having other wrapping mode combinations.
-		return (wrap_s == WrapMode::REPEAT) && (wrap_t == WrapMode::REPEAT);
-	}
-
-	void set_wrap_mode(bool mat_repeats)
-	{
-		if (mat_repeats) {
-			wrap_s = WrapMode::REPEAT;
-			wrap_t = WrapMode::REPEAT;
-		}
-		else {
-			wrap_s = WrapMode::CLAMP_TO_EDGE;
-			wrap_t = WrapMode::CLAMP_TO_EDGE;
-		}
-	}
-
-private:
-	FilterMode mag_filter = FilterMode::LINEAR;
-	FilterMode min_filter = FilterMode::LINEAR_MIPMAP_LINEAR;
-	WrapMode wrap_s = WrapMode::REPEAT;
-	WrapMode wrap_t = WrapMode::REPEAT;
-};
-
-class GLTFTexture final : public Resource
-{
-private:
-	GLTFImageIndex src_image = -1;
-	GLTFTextureSamplerIndex sampler = -1;
-
-public:
-	void set_src_image(GLTFImageIndex val);
-	GLTFTextureSamplerIndex get_sampler() const;
-	void set_sampler(GLTFTextureSamplerIndex val);
-};
-
-class GLTFBufferView final : public Resource
-{
-	friend class GLTFDocument;
-
-public:
-	// When a buffer view is used by vertex indices or attribute accessors it SHOULD specify
-	// "target" with a value of ELEMENT_ARRAY_BUFFER (34963) or ARRAY_BUFFER (34962) respectively.
-	// This is only used for mesh data. For non-mesh buffer views, the target should be left blank.
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#buffers-and-buffer-views-overview
-	enum ArrayBufferTarget
-	{
-		TARGET_NONE = 0,
-		TARGET_ARRAY_BUFFER = 34962,
-		TARGET_ELEMENT_ARRAY_BUFFER = 34963,
-	};
-
-private:
-	GLTFBufferIndex buffer = -1;
-	int64_t byte_offset = 0;
-	int64_t byte_length = 0;
-	int64_t byte_stride = -1;
-	bool indices = false;			// True for TARGET_ELEMENT_ARRAY_BUFFER.
-	bool vertex_attributes = false; // True for TARGET_ARRAY_BUFFER.
-
-public:
-	GLTFBufferIndex get_buffer() const;
-	void set_buffer(GLTFBufferIndex p_buffer);
-
-	int64_t get_byte_offset() const;
-	void set_byte_offset(int64_t p_byte_offset);
-
-	int64_t get_byte_length() const;
-	void set_byte_length(int64_t p_byte_length);
-
-	int64_t get_byte_stride() const;
-	void set_byte_stride(int64_t p_byte_stride);
-
-	bool get_indices() const;
-	void set_indices(bool p_indices);
-
-	bool get_vertex_attributes() const;
-	void set_vertex_attributes(bool p_attributes);
-
-	Vector<uint8_t> load_buffer_view_data(const Ref<GLTFState> p_gltf_state) const;
-};
-
-class GLTFAccessor final : public Resource
-{
-	friend class GLTFDocument;
-
-public:
-	enum GLTFAccessorType
-	{
-		TYPE_SCALAR,
-		TYPE_VEC2,
-		TYPE_VEC3,
-		TYPE_VEC4,
-		TYPE_MAT2,
-		TYPE_MAT3,
-		TYPE_MAT4,
-	};
-
-	enum GLTFComponentType
-	{
-		COMPONENT_TYPE_NONE = 0,
-		COMPONENT_TYPE_SIGNED_BYTE = 5120,
-		COMPONENT_TYPE_UNSIGNED_BYTE = 5121,
-		COMPONENT_TYPE_SIGNED_SHORT = 5122,
-		COMPONENT_TYPE_UNSIGNED_SHORT = 5123,
-		COMPONENT_TYPE_SIGNED_INT = 5124,
-		COMPONENT_TYPE_UNSIGNED_INT = 5125,
-		COMPONENT_TYPE_SINGLE_FLOAT = 5126,
-		COMPONENT_TYPE_DOUBLE_FLOAT = 5130,
-		COMPONENT_TYPE_HALF_FLOAT = 5131,
-		COMPONENT_TYPE_SIGNED_LONG = 5134,
-		COMPONENT_TYPE_UNSIGNED_LONG = 5135,
-	};
-
-private:
-	GLTFBufferViewIndex buffer_view = -1;
-	int64_t byte_offset = 0;
-	GLTFComponentType component_type = COMPONENT_TYPE_NONE;
-	bool normalized = false;
-	int64_t count = 0;
-	GLTFAccessorType accessor_type = GLTFAccessorType::TYPE_SCALAR;
-	Vector<double> min;
-	Vector<double> max;
-	int64_t sparse_count = 0;
-	GLTFBufferViewIndex sparse_indices_buffer_view = 0;
-	int64_t sparse_indices_byte_offset = 0;
-	GLTFComponentType sparse_indices_component_type = COMPONENT_TYPE_NONE;
-	GLTFBufferViewIndex sparse_values_buffer_view = 0;
-	int64_t sparse_values_byte_offset = 0;
-
-	// Trivial helper functions.
-	void _determine_pad_skip(int64_t& r_skip_every, int64_t& r_skip_bytes) const;
-	int64_t _determine_padded_byte_count(int64_t p_raw_byte_size) const;
-	String _get_accessor_type_name() const;
-	int64_t _get_vector_size() const;
-	static int64_t _get_bytes_per_component(const GLTFComponentType p_component_type);
-	int64_t _get_bytes_per_vector() const;
-
-	// Private decode functions.
-	PackedInt64Array _decode_sparse_indices(const Ref<GLTFState>& p_gltf_state,
-		const Vector<Ref<GLTFBufferView>>& p_buffer_views) const;
-	template <typename T>
-	Vector<T> _decode_raw_numbers(const Ref<GLTFState>& p_gltf_state,
-		const Vector<Ref<GLTFBufferView>>& p_buffer_views, bool p_sparse_values) const;
-	template <typename T> Vector<T> _decode_as_numbers(const Ref<GLTFState>& p_gltf_state) const;
-
-
-public:
-	// Property getters and setters.
-
-	int64_t get_byte_offset() const;
-	void set_byte_offset(int64_t p_byte_offset);
-
-
-
-	int64_t get_count() const;
-	void set_count(int64_t p_count);
-
-
-	int get_type() const;
-	void set_type(int p_accessor_type);
-
-	Vector<double> get_min() const;
-	void set_min(const Vector<double>& p_min);
-
-	Vector<double> get_max() const;
-	void set_max(const Vector<double>& p_max);
-
-
-
-
-
-
-
-
-	// High-level decode functions.
-	PackedColorArray decode_as_colors(const Ref<GLTFState>& p_gltf_state) const;
-	Vector<Quaternion> decode_as_quaternions(const Ref<GLTFState>& p_gltf_state) const;
-	PackedVector2Array decode_as_vector2s(const Ref<GLTFState>& p_gltf_state) const;
-	PackedVector3Array decode_as_vector3s(const Ref<GLTFState>& p_gltf_state) const;
-	PackedVector4Array decode_as_vector4s(const Ref<GLTFState>& p_gltf_state) const;
-
-	// Low-level encode functions.
-
-
-	// High-level encode functions.
-};
-
-class GLTFNode final : public Resource
-{
-	friend class GLTFDocument;
-	friend class SkinTool;
-	friend class FBXDocument;
-
-private:
-	String original_name;
-	GLTFNodeIndex parent = -1;
-	int height = -1;
-	Transform3D transform;
-	GLTFMeshIndex mesh = -1;
-	GLTFCameraIndex camera = -1;
-	GLTFSkinIndex skin = -1;
-	GLTFSkeletonIndex skeleton = -1;
-	bool joint = false;
-	bool visible = true;
-	Vector<int> children;
-	GLTFLightIndex light = -1;
-
-public:
-
-	GLTFNodeIndex get_parent();
-	void set_parent(GLTFNodeIndex p_parent);
-
-	int get_height();
-	void set_height(int p_height);
-
-
-	Transform3D get_rest_xform();
-	void set_rest_xform(const Transform3D& p_rest_xform);
-
-	GLTFMeshIndex get_mesh();
-	void set_mesh(GLTFMeshIndex p_mesh);
-
-	GLTFCameraIndex get_camera();
-	void set_camera(GLTFCameraIndex p_camera);
-
-	GLTFSkinIndex get_skin();
-	void set_skin(GLTFSkinIndex p_skin);
-
-	GLTFSkeletonIndex get_skeleton();
-	void set_skeleton(GLTFSkeletonIndex p_skeleton);
-
-	Vector3 get_position();
-	void set_position(const Vector3& p_position);
-
-	Quaternion get_rotation();
-	void set_rotation(const Quaternion& p_rotation);
-
-	Vector3 get_scale();
-	void set_scale(const Vector3& p_scale);
-
-	Vector<int> get_children();
-
-	GLTFLightIndex get_light();
-
-	void set_visible(bool p_visible);
-
-	bool has_additional_data(const String& p_extension_name);
-
-};
-
-class GLTFSkeleton final : public Resource
-{
-	friend class GLTFDocument;
-	friend class SkinTool;
-	friend class FBXDocument;
-
-private:
-	// The *synthesized* skeletons joints
-	Vector<GLTFNodeIndex> joints;
-
-	// The roots of the skeleton. If there are multiple, each root must have the
-	// same parent (ie roots are siblings)
-	Vector<GLTFNodeIndex> roots;
-
-	// The created Skeleton3D for the scene
-	Skeleton3D* godot_skeleton = nullptr;
-
-	// Set of unique bone names for the skeleton
-	HashSet<String> unique_names;
-
-	HashMap<int32_t, GLTFNodeIndex> godot_bone_node;
-
-	Vector<BoneAttachment3D*> bone_attachments;
-
-public:
-	Vector<GLTFNodeIndex> get_joints();
-
-
-
-	TypedArray<String> get_unique_names();
-	void set_unique_names(const TypedArray<String>& p_unique_names);
-
-};
-
-class GLTFSkin final : public Resource
-{
-	friend class GLTFDocument;
-	friend class SkinTool;
-	friend class FBXDocument;
-
-private:
-	// The "skeleton" property defined in the gltf spec. -1 = Scene Root
-	GLTFNodeIndex skin_root = -1;
-
-	Vector<GLTFNodeIndex> joints_original;
-	Vector<Transform3D> inverse_binds;
-
-	// Note: joints + non_joints should form a complete subtree, or subtrees
-	// with a common parent
-
-	// All nodes that are skins that are caught in-between the original joints
-	// (inclusive of joints_original)
-	Vector<GLTFNodeIndex> joints;
-
-	// All Nodes that are caught in-between skin joint nodes, and are not
-	// defined as joints by any skin
-	Vector<GLTFNodeIndex> non_joints;
-
-	// The roots of the skin. In the case of multiple roots, their parent *must*
-	// be the same (the roots must be siblings)
-	Vector<GLTFNodeIndex> roots;
-
-	// The GLTF Skeleton this Skin points to (after we determine skeletons)
-	GLTFSkeletonIndex skeleton = -1;
-
-	// A mapping from the joint indices (in the order of joints_original) to the
-	// Godot Skeleton's bone_indices
-	HashMap<int, int> joint_i_to_bone_i;
-	HashMap<int, String> joint_i_to_name;
-
-	// The Actual Skin that will be created as a mapping between the IBM's of
-	// this skin to the generated skeleton for the mesh instances.
-	Ref<Skin> godot_skin;
-
-public:
-
-
-	TypedArray<Transform3D> get_inverse_binds();
-	void set_inverse_binds(const TypedArray<Transform3D>& p_inverse_binds);
-
-	Vector<GLTFNodeIndex> get_joints();
-
-
-
-	int get_skeleton();
-	void set_skeleton(int p_skeleton);
-
-};
-
-class GLTFMesh final : public Resource
-{
-private:
-	String original_name;
-	Ref<ImporterMesh> mesh;
-	Vector<float> blend_weights;
-
-public:
-	Ref<ImporterMesh> get_mesh();
-	void set_mesh(const Ref<ImporterMesh>& p_mesh);
-};
-
-// Reference and test file:
-// https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_015_SimpleCameras.md
-
-class GLTFCamera final : public Resource
-{
-private:
-	// glTF has no default camera values, they should always be specified in
-	// the glTF file. Here we default to Godot's default camera settings.
-	bool perspective = true;
-	real_t fov = Math::deg_to_rad(75.0);
-	real_t size_mag = 0.5;
-	real_t depth_far = 4000.0;
-	real_t depth_near = 0.05;
-
-public:
-
-	bool get_perspective() const { return perspective; }
-	void set_perspective(bool p_val) { perspective = p_val; }
-
-	real_t get_fov() const { return fov; }
-	void set_fov(real_t p_val) { fov = p_val; }
-
-	real_t get_size_mag() const { return size_mag; }
-	void set_size_mag(real_t p_val) { size_mag = p_val; }
-
-	real_t get_depth_far() const { return depth_far; }
-	void set_depth_far(real_t p_val) { depth_far = p_val; }
-
-	real_t get_depth_near() const { return depth_near; }
-	void set_depth_near(real_t p_val) { depth_near = p_val; }
-
-	static Ref<GLTFCamera> from_node(const Camera3D* p_camera);
-};
-
-class GLTFAnimation final : public Resource
-{
-public:
-	enum Interpolation
-	{
-		INTERP_LINEAR,
-		INTERP_STEP,
-		INTERP_CATMULLROMSPLINE,
-		INTERP_CUBIC_SPLINE,
-	};
-
-	template <typename T> struct Channel
-	{
-		Interpolation interpolation = INTERP_LINEAR;
-		Vector<double> times;
-		Vector<T> values;
-	};
-
-	struct NodeTrack
-	{
-		Channel<Vector3> position_track;
-		Channel<Quaternion> rotation_track;
-		Channel<Vector3> scale_track;
-		Vector<Channel<real_t>> weight_tracks;
-	};
-
-	String original_name;
-	bool loop = false;
-	HashMap<int, NodeTrack> node_tracks;
-
-public:
-
-
-	void set_loop(bool p_val);
-
-	HashMap<int, GLTFAnimation::NodeTrack>& get_node_tracks();
-	bool is_empty_of_tracks() const;
-
-	GLTFAnimation();
-};
-
-// Object model: https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/ObjectModel.adoc
-// KHR_animation_pointer:
-// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_animation_pointer
-
-class GLTFObjectModelProperty final : public RefCounted
-{
-public:
-	enum GLTFObjectModelType
-	{
-		GLTF_OBJECT_MODEL_TYPE_UNKNOWN,
-		GLTF_OBJECT_MODEL_TYPE_BOOL,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT_ARRAY,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT2,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT3,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT4,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT2X2,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT3X3,
-		GLTF_OBJECT_MODEL_TYPE_FLOAT4X4,
-		GLTF_OBJECT_MODEL_TYPE_INT,
-	};
-
-private:
-	Ref<Expression> gltf_to_godot_expr;
-	Ref<Expression> godot_to_gltf_expr;
-	GLTFObjectModelType object_model_type = GLTF_OBJECT_MODEL_TYPE_UNKNOWN;
-	Vector<PackedStringArray> json_pointers;
-
-public:
-	void append_node_path(const NodePath& p_node_path);
-	void append_path_to_property(const NodePath& p_node_path, const String& p_prop_name);
-
-
-
-
-	bool has_node_paths() const;
-
-
-};
-
-class Light3D;
-
-// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual
-
-class GLTFLight final : public Resource
-{
-	friend class GLTFDocument;
-
-private:
-	Color color = Color(1.0f, 1.0f, 1.0f);
-	float intensity = 1.0f;
-	String light_type;
-	float range = Math::INF;
-	float inner_cone_angle = 0.0f;
-	float outer_cone_angle = Math::TAU / 8.0f;
-
-public:
-
-	Color get_color();
-	void set_color(Color p_color);
-
-	float get_intensity();
-	void set_intensity(float p_intensity);
-
-	String get_light_type();
-	void set_light_type(String p_light_type);
-
-	float get_range();
-	void set_range(float p_range);
-
-
-
-	static Ref<GLTFLight> from_node(const Light3D* p_light);
-};
-
-// KHR_materials_pbrSpecularGlossiness is an archived GLTF extension.
-// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
-
-
-class GLTFDocumentExtension : public Resource
-{
-public:
-	// Import process.
-	virtual Error import_preflight(Ref<GLTFState> p_state, const Vector<String>& p_extensions);
-	virtual Vector<String> get_supported_extensions();
-	virtual Error parse_image_data(Ref<GLTFState> p_state, const PackedByteArray& p_image_data,
-		const String& p_mime_type, Ref<Image> r_image);
-	virtual String get_image_file_extension();
-	virtual Ref<GLTFObjectModelProperty> import_object_model_property(Ref<GLTFState> p_state,
-		const PackedStringArray& p_split_json_pointer, const TypedArray<NodePath>& p_partial_paths);
-	virtual Error import_post_parse(Ref<GLTFState> p_state);
-	virtual Error import_pre_generate(Ref<GLTFState> p_state);
-	virtual Node3D* generate_scene_node(
-		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_parent);
-	virtual Error import_post(Ref<GLTFState> p_state, Node* p_node);
-	// Export process.
-	virtual Error export_preflight(Ref<GLTFState> p_state, Node* p_root);
-	virtual void convert_scene_node(
-		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node, Node* p_scene_node);
-	virtual Error export_post_convert(Ref<GLTFState> p_state, Node* p_root);
-	virtual Error export_preserialize(Ref<GLTFState> p_state);
-	virtual Vector<String> get_saveable_image_formats();
-	virtual Error save_image_at_path(Ref<GLTFState> p_state, Ref<Image> p_image,
-		const String& p_file_path, const String& p_image_format, float p_lossy_quality);
-	virtual Error export_post(Ref<GLTFState> p_state);
-};
-
-#ifndef PHYSICS_3D_DISABLED
-
-// GLTFPhysicsBody is an intermediary between Godot's physics body nodes
-// and the OMI_physics_body extension.
-// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_body
-
-class GLTFPhysicsBody final : public Resource
-{
-public:
-	enum class PhysicsBodyType
-	{
-		STATIC,
-		ANIMATABLE,
-		CHARACTER,
-		RIGID,
-		VEHICLE,
-		TRIGGER,
-	};
-
-private:
-	PhysicsBodyType body_type = PhysicsBodyType::RIGID;
-	real_t mass = 1.0;
-	Vector3 linear_velocity;
-	Vector3 angular_velocity;
-	Vector3 center_of_mass;
-	Vector3 inertia_diagonal;
-	Quaternion inertia_orientation;
-
-public:
-	String get_body_type() const;
-
-
-	real_t get_mass() const;
-	void set_mass(real_t p_mass);
-
-	Vector3 get_linear_velocity() const;
-	void set_linear_velocity(const Vector3& p_linear_velocity);
-
-	Vector3 get_angular_velocity() const;
-	void set_angular_velocity(const Vector3& p_angular_velocity);
-
-	Vector3 get_center_of_mass() const;
-	void set_center_of_mass(const Vector3& p_center_of_mass);
-
-
-
-#ifndef DISABLE_DEPRECATED
-#endif // DISABLE_DEPRECATED
-
-	static Ref<GLTFPhysicsBody> from_node(const Node3D* p_body_node);
-	Node3D* to_node() const;
-};
-
-// GLTFPhysicsShape is an intermediary between Godot's collision shape nodes
-// and the OMI_physics_shape extension.
-// https://github.com/omigroup/gltf-extensions/tree/main/extensions/2.0/OMI_physics_shape
-
-class GLTFPhysicsShape final : public Resource
-{
-private:
-	String shape_type;
-	Vector3 size = Vector3(1.0, 1.0, 1.0);
-	real_t radius = 0.5;
-	real_t height = 2.0;
-	bool is_trigger = false;
-	GLTFMeshIndex mesh_index = -1;
-	Ref<ImporterMesh> importer_mesh = nullptr;
-	// Internal only, for caching Godot shape resources. Used in `to_resource` and `to_node`.
-	Ref<Shape3D> _shape_cache = nullptr;
-
-public:
-	String get_shape_type() const;
-	void set_shape_type(const String& p_shape_type);
-
-	Vector3 get_size() const;
-	void set_size(const Vector3& p_size);
-
-	real_t get_radius() const;
-	void set_radius(real_t p_radius);
-
-	real_t get_height() const;
-	void set_height(real_t p_height);
-
-	bool get_is_trigger() const;
-
-	GLTFMeshIndex get_mesh_index() const;
-
-	Ref<ImporterMesh> get_importer_mesh() const;
-	void set_importer_mesh(const Ref<ImporterMesh>& p_importer_mesh);
-
-	static Ref<GLTFPhysicsShape> from_node(const CollisionShape3D* p_shape_node);
-	CollisionShape3D* to_node(bool p_cache_shapes = false);
-
-	static Ref<GLTFPhysicsShape> from_resource(const Ref<Shape3D>& p_shape_resource);
-	Ref<Shape3D> to_resource(bool p_cache_shapes = false);
-};
-
-#endif // PHYSICS_3D_DISABLED
-
-class GLTFState final : public Resource
-{
-	friend class GLTFDocument;
-	friend class GLTFNode;
-	friend class FBXDocument;
-	friend class FBXState;
-
-public:
-	enum HandleBinaryImageMode
-	{
-		HANDLE_BINARY_IMAGE_MODE_DISCARD_TEXTURES = 0,
-		HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES,
-		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_BASISU,
-		HANDLE_BINARY_IMAGE_MODE_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
-														// ResourceImporterScene::pre_import must be
-														// changed as well.
-	};
-
-protected:
-	String base_path;
-	String extract_path;
-	String extract_prefix;
-	String filename;
-	int major_version = 0;
-	int minor_version = 0;
-	String copyright;
-	Vector<uint8_t> glb_data;
-	double bake_fps = 30.0;
-
-	bool use_named_skin_binds = false;
-	bool use_khr_texture_transform = false;
-	bool discard_meshes_and_materials = false;
-	bool force_generate_tangents = false;
-	bool create_animations = true;
-	bool force_disable_compression = false;
-	bool import_as_skeleton_bones = false;
-
-	HandleBinaryImageMode handle_binary_image_mode = HANDLE_BINARY_IMAGE_MODE_EXTRACT_TEXTURES;
-
-	Vector<Ref<GLTFNode>> nodes;
-	Vector<Vector<uint8_t>> buffers;
-	Vector<Ref<GLTFBufferView>> buffer_views;
-	Vector<Ref<GLTFAccessor>> accessors;
-
-	Vector<Ref<GLTFMesh>> meshes; // Meshes are loaded directly, no reason not to.
-
-	Vector<AnimationPlayer*> animation_players;
-	HashMap<Ref<Material>, GLTFMaterialIndex> material_cache;
-	Vector<Ref<Material>> materials;
-
-	String scene_name;
-	Vector<int> root_nodes;
-	Vector<Ref<GLTFTexture>> textures;
-	Vector<Ref<GLTFTextureSampler>> texture_samplers;
-	Ref<GLTFTextureSampler> default_texture_sampler;
-	Vector<Ref<Texture2D>> images;
-	Vector<String> extensions_used;
-	Vector<String> extensions_required;
-	Vector<Ref<Image>> source_images;
-
-	Vector<Ref<GLTFSkin>> skins;
-	Vector<Ref<GLTFCamera>> cameras;
-	Vector<Ref<GLTFLight>> lights;
-	HashSet<String> unique_names;
-	HashSet<String> unique_animation_names;
-
-	Vector<Ref<GLTFSkeleton>> skeletons;
-	Vector<Ref<GLTFAnimation>> animations;
-	HashMap<GLTFNodeIndex, Node*> scene_nodes;
-	HashMap<GLTFNodeIndex, ImporterMeshInstance3D*> scene_mesh_instances;
-	HashMap<String, Ref<GLTFObjectModelProperty>> object_model_properties;
-
-public:
-	double get_bake_fps() const { return bake_fps; }
-
-	void set_bake_fps(double value) { bake_fps = value; }
-
-
-	// Deprecated, use HandleBinaryImageMode instead.
-	enum GLTFHandleBinary
-	{
-		HANDLE_BINARY_DISCARD_TEXTURES = 0,
-		HANDLE_BINARY_EXTRACT_TEXTURES,
-		HANDLE_BINARY_EMBED_AS_BASISU,
-		HANDLE_BINARY_EMBED_AS_UNCOMPRESSED, // If this value changes from 3,
-											 // ResourceImporterScene::pre_import must be changed as
-											 // well.
-	};
-
-	int32_t get_handle_binary_image() const { return handle_binary_image_mode; }
-
-	void set_handle_binary_image(int32_t p_handle_binary_image)
-	{
-		handle_binary_image_mode = (HandleBinaryImageMode)p_handle_binary_image;
-	}
-
-	HandleBinaryImageMode get_handle_binary_image_mode() const { return handle_binary_image_mode; }
-
-	void set_handle_binary_image_mode(HandleBinaryImageMode p_handle_binary_image)
-	{
-		handle_binary_image_mode = p_handle_binary_image;
-	}
-
-
-
-	String get_copyright() const;
-
-
-
-
-	const Vector<Ref<GLTFNode>>& get_nodes() const { return nodes; }
-
-	void set_nodes(const Vector<Ref<GLTFNode>>& p_nodes) { nodes = p_nodes; }
-
-	const Vector<PackedByteArray>& get_buffers() const { return buffers; }
-
-	void set_buffers(const Vector<PackedByteArray>& p_buffers) { buffers = p_buffers; }
-
-	const Vector<Ref<GLTFBufferView>>& get_buffer_views() const { return buffer_views; }
-
-	void set_buffer_views(const Vector<Ref<GLTFBufferView>>& p_buffer_views)
-	{
-		buffer_views = p_buffer_views;
-	}
-
-	const Vector<Ref<GLTFAccessor>>& get_accessors() const { return accessors; }
-
-	void set_accessors(const Vector<Ref<GLTFAccessor>>& p_accessors) { accessors = p_accessors; }
-
-	const Vector<Ref<GLTFMesh>>& get_meshes() const { return meshes; }
-
-	void set_meshes(const Vector<Ref<GLTFMesh>>& p_meshes) { meshes = p_meshes; }
-
-	const Vector<Ref<Material>>& get_materials() const { return materials; }
-
-	void set_materials(const Vector<Ref<Material>>& p_materials) { materials = p_materials; }
-
-	String get_scene_name() const;
-
-	String get_base_path() const;
-	void set_base_path(const String& p_base_path);
-
-
-
-	String get_filename() const;
-	void set_filename(const String& p_filename);
-
-
-	const Vector<Ref<GLTFTexture>>& get_textures() const { return textures; }
-
-	void set_textures(const Vector<Ref<GLTFTexture>>& p_textures) { textures = p_textures; }
-
-	const Vector<Ref<GLTFTextureSampler>>& get_texture_samplers() const { return texture_samplers; }
-
-	void set_texture_samplers(const Vector<Ref<GLTFTextureSampler>>& p_texture_samplers)
-	{
-		texture_samplers = p_texture_samplers;
-	}
-
-	const Vector<Ref<Texture2D>>& get_images() const { return images; }
-
-	void set_images(const Vector<Ref<Texture2D>>& p_images) { images = p_images; }
-
-	const Vector<Ref<GLTFSkin>>& get_skins() const { return skins; }
-
-	void set_skins(const Vector<Ref<GLTFSkin>>& p_skins) { skins = p_skins; }
-
-	const Vector<Ref<GLTFCamera>>& get_cameras() const { return cameras; }
-
-	void set_cameras(const Vector<Ref<GLTFCamera>>& p_cameras) { cameras = p_cameras; }
-
-	const Vector<Ref<GLTFLight>>& get_lights() const { return lights; }
-
-	void set_lights(const Vector<Ref<GLTFLight>>& p_lights) { lights = p_lights; }
-
-	const HashSet<String>& get_unique_names() const { return unique_names; }
-
-	void set_unique_names(const HashSet<String>& p_unique_names) { unique_names = p_unique_names; }
-
-	const HashSet<String>& get_unique_animation_names() const { return unique_animation_names; }
-
-	void set_unique_animation_names(const HashSet<String>& p_unique_animation_names)
-	{
-		unique_animation_names = p_unique_animation_names;
-	}
-
-	const Vector<Ref<GLTFSkeleton>>& get_skeletons() const { return skeletons; }
-
-	void set_skeletons(const Vector<Ref<GLTFSkeleton>>& p_skeletons) { skeletons = p_skeletons; }
-
-
-
-	const Vector<Ref<GLTFAnimation>>& get_animations() const { return animations; }
-
-	void set_animations(const Vector<Ref<GLTFAnimation>>& p_animations)
-	{
-		animations = p_animations;
-	}
-
-	GLTFNodeIndex get_node_index(Node* p_node) const;
-
-
-	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
-};
-
-class CSGShape3D;
-class GridMap;
-
-class GLTFDocument final : public Resource
-{
-	friend class FBXDocument;
-
-public:
-	const int32_t JOINT_GROUP_SIZE = 4;
-
-	enum
-	{
-		TEXTURE_TYPE_GENERIC = 0,
-		TEXTURE_TYPE_NORMAL = 1,
-	};
-
-	enum RootNodeMode
-	{
-		ROOT_NODE_MODE_SINGLE_ROOT,
-		ROOT_NODE_MODE_KEEP_ROOT,
-		ROOT_NODE_MODE_MULTI_ROOT,
-	};
-
-	enum TextureMapMode
-	{
-		TEXTURE_MAP_MODE_DO_NOT_REMAP,
-		TEXTURE_MAP_MODE_REMAP_TO_STANDARD_MATERIAL,
-	};
-
-	enum VisibilityMode
-	{
-		VISIBILITY_MODE_INCLUDE_REQUIRED,
-		VISIBILITY_MODE_INCLUDE_OPTIONAL,
-		VISIBILITY_MODE_EXCLUDE,
-	};
-
-	enum ImportFlags
-	{
-		IMPORT_FLAG_GENERATE_TANGENT_ARRAYS = 8,
-		IMPORT_FLAG_USE_NAMED_SKIN_BINDS = 16,
-		IMPORT_FLAG_DISCARD_MESHES_AND_MATERIALS = 32,
-		IMPORT_FLAG_FORCE_DISABLE_MESH_COMPRESSION = 64,
-	};
-
-private:
-	int _naming_version = 2;
-	String _image_format = "PNG";
-	float _lossy_quality = 0.75f;
-	String _fallback_image_format = "None";
-	float _fallback_image_quality = 0.25f;
-	Ref<GLTFDocumentExtension> _image_save_extension;
-	RootNodeMode _root_node_mode = RootNodeMode::ROOT_NODE_MODE_SINGLE_ROOT;
-	TextureMapMode _texture_map_mode = TextureMapMode::TEXTURE_MAP_MODE_REMAP_TO_STANDARD_MATERIAL;
-	VisibilityMode _visibility_mode = VisibilityMode::VISIBILITY_MODE_INCLUDE_REQUIRED;
-
-protected:
-	String _gen_unique_name(Ref<GLTFState> p_state, const String& p_name);
-	static Vector<Ref<GLTFDocumentExtension>> all_document_extensions;
-	static Mutex all_document_extensions_mutex;
-	Vector<Ref<GLTFDocumentExtension>> document_extensions;
-
-public:
-	static void register_gltf_document_extension(
-		Ref<GLTFDocumentExtension> p_extension, bool p_first_priority = false);
-	static void unregister_all_gltf_document_extensions();
-	static Vector<Ref<GLTFDocumentExtension>> get_all_gltf_document_extensions();
-
-	static NodePath _find_material_node_path(
-		Ref<GLTFState> p_state, const Ref<Material>& p_material);
-	static Ref<GLTFObjectModelProperty> import_object_model_property(
-		Ref<GLTFState> p_state, const String& p_json_pointer);
-	static Ref<GLTFObjectModelProperty> export_object_model_property(Ref<GLTFState> p_state,
-		const NodePath& p_node_path, const Node* p_godot_node, GLTFNodeIndex p_gltf_node_index);
-
-	void set_naming_version(int p_version);
-	int get_naming_version() const;
-
-	TextureMapMode get_texture_map_mode() const { return _texture_map_mode; }
-
-	void set_visibility_mode(VisibilityMode p_visibility_mode);
-	VisibilityMode get_visibility_mode() const;
-	static String _gen_unique_name_static(HashSet<String>& r_unique_names, const String& p_name);
-
-private:
-	Error _parse_scenes(Ref<GLTFState> p_state);
-	Error _parse_nodes(Ref<GLTFState> p_state);
-	String _sanitize_animation_name(const String& p_name);
-	String _gen_unique_animation_name(Ref<GLTFState> p_state, const String& p_name);
-	String _sanitize_bone_name(const String& p_name);
-	String _gen_unique_bone_name(
-		Ref<GLTFState> p_state, const GLTFSkeletonIndex p_skel_i, const String& p_name);
-	GLTFTextureIndex _set_texture(Ref<GLTFState> p_state, Ref<Texture2D> p_texture,
-		StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
-	GLTFTextureSamplerIndex _set_sampler_for_mode(
-		Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
-	Error _parse_json(const String& p_path, Ref<GLTFState> p_state);
-	Error _parse_glb(Ref<FileAccess> p_file, Ref<GLTFState> p_state);
-	Error _parse_meshes(Ref<GLTFState> p_state);
-	Error _serialize_textures(Ref<GLTFState> p_state);
-	Error _serialize_texture_samplers(Ref<GLTFState> p_state);
-	Error _serialize_images(Ref<GLTFState> p_state);
-	Error _serialize_lights(Ref<GLTFState> p_state);
-	Ref<Image> _parse_image_bytes_into_image(Ref<GLTFState> p_state, const Vector<uint8_t>& p_bytes,
-		const String& p_mime_type, int p_index, String& r_file_extension);
-	void _parse_image_save_image(Ref<GLTFState> p_state, const Vector<uint8_t>& p_bytes,
-		const String& p_resource_uri, const String& p_file_extension, int p_index,
-		Ref<Image> p_image);
-	Error _parse_images(Ref<GLTFState> p_state, const String& p_base_path);
-	Error _parse_skins(Ref<GLTFState> p_state);
-	Error _serialize_skins(Ref<GLTFState> p_state);
-	Error _create_skins(Ref<GLTFState> p_state);
-	bool _skins_are_same(const Ref<Skin>& p_skin_a, const Ref<Skin>& p_skin_b);
-	void _remove_duplicate_skins(Ref<GLTFState> p_state);
-	Error _serialize_cameras(Ref<GLTFState> p_state);
-	Error _parse_cameras(Ref<GLTFState> p_state);
-	Error _parse_lights(Ref<GLTFState> p_state);
-	Error _parse_animations(Ref<GLTFState> p_state);
-	void _parse_animation_pointer(Ref<GLTFState> p_state, const String& p_animation_json_pointer,
-		const Ref<GLTFAnimation> p_gltf_animation, const GLTFAnimation::Interpolation p_interp,
-		const Vector<double>& p_times, const int p_output_value_accessor_index);
-	Error _serialize_animations(Ref<GLTFState> p_state);
-	BoneAttachment3D* _generate_bone_attachment(
-		Skeleton3D* p_godot_skeleton, const Ref<GLTFNode>& p_bone_node);
-	ImporterMeshInstance3D* _generate_mesh_instance(
-		Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	Node3D* _generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
-	void _assign_node_names(Ref<GLTFState> p_state);
-	Error _encode_accessors(Ref<GLTFState> p_state);
-	Error _encode_buffer_views(Ref<GLTFState> p_state);
-	Error _serialize_materials(Ref<GLTFState> p_state);
-	Error _serialize_meshes(Ref<GLTFState> p_state);
-	Error _serialize_nodes(Ref<GLTFState> p_state);
-	Error _serialize_scenes(Ref<GLTFState> p_state);
-	Error _encode_buffer_bins(Ref<GLTFState> p_state, const String& p_path);
-	Error _encode_buffer_glb(Ref<GLTFState> p_state, const String& p_path);
-	PackedByteArray _serialize_glb_buffer(Ref<GLTFState> p_state, Error* r_err);
-	Error _serialize_asset_header(Ref<GLTFState> p_state);
-	Error _serialize_file(Ref<GLTFState> p_state, const String p_path);
-	Error _serialize_gltf_extensions(Ref<GLTFState> p_state) const;
-
-public:
-	// https://www.itu.int/rec/R-REC-BT.601
-	// https://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.601-7-201103-I!!PDF-E.pdf
-	static constexpr float R_BRIGHTNESS_COEFF = 0.299f;
-	static constexpr float G_BRIGHTNESS_COEFF = 0.587f;
-	static constexpr float B_BRIGHTNESS_COEFF = 0.114f;
-
-private:
-	// https://github.com/microsoft/glTF-SDK/blob/master/GLTFSDK/Source/PBRUtils.cpp#L9
-	// https://bghgary.github.io/glTF/convert-between-workflows-bjs/js/babylon.pbrUtilities.js
-
-public:
-	Error append_from_file(const String& p_path, Ref<GLTFState> p_state,
-		uint32_t p_flags = 0, const String& p_base_path = String());
-	Error append_from_buffer(const PackedByteArray& p_bytes, const String& p_base_path,
-		Ref<GLTFState> p_state, uint32_t p_flags = 0);
-	Error append_from_scene(Node* p_node, Ref<GLTFState> p_state, uint32_t p_flags = 0);
-
-	Node* generate_scene(Ref<GLTFState> p_state, float p_bake_fps = 30.0f,
-		bool p_trimming = false, bool p_remove_immutable_tracks = true);
-	PackedByteArray generate_buffer(Ref<GLTFState> p_state);
-	Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path);
-
-public:
-	Error _parse_asset_header(Ref<GLTFState> p_state);
-	void _process_mesh_instances(Ref<GLTFState> p_state, Node* p_scene_root);
-	Node* _generate_scene_node_tree(Ref<GLTFState> p_state);
-	void _generate_scene_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
-		Node* p_scene_parent, Node* p_scene_root);
-	void _generate_skeleton_bone_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
-		Node3D* p_current_node, Node* p_scene_parent, Node* p_scene_root);
-	void _attach_node_to_skeleton(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
-		Node3D* p_current_node, Skeleton3D* p_godot_skeleton, Node* p_scene_root,
-		GLTFNodeIndex p_bone_node_index = -1);
-	void _generate_scene_node_compat_4pt4(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
-		Node* p_scene_parent, Node* p_scene_root);
-	void _generate_skeleton_bone_node_compat_4pt4(Ref<GLTFState> p_state,
-		const GLTFNodeIndex p_node_index, Node* p_scene_parent, Node* p_scene_root);
-	void _import_animation(Ref<GLTFState> p_state, AnimationPlayer* p_animation_player,
-		const GLTFAnimationIndex p_index, const bool p_trimming,
-		const bool p_remove_immutable_tracks);
-	void _convert_mesh_instances(Ref<GLTFState> p_state);
-	void _convert_scene_node(Ref<GLTFState> p_state, Node* p_current,
-		const GLTFNodeIndex p_gltf_current, const GLTFNodeIndex p_gltf_root);
-
-	void _convert_csg_shape_to_gltf(CSGShape3D* p_current, GLTFNodeIndex p_gltf_parent,
-		Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
-
-	void _check_visibility(Node* p_node, bool& r_retflag);
-	void _convert_grid_map_to_gltf(GridMap* p_grid_map, GLTFNodeIndex p_parent_node_index,
-		GLTFNodeIndex p_root_node_index, Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
-	void _convert_skeleton_to_gltf(Skeleton3D* p_scene_parent, Ref<GLTFState> p_state,
-		GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
-		Ref<GLTFNode> p_gltf_node);
-	void _convert_bone_attachment_to_gltf(BoneAttachment3D* p_bone_attachment,
-		Ref<GLTFState> p_state, GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
-		Ref<GLTFNode> p_gltf_node);
-
-	GLTFNodeIndex _node_and_or_bone_to_gltf_node_index(
-		Ref<GLTFState> p_state, const Vector<String>& p_node_subpath, const Node* p_godot_node);
-	bool _convert_animation_node_track(Ref<GLTFState> p_state,
-		GLTFAnimation::NodeTrack& p_gltf_node_track, const Ref<Animation>& p_godot_animation,
-		int32_t p_godot_anim_track_index, Vector<double>& p_times);
-	void _convert_animation(Ref<GLTFState> p_state, AnimationPlayer* p_animation_player,
-		const String& p_animation_track_name);
-
-	Error _serialize(Ref<GLTFState> p_state);
-	Error _parse(Ref<GLTFState> p_state, const String& p_path, Ref<FileAccess> p_file);
-};
-
-#include "core/templates/rb_set.h"
-
-using SkinNodeIndex = int;
-using SkinSkeletonIndex = int;
-
-class SkinTool final {
-public:
-	static String _sanitize_bone_name(const String &p_name);
-	static String _gen_unique_bone_name(HashSet<String> &r_unique_names, const String &p_name);
-	static SkinNodeIndex _find_highest_node(Vector<Ref<GLTFNode>> &r_nodes, const Vector<SkinNodeIndex> &p_subset);
-	static bool _capture_nodes_in_skin(const Vector<Ref<GLTFNode>> &p_nodes, Ref<GLTFSkin> p_skin, const SkinNodeIndex p_node_index);
-	static void _capture_nodes_for_multirooted_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
-	static void _recurse_children(
-			Vector<Ref<GLTFNode>> &r_nodes,
-			const SkinNodeIndex p_node_index,
-			RBSet<SkinNodeIndex> &r_all_skin_nodes,
-			HashSet<SkinNodeIndex> &r_child_visited_set);
-	static Error _reparent_non_joint_skeleton_subtrees(
-			Vector<Ref<GLTFNode>> &r_nodes,
-			Ref<GLTFSkeleton> p_skeleton,
-			const Vector<SkinNodeIndex> &p_non_joints);
-	static Error _determine_skeleton_roots(
-			Vector<Ref<GLTFNode>> &r_nodes,
-			Vector<Ref<GLTFSkeleton>> &r_skeletons,
-			const SkinSkeletonIndex p_skel_i);
-	static Error _map_skin_joints_indices_to_skeleton_bone_indices(
-			Vector<Ref<GLTFSkin>> &r_skins,
-			Vector<Ref<GLTFSkeleton>> &r_skeletons,
-			Vector<Ref<GLTFNode>> &r_nodes);
-	static String _gen_unique_name(HashSet<String> &unique_names, const String &p_name);
-	static bool _skins_are_same(const Ref<Skin> p_skin_a, const Ref<Skin> p_skin_b);
-	static void _remove_duplicate_skins(Vector<Ref<GLTFSkin>> &r_skins);
-	static void _check_if_parent_needs_to_become_joint(
-			const Vector<Ref<GLTFNode>> &p_all_nodes,
-			const Vector<GLTFNodeIndex> &p_skeleton_node_indices,
-			const Ref<GLTFNode> &p_gltf_node,
-			Vector<GLTFNodeIndex> &r_non_joint_indices);
-
-public:
-	static Error _expand_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
-	static Error _verify_skin(Vector<Ref<GLTFNode>> &r_nodes, Ref<GLTFSkin> p_skin);
-	static Error _asset_parse_skins(
-			const Vector<SkinNodeIndex> &p_input_skin_indices,
-			const Vector<Ref<GLTFSkin>> &p_input_skins,
-			const Vector<Ref<GLTFNode>> &p_input_nodes,
-			Vector<SkinNodeIndex> &r_output_skin_indices,
-			Vector<Ref<GLTFSkin>> &r_output_skins,
-			HashMap<GLTFNodeIndex, bool> &r_joint_mapping);
-	static Error _determine_skeletons(
-			Vector<Ref<GLTFSkin>> &r_skins,
-			Vector<Ref<GLTFNode>> &r_nodes,
-			Vector<Ref<GLTFSkeleton>> &r_skeletons,
-			const Vector<GLTFNodeIndex> &p_single_skeleton_root,
-			bool p_turn_non_joint_descendants_into_bones);
-	static Error _create_skins(Vector<Ref<GLTFSkin>> &skins, Vector<Ref<GLTFNode>> &nodes, bool use_named_skin_binds, HashSet<String> &unique_names);
-};
 
 #ifdef TOOLS_ENABLED
 #include "core/typedefs.h"
@@ -110177,9 +108083,10 @@ class AnimationPlayer;
 class ImporterMesh;
 class Material;
 
-class EditorSceneFormatImporter : public RefCounted
+class EditorSceneFormatImporter final : public RefCounted
 {
 	List<ResourceImporter::ImportOption>* current_option_list = nullptr;
+	bool is_fbx = false;
 
 public:
 	enum ImportFlags
@@ -110193,8 +108100,10 @@ public:
 		IMPORT_FORCE_DISABLE_MESH_COMPRESSION = 64,
 	};
 
-	virtual void get_extensions(List<String>* r_extensions) const;
-	virtual void get_import_options(
+	explicit EditorSceneFormatImporter(bool p_is_fbx = false) : is_fbx(p_is_fbx) {}
+
+	void get_extensions(List<String>* r_extensions) const;
+	void get_import_options(
 		const String& p_path, List<ResourceImporter::ImportOption>* r_options);
 };
 
@@ -110832,13 +108741,6 @@ public:
 class Animation;
 class Node;
 
-class EditorSceneFormatImporterGLTF final : public EditorSceneFormatImporter
-{
-public:
-	virtual void get_extensions(List<String>* r_extensions) const override;
-	virtual void get_import_options(
-		const String& p_path, List<ResourceImporter::ImportOption>* r_options) override;
-};
 #endif // TOOLS_ENABLED
 
 #include "core/io/ip.h"

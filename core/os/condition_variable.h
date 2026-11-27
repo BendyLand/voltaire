@@ -268,7 +268,7 @@ struct Tuple<T, Rest...> : Tuple<Rest...> {
 
 // Tuple is zero-constructible if and only if all constrained types are zero-constructible.
 template <typename... Types>
-struct is_zero_constructible<Tuple<Types...>> : std::conjunction<is_zero_constructible<Types>...> {};
+inline constexpr bool is_zero_constructible_v<Tuple<Types...>> = (is_zero_constructible_v<Types> && ...);
 
 template <size_t I, typename Tuple>
 struct TupleGet;
