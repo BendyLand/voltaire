@@ -81,9 +81,6 @@ static CoreBind::ResourceLoader* _resource_loader = nullptr;
 
 static Mutex _global_mutex;
 
-extern void register_global_constants();
-extern void unregister_global_constants();
-
 static bool _is_core_extensions_registered = false;
 
 void register_core_types()
@@ -91,8 +88,6 @@ void register_core_types()
 	OS::benchmark_begin_measure("Core", "Register Types");
 
 	CryptoCore::initialize();
-
-	register_global_constants();
 
 	ResourceLoader::initialize();
 
@@ -164,363 +159,6 @@ void unregister_core_types()
 	ResourceFormatImporter::finalize();
 	ResourceUID::finalize();
 }
-
-struct _CoreConstant
-{
-#ifdef DEBUG_ENABLED
-	bool ignore_value_in_docs = false;
-	bool is_bitfield = false;
-#endif // DEBUG_ENABLED
-	String enum_name;
-	const char* name = nullptr;
-	int64_t value = 0;
-
-	_CoreConstant() {}
-
-#ifdef DEBUG_ENABLED
-	_CoreConstant(const String& p_enum_name, const char* p_name, int64_t p_value,
-		bool p_ignore_value_in_docs = false, bool p_is_bitfield = false)
-		: ignore_value_in_docs(p_ignore_value_in_docs), is_bitfield(p_is_bitfield),
-		  enum_name(p_enum_name), name(p_name), value(p_value)
-	{
-	}
-#else
-	_CoreConstant(const String& p_enum_name, const char* p_name, int64_t p_value)
-		: enum_name(p_enum_name), name(p_name), value(p_value)
-	{
-	}
-#endif // DEBUG_ENABLED
-};
-
-static Vector<_CoreConstant> _global_constants;
-static HashMap<String, int> _global_constants_map;
-static HashMap<String, Vector<_CoreConstant>> _global_enums;
-
-#ifdef DEBUG_ENABLED
-
-#define BIND_CORE_CONSTANT(m_constant)                                                             \
-	_global_constants.push_back(_CoreConstant(String(), #m_constant, m_constant));             \
-	_global_constants_map[#m_constant] = _global_constants.size() - 1;
-
-#define BIND_CORE_ENUM_CONSTANT(m_constant)                                                        \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_constant, m_constant));            \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_FLAG(m_constant)                                                        \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_constant);                           \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_constant, m_constant, false, true));                       \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-// This just binds enum classes as if they were regular enum constants.
-#define BIND_CORE_ENUM_CLASS_CONSTANT(m_enum, m_prefix, m_member)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member));         \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_CLASS_FLAG(m_enum, m_prefix, m_member)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_enum::m_member);                     \
-		_global_constants.push_back(_CoreConstant(                                                 \
-			enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member, false, true));          \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CLASS_CONSTANT_CUSTOM(m_enum, m_name, m_member)                             \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_name, (int64_t)m_enum::m_member)); \
-		_global_constants_map[#m_name] = _global_constants.size() - 1;                             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_CLASS_FLAG_CUSTOM(m_enum, m_name, m_member)                             \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_enum::m_member);                     \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_name, (int64_t)m_enum::m_member, false, true));            \
-		_global_constants_map[#m_name] = _global_constants.size() - 1;                             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CLASS_CONSTANT_NO_VAL(m_enum, m_prefix, m_member)                           \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member, true));   \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CONSTANT_CUSTOM(m_custom_name, m_constant)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, m_custom_name, m_constant));          \
-		_global_constants_map[m_custom_name] = _global_constants.size() - 1;                       \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_CONSTANT_NO_VAL(m_constant)                                                      \
-	_global_constants.push_back(_CoreConstant(String(), #m_constant, m_constant, true));       \
-	_global_constants_map[#m_constant] = _global_constants.size() - 1;
-
-#define BIND_CORE_ENUM_CONSTANT_NO_VAL(m_constant)                                                 \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_constant, m_constant, true));      \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CONSTANT_CUSTOM_NO_VAL(m_custom_name, m_constant)                           \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, m_custom_name, m_constant, true));    \
-		_global_constants_map[m_custom_name] = _global_constants.size() - 1;                       \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#else
-
-#define BIND_CORE_CONSTANT(m_constant)                                                             \
-	_global_constants.push_back(_CoreConstant(String(), #m_constant, m_constant));             \
-	_global_constants_map[#m_constant] = _global_constants.size() - 1;
-
-#define BIND_CORE_ENUM_CONSTANT(m_constant)                                                        \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_constant, m_constant));            \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_FLAG(m_constant)                                                        \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_constant);                           \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_constant, m_constant));            \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-// This just binds enum classes as if they were regular enum constants.
-#define BIND_CORE_ENUM_CLASS_CONSTANT(m_enum, m_prefix, m_member)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member));         \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_CLASS_FLAG(m_enum, m_prefix, m_member)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_enum::m_member);                     \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member));         \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CLASS_CONSTANT_CUSTOM(m_enum, m_name, m_member)                             \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_name, (int64_t)m_enum::m_member)); \
-		_global_constants_map[#m_name] = _global_constants.size() - 1;                             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_BITFIELD_CLASS_FLAG_CUSTOM(m_enum, m_name, m_member)                             \
-	{                                                                                              \
-		String enum_name = __constant_get_bitfield_name(m_enum::m_member);                     \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_name, (int64_t)m_enum::m_member)); \
-		_global_constants_map[#m_name] = _global_constants.size() - 1;                             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CLASS_CONSTANT_NO_VAL(m_enum, m_prefix, m_member)                           \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_enum::m_member);                         \
-		_global_constants.push_back(                                                               \
-			_CoreConstant(enum_name, #m_prefix "_" #m_member, (int64_t)m_enum::m_member));         \
-		_global_constants_map[#m_prefix "_" #m_member] = _global_constants.size() - 1;             \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CONSTANT_CUSTOM(m_custom_name, m_constant)                                  \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, m_custom_name, m_constant));          \
-		_global_constants_map[m_custom_name] = _global_constants.size() - 1;                       \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_CONSTANT_NO_VAL(m_constant)                                                      \
-	_global_constants.push_back(_CoreConstant(String(), #m_constant, m_constant));             \
-	_global_constants_map[#m_constant] = _global_constants.size() - 1;
-
-#define BIND_CORE_ENUM_CONSTANT_NO_VAL(m_constant)                                                 \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, #m_constant, m_constant));            \
-		_global_constants_map[#m_constant] = _global_constants.size() - 1;                         \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#define BIND_CORE_ENUM_CONSTANT_CUSTOM_NO_VAL(m_custom_name, m_constant)                           \
-	{                                                                                              \
-		String enum_name = __constant_get_enum_name(m_constant);                               \
-		_global_constants.push_back(_CoreConstant(enum_name, m_custom_name, m_constant));          \
-		_global_constants_map[m_custom_name] = _global_constants.size() - 1;                       \
-		_global_enums[enum_name].push_back(                                                        \
-			(_global_constants.ptr())[_global_constants.size() - 1]);                              \
-	}
-
-#endif // DEBUG_ENABLED
-
-void register_global_constants() {}
-
-void unregister_global_constants()
-{
-	_global_constants.clear();
-	_global_constants_map.clear();
-	_global_enums.clear();
-}
-
-int CoreConstants::get_global_constant_count() { return _global_constants.size(); }
-
-String CoreConstants::get_global_constant_enum(int p_idx)
-{
-	return _global_constants[p_idx].enum_name;
-}
-
-#ifdef DEBUG_ENABLED
-bool CoreConstants::is_global_constant_bitfield(int p_idx)
-{
-	return _global_constants[p_idx].is_bitfield;
-}
-
-bool CoreConstants::get_ignore_value_in_docs(int p_idx)
-{
-	return _global_constants[p_idx].ignore_value_in_docs;
-}
-#else
-bool CoreConstants::is_global_constant_bitfield(int p_idx) { return false; }
-
-bool CoreConstants::get_ignore_value_in_docs(int p_idx) { return false; }
-#endif // DEBUG_ENABLED
-
-const char* CoreConstants::get_global_constant_name(int p_idx)
-{
-	return _global_constants[p_idx].name;
-}
-
-int64_t CoreConstants::get_global_constant_value(int p_idx)
-{
-	return _global_constants[p_idx].value;
-}
-
-bool CoreConstants::is_global_constant(const String& p_name)
-{
-	return _global_constants_map.has(p_name);
-}
-
-int CoreConstants::get_global_constant_index(const String& p_name)
-{
-	ERR_FAIL_COND_V_MSG(
-		!_global_constants_map.has(p_name), -1, "Trying to get index of non-existing constant.");
-	return _global_constants_map[p_name];
-}
-
-bool CoreConstants::is_global_enum(const String& p_enum) { return _global_enums.has(p_enum); }
-
-void CoreConstants::get_enum_values(
-	const String& p_enum, HashMap<String, int64_t>* p_values)
-{
-	ERR_FAIL_NULL_MSG(p_values, "Trying to get enum values with null map.");
-	ERR_FAIL_COND_MSG(!_global_enums.has(p_enum), "Trying to get values of non-existing enum.");
-	for (const _CoreConstant& constant : _global_enums[p_enum]) {
-		(*p_values)[constant.name] = constant.value;
-	}
-}
-
-#ifdef TOOLS_ENABLED
-
-void CoreConstants::get_global_enums(List<String>* r_values)
-{
-	for (const KeyValue<String, Vector<_CoreConstant>>& global_enum : _global_enums) {
-		r_values->push_back(global_enum.key);
-	}
-}
-
-#endif
-
-#ifdef BIND_CORE_CONSTANT
-#undef BIND_CORE_CONSTANT
-#endif
-#ifdef BIND_CORE_ENUM_CONSTANT
-#undef BIND_CORE_ENUM_CONSTANT
-#endif
-#ifdef BIND_CORE_BITFIELD_FLAG
-#undef BIND_CORE_BITFIELD_FLAG
-#endif
-#ifdef BIND_CORE_ENUM_CLASS_CONSTANT
-#undef BIND_CORE_ENUM_CLASS_CONSTANT
-#endif
-#ifdef BIND_CORE_BITFIELD_CLASS_FLAG
-#undef BIND_CORE_BITFIELD_CLASS_FLAG
-#endif
-#ifdef BIND_CORE_ENUM_CLASS_CONSTANT_CUSTOM
-#undef BIND_CORE_ENUM_CLASS_CONSTANT_CUSTOM
-#endif
-#ifdef BIND_CORE_BITFIELD_CLASS_FLAG_CUSTOM
-#undef BIND_CORE_BITFIELD_CLASS_FLAG_CUSTOM
-#endif
-#ifdef BIND_CORE_ENUM_CLASS_CONSTANT_NO_VAL
-#undef BIND_CORE_ENUM_CLASS_CONSTANT_NO_VAL
-#endif
-#ifdef BIND_CORE_ENUM_CONSTANT_CUSTOM
-#undef BIND_CORE_ENUM_CONSTANT_CUSTOM
-#endif
-#ifdef BIND_CORE_CONSTANT_NO_VAL
-#undef BIND_CORE_CONSTANT_NO_VAL
-#endif
-#ifdef BIND_CORE_ENUM_CONSTANT_NO_VAL
-#undef BIND_CORE_ENUM_CONSTANT_NO_VAL
-#endif
-#ifdef BIND_CORE_ENUM_CONSTANT_CUSTOM_NO_VAL
-#undef BIND_CORE_ENUM_CONSTANT_CUSTOM_NO_VAL
-#endif
 
 #include "core/templates/rb_set.h"
 #include "core/typedefs.h"
@@ -8225,7 +7863,6 @@ void MainLoop::clear()
 	}
 }
 
-uint8_t MIDIDriver::last_received_message = 0x00;
 
 void MIDIDriver::initialize()
 {
@@ -60848,51 +60485,29 @@ struct MainFrameTime {
 };
 
 class MainTimerSync {
-	class DeltaSmoother {
-	public:
-		// pass the recorded delta, returns a smoothed delta
-		int64_t smooth_delta(int64_t p_delta);
+	int64_t smooth_delta(int64_t p_delta);
+	void made_new_estimate();
+	void update_refresh_rate_estimator(int64_t p_delta);
+	bool fps_allows_smoothing(int64_t p_delta);
 
-	private:
-		void made_new_estimate();
-		void update_refresh_rate_estimator(int64_t p_delta);
-		bool fps_allows_smoothing(int64_t p_delta);
-
-		// estimated vsync delta (monitor refresh rate)
-		int64_t _vsync_delta = 16666;
-
-		// keep track of accumulated time so we know how many vsyncs to advance by
-		int64_t _leftover_time = 0;
-
-		// keep a rough measurement of the FPS as we run.
-		// If this drifts a long way below or above the refresh rate, the machine
-		// is struggling to keep up, and we can switch off smoothing. This
-		// also deals with the case that the user has overridden the vsync in the GPU settings,
-		// in which case we don't want to try smoothing.
-		static const int MEASURE_FPS_OVER_NUM_FRAMES = 64;
-
-		int64_t _measurement_time = 0;
-		int64_t _measurement_frame_count = 0;
-		int64_t _measurement_end_frame = MEASURE_FPS_OVER_NUM_FRAMES;
-		int64_t _measurement_start_time = 0;
-		bool _measurement_allows_smoothing = true;
-
-		// we can estimate the fps by growing it on condition
-		// that a large proportion of frames are higher than the current estimate.
-		int32_t _estimated_fps = 0;
-		int32_t _hits_at_estimated = 0;
-		int32_t _hits_above_estimated = 0;
-		int32_t _hits_below_estimated = 0;
-		int32_t _hits_one_above_estimated = 0;
-		int32_t _hits_one_below_estimated = 0;
-		bool _estimate_complete = false;
-		bool _estimate_locked = false;
-
-		// data for averaging the delta over a second or so
-		// to prevent spurious values
-		int64_t _estimator_total_delta = 0;
-		int32_t _estimator_delta_readings = 0;
-	} _delta_smoother;
+	static const int MEASURE_FPS_OVER_NUM_FRAMES = 64;
+	int64_t _vsync_delta = 16666;
+	int64_t _leftover_time = 0;
+	int64_t _measurement_time = 0;
+	int64_t _measurement_frame_count = 0;
+	int64_t _measurement_end_frame = MEASURE_FPS_OVER_NUM_FRAMES;
+	int64_t _measurement_start_time = 0;
+	bool _measurement_allows_smoothing = true;
+	int32_t _estimated_fps = 0;
+	int32_t _hits_at_estimated = 0;
+	int32_t _hits_above_estimated = 0;
+	int32_t _hits_below_estimated = 0;
+	int32_t _hits_one_above_estimated = 0;
+	int32_t _hits_one_below_estimated = 0;
+	bool _estimate_complete = false;
+	bool _estimate_locked = false;
+	int64_t _estimator_total_delta = 0;
+	int32_t _estimator_delta_readings = 0;
 
 	// wall clock time measured on the main thread
 	uint64_t last_cpu_ticks_usec = 0;
@@ -60956,19 +60571,17 @@ public:
 
 template <typename T> class TypedArray;
 
-class Performance final
+namespace Performance
 {
-	static inline bool _initialized = false;
+	inline bool _initialized = false;
 
-	static int _get_node_count();
-	static int _get_orphan_node_count();
+	int _get_node_count();
+	int _get_orphan_node_count();
 
-	static inline double _process_time = 0.0;
-	static inline double _physics_process_time = 0.0;
-	static inline double _navigation_process_time = 0.0;
-	static inline uint64_t _monitor_modification_time = 0;
-
-public:
+	inline double _process_time = 0.0;
+	inline double _physics_process_time = 0.0;
+	inline double _navigation_process_time = 0.0;
+	inline uint64_t _monitor_modification_time = 0;
 	enum Monitor
 	{
 		TIME_FPS,
@@ -61044,27 +60657,20 @@ public:
 		MONITOR_TYPE_PERCENTAGE,
 	};
 
-	static void initialize();
-	static void finalize();
-	static _FORCE_INLINE_ bool is_initialized() { return _initialized; }
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return _initialized; }
 
-	static double get_monitor(Monitor p_monitor);
-	static String get_monitor_name(Monitor p_monitor);
+	double get_monitor(Monitor p_monitor);
+	String get_monitor_name(Monitor p_monitor);
 
-	static MonitorType get_monitor_type(Monitor p_monitor);
+	MonitorType get_monitor_type(Monitor p_monitor);
 
-	static void set_process_time(double p_pt);
-	static void set_physics_process_time(double p_pt);
-	static void set_navigation_process_time(double p_pt);
+	void set_process_time(double p_pt);
+	void set_physics_process_time(double p_pt);
+	void set_navigation_process_time(double p_pt);
 
-	static uint64_t get_monitor_modification_time();
-
-	Performance() = delete;
-	Performance(const Performance&) = delete;
-	Performance& operator=(const Performance&) = delete;
-	~Performance() = delete;
-
-private:
+	uint64_t get_monitor_modification_time();
 	class MonitorCall
 	{
 		MonitorType _type = MONITOR_TYPE_QUANTITY;
@@ -61074,7 +60680,7 @@ private:
 
 		inline MonitorType get_monitor_type() const { return _type; }
 	};
-};
+} // namespace Performance
 
 #include "main/splash.gen.h"
 #include "servers/display/display_server.h"
@@ -61279,16 +60885,12 @@ void draw_clipped_line(RID p_ci, const Rect2& p_clip, Point2 p_a, Point2 p_b, co
 String read_project_name(const String& p_dir);
 } // namespace UIDraw
 
-class EditorUI
+namespace EditorUI
 {
-private:
-	static inline bool _initialized = false;
+	inline bool _initialized = false;
 
-public:
-	EditorUI() = delete;
-
-	static constexpr int DEFAULT_WINDOW_WIDTH = 1280;
-	static constexpr int DEFAULT_WINDOW_HEIGHT = 720;
+	inline constexpr int DEFAULT_WINDOW_WIDTH = 1280;
+	inline constexpr int DEFAULT_WINDOW_HEIGHT = 720;
 
 	enum ViewMode
 	{
@@ -61397,67 +60999,67 @@ public:
 		bool pending_return_to_pm = false;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static bool is_initialized() { return _initialized; }
+	inline bool is_initialized() { return _initialized; }
 
-	static void initialize(RID p_viewport_rid, Size2i p_size, const String& p_project_path,
+	void initialize(RID p_viewport_rid, Size2i p_size, const String& p_project_path,
 		const String& p_project_name, bool p_start_playing = false);
-	static void poll(double p_delta = 0.016);
-	static void process_and_draw();
-	static void finalize();
+	void poll(double p_delta = 0.016);
+	void process_and_draw();
+	void finalize();
 
-	static void handle_input_event(const InputEvent& p_event);
-	static void add_log(const String& p_msg);
-	static void scan_project_files();
-	static void load_scene();
-	static void save_scene();
-	static void open_text_file(const String& p_path);
-	static void save_open_text_file();
-	static void start_play();
-	static void stop_play();
+	void handle_input_event(const InputEvent& p_event);
+	void add_log(const String& p_msg);
+	void scan_project_files();
+	void load_scene();
+	void save_scene();
+	void open_text_file(const String& p_path);
+	void save_open_text_file();
+	void start_play();
+	void stop_play();
 
 	// Button callbacks
-	static void _back_to_project_list();
-	static void _switch_view_2d();
-	static void _switch_view_3d();
-	static void _switch_view_script();
-	static void _add_node();
-	static void _save_all();
-	static void _toggle_play();
-	static void _stop_and_edit();
-	static void _reset_simulation();
-	static void _reset_camera_view();
-	static void _refresh_files();
-	static void _new_script_file();
-	static void _clear_output();
-	static void _duplicate_selected_node();
-	static void _delete_selected_node();
-	static void _nudge_pos_x_neg();
-	static void _nudge_pos_x_pos();
-	static void _nudge_pos_y_neg();
-	static void _nudge_pos_y_pos();
-	static void _nudge_size_w_neg();
-	static void _nudge_size_w_pos();
-	static void _nudge_size_h_neg();
-	static void _nudge_size_h_pos();
-	static void _open_project_settings();
-	static void _close_project_settings();
-	static void _save_project_settings();
-	static void _ps_width_dec();
-	static void _ps_width_inc();
-	static void _ps_height_dec();
-	static void _ps_height_inc();
-	static void _ps_ticks_dec();
-	static void _ps_ticks_inc();
-	static void _ps_toggle_vsync();
-	static void _ps_toggle_resizable();
-	static void _ps_toggle_borderless();
-	static void _ps_toggle_use_3d();
+	void _back_to_project_list();
+	void _switch_view_2d();
+	void _switch_view_3d();
+	void _switch_view_script();
+	void _add_node();
+	void _save_all();
+	void _toggle_play();
+	void _stop_and_edit();
+	void _reset_simulation();
+	void _reset_camera_view();
+	void _refresh_files();
+	void _new_script_file();
+	void _clear_output();
+	void _duplicate_selected_node();
+	void _delete_selected_node();
+	void _nudge_pos_x_neg();
+	void _nudge_pos_x_pos();
+	void _nudge_pos_y_neg();
+	void _nudge_pos_y_pos();
+	void _nudge_size_w_neg();
+	void _nudge_size_w_pos();
+	void _nudge_size_h_neg();
+	void _nudge_size_h_pos();
+	void _open_project_settings();
+	void _close_project_settings();
+	void _save_project_settings();
+	void _ps_width_dec();
+	void _ps_width_inc();
+	void _ps_height_dec();
+	void _ps_height_inc();
+	void _ps_ticks_dec();
+	void _ps_ticks_inc();
+	void _ps_toggle_vsync();
+	void _ps_toggle_resizable();
+	void _ps_toggle_borderless();
+	void _ps_toggle_use_3d();
 
-	static bool _can_modify_selected_node();
-	static bool _can_delete_selected_node();
-};
+	bool _can_modify_selected_node();
+	bool _can_delete_selected_node();
+} // namespace EditorUI
 
 class XMLParser;
 
@@ -61492,16 +61094,12 @@ public:
 };
 
 
-class ProjectManager
+namespace ProjectManager
 {
-private:
-	static inline bool _initialized = false;
+	inline bool _initialized = false;
 
-public:
-	ProjectManager() = delete;
-
-	static constexpr int DEFAULT_WINDOW_WIDTH = 1152;
-	static constexpr int DEFAULT_WINDOW_HEIGHT = 648;
+	inline constexpr int DEFAULT_WINDOW_WIDTH = 1152;
+	inline constexpr int DEFAULT_WINDOW_HEIGHT = 648;
 
 	enum ModalMode
 	{
@@ -61563,43 +61161,43 @@ public:
 		bool pending_open_play = false;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
 	// Lifecycle & Frame Hooks
-	static bool is_initialized() { return _initialized; }
+	inline bool is_initialized() { return _initialized; }
 
-	static void initialize(RID p_viewport_rid, Size2i p_size);
-	static void poll();
-	static void process_and_draw();
-	static void finalize();
+	void initialize(RID p_viewport_rid, Size2i p_size);
+	void poll();
+	void process_and_draw();
+	void finalize();
 
-	static void handle_input_event(const InputEvent& p_event);
-	static void load_projects();
-	static void save_projects();
-	static void rebuild_filtered_list();
+	void handle_input_event(const InputEvent& p_event);
+	void load_projects();
+	void save_projects();
+	void rebuild_filtered_list();
 
 	// Button callbacks
-	static void _new_project();
-	static void _import_project();
-	static void _scan_projects();
-	static void _open_donate_page();
-	static void _edit_selected_project();
-	static void _run_selected_project();
-	static void _open_selected_folder();
-	static void _toggle_favorite_selected();
-	static void _remove_selected_project();
-	static void _quit_manager();
-	static void _cancel_modal();
-	static void _confirm_modal();
-	static void _confirm_modal_and_edit();
+	void _new_project();
+	void _import_project();
+	void _scan_projects();
+	void _open_donate_page();
+	void _edit_selected_project();
+	void _run_selected_project();
+	void _open_selected_folder();
+	void _toggle_favorite_selected();
+	void _remove_selected_project();
+	void _quit_manager();
+	void _cancel_modal();
+	void _confirm_modal();
+	void _confirm_modal_and_edit();
 
-	static bool _has_valid_selected_project();
-	static bool _has_any_selected_project();
-	static bool _read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out);
-	static String _get_default_projects_dir();
-	static void _scan_dir_for_projects(
+	bool _has_valid_selected_project();
+	bool _has_any_selected_project();
+	bool _read_voltaire_project(const String& p_dir, VoltaireProjectFile* r_out);
+	String _get_default_projects_dir();
+	void _scan_dir_for_projects(
 		const String& p_dir, int p_depth, int p_max_depth, LocalVector<String>& r_found);
-};
+} // namespace ProjectManager
 
 
 #define EditorString(m_name) SceneStrings::_get_data()->m_name
@@ -65818,7 +65416,7 @@ void MainFrameTime::clamp_process_step(double min_process_step, double max_proce
 
 /////////////////////////////////
 
-void MainTimerSync::DeltaSmoother::made_new_estimate() {
+void MainTimerSync::made_new_estimate() {
 	_hits_above_estimated = 0;
 	_hits_at_estimated = 0;
 	_hits_below_estimated = 0;
@@ -65832,7 +65430,7 @@ void MainTimerSync::DeltaSmoother::made_new_estimate() {
 #endif
 }
 
-void MainTimerSync::DeltaSmoother::update_refresh_rate_estimator(int64_t p_delta) {
+void MainTimerSync::update_refresh_rate_estimator(int64_t p_delta) {
 	// the calling code should prevent 0 or negative values of delta
 	// (preventing divide by zero)
 
@@ -65984,7 +65582,7 @@ void MainTimerSync::DeltaSmoother::update_refresh_rate_estimator(int64_t p_delta
 	}
 }
 
-bool MainTimerSync::DeltaSmoother::fps_allows_smoothing(int64_t p_delta) {
+bool MainTimerSync::fps_allows_smoothing(int64_t p_delta) {
 	_measurement_time += p_delta;
 	_measurement_frame_count++;
 
@@ -66017,7 +65615,7 @@ bool MainTimerSync::DeltaSmoother::fps_allows_smoothing(int64_t p_delta) {
 	return _measurement_allows_smoothing;
 }
 
-int64_t MainTimerSync::DeltaSmoother::smooth_delta(int64_t p_delta) {
+int64_t MainTimerSync::smooth_delta(int64_t p_delta) {
 	// Conditions to disable smoothing.
 	// Note that vsync is a request, it cannot be relied on, the OS may override this.
 	// If the OS turns vsync on without vsync in the app, smoothing will not be enabled.
@@ -66277,7 +65875,7 @@ double MainTimerSync::get_cpu_process_step() {
 	uint64_t cpu_ticks_elapsed = current_cpu_ticks_usec - last_cpu_ticks_usec;
 	last_cpu_ticks_usec = current_cpu_ticks_usec;
 
-	cpu_ticks_elapsed = _delta_smoother.smooth_delta(cpu_ticks_elapsed);
+	cpu_ticks_elapsed = smooth_delta(cpu_ticks_elapsed);
 
 	return cpu_ticks_elapsed / 1000000.0;
 }
@@ -70987,8 +70585,7 @@ void ProjectManager::_remove_selected_project()
 
 void ProjectManager::_quit_manager()
 {
-	extern bool s_quit_requested;
-	s_quit_requested = true;
+	::s_quit_requested = true;
 }
 
 void ProjectManager::_cancel_modal()
@@ -72379,13 +71976,6 @@ bool EditorFileSystem::_is_test_for_reimport_needed(const String& p_path,
 		}
 	}
 	return false;
-}
-
-void EditorFileSystem::ScanProgress::increment()
-{
-	current++;
-	float ratio = current / MAX(hi, 1.0f);
-	EditorFileSystem::instance->scan_total = ratio;
 }
 
 int EditorFileSystem::_scan_new_dir(ScannedDirectory* p_dir, Ref<DirAccess>& da)
@@ -74565,12 +74155,9 @@ struct Lightmapper::RDState
 	Vector<Light> lights;
 	Vector<LightMetadata> light_metadata;
 
-	struct AreaLightAtlas
-	{
-		int mipmap_count;
-		Vector2i size;
-		PackedByteArray atlas_data;
-	} area_light_atlas;
+	int area_light_atlas_mipmap_count = 0;
+	Vector2i area_light_atlas_size;
+	PackedByteArray area_light_atlas_data;
 
 	struct TriangleSort
 	{
@@ -74830,9 +74417,9 @@ void Lightmapper::add_area_light(const String& p_name, bool p_static, const Vect
 void Lightmapper::add_area_light_atlas(
 	const Vector2i& p_size, int p_mipmap_count, const PackedByteArray& p_atlas_data)
 {
-	rd_state->area_light_atlas.mipmap_count = p_mipmap_count;
-	rd_state->area_light_atlas.size = p_size;
-	rd_state->area_light_atlas.atlas_data = p_atlas_data;
+	rd_state->area_light_atlas_mipmap_count = p_mipmap_count;
+	rd_state->area_light_atlas_size = p_size;
+	rd_state->area_light_atlas_data = p_atlas_data;
 }
 
 void Lightmapper::add_probe(const Vector3& p_position)
@@ -76444,293 +76031,32 @@ Error _betsy_compress_bptc(
 	Image* r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format);
 Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels);
 
-class BetsyCompressor
-{
-	mutable CommandQueueMT command_queue;
-	bool exit = false;
-
-	struct BetsyShader
-	{
-		RID compiled;
-		RID pipeline;
-	};
-
-	// Resources shared by all compression formats.
-	RenderingContextDriver* compress_rcd = nullptr;
-	BetsyShader cached_shaders[BETSY_SHADER_MAX];
-	RID src_sampler;
-
-	// Format-specific resources.
-	RID dxt1_encoding_table_buffer;
-
-	void _init();
-	void _thread_loop();
-	void _thread_exit();
-
-	Error _get_shader(BetsyFormat p_format, const String& p_version, BetsyShader& r_shader);
-	Error _compress(BetsyFormat p_format, Image* r_img);
-
-public:
-	void init();
-	void finish();
-
-	Error compress(BetsyFormat p_format, Image* r_img)
-	{
-		Error err;
-		command_queue.push_and_ret(this, &BetsyCompressor::_compress, &err, p_format, r_img);
-		return err;
-	}
-};
-
-#include "main/splash.gen.h"
-#include "servers/display/display_server.h"
-
-#if defined(VULKAN_ENABLED)
-#define Window VkXlibWindow
-#define Font VkXlibFont
-#include "servers/display/display_server.h"
-#undef Font
-#undef Window
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-#ifdef Bool
-#undef Bool
-#endif
-#ifdef True
-#undef True
-#endif
-#ifdef False
-#undef False
-#endif
-#ifdef Always
-#undef Always
-#endif
-#endif
-#if defined(METAL_ENABLED)
-#include "servers/display/display_server.h"
-#endif
-
-static Mutex betsy_mutex;
-static BetsyCompressor* betsy = nullptr;
-
-static const BetsyShaderType FORMAT_TO_TYPE[BETSY_FORMAT_MAX] = {
-	BETSY_SHADER_BC1_STANDARD,
-	BETSY_SHADER_BC1_DITHER,
-	BETSY_SHADER_BC1_STANDARD,
-	BETSY_SHADER_BC4_SIGNED,
-	BETSY_SHADER_BC4_UNSIGNED,
-	BETSY_SHADER_BC4_SIGNED,
-	BETSY_SHADER_BC4_UNSIGNED,
-	BETSY_SHADER_BC6_SIGNED,
-	BETSY_SHADER_BC6_UNSIGNED,
-};
-
-static const RDC::DataFormat BETSY_TO_RD_FORMAT[BETSY_FORMAT_MAX] = {
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32_UINT,
-	RDC::DATA_FORMAT_R32G32B32A32_UINT,
-	RDC::DATA_FORMAT_R32G32B32A32_UINT,
-};
-
-static const Image::Format BETSY_TO_IMAGE_FORMAT[BETSY_FORMAT_MAX] = {
-	Image::FORMAT_DXT1,
-	Image::FORMAT_DXT1,
-	Image::FORMAT_DXT5,
-	Image::FORMAT_RGTC_R,
-	Image::FORMAT_RGTC_R,
-	Image::FORMAT_RGTC_RG,
-	Image::FORMAT_RGTC_RG,
-	Image::FORMAT_BPTC_RGBF,
-	Image::FORMAT_BPTC_RGBFU,
-};
-
-void BetsyCompressor::init() {}
-
-void BetsyCompressor::finish() {}
-
-Error BetsyCompressor::_compress(BetsyFormat p_format, Image* r_img) { return OK; }
-
-void BetsyCompressor::_thread_exit()
-{
-	exit = true;
-
-	if (RD::data != nullptr) {
-		if (dxt1_encoding_table_buffer.is_valid()) {
-			RD::free_rid(dxt1_encoding_table_buffer);
-		}
-
-		RD::free_rid(src_sampler);
-
-		// Clear the shader cache, pipelines will be unreferenced automatically.
-		for (int i = 0; i < BETSY_SHADER_MAX; i++) {
-			if (cached_shaders[i].compiled.is_valid()) {
-				RD::free_rid(cached_shaders[i].compiled);
-			}
-		}
-
-		// Free the RD (and RCD if necessary).
-		memdelete(RD::data);
-		RD::data = nullptr;
-		if (compress_rcd != nullptr) {
-			memdelete(compress_rcd);
-			compress_rcd = nullptr;
-		}
-	}
-}
-
-// Helper functions.
-
-static int get_next_multiple(int n, int m) { return n + (m - (n % m)); }
-
-static Error get_src_texture_format(Image* r_img, RDC::DataFormat& r_format, bool& r_is_rgb)
-{
-	r_is_rgb = false;
-
-	switch (r_img->get_format()) {
-	case Image::FORMAT_L8:
-		r_img->convert(Image::FORMAT_RGBA8);
-		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Image::FORMAT_LA8:
-		r_img->convert(Image::FORMAT_RGBA8);
-		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Image::FORMAT_R8:
-		r_format = RDC::DATA_FORMAT_R8_UNORM;
-		break;
-	case Image::FORMAT_RG8:
-		r_format = RDC::DATA_FORMAT_R8G8_UNORM;
-		break;
-	case Image::FORMAT_RGB8:
-		r_is_rgb = true;
-		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Image::FORMAT_RGBA8:
-		r_format = RDC::DATA_FORMAT_R8G8B8A8_UNORM;
-		break;
-	case Image::FORMAT_RH:
-		r_format = RDC::DATA_FORMAT_R16_SFLOAT;
-		break;
-	case Image::FORMAT_RGH:
-		r_format = RDC::DATA_FORMAT_R16G16_SFLOAT;
-		break;
-	case Image::FORMAT_RGBH:
-		r_is_rgb = true;
-		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
-		break;
-	case Image::FORMAT_RGBAH:
-		r_format = RDC::DATA_FORMAT_R16G16B16A16_SFLOAT;
-		break;
-	case Image::FORMAT_RF:
-		r_format = RDC::DATA_FORMAT_R32_SFLOAT;
-		break;
-	case Image::FORMAT_RGF:
-		r_format = RDC::DATA_FORMAT_R32G32_SFLOAT;
-		break;
-	case Image::FORMAT_RGBF:
-		r_is_rgb = true;
-		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
-		break;
-	case Image::FORMAT_RGBAF:
-		r_format = RDC::DATA_FORMAT_R32G32B32A32_SFLOAT;
-		break;
-	case Image::FORMAT_RGBE9995:
-		r_format = RDC::DATA_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-		break;
-	case Image::FORMAT_R16:
-		r_format = RDC::DATA_FORMAT_R16_UNORM;
-		break;
-	case Image::FORMAT_RG16:
-		r_format = RDC::DATA_FORMAT_R16G16_UNORM;
-		break;
-	case Image::FORMAT_RGB16:
-		r_is_rgb = true;
-		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
-		break;
-	case Image::FORMAT_RGBA16:
-		r_format = RDC::DATA_FORMAT_R16G16B16A16_UNORM;
-		break;
-	default: {
-		return ERR_UNAVAILABLE;
-	}
-	}
-
-	return OK;
-}
-
-void ensure_betsy_exists()
-{
-	betsy_mutex.lock();
-	if (betsy == nullptr) {
-		betsy = memnew(BetsyCompressor);
-		betsy->init();
-	}
-	betsy_mutex.unlock();
-}
-
 Error _betsy_compress_bptc(
 	Image* r_img, Image::UsedChannels p_channels, Image::BPTCFormat p_bptc_format)
 {
-	ensure_betsy_exists();
+	(void)p_channels;
+	(void)p_bptc_format;
 	Image::Format format = r_img->get_format();
-	Error result = ERR_UNAVAILABLE;
-
-	if (format >= Image::FORMAT_RF && format <= Image::FORMAT_RGBE9995) {
-		if ((p_bptc_format == Image::BPTC_DETECT && r_img->detect_signed()) ||
-			p_bptc_format == Image::BPTC_FORCE_SIGNED) {
-			result = betsy->compress(BETSY_FORMAT_BC6_SIGNED, r_img);
-		}
-		else {
-			result = betsy->compress(BETSY_FORMAT_BC6_UNSIGNED, r_img);
-		}
-	}
-
-	return result;
+	return (format >= Image::FORMAT_RF && format <= Image::FORMAT_RGBE9995) ? OK : ERR_UNAVAILABLE;
 }
 
 Error _betsy_compress_s3tc(Image* r_img, Image::UsedChannels p_channels)
 {
-	ensure_betsy_exists();
-	Error result = ERR_UNAVAILABLE;
-
+	(void)r_img;
 	switch (p_channels) {
 	case Image::USED_CHANNELS_RGB:
 	case Image::USED_CHANNELS_L:
-		result = betsy->compress(BETSY_FORMAT_BC1, r_img);
-		break;
 	case Image::USED_CHANNELS_RGBA:
 	case Image::USED_CHANNELS_LA:
-		result = betsy->compress(BETSY_FORMAT_BC3, r_img);
-		break;
 	case Image::USED_CHANNELS_R:
-		result = betsy->compress(BETSY_FORMAT_BC4_UNSIGNED, r_img);
-		break;
 	case Image::USED_CHANNELS_RG:
-		result = betsy->compress(BETSY_FORMAT_BC5_UNSIGNED, r_img);
-		break;
+		return OK;
 	default:
-		break;
-	}
-
-	return result;
-}
-
-void free_device()
-{
-	if (betsy != nullptr) {
-		betsy->finish();
-		memdelete(betsy);
+		return ERR_UNAVAILABLE;
 	}
 }
+
+void free_device() {}
 
 void initialize_betsy_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -106631,7 +105957,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 	scene_state.data.emissive_exposure_normalization = -1.0; // Use default exposure normalization.
 
 	bool enough_vertex_attribs_for_motion_vectors = GLES3::Config::max_vertex_attribs >= 22;
-	if (rt && rt->overridden.velocity_fbo != 0 && enough_vertex_attribs_for_motion_vectors) {
+	if (rt && rt->overridden_velocity_fbo != 0 && enough_vertex_attribs_for_motion_vectors) {
 		// First frame we render motion vectors? Use our current data!
 		if (scene_state.prev_data_state == 0) {
 			scene_state.prev_data_state = 1;
@@ -106644,7 +105970,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 	bool flip_y = !is_reflection_probe;
 
-	if (rt && rt->overridden.color.is_valid()) {
+	if (rt && rt->overridden_color.is_valid()) {
 		// If we've overridden the render target's color texture, then don't render upside down.
 		// We're probably rendering directly to an XR device.
 		flip_y = false;
@@ -106759,7 +106085,7 @@ void RasterizerSceneGLES3::render_scene(const Ref<RenderSceneBuffers>& p_render_
 
 	scene_state.reset_gl_state();
 
-	GLuint motion_vectors_fbo = rt ? rt->overridden.velocity_fbo : 0;
+	GLuint motion_vectors_fbo = rt ? rt->overridden_velocity_fbo : 0;
 	if (motion_vectors_fbo != 0 && enough_vertex_attribs_for_motion_vectors) {
 		RENDER_TIMESTAMP("Motion Vectors Pass");
 		glBindFramebuffer(GL_FRAMEBUFFER, motion_vectors_fbo);
@@ -121955,8 +121281,8 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 		glBindFramebuffer(GL_FRAMEBUFFER, rt->fbo);
 
 		// color
-		if (rt->overridden.color.is_valid()) {
-			texture = get_texture(rt->overridden.color);
+		if (rt->overridden_color.is_valid()) {
+			texture = get_texture(rt->overridden_color);
 			ERR_FAIL_NULL(texture);
 
 			rt->color = texture->tex_id;
@@ -121999,12 +121325,12 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 		}
 
 		// depth
-		if (rt->overridden.depth.is_valid()) {
-			texture = get_texture(rt->overridden.depth);
+		if (rt->overridden_depth.is_valid()) {
+			texture = get_texture(rt->overridden_depth);
 			ERR_FAIL_NULL(texture);
 
 			rt->depth = texture->tex_id;
-			rt->depth_has_stencil = rt->overridden.depth_has_stencil;
+			rt->depth_has_stencil = rt->overridden_depth_has_stencil;
 		}
 		else {
 			glGenTextures(1, &rt->depth);
@@ -122048,10 +121374,10 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE) {
 			glDeleteFramebuffers(1, &rt->fbo);
-			if (rt->overridden.color.is_null()) {
+			if (rt->overridden_color.is_null()) {
 				GLES3::Utilities::texture_free_data(rt->color);
 			}
-			if (rt->overridden.depth.is_null()) {
+			if (rt->overridden_depth.is_null()) {
 				GLES3::Utilities::texture_free_data(rt->depth);
 			}
 			rt->fbo = 0;
@@ -122059,7 +121385,7 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 			rt->size.y = 0;
 			rt->color = 0;
 			rt->depth = 0;
-			if (rt->overridden.color.is_null()) {
+			if (rt->overridden_color.is_null()) {
 				texture->tex_id = 0;
 				texture->active = false;
 			}
@@ -122069,7 +121395,7 @@ void GLES3::TextureStorage::_update_render_target_color(RenderTarget* rt)
 
 		texture->is_render_target = true;
 		texture->render_target = rt;
-		if (rt->overridden.color.is_null()) {
+		if (rt->overridden_color.is_null()) {
 			texture->format = rt->image_format;
 			texture->real_format = rt->image_format;
 			texture->target = texture_target;
@@ -122109,7 +121435,7 @@ void GLES3::TextureStorage::_update_render_target_velocity(RenderTarget* rt)
 	uint32_t view_count = rt->view_count;
 	GLuint texture_target = view_count > 1 ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
 
-	GLuint velocity_texture_id = texture_get_texid(rt->overridden.velocity);
+	GLuint velocity_texture_id = texture_get_texid(rt->overridden_velocity);
 	glBindTexture(texture_target, velocity_texture_id);
 	glTexParameteri(texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -122129,7 +121455,7 @@ void GLES3::TextureStorage::_update_render_target_velocity(RenderTarget* rt)
 			GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, velocity_texture_id, 0);
 	}
 
-	GLuint velocity_depth_texture_id = texture_get_texid(rt->overridden.velocity_depth);
+	GLuint velocity_depth_texture_id = texture_get_texid(rt->overridden_velocity_depth);
 	glBindTexture(texture_target, velocity_depth_texture_id);
 	glTexParameteri(texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -122156,7 +121482,7 @@ void GLES3::TextureStorage::_update_render_target_velocity(RenderTarget* rt)
 			GLES3::TextureStorage::get_framebuffer_error(status)));
 	}
 	else {
-		rt->overridden.velocity_fbo = new_velocity_fbo;
+		rt->overridden_velocity_fbo = new_velocity_fbo;
 	}
 
 	glBindTexture(texture_target, 0);
@@ -122233,29 +121559,29 @@ void GLES3::TextureStorage::_clear_render_target(RenderTarget* rt)
 		return;
 	}
 
-	for (KeyValue<uint32_t, GLuint>& E : rt->overridden.velocity_fbo_cache) {
+	for (KeyValue<uint32_t, GLuint>& E : rt->overridden_velocity_fbo_cache) {
 		glDeleteFramebuffers(1, &E.value);
 	}
-	rt->overridden.velocity_fbo_cache.clear();
-	rt->overridden.velocity_fbo = 0;
+	rt->overridden_velocity_fbo_cache.clear();
+	rt->overridden_velocity_fbo = 0;
 
 	// Dispose of the cached fbo's and the allocated textures
-	for (KeyValue<uint32_t, RenderTarget::RTOverridden::FBOCacheEntry>& E :
-		rt->overridden.fbo_cache) {
+	for (KeyValue<uint32_t, RenderTarget::RenderTarget::FBOCacheEntry>& E :
+		rt->overridden_fbo_cache) {
 		glDeleteTextures(E.value.allocated_textures.size(), E.value.allocated_textures.ptr());
 		// Don't delete the current FBO, we'll do that a couple lines down.
 		if (E.value.fbo != rt->fbo) {
 			glDeleteFramebuffers(1, &E.value.fbo);
 		}
 	}
-	rt->overridden.fbo_cache.clear();
+	rt->overridden_fbo_cache.clear();
 
 	if (rt->fbo) {
 		glDeleteFramebuffers(1, &rt->fbo);
 		rt->fbo = 0;
 	}
 
-	if (rt->overridden.color.is_null()) {
+	if (rt->overridden_color.is_null()) {
 		if (rt->texture.is_valid()) {
 			Texture* tex = get_texture(rt->texture);
 			tex->alloc_height = 0;
@@ -122270,13 +121596,13 @@ void GLES3::TextureStorage::_clear_render_target(RenderTarget* rt)
 		}
 	}
 	else {
-		Texture* tex = get_texture(rt->overridden.color);
+		Texture* tex = get_texture(rt->overridden_color);
 		tex->render_target = nullptr;
 		tex->is_render_target = false;
 	}
 
-	if (rt->overridden.color.is_valid()) {
-		rt->overridden.color = RID();
+	if (rt->overridden_color.is_valid()) {
+		rt->overridden_color = RID();
 	}
 	else if (rt->color) {
 		GLES3::Utilities::texture_free_data(rt->color);
@@ -122287,15 +121613,15 @@ void GLES3::TextureStorage::_clear_render_target(RenderTarget* rt)
 	}
 	rt->color = 0;
 
-	if (rt->overridden.depth.is_valid()) {
-		rt->overridden.depth = RID();
+	if (rt->overridden_depth.is_valid()) {
+		rt->overridden_depth = RID();
 	}
 	else if (rt->depth) {
 		GLES3::Utilities::texture_free_data(rt->depth);
 	}
 	rt->depth = 0;
 
-	rt->overridden.is_overridden = false;
+	rt->overridden_is_overridden = false;
 
 	if (rt->backbuffer_fbo != 0) {
 		glDeleteFramebuffers(1, &rt->backbuffer_fbo);
@@ -122341,7 +121667,7 @@ void GLES3::TextureStorage::render_target_free(RID p_rid)
 	Texture* t = get_texture(rt->texture);
 	if (t) {
 		t->is_render_target = false;
-		if (rt->overridden.color.is_null()) {
+		if (rt->overridden_color.is_null()) {
 			texture_free(rt->texture);
 		}
 		// memdelete(t);
@@ -122374,7 +121700,7 @@ void GLES3::TextureStorage::render_target_set_size(
 	if (p_width == rt->size.x && p_height == rt->size.y && p_view_count == rt->view_count) {
 		return;
 	}
-	if (rt->overridden.color.is_valid()) {
+	if (rt->overridden_color.is_valid()) {
 		return;
 	}
 
@@ -122408,9 +121734,9 @@ void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID 
 	bool create_new_color_fbo = true;
 	bool create_new_velocity_fbo = true;
 
-	if (rt->overridden.color == p_color_texture && rt->overridden.depth == p_depth_texture &&
-		rt->overridden.velocity == p_velocity_texture &&
-		rt->overridden.velocity_depth == p_velocity_depth_texture) {
+	if (rt->overridden_color == p_color_texture && rt->overridden_depth == p_depth_texture &&
+		rt->overridden_velocity == p_velocity_texture &&
+		rt->overridden_velocity_depth == p_velocity_depth_texture) {
 		return;
 	}
 
@@ -122425,16 +121751,16 @@ void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID 
 		create_new_color_fbo = false;
 	}
 
-	if (!rt->overridden.is_overridden) {
+	if (!rt->overridden_is_overridden) {
 		_clear_render_target(rt);
 	}
 
-	rt->overridden.color = p_color_texture;
-	rt->overridden.depth = p_depth_texture;
-	rt->overridden.depth_has_stencil = p_depth_texture.is_null();
-	rt->overridden.velocity = p_velocity_texture;
-	rt->overridden.velocity_depth = p_velocity_depth_texture;
-	rt->overridden.is_overridden = true;
+	rt->overridden_color = p_color_texture;
+	rt->overridden_depth = p_depth_texture;
+	rt->overridden_depth_has_stencil = p_depth_texture.is_null();
+	rt->overridden_velocity = p_velocity_texture;
+	rt->overridden_velocity_depth = p_velocity_depth_texture;
+	rt->overridden_is_overridden = true;
 
 	// Update to our new color output.
 	RID new_color_texture = render_target_get_texture(p_render_target);
@@ -122446,8 +121772,8 @@ void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID 
 	hash_key = hash_murmur3_one_64(p_depth_texture.get_id(), hash_key);
 	hash_key = hash_fmix32(hash_key);
 
-	RBMap<uint32_t, RenderTarget::RTOverridden::FBOCacheEntry>::Element* cache;
-	if ((cache = rt->overridden.fbo_cache.find(hash_key)) != nullptr) {
+	RBMap<uint32_t, RenderTarget::RenderTarget::FBOCacheEntry>::Element* cache;
+	if ((cache = rt->overridden_fbo_cache.find(hash_key)) != nullptr) {
 		rt->fbo = cache->get().fbo;
 		rt->color = cache->get().color;
 		rt->depth = cache->get().depth;
@@ -122462,26 +121788,26 @@ void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID 
 	velocity_hash_key = hash_fmix32(velocity_hash_key);
 
 	RBMap<uint32_t, GLuint>::Element* fbo =
-		rt->overridden.velocity_fbo_cache.find(velocity_hash_key);
+		rt->overridden_velocity_fbo_cache.find(velocity_hash_key);
 	if (fbo != nullptr) {
-		rt->overridden.velocity_fbo = fbo->get();
+		rt->overridden_velocity_fbo = fbo->get();
 		create_new_velocity_fbo = false;
 	}
 
 	if (p_velocity_texture.is_null()) {
-		for (KeyValue<uint32_t, GLuint>& E : rt->overridden.velocity_fbo_cache) {
+		for (KeyValue<uint32_t, GLuint>& E : rt->overridden_velocity_fbo_cache) {
 			glDeleteFramebuffers(1, &E.value);
 		}
 
-		rt->overridden.velocity_fbo_cache.clear();
-		rt->overridden.velocity_fbo = 0;
+		rt->overridden_velocity_fbo_cache.clear();
+		rt->overridden_velocity_fbo = 0;
 		create_new_velocity_fbo = false;
 	}
 
 	if (create_new_color_fbo) {
 		_update_render_target_color(rt);
 
-		RenderTarget::RTOverridden::FBOCacheEntry new_entry;
+		RenderTarget::RenderTarget::FBOCacheEntry new_entry;
 		new_entry.fbo = rt->fbo;
 		new_entry.color = rt->color;
 		new_entry.depth = rt->depth;
@@ -122493,12 +121819,12 @@ void GLES3::TextureStorage::render_target_set_override(RID p_render_target, RID 
 		if (p_depth_texture.is_null()) {
 			new_entry.allocated_textures.push_back(rt->depth);
 		}
-		rt->overridden.fbo_cache.insert(hash_key, new_entry);
+		rt->overridden_fbo_cache.insert(hash_key, new_entry);
 	}
 
 	if (create_new_velocity_fbo) {
 		_update_render_target_velocity(rt);
-		rt->overridden.velocity_fbo_cache.insert(velocity_hash_key, rt->overridden.velocity_fbo);
+		rt->overridden_velocity_fbo_cache.insert(velocity_hash_key, rt->overridden_velocity_fbo);
 	}
 }
 
@@ -122507,7 +121833,7 @@ RID GLES3::TextureStorage::render_target_get_override_color(RID p_render_target)
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 
-	return rt->overridden.color;
+	return rt->overridden_color;
 }
 
 RID GLES3::TextureStorage::render_target_get_override_depth(RID p_render_target)
@@ -122515,7 +121841,7 @@ RID GLES3::TextureStorage::render_target_get_override_depth(RID p_render_target)
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 
-	return rt->overridden.depth;
+	return rt->overridden_depth;
 }
 
 RID GLES3::TextureStorage::render_target_get_override_velocity(RID p_render_target)
@@ -122523,7 +121849,7 @@ RID GLES3::TextureStorage::render_target_get_override_velocity(RID p_render_targ
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 
-	return rt->overridden.velocity;
+	return rt->overridden_velocity;
 }
 
 RID GLES3::TextureStorage::render_target_get_override_velocity_depth(RID p_render_target)
@@ -122531,7 +121857,7 @@ RID GLES3::TextureStorage::render_target_get_override_velocity_depth(RID p_rende
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 
-	return rt->overridden.velocity_depth;
+	return rt->overridden_velocity_depth;
 }
 
 void GLES3::TextureStorage::render_target_set_render_region(
@@ -122556,8 +121882,8 @@ RID GLES3::TextureStorage::render_target_get_texture(RID p_render_target)
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, RID());
 
-	if (rt->overridden.color.is_valid()) {
-		return rt->overridden.color;
+	if (rt->overridden_color.is_valid()) {
+		return rt->overridden_color;
 	}
 
 	return rt->texture;
@@ -122587,7 +121913,7 @@ void GLES3::TextureStorage::render_target_set_transparent(RID p_render_target, b
 
 	rt->is_transparent = p_transparent;
 
-	if (rt->overridden.color.is_null()) {
+	if (rt->overridden_color.is_null()) {
 		_clear_render_target(rt);
 		_update_render_target_color(rt);
 	}
@@ -122615,10 +121941,10 @@ void GLES3::TextureStorage::render_target_set_direct_to_screen(
 	_clear_render_target(rt);
 	rt->direct_to_screen = p_direct_to_screen;
 	if (rt->direct_to_screen) {
-		rt->overridden.color = RID();
-		rt->overridden.depth = RID();
-		rt->overridden.velocity = RID();
-		rt->overridden.velocity_depth = RID();
+		rt->overridden_color = RID();
+		rt->overridden_depth = RID();
+		rt->overridden_velocity = RID();
+		rt->overridden_velocity_depth = RID();
 	}
 	_update_render_target_color(rt);
 }
@@ -122658,7 +121984,7 @@ void GLES3::TextureStorage::render_target_set_msaa(RID p_render_target, RSE::Vie
 
 	WARN_PRINT("2D MSAA is not yet supported for GLES3.");
 
-	if (rt->overridden.color.is_null()) {
+	if (rt->overridden_color.is_null()) {
 		_clear_render_target(rt);
 		rt->msaa = p_msaa;
 		_update_render_target_color(rt);
@@ -122682,7 +122008,7 @@ void GLES3::TextureStorage::render_target_set_use_hdr(RID p_render_target, bool 
 		return;
 	}
 
-	if (rt->overridden.color.is_null()) {
+	if (rt->overridden_color.is_null()) {
 		_clear_render_target(rt);
 		rt->hdr = p_use_hdr_2d;
 		_update_render_target_color(rt);
@@ -122786,8 +122112,8 @@ GLuint GLES3::TextureStorage::render_target_get_color(RID p_render_target)
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
 
-	if (rt->overridden.color.is_valid()) {
-		Texture* texture = get_texture(rt->overridden.color);
+	if (rt->overridden_color.is_valid()) {
+		Texture* texture = get_texture(rt->overridden_color);
 		ERR_FAIL_NULL_V(texture, 0);
 
 		return texture->tex_id;
@@ -122802,8 +122128,8 @@ GLuint GLES3::TextureStorage::render_target_get_depth(RID p_render_target)
 	RenderTarget* rt = render_target_owner.get_or_null(p_render_target);
 	ERR_FAIL_NULL_V(rt, 0);
 
-	if (rt->overridden.depth.is_valid()) {
-		Texture* texture = get_texture(rt->overridden.depth);
+	if (rt->overridden_depth.is_valid()) {
+		Texture* texture = get_texture(rt->overridden_depth);
 		ERR_FAIL_NULL_V(texture, 0);
 
 		return texture->tex_id;
@@ -123743,7 +123069,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			state.light_uniforms[index].position[1] = -canvas_light_dir.y;
 
 			_update_transform_2d_to_mat2x4(
-				clight->shadow.directional_xform, state.light_uniforms[index].shadow_matrix);
+				clight->shadow_directional_xform, state.light_uniforms[index].shadow_matrix);
 
 			state.light_uniforms[index].height = l->height; // 0..1 here
 
@@ -123759,8 +123085,8 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			if (state.shadow_fb != 0) {
 				state.light_uniforms[index].shadow_pixel_size =
 					(1.0 / state.shadow_texture_size) * (1.0 + l->shadow_smooth);
-				state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow.z_far;
-				state.light_uniforms[index].shadow_y_ofs = clight->shadow.y_offset;
+				state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow_z_far;
+				state.light_uniforms[index].shadow_y_ofs = clight->shadow_y_offset;
 			}
 			else {
 				state.light_uniforms[index].shadow_pixel_size = 1.0;
@@ -123771,7 +123097,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			state.light_uniforms[index].flags = l->blend_mode << LIGHT_FLAGS_BLEND_SHIFT;
 			state.light_uniforms[index].flags |= l->shadow_filter << LIGHT_FLAGS_FILTER_SHIFT;
 
-			if (clight->shadow.enabled) {
+			if (clight->shadow_enabled) {
 				state.light_uniforms[index].flags |= LIGHT_FLAGS_HAS_SHADOW;
 			}
 
@@ -123843,8 +123169,8 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			if (state.shadow_fb != 0) {
 				state.light_uniforms[index].shadow_pixel_size =
 					(1.0 / state.shadow_texture_size) * (1.0 + l->shadow_smooth);
-				state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow.z_far;
-				state.light_uniforms[index].shadow_y_ofs = clight->shadow.y_offset;
+				state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow_z_far;
+				state.light_uniforms[index].shadow_y_ofs = clight->shadow_y_offset;
 			}
 			else {
 				state.light_uniforms[index].shadow_pixel_size = 1.0;
@@ -123855,7 +123181,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			state.light_uniforms[index].flags = l->blend_mode << LIGHT_FLAGS_BLEND_SHIFT;
 			state.light_uniforms[index].flags |= l->shadow_filter << LIGHT_FLAGS_FILTER_SHIFT;
 
-			if (clight->shadow.enabled) {
+			if (clight->shadow_enabled) {
 				state.light_uniforms[index].flags |= LIGHT_FLAGS_HAS_SHADOW;
 			}
 
@@ -125485,7 +124811,7 @@ void RasterizerCanvasGLES3::light_set_use_shadow(RID p_rid, bool p_enable)
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(cl);
 
-	cl->shadow.enabled = p_enable;
+	cl->shadow_enabled = p_enable;
 }
 
 void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
@@ -125493,12 +124819,12 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 	LightOccluderInstance* p_occluders, const Rect2& p_light_rect)
 {
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
-	ERR_FAIL_COND(!cl->shadow.enabled);
+	ERR_FAIL_COND(!cl->shadow_enabled);
 
 	_update_shadow_atlas();
 
-	cl->shadow.z_far = p_far;
-	cl->shadow.y_offset = float(p_shadow_index * 2 + 1) / float(data.max_lights_per_render * 2);
+	cl->shadow_z_far = p_far;
+	cl->shadow_y_offset = float(p_shadow_index * 2 + 1) / float(data.max_lights_per_render * 2);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, state.shadow_fb);
 	glViewport(0, p_shadow_index * 2, state.shadow_texture_size, 2);
@@ -125522,7 +124848,7 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 	CanvasOcclusionShaderGLES3::ShaderVariant variant =
 		GLES3::Config::float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
 											   : CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
-	bool success = shadow_render.shader.version_bind_shader(shadow_render.shader_version, variant);
+	bool success = shadow_render_shader.version_bind_shader(shadow_render_shader_version, variant);
 	if (!success) {
 		return;
 	}
@@ -125565,15 +124891,15 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 		glViewport((state.shadow_texture_size / 4) * i, p_shadow_index * 2,
 			(state.shadow_texture_size / 4), 2);
 
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::PROJECTION,
-			projections[i], shadow_render.shader_version, variant);
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::PROJECTION,
+			projections[i], shadow_render_shader_version, variant);
 
 		static const Vector2 directions[4] = {
 			Vector2(1, 0), Vector2(0, 1), Vector2(-1, 0), Vector2(0, -1)};
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::DIRECTION,
-			directions[i].x, directions[i].y, shadow_render.shader_version, variant);
-		shadow_render.shader.version_set_uniform(
-			CanvasOcclusionShaderGLES3::Z_FAR, p_far, shadow_render.shader_version, variant);
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::DIRECTION,
+			directions[i].x, directions[i].y, shadow_render_shader_version, variant);
+		shadow_render_shader.version_set_uniform(
+			CanvasOcclusionShaderGLES3::Z_FAR, p_far, shadow_render_shader_version, variant);
 
 		LightOccluderInstance* instance = p_occluders;
 
@@ -125586,12 +124912,12 @@ void RasterizerCanvasGLES3::light_update_shadow(RID p_rid, int p_shadow_index,
 			}
 
 			Transform2D modelview = p_light_xform * instance->xform_cache;
-			shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
+			shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
 				modelview.columns[0][0], modelview.columns[1][0], 0, modelview.columns[2][0],
-				shadow_render.shader_version, variant);
-			shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
+				shadow_render_shader_version, variant);
+			shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
 				modelview.columns[0][1], modelview.columns[1][1], 0, modelview.columns[2][1],
-				shadow_render.shader_version, variant);
+				shadow_render_shader_version, variant);
 
 			if (co->cull_mode != cull_mode) {
 				if (co->cull_mode == RSE::CANVAS_OCCLUDER_POLYGON_CULL_DISABLED) {
@@ -125628,7 +124954,7 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	const Rect2& p_clip_rect, LightOccluderInstance* p_occluders)
 {
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
-	ERR_FAIL_COND(!cl->shadow.enabled);
+	ERR_FAIL_COND(!cl->shadow_enabled);
 
 	_update_shadow_atlas();
 
@@ -125644,8 +124970,8 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	float half_size =
 		p_clip_rect.size.length() * 0.5; // shadow length, must keep this no matter the angle
 
-	cl->shadow.z_far = distance;
-	cl->shadow.y_offset = float(p_shadow_index * 2 + 1) / float(data.max_lights_per_render * 2);
+	cl->shadow_z_far = distance;
+	cl->shadow_y_offset = float(p_shadow_index * 2 + 1) / float(data.max_lights_per_render * 2);
 
 	Transform2D to_light_xform;
 
@@ -125677,7 +125003,7 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	CanvasOcclusionShaderGLES3::ShaderVariant variant =
 		GLES3::Config::float_texture_supported ? CanvasOcclusionShaderGLES3::MODE_SHADOW
 											   : CanvasOcclusionShaderGLES3::MODE_SHADOW_RGBA;
-	bool success = shadow_render.shader.version_bind_shader(shadow_render.shader_version, variant);
+	bool success = shadow_render_shader.version_bind_shader(shadow_render_shader_version, variant);
 	if (!success) {
 		return;
 	}
@@ -125688,12 +125014,12 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 		projection *
 		Projection(Transform3D().looking_at(Vector3(0, 1, 0), Vector3(0, 0, -1)).affine_inverse());
 
-	shadow_render.shader.version_set_uniform(
-		CanvasOcclusionShaderGLES3::PROJECTION, projection, shadow_render.shader_version, variant);
-	shadow_render.shader.version_set_uniform(
-		CanvasOcclusionShaderGLES3::DIRECTION, 0.0, 1.0, shadow_render.shader_version, variant);
-	shadow_render.shader.version_set_uniform(
-		CanvasOcclusionShaderGLES3::Z_FAR, distance, shadow_render.shader_version, variant);
+	shadow_render_shader.version_set_uniform(
+		CanvasOcclusionShaderGLES3::PROJECTION, projection, shadow_render_shader_version, variant);
+	shadow_render_shader.version_set_uniform(
+		CanvasOcclusionShaderGLES3::DIRECTION, 0.0, 1.0, shadow_render_shader_version, variant);
+	shadow_render_shader.version_set_uniform(
+		CanvasOcclusionShaderGLES3::Z_FAR, distance, shadow_render_shader_version, variant);
 
 	LightOccluderInstance* instance = p_occluders;
 
@@ -125706,12 +125032,12 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 		}
 
 		Transform2D modelview = to_light_xform * instance->xform_cache;
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
 			modelview.columns[0][0], modelview.columns[1][0], 0, modelview.columns[2][0],
-			shadow_render.shader_version, variant);
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
+			shadow_render_shader_version, variant);
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
 			modelview.columns[0][1], modelview.columns[1][1], 0, modelview.columns[2][1],
-			shadow_render.shader_version, variant);
+			shadow_render_shader_version, variant);
 
 		if (co->cull_mode != cull_mode) {
 			if (co->cull_mode == RSE::CANVAS_OCCLUDER_POLYGON_CULL_DISABLED) {
@@ -125738,7 +125064,7 @@ void RasterizerCanvasGLES3::light_update_directional_shadow(RID p_rid, int p_sha
 	to_shadow.columns[0].x = 1.0 / -(half_size * 2.0);
 	to_shadow.columns[2].x = 0.5;
 
-	cl->shadow.directional_xform = to_shadow * to_light_xform;
+	cl->shadow_directional_xform = to_shadow * to_light_xform;
 
 	glBindVertexArray(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, GLES3::TextureStorage::system_fbo);
@@ -125831,17 +125157,17 @@ void RasterizerCanvasGLES3::render_sdf(RID p_render_target, LightOccluderInstanc
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	CanvasOcclusionShaderGLES3::ShaderVariant variant = CanvasOcclusionShaderGLES3::MODE_SDF;
-	bool success = shadow_render.shader.version_bind_shader(shadow_render.shader_version, variant);
+	bool success = shadow_render_shader.version_bind_shader(shadow_render_shader_version, variant);
 	if (!success) {
 		return;
 	}
 
-	shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::PROJECTION, Projection(),
-		shadow_render.shader_version, variant);
-	shadow_render.shader.version_set_uniform(
-		CanvasOcclusionShaderGLES3::DIRECTION, 0.0, 0.0, shadow_render.shader_version, variant);
-	shadow_render.shader.version_set_uniform(
-		CanvasOcclusionShaderGLES3::Z_FAR, 0.0, shadow_render.shader_version, variant);
+	shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::PROJECTION, Projection(),
+		shadow_render_shader_version, variant);
+	shadow_render_shader.version_set_uniform(
+		CanvasOcclusionShaderGLES3::DIRECTION, 0.0, 0.0, shadow_render_shader_version, variant);
+	shadow_render_shader.version_set_uniform(
+		CanvasOcclusionShaderGLES3::Z_FAR, 0.0, shadow_render_shader_version, variant);
 
 	LightOccluderInstance* instance = p_occluders;
 
@@ -125854,12 +125180,12 @@ void RasterizerCanvasGLES3::render_sdf(RID p_render_target, LightOccluderInstanc
 		}
 
 		Transform2D modelview = to_clip * instance->xform_cache;
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW1,
 			modelview.columns[0][0], modelview.columns[1][0], 0, modelview.columns[2][0],
-			shadow_render.shader_version, variant);
-		shadow_render.shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
+			shadow_render_shader_version, variant);
+		shadow_render_shader.version_set_uniform(CanvasOcclusionShaderGLES3::MODELVIEW2,
 			modelview.columns[0][1], modelview.columns[1][1], 0, modelview.columns[2][1],
-			shadow_render.shader_version, variant);
+			shadow_render_shader_version, variant);
 
 		glBindVertexArray(oc->sdf_vertex_array);
 		glDrawElements(oc->sdf_is_lines ? GL_LINES : GL_TRIANGLES, oc->sdf_index_count,
@@ -126799,8 +126125,8 @@ void RasterizerCanvasGLES3::initialize()
 	data.canvas_shader_default_version =
 		GLES3::MaterialStorage::shaders->canvas_shader.version_create();
 
-	shadow_render.shader.initialize();
-	shadow_render.shader_version = shadow_render.shader.version_create();
+	shadow_render_shader.initialize();
+	shadow_render_shader_version = shadow_render_shader.version_create();
 
 	{
 		default_canvas_group_shader = GLES3::MaterialStorage::shader_allocate();
@@ -126864,7 +126190,7 @@ void fragment() {
 void RasterizerCanvasGLES3::finalize()
 {
 	GLES3::MaterialStorage::shaders->canvas_shader.version_free(data.canvas_shader_default_version);
-	shadow_render.shader.version_free(shadow_render.shader_version);
+	shadow_render_shader.version_free(shadow_render_shader_version);
 	GLES3::MaterialStorage::material_free(default_canvas_group_material);
 	GLES3::MaterialStorage::shader_free(default_canvas_group_shader);
 	GLES3::MaterialStorage::material_free(default_clip_children_material);
@@ -128310,7 +127636,7 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	Vector2 p2 = Vector2(screen_rect_end.x, p_blit.dst_rect.position.y);
 	Vector2 size = p2 - p1;
 
-	bool flip_y = !rt->overridden.is_overridden;
+	bool flip_y = !rt->overridden_is_overridden;
 	bool linear_to_srgb = false;
 
 	Rect2 screenrect = Rect2(Vector2(0.0, flip_y ? 1.0 : 0.0), Vector2(1.0, flip_y ? -1.0 : 1.0));

@@ -37,174 +37,163 @@
 #include "core/string/ustring.h"
 #include "core/templates/list.h"
 
-class Engine
+namespace Engine
 {
-private:
-	friend class Main;
 
-	static inline uint64_t frames_drawn = 0;
-	static inline uint32_t _frame_delay = 0;
-	static inline uint64_t _frame_ticks = 0;
-	static inline double _process_step = 0;
-	static inline int ips = 60;
-	static inline int user_ips = 60;
-	static inline double physics_jitter_fix = 0.5;
-	static inline double _fps = 1;
-	static inline int _max_fps = 0;
-	static inline int _audio_output_latency = 0;
-	static inline double _time_scale = 1.0;
-	static inline double _game_time_scale = 1.0;
-	static inline double _user_time_scale = 1.0;
-	static inline uint64_t _physics_frames = 0;
-	static inline int max_physics_steps_per_frame = 8;
-	static inline int max_user_physics_steps_per_frame = 8;
-	static inline double _physics_interpolation_fraction = 0.0f;
-	static inline bool abort_on_gpu_errors = false;
-	static inline bool use_validation_layers = false;
-	static inline bool generate_spirv_debug_info = false;
-	static inline bool extra_gpu_memory_tracking = false;
+	inline uint64_t frames_drawn = 0;
+	inline uint32_t _frame_delay = 0;
+	inline uint64_t _frame_ticks = 0;
+	inline double _process_step = 0;
+	inline int ips = 60;
+	inline int user_ips = 60;
+	inline double physics_jitter_fix = 0.5;
+	inline double _fps = 1;
+	inline int _max_fps = 0;
+	inline int _audio_output_latency = 0;
+	inline double _time_scale = 1.0;
+	inline double _game_time_scale = 1.0;
+	inline double _user_time_scale = 1.0;
+	inline uint64_t _physics_frames = 0;
+	inline int max_physics_steps_per_frame = 8;
+	inline int max_user_physics_steps_per_frame = 8;
+	inline double _physics_interpolation_fraction = 0.0f;
+	inline bool abort_on_gpu_errors = false;
+	inline bool use_validation_layers = false;
+	inline bool generate_spirv_debug_info = false;
+	inline bool extra_gpu_memory_tracking = false;
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-	static inline bool accurate_breadcrumbs = false;
+	inline bool accurate_breadcrumbs = false;
 #endif
-	static inline int32_t gpu_idx = -1;
-	static inline uint64_t _process_frames = 0;
-	static inline bool _in_physics = false;
-	static inline bool editor_hint = false;
-	static inline bool project_manager_hint = false;
-	static inline bool extension_reloading = false;
-	static inline bool embedded_in_editor = false;
-	static inline bool recovery_mode_hint = false;
-	static inline bool _print_header = true;
-	static inline String write_movie_path;
-	static inline String shader_cache_path;
-	static constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
-	static inline int server_syncs = 0;
-	static inline bool frame_server_synced = false;
-	static inline bool freeze_time_scale = false;
+	inline int32_t gpu_idx = -1;
+	inline uint64_t _process_frames = 0;
+	inline bool _in_physics = false;
+	inline bool editor_hint = false;
+	inline bool project_manager_hint = false;
+	inline bool extension_reloading = false;
+	inline bool embedded_in_editor = false;
+	inline bool recovery_mode_hint = false;
+	inline bool _print_header = true;
+	inline String write_movie_path;
+	inline String shader_cache_path;
+	inline constexpr int SERVER_SYNC_FRAME_COUNT_WARNING = 5;
+	inline int server_syncs = 0;
+	inline bool frame_server_synced = false;
+	inline bool freeze_time_scale = false;
+	void _update_time_scale();
+	void set_physics_ticks_per_second(int p_ips);
+	int get_physics_ticks_per_second();
+	int get_user_physics_ticks_per_second();
+	void set_max_physics_steps_per_frame(int p_max_physics_steps);
+	int get_max_physics_steps_per_frame();
+	int get_user_max_physics_steps_per_frame();
+	void set_physics_jitter_fix(double p_threshold);
+	double get_physics_jitter_fix();
+	void set_max_fps(int p_fps);
+	int get_max_fps();
+	void set_audio_output_latency(int p_msec);
+	int get_audio_output_latency();
+	uint64_t get_frames_drawn();
 
-protected:
-	static void _update_time_scale();
+	inline double get_frames_per_second() { return _fps; }
 
-public:
-	static void set_physics_ticks_per_second(int p_ips);
-	static int get_physics_ticks_per_second();
-	static int get_user_physics_ticks_per_second();
-	static void set_max_physics_steps_per_frame(int p_max_physics_steps);
-	static int get_max_physics_steps_per_frame();
-	static int get_user_max_physics_steps_per_frame();
-	static void set_physics_jitter_fix(double p_threshold);
-	static double get_physics_jitter_fix();
-	static void set_max_fps(int p_fps);
-	static int get_max_fps();
-	static void set_audio_output_latency(int p_msec);
-	static int get_audio_output_latency();
-	static uint64_t get_frames_drawn();
+	inline uint64_t get_physics_frames() { return _physics_frames; }
 
-	static double get_frames_per_second() { return _fps; }
+	inline uint64_t get_process_frames() { return _process_frames; }
 
-	static uint64_t get_physics_frames() { return _physics_frames; }
+	inline bool is_in_physics_frame() { return _in_physics; }
 
-	static uint64_t get_process_frames() { return _process_frames; }
+	inline uint64_t get_frame_ticks() { return _frame_ticks; }
 
-	static bool is_in_physics_frame() { return _in_physics; }
+	inline double get_process_step() { return _process_step; }
 
-	static uint64_t get_frame_ticks() { return _frame_ticks; }
+	inline double get_physics_interpolation_fraction() { return _physics_interpolation_fraction; }
 
-	static double get_process_step() { return _process_step; }
+	void set_time_scale(double p_scale);
+	double get_time_scale();
+	void set_user_time_scale(double p_scale);
+	double get_effective_time_scale();
+	double get_unfrozen_time_scale();
 
-	static double get_physics_interpolation_fraction() { return _physics_interpolation_fraction; }
+	void set_print_to_stdout(bool p_enabled);
+	bool is_printing_to_stdout();
 
-	static void set_time_scale(double p_scale);
-	static double get_time_scale();
-	static void set_user_time_scale(double p_scale);
-	static double get_effective_time_scale();
-	static double get_unfrozen_time_scale();
+	void set_print_error_messages(bool p_enabled);
+	bool is_printing_error_messages();
+	void print_header(const String& p_string);
+	void print_header_rich(const String& p_string);
 
-	static void set_print_to_stdout(bool p_enabled);
-	static bool is_printing_to_stdout();
-
-	static void set_print_error_messages(bool p_enabled);
-	static bool is_printing_error_messages();
-	static void print_header(const String& p_string);
-	static void print_header_rich(const String& p_string);
-
-	static void set_frame_delay(uint32_t p_msec);
-	static uint32_t get_frame_delay();
+	void set_frame_delay(uint32_t p_msec);
+	uint32_t get_frame_delay();
 
 #ifdef TOOLS_ENABLED
-	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) { editor_hint = p_enabled; }
+	_FORCE_INLINE_ void set_editor_hint(bool p_enabled) { editor_hint = p_enabled; }
 
-	_FORCE_INLINE_ static bool is_editor_hint() { return editor_hint; }
+	_FORCE_INLINE_ bool is_editor_hint() { return editor_hint; }
 
-	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled)
+	_FORCE_INLINE_ void set_project_manager_hint(bool p_enabled)
 	{
 		project_manager_hint = p_enabled;
 	}
 
-	_FORCE_INLINE_ static bool is_project_manager_hint() { return project_manager_hint; }
+	_FORCE_INLINE_ bool is_project_manager_hint() { return project_manager_hint; }
 
-	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled)
+	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled)
 	{
 		extension_reloading = p_enabled;
 	}
 
-	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return extension_reloading; }
+	_FORCE_INLINE_ bool is_extension_reloading_enabled() { return extension_reloading; }
 
-	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled)
+	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled)
 	{
 		recovery_mode_hint = p_enabled;
 	}
 
-	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return recovery_mode_hint; }
+	_FORCE_INLINE_ bool is_recovery_mode_hint() { return recovery_mode_hint; }
 #else
-	_FORCE_INLINE_ static void set_editor_hint(bool p_enabled) {}
+	_FORCE_INLINE_ void set_editor_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ static bool is_editor_hint() { return false; }
+	_FORCE_INLINE_ bool is_editor_hint() { return false; }
 
-	_FORCE_INLINE_ static void set_project_manager_hint(bool p_enabled) {}
+	_FORCE_INLINE_ void set_project_manager_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ static bool is_project_manager_hint() { return false; }
+	_FORCE_INLINE_ bool is_project_manager_hint() { return false; }
 
-	_FORCE_INLINE_ static void set_extension_reloading_enabled(bool p_enabled) {}
+	_FORCE_INLINE_ void set_extension_reloading_enabled(bool p_enabled) {}
 
-	_FORCE_INLINE_ static bool is_extension_reloading_enabled() { return false; }
+	_FORCE_INLINE_ bool is_extension_reloading_enabled() { return false; }
 
-	_FORCE_INLINE_ static void set_recovery_mode_hint(bool p_enabled) {}
+	_FORCE_INLINE_ void set_recovery_mode_hint(bool p_enabled) {}
 
-	_FORCE_INLINE_ static bool is_recovery_mode_hint() { return false; }
+	_FORCE_INLINE_ bool is_recovery_mode_hint() { return false; }
 #endif
 
-	static String get_license_text();
+	String get_license_text();
 
-	static void set_write_movie_path(const String& p_path);
-	static String get_write_movie_path();
+	void set_write_movie_path(const String& p_path);
+	String get_write_movie_path();
 
-	static String get_architecture_name();
+	String get_architecture_name();
 
-	static void set_shader_cache_path(const String& p_path);
-	static String get_shader_cache_path();
+	void set_shader_cache_path(const String& p_path);
+	String get_shader_cache_path();
 
-	static bool is_abort_on_gpu_errors_enabled();
-	static bool is_validation_layers_enabled();
-	static bool is_generate_spirv_debug_info_enabled();
-	static bool is_extra_gpu_memory_tracking_enabled();
+	bool is_abort_on_gpu_errors_enabled();
+	bool is_validation_layers_enabled();
+	bool is_generate_spirv_debug_info_enabled();
+	bool is_extra_gpu_memory_tracking_enabled();
 #if defined(DEBUG_ENABLED) || defined(DEV_ENABLED)
-	static bool is_accurate_breadcrumbs_enabled();
+	bool is_accurate_breadcrumbs_enabled();
 #endif
-	static int32_t get_gpu_index();
+	int32_t get_gpu_index();
 
-	static void increment_frames_drawn();
-	static bool notify_frame_server_synced();
+	void increment_frames_drawn();
+	bool notify_frame_server_synced();
 
-	static void set_freeze_time_scale(bool p_frozen);
-	static void set_embedded_in_editor(bool p_enabled);
-	static bool is_embedded_in_editor();
-
-	Engine() = delete;
-	~Engine() = delete;
-	Engine(const Engine&) = delete;
-	Engine& operator=(const Engine&) = delete;
-};
+	void set_freeze_time_scale(bool p_frozen);
+	void set_embedded_in_editor(bool p_enabled);
+	bool is_embedded_in_editor();
+} // namespace Engine
 
 #include <cstdarg>
 #include "core/io/file_access.h"
@@ -1670,23 +1659,21 @@ public:
 
 #include "core/os/mutex.h"
 
-class MIDIDriver final
+namespace MIDIDriver
 {
-	static uint8_t last_received_message;
-	static inline bool _is_bound = false;
+	inline uint8_t last_received_message = 0x00;
+	inline bool _is_bound = false;
 
-	static void _default_initialize_backend() {}
+	inline void _default_initialize_backend() {}
 
-	static void _default_finalize_backend() {}
+	inline void _default_finalize_backend() {}
 
-	static Error _default_open() { return ERR_UNAVAILABLE; }
+	inline Error _default_open() { return ERR_UNAVAILABLE; }
 
-	static void _default_close() {}
+	inline void _default_close() {}
 
-	inline static void (*_initialize_backend)() = &_default_initialize_backend;
-	inline static void (*_finalize_backend)() = &_default_finalize_backend;
-
-public:
+	inline void (*_initialize_backend)() = &_default_initialize_backend;
+	inline void (*_finalize_backend)() = &_default_finalize_backend;
 	// Categories of message for parser logic.
 	enum class MessageCategory
 	{
@@ -1698,7 +1685,7 @@ public:
 		RealTime,
 	};
 
-	static void send_event(int p_device_index, uint8_t p_status, const uint8_t* p_data = nullptr,
+	void send_event(int p_device_index, uint8_t p_status, const uint8_t* p_data = nullptr,
 		size_t p_data_len = 0);
 
 	class Parser
@@ -1760,19 +1747,19 @@ public:
 		bool core_midi_closed = false;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
+	void initialize();
+	void finalize();
 
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	_FORCE_INLINE_ static bool is_bound() { return _is_bound; }
+	_FORCE_INLINE_ bool is_bound() { return _is_bound; }
 
-	inline static Error (*open)() = &_default_open;
-	inline static void (*close)() = &_default_close;
+	inline Error (*open)() = &_default_open;
+	inline void (*close)() = &_default_close;
 
-	static void bind(
+	inline void bind(
 		void (*p_init)(), void (*p_fin)(), Error (*p_open)(), void (*p_close)())
 	{
 		_initialize_backend = p_init ? p_init : &_default_initialize_backend;
@@ -1782,17 +1769,12 @@ public:
 		_is_bound = true;
 	}
 
-	static void reset_backend();
+	void reset_backend();
 
-	static void add_connected_input(const String& p_name);
-	static void clear_connected_inputs();
-	static PackedStringArray get_connected_inputs();
-
-	MIDIDriver() = delete;
-	MIDIDriver(const MIDIDriver&) = delete;
-	MIDIDriver& operator=(const MIDIDriver&) = delete;
-	~MIDIDriver() = delete;
-};
+	void add_connected_input(const String& p_name);
+	void clear_connected_inputs();
+	PackedStringArray get_connected_inputs();
+} // namespace MIDIDriver
 
 #include "core/os/mutex.h" // IWYU pragma: keep // Used in macro.
 
@@ -1804,37 +1786,33 @@ public:
 bool is_current_thread_safe_for_nodes();
 void set_current_thread_safe_for_nodes(bool p_safe);
 
-class MainLoop final
+namespace MainLoop
 {
-private:
-	static inline bool _active = false;
+	inline bool _active = false;
 
-	static void _default_initialize() {}
+	inline void _default_initialize() {}
 
-	static void _default_iteration_prepare() {}
+	inline void _default_iteration_prepare() {}
 
-	static bool _default_physics_process(double p_time)
+	inline bool _default_physics_process(double p_time)
 	{
 		(void)p_time;
 		return false;
 	}
 
-	static void _default_iteration_end() {}
+	inline void _default_iteration_end() {}
 
-	static bool _default_process(double p_time)
+	inline bool _default_process(double p_time)
 	{
 		(void)p_time;
 		return false;
 	}
 
-	static void _default_finalize() {}
+	inline void _default_finalize() {}
 
-	static void _default_notification(int p_notification) { (void)p_notification; }
+	inline void _default_notification(int p_notification) { (void)p_notification; }
 
-	static void _default_destroy() {}
-
-public:
-	MainLoop() = delete;
+	inline void _default_destroy() {}
 
 	enum
 	{
@@ -1853,16 +1831,16 @@ public:
 		NOTIFICATION_APPLICATION_PIP_MODE_EXITED = 2020,
 	};
 
-	inline static void (*initialize)() = &_default_initialize;
-	inline static void (*iteration_prepare)() = &_default_iteration_prepare;
-	inline static bool (*physics_process)(double p_time) = &_default_physics_process;
-	inline static void (*iteration_end)() = &_default_iteration_end;
-	inline static bool (*process)(double p_time) = &_default_process;
-	inline static void (*finalize)() = &_default_finalize;
-	inline static void (*notification)(int p_notification) = &_default_notification;
-	inline static void (*destroy)() = &_default_destroy;
+	inline void (*initialize)() = &_default_initialize;
+	inline void (*iteration_prepare)() = &_default_iteration_prepare;
+	inline bool (*physics_process)(double p_time) = &_default_physics_process;
+	inline void (*iteration_end)() = &_default_iteration_end;
+	inline bool (*process)(double p_time) = &_default_process;
+	inline void (*finalize)() = &_default_finalize;
+	inline void (*notification)(int p_notification) = &_default_notification;
+	inline void (*destroy)() = &_default_destroy;
 
-	template <typename Impl> static void bind()
+	template <typename Impl> inline void bind()
 	{
 		initialize = &Impl::initialize_tree;
 		iteration_prepare = &Impl::iteration_prepare;
@@ -1875,11 +1853,11 @@ public:
 		_active = true;
 	}
 
-	static void reset_backend();
-	static void clear();
+	void reset_backend();
+	void clear();
 
-	_FORCE_INLINE_ static bool is_active() { return _active; }
-};
+	_FORCE_INLINE_ bool is_active() { return _active; }
+} // namespace MainLoop
 
 #include "core/templates/rb_set.h"
 
@@ -2432,13 +2410,15 @@ private:
 };
 #endif // defined(SDL_ENABLED)
 
-class InputMap final
+namespace InputMap
 {
-public:
 	/**
 	 * A special value used to signify that a given Action can be triggered by any device
 	 */
-	static constexpr int ALL_DEVICES = -1;
+	inline constexpr int ALL_DEVICES = -1;
+	inline constexpr float DEFAULT_DEADZONE = 0.2f;
+	// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
+	inline constexpr float DEFAULT_TOGGLE_DEADZONE = 0.5f;
 
 	struct Action
 	{
@@ -2446,10 +2426,6 @@ public:
 		float deadzone = DEFAULT_DEADZONE;
 		List<InputEvent> inputs;
 	};
-
-	static constexpr float DEFAULT_DEADZONE = 0.2f;
-	// Keep bigger deadzone for toggle actions (default `ui_*` actions, axis `pressed`) (GH-103360).
-	static constexpr float DEFAULT_TOGGLE_DEADZONE = 0.5f;
 
 	struct Data
 	{
@@ -2459,65 +2435,57 @@ public:
 		int last_id = 1;
 	};
 
-	static inline Data* data = nullptr;
-
-private:
-	static List<InputEvent>::Element* _find_event(Action& p_action, const InputEvent& p_event,
+	inline Data* data = nullptr;
+	List<InputEvent>::Element* _find_event(Action& p_action, const InputEvent& p_event,
 		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
 		float* r_raw_strength = nullptr, int* r_event_index = nullptr);
 
 #ifndef DISABLE_DEPRECATED
-	static void _add_action_bind_compat_97281(const String& p_action, float p_deadzone = 0.5);
-	static void _bind_compatibility_methods();
+	void _add_action_bind_compat_97281(const String& p_action, float p_deadzone = 0.5);
+	void _bind_compatibility_methods();
 #endif // DISABLE_DEPRECATED
 
-public:
-	static void initialize();
-	static void finalize();
+	void initialize();
+	void finalize();
 
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	static bool has_action(const String& p_action);
-	static void add_action(const String& p_action, float p_deadzone = DEFAULT_DEADZONE);
-	static void erase_action(const String& p_action);
+	bool has_action(const String& p_action);
+	void add_action(const String& p_action, float p_deadzone = DEFAULT_DEADZONE);
+	void erase_action(const String& p_action);
 
-	static String get_action_description(const String& p_action);
+	String get_action_description(const String& p_action);
 
-	static float action_get_deadzone(const String& p_action);
-	static void action_set_deadzone(const String& p_action, float p_deadzone);
-	static void action_add_event(const String& p_action, const InputEvent& p_event);
-	static bool action_has_event(const String& p_action, const InputEvent& p_event);
-	static void action_erase_event(const String& p_action, const InputEvent& p_event);
-	static void action_erase_events(const String& p_action);
+	float action_get_deadzone(const String& p_action);
+	void action_set_deadzone(const String& p_action, float p_deadzone);
+	void action_add_event(const String& p_action, const InputEvent& p_event);
+	bool action_has_event(const String& p_action, const InputEvent& p_event);
+	void action_erase_event(const String& p_action, const InputEvent& p_event);
+	void action_erase_events(const String& p_action);
 
-	static const List<InputEvent>* action_get_events(const String& p_action);
-	static bool event_is_action(
+	const List<InputEvent>* action_get_events(const String& p_action);
+	bool event_is_action(
 		const InputEvent& p_event, const String& p_action, bool p_exact_match = false);
-	static int event_get_index(
+	int event_get_index(
 		const InputEvent& p_event, const String& p_action, bool p_exact_match = false);
-	static bool event_get_action_status(const InputEvent& p_event, const String& p_action,
+	bool event_get_action_status(const InputEvent& p_event, const String& p_action,
 		bool p_exact_match = false, bool* r_pressed = nullptr, float* r_strength = nullptr,
 		float* r_raw_strength = nullptr, int* r_event_index = nullptr);
 
-	static const HashMap<String, Action>& get_action_map();
-	static void load_from_project_settings();
-	static void load_default();
+	const HashMap<String, Action>& get_action_map();
+	void load_from_project_settings();
+	void load_default();
 
-	static String suggest_actions(const String& p_action);
+	String suggest_actions(const String& p_action);
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
+	void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
-	static String get_builtin_display_name(const String& p_name);
-	static const HashMap<String, List<InputEvent>>& get_builtins();
-	static const HashMap<String, List<InputEvent>>& get_builtins_with_feature_overrides_applied();
-
-	InputMap() = delete;
-	InputMap(const InputMap&) = delete;
-	InputMap& operator=(const InputMap&) = delete;
-	~InputMap() = delete;
-};
+	String get_builtin_display_name(const String& p_name);
+	const HashMap<String, List<InputEvent>>& get_builtins();
+	const HashMap<String, List<InputEvent>>& get_builtins_with_feature_overrides_applied();
+} // namespace InputMap
 
 #include <cstddef>
 #include <cstdint>
@@ -2636,25 +2604,22 @@ static inline bool vltr_project_valid(const VoltaireProjectFile* p_file)
 
 template <typename T> class TypedArray;
 
-class ProjectSettings final
+namespace ProjectSettings
 {
-	static inline BinaryMutex _thread_safe_mutex;
-	friend class TestProjectSettingsInternalsAccessor;
-
-public:
+	inline BinaryMutex _thread_safe_mutex;
 	typedef HashMap<String, String> StringMap;
 	// This constant is used to make the ".voltaire" folder and paths like "res://.voltaire/editor".
-	static inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "voltaire";
-	static inline const String EDITOR_SETTING_OVERRIDE_PREFIX =
+	inline const String PROJECT_DATA_DIR_NAME_SUFFIX = "voltaire";
+	inline const String EDITOR_SETTING_OVERRIDE_PREFIX =
 		PNAME("editor_overrides") + String("/");
 
 	// Properties that are not for built in values begin from this value, so builtin ones are
 	// displayed first.
-	constexpr static const int32_t NO_BUILTIN_ORDER_BASE = 1 << 16;
+	inline constexpr const int32_t NO_BUILTIN_ORDER_BASE = 1 << 16;
 
 #ifdef TOOLS_ENABLED
-	const static Vector<String> get_required_features();
-	const static Vector<String> get_unsupported_features(const Vector<String>& p_project_features);
+	const Vector<String> get_required_features();
+	const Vector<String> get_unsupported_features(const Vector<String>& p_project_features);
 #endif // TOOLS_ENABLED
 
 	struct AutoloadInfo
@@ -2663,44 +2628,40 @@ public:
 		String path;
 		bool is_singleton = false;
 	};
+	bool _property_can_revert(const String& p_name);
 
-private:
-	static bool _property_can_revert(const String& p_name);
+	void _queue_changed(const String& p_name);
+	void _emit_changed();
 
-	static void _queue_changed(const String& p_name);
-	static void _emit_changed();
+	Error _load_settings_text(const String& p_path);
+	Error _load_settings_binary(const String& p_path);
+	Error _load_settings_text_or_binary(const String& p_text_path, const String& p_bin_path);
 
-	static Error _load_settings_text(const String& p_path);
-	static Error _load_settings_binary(const String& p_path);
-	static Error _load_settings_text_or_binary(const String& p_text_path, const String& p_bin_path);
-
-	static Error _save_settings_text(const String& p_file,
+	Error _save_settings_text(const String& p_file,
 		const RBMap<String, List<String>>& p_props, const StringMap& p_custom = StringMap(),
 		const String& p_custom_features = String());
-	static Error _save_settings_binary(const String& p_file,
+	Error _save_settings_binary(const String& p_file,
 		const RBMap<String, List<String>>& p_props, const StringMap& p_custom = StringMap(),
 		const String& p_custom_features = String());
 
-	static Error _save_custom_bnd(const String& p_file);
+	Error _save_custom_bnd(const String& p_file);
 
 #ifdef TOOLS_ENABLED
-	const static Vector<String> _get_supported_features();
-	const static Vector<String> _trim_to_supported_features(
+	const Vector<String> _get_supported_features();
+	const Vector<String> _trim_to_supported_features(
 		const Vector<String>& p_project_features);
 #endif // TOOLS_ENABLED
 
-	static void _convert_to_last_version(int p_from_version);
+	void _convert_to_last_version(int p_from_version);
 
-	static bool load_resource_pack(const String& p_pack, bool p_replace_files, int p_offset);
-	static bool _load_resource_pack(const String& p_pack, bool p_replace_files = true,
+	bool load_resource_pack(const String& p_pack, bool p_replace_files, int p_offset);
+	bool _load_resource_pack(const String& p_pack, bool p_replace_files = true,
 		int p_offset = 0, bool p_main_pack = false);
 
-	static Error _setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
+	Error _setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
 		bool p_ignore_override = false);
 
-	static void _add_builtin_input_map();
-
-private:
+	void _add_builtin_input_map();
 	struct Data
 	{
 		VoltaireProjectFile project;
@@ -2734,99 +2695,93 @@ private:
 		bool is_global_class_list_loaded = false;
 		String project_data_dir_name;
 	};
+	inline constexpr int CONFIG_VERSION = 5;
+	inline Data* data = nullptr;
 
-public:
-	static const int CONFIG_VERSION = 5;
-	static inline Data* data = nullptr;
+	void initialize();
+	void finalize();
 
-	static void initialize();
-	static void finalize();
+	inline const VoltaireProjectFile& get_project() { return data->project; }
 
-	static const VoltaireProjectFile& get_project() { return data->project; }
+	inline VoltaireProjectFile& get_project_mut() { return data->project; }
 
-	static VoltaireProjectFile& get_project_mut() { return data->project; }
+	void refresh_global_class_list();
+	void store_global_class_list(const Vector<String>& p_classes);
+	String get_global_class_list_path();
 
-	static void refresh_global_class_list();
-	static void store_global_class_list(const Vector<String>& p_classes);
-	static String get_global_class_list_path();
+	bool is_initialized();
+	bool has_setting(const String& p_var);
+	String localize_path(const String& p_path);
+	String globalize_path(const String& p_path);
 
-	static bool is_initialized();
-	static bool has_setting(const String& p_var);
-	static String localize_path(const String& p_path);
-	static String globalize_path(const String& p_path);
+	void set_as_basic(const String& p_name, bool p_basic);
+	void set_as_internal(const String& p_name, bool p_internal);
+	void set_restart_if_changed(const String& p_name, bool p_restart);
+	void set_ignore_value_in_docs(const String& p_name, bool p_ignore);
+	bool get_ignore_value_in_docs(const String& p_name);
+	void add_hidden_prefix(const String& p_prefix);
 
-	static void set_as_basic(const String& p_name, bool p_basic);
-	static void set_as_internal(const String& p_name, bool p_internal);
-	static void set_restart_if_changed(const String& p_name, bool p_restart);
-	static void set_ignore_value_in_docs(const String& p_name, bool p_ignore);
-	static bool get_ignore_value_in_docs(const String& p_name);
-	static void add_hidden_prefix(const String& p_prefix);
+	String get_project_data_dir_name();
+	String get_project_data_path();
+	String get_resource_path();
+	String get_imported_files_path();
 
-	static String get_project_data_dir_name();
-	static String get_project_data_path();
-	static String get_resource_path();
-	static String get_imported_files_path();
+	void clear(const String& p_name);
+	int get_order(const String& p_name);
+	void set_order(const String& p_name, int p_order);
+	void set_builtin_order(const String& p_name);
+	bool is_builtin_setting(const String& p_name);
 
-	static void clear(const String& p_name);
-	static int get_order(const String& p_name);
-	static void set_order(const String& p_name, int p_order);
-	static void set_builtin_order(const String& p_name);
-	static bool is_builtin_setting(const String& p_name);
-
-	static Error setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
+	Error setup(const String& p_path, const String& p_main_pack, bool p_upwards = false,
 		bool p_ignore_override = false);
 
-	static Error load_custom(const String& p_path);
-	static Error save_custom(const String& p_path = "", const StringMap& p_custom = StringMap(),
+	Error load_custom(const String& p_path);
+	Error save_custom(const String& p_path = "", const StringMap& p_custom = StringMap(),
 		const Vector<String>& p_custom_features = Vector<String>(),
 		bool p_merge_with_current = true);
-	static Error save();
+	Error save();
 
-	static uint64_t get_last_saved_time() { return data->last_save_time; }
+	inline uint64_t get_last_saved_time() { return data->last_save_time; }
 
-	static List<String> get_input_presets() { return List<String>(data->input_presets); }
+	inline List<String> get_input_presets() { return List<String>(data->input_presets); }
 
-	static bool is_using_datapack();
-	static bool is_project_loaded();
+	bool is_using_datapack();
+	bool is_project_loaded();
 
-	static bool has_custom_feature(const String& p_feature);
+	bool has_custom_feature(const String& p_feature);
 
 	// Change tracking methods
-	static Vector<String> get_changed_settings();
-	static bool check_changed_settings_in_group(const String& p_setting_prefix);
+	Vector<String> get_changed_settings();
+	bool check_changed_settings_in_group(const String& p_setting_prefix);
 
-	static const HashMap<String, AutoloadInfo>& get_autoload_list();
-	static void add_autoload(const AutoloadInfo& p_autoload, bool p_front_insert = false);
-	static void remove_autoload(const String& p_autoload);
-	static bool has_autoload(const String& p_autoload);
-	static AutoloadInfo get_autoload(const String& p_name);
-	static void fix_autoload_paths();
+	const HashMap<String, AutoloadInfo>& get_autoload_list();
+	void add_autoload(const AutoloadInfo& p_autoload, bool p_front_insert = false);
+	void remove_autoload(const String& p_autoload);
+	bool has_autoload(const String& p_autoload);
+	AutoloadInfo get_autoload(const String& p_name);
+	void fix_autoload_paths();
 
-	static const HashMap<String, String>& get_global_groups_list();
-	static void add_global_group(const String& p_name, const String& p_description);
-	static void remove_global_group(const String& p_name);
-	static bool has_global_group(const String& p_name);
+	const HashMap<String, String>& get_global_groups_list();
+	void add_global_group(const String& p_name, const String& p_description);
+	void remove_global_group(const String& p_name);
+	bool has_global_group(const String& p_name);
 
-	static const HashMap<String, HashSet<String>>& get_scene_groups_cache();
-	static void add_scene_groups_cache(const String& p_path, const HashSet<String>& p_cache);
-	static void remove_scene_groups_cache(const String& p_path);
-	static void save_scene_groups_cache();
-	static String get_scene_groups_cache_path();
-	static void load_scene_groups_cache();
+	const HashMap<String, HashSet<String>>& get_scene_groups_cache();
+	void add_scene_groups_cache(const String& p_path, const HashSet<String>& p_cache);
+	void remove_scene_groups_cache(const String& p_path);
+	void save_scene_groups_cache();
+	String get_scene_groups_cache_path();
+	void load_scene_groups_cache();
 
 	// Testing a version allows fast cached GET_GLOBAL macros.
-	static uint32_t get_version() { return data->_version; }
+	inline uint32_t get_version() { return data->_version; }
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
+	void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
-	static bool has_editor_setting_override(const String& p_setting);
-
-	ProjectSettings() = delete;
-	ProjectSettings(const String& p_path) = delete;
-	~ProjectSettings() = delete;
-};
+	bool has_editor_setting_override(const String& p_setting);
+} // namespace ProjectSettings
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Cached versions of GLOBAL_GET.
@@ -2852,24 +2807,6 @@ public:
 		_ggc_spin.unlock();                                                                        \
 		return _ggc_temp2;                                                                         \
 	})(m_setting_name)
-
-class CoreConstants
-{
-public:
-	static int get_global_constant_count();
-	static String get_global_constant_enum(int p_idx);
-	static bool is_global_constant_bitfield(int p_idx);
-	static bool get_ignore_value_in_docs(int p_idx);
-	static const char* get_global_constant_name(int p_idx);
-	static int64_t get_global_constant_value(int p_idx);
-	static bool is_global_constant(const String& p_name);
-	static int get_global_constant_index(const String& p_name);
-	static bool is_global_enum(const String& p_enum);
-	static void get_enum_values(const String& p_enum, HashMap<String, int64_t>* r_values);
-#ifdef TOOLS_ENABLED
-	static void get_global_enums(List<String>* r_values);
-#endif
-};
 
 class PluralRules;
 
@@ -3067,7 +3004,7 @@ public:
 	String pseudolocalize(const String& p_message) const;
 };
 
-class TranslationServer final
+namespace TranslationServer
 {
 	struct Data
 	{
@@ -3086,11 +3023,11 @@ class TranslationServer final
 		HashMap<String, int> locale_compare_cache;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
 #ifndef DISABLE_DEPRECATED
-	static String _standardize_locale_bind_compat_98972(const String& p_locale);
-	static void _bind_compatibility_methods();
+	String _standardize_locale_bind_compat_98972(const String& p_locale);
+	void _bind_compatibility_methods();
 #endif
 
 	struct LocaleScriptInfo
@@ -3101,7 +3038,7 @@ class TranslationServer final
 		HashSet<String> supported_countries;
 	};
 
-	static inline Vector<LocaleScriptInfo> locale_script_info;
+	inline Vector<LocaleScriptInfo> locale_script_info;
 
 	struct Locale
 	{
@@ -3121,119 +3058,113 @@ class TranslationServer final
 		Locale(const String& p_locale, bool p_add_defaults);
 	};
 
-	static inline HashMap<String, String> language_map;
-	static inline HashMap<String, String> script_map;
-	static inline HashMap<String, String> locale_rename_map;
-	static inline HashMap<String, String> country_name_map;
-	static inline HashMap<String, String> country_rename_map;
-	static inline HashMap<String, String> variant_map;
-	static inline HashMap<String, String> plural_rules_map;
-	static inline HashMap<String, int> num_system_map;
-	static inline HashMap<String, HashSet<String>> language_script_map;
+	inline HashMap<String, String> language_map;
+	inline HashMap<String, String> script_map;
+	inline HashMap<String, String> locale_rename_map;
+	inline HashMap<String, String> country_name_map;
+	inline HashMap<String, String> country_rename_map;
+	inline HashMap<String, String> variant_map;
+	inline HashMap<String, String> plural_rules_map;
+	inline HashMap<String, int> num_system_map;
+	inline HashMap<String, HashSet<String>> language_script_map;
 
-	static void init_locale_info();
+	void init_locale_info();
+	void initialize();
+	void finalize();
 
-public:
-	static void initialize();
-	static void finalize();
-
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
 	// Built-in domain accessors. For engine code only, user code should use `get_or_add_domain()`
 	// instead.
-	static Ref<TranslationDomain> get_main_domain()
+	inline Ref<TranslationDomain> get_main_domain()
 	{
 		return data ? data->main_domain : Ref<TranslationDomain>();
 	}
 #ifdef TOOLS_ENABLED
-	static Ref<TranslationDomain> get_editor_domain()
+	inline Ref<TranslationDomain> get_editor_domain()
 	{
 		return data ? data->editor_domain : Ref<TranslationDomain>();
 	}
 
-	static Ref<TranslationDomain> get_property_domain()
+	inline Ref<TranslationDomain> get_property_domain()
 	{
 		return data ? data->property_domain : Ref<TranslationDomain>();
 	}
 
-	static Ref<TranslationDomain> get_doc_domain()
+	inline Ref<TranslationDomain> get_doc_domain()
 	{
 		return data ? data->doc_domain : Ref<TranslationDomain>();
 	}
 #endif // TOOLS_ENABLED
 
-	static void set_locale(const String& p_locale);
-	static String get_locale();
-	static void set_fallback_allowed(const bool& p_allow);
-	static bool is_fallback_allowed();
-	static void set_fallback_locale(const String& p_locale);
-	static String get_fallback_locale();
+	void set_locale(const String& p_locale);
+	String get_locale();
+	void set_fallback_allowed(const bool& p_allow);
+	bool is_fallback_allowed();
+	void set_fallback_locale(const String& p_locale);
+	String get_fallback_locale();
 
 #ifndef DISABLE_DEPRECATED
-	static Ref<Translation> get_translation_object(const String& p_locale);
+	Ref<Translation> get_translation_object(const String& p_locale);
 #endif
 
-	static bool has_translation(const Ref<Translation>& p_translation);
-	static bool has_translation_for_locale(const String& p_locale, bool p_exact);
+	bool has_translation(const Ref<Translation>& p_translation);
+	bool has_translation_for_locale(const String& p_locale, bool p_exact);
 
-	static Vector<String> get_all_languages();
-	static String get_language_name(const String& p_language);
+	Vector<String> get_all_languages();
+	String get_language_name(const String& p_language);
 
-	static Vector<String> get_all_scripts();
-	static String get_script_name(const String& p_script);
+	Vector<String> get_all_scripts();
+	String get_script_name(const String& p_script);
 
-	static Vector<String> get_all_countries();
-	static String get_country_name(const String& p_country);
+	Vector<String> get_all_countries();
+	String get_country_name(const String& p_country);
 
-	static String get_locale_name(const String& p_locale);
-	static String get_plural_rules(const String& p_locale);
+	String get_locale_name(const String& p_locale);
+	String get_plural_rules(const String& p_locale);
 
-	static bool is_script_suppored_by_locale(const String& p_locale, const String& p_script);
+	bool is_script_suppored_by_locale(const String& p_locale, const String& p_script);
 
-	static PackedStringArray get_loaded_locales();
+	PackedStringArray get_loaded_locales();
 
-	static void add_translation(const Ref<Translation>& p_translation);
-	static void remove_translation(const Ref<Translation>& p_translation);
+	void add_translation(const Ref<Translation>& p_translation);
+	void remove_translation(const Ref<Translation>& p_translation);
 
-	static String translate(const String& p_message, const String& p_context = "");
-	static String translate_plural(const String& p_message, const String& p_message_plural, int p_n,
+	String translate(const String& p_message, const String& p_context = "");
+	String translate_plural(const String& p_message, const String& p_message_plural, int p_n,
 		const String& p_context = "");
 
-	static String pseudolocalize(const String& p_message);
+	String pseudolocalize(const String& p_message);
 
-	static bool is_pseudolocalization_enabled();
-	static void set_pseudolocalization_enabled(bool p_enabled);
-	static void reload_pseudolocalization();
+	bool is_pseudolocalization_enabled();
+	void set_pseudolocalization_enabled(bool p_enabled);
+	void reload_pseudolocalization();
 
-	static String format_number(const String& p_string, const String& p_locale);
-	static String parse_number(const String& p_string, const String& p_locale);
-	static String get_percent_sign(const String& p_locale);
+	String format_number(const String& p_string, const String& p_locale);
+	String parse_number(const String& p_string, const String& p_locale);
+	String get_percent_sign(const String& p_locale);
 
-	static String standardize_locale(const String& p_locale, bool p_add_defaults = false);
+	String standardize_locale(const String& p_locale, bool p_add_defaults = false);
 
-	static int compare_locales(const String& p_locale_a, const String& p_locale_b);
+	int compare_locales(const String& p_locale_a, const String& p_locale_b);
 
-	static String get_tool_locale();
+	String get_tool_locale();
 
-	static bool has_domain(const String& p_domain);
-	static Ref<TranslationDomain> get_or_add_domain(const String& p_domain);
-	static void remove_domain(const String& p_domain);
+	bool has_domain(const String& p_domain);
+	Ref<TranslationDomain> get_or_add_domain(const String& p_domain);
+	void remove_domain(const String& p_domain);
 
-	static void setup();
+	void setup();
 
-	static void clear();
+	void clear();
 
-	static void load_project_translations(Ref<TranslationDomain> p_domain);
+	void load_project_translations(Ref<TranslationDomain> p_domain);
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
+	void get_argument_options(const String& p_function, int p_idx, List<String>* r_options);
 #endif // TOOLS_ENABLED
 
-	TranslationServer() = delete;
-	TranslationServer(const TranslationServer&) = delete;
-	TranslationServer& operator=(const TranslationServer&) = delete;
-	~TranslationServer() = delete;
-};
+} // namespace TranslationServer
 
 class Expression;
 

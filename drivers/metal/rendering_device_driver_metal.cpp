@@ -6878,7 +6878,7 @@ void MDCommandBuffer::_encode_barrier(MTL::CommandEncoder *p_enc) {
 		stage = STAGE_RENDER;
 	} else if (compute.encoder.get() == p_enc && pending_after_stages[STAGE_COMPUTE] != 0) {
 		stage = STAGE_COMPUTE;
-	} else if (blit.encoder.get() == p_enc && pending_after_stages[STAGE_BLIT] != 0) {
+	} else if (blit_encoder.get() == p_enc && pending_after_stages[STAGE_BLIT] != 0) {
 		stage = STAGE_BLIT;
 	}
 
@@ -7022,14 +7022,14 @@ MTL::BlitCommandEncoder *MDCommandBuffer::_ensure_blit_encoder() {
 			_end_compute_dispatch();
 			break;
 		case MDCommandBufferStateType::Blit:
-			return blit.encoder.get();
+			return blit_encoder.get();
 	}
 
 	type = MDCommandBufferStateType::Blit;
-	blit.encoder = NS::RetainPtr(command_buffer()->blitCommandEncoder());
-	_encode_barrier(blit.encoder.get());
+	blit_encoder = NS::RetainPtr(command_buffer()->blitCommandEncoder());
+	_encode_barrier(blit_encoder.get());
 
-	return blit.encoder.get();
+	return blit_encoder.get();
 }
 
 void MDCommandBuffer::resolve_texture(RDD::TextureID p_src_texture, RDD::TextureLayout p_src_texture_layout, uint32_t p_src_layer, uint32_t p_src_mipmap, RDD::TextureID p_dst_texture, RDD::TextureLayout p_dst_texture_layout, uint32_t p_dst_layer, uint32_t p_dst_mipmap) {
@@ -8255,8 +8255,8 @@ void MDCommandBuffer::_end_compute_dispatch() {
 void MDCommandBuffer::_end_blit() {
 	DEV_ASSERT(type == MDCommandBufferStateType::Blit);
 
-	blit.encoder->endEncoding();
-	blit.reset();
+	blit_encoder->endEncoding();
+	blit_encoder.reset();
 	reset();
 }
 

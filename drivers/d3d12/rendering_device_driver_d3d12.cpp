@@ -974,13 +974,13 @@ RDD::BufferID RenderingDeviceDriverD3D12::buffer_create(uint64_t p_size, uint32_
 		buf_info = VersatileResource::allocate<BufferInfo>(resources_allocator);
 	}
 	buf_info->resource = buffer.Get();
-	buf_info->owner_info.resource = buffer;
-	buf_info->owner_info.allocation = allocation;
-	buf_info->owner_info.states.subresource_states.push_back(initial_state);
-	buf_info->states_ptr = &buf_info->owner_info.states;
+	buf_info->owner_resource = buffer;
+	buf_info->owner_allocation = allocation;
+	buf_info->owner_states.subresource_states.push_back(initial_state);
+	buf_info->states_ptr = &buf_info->owner_states;
 	buf_info->gpu_virtual_address = buffer->GetGPUVirtualAddress();
 	buf_info->size = original_size;
-	buf_info->flags.is_dynamic = p_usage.has_flag(BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT);
+	buf_info->flag_is_dynamic = p_usage.has_flag(BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT);
 
 	return BufferID(buf_info);
 }
@@ -1003,7 +1003,7 @@ void RenderingDeviceDriverD3D12::buffer_free(BufferID p_buffer) {
 
 uint64_t RenderingDeviceDriverD3D12::buffer_get_allocation_size(BufferID p_buffer) {
 	const BufferInfo *buf_info = (const BufferInfo *)p_buffer.id;
-	return buf_info->owner_info.allocation ? buf_info->owner_info.allocation->GetSize() : 0;
+	return buf_info->owner_allocation ? buf_info->owner_allocation->GetSize() : 0;
 }
 
 uint8_t *RenderingDeviceDriverD3D12::buffer_map(BufferID p_buffer) {
@@ -1490,13 +1490,13 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create(const TextureFormat &p
 
 	TextureInfo *tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
 	tex_info->resource = texture;
-	tex_info->owner_info.resource = main_texture;
-	tex_info->owner_info.allocation = allocation;
-	tex_info->owner_info.states.subresource_states.resize(p_format.mipmaps * p_format.array_layers);
-	for (uint32_t i = 0; i < tex_info->owner_info.states.subresource_states.size(); i++) {
-		tex_info->owner_info.states.subresource_states[i] = initial_state;
+	tex_info->owner_resource = main_texture;
+	tex_info->owner_allocation = allocation;
+	tex_info->owner_states.subresource_states.resize(p_format.mipmaps * p_format.array_layers);
+	for (uint32_t i = 0; i < tex_info->owner_states.subresource_states.size(); i++) {
+		tex_info->owner_states.subresource_states[i] = initial_state;
 	}
-	tex_info->states_ptr = &tex_info->owner_info.states;
+	tex_info->states_ptr = &tex_info->owner_states;
 	tex_info->format = p_format.format;
 	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Wstrict-aliasing")
 	tex_info->desc = *(CD3DX12_RESOURCE_DESC *)&resource_desc;
@@ -1505,8 +1505,8 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create(const TextureFormat &p
 	tex_info->layers = resource_desc.ArraySize();
 	tex_info->base_mip = 0;
 	tex_info->mipmaps = resource_desc.MipLevels;
-	tex_info->view_descs.srv = srv_desc;
-	tex_info->view_descs.uav = uav_desc;
+	tex_info->srv_desc = srv_desc;
+	tex_info->uav_desc = uav_desc;
 
 	return TextureID(tex_info);
 }
@@ -1585,13 +1585,13 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create_from_extension(uint64_
 
 	TextureInfo *tex_info = VersatileResource::allocate<TextureInfo>(resources_allocator);
 	tex_info->resource = texture;
-	tex_info->owner_info.resource = nullptr; // Not allocated by us.
-	tex_info->owner_info.allocation = nullptr; // Not allocated by us.
-	tex_info->owner_info.states.subresource_states.resize(resource_desc.MipLevels * p_array_layers);
-	for (uint32_t i = 0; i < tex_info->owner_info.states.subresource_states.size(); i++) {
-		tex_info->owner_info.states.subresource_states[i] = !p_depth_stencil ? D3D12_RESOURCE_STATE_RENDER_TARGET : D3D12_RESOURCE_STATE_DEPTH_WRITE;
+	tex_info->owner_resource = nullptr; // Not allocated by us.
+	tex_info->owner_allocation = nullptr; // Not allocated by us.
+	tex_info->owner_states.subresource_states.resize(resource_desc.MipLevels * p_array_layers);
+	for (uint32_t i = 0; i < tex_info->owner_states.subresource_states.size(); i++) {
+		tex_info->owner_states.subresource_states[i] = !p_depth_stencil ? D3D12_RESOURCE_STATE_RENDER_TARGET : D3D12_RESOURCE_STATE_DEPTH_WRITE;
 	}
-	tex_info->states_ptr = &tex_info->owner_info.states;
+	tex_info->states_ptr = &tex_info->owner_states;
 	tex_info->format = p_format;
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
@@ -1605,8 +1605,8 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create_from_extension(uint64_
 	tex_info->layers = p_array_layers;
 	tex_info->base_mip = 0;
 	tex_info->mipmaps = resource_desc.MipLevels;
-	tex_info->view_descs.srv = srv_desc;
-	tex_info->view_descs.uav = uav_desc;
+	tex_info->srv_desc = srv_desc;
+	tex_info->uav_desc = uav_desc;
 #ifdef DEBUG_ENABLED
 	tex_info->created_from_extension = true;
 #endif
@@ -1624,7 +1624,7 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create_shared_from_slice(Text
 RDD::TextureID RenderingDeviceDriverD3D12::_texture_create_shared_from_slice(TextureID p_original_texture, const TextureView &p_view, TextureSliceType p_slice_type, uint32_t p_layer, uint32_t p_layers, uint32_t p_mipmap, uint32_t p_mipmaps) {
 	TextureInfo *owner_tex_info = (TextureInfo *)p_original_texture.id;
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_V(!owner_tex_info->owner_info.allocation, TextureID());
+	ERR_FAIL_COND_V(!owner_tex_info->owner_allocation, TextureID());
 #endif
 
 	ComPtr<ID3D12Resource> new_texture;
@@ -1634,13 +1634,13 @@ RDD::TextureID RenderingDeviceDriverD3D12::_texture_create_shared_from_slice(Tex
 
 	// Describe views.
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = owner_tex_info->view_descs.srv;
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = owner_tex_info->srv_desc;
 	{
 		srv_desc.Format = RD_TO_D3D12_FORMAT[p_view.format].general_format;
 		srv_desc.Shader4ComponentMapping = _compute_component_mapping(p_view);
 	}
 
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = owner_tex_info->view_descs.uav;
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = owner_tex_info->uav_desc;
 	{
 		uav_desc.Format = RD_TO_D3D12_FORMAT[p_view.format].general_format;
 	}
@@ -1754,8 +1754,8 @@ RDD::TextureID RenderingDeviceDriverD3D12::_texture_create_shared_from_slice(Tex
 		tex_info->base_mip = p_mipmap;
 		tex_info->mipmaps = p_mipmaps;
 	}
-	tex_info->view_descs.srv = srv_desc;
-	tex_info->view_descs.uav = uav_desc;
+	tex_info->srv_desc = srv_desc;
+	tex_info->uav_desc = uav_desc;
 	tex_info->main_texture = owner_tex_info;
 
 	return TextureID(tex_info);
@@ -1768,7 +1768,7 @@ void RenderingDeviceDriverD3D12::texture_free(TextureID p_texture) {
 
 uint64_t RenderingDeviceDriverD3D12::texture_get_allocation_size(TextureID p_texture) {
 	const TextureInfo *tex_info = (const TextureInfo *)p_texture.id;
-	return tex_info->owner_info.allocation ? tex_info->owner_info.allocation->GetSize() : 0;
+	return tex_info->owner_allocation ? tex_info->owner_allocation->GetSize() : 0;
 }
 
 void RenderingDeviceDriverD3D12::texture_get_copyable_layout(TextureID p_texture, const TextureSubresource &p_subresource, TextureCopyableLayout *r_layout) {
@@ -2927,8 +2927,8 @@ Error RenderingDeviceDriverD3D12::swap_chain_resize(CommandQueueID p_cmd_queue, 
 		// reference an address of the element itself, we must insert it first and then modify it.
 		swap_chain->render_targets_info.push_back(TextureInfo());
 		TextureInfo &texture_info = swap_chain->render_targets_info[i];
-		texture_info.owner_info.states.subresource_states.push_back(D3D12_RESOURCE_STATE_PRESENT);
-		texture_info.states_ptr = &texture_info.owner_info.states;
+		texture_info.owner_states.subresource_states.push_back(D3D12_RESOURCE_STATE_PRESENT);
+		texture_info.states_ptr = &texture_info.owner_states;
 		texture_info.format = swap_chain->data_format;
 #if defined(_MSC_VER) || !defined(_WIN32)
 		texture_info.desc = CD3DX12_RESOURCE_DESC(render_target->GetDesc());
@@ -2938,8 +2938,8 @@ Error RenderingDeviceDriverD3D12::swap_chain_resize(CommandQueueID p_cmd_queue, 
 		texture_info.layers = 1;
 		texture_info.mipmaps = 1;
 		texture_info.resource = render_target;
-		texture_info.view_descs.srv.Format = texture_info.desc.Format;
-		texture_info.view_descs.srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		texture_info.srv_desc.Format = texture_info.desc.Format;
+		texture_info.srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
 		// Create the framebuffer for this buffer.
 		FramebufferID framebuffer = _framebuffer_create(swap_chain->render_pass, TextureID(&swap_chain->render_targets_info[i]), swap_chain_desc.Width, swap_chain_desc.Height, true);
@@ -2999,9 +2999,9 @@ void RenderingDeviceDriverD3D12::swap_chain_free(SwapChainID p_swap_chain) {
 
 D3D12_RENDER_TARGET_VIEW_DESC RenderingDeviceDriverD3D12::_make_rtv_for_texture(const TextureInfo *p_texture_info, uint32_t p_mipmap_offset, uint32_t p_layer_offset, uint32_t p_layers, bool p_add_bases) {
 	D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = {};
-	rtv_desc.Format = p_texture_info->view_descs.srv.Format;
+	rtv_desc.Format = p_texture_info->srv_desc.Format;
 
-	switch (p_texture_info->view_descs.srv.ViewDimension) {
+	switch (p_texture_info->srv_desc.ViewDimension) {
 		case D3D12_SRV_DIMENSION_TEXTURE1D: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1D;
 			rtv_desc.Texture1D.MipSlice = p_texture_info->base_mip + p_mipmap_offset;
@@ -3010,19 +3010,19 @@ D3D12_RENDER_TARGET_VIEW_DESC RenderingDeviceDriverD3D12::_make_rtv_for_texture(
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE1DARRAY;
 			rtv_desc.Texture1DArray.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
 			rtv_desc.Texture1DArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			rtv_desc.Texture1DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture1DArray.ArraySize : p_layers;
+			rtv_desc.Texture1DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture1DArray.ArraySize : p_layers;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2D: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 			rtv_desc.Texture2D.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
-			rtv_desc.Texture2D.PlaneSlice = p_texture_info->view_descs.srv.Texture2D.PlaneSlice;
+			rtv_desc.Texture2D.PlaneSlice = p_texture_info->srv_desc.Texture2D.PlaneSlice;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2DARRAY: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 			rtv_desc.Texture2DArray.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
 			rtv_desc.Texture2DArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			rtv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture2DArray.ArraySize : p_layers;
-			rtv_desc.Texture2DArray.PlaneSlice = p_texture_info->view_descs.srv.Texture2DArray.PlaneSlice;
+			rtv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture2DArray.ArraySize : p_layers;
+			rtv_desc.Texture2DArray.PlaneSlice = p_texture_info->srv_desc.Texture2DArray.PlaneSlice;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2DMS: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
@@ -3030,11 +3030,11 @@ D3D12_RENDER_TARGET_VIEW_DESC RenderingDeviceDriverD3D12::_make_rtv_for_texture(
 		case D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
 			rtv_desc.Texture2DMSArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			rtv_desc.Texture2DMSArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture2DMSArray.ArraySize : p_layers;
+			rtv_desc.Texture2DMSArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture2DMSArray.ArraySize : p_layers;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE3D: {
 			rtv_desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
-			rtv_desc.Texture3D.MipSlice = p_texture_info->view_descs.srv.Texture3D.MostDetailedMip + p_mipmap_offset;
+			rtv_desc.Texture3D.MipSlice = p_texture_info->srv_desc.Texture3D.MostDetailedMip + p_mipmap_offset;
 			rtv_desc.Texture3D.FirstWSlice = 0;
 			rtv_desc.Texture3D.WSize = -1;
 		} break;
@@ -3055,10 +3055,10 @@ D3D12_RENDER_TARGET_VIEW_DESC RenderingDeviceDriverD3D12::_make_rtv_for_texture(
 }
 
 D3D12_UNORDERED_ACCESS_VIEW_DESC RenderingDeviceDriverD3D12::_make_ranged_uav_for_texture(const TextureInfo *p_texture_info, uint32_t p_mipmap_offset, uint32_t p_layer_offset, uint32_t p_layers, bool p_add_bases) {
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = p_texture_info->view_descs.uav;
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = p_texture_info->uav_desc;
 
 	uint32_t mip = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
-	switch (p_texture_info->view_descs.uav.ViewDimension) {
+	switch (p_texture_info->uav_desc.ViewDimension) {
 		case D3D12_UAV_DIMENSION_TEXTURE1D: {
 			uav_desc.Texture1DArray.MipSlice = mip;
 		} break;
@@ -3091,7 +3091,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC RenderingDeviceDriverD3D12::_make_dsv_for_texture(
 	dsv_desc.Format = RD_TO_D3D12_FORMAT[p_texture_info->format].dsv_format;
 	dsv_desc.Flags = D3D12_DSV_FLAG_NONE;
 
-	switch (p_texture_info->view_descs.srv.ViewDimension) {
+	switch (p_texture_info->srv_desc.ViewDimension) {
 		case D3D12_SRV_DIMENSION_TEXTURE1D: {
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1D;
 			dsv_desc.Texture1D.MipSlice = p_texture_info->base_mip + p_mipmap_offset;
@@ -3100,7 +3100,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC RenderingDeviceDriverD3D12::_make_dsv_for_texture(
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE1DARRAY;
 			dsv_desc.Texture1DArray.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
 			dsv_desc.Texture1DArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			dsv_desc.Texture1DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture1DArray.ArraySize : p_layers;
+			dsv_desc.Texture1DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture1DArray.ArraySize : p_layers;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2D: {
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -3110,16 +3110,16 @@ D3D12_DEPTH_STENCIL_VIEW_DESC RenderingDeviceDriverD3D12::_make_dsv_for_texture(
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 			dsv_desc.Texture2DArray.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
 			dsv_desc.Texture2DArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			dsv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture2DArray.ArraySize : p_layers;
+			dsv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture2DArray.ArraySize : p_layers;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2DMS: {
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-			dsv_desc.Texture2DMS.UnusedField_NothingToDefine = p_texture_info->view_descs.srv.Texture2DMS.UnusedField_NothingToDefine;
+			dsv_desc.Texture2DMS.UnusedField_NothingToDefine = p_texture_info->srv_desc.Texture2DMS.UnusedField_NothingToDefine;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY: {
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMSARRAY;
 			dsv_desc.Texture2DMSArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			dsv_desc.Texture2DMSArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->view_descs.srv.Texture2DMSArray.ArraySize : p_layers;
+			dsv_desc.Texture2DMSArray.ArraySize = p_layers == UINT32_MAX ? p_texture_info->srv_desc.Texture2DMSArray.ArraySize : p_layers;
 		} break;
 		case D3D12_SRV_DIMENSION_TEXTURECUBE: {
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
@@ -3131,7 +3131,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC RenderingDeviceDriverD3D12::_make_dsv_for_texture(
 			dsv_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
 			dsv_desc.Texture2DArray.MipSlice = (p_add_bases ? p_texture_info->base_mip : 0) + p_mipmap_offset;
 			dsv_desc.Texture2DArray.FirstArraySlice = (p_add_bases ? p_texture_info->base_layer : 0) + p_layer_offset;
-			dsv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? (p_texture_info->view_descs.srv.TextureCubeArray.NumCubes * 6) : p_layers;
+			dsv_desc.Texture2DArray.ArraySize = p_layers == UINT32_MAX ? (p_texture_info->srv_desc.TextureCubeArray.NumCubes * 6) : p_layers;
 		} break;
 		default: {
 			DEV_ASSERT(false);
@@ -3480,7 +3480,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 					}
 
 					TextureInfo *texture_info = (TextureInfo *)uniform.ids[j + 1].id;
-					device->CreateShaderResourceView(texture_info->resource, &texture_info->view_descs.srv, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + (j / 2), resource_descriptor_heap.increment_size));
+					device->CreateShaderResourceView(texture_info->resource, &texture_info->srv_desc, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + (j / 2), resource_descriptor_heap.increment_size));
 
 					NeededState &ns = resource_states[texture_info];
 					ns.shader_uniform_idx_mask |= ((uint64_t)1 << i);
@@ -3490,7 +3490,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 			case UNIFORM_TYPE_TEXTURE: {
 				for (uint32_t j = 0; j < uniform.ids.size(); j++) {
 					TextureInfo *texture_info = (TextureInfo *)uniform.ids[j].id;
-					device->CreateShaderResourceView(texture_info->resource, &texture_info->view_descs.srv, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
+					device->CreateShaderResourceView(texture_info->resource, &texture_info->srv_desc, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
 
 					NeededState &ns = resource_states[texture_info];
 					ns.shader_uniform_idx_mask |= ((uint64_t)1 << i);
@@ -3500,7 +3500,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 			case UNIFORM_TYPE_IMAGE: {
 				for (uint32_t j = 0; j < uniform.ids.size(); j++) {
 					TextureInfo *texture_info = (TextureInfo *)uniform.ids[j].id;
-					device->CreateUnorderedAccessView(texture_info->resource, nullptr, &texture_info->view_descs.uav, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
+					device->CreateUnorderedAccessView(texture_info->resource, nullptr, &texture_info->uav_desc, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
 
 					NeededState &ns = resource_states[texture_info];
 					ns.shader_uniform_idx_mask |= ((uint64_t)1 << i);
@@ -3594,7 +3594,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 				for (uint32_t j = 0; j < uniform.ids.size(); j++) {
 					TextureInfo *texture_info = (TextureInfo *)uniform.ids[j].id;
 
-					device->CreateShaderResourceView(texture_info->resource, &texture_info->view_descs.srv, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
+					device->CreateShaderResourceView(texture_info->resource, &texture_info->srv_desc, get_cpu_handle(uniform_set_info->resource_descriptor_heap_alloc.cpu_handle, binding.resource_descriptor_offset + j, resource_descriptor_heap.increment_size));
 
 					NeededState &ns = resource_states[texture_info];
 					ns.shader_uniform_idx_mask |= ((uint64_t)1 << i);
@@ -3977,7 +3977,7 @@ void RenderingDeviceDriverD3D12::command_clear_color_texture(CommandBufferID p_c
 
 		for (uint32_t i = 0; i < p_subresources.mipmap_count; i++) {
 			D3D12_RENDER_TARGET_VIEW_DESC rtv_desc = _make_rtv_for_texture(tex_info, p_subresources.base_mipmap + i, p_subresources.base_layer, p_subresources.layer_count, false);
-			rtv_desc.Format = tex_info->view_descs.uav.Format;
+			rtv_desc.Format = tex_info->uav_desc.Format;
 			device->CreateRenderTargetView(
 					tex_info->resource,
 					&rtv_desc,
@@ -5718,7 +5718,7 @@ void RenderingDeviceDriverD3D12::set_object_name(ObjectType p_type, ID p_driver_
 	switch (p_type) {
 		case OBJECT_TYPE_TEXTURE: {
 			const TextureInfo *tex_info = (const TextureInfo *)p_driver_id.id;
-			if (tex_info->owner_info.allocation) {
+			if (tex_info->owner_allocation) {
 				_set_object_name(tex_info->resource, p_name);
 			}
 		} break;

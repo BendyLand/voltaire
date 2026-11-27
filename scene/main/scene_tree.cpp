@@ -69711,18 +69711,10 @@ SelfList<CanvasItemMaterial>::List CanvasItemMaterial::dirty_materials;
 HashMap<CanvasItemMaterial::MaterialKey, CanvasItemMaterial::ShaderData,
 	CanvasItemMaterial::MaterialKey>
 	CanvasItemMaterial::shader_map;
-CanvasItemMaterial::ShaderNames* CanvasItemMaterial::shader_names = nullptr;
 Mutex CanvasItemMaterial::blit_shader_mutex;
 RID CanvasItemMaterial::blit_shader_cache[6];
 
-void CanvasItemMaterial::init_shaders()
-{
-	shader_names = memnew(ShaderNames);
-
-	shader_names->particles_anim_h_frames = "particles_anim_h_frames";
-	shader_names->particles_anim_v_frames = "particles_anim_v_frames";
-	shader_names->particles_anim_loop = "particles_anim_loop";
-}
+void CanvasItemMaterial::init_shaders() {}
 
 void CanvasItemMaterial::cleanup_blit_shaders()
 {
@@ -69739,9 +69731,6 @@ void CanvasItemMaterial::finish_shaders()
 	cleanup_blit_shaders();
 
 	dirty_materials.clear();
-
-	memdelete(shader_names);
-	shader_names = nullptr;
 }
 
 void CanvasItemMaterial::_update_blit_shader(BlendMode p_blend)
@@ -104651,19 +104640,19 @@ namespace {
 
 // VehicleWheel3D
 
-void VehicleWheel3D::FTIData::update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction) {
-	if (!unset) {
+void VehicleWheel3D::fti_update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction) {
+	if (!fti_unset) {
 		real_t f = p_interpolation_fraction;
 
 		WheelXform i;
-		i.up = prev.up.lerp(curr.up, f).normalized();
-		i.right = prev.right.lerp(curr.right, f).normalized();
+		i.up = fti_prev.up.lerp(fti_curr.up, f).normalized();
+		i.right = fti_prev.right.lerp(fti_curr.right, f).normalized();
 		Vector3 fwd = i.up.cross(i.right).normalized();
 
-		i.origin = prev.origin.lerp(curr.origin, f);
-		i.steering = Math::lerp(prev.steering, curr.steering, f);
+		i.origin = fti_prev.origin.lerp(fti_curr.origin, f);
+		i.steering = Math::lerp(fti_prev.steering, fti_curr.steering, f);
 
-		real_t rotation = Math::lerp(curr_rotation - curr_rotation_delta, curr_rotation, f);
+		real_t rotation = Math::lerp(fti_curr_rotation - fti_curr_rotation_delta, fti_curr_rotation, f);
 
 		Basis steeringMat(i.up, i.steering);
 		Basis rotatingMat(i.right, rotation);
@@ -104832,7 +104821,7 @@ void PhysicsBody3D::_notification(int p_what) {
 				Transform3D inv_vehicle_xform = get_global_transform_interpolated().affine_inverse();
 				for (int i = 0; i < vehicle.wheels.size(); i++) {
 					VehicleWheel3D &w = *vehicle.wheels[i];
-					w.fti_data.update_world_xform(xform, f);
+					w.fti_update_world_xform(xform, f);
 					w.set_transform(inv_vehicle_xform * xform);
 				}
 			}
@@ -104841,7 +104830,7 @@ void PhysicsBody3D::_notification(int p_what) {
 			if (mode == MODE_VEHICLE) {
 				_update_vehicle_process_mode();
 				for (int i = 0; i < vehicle.wheels.size(); i++) {
-					vehicle.wheels[i]->fti_data.reset_queued = true;
+					vehicle.wheels[i]->fti_reset_queued = true;
 				}
 			}
 		} break;
@@ -104858,7 +104847,7 @@ void PhysicsBody3D::_physics_interpolated_changed() {
 void PhysicsBody3D::fti_pump_xform() {
 	if (mode == MODE_VEHICLE) {
 		for (int i = 0; i < vehicle.wheels.size(); i++) {
-			vehicle.wheels[i]->fti_data.pump();
+			vehicle.wheels[i]->fti_pump();
 		}
 	}
 	Node3D::fti_pump_xform();
@@ -105335,18 +105324,17 @@ void PhysicsBody3D::_update_wheel(int p_idx, PhysicsDirectBodyState3D *s) {
 	const Vector3 &right = wheel.rc_wheelAxleWS;
 	Vector3 fwd = up.cross(right).normalized();
 
-	VehicleWheel3D::FTIData &id = wheel.fti_data;
 	Vector3 origin = wheel.rc_hardPointWS + wheel.rc_wheelDirectionWS * wheel.rc_suspensionLength;
 
 	if (is_physics_interpolated_and_enabled()) {
-		id.curr.up = up;
-		id.curr.right = right;
-		id.curr.steering = wheel.m_steering;
-		id.curr.origin = origin;
-		if (id.unset || id.reset_queued) {
-			id.unset = false;
-			id.reset_queued = false;
-			id.pump();
+		wheel.fti_curr.up = up;
+		wheel.fti_curr.right = right;
+		wheel.fti_curr.steering = wheel.m_steering;
+		wheel.fti_curr.origin = origin;
+		if (wheel.fti_unset || wheel.fti_reset_queued) {
+			wheel.fti_unset = false;
+			wheel.fti_reset_queued = false;
+			wheel.fti_pump();
 		}
 	}
 
@@ -105589,7 +105577,7 @@ void PhysicsBody3D::_step_vehicle(PhysicsDirectBodyState3D *p_state) {
 
 		wheel.m_rotation += wheel.m_deltaRotation;
 		if (use_fti) {
-			wheel.fti_data.rotate(wheel.m_deltaRotation);
+			wheel.fti_rotate(wheel.m_deltaRotation);
 		}
 		wheel.m_rpm = ((wheel.m_deltaRotation / step) * 60.0f) / Math::TAU;
 		wheel.m_deltaRotation *= 0.99f;
@@ -120777,36 +120765,6 @@ Node* SceneRPCInterface::_process_get_node(int, unsigned char const*, unsigned i
 	return nullptr;
 }
 
-// MultiplayerDebugger
-
-int MultiplayerDebugger::BandwidthProfiler::bandwidth_usage(
-	const Vector<BandwidthFrame>& p_buffer, int p_pointer)
-{
-	ERR_FAIL_COND_V(p_buffer.is_empty(), 0);
-	int total_bandwidth = 0;
-
-	uint64_t timestamp = OS::get_ticks_msec();
-	uint64_t final_timestamp = timestamp - 1000;
-
-	int i = (p_pointer + p_buffer.size() - 1) % p_buffer.size();
-
-	while (i != p_pointer && p_buffer[i].packet_size > 0) {
-		if (p_buffer[i].timestamp < final_timestamp) {
-			return total_bandwidth;
-		}
-		total_bandwidth += p_buffer[i].packet_size;
-		i = (i + p_buffer.size() - 1) % p_buffer.size();
-	}
-
-	ERR_FAIL_COND_V_MSG(i == p_pointer, total_bandwidth,
-		"Reached the end of the bandwidth profiler buffer, values might be inaccurate.");
-	return total_bandwidth;
-}
-
-void MultiplayerDebugger::initialize() {}
-
-void MultiplayerDebugger::deinitialize() {}
-
 // MultiplayerAPI
 
 void MultiplayerAPI::set_root_path(const NodePath& p_path)
@@ -121193,13 +121151,11 @@ void initialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		MultiplayerAPI::set_default_interface("MultiplayerAPI");
-		MultiplayerDebugger::initialize();
 	}
 }
 
 void uninitialize_multiplayer_module(ModuleInitializationLevel p_level)
 {
-	MultiplayerDebugger::deinitialize();
 }
 
 #include "servers/display/display_server.h"
@@ -154048,7 +154004,7 @@ void RasterizerDummy::_ensure_data()
 }
 
 RID RasterizerDummy::lightmap_allocate() { return _get_data()->lightmap_owner.allocate_rid(); }
-void RasterizerDummy::lightmap_initialize(RID p_lightmap) { _get_data()->lightmap_owner.initialize_rid(p_lightmap, Lightmap()); }
+void RasterizerDummy::lightmap_initialize(RID p_lightmap) { _get_data()->lightmap_owner.initialize_rid(p_lightmap, false); }
 
 void RasterizerDummy::lightmap_free(RID p_rid)
 {
@@ -154061,9 +154017,7 @@ void RasterizerDummy::lightmap_free(RID p_rid)
 
 RID RasterizerDummy::lightmap_instance_create(RID p_lightmap)
 {
-	LightmapInstance li;
-	li.lightmap = p_lightmap;
-	return _get_data()->lightmap_instance_owner.make_rid(li);
+	return _get_data()->lightmap_instance_owner.make_rid(p_lightmap);
 }
 
 void RasterizerDummy::lightmap_instance_free(RID p_lightmap)
@@ -154094,14 +154048,14 @@ Vector<String> RasterizerDummy::global_shader_parameter_get_list()
 }
 
 RID RasterizerDummy::shader_allocate() { return _get_data()->shader_owner.allocate_rid(); }
-void RasterizerDummy::shader_initialize(RID p_rid, bool p_embedded) { _get_data()->shader_owner.initialize_rid(p_rid, DummyShader()); }
+void RasterizerDummy::shader_initialize(RID p_rid, bool p_embedded) { _get_data()->shader_owner.initialize_rid(p_rid, DummyShaderUniforms()); }
 
 void RasterizerDummy::shader_free(RID p_rid)
 {
 	if (!data) {
 		return;
 	}
-	DummyShader* shader = data->shader_owner.get_or_null(p_rid);
+	DummyShaderUniforms* shader = data->shader_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(shader);
 	data->shader_owner.free(p_rid);
 }
@@ -154109,7 +154063,7 @@ void RasterizerDummy::shader_free(RID p_rid)
 void RasterizerDummy::shader_set_code(RID p_shader, const String& p_code)
 {
 	Data* d = _get_data();
-	DummyShader* shader = d->shader_owner.get_or_null(p_shader);
+	DummyShaderUniforms* shader = d->shader_owner.get_or_null(p_shader);
 	ERR_FAIL_NULL(shader);
 	if (p_code.is_empty()) {
 		return;
@@ -154139,37 +154093,37 @@ void RasterizerDummy::shader_set_code(RID p_shader, const String& p_code)
 		ERR_FAIL_MSG("Shader type " + mode_string + " not supported in Dummy renderer.");
 	}
 	ShaderCompiler::IdentifierActions actions;
-	actions.uniforms = &shader->uniforms;
+	actions.uniforms = shader;
 	ShaderCompiler::GeneratedCode gen_code;
 	Error err = d->dummy_compiler->compile(new_mode, p_code, &actions, "", gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 }
 
 RID RasterizerDummy::material_allocate() { return _get_data()->material_owner.allocate_rid(); }
-void RasterizerDummy::material_initialize(RID p_rid) { _get_data()->material_owner.initialize_rid(p_rid, DummyMaterial()); }
+void RasterizerDummy::material_initialize(RID p_rid) { _get_data()->material_owner.initialize_rid(p_rid, Pair<RID, RID>()); }
 
 void RasterizerDummy::material_free(RID p_rid)
 {
 	if (!data) {
 		return;
 	}
-	DummyMaterial* material = data->material_owner.get_or_null(p_rid);
+	Pair<RID, RID>* material = data->material_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(material);
 	data->material_owner.free(p_rid);
 }
 
 void RasterizerDummy::material_set_shader(RID p_material, RID p_shader)
 {
-	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
+	Pair<RID, RID>* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
-	material->shader = p_shader;
+	material->first = p_shader;
 }
 
-void RasterizerDummy::material_set_next_pass(RID p_material, RID p_next_material)
+void RasterizerDummy::material_set_next_pass(RID p_material, RID p_next_pass)
 {
-	DummyMaterial* material = _get_data()->material_owner.get_or_null(p_material);
+	Pair<RID, RID>* material = _get_data()->material_owner.get_or_null(p_material);
 	ERR_FAIL_NULL(material);
-	material->next_pass = p_next_material;
+	material->second = p_next_pass;
 }
 
 RSE::GlobalShaderParameterType RasterizerDummy::global_shader_parameter_get_type(const String& p_name) { return RSE::GLOBAL_VAR_TYPE_MAX; }
@@ -160145,8 +160099,7 @@ Error RendererCompositor::create()
 
 #if defined(RD_ENABLED)
 	if (!low_end) {
-		low_end = false;
-		bind_compositor<RendererCompositorRD>();
+		RendererCompositorRD::make_current();
 		if (DisplayServer::is_initialized()) {
 			Error err = DisplayServer::init_rendering_device();
 			ERR_FAIL_COND_V_MSG(
@@ -168530,7 +168483,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			RendererRD::state.light_uniforms[index].position[1] = -canvas_light_dir.y;
 
 			_update_transform_2d_to_mat2x4(
-				clight->shadow.directional_xform, RendererRD::state.light_uniforms[index].shadow_matrix);
+				clight->shadow_directional_xform, RendererRD::state.light_uniforms[index].shadow_matrix);
 
 			RendererRD::state.light_uniforms[index].height = l->height; // 0..1 here
 
@@ -168546,8 +168499,8 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			if (RendererRD::state.shadow_fb.is_valid()) {
 				RendererRD::state.light_uniforms[index].shadow_pixel_size =
 					(1.0 / RendererRD::state.shadow_texture_size) * (1.0 + l->shadow_smooth);
-				RendererRD::state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow.z_far;
-				RendererRD::state.light_uniforms[index].shadow_y_ofs = clight->shadow.y_offset;
+				RendererRD::state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow_z_far;
+				RendererRD::state.light_uniforms[index].shadow_y_ofs = clight->shadow_y_offset;
 			}
 			else {
 				RendererRD::state.light_uniforms[index].shadow_pixel_size = 1.0;
@@ -168557,7 +168510,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 
 			RendererRD::state.light_uniforms[index].flags = l->blend_mode << LIGHT_FLAGS_BLEND_SHIFT;
 			RendererRD::state.light_uniforms[index].flags |= l->shadow_filter << LIGHT_FLAGS_FILTER_SHIFT;
-			if (clight->shadow.enabled) {
+			if (clight->shadow_enabled) {
 				RendererRD::state.light_uniforms[index].flags |= LIGHT_FLAGS_HAS_SHADOW;
 			}
 
@@ -168630,8 +168583,8 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			if (RendererRD::state.shadow_fb.is_valid()) {
 				RendererRD::state.light_uniforms[index].shadow_pixel_size =
 					(1.0 / RendererRD::state.shadow_texture_size) * (1.0 + l->shadow_smooth);
-				RendererRD::state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow.z_far;
-				RendererRD::state.light_uniforms[index].shadow_y_ofs = clight->shadow.y_offset;
+				RendererRD::state.light_uniforms[index].shadow_z_far_inv = 1.0 / clight->shadow_z_far;
+				RendererRD::state.light_uniforms[index].shadow_y_ofs = clight->shadow_y_offset;
 			}
 			else {
 				RendererRD::state.light_uniforms[index].shadow_pixel_size = 1.0;
@@ -168641,7 +168594,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 
 			RendererRD::state.light_uniforms[index].flags = l->blend_mode << LIGHT_FLAGS_BLEND_SHIFT;
 			RendererRD::state.light_uniforms[index].flags |= l->shadow_filter << LIGHT_FLAGS_FILTER_SHIFT;
-			if (clight->shadow.enabled) {
+			if (clight->shadow_enabled) {
 				RendererRD::state.light_uniforms[index].flags |= LIGHT_FLAGS_HAS_SHADOW;
 			}
 
@@ -168991,7 +168944,7 @@ void RendererCanvasRenderRD::light_set_use_shadow(RID p_rid, bool p_enable)
 	CanvasLight* cl = canvas_light_owner.get_or_null(p_rid);
 	ERR_FAIL_NULL(cl);
 
-	cl->shadow.enabled = p_enable;
+	cl->shadow_enabled = p_enable;
 }
 
 void RendererCanvasRenderRD::_update_shadow_atlas()
@@ -169341,12 +169294,6 @@ RendererRD::MaterialStorage::ShaderData* RendererCanvasRenderRD::_create_shader_
 {
 	RendererRD::CanvasShaderData* shader_data = memnew(RendererRD::CanvasShaderData);
 	return shader_data;
-}
-
-RendererRD::CanvasMaterialData::~CanvasMaterialData()
-{
-	free_parameters_uniform_set(uniform_set);
-	free_parameters_uniform_set(uniform_set_srgb);
 }
 
 RendererRD::MaterialStorage::MaterialData* RendererCanvasRenderRD::_create_material_func(
@@ -171433,8 +171380,6 @@ SkyRD::SkyShaderData::~SkyShaderData()
 		RendererSceneRenderRD::data->sky.sky_shader.shader.version_free(version);
 	}
 }
-
-SkyRD::SkyMaterialData::~SkyMaterialData() { free_parameters_uniform_set(uniform_set); }
 
 static _FORCE_INLINE_ void store_transform_3x3(const Basis& p_basis, float* p_array)
 {
@@ -174123,8 +174068,6 @@ Vector3 Fog::fog_volume_get_size(RID p_fog_volume)
 	ERR_FAIL_NULL_V(fog_volume, Vector3());
 	return fog_volume->size;
 }
-
-Fog::FogMaterialData::~FogMaterialData() { free_parameters_uniform_set(uniform_set); }
 
 RendererRD::MaterialStorage::ShaderData* Fog::_create_fog_shader_func()
 {
@@ -186013,30 +185956,30 @@ void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_re
 	const RenderPipeline* pipeline = data->render_pipeline_owner.get_or_null(p_render_pipeline);
 	ERR_FAIL_NULL(pipeline);
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND(pipeline->validation.framebuffer_format != data->draw_list_framebuffer_format &&
-				  pipeline->validation.render_pass != data->draw_list_current_subpass);
+	ERR_FAIL_COND(pipeline->val_framebuffer_format != data->draw_list_framebuffer_format &&
+				  pipeline->val_render_pass != data->draw_list_current_subpass);
 #endif
 
-	if (p_render_pipeline == data->draw_list.state.pipeline) {
+	if (p_render_pipeline == data->draw_list.st_pipeline) {
 		return; // Redundant state, return.
 	}
 
-	data->draw_list.state.pipeline = p_render_pipeline;
+	data->draw_list.st_pipeline = p_render_pipeline;
 
 	data->draw_graph.add_draw_list_bind_pipeline(pipeline->driver_id, pipeline->stage_bits);
 
-	if (data->draw_list.state.pipeline_shader != pipeline->shader) {
+	if (data->draw_list.st_pipeline_shader != pipeline->shader) {
 		// Shader changed, so descriptor sets may become incompatible.
 
 		uint32_t pcount = pipeline->set_formats.size(); // Formats count in this pipeline.
-		data->draw_list.state.set_count = MAX(data->draw_list.state.set_count, pcount);
+		data->draw_list.st_set_count = MAX(data->draw_list.st_set_count, pcount);
 		const uint32_t* pformats = pipeline->set_formats.ptr(); // Pipeline set formats.
 
 		uint32_t first_invalid_set = UINT32_MAX; // All valid by default.
-		if (pipeline->push_constant_size != data->draw_list.state.pipeline_push_constant_size) {
+		if (pipeline->push_constant_size != data->draw_list.st_pipeline_push_constant_size) {
 			// All sets must be invalidated as the pipeline layout is not compatible if the push
 			// constant range is different.
-			data->draw_list.state.pipeline_push_constant_size = pipeline->push_constant_size;
+			data->draw_list.st_pipeline_push_constant_size = pipeline->push_constant_size;
 			first_invalid_set = 0;
 		}
 		else {
@@ -186046,14 +185989,14 @@ void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_re
 			} break;
 			case RDD::SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE: {
 				for (uint32_t i = 0; i < pcount; i++) {
-					if (data->draw_list.state.sets[i].pipeline_expected_format != pformats[i]) {
+					if (data->draw_list.st_sets[i].pipeline_expected_format != pformats[i]) {
 						first_invalid_set = i;
 						break;
 					}
 				}
 			} break;
 			case RDD::SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH: {
-				if (data->draw_list.state.pipeline_shader_layout_hash !=
+				if (data->draw_list.st_pipeline_shader_layout_hash !=
 					pipeline->shader_layout_hash) {
 					first_invalid_set = 0;
 				}
@@ -186063,38 +186006,38 @@ void RenderingDevice::draw_list_bind_render_pipeline(DrawListID p_list, RID p_re
 
 		if (pipeline->push_constant_size) {
 #ifdef DEBUG_ENABLED
-			data->draw_list.validation.pipeline_push_constant_supplied = false;
+			data->draw_list.val_pipeline_push_constant_supplied = false;
 #endif
 		}
 
 		for (uint32_t i = 0; i < pcount; i++) {
-			data->draw_list.state.sets[i].bound =
-				data->draw_list.state.sets[i].bound && i < first_invalid_set;
-			data->draw_list.state.sets[i].pipeline_expected_format = pformats[i];
+			data->draw_list.st_sets[i].bound =
+				data->draw_list.st_sets[i].bound && i < first_invalid_set;
+			data->draw_list.st_sets[i].pipeline_expected_format = pformats[i];
 		}
 
-		for (uint32_t i = pcount; i < data->draw_list.state.set_count; i++) {
+		for (uint32_t i = pcount; i < data->draw_list.st_set_count; i++) {
 			// Unbind the ones above (not used) if exist.
-			data->draw_list.state.sets[i].bound = false;
+			data->draw_list.st_sets[i].bound = false;
 		}
 
-		data->draw_list.state.set_count = pcount; // Update set count.
+		data->draw_list.st_set_count = pcount; // Update set count.
 
-		data->draw_list.state.pipeline_shader = pipeline->shader;
-		data->draw_list.state.pipeline_shader_driver_id = pipeline->shader_driver_id;
-		data->draw_list.state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
+		data->draw_list.st_pipeline_shader = pipeline->shader;
+		data->draw_list.st_pipeline_shader_driver_id = pipeline->shader_driver_id;
+		data->draw_list.st_pipeline_shader_layout_hash = pipeline->shader_layout_hash;
 	}
 
 #ifdef DEBUG_ENABLED
 	// Update render pass pipeline info.
-	data->draw_list.validation.pipeline_active = true;
-	data->draw_list.validation.pipeline_dynamic_state = pipeline->validation.dynamic_state;
-	data->draw_list.validation.pipeline_vertex_format = pipeline->validation.vertex_format;
-	data->draw_list.validation.pipeline_uses_restart_indices =
-		pipeline->validation.uses_restart_indices;
-	data->draw_list.validation.pipeline_primitive_divisor = pipeline->validation.primitive_divisor;
-	data->draw_list.validation.pipeline_primitive_minimum = pipeline->validation.primitive_minimum;
-	data->draw_list.validation.pipeline_push_constant_size = pipeline->push_constant_size;
+	data->draw_list.val_pipeline_active = true;
+	data->draw_list.val_pipeline_dynamic_state = pipeline->val_dynamic_state;
+	data->draw_list.val_pipeline_vertex_format = pipeline->val_vertex_format;
+	data->draw_list.val_pipeline_uses_restart_indices =
+		pipeline->val_uses_restart_indices;
+	data->draw_list.val_pipeline_primitive_divisor = pipeline->val_primitive_divisor;
+	data->draw_list.val_pipeline_primitive_minimum = pipeline->val_primitive_minimum;
+	data->draw_list.val_pipeline_push_constant_size = pipeline->push_constant_size;
 #endif
 }
 
@@ -186116,13 +186059,13 @@ void RenderingDevice::draw_list_bind_uniform_set(
 	const UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
-	data->draw_list.state.set_count = MAX(data->draw_list.state.set_count, p_index + 1);
+	data->draw_list.st_set_count = MAX(data->draw_list.st_set_count, p_index + 1);
 
-	data->draw_list.state.sets[p_index].uniform_set_driver_id =
+	data->draw_list.st_sets[p_index].uniform_set_driver_id =
 		uniform_set->driver_id;						   // Update set pointer.
-	data->draw_list.state.sets[p_index].bound = false; // Needs rebind.
-	data->draw_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	data->draw_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->draw_list.st_sets[p_index].bound = false; // Needs rebind.
+	data->draw_list.st_sets[p_index].uniform_set_format = uniform_set->format;
+	data->draw_list.st_sets[p_index].uniform_set = p_uniform_set;
 
 #ifdef DEBUG_ENABLED
 	{ // Validate that textures bound are not attached as framebuffer bindings.
@@ -186161,17 +186104,17 @@ void RenderingDevice::draw_list_set_push_constant(
 	ERR_FAIL_COND(!data->draw_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != data->draw_list.validation.pipeline_push_constant_size,
+	ERR_FAIL_COND_MSG(p_data_size != data->draw_list.val_pipeline_push_constant_size,
 		"This render pipeline requires (" +
-			itos(data->draw_list.validation.pipeline_push_constant_size) +
+			itos(data->draw_list.val_pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
 	data->draw_graph.add_draw_list_set_push_constant(
-		data->draw_list.state.pipeline_shader_driver_id, p_data, p_data_size);
+		data->draw_list.st_pipeline_shader_driver_id, p_data, p_data_size);
 
 #ifdef DEBUG_ENABLED
-	data->draw_list.validation.pipeline_push_constant_supplied = true;
+	data->draw_list.val_pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -186183,47 +186126,47 @@ void RenderingDevice::draw_list_draw(
 	ERR_FAIL_COND(!data->draw_list.active);
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(!data->draw_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->draw_list.val_pipeline_active,
 		"No render pipeline was set before attempting to draw.");
-	if (data->draw_list.validation.pipeline_vertex_format != RDC::INVALID_ID) {
+	if (data->draw_list.val_pipeline_vertex_format != RDC::INVALID_ID) {
 		// Pipeline uses vertices, validate format.
-		ERR_FAIL_COND_MSG(data->draw_list.validation.vertex_format == RDC::INVALID_ID,
+		ERR_FAIL_COND_MSG(data->draw_list.val_vertex_format == RDC::INVALID_ID,
 			"No vertex array was bound, and render pipeline expects vertices.");
 		// Make sure format is right.
-		ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_vertex_format !=
-							  data->draw_list.validation.vertex_format,
+		ERR_FAIL_COND_MSG(data->draw_list.val_pipeline_vertex_format !=
+							  data->draw_list.val_vertex_format,
 			"The vertex format used to create the pipeline does not match the vertex format "
 			"bound.");
 		// Make sure number of instances is valid.
-		ERR_FAIL_COND_MSG(p_instances > data->draw_list.validation.vertex_max_instances_allowed,
+		ERR_FAIL_COND_MSG(p_instances > data->draw_list.val_vertex_max_instances_allowed,
 			"Number of instances requested (" + itos(p_instances) +
 				") is larger than the maximum number supported by the bound vertex array (" +
-				itos(data->draw_list.validation.vertex_max_instances_allowed) + ").");
+				itos(data->draw_list.val_vertex_max_instances_allowed) + ").");
 	}
 
-	if (data->draw_list.validation.pipeline_push_constant_size > 0) {
+	if (data->draw_list.val_pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!data->draw_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->draw_list.val_pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
 
-	for (uint32_t i = 0; i < data->draw_list.state.set_count; i++) {
-		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->draw_list.st_set_count; i++) {
+		if (data->draw_list.st_sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (data->draw_list.state.sets[i].pipeline_expected_format !=
-			data->draw_list.state.sets[i].uniform_set_format) {
-			if (data->draw_list.state.sets[i].uniform_set_format == 0) {
+		if (data->draw_list.st_sets[i].pipeline_expected_format !=
+			data->draw_list.st_sets[i].uniform_set_format) {
+			if (data->draw_list.st_sets[i].uniform_set_format == 0) {
 				ERR_FAIL_MSG(vformat("Uniforms were never supplied for set (%d) at the time of "
 									 "drawing, which are required by the pipeline.",
 					i));
 			}
-			else if (data->uniform_set_owner.owns(data->draw_list.state.sets[i].uniform_set)) {
+			else if (data->uniform_set_owner.owns(data->draw_list.st_sets[i].uniform_set)) {
 				UniformSet* us =
-					data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
+					data->uniform_set_owner.get_or_null(data->draw_list.st_sets[i].uniform_set);
 				const String us_info =
 					us ? vformat(
 							 "(%d):\n%s\n", i, _shader_uniform_debug(us->shader_id, us->shader_set))
@@ -186231,73 +186174,73 @@ void RenderingDevice::draw_list_draw(
 				ERR_FAIL_MSG(vformat(
 					"Uniforms supplied for set %sare not the same format as required by the "
 					"pipeline shader. Pipeline shader requires the following bindings:\n%s",
-					us_info, _shader_uniform_debug(data->draw_list.state.pipeline_shader)));
+					us_info, _shader_uniform_debug(data->draw_list.st_pipeline_shader)));
 			}
 			else {
 				ERR_FAIL_MSG(vformat("Uniforms supplied for set (%d, which was just freed) are not "
 									 "the same format as required by the pipeline shader. Pipeline "
 									 "shader requires the following bindings:\n%s",
-					i, _shader_uniform_debug(data->draw_list.state.pipeline_shader)));
+					i, _shader_uniform_debug(data->draw_list.st_pipeline_shader)));
 			}
 		}
 	}
 #endif
 	thread_local LocalVector<RDD::UniformSetID> valid_descriptor_ids;
 	valid_descriptor_ids.clear();
-	valid_descriptor_ids.resize(data->draw_list.state.set_count);
+	valid_descriptor_ids.resize(data->draw_list.st_set_count);
 	uint32_t valid_set_count = 0;
 	uint32_t first_set_index = 0;
 	uint32_t last_set_index = 0;
 	bool found_first_set = false;
 
-	for (uint32_t i = 0; i < data->draw_list.state.set_count; i++) {
-		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->draw_list.st_set_count; i++) {
+		if (data->draw_list.st_sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!data->draw_list.state.sets[i].bound && !found_first_set) {
+		if (!data->draw_list.st_sets[i].bound && !found_first_set) {
 			first_set_index = i;
 			found_first_set = true;
 		}
 		// Prepare descriptor sets if the API doesn't use pipeline barriers.
 		if (!data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
 			data->draw_graph.add_draw_list_uniform_set_prepare_for_use(
-				data->draw_list.state.pipeline_shader_driver_id,
-				data->draw_list.state.sets[i].uniform_set_driver_id, i);
+				data->draw_list.st_pipeline_shader_driver_id,
+				data->draw_list.st_sets[i].uniform_set_driver_id, i);
 		}
 	}
 
 	// Bind descriptor sets.
-	for (uint32_t i = first_set_index; i < data->draw_list.state.set_count; i++) {
-		if (data->draw_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = first_set_index; i < data->draw_list.st_set_count; i++) {
+		if (data->draw_list.st_sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!data->draw_list.state.sets[i].bound) {
+		if (!data->draw_list.st_sets[i].bound) {
 			UniformSet* uniform_set =
-				data->uniform_set_owner.get_or_null(data->draw_list.state.sets[i].uniform_set);
+				data->uniform_set_owner.get_or_null(data->draw_list.st_sets[i].uniform_set);
 			ERR_FAIL_NULL(uniform_set);
 			_uniform_set_update_shared(uniform_set);
 
 			data->draw_graph.add_draw_list_usages(
 				uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
-			data->draw_list.state.sets[i].bound = true;
+			data->draw_list.st_sets[i].bound = true;
 
 			// Batch contiguous descriptor sets in a single call.
 			if (data->descriptor_set_batching) {
 				// All good, see if this requires re-binding.
 				if (i - last_set_index > 1) {
 					data->draw_graph.add_draw_list_bind_uniform_sets(
-						data->draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+						data->draw_list.st_pipeline_shader_driver_id, valid_descriptor_ids,
 						first_set_index, valid_set_count);
 
 					first_set_index = i;
 					valid_set_count = 1;
-					valid_descriptor_ids[0] = data->draw_list.state.sets[i].uniform_set_driver_id;
+					valid_descriptor_ids[0] = data->draw_list.st_sets[i].uniform_set_driver_id;
 				}
 				else {
 					valid_descriptor_ids[valid_set_count] =
-						data->draw_list.state.sets[i].uniform_set_driver_id;
+						data->draw_list.st_sets[i].uniform_set_driver_id;
 					valid_set_count++;
 				}
 
@@ -186305,8 +186248,8 @@ void RenderingDevice::draw_list_draw(
 			}
 			else {
 				data->draw_graph.add_draw_list_bind_uniform_set(
-					data->draw_list.state.pipeline_shader_driver_id,
-					data->draw_list.state.sets[i].uniform_set_driver_id, i);
+					data->draw_list.st_pipeline_shader_driver_id,
+					data->draw_list.st_sets[i].uniform_set_driver_id, i);
 			}
 		}
 	}
@@ -186314,7 +186257,7 @@ void RenderingDevice::draw_list_draw(
 	// Bind the remaining batch.
 	if (data->descriptor_set_batching && valid_set_count > 0) {
 		data->draw_graph.add_draw_list_bind_uniform_sets(
-			data->draw_list.state.pipeline_shader_driver_id, valid_descriptor_ids, first_set_index,
+			data->draw_list.st_pipeline_shader_driver_id, valid_descriptor_ids, first_set_index,
 			valid_set_count);
 	}
 
@@ -186323,26 +186266,26 @@ void RenderingDevice::draw_list_draw(
 		ERR_FAIL_COND_MSG(
 			p_procedural_vertices > 0, "Procedural vertices can't be used together with indices.");
 
-		ERR_FAIL_COND_MSG(!data->draw_list.validation.index_array_count,
+		ERR_FAIL_COND_MSG(!data->draw_list.val_index_array_count,
 			"Draw command requested indices, but no index buffer was set.");
 
-		ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_uses_restart_indices !=
-							  data->draw_list.validation.index_buffer_uses_restart_indices,
+		ERR_FAIL_COND_MSG(data->draw_list.val_pipeline_uses_restart_indices !=
+							  data->draw_list.val_index_buffer_uses_restart_indices,
 			"The usage of restart indices in index buffer does not match the render primitive in "
 			"the pipeline.");
 #endif
-		uint32_t to_draw = data->draw_list.validation.index_array_count;
+		uint32_t to_draw = data->draw_list.val_index_array_count;
 
 #ifdef DEBUG_ENABLED
-		ERR_FAIL_COND_MSG(to_draw < data->draw_list.validation.pipeline_primitive_minimum,
+		ERR_FAIL_COND_MSG(to_draw < data->draw_list.val_pipeline_primitive_minimum,
 			"Too few indices (" + itos(to_draw) +
 				") for the render primitive set in the render pipeline (" +
-				itos(data->draw_list.validation.pipeline_primitive_minimum) + ").");
+				itos(data->draw_list.val_pipeline_primitive_minimum) + ").");
 
-		ERR_FAIL_COND_MSG((to_draw % data->draw_list.validation.pipeline_primitive_divisor) != 0,
+		ERR_FAIL_COND_MSG((to_draw % data->draw_list.val_pipeline_primitive_divisor) != 0,
 			"Index amount (" + itos(to_draw) +
 				") must be a multiple of the amount of indices required by the render primitive (" +
-				itos(data->draw_list.validation.pipeline_primitive_divisor) + ").");
+				itos(data->draw_list.val_pipeline_primitive_divisor) + ").");
 #endif
 
 		data->draw_graph.add_draw_list_draw_indexed(to_draw, p_instances, 0);
@@ -186355,29 +186298,29 @@ void RenderingDevice::draw_list_draw(
 		}
 		else {
 #ifdef DEBUG_ENABLED
-			ERR_FAIL_COND_MSG(data->draw_list.validation.pipeline_vertex_format == RDC::INVALID_ID,
+			ERR_FAIL_COND_MSG(data->draw_list.val_pipeline_vertex_format == RDC::INVALID_ID,
 				"Draw command lacks indices, but pipeline format does not use vertices.");
 #endif
-			to_draw = data->draw_list.validation.vertex_array_size;
+			to_draw = data->draw_list.val_vertex_array_size;
 		}
 
 #ifdef DEBUG_ENABLED
-		ERR_FAIL_COND_MSG(to_draw < data->draw_list.validation.pipeline_primitive_minimum,
+		ERR_FAIL_COND_MSG(to_draw < data->draw_list.val_pipeline_primitive_minimum,
 			"Too few vertices (" + itos(to_draw) +
 				") for the render primitive set in the render pipeline (" +
-				itos(data->draw_list.validation.pipeline_primitive_minimum) + ").");
+				itos(data->draw_list.val_pipeline_primitive_minimum) + ").");
 
-		ERR_FAIL_COND_MSG((to_draw % data->draw_list.validation.pipeline_primitive_divisor) != 0,
+		ERR_FAIL_COND_MSG((to_draw % data->draw_list.val_pipeline_primitive_divisor) != 0,
 			"Vertex amount (" + itos(to_draw) +
 				") must be a multiple of the amount of vertices required by the render primitive "
 				"(" +
-				itos(data->draw_list.validation.pipeline_primitive_divisor) + ").");
+				itos(data->draw_list.val_pipeline_primitive_divisor) + ").");
 #endif
 
 		data->draw_graph.add_draw_list_draw(to_draw, p_instances);
 	}
 
-	data->draw_list.state.draw_count++;
+	data->draw_list.st_draw_count++;
 }
 
 void RenderingDevice::draw_list_set_viewport(DrawListID p_list, const Rect2& p_rect)
@@ -186478,15 +186421,15 @@ void RenderingDevice::raytracing_list_bind_uniform_set(
 	}
 #endif
 
-	if (p_index > data->raytracing_list.state.set_count) {
-		data->raytracing_list.state.set_count = p_index;
+	if (p_index > data->raytracing_list.st_set_count) {
+		data->raytracing_list.st_set_count = p_index;
 	}
 
-	data->raytracing_list.state.sets[p_index].uniform_set_driver_id =
+	data->raytracing_list.st_sets[p_index].uniform_set_driver_id =
 		uniform_set->driver_id;								 // Update set pointer.
-	data->raytracing_list.state.sets[p_index].bound = false; // Needs rebind.
-	data->raytracing_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	data->raytracing_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->raytracing_list.st_sets[p_index].bound = false; // Needs rebind.
+	data->raytracing_list.st_sets[p_index].uniform_set_format = uniform_set->format;
+	data->raytracing_list.st_sets[p_index].uniform_set = p_uniform_set;
 }
 
 void RenderingDevice::raytracing_list_set_push_constant(
@@ -186501,21 +186444,21 @@ void RenderingDevice::raytracing_list_set_push_constant(
 		"Push constants can't be bigger than 128 bytes to maintain compatibility.");
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != data->raytracing_list.validation.pipeline_push_constant_size,
+	ERR_FAIL_COND_MSG(p_data_size != data->raytracing_list.val_pipeline_push_constant_size,
 		"This raytracing pipeline requires (" +
-			itos(data->raytracing_list.validation.pipeline_push_constant_size) +
+			itos(data->raytracing_list.val_pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
 	data->draw_graph.add_raytracing_list_set_push_constant(
-		data->raytracing_list.state.layout_defining_shader_driver_id, p_data, p_data_size);
+		data->raytracing_list.st_layout_defining_shader_driver_id, p_data, p_data_size);
 
 	// Store it in the state in case we need to restart the raytracing list.
-	memcpy(data->raytracing_list.state.push_constant_data, p_data, p_data_size);
-	data->raytracing_list.state.push_constant_size = p_data_size;
+	memcpy(data->raytracing_list.st_push_constant_data, p_data, p_data_size);
+	data->raytracing_list.st_push_constant_size = p_data_size;
 
 #ifdef DEBUG_ENABLED
-	data->raytracing_list.validation.pipeline_push_constant_supplied = true;
+	data->raytracing_list.val_pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -186557,17 +186500,17 @@ void RenderingDevice::compute_list_bind_compute_pipeline(
 	const ComputePipeline* pipeline = data->compute_pipeline_owner.get_or_null(p_compute_pipeline);
 	ERR_FAIL_NULL(pipeline);
 
-	if (p_compute_pipeline == data->compute_list.state.pipeline) {
+	if (p_compute_pipeline == data->compute_list.st_pipeline) {
 		return; // Redundant state, return.
 	}
 
-	data->compute_list.state.pipeline = p_compute_pipeline;
+	data->compute_list.st_pipeline = p_compute_pipeline;
 
 	data->draw_graph.add_compute_list_bind_pipeline(pipeline->driver_id);
 
-	if (data->compute_list.state.pipeline_shader != pipeline->shader) {
+	if (data->compute_list.st_pipeline_shader != pipeline->shader) {
 		uint32_t pcount = pipeline->set_formats.size();
-		data->compute_list.state.set_count = MAX(data->compute_list.state.set_count, pcount);
+		data->compute_list.st_set_count = MAX(data->compute_list.st_set_count, pcount);
 		const uint32_t* pformats = pipeline->set_formats.ptr();
 
 		uint32_t first_invalid_set = UINT32_MAX;
@@ -186577,14 +186520,14 @@ void RenderingDevice::compute_list_bind_compute_pipeline(
 		} break;
 		case RDD::SHADER_CHANGE_INVALIDATION_INCOMPATIBLE_SETS_PLUS_CASCADE: {
 			for (uint32_t i = 0; i < pcount; i++) {
-				if (data->compute_list.state.sets[i].pipeline_expected_format != pformats[i]) {
+				if (data->compute_list.st_sets[i].pipeline_expected_format != pformats[i]) {
 					first_invalid_set = i;
 					break;
 				}
 			}
 		} break;
 		case RDD::SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH: {
-			if (data->compute_list.state.pipeline_shader_layout_hash !=
+			if (data->compute_list.st_pipeline_shader_layout_hash !=
 				pipeline->shader_layout_hash) {
 				first_invalid_set = 0;
 			}
@@ -186592,34 +186535,34 @@ void RenderingDevice::compute_list_bind_compute_pipeline(
 		}
 
 		for (uint32_t i = 0; i < pcount; i++) {
-			data->compute_list.state.sets[i].bound =
-				data->compute_list.state.sets[i].bound && i < first_invalid_set;
-			data->compute_list.state.sets[i].pipeline_expected_format = pformats[i];
+			data->compute_list.st_sets[i].bound =
+				data->compute_list.st_sets[i].bound && i < first_invalid_set;
+			data->compute_list.st_sets[i].pipeline_expected_format = pformats[i];
 		}
 
-		for (uint32_t i = pcount; i < data->compute_list.state.set_count; i++) {
-			data->compute_list.state.sets[i].bound = false;
+		for (uint32_t i = pcount; i < data->compute_list.st_set_count; i++) {
+			data->compute_list.st_sets[i].bound = false;
 		}
 
-		data->compute_list.state.set_count = pcount;
+		data->compute_list.st_set_count = pcount;
 
 		if (pipeline->push_constant_size) {
 #ifdef DEBUG_ENABLED
-			data->compute_list.validation.pipeline_push_constant_supplied = false;
+			data->compute_list.val_pipeline_push_constant_supplied = false;
 #endif
 		}
 
-		data->compute_list.state.pipeline_shader = pipeline->shader;
-		data->compute_list.state.pipeline_shader_driver_id = pipeline->shader_driver_id;
-		data->compute_list.state.pipeline_shader_layout_hash = pipeline->shader_layout_hash;
-		data->compute_list.state.local_group_size[0] = pipeline->local_group_size[0];
-		data->compute_list.state.local_group_size[1] = pipeline->local_group_size[1];
-		data->compute_list.state.local_group_size[2] = pipeline->local_group_size[2];
+		data->compute_list.st_pipeline_shader = pipeline->shader;
+		data->compute_list.st_pipeline_shader_driver_id = pipeline->shader_driver_id;
+		data->compute_list.st_pipeline_shader_layout_hash = pipeline->shader_layout_hash;
+		data->compute_list.st_local_group_size[0] = pipeline->local_group_size[0];
+		data->compute_list.st_local_group_size[1] = pipeline->local_group_size[1];
+		data->compute_list.st_local_group_size[2] = pipeline->local_group_size[2];
 	}
 
 #ifdef DEBUG_ENABLED
-	data->compute_list.validation.pipeline_active = true;
-	data->compute_list.validation.pipeline_push_constant_size = pipeline->push_constant_size;
+	data->compute_list.val_pipeline_active = true;
+	data->compute_list.val_pipeline_push_constant_size = pipeline->push_constant_size;
 #endif
 }
 
@@ -186642,15 +186585,15 @@ void RenderingDevice::compute_list_bind_uniform_set(
 	UniformSet* uniform_set = data->uniform_set_owner.get_or_null(p_uniform_set);
 	ERR_FAIL_NULL(uniform_set);
 
-	if (p_index > data->compute_list.state.set_count) {
-		data->compute_list.state.set_count = p_index;
+	if (p_index > data->compute_list.st_set_count) {
+		data->compute_list.st_set_count = p_index;
 	}
 
-	data->compute_list.state.sets[p_index].uniform_set_driver_id =
+	data->compute_list.st_sets[p_index].uniform_set_driver_id =
 		uniform_set->driver_id;							  // Update set pointer.
-	data->compute_list.state.sets[p_index].bound = false; // Needs rebind.
-	data->compute_list.state.sets[p_index].uniform_set_format = uniform_set->format;
-	data->compute_list.state.sets[p_index].uniform_set = p_uniform_set;
+	data->compute_list.st_sets[p_index].bound = false; // Needs rebind.
+	data->compute_list.st_sets[p_index].uniform_set_format = uniform_set->format;
+	data->compute_list.st_sets[p_index].uniform_set = p_uniform_set;
 
 #if 0
 	{ // Validate that textures bound are not attached as framebuffer bindings.
@@ -186679,21 +186622,21 @@ void RenderingDevice::compute_list_set_push_constant(
 		"Push constants can't be bigger than 128 bytes to maintain compatibility.");
 
 #ifdef DEBUG_ENABLED
-	ERR_FAIL_COND_MSG(p_data_size != data->compute_list.validation.pipeline_push_constant_size,
+	ERR_FAIL_COND_MSG(p_data_size != data->compute_list.val_pipeline_push_constant_size,
 		"This compute pipeline requires (" +
-			itos(data->compute_list.validation.pipeline_push_constant_size) +
+			itos(data->compute_list.val_pipeline_push_constant_size) +
 			") bytes of push constant data, supplied: (" + itos(p_data_size) + ")");
 #endif
 
 	data->draw_graph.add_compute_list_set_push_constant(
-		data->compute_list.state.pipeline_shader_driver_id, p_data, p_data_size);
+		data->compute_list.st_pipeline_shader_driver_id, p_data, p_data_size);
 
 	// Store it in the state in case we need to restart the compute list.
-	memcpy(data->compute_list.state.push_constant_data, p_data, p_data_size);
-	data->compute_list.state.push_constant_size = p_data_size;
+	memcpy(data->compute_list.st_push_constant_data, p_data, p_data_size);
+	data->compute_list.st_push_constant_size = p_data_size;
 
 #ifdef DEBUG_ENABLED
-	data->compute_list.validation.pipeline_push_constant_supplied = true;
+	data->compute_list.val_pipeline_push_constant_supplied = true;
 #endif
 }
 
@@ -186731,12 +186674,12 @@ void RenderingDevice::compute_list_dispatch(
 
 #ifdef DEBUG_ENABLED
 
-	ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->compute_list.val_pipeline_active,
 		"No compute pipeline was set before attempting to draw.");
 
-	if (data->compute_list.validation.pipeline_push_constant_size > 0) {
+	if (data->compute_list.val_pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->compute_list.val_pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
@@ -186744,70 +186687,70 @@ void RenderingDevice::compute_list_dispatch(
 #endif
 
 #ifdef DEBUG_ENABLED
-	for (uint32_t i = 0; i < data->compute_list.state.set_count; i++) {
-		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->compute_list.st_set_count; i++) {
+		if (data->compute_list.st_sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (data->compute_list.state.sets[i].pipeline_expected_format !=
-			data->compute_list.state.sets[i].uniform_set_format) {
-			if (data->compute_list.state.sets[i].uniform_set_format == 0) {
+		if (data->compute_list.st_sets[i].pipeline_expected_format !=
+			data->compute_list.st_sets[i].uniform_set_format) {
+			if (data->compute_list.st_sets[i].uniform_set_format == 0) {
 				ERR_FAIL_MSG("Uniforms were never supplied for set (" + itos(i) +
 							 ") at the time of drawing, which are required by the pipeline.");
 			}
-			else if (data->uniform_set_owner.owns(data->compute_list.state.sets[i].uniform_set)) {
+			else if (data->uniform_set_owner.owns(data->compute_list.st_sets[i].uniform_set)) {
 				UniformSet* us = data->uniform_set_owner.get_or_null(
-					data->compute_list.state.sets[i].uniform_set);
+					data->compute_list.st_sets[i].uniform_set);
 				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) + "):\n" +
 							 _shader_uniform_debug(us->shader_id, us->shader_set) +
 							 "\nare not the same format as required by the pipeline shader. "
 							 "Pipeline shader requires the following bindings:\n" +
-							 _shader_uniform_debug(data->compute_list.state.pipeline_shader));
+							 _shader_uniform_debug(data->compute_list.st_pipeline_shader));
 			}
 			else {
 				ERR_FAIL_MSG("Uniforms supplied for set (" + itos(i) +
 							 ", which was just freed) are not the same format as required by the "
 							 "pipeline shader. Pipeline shader requires the following bindings:\n" +
-							 _shader_uniform_debug(data->compute_list.state.pipeline_shader));
+							 _shader_uniform_debug(data->compute_list.st_pipeline_shader));
 			}
 		}
 	}
 #endif
 	thread_local LocalVector<RDD::UniformSetID> valid_descriptor_ids;
 	valid_descriptor_ids.clear();
-	valid_descriptor_ids.resize(data->compute_list.state.set_count);
+	valid_descriptor_ids.resize(data->compute_list.st_set_count);
 
 	uint32_t valid_set_count = 0;
 	uint32_t first_set_index = 0;
 	uint32_t last_set_index = 0;
 	bool found_first_set = false;
 
-	for (uint32_t i = 0; i < data->compute_list.state.set_count; i++) {
-		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = 0; i < data->compute_list.st_set_count; i++) {
+		if (data->compute_list.st_sets[i].pipeline_expected_format == 0) {
 			// Nothing expected by this pipeline.
 			continue;
 		}
 
-		if (!data->compute_list.state.sets[i].bound && !found_first_set) {
+		if (!data->compute_list.st_sets[i].bound && !found_first_set) {
 			first_set_index = i;
 			found_first_set = true;
 		}
 		// Prepare descriptor sets if the API doesn't use pipeline barriers.
 		if (!data->driver->api_trait_get(RDD::API_TRAIT_HONORS_PIPELINE_BARRIERS)) {
 			data->draw_graph.add_compute_list_uniform_set_prepare_for_use(
-				data->compute_list.state.pipeline_shader_driver_id,
-				data->compute_list.state.sets[i].uniform_set_driver_id, i);
+				data->compute_list.st_pipeline_shader_driver_id,
+				data->compute_list.st_sets[i].uniform_set_driver_id, i);
 		}
 	}
 
 	// Bind descriptor sets.
-	for (uint32_t i = first_set_index; i < data->compute_list.state.set_count; i++) {
-		if (data->compute_list.state.sets[i].pipeline_expected_format == 0) {
+	for (uint32_t i = first_set_index; i < data->compute_list.st_set_count; i++) {
+		if (data->compute_list.st_sets[i].pipeline_expected_format == 0) {
 			continue; // Nothing expected by this pipeline.
 		}
 
-		if (!data->compute_list.state.sets[i].bound) {
+		if (!data->compute_list.st_sets[i].bound) {
 			// Descriptor set batching
 			if (data->descriptor_set_batching) {
 				// All good, see if this requires re-binding.
@@ -186815,18 +186758,18 @@ void RenderingDevice::compute_list_dispatch(
 					// If the descriptor sets are not contiguous, bind the previous ones and start a
 					// new batch.
 					data->draw_graph.add_compute_list_bind_uniform_sets(
-						data->compute_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+						data->compute_list.st_pipeline_shader_driver_id, valid_descriptor_ids,
 						first_set_index, valid_set_count);
 
 					first_set_index = i;
 					valid_set_count = 1;
 					valid_descriptor_ids[0] =
-						data->compute_list.state.sets[i].uniform_set_driver_id;
+						data->compute_list.st_sets[i].uniform_set_driver_id;
 				}
 				else {
 					// Otherwise, keep storing in the current batch.
 					valid_descriptor_ids[valid_set_count] =
-						data->compute_list.state.sets[i].uniform_set_driver_id;
+						data->compute_list.st_sets[i].uniform_set_driver_id;
 					valid_set_count++;
 				}
 
@@ -186834,27 +186777,27 @@ void RenderingDevice::compute_list_dispatch(
 			}
 			else {
 				data->draw_graph.add_compute_list_bind_uniform_set(
-					data->compute_list.state.pipeline_shader_driver_id,
-					data->compute_list.state.sets[i].uniform_set_driver_id, i);
+					data->compute_list.st_pipeline_shader_driver_id,
+					data->compute_list.st_sets[i].uniform_set_driver_id, i);
 			}
 			UniformSet* uniform_set =
-				data->uniform_set_owner.get_or_null(data->compute_list.state.sets[i].uniform_set);
+				data->uniform_set_owner.get_or_null(data->compute_list.st_sets[i].uniform_set);
 			_uniform_set_update_shared(uniform_set);
 
 			data->draw_graph.add_compute_list_usages(
 				uniform_set->draw_trackers, uniform_set->draw_trackers_usage);
-			data->compute_list.state.sets[i].bound = true;
+			data->compute_list.st_sets[i].bound = true;
 		}
 	}
 
 	// Bind the remaining batch.
 	if (valid_set_count > 0) {
 		data->draw_graph.add_compute_list_bind_uniform_sets(
-			data->compute_list.state.pipeline_shader_driver_id, valid_descriptor_ids,
+			data->compute_list.st_pipeline_shader_driver_id, valid_descriptor_ids,
 			first_set_index, valid_set_count);
 	}
 	data->draw_graph.add_compute_list_dispatch(p_x_groups, p_y_groups, p_z_groups);
-	data->compute_list.state.dispatch_count++;
+	data->compute_list.st_dispatch_count++;
 }
 
 void RenderingDevice::compute_list_dispatch_threads(
@@ -186876,12 +186819,12 @@ void RenderingDevice::compute_list_dispatch_threads(
 
 #ifdef DEBUG_ENABLED
 
-	ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_active,
+	ERR_FAIL_COND_MSG(!data->compute_list.val_pipeline_active,
 		"No compute pipeline was set before attempting to draw.");
 
-	if (data->compute_list.validation.pipeline_push_constant_size > 0) {
+	if (data->compute_list.val_pipeline_push_constant_size > 0) {
 		// Using push constants, check that they were supplied.
-		ERR_FAIL_COND_MSG(!data->compute_list.validation.pipeline_push_constant_supplied,
+		ERR_FAIL_COND_MSG(!data->compute_list.val_pipeline_push_constant_supplied,
 			"The shader in this pipeline requires a push constant to be set before drawing, but "
 			"it's not present.");
 	}
@@ -186889,9 +186832,9 @@ void RenderingDevice::compute_list_dispatch_threads(
 #endif
 
 	compute_list_dispatch(p_list,
-		Math::division_round_up(p_x_threads, data->compute_list.state.local_group_size[0]),
-		Math::division_round_up(p_y_threads, data->compute_list.state.local_group_size[1]),
-		Math::division_round_up(p_z_threads, data->compute_list.state.local_group_size[2]));
+		Math::division_round_up(p_x_threads, data->compute_list.st_local_group_size[0]),
+		Math::division_round_up(p_y_threads, data->compute_list.st_local_group_size[1]),
+		Math::division_round_up(p_z_threads, data->compute_list.st_local_group_size[2]));
 }
 
 void RenderingDevice::compute_list_end()
@@ -188096,14 +188039,14 @@ void RenderingDevice::capture_timestamp(const String& p_name)
 	}
 	ERR_RENDER_THREAD_GUARD();
 
-	ERR_FAIL_COND_MSG(data->draw_list.active && data->draw_list.state.draw_count > 0,
+	ERR_FAIL_COND_MSG(data->draw_list.active && data->draw_list.st_draw_count > 0,
 		"Capturing timestamps during draw list creation is not allowed. Offending timestamp was: " +
 			p_name);
-	ERR_FAIL_COND_MSG(data->compute_list.active && data->compute_list.state.dispatch_count > 0,
+	ERR_FAIL_COND_MSG(data->compute_list.active && data->compute_list.st_dispatch_count > 0,
 		"Capturing timestamps during compute list creation is not allowed. Offending timestamp "
 		"was: " +
 			p_name);
-	ERR_FAIL_COND_MSG(data->raytracing_list.active && data->raytracing_list.state.trace_count > 0,
+	ERR_FAIL_COND_MSG(data->raytracing_list.active && data->raytracing_list.st_trace_count > 0,
 		"Capturing timestamps during raytracing list creation is not allowed. Offending timestamp "
 		"was: " +
 			p_name);
@@ -188509,19 +188452,19 @@ RID RenderingDevice::render_pipeline_create(RID p_shader, FramebufferFormatID p_
 	pipeline.stage_bits = shader->stage_bits;
 
 #ifdef DEBUG_ENABLED
-	pipeline.validation.framebuffer_format = p_framebuffer_format;
-	pipeline.validation.render_pass = p_for_render_pass;
-	pipeline.validation.dynamic_state = p_dynamic_state_flags;
-	pipeline.validation.vertex_format = p_vertex_format;
-	pipeline.validation.uses_restart_indices =
+	pipeline.val_framebuffer_format = p_framebuffer_format;
+	pipeline.val_render_pass = p_for_render_pass;
+	pipeline.val_dynamic_state = p_dynamic_state_flags;
+	pipeline.val_vertex_format = p_vertex_format;
+	pipeline.val_uses_restart_indices =
 		p_render_primitive == RDC::RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX;
 
 	static const uint32_t primitive_divisor[RDC::RENDER_PRIMITIVE_MAX] = {
 		1, 2, 1, 1, 1, 3, 1, 1, 1, 1, 1};
-	pipeline.validation.primitive_divisor = primitive_divisor[p_render_primitive];
+	pipeline.val_primitive_divisor = primitive_divisor[p_render_primitive];
 	static const uint32_t primitive_minimum[RDC::RENDER_PRIMITIVE_MAX] = {
 		1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 1};
-	pipeline.validation.primitive_minimum = primitive_minimum[p_render_primitive];
+	pipeline.val_primitive_minimum = primitive_minimum[p_render_primitive];
 #endif
 
 	RID id = data->render_pipeline_owner.make_rid(pipeline);
@@ -189395,7 +189338,7 @@ void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_
 
 	ERR_FAIL_COND(!data->draw_list.active);
 
-	if (data->draw_list.state.index_array == p_index_array) {
+	if (data->draw_list.st_index_array == p_index_array) {
 		return;
 	}
 
@@ -189412,14 +189355,14 @@ void RenderingDevice::draw_list_bind_index_array(DrawListID p_list, RID p_index_
 	data->draw_graph.add_draw_list_bind_index_buffer(index_array->driver_id, index_array->format,
 		index_array->offset * (index_array->format == RDC::INDEX_BUFFER_FORMAT_UINT16 ? 2 : 4));
 
-	data->draw_list.validation.index_array_count = index_array->indices;
+	data->draw_list.val_index_array_count = index_array->indices;
 #ifdef DEBUG_ENABLED
-	data->draw_list.validation.index_array_max_index = index_array->max_index;
-	data->draw_list.validation.index_buffer_uses_restart_indices =
+	data->draw_list.val_index_array_max_index = index_array->max_index;
+	data->draw_list.val_index_buffer_uses_restart_indices =
 		index_array->supports_restart_indices;
 #endif
 
-	data->draw_list.state.index_array = p_index_array;
+	data->draw_list.st_index_array = p_index_array;
 }
 
 void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_vertex_array)
@@ -189431,19 +189374,19 @@ void RenderingDevice::draw_list_bind_vertex_array(DrawListID p_list, RID p_verte
 	VertexArray* vertex_array = data->vertex_array_owner.get_or_null(p_vertex_array);
 	ERR_FAIL_NULL(vertex_array);
 
-	if (data->draw_list.state.vertex_array == p_vertex_array) {
+	if (data->draw_list.st_vertex_array == p_vertex_array) {
 		return;
 	}
 
 	_check_transfer_worker_vertex_array(vertex_array);
 
-	data->draw_list.state.vertex_array = p_vertex_array;
+	data->draw_list.st_vertex_array = p_vertex_array;
 
 #ifdef DEBUG_ENABLED
-	data->draw_list.validation.vertex_format = vertex_array->description;
-	data->draw_list.validation.vertex_max_instances_allowed = vertex_array->max_instances_allowed;
+	data->draw_list.val_vertex_format = vertex_array->description;
+	data->draw_list.val_vertex_max_instances_allowed = vertex_array->max_instances_allowed;
 #endif
-	data->draw_list.validation.vertex_array_size = vertex_array->vertex_count;
+	data->draw_list.val_vertex_array_size = vertex_array->vertex_count;
 
 	data->draw_graph.add_draw_list_bind_vertex_buffers(
 		vertex_array->buffers, vertex_array->offsets);
@@ -189550,7 +189493,7 @@ void RenderingDevice::draw_list_bind_vertex_buffers_format(DrawListID p_list,
 		}
 	}
 
-	data->draw_list.state.vertex_array = RID();
+	data->draw_list.st_vertex_array = RID();
 
 	data->draw_graph.add_draw_list_bind_vertex_buffers(driver_buffers, offsets_span);
 
@@ -189558,11 +189501,11 @@ void RenderingDevice::draw_list_bind_vertex_buffers_format(DrawListID p_list,
 		data->draw_graph.add_draw_list_usage(tracker, RDG::RESOURCE_USAGE_VERTEX_BUFFER_READ);
 	}
 
-	data->draw_list.validation.vertex_array_size = p_vertex_count;
+	data->draw_list.val_vertex_array_size = p_vertex_count;
 
 #ifdef DEBUG_ENABLED
-	data->draw_list.validation.vertex_format = p_vertex_format;
-	data->draw_list.validation.vertex_max_instances_allowed = max_instances_allowed;
+	data->draw_list.val_vertex_format = p_vertex_format;
+	data->draw_list.val_vertex_max_instances_allowed = max_instances_allowed;
 #endif
 }
 
@@ -214737,18 +214680,16 @@ private:
 	float hpf_h1 = 0.0f;
 	float hpf_h2 = 0.0f;
 
-	struct Parameters {
-		float room_size;
-		float damp;
-		float wet;
-		float dry;
-		float mix_rate;
-		float extra_spread_base;
-		float extra_spread;
-		float predelay;
-		float predelay_fb;
-		float hpf;
-	} params;
+	float param_room_size = 0.8f;
+	float param_damp = 0.5f;
+	float param_wet = 0.0f;
+	float param_dry = 1.0f;
+	float param_mix_rate = 44100.0f;
+	float param_extra_spread_base = 0.0f;
+	float param_extra_spread = 1.0f;
+	float param_predelay = 150.0f;
+	float param_predelay_fb = 0.4f;
+	float param_hpf = 0.0f;
 
 	void configure_buffers();
 	void update_parameters();
@@ -217936,7 +217877,7 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 		p_frames = INPUT_BUFFER_MAX_SIZE;
 	}
 
-	int predelay_frames = std::rint((params.predelay / 1000.0) * params.mix_rate);
+	int predelay_frames = std::rint((param_predelay / 1000.0) * param_mix_rate);
 	if (predelay_frames < 10) {
 		predelay_frames = 10;
 	}
@@ -217954,7 +217895,7 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 			read_pos += echo_buffer_size;
 		}
 
-		float in = undenormalize(echo_buffer[read_pos] * params.predelay_fb + p_src[i]);
+		float in = undenormalize(echo_buffer[read_pos] * param_predelay_fb + p_src[i]);
 
 		echo_buffer[echo_buffer_pos] = in;
 
@@ -217965,8 +217906,8 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 		echo_buffer_pos++;
 	}
 
-	if (params.hpf > 0) {
-		float hpaux = std::exp(-Math::TAU * params.hpf * 6000 / params.mix_rate);
+	if (param_hpf > 0) {
+		float hpaux = std::exp(-Math::TAU * param_hpf * 6000 / param_mix_rate);
 		float hp_a1 = (1.0 + hpaux) / 2.0;
 		float hp_a2 = -(1.0 + hpaux) / 2.0;
 		float hp_b1 = hpaux;
@@ -217982,7 +217923,7 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 	for (int i = 0; i < MAX_COMBS; i++) {
 		Comb &c = comb[i];
 
-		int size_limit = c.size - std::rint((float)c.extra_spread_frames * (1.0 - params.extra_spread));
+		int size_limit = c.size - std::rint((float)c.extra_spread_frames * (1.0 - param_extra_spread));
 		for (int j = 0; j < p_frames; j++) {
 			if (c.pos >= size_limit) { //reset this now just in case
 				c.pos = 0;
@@ -218003,7 +217944,7 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 
 	for (int i=0;i<MAX_ALLPASS;i++) {
 		AllPass &a=allpass[i];
-		ap_size_limit[i]=a.size-std::rint((float)a.extra_spread_frames*(1.0-params.extra_spread));
+		ap_size_limit[i]=a.size-std::rint((float)a.extra_spread_frames*(1.0-param_extra_spread));
 	}
 
 	for (int i=0;i<p_frames;i++) {
@@ -218031,7 +217972,7 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 
 	for (int i = 0; i < MAX_ALLPASS; i++) {
 		AllPass &a = allpass[i];
-		int size_limit = a.size - std::rint((float)a.extra_spread_frames * (1.0 - params.extra_spread));
+		int size_limit = a.size - std::rint((float)a.extra_spread_frames * (1.0 - param_extra_spread));
 
 		for (int j = 0; j < p_frames; j++) {
 			if (a.pos >= size_limit) {
@@ -218048,34 +217989,34 @@ void Reverb::process(float *p_src, float *p_dst, int p_frames) {
 	static const float wet_scale = 0.6;
 
 	for (int i = 0; i < p_frames; i++) {
-		p_dst[i] = p_dst[i] * params.wet * wet_scale + p_src[i] * params.dry;
+		p_dst[i] = p_dst[i] * param_wet * wet_scale + p_src[i] * param_dry;
 	}
 }
 
 void Reverb::set_room_size(float p_size) {
-	params.room_size = p_size;
+	param_room_size = p_size;
 	update_parameters();
 }
 
 void Reverb::set_damp(float p_damp) {
-	params.damp = p_damp;
+	param_damp = p_damp;
 	update_parameters();
 }
 
 void Reverb::set_wet(float p_wet) {
-	params.wet = p_wet;
+	param_wet = p_wet;
 }
 
 void Reverb::set_dry(float p_dry) {
-	params.dry = p_dry;
+	param_dry = p_dry;
 }
 
 void Reverb::set_predelay(float p_predelay) {
-	params.predelay = p_predelay;
+	param_predelay = p_predelay;
 }
 
 void Reverb::set_predelay_feedback(float p_predelay_fb) {
-	params.predelay_fb = p_predelay_fb;
+	param_predelay_fb = p_predelay_fb;
 }
 
 void Reverb::set_highpass(float p_frq) {
@@ -218085,20 +218026,20 @@ void Reverb::set_highpass(float p_frq) {
 	if (p_frq < 0) {
 		p_frq = 0;
 	}
-	params.hpf = p_frq;
+	param_hpf = p_frq;
 }
 
 void Reverb::set_extra_spread(float p_spread) {
-	params.extra_spread = p_spread;
+	param_extra_spread = p_spread;
 }
 
 void Reverb::set_mix_rate(float p_mix_rate) {
-	params.mix_rate = p_mix_rate;
+	param_mix_rate = p_mix_rate;
 	configure_buffers();
 }
 
 void Reverb::set_extra_spread_base(float p_sec) {
-	params.extra_spread_base = p_sec;
+	param_extra_spread_base = p_sec;
 	configure_buffers();
 }
 
@@ -218108,9 +218049,9 @@ void Reverb::configure_buffers() {
 	for (int i = 0; i < MAX_COMBS; i++) {
 		Comb &c = comb[i];
 
-		c.extra_spread_frames = std::rint(params.extra_spread_base * params.mix_rate);
+		c.extra_spread_frames = std::rint(param_extra_spread_base * param_mix_rate);
 
-		int len = std::rint(comb_tunings[i] * params.mix_rate) + c.extra_spread_frames;
+		int len = std::rint(comb_tunings[i] * param_mix_rate) + c.extra_spread_frames;
 		if (len < 5) {
 			len = 5; //may this happen?
 		}
@@ -218126,9 +218067,9 @@ void Reverb::configure_buffers() {
 	for (int i = 0; i < MAX_ALLPASS; i++) {
 		AllPass &a = allpass[i];
 
-		a.extra_spread_frames = std::rint(params.extra_spread_base * params.mix_rate);
+		a.extra_spread_frames = std::rint(param_extra_spread_base * param_mix_rate);
 
-		int len = std::rint(allpass_tunings[i] * params.mix_rate) + a.extra_spread_frames;
+		int len = std::rint(allpass_tunings[i] * param_mix_rate) + a.extra_spread_frames;
 		if (len < 5) {
 			len = 5; //may this happen?
 		}
@@ -218141,7 +218082,7 @@ void Reverb::configure_buffers() {
 		a.size = len;
 	}
 
-	echo_buffer_size = (int)(((float)MAX_ECHO_MS / 1000.0) * params.mix_rate + 1.0);
+	echo_buffer_size = (int)(((float)MAX_ECHO_MS / 1000.0) * param_mix_rate + 1.0);
 	echo_buffer = memnew_arr(float, echo_buffer_size);
 	for (int i = 0; i < echo_buffer_size; i++) {
 		echo_buffer[i] = 0;
@@ -218157,17 +218098,17 @@ void Reverb::update_parameters() {
 
 	for (int i = 0; i < MAX_COMBS; i++) {
 		Comb &c = comb[i];
-		c.feedback = room_offset + params.room_size * room_scale;
+		c.feedback = room_offset + param_room_size * room_scale;
 		if (c.feedback < room_offset) {
 			c.feedback = room_offset;
 		} else if (c.feedback > (room_offset + room_scale)) {
 			c.feedback = (room_offset + room_scale);
 		}
 
-		float auxdmp = params.damp / 2.0 + 0.5; //only half the range (0.5 .. 1.0 is enough)
+		float auxdmp = param_damp / 2.0 + 0.5; //only half the range (0.5 .. 1.0 is enough)
 		auxdmp *= auxdmp;
 
-		c.damp = std::exp(-Math::TAU * auxdmp * 10000 / params.mix_rate); // 0 .. 10khz
+		c.damp = std::exp(-Math::TAU * auxdmp * 10000 / param_mix_rate); // 0 .. 10khz
 	}
 }
 
@@ -218194,16 +218135,16 @@ void Reverb::clear_buffers() {
 }
 
 Reverb::Reverb() {
-	params.room_size = 0.8;
-	params.damp = 0.5;
-	params.dry = 1.0;
-	params.wet = 0.0;
-	params.mix_rate = 44100;
-	params.extra_spread_base = 0;
-	params.extra_spread = 1.0;
-	params.predelay = 150;
-	params.predelay_fb = 0.4;
-	params.hpf = 0;
+	param_room_size = 0.8;
+	param_damp = 0.5;
+	param_dry = 1.0;
+	param_wet = 0.0;
+	param_mix_rate = 44100;
+	param_extra_spread_base = 0;
+	param_extra_spread = 1.0;
+	param_predelay = 150;
+	param_predelay_fb = 0.4;
+	param_hpf = 0;
 
 	input_buffer = memnew_arr(float, INPUT_BUFFER_MAX_SIZE);
 
@@ -222293,12 +222234,6 @@ AccessibilityServerDriver::~AccessibilityServerDriver()
 {
 	AccessibilityServer::_unbind_driver(this);
 }
-
-AccessibilityServer::AccessibilityServerCreate
-	AccessibilityServer::server_create_functions[AccessibilityServer::MAX_SERVERS] = {
-		{"dummy", &AccessibilityServerDriver::create_dummy}};
-
-int AccessibilityServer::server_create_count = 1;
 
 void AccessibilityServer::_bind_driver(AccessibilityServerDriver* p_driver)
 {
@@ -227740,7 +227675,6 @@ void XRServer::_bind_compatibility_methods() {}
 
 #include "servers/display/display_server.h"
 
-XRServer::XRMode XRServer::xr_mode = XRMODE_DEFAULT;
 
 void XRServer::initialize()
 {
@@ -239692,11 +239626,6 @@ RendererRD::MaterialStorage::ShaderData* ParticlesStorage::_create_particles_sha
 	return shader_data;
 }
 
-ParticlesStorage::ParticleProcessMaterialData::~ParticleProcessMaterialData()
-{
-	free_parameters_uniform_set(uniform_set);
-}
-
 RendererRD::MaterialStorage::MaterialData* ParticlesStorage::_create_particles_material_func(
 	ParticlesShaderData* p_shader)
 {
@@ -247849,18 +247778,6 @@ RendererRD::MaterialStorage::ShaderData* SceneShaderForwardClustered::_create_sh
 	return shader_data;
 }
 
-void SceneShaderForwardClustered::MaterialData::set_render_priority(int p_priority)
-{
-	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
-}
-
-void SceneShaderForwardClustered::MaterialData::set_next_pass(RID p_pass) { next_pass = p_pass; }
-
-SceneShaderForwardClustered::MaterialData::~MaterialData()
-{
-	free_parameters_uniform_set(uniform_set);
-}
-
 RendererRD::MaterialStorage::MaterialData* SceneShaderForwardClustered::_create_material_func(
 	ShaderData* p_shader)
 {
@@ -251681,18 +251598,6 @@ RendererRD::MaterialStorage::ShaderData* SceneShaderForwardMobile::_create_shade
 	return shader_data;
 }
 
-void SceneShaderForwardMobile::MaterialData::set_render_priority(int p_priority)
-{
-	priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN; // 8 bits
-}
-
-void SceneShaderForwardMobile::MaterialData::set_next_pass(RID p_pass) { next_pass = p_pass; }
-
-SceneShaderForwardMobile::MaterialData::~MaterialData()
-{
-	free_parameters_uniform_set(uniform_set);
-}
-
 RendererRD::MaterialStorage::MaterialData* SceneShaderForwardMobile::_create_material_func(
 	ShaderData* p_shader)
 {
@@ -252017,45 +251922,37 @@ void uninitialize_svg_module(ModuleInitializationLevel p_level) {
 	};
 
 	struct bmp_header_s {
-		struct bmp_file_header_s {
-			uint16_t bmp_signature = 0;
-			uint32_t bmp_file_size = 0;
-			uint32_t bmp_file_padding = 0;
-			uint32_t bmp_file_offset = 0;
-		} bmp_file_header;
+		uint16_t bmp_signature = 0;
+		uint32_t bmp_file_size = 0;
+		uint32_t bmp_file_padding = 0;
+		uint32_t bmp_file_offset = 0;
 
-		struct bmp_info_header_s {
-			uint32_t bmp_header_size = 0;
-			uint32_t bmp_width = 0;
-			uint32_t bmp_height = 0;
-			uint16_t bmp_planes = 0;
-			uint16_t bmp_bit_count = 0;
-			uint32_t bmp_compression = 0;
-			uint32_t bmp_size_image = 0;
-			uint32_t bmp_pixels_per_meter_x = 0;
-			uint32_t bmp_pixels_per_meter_y = 0;
-			uint32_t bmp_colors_used = 0;
-			uint32_t bmp_important_colors = 0;
-		} bmp_info_header;
+		uint32_t bmp_header_size = 0;
+		uint32_t bmp_width = 0;
+		uint32_t bmp_height = 0;
+		uint16_t bmp_planes = 0;
+		uint16_t bmp_bit_count = 0;
+		uint32_t bmp_compression = 0;
+		uint32_t bmp_size_image = 0;
+		uint32_t bmp_pixels_per_meter_x = 0;
+		uint32_t bmp_pixels_per_meter_y = 0;
+		uint32_t bmp_colors_used = 0;
+		uint32_t bmp_important_colors = 0;
 
-		struct bmp_bitfield_s {
-			uint16_t alpha_mask = 0x8000;
-			uint16_t red_mask = 0x7C00;
-			uint16_t green_mask = 0x03E0;
-			uint16_t blue_mask = 0x001F;
-			uint16_t alpha_mask_width = 1u;
-			uint16_t red_mask_width = 5u;
-			uint16_t green_mask_width = 5u;
-			uint16_t blue_mask_width = 5u;
-			uint8_t alpha_offset = 15u; // Used for bit shifting.
-			uint8_t red_offset = 10u; // Used for bit shifting.
-			uint8_t green_offset = 5u; // Used for bit shifting.
-			//uint8_t blue_offset = 0u; // Always LSB aligned no shifting needed.
-			//uint8_t alpha_max = 1u; // Always boolean or on, so no scaling needed.
-			uint8_t red_max = 32u; // Used for color space scaling.
-			uint8_t green_max = 32u; // Used for color space scaling.
-			uint8_t blue_max = 32u; // Used for color space scaling.
-		} bmp_bitfield;
+		uint16_t alpha_mask = 0x8000;
+		uint16_t red_mask = 0x7C00;
+		uint16_t green_mask = 0x03E0;
+		uint16_t blue_mask = 0x001F;
+		uint16_t alpha_mask_width = 1u;
+		uint16_t red_mask_width = 5u;
+		uint16_t green_mask_width = 5u;
+		uint16_t blue_mask_width = 5u;
+		uint8_t alpha_offset = 15u;
+		uint8_t red_offset = 10u;
+		uint8_t green_offset = 5u;
+		uint8_t red_max = 32u;
+		uint8_t green_max = 32u;
+		uint8_t blue_max = 32u;
 	};
 
 	static Error _bmp_convert_to_image(Ref<Image> p_image,
@@ -252089,9 +251986,9 @@ static Error _bmp_convert_to_image(Ref<Image> p_image,
 
 	if (err == OK) {
 		size_t index = 0;
-		size_t width = (size_t)p_header.bmp_info_header.bmp_width;
-		size_t height = (size_t)p_header.bmp_info_header.bmp_height;
-		size_t bits_per_pixel = (size_t)p_header.bmp_info_header.bmp_bit_count;
+		size_t width = (size_t)p_header.bmp_width;
+		size_t height = (size_t)p_header.bmp_height;
+		size_t bits_per_pixel = (size_t)p_header.bmp_bit_count;
 
 		// Image data (might be indexed)
 		Vector<uint8_t> data;
@@ -252112,7 +252009,7 @@ static Error _bmp_convert_to_image(Ref<Image> p_image,
 		const uint32_t line_width = (width_bytes + 3) & ~3; // Padded to 4 bytes.
 
 		const uint8_t *line = p_buffer + (line_width * (height - 1));
-		const uint8_t *end_buffer = p_buffer + p_header.bmp_file_header.bmp_file_size - p_header.bmp_file_header.bmp_file_offset;
+		const uint8_t *end_buffer = p_buffer + p_header.bmp_file_size - p_header.bmp_file_offset;
 		ERR_FAIL_COND_V(line + line_width > end_buffer, ERR_FILE_CORRUPT);
 
 		for (uint64_t i = 0; i < height; i++) {
@@ -252147,22 +252044,22 @@ static Error _bmp_convert_to_image(Ref<Image> p_image,
 						uint16_t rgb = (static_cast<uint16_t>(line_ptr[1]) << 8) | line_ptr[0];
 						// A1R5G5B5/X1R5G5B5 => uint16_t
 						// [A/X]1R5G2 | G3B5 => uint8_t | uint8_t
-						uint8_t ba = (rgb & p_header.bmp_bitfield.alpha_mask) >> p_header.bmp_bitfield.alpha_offset; // Alpha 0b 1000 ...
-						uint8_t b0 = (rgb & p_header.bmp_bitfield.red_mask) >> p_header.bmp_bitfield.red_offset; // Red   0b 0111 1100 ...
-						uint8_t b1 = (rgb & p_header.bmp_bitfield.green_mask) >> p_header.bmp_bitfield.green_offset; // Green 0b 0000 0011 1110 ...
-						uint8_t b2 = (rgb & p_header.bmp_bitfield.blue_mask); // >> p_header.bmp_bitfield.blue_offset; // Blue  0b  ... 0001 1111
+						uint8_t ba = (rgb & p_header.alpha_mask) >> p_header.alpha_offset; // Alpha 0b 1000 ...
+						uint8_t b0 = (rgb & p_header.red_mask) >> p_header.red_offset; // Red   0b 0111 1100 ...
+						uint8_t b1 = (rgb & p_header.green_mask) >> p_header.green_offset; // Green 0b 0000 0011 1110 ...
+						uint8_t b2 = (rgb & p_header.blue_mask); // >> p_header.blue_offset; // Blue  0b  ... 0001 1111
 
 						// Next we apply some color scaling going from a variable value space to a 256 value space.
 						// This may be simplified some but left as is for legibility.
 						// float scaled_value = unscaled_value * byte_max_value / color_channel_maximum_value + rounding_offset;
-						float f0 = b0 * 255.0f / static_cast<float>(p_header.bmp_bitfield.red_max) + 0.5f;
-						float f1 = b1 * 255.0f / static_cast<float>(p_header.bmp_bitfield.green_max) + 0.5f;
-						float f2 = b2 * 255.0f / static_cast<float>(p_header.bmp_bitfield.blue_max) + 0.5f;
+						float f0 = b0 * 255.0f / static_cast<float>(p_header.red_max) + 0.5f;
+						float f1 = b1 * 255.0f / static_cast<float>(p_header.green_max) + 0.5f;
+						float f2 = b2 * 255.0f / static_cast<float>(p_header.blue_max) + 0.5f;
 						write_buffer[index + 0] = static_cast<uint8_t>(f0); // R
 						write_buffer[index + 1] = static_cast<uint8_t>(f1); // G
 						write_buffer[index + 2] = static_cast<uint8_t>(f2); // B
 
-						if (p_header.bmp_bitfield.alpha_mask_width > 0) {
+						if (p_header.alpha_mask_width > 0) {
 							write_buffer[index + 3] = ba * 0xFF; // Alpha value(Always true or false so no scaling)
 						} else {
 							write_buffer[index + 3] = 0xFF; // No Alpha channel, Show everything.
@@ -252248,51 +252145,51 @@ static Error _bmp_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_f
 	// file header and a minimal info header
 	if (f->get_length() > BITMAP_FILE_HEADER_SIZE + BITMAP_INFO_HEADER_MIN_SIZE) {
 		// File Header
-		bmp_header.bmp_file_header.bmp_signature = f->get_16();
-		if (bmp_header.bmp_file_header.bmp_signature == BITMAP_SIGNATURE) {
-			bmp_header.bmp_file_header.bmp_file_size = f->get_32();
-			bmp_header.bmp_file_header.bmp_file_padding = f->get_32();
-			bmp_header.bmp_file_header.bmp_file_offset = f->get_32();
+		bmp_header.bmp_signature = f->get_16();
+		if (bmp_header.bmp_signature == BITMAP_SIGNATURE) {
+			bmp_header.bmp_file_size = f->get_32();
+			bmp_header.bmp_file_padding = f->get_32();
+			bmp_header.bmp_file_offset = f->get_32();
 
 			// Info Header
-			bmp_header.bmp_info_header.bmp_header_size = f->get_32();
-			ERR_FAIL_COND_V_MSG(bmp_header.bmp_info_header.bmp_header_size < BITMAP_INFO_HEADER_MIN_SIZE, ERR_FILE_CORRUPT,
+			bmp_header.bmp_header_size = f->get_32();
+			ERR_FAIL_COND_V_MSG(bmp_header.bmp_header_size < BITMAP_INFO_HEADER_MIN_SIZE, ERR_FILE_CORRUPT,
 					vformat("Couldn't parse the BMP info header. The file is likely corrupt: %s", f->get_path()));
 
-			bmp_header.bmp_info_header.bmp_width = f->get_32();
-			bmp_header.bmp_info_header.bmp_height = f->get_32();
+			bmp_header.bmp_width = f->get_32();
+			bmp_header.bmp_height = f->get_32();
 
-			bmp_header.bmp_info_header.bmp_planes = f->get_16();
-			ERR_FAIL_COND_V_MSG(bmp_header.bmp_info_header.bmp_planes != 1, ERR_FILE_CORRUPT,
+			bmp_header.bmp_planes = f->get_16();
+			ERR_FAIL_COND_V_MSG(bmp_header.bmp_planes != 1, ERR_FILE_CORRUPT,
 					vformat("Couldn't parse the BMP planes. The file is likely corrupt: %s", f->get_path()));
 
-			bmp_header.bmp_info_header.bmp_bit_count = f->get_16();
-			bmp_header.bmp_info_header.bmp_compression = f->get_32();
-			bmp_header.bmp_info_header.bmp_size_image = f->get_32();
-			bmp_header.bmp_info_header.bmp_pixels_per_meter_x = f->get_32();
-			bmp_header.bmp_info_header.bmp_pixels_per_meter_y = f->get_32();
-			bmp_header.bmp_info_header.bmp_colors_used = f->get_32();
-			bmp_header.bmp_info_header.bmp_important_colors = f->get_32();
+			bmp_header.bmp_bit_count = f->get_16();
+			bmp_header.bmp_compression = f->get_32();
+			bmp_header.bmp_size_image = f->get_32();
+			bmp_header.bmp_pixels_per_meter_x = f->get_32();
+			bmp_header.bmp_pixels_per_meter_y = f->get_32();
+			bmp_header.bmp_colors_used = f->get_32();
+			bmp_header.bmp_important_colors = f->get_32();
 
-			switch (bmp_header.bmp_info_header.bmp_compression) {
+			switch (bmp_header.bmp_compression) {
 				case BI_BITFIELDS: {
-					bmp_header.bmp_bitfield.red_mask = f->get_32();
-					bmp_header.bmp_bitfield.green_mask = f->get_32();
-					bmp_header.bmp_bitfield.blue_mask = f->get_32();
-					bmp_header.bmp_bitfield.alpha_mask = f->get_32();
+					bmp_header.red_mask = f->get_32();
+					bmp_header.green_mask = f->get_32();
+					bmp_header.blue_mask = f->get_32();
+					bmp_header.alpha_mask = f->get_32();
 
-					bmp_header.bmp_bitfield.red_mask_width = get_mask_width(bmp_header.bmp_bitfield.red_mask);
-					bmp_header.bmp_bitfield.green_mask_width = get_mask_width(bmp_header.bmp_bitfield.green_mask);
-					bmp_header.bmp_bitfield.blue_mask_width = get_mask_width(bmp_header.bmp_bitfield.blue_mask);
-					bmp_header.bmp_bitfield.alpha_mask_width = get_mask_width(bmp_header.bmp_bitfield.alpha_mask);
+					bmp_header.red_mask_width = get_mask_width(bmp_header.red_mask);
+					bmp_header.green_mask_width = get_mask_width(bmp_header.green_mask);
+					bmp_header.blue_mask_width = get_mask_width(bmp_header.blue_mask);
+					bmp_header.alpha_mask_width = get_mask_width(bmp_header.alpha_mask);
 
-					bmp_header.bmp_bitfield.alpha_offset = bmp_header.bmp_bitfield.red_mask_width + bmp_header.bmp_bitfield.green_mask_width + bmp_header.bmp_bitfield.blue_mask_width;
-					bmp_header.bmp_bitfield.red_offset = bmp_header.bmp_bitfield.green_mask_width + bmp_header.bmp_bitfield.blue_mask_width;
-					bmp_header.bmp_bitfield.green_offset = bmp_header.bmp_bitfield.blue_mask_width;
+					bmp_header.alpha_offset = bmp_header.red_mask_width + bmp_header.green_mask_width + bmp_header.blue_mask_width;
+					bmp_header.red_offset = bmp_header.green_mask_width + bmp_header.blue_mask_width;
+					bmp_header.green_offset = bmp_header.blue_mask_width;
 
-					bmp_header.bmp_bitfield.red_max = (1 << bmp_header.bmp_bitfield.red_mask_width) - 1;
-					bmp_header.bmp_bitfield.green_max = (1 << bmp_header.bmp_bitfield.green_mask_width) - 1;
-					bmp_header.bmp_bitfield.blue_max = (1 << bmp_header.bmp_bitfield.blue_mask_width) - 1;
+					bmp_header.red_max = (1 << bmp_header.red_mask_width) - 1;
+					bmp_header.green_max = (1 << bmp_header.green_mask_width) - 1;
+					bmp_header.blue_max = (1 << bmp_header.blue_mask_width) - 1;
 				} break;
 				case BI_RLE8:
 				case BI_RLE4:
@@ -252305,16 +252202,16 @@ static Error _bmp_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_f
 			}
 			// Don't rely on sizeof(bmp_file_header) as structure padding
 			// adds 2 bytes offset leading to misaligned color table reading
-			uint32_t ct_offset = BITMAP_FILE_HEADER_SIZE + bmp_header.bmp_info_header.bmp_header_size;
+			uint32_t ct_offset = BITMAP_FILE_HEADER_SIZE + bmp_header.bmp_header_size;
 			f->seek(ct_offset);
 
 			uint32_t color_table_size = 0;
 
 			// bmp_colors_used may report 0 despite having a color table
 			// for 4 and 1 bit images, so don't rely on this information
-			if (bmp_header.bmp_info_header.bmp_bit_count <= 8) {
+			if (bmp_header.bmp_bit_count <= 8) {
 				// Support 256 colors max
-				color_table_size = 1 << bmp_header.bmp_info_header.bmp_bit_count;
+				color_table_size = 1 << bmp_header.bmp_bit_count;
 				ERR_FAIL_COND_V_MSG(color_table_size == 0, ERR_BUG,
 						vformat("Couldn't parse the BMP color table: %s", f->get_path()));
 			}
@@ -252325,9 +252222,9 @@ static Error _bmp_load_image(Ref<Image> p_image, Ref<FileAccess> f, uint32_t p_f
 			uint8_t *bmp_color_table_w = bmp_color_table.ptrw();
 			f->get_buffer(bmp_color_table_w, color_table_size * 4);
 
-			f->seek(bmp_header.bmp_file_header.bmp_file_offset);
+			f->seek(bmp_header.bmp_file_offset);
 
-			uint32_t bmp_buffer_size = (bmp_header.bmp_file_header.bmp_file_size - bmp_header.bmp_file_header.bmp_file_offset);
+			uint32_t bmp_buffer_size = (bmp_header.bmp_file_size - bmp_header.bmp_file_offset);
 
 			Vector<uint8_t> bmp_buffer;
 			err = bmp_buffer.resize(bmp_buffer_size);
@@ -270347,9 +270244,8 @@ class JavaObject;
 class MeshInstance3D;
 class Mesh;
 class OpenXRAPI;
-class OpenXRExtensions final
+namespace OpenXRExtensions
 {
-public:
 	enum HandTrackedHands
 	{
 		OPENXR_TRACKED_LEFT_HAND,
@@ -270411,52 +270307,50 @@ public:
 		XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties = {};
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize(const String& p_rendering_driver = String());
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	void initialize(const String& p_rendering_driver = String());
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
 	// Eye gaze
-	static bool supports_eye_gaze_interaction();
-	static bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
+	bool supports_eye_gaze_interaction();
+	bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
 
 	// User presence
-	static bool is_user_presence_active();
-	static bool is_user_present();
+	bool is_user_presence_active();
+	bool is_user_present();
 
 	// Display refresh rate
-	static float get_refresh_rate() { return 0.0f; }
-	static void set_refresh_rate(float p_refresh_rate) { (void)p_refresh_rate; }
+	inline float get_refresh_rate() { return 0.0f; }
+	inline void set_refresh_rate(float p_refresh_rate) { (void)p_refresh_rate; }
 
 	// Performance settings
-	static bool is_perf_settings_available() { return data != nullptr && data->perf_settings_available; }
-	static void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
-	static void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	inline bool is_perf_settings_available() { return data != nullptr && data->perf_settings_available; }
+	void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
 
 	// Debug utils
-	static bool is_debug_utils_active() { return data != nullptr && data->debug_utils_ext; }
-	static void set_object_name(XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
-	static void begin_debug_label_region(const char* p_label_name);
-	static void end_debug_label_region();
-	static void insert_debug_label(const char* p_label_name);
+	inline bool is_debug_utils_active() { return data != nullptr && data->debug_utils_ext; }
+	void set_object_name(XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
+	void begin_debug_label_region(const char* p_label_name);
+	void end_debug_label_region();
+	void insert_debug_label(const char* p_label_name);
 
 	// Hand tracking
-	static bool is_hand_tracking_active() { return data != nullptr && data->hand_tracking_active; }
+	inline bool is_hand_tracking_active() { return data != nullptr && data->hand_tracking_active; }
 
 	// Foveation
-	static bool is_foveation_enabled();
-	static XrFoveationLevelFB get_foveation_level();
-	static void set_foveation_level(XrFoveationLevelFB p_foveation_level);
-	static XrFoveationDynamicFB get_foveation_dynamic();
-	static void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
-	static bool is_foveation_eye_tracked_enabled();
-	static void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets) { (void)r_offsets; }
-	static void set_foveation_with_subsampled_images_enabled(bool p_enabled);
-	static bool is_foveation_with_subsampled_images_enabled();
-
-private:
-	static XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
+	bool is_foveation_enabled();
+	XrFoveationLevelFB get_foveation_level();
+	void set_foveation_level(XrFoveationLevelFB p_foveation_level);
+	XrFoveationDynamicFB get_foveation_dynamic();
+	void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
+	bool is_foveation_eye_tracked_enabled();
+	inline void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets) { (void)r_offsets; }
+	void set_foveation_with_subsampled_images_enabled(bool p_enabled);
+	bool is_foveation_with_subsampled_images_enabled();
+	XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
 	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
 		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
 	EXT_PROTO_XRRESULT_FUNC2(xrSetDebugUtilsObjectNameEXT, (XrInstance), p_instance,
@@ -270466,12 +270360,7 @@ private:
 	EXT_PROTO_XRRESULT_FUNC1(xrSessionEndDebugUtilsLabelRegionEXT, (XrSession), p_session)
 	EXT_PROTO_XRRESULT_FUNC2(xrSessionInsertDebugUtilsLabelEXT, (XrSession), p_session,
 		(const XrDebugUtilsLabelEXT*), p_label_info)
-
-	OpenXRExtensions() = delete;
-	OpenXRExtensions(const OpenXRExtensions&) = delete;
-	OpenXRExtensions& operator=(const OpenXRExtensions&) = delete;
-	~OpenXRExtensions() = delete;
-};
+} // namespace OpenXRExtensions
 
 class OpenXRInteractionProfileExtension final
 {

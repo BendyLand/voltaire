@@ -9405,15 +9405,12 @@ class FileAccess;
 
 typedef void (*ResourceUIDScanForUIDOnStartup)();
 
-class ResourceUID final
+namespace ResourceUID
 {
-public:
 	typedef int64_t ID;
-	constexpr const static ID INVALID_ID = -1;
+	constexpr const inline ID INVALID_ID = -1;
 
-	static String get_cache_file();
-
-private:
+	String get_cache_file();
 	struct Cache
 	{
 		CharString cs;
@@ -9431,51 +9428,44 @@ private:
 		bool cache_initialized = false;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	inline ResourceUIDScanForUIDOnStartup scan_for_uid_on_startup = nullptr;
 
-	inline static ResourceUIDScanForUIDOnStartup scan_for_uid_on_startup = nullptr;
+	String id_to_text(ID p_id);
+	ID text_to_id(const String& p_text);
 
-	static String id_to_text(ID p_id);
-	static ID text_to_id(const String& p_text);
+	ID create_id();
+	ID create_id_for_path(const String& p_path);
+	bool has_id(ID p_id);
+	void add_id(ID p_id, const String& p_path);
+	void set_id(ID p_id, const String& p_path);
+	String get_id_path(ID p_id);
+	ID get_path_id(const String& p_path);
+	void remove_id(ID p_id);
 
-	static ID create_id();
-	static ID create_id_for_path(const String& p_path);
-	static bool has_id(ID p_id);
-	static void add_id(ID p_id, const String& p_path);
-	static void set_id(ID p_id, const String& p_path);
-	static String get_id_path(ID p_id);
-	static ID get_path_id(const String& p_path);
-	static void remove_id(ID p_id);
+	String uid_to_path(const String& p_uid);
+	String path_to_uid(const String& p_path);
+	String ensure_path(const String& p_uid_or_path);
 
-	static String uid_to_path(const String& p_uid);
-	static String path_to_uid(const String& p_path);
-	static String ensure_path(const String& p_uid_or_path);
+	Error load_from_cache(bool p_reset);
+	Error save_to_cache();
+	Error update_cache();
+	String get_path_from_cache(Ref<FileAccess>& p_cache_file, const String& p_uid_string);
+	Vector<uint8_t> encode_binary_cache(const Vector<Pair<ID, String>>& p_entries);
 
-	static Error load_from_cache(bool p_reset);
-	static Error save_to_cache();
-	static Error update_cache();
-	static String get_path_from_cache(Ref<FileAccess>& p_cache_file, const String& p_uid_string);
-	static Vector<uint8_t> encode_binary_cache(const Vector<Pair<ID, String>>& p_entries);
-
-	static void enable_reverse_cache()
+	inline void enable_reverse_cache()
 	{
 		if (data) {
 			data->use_reverse_cache = true;
 		}
 	}
 
-	static void clear();
-
-	ResourceUID() = delete;
-	ResourceUID(const ResourceUID&) = delete;
-	ResourceUID& operator=(const ResourceUID&) = delete;
-	~ResourceUID() = delete;
-};
+	void clear();
+} // namespace ResourceUID
 
 class Node;
 class RWLock;

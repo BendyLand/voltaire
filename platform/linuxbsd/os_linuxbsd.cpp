@@ -40,22 +40,19 @@
 typedef uint32_t xkb_keycode_t;
 typedef uint32_t xkb_keysym_t;
 
-class KeyMappingXKB {
-	static inline HashMap<xkb_keycode_t, Key> xkb_keycode_map;
-	static inline HashMap<unsigned int, Key> scancode_map;
-	static inline HashMap<Key, unsigned int> scancode_map_inv;
-	static inline HashMap<unsigned int, KeyLocation> location_map;
+namespace KeyMappingXKB
+{
+	inline HashMap<xkb_keycode_t, Key> xkb_keycode_map;
+	inline HashMap<unsigned int, Key> scancode_map;
+	inline HashMap<Key, unsigned int> scancode_map_inv;
+	inline HashMap<unsigned int, KeyLocation> location_map;
+	void initialize();
 
-	KeyMappingXKB() {}
-
-public:
-	static void initialize();
-
-	static Key get_keycode(xkb_keysym_t p_keysym);
-	static xkb_keycode_t get_xkb_keycode(Key p_keycode);
-	static Key get_scancode(unsigned int p_code);
-	static KeyLocation get_location(unsigned int p_code);
-};
+	Key get_keycode(xkb_keysym_t p_keysym);
+	xkb_keycode_t get_xkb_keycode(Key p_keycode);
+	Key get_scancode(unsigned int p_code);
+	KeyLocation get_location(unsigned int p_code);
+} // namespace KeyMappingXKB
 
 #ifdef SOWRAP_ENABLED
 #include "platform/linuxbsd/xkbcommon-so_wrap.h"
@@ -2852,30 +2849,22 @@ extern "C" EGLAPI EGLDisplay EGLAPIENTRY eglGetPlatformDisplayEXT(EGLenum platfo
 #define GLAD_EGL_EXT_platform_base 0
 #endif
 
-class DetectPrimeEGL {
-private:
-	struct Vendor {
-		const char *glxvendor = nullptr;
-		int priority = 0;
-	};
-
-	static constexpr Vendor vendor_map[] = {
-		{ "Advanced Micro Devices, Inc.", 30 },
-		{ "AMD", 30 },
-		{ "NVIDIA Corporation", 30 },
-		{ "X.Org", 30 },
-		{ "Intel Open Source Technology Center", 20 },
-		{ "Intel", 20 },
-		{ "nouveau", 10 },
-		{ "Mesa Project", 0 },
-		{ nullptr, 0 }
-	};
-
-public:
-	static void create_context(EGLenum p_platform_enum);
-
-	static int detect_prime(EGLenum p_platform_enum);
-};
+namespace DetectPrime {
+inline int get_vendor_priority(const String &p_vendor) {
+	if (p_vendor == "Advanced Micro Devices, Inc." || p_vendor == "AMD" || p_vendor == "NVIDIA Corporation" || p_vendor == "X.Org") {
+		return 30;
+	}
+	if (p_vendor == "Intel Open Source Technology Center" || p_vendor == "Intel") {
+		return 20;
+	}
+	if (p_vendor == "nouveau") {
+		return 10;
+	}
+	return 0;
+}
+void create_egl_context(EGLenum p_platform_enum);
+int detect_egl(EGLenum p_platform_enum);
+} // namespace DetectPrime
 
 #endif // GLES3_ENABLED
 #endif // EGL_ENABLED
@@ -5057,7 +5046,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 			if (prime_idx == -1) {
 				print_verbose("Detecting GPUs, set DRI_PRIME in the environment to override GPU "
 							  "detection logic.");
-				prime_idx = DetectPrimeEGL::detect_prime(EGL_PLATFORM_WAYLAND_KHR);
+				prime_idx = DetectPrime::detect_egl(EGL_PLATFORM_WAYLAND_KHR);
 			}
 
 			if (prime_idx) {
@@ -5329,7 +5318,7 @@ void DisplayServerWayland::register_wayland_driver()
 #undef glGetString
 
 // Runs inside a child. Exiting will not quit the engine.
-void DetectPrimeEGL::create_context(EGLenum p_platform_enum) {
+void DetectPrime::create_egl_context(EGLenum p_platform_enum) {
 #if defined(GLAD_ENABLED)
 	if (!gladLoaderLoadEGL(nullptr)) {
 		print_verbose("Unable to load EGL, GPU detection skipped.");
@@ -5393,7 +5382,7 @@ void DetectPrimeEGL::create_context(EGLenum p_platform_enum) {
 	eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context);
 }
 
-int DetectPrimeEGL::detect_prime(EGLenum p_platform_enum) {
+int DetectPrime::detect_egl(EGLenum p_platform_enum) {
 	pid_t p;
 	int priorities[4] = {};
 	String vendors[4];
@@ -5451,7 +5440,7 @@ int DetectPrimeEGL::detect_prime(EGLenum p_platform_enum) {
 
 			setenv("DRI_PRIME", itos(i).utf8().ptr(), 1);
 
-			create_context(p_platform_enum);
+			create_egl_context(p_platform_enum);
 
 			PFNGLGETSTRINGPROC glGetString = (PFNGLGETSTRINGPROC)eglGetProcAddress("glGetString");
 			const char *vendor = (const char *)glGetString(GL_VENDOR);
@@ -5487,17 +5476,12 @@ int DetectPrimeEGL::detect_prime(EGLenum p_platform_enum) {
 	}
 
 	for (int i = 3; i >= 0; --i) {
-		const Vendor *v = vendor_map;
-		while (v->glxvendor) {
-			if (v->glxvendor == vendors[i]) {
-				priorities[i] = v->priority;
-
-				if (v->priority >= priority) {
-					priority = v->priority;
-					preferred = i;
-				}
+		if (vendors[i] != "Unknown") {
+			priorities[i] = get_vendor_priority(vendors[i]);
+			if (priorities[i] >= priority) {
+				priority = priorities[i];
+				preferred = i;
 			}
-			++v;
 		}
 	}
 
@@ -19757,8 +19741,6 @@ public:
 #include <X11/Xutil.h>
 #endif
 
-struct GLManager_X11_Private;
-
 class GLManager_X11
 {
 public:
@@ -19786,7 +19768,7 @@ private:
 		GLDisplay() {}
 
 		~GLDisplay();
-		GLManager_X11_Private* context = nullptr;
+		void* glx_context = nullptr;
 		::Display* x11_display = nullptr;
 		XVisualInfo x_vi = {};
 		void* x_fbconfig = nullptr;
@@ -19854,30 +19836,24 @@ public:
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
-class DetectPrimeX11 {
-private:
-	struct Vendor {
-		const char *glxvendor = nullptr;
-		int priority = 0;
-	};
-
-	static constexpr Vendor vendor_map[] = {
-		{ "Advanced Micro Devices, Inc.", 30 },
-		{ "AMD", 30 },
-		{ "NVIDIA Corporation", 30 },
-		{ "X.Org", 30 },
-		{ "Intel Open Source Technology Center", 20 },
-		{ "Intel", 20 },
-		{ "nouveau", 10 },
-		{ "Mesa Project", 0 },
-		{ nullptr, 0 }
-	};
-
-public:
-	static void create_context();
-
-	static int detect_prime();
-};
+namespace DetectPrime {
+#ifndef EGL_ENABLED
+inline int get_vendor_priority(const String &p_vendor) {
+	if (p_vendor == "Advanced Micro Devices, Inc." || p_vendor == "AMD" || p_vendor == "NVIDIA Corporation" || p_vendor == "X.Org") {
+		return 30;
+	}
+	if (p_vendor == "Intel Open Source Technology Center" || p_vendor == "Intel") {
+		return 20;
+	}
+	if (p_vendor == "nouveau") {
+		return 10;
+	}
+	return 0;
+}
+#endif
+void create_x11_context();
+int detect_x11();
+} // namespace DetectPrime
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
@@ -22081,7 +22057,7 @@ bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_d
 			return false;
 		}
 #endif
-		DetectPrimeX11::create_context();
+		DetectPrime::create_x11_context();
 	}
 #endif
 #ifdef WAYLAND_ENABLED
@@ -22091,7 +22067,7 @@ bool OS_LinuxBSD::_test_create_rendering_device_and_gl(const String& p_display_d
 			return false;
 		}
 #endif
-		DetectPrimeEGL::create_context(EGL_PLATFORM_WAYLAND_KHR);
+		DetectPrime::create_egl_context(EGL_PLATFORM_WAYLAND_KHR);
 	}
 #endif
 	RasterizerGLES3::make_current(true);
@@ -23865,25 +23841,22 @@ void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance) {
 #define XK_XKB_KEYS
 #include <X11/keysymdef.h>
 
-class KeyMappingX11 {
-	static inline HashMap<KeySym, Key> xkeysym_map;
-	static inline HashMap<unsigned int, Key> scancode_map;
-	static inline HashMap<Key, unsigned int> scancode_map_inv;
-	static inline HashMap<KeySym, char32_t> xkeysym_unicode_map;
-	static inline HashMap<unsigned int, KeyLocation> location_map;
+namespace KeyMappingX11
+{
+	inline HashMap<KeySym, Key> xkeysym_map;
+	inline HashMap<unsigned int, Key> scancode_map;
+	inline HashMap<Key, unsigned int> scancode_map_inv;
+	inline HashMap<KeySym, char32_t> xkeysym_unicode_map;
+	inline HashMap<unsigned int, KeyLocation> location_map;
+	void initialize();
 
-	KeyMappingX11() {}
-
-public:
-	static void initialize();
-
-	static bool is_sym_numpad(KeySym p_keysym);
-	static Key get_keycode(KeySym p_keysym);
-	static unsigned int get_xlibcode(Key p_keysym);
-	static Key get_scancode(unsigned int p_code);
-	static char32_t get_unicode_from_keysym(KeySym p_keysym);
-	static KeyLocation get_location(unsigned int p_code);
-};
+	bool is_sym_numpad(KeySym p_keysym);
+	Key get_keycode(KeySym p_keysym);
+	unsigned int get_xlibcode(Key p_keysym);
+	Key get_scancode(unsigned int p_code);
+	char32_t get_unicode_from_keysym(KeySym p_keysym);
+	KeyLocation get_location(unsigned int p_code);
+} // namespace KeyMappingX11
 
 #ifdef SOWRAP_ENABLED
 #ifndef DYLIBLOAD_WRAPPER_XEXT
@@ -30792,18 +30765,11 @@ typedef GLXContext (*GLXCREATECONTEXTATTRIBSARBPROC)(
 // To prevent shadowing warnings
 #undef glXCreateContextAttribsARB
 
-struct GLManager_X11_Private
-{
-	::GLXContext glx_context;
-};
-
 GLManager_X11::GLDisplay::~GLDisplay()
 {
-	if (context) {
-		// release_current();
-		glXDestroyContext(x11_display, context->glx_context);
-		memdelete(context);
-		context = nullptr;
+	if (glx_context) {
+		glXDestroyContext(x11_display, (::GLXContext)glx_context);
+		glx_context = nullptr;
 	}
 }
 
@@ -30864,9 +30830,7 @@ int GLManager_X11::_find_or_create_display(Display* p_x11_display)
 	}
 	XFree(fbc);
 
-	// create context
-	d.context = memnew(GLManager_X11_Private);
-	d.context->glx_context = nullptr;
+	d.glx_context = nullptr;
 
 	Error err = _create_context(d);
 
@@ -30882,10 +30846,7 @@ Error GLManager_X11::_create_context(GLDisplay& gl_display)
 {
 	ERR_FAIL_NULL_V(gl_display.x_fbconfig, ERR_INVALID_PARAMETER);
 
-	if (!gl_display.context) {
-		gl_display.context = memnew(GLManager_X11_Private);
-	}
-	gl_display.context->glx_context = nullptr;
+	gl_display.glx_context = nullptr;
 
 	GLXFBConfig fb_config = (GLXFBConfig)gl_display.x_fbconfig;
 
@@ -30898,34 +30859,34 @@ Error GLManager_X11::_create_context(GLDisplay& gl_display)
 		int attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB, 3, GLX_CONTEXT_MINOR_VERSION_ARB, 3,
 			GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB, None};
 
-		gl_display.context->glx_context = glad_glXCreateContextAttribsARB(
+		gl_display.glx_context = glad_glXCreateContextAttribsARB(
 			gl_display.x11_display, fb_config, nullptr, True, attribs);
 
 		XSync(gl_display.x11_display, False);
 
 		if (ctxErrorOccurred) {
-			gl_display.context->glx_context = nullptr;
+			gl_display.glx_context = nullptr;
 			ctxErrorOccurred = false;
 		}
 	}
 
 	// Fall back to standard GLX 1.3 context creation if core profile creation fails
-	if (!gl_display.context->glx_context) {
+	if (!gl_display.glx_context) {
 		ctxErrorOccurred = false;
-		gl_display.context->glx_context =
+		gl_display.glx_context =
 			glXCreateNewContext(gl_display.x11_display, fb_config, GLX_RGBA_TYPE, nullptr, True);
 
 		XSync(gl_display.x11_display, False);
 
 		if (ctxErrorOccurred) {
-			gl_display.context->glx_context = nullptr;
+			gl_display.glx_context = nullptr;
 		}
 	}
 
 	XSetErrorHandler(oldHandler);
 
 	ERR_FAIL_COND_V_MSG(
-		!gl_display.context->glx_context, ERR_CANT_CREATE, "Could not create GLX context.");
+		!gl_display.glx_context, ERR_CANT_CREATE, "Could not create GLX context.");
 
 	return OK;
 }
@@ -30979,7 +30940,7 @@ Error GLManager_X11::window_create(DisplayServerEnums::WindowID p_window_id, ::W
 	::Display* x11_display = gl_display.x11_display;
 	::Window& x11_window = win.x11_window;
 
-	if (!glXMakeCurrent(x11_display, x11_window, gl_display.context->glx_context)) {
+	if (!glXMakeCurrent(x11_display, x11_window, (::GLXContext)gl_display.glx_context)) {
 		ERR_PRINT("glXMakeCurrent failed");
 	}
 
@@ -31047,7 +31008,7 @@ void GLManager_X11::window_make_current(DisplayServerEnums::WindowID p_window_id
 
 	const GLDisplay& disp = get_display(win.gldisplay_id);
 
-	if (!glXMakeCurrent(disp.x11_display, win.x11_window, disp.context->glx_context)) {
+	if (!glXMakeCurrent(disp.x11_display, win.x11_window, (::GLXContext)disp.glx_context)) {
 		ERR_PRINT("glXMakeCurrent failed");
 	}
 
@@ -31164,7 +31125,7 @@ void* GLManager_X11::get_glx_context(DisplayServerEnums::WindowID p_window_id)
 	const GLWindow& win = _windows[p_window_id];
 	const GLDisplay& disp = get_display(win.gldisplay_id);
 
-	return (void*)disp.context->glx_context;
+	return (void*)(::GLXContext)disp.glx_context;
 }
 
 VisualID GLManager_X11::get_glx_visualid(DisplayServerEnums::WindowID p_window_id)
@@ -31253,7 +31214,7 @@ int silent_error_handler(Display* display, XErrorEvent* error)
 }
 
 // Runs inside a child. Exiting will not quit the engine.
-void DetectPrimeX11::create_context()
+void DetectPrime::create_x11_context()
 {
 	XSetErrorHandler(&silent_error_handler);
 
@@ -31308,7 +31269,7 @@ void DetectPrimeX11::create_context()
 	XFree(vi);
 }
 
-int DetectPrimeX11::detect_prime()
+int DetectPrime::detect_x11()
 {
 	pid_t p;
 	int priorities[2] = {};
@@ -31371,7 +31332,7 @@ int DetectPrimeX11::detect_prime()
 				setenv("DRI_PRIME", "1", 1);
 			}
 
-			create_context();
+			create_x11_context();
 
 			PFNGLGETSTRINGPROC glGetString =
 				(PFNGLGETSTRINGPROC)glXGetProcAddressARB((GLubyte*)"glGetString");
@@ -31414,17 +31375,12 @@ int DetectPrimeX11::detect_prime()
 	}
 
 	for (int i = 1; i >= 0; --i) {
-		const Vendor* v = vendor_map;
-		while (v->glxvendor) {
-			if (v->glxvendor == vendors[i]) {
-				priorities[i] = v->priority;
-
-				if (v->priority >= priority) {
-					priority = v->priority;
-					preferred = i;
-				}
+		if (vendors[i] != "Unknown") {
+			priorities[i] = get_vendor_priority(vendors[i]);
+			if (priorities[i] >= priority) {
+				priority = priorities[i];
+				preferred = i;
 			}
-			++v;
 		}
 	}
 

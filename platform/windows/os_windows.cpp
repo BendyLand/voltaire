@@ -4703,14 +4703,21 @@ bool DisplayServerWindows::clipboard_has_image() const {
 	return ((png_format && IsClipboardFormatAvailable(png_format)) || IsClipboardFormatAvailable(CF_DIB));
 }
 
-typedef struct {
-	int count;
-	int screen;
-	HMONITOR monitor;
-} EnumScreenData;
+struct MonitorEnumData {
+	int count = 0;
+	int screen = 0;
+	HMONITOR monitor = nullptr;
+	Point2 pos;
+	Size2 size;
+	Rect2i rect;
+	Vector<DISPLAYCONFIG_PATH_INFO> paths;
+	Vector<DISPLAYCONFIG_MODE_INFO> modes;
+	float rate = 0.0f;
+	int dpi = 96;
+};
 
 static BOOL CALLBACK _MonitorEnumProcPrim(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumScreenData *data = (EnumScreenData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if ((lprcMonitor->left == 0) && (lprcMonitor->top == 0)) {
 		data->screen = data->count;
 		return FALSE;
@@ -4721,7 +4728,7 @@ static BOOL CALLBACK _MonitorEnumProcPrim(HMONITOR hMonitor, HDC hdcMonitor, LPR
 }
 
 static BOOL CALLBACK _MonitorEnumProcScreen(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumScreenData *data = (EnumScreenData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if (data->monitor == hMonitor) {
 		data->screen = data->count;
 	}
@@ -4737,7 +4744,7 @@ static BOOL CALLBACK _MonitorEnumProcCount(HMONITOR hMonitor, HDC hdcMonitor, LP
 }
 
 static BOOL CALLBACK _MonitorEnumProcMonitor(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumScreenData *data = (EnumScreenData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 
 	if (data->screen == data->count) {
 		data->monitor = hMonitor;
@@ -4749,7 +4756,7 @@ static BOOL CALLBACK _MonitorEnumProcMonitor(HMONITOR hMonitor, HDC hdcMonitor, 
 }
 
 static HMONITOR _get_hmonitor_of_screen(int p_screen) {
-	EnumScreenData data = { 0, p_screen, nullptr };
+	MonitorEnumData data; data.screen = p_screen;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcMonitor, (LPARAM)&data);
 	return data.monitor;
 }
@@ -4763,7 +4770,7 @@ int DisplayServerWindows::get_screen_count() const {
 }
 
 int DisplayServerWindows::get_primary_screen() const {
-	EnumScreenData data = { 0, 0, nullptr };
+	MonitorEnumData data;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcPrim, (LPARAM)&data);
 	return data.screen;
 }
@@ -4771,7 +4778,7 @@ int DisplayServerWindows::get_primary_screen() const {
 int DisplayServerWindows::get_keyboard_focus_screen() const {
 	HWND hwnd = GetForegroundWindow();
 	if (hwnd) {
-		EnumScreenData data = { 0, 0, MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+		MonitorEnumData data; data.monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcScreen, (LPARAM)&data);
 		return data.screen;
 	} else {
@@ -4779,14 +4786,8 @@ int DisplayServerWindows::get_keyboard_focus_screen() const {
 	}
 }
 
-typedef struct {
-	int count;
-	int screen;
-	Point2 pos;
-} EnumPosData;
-
 static BOOL CALLBACK _MonitorEnumProcPos(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumPosData *data = (EnumPosData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if (data->count == data->screen) {
 		data->pos.x = lprcMonitor->left;
 		data->pos.y = lprcMonitor->top;
@@ -4797,7 +4798,7 @@ static BOOL CALLBACK _MonitorEnumProcPos(HMONITOR hMonitor, HDC hdcMonitor, LPRE
 }
 
 static BOOL CALLBACK _MonitorEnumProcOrigin(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumPosData *data = (EnumPosData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	data->pos = data->pos.min(Point2(lprcMonitor->left, lprcMonitor->top));
 
 	return TRUE;
@@ -4806,7 +4807,7 @@ static BOOL CALLBACK _MonitorEnumProcOrigin(HMONITOR hMonitor, HDC hdcMonitor, L
 Point2i DisplayServerWindows::_get_screens_origin() const {
 	_THREAD_SAFE_METHOD_
 
-	EnumPosData data = { 0, 0, Point2() };
+	MonitorEnumData data;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcOrigin, (LPARAM)&data);
 	return data.pos;
 }
@@ -4818,33 +4819,13 @@ Point2i DisplayServerWindows::screen_get_position(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, Point2i());
 
-	EnumPosData data = { 0, p_screen, Point2() };
+	MonitorEnumData data; data.screen = p_screen;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcPos, (LPARAM)&data);
 	return data.pos - _get_screens_origin();
 }
 
-typedef struct {
-	int count;
-	int screen;
-	Size2 size;
-} EnumSizeData;
-
-typedef struct {
-	int count;
-	int screen;
-	Rect2i rect;
-} EnumRectData;
-
-typedef struct {
-	Vector<DISPLAYCONFIG_PATH_INFO> paths;
-	Vector<DISPLAYCONFIG_MODE_INFO> modes;
-	int count;
-	int screen;
-	float rate;
-} EnumRefreshRateData;
-
 static BOOL CALLBACK _MonitorEnumProcSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumSizeData *data = (EnumSizeData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if (data->count == data->screen) {
 		data->size.x = lprcMonitor->right - lprcMonitor->left;
 		data->size.y = lprcMonitor->bottom - lprcMonitor->top;
@@ -4861,13 +4842,13 @@ Size2i DisplayServerWindows::screen_get_size(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, Size2i());
 
-	EnumSizeData data = { 0, p_screen, Size2() };
+	MonitorEnumData data; data.screen = p_screen;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcSize, (LPARAM)&data);
 	return data.size;
 }
 
 static BOOL CALLBACK _MonitorEnumProcUsableSize(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumRectData *data = (EnumRectData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if (data->count == data->screen) {
 		MONITORINFO minfo;
 		memset(&minfo, 0, sizeof(MONITORINFO));
@@ -4885,7 +4866,7 @@ static BOOL CALLBACK _MonitorEnumProcUsableSize(HMONITOR hMonitor, HDC hdcMonito
 }
 
 static BOOL CALLBACK _MonitorEnumProcRefreshRate(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumRefreshRateData *data = (EnumRefreshRateData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 	if (data->count == data->screen) {
 		MONITORINFOEXW minfo;
 		memset(&minfo, 0, sizeof(minfo));
@@ -4929,17 +4910,11 @@ Rect2i DisplayServerWindows::screen_get_usable_rect(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, Rect2i());
 
-	EnumRectData data = { 0, p_screen, Rect2i() };
+	MonitorEnumData data; data.screen = p_screen;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcUsableSize, (LPARAM)&data);
 	data.rect.position -= _get_screens_origin();
 	return data.rect;
 }
-
-typedef struct {
-	int current_index;
-	int screen;
-	int dpi;
-} EnumDpiData;
 
 static int QueryDpiForMonitor(HMONITOR hmon) {
 	int dpiX = 96, dpiY = 96;
@@ -4971,11 +4946,11 @@ static int QueryDpiForMonitor(HMONITOR hmon) {
 }
 
 static BOOL CALLBACK _MonitorEnumProcDpi(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
-	EnumDpiData *data = (EnumDpiData *)dwData;
+	MonitorEnumData *data = (MonitorEnumData *)dwData;
 
-	data->current_index++;
+	data->count++;
 
-	if (data->current_index == data->screen) {
+	if (data->count == data->screen) {
 		data->dpi = QueryDpiForMonitor(hMonitor);
 		return FALSE;
 	}
@@ -4987,10 +4962,12 @@ int DisplayServerWindows::screen_get_dpi(int p_screen) const {
 
 	p_screen = _get_screen_index(p_screen);
 
-	EnumDpiData data = { -1, p_screen, 96 };
+	MonitorEnumData data;
+	data.count = -1;
+	data.screen = p_screen;
 	EnumDisplayMonitors(nullptr, nullptr, _MonitorEnumProcDpi, (LPARAM)&data);
 
-	ERR_FAIL_COND_V_MSG(data.current_index < p_screen, 96, vformat("Screen index %d out of range [0, %d].", p_screen, data.current_index));
+	ERR_FAIL_COND_V_MSG(data.count < p_screen, 96, vformat("Screen index %d out of range [0, %d].", p_screen, data.count));
 	return data.dpi;
 }
 
@@ -5229,7 +5206,7 @@ float DisplayServerWindows::screen_get_refresh_rate(int p_screen) const {
 	int screen_count = get_screen_count();
 	ERR_FAIL_INDEX_V(p_screen, screen_count, SCREEN_REFRESH_RATE_FALLBACK);
 
-	EnumRefreshRateData data = { Vector<DISPLAYCONFIG_PATH_INFO>(), Vector<DISPLAYCONFIG_MODE_INFO>(), 0, p_screen, SCREEN_REFRESH_RATE_FALLBACK };
+	MonitorEnumData data; data.screen = p_screen; data.rate = SCREEN_REFRESH_RATE_FALLBACK;
 
 	uint32_t path_count = 0;
 	uint32_t mode_count = 0;

@@ -2179,22 +2179,16 @@ public:
 	virtual ~AccessibilityServerDriver();
 };
 
-class AccessibilityServer final
+namespace AccessibilityServer
 {
-	friend class AccessibilityServerDriver;
 
-	static void _bind_driver(AccessibilityServerDriver* p_driver);
-	static void _unbind_driver(AccessibilityServerDriver* p_driver);
-
-public:
-	AccessibilityServer() = delete;
+	void _bind_driver(AccessibilityServerDriver* p_driver);
+	void _unbind_driver(AccessibilityServerDriver* p_driver);
 
 	typedef AccessibilityServerDriver* (*CreateFunction)(Error& r_error);
 
-	static inline AccessibilityServerDriver* driver = nullptr;
-
-private:
-	static inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
+	inline AccessibilityServerDriver* driver = nullptr;
+	inline AccessibilityServerEnums::AccessibilityMode accessibility_mode =
 		AccessibilityServerEnums::AccessibilityMode::ACCESSIBILITY_AUTO;
 
 	enum
@@ -2208,131 +2202,129 @@ private:
 		CreateFunction create_function;
 	};
 
-	static AccessibilityServerCreate server_create_functions[MAX_SERVERS];
-	static int server_create_count;
-
-public:
-	static void register_create_function(const char* p_name, CreateFunction p_function);
-	static int get_create_function_count();
-	static const char* get_create_function_name(int p_index);
-	static AccessibilityServerDriver* create(int p_index, Error& r_error);
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized()
+	inline AccessibilityServerCreate server_create_functions[MAX_SERVERS] = {{"dummy", &AccessibilityServerDriver::create_dummy}};
+	inline int server_create_count = 1;
+	void register_create_function(const char* p_name, CreateFunction p_function);
+	int get_create_function_count();
+	const char* get_create_function_name(int p_index);
+	AccessibilityServerDriver* create(int p_index, Error& r_error);
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized()
 	{
 		return driver != nullptr;
 	}
-	_FORCE_INLINE_ static AccessibilityServerDriver* get_driver()
+	_FORCE_INLINE_ AccessibilityServerDriver* get_driver()
 	{
 		return driver;
 	}
-	template <typename T> _FORCE_INLINE_ static T* driver_as()
+	template <typename T> _FORCE_INLINE_ T* driver_as()
 	{
 		return dynamic_cast<T*>(driver);
 	}
 
-	_FORCE_INLINE_ static AccessibilityServerEnums::AccessibilityMode get_mode()
+	_FORCE_INLINE_ AccessibilityServerEnums::AccessibilityMode get_mode()
 	{
 		return accessibility_mode;
 	}
 
-	static void set_mode(AccessibilityServerEnums::AccessibilityMode p_mode)
+	inline void set_mode(AccessibilityServerEnums::AccessibilityMode p_mode)
 	{
 		accessibility_mode = p_mode;
 	}
 
-	static bool is_supported();
+	bool is_supported();
 
-	static bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle);
-	static void window_destroy(DisplayServerEnums::WindowID p_window_id);
+	bool window_create(DisplayServerEnums::WindowID p_window_id, void* p_handle);
+	void window_destroy(DisplayServerEnums::WindowID p_window_id);
 
-	static RID create_element(
+	RID create_element(
 		DisplayServerEnums::WindowID p_window_id, AccessibilityServerEnums::AccessibilityRole p_role);
-	static RID create_sub_element(const RID& p_parent_rid,
+	RID create_sub_element(const RID& p_parent_rid,
 		AccessibilityServerEnums::AccessibilityRole p_role, int p_insert_pos = -1);
-	static RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
+	RID create_sub_text_edit_elements(const RID& p_parent_rid, const RID& p_shaped_text,
 		float p_min_height, int p_insert_pos = -1, bool p_is_last_line = false);
-	static bool has_element(const RID& p_id);
-	static void free_element(const RID& p_id);
+	bool has_element(const RID& p_id);
+	void free_element(const RID& p_id);
 
-	static RID get_window_root(DisplayServerEnums::WindowID p_window_id);
-	static void update_set_focus(const RID& p_id);
+	RID get_window_root(DisplayServerEnums::WindowID p_window_id);
+	void update_set_focus(const RID& p_id);
 
-	static void set_window_rect(
+	void set_window_rect(
 		DisplayServerEnums::WindowID p_window_id, const Rect2& p_rect_out, const Rect2& p_rect_in);
-	static void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused);
-	static void window_activation_completed(DisplayServerEnums::WindowID p_window_id);
-	static void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id);
+	void set_window_focused(DisplayServerEnums::WindowID p_window_id, bool p_focused);
+	void window_activation_completed(DisplayServerEnums::WindowID p_window_id);
+	void window_deactivation_completed(DisplayServerEnums::WindowID p_window_id);
 
-	static void update_set_role(
+	void update_set_role(
 		const RID& p_id, AccessibilityServerEnums::AccessibilityRole p_role);
-	static void update_set_name(const RID& p_id, const String& p_name);
-	static void update_set_braille_label(const RID& p_id, const String& p_name);
-	static void update_set_braille_role_description(const RID& p_id, const String& p_description);
-	static void update_set_extra_info(const RID& p_id, const String& p_name_extra_info);
-	static void update_set_description(const RID& p_id, const String& p_description);
-	static void update_set_value(const RID& p_id, const String& p_value);
-	static void update_set_tooltip(const RID& p_id, const String& p_tooltip);
-	static void update_set_bounds(const RID& p_id, const Rect2& p_rect);
-	static void update_set_transform(const RID& p_id, const Transform2D& p_transform);
-	static void update_add_child(const RID& p_id, const RID& p_child_id);
-	static void update_add_related_controls(const RID& p_id, const RID& p_related_id);
-	static void update_add_related_details(const RID& p_id, const RID& p_related_id);
-	static void update_add_related_described_by(const RID& p_id, const RID& p_related_id);
-	static void update_add_related_flow_to(const RID& p_id, const RID& p_related_id);
-	static void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id);
-	static void update_add_related_radio_group(const RID& p_id, const RID& p_related_id);
-	static void update_set_active_descendant(const RID& p_id, const RID& p_other_id);
-	static void update_set_next_on_line(const RID& p_id, const RID& p_other_id);
-	static void update_set_previous_on_line(const RID& p_id, const RID& p_other_id);
-	static void update_set_member_of(const RID& p_id, const RID& p_group_id);
-	static void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id);
-	static void update_set_error_message(const RID& p_id, const RID& p_other_id);
-	static void update_set_live(
+	void update_set_name(const RID& p_id, const String& p_name);
+	void update_set_braille_label(const RID& p_id, const String& p_name);
+	void update_set_braille_role_description(const RID& p_id, const String& p_description);
+	void update_set_extra_info(const RID& p_id, const String& p_name_extra_info);
+	void update_set_description(const RID& p_id, const String& p_description);
+	void update_set_value(const RID& p_id, const String& p_value);
+	void update_set_tooltip(const RID& p_id, const String& p_tooltip);
+	void update_set_bounds(const RID& p_id, const Rect2& p_rect);
+	void update_set_transform(const RID& p_id, const Transform2D& p_transform);
+	void update_add_child(const RID& p_id, const RID& p_child_id);
+	void update_add_related_controls(const RID& p_id, const RID& p_related_id);
+	void update_add_related_details(const RID& p_id, const RID& p_related_id);
+	void update_add_related_described_by(const RID& p_id, const RID& p_related_id);
+	void update_add_related_flow_to(const RID& p_id, const RID& p_related_id);
+	void update_add_related_labeled_by(const RID& p_id, const RID& p_related_id);
+	void update_add_related_radio_group(const RID& p_id, const RID& p_related_id);
+	void update_set_active_descendant(const RID& p_id, const RID& p_other_id);
+	void update_set_next_on_line(const RID& p_id, const RID& p_other_id);
+	void update_set_previous_on_line(const RID& p_id, const RID& p_other_id);
+	void update_set_member_of(const RID& p_id, const RID& p_group_id);
+	void update_set_in_page_link_target(const RID& p_id, const RID& p_other_id);
+	void update_set_error_message(const RID& p_id, const RID& p_other_id);
+	void update_set_live(
 		const RID& p_id, AccessibilityServerEnums::AccessibilityLiveMode p_live);
-	static void update_add_custom_action(
+	void update_add_custom_action(
 		const RID& p_id, int p_action_id, const String& p_action_description);
-	static void update_set_table_row_count(const RID& p_id, int p_count);
-	static void update_set_table_column_count(const RID& p_id, int p_count);
-	static void update_set_table_row_index(const RID& p_id, int p_index);
-	static void update_set_table_column_index(const RID& p_id, int p_index);
-	static void update_set_table_cell_position(const RID& p_id, int p_row_index, int p_column_index);
-	static void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span);
-	static void update_set_list_item_count(const RID& p_id, int p_size);
-	static void update_set_list_item_index(const RID& p_id, int p_index);
-	static void update_set_list_item_level(const RID& p_id, int p_level);
-	static void update_set_list_item_selected(const RID& p_id, bool p_selected);
-	static void update_set_list_item_expanded(const RID& p_id, bool p_expanded);
-	static void update_set_popup_type(
+	void update_set_table_row_count(const RID& p_id, int p_count);
+	void update_set_table_column_count(const RID& p_id, int p_count);
+	void update_set_table_row_index(const RID& p_id, int p_index);
+	void update_set_table_column_index(const RID& p_id, int p_index);
+	void update_set_table_cell_position(const RID& p_id, int p_row_index, int p_column_index);
+	void update_set_table_cell_span(const RID& p_id, int p_row_span, int p_column_span);
+	void update_set_list_item_count(const RID& p_id, int p_size);
+	void update_set_list_item_index(const RID& p_id, int p_index);
+	void update_set_list_item_level(const RID& p_id, int p_level);
+	void update_set_list_item_selected(const RID& p_id, bool p_selected);
+	void update_set_list_item_expanded(const RID& p_id, bool p_expanded);
+	void update_set_popup_type(
 		const RID& p_id, AccessibilityServerEnums::AccessibilityPopupType p_popup);
-	static void update_set_checked(const RID& p_id, bool p_checekd);
-	static void update_set_num_value(const RID& p_id, double p_position);
-	static void update_set_num_range(const RID& p_id, double p_min, double p_max);
-	static void update_set_num_step(const RID& p_id, double p_step);
-	static void update_set_num_jump(const RID& p_id, double p_jump);
-	static void update_set_scroll_x(const RID& p_id, double p_position);
-	static void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max);
-	static void update_set_scroll_y(const RID& p_id, double p_position);
-	static void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max);
-	static void update_set_text_decorations(const RID& p_id, bool p_underline, bool p_strikethrough,
+	void update_set_checked(const RID& p_id, bool p_checekd);
+	void update_set_num_value(const RID& p_id, double p_position);
+	void update_set_num_range(const RID& p_id, double p_min, double p_max);
+	void update_set_num_step(const RID& p_id, double p_step);
+	void update_set_num_jump(const RID& p_id, double p_jump);
+	void update_set_scroll_x(const RID& p_id, double p_position);
+	void update_set_scroll_x_range(const RID& p_id, double p_min, double p_max);
+	void update_set_scroll_y(const RID& p_id, double p_position);
+	void update_set_scroll_y_range(const RID& p_id, double p_min, double p_max);
+	void update_set_text_decorations(const RID& p_id, bool p_underline, bool p_strikethrough,
 		bool p_overline, const Color& p_color);
-	static void update_set_text_align(const RID& p_id, HorizontalAlignment p_align);
-	static void update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
+	void update_set_text_align(const RID& p_id, HorizontalAlignment p_align);
+	void update_set_text_selection(const RID& p_id, const RID& p_text_start_id,
 		int p_start_char, const RID& p_text_end_id, int p_end_char);
-	static void update_set_flag(
+	void update_set_flag(
 		const RID& p_id, AccessibilityServerEnums::AccessibilityFlags p_flag, bool p_value);
-	static void update_set_classname(const RID& p_id, const String& p_classname);
-	static void update_set_placeholder(const RID& p_id, const String& p_placeholder);
-	static void update_set_language(const RID& p_id, const String& p_language);
-	static void update_set_text_orientation(const RID& p_id, bool p_vertical);
-	static void update_set_list_orientation(const RID& p_id, bool p_vertical);
-	static void update_set_shortcut(const RID& p_id, const String& p_shortcut);
-	static void update_set_url(const RID& p_id, const String& p_url);
-	static void update_set_role_description(const RID& p_id, const String& p_description);
-	static void update_set_state_description(const RID& p_id, const String& p_description);
-	static void update_set_color_value(const RID& p_id, const Color& p_color);
-	static void update_set_background_color(const RID& p_id, const Color& p_color);
-	static void update_set_foreground_color(const RID& p_id, const Color& p_color);
-};
+	void update_set_classname(const RID& p_id, const String& p_classname);
+	void update_set_placeholder(const RID& p_id, const String& p_placeholder);
+	void update_set_language(const RID& p_id, const String& p_language);
+	void update_set_text_orientation(const RID& p_id, bool p_vertical);
+	void update_set_list_orientation(const RID& p_id, bool p_vertical);
+	void update_set_shortcut(const RID& p_id, const String& p_shortcut);
+	void update_set_url(const RID& p_id, const String& p_url);
+	void update_set_role_description(const RID& p_id, const String& p_description);
+	void update_set_state_description(const RID& p_id, const String& p_description);
+	void update_set_color_value(const RID& p_id, const Color& p_color);
+	void update_set_background_color(const RID& p_id, const Color& p_color);
+	void update_set_foreground_color(const RID& p_id, const Color& p_color);
+} // namespace AccessibilityServer
 
 #include <atomic>
 #include "core/math/vector2.h"
@@ -13106,16 +13098,13 @@ private:
 	struct RenderPipeline
 	{
 #ifdef DEBUG_ENABLED
-		struct Validation
-		{
-			FramebufferFormatID framebuffer_format;
-			uint32_t render_pass = 0;
-			uint32_t dynamic_state = 0;
-			VertexFormatID vertex_format;
-			bool uses_restart_indices = false;
-			uint32_t primitive_minimum = 0;
-			uint32_t primitive_divisor = 0;
-		} validation;
+		FramebufferFormatID val_framebuffer_format;
+		uint32_t val_render_pass = 0;
+		uint32_t val_dynamic_state = 0;
+		VertexFormatID val_vertex_format;
+		bool val_uses_restart_indices = false;
+		uint32_t val_primitive_minimum = 0;
+		uint32_t val_primitive_divisor = 0;
 #endif
 		RID shader;
 		RDD::ShaderID shader_driver_id;
@@ -13211,63 +13200,51 @@ private:
 	static void _hit_sbt_add_dirty_range(
 		HitShaderBindingTable* p_hit_sbt, uint32_t p_offset, uint32_t p_count);
 
+	struct ListSetState
+	{
+		uint32_t pipeline_expected_format = 0;
+		uint32_t uniform_set_format = 0;
+		RDD::UniformSetID uniform_set_driver_id;
+		RID uniform_set;
+		bool bound = false;
+	};
+
 	struct DrawList
 	{
 		Rect2i viewport;
 		bool active = false;
 
-		struct SetState
-		{
-			uint32_t pipeline_expected_format = 0;
-			uint32_t uniform_set_format = 0;
-			RDD::UniformSetID uniform_set_driver_id;
-			RID uniform_set;
-			bool bound = false;
-		};
+		ListSetState st_sets[MAX_UNIFORM_SETS];
+		uint32_t st_set_count = 0;
+		RID st_pipeline;
+		RID st_pipeline_shader;
+		RDD::ShaderID st_pipeline_shader_driver_id;
+		uint32_t st_pipeline_shader_layout_hash = 0;
+		uint32_t st_pipeline_push_constant_size = 0;
+		RID st_vertex_array;
+		RID st_index_array;
+		uint32_t st_draw_count = 0;
 
-		struct State
-		{
-			SetState sets[MAX_UNIFORM_SETS];
-			uint32_t set_count = 0;
-			RID pipeline;
-			RID pipeline_shader;
-			RDD::ShaderID pipeline_shader_driver_id;
-			uint32_t pipeline_shader_layout_hash = 0;
-			uint32_t pipeline_push_constant_size = 0;
-			RID vertex_array;
-			RID index_array;
-			uint32_t draw_count = 0;
-		} state;
-
+		uint32_t val_vertex_array_size = 0;
+		uint32_t val_index_array_count = 0;
 #ifdef DEBUG_ENABLED
-		struct Validation
-		{
-			uint32_t dynamic_state = 0;
-			VertexFormatID vertex_format = RDC::INVALID_ID;
-			uint32_t vertex_array_size = 0;
-			uint32_t vertex_max_instances_allowed = 0xFFFFFFFF;
-			bool index_buffer_uses_restart_indices = false;
-			uint32_t index_array_count = 0;
-			uint32_t index_array_max_index = 0;
-			Vector<uint32_t> set_formats;
-			Vector<bool> set_bound;
-			Vector<RID> set_rids;
-			bool pipeline_active = false;
-			uint32_t pipeline_dynamic_state = 0;
-			VertexFormatID pipeline_vertex_format = RDC::INVALID_ID;
-			RID pipeline_shader;
-			bool pipeline_uses_restart_indices = false;
-			uint32_t pipeline_primitive_divisor = 0;
-			uint32_t pipeline_primitive_minimum = 0;
-			uint32_t pipeline_push_constant_size = 0;
-			bool pipeline_push_constant_supplied = false;
-		} validation;
-#else
-		struct Validation
-		{
-			uint32_t vertex_array_size = 0;
-			uint32_t index_array_count = 0;
-		} validation;
+		uint32_t val_dynamic_state = 0;
+		VertexFormatID val_vertex_format = RDC::INVALID_ID;
+		uint32_t val_vertex_max_instances_allowed = 0xFFFFFFFF;
+		bool val_index_buffer_uses_restart_indices = false;
+		uint32_t val_index_array_max_index = 0;
+		Vector<uint32_t> val_set_formats;
+		Vector<bool> val_set_bound;
+		Vector<RID> val_set_rids;
+		bool val_pipeline_active = false;
+		uint32_t val_pipeline_dynamic_state = 0;
+		VertexFormatID val_pipeline_vertex_format = RDC::INVALID_ID;
+		RID val_pipeline_shader;
+		bool val_pipeline_uses_restart_indices = false;
+		uint32_t val_pipeline_primitive_divisor = 0;
+		uint32_t val_pipeline_primitive_minimum = 0;
+		uint32_t val_pipeline_push_constant_size = 0;
+		bool val_pipeline_push_constant_supplied = false;
 #endif
 	};
 
@@ -13278,45 +13255,30 @@ private:
 	{
 		bool active = false;
 
-		struct SetState
-		{
-			uint32_t pipeline_expected_format = 0;
-			uint32_t uniform_set_format = 0;
-			RDD::UniformSetID uniform_set_driver_id;
-			RID uniform_set;
-			bool bound = false;
-		};
-
-		struct State
-		{
-			SetState sets[MAX_UNIFORM_SETS];
-			uint32_t set_count = 0;
-			RID pipeline;
-			RDD::RaytracingPipelineID pipeline_driver_id;
-			RID layout_defining_shader;
-			RDD::ShaderID layout_defining_shader_driver_id;
-			uint32_t layout_defining_shader_layout_hash = 0;
-			uint8_t push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
-			uint32_t push_constant_size = 0;
-			RDD::BufferID sbt_buffer;
-			uint32_t raygen_shader_count = 0;
-			uint32_t miss_shader_count = 0;
-			uint32_t trace_count = 0;
-		} state;
+		ListSetState st_sets[MAX_UNIFORM_SETS];
+		uint32_t st_set_count = 0;
+		RID st_pipeline;
+		RDD::RaytracingPipelineID st_pipeline_driver_id;
+		RID st_layout_defining_shader;
+		RDD::ShaderID st_layout_defining_shader_driver_id;
+		uint32_t st_layout_defining_shader_layout_hash = 0;
+		uint8_t st_push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
+		uint32_t st_push_constant_size = 0;
+		RDD::BufferID st_sbt_buffer;
+		uint32_t st_raygen_shader_count = 0;
+		uint32_t st_miss_shader_count = 0;
+		uint32_t st_trace_count = 0;
 
 #ifdef DEBUG_ENABLED
-		struct Validation
-		{
-			bool active = true;
-			Vector<uint32_t> set_formats;
-			Vector<bool> set_bound;
-			Vector<RID> set_rids;
-			bool pipeline_active = false;
-			RID pipeline_shader;
-			uint32_t invalid_set_from = 0;
-			uint32_t pipeline_push_constant_size = 0;
-			bool pipeline_push_constant_supplied = false;
-		} validation;
+		bool val_active = true;
+		Vector<uint32_t> val_set_formats;
+		Vector<bool> val_set_bound;
+		Vector<RID> val_set_rids;
+		bool val_pipeline_active = false;
+		RID val_pipeline_shader;
+		uint32_t val_invalid_set_from = 0;
+		uint32_t val_pipeline_push_constant_size = 0;
+		bool val_pipeline_push_constant_supplied = false;
 #endif
 	};
 
@@ -13324,41 +13286,26 @@ private:
 	{
 		bool active = false;
 
-		struct SetState
-		{
-			uint32_t pipeline_expected_format = 0;
-			uint32_t uniform_set_format = 0;
-			RDD::UniformSetID uniform_set_driver_id;
-			RID uniform_set;
-			bool bound = false;
-		};
-
-		struct State
-		{
-			SetState sets[MAX_UNIFORM_SETS];
-			uint32_t set_count = 0;
-			RID pipeline;
-			RID pipeline_shader;
-			RDD::ShaderID pipeline_shader_driver_id;
-			uint32_t pipeline_shader_layout_hash = 0;
-			uint32_t local_group_size[3] = {0, 0, 0};
-			uint8_t push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
-			uint32_t push_constant_size = 0;
-			uint32_t dispatch_count = 0;
-		} state;
+		ListSetState st_sets[MAX_UNIFORM_SETS];
+		uint32_t st_set_count = 0;
+		RID st_pipeline;
+		RID st_pipeline_shader;
+		RDD::ShaderID st_pipeline_shader_driver_id;
+		uint32_t st_pipeline_shader_layout_hash = 0;
+		uint32_t st_local_group_size[3] = {0, 0, 0};
+		uint8_t st_push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
+		uint32_t st_push_constant_size = 0;
+		uint32_t st_dispatch_count = 0;
 
 #ifdef DEBUG_ENABLED
-		struct Validation
-		{
-			Vector<uint32_t> set_formats;
-			Vector<bool> set_bound;
-			Vector<RID> set_rids;
-			bool pipeline_active = false;
-			RID pipeline_shader;
-			uint32_t invalid_set_from = 0;
-			uint32_t pipeline_push_constant_size = 0;
-			bool pipeline_push_constant_supplied = false;
-		} validation;
+		Vector<uint32_t> val_set_formats;
+		Vector<bool> val_set_bound;
+		Vector<RID> val_set_rids;
+		bool val_pipeline_active = false;
+		RID val_pipeline_shader;
+		uint32_t val_invalid_set_from = 0;
+		uint32_t val_pipeline_push_constant_size = 0;
+		bool val_pipeline_push_constant_supplied = false;
 #endif
 	};
 
@@ -13552,10 +13499,8 @@ private:
 		LocalVector<RID> draw_list_bound_textures;
 
 		RaytracingList raytracing_list;
-		RaytracingList::State raytracing_list_barrier_state;
 
 		ComputeList compute_list;
-		ComputeList::State compute_list_barrier_state;
 
 		TightLocalVector<TransferWorker*> transfer_worker_pool;
 		uint32_t transfer_worker_pool_size = 0;
@@ -14087,50 +14032,44 @@ private:
 
 class DependencyTracker;
 
-class RendererUtilities
+namespace RendererUtilities
 {
-public:
-	inline static bool capturing_timestamps = false;
+	inline bool capturing_timestamps = false;
 
-	inline static RID (*visibility_notifier_allocate)() = nullptr;
-	inline static void (*visibility_notifier_initialize)(RID) = nullptr;
-	inline static void (*visibility_notifier_free)(RID) = nullptr;
-	inline static void (*visibility_notifier_set_aabb)(RID, const AABB&) = nullptr;
-	inline static AABB (*visibility_notifier_get_aabb)(RID) = nullptr;
-	inline static void (*visibility_notifier_call)(RID, bool, bool) = nullptr;
+	inline RID (*visibility_notifier_allocate)() = nullptr;
+	inline void (*visibility_notifier_initialize)(RID) = nullptr;
+	inline void (*visibility_notifier_free)(RID) = nullptr;
+	inline void (*visibility_notifier_set_aabb)(RID, const AABB&) = nullptr;
+	inline AABB (*visibility_notifier_get_aabb)(RID) = nullptr;
+	inline void (*visibility_notifier_call)(RID, bool, bool) = nullptr;
 
-	inline static bool (*free)(RID) = nullptr;
-	inline static RSE::InstanceType (*get_base_type)(RID) = nullptr;
-	inline static void (*base_update_dependency)(RID, DependencyTracker*) = nullptr;
+	inline bool (*free)(RID) = nullptr;
+	inline RSE::InstanceType (*get_base_type)(RID) = nullptr;
+	inline void (*base_update_dependency)(RID, DependencyTracker*) = nullptr;
 
-	inline static void (*capture_timestamps_begin)() = nullptr;
-	inline static void (*capture_timestamp)(const String&) = nullptr;
-	inline static uint32_t (*get_captured_timestamps_count)() = nullptr;
-	inline static uint64_t (*get_captured_timestamps_frame)() = nullptr;
-	inline static uint64_t (*get_captured_timestamp_gpu_time)(uint32_t) = nullptr;
-	inline static uint64_t (*get_captured_timestamp_cpu_time)(uint32_t) = nullptr;
-	inline static String (*get_captured_timestamp_name)(uint32_t) = nullptr;
+	inline void (*capture_timestamps_begin)() = nullptr;
+	inline void (*capture_timestamp)(const String&) = nullptr;
+	inline uint32_t (*get_captured_timestamps_count)() = nullptr;
+	inline uint64_t (*get_captured_timestamps_frame)() = nullptr;
+	inline uint64_t (*get_captured_timestamp_gpu_time)(uint32_t) = nullptr;
+	inline uint64_t (*get_captured_timestamp_cpu_time)(uint32_t) = nullptr;
+	inline String (*get_captured_timestamp_name)(uint32_t) = nullptr;
 
-	inline static void (*update_dirty_resources)() = nullptr;
-	inline static void (*set_debug_generate_wireframes)(bool) = nullptr;
-	inline static bool (*has_os_feature)(const String&) = nullptr;
-	inline static void (*update_memory_info)() = nullptr;
+	inline void (*update_dirty_resources)() = nullptr;
+	inline void (*set_debug_generate_wireframes)(bool) = nullptr;
+	inline bool (*has_os_feature)(const String&) = nullptr;
+	inline void (*update_memory_info)() = nullptr;
 
-	inline static uint64_t (*get_rendering_info)(RSE::RenderingInfo) = nullptr;
-	inline static String (*get_video_adapter_name)() = nullptr;
-	inline static String (*get_video_adapter_vendor)() = nullptr;
-	inline static RenderingDeviceEnums::DeviceType (*get_video_adapter_type)() = nullptr;
-	inline static String (*get_video_adapter_api_version)() = nullptr;
+	inline uint64_t (*get_rendering_info)(RSE::RenderingInfo) = nullptr;
+	inline String (*get_video_adapter_name)() = nullptr;
+	inline String (*get_video_adapter_vendor)() = nullptr;
+	inline RenderingDeviceEnums::DeviceType (*get_video_adapter_type)() = nullptr;
+	inline String (*get_video_adapter_api_version)() = nullptr;
 
-	inline static Size2i (*get_maximum_viewport_size)() = nullptr;
-	inline static uint32_t (*get_maximum_shader_varyings)() = nullptr;
-	inline static uint64_t (*get_maximum_uniform_buffer_size)() = nullptr;
-
-	RendererUtilities() = delete;
-	RendererUtilities(const RendererUtilities&) = delete;
-	RendererUtilities& operator=(const RendererUtilities&) = delete;
-	~RendererUtilities() = delete;
-};
+	inline Size2i (*get_maximum_viewport_size)() = nullptr;
+	inline uint32_t (*get_maximum_shader_varyings)() = nullptr;
+	inline uint64_t (*get_maximum_uniform_buffer_size)() = nullptr;
+} // namespace RendererUtilities
 
 #define RENDER_TIMESTAMP(m_text)                                                                   \
 	if (RendererUtilities::capture_timestamp) {                                                    \
@@ -14217,13 +14156,8 @@ using RC = RendererCompositor;
 
 #include "core/io/ip.h"
 
-class RendererCameraAttributes final
+namespace RendererCameraAttributes
 {
-public:
-	RendererCameraAttributes() = delete;
-	~RendererCameraAttributes() = delete;
-	RendererCameraAttributes(const RendererCameraAttributes&) = delete;
-	RendererCameraAttributes& operator=(const RendererCameraAttributes&) = delete;
 
 	struct CameraAttributes
 	{
@@ -14246,49 +14180,45 @@ public:
 		float dof_blur_near_transition = 1;
 		float dof_blur_amount = 0.1;
 	};
+	inline bool _initialized = false;
 
-private:
-	static inline bool _initialized = false;
+	inline RSE::DOFBlurQuality dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
+	inline RSE::DOFBokehShape dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
+	inline bool dof_blur_use_jitter = false;
+	inline uint64_t auto_exposure_counter = 2;
 
-	static inline RSE::DOFBlurQuality dof_blur_quality = RSE::DOF_BLUR_QUALITY_MEDIUM;
-	static inline RSE::DOFBokehShape dof_blur_bokeh_shape = RSE::DOF_BOKEH_HEXAGON;
-	static inline bool dof_blur_use_jitter = false;
-	static inline uint64_t auto_exposure_counter = 2;
+	inline RID_Owner<CameraAttributes, true> camera_attributes_owner;
+	void initialize();
+	void finalize();
 
-	static inline RID_Owner<CameraAttributes, true> camera_attributes_owner;
+	inline bool is_initialized() { return _initialized; }
 
-public:
-	static void initialize();
-	static void finalize();
-
-	static bool is_initialized() { return _initialized; }
-
-	static CameraAttributes* get_camera_attributes(RID p_rid)
+	inline CameraAttributes* get_camera_attributes(RID p_rid)
 	{
 		return camera_attributes_owner.get_or_null(p_rid);
 	}
-	static bool owns_camera_attributes(RID p_rid) { return camera_attributes_owner.owns(p_rid); }
+	inline bool owns_camera_attributes(RID p_rid) { return camera_attributes_owner.owns(p_rid); }
 
-	static RID camera_attributes_allocate();
-	static void camera_attributes_initialize(RID p_rid);
-	static void camera_attributes_free(RID p_rid);
+	RID camera_attributes_allocate();
+	void camera_attributes_initialize(RID p_rid);
+	void camera_attributes_free(RID p_rid);
 
-	static void camera_attributes_set_dof_blur_quality(
+	void camera_attributes_set_dof_blur_quality(
 		RSE::DOFBlurQuality p_quality, bool p_use_jitter);
-	static void camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape);
+	void camera_attributes_set_dof_blur_bokeh_shape(RSE::DOFBokehShape p_shape);
 
-	static void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable,
+	void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable,
 		float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance,
 		float p_near_transition, float p_amount);
-	static bool camera_attributes_get_dof_far_enabled(RID p_camera_attributes);
-	static float camera_attributes_get_dof_far_distance(RID p_camera_attributes);
-	static float camera_attributes_get_dof_far_transition(RID p_camera_attributes);
-	static bool camera_attributes_get_dof_near_enabled(RID p_camera_attributes);
-	static float camera_attributes_get_dof_near_distance(RID p_camera_attributes);
-	static float camera_attributes_get_dof_near_transition(RID p_camera_attributes);
-	static float camera_attributes_get_dof_blur_amount(RID p_camera_attributes);
+	bool camera_attributes_get_dof_far_enabled(RID p_camera_attributes);
+	float camera_attributes_get_dof_far_distance(RID p_camera_attributes);
+	float camera_attributes_get_dof_far_transition(RID p_camera_attributes);
+	bool camera_attributes_get_dof_near_enabled(RID p_camera_attributes);
+	float camera_attributes_get_dof_near_distance(RID p_camera_attributes);
+	float camera_attributes_get_dof_near_transition(RID p_camera_attributes);
+	float camera_attributes_get_dof_blur_amount(RID p_camera_attributes);
 
-	_FORCE_INLINE_ static bool camera_attributes_uses_dof(RID p_camera_attributes)
+	_FORCE_INLINE_ bool camera_attributes_uses_dof(RID p_camera_attributes)
 	{
 		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 
@@ -14297,40 +14227,40 @@ public:
 			   cam_attributes->dof_blur_amount > 0.0;
 	}
 
-	static void camera_attributes_set_exposure(
+	void camera_attributes_set_exposure(
 		RID p_camera_attributes, float p_multiplier, float p_exposure_normalization);
-	static float camera_attributes_get_exposure_normalization_factor(RID p_camera_attributes);
+	float camera_attributes_get_exposure_normalization_factor(RID p_camera_attributes);
 
-	static void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable,
+	void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable,
 		float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale);
-	static float camera_attributes_get_auto_exposure_min_sensitivity(RID p_camera_attributes);
-	static float camera_attributes_get_auto_exposure_max_sensitivity(RID p_camera_attributes);
-	static float camera_attributes_get_auto_exposure_adjust_speed(RID p_camera_attributes);
-	static float camera_attributes_get_auto_exposure_scale(RID p_camera_attributes);
-	static uint64_t camera_attributes_get_auto_exposure_version(RID p_camera_attributes);
+	float camera_attributes_get_auto_exposure_min_sensitivity(RID p_camera_attributes);
+	float camera_attributes_get_auto_exposure_max_sensitivity(RID p_camera_attributes);
+	float camera_attributes_get_auto_exposure_adjust_speed(RID p_camera_attributes);
+	float camera_attributes_get_auto_exposure_scale(RID p_camera_attributes);
+	uint64_t camera_attributes_get_auto_exposure_version(RID p_camera_attributes);
 
-	_FORCE_INLINE_ static bool camera_attributes_uses_auto_exposure(RID p_camera_attributes)
+	_FORCE_INLINE_ bool camera_attributes_uses_auto_exposure(RID p_camera_attributes)
 	{
 		CameraAttributes* cam_attributes = camera_attributes_owner.get_or_null(p_camera_attributes);
 
 		return cam_attributes && cam_attributes->use_auto_exposure;
 	}
 
-	_FORCE_INLINE_ static RSE::DOFBlurQuality camera_attributes_get_dof_blur_quality()
+	_FORCE_INLINE_ RSE::DOFBlurQuality camera_attributes_get_dof_blur_quality()
 	{
 		return dof_blur_quality;
 	}
 
-	_FORCE_INLINE_ static RSE::DOFBokehShape camera_attributes_get_dof_blur_bokeh_shape()
+	_FORCE_INLINE_ RSE::DOFBokehShape camera_attributes_get_dof_blur_bokeh_shape()
 	{
 		return dof_blur_bokeh_shape;
 	}
 
-	_FORCE_INLINE_ static bool camera_attributes_get_dof_blur_use_jitter()
+	_FORCE_INLINE_ bool camera_attributes_get_dof_blur_use_jitter()
 	{
 		return dof_blur_use_jitter;
 	}
-};
+} // namespace RendererCameraAttributes
 
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -14439,17 +14369,10 @@ public:
 
 #include "core/io/ip.h"
 
-class RendererCompositorStorage final
+namespace RendererCompositorStorage
 {
-public:
-	RendererCompositorStorage() = delete;
-	~RendererCompositorStorage() = delete;
-	RendererCompositorStorage(const RendererCompositorStorage&) = delete;
-	RendererCompositorStorage& operator=(const RendererCompositorStorage&) = delete;
-
-private:
-	static inline bool _initialized = false;
-	static inline int num_compositor_effects_with_motion_vectors = 0;
+	inline bool _initialized = false;
+	inline int num_compositor_effects_with_motion_vectors = 0;
 
 	// Compositor effect
 	struct CompositorEffect
@@ -14460,7 +14383,7 @@ private:
 		uint32_t flags = {};
 	};
 
-	static inline RID_Owner<CompositorEffect, true> compositor_effects_owner;
+	inline RID_Owner<CompositorEffect, true> compositor_effects_owner;
 
 	// Compositor
 	struct Compositor
@@ -14469,61 +14392,54 @@ private:
 		Vector<RID> compositor_effects;
 	};
 
-	static inline RID_Owner<Compositor, true> compositor_owner;
+	inline RID_Owner<Compositor, true> compositor_owner;
+	void initialize();
+	void finalize();
 
-public:
-	static void initialize();
-	static void finalize();
+	inline bool is_initialized() { return _initialized; }
 
-	static bool is_initialized() { return _initialized; }
-
-	static int get_num_compositor_effects_with_motion_vectors()
+	inline int get_num_compositor_effects_with_motion_vectors()
 	{
 		return num_compositor_effects_with_motion_vectors;
 	}
 
 	// Compositor effect
-	static RID compositor_effect_allocate();
-	static void compositor_effect_initialize(RID p_rid);
-	static void compositor_effect_free(RID p_rid);
+	RID compositor_effect_allocate();
+	void compositor_effect_initialize(RID p_rid);
+	void compositor_effect_free(RID p_rid);
 
-	static bool is_compositor_effect(RID p_effect)
+	inline bool is_compositor_effect(RID p_effect)
 	{
 		return compositor_effects_owner.owns(p_effect);
 	}
 
-	static void compositor_effect_set_enabled(RID p_effect, bool p_enabled);
-	static bool compositor_effect_get_enabled(RID p_effect);
+	void compositor_effect_set_enabled(RID p_effect, bool p_enabled);
+	bool compositor_effect_get_enabled(RID p_effect);
 
-	static RSE::CompositorEffectCallbackType compositor_effect_get_callback_type(RID p_effect);
+	RSE::CompositorEffectCallbackType compositor_effect_get_callback_type(RID p_effect);
 
-	static void compositor_effect_set_flag(
+	void compositor_effect_set_flag(
 		RID p_effect, RSE::CompositorEffectFlags p_flag, bool p_set);
-	static bool compositor_effect_get_flag(RID p_effect, RSE::CompositorEffectFlags p_flag);
+	bool compositor_effect_get_flag(RID p_effect, RSE::CompositorEffectFlags p_flag);
 
 	// Compositor
-	static RID compositor_allocate();
-	static void compositor_initialize(RID p_rid);
-	static void compositor_free(RID p_rid);
+	RID compositor_allocate();
+	void compositor_initialize(RID p_rid);
+	void compositor_free(RID p_rid);
 
-	static bool is_compositor(RID p_compositor) { return compositor_owner.owns(p_compositor); }
+	inline bool is_compositor(RID p_compositor) { return compositor_owner.owns(p_compositor); }
 
-	static void compositor_set_compositor_effects(RID p_compositor, const Vector<RID>& p_effects);
-	static Vector<RID> compositor_get_compositor_effects(RID p_compositor,
+	void compositor_set_compositor_effects(RID p_compositor, const Vector<RID>& p_effects);
+	Vector<RID> compositor_get_compositor_effects(RID p_compositor,
 		RSE::CompositorEffectCallbackType p_callback_type =
 			RSE::COMPOSITOR_EFFECT_CALLBACK_TYPE_ANY,
 		bool p_enabled_only = true);
-};
+} // namespace RendererCompositorStorage
 
 #include "core/io/ip.h"
 
-class RendererEnvironmentStorage final
+namespace RendererEnvironmentStorage
 {
-public:
-	RendererEnvironmentStorage() = delete;
-	~RendererEnvironmentStorage() = delete;
-	RendererEnvironmentStorage(const RendererEnvironmentStorage&) = delete;
-	RendererEnvironmentStorage& operator=(const RendererEnvironmentStorage&) = delete;
 
 	union TonemapParameters
 	{
@@ -14551,9 +14467,7 @@ public:
 			float awp_w;
 		};
 	};
-
-private:
-	static inline bool _initialized = false;
+	inline bool _initialized = false;
 
 	// Environment
 	struct Environment
@@ -14676,180 +14590,178 @@ private:
 		RID color_correction;
 	};
 
-	static inline RID_Owner<Environment, true> environment_owner;
+	inline RID_Owner<Environment, true> environment_owner;
+	void initialize();
+	void finalize();
 
-public:
-	static void initialize();
-	static void finalize();
-
-	static bool is_initialized() { return _initialized; }
+	inline bool is_initialized() { return _initialized; }
 
 	// Environment
-	static RID environment_allocate();
-	static void environment_initialize(RID p_rid);
-	static void environment_free(RID p_rid);
+	RID environment_allocate();
+	void environment_initialize(RID p_rid);
+	void environment_free(RID p_rid);
 
-	static bool is_environment(RID p_environment) { return environment_owner.owns(p_environment); }
+	inline bool is_environment(RID p_environment) { return environment_owner.owns(p_environment); }
 
 	// Background
-	static void environment_set_background(RID p_env, RSE::EnvironmentBG p_bg);
-	static void environment_set_sky(RID p_env, RID p_sky);
-	static void environment_set_sky_custom_fov(RID p_env, float p_scale);
-	static void environment_set_sky_orientation(RID p_env, const Basis& p_orientation);
-	static void environment_set_bg_color(RID p_env, const Color& p_color);
-	static void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
-	static void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
-	static void environment_set_ambient_light(RID p_env, const Color& p_color,
+	void environment_set_background(RID p_env, RSE::EnvironmentBG p_bg);
+	void environment_set_sky(RID p_env, RID p_sky);
+	void environment_set_sky_custom_fov(RID p_env, float p_scale);
+	void environment_set_sky_orientation(RID p_env, const Basis& p_orientation);
+	void environment_set_bg_color(RID p_env, const Color& p_color);
+	void environment_set_bg_energy(RID p_env, float p_multiplier, float p_exposure_value);
+	void environment_set_canvas_max_layer(RID p_env, int p_max_layer);
+	void environment_set_ambient_light(RID p_env, const Color& p_color,
 		RSE::EnvironmentAmbientSource p_ambient = RSE::ENV_AMBIENT_SOURCE_BG, float p_energy = 1.0,
 		float p_sky_contribution = 0.0,
 		RSE::EnvironmentReflectionSource p_reflection_source = RSE::ENV_REFLECTION_SOURCE_BG);
-	static void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id);
-	static int environment_get_camera_feed_id(RID p_env);
+	void environment_set_camera_feed_id(RID p_env, int p_camera_feed_id);
+	int environment_get_camera_feed_id(RID p_env);
 
-	static RSE::EnvironmentBG environment_get_background(RID p_env);
-	static RID environment_get_sky(RID p_env);
-	static float environment_get_sky_custom_fov(RID p_env);
-	static Basis environment_get_sky_orientation(RID p_env);
-	static Color environment_get_bg_color(RID p_env);
-	static float environment_get_bg_energy_multiplier(RID p_env);
-	static float environment_get_bg_intensity(RID p_env);
-	static int environment_get_canvas_max_layer(RID p_env);
-	static RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_env);
-	static Color environment_get_ambient_light(RID p_env);
-	static float environment_get_ambient_light_energy(RID p_env);
-	static float environment_get_ambient_sky_contribution(RID p_env);
-	static RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_env);
+	RSE::EnvironmentBG environment_get_background(RID p_env);
+	RID environment_get_sky(RID p_env);
+	float environment_get_sky_custom_fov(RID p_env);
+	Basis environment_get_sky_orientation(RID p_env);
+	Color environment_get_bg_color(RID p_env);
+	float environment_get_bg_energy_multiplier(RID p_env);
+	float environment_get_bg_intensity(RID p_env);
+	int environment_get_canvas_max_layer(RID p_env);
+	RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_env);
+	Color environment_get_ambient_light(RID p_env);
+	float environment_get_ambient_light_energy(RID p_env);
+	float environment_get_ambient_sky_contribution(RID p_env);
+	RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_env);
 
 	// Tonemap
-	static void environment_set_tonemap(
+	void environment_set_tonemap(
 		RID p_env, RSE::EnvironmentToneMapper p_tone_mapper, float p_exposure, float p_white);
-	static RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_env);
-	static float environment_get_exposure(RID p_env);
-	static float environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value);
-	static void environment_set_tonemap_agx_contrast(RID p_env, float p_agx_contrast);
-	static float environment_get_tonemap_agx_contrast(RID p_env);
-	static TonemapParameters environment_get_tonemap_parameters(
+	RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_env);
+	float environment_get_exposure(RID p_env);
+	float environment_get_white(RID p_env, bool p_limit_agx_white, float p_output_max_value);
+	void environment_set_tonemap_agx_contrast(RID p_env, float p_agx_contrast);
+	float environment_get_tonemap_agx_contrast(RID p_env);
+	TonemapParameters environment_get_tonemap_parameters(
 		RID p_env, bool p_limit_agx_white, float p_output_max_value);
 
 	// Fog
-	static void environment_set_fog(RID p_env, bool p_enable, const Color& p_light_color,
+	void environment_set_fog(RID p_env, bool p_enable, const Color& p_light_color,
 		float p_light_energy, float p_sun_scatter, float p_density, float p_height,
 		float p_height_density, float p_aerial_perspective, float p_sky_affect,
 		RSE::EnvironmentFogMode p_mode);
-	static bool environment_get_fog_enabled(RID p_env);
-	static RSE::EnvironmentFogMode environment_get_fog_mode(RID p_env);
-	static Color environment_get_fog_light_color(RID p_env);
-	static float environment_get_fog_light_energy(RID p_env);
-	static float environment_get_fog_sun_scatter(RID p_env);
-	static float environment_get_fog_density(RID p_env);
-	static float environment_get_fog_sky_affect(RID p_env);
-	static float environment_get_fog_height(RID p_env);
-	static float environment_get_fog_height_density(RID p_env);
-	static float environment_get_fog_aerial_perspective(RID p_env);
+	bool environment_get_fog_enabled(RID p_env);
+	RSE::EnvironmentFogMode environment_get_fog_mode(RID p_env);
+	Color environment_get_fog_light_color(RID p_env);
+	float environment_get_fog_light_energy(RID p_env);
+	float environment_get_fog_sun_scatter(RID p_env);
+	float environment_get_fog_density(RID p_env);
+	float environment_get_fog_sky_affect(RID p_env);
+	float environment_get_fog_height(RID p_env);
+	float environment_get_fog_height_density(RID p_env);
+	float environment_get_fog_aerial_perspective(RID p_env);
 
 	// Depth Fog
-	static void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end);
-	static float environment_get_fog_depth_curve(RID p_env);
-	static float environment_get_fog_depth_begin(RID p_env);
-	static float environment_get_fog_depth_end(RID p_env);
+	void environment_set_fog_depth(RID p_env, float p_curve, float p_begin, float p_end);
+	float environment_get_fog_depth_curve(RID p_env);
+	float environment_get_fog_depth_begin(RID p_env);
+	float environment_get_fog_depth_end(RID p_env);
 
 	// Volumetric Fog
-	static void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density,
+	void environment_set_volumetric_fog(RID p_env, bool p_enable, float p_density,
 		const Color& p_albedo, const Color& p_emission, float p_emission_energy, float p_anisotropy,
 		float p_length, float p_detail_spread, float p_gi_inject, bool p_temporal_reprojection,
 		float p_temporal_reprojection_amount, float p_ambient_inject, float p_sky_affect);
-	static bool environment_get_volumetric_fog_enabled(RID p_env);
-	static float environment_get_volumetric_fog_density(RID p_env);
-	static Color environment_get_volumetric_fog_scattering(RID p_env);
-	static Color environment_get_volumetric_fog_emission(RID p_env);
-	static float environment_get_volumetric_fog_emission_energy(RID p_env);
-	static float environment_get_volumetric_fog_anisotropy(RID p_env);
-	static float environment_get_volumetric_fog_length(RID p_env);
-	static float environment_get_volumetric_fog_detail_spread(RID p_env);
-	static float environment_get_volumetric_fog_gi_inject(RID p_env);
-	static float environment_get_volumetric_fog_sky_affect(RID p_env);
-	static bool environment_get_volumetric_fog_temporal_reprojection(RID p_env);
-	static float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env);
-	static float environment_get_volumetric_fog_ambient_inject(RID p_env);
+	bool environment_get_volumetric_fog_enabled(RID p_env);
+	float environment_get_volumetric_fog_density(RID p_env);
+	Color environment_get_volumetric_fog_scattering(RID p_env);
+	Color environment_get_volumetric_fog_emission(RID p_env);
+	float environment_get_volumetric_fog_emission_energy(RID p_env);
+	float environment_get_volumetric_fog_anisotropy(RID p_env);
+	float environment_get_volumetric_fog_length(RID p_env);
+	float environment_get_volumetric_fog_detail_spread(RID p_env);
+	float environment_get_volumetric_fog_gi_inject(RID p_env);
+	float environment_get_volumetric_fog_sky_affect(RID p_env);
+	bool environment_get_volumetric_fog_temporal_reprojection(RID p_env);
+	float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_env);
+	float environment_get_volumetric_fog_ambient_inject(RID p_env);
 
 	// GLOW
-	static void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels,
+	void environment_set_glow(RID p_env, bool p_enable, Vector<float> p_levels,
 		float p_intensity, float p_strength, float p_mix, float p_bloom_threshold,
 		RSE::EnvironmentGlowBlendMode p_blend_mode, float p_hdr_bleed_threshold,
 		float p_hdr_bleed_scale, float p_hdr_luminance_cap, float p_glow_map_strength,
 		RID p_glow_map);
-	static bool environment_get_glow_enabled(RID p_env);
-	static Vector<float> environment_get_glow_levels(RID p_env);
-	static float environment_get_glow_intensity(RID p_env);
-	static float environment_get_glow_strength(RID p_env);
-	static float environment_get_glow_bloom(RID p_env);
-	static float environment_get_glow_mix(RID p_env);
-	static RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_env);
-	static float environment_get_glow_hdr_bleed_threshold(RID p_env);
-	static float environment_get_glow_hdr_luminance_cap(RID p_env);
-	static float environment_get_glow_hdr_bleed_scale(RID p_env);
-	static float environment_get_glow_map_strength(RID p_env);
-	static RID environment_get_glow_map(RID p_env);
+	bool environment_get_glow_enabled(RID p_env);
+	Vector<float> environment_get_glow_levels(RID p_env);
+	float environment_get_glow_intensity(RID p_env);
+	float environment_get_glow_strength(RID p_env);
+	float environment_get_glow_bloom(RID p_env);
+	float environment_get_glow_mix(RID p_env);
+	RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_env);
+	float environment_get_glow_hdr_bleed_threshold(RID p_env);
+	float environment_get_glow_hdr_luminance_cap(RID p_env);
+	float environment_get_glow_hdr_bleed_scale(RID p_env);
+	float environment_get_glow_map_strength(RID p_env);
+	RID environment_get_glow_map(RID p_env);
 
 	// SSR
-	static void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int,
+	void environment_set_ssr(RID p_env, bool p_enable, int p_max_steps, float p_fade_int,
 		float p_fade_out, float p_depth_tolerance);
-	static bool environment_get_ssr_enabled(RID p_env);
-	static int environment_get_ssr_max_steps(RID p_env);
-	static float environment_get_ssr_fade_in(RID p_env);
-	static float environment_get_ssr_fade_out(RID p_env);
-	static float environment_get_ssr_depth_tolerance(RID p_env);
+	bool environment_get_ssr_enabled(RID p_env);
+	int environment_get_ssr_max_steps(RID p_env);
+	float environment_get_ssr_fade_in(RID p_env);
+	float environment_get_ssr_fade_out(RID p_env);
+	float environment_get_ssr_depth_tolerance(RID p_env);
 
 	// SSAO
-	static void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity,
+	void environment_set_ssao(RID p_env, bool p_enable, float p_radius, float p_intensity,
 		float p_power, float p_detail, float p_horizon, float p_sharpness, float p_light_affect,
 		float p_ao_channel_affect);
-	static bool environment_get_ssao_enabled(RID p_env);
-	static float environment_get_ssao_radius(RID p_env);
-	static float environment_get_ssao_intensity(RID p_env);
-	static float environment_get_ssao_power(RID p_env);
-	static float environment_get_ssao_detail(RID p_env);
-	static float environment_get_ssao_horizon(RID p_env);
-	static float environment_get_ssao_sharpness(RID p_env);
-	static float environment_get_ssao_direct_light_affect(RID p_env);
-	static float environment_get_ssao_ao_channel_affect(RID p_env);
+	bool environment_get_ssao_enabled(RID p_env);
+	float environment_get_ssao_radius(RID p_env);
+	float environment_get_ssao_intensity(RID p_env);
+	float environment_get_ssao_power(RID p_env);
+	float environment_get_ssao_detail(RID p_env);
+	float environment_get_ssao_horizon(RID p_env);
+	float environment_get_ssao_sharpness(RID p_env);
+	float environment_get_ssao_direct_light_affect(RID p_env);
+	float environment_get_ssao_ao_channel_affect(RID p_env);
 
 	// SSIL
-	static void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity,
+	void environment_set_ssil(RID p_env, bool p_enable, float p_radius, float p_intensity,
 		float p_sharpness, float p_normal_rejection);
-	static bool environment_get_ssil_enabled(RID p_env);
-	static float environment_get_ssil_radius(RID p_env);
-	static float environment_get_ssil_intensity(RID p_env);
-	static float environment_get_ssil_sharpness(RID p_env);
-	static float environment_get_ssil_normal_rejection(RID p_env);
+	bool environment_get_ssil_enabled(RID p_env);
+	float environment_get_ssil_radius(RID p_env);
+	float environment_get_ssil_intensity(RID p_env);
+	float environment_get_ssil_sharpness(RID p_env);
+	float environment_get_ssil_normal_rejection(RID p_env);
 
 	// SDFGI
-	static void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades,
+	void environment_set_sdfgi(RID p_env, bool p_enable, int p_cascades,
 		float p_min_cell_size, RSE::EnvironmentSDFGIYScale p_y_scale, bool p_use_occlusion,
 		float p_bounce_feedback, bool p_read_sky, float p_energy, float p_normal_bias,
 		float p_probe_bias);
-	static bool environment_get_sdfgi_enabled(RID p_env);
-	static int environment_get_sdfgi_cascades(RID p_env);
-	static float environment_get_sdfgi_min_cell_size(RID p_env);
-	static bool environment_get_sdfgi_use_occlusion(RID p_env);
-	static float environment_get_sdfgi_bounce_feedback(RID p_env);
-	static bool environment_get_sdfgi_read_sky_light(RID p_env);
-	static float environment_get_sdfgi_energy(RID p_env);
-	static float environment_get_sdfgi_normal_bias(RID p_env);
-	static float environment_get_sdfgi_probe_bias(RID p_env);
-	static RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_env);
+	bool environment_get_sdfgi_enabled(RID p_env);
+	int environment_get_sdfgi_cascades(RID p_env);
+	float environment_get_sdfgi_min_cell_size(RID p_env);
+	bool environment_get_sdfgi_use_occlusion(RID p_env);
+	float environment_get_sdfgi_bounce_feedback(RID p_env);
+	bool environment_get_sdfgi_read_sky_light(RID p_env);
+	float environment_get_sdfgi_energy(RID p_env);
+	float environment_get_sdfgi_normal_bias(RID p_env);
+	float environment_get_sdfgi_probe_bias(RID p_env);
+	RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_env);
 
 	// Adjustment
-	static void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness,
+	void environment_set_adjustment(RID p_env, bool p_enable, float p_brightness,
 		float p_contrast, float p_saturation, bool p_use_1d_color_correction,
 		RID p_color_correction);
-	static bool environment_get_adjustments_enabled(RID p_env);
-	static float environment_get_adjustments_brightness(RID p_env);
-	static float environment_get_adjustments_contrast(RID p_env);
-	static float environment_get_adjustments_saturation(RID p_env);
-	static bool environment_get_use_1d_color_correction(RID p_env);
-	static RID environment_get_color_correction(RID p_env);
-};
+	bool environment_get_adjustments_enabled(RID p_env);
+	float environment_get_adjustments_brightness(RID p_env);
+	float environment_get_adjustments_contrast(RID p_env);
+	float environment_get_adjustments_saturation(RID p_env);
+	bool environment_get_use_1d_color_correction(RID p_env);
+	RID environment_get_color_correction(RID p_env);
+} // namespace RendererEnvironmentStorage
 
 #include "core/io/ip.h"
 
@@ -16799,75 +16711,70 @@ struct InterpolationData
         &multimesh_transform_update_lists[1];
 };
 
-class RendererMeshStorage final
+namespace RendererMeshStorage
 {
-public:
-    RendererMeshStorage() = delete;
-    RendererMeshStorage(const RendererMeshStorage&) = delete;
-    RendererMeshStorage& operator=(const RendererMeshStorage&) = delete;
-    ~RendererMeshStorage() = delete;
 
     /* MESH API */
 
-    inline static RID (*mesh_allocate)() = nullptr;
-    inline static void (*mesh_initialize)(RID p_rid) = nullptr;
-    inline static void (*mesh_free)(RID p_rid) = nullptr;
+    inline RID (*mesh_allocate)() = nullptr;
+    inline void (*mesh_initialize)(RID p_rid) = nullptr;
+    inline void (*mesh_free)(RID p_rid) = nullptr;
 
-    inline static void (*mesh_set_blend_shape_count)(RID p_mesh, int p_blend_shape_count) = nullptr;
-    inline static bool (*mesh_needs_instance)(RID p_mesh, bool p_has_skeleton) = nullptr;
+    inline void (*mesh_set_blend_shape_count)(RID p_mesh, int p_blend_shape_count) = nullptr;
+    inline bool (*mesh_needs_instance)(RID p_mesh, bool p_has_skeleton) = nullptr;
 
-    inline static void (*mesh_add_surface)(
+    inline void (*mesh_add_surface)(
         RID p_mesh, const RenderingServerTypes::SurfaceData& p_surface) = nullptr;
 
-    inline static int (*mesh_get_blend_shape_count)(RID p_mesh) = nullptr;
+    inline int (*mesh_get_blend_shape_count)(RID p_mesh) = nullptr;
 
-    inline static void (*mesh_set_blend_shape_mode)(RID p_mesh, RSE::BlendShapeMode p_mode) = nullptr;
-    inline static RSE::BlendShapeMode (*mesh_get_blend_shape_mode)(RID p_mesh) = nullptr;
+    inline void (*mesh_set_blend_shape_mode)(RID p_mesh, RSE::BlendShapeMode p_mode) = nullptr;
+    inline RSE::BlendShapeMode (*mesh_get_blend_shape_mode)(RID p_mesh) = nullptr;
 
-    inline static void (*mesh_surface_update_vertex_region)(
+    inline void (*mesh_surface_update_vertex_region)(
         RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
-    inline static void (*mesh_surface_update_attribute_region)(
+    inline void (*mesh_surface_update_attribute_region)(
         RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
-    inline static void (*mesh_surface_update_skin_region)(
+    inline void (*mesh_surface_update_skin_region)(
         RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
-    inline static void (*mesh_surface_update_index_region)(
+    inline void (*mesh_surface_update_index_region)(
         RID p_mesh, int p_surface, int p_offset, const Vector<uint8_t>& p_data) = nullptr;
 
-    inline static void (*mesh_surface_set_material)(RID p_mesh, int p_surface, RID p_material) = nullptr;
-    inline static RID (*mesh_surface_get_material)(RID p_mesh, int p_surface) = nullptr;
+    inline void (*mesh_surface_set_material)(RID p_mesh, int p_surface, RID p_material) = nullptr;
+    inline RID (*mesh_surface_get_material)(RID p_mesh, int p_surface) = nullptr;
 
-    inline static RenderingServerTypes::SurfaceData (*mesh_get_surface)(RID p_mesh, int p_surface) = nullptr;
+    inline RenderingServerTypes::SurfaceData (*mesh_get_surface)(RID p_mesh, int p_surface) = nullptr;
 
-    inline static RID (*mesh_surface_get_vertex_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
-    inline static RID (*mesh_surface_get_attribute_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
-    inline static RID (*mesh_surface_get_skin_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
-    inline static RID (*mesh_surface_get_index_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline RID (*mesh_surface_get_vertex_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline RID (*mesh_surface_get_attribute_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline RID (*mesh_surface_get_skin_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
+    inline RID (*mesh_surface_get_index_buffer_rd_rid)(RID p_mesh, int p_surface) = nullptr;
 
-    inline static int (*mesh_get_surface_count)(RID p_mesh) = nullptr;
+    inline int (*mesh_get_surface_count)(RID p_mesh) = nullptr;
 
-    inline static void (*mesh_set_custom_aabb)(RID p_mesh, const AABB& p_aabb) = nullptr;
-    inline static AABB (*mesh_get_custom_aabb)(RID p_mesh) = nullptr;
-    inline static AABB (*mesh_get_aabb)(RID p_mesh, RID p_skeleton) = nullptr;
+    inline void (*mesh_set_custom_aabb)(RID p_mesh, const AABB& p_aabb) = nullptr;
+    inline AABB (*mesh_get_custom_aabb)(RID p_mesh) = nullptr;
+    inline AABB (*mesh_get_aabb)(RID p_mesh, RID p_skeleton) = nullptr;
 
-    inline static void (*mesh_set_path)(RID p_mesh, const String& p_path) = nullptr;
-    inline static String (*mesh_get_path)(RID p_mesh) = nullptr;
-    inline static void (*mesh_set_shadow_mesh)(RID p_mesh, RID p_shadow_mesh) = nullptr;
+    inline void (*mesh_set_path)(RID p_mesh, const String& p_path) = nullptr;
+    inline String (*mesh_get_path)(RID p_mesh) = nullptr;
+    inline void (*mesh_set_shadow_mesh)(RID p_mesh, RID p_shadow_mesh) = nullptr;
 
-    inline static void (*mesh_clear)(RID p_mesh) = nullptr;
-    inline static void (*mesh_surface_remove)(RID p_mesh, int p_surface) = nullptr;
-    inline static void (*mesh_debug_usage)(List<RenderingServerTypes::MeshInfo>* r_info) = nullptr;
+    inline void (*mesh_clear)(RID p_mesh) = nullptr;
+    inline void (*mesh_surface_remove)(RID p_mesh, int p_surface) = nullptr;
+    inline void (*mesh_debug_usage)(List<RenderingServerTypes::MeshInfo>* r_info) = nullptr;
 
     /* MESH INSTANCE API */
 
-    inline static RID (*mesh_instance_create)(RID p_base) = nullptr;
-    inline static void (*mesh_instance_free)(RID p_mesh_instance) = nullptr;
-    inline static void (*mesh_instance_set_skeleton)(RID p_mesh_instance, RID p_skeleton) = nullptr;
-    inline static void (*mesh_instance_set_blend_shape_weight)(
+    inline RID (*mesh_instance_create)(RID p_base) = nullptr;
+    inline void (*mesh_instance_free)(RID p_mesh_instance) = nullptr;
+    inline void (*mesh_instance_set_skeleton)(RID p_mesh_instance, RID p_skeleton) = nullptr;
+    inline void (*mesh_instance_set_blend_shape_weight)(
         RID p_mesh_instance, int p_shape, float p_weight) = nullptr;
-    inline static void (*mesh_instance_check_for_update)(RID p_mesh_instance) = nullptr;
-    inline static void (*mesh_instance_set_canvas_item_transform)(
+    inline void (*mesh_instance_check_for_update)(RID p_mesh_instance) = nullptr;
+    inline void (*mesh_instance_set_canvas_item_transform)(
         RID p_mesh_instance, const Transform2D& p_transform) = nullptr;
-    inline static void (*update_mesh_instances)() = nullptr;
+    inline void (*update_mesh_instances)() = nullptr;
 
     /* MULTIMESH STRUCTS & BACKEND DISPATCH HOOKS */
 
@@ -16893,128 +16800,124 @@ public:
         Vector<float> _data_interpolated;
     };
 
-    inline static RID (*_multimesh_allocate)() = nullptr;
-    inline static void (*_multimesh_initialize)(RID p_rid) = nullptr;
-    inline static void (*_multimesh_free)(RID p_rid) = nullptr;
+    inline RID (*_multimesh_allocate)() = nullptr;
+    inline void (*_multimesh_initialize)(RID p_rid) = nullptr;
+    inline void (*_multimesh_free)(RID p_rid) = nullptr;
 
-    inline static void (*_multimesh_allocate_data)(RID p_multimesh, int p_instances,
+    inline void (*_multimesh_allocate_data)(RID p_multimesh, int p_instances,
         RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors,
         bool p_use_custom_data, bool p_use_indirect) = nullptr;
 
-    inline static int (*_multimesh_get_instance_count)(RID p_multimesh) = nullptr;
+    inline int (*_multimesh_get_instance_count)(RID p_multimesh) = nullptr;
 
-    inline static void (*_multimesh_set_mesh)(RID p_multimesh, RID p_mesh) = nullptr;
-    inline static void (*_multimesh_instance_set_transform)(
+    inline void (*_multimesh_set_mesh)(RID p_multimesh, RID p_mesh) = nullptr;
+    inline void (*_multimesh_instance_set_transform)(
         RID p_multimesh, int p_index, const Transform3D& p_transform) = nullptr;
-    inline static void (*_multimesh_instance_set_transform_2d)(
+    inline void (*_multimesh_instance_set_transform_2d)(
         RID p_multimesh, int p_index, const Transform2D& p_transform) = nullptr;
-    inline static void (*_multimesh_instance_set_color)(
+    inline void (*_multimesh_instance_set_color)(
         RID p_multimesh, int p_index, const Color& p_color) = nullptr;
-    inline static void (*_multimesh_instance_set_custom_data)(
+    inline void (*_multimesh_instance_set_custom_data)(
         RID p_multimesh, int p_index, const Color& p_color) = nullptr;
 
-    inline static void (*_multimesh_set_custom_aabb)(RID p_multimesh, const AABB& p_aabb) = nullptr;
-    inline static AABB (*_multimesh_get_custom_aabb)(RID p_multimesh) = nullptr;
+    inline void (*_multimesh_set_custom_aabb)(RID p_multimesh, const AABB& p_aabb) = nullptr;
+    inline AABB (*_multimesh_get_custom_aabb)(RID p_multimesh) = nullptr;
 
-    inline static RID (*_multimesh_get_mesh)(RID p_multimesh) = nullptr;
+    inline RID (*_multimesh_get_mesh)(RID p_multimesh) = nullptr;
 
-    inline static Transform3D (*_multimesh_instance_get_transform)(RID p_multimesh, int p_index) = nullptr;
-    inline static Transform2D (*_multimesh_instance_get_transform_2d)(RID p_multimesh, int p_index) = nullptr;
-    inline static Color (*_multimesh_instance_get_color)(RID p_multimesh, int p_index) = nullptr;
-    inline static Color (*_multimesh_instance_get_custom_data)(RID p_multimesh, int p_index) = nullptr;
+    inline Transform3D (*_multimesh_instance_get_transform)(RID p_multimesh, int p_index) = nullptr;
+    inline Transform2D (*_multimesh_instance_get_transform_2d)(RID p_multimesh, int p_index) = nullptr;
+    inline Color (*_multimesh_instance_get_color)(RID p_multimesh, int p_index) = nullptr;
+    inline Color (*_multimesh_instance_get_custom_data)(RID p_multimesh, int p_index) = nullptr;
 
-    inline static void (*_multimesh_set_buffer)(RID p_multimesh, const Vector<float>& p_buffer) = nullptr;
-    inline static RID (*_multimesh_get_command_buffer_rd_rid)(RID p_multimesh) = nullptr;
-    inline static RID (*_multimesh_get_buffer_rd_rid)(RID p_multimesh) = nullptr;
-    inline static Vector<float> (*_multimesh_get_buffer)(RID p_multimesh) = nullptr;
+    inline void (*_multimesh_set_buffer)(RID p_multimesh, const Vector<float>& p_buffer) = nullptr;
+    inline RID (*_multimesh_get_command_buffer_rd_rid)(RID p_multimesh) = nullptr;
+    inline RID (*_multimesh_get_buffer_rd_rid)(RID p_multimesh) = nullptr;
+    inline Vector<float> (*_multimesh_get_buffer)(RID p_multimesh) = nullptr;
 
-    inline static void (*_multimesh_set_visible_instances)(RID p_multimesh, int p_visible) = nullptr;
-    inline static int (*_multimesh_get_visible_instances)(RID p_multimesh) = nullptr;
+    inline void (*_multimesh_set_visible_instances)(RID p_multimesh, int p_visible) = nullptr;
+    inline int (*_multimesh_get_visible_instances)(RID p_multimesh) = nullptr;
 
-    inline static AABB (*_multimesh_get_aabb)(RID p_multimesh) = nullptr;
+    inline AABB (*_multimesh_get_aabb)(RID p_multimesh) = nullptr;
 
-    inline static MultiMeshInterpolator* (*_multimesh_get_interpolator)(RID p_multimesh) = nullptr;
+    inline MultiMeshInterpolator* (*_multimesh_get_interpolator)(RID p_multimesh) = nullptr;
 
     /* MULTIMESH PUBLIC FRONTEND API */
 
-    static _FORCE_INLINE_ RID multimesh_allocate() { return _multimesh_allocate(); }
-    static _FORCE_INLINE_ void multimesh_initialize(RID p_rid) { _multimesh_initialize(p_rid); }
-    static _FORCE_INLINE_ void multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
+    _FORCE_INLINE_ RID multimesh_allocate() { return _multimesh_allocate(); }
+    _FORCE_INLINE_ void multimesh_initialize(RID p_rid) { _multimesh_initialize(p_rid); }
+    _FORCE_INLINE_ void multimesh_free(RID p_rid) { _multimesh_free(p_rid); }
 
-    static void multimesh_allocate_data(RID p_multimesh, int p_instances,
+    void multimesh_allocate_data(RID p_multimesh, int p_instances,
         RSE::MultimeshTransformFormat p_transform_format, bool p_use_colors = false,
         bool p_use_custom_data = false, bool p_use_indirect = false);
 
-    static int multimesh_get_instance_count(RID p_multimesh);
+    int multimesh_get_instance_count(RID p_multimesh);
 
-    static void multimesh_set_mesh(RID p_multimesh, RID p_mesh);
-    static void multimesh_instance_set_transform(
+    void multimesh_set_mesh(RID p_multimesh, RID p_mesh);
+    void multimesh_instance_set_transform(
         RID p_multimesh, int p_index, const Transform3D& p_transform);
-    static void multimesh_instance_set_transform_2d(
+    void multimesh_instance_set_transform_2d(
         RID p_multimesh, int p_index, const Transform2D& p_transform);
-    static void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color);
-    static void multimesh_instance_set_custom_data(
+    void multimesh_instance_set_color(RID p_multimesh, int p_index, const Color& p_color);
+    void multimesh_instance_set_custom_data(
         RID p_multimesh, int p_index, const Color& p_color);
 
-    static void multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
-    static AABB multimesh_get_custom_aabb(RID p_multimesh);
+    void multimesh_set_custom_aabb(RID p_multimesh, const AABB& p_aabb);
+    AABB multimesh_get_custom_aabb(RID p_multimesh);
 
-    static RID multimesh_get_mesh(RID p_multimesh);
+    RID multimesh_get_mesh(RID p_multimesh);
 
-    static Transform3D multimesh_instance_get_transform(RID p_multimesh, int p_index);
-    static Transform2D multimesh_instance_get_transform_2d(RID p_multimesh, int p_index);
-    static Color multimesh_instance_get_color(RID p_multimesh, int p_index);
-    static Color multimesh_instance_get_custom_data(RID p_multimesh, int p_index);
+    Transform3D multimesh_instance_get_transform(RID p_multimesh, int p_index);
+    Transform2D multimesh_instance_get_transform_2d(RID p_multimesh, int p_index);
+    Color multimesh_instance_get_color(RID p_multimesh, int p_index);
+    Color multimesh_instance_get_custom_data(RID p_multimesh, int p_index);
 
-    static void multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
-    static RID multimesh_get_command_buffer_rd_rid(RID p_multimesh);
-    static RID multimesh_get_buffer_rd_rid(RID p_multimesh);
-    static Vector<float> multimesh_get_buffer(RID p_multimesh);
+    void multimesh_set_buffer(RID p_multimesh, const Vector<float>& p_buffer);
+    RID multimesh_get_command_buffer_rd_rid(RID p_multimesh);
+    RID multimesh_get_buffer_rd_rid(RID p_multimesh);
+    Vector<float> multimesh_get_buffer(RID p_multimesh);
 
-    static void multimesh_set_buffer_interpolated(
+    void multimesh_set_buffer_interpolated(
         RID p_multimesh, const Vector<float>& p_buffer, const Vector<float>& p_buffer_prev);
-    static void multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated);
-    static void multimesh_set_physics_interpolation_quality(
+    void multimesh_set_physics_interpolated(RID p_multimesh, bool p_interpolated);
+    void multimesh_set_physics_interpolation_quality(
         RID p_multimesh, RSE::MultimeshPhysicsInterpolationQuality p_quality);
-    static void multimesh_instance_reset_physics_interpolation(RID p_multimesh, int p_index);
-    static void multimesh_instances_reset_physics_interpolation(RID p_multimesh);
+    void multimesh_instance_reset_physics_interpolation(RID p_multimesh, int p_index);
+    void multimesh_instances_reset_physics_interpolation(RID p_multimesh);
 
-    static void multimesh_set_visible_instances(RID p_multimesh, int p_visible);
-    static int multimesh_get_visible_instances(RID p_multimesh);
+    void multimesh_set_visible_instances(RID p_multimesh, int p_visible);
+    int multimesh_get_visible_instances(RID p_multimesh);
 
-    static AABB multimesh_get_aabb(RID p_multimesh);
-
-private:
-    static void _multimesh_add_to_interpolation_lists(RID p_multimesh, MultiMeshInterpolator& r_mmi);
-
-public:
+    AABB multimesh_get_aabb(RID p_multimesh);
+    void _multimesh_add_to_interpolation_lists(RID p_multimesh, MultiMeshInterpolator& r_mmi);
     /* SKELETON API */
 
-    inline static RID (*skeleton_allocate)() = nullptr;
-    inline static void (*skeleton_initialize)(RID p_rid) = nullptr;
-    inline static void (*skeleton_free)(RID p_rid) = nullptr;
+    inline RID (*skeleton_allocate)() = nullptr;
+    inline void (*skeleton_initialize)(RID p_rid) = nullptr;
+    inline void (*skeleton_free)(RID p_rid) = nullptr;
 
-    inline static void (*skeleton_allocate_data)(
+    inline void (*skeleton_allocate_data)(
         RID p_skeleton, int p_bones, bool p_2d_skeleton) = nullptr;
-    inline static void (*skeleton_set_base_transform_2d)(
+    inline void (*skeleton_set_base_transform_2d)(
         RID p_skeleton, const Transform2D& p_base_transform) = nullptr;
-    inline static int (*skeleton_get_bone_count)(RID p_skeleton) = nullptr;
-    inline static void (*skeleton_bone_set_transform)(
+    inline int (*skeleton_get_bone_count)(RID p_skeleton) = nullptr;
+    inline void (*skeleton_bone_set_transform)(
         RID p_skeleton, int p_bone, const Transform3D& p_transform) = nullptr;
-    inline static Transform3D (*skeleton_bone_get_transform)(RID p_skeleton, int p_bone) = nullptr;
-    inline static void (*skeleton_bone_set_transform_2d)(
+    inline Transform3D (*skeleton_bone_get_transform)(RID p_skeleton, int p_bone) = nullptr;
+    inline void (*skeleton_bone_set_transform_2d)(
         RID p_skeleton, int p_bone, const Transform2D& p_transform) = nullptr;
-    inline static Transform2D (*skeleton_bone_get_transform_2d)(RID p_skeleton, int p_bone) = nullptr;
+    inline Transform2D (*skeleton_bone_get_transform_2d)(RID p_skeleton, int p_bone) = nullptr;
 
-    inline static void (*skeleton_update_dependency)(RID p_base, DependencyTracker* p_instance) = nullptr;
+    inline void (*skeleton_update_dependency)(RID p_base, DependencyTracker* p_instance) = nullptr;
 
     /* INTERPOLATION */
 
-    inline static InterpolationData _interpolation_data;
+    inline InterpolationData _interpolation_data;
 
-    static void update_interpolation_tick(bool p_process = true);
-    static void update_interpolation_frame(bool p_process = true);
-};
+    void update_interpolation_tick(bool p_process = true);
+    void update_interpolation_frame(bool p_process = true);
+} // namespace RendererMeshStorage
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 #include "core/typedefs.h"
@@ -22994,11 +22897,9 @@ public:
 class XRInterface;
 class XRTracker;
 
-class XRServer final
+namespace XRServer
 {
-	static inline Mutex _thread_safe_;
-
-public:
+	inline Mutex _thread_safe_;
 	enum XRMode
 	{
 		XRMODE_DEFAULT, /* Default behavior, means we check project settings */
@@ -23031,9 +22932,7 @@ public:
 		RESET_BUT_KEEP_TILT = 1, /* reset rotation but keep tilt. */
 		DONT_RESET_ROTATION = 2, /* don't reset the rotation, we will only center on position */
 	};
-
-private:
-	static XRMode xr_mode;
+	inline XRMode xr_mode = XRMODE_DEFAULT;
 
 	// As we may be updating our main state for our next frame while we're still rendering our
 	// previous frame, we need to keep copies around.
@@ -23052,75 +22951,69 @@ private:
 		RenderState render_state;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void _set_render_world_scale(double p_world_scale);
-	static void _set_render_world_origin(const Transform3D& p_world_origin);
-	static void _set_render_reference_frame(const Transform3D& p_reference_frame);
+	void _set_render_world_scale(double p_world_scale);
+	void _set_render_world_origin(const Transform3D& p_world_origin);
+	void _set_render_reference_frame(const Transform3D& p_reference_frame);
 
-	static void set_render_world_scale(double p_world_scale);
-	static void set_render_world_origin(const Transform3D& p_world_origin);
-	static void set_render_reference_frame(const Transform3D& p_reference_frame);
+	void set_render_world_scale(double p_world_scale);
+	void set_render_world_origin(const Transform3D& p_world_origin);
+	void set_render_reference_frame(const Transform3D& p_reference_frame);
 
 #ifndef DISABLE_DEPRECATED
-	static void _bind_compatibility_methods();
-	static void _add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
-	static void _remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
-	static Ref<XRTracker> _get_tracker_bind_compat_90645(const String& p_name);
+	void _bind_compatibility_methods();
+	void _add_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	void _remove_tracker_bind_compat_90645(const Ref<XRTracker>& p_tracker);
+	Ref<XRTracker> _get_tracker_bind_compat_90645(const String& p_name);
 #endif
 
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	static XRMode get_xr_mode();
-	static void set_xr_mode(XRMode p_mode);
+	XRMode get_xr_mode();
+	void set_xr_mode(XRMode p_mode);
 
-	static double get_world_scale();
-	static void set_world_scale(double p_world_scale);
+	double get_world_scale();
+	void set_world_scale(double p_world_scale);
 
-	static Transform3D get_world_origin();
-	static void set_world_origin(const Transform3D& p_world_origin);
+	Transform3D get_world_origin();
+	void set_world_origin(const Transform3D& p_world_origin);
 
-	static Transform3D get_reference_frame();
-	static void clear_reference_frame();
-	static void center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height);
+	Transform3D get_reference_frame();
+	void clear_reference_frame();
+	void center_on_hmd(RotationMode p_rotation_mode, bool p_keep_height);
 
-	static Transform3D get_hmd_transform();
+	Transform3D get_hmd_transform();
 
-	static void set_camera_locked_to_origin(bool p_enable);
+	void set_camera_locked_to_origin(bool p_enable);
 
-	static inline bool is_camera_locked_to_origin()
+	inline bool is_camera_locked_to_origin()
 	{
 		return data ? data->camera_locked_to_origin : false;
 	}
 
-	static void add_interface(const Ref<XRInterface>& p_interface);
-	static void remove_interface(const Ref<XRInterface>& p_interface);
-	static int get_interface_count();
-	static Ref<XRInterface> get_interface(int p_index);
-	static Ref<XRInterface> find_interface(const String& p_name);
+	void add_interface(const Ref<XRInterface>& p_interface);
+	void remove_interface(const Ref<XRInterface>& p_interface);
+	int get_interface_count();
+	Ref<XRInterface> get_interface(int p_index);
+	Ref<XRInterface> find_interface(const String& p_name);
 
-	static Ref<XRInterface> get_primary_interface();
-	static void set_primary_interface(const Ref<XRInterface>& p_primary_interface);
+	Ref<XRInterface> get_primary_interface();
+	void set_primary_interface(const Ref<XRInterface>& p_primary_interface);
 
-	static void add_tracker(const Ref<XRTracker>& p_tracker);
-	static void remove_tracker(const Ref<XRTracker>& p_tracker);
-	static Ref<XRTracker> get_tracker(const String& p_name);
+	void add_tracker(const Ref<XRTracker>& p_tracker);
+	void remove_tracker(const Ref<XRTracker>& p_tracker);
+	Ref<XRTracker> get_tracker(const String& p_name);
 
-	static PackedStringArray get_suggested_tracker_names();
-	static PackedStringArray get_suggested_pose_names(const String& p_tracker_name);
+	PackedStringArray get_suggested_tracker_names();
+	PackedStringArray get_suggested_pose_names(const String& p_tracker_name);
 
-	static void _process();
-	static void pre_render();
-	static void end_frame();
-
-	XRServer() = delete;
-	XRServer(const XRServer&) = delete;
-	XRServer& operator=(const XRServer&) = delete;
-	~XRServer() = delete;
-};
+	void _process();
+	void pre_render();
+	void end_frame();
+} // namespace XRServer
 
 #define XR XRServer
 
@@ -24119,9 +24012,8 @@ private:
 
 class RenderingLightCuller;
 
-class RendererSceneCull final
+namespace RendererSceneCull
 {
-public:
 	enum
 	{
 		SDFGI_MAX_CASCADES = 8,
@@ -24132,8 +24024,8 @@ public:
 
 	/* EVENT QUEUING */
 
-	static void tick();
-	static void pre_draw(bool p_will_draw);
+	void tick();
+	void pre_draw(bool p_will_draw);
 
 	/* CAMERA API */
 
@@ -24172,26 +24064,26 @@ public:
 		}
 	};
 
-	static RID camera_allocate();
-	static void camera_initialize(RID p_rid);
+	RID camera_allocate();
+	void camera_initialize(RID p_rid);
 
-	static void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
-	static void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
-	static void camera_set_frustum(
+	void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far);
+	void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far);
+	void camera_set_frustum(
 		RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far);
-	static void camera_set_transform(RID p_camera, const Transform3D& p_transform);
-	static void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
-	static void camera_set_environment(RID p_camera, RID p_env);
-	static void camera_set_camera_attributes(RID p_camera, RID p_attributes);
-	static void camera_set_compositor(RID p_camera, RID p_compositor);
-	static void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
-	static bool is_camera(RID p_camera);
+	void camera_set_transform(RID p_camera, const Transform3D& p_transform);
+	void camera_set_cull_mask(RID p_camera, uint32_t p_layers);
+	void camera_set_environment(RID p_camera, RID p_env);
+	void camera_set_camera_attributes(RID p_camera, RID p_attributes);
+	void camera_set_compositor(RID p_camera, RID p_compositor);
+	void camera_set_use_vertical_aspect(RID p_camera, bool p_enable);
+	bool is_camera(RID p_camera);
 
 	/* OCCLUDER API */
 
-	static RID occluder_allocate();
-	static void occluder_initialize(RID p_occluder);
-	static void occluder_set_mesh(
+	RID occluder_allocate();
+	void occluder_initialize(RID p_occluder);
+	void occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
 
 	/* SCENARIO API */
@@ -24403,17 +24295,21 @@ public:
 		float children_fade_alpha = 1.0f;
 	};
 
+	void _instance_queue_update(
+		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false);
+	void _unpair_instance(Instance* p_instance);
+	void instance_set_base(RID p_instance, RID p_base);
+	void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
+	void instance_attach_skeleton(RID p_instance, RID p_skeleton);
+	void instance_geometry_set_material_override(RID p_instance, RID p_material);
+	void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+
 class _WARN_UNUSED_ VisibilityArray {
 	PagedArray<InstanceVisibilityData> array;
 	LocalVector<uint64_t> bin_limits;
 
 	// Implement if elements need to keep track of their own index in the array.
-	_FORCE_INLINE_ void _update_idx(InstanceVisibilityData &r_element, uint64_t p_idx) {
-		r_element.instance->visibility_index = p_idx;
-		if (r_element.instance->scenario && r_element.instance->array_index != -1) {
-			r_element.instance->scenario->instance_data[r_element.instance->array_index].visibility_index = p_idx;
-		}
-	}
+	_FORCE_INLINE_ void _update_idx(InstanceVisibilityData &r_element, uint64_t p_idx);
 
 	_FORCE_INLINE_ void _swap(uint64_t p_a, uint64_t p_b) {
 		SWAP(array[p_a], array[p_b]);
@@ -24590,24 +24486,24 @@ public:
 		}
 	};
 
-	static void _instance_pair(Instance* p_A, Instance* p_B);
-	static void _instance_unpair(Instance* p_A, Instance* p_B);
+	void _instance_pair(Instance* p_A, Instance* p_B);
+	void _instance_unpair(Instance* p_A, Instance* p_B);
 
-	static void _instance_update_mesh_instance(Instance* p_instance);
+	void _instance_update_mesh_instance(Instance* p_instance);
 
-	static RID scenario_allocate();
-	static void scenario_initialize(RID p_rid);
+	RID scenario_allocate();
+	void scenario_initialize(RID p_rid);
 
-	static void scenario_set_environment(RID p_scenario, RID p_environment);
-	static void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
-	static void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
-	static void scenario_set_compositor(RID p_scenario, RID p_compositor);
-	static void scenario_set_reflection_atlas_size(
+	void scenario_set_environment(RID p_scenario, RID p_environment);
+	void scenario_set_camera_attributes(RID p_scenario, RID p_attributes);
+	void scenario_set_fallback_environment(RID p_scenario, RID p_environment);
+	void scenario_set_compositor(RID p_scenario, RID p_compositor);
+	void scenario_set_reflection_atlas_size(
 		RID p_scenario, int p_reflection_size, int p_reflection_count);
-	static bool is_scenario(RID p_scenario);
-	static RID scenario_get_environment(RID p_scenario);
-	static void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
-	static void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	bool is_scenario(RID p_scenario);
+	RID scenario_get_environment(RID p_scenario);
+	void scenario_add_viewport_visibility_mask(RID p_scenario, RID p_viewport);
+	void scenario_remove_viewport_visibility_mask(RID p_scenario, RID p_viewport);
 
 	/* INSTANCING API */
 
@@ -24966,8 +24862,12 @@ public:
 		}
 	};
 
-	static void _instance_queue_update(
-		Instance* p_instance, bool p_update_aabb, bool p_update_dependencies = false);
+	_FORCE_INLINE_ void VisibilityArray::_update_idx(InstanceVisibilityData &r_element, uint64_t p_idx) {
+		r_element.instance->visibility_index = p_idx;
+		if (r_element.instance->scenario && r_element.instance->array_index != -1) {
+			r_element.instance->scenario->instance_data[r_element.instance->array_index].visibility_index = p_idx;
+		}
+	}
 
 	struct PairInstances
 	{
@@ -25166,66 +25066,66 @@ public:
 		}
 	};
 
-	static RID instance_allocate();
-	static void instance_initialize(RID p_rid);
+	RID instance_allocate();
+	void instance_initialize(RID p_rid);
 
-	static void instance_set_base(RID p_instance, RID p_base);
-	static void instance_set_scenario(RID p_instance, RID p_scenario);
-	static void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
-	static void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
-	static void instance_set_transform(RID p_instance, const Transform3D& p_transform);
-	static void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
-	static void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
-	static void instance_set_visible(RID p_instance, bool p_visible);
-	static void instance_geometry_set_transparency(RID p_instance, float p_transparency);
+	void instance_set_base(RID p_instance, RID p_base);
+	void instance_set_scenario(RID p_instance, RID p_scenario);
+	void instance_set_layer_mask(RID p_instance, uint32_t p_mask);
+	void instance_set_pivot_data(RID p_instance, float p_sorting_offset, bool p_use_aabb_center);
+	void instance_set_transform(RID p_instance, const Transform3D& p_transform);
+	void instance_set_blend_shape_weight(RID p_instance, int p_shape, float p_weight);
+	void instance_set_surface_override_material(RID p_instance, int p_surface, RID p_material);
+	void instance_set_visible(RID p_instance, bool p_visible);
+	void instance_geometry_set_transparency(RID p_instance, float p_transparency);
 
-	static void instance_teleport(RID p_instance);
+	void instance_teleport(RID p_instance);
 
-	static void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
+	void instance_set_custom_aabb(RID p_instance, AABB p_aabb);
 
-	static void instance_attach_skeleton(RID p_instance, RID p_skeleton);
+	void instance_attach_skeleton(RID p_instance, RID p_skeleton);
 
-	static void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
+	void instance_set_extra_visibility_margin(RID p_instance, real_t p_margin);
 
-	static void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
+	void instance_set_visibility_parent(RID p_instance, RID p_parent_instance);
 
-	static void instance_set_ignore_culling(RID p_instance, bool p_enabled);
+	void instance_set_ignore_culling(RID p_instance, bool p_enabled);
 
-	static bool _update_instance_visibility_depth(Instance* p_instance);
-	static void _update_instance_visibility_dependencies(Instance* p_instance);
+	bool _update_instance_visibility_depth(Instance* p_instance);
+	void _update_instance_visibility_dependencies(Instance* p_instance);
 
-	static void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
-	static void instance_geometry_set_cast_shadows_setting(
+	void instance_geometry_set_flag(RID p_instance, RSE::InstanceFlags p_flags, bool p_enabled);
+	void instance_geometry_set_cast_shadows_setting(
 		RID p_instance, RSE::ShadowCastingSetting p_shadow_casting_setting);
-	static void instance_geometry_set_material_override(RID p_instance, RID p_material);
-	static void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
+	void instance_geometry_set_material_override(RID p_instance, RID p_material);
+	void instance_geometry_set_material_overlay(RID p_instance, RID p_material);
 
-	static void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
+	void instance_geometry_set_visibility_range(RID p_instance, float p_min, float p_max,
 		float p_min_margin, float p_max_margin, RSE::VisibilityRangeFadeMode p_fade_mode);
 
-	static void instance_geometry_set_lightmap(
+	void instance_geometry_set_lightmap(
 		RID p_instance, RID p_lightmap, const Rect2& p_lightmap_uv_scale, int p_slice_index);
-	static void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
+	void instance_geometry_set_lod_bias(RID p_instance, float p_lod_bias);
 
-	static void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
-	static uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
+	void mesh_generate_pipelines(RID p_mesh, bool p_background_compilation);
+	uint32_t get_pipeline_compilations(RSE::PipelineSource p_source);
 
-	static _FORCE_INLINE_ void _update_instance(Instance* p_instance);
-	static _FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance);
-	static _FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance);
-	static void _unpair_instance(Instance* p_instance);
+	_FORCE_INLINE_ void _update_instance(Instance* p_instance);
+	_FORCE_INLINE_ void _update_instance_aabb(Instance* p_instance);
+	_FORCE_INLINE_ void _update_instance_lightmap_captures(Instance* p_instance);
+	void _unpair_instance(Instance* p_instance);
 
-	static void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance,
+	void _light_instance_setup_directional_shadow(int p_shadow_index, Instance* p_instance,
 		const Transform3D p_cam_transform, const Projection& p_cam_projection,
 		bool p_cam_orthogonal, bool p_cam_vaspect);
 
-	static _FORCE_INLINE_ bool _light_instance_update_shadow(Instance* p_instance,
+	_FORCE_INLINE_ bool _light_instance_update_shadow(Instance* p_instance,
 		const Transform3D p_cam_transform, const Projection& p_cam_projection,
 		bool p_cam_orthogonal, bool p_cam_vaspect, RID p_shadow_atlas, Scenario* p_scenario,
 		float p_screen_mesh_lod_threshold, uint32_t p_visible_layers = 0xFFFFFF);
 
-	static RID _render_get_environment(RID p_camera, RID p_scenario);
-	static RID _render_get_compositor(RID p_camera, RID p_scenario);
+	RID _render_get_environment(RID p_camera, RID p_scenario);
+	RID _render_get_compositor(RID p_camera, RID p_scenario);
 
 	struct Cull
 	{
@@ -25283,10 +25183,10 @@ public:
 		uint32_t cull_count;
 	};
 
-	static void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
-	static void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
+	void _visibility_cull_threaded(uint32_t p_thread, VisibilityCullData* cull_data);
+	void _visibility_cull(const VisibilityCullData& cull_data, uint64_t p_from, uint64_t p_to);
 	template <bool p_fade_check>
-	static _FORCE_INLINE_ int _visibility_range_check(
+	_FORCE_INLINE_ int _visibility_range_check(
 		InstanceVisibilityData& r_vis_data, const Vector3& p_camera_pos, uint64_t p_viewport_mask);
 
 	struct CullData
@@ -25302,26 +25202,26 @@ public:
 		uint64_t visibility_viewport_mask;
 	};
 
-	static void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
-	static void _scene_cull(
+	void _scene_cull_threaded(uint32_t p_thread, CullData* cull_data);
+	void _scene_cull(
 		CullData& cull_data, InstanceCullResult& cull_result, uint64_t p_from, uint64_t p_to);
-	static void _scene_particles_set_view_axis(
+	void _scene_particles_set_view_axis(
 		RID p_particles, const Vector3& p_axis, const Vector3& p_up_axis);
-	static _FORCE_INLINE_ bool _visibility_parent_check(
+	_FORCE_INLINE_ bool _visibility_parent_check(
 		const CullData& p_cull_data, const InstanceData& p_instance_data);
 
-	static bool _render_reflection_probe_step(Instance* p_instance, int p_step);
+	bool _render_reflection_probe_step(Instance* p_instance, int p_step);
 
-	static void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
+	void render_empty_scene(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_scenario,
 		RID p_shadow_atlas, float p_window_output_max_value);
 
-	static void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
+	void render_camera(const Ref<RenderSceneBuffers>& p_render_buffers, RID p_camera,
 		RID p_scenario, RID p_viewport, Size2 p_viewport_size, uint32_t p_jitter_phase_count,
 		float p_screen_mesh_lod_threshold, RID p_shadow_atlas, Ref<XRInterface>& p_xr_interface,
 		float p_window_output_max_value, RenderingServerTypes::RenderInfo* r_render_info = nullptr);
 
-	static void render_particle_colliders();
-	static void render_probes();
+	void render_particle_colliders();
+	void render_probes();
 
 	struct Data
 	{
@@ -25378,253 +25278,248 @@ public:
 		bool interpolation_enabled = false;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
-	static _FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
-	static _FORCE_INLINE_ RendererSceneRender* get_scene_render()
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ RendererSceneRender* get_scene_render()
 	{
 		return data ? data->scene_render : nullptr;
 	}
 
-	static void voxel_gi_set_quality(RSE::VoxelGIQuality p_arg1) { if (data && data->scene_render) { data->scene_render->voxel_gi_set_quality(p_arg1); } }
+	inline void voxel_gi_set_quality(RSE::VoxelGIQuality p_arg1) { if (data && data->scene_render) { data->scene_render->voxel_gi_set_quality(p_arg1); } }
 
 	/* SKY API */
 
-	static RID sky_allocate() { ERR_FAIL_COND_V(!data || !data->scene_render, RID()); return data->scene_render->sky_allocate(); }
-	static void sky_initialize(RID p_arg1) { if (data && data->scene_render) { data->scene_render->sky_initialize(p_arg1); } }
+	inline RID sky_allocate() { ERR_FAIL_COND_V(!data || !data->scene_render, RID()); return data->scene_render->sky_allocate(); }
+	inline void sky_initialize(RID p_arg1) { if (data && data->scene_render) { data->scene_render->sky_initialize(p_arg1); } }
 
-	static void sky_set_radiance_size(RID p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_radiance_size(p_arg1, p_arg2); } }
-	static void sky_set_mode(RID p_arg1, RSE::SkyMode p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_mode(p_arg1, p_arg2); } }
-	static void sky_set_material(RID p_arg1, RID p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_material(p_arg1, p_arg2); } }
-	static Ref<Image> sky_bake_panorama(RID p_arg1, float p_arg2, bool p_arg3, const Size2i& p_arg4) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->sky_bake_panorama(p_arg1, p_arg2, p_arg3, p_arg4); }
+	inline void sky_set_radiance_size(RID p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_radiance_size(p_arg1, p_arg2); } }
+	inline void sky_set_mode(RID p_arg1, RSE::SkyMode p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_mode(p_arg1, p_arg2); } }
+	inline void sky_set_material(RID p_arg1, RID p_arg2) { if (data && data->scene_render) { data->scene_render->sky_set_material(p_arg1, p_arg2); } }
+	inline Ref<Image> sky_bake_panorama(RID p_arg1, float p_arg2, bool p_arg3, const Size2i& p_arg4) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->sky_bake_panorama(p_arg1, p_arg2, p_arg3, p_arg4); }
 
 	// Compositor effect
 
-	static RID compositor_effect_allocate() { return RendererSceneRender::compositor_effect_allocate(); }
-	static void compositor_effect_initialize(RID p_arg1) { RendererSceneRender::compositor_effect_initialize(p_arg1); }
+	inline RID compositor_effect_allocate() { return RendererSceneRender::compositor_effect_allocate(); }
+	inline void compositor_effect_initialize(RID p_arg1) { RendererSceneRender::compositor_effect_initialize(p_arg1); }
 
-	static bool is_compositor_effect(RID p_arg1) { return RendererSceneRender::is_compositor_effect(p_arg1); }
+	inline bool is_compositor_effect(RID p_arg1) { return RendererSceneRender::is_compositor_effect(p_arg1); }
 
-	static void compositor_effect_set_enabled(RID p_arg1, bool p_arg2) { RendererSceneRender::compositor_effect_set_enabled(p_arg1, p_arg2); }
-	static void compositor_effect_set_flag(RID p_arg1, RSE::CompositorEffectFlags p_arg2, bool p_arg3) { RendererSceneRender::compositor_effect_set_flag(p_arg1, p_arg2, p_arg3); }
+	inline void compositor_effect_set_enabled(RID p_arg1, bool p_arg2) { RendererSceneRender::compositor_effect_set_enabled(p_arg1, p_arg2); }
+	inline void compositor_effect_set_flag(RID p_arg1, RSE::CompositorEffectFlags p_arg2, bool p_arg3) { RendererSceneRender::compositor_effect_set_flag(p_arg1, p_arg2, p_arg3); }
 
 	// Compositor
 
-	static RID compositor_allocate() { return RendererSceneRender::compositor_allocate(); }
-	static void compositor_initialize(RID p_arg1) { RendererSceneRender::compositor_initialize(p_arg1); }
+	inline RID compositor_allocate() { return RendererSceneRender::compositor_allocate(); }
+	inline void compositor_initialize(RID p_arg1) { RendererSceneRender::compositor_initialize(p_arg1); }
 
-	static bool is_compositor(RID p_arg1) { return RendererSceneRender::is_compositor(p_arg1); }
+	inline bool is_compositor(RID p_arg1) { return RendererSceneRender::is_compositor(p_arg1); }
 
 	// Environment
 
-	static RID environment_allocate() { return RendererSceneRender::environment_allocate(); }
-	static void environment_initialize(RID p_arg1) { RendererSceneRender::environment_initialize(p_arg1); }
+	inline RID environment_allocate() { return RendererSceneRender::environment_allocate(); }
+	inline void environment_initialize(RID p_arg1) { RendererSceneRender::environment_initialize(p_arg1); }
 
-	static bool is_environment(RID p_arg1) { return RendererSceneRender::is_environment(p_arg1); }
+	inline bool is_environment(RID p_arg1) { return RendererSceneRender::is_environment(p_arg1); }
 
 	// Background
-	static void environment_set_background(RID p_arg1, RSE::EnvironmentBG p_arg2) { RendererSceneRender::environment_set_background(p_arg1, p_arg2); }
-	static void environment_set_sky(RID p_arg1, RID p_arg2) { RendererSceneRender::environment_set_sky(p_arg1, p_arg2); }
-	static void environment_set_sky_custom_fov(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_sky_custom_fov(p_arg1, p_arg2); }
-	static void environment_set_sky_orientation(RID p_arg1, const Basis& p_arg2) { RendererSceneRender::environment_set_sky_orientation(p_arg1, p_arg2); }
-	static void environment_set_bg_color(RID p_arg1, const Color& p_arg2) { RendererSceneRender::environment_set_bg_color(p_arg1, p_arg2); }
-	static void environment_set_bg_energy(RID p_arg1, float p_arg2, float p_arg3) { RendererSceneRender::environment_set_bg_energy(p_arg1, p_arg2, p_arg3); }
-	static void environment_set_canvas_max_layer(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_canvas_max_layer(p_arg1, p_arg2); }
-	static void environment_set_ambient_light(RID p_arg1, const Color& p_arg2, RSE::EnvironmentAmbientSource p_arg3, float p_arg4, float p_arg5, RSE::EnvironmentReflectionSource p_arg6) { RendererSceneRender::environment_set_ambient_light(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
-	static void environment_set_camera_feed_id(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_camera_feed_id(p_arg1, p_arg2); }
+	inline void environment_set_background(RID p_arg1, RSE::EnvironmentBG p_arg2) { RendererSceneRender::environment_set_background(p_arg1, p_arg2); }
+	inline void environment_set_sky(RID p_arg1, RID p_arg2) { RendererSceneRender::environment_set_sky(p_arg1, p_arg2); }
+	inline void environment_set_sky_custom_fov(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_sky_custom_fov(p_arg1, p_arg2); }
+	inline void environment_set_sky_orientation(RID p_arg1, const Basis& p_arg2) { RendererSceneRender::environment_set_sky_orientation(p_arg1, p_arg2); }
+	inline void environment_set_bg_color(RID p_arg1, const Color& p_arg2) { RendererSceneRender::environment_set_bg_color(p_arg1, p_arg2); }
+	inline void environment_set_bg_energy(RID p_arg1, float p_arg2, float p_arg3) { RendererSceneRender::environment_set_bg_energy(p_arg1, p_arg2, p_arg3); }
+	inline void environment_set_canvas_max_layer(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_canvas_max_layer(p_arg1, p_arg2); }
+	inline void environment_set_ambient_light(RID p_arg1, const Color& p_arg2, RSE::EnvironmentAmbientSource p_arg3, float p_arg4, float p_arg5, RSE::EnvironmentReflectionSource p_arg6) { RendererSceneRender::environment_set_ambient_light(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+	inline void environment_set_camera_feed_id(RID p_arg1, int p_arg2) { RendererSceneRender::environment_set_camera_feed_id(p_arg1, p_arg2); }
 
-	static RSE::EnvironmentBG environment_get_background(RID p_arg1) { return RendererSceneRender::environment_get_background(p_arg1); }
-	static RID environment_get_sky(RID p_arg1) { return RendererSceneRender::environment_get_sky(p_arg1); }
-	static float environment_get_sky_custom_fov(RID p_arg1) { return RendererSceneRender::environment_get_sky_custom_fov(p_arg1); }
-	static Basis environment_get_sky_orientation(RID p_arg1) { return RendererSceneRender::environment_get_sky_orientation(p_arg1); }
-	static Color environment_get_bg_color(RID p_arg1) { return RendererSceneRender::environment_get_bg_color(p_arg1); }
-	static float environment_get_bg_energy_multiplier(RID p_arg1) { return RendererSceneRender::environment_get_bg_energy_multiplier(p_arg1); }
-	static float environment_get_bg_intensity(RID p_arg1) { return RendererSceneRender::environment_get_bg_intensity(p_arg1); }
-	static int environment_get_canvas_max_layer(RID p_arg1) { return RendererSceneRender::environment_get_canvas_max_layer(p_arg1); }
-	static RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_arg1) { return RendererSceneRender::environment_get_ambient_source(p_arg1); }
-	static Color environment_get_ambient_light(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light(p_arg1); }
-	static float environment_get_ambient_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light_energy(p_arg1); }
-	static float environment_get_ambient_sky_contribution(RID p_arg1) { return RendererSceneRender::environment_get_ambient_sky_contribution(p_arg1); }
-	static RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_arg1) { return RendererSceneRender::environment_get_reflection_source(p_arg1); }
+	inline RSE::EnvironmentBG environment_get_background(RID p_arg1) { return RendererSceneRender::environment_get_background(p_arg1); }
+	inline RID environment_get_sky(RID p_arg1) { return RendererSceneRender::environment_get_sky(p_arg1); }
+	inline float environment_get_sky_custom_fov(RID p_arg1) { return RendererSceneRender::environment_get_sky_custom_fov(p_arg1); }
+	inline Basis environment_get_sky_orientation(RID p_arg1) { return RendererSceneRender::environment_get_sky_orientation(p_arg1); }
+	inline Color environment_get_bg_color(RID p_arg1) { return RendererSceneRender::environment_get_bg_color(p_arg1); }
+	inline float environment_get_bg_energy_multiplier(RID p_arg1) { return RendererSceneRender::environment_get_bg_energy_multiplier(p_arg1); }
+	inline float environment_get_bg_intensity(RID p_arg1) { return RendererSceneRender::environment_get_bg_intensity(p_arg1); }
+	inline int environment_get_canvas_max_layer(RID p_arg1) { return RendererSceneRender::environment_get_canvas_max_layer(p_arg1); }
+	inline RSE::EnvironmentAmbientSource environment_get_ambient_source(RID p_arg1) { return RendererSceneRender::environment_get_ambient_source(p_arg1); }
+	inline Color environment_get_ambient_light(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light(p_arg1); }
+	inline float environment_get_ambient_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_ambient_light_energy(p_arg1); }
+	inline float environment_get_ambient_sky_contribution(RID p_arg1) { return RendererSceneRender::environment_get_ambient_sky_contribution(p_arg1); }
+	inline RSE::EnvironmentReflectionSource environment_get_reflection_source(RID p_arg1) { return RendererSceneRender::environment_get_reflection_source(p_arg1); }
 
 	// Tonemap
-	static void environment_set_tonemap(RID p_arg1, RSE::EnvironmentToneMapper p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_tonemap(p_arg1, p_arg2, p_arg3, p_arg4); }
-	static void environment_set_tonemap_agx_contrast(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_tonemap_agx_contrast(p_arg1, p_arg2); }
-	static RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_arg1) { return RendererSceneRender::environment_get_tone_mapper(p_arg1); }
-	static float environment_get_exposure(RID p_arg1) { return RendererSceneRender::environment_get_exposure(p_arg1); }
-	static float environment_get_white(RID p_arg1, bool p_arg2, float p_arg3) { return RendererSceneRender::environment_get_white(p_arg1, p_arg2, p_arg3); }
+	inline void environment_set_tonemap(RID p_arg1, RSE::EnvironmentToneMapper p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_tonemap(p_arg1, p_arg2, p_arg3, p_arg4); }
+	inline void environment_set_tonemap_agx_contrast(RID p_arg1, float p_arg2) { RendererSceneRender::environment_set_tonemap_agx_contrast(p_arg1, p_arg2); }
+	inline RSE::EnvironmentToneMapper environment_get_tone_mapper(RID p_arg1) { return RendererSceneRender::environment_get_tone_mapper(p_arg1); }
+	inline float environment_get_exposure(RID p_arg1) { return RendererSceneRender::environment_get_exposure(p_arg1); }
+	inline float environment_get_white(RID p_arg1, bool p_arg2, float p_arg3) { return RendererSceneRender::environment_get_white(p_arg1, p_arg2, p_arg3); }
 
 	// Fog
-	static void environment_set_fog(RID p_arg1, bool p_arg2, const Color& p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, RSE::EnvironmentFogMode p_arg11) { RendererSceneRender::environment_set_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
+	inline void environment_set_fog(RID p_arg1, bool p_arg2, const Color& p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, RSE::EnvironmentFogMode p_arg11) { RendererSceneRender::environment_set_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
 
-	static bool environment_get_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_fog_enabled(p_arg1); }
-	static Color environment_get_fog_light_color(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_color(p_arg1); }
-	static float environment_get_fog_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_energy(p_arg1); }
-	static float environment_get_fog_sun_scatter(RID p_arg1) { return RendererSceneRender::environment_get_fog_sun_scatter(p_arg1); }
-	static float environment_get_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_density(p_arg1); }
-	static float environment_get_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_fog_sky_affect(p_arg1); }
-	static float environment_get_fog_height(RID p_arg1) { return RendererSceneRender::environment_get_fog_height(p_arg1); }
-	static float environment_get_fog_height_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_height_density(p_arg1); }
-	static float environment_get_fog_aerial_perspective(RID p_arg1) { return RendererSceneRender::environment_get_fog_aerial_perspective(p_arg1); }
-	static RSE::EnvironmentFogMode environment_get_fog_mode(RID p_arg1) { return RendererSceneRender::environment_get_fog_mode(p_arg1); }
+	inline bool environment_get_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_fog_enabled(p_arg1); }
+	inline Color environment_get_fog_light_color(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_color(p_arg1); }
+	inline float environment_get_fog_light_energy(RID p_arg1) { return RendererSceneRender::environment_get_fog_light_energy(p_arg1); }
+	inline float environment_get_fog_sun_scatter(RID p_arg1) { return RendererSceneRender::environment_get_fog_sun_scatter(p_arg1); }
+	inline float environment_get_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_density(p_arg1); }
+	inline float environment_get_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_fog_sky_affect(p_arg1); }
+	inline float environment_get_fog_height(RID p_arg1) { return RendererSceneRender::environment_get_fog_height(p_arg1); }
+	inline float environment_get_fog_height_density(RID p_arg1) { return RendererSceneRender::environment_get_fog_height_density(p_arg1); }
+	inline float environment_get_fog_aerial_perspective(RID p_arg1) { return RendererSceneRender::environment_get_fog_aerial_perspective(p_arg1); }
+	inline RSE::EnvironmentFogMode environment_get_fog_mode(RID p_arg1) { return RendererSceneRender::environment_get_fog_mode(p_arg1); }
 
-	static void environment_set_volumetric_fog_volume_size(int p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_volume_size(p_arg1, p_arg2); } }
-	static void environment_set_volumetric_fog_filter_active(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_filter_active(p_arg1); } }
+	inline void environment_set_volumetric_fog_volume_size(int p_arg1, int p_arg2) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_volume_size(p_arg1, p_arg2); } }
+	inline void environment_set_volumetric_fog_filter_active(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_volumetric_fog_filter_active(p_arg1); } }
 
 	// Depth Fog
-	static void environment_set_fog_depth(RID p_arg1, float p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_fog_depth(p_arg1, p_arg2, p_arg3, p_arg4); }
-	static float environment_get_fog_depth_curve(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_curve(p_arg1); }
-	static float environment_get_fog_depth_begin(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_begin(p_arg1); }
-	static float environment_get_fog_depth_end(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_end(p_arg1); }
+	inline void environment_set_fog_depth(RID p_arg1, float p_arg2, float p_arg3, float p_arg4) { RendererSceneRender::environment_set_fog_depth(p_arg1, p_arg2, p_arg3, p_arg4); }
+	inline float environment_get_fog_depth_curve(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_curve(p_arg1); }
+	inline float environment_get_fog_depth_begin(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_begin(p_arg1); }
+	inline float environment_get_fog_depth_end(RID p_arg1) { return RendererSceneRender::environment_get_fog_depth_end(p_arg1); }
 
 	// Volumentric Fog
-	static void environment_set_volumetric_fog(RID p_arg1, bool p_arg2, float p_arg3, const Color& p_arg4, const Color& p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, bool p_arg11, float p_arg12, float p_arg13, float p_arg14) { RendererSceneRender::environment_set_volumetric_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13, p_arg14); }
+	inline void environment_set_volumetric_fog(RID p_arg1, bool p_arg2, float p_arg3, const Color& p_arg4, const Color& p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10, bool p_arg11, float p_arg12, float p_arg13, float p_arg14) { RendererSceneRender::environment_set_volumetric_fog(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13, p_arg14); }
 
-	static bool environment_get_volumetric_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_enabled(p_arg1); }
-	static float environment_get_volumetric_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_density(p_arg1); }
-	static Color environment_get_volumetric_fog_scattering(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_scattering(p_arg1); }
-	static Color environment_get_volumetric_fog_emission(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission(p_arg1); }
-	static float environment_get_volumetric_fog_emission_energy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission_energy(p_arg1); }
-	static float environment_get_volumetric_fog_anisotropy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_anisotropy(p_arg1); }
-	static float environment_get_volumetric_fog_length(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_length(p_arg1); }
-	static float environment_get_volumetric_fog_detail_spread(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_detail_spread(p_arg1); }
-	static float environment_get_volumetric_fog_gi_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_gi_inject(p_arg1); }
-	static float environment_get_volumetric_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_sky_affect(p_arg1); }
-	static bool environment_get_volumetric_fog_temporal_reprojection(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection(p_arg1); }
-	static float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection_amount(p_arg1); }
-	static float environment_get_volumetric_fog_ambient_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_ambient_inject(p_arg1); }
+	inline bool environment_get_volumetric_fog_enabled(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_enabled(p_arg1); }
+	inline float environment_get_volumetric_fog_density(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_density(p_arg1); }
+	inline Color environment_get_volumetric_fog_scattering(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_scattering(p_arg1); }
+	inline Color environment_get_volumetric_fog_emission(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission(p_arg1); }
+	inline float environment_get_volumetric_fog_emission_energy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_emission_energy(p_arg1); }
+	inline float environment_get_volumetric_fog_anisotropy(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_anisotropy(p_arg1); }
+	inline float environment_get_volumetric_fog_length(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_length(p_arg1); }
+	inline float environment_get_volumetric_fog_detail_spread(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_detail_spread(p_arg1); }
+	inline float environment_get_volumetric_fog_gi_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_gi_inject(p_arg1); }
+	inline float environment_get_volumetric_fog_sky_affect(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_sky_affect(p_arg1); }
+	inline bool environment_get_volumetric_fog_temporal_reprojection(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection(p_arg1); }
+	inline float environment_get_volumetric_fog_temporal_reprojection_amount(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_temporal_reprojection_amount(p_arg1); }
+	inline float environment_get_volumetric_fog_ambient_inject(RID p_arg1) { return RendererSceneRender::environment_get_volumetric_fog_ambient_inject(p_arg1); }
 
 	// Glow
-	static void environment_set_glow(RID p_arg1, bool p_arg2, Vector<float> p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, RSE::EnvironmentGlowBlendMode p_arg8, float p_arg9, float p_arg10, float p_arg11, float p_arg12, RID p_arg13) { RendererSceneRender::environment_set_glow(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13); }
+	inline void environment_set_glow(RID p_arg1, bool p_arg2, Vector<float> p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, RSE::EnvironmentGlowBlendMode p_arg8, float p_arg9, float p_arg10, float p_arg11, float p_arg12, RID p_arg13) { RendererSceneRender::environment_set_glow(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11, p_arg12, p_arg13); }
 
-	static bool environment_get_glow_enabled(RID p_arg1) { return RendererSceneRender::environment_get_glow_enabled(p_arg1); }
-	static Vector<float> environment_get_glow_levels(RID p_arg1) { return RendererSceneRender::environment_get_glow_levels(p_arg1); }
-	static float environment_get_glow_intensity(RID p_arg1) { return RendererSceneRender::environment_get_glow_intensity(p_arg1); }
-	static float environment_get_glow_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_strength(p_arg1); }
-	static float environment_get_glow_bloom(RID p_arg1) { return RendererSceneRender::environment_get_glow_bloom(p_arg1); }
-	static float environment_get_glow_mix(RID p_arg1) { return RendererSceneRender::environment_get_glow_mix(p_arg1); }
-	static RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_arg1) { return RendererSceneRender::environment_get_glow_blend_mode(p_arg1); }
-	static float environment_get_glow_hdr_bleed_threshold(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_threshold(p_arg1); }
-	static float environment_get_glow_hdr_luminance_cap(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_arg1); }
-	static float environment_get_glow_hdr_bleed_scale(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_scale(p_arg1); }
-	static float environment_get_glow_map_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_map_strength(p_arg1); }
-	static RID environment_get_glow_map(RID p_arg1) { return RendererSceneRender::environment_get_glow_map(p_arg1); }
+	inline bool environment_get_glow_enabled(RID p_arg1) { return RendererSceneRender::environment_get_glow_enabled(p_arg1); }
+	inline Vector<float> environment_get_glow_levels(RID p_arg1) { return RendererSceneRender::environment_get_glow_levels(p_arg1); }
+	inline float environment_get_glow_intensity(RID p_arg1) { return RendererSceneRender::environment_get_glow_intensity(p_arg1); }
+	inline float environment_get_glow_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_strength(p_arg1); }
+	inline float environment_get_glow_bloom(RID p_arg1) { return RendererSceneRender::environment_get_glow_bloom(p_arg1); }
+	inline float environment_get_glow_mix(RID p_arg1) { return RendererSceneRender::environment_get_glow_mix(p_arg1); }
+	inline RSE::EnvironmentGlowBlendMode environment_get_glow_blend_mode(RID p_arg1) { return RendererSceneRender::environment_get_glow_blend_mode(p_arg1); }
+	inline float environment_get_glow_hdr_bleed_threshold(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_threshold(p_arg1); }
+	inline float environment_get_glow_hdr_luminance_cap(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_luminance_cap(p_arg1); }
+	inline float environment_get_glow_hdr_bleed_scale(RID p_arg1) { return RendererSceneRender::environment_get_glow_hdr_bleed_scale(p_arg1); }
+	inline float environment_get_glow_map_strength(RID p_arg1) { return RendererSceneRender::environment_get_glow_map_strength(p_arg1); }
+	inline RID environment_get_glow_map(RID p_arg1) { return RendererSceneRender::environment_get_glow_map(p_arg1); }
 
-	static void environment_glow_set_use_bicubic_upscale(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_glow_set_use_bicubic_upscale(p_arg1); } }
+	inline void environment_glow_set_use_bicubic_upscale(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_glow_set_use_bicubic_upscale(p_arg1); } }
 
 	// SSR
-	static void environment_set_ssr(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssr(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+	inline void environment_set_ssr(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssr(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
 
-	static bool environment_get_ssr_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssr_enabled(p_arg1); }
-	static int environment_get_ssr_max_steps(RID p_arg1) { return RendererSceneRender::environment_get_ssr_max_steps(p_arg1); }
-	static float environment_get_ssr_fade_in(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_in(p_arg1); }
-	static float environment_get_ssr_fade_out(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_out(p_arg1); }
-	static float environment_get_ssr_depth_tolerance(RID p_arg1) { return RendererSceneRender::environment_get_ssr_depth_tolerance(p_arg1); }
+	inline bool environment_get_ssr_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssr_enabled(p_arg1); }
+	inline int environment_get_ssr_max_steps(RID p_arg1) { return RendererSceneRender::environment_get_ssr_max_steps(p_arg1); }
+	inline float environment_get_ssr_fade_in(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_in(p_arg1); }
+	inline float environment_get_ssr_fade_out(RID p_arg1) { return RendererSceneRender::environment_get_ssr_fade_out(p_arg1); }
+	inline float environment_get_ssr_depth_tolerance(RID p_arg1) { return RendererSceneRender::environment_get_ssr_depth_tolerance(p_arg1); }
 
-	static void environment_set_ssr_half_size(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_half_size(p_arg1); } }
-	static void environment_set_ssr_roughness_quality(RSE::EnvironmentSSRRoughnessQuality p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_roughness_quality(p_arg1); } }
+	inline void environment_set_ssr_half_size(bool p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_half_size(p_arg1); } }
+	inline void environment_set_ssr_roughness_quality(RSE::EnvironmentSSRRoughnessQuality p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_ssr_roughness_quality(p_arg1); } }
 
 	// SSAO
-	static void environment_set_ssao(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10) { RendererSceneRender::environment_set_ssao(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10); }
+	inline void environment_set_ssao(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6, float p_arg7, float p_arg8, float p_arg9, float p_arg10) { RendererSceneRender::environment_set_ssao(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10); }
 
-	static bool environment_get_ssao_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssao_enabled(p_arg1); }
-	static float environment_get_ssao_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssao_radius(p_arg1); }
-	static float environment_get_ssao_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssao_intensity(p_arg1); }
-	static float environment_get_ssao_power(RID p_arg1) { return RendererSceneRender::environment_get_ssao_power(p_arg1); }
-	static float environment_get_ssao_detail(RID p_arg1) { return RendererSceneRender::environment_get_ssao_detail(p_arg1); }
-	static float environment_get_ssao_horizon(RID p_arg1) { return RendererSceneRender::environment_get_ssao_horizon(p_arg1); }
-	static float environment_get_ssao_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssao_sharpness(p_arg1); }
-	static float environment_get_ssao_direct_light_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_direct_light_affect(p_arg1); }
-	static float environment_get_ssao_ao_channel_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_ao_channel_affect(p_arg1); }
+	inline bool environment_get_ssao_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssao_enabled(p_arg1); }
+	inline float environment_get_ssao_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssao_radius(p_arg1); }
+	inline float environment_get_ssao_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssao_intensity(p_arg1); }
+	inline float environment_get_ssao_power(RID p_arg1) { return RendererSceneRender::environment_get_ssao_power(p_arg1); }
+	inline float environment_get_ssao_detail(RID p_arg1) { return RendererSceneRender::environment_get_ssao_detail(p_arg1); }
+	inline float environment_get_ssao_horizon(RID p_arg1) { return RendererSceneRender::environment_get_ssao_horizon(p_arg1); }
+	inline float environment_get_ssao_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssao_sharpness(p_arg1); }
+	inline float environment_get_ssao_direct_light_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_direct_light_affect(p_arg1); }
+	inline float environment_get_ssao_ao_channel_affect(RID p_arg1) { return RendererSceneRender::environment_get_ssao_ao_channel_affect(p_arg1); }
 
-	static void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssao_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
+	inline void environment_set_ssao_quality(RSE::EnvironmentSSAOQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssao_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
 
 	// SSIL
-	static void environment_set_ssil(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssil(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
+	inline void environment_set_ssil(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, float p_arg6) { RendererSceneRender::environment_set_ssil(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); }
 
-	static bool environment_get_ssil_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssil_enabled(p_arg1); }
-	static float environment_get_ssil_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssil_radius(p_arg1); }
-	static float environment_get_ssil_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssil_intensity(p_arg1); }
-	static float environment_get_ssil_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssil_sharpness(p_arg1); }
-	static float environment_get_ssil_normal_rejection(RID p_arg1) { return RendererSceneRender::environment_get_ssil_normal_rejection(p_arg1); }
+	inline bool environment_get_ssil_enabled(RID p_arg1) { return RendererSceneRender::environment_get_ssil_enabled(p_arg1); }
+	inline float environment_get_ssil_radius(RID p_arg1) { return RendererSceneRender::environment_get_ssil_radius(p_arg1); }
+	inline float environment_get_ssil_intensity(RID p_arg1) { return RendererSceneRender::environment_get_ssil_intensity(p_arg1); }
+	inline float environment_get_ssil_sharpness(RID p_arg1) { return RendererSceneRender::environment_get_ssil_sharpness(p_arg1); }
+	inline float environment_get_ssil_normal_rejection(RID p_arg1) { return RendererSceneRender::environment_get_ssil_normal_rejection(p_arg1); }
 
-	static void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssil_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
+	inline void environment_set_ssil_quality(RSE::EnvironmentSSILQuality p_arg1, bool p_arg2, float p_arg3, int p_arg4, float p_arg5, float p_arg6) { if (data && data->scene_render) { data->scene_render->environment_set_ssil_quality(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6); } }
 
 	// SDFGI
 
-	static void environment_set_sdfgi(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, RSE::EnvironmentSDFGIYScale p_arg5, bool p_arg6, float p_arg7, bool p_arg8, float p_arg9, float p_arg10, float p_arg11) { RendererSceneRender::environment_set_sdfgi(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
+	inline void environment_set_sdfgi(RID p_arg1, bool p_arg2, int p_arg3, float p_arg4, RSE::EnvironmentSDFGIYScale p_arg5, bool p_arg6, float p_arg7, bool p_arg8, float p_arg9, float p_arg10, float p_arg11) { RendererSceneRender::environment_set_sdfgi(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7, p_arg8, p_arg9, p_arg10, p_arg11); }
 
-	static bool environment_get_sdfgi_enabled(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_enabled(p_arg1); }
-	static int environment_get_sdfgi_cascades(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_cascades(p_arg1); }
-	static float environment_get_sdfgi_min_cell_size(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_min_cell_size(p_arg1); }
-	static bool environment_get_sdfgi_use_occlusion(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_use_occlusion(p_arg1); }
-	static float environment_get_sdfgi_bounce_feedback(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_bounce_feedback(p_arg1); }
-	static bool environment_get_sdfgi_read_sky_light(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_read_sky_light(p_arg1); }
-	static float environment_get_sdfgi_energy(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_energy(p_arg1); }
-	static float environment_get_sdfgi_normal_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_normal_bias(p_arg1); }
-	static float environment_get_sdfgi_probe_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_probe_bias(p_arg1); }
-	static RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_y_scale(p_arg1); }
+	inline bool environment_get_sdfgi_enabled(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_enabled(p_arg1); }
+	inline int environment_get_sdfgi_cascades(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_cascades(p_arg1); }
+	inline float environment_get_sdfgi_min_cell_size(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_min_cell_size(p_arg1); }
+	inline bool environment_get_sdfgi_use_occlusion(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_use_occlusion(p_arg1); }
+	inline float environment_get_sdfgi_bounce_feedback(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_bounce_feedback(p_arg1); }
+	inline bool environment_get_sdfgi_read_sky_light(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_read_sky_light(p_arg1); }
+	inline float environment_get_sdfgi_energy(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_energy(p_arg1); }
+	inline float environment_get_sdfgi_normal_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_normal_bias(p_arg1); }
+	inline float environment_get_sdfgi_probe_bias(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_probe_bias(p_arg1); }
+	inline RSE::EnvironmentSDFGIYScale environment_get_sdfgi_y_scale(RID p_arg1) { return RendererSceneRender::environment_get_sdfgi_y_scale(p_arg1); }
 
-	static void environment_set_sdfgi_ray_count(RSE::EnvironmentSDFGIRayCount p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_ray_count(p_arg1); } }
-	static void environment_set_sdfgi_frames_to_converge(RSE::EnvironmentSDFGIFramesToConverge p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_converge(p_arg1); } }
-	static void environment_set_sdfgi_frames_to_update_light(RSE::EnvironmentSDFGIFramesToUpdateLight p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_update_light(p_arg1); } }
+	inline void environment_set_sdfgi_ray_count(RSE::EnvironmentSDFGIRayCount p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_ray_count(p_arg1); } }
+	inline void environment_set_sdfgi_frames_to_converge(RSE::EnvironmentSDFGIFramesToConverge p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_converge(p_arg1); } }
+	inline void environment_set_sdfgi_frames_to_update_light(RSE::EnvironmentSDFGIFramesToUpdateLight p_arg1) { if (data && data->scene_render) { data->scene_render->environment_set_sdfgi_frames_to_update_light(p_arg1); } }
 
 	// Adjustment
-	static void environment_set_adjustment(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, bool p_arg6, RID p_arg7) { RendererSceneRender::environment_set_adjustment(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7); }
+	inline void environment_set_adjustment(RID p_arg1, bool p_arg2, float p_arg3, float p_arg4, float p_arg5, bool p_arg6, RID p_arg7) { RendererSceneRender::environment_set_adjustment(p_arg1, p_arg2, p_arg3, p_arg4, p_arg5, p_arg6, p_arg7); }
 
-	static bool environment_get_adjustments_enabled(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_enabled(p_arg1); }
-	static float environment_get_adjustments_brightness(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_brightness(p_arg1); }
+	inline bool environment_get_adjustments_enabled(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_enabled(p_arg1); }
+	inline float environment_get_adjustments_brightness(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_brightness(p_arg1); }
 
-	static float environment_get_adjustments_contrast(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_contrast(p_arg1); }
-	static float environment_get_adjustments_saturation(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_saturation(p_arg1); }
-	static bool environment_get_use_1d_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_use_1d_color_correction(p_arg1); }
-	static RID environment_get_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_color_correction(p_arg1); }
+	inline float environment_get_adjustments_contrast(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_contrast(p_arg1); }
+	inline float environment_get_adjustments_saturation(RID p_arg1) { return RendererSceneRender::environment_get_adjustments_saturation(p_arg1); }
+	inline bool environment_get_use_1d_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_use_1d_color_correction(p_arg1); }
+	inline RID environment_get_color_correction(RID p_arg1) { return RendererSceneRender::environment_get_color_correction(p_arg1); }
 
-	static Ref<Image> environment_bake_panorama(RID p_arg1, bool p_arg2, const Size2i& p_arg3) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->environment_bake_panorama(p_arg1, p_arg2, p_arg3); }
+	inline Ref<Image> environment_bake_panorama(RID p_arg1, bool p_arg2, const Size2i& p_arg3) { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<Image>()); return data->scene_render->environment_bake_panorama(p_arg1, p_arg2, p_arg3); }
 
-	static void screen_space_roughness_limiter_set_active(bool p_arg1, float p_arg2, float p_arg3) { if (data && data->scene_render) { data->scene_render->screen_space_roughness_limiter_set_active(p_arg1, p_arg2, p_arg3); } }
-	static void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_arg1) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_quality(p_arg1); } }
-	static void sub_surface_scattering_set_scale(float p_arg1, float p_arg2) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_scale(p_arg1, p_arg2); } }
+	inline void screen_space_roughness_limiter_set_active(bool p_arg1, float p_arg2, float p_arg3) { if (data && data->scene_render) { data->scene_render->screen_space_roughness_limiter_set_active(p_arg1, p_arg2, p_arg3); } }
+	inline void sub_surface_scattering_set_quality(RSE::SubSurfaceScatteringQuality p_arg1) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_quality(p_arg1); } }
+	inline void sub_surface_scattering_set_scale(float p_arg1, float p_arg2) { if (data && data->scene_render) { data->scene_render->sub_surface_scattering_set_scale(p_arg1, p_arg2); } }
 
-	static void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->positional_soft_shadow_filter_set_quality(p_arg1); } }
-	static void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->directional_soft_shadow_filter_set_quality(p_arg1); } }
+	inline void positional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->positional_soft_shadow_filter_set_quality(p_arg1); } }
+	inline void directional_soft_shadow_filter_set_quality(RSE::ShadowQuality p_arg1) { if (data && data->scene_render) { data->scene_render->directional_soft_shadow_filter_set_quality(p_arg1); } }
 
-	static void sdfgi_set_debug_probe_select(const Vector3& p_arg1, const Vector3& p_arg2) { if (data && data->scene_render) { data->scene_render->sdfgi_set_debug_probe_select(p_arg1, p_arg2); } }
+	inline void sdfgi_set_debug_probe_select(const Vector3& p_arg1, const Vector3& p_arg2) { if (data && data->scene_render) { data->scene_render->sdfgi_set_debug_probe_select(p_arg1, p_arg2); } }
 
 	/* Render Buffers */
 
-	static Ref<RenderSceneBuffers> render_buffers_create() { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<RenderSceneBuffers>()); return data->scene_render->render_buffers_create(); }
-	static void gi_set_use_half_resolution(bool p_arg1) { if (data && data->scene_render) { data->scene_render->gi_set_use_half_resolution(p_arg1); } }
+	inline Ref<RenderSceneBuffers> render_buffers_create() { ERR_FAIL_COND_V(!data || !data->scene_render, Ref<RenderSceneBuffers>()); return data->scene_render->render_buffers_create(); }
+	inline void gi_set_use_half_resolution(bool p_arg1) { if (data && data->scene_render) { data->scene_render->gi_set_use_half_resolution(p_arg1); } }
 
 	/* Misc */
-	static void set_debug_draw_mode(RSE::ViewportDebugDraw p_arg1) { if (data && data->scene_render) { data->scene_render->set_debug_draw_mode(p_arg1); } }
+	inline void set_debug_draw_mode(RSE::ViewportDebugDraw p_arg1) { if (data && data->scene_render) { data->scene_render->set_debug_draw_mode(p_arg1); } }
 
-	static void decals_set_filter(RSE::DecalFilter p_arg1) { if (data && data->scene_render) { data->scene_render->decals_set_filter(p_arg1); } }
-	static void light_projectors_set_filter(RSE::LightProjectorFilter p_arg1) { if (data && data->scene_render) { data->scene_render->light_projectors_set_filter(p_arg1); } }
-	static void lightmaps_set_bicubic_filter(bool p_arg1) { if (data && data->scene_render) { data->scene_render->lightmaps_set_bicubic_filter(p_arg1); } }
-	static void material_set_use_debanding(bool p_arg1) { if (data && data->scene_render) { data->scene_render->material_set_use_debanding(p_arg1); } }
+	inline void decals_set_filter(RSE::DecalFilter p_arg1) { if (data && data->scene_render) { data->scene_render->decals_set_filter(p_arg1); } }
+	inline void light_projectors_set_filter(RSE::LightProjectorFilter p_arg1) { if (data && data->scene_render) { data->scene_render->light_projectors_set_filter(p_arg1); } }
+	inline void lightmaps_set_bicubic_filter(bool p_arg1) { if (data && data->scene_render) { data->scene_render->lightmaps_set_bicubic_filter(p_arg1); } }
+	inline void material_set_use_debanding(bool p_arg1) { if (data && data->scene_render) { data->scene_render->material_set_use_debanding(p_arg1); } }
 
-	static void update();
+	void update();
 
-	static bool free(RID p_rid);
+	bool free(RID p_rid);
 
-	static void set_scene_render(RendererSceneRender* p_scene_render);
+	void set_scene_render(RendererSceneRender* p_scene_render);
 
-	static void update_visibility_notifiers();
+	void update_visibility_notifiers();
 
 	/* INTERPOLATION */
 
-	static void update_interpolation_tick(bool p_process = true);
-	static void update_interpolation_frame(bool p_process = true);
-	static void set_physics_interpolation_enabled(bool p_enabled);
-
-	RendererSceneCull() = delete;
-	RendererSceneCull(const RendererSceneCull&) = delete;
-	RendererSceneCull& operator=(const RendererSceneCull&) = delete;
-	~RendererSceneCull() = delete;
-};
+	void update_interpolation_tick(bool p_process = true);
+	void update_interpolation_frame(bool p_process = true);
+	void set_physics_interpolation_enabled(bool p_enabled);
+} // namespace RendererSceneCull
 
 struct Projection;
 struct Transform3D;
@@ -29300,15 +29195,6 @@ private:
 		bool operator==(const MaterialKey& p_key) const { return key == p_key.key; }
 	};
 
-	struct ShaderNames
-	{
-		String particles_anim_h_frames;
-		String particles_anim_v_frames;
-		String particles_anim_loop;
-	};
-
-	static ShaderNames* shader_names;
-
 	struct ShaderData
 	{
 		RID shader;
@@ -32712,10 +32598,7 @@ class RasterizerSceneDummy;
 class RasterizerDummy final
 {
 public:
-	struct Lightmap {};
-	struct LightmapInstance { RID lightmap; };
-	struct DummyShader { HashMap<String, ShaderLanguage::ShaderNode::Uniform> uniforms; };
-	struct DummyMaterial { RID shader; RID next_pass; };
+	using DummyShaderUniforms = HashMap<String, ShaderLanguage::ShaderNode::Uniform>;
 	struct DummyMesh
 	{
 		Vector<RenderingServerTypes::SurfaceData> surfaces;
@@ -32724,7 +32607,6 @@ public:
 		PackedFloat32Array blend_shape_values;
 		Dependency dependency;
 	};
-	struct DummyMultiMesh { PackedFloat32Array buffer; };
 	struct DummyTexture
 	{
 		String path;
@@ -32762,15 +32644,15 @@ public:
 private:
 	struct Data
 	{
-		RID_Owner<Lightmap, true> lightmap_owner;
-		RID_Owner<LightmapInstance> lightmap_instance_owner;
+		RID_Owner<bool, true> lightmap_owner;
+		RID_Owner<RID> lightmap_instance_owner;
 		HashMap<String, RSE::GlobalShaderParameterType> global_shader_variables;
-		RID_Owner<DummyShader> shader_owner;
+		RID_Owner<DummyShaderUniforms> shader_owner;
 		ShaderCompiler* dummy_compiler = nullptr;
 		HashSet<RID> dummy_embedded_set;
-		RID_Owner<DummyMaterial> material_owner;
+		RID_Owner<Pair<RID, RID>> material_owner;
 		RID_Owner<DummyMesh> mesh_owner;
-		RID_Owner<DummyMultiMesh> multimesh_owner;
+		RID_Owner<PackedFloat32Array> multimesh_owner;
 		RID_Owner<DummyTexture> texture_owner;
 		RID_Owner<DummyRenderTarget> render_target_owner;
 		RID_Owner<DummyCanvasTexture> canvas_texture_owner;
@@ -33485,7 +33367,7 @@ public:
 	static RID _multimesh_allocate() { return _get_data()->multimesh_owner.allocate_rid(); }
 	static void _multimesh_initialize(RID p_rid)
 	{
-		_get_data()->multimesh_owner.initialize_rid(p_rid, DummyMultiMesh());
+		_get_data()->multimesh_owner.initialize_rid(p_rid, PackedFloat32Array());
 	}
 	static void _multimesh_free(RID p_rid)
 	{
@@ -35652,22 +35534,6 @@ struct RendererGlobalShaderUniformsT
 		float w;
 	};
 
-	struct ValueInt
-	{
-		int32_t x;
-		int32_t y;
-		int32_t z;
-		int32_t w;
-	};
-
-	struct ValueUInt
-	{
-		uint32_t x;
-		uint32_t y;
-		uint32_t z;
-		uint32_t w;
-	};
-
 	struct ValueUsage
 	{
 		uint32_t elements = 0;
@@ -35796,6 +35662,39 @@ public:
 		Vector<uint8_t> ubo_data[2];
 		RID uniform_buffer[2];
 		Vector<RID> texture_cache;
+	};
+
+	template <typename ShaderDataT, bool HasPriorityPass = false>
+	struct TypedMaterialData : public MaterialData
+	{
+		ShaderDataT* shader_data = nullptr;
+		RID uniform_set;
+		RID uniform_set_srgb;
+		RID next_pass;
+		uint64_t last_pass = 0;
+		uint32_t index = 0;
+		uint8_t priority = 0;
+		bool uniform_set_updated = false;
+
+		virtual void set_render_priority(int p_priority) override
+		{
+			if constexpr (HasPriorityPass) {
+				priority = p_priority - RSE::MATERIAL_RENDER_PRIORITY_MIN;
+			}
+		}
+
+		virtual void set_next_pass(RID p_pass) override
+		{
+			if constexpr (HasPriorityPass) {
+				next_pass = p_pass;
+			}
+		}
+
+		virtual ~TypedMaterialData() override
+		{
+			free_parameters_uniform_set(uniform_set);
+			free_parameters_uniform_set(uniform_set_srgb);
+		}
 	};
 
 	/* Texture Blit Shader */
@@ -37167,18 +37066,7 @@ public:
 
 	SkyShader sky_shader;
 
-	struct SkyMaterialData : public RendererRD::MaterialStorage::MaterialData
-	{
-		SkyShaderData* shader_data = nullptr;
-		RID uniform_set;
-		bool uniform_set_updated;
-
-		virtual void set_render_priority(int p_priority) {}
-
-		virtual void set_next_pass(RID p_pass) {}
-
-		virtual ~SkyMaterialData();
-	};
+	using SkyMaterialData = RendererRD::MaterialStorage::TypedMaterialData<SkyShaderData>;
 
 private:
 	SkyMaterialData* _get_sky_material_data(RID p_env);
@@ -38135,18 +38023,7 @@ public:
 		virtual ~FogShaderData();
 	};
 
-	struct FogMaterialData : public RendererRD::MaterialStorage::MaterialData
-	{
-		FogShaderData* shader_data = nullptr;
-		RID uniform_set;
-		bool uniform_set_updated;
-
-		virtual void set_render_priority(int p_priority) override {}
-
-		virtual void set_next_pass(RID p_pass) override {}
-
-		virtual ~FogMaterialData();
-	};
+	using FogMaterialData = RendererRD::MaterialStorage::TypedMaterialData<FogShaderData>;
 
 	/* Volumetric FOG Render Buffer Data */
 	class VolumetricFog final : public RefCounted
@@ -43660,18 +43537,7 @@ public:
 		return _create_shader_func();
 	}
 
-	struct MaterialData : public RendererRD::MaterialStorage::MaterialData
-	{
-		ShaderData* shader_data = nullptr;
-		RID uniform_set;
-		uint64_t last_pass = 0;
-		uint32_t index = 0;
-		RID next_pass;
-		uint8_t priority;
-		virtual void set_render_priority(int p_priority);
-		virtual void set_next_pass(RID p_pass);
-		virtual ~MaterialData();
-	};
+	using MaterialData = RendererRD::MaterialStorage::TypedMaterialData<ShaderData, true>;
 
 	static RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
 
@@ -45057,18 +44923,7 @@ public:
 		return _create_shader_func();
 	}
 
-	struct MaterialData : public RendererRD::MaterialStorage::MaterialData
-	{
-		ShaderData* shader_data = nullptr;
-		RID uniform_set;
-		uint64_t last_pass = 0;
-		uint32_t index = 0;
-		RID next_pass;
-		uint8_t priority;
-		virtual void set_render_priority(int p_priority);
-		virtual void set_next_pass(RID p_pass);
-		virtual ~MaterialData();
-	};
+	using MaterialData = RendererRD::MaterialStorage::TypedMaterialData<ShaderData, true>;
 
 	static RendererRD::MaterialStorage::MaterialData* _create_material_func(ShaderData* p_shader);
 
@@ -46065,18 +45920,7 @@ struct CanvasShaderData : public RendererRD::MaterialStorage::ShaderData
 	virtual ~CanvasShaderData();
 };
 
-struct CanvasMaterialData : public RendererRD::MaterialStorage::MaterialData
-{
-	CanvasShaderData* shader_data = nullptr;
-	RID uniform_set;
-	RID uniform_set_srgb;
-
-	virtual void set_render_priority(int p_priority) {}
-
-	virtual void set_next_pass(RID p_pass) {}
-
-	virtual ~CanvasMaterialData();
-};
+using CanvasMaterialData = RendererRD::MaterialStorage::TypedMaterialData<CanvasShaderData>;
 
 struct TextureState
 {
@@ -46391,14 +46235,10 @@ static inline struct
 struct RendererCanvasLight
 {
 	RID texture;
-
-	struct
-	{
-		bool enabled = false;
-		float z_far;
-		float y_offset;
-		Transform2D directional_xform;
-	} shadow;
+	bool shadow_enabled = false;
+	float shadow_z_far = 0.0f;
+	float shadow_y_offset = 0.0f;
+	Transform2D shadow_directional_xform;
 };
 
 class RendererCanvasRenderRD : public RendererCanvasRender
@@ -46490,12 +46330,6 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 	/**************************/
 	/**** CANVAS TEXTURES *****/
 	/**************************/
-
-	struct
-	{
-		RSE::CanvasItemTextureFilter default_filter;
-		RSE::CanvasItemTextureRepeat default_repeat;
-	} default_samplers;
 
 	/******************/
 	/**** POLYGONS ****/
@@ -47954,15 +47788,7 @@ private:
 
 	static MaterialStorage::ShaderData* _create_particles_shader_func();
 
-	struct ParticleProcessMaterialData : public MaterialStorage::MaterialData
-	{
-		ParticlesShaderData* shader_data = nullptr;
-		RID uniform_set;
-
-		virtual void set_render_priority(int p_priority) override {}
-		virtual void set_next_pass(RID p_pass) override {}
-		virtual ~ParticleProcessMaterialData() override;
-	};
+	using ParticleProcessMaterialData = MaterialStorage::TypedMaterialData<ParticlesShaderData>;
 
 	static MaterialStorage::MaterialData* _create_particles_material_func(ParticlesShaderData* p_shader);
 
@@ -48324,9 +48150,8 @@ public:
 
 } // namespace RendererRD
 
-class RendererCompositorRD final
+namespace RendererCompositorRD
 {
-public:
 	enum BlitMode
 	{
 		BLIT_MODE_NORMAL,
@@ -48375,111 +48200,123 @@ public:
 		RID array;
 		RID sampler;
 	};
+	inline RendererCanvasRenderRD* canvas = nullptr;
+	inline RendererSceneRenderRD* scene = nullptr;
 
-private:
-	static inline RendererCanvasRenderRD* canvas = nullptr;
-	static inline RendererSceneRenderRD* scene = nullptr;
+	inline RendererRD::Fog* fog = nullptr;
+	inline RendererRD::LightStorage* light_storage = nullptr;
+	inline RendererRD::MaterialStorage* material_storage = nullptr;
+	inline RendererRD::MeshStorage* mesh_storage = nullptr;
+	inline RendererRD::ParticlesStorage* particles_storage = nullptr;
+	inline RendererRD::TextureStorage* texture_storage = nullptr;
 
-	static inline RendererRD::Fog* fog = nullptr;
-	static inline RendererRD::LightStorage* light_storage = nullptr;
-	static inline RendererRD::MaterialStorage* material_storage = nullptr;
-	static inline RendererRD::MeshStorage* mesh_storage = nullptr;
-	static inline RendererRD::ParticlesStorage* particles_storage = nullptr;
-	static inline RendererRD::TextureStorage* texture_storage = nullptr;
+	inline Blit* blit = nullptr;
 
-	static inline Blit* blit = nullptr;
+	inline HashMap<RID, RID> render_target_descriptors;
 
-	static inline HashMap<RID, RID> render_target_descriptors;
+	inline double time = 0.0;
+	inline double delta = 0.0;
+	inline uint64_t frame = 0;
 
-	static inline double time = 0.0;
-	static inline double delta = 0.0;
-	static inline uint64_t frame = 0;
-
-	static BlitPipelines _get_blit_pipelines_for_format(
+	BlitPipelines _get_blit_pipelines_for_format(
 		RenderingDevice::FramebufferFormatID format);
-	static float _compute_reference_multiplier(RDC::ColorSpace p_color_space,
+	float _compute_reference_multiplier(RDC::ColorSpace p_color_space,
 		const float p_reference_luminance, const float p_linear_luminance_scale);
+	void bind_canvas_render();
 
-public:
-	static void bind_canvas_render();
-
-	static void bind_mesh_storage();
+	void bind_mesh_storage();
 
 	// Inside class RendererCompositorRD public section:
-    static void bind_canvas() { RendererCanvasRender::bind<RendererCanvasRenderRD>(); }
+    inline void bind_canvas() { RendererCanvasRender::bind<RendererCanvasRenderRD>(); }
 
-	static void bind_texture_storage()
+	inline void bind_texture_storage()
 	{
 		RendererTextureStorage::bind<RendererRD::TextureStorage>();
 	}
 
-	static void bind_material_storage()
+	inline void bind_material_storage()
 	{
 		RendererMaterialStorage::bind<RendererRD::MaterialStorage>();
 	}
 
-	static void bind_light_storage() { RendererLightStorage::bind<RendererRD::LightStorage>(); }
+	inline void bind_light_storage() { RendererLightStorage::bind<RendererRD::LightStorage>(); }
 
-	static void bind_particles_storage()
+	inline void bind_particles_storage()
 	{
 		RendererParticlesStorage::bind<RendererRD::ParticlesStorage>();
 	}
 
-	static void bind_utilities();
+	void bind_utilities();
 
-	static void bind_gi() { RendererGI::bind<RendererRD::GI>(); }
+	inline void bind_gi() { RendererGI::bind<RendererRD::GI>(); }
 
-	static void bind_fog() { RendererFog::bind<RendererRD::Fog>(); }
+	inline void bind_fog() { RendererFog::bind<RendererRD::Fog>(); }
 
-	_ALWAYS_INLINE_ static RendererCanvasRender* get_canvas() { return canvas; }
+	_ALWAYS_INLINE_ RendererCanvasRender* get_canvas() { return canvas; }
 
-	_ALWAYS_INLINE_ static RendererSceneRenderRD* get_scene() { return scene; }
+	_ALWAYS_INLINE_ RendererSceneRenderRD* get_scene() { return scene; }
 
-	static void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
+	void set_boot_image_with_stretch(const Ref<Image>& p_image, const Color& p_color,
 		RSE::SplashStretchMode p_stretch_mode, bool p_use_filter);
 
-	static void initialize();
-	static void begin_frame(double frame_step);
-	static void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
+	void initialize();
+	void begin_frame(double frame_step);
+	void blit_render_targets_to_screen(DisplayServerEnums::WindowID p_screen,
 		const RenderingServerTypes::BlitToScreen* p_render_targets, int p_amount);
 
-	_ALWAYS_INLINE_ static bool is_opengl() { return false; }
+	_ALWAYS_INLINE_ bool is_opengl() { return false; }
 
-	_ALWAYS_INLINE_ static void gl_end_frame(bool p_swap_buffers) {}
+	_ALWAYS_INLINE_ void gl_end_frame(bool p_swap_buffers) {}
 
-	static void end_frame(bool p_present);
-	static void finalize();
+	void end_frame(bool p_present);
+	void finalize();
 
-	_ALWAYS_INLINE_ static uint64_t get_frame_number() { return frame; }
+	_ALWAYS_INLINE_ uint64_t get_frame_number() { return frame; }
 
-	_ALWAYS_INLINE_ static double get_frame_delta_time() { return delta; }
+	_ALWAYS_INLINE_ double get_frame_delta_time() { return delta; }
 
-	_ALWAYS_INLINE_ static double get_total_time() { return time; }
+	_ALWAYS_INLINE_ double get_total_time() { return time; }
 
-	_ALWAYS_INLINE_ static bool can_create_resources_async() { return true; }
+	_ALWAYS_INLINE_ bool can_create_resources_async() { return true; }
 
-	static bool is_xr_enabled() { return RendererCompositor::is_xr_enabled(); }
+	inline bool is_xr_enabled() { return RendererCompositor::is_xr_enabled(); }
 
-	_ALWAYS_INLINE_ static Error is_viable() { return OK; }
+	_ALWAYS_INLINE_ Error is_viable() { return OK; }
 
-	static Error _create_current()
+	inline Error _create_current()
 	{
 		RendererCompositorRD::initialize();
 		return OK;
 	}
 
-	static void make_current()
+	inline void make_current()
 	{
 		RendererCompositor::low_end = false;
-		RendererCompositor::bind_compositor<RendererCompositorRD>();
+		bind_utilities();
+		bind_texture_storage();
+		bind_material_storage();
+		bind_mesh_storage();
+		bind_light_storage();
+		bind_particles_storage();
+		bind_gi();
+		bind_fog();
+		bind_canvas();
+		RendererCompositor::set_boot_image_with_stretch = &set_boot_image_with_stretch;
+		RendererCompositor::initialize = &initialize;
+		RendererCompositor::begin_frame = &begin_frame;
+		RendererCompositor::blit_render_targets_to_screen = &blit_render_targets_to_screen;
+		RendererCompositor::is_opengl = &is_opengl;
+		RendererCompositor::gl_end_frame = &gl_end_frame;
+		RendererCompositor::end_frame = &end_frame;
+		RendererCompositor::finalize = &finalize;
+		RendererCompositor::get_frame_number = &get_frame_number;
+		RendererCompositor::get_frame_delta_time = &get_frame_delta_time;
+		RendererCompositor::get_total_time = &get_total_time;
+		RendererCompositor::can_create_resources_async = &can_create_resources_async;
 	}
+} // namespace RendererCompositorRD
 
-	RendererCompositorRD() = delete;
-	RendererCompositorRD(const RendererCompositorRD&) = delete;
-	~RendererCompositorRD() = delete;
-};
-
-using RCRD = RendererCompositorRD;
+namespace RCRD = RendererCompositorRD;
 
 #if defined(MODULE_OPENXR_ENABLED)
 #include <openxr/openxr.h>
@@ -50903,31 +50740,25 @@ struct RenderTarget
 	GLuint sdf_texture_process[2] = {0, 0};
 	GLuint sdf_texture_write_fb = 0;
 
-	struct RTOverridden
+	struct FBOCacheEntry
 	{
-		struct FBOCacheEntry
-		{
-			GLuint fbo = 0;
-			GLuint color = 0;
-			GLuint depth = 0;
-			bool depth_has_stencil = false;
-			Size2i size;
-			LocalVector<GLuint> allocated_textures;
-		};
+		GLuint fbo = 0;
+		GLuint color = 0;
+		GLuint depth = 0;
+		bool depth_has_stencil = false;
+		Size2i size;
+		LocalVector<GLuint> allocated_textures;
 	};
 
-	struct Overridden
-	{
-		RID color;
-		RID depth;
-		RID velocity;
-		RID velocity_depth;
-		GLuint velocity_fbo = 0;
-		bool is_overridden = false;
-		bool depth_has_stencil = false;
-		RBMap<uint32_t, RTOverridden::FBOCacheEntry> fbo_cache;
-		RBMap<uint32_t, GLuint> velocity_fbo_cache;
-	} overridden;
+	RID overridden_color;
+	RID overridden_depth;
+	RID overridden_velocity;
+	RID overridden_velocity_depth;
+	GLuint overridden_velocity_fbo = 0;
+	bool overridden_is_overridden = false;
+	bool overridden_depth_has_stencil = false;
+	RBMap<uint32_t, FBOCacheEntry> overridden_fbo_cache;
+	RBMap<uint32_t, GLuint> overridden_velocity_fbo_cache;
 
 	uint32_t view_count = 1;
 	Size2i velocity_target_size;
@@ -52945,11 +52776,8 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender
 
 	static void _update_shadow_atlas();
 
-	static inline struct ShadowRender
-	{
-		CanvasOcclusionShaderGLES3 shader;
-		RID shader_version;
-	} shadow_render;
+	static inline CanvasOcclusionShaderGLES3 shadow_render_shader;
+	static inline RID shadow_render_shader_version;
 
 	static_assert(
 		sizeof(GLES3::LightUniform) % 16 == 0, "2D light UBO size must be a multiple of 16 bytes");
@@ -56163,11 +55991,9 @@ private:
 		};
 
 		ID3D12Resource *resource = nullptr; // Non-null even if not owned.
-		struct {
-			Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-			Microsoft::WRL::ComPtr<D3D12MA::Allocation> allocation;
-			States states;
-		} owner_info; // All empty if the resource is not owned.
+		Microsoft::WRL::ComPtr<ID3D12Resource> owner_resource;
+		Microsoft::WRL::ComPtr<D3D12MA::Allocation> owner_allocation;
+		States owner_states;
 		States *states_ptr = nullptr; // Own or from another if it doesn't own the D3D12 resource.
 	};
 
@@ -56202,11 +56028,9 @@ private:
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_virtual_address = {};
 		DataFormat texel_format = DATA_FORMAT_MAX;
 		uint64_t size = 0;
-		struct {
-			bool is_dynamic : 1; // Only used for tracking (e.g. Vulkan needs these checks).
-		} flags = {};
+		bool flag_is_dynamic = false;
 
-		bool is_dynamic() const { return flags.is_dynamic; }
+		bool is_dynamic() const { return flag_is_dynamic; }
 	};
 
 	struct BufferDynamicInfo : BufferInfo {
@@ -56241,10 +56065,8 @@ private:
 		uint32_t base_mip = 0;
 		uint32_t mipmaps = 0;
 
-		struct {
-			D3D12_SHADER_RESOURCE_VIEW_DESC srv;
-			D3D12_UNORDERED_ACCESS_VIEW_DESC uav;
-		} view_descs = {};
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
 
 		TextureInfo *main_texture = nullptr;
 
@@ -57498,13 +57320,7 @@ public:
 		}
 	} compute;
 
-	// State specific to a blit pass.
-	struct {
-		NS::SharedPtr<MTL::BlitCommandEncoder> encoder;
-		_FORCE_INLINE_ void reset() {
-			encoder.reset();
-		}
-	} blit;
+	NS::SharedPtr<MTL::BlitCommandEncoder> blit_encoder;
 
 	_FORCE_INLINE_ MTL::CommandBuffer *get_command_buffer() const {
 		return commandBuffer.get();
@@ -70413,28 +70229,6 @@ public:
 
 #endif // VULKAN_ENABLED
 
-class TTSDriver
-{
-public:
-	mem_unique_ptr<Object> obj;
-	virtual bool is_speaking() const = 0;
-	virtual bool is_paused() const = 0;
-	virtual Array get_voices() const = 0;
-
-	virtual void speak(const String& p_text, const String& p_voice, int p_volume = 50,
-		float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0,
-		bool p_interrupt = false) = 0;
-	virtual void pause() = 0;
-	virtual void resume() = 0;
-	virtual void stop() = 0;
-
-	virtual void process_events() = 0;
-
-	virtual bool init() = 0;
-
-	virtual ~TTSDriver() {}
-};
-
 VLTR_GCC_WARNING_PUSH
 VLTR_GCC_WARNING_IGNORE("-Wnon-virtual-dtor")
 VLTR_GCC_WARNING_IGNORE("-Wctor-dtor-privacy")
@@ -70461,15 +70255,38 @@ using namespace winrt::Windows::Media::Playback;
 using namespace winrt::Windows::Media::SpeechSynthesis;
 using namespace winrt::Windows::Storage::Streams;
 
+#include <windows.h>
+#include <objbase.h>
+#include <sapi.h>
+#include <winnls.h>
+#include <cwchar>
+
 struct TTSUtterance;
 
-class TTSDriverOneCore : public TTSDriver {
-	List<TTSUtterance> queue;
+class TTSDriver final
+{
+public:
+	enum Mode { MODE_SAPI, MODE_ONECORE };
 
+private:
+	Mode mode = MODE_SAPI;
+	List<TTSUtterance> queue;
 	bool playing = false;
 	bool paused = false;
 	bool update_requested = false;
 
+	// SAPI state
+	ISpVoice *synth = nullptr;
+	struct UTData {
+		Char16String string;
+		int offset;
+		int64_t id;
+	};
+	HashMap<uint32_t, UTData> ids;
+	static void __stdcall speech_event_callback(WPARAM wParam, LPARAM lParam);
+
+#ifdef WINRT_ENABLED
+	// OneCore state
 	int64_t id = -1;
 	Char16String string;
 	std::shared_ptr<MediaPlayer> media;
@@ -70484,69 +70301,25 @@ class TTSDriverOneCore : public TTSDriver {
 	int64_t offset = 0;
 
 	void _dispose_current(bool p_silent = false, bool p_canceled = false);
-
 	void _speech_cancel(int p_msg_id);
 	void _speech_end(int p_msg_id);
 	void _speech_index_mark(int p_msg_id, int p_index_mark);
+#endif
 
 public:
-	virtual bool is_speaking() const override;
-	virtual bool is_paused() const override;
-	virtual Array get_voices() const override;
+	mem_unique_ptr<Object> obj;
+	explicit TTSDriver(Mode p_mode) : mode(p_mode) {}
+	~TTSDriver();
 
-	virtual void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
-	virtual void pause() override;
-	virtual void resume() override;
-	virtual void stop() override;
-
-	virtual void process_events() override;
-
-	virtual bool init() override;
-
-	TTSDriverOneCore();
-	~TTSDriverOneCore();
-};
-
-#include <windows.h>
-
-#include <objbase.h>
-#include <sapi.h>
-#include <winnls.h>
-
-#include <cwchar>
-
-struct TTSUtterance;
-
-class TTSDriverSAPI : public TTSDriver {
-	List<TTSUtterance> queue;
-	ISpVoice *synth = nullptr;
-	bool paused = false;
-	struct UTData {
-		Char16String string;
-		int offset;
-		int64_t id;
-	};
-	HashMap<uint32_t, UTData> ids;
-	bool update_requested = false;
-
-	static void __stdcall speech_event_callback(WPARAM wParam, LPARAM lParam);
-
-public:
-	virtual bool is_speaking() const override;
-	virtual bool is_paused() const override;
-	virtual Array get_voices() const override;
-
-	virtual void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false) override;
-	virtual void pause() override;
-	virtual void resume() override;
-	virtual void stop() override;
-
-	virtual void process_events() override;
-
-	virtual bool init() override;
-
-	TTSDriverSAPI();
-	~TTSDriverSAPI();
+	bool is_speaking() const;
+	bool is_paused() const;
+	Array get_voices() const;
+	void speak(const String &p_text, const String &p_voice, int p_volume = 50, float p_pitch = 1.f, float p_rate = 1.f, int64_t p_utterance_id = 0, bool p_interrupt = false);
+	void pause();
+	void resume();
+	void stop();
+	void process_events();
+	bool init();
 };
 
 #include "core/string/ustring.h"
@@ -75580,38 +75353,6 @@ public:
 	}
 };
 
-class MultiplayerDebugger final
-{
-public:
-
-
-
-private:
-	class BandwidthProfiler
-	{
-	protected:
-		struct BandwidthFrame
-		{
-			uint32_t timestamp;
-			int packet_size;
-		};
-
-		int bandwidth_in_ptr = 0;
-		Vector<BandwidthFrame> bandwidth_in;
-		int bandwidth_out_ptr = 0;
-		Vector<BandwidthFrame> bandwidth_out;
-		uint64_t last_bandwidth_time = 0;
-
-		int bandwidth_usage(const Vector<BandwidthFrame>& p_buffer, int p_pointer);
-	};
-
-
-
-public:
-	static void initialize();
-	static void deinitialize();
-};
-
 struct MultiplayerAPI::SceneData
 {
 	struct PendingPeer
@@ -80037,151 +79778,146 @@ template <typename T> class Ref;
 class PhysicsTestMotionParameters2D;
 class PhysicsTestMotionResult2D;
 
-class PhysicsServer2D final
+namespace PhysicsServer2D
 {
-public:
 	struct Data
 	{
 		GodotPhysicsServer2D* server = nullptr;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize(bool p_using_threads = false);
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized()
+	void initialize(bool p_using_threads = false);
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized()
 	{
 		return data != nullptr && data->server != nullptr;
 	}
-	_FORCE_INLINE_ static GodotPhysicsServer2D* get_driver() { return data ? data->server : nullptr; }
+	_FORCE_INLINE_ GodotPhysicsServer2D* get_driver() { return data ? data->server : nullptr; }
 
-	static RID world_boundary_shape_create();
-	static RID separation_ray_shape_create();
-	static RID segment_shape_create();
-	static RID circle_shape_create();
-	static RID rectangle_shape_create();
-	static RID capsule_shape_create();
-	static RID convex_polygon_shape_create();
-	static RID concave_polygon_shape_create();
-	static void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
-	static PS2DE::ShapeType shape_get_type(RID p_shape);
-	static real_t shape_get_custom_solver_bias(RID p_shape);
-	static bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count);
-	static RID space_create();
-	static void space_set_active(RID p_space, bool p_active);
-	static bool space_is_active(RID p_space);
-	static void space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
-	static real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param);
-	static PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
-	static void space_set_debug_contacts(RID p_space, int p_max_contacts);
-	static Vector<Vector2> space_get_contacts(RID p_space);
-	static int space_get_contact_count(RID p_space);
-	static RID area_create();
-	static void area_set_space(RID p_area, RID p_space);
-	static RID area_get_space(RID p_area);
-	static void area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
-	static void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
-	static void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform);
-	static int area_get_shape_count(RID p_area);
-	static RID area_get_shape(RID p_area, int p_shape_idx);
-	static Transform2D area_get_shape_transform(RID p_area, int p_shape_idx);
-	static void area_remove_shape(RID p_area, int p_shape_idx);
-	static void area_clear_shapes(RID p_area);
-	static void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
-	static void area_set_transform(RID p_area, const Transform2D& p_transform);
-	static Transform2D area_get_transform(RID p_area);
-	static void area_set_collision_layer(RID p_area, uint32_t p_layer);
-	static uint32_t area_get_collision_layer(RID p_area);
-	static void area_set_collision_mask(RID p_area, uint32_t p_mask);
-	static uint32_t area_get_collision_mask(RID p_area);
-	static void area_set_monitorable(RID p_area, bool p_monitorable);
-	static void area_set_pickable(RID p_area, bool p_pickable);
-	static RID body_create();
-	static void body_set_space(RID p_body, RID p_space);
-	static RID body_get_space(RID p_body);
-	static void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
-	static PS2DE::BodyMode body_get_mode(RID p_body);
-	static void body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
-	static void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
-	static void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform);
-	static int body_get_shape_count(RID p_body);
-	static RID body_get_shape(RID p_body, int p_shape_idx);
-	static Transform2D body_get_shape_transform(RID p_body, int p_shape_idx);
-	static void body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled);
-	static void body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
-	static void body_remove_shape(RID p_body, int p_shape_idx);
-	static void body_clear_shapes(RID p_body);
-	static void body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode);
-	static PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body);
-	static void body_set_collision_layer(RID p_body, uint32_t p_layer);
-	static uint32_t body_get_collision_layer(RID p_body);
-	static void body_set_collision_mask(RID p_body, uint32_t p_mask);
-	static uint32_t body_get_collision_mask(RID p_body);
-	static void body_set_collision_priority(RID p_body, real_t p_priority);
-	static real_t body_get_collision_priority(RID p_body);
-	static void body_reset_mass_properties(RID p_body);
-	static void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
-	static void body_apply_torque_impulse(RID p_body, real_t p_torque);
-	static void body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
-	static void body_apply_central_force(RID p_body, const Vector2& p_force);
-	static void body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
-	static void body_apply_torque(RID p_body, real_t p_torque);
-	static void body_add_constant_central_force(RID p_body, const Vector2& p_force);
-	static void body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
-	static void body_add_constant_torque(RID p_body, real_t p_torque);
-	static void body_set_constant_force(RID p_body, const Vector2& p_force);
-	static Vector2 body_get_constant_force(RID p_body);
-	static void body_set_constant_torque(RID p_body, real_t p_torque);
-	static real_t body_get_constant_torque(RID p_body);
-	static void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
-	static void body_add_collision_exception(RID p_body, RID p_body_b);
-	static void body_remove_collision_exception(RID p_body, RID p_body_b);
-	static void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
-	static void body_set_max_contacts_reported(RID p_body, int p_contacts);
-	static int body_get_max_contacts_reported(RID p_body);
-	static void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
-	static real_t body_get_contacts_reported_depth_threshold(RID p_body);
-	static void body_set_omit_force_integration(RID p_body, bool p_omit);
-	static bool body_is_omitting_force_integration(RID p_body);
-	static bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count);
-	static void body_set_pickable(RID p_body, bool p_pickable);
-	static PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
-	static bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result = nullptr);
-	static RID joint_create();
-	static void joint_clear(RID p_joint);
-	static void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
-	static real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param);
-	static void joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable);
-	static bool joint_is_disabled_collisions_between_bodies(RID p_joint);
-	static void joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
-	static void joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
-	static void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
-	static void pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
-	static real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param);
-	static void pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
-	static bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag);
-	static void damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
-	static real_t damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param);
-	static PS2DE::JointType joint_get_type(RID p_joint);
-	static void free_rid(RID p_rid);
-	static void set_active(bool p_active);
-	static void init();
-	static void step(real_t p_step);
-	static void sync();
-	static void flush_queries();
-	static void end_sync();
-	static void finish();
-	static bool is_flushing_queries();
-	static int get_process_info(PS2DE::ProcessInfo p_info);
+	RID world_boundary_shape_create();
+	RID separation_ray_shape_create();
+	RID segment_shape_create();
+	RID circle_shape_create();
+	RID rectangle_shape_create();
+	RID capsule_shape_create();
+	RID convex_polygon_shape_create();
+	RID concave_polygon_shape_create();
+	void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+	PS2DE::ShapeType shape_get_type(RID p_shape);
+	real_t shape_get_custom_solver_bias(RID p_shape);
+	bool shape_collide(RID p_shape_A, const Transform2D& p_xform_A, const Vector2& p_motion_A, RID p_shape_B, const Transform2D& p_xform_B, const Vector2& p_motion_B, Vector2* r_results, int p_result_max, int& r_result_count);
+	RID space_create();
+	void space_set_active(RID p_space, bool p_active);
+	bool space_is_active(RID p_space);
+	void space_set_param(RID p_space, PS2DE::SpaceParameter p_param, real_t p_value);
+	real_t space_get_param(RID p_space, PS2DE::SpaceParameter p_param);
+	PhysicsDirectSpaceState2D* space_get_direct_state(RID p_space);
+	void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	Vector<Vector2> space_get_contacts(RID p_space);
+	int space_get_contact_count(RID p_space);
+	RID area_create();
+	void area_set_space(RID p_area, RID p_space);
+	RID area_get_space(RID p_area);
+	void area_add_shape(RID p_area, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform2D& p_transform);
+	int area_get_shape_count(RID p_area);
+	RID area_get_shape(RID p_area, int p_shape_idx);
+	Transform2D area_get_shape_transform(RID p_area, int p_shape_idx);
+	void area_remove_shape(RID p_area, int p_shape_idx);
+	void area_clear_shapes(RID p_area);
+	void area_set_shape_disabled(RID p_area, int p_shape, bool p_disabled);
+	void area_set_transform(RID p_area, const Transform2D& p_transform);
+	Transform2D area_get_transform(RID p_area);
+	void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	uint32_t area_get_collision_layer(RID p_area);
+	void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	uint32_t area_get_collision_mask(RID p_area);
+	void area_set_monitorable(RID p_area, bool p_monitorable);
+	void area_set_pickable(RID p_area, bool p_pickable);
+	RID body_create();
+	void body_set_space(RID p_body, RID p_space);
+	RID body_get_space(RID p_body);
+	void body_set_mode(RID p_body, PS2DE::BodyMode p_mode);
+	PS2DE::BodyMode body_get_mode(RID p_body);
+	void body_add_shape(RID p_body, RID p_shape, const Transform2D& p_transform = Transform2D(), bool p_disabled = false);
+	void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform2D& p_transform);
+	int body_get_shape_count(RID p_body);
+	RID body_get_shape(RID p_body, int p_shape_idx);
+	Transform2D body_get_shape_transform(RID p_body, int p_shape_idx);
+	void body_set_shape_disabled(RID p_body, int p_shape, bool p_disabled);
+	void body_set_shape_as_one_way_collision(RID p_body, int p_shape, bool p_enabled, real_t p_margin = 0, const Vector2& p_direction = Vector2(0, 1));
+	void body_remove_shape(RID p_body, int p_shape_idx);
+	void body_clear_shapes(RID p_body);
+	void body_set_continuous_collision_detection_mode(RID p_body, PS2DE::CCDMode p_mode);
+	PS2DE::CCDMode body_get_continuous_collision_detection_mode(RID p_body);
+	void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t body_get_collision_layer(RID p_body);
+	void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t body_get_collision_mask(RID p_body);
+	void body_set_collision_priority(RID p_body, real_t p_priority);
+	real_t body_get_collision_priority(RID p_body);
+	void body_reset_mass_properties(RID p_body);
+	void body_apply_central_impulse(RID p_body, const Vector2& p_impulse);
+	void body_apply_torque_impulse(RID p_body, real_t p_torque);
+	void body_apply_impulse(RID p_body, const Vector2& p_impulse, const Vector2& p_position = Vector2());
+	void body_apply_central_force(RID p_body, const Vector2& p_force);
+	void body_apply_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_apply_torque(RID p_body, real_t p_torque);
+	void body_add_constant_central_force(RID p_body, const Vector2& p_force);
+	void body_add_constant_force(RID p_body, const Vector2& p_force, const Vector2& p_position = Vector2());
+	void body_add_constant_torque(RID p_body, real_t p_torque);
+	void body_set_constant_force(RID p_body, const Vector2& p_force);
+	Vector2 body_get_constant_force(RID p_body);
+	void body_set_constant_torque(RID p_body, real_t p_torque);
+	real_t body_get_constant_torque(RID p_body);
+	void body_set_axis_velocity(RID p_body, const Vector2& p_axis_velocity);
+	void body_add_collision_exception(RID p_body, RID p_body_b);
+	void body_remove_collision_exception(RID p_body, RID p_body_b);
+	void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	int body_get_max_contacts_reported(RID p_body);
+	void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	real_t body_get_contacts_reported_depth_threshold(RID p_body);
+	void body_set_omit_force_integration(RID p_body, bool p_omit);
+	bool body_is_omitting_force_integration(RID p_body);
+	bool body_collide_shape(RID p_body, int p_body_shape, RID p_shape, const Transform2D& p_shape_xform, const Vector2& p_motion, Vector2* r_results, int p_result_max, int& r_result_count);
+	void body_set_pickable(RID p_body, bool p_pickable);
+	PhysicsDirectBodyState2D* body_get_direct_state(RID p_body);
+	bool body_test_motion(RID p_body, const PS2DT::MotionParameters& p_parameters, PS2DT::MotionResult* r_result = nullptr);
+	RID joint_create();
+	void joint_clear(RID p_joint);
+	void joint_set_param(RID p_joint, PS2DE::JointParam p_param, real_t p_value);
+	real_t joint_get_param(RID p_joint, PS2DE::JointParam p_param);
+	void joint_disable_collisions_between_bodies(RID p_joint, const bool p_disable);
+	bool joint_is_disabled_collisions_between_bodies(RID p_joint);
+	void joint_make_pin(RID p_joint, const Vector2& p_anchor, RID p_body_a, RID p_body_b = RID());
+	void joint_make_groove(RID p_joint, const Vector2& p_a_groove1, const Vector2& p_a_groove2, const Vector2& p_b_anchor, RID p_body_a, RID p_body_b);
+	void joint_make_damped_spring(RID p_joint, const Vector2& p_anchor_a, const Vector2& p_anchor_b, RID p_body_a, RID p_body_b = RID());
+	void pin_joint_set_param(RID p_joint, PS2DE::PinJointParam p_param, real_t p_value);
+	real_t pin_joint_get_param(RID p_joint, PS2DE::PinJointParam p_param);
+	void pin_joint_set_flag(RID p_joint, PS2DE::PinJointFlag p_flag, bool p_enabled);
+	bool pin_joint_get_flag(RID p_joint, PS2DE::PinJointFlag p_flag);
+	void damped_spring_joint_set_param(RID p_joint, PS2DE::DampedSpringParam p_param, real_t p_value);
+	real_t damped_spring_joint_get_param(RID p_joint, PS2DE::DampedSpringParam p_param);
+	PS2DE::JointType joint_get_type(RID p_joint);
+	void free_rid(RID p_rid);
+	void set_active(bool p_active);
+	void init();
+	void step(real_t p_step);
+	void sync();
+	void flush_queries();
+	void end_sync();
+	void finish();
+	bool is_flushing_queries();
+	int get_process_info(PS2DE::ProcessInfo p_info);
 #ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] static void free(RID p_rid) { free_rid(p_rid); }
+	[[deprecated("Use `free_rid()` instead.")]] inline void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
-	PhysicsServer2D() = delete;
-	PhysicsServer2D(const PhysicsServer2D&) = delete;
-	PhysicsServer2D& operator=(const PhysicsServer2D&) = delete;
-	~PhysicsServer2D() = delete;
-};
+} // namespace PhysicsServer2D
 
 namespace PhysicsServer2DConstants {
 
@@ -83941,11 +83677,9 @@ public:
 		const LocalVector<RID>& p_path_rids, const LocalVector<int64_t>& p_path_owner_ids);
 };
 
-class NavigationServer2D final
+namespace NavigationServer2D
 {
-	static inline BinaryMutex _thread_safe_mutex;
-
-public:
+	inline BinaryMutex _thread_safe_mutex;
 	enum ProcessInfo
 	{
 		INFO_ACTIVE_MAPS,
@@ -83959,8 +83693,6 @@ public:
 		INFO_EDGE_FREE_COUNT,
 		INFO_OBSTACLE_COUNT,
 	};
-
-private:
 	struct Data
 	{
 		bool active = true;
@@ -84009,314 +83741,307 @@ private:
 		bool debug_navigation_avoidance_enable_obstacles_static = true;
 #endif // DEBUG_ENABLED
 	};
-
-public:
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
 	/* SERVER LIFECYCLE */
 
-	static void initialize();
-	static void finalize();
+	void initialize();
+	void finalize();
 
-	static bool is_initialized() { return data != nullptr; }
+	inline bool is_initialized() { return data != nullptr; }
 
-	static void set_active(bool p_active);
-	static void sync();
-	static void process(double p_delta_time);
-	static void physics_process(double p_delta_time);
-	static void free_rid(RID p_rid);
+	void set_active(bool p_active);
+	void sync();
+	void process(double p_delta_time);
+	void physics_process(double p_delta_time);
+	void free_rid(RID p_rid);
 
-	static int get_process_info(ProcessInfo p_info);
+	int get_process_info(ProcessInfo p_info);
 
 	/* MAP API */
 
-	static RID map_create();
-	static void map_set_active(RID p_map, bool p_active);
-	static bool map_is_active(RID p_map);
+	RID map_create();
+	void map_set_active(RID p_map, bool p_active);
+	bool map_is_active(RID p_map);
 
-	static void map_set_cell_size(RID p_map, real_t p_cell_size);
-	static real_t map_get_cell_size(RID p_map);
+	void map_set_cell_size(RID p_map, real_t p_cell_size);
+	real_t map_get_cell_size(RID p_map);
 
-	static void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
-	static float map_get_merge_rasterizer_cell_scale(RID p_map);
+	void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
+	float map_get_merge_rasterizer_cell_scale(RID p_map);
 
-	static void map_set_use_edge_connections(RID p_map, bool p_enabled);
-	static bool map_get_use_edge_connections(RID p_map);
+	void map_set_use_edge_connections(RID p_map, bool p_enabled);
+	bool map_get_use_edge_connections(RID p_map);
 
-	static void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
-	static real_t map_get_edge_connection_margin(RID p_map);
+	void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+	real_t map_get_edge_connection_margin(RID p_map);
 
-	static void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
-	static real_t map_get_link_connection_radius(RID p_map);
+	void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
+	real_t map_get_link_connection_radius(RID p_map);
 
-	static Vector<Vector2> map_get_path(RID p_map, Vector2 p_origin, Vector2 p_destination,
+	Vector<Vector2> map_get_path(RID p_map, Vector2 p_origin, Vector2 p_destination,
 		bool p_optimize, uint32_t p_navigation_layers = 1);
-	static Vector2 map_get_closest_point(RID p_map, const Vector2& p_point);
-	static RID map_get_closest_point_owner(RID p_map, const Vector2& p_point);
+	Vector2 map_get_closest_point(RID p_map, const Vector2& p_point);
+	RID map_get_closest_point_owner(RID p_map, const Vector2& p_point);
 
-	static void map_force_update(RID p_map);
-	static uint32_t map_get_iteration_id(RID p_map);
+	void map_force_update(RID p_map);
+	uint32_t map_get_iteration_id(RID p_map);
 
-	static void map_set_use_async_iterations(RID p_map, bool p_enabled);
-	static bool map_get_use_async_iterations(RID p_map);
+	void map_set_use_async_iterations(RID p_map, bool p_enabled);
+	bool map_get_use_async_iterations(RID p_map);
 
-	static Vector2 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
+	Vector2 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
 
 	/* REGION API */
 
-	static RID region_create();
-	static uint32_t region_get_iteration_id(RID p_region);
+	RID region_create();
+	uint32_t region_get_iteration_id(RID p_region);
 
-	static void region_set_use_async_iterations(RID p_region, bool p_enabled);
-	static bool region_get_use_async_iterations(RID p_region);
+	void region_set_use_async_iterations(RID p_region, bool p_enabled);
+	bool region_get_use_async_iterations(RID p_region);
 
-	static void region_set_enabled(RID p_region, bool p_enabled);
-	static bool region_get_enabled(RID p_region);
+	void region_set_enabled(RID p_region, bool p_enabled);
+	bool region_get_enabled(RID p_region);
 
-	static void region_set_use_edge_connections(RID p_region, bool p_enabled);
-	static bool region_get_use_edge_connections(RID p_region);
+	void region_set_use_edge_connections(RID p_region, bool p_enabled);
+	bool region_get_use_edge_connections(RID p_region);
 
-	static void region_set_enter_cost(RID p_region, real_t p_enter_cost);
-	static real_t region_get_enter_cost(RID p_region);
+	void region_set_enter_cost(RID p_region, real_t p_enter_cost);
+	real_t region_get_enter_cost(RID p_region);
 
-	static void region_set_travel_cost(RID p_region, real_t p_travel_cost);
-	static real_t region_get_travel_cost(RID p_region);
+	void region_set_travel_cost(RID p_region, real_t p_travel_cost);
+	real_t region_get_travel_cost(RID p_region);
 
-	static bool region_owns_point(RID p_region, const Vector2& p_point);
+	bool region_owns_point(RID p_region, const Vector2& p_point);
 
-	static void region_set_map(RID p_region, RID p_map);
-	static RID region_get_map(RID p_region);
+	void region_set_map(RID p_region, RID p_map);
+	RID region_get_map(RID p_region);
 
-	static void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
-	static uint32_t region_get_navigation_layers(RID p_region);
+	void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
+	uint32_t region_get_navigation_layers(RID p_region);
 
-	static void region_set_transform(RID p_region, Transform2D p_transform);
-	static Transform2D region_get_transform(RID p_region);
+	void region_set_transform(RID p_region, Transform2D p_transform);
+	Transform2D region_get_transform(RID p_region);
 
-	static void region_set_navigation_polygon(
+	void region_set_navigation_polygon(
 		RID p_region, Ref<NavigationPolygon> p_navigation_polygon);
 
-	static int region_get_connections_count(RID p_region);
-	static Vector2 region_get_connection_pathway_start(RID p_region, int p_connection_id);
-	static Vector2 region_get_connection_pathway_end(RID p_region, int p_connection_id);
+	int region_get_connections_count(RID p_region);
+	Vector2 region_get_connection_pathway_start(RID p_region, int p_connection_id);
+	Vector2 region_get_connection_pathway_end(RID p_region, int p_connection_id);
 
-	static Vector2 region_get_closest_point(RID p_region, const Vector2& p_point);
-	static Vector2 region_get_random_point(
+	Vector2 region_get_closest_point(RID p_region, const Vector2& p_point);
+	Vector2 region_get_random_point(
 		RID p_region, uint32_t p_navigation_layers, bool p_uniformly);
-	static Rect2 region_get_bounds(RID p_region);
+	Rect2 region_get_bounds(RID p_region);
 
 	/* LINK API */
 
-	static RID link_create();
-	static uint32_t link_get_iteration_id(RID p_link);
+	RID link_create();
+	uint32_t link_get_iteration_id(RID p_link);
 
-	static void link_set_map(RID p_link, RID p_map);
-	static RID link_get_map(RID p_link);
+	void link_set_map(RID p_link, RID p_map);
+	RID link_get_map(RID p_link);
 
-	static void link_set_enabled(RID p_link, bool p_enabled);
-	static bool link_get_enabled(RID p_link);
+	void link_set_enabled(RID p_link, bool p_enabled);
+	bool link_get_enabled(RID p_link);
 
-	static void link_set_bidirectional(RID p_link, bool p_bidirectional);
-	static bool link_is_bidirectional(RID p_link);
+	void link_set_bidirectional(RID p_link, bool p_bidirectional);
+	bool link_is_bidirectional(RID p_link);
 
-	static void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
-	static uint32_t link_get_navigation_layers(RID p_link);
+	void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
+	uint32_t link_get_navigation_layers(RID p_link);
 
-	static void link_set_start_position(RID p_link, Vector2 p_position);
-	static Vector2 link_get_start_position(RID p_link);
+	void link_set_start_position(RID p_link, Vector2 p_position);
+	Vector2 link_get_start_position(RID p_link);
 
-	static void link_set_end_position(RID p_link, Vector2 p_position);
-	static Vector2 link_get_end_position(RID p_link);
+	void link_set_end_position(RID p_link, Vector2 p_position);
+	Vector2 link_get_end_position(RID p_link);
 
-	static void link_set_enter_cost(RID p_link, real_t p_enter_cost);
-	static real_t link_get_enter_cost(RID p_link);
+	void link_set_enter_cost(RID p_link, real_t p_enter_cost);
+	real_t link_get_enter_cost(RID p_link);
 
-	static void link_set_travel_cost(RID p_link, real_t p_travel_cost);
-	static real_t link_get_travel_cost(RID p_link);
+	void link_set_travel_cost(RID p_link, real_t p_travel_cost);
+	real_t link_get_travel_cost(RID p_link);
 
 	/* AGENT API */
 
-	static RID agent_create();
+	RID agent_create();
 
-	static void agent_set_map(RID p_agent, RID p_map);
-	static RID agent_get_map(RID p_agent);
+	void agent_set_map(RID p_agent, RID p_map);
+	RID agent_get_map(RID p_agent);
 
-	static void agent_set_paused(RID p_agent, bool p_paused);
-	static bool agent_get_paused(RID p_agent);
+	void agent_set_paused(RID p_agent, bool p_paused);
+	bool agent_get_paused(RID p_agent);
 
-	static void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
-	static bool agent_get_avoidance_enabled(RID p_agent);
+	void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
+	bool agent_get_avoidance_enabled(RID p_agent);
 
-	static void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
-	static real_t agent_get_neighbor_distance(RID p_agent);
+	void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
+	real_t agent_get_neighbor_distance(RID p_agent);
 
-	static void agent_set_max_neighbors(RID p_agent, int p_count);
-	static int agent_get_max_neighbors(RID p_agent);
+	void agent_set_max_neighbors(RID p_agent, int p_count);
+	int agent_get_max_neighbors(RID p_agent);
 
-	static void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
-	static real_t agent_get_time_horizon_agents(RID p_agent);
+	void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
+	real_t agent_get_time_horizon_agents(RID p_agent);
 
-	static void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
-	static real_t agent_get_time_horizon_obstacles(RID p_agent);
+	void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
+	real_t agent_get_time_horizon_obstacles(RID p_agent);
 
-	static void agent_set_radius(RID p_agent, real_t p_radius);
-	static real_t agent_get_radius(RID p_agent);
+	void agent_set_radius(RID p_agent, real_t p_radius);
+	real_t agent_get_radius(RID p_agent);
 
-	static void agent_set_max_speed(RID p_agent, real_t p_max_speed);
-	static real_t agent_get_max_speed(RID p_agent);
+	void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+	real_t agent_get_max_speed(RID p_agent);
 
-	static void agent_set_velocity_forced(RID p_agent, Vector2 p_velocity);
-	static void agent_set_velocity(RID p_agent, Vector2 p_velocity);
-	static Vector2 agent_get_velocity(RID p_agent);
+	void agent_set_velocity_forced(RID p_agent, Vector2 p_velocity);
+	void agent_set_velocity(RID p_agent, Vector2 p_velocity);
+	Vector2 agent_get_velocity(RID p_agent);
 
-	static void agent_set_position(RID p_agent, Vector2 p_position);
-	static Vector2 agent_get_position(RID p_agent);
+	void agent_set_position(RID p_agent, Vector2 p_position);
+	Vector2 agent_get_position(RID p_agent);
 
-	static bool agent_is_map_changed(RID p_agent);
-	static bool agent_has_avoidance_callback(RID p_agent);
+	bool agent_is_map_changed(RID p_agent);
+	bool agent_has_avoidance_callback(RID p_agent);
 
-	static void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
-	static uint32_t agent_get_avoidance_layers(RID p_agent);
+	void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
+	uint32_t agent_get_avoidance_layers(RID p_agent);
 
-	static void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
-	static uint32_t agent_get_avoidance_mask(RID p_agent);
+	void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
+	uint32_t agent_get_avoidance_mask(RID p_agent);
 
-	static void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
-	static real_t agent_get_avoidance_priority(RID p_agent);
+	void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
+	real_t agent_get_avoidance_priority(RID p_agent);
 
 	/* OBSTACLE API */
 
-	static RID obstacle_create();
+	RID obstacle_create();
 
-	static void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
-	static bool obstacle_get_avoidance_enabled(RID p_obstacle);
+	void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
+	bool obstacle_get_avoidance_enabled(RID p_obstacle);
 
-	static void obstacle_set_map(RID p_obstacle, RID p_map);
-	static RID obstacle_get_map(RID p_obstacle);
+	void obstacle_set_map(RID p_obstacle, RID p_map);
+	RID obstacle_get_map(RID p_obstacle);
 
-	static void obstacle_set_paused(RID p_obstacle, bool p_paused);
-	static bool obstacle_get_paused(RID p_obstacle);
+	void obstacle_set_paused(RID p_obstacle, bool p_paused);
+	bool obstacle_get_paused(RID p_obstacle);
 
-	static void obstacle_set_radius(RID p_obstacle, real_t p_radius);
-	static real_t obstacle_get_radius(RID p_obstacle);
+	void obstacle_set_radius(RID p_obstacle, real_t p_radius);
+	real_t obstacle_get_radius(RID p_obstacle);
 
-	static void obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity);
-	static Vector2 obstacle_get_velocity(RID p_obstacle);
+	void obstacle_set_velocity(RID p_obstacle, Vector2 p_velocity);
+	Vector2 obstacle_get_velocity(RID p_obstacle);
 
-	static void obstacle_set_position(RID p_obstacle, Vector2 p_position);
-	static Vector2 obstacle_get_position(RID p_obstacle);
+	void obstacle_set_position(RID p_obstacle, Vector2 p_position);
+	Vector2 obstacle_get_position(RID p_obstacle);
 
-	static void obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices);
-	static Vector<Vector2> obstacle_get_vertices(RID p_obstacle);
+	void obstacle_set_vertices(RID p_obstacle, const Vector<Vector2>& p_vertices);
+	Vector<Vector2> obstacle_get_vertices(RID p_obstacle);
 
-	static void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
-	static uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
+	void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
+	uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
 
 	/* PATH QUERY & UTILITIES */
 
-	static void query_path(const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
+	void query_path(const Ref<NavigationPathQueryParameters2D>& p_query_parameters,
 		Ref<NavigationPathQueryResult2D> p_query_result);
-	static Vector<Vector2> simplify_path(const Vector<Vector2>& p_path, real_t p_epsilon);
+	Vector<Vector2> simplify_path(const Vector<Vector2>& p_path, real_t p_epsilon);
 
 	/* DEBUG API */
 
-	static void set_debug_enabled(bool p_enabled);
-	static bool get_debug_enabled();
+	void set_debug_enabled(bool p_enabled);
+	bool get_debug_enabled();
 
 #ifdef DEBUG_ENABLED
-	static void set_debug_navigation_enabled(bool p_enabled);
-	static bool get_debug_navigation_enabled();
+	void set_debug_navigation_enabled(bool p_enabled);
+	bool get_debug_navigation_enabled();
 
-	static void set_debug_avoidance_enabled(bool p_enabled);
-	static bool get_debug_avoidance_enabled();
+	void set_debug_avoidance_enabled(bool p_enabled);
+	bool get_debug_avoidance_enabled();
 
-	static void set_debug_navigation_edge_connection_color(const Color& p_color);
-	static Color get_debug_navigation_edge_connection_color();
+	void set_debug_navigation_edge_connection_color(const Color& p_color);
+	Color get_debug_navigation_edge_connection_color();
 
-	static void set_debug_navigation_geometry_face_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_face_color();
+	void set_debug_navigation_geometry_face_color(const Color& p_color);
+	Color get_debug_navigation_geometry_face_color();
 
-	static void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_face_disabled_color();
+	void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
+	Color get_debug_navigation_geometry_face_disabled_color();
 
-	static void set_debug_navigation_geometry_edge_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_edge_color();
+	void set_debug_navigation_geometry_edge_color(const Color& p_color);
+	Color get_debug_navigation_geometry_edge_color();
 
-	static void set_debug_navigation_enable_obstacles(bool p_enable);
-	static bool get_debug_navigation_enable_obstacles();
+	void set_debug_navigation_enable_obstacles(bool p_enable);
+	bool get_debug_navigation_enable_obstacles();
 
-	static void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_edge_disabled_color();
+	void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
+	Color get_debug_navigation_geometry_edge_disabled_color();
 
-	static void set_debug_navigation_link_connection_color(const Color& p_color);
-	static Color get_debug_navigation_link_connection_color();
+	void set_debug_navigation_link_connection_color(const Color& p_color);
+	Color get_debug_navigation_link_connection_color();
 
-	static void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_link_connection_disabled_color();
+	void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
+	Color get_debug_navigation_link_connection_disabled_color();
 
-	static void set_debug_navigation_enable_edge_connections(bool p_value);
-	static bool get_debug_navigation_enable_edge_connections();
+	void set_debug_navigation_enable_edge_connections(bool p_value);
+	bool get_debug_navigation_enable_edge_connections();
 
-	static void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
-	static bool get_debug_navigation_enable_geometry_face_random_color();
+	void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
+	bool get_debug_navigation_enable_geometry_face_random_color();
 
-	static void set_debug_navigation_enable_link_connections(bool p_enable);
-	static bool get_debug_navigation_enable_link_connections();
+	void set_debug_navigation_enable_link_connections(bool p_enable);
+	bool get_debug_navigation_enable_link_connections();
 
-	static void set_debug_navigation_enable_edge_lines(bool p_value);
-	static bool get_debug_navigation_enable_edge_lines();
+	void set_debug_navigation_enable_edge_lines(bool p_value);
+	bool get_debug_navigation_enable_edge_lines();
 
-	static void set_debug_navigation_agent_path_color(const Color& p_color);
-	static Color get_debug_navigation_agent_path_color();
+	void set_debug_navigation_agent_path_color(const Color& p_color);
+	Color get_debug_navigation_agent_path_color();
 
-	static void set_debug_navigation_enable_agent_radius(bool p_enable);
-	static bool get_debug_navigation_enable_agent_radius();
+	void set_debug_navigation_enable_agent_radius(bool p_enable);
+	bool get_debug_navigation_enable_agent_radius();
 
-	static void set_debug_navigation_enable_agent_paths(bool p_value);
-	static bool get_debug_navigation_enable_agent_paths();
+	void set_debug_navigation_enable_agent_paths(bool p_value);
+	bool get_debug_navigation_enable_agent_paths();
 
-	static void set_debug_navigation_agent_path_point_size(real_t p_point_size);
-	static real_t get_debug_navigation_agent_path_point_size();
+	void set_debug_navigation_agent_path_point_size(real_t p_point_size);
+	real_t get_debug_navigation_agent_path_point_size();
 
-	static void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_agents_radius();
+	void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
+	bool get_debug_navigation_avoidance_enable_agents_radius();
 
-	static void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_obstacles_radius();
+	void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
+	bool get_debug_navigation_avoidance_enable_obstacles_radius();
 
-	static void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
-	static Color get_debug_navigation_avoidance_agents_radius_color();
+	void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
+	Color get_debug_navigation_avoidance_agents_radius_color();
 
-	static void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
-	static Color get_debug_navigation_avoidance_obstacles_radius_color();
+	void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
+	Color get_debug_navigation_avoidance_obstacles_radius_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
 
-	static void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_obstacles_static();
+	void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
+	bool get_debug_navigation_avoidance_enable_obstacles_static();
 #endif // DEBUG_ENABLED
 
 	/* LIFECYCLE DISALLOWANCE */
-
-	NavigationServer2D() = delete;
-	NavigationServer2D(const NavigationServer2D&) = delete;
-	NavigationServer2D& operator=(const NavigationServer2D&) = delete;
-	~NavigationServer2D() = delete;
-};
+} // namespace NavigationServer2D
 
 #include "core/string/ustring.h"
 
@@ -89343,212 +89068,207 @@ template <typename T> class Ref;
 class PhysicsTestMotionParameters3D;
 class PhysicsTestMotionResult3D;
 
-class PhysicsServer3D final
+namespace PhysicsServer3D
 {
-public:
 	struct Data
 	{
 		JoltPhysicsServer3D* server = nullptr;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize(bool p_on_separate_thread = false);
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized()
+	void initialize(bool p_on_separate_thread = false);
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized()
 	{
 		return data != nullptr && data->server != nullptr;
 	}
-	_FORCE_INLINE_ static JoltPhysicsServer3D* get_driver() { return data ? data->server : nullptr; }
+	_FORCE_INLINE_ JoltPhysicsServer3D* get_driver() { return data ? data->server : nullptr; }
 
-	static void soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler);
-	static RID shape_create(PS3DE::ShapeType p_shape);
-	static RID world_boundary_shape_create();
-	static RID separation_ray_shape_create();
-	static RID sphere_shape_create();
-	static RID box_shape_create();
-	static RID capsule_shape_create();
-	static RID cylinder_shape_create();
-	static RID convex_polygon_shape_create();
-	static RID concave_polygon_shape_create();
-	static RID heightmap_shape_create();
-	static RID custom_shape_create();
-	static void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
-	static PS3DE::ShapeType shape_get_type(RID p_shape);
-	static void shape_set_margin(RID p_shape, real_t p_margin);
-	static real_t shape_get_margin(RID p_shape);
-	static real_t shape_get_custom_solver_bias(RID p_shape);
-	static RID space_create();
-	static void space_set_active(RID p_space, bool p_active);
-	static bool space_is_active(RID p_space);
-	static void space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value);
-	static real_t space_get_param(RID p_space, PS3DE::SpaceParameter p_param);
-	static PhysicsDirectSpaceState3D* space_get_direct_state(RID p_space);
-	static void space_set_debug_contacts(RID p_space, int p_max_contacts);
-	static Vector<Vector3> space_get_contacts(RID p_space);
-	static int space_get_contact_count(RID p_space);
-	static RID area_create();
-	static void area_set_space(RID p_area, RID p_space);
-	static RID area_get_space(RID p_area);
-	static void area_add_shape(RID p_area, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
-	static void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
-	static void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform);
-	static int area_get_shape_count(RID p_area);
-	static RID area_get_shape(RID p_area, int p_shape_idx);
-	static Transform3D area_get_shape_transform(RID p_area, int p_shape_idx);
-	static void area_remove_shape(RID p_area, int p_shape_idx);
-	static void area_clear_shapes(RID p_area);
-	static void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled);
-	static void area_set_transform(RID p_area, const Transform3D& p_transform);
-	static Transform3D area_get_transform(RID p_area);
-	static void area_set_collision_layer(RID p_area, uint32_t p_layer);
-	static uint32_t area_get_collision_layer(RID p_area);
-	static void area_set_collision_mask(RID p_area, uint32_t p_mask);
-	static uint32_t area_get_collision_mask(RID p_area);
-	static void area_set_monitorable(RID p_area, bool p_monitorable);
-	static void area_set_ray_pickable(RID p_area, bool p_enable);
-	static RID body_create();
-	static void body_set_space(RID p_body, RID p_space);
-	static RID body_get_space(RID p_body);
-	static void body_set_mode(RID p_body, PS3DE::BodyMode p_mode);
-	static PS3DE::BodyMode body_get_mode(RID p_body);
-	static void body_add_shape(RID p_body, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
-	static void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
-	static void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform);
-	static int body_get_shape_count(RID p_body);
-	static RID body_get_shape(RID p_body, int p_shape_idx);
-	static Transform3D body_get_shape_transform(RID p_body, int p_shape_idx);
-	static void body_remove_shape(RID p_body, int p_shape_idx);
-	static void body_clear_shapes(RID p_body);
-	static void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
-	static void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable);
-	static bool body_is_continuous_collision_detection_enabled(RID p_body);
-	static void body_set_collision_layer(RID p_body, uint32_t p_layer);
-	static uint32_t body_get_collision_layer(RID p_body);
-	static void body_set_collision_mask(RID p_body, uint32_t p_mask);
-	static uint32_t body_get_collision_mask(RID p_body);
-	static void body_set_collision_priority(RID p_body, real_t p_priority);
-	static real_t body_get_collision_priority(RID p_body);
-	static void body_set_user_flags(RID p_body, uint32_t p_flags);
-	static uint32_t body_get_user_flags(RID p_body);
-	static void body_reset_mass_properties(RID p_body);
-	static void body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
-	static void body_apply_impulse(RID p_body, const Vector3& p_impulse, const Vector3& p_position = Vector3());
-	static void body_apply_torque_impulse(RID p_body, const Vector3& p_impulse);
-	static void body_apply_central_force(RID p_body, const Vector3& p_force);
-	static void body_apply_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
-	static void body_apply_torque(RID p_body, const Vector3& p_torque);
-	static void body_add_constant_central_force(RID p_body, const Vector3& p_force);
-	static void body_add_constant_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
-	static void body_add_constant_torque(RID p_body, const Vector3& p_torque);
-	static void body_set_constant_force(RID p_body, const Vector3& p_force);
-	static Vector3 body_get_constant_force(RID p_body);
-	static void body_set_constant_torque(RID p_body, const Vector3& p_torque);
-	static Vector3 body_get_constant_torque(RID p_body);
-	static void body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity);
-	static void body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock);
-	static bool body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis);
-	static void body_add_collision_exception(RID p_body, RID p_body_b);
-	static void body_remove_collision_exception(RID p_body, RID p_body_b);
-	static void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
-	static void body_set_max_contacts_reported(RID p_body, int p_contacts);
-	static int body_get_max_contacts_reported(RID p_body);
-	static void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
-	static real_t body_get_contacts_reported_depth_threshold(RID p_body);
-	static void body_set_omit_force_integration(RID p_body, bool p_omit);
-	static bool body_is_omitting_force_integration(RID p_body);
-	static void body_set_ray_pickable(RID p_body, bool p_enable);
-	static PhysicsDirectBodyState3D* body_get_direct_state(RID p_body);
-	static bool body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result = nullptr);
-	static RID soft_body_create();
-	static void soft_body_set_space(RID p_body, RID p_space);
-	static RID soft_body_get_space(RID p_body);
-	static void soft_body_set_mesh(RID p_body, RID p_mesh);
-	static AABB soft_body_get_bounds(RID p_body);
-	static void soft_body_set_collision_layer(RID p_body, uint32_t p_layer);
-	static uint32_t soft_body_get_collision_layer(RID p_body);
-	static void soft_body_set_collision_mask(RID p_body, uint32_t p_mask);
-	static uint32_t soft_body_get_collision_mask(RID p_body);
-	static void soft_body_add_collision_exception(RID p_body, RID p_body_b);
-	static void soft_body_remove_collision_exception(RID p_body, RID p_body_b);
-	static void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
-	static void soft_body_set_transform(RID p_body, const Transform3D& p_transform);
-	static void soft_body_set_ray_pickable(RID p_body, bool p_enable);
-	static void soft_body_set_simulation_precision(RID p_body, int p_simulation_precision);
-	static int soft_body_get_simulation_precision(RID p_body);
-	static void soft_body_set_total_mass(RID p_body, real_t p_total_mass);
-	static real_t soft_body_get_total_mass(RID p_body);
-	static void soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness);
-	static real_t soft_body_get_linear_stiffness(RID p_body);
-	static void soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor);
-	static real_t soft_body_get_shrinking_factor(RID p_body);
-	static void soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient);
-	static real_t soft_body_get_pressure_coefficient(RID p_body);
-	static void soft_body_set_damping_coefficient(RID p_body, real_t p_damping_coefficient);
-	static real_t soft_body_get_damping_coefficient(RID p_body);
-	static void soft_body_set_drag_coefficient(RID p_body, real_t p_drag_coefficient);
-	static real_t soft_body_get_drag_coefficient(RID p_body);
-	static void soft_body_move_point(RID p_body, int p_point_index, const Vector3& p_global_position);
-	static Vector3 soft_body_get_point_global_position(RID p_body, int p_point_index);
-	static void soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3& p_impulse);
-	static void soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3& p_force);
-	static void soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
-	static void soft_body_apply_central_force(RID p_body, const Vector3& p_force);
-	static void soft_body_remove_all_pinned_points(RID p_body);
-	static void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin);
-	static bool soft_body_is_point_pinned(RID p_body, int p_point_index);
-	static RID joint_create();
-	static void joint_clear(RID p_joint);
-	static PS3DE::JointType joint_get_type(RID p_joint);
-	static void joint_set_solver_priority(RID p_joint, int p_priority);
-	static int joint_get_solver_priority(RID p_joint);
-	static void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable);
-	static bool joint_is_disabled_collisions_between_bodies(RID p_joint);
-	static void joint_make_pin(RID p_joint, RID p_body_A, const Vector3& p_local_A, RID p_body_B, const Vector3& p_local_B);
-	static void pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value);
-	static real_t pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param);
-	static void pin_joint_set_local_a(RID p_joint, const Vector3& p_A);
-	static Vector3 pin_joint_get_local_a(RID p_joint);
-	static void pin_joint_set_local_b(RID p_joint, const Vector3& p_B);
-	static Vector3 pin_joint_get_local_b(RID p_joint);
-	static void joint_make_hinge(RID p_joint, RID p_body_A, const Transform3D& p_hinge_A, RID p_body_B, const Transform3D& p_hinge_B);
-	static void joint_make_hinge_simple(RID p_joint, RID p_body_A, const Vector3& p_pivot_A, const Vector3& p_axis_A, RID p_body_B, const Vector3& p_pivot_B, const Vector3& p_axis_B);
-	static void hinge_joint_set_param(RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value);
-	static real_t hinge_joint_get_param(RID p_joint, PS3DE::HingeJointParam p_param);
-	static void hinge_joint_set_flag(RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled);
-	static bool hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag);
-	static void joint_make_slider(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
-	static void slider_joint_set_param(RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value);
-	static real_t slider_joint_get_param(RID p_joint, PS3DE::SliderJointParam p_param);
-	static void joint_make_cone_twist(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
-	static void cone_twist_joint_set_param(RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value);
-	static real_t cone_twist_joint_get_param(RID p_joint, PS3DE::ConeTwistJointParam p_param);
-	static void joint_make_generic_6dof(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
-	static void generic_6dof_joint_set_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param, real_t p_value);
-	static real_t generic_6dof_joint_get_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param);
-	static void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable);
-	static bool generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag);
-	static void generic_6dof_joint_set_angular_target_rotation(RID p_joint, const Quaternion& p_target_rotation);
-	static Quaternion generic_6dof_joint_get_angular_target_rotation(RID p_joint);
-	static void free_rid(RID p_rid);
-	static void set_active(bool p_active);
-	static void init();
-	static void step(real_t p_step);
-	static void sync();
-	static void flush_queries();
-	static void end_sync();
-	static void finish();
-	static bool is_flushing_queries();
-	static int get_process_info(PS3DE::ProcessInfo p_info);
+	void soft_body_update_rendering_server(RID p_body, PhysicsServer3DRenderingServerHandler* rp_rendering_server_handler);
+	RID shape_create(PS3DE::ShapeType p_shape);
+	RID world_boundary_shape_create();
+	RID separation_ray_shape_create();
+	RID sphere_shape_create();
+	RID box_shape_create();
+	RID capsule_shape_create();
+	RID cylinder_shape_create();
+	RID convex_polygon_shape_create();
+	RID concave_polygon_shape_create();
+	RID heightmap_shape_create();
+	RID custom_shape_create();
+	void shape_set_custom_solver_bias(RID p_shape, real_t p_bias);
+	PS3DE::ShapeType shape_get_type(RID p_shape);
+	void shape_set_margin(RID p_shape, real_t p_margin);
+	real_t shape_get_margin(RID p_shape);
+	real_t shape_get_custom_solver_bias(RID p_shape);
+	RID space_create();
+	void space_set_active(RID p_space, bool p_active);
+	bool space_is_active(RID p_space);
+	void space_set_param(RID p_space, PS3DE::SpaceParameter p_param, real_t p_value);
+	real_t space_get_param(RID p_space, PS3DE::SpaceParameter p_param);
+	PhysicsDirectSpaceState3D* space_get_direct_state(RID p_space);
+	void space_set_debug_contacts(RID p_space, int p_max_contacts);
+	Vector<Vector3> space_get_contacts(RID p_space);
+	int space_get_contact_count(RID p_space);
+	RID area_create();
+	void area_set_space(RID p_area, RID p_space);
+	RID area_get_space(RID p_area);
+	void area_add_shape(RID p_area, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+	void area_set_shape(RID p_area, int p_shape_idx, RID p_shape);
+	void area_set_shape_transform(RID p_area, int p_shape_idx, const Transform3D& p_transform);
+	int area_get_shape_count(RID p_area);
+	RID area_get_shape(RID p_area, int p_shape_idx);
+	Transform3D area_get_shape_transform(RID p_area, int p_shape_idx);
+	void area_remove_shape(RID p_area, int p_shape_idx);
+	void area_clear_shapes(RID p_area);
+	void area_set_shape_disabled(RID p_area, int p_shape_idx, bool p_disabled);
+	void area_set_transform(RID p_area, const Transform3D& p_transform);
+	Transform3D area_get_transform(RID p_area);
+	void area_set_collision_layer(RID p_area, uint32_t p_layer);
+	uint32_t area_get_collision_layer(RID p_area);
+	void area_set_collision_mask(RID p_area, uint32_t p_mask);
+	uint32_t area_get_collision_mask(RID p_area);
+	void area_set_monitorable(RID p_area, bool p_monitorable);
+	void area_set_ray_pickable(RID p_area, bool p_enable);
+	RID body_create();
+	void body_set_space(RID p_body, RID p_space);
+	RID body_get_space(RID p_body);
+	void body_set_mode(RID p_body, PS3DE::BodyMode p_mode);
+	PS3DE::BodyMode body_get_mode(RID p_body);
+	void body_add_shape(RID p_body, RID p_shape, const Transform3D& p_transform = Transform3D(), bool p_disabled = false);
+	void body_set_shape(RID p_body, int p_shape_idx, RID p_shape);
+	void body_set_shape_transform(RID p_body, int p_shape_idx, const Transform3D& p_transform);
+	int body_get_shape_count(RID p_body);
+	RID body_get_shape(RID p_body, int p_shape_idx);
+	Transform3D body_get_shape_transform(RID p_body, int p_shape_idx);
+	void body_remove_shape(RID p_body, int p_shape_idx);
+	void body_clear_shapes(RID p_body);
+	void body_set_shape_disabled(RID p_body, int p_shape_idx, bool p_disabled);
+	void body_set_enable_continuous_collision_detection(RID p_body, bool p_enable);
+	bool body_is_continuous_collision_detection_enabled(RID p_body);
+	void body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t body_get_collision_layer(RID p_body);
+	void body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t body_get_collision_mask(RID p_body);
+	void body_set_collision_priority(RID p_body, real_t p_priority);
+	real_t body_get_collision_priority(RID p_body);
+	void body_set_user_flags(RID p_body, uint32_t p_flags);
+	uint32_t body_get_user_flags(RID p_body);
+	void body_reset_mass_properties(RID p_body);
+	void body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	void body_apply_impulse(RID p_body, const Vector3& p_impulse, const Vector3& p_position = Vector3());
+	void body_apply_torque_impulse(RID p_body, const Vector3& p_impulse);
+	void body_apply_central_force(RID p_body, const Vector3& p_force);
+	void body_apply_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	void body_apply_torque(RID p_body, const Vector3& p_torque);
+	void body_add_constant_central_force(RID p_body, const Vector3& p_force);
+	void body_add_constant_force(RID p_body, const Vector3& p_force, const Vector3& p_position = Vector3());
+	void body_add_constant_torque(RID p_body, const Vector3& p_torque);
+	void body_set_constant_force(RID p_body, const Vector3& p_force);
+	Vector3 body_get_constant_force(RID p_body);
+	void body_set_constant_torque(RID p_body, const Vector3& p_torque);
+	Vector3 body_get_constant_torque(RID p_body);
+	void body_set_axis_velocity(RID p_body, const Vector3& p_axis_velocity);
+	void body_set_axis_lock(RID p_body, PS3DE::BodyAxis p_axis, bool p_lock);
+	bool body_is_axis_locked(RID p_body, PS3DE::BodyAxis p_axis);
+	void body_add_collision_exception(RID p_body, RID p_body_b);
+	void body_remove_collision_exception(RID p_body, RID p_body_b);
+	void body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	void body_set_max_contacts_reported(RID p_body, int p_contacts);
+	int body_get_max_contacts_reported(RID p_body);
+	void body_set_contacts_reported_depth_threshold(RID p_body, real_t p_threshold);
+	real_t body_get_contacts_reported_depth_threshold(RID p_body);
+	void body_set_omit_force_integration(RID p_body, bool p_omit);
+	bool body_is_omitting_force_integration(RID p_body);
+	void body_set_ray_pickable(RID p_body, bool p_enable);
+	PhysicsDirectBodyState3D* body_get_direct_state(RID p_body);
+	bool body_test_motion(RID p_body, const PS3DT::MotionParameters& p_parameters, PS3DT::MotionResult* r_result = nullptr);
+	RID soft_body_create();
+	void soft_body_set_space(RID p_body, RID p_space);
+	RID soft_body_get_space(RID p_body);
+	void soft_body_set_mesh(RID p_body, RID p_mesh);
+	AABB soft_body_get_bounds(RID p_body);
+	void soft_body_set_collision_layer(RID p_body, uint32_t p_layer);
+	uint32_t soft_body_get_collision_layer(RID p_body);
+	void soft_body_set_collision_mask(RID p_body, uint32_t p_mask);
+	uint32_t soft_body_get_collision_mask(RID p_body);
+	void soft_body_add_collision_exception(RID p_body, RID p_body_b);
+	void soft_body_remove_collision_exception(RID p_body, RID p_body_b);
+	void soft_body_get_collision_exceptions(RID p_body, List<RID>* p_exceptions);
+	void soft_body_set_transform(RID p_body, const Transform3D& p_transform);
+	void soft_body_set_ray_pickable(RID p_body, bool p_enable);
+	void soft_body_set_simulation_precision(RID p_body, int p_simulation_precision);
+	int soft_body_get_simulation_precision(RID p_body);
+	void soft_body_set_total_mass(RID p_body, real_t p_total_mass);
+	real_t soft_body_get_total_mass(RID p_body);
+	void soft_body_set_linear_stiffness(RID p_body, real_t p_stiffness);
+	real_t soft_body_get_linear_stiffness(RID p_body);
+	void soft_body_set_shrinking_factor(RID p_body, real_t p_shrinking_factor);
+	real_t soft_body_get_shrinking_factor(RID p_body);
+	void soft_body_set_pressure_coefficient(RID p_body, real_t p_pressure_coefficient);
+	real_t soft_body_get_pressure_coefficient(RID p_body);
+	void soft_body_set_damping_coefficient(RID p_body, real_t p_damping_coefficient);
+	real_t soft_body_get_damping_coefficient(RID p_body);
+	void soft_body_set_drag_coefficient(RID p_body, real_t p_drag_coefficient);
+	real_t soft_body_get_drag_coefficient(RID p_body);
+	void soft_body_move_point(RID p_body, int p_point_index, const Vector3& p_global_position);
+	Vector3 soft_body_get_point_global_position(RID p_body, int p_point_index);
+	void soft_body_apply_point_impulse(RID p_body, int p_point_index, const Vector3& p_impulse);
+	void soft_body_apply_point_force(RID p_body, int p_point_index, const Vector3& p_force);
+	void soft_body_apply_central_impulse(RID p_body, const Vector3& p_impulse);
+	void soft_body_apply_central_force(RID p_body, const Vector3& p_force);
+	void soft_body_remove_all_pinned_points(RID p_body);
+	void soft_body_pin_point(RID p_body, int p_point_index, bool p_pin);
+	bool soft_body_is_point_pinned(RID p_body, int p_point_index);
+	RID joint_create();
+	void joint_clear(RID p_joint);
+	PS3DE::JointType joint_get_type(RID p_joint);
+	void joint_set_solver_priority(RID p_joint, int p_priority);
+	int joint_get_solver_priority(RID p_joint);
+	void joint_disable_collisions_between_bodies(RID p_joint, bool p_disable);
+	bool joint_is_disabled_collisions_between_bodies(RID p_joint);
+	void joint_make_pin(RID p_joint, RID p_body_A, const Vector3& p_local_A, RID p_body_B, const Vector3& p_local_B);
+	void pin_joint_set_param(RID p_joint, PS3DE::PinJointParam p_param, real_t p_value);
+	real_t pin_joint_get_param(RID p_joint, PS3DE::PinJointParam p_param);
+	void pin_joint_set_local_a(RID p_joint, const Vector3& p_A);
+	Vector3 pin_joint_get_local_a(RID p_joint);
+	void pin_joint_set_local_b(RID p_joint, const Vector3& p_B);
+	Vector3 pin_joint_get_local_b(RID p_joint);
+	void joint_make_hinge(RID p_joint, RID p_body_A, const Transform3D& p_hinge_A, RID p_body_B, const Transform3D& p_hinge_B);
+	void joint_make_hinge_simple(RID p_joint, RID p_body_A, const Vector3& p_pivot_A, const Vector3& p_axis_A, RID p_body_B, const Vector3& p_pivot_B, const Vector3& p_axis_B);
+	void hinge_joint_set_param(RID p_joint, PS3DE::HingeJointParam p_param, real_t p_value);
+	real_t hinge_joint_get_param(RID p_joint, PS3DE::HingeJointParam p_param);
+	void hinge_joint_set_flag(RID p_joint, PS3DE::HingeJointFlag p_flag, bool p_enabled);
+	bool hinge_joint_get_flag(RID p_joint, PS3DE::HingeJointFlag p_flag);
+	void joint_make_slider(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	void slider_joint_set_param(RID p_joint, PS3DE::SliderJointParam p_param, real_t p_value);
+	real_t slider_joint_get_param(RID p_joint, PS3DE::SliderJointParam p_param);
+	void joint_make_cone_twist(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	void cone_twist_joint_set_param(RID p_joint, PS3DE::ConeTwistJointParam p_param, real_t p_value);
+	real_t cone_twist_joint_get_param(RID p_joint, PS3DE::ConeTwistJointParam p_param);
+	void joint_make_generic_6dof(RID p_joint, RID p_body_A, const Transform3D& p_local_frame_A, RID p_body_B, const Transform3D& p_local_frame_B);
+	void generic_6dof_joint_set_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param, real_t p_value);
+	real_t generic_6dof_joint_get_param(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisParam p_param);
+	void generic_6dof_joint_set_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag, bool p_enable);
+	bool generic_6dof_joint_get_flag(RID p_joint, Vector3::Axis, PS3DE::G6DOFJointAxisFlag p_flag);
+	void generic_6dof_joint_set_angular_target_rotation(RID p_joint, const Quaternion& p_target_rotation);
+	Quaternion generic_6dof_joint_get_angular_target_rotation(RID p_joint);
+	void free_rid(RID p_rid);
+	void set_active(bool p_active);
+	void init();
+	void step(real_t p_step);
+	void sync();
+	void flush_queries();
+	void end_sync();
+	void finish();
+	bool is_flushing_queries();
+	int get_process_info(PS3DE::ProcessInfo p_info);
 #ifndef DISABLE_DEPRECATED
-	[[deprecated("Use `free_rid()` instead.")]] static void free(RID p_rid) { free_rid(p_rid); }
+	[[deprecated("Use `free_rid()` instead.")]] inline void free(RID p_rid) { free_rid(p_rid); }
 #endif // DISABLE_DEPRECATED
 
-	PhysicsServer3D() = delete;
-	PhysicsServer3D(const PhysicsServer3D&) = delete;
-	PhysicsServer3D& operator=(const PhysicsServer3D&) = delete;
-	~PhysicsServer3D() = delete;
-};
+} // namespace PhysicsServer3D
 
 namespace PhysicsServer3DConstants {
 
@@ -90451,11 +90171,9 @@ public:
 		const LocalVector<RID>& p_path_rids, const LocalVector<int64_t>& p_path_owner_ids);
 };
 
-class NavigationServer3D final
+namespace NavigationServer3D
 {
-	static inline BinaryMutex _thread_safe_mutex;
-
-public:
+	inline BinaryMutex _thread_safe_mutex;
 	enum ProcessInfo
 	{
 		INFO_ACTIVE_MAPS,
@@ -90469,8 +90187,6 @@ public:
 		INFO_EDGE_FREE_COUNT,
 		INFO_OBSTACLE_COUNT,
 	};
-
-private:
 	struct Data
 	{
 		bool active = true;
@@ -90539,368 +90255,361 @@ private:
 		Ref<StandardMaterial3D> debug_navigation_agent_path_point_material;
 #endif // DEBUG_ENABLED
 	};
-
-public:
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
 	/* SERVER LIFECYCLE */
 
-	static void initialize();
-	static void finalize();
+	void initialize();
+	void finalize();
 
-	static bool is_initialized() { return data != nullptr; }
+	inline bool is_initialized() { return data != nullptr; }
 
-	static void set_active(bool p_active);
-	static void sync();
-	static void process(double p_delta_time);
-	static void physics_process(double p_delta_time);
-	static void free_rid(RID p_rid);
+	void set_active(bool p_active);
+	void sync();
+	void process(double p_delta_time);
+	void physics_process(double p_delta_time);
+	void free_rid(RID p_rid);
 
-	static int get_process_info(ProcessInfo p_info);
+	int get_process_info(ProcessInfo p_info);
 
 	/* MAP API */
 
-	static RID map_create();
-	static void map_set_active(RID p_map, bool p_active);
-	static bool map_is_active(RID p_map);
+	RID map_create();
+	void map_set_active(RID p_map, bool p_active);
+	bool map_is_active(RID p_map);
 
-	static void map_set_up(RID p_map, Vector3 p_up);
-	static Vector3 map_get_up(RID p_map);
+	void map_set_up(RID p_map, Vector3 p_up);
+	Vector3 map_get_up(RID p_map);
 
-	static void map_set_cell_size(RID p_map, real_t p_cell_size);
-	static real_t map_get_cell_size(RID p_map);
+	void map_set_cell_size(RID p_map, real_t p_cell_size);
+	real_t map_get_cell_size(RID p_map);
 
-	static void map_set_cell_height(RID p_map, real_t p_height);
-	static real_t map_get_cell_height(RID p_map);
+	void map_set_cell_height(RID p_map, real_t p_height);
+	real_t map_get_cell_height(RID p_map);
 
-	static void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
-	static float map_get_merge_rasterizer_cell_scale(RID p_map);
+	void map_set_merge_rasterizer_cell_scale(RID p_map, float p_value);
+	float map_get_merge_rasterizer_cell_scale(RID p_map);
 
-	static void map_set_use_edge_connections(RID p_map, bool p_enabled);
-	static bool map_get_use_edge_connections(RID p_map);
+	void map_set_use_edge_connections(RID p_map, bool p_enabled);
+	bool map_get_use_edge_connections(RID p_map);
 
-	static void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
-	static real_t map_get_edge_connection_margin(RID p_map);
+	void map_set_edge_connection_margin(RID p_map, real_t p_connection_margin);
+	real_t map_get_edge_connection_margin(RID p_map);
 
-	static void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
-	static real_t map_get_link_connection_radius(RID p_map);
+	void map_set_link_connection_radius(RID p_map, real_t p_connection_radius);
+	real_t map_get_link_connection_radius(RID p_map);
 
-	static Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination,
+	Vector<Vector3> map_get_path(RID p_map, Vector3 p_origin, Vector3 p_destination,
 		bool p_optimize, uint32_t p_navigation_layers = 1);
 
-	static Vector3 map_get_closest_point_to_segment(
+	Vector3 map_get_closest_point_to_segment(
 		RID p_map, const Vector3& p_from, const Vector3& p_to, const bool p_use_collision = false);
-	static Vector3 map_get_closest_point(RID p_map, const Vector3& p_point);
-	static Vector3 map_get_closest_point_normal(RID p_map, const Vector3& p_point);
-	static RID map_get_closest_point_owner(RID p_map, const Vector3& p_point);
+	Vector3 map_get_closest_point(RID p_map, const Vector3& p_point);
+	Vector3 map_get_closest_point_normal(RID p_map, const Vector3& p_point);
+	RID map_get_closest_point_owner(RID p_map, const Vector3& p_point);
 
-	static void map_force_update(RID p_map);
-	static uint32_t map_get_iteration_id(RID p_map);
+	void map_force_update(RID p_map);
+	uint32_t map_get_iteration_id(RID p_map);
 
-	static void map_set_use_async_iterations(RID p_map, bool p_enabled);
-	static bool map_get_use_async_iterations(RID p_map);
+	void map_set_use_async_iterations(RID p_map, bool p_enabled);
+	bool map_get_use_async_iterations(RID p_map);
 
-	static Vector3 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
+	Vector3 map_get_random_point(RID p_map, uint32_t p_navigation_layers, bool p_uniformly);
 
 	/* REGION API */
 
-	static RID region_create();
-	static uint32_t region_get_iteration_id(RID p_region);
+	RID region_create();
+	uint32_t region_get_iteration_id(RID p_region);
 
-	static void region_set_use_async_iterations(RID p_region, bool p_enabled);
-	static bool region_get_use_async_iterations(RID p_region);
+	void region_set_use_async_iterations(RID p_region, bool p_enabled);
+	bool region_get_use_async_iterations(RID p_region);
 
-	static void region_set_enabled(RID p_region, bool p_enabled);
-	static bool region_get_enabled(RID p_region);
+	void region_set_enabled(RID p_region, bool p_enabled);
+	bool region_get_enabled(RID p_region);
 
-	static void region_set_use_edge_connections(RID p_region, bool p_enabled);
-	static bool region_get_use_edge_connections(RID p_region);
+	void region_set_use_edge_connections(RID p_region, bool p_enabled);
+	bool region_get_use_edge_connections(RID p_region);
 
-	static void region_set_enter_cost(RID p_region, real_t p_enter_cost);
-	static real_t region_get_enter_cost(RID p_region);
+	void region_set_enter_cost(RID p_region, real_t p_enter_cost);
+	real_t region_get_enter_cost(RID p_region);
 
-	static void region_set_travel_cost(RID p_region, real_t p_travel_cost);
-	static real_t region_get_travel_cost(RID p_region);
+	void region_set_travel_cost(RID p_region, real_t p_travel_cost);
+	real_t region_get_travel_cost(RID p_region);
 
-	static bool region_owns_point(RID p_region, const Vector3& p_point);
+	bool region_owns_point(RID p_region, const Vector3& p_point);
 
-	static void region_set_map(RID p_region, RID p_map);
-	static RID region_get_map(RID p_region);
+	void region_set_map(RID p_region, RID p_map);
+	RID region_get_map(RID p_region);
 
-	static void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
-	static uint32_t region_get_navigation_layers(RID p_region);
+	void region_set_navigation_layers(RID p_region, uint32_t p_navigation_layers);
+	uint32_t region_get_navigation_layers(RID p_region);
 
-	static void region_set_transform(RID p_region, Transform3D p_transform);
-	static Transform3D region_get_transform(RID p_region);
+	void region_set_transform(RID p_region, Transform3D p_transform);
+	Transform3D region_get_transform(RID p_region);
 
-	static void region_set_navigation_mesh(RID p_region, Ref<NavigationMesh> p_navigation_mesh);
+	void region_set_navigation_mesh(RID p_region, Ref<NavigationMesh> p_navigation_mesh);
 
-	static int region_get_connections_count(RID p_region);
-	static Vector3 region_get_connection_pathway_start(RID p_region, int p_connection_id);
-	static Vector3 region_get_connection_pathway_end(RID p_region, int p_connection_id);
+	int region_get_connections_count(RID p_region);
+	Vector3 region_get_connection_pathway_start(RID p_region, int p_connection_id);
+	Vector3 region_get_connection_pathway_end(RID p_region, int p_connection_id);
 
-	static Vector3 region_get_closest_point_to_segment(
+	Vector3 region_get_closest_point_to_segment(
 		RID p_region, const Vector3& p_from, const Vector3& p_to, bool p_use_collision = false);
-	static Vector3 region_get_closest_point(RID p_region, const Vector3& p_point);
-	static Vector3 region_get_closest_point_normal(RID p_region, const Vector3& p_point);
-	static Vector3 region_get_random_point(
+	Vector3 region_get_closest_point(RID p_region, const Vector3& p_point);
+	Vector3 region_get_closest_point_normal(RID p_region, const Vector3& p_point);
+	Vector3 region_get_random_point(
 		RID p_region, uint32_t p_navigation_layers, bool p_uniformly);
 
-	static AABB region_get_bounds(RID p_region);
+	AABB region_get_bounds(RID p_region);
 
 	/* LINK API */
 
-	static RID link_create();
-	static uint32_t link_get_iteration_id(RID p_link);
+	RID link_create();
+	uint32_t link_get_iteration_id(RID p_link);
 
-	static void link_set_map(RID p_link, RID p_map);
-	static RID link_get_map(RID p_link);
+	void link_set_map(RID p_link, RID p_map);
+	RID link_get_map(RID p_link);
 
-	static void link_set_enabled(RID p_link, bool p_enabled);
-	static bool link_get_enabled(RID p_link);
+	void link_set_enabled(RID p_link, bool p_enabled);
+	bool link_get_enabled(RID p_link);
 
-	static void link_set_bidirectional(RID p_link, bool p_bidirectional);
-	static bool link_is_bidirectional(RID p_link);
+	void link_set_bidirectional(RID p_link, bool p_bidirectional);
+	bool link_is_bidirectional(RID p_link);
 
-	static void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
-	static uint32_t link_get_navigation_layers(RID p_link);
+	void link_set_navigation_layers(RID p_link, uint32_t p_navigation_layers);
+	uint32_t link_get_navigation_layers(RID p_link);
 
-	static void link_set_start_position(RID p_link, Vector3 p_position);
-	static Vector3 link_get_start_position(RID p_link);
+	void link_set_start_position(RID p_link, Vector3 p_position);
+	Vector3 link_get_start_position(RID p_link);
 
-	static void link_set_end_position(RID p_link, Vector3 p_position);
-	static Vector3 link_get_end_position(RID p_link);
+	void link_set_end_position(RID p_link, Vector3 p_position);
+	Vector3 link_get_end_position(RID p_link);
 
-	static void link_set_enter_cost(RID p_link, real_t p_enter_cost);
-	static real_t link_get_enter_cost(RID p_link);
+	void link_set_enter_cost(RID p_link, real_t p_enter_cost);
+	real_t link_get_enter_cost(RID p_link);
 
-	static void link_set_travel_cost(RID p_link, real_t p_travel_cost);
-	static real_t link_get_travel_cost(RID p_link);
+	void link_set_travel_cost(RID p_link, real_t p_travel_cost);
+	real_t link_get_travel_cost(RID p_link);
 
 	/* AGENT API */
 
-	static RID agent_create();
+	RID agent_create();
 
-	static void agent_set_map(RID p_agent, RID p_map);
-	static RID agent_get_map(RID p_agent);
+	void agent_set_map(RID p_agent, RID p_map);
+	RID agent_get_map(RID p_agent);
 
-	static void agent_set_paused(RID p_agent, bool p_paused);
-	static bool agent_get_paused(RID p_agent);
+	void agent_set_paused(RID p_agent, bool p_paused);
+	bool agent_get_paused(RID p_agent);
 
-	static void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
-	static bool agent_get_avoidance_enabled(RID p_agent);
+	void agent_set_avoidance_enabled(RID p_agent, bool p_enabled);
+	bool agent_get_avoidance_enabled(RID p_agent);
 
-	static void agent_set_use_3d_avoidance(RID p_agent, bool p_enabled);
-	static bool agent_get_use_3d_avoidance(RID p_agent);
+	void agent_set_use_3d_avoidance(RID p_agent, bool p_enabled);
+	bool agent_get_use_3d_avoidance(RID p_agent);
 
-	static void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
-	static real_t agent_get_neighbor_distance(RID p_agent);
+	void agent_set_neighbor_distance(RID p_agent, real_t p_distance);
+	real_t agent_get_neighbor_distance(RID p_agent);
 
-	static void agent_set_max_neighbors(RID p_agent, int p_count);
-	static int agent_get_max_neighbors(RID p_agent);
+	void agent_set_max_neighbors(RID p_agent, int p_count);
+	int agent_get_max_neighbors(RID p_agent);
 
-	static void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
-	static real_t agent_get_time_horizon_agents(RID p_agent);
+	void agent_set_time_horizon_agents(RID p_agent, real_t p_time_horizon);
+	real_t agent_get_time_horizon_agents(RID p_agent);
 
-	static void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
-	static real_t agent_get_time_horizon_obstacles(RID p_agent);
+	void agent_set_time_horizon_obstacles(RID p_agent, real_t p_time_horizon);
+	real_t agent_get_time_horizon_obstacles(RID p_agent);
 
-	static void agent_set_radius(RID p_agent, real_t p_radius);
-	static real_t agent_get_radius(RID p_agent);
+	void agent_set_radius(RID p_agent, real_t p_radius);
+	real_t agent_get_radius(RID p_agent);
 
-	static void agent_set_height(RID p_agent, real_t p_height);
-	static real_t agent_get_height(RID p_agent);
+	void agent_set_height(RID p_agent, real_t p_height);
+	real_t agent_get_height(RID p_agent);
 
-	static void agent_set_max_speed(RID p_agent, real_t p_max_speed);
-	static real_t agent_get_max_speed(RID p_agent);
+	void agent_set_max_speed(RID p_agent, real_t p_max_speed);
+	real_t agent_get_max_speed(RID p_agent);
 
-	static void agent_set_velocity_forced(RID p_agent, Vector3 p_velocity);
-	static void agent_set_velocity(RID p_agent, Vector3 p_velocity);
-	static Vector3 agent_get_velocity(RID p_agent);
+	void agent_set_velocity_forced(RID p_agent, Vector3 p_velocity);
+	void agent_set_velocity(RID p_agent, Vector3 p_velocity);
+	Vector3 agent_get_velocity(RID p_agent);
 
-	static void agent_set_position(RID p_agent, Vector3 p_position);
-	static Vector3 agent_get_position(RID p_agent);
+	void agent_set_position(RID p_agent, Vector3 p_position);
+	Vector3 agent_get_position(RID p_agent);
 
-	static bool agent_is_map_changed(RID p_agent);
-	static bool agent_has_avoidance_callback(RID p_agent);
+	bool agent_is_map_changed(RID p_agent);
+	bool agent_has_avoidance_callback(RID p_agent);
 
-	static void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
-	static uint32_t agent_get_avoidance_layers(RID p_agent);
+	void agent_set_avoidance_layers(RID p_agent, uint32_t p_layers);
+	uint32_t agent_get_avoidance_layers(RID p_agent);
 
-	static void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
-	static uint32_t agent_get_avoidance_mask(RID p_agent);
+	void agent_set_avoidance_mask(RID p_agent, uint32_t p_mask);
+	uint32_t agent_get_avoidance_mask(RID p_agent);
 
-	static void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
-	static real_t agent_get_avoidance_priority(RID p_agent);
+	void agent_set_avoidance_priority(RID p_agent, real_t p_priority);
+	real_t agent_get_avoidance_priority(RID p_agent);
 
 	/* OBSTACLE API */
 
-	static RID obstacle_create();
+	RID obstacle_create();
 
-	static void obstacle_set_map(RID p_obstacle, RID p_map);
-	static RID obstacle_get_map(RID p_obstacle);
+	void obstacle_set_map(RID p_obstacle, RID p_map);
+	RID obstacle_get_map(RID p_obstacle);
 
-	static void obstacle_set_paused(RID p_obstacle, bool p_paused);
-	static bool obstacle_get_paused(RID p_obstacle);
+	void obstacle_set_paused(RID p_obstacle, bool p_paused);
+	bool obstacle_get_paused(RID p_obstacle);
 
-	static void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
-	static bool obstacle_get_avoidance_enabled(RID p_obstacle);
+	void obstacle_set_avoidance_enabled(RID p_obstacle, bool p_enabled);
+	bool obstacle_get_avoidance_enabled(RID p_obstacle);
 
-	static void obstacle_set_use_3d_avoidance(RID p_obstacle, bool p_enabled);
-	static bool obstacle_get_use_3d_avoidance(RID p_obstacle);
+	void obstacle_set_use_3d_avoidance(RID p_obstacle, bool p_enabled);
+	bool obstacle_get_use_3d_avoidance(RID p_obstacle);
 
-	static void obstacle_set_radius(RID p_obstacle, real_t p_radius);
-	static real_t obstacle_get_radius(RID p_obstacle);
+	void obstacle_set_radius(RID p_obstacle, real_t p_radius);
+	real_t obstacle_get_radius(RID p_obstacle);
 
-	static void obstacle_set_height(RID p_obstacle, real_t p_height);
-	static real_t obstacle_get_height(RID p_obstacle);
+	void obstacle_set_height(RID p_obstacle, real_t p_height);
+	real_t obstacle_get_height(RID p_obstacle);
 
-	static void obstacle_set_velocity(RID p_obstacle, Vector3 p_velocity);
-	static Vector3 obstacle_get_velocity(RID p_obstacle);
+	void obstacle_set_velocity(RID p_obstacle, Vector3 p_velocity);
+	Vector3 obstacle_get_velocity(RID p_obstacle);
 
-	static void obstacle_set_position(RID p_obstacle, Vector3 p_position);
-	static Vector3 obstacle_get_position(RID p_obstacle);
+	void obstacle_set_position(RID p_obstacle, Vector3 p_position);
+	Vector3 obstacle_get_position(RID p_obstacle);
 
-	static void obstacle_set_vertices(RID p_obstacle, const Vector<Vector3>& p_vertices);
-	static Vector<Vector3> obstacle_get_vertices(RID p_obstacle);
+	void obstacle_set_vertices(RID p_obstacle, const Vector<Vector3>& p_vertices);
+	Vector<Vector3> obstacle_get_vertices(RID p_obstacle);
 
-	static void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
-	static uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
+	void obstacle_set_avoidance_layers(RID p_obstacle, uint32_t p_layers);
+	uint32_t obstacle_get_avoidance_layers(RID p_obstacle);
 
 	/* PATH QUERY & UTILITIES */
 
-	static void query_path(const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
+	void query_path(const Ref<NavigationPathQueryParameters3D>& p_query_parameters,
 		Ref<NavigationPathQueryResult3D> p_query_result);
-	static Vector<Vector3> simplify_path(const Vector<Vector3>& p_path, real_t p_epsilon);
+	Vector<Vector3> simplify_path(const Vector<Vector3>& p_path, real_t p_epsilon);
 
 	/* DEBUG API */
 
-	static void set_debug_enabled(bool p_enabled);
-	static bool get_debug_enabled();
+	void set_debug_enabled(bool p_enabled);
+	bool get_debug_enabled();
 
 #ifdef DEBUG_ENABLED
-	static void set_debug_navigation_enabled(bool p_enabled);
-	static bool get_debug_navigation_enabled();
+	void set_debug_navigation_enabled(bool p_enabled);
+	bool get_debug_navigation_enabled();
 
-	static void set_debug_avoidance_enabled(bool p_enabled);
-	static bool get_debug_avoidance_enabled();
+	void set_debug_avoidance_enabled(bool p_enabled);
+	bool get_debug_avoidance_enabled();
 
-	static void set_debug_navigation_edge_connection_color(const Color& p_color);
-	static Color get_debug_navigation_edge_connection_color();
+	void set_debug_navigation_edge_connection_color(const Color& p_color);
+	Color get_debug_navigation_edge_connection_color();
 
-	static void set_debug_navigation_geometry_edge_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_edge_color();
+	void set_debug_navigation_geometry_edge_color(const Color& p_color);
+	Color get_debug_navigation_geometry_edge_color();
 
-	static void set_debug_navigation_geometry_face_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_face_color();
+	void set_debug_navigation_geometry_face_color(const Color& p_color);
+	Color get_debug_navigation_geometry_face_color();
 
-	static void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_edge_disabled_color();
+	void set_debug_navigation_geometry_edge_disabled_color(const Color& p_color);
+	Color get_debug_navigation_geometry_edge_disabled_color();
 
-	static void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_geometry_face_disabled_color();
+	void set_debug_navigation_geometry_face_disabled_color(const Color& p_color);
+	Color get_debug_navigation_geometry_face_disabled_color();
 
-	static void set_debug_navigation_link_connection_color(const Color& p_color);
-	static Color get_debug_navigation_link_connection_color();
+	void set_debug_navigation_link_connection_color(const Color& p_color);
+	Color get_debug_navigation_link_connection_color();
 
-	static void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
-	static Color get_debug_navigation_link_connection_disabled_color();
+	void set_debug_navigation_link_connection_disabled_color(const Color& p_color);
+	Color get_debug_navigation_link_connection_disabled_color();
 
-	static void set_debug_navigation_agent_path_color(const Color& p_color);
-	static Color get_debug_navigation_agent_path_color();
+	void set_debug_navigation_agent_path_color(const Color& p_color);
+	Color get_debug_navigation_agent_path_color();
 
-	static void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
-	static Color get_debug_navigation_avoidance_agents_radius_color();
+	void set_debug_navigation_avoidance_agents_radius_color(const Color& p_color);
+	Color get_debug_navigation_avoidance_agents_radius_color();
 
-	static void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
-	static Color get_debug_navigation_avoidance_obstacles_radius_color();
+	void set_debug_navigation_avoidance_obstacles_radius_color(const Color& p_color);
+	Color get_debug_navigation_avoidance_obstacles_radius_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushin_face_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushin_face_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushout_face_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushout_face_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushin_edge_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushin_edge_color();
 
-	static void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
+	void set_debug_navigation_avoidance_static_obstacle_pushout_edge_color(
 		const Color& p_color);
-	static Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
+	Color get_debug_navigation_avoidance_static_obstacle_pushout_edge_color();
 
-	static void set_debug_navigation_enable_edge_connections(bool p_value);
-	static bool get_debug_navigation_enable_edge_connections();
+	void set_debug_navigation_enable_edge_connections(bool p_value);
+	bool get_debug_navigation_enable_edge_connections();
 
-	static void set_debug_navigation_enable_edge_connections_xray(bool p_value);
-	static bool get_debug_navigation_enable_edge_connections_xray();
+	void set_debug_navigation_enable_edge_connections_xray(bool p_value);
+	bool get_debug_navigation_enable_edge_connections_xray();
 
-	static void set_debug_navigation_enable_edge_lines(bool p_value);
-	static bool get_debug_navigation_enable_edge_lines();
+	void set_debug_navigation_enable_edge_lines(bool p_value);
+	bool get_debug_navigation_enable_edge_lines();
 
-	static void set_debug_navigation_enable_edge_lines_xray(bool p_value);
-	static bool get_debug_navigation_enable_edge_lines_xray();
+	void set_debug_navigation_enable_edge_lines_xray(bool p_value);
+	bool get_debug_navigation_enable_edge_lines_xray();
 
-	static void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
-	static bool get_debug_navigation_enable_geometry_face_random_color();
+	void set_debug_navigation_enable_geometry_face_random_color(bool p_value);
+	bool get_debug_navigation_enable_geometry_face_random_color();
 
-	static void set_debug_navigation_enable_link_connections(bool p_value);
-	static bool get_debug_navigation_enable_link_connections();
+	void set_debug_navigation_enable_link_connections(bool p_value);
+	bool get_debug_navigation_enable_link_connections();
 
-	static void set_debug_navigation_enable_link_connections_xray(bool p_value);
-	static bool get_debug_navigation_enable_link_connections_xray();
+	void set_debug_navigation_enable_link_connections_xray(bool p_value);
+	bool get_debug_navigation_enable_link_connections_xray();
 
-	static void set_debug_navigation_enable_agent_paths(bool p_value);
-	static bool get_debug_navigation_enable_agent_paths();
+	void set_debug_navigation_enable_agent_paths(bool p_value);
+	bool get_debug_navigation_enable_agent_paths();
 
-	static void set_debug_navigation_enable_agent_paths_xray(bool p_value);
-	static bool get_debug_navigation_enable_agent_paths_xray();
+	void set_debug_navigation_enable_agent_paths_xray(bool p_value);
+	bool get_debug_navigation_enable_agent_paths_xray();
 
-	static void set_debug_navigation_agent_path_point_size(real_t p_point_size);
-	static real_t get_debug_navigation_agent_path_point_size();
+	void set_debug_navigation_agent_path_point_size(real_t p_point_size);
+	real_t get_debug_navigation_agent_path_point_size();
 
-	static void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_agents_radius();
+	void set_debug_navigation_avoidance_enable_agents_radius(bool p_value);
+	bool get_debug_navigation_avoidance_enable_agents_radius();
 
-	static void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_obstacles_radius();
+	void set_debug_navigation_avoidance_enable_obstacles_radius(bool p_value);
+	bool get_debug_navigation_avoidance_enable_obstacles_radius();
 
-	static void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
-	static bool get_debug_navigation_avoidance_enable_obstacles_static();
+	void set_debug_navigation_avoidance_enable_obstacles_static(bool p_value);
+	bool get_debug_navigation_avoidance_enable_obstacles_static();
 
-	static Ref<StandardMaterial3D> get_debug_navigation_geometry_face_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_geometry_face_disabled_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_disabled_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_edge_connections_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_link_connections_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_link_connections_disabled_material();
+	Ref<StandardMaterial3D> get_debug_navigation_geometry_face_material();
+	Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_material();
+	Ref<StandardMaterial3D> get_debug_navigation_geometry_face_disabled_material();
+	Ref<StandardMaterial3D> get_debug_navigation_geometry_edge_disabled_material();
+	Ref<StandardMaterial3D> get_debug_navigation_edge_connections_material();
+	Ref<StandardMaterial3D> get_debug_navigation_link_connections_material();
+	Ref<StandardMaterial3D> get_debug_navigation_link_connections_disabled_material();
 
-	static Ref<StandardMaterial3D> get_debug_navigation_agent_path_line_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_agent_path_point_material();
+	Ref<StandardMaterial3D> get_debug_navigation_agent_path_line_material();
+	Ref<StandardMaterial3D> get_debug_navigation_agent_path_point_material();
 
-	static Ref<StandardMaterial3D> get_debug_navigation_avoidance_agents_radius_material();
-	static Ref<StandardMaterial3D> get_debug_navigation_avoidance_obstacles_radius_material();
+	Ref<StandardMaterial3D> get_debug_navigation_avoidance_agents_radius_material();
+	Ref<StandardMaterial3D> get_debug_navigation_avoidance_obstacles_radius_material();
 
-	static Ref<StandardMaterial3D>
+	Ref<StandardMaterial3D>
 	get_debug_navigation_avoidance_static_obstacle_pushin_face_material();
-	static Ref<StandardMaterial3D>
+	Ref<StandardMaterial3D>
 	get_debug_navigation_avoidance_static_obstacle_pushout_face_material();
-	static Ref<StandardMaterial3D>
+	Ref<StandardMaterial3D>
 	get_debug_navigation_avoidance_static_obstacle_pushin_edge_material();
-	static Ref<StandardMaterial3D>
+	Ref<StandardMaterial3D>
 	get_debug_navigation_avoidance_static_obstacle_pushout_edge_material();
 #endif // DEBUG_ENABLED
 
 	/* LIFECYCLE DISALLOWANCE */
-
-	NavigationServer3D() = delete;
-	NavigationServer3D(const NavigationServer3D&) = delete;
-	NavigationServer3D& operator=(const NavigationServer3D&) = delete;
-	~NavigationServer3D() = delete;
-};
+} // namespace NavigationServer3D
 
 class ArrayMesh;
 class NavigationMeshSourceGeometryData3D;
@@ -94506,31 +94215,29 @@ class VehicleWheel3D : public Node3D {
 		real_t steering = 0.0f;
 	};
 
-	struct FTIData {
-		real_t curr_rotation = 0.0f;
-		real_t curr_rotation_delta = 0.0f;
-		WheelXform curr;
-		WheelXform prev;
-		bool unset = true;
-		bool reset_queued = false;
+	real_t fti_curr_rotation = 0.0f;
+	real_t fti_curr_rotation_delta = 0.0f;
+	WheelXform fti_curr;
+	WheelXform fti_prev;
+	bool fti_unset = true;
+	bool fti_reset_queued = false;
 
-		void rotate(real_t p_delta) {
-			curr_rotation += p_delta;
-			curr_rotation_delta = p_delta;
-			double wrapped = Math::fmod(curr_rotation + Math::PI, Math::TAU);
-			if (wrapped < 0) {
-				wrapped += Math::TAU;
-			}
-			curr_rotation = wrapped - Math::PI;
+	void fti_rotate(real_t p_delta) {
+		fti_curr_rotation += p_delta;
+		fti_curr_rotation_delta = p_delta;
+		double wrapped = Math::fmod(fti_curr_rotation + Math::PI, Math::TAU);
+		if (wrapped < 0) {
+			wrapped += Math::TAU;
 		}
+		fti_curr_rotation = wrapped - Math::PI;
+	}
 
-		void pump() {
-			prev = curr;
-			curr_rotation_delta = 0.0f;
-		}
+	void fti_pump() {
+		fti_prev = fti_curr;
+		fti_curr_rotation_delta = 0.0f;
+	}
 
-		void update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction);
-	} fti_data;
+	void fti_update_world_xform(Transform3D &r_xform, real_t p_interpolation_fraction);
 
 	Transform3D m_worldTransform;
 	Transform3D local_xform;
@@ -102514,11 +102221,9 @@ public:
 #include "core/io/ip.h"
 #include "core/os/os.h"
 
-class EditorSettings final
+namespace EditorSettings
 {
-	static inline BinaryMutex _thread_safe_mutex;
-
-public:
+	inline BinaryMutex _thread_safe_mutex;
 
 	enum NetworkMode
 	{
@@ -102534,8 +102239,6 @@ public:
 		INITIAL_SCREEN_WITH_KEYBOARD_FOCUS = -3,
 		INITIAL_SCREEN_PRIMARY = -2,
 	};
-
-private:
 	struct Data
 	{
 		HashSet<String> changed_settings;
@@ -102561,109 +102264,105 @@ private:
 #endif
 	};
 
-	static bool _property_can_revert(const String& p_name);
+	bool _property_can_revert(const String& p_name);
 
-	static void _set_initialized();
-	static void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
-	static void _load_default_visual_shader_editor_theme();
-	static String _guess_exec_args_for_extenal_editor(const String& p_value);
-	static String _get_project_metadata_path();
+	void _set_initialized();
+	void _load_defaults(Ref<ConfigFile> p_extra_config = Ref<ConfigFile>());
+	void _load_default_visual_shader_editor_theme();
+	String _guess_exec_args_for_extenal_editor(const String& p_value);
+	String _get_project_metadata_path();
 #ifndef DISABLE_DEPRECATED
-	static void _handle_setting_compatibility();
-	static void _rename_setting(const String& p_old_name, const String& p_new_name);
-	static void _rename_shortcut(const String& p_old_path, const String& p_new_path);
+	void _handle_setting_compatibility();
+	void _rename_setting(const String& p_old_name, const String& p_new_name);
+	void _rename_shortcut(const String& p_old_path, const String& p_new_path);
 #endif
 
 	// Bind helpers.
-	static Vector<String> _get_shortcut_list();
-
-public:
+	Vector<String> _get_shortcut_list();
 	enum
 	{
 		NOTIFICATION_EDITOR_SETTINGS_CHANGED = 10000
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return data != nullptr; }
 
-	static String get_existing_settings_path();
-	static String get_newest_settings_path();
+	String get_existing_settings_path();
+	String get_newest_settings_path();
 
-	static void init_shortcuts();
-	static void setup_language(bool p_initial_setup);
-	static void setup_network();
-	static void save();
-	static void set_optimize_save(bool p_optimize);
+	void init_shortcuts();
+	void setup_language(bool p_initial_setup);
+	void setup_network();
+	void save();
+	void set_optimize_save(bool p_optimize);
 
-	static bool has_default_value(const String& p_setting);
-	static bool has_setting(const String& p_setting);
-	static void erase(const String& p_setting);
-	static void raise_order(const String& p_setting);
-	static void set_restart_if_changed(const String& p_setting, bool p_restart);
-	static void set_basic(const String& p_setting, bool p_basic);
+	bool has_default_value(const String& p_setting);
+	bool has_setting(const String& p_setting);
+	void erase(const String& p_setting);
+	void raise_order(const String& p_setting);
+	void set_restart_if_changed(const String& p_setting, bool p_restart);
+	void set_basic(const String& p_setting, bool p_basic);
 
-	static PackedStringArray get_changed_settings();
-	static bool check_changed_settings_in_group(const String& p_setting_prefix);
-	static void mark_setting_changed(const String& p_setting);
+	PackedStringArray get_changed_settings();
+	bool check_changed_settings_in_group(const String& p_setting_prefix);
+	void mark_setting_changed(const String& p_setting);
 
-	static void set_resource_clipboard(const Ref<Resource>& p_resource)
+	inline void set_resource_clipboard(const Ref<Resource>& p_resource)
 	{
 		if (data) {
 			data->clipboard = p_resource;
 		}
 	}
 
-	static Ref<Resource> get_resource_clipboard()
+	inline Ref<Resource> get_resource_clipboard()
 	{
 		return data ? data->clipboard : Ref<Resource>();
 	}
 
-	static void save_project_metadata();
+	void save_project_metadata();
 
-	static void set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog = true);
-	static void set_favorites_bind(const Vector<String>& p_favorites);
-	static Vector<String> get_favorites();
-	static Vector<String> get_favorite_folders();
-	static void set_favorite_properties(
+	void set_favorites(const Vector<String>& p_favorites, bool p_update_file_dialog = true);
+	void set_favorites_bind(const Vector<String>& p_favorites);
+	Vector<String> get_favorites();
+	Vector<String> get_favorite_folders();
+	void set_favorite_properties(
 		const HashMap<String, PackedStringArray>& p_favorite_properties);
-	static HashMap<String, PackedStringArray> get_favorite_properties();
-	static void set_recent_dirs(
+	HashMap<String, PackedStringArray> get_favorite_properties();
+	void set_recent_dirs(
 		const Vector<String>& p_recent_dirs, bool p_update_file_dialog = true);
-	static void set_recent_dirs_bind(const Vector<String>& p_recent_dirs);
-	static Vector<String> get_recent_dirs();
-	static void load_favorites_and_recent_dirs();
+	void set_recent_dirs_bind(const Vector<String>& p_recent_dirs);
+	Vector<String> get_recent_dirs();
+	void load_favorites_and_recent_dirs();
 
-	static HashMap<String, Color> get_godot2_text_editor_theme();
-	static bool is_default_text_editor_theme(const String& p_theme_name);
-	static void update_text_editor_themes_list();
+	HashMap<String, Color> get_godot2_text_editor_theme();
+	bool is_default_text_editor_theme(const String& p_theme_name);
+	void update_text_editor_themes_list();
 
-	static Vector<String> get_script_templates(
+	Vector<String> get_script_templates(
 		const String& p_extension, const String& p_custom_path = String());
-	static String get_editor_layouts_config();
-	static float get_auto_display_scale();
-	static String get_language();
+	String get_editor_layouts_config();
+	float get_auto_display_scale();
+	String get_language();
 
-	static void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
-	static void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
-	static void remove_shortcut(const String& p_path);
-	static bool is_shortcut(const String& p_path, const InputEvent& p_event);
-	static bool has_shortcut(const String& p_path);
-	static Ref<Shortcut> get_shortcut(const String& p_path);
-	static void get_shortcut_list(List<String>* r_shortcuts);
+	void _add_shortcut_default(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	void add_shortcut(const String& p_path, const Ref<Shortcut>& p_shortcut);
+	void remove_shortcut(const String& p_path);
+	bool is_shortcut(const String& p_path, const InputEvent& p_event);
+	bool has_shortcut(const String& p_path);
+	Ref<Shortcut> get_shortcut(const String& p_path);
+	void get_shortcut_list(List<String>* r_shortcuts);
 
-	static void notify_changes();
+	void notify_changes();
 
 #ifdef TOOLS_ENABLED
-	static void get_argument_options(
+	void get_argument_options(
 		const String& p_function, int p_idx, List<String>* r_options);
 #endif
 
-	EditorSettings() = delete;
-	~EditorSettings() = delete;
-};
+} // namespace EditorSettings
 
 #define EDITOR_DEF(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val))
 #define EDITOR_DEF_RST(m_var, m_val) _EDITOR_DEF(m_var, Variant(m_val), true)
@@ -102896,13 +102595,6 @@ class EditorFileSystem : public Node
 
 	HashMap<String, FileCache> file_cache;
 	HashSet<String> dep_update_list;
-
-	struct ScanProgress
-	{
-		float hi = 0;
-		int current = 0;
-		void increment();
-	};
 
 
 	void _save_filesystem_cache();

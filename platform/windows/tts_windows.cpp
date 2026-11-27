@@ -95,7 +95,7 @@ void TTS_Windows::initialize()
 	initialized = true;
 #ifdef WINRT_ENABLED
 	if (!driver) {
-		driver = memnew(TTSDriverOneCore);
+		driver = memnew(TTSDriver(TTSDriver::MODE_ONECORE));
 		if (!driver->init()) {
 			memdelete(driver);
 			driver = nullptr;
@@ -103,7 +103,7 @@ void TTS_Windows::initialize()
 	}
 #endif
 	if (!driver) {
-		driver = memnew(TTSDriverSAPI);
+		driver = memnew(TTSDriver(TTSDriver::MODE_SAPI));
 		if (!driver->init()) {
 			memdelete(driver);
 			driver = nullptr;
@@ -154,245 +154,6 @@ void TTS_Windows::finalize()
 
 #include "servers/display/display_server.h"
 
-
-void __stdcall TTSDriverSAPI::speech_event_callback(WPARAM wParam, LPARAM lParam) {
-	TTSDriverSAPI *self = reinterpret_cast<TTSDriverSAPI *>(wParam);
-	ERR_FAIL_NULL(self);
-
-	SPEVENT event;
-	while (self->synth->GetEvents(1, &event, nullptr) == S_OK) {
-		uint32_t stream_num = (uint32_t)event.ulStreamNum;
-		if (self->ids.has(stream_num)) {
-			if (event.eEventId == SPEI_START_INPUT_STREAM) {
-				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, self->ids[stream_num].id);
-			} else if (event.eEventId == SPEI_END_INPUT_STREAM) {
-				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, self->ids[stream_num].id);
-				self->ids.erase(stream_num);
-				self->update_requested = true;
-			} else if (event.eEventId == SPEI_WORD_BOUNDARY) {
-				const Char16String &string = self->ids[stream_num].string;
-				int pos = 0;
-				for (int i = 0; i < MIN(event.lParam, string.length()); i++) {
-					char16_t c = string[i];
-					if ((c & 0xfffffc00) == 0xd800) {
-						i++;
-					}
-					pos++;
-				}
-				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, self->ids[stream_num].id, pos - self->ids[stream_num].offset);
-			}
-		}
-	}
-}
-
-void TTSDriverSAPI::process_events() {
-	if (update_requested && !paused && queue.size() > 0 && !is_speaking()) {
-		TTSUtterance &message = queue.front()->get();
-
-		String text;
-		DWORD flags = SPF_ASYNC | SPF_PURGEBEFORESPEAK | SPF_IS_XML;
-		String pitch_tag = String("<pitch absmiddle=\"") + String::num_int64(message.pitch * 10 - 10, 10) + String("\">");
-		text = pitch_tag + message.text + String("</pitch>");
-
-		IEnumSpObjectTokens *cpEnum;
-		ISpObjectToken *cpVoiceToken;
-		ULONG ulCount = 0;
-		ULONG stream_number = 0;
-		ISpObjectTokenCategory *cpCategory;
-		HRESULT hr = CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_INPROC_SERVER, IID_ISpObjectTokenCategory, (void **)&cpCategory);
-		if (SUCCEEDED(hr)) {
-			hr = cpCategory->SetId(SPCAT_VOICES, false);
-			if (SUCCEEDED(hr)) {
-				hr = cpCategory->EnumTokens(nullptr, nullptr, &cpEnum);
-				if (SUCCEEDED(hr)) {
-					hr = cpEnum->GetCount(&ulCount);
-					while (SUCCEEDED(hr) && ulCount--) {
-						wchar_t *w_id = nullptr;
-						hr = cpEnum->Next(1, &cpVoiceToken, nullptr);
-						cpVoiceToken->GetId(&w_id);
-						if (String::utf16((const char16_t *)w_id) == message.voice) {
-							synth->SetVoice(cpVoiceToken);
-							cpVoiceToken->Release();
-							break;
-						}
-						cpVoiceToken->Release();
-					}
-					cpEnum->Release();
-				}
-			}
-			cpCategory->Release();
-		}
-
-		UTData ut;
-		ut.string = text.utf16();
-		ut.offset = pitch_tag.length(); // Subtract injected <pitch> tag offset.
-		ut.id = message.id;
-
-		synth->SetVolume(message.volume);
-		synth->SetRate(10.f * std::log10(message.rate) / std::log10(3.f));
-		synth->Speak((LPCWSTR)ut.string.get_data(), flags, &stream_number);
-
-		ids[(uint32_t)stream_number] = ut;
-
-		queue.pop_front();
-
-		update_requested = false;
-	}
-}
-
-bool TTSDriverSAPI::is_speaking() const {
-	ERR_FAIL_NULL_V(synth, false);
-
-	SPVOICESTATUS status;
-	synth->GetStatus(&status, nullptr);
-	return (status.dwRunningState == SPRS_IS_SPEAKING || status.dwRunningState == 0 /* Waiting To Speak */);
-}
-
-bool TTSDriverSAPI::is_paused() const {
-	ERR_FAIL_NULL_V(synth, false);
-	return paused;
-}
-
-Array TTSDriverSAPI::get_voices() const {
-	Array list;
-	IEnumSpObjectTokens *cpEnum;
-	ISpObjectToken *cpVoiceToken;
-	ISpDataKey *cpDataKeyAttribs;
-	ULONG ulCount = 0;
-	ISpObjectTokenCategory *cpCategory;
-	HRESULT hr = CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_INPROC_SERVER, IID_ISpObjectTokenCategory, (void **)&cpCategory);
-	if (SUCCEEDED(hr)) {
-		hr = cpCategory->SetId(SPCAT_VOICES, false);
-		if (SUCCEEDED(hr)) {
-			hr = cpCategory->EnumTokens(nullptr, nullptr, &cpEnum);
-			if (SUCCEEDED(hr)) {
-				hr = cpEnum->GetCount(&ulCount);
-				while (SUCCEEDED(hr) && ulCount--) {
-					hr = cpEnum->Next(1, &cpVoiceToken, nullptr);
-					HRESULT hr_attr = cpVoiceToken->OpenKey(SPTOKENKEY_ATTRIBUTES, &cpDataKeyAttribs);
-					if (SUCCEEDED(hr_attr)) {
-						wchar_t *w_id = nullptr;
-						wchar_t *w_lang = nullptr;
-						wchar_t *w_name = nullptr;
-						cpVoiceToken->GetId(&w_id);
-						cpDataKeyAttribs->GetStringValue(L"Language", &w_lang);
-						cpDataKeyAttribs->GetStringValue(nullptr, &w_name);
-						LCID locale = wcstol(w_lang, nullptr, 16);
-
-						int locale_chars = GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, nullptr, 0);
-						int region_chars = GetLocaleInfoW(locale, LOCALE_SISO3166CTRYNAME, nullptr, 0);
-						wchar_t *w_lang_code = new wchar_t[locale_chars];
-						wchar_t *w_reg_code = new wchar_t[region_chars];
-						GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, w_lang_code, locale_chars);
-						GetLocaleInfoW(locale, LOCALE_SISO3166CTRYNAME, w_reg_code, region_chars);
-
-						Dictionary voice_d;
-						voice_d["id"] = String::utf16((const char16_t *)w_id);
-						if (w_name) {
-							voice_d["name"] = String::utf16((const char16_t *)w_name);
-						} else {
-							voice_d["name"] = voice_d["id"].operator String().replace("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\", "");
-						}
-						voice_d["language"] = String::utf16((const char16_t *)w_lang_code) + "_" + String::utf16((const char16_t *)w_reg_code);
-						list.push_back(voice_d);
-
-						delete[] w_lang_code;
-						delete[] w_reg_code;
-
-						cpDataKeyAttribs->Release();
-					}
-					cpVoiceToken->Release();
-				}
-				cpEnum->Release();
-			}
-		}
-		cpCategory->Release();
-	}
-	return list;
-}
-
-void TTSDriverSAPI::speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
-	ERR_FAIL_NULL(synth);
-	if (p_interrupt) {
-		stop();
-	}
-
-	if (p_text.is_empty()) {
-		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
-		return;
-	}
-
-	TTSUtterance message;
-	message.text = p_text;
-	message.voice = p_voice;
-	message.volume = CLAMP(p_volume, 0, 100);
-	message.pitch = CLAMP(p_pitch, 0.f, 2.f);
-	message.rate = CLAMP(p_rate, 0.1f, 10.f);
-	message.id = p_utterance_id;
-	queue.push_back(message);
-
-	if (is_paused()) {
-		resume();
-	} else {
-		update_requested = true;
-	}
-}
-
-void TTSDriverSAPI::pause() {
-	ERR_FAIL_NULL(synth);
-	if (!paused) {
-		if (synth->Pause() == S_OK) {
-			paused = true;
-		}
-	}
-}
-
-void TTSDriverSAPI::resume() {
-	ERR_FAIL_NULL(synth);
-	synth->Resume();
-	paused = false;
-}
-
-void TTSDriverSAPI::stop() {
-	ERR_FAIL_NULL(synth);
-
-	SPVOICESTATUS status;
-	synth->GetStatus(&status, nullptr);
-	uint32_t current_stream = (uint32_t)status.ulCurrentStream;
-	if (ids.has(current_stream)) {
-		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[current_stream].id);
-		ids.erase(current_stream);
-	}
-	for (TTSUtterance &message : queue) {
-		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
-	}
-	queue.clear();
-	synth->Speak(nullptr, SPF_PURGEBEFORESPEAK, nullptr);
-	synth->Resume();
-	paused = false;
-}
-
-bool TTSDriverSAPI::init() {
-	if (SUCCEEDED(CoCreateInstance(CLSID_SpVoice, nullptr, CLSCTX_ALL, IID_ISpVoice, (void **)&synth))) {
-		ULONGLONG event_mask = SPFEI(SPEI_END_INPUT_STREAM) | SPFEI(SPEI_START_INPUT_STREAM) | SPFEI(SPEI_WORD_BOUNDARY);
-		synth->SetInterest(event_mask, event_mask);
-		synth->SetNotifyCallbackFunction(&speech_event_callback, (WPARAM)(this), 0);
-		print_verbose("Text-to-Speech: SAPI initialized.");
-		return true;
-	} else {
-		print_verbose("Text-to-Speech: Cannot initialize SAPI driver!");
-		return false;
-	}
-}
-
-TTSDriverSAPI::TTSDriverSAPI() {
-}
-
-TTSDriverSAPI::~TTSDriverSAPI() {
-	if (synth) {
-		synth->Release();
-	}
-}
 
 // === Merged from platform/windows/winrt_utils.cpp ===
 /*                         This file is part of:                          */
@@ -653,54 +414,50 @@ void WinRTUtils::destroy_wd(WinRTWindowData *p_data) {}
 
 #endif
 
-// === Merged from platform/windows/tts_driver_onecore.cpp ===
+void __stdcall TTSDriver::speech_event_callback(WPARAM wParam, LPARAM lParam) {
+	TTSDriver *self = reinterpret_cast<TTSDriver *>(wParam);
+	ERR_FAIL_NULL(self);
+
+	SPEVENT event;
+	while (self->synth->GetEvents(1, &event, nullptr) == S_OK) {
+		uint32_t stream_num = (uint32_t)event.ulStreamNum;
+		if (self->ids.has(stream_num)) {
+			if (event.eEventId == SPEI_START_INPUT_STREAM) {
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, self->ids[stream_num].id);
+			} else if (event.eEventId == SPEI_END_INPUT_STREAM) {
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, self->ids[stream_num].id);
+				self->ids.erase(stream_num);
+				self->update_requested = true;
+			} else if (event.eEventId == SPEI_WORD_BOUNDARY) {
+				const Char16String &str = self->ids[stream_num].string;
+				int pos = 0;
+				for (int i = 0; i < MIN(event.lParam, str.length()); i++) {
+					char16_t c = str[i];
+					if ((c & 0xfffffc00) == 0xd800) {
+						i++;
+					}
+					pos++;
+				}
+				DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, self->ids[stream_num].id, pos - self->ids[stream_num].offset);
+			}
+		}
+	}
+}
+
 #ifdef WINRT_ENABLED
-/*  tts_driver_onecore.cpp                                                */
-/**************************************************************************/
-/*                         This file is part of:                          */
-/*                            VOLTAIRE ENGINE                             */
-/*                https://github.com/BendyLand/Voltaire                   */
-/**************************************************************************/
-/* Copyright (c) 2026-present Bland Logic LLC.                            */
-/* Copyright (c) 2014-2026 Godot Engine contributors (see AUTHORS.md).    */
-/* Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur.                  */
-/*                                                                        */
-/* Permission is hereby granted, free of charge, to any person obtaining  */
-/* a copy of this software and associated documentation files (the        */
-/* "Software"), to deal in the Software without restriction, including    */
-/* without limitation the rights to use, copy, modify, merge, publish,    */
-/* distribute, sublicense, and/or sell copies of the Software, and to     */
-/* permit persons to whom the Software is furnished to do so, subject to  */
-/* the following conditions:                                              */
-/*                                                                        */
-/* The above copyright notice and this permission notice shall be         */
-/* included in all copies or substantial portions of the Software.        */
-/*                                                                        */
-/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,        */
-/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF     */
-/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. */
-/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY   */
-/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,   */
-/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE      */
-/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
-/**************************************************************************/
-
-#include "servers/display/display_server.h"
-
-
-void TTSDriverOneCore::_speech_index_mark(int p_msg_id, int p_index_mark) {
+void TTSDriver::_speech_index_mark(int p_msg_id, int p_index_mark) {
 	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_BOUNDARY, p_msg_id, p_index_mark);
 }
 
-void TTSDriverOneCore::_speech_cancel(int p_msg_id) {
+void TTSDriver::_speech_cancel(int p_msg_id) {
 	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_msg_id);
 }
 
-void TTSDriverOneCore::_speech_end(int p_msg_id) {
+void TTSDriver::_speech_end(int p_msg_id) {
 	DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_ENDED, p_msg_id);
 }
 
-void TTSDriverOneCore::_dispose_current(bool p_silent, bool p_canceled) {
+void TTSDriver::_dispose_current(bool p_silent, bool p_canceled) {
 	if (media.get() != nullptr) {
 		for (const TrackData &T : tracks) {
 			T.track.CueEntered(T.token);
@@ -716,9 +473,9 @@ void TTSDriverOneCore::_dispose_current(bool p_silent, bool p_canceled) {
 
 		if (!p_silent) {
 			if (p_canceled) {
-				callable_mp(this, &TTSDriverOneCore::_speech_cancel).call_deferred(id);
+				callable_mp(this, &TTSDriver::_speech_cancel).call_deferred(id);
 			} else {
-				callable_mp(this, &TTSDriverOneCore::_speech_end).call_deferred(id);
+				callable_mp(this, &TTSDriver::_speech_end).call_deferred(id);
 			}
 		}
 		id = -1;
@@ -728,137 +485,258 @@ void TTSDriverOneCore::_dispose_current(bool p_silent, bool p_canceled) {
 		offset = 0;
 	}
 }
+#endif
 
-void TTSDriverOneCore::process_events() {
+void TTSDriver::process_events() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		if (update_requested && !paused && queue.size() > 0 && !is_speaking()) {
+			TTSUtterance &message = queue.front()->get();
+			_dispose_current(true);
+			playing = true;
+
+			SpeechSynthesizer one_synth = SpeechSynthesizer();
+			if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 4)) {
+				one_synth.Options().IncludeWordBoundaryMetadata(true);
+			}
+			if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 5)) {
+				one_synth.Options().SpeakingRate(CLAMP(message.rate, 0.5, 6.0));
+				one_synth.Options().AudioPitch(CLAMP(message.pitch, 0.0, 2.0));
+				one_synth.Options().AudioVolume(CLAMP((double)message.volume / 100.0, 0.0, 1.0));
+			}
+
+			winrt::hstring name = winrt::hstring((const wchar_t *)message.voice.utf16().get_data());
+			IVectorView<VoiceInformation> voices = SpeechSynthesizer::AllVoices();
+			for (uint32_t i = 0; i < voices.Size(); i++) {
+				VoiceInformation voice = voices.GetAt(i);
+				if (voice.Id() == name) {
+					one_synth.Voice(voice);
+					break;
+				}
+			}
+
+			string = message.text.utf16();
+			winrt::hstring text = winrt::hstring((const wchar_t *)string.get_data());
+			SpeechSynthesisStream stream = one_synth.SynthesizeTextToStreamAsync(text).get();
+
+			media = std::make_shared<MediaPlayer>();
+			token_f = media->MediaFailed([=, this](const MediaPlayer &p_sender, const MediaPlayerFailedEventArgs &p_args) {
+				_dispose_current(false, true);
+			});
+			token_e = media->MediaEnded([=, this](const MediaPlayer &p_sender, const IInspectable &p_args) {
+				_dispose_current(false, false);
+			});
+			if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 4)) {
+				MediaPlaybackItem mitem = MediaPlaybackItem(MediaSource::CreateFromStream(stream, stream.ContentType()));
+				media->Source(mitem);
+				MediaPlaybackTimedMetadataTrackList list = mitem.TimedMetadataTracks();
+				for (uint32_t i = 0; i < list.Size(); i++) {
+					TimedMetadataTrack track = list.GetAt(i);
+					if (track.TimedMetadataKind() == TimedMetadataKind::Speech) {
+						winrt::event_token token = track.CueEntered([=, this](const TimedMetadataTrack &p_sender, const MediaCueEventArgs &p_args) {
+							SpeechCue sq;
+							p_args.Cue().as(sq);
+							int32_t pos16 = sq.StartPositionInInput().Value();
+							int pos = 0;
+							for (int j = 0; j < MIN(pos16, string.length()); j++) {
+								char16_t c = string[j];
+								if ((c & 0xfffffc00) == 0xd800) {
+									j++;
+								}
+								pos++;
+							}
+							callable_mp(this, &TTSDriver::_speech_index_mark).call_deferred(id, pos);
+						});
+						tracks.push_back({ track, token });
+						list.SetPresentationMode(i, TimedMetadataTrackPresentationMode::ApplicationPresented);
+					}
+				}
+			} else {
+				media->Source(MediaSource::CreateFromStream(stream, stream.ContentType()));
+				token_s = media->PlaybackMediaMarkerReached([=, this](const MediaPlayer &p_sender, const PlaybackMediaMarkerReachedEventArgs &p_args) {
+					offset += p_args.PlaybackMediaMarker().Text().size() + 1;
+					int pos = 0;
+					for (int j = 0; j < MIN(offset, string.length()); j++) {
+						char16_t c = string[j];
+						if ((c & 0xfffffc00) == 0xd800) {
+							j++;
+						}
+						pos++;
+					}
+					callable_mp(this, &TTSDriver::_speech_index_mark).call_deferred(id, pos);
+				});
+			}
+			media->AutoPlay(true);
+			id = message.id;
+			update_requested = false;
+			paused = false;
+			media->Play();
+			DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
+			queue.pop_front();
+		}
+		return;
+	}
+#endif
 	if (update_requested && !paused && queue.size() > 0 && !is_speaking()) {
 		TTSUtterance &message = queue.front()->get();
-		_dispose_current(true);
-		playing = true;
 
-		SpeechSynthesizer synth = SpeechSynthesizer();
+		String text;
+		DWORD flags = SPF_ASYNC | SPF_PURGEBEFORESPEAK | SPF_IS_XML;
+		String pitch_tag = String("<pitch absmiddle=\"") + String::num_int64(message.pitch * 10 - 10, 10) + String("\">");
+		text = pitch_tag + message.text + String("</pitch>");
 
-		if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 4)) {
-			synth.Options().IncludeWordBoundaryMetadata(true);
-		}
-		if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 5)) {
-			synth.Options().SpeakingRate(CLAMP(message.rate, 0.5, 6.0));
-			synth.Options().AudioPitch(CLAMP(message.pitch, 0.0, 2.0));
-			synth.Options().AudioVolume(CLAMP((double)message.volume / 100.0, 0.0, 1.0));
-		}
-
-		winrt::hstring name = winrt::hstring((const wchar_t *)message.voice.utf16().get_data());
-		IVectorView<VoiceInformation> voices = SpeechSynthesizer::AllVoices();
-		for (uint32_t i = 0; i < voices.Size(); i++) {
-			VoiceInformation voice = voices.GetAt(i);
-			if (voice.Id() == name) {
-				synth.Voice(voice);
-				break;
-			}
-		}
-
-		string = message.text.utf16();
-		winrt::hstring text = winrt::hstring((const wchar_t *)string.get_data());
-
-		SpeechSynthesisStream stream = synth.SynthesizeTextToStreamAsync(text).get();
-
-		media = std::make_shared<MediaPlayer>();
-		token_f = media->MediaFailed([=, this](const MediaPlayer &p_sender, const MediaPlayerFailedEventArgs &p_args) {
-			_dispose_current(false, true);
-		});
-		token_e = media->MediaEnded([=, this](const MediaPlayer &p_sender, const IInspectable &p_args) {
-			_dispose_current(false, false);
-		});
-		if (ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 4)) {
-			MediaPlaybackItem mitem = MediaPlaybackItem(MediaSource::CreateFromStream(stream, stream.ContentType()));
-			media->Source(mitem);
-			MediaPlaybackTimedMetadataTrackList list = mitem.TimedMetadataTracks();
-
-			for (uint32_t i = 0; i < list.Size(); i++) {
-				TimedMetadataTrack track = list.GetAt(i);
-				if (track.TimedMetadataKind() == TimedMetadataKind::Speech) {
-					winrt::event_token token = track.CueEntered([=, this](const TimedMetadataTrack &p_sender, const MediaCueEventArgs &p_args) {
-						SpeechCue sq;
-						p_args.Cue().as(sq);
-						int32_t pos16 = sq.StartPositionInInput().Value();
-						int pos = 0;
-						for (int j = 0; j < MIN(pos16, string.length()); j++) {
-							char16_t c = string[j];
-							if ((c & 0xfffffc00) == 0xd800) {
-								j++;
-							}
-							pos++;
+		IEnumSpObjectTokens *cpEnum;
+		ISpObjectToken *cpVoiceToken;
+		ULONG ulCount = 0;
+		ULONG stream_number = 0;
+		ISpObjectTokenCategory *cpCategory;
+		HRESULT hr = CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_INPROC_SERVER, IID_ISpObjectTokenCategory, (void **)&cpCategory);
+		if (SUCCEEDED(hr)) {
+			hr = cpCategory->SetId(SPCAT_VOICES, false);
+			if (SUCCEEDED(hr)) {
+				hr = cpCategory->EnumTokens(nullptr, nullptr, &cpEnum);
+				if (SUCCEEDED(hr)) {
+					hr = cpEnum->GetCount(&ulCount);
+					while (SUCCEEDED(hr) && ulCount--) {
+						wchar_t *w_id = nullptr;
+						hr = cpEnum->Next(1, &cpVoiceToken, nullptr);
+						cpVoiceToken->GetId(&w_id);
+						if (String::utf16((const char16_t *)w_id) == message.voice) {
+							synth->SetVoice(cpVoiceToken);
+							cpVoiceToken->Release();
+							break;
 						}
-						callable_mp(this, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
-					});
-					tracks.push_back({ track, token });
-					list.SetPresentationMode(i, TimedMetadataTrackPresentationMode::ApplicationPresented);
+						cpVoiceToken->Release();
+					}
+					cpEnum->Release();
 				}
 			}
-		} else {
-			media->Source(MediaSource::CreateFromStream(stream, stream.ContentType()));
-			token_s = media->PlaybackMediaMarkerReached([=, this](const MediaPlayer &p_sender, const PlaybackMediaMarkerReachedEventArgs &p_args) {
-				offset += p_args.PlaybackMediaMarker().Text().size() + 1;
-				int pos = 0;
-				for (int j = 0; j < MIN(offset, string.length()); j++) {
-					char16_t c = string[j];
-					if ((c & 0xfffffc00) == 0xd800) {
-						j++;
-					}
-					pos++;
-				}
-				callable_mp(this, &TTSDriverOneCore::_speech_index_mark).call_deferred(id, pos);
-			});
+			cpCategory->Release();
 		}
-		media->AutoPlay(true);
 
-		id = message.id;
-		update_requested = false;
-		paused = false;
+		UTData ut;
+		ut.string = text.utf16();
+		ut.offset = pitch_tag.length();
+		ut.id = message.id;
 
-		media->Play();
+		synth->SetVolume(message.volume);
+		synth->SetRate(10.f * std::log10(message.rate) / std::log10(3.f));
+		synth->Speak((LPCWSTR)ut.string.get_data(), flags, &stream_number);
 
-		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_STARTED, message.id);
+		ids[(uint32_t)stream_number] = ut;
 		queue.pop_front();
+		update_requested = false;
 	}
 }
 
-bool TTSDriverOneCore::is_speaking() const {
-	return playing;
+bool TTSDriver::is_speaking() const {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		return playing;
+	}
+#endif
+	ERR_FAIL_NULL_V(synth, false);
+	SPVOICESTATUS status;
+	synth->GetStatus(&status, nullptr);
+	return (status.dwRunningState == SPRS_IS_SPEAKING || status.dwRunningState == 0);
 }
 
-bool TTSDriverOneCore::is_paused() const {
+bool TTSDriver::is_paused() const {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		return paused;
+	}
+#endif
+	ERR_FAIL_NULL_V(synth, false);
 	return paused;
 }
 
-Array TTSDriverOneCore::get_voices() const {
+Array TTSDriver::get_voices() const {
 	Array list;
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		IVectorView<VoiceInformation> voices = SpeechSynthesizer::AllVoices();
+		for (uint32_t i = 0; i < voices.Size(); i++) {
+			VoiceInformation voice = voices.GetAt(i);
+			winrt::hstring vname = voice.DisplayName();
+			winrt::hstring vid = voice.Id();
+			winrt::hstring vlang = voice.Language();
 
-	IVectorView<VoiceInformation> voices = SpeechSynthesizer::AllVoices();
-	for (uint32_t i = 0; i < voices.Size(); i++) {
-		VoiceInformation voice = voices.GetAt(i);
-		winrt::hstring vname = voice.DisplayName();
-		winrt::hstring vid = voice.Id();
-		winrt::hstring vlang = voice.Language();
+			Dictionary voice_d;
+			voice_d["id"] = String::utf16((const char16_t *)vid.c_str(), vid.size());
+			voice_d["name"] = String::utf16((const char16_t *)vname.c_str(), vname.size());
+			voice_d["language"] = String::utf16((const char16_t *)vlang.c_str(), vlang.size()).replace_char('-', '_');
+			list.push_back(voice_d);
+		}
+		return list;
+	}
+#endif
+	IEnumSpObjectTokens *cpEnum;
+	ISpObjectToken *cpVoiceToken;
+	ISpDataKey *cpDataKeyAttribs;
+	ULONG ulCount = 0;
+	ISpObjectTokenCategory *cpCategory;
+	HRESULT hr = CoCreateInstance(CLSID_SpObjectTokenCategory, nullptr, CLSCTX_INPROC_SERVER, IID_ISpObjectTokenCategory, (void **)&cpCategory);
+	if (SUCCEEDED(hr)) {
+		hr = cpCategory->SetId(SPCAT_VOICES, false);
+		if (SUCCEEDED(hr)) {
+			hr = cpCategory->EnumTokens(nullptr, nullptr, &cpEnum);
+			if (SUCCEEDED(hr)) {
+				hr = cpEnum->GetCount(&ulCount);
+				while (SUCCEEDED(hr) && ulCount--) {
+					hr = cpEnum->Next(1, &cpVoiceToken, nullptr);
+					HRESULT hr_attr = cpVoiceToken->OpenKey(SPTOKENKEY_ATTRIBUTES, &cpDataKeyAttribs);
+					if (SUCCEEDED(hr_attr)) {
+						wchar_t *w_id = nullptr;
+						wchar_t *w_lang = nullptr;
+						wchar_t *w_name = nullptr;
+						cpVoiceToken->GetId(&w_id);
+						cpDataKeyAttribs->GetStringValue(L"Language", &w_lang);
+						cpDataKeyAttribs->GetStringValue(nullptr, &w_name);
+						LCID locale = wcstol(w_lang, nullptr, 16);
 
-		Dictionary voice_d;
-		voice_d["id"] = String::utf16((const char16_t *)vid.c_str(), vid.size());
-		voice_d["name"] = String::utf16((const char16_t *)vname.c_str(), vname.size());
-		voice_d["language"] = String::utf16((const char16_t *)vlang.c_str(), vlang.size()).replace_char('-', '_');
-		list.push_back(voice_d);
+						int locale_chars = GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, nullptr, 0);
+						int region_chars = GetLocaleInfoW(locale, LOCALE_SISO3166CTRYNAME, nullptr, 0);
+						wchar_t *w_lang_code = new wchar_t[locale_chars];
+						wchar_t *w_reg_code = new wchar_t[region_chars];
+						GetLocaleInfoW(locale, LOCALE_SISO639LANGNAME, w_lang_code, locale_chars);
+						GetLocaleInfoW(locale, LOCALE_SISO3166CTRYNAME, w_reg_code, region_chars);
+
+						Dictionary voice_d;
+						voice_d["id"] = String::utf16((const char16_t *)w_id);
+						if (w_name) {
+							voice_d["name"] = String::utf16((const char16_t *)w_name);
+						} else {
+							voice_d["name"] = voice_d["id"].operator String().replace("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Speech\\Voices\\Tokens\\", "");
+						}
+						voice_d["language"] = String::utf16((const char16_t *)w_lang_code) + "_" + String::utf16((const char16_t *)w_reg_code);
+						list.push_back(voice_d);
+
+						delete[] w_lang_code;
+						delete[] w_reg_code;
+						cpDataKeyAttribs->Release();
+					}
+					cpVoiceToken->Release();
+				}
+				cpEnum->Release();
+			}
+		}
+		cpCategory->Release();
 	}
 	return list;
 }
 
-void TTSDriverOneCore::speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
+void TTSDriver::speak(const String &p_text, const String &p_voice, int p_volume, float p_pitch, float p_rate, int64_t p_utterance_id, bool p_interrupt) {
+	if (mode == MODE_SAPI) {
+		ERR_FAIL_NULL(synth);
+	}
 	if (p_interrupt) {
 		stop();
 	}
-
 	if (p_text.is_empty()) {
 		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, p_utterance_id);
 		return;
 	}
-
 	TTSUtterance message;
 	message.text = p_text;
 	message.voice = p_voice;
@@ -875,45 +753,102 @@ void TTSDriverOneCore::speak(const String &p_text, const String &p_voice, int p_
 	}
 }
 
-void TTSDriverOneCore::pause() {
-	if (!paused && playing) {
-		media->Pause();
-		paused = true;
+void TTSDriver::pause() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		if (!paused && playing) {
+			media->Pause();
+			paused = true;
+		}
+		return;
+	}
+#endif
+	ERR_FAIL_NULL(synth);
+	if (!paused) {
+		if (synth->Pause() == S_OK) {
+			paused = true;
+		}
 	}
 }
 
-void TTSDriverOneCore::resume() {
-	if (paused && playing) {
-		media->Play();
-		paused = false;
+void TTSDriver::resume() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		if (paused && playing) {
+			media->Play();
+			paused = false;
+		}
+		return;
 	}
+#endif
+	ERR_FAIL_NULL(synth);
+	synth->Resume();
+	paused = false;
 }
 
-void TTSDriverOneCore::stop() {
+void TTSDriver::stop() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		for (TTSUtterance &message : queue) {
+			DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
+		}
+		queue.clear();
+		_dispose_current(false, true);
+		return;
+	}
+#endif
+	ERR_FAIL_NULL(synth);
+	SPVOICESTATUS status;
+	synth->GetStatus(&status, nullptr);
+	uint32_t current_stream = (uint32_t)status.ulCurrentStream;
+	if (ids.has(current_stream)) {
+		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, ids[current_stream].id);
+		ids.erase(current_stream);
+	}
 	for (TTSUtterance &message : queue) {
 		DisplayServer::tts_post_utterance_event(DisplayServerEnums::TTS_UTTERANCE_CANCELED, message.id);
 	}
 	queue.clear();
-	_dispose_current(false, true);
+	synth->Speak(nullptr, SPF_PURGEBEFORESPEAK, nullptr);
+	synth->Resume();
+	paused = false;
 }
 
-bool TTSDriverOneCore::init() {
-	if (!ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 1)) {
-		print_verbose("Text-to-Speech: Cannot initialize OneCore driver, API contract not present!");
-		return false;
+bool TTSDriver::init() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		if (!ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 1)) {
+			print_verbose("Text-to-Speech: Cannot initialize OneCore driver, API contract not present!");
+			return false;
+		}
+		if (SpeechSynthesizer::AllVoices().Size() == 0) {
+			print_verbose("Text-to-Speech: Cannot initialize OneCore driver, no voices found!");
+			return false;
+		}
+		print_verbose("Text-to-Speech: OneCore initialized.");
+		return true;
 	}
-	if (SpeechSynthesizer::AllVoices().Size() == 0) {
-		print_verbose("Text-to-Speech: Cannot initialize OneCore driver, no voices found!");
-		return false;
+#endif
+	if (SUCCEEDED(CoCreateInstance(CLSID_SpVoice, nullptr, CLSCTX_ALL, IID_ISpVoice, (void **)&synth))) {
+		ULONGLONG event_mask = SPFEI(SPEI_END_INPUT_STREAM) | SPFEI(SPEI_START_INPUT_STREAM) | SPFEI(SPEI_WORD_BOUNDARY);
+		synth->SetInterest(event_mask, event_mask);
+		synth->SetNotifyCallbackFunction(&speech_event_callback, (WPARAM)(this), 0);
+		print_verbose("Text-to-Speech: SAPI initialized.");
+		return true;
 	}
-	print_verbose("Text-to-Speech: OneCore initialized.");
-	return true;
+	print_verbose("Text-to-Speech: Cannot initialize SAPI driver!");
+	return false;
 }
 
-TTSDriverOneCore::TTSDriverOneCore() {
+TTSDriver::~TTSDriver() {
+#ifdef WINRT_ENABLED
+	if (mode == MODE_ONECORE) {
+		_dispose_current(false, true);
+		return;
+	}
+#endif
+	if (synth) {
+		synth->Release();
+	}
 }
 
-TTSDriverOneCore::~TTSDriverOneCore() {
-	_dispose_current(false, true);
-}
-#endif // WINRT_ENABLED
