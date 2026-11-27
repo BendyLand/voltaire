@@ -3100,7 +3100,7 @@ void Input::set_joy_axis(int p_device, JoyAxis p_axis, float p_value)
 	data->_joy_axis[c] = p_value;
 }
 
-void Input::set_joy_features(int p_device, JoypadFeatures* p_features)
+void Input::set_joy_features(int p_device, void* p_features)
 {
 	if (!data) {
 		return;
@@ -3128,8 +3128,10 @@ void Input::set_joy_light(int p_device, const Color& p_color)
 	if (!joypad || !joypad->has_light || joypad->features == nullptr) {
 		return;
 	}
+#ifdef SDL_ENABLED
 	Color linear = p_color.srgb_to_linear();
-	joypad->features->set_joy_light(linear);
+	static_cast<JoypadSDL::Joypad*>(joypad->features)->set_joy_light(linear);
+#endif
 }
 
 bool Input::has_joy_light(int p_device)
@@ -3232,7 +3234,9 @@ void Input::set_joy_motion_sensors_enabled(int p_device, bool p_enable)
 	if (motion == nullptr) {
 		return;
 	}
-	joypad->features->set_joy_motion_sensors_enabled(p_enable);
+#ifdef SDL_ENABLED
+	static_cast<JoypadSDL::Joypad*>(joypad->features)->set_joy_motion_sensors_enabled(p_enable);
+#endif
 	motion->sensors_enabled = p_enable;
 }
 
@@ -4044,17 +4048,19 @@ void Input::_update_action_cache(const String& p_action_name, ActionState& r_act
 
 void Input::_update_joypad_features(int p_device)
 {
+#ifdef SDL_ENABLED
 	Joypad* joypad = data->joy_names.getptr(p_device);
 	if (!joypad || joypad->features == nullptr) {
 		return;
 	}
-	if (joypad->features->has_joy_vibration()) {
+	JoypadSDL::Joypad* feat = static_cast<JoypadSDL::Joypad*>(joypad->features);
+	if (feat->has_joy_vibration()) {
 		joypad->has_vibration = true;
 	}
-	if (joypad->features->has_joy_light()) {
+	if (feat->has_joy_light()) {
 		joypad->has_light = true;
 	}
-	if (joypad->features->has_joy_motion_sensors()) {
+	if (feat->has_joy_motion_sensors()) {
 		MotionInfo& motion = data->joy_motion[p_device];
 
 		if (!motion.gamepad_motion) {
@@ -4065,9 +4071,10 @@ void Input::_update_joypad_features(int p_device)
 		}
 		motion.last_timestamp = OS::get_ticks_msec();
 	}
-	if (joypad->features->get_joy_num_touchpads() > 0) {
-		data->joy_touch[p_device].num_touchpads = joypad->features->get_joy_num_touchpads();
+	if (feat->get_joy_num_touchpads() > 0) {
+		data->joy_touch[p_device].num_touchpads = feat->get_joy_num_touchpads();
 	}
+#endif
 }
 
 Input::JoyEvent Input::_get_mapped_button_event(
@@ -23977,15 +23984,31 @@ FileAccess::~FileAccess() { _delete_temp(); }
 
 namespace {
 struct ZstdDecompressorContext {
+	ZSTD_CCtx *zstd_c_ctx = nullptr;
 	ZSTD_DCtx *zstd_d_ctx = nullptr;
 	bool zstd_long_distance_matching = false;
 	int zstd_window_log_size = 0;
 
+	ZstdDecompressorContext() = default;
+	explicit ZstdDecompressorContext(bool p_compress) {
+		if (p_compress) {
+			zstd_c_ctx = ZSTD_createCCtx();
+		} else {
+			zstd_d_ctx = ZSTD_createDCtx();
+		}
+	}
+
 	~ZstdDecompressorContext() {
+		if (zstd_c_ctx) {
+			ZSTD_freeCCtx(zstd_c_ctx);
+		}
 		if (zstd_d_ctx) {
 			ZSTD_freeDCtx(zstd_d_ctx);
 		}
 	}
+
+	operator ZSTD_CCtx *() { return zstd_c_ctx; }
+	operator ZSTD_DCtx *() { return zstd_d_ctx; }
 
 	void invalidate(bool p_zstd_long_distance_matching, int p_zstd_window_log_size) {
 		if (!zstd_d_ctx || zstd_long_distance_matching != p_zstd_long_distance_matching || zstd_window_log_size != p_zstd_window_log_size) {
@@ -24348,24 +24371,6 @@ int Compression::decompress_dynamic(Vector<uint8_t> *p_dst_vect, int64_t p_max_d
 		vformat("%s Zstandard reported error code %d: \"%s\".", m_msg,                             \
 			ZSTD_getErrorCode(m_result), ZSTD_getErrorString(ZSTD_getErrorCode(m_result))))
 
-struct ZstdCompressionContext
-{
-	ZSTD_CCtx* context = ZSTD_createCCtx();
-
-	~ZstdCompressionContext() { ZSTD_freeCCtx(context); }
-
-	operator ZSTD_CCtx*() { return context; }
-};
-
-struct ZstdDecompressionContext
-{
-	ZSTD_DCtx* context = ZSTD_createDCtx();
-
-	~ZstdDecompressionContext() { ZSTD_freeDCtx(context); }
-
-	operator ZSTD_DCtx*() { return context; }
-};
-
 static constexpr uint8_t DELTA_MAGIC[4] = {'G', 'D', 'D', 'L'};
 static constexpr uint8_t DELTA_VERSION_NUMBER = 1;
 static constexpr size_t DELTA_HEADER_SIZE = 5;
@@ -24383,7 +24388,7 @@ Error DeltaEncoding::encode_delta(Span<uint8_t> p_old_data, Span<uint8_t> p_new_
 	memcpy(r_delta.ptrw(), DELTA_MAGIC, 4);
 	r_delta.write[4] = DELTA_VERSION_NUMBER;
 
-	ZstdCompressionContext zstd_context;
+	ZstdDecompressorContext zstd_context(true);
 
 	zstd_result =
 		ZSTD_CCtx_setParameter(zstd_context, ZSTD_c_compressionLevel, p_compression_level);
@@ -24439,7 +24444,7 @@ Error DeltaEncoding::decode_delta(
 	r_new_data.reserve_exact(zstd_result);
 	r_new_data.resize(zstd_result);
 
-	ZstdDecompressionContext zstd_context;
+	ZstdDecompressorContext zstd_context(false);
 
 	zstd_result = ZSTD_DCtx_refPrefix(zstd_context, p_old_data.ptr(), p_old_data.size());
 	ERR_FAIL_ZSTD_V_MSG(
@@ -128322,16 +128327,16 @@ void RasterizerGLES3::_blit_render_target_to_screen(DisplayServerEnums::WindowID
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_ONE, GL_ZERO);
 
-	if (p_blit.lens_distortion.apply &&
-		(p_blit.lens_distortion.k1 != 0.0 || p_blit.lens_distortion.k2)) {
+	if (p_blit.lens_distortion_apply &&
+		(p_blit.lens_distortion_k1 != 0.0 || p_blit.lens_distortion_k2)) {
 		GLES3::Effects::copy_with_lens_distortion(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0,
-			p_blit.lens_distortion.eye_center, p_blit.lens_distortion.k1, p_blit.lens_distortion.k2,
-			p_blit.lens_distortion.upscale, p_blit.lens_distortion.aspect_ratio, linear_to_srgb);
+			p_blit.multi_view_use_layer ? p_blit.multi_view_layer : 0,
+			p_blit.lens_distortion_eye_center, p_blit.lens_distortion_k1, p_blit.lens_distortion_k2,
+			p_blit.lens_distortion_upscale, p_blit.lens_distortion_aspect_ratio, linear_to_srgb);
 	}
 	else if (rt->view_count > 1) {
 		GLES3::Effects::copy_to_rect_3d(screenrect,
-			p_blit.multi_view.use_layer ? p_blit.multi_view.layer : 0, GLES3::Texture::TYPE_LAYERED,
+			p_blit.multi_view_use_layer ? p_blit.multi_view_layer : 0, GLES3::Texture::TYPE_LAYERED,
 			0.0, linear_to_srgb);
 	}
 	else {

@@ -42,8 +42,6 @@
 #define THREADING_NAMESPACE std
 #endif
 
-#ifdef THREADS_ENABLED
-
 template <typename MutexT>
 class MutexLock;
 
@@ -56,6 +54,7 @@ class MutexImpl {
 	mutable StdMutexT mutex;
 
 public:
+#ifdef THREADS_ENABLED
 	_ALWAYS_INLINE_ void lock() const {
 		mutex.lock();
 	}
@@ -67,10 +66,16 @@ public:
 	_ALWAYS_INLINE_ bool try_lock() const {
 		return mutex.try_lock();
 	}
+#else
+	void lock() const {}
+	void unlock() const {}
+	bool try_lock() const { return true; }
+#endif
 };
 
 template <typename MutexT>
 class [[nodiscard]] MutexLock {
+#ifdef THREADS_ENABLED
 	mutable THREADING_NAMESPACE::unique_lock<typename MutexT::StdMutexType> lock;
 
 public:
@@ -91,41 +96,23 @@ public:
 	_ALWAYS_INLINE_ void temp_unlock() const {
 		lock.unlock();
 	}
+#else
+public:
+	explicit MutexLock(const MutexT &p_mutex) {}
 
-	// TODO: Implement a `try_temp_relock` if needed (will also need a dummy method below).
+	void temp_relock() const {}
+	void temp_unlock() const {}
+#endif
 };
 
 using Mutex = MutexImpl<THREADING_NAMESPACE::recursive_mutex>; // Recursive, for general use
 using BinaryMutex = MutexImpl<THREADING_NAMESPACE::mutex>; // Non-recursive, handle with care
 
+#ifdef THREADS_ENABLED
 extern template class MutexImpl<THREADING_NAMESPACE::recursive_mutex>;
 extern template class MutexImpl<THREADING_NAMESPACE::mutex>;
 extern template class MutexLock<MutexImpl<THREADING_NAMESPACE::recursive_mutex>>;
 extern template class MutexLock<MutexImpl<THREADING_NAMESPACE::mutex>>;
-
-#else // No threads.
-
-class MutexImpl {
-	mutable THREADING_NAMESPACE::mutex mutex;
-
-public:
-	void lock() const {}
-	void unlock() const {}
-	bool try_lock() const { return true; }
-};
-
-template <typename MutexT>
-class [[nodiscard]] MutexLock {
-public:
-	MutexLock(const MutexT &p_mutex) {}
-
-	void temp_relock() const {}
-	void temp_unlock() const {}
-};
-
-using Mutex = MutexImpl;
-using BinaryMutex = MutexImpl;
-
 #endif // THREADS_ENABLED
 
 // --- Folded from core/os/spin_lock.h ---
@@ -137,97 +124,14 @@ using BinaryMutex = MutexImpl;
 // Overriding the Thread implementation is required in some proprietary platforms.
 
 #ifdef PLATFORM_THREAD_OVERRIDE
-
-// --- Folded from drivers/apple/thread_apple.h ---
 #include "core/os/memory.h"
 #include "core/typedefs.h"
-
 #include <pthread.h>
-
-#include <new> // For hardware interference size
-
-class String;
-
-class Thread {
-public:
-	typedef void (*Callback)(void *p_userdata);
-
-	typedef uint64_t ID;
-
-	enum : ID {
-		UNASSIGNED_ID = 0,
-		MAIN_ID = 1
-	};
-
-	enum Priority {
-		PRIORITY_LOW,
-		PRIORITY_NORMAL,
-		PRIORITY_HIGH
-	};
-
-	struct Settings {
-		Priority priority;
-		Settings() { priority = PRIORITY_NORMAL; }
-	};
-
-#if defined(__cpp_lib_hardware_interference_size)
-	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Winterference-size")
-	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
-	VLTR_GCC_WARNING_POP
-#else
-	// At a negligible memory cost, we use a conservatively high value.
-	static constexpr size_t CACHE_LINE_BYTES = 128;
-#endif
-
-private:
-	friend class Main;
-
-	ID id = UNASSIGNED_ID;
-	pthread_t pthread;
-
-	static inline SafeFlag is_main_thread_assigned{ false };
-	static SafeNumeric<uint64_t> id_counter;
-	static thread_local ID caller_id;
-
-	static void *thread_callback(void *p_data);
-
-public:
-	_FORCE_INLINE_ static void yield() { pthread_yield_np(); }
-
-	_FORCE_INLINE_ ID get_id() const { return id; }
-	// get the ID of the caller thread
-	_FORCE_INLINE_ static ID get_caller_id() {
-		return caller_id;
-	}
-	// get the ID of the main thread
-	_FORCE_INLINE_ static ID get_main_id() { return MAIN_ID; }
-
-	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; }
-	static void make_main_thread();
-	static void release_main_thread();
-
-	static Error set_name(const String &p_name);
-
-	ID start(Thread::Callback p_callback, void *p_user, const Settings &p_settings = Settings());
-	bool is_started() const { return id != UNASSIGNED_ID; }
-	/// Waits until thread is finished, and deallocates it.
-	void wait_to_finish();
-
-	Thread() = default;
-	~Thread();
-};
-// --- End drivers/apple/thread_apple.h ---
-
-#else
-
-#include "core/typedefs.h"
-
-#ifdef THREADS_ENABLED
-
+#include <new>
+#elif defined(THREADS_ENABLED)
 #include "core/os/memory.h"
-
-#include <new> // IWYU pragma: keep // For hardware interference size.
-
+#include "core/typedefs.h"
+#include <new>
 #ifdef MINGW_ENABLED
 #define MINGW_STDTHREAD_REDUNDANCY_WARNING
 #include <thirdparty/mingw-std-threads/mingw.thread.h>
@@ -236,13 +140,15 @@ public:
 #include <thread>
 #define THREADING_NAMESPACE std
 #endif
+#else
+#include "core/typedefs.h"
+#endif
 
 class String;
 
 class Thread {
 public:
 	typedef void (*Callback)(void *p_userdata);
-
 	typedef uint64_t ID;
 
 	enum : ID {
@@ -261,6 +167,7 @@ public:
 		Settings() { priority = PRIORITY_NORMAL; }
 	};
 
+#ifndef PLATFORM_THREAD_OVERRIDE
 	struct PlatformFunctions {
 		Error (*set_name)(const String &) = nullptr;
 		void (*set_priority)(Thread::Priority) = nullptr;
@@ -268,21 +175,43 @@ public:
 		void (*wrapper)(Thread::Callback, void *) = nullptr;
 		void (*term)() = nullptr;
 	};
+#endif
 
-#if defined(__cpp_lib_hardware_interference_size) && !defined(ANDROID_ENABLED) // This would be OK with NDK >= 26.
+#if defined(PLATFORM_THREAD_OVERRIDE)
+#if defined(__cpp_lib_hardware_interference_size)
+	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Winterference-size")
+	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
+	VLTR_GCC_WARNING_POP
+#else
+	static constexpr size_t CACHE_LINE_BYTES = 128;
+#endif
+#elif defined(THREADS_ENABLED)
+#if defined(__cpp_lib_hardware_interference_size) && !defined(ANDROID_ENABLED)
 	VLTR_GCC_WARNING_PUSH_AND_IGNORE("-Winterference-size")
 	static constexpr size_t CACHE_LINE_BYTES = std::hardware_destructive_interference_size;
 	VLTR_GCC_WARNING_POP
 #elif defined(__GCC_DESTRUCTIVE_SIZE) && !defined(ANDROID_ENABLED)
 	static constexpr size_t CACHE_LINE_BYTES = __GCC_DESTRUCTIVE_SIZE;
 #else
-	// At a negligible memory cost, we use a conservatively high value.
 	static constexpr size_t CACHE_LINE_BYTES = 128;
+#endif
+#else
+	static constexpr size_t CACHE_LINE_BYTES = sizeof(void *);
 #endif
 
 private:
 	friend class Main;
 
+#ifdef PLATFORM_THREAD_OVERRIDE
+	ID id = UNASSIGNED_ID;
+	pthread_t pthread;
+
+	static inline SafeFlag is_main_thread_assigned{ false };
+	static SafeNumeric<uint64_t> id_counter;
+	static thread_local ID caller_id;
+
+	static void *thread_callback(void *p_data);
+#elif defined(THREADS_ENABLED)
 	static PlatformFunctions platform_functions;
 
 	ID id = UNASSIGNED_ID;
@@ -293,21 +222,42 @@ private:
 	THREADING_NAMESPACE::thread thread;
 
 	static void callback(ID p_caller_id, const Settings &p_settings, Thread::Callback p_callback, void *p_userdata);
+#else
+	static PlatformFunctions platform_functions;
+#endif
 
 public:
+#ifndef PLATFORM_THREAD_OVERRIDE
 	static void _set_platform_functions(const PlatformFunctions &p_functions);
+#endif
 
+#ifdef PLATFORM_THREAD_OVERRIDE
+	_FORCE_INLINE_ static void yield() { pthread_yield_np(); }
+
+	_FORCE_INLINE_ ID get_id() const { return id; }
+	_FORCE_INLINE_ static ID get_caller_id() { return caller_id; }
+	_FORCE_INLINE_ static ID get_main_id() { return MAIN_ID; }
+
+	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; }
+	static void make_main_thread();
+	static void release_main_thread();
+
+	static Error set_name(const String &p_name);
+
+	ID start(Thread::Callback p_callback, void *p_user, const Settings &p_settings = Settings());
+	bool is_started() const { return id != UNASSIGNED_ID; }
+	void wait_to_finish();
+
+	Thread() = default;
+	~Thread();
+#elif defined(THREADS_ENABLED)
 	_FORCE_INLINE_ static void yield() { std::this_thread::yield(); }
 
 	_FORCE_INLINE_ ID get_id() const { return id; }
-	// get the ID of the caller thread
-	_FORCE_INLINE_ static ID get_caller_id() {
-		return caller_id;
-	}
-	// get the ID of the main thread
+	_FORCE_INLINE_ static ID get_caller_id() { return caller_id; }
 	_FORCE_INLINE_ static ID get_main_id() { return MAIN_ID; }
 
-	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; } // Gain a tiny bit of perf here because there is no need to validate caller_id here, because only main thread will be set as 1.
+	_FORCE_INLINE_ static bool is_main_thread() { return caller_id == MAIN_ID; }
 	static void make_main_thread();
 	static void release_main_thread();
 
@@ -315,55 +265,11 @@ public:
 
 	ID start(Thread::Callback p_callback, void *p_user, const Settings &p_settings = Settings());
 	bool is_started() const;
-	///< waits until thread is finished, and deallocates it.
 	void wait_to_finish();
 
 	~Thread();
-};
-
-#else // No threads.
-
-class String;
-
-class Thread {
-public:
-	typedef void (*Callback)(void *p_userdata);
-
-	typedef uint64_t ID;
-
-	static constexpr size_t CACHE_LINE_BYTES = sizeof(void *);
-
-	enum : ID {
-		UNASSIGNED_ID = 0,
-		MAIN_ID = 1
-	};
-
-	enum Priority {
-		PRIORITY_LOW,
-		PRIORITY_NORMAL,
-		PRIORITY_HIGH
-	};
-
-	struct Settings {
-		Priority priority;
-		Settings() { priority = PRIORITY_NORMAL; }
-	};
-
-	struct PlatformFunctions {
-		Error (*set_name)(const String &) = nullptr;
-		void (*set_priority)(Thread::Priority) = nullptr;
-		void (*init)() = nullptr;
-		void (*wrapper)(Thread::Callback, void *) = nullptr;
-		void (*term)() = nullptr;
-	};
-
-private:
-	friend class Main;
-
-	static PlatformFunctions platform_functions;
-
-public:
-	static void _set_platform_functions(const PlatformFunctions &p_functions);
+#else
+	_FORCE_INLINE_ static void yield() {}
 
 	_FORCE_INLINE_ ID get_id() const { return 0; }
 	_FORCE_INLINE_ static ID get_caller_id() { return MAIN_ID; }
@@ -378,84 +284,64 @@ public:
 	void start(Thread::Callback p_callback, void *p_user, const Settings &p_settings = Settings()) {}
 	bool is_started() const { return false; }
 	void wait_to_finish() {}
+#endif
 };
-
-#endif // THREADS_ENABLED
-
-#endif // PLATFORM_THREAD_OVERRIDE
 // --- End core/os/thread.h ---
 #include "core/typedefs.h"
 
 #ifdef THREADS_ENABLED
-
-// Note the implementations below avoid false sharing by ensuring their
-// sizes match the assumed cache line. We can't use align attributes
-// because these objects may end up unaligned in semi-tightly packed arrays.
-
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
-
 #if defined(__APPLE__)
-
 #include <os/lock.h>
-
-class SpinLock {
-	union {
-		mutable os_unfair_lock _lock = OS_UNFAIR_LOCK_INIT;
-		char aligner[Thread::CACHE_LINE_BYTES];
-	};
-
-public:
-	_ALWAYS_INLINE_ void lock() const {
-		os_unfair_lock_lock(&_lock);
-	}
-
-	_ALWAYS_INLINE_ void unlock() const {
-		os_unfair_lock_unlock(&_lock);
-	}
-};
-
-#else // __APPLE__
-
+#else
 #include <atomic>
 
 _ALWAYS_INLINE_ static void _cpu_pause() {
 #if defined(_MSC_VER)
-// ----- MSVC.
-#if defined(_M_ARM) || defined(_M_ARM64) // ARM.
+#if defined(_M_ARM) || defined(_M_ARM64)
 	__yield();
-#elif defined(_M_IX86) || defined(_M_X64) // x86.
+#elif defined(_M_IX86) || defined(_M_X64)
 	_mm_pause();
 #endif
 #elif defined(__GNUC__) || defined(__clang__)
-// ----- GCC/Clang.
-#if defined(__i386__) || defined(__x86_64__) // x86.
+#if defined(__i386__) || defined(__x86_64__)
 	__builtin_ia32_pause();
-#elif defined(__arm__) || defined(__aarch64__) // ARM.
+#elif defined(__arm__) || defined(__aarch64__)
 	asm volatile("yield");
-#elif defined(__powerpc__) // PowerPC.
+#elif defined(__powerpc__)
 	asm volatile("or 27,27,27");
-#elif defined(__riscv) // RISC-V.
+#elif defined(__riscv)
 	asm volatile(".insn i 0x0F, 0, x0, x0, 0x010");
 #endif
 #endif
 }
 
 static_assert(std::atomic_bool::is_always_lock_free);
+#endif // __APPLE__
+#endif // THREADS_ENABLED
 
 class SpinLock {
+#ifdef THREADS_ENABLED
 	union {
-#if __cplusplus >= 202002L
+#if defined(__APPLE__)
+		mutable os_unfair_lock _lock = OS_UNFAIR_LOCK_INIT;
+#elif __cplusplus >= 202002L
 		mutable std::atomic<bool> locked = false;
 #else
 		mutable std::atomic<bool> locked = ATOMIC_VAR_INIT(false);
 #endif
 		char aligner[Thread::CACHE_LINE_BYTES];
 	};
+#endif
 
 public:
 	_ALWAYS_INLINE_ void lock() const {
+#ifdef THREADS_ENABLED
+#if defined(__APPLE__)
+		os_unfair_lock_lock(&_lock);
+#else
 		while (true) {
 			bool expected = false;
 			if (locked.compare_exchange_weak(expected, true, std::memory_order_acquire, std::memory_order_relaxed)) {
@@ -465,24 +351,20 @@ public:
 				_cpu_pause();
 			} while (locked.load(std::memory_order_relaxed));
 		}
+#endif
+#endif
 	}
 
 	_ALWAYS_INLINE_ void unlock() const {
+#ifdef THREADS_ENABLED
+#if defined(__APPLE__)
+		os_unfair_lock_unlock(&_lock);
+#else
 		locked.store(false, std::memory_order_release);
+#endif
+#endif
 	}
 };
-
-#endif // __APPLE__
-
-#else // THREADS_ENABLED
-
-class SpinLock {
-public:
-	void lock() const {}
-	void unlock() const {}
-};
-
-#endif // THREADS_ENABLED
 
 // --- Folded from core/os/rw_lock.h ---
 #include "core/typedefs.h"
@@ -561,11 +443,6 @@ public:
 #include "core/typedefs.h"
 
 #ifdef THREADS_ENABLED
-
-#ifdef DEBUG_ENABLED
-#include "core/typedefs.h"
-#endif
-
 #ifdef MINGW_ENABLED
 #define MINGW_STDTHREAD_REDUNDANCY_WARNING
 #include <thirdparty/mingw-std-threads/mingw.condition_variable.h>
@@ -576,8 +453,10 @@ public:
 #include <mutex>
 #define THREADING_NAMESPACE std
 #endif
+#endif // THREADS_ENABLED
 
 class Semaphore {
+#ifdef THREADS_ENABLED
 private:
 	mutable THREADING_NAMESPACE::mutex mutex;
 	mutable THREADING_NAMESPACE::condition_variable condition;
@@ -585,17 +464,21 @@ private:
 #ifdef DEBUG_ENABLED
 	mutable uint32_t awaiters = 0;
 #endif
+#endif
 
 public:
 	_ALWAYS_INLINE_ void post(uint32_t p_count = 1) const {
+#ifdef THREADS_ENABLED
 		std::lock_guard lock(mutex);
 		count += p_count;
 		for (uint32_t i = 0; i < p_count; ++i) {
 			condition.notify_one();
 		}
+#endif
 	}
 
 	_ALWAYS_INLINE_ void wait() const {
+#ifdef THREADS_ENABLED
 		THREADING_NAMESPACE::unique_lock lock(mutex);
 #ifdef DEBUG_ENABLED
 		++awaiters;
@@ -607,9 +490,11 @@ public:
 #ifdef DEBUG_ENABLED
 		--awaiters;
 #endif
+#endif
 	}
 
 	_ALWAYS_INLINE_ bool try_wait() const {
+#ifdef THREADS_ENABLED
 		std::lock_guard lock(mutex);
 		if (count) {
 			count--;
@@ -617,59 +502,20 @@ public:
 		} else {
 			return false;
 		}
+#else
+		return true;
+#endif
 	}
 
-#ifdef DEBUG_ENABLED
+#if defined(THREADS_ENABLED) && defined(DEBUG_ENABLED)
 	~Semaphore() {
-		// Destroying an std::condition_variable when not all threads waiting on it have been notified
-		// invokes undefined behavior (e.g., it may be nicely destroyed or it may be awaited forever.)
-		// That means other threads could still be running the body of std::condition_variable::wait()
-		// but already past the safety checkpoint. That's the case for instance if that function is already
-		// waiting to lock again.
-		//
-		// We will make the rule a bit more restrictive and simpler to understand at the same time: there
-		// should not be any threads at any stage of the waiting by the time the semaphore is destroyed.
-		//
-		// We do so because of the following reasons:
-		// - We have the guideline that threads must be awaited (i.e., completed), so the waiting thread
-		//   must be completely done by the time the thread controlling it finally destroys the semaphore.
-		//   Therefore, only a coding mistake could make the program run into such a attempt at premature
-		//   destruction of the semaphore.
-		// - In scripting, given that Semaphores are wrapped by RefCounted classes, in general it can't
-		//   happen that a thread is trying to destroy a Semaphore while another is still doing whatever with
-		//   it, so the simplification is mostly transparent to script writers.
-		// - The redefined rule can be checked for failure to meet it, which is what this implementation does.
-		//   This is useful to detect a few cases of potential misuse; namely:
-		//   a) In scripting:
-		//      * The coder is naughtily dealing with the reference count causing a semaphore to die prematurely.
-		//      * The coder is letting the project reach its termination without having cleanly finished threads
-		//        that await on semaphores (or at least, let the usual semaphore-controlled loop exit).
-		//   b) In the native side, where Semaphore is not a ref-counted beast and certain coding mistakes can
-		//      lead to its premature destruction as well.
-		//
-		// Let's let users know they are doing it wrong, but apply a, somewhat hacky, countermeasure against UB
-		// in debug builds.
 		std::lock_guard lock(mutex);
 		if (awaiters) {
 			WARN_PRINT(
 					"A Semaphore object is being destroyed while one or more threads are still waiting on it.\n"
 					"Please call post() on it as necessary to prevent such a situation and so ensure correct cleanup.");
-			// And now, the hacky countermeasure (i.e., leak the condition variable).
 			new (&condition) THREADING_NAMESPACE::condition_variable();
 		}
 	}
 #endif
 };
-
-#else // No threads.
-
-class Semaphore {
-public:
-	void post(uint32_t p_count = 1) const {}
-	void wait() const {}
-	bool try_wait() const {
-		return true;
-	}
-};
-
-#endif // THREADS_ENABLED

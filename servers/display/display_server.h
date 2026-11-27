@@ -2828,7 +2828,9 @@ void AudioFilterSW::Processor::process_one_interp(float &p_sample) {
 	coeffs.a2 += incr_coeffs.a2;
 }
 
-class AudioDriverDummy;
+#include "core/os/mutex.h"
+#include "core/os/memory.h"
+
 class AudioSample;
 class AudioStream;
 class AudioStreamWAV;
@@ -2839,6 +2841,18 @@ class AudioDriver
 {
 	uint64_t _last_mix_time = 0;
 	uint64_t _last_mix_frames = 0;
+
+	Thread _dummy_thread;
+	Mutex _dummy_mutex;
+	int32_t* _dummy_samples_in = nullptr;
+	static void _dummy_thread_func(void* p_udata);
+	uint32_t _dummy_buffer_frames = 4096;
+	int32_t _dummy_mix_rate = -1;
+	int _dummy_speaker_mode = 0;
+	int _dummy_channels = 0;
+	SafeFlag _dummy_active;
+	SafeFlag _dummy_exit_thread;
+	bool _dummy_use_threads = true;
 
 #ifdef DEBUG_ENABLED
 	SafeNumeric<uint64_t> prof_ticks;
@@ -2878,23 +2892,29 @@ public:
 		SPEAKER_SURROUND_71,
 	};
 
-	// Virtual API to implement.
+	// Virtual API to implement (defaults provide the Dummy driver implementation).
 
-	virtual const char* get_name() const = 0;
+	virtual const char* get_name() const { return "Dummy"; }
 
-	virtual Error init() = 0;
-	virtual void start() = 0;
-	virtual int get_mix_rate() const = 0;
+	virtual Error init();
+	virtual void start();
+	virtual int get_mix_rate() const;
 
 	virtual int get_input_mix_rate() const { return get_mix_rate(); }
 
-	virtual SpeakerMode get_speaker_mode() const = 0;
+	virtual SpeakerMode get_speaker_mode() const;
 
 	virtual float get_latency() { return 0; }
 
-	virtual void lock() = 0;
-	virtual void unlock() = 0;
-	virtual void finish() = 0;
+	virtual void lock();
+	virtual void unlock();
+	virtual void finish();
+
+	void set_use_threads(bool p_use_threads);
+	void set_speaker_mode(SpeakerMode p_mode);
+	void set_mix_rate(int p_rate);
+	uint32_t get_channels() const;
+	void mix_audio(int p_frames, int32_t* p_buffer);
 
 	virtual PackedStringArray get_output_device_list();
 	virtual String get_output_device();
@@ -2988,33 +3008,25 @@ public:
 	virtual ~AudioDriver() {}
 };
 
-class AudioDriverManager final
+namespace AudioDriverManager
 {
-	enum
-	{
-		MAX_DRIVERS = 10
-	};
+inline constexpr int MAX_DRIVERS = 10;
+inline constexpr int DEFAULT_MIX_RATE = 44100;
 
-	static AudioDriver* drivers[MAX_DRIVERS];
-	static int driver_count;
+extern AudioDriver* drivers[MAX_DRIVERS];
+extern int driver_count;
+extern AudioDriver dummy_driver;
+extern AudioDriver* active_driver;
 
-	static AudioDriverDummy dummy_driver;
-	static AudioDriver* active_driver;
+void add_driver(AudioDriver* p_driver);
+void initialize(int p_driver);
+int get_driver_count();
+AudioDriver* get_driver(int p_driver);
 
-public:
-	static const int DEFAULT_MIX_RATE = 44100;
-
-	static void add_driver(AudioDriver* p_driver);
-	static void initialize(int p_driver);
-	static int get_driver_count();
-	static AudioDriver* get_driver(int p_driver);
-
-	_FORCE_INLINE_ static AudioDriver* get_active_driver() { return active_driver; }
-	static void set_active_driver(AudioDriver* p_driver);
-	_FORCE_INLINE_ static AudioDriverDummy* get_dummy_driver() { return &dummy_driver; }
-
-	AudioDriverManager() = delete;
-};
+_FORCE_INLINE_ AudioDriver* get_active_driver() { return active_driver; }
+void set_active_driver(AudioDriver* p_driver);
+_FORCE_INLINE_ AudioDriver* get_dummy_driver() { return &dummy_driver; }
+} // namespace AudioDriverManager
 
 class AudioBusLayout;
 
@@ -3434,50 +3446,7 @@ public:
 #include "core/os/mutex.h"
 #include "core/os/memory.h"
 
-class AudioDriverDummy : public AudioDriver {
-	Thread thread;
-	Mutex mutex;
 
-	int32_t *samples_in = nullptr;
-
-	static void thread_func(void *p_udata);
-
-	uint32_t buffer_frames = 4096;
-	int32_t mix_rate = -1;
-	SpeakerMode speaker_mode = SPEAKER_MODE_STEREO;
-
-	int channels;
-
-	SafeFlag active;
-	SafeFlag exit_thread;
-
-	bool use_threads = true;
-
-public:
-	virtual const char *get_name() const override {
-		return "Dummy";
-	}
-
-	virtual Error init() override;
-	virtual void start() override;
-	virtual int get_mix_rate() const override;
-	virtual SpeakerMode get_speaker_mode() const override;
-
-	virtual void lock() override;
-	virtual void unlock() override;
-	virtual void finish() override;
-
-	void set_use_threads(bool p_use_threads);
-	void set_speaker_mode(SpeakerMode p_mode);
-	void set_mix_rate(int p_rate);
-
-	uint32_t get_channels() const;
-
-	void mix_audio(int p_frames, int32_t *p_buffer);
-
-	AudioDriverDummy();
-	~AudioDriverDummy() {}
-};
 
 #include "core/os/memory.h"
 #include "core/typedefs.h"
@@ -7067,40 +7036,33 @@ struct CaretInfo
 	TextServer::Direction t_dir;
 };
 
-class TextServerManager final
+namespace TextServerManager
 {
-private:
-	struct Data
-	{
-		Ref<TextServer> primary_interface;
-		Vector<Ref<TextServer>> interfaces;
-	};
-
-	static inline Data* data = nullptr;
-
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	static void add_interface(const Ref<TextServer>& p_interface);
-	static void remove_interface(const Ref<TextServer>& p_interface);
-	static int get_interface_count();
-	static Ref<TextServer> get_interface(int p_index);
-	static Ref<TextServer> find_interface(const String& p_name);
-
-	_FORCE_INLINE_ static Ref<TextServer> get_primary_interface()
-	{
-		return data ? data->primary_interface : Ref<TextServer>();
-	}
-
-	static void set_primary_interface(const Ref<TextServer>& p_primary_interface);
-
-	TextServerManager() = delete;
-	TextServerManager(const TextServerManager&) = delete;
-	TextServerManager& operator=(const TextServerManager&) = delete;
-	~TextServerManager() = delete;
+struct Data
+{
+	Ref<TextServer> primary_interface;
+	Vector<Ref<TextServer>> interfaces;
 };
+
+inline Data* data = nullptr;
+
+void initialize();
+void finalize();
+_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+void add_interface(const Ref<TextServer>& p_interface);
+void remove_interface(const Ref<TextServer>& p_interface);
+int get_interface_count();
+Ref<TextServer> get_interface(int p_index);
+Ref<TextServer> find_interface(const String& p_name);
+
+_FORCE_INLINE_ Ref<TextServer> get_primary_interface()
+{
+	return data ? data->primary_interface : Ref<TextServer>();
+}
+
+void set_primary_interface(const Ref<TextServer>& p_primary_interface);
+} // namespace TextServerManager
 
 #define TS TextServerManager::get_primary_interface()
 
@@ -13945,21 +13907,14 @@ struct BlitToScreen {
 	Rect2 src_rect = Rect2(0.0, 0.0, 1.0, 1.0);
 	Rect2i dst_rect;
 
-	struct {
-		bool use_layer = false;
-		uint32_t layer = 0;
-	} multi_view;
-
-	struct {
-		//lens distorted parameters for VR
-		bool apply = false;
-		Vector2 eye_center;
-		float k1 = 0.0;
-		float k2 = 0.0;
-
-		float upscale = 1.0;
-		float aspect_ratio = 1.0;
-	} lens_distortion;
+	bool multi_view_use_layer = false;
+	uint32_t multi_view_layer = 0;
+	bool lens_distortion_apply = false;
+	Vector2 lens_distortion_eye_center;
+	float lens_distortion_k1 = 0.0;
+	float lens_distortion_k2 = 0.0;
+	float lens_distortion_upscale = 1.0;
+	float lens_distortion_aspect_ratio = 1.0;
 };
 
 /* BACKGROUND */
@@ -19503,10 +19458,6 @@ public:
 class RendererViewport final
 {
 public:
-	struct CanvasBase
-	{
-	};
-
 	struct Viewport
 	{
 		RID self;
@@ -19612,7 +19563,7 @@ public:
 
 		struct CanvasData
 		{
-			CanvasBase* canvas = nullptr;
+			void* canvas = nullptr;
 			Transform2D transform;
 			int layer = 0;
 			int sublayer = 0;
@@ -20227,7 +20178,9 @@ void DynamicBVH::ray_query(const Vector3 &p_from, const Vector3 &p_to, QueryResu
 
 #include <thirdparty/misc/r128.h>
 
-class Delaunay3D {
+namespace Delaunay3D
+{
+
 	struct Simplex;
 
 	enum {
@@ -20290,7 +20243,7 @@ class Delaunay3D {
 		}
 	};
 
-	_FORCE_INLINE_ static void circum_sphere_compute(const Vector3 *p_points, Simplex *p_simplex) {
+	_FORCE_INLINE_ void circum_sphere_compute(const Vector3 *p_points, Simplex *p_simplex) {
 		// The only part in the algorithm where there may be precision errors is this one,
 		// so ensure that we do it with the maximum precision possible.
 
@@ -20348,7 +20301,7 @@ class Delaunay3D {
 		p_simplex->circum_r2 = radius1;
 	}
 
-	_FORCE_INLINE_ static bool simplex_contains(const Vector3 *p_points, const Simplex &p_simplex, uint32_t p_vertex) {
+	_FORCE_INLINE_ bool simplex_contains(const Vector3 *p_points, const Simplex &p_simplex, uint32_t p_vertex) {
 		R128 v_x = p_points[p_vertex].x;
 		R128 v_y = p_points[p_vertex].y;
 		R128 v_z = p_points[p_vertex].z;
@@ -20364,7 +20317,7 @@ class Delaunay3D {
 		// When it's too small, large amounts of planar simplices are created.
 	}
 
-	static bool simplex_is_coplanar(const Vector3 *p_points, const Simplex &p_simplex) {
+	inline bool simplex_is_coplanar(const Vector3 *p_points, const Simplex &p_simplex) {
 		// Checking every possible distance like this is overkill, but only checking
 		// one is not enough. If the simplex is almost planar then the vectors p1-p2
 		// and p1-p3 can be practically collinear, which makes Plane unreliable.
@@ -20380,12 +20333,11 @@ class Delaunay3D {
 		return false;
 	}
 
-public:
 	struct OutputSimplex {
 		uint32_t points[4];
 	};
 
-	static Vector<OutputSimplex> tetrahedralize(const Vector<Vector3> &p_points) {
+	inline Vector<OutputSimplex> tetrahedralize(const Vector<Vector3> &p_points) {
 		uint32_t point_count = p_points.size();
 		Vector3 *points = (Vector3 *)memalloc(sizeof(Vector3) * (point_count + 4));
 		const Vector3 *src_points = p_points.ptr();
@@ -20573,7 +20525,7 @@ public:
 
 		return ret_simplices;
 	}
-};
+} // namespace Delaunay3D
 
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -21860,8 +21812,9 @@ public:
 	static Error convex_hull(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
 };
 
-class QuickHull {
-public:
+namespace QuickHull
+{
+
 	struct Edge {
 		union {
 			uint32_t vertices[2];
@@ -21899,7 +21852,6 @@ public:
 		}
 	};
 
-private:
 	struct FaceConnect {
 		List<Face>::Element *left = nullptr;
 		List<Face>::Element *right = nullptr;
@@ -21909,10 +21861,9 @@ private:
 		List<Geometry3D::MeshData::Face>::Element *right = nullptr;
 	};
 
-public:
-	static uint32_t debug_stop_after;
-	static Error build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
-};
+	extern uint32_t debug_stop_after;
+	Error build(const Vector<Vector3> &p_points, Geometry3D::MeshData &r_mesh);
+} // namespace QuickHull
 
 #include "core/io/ip.h"
 
@@ -22109,8 +22060,9 @@ public:
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
 
-class Delaunay2D {
-public:
+namespace Delaunay2D
+{
+
 	struct Triangle {
 		int points[3];
 		Vector2 circum_center;
@@ -22139,7 +22091,7 @@ public:
 		}
 	};
 
-	static Triangle create_triangle(const Vector<Vector2> &p_vertices, int p_a, int p_b, int p_c) {
+	inline Triangle create_triangle(const Vector<Vector2> &p_vertices, int p_a, int p_b, int p_c) {
 		Triangle triangle = Triangle(p_a, p_b, p_c);
 
 		// Get the values of the circumcircle and store them inside the triangle object.
@@ -22154,7 +22106,7 @@ public:
 		return triangle;
 	}
 
-	static Vector<Triangle> triangulate(const Vector<Vector2> &p_points) {
+	inline Vector<Triangle> triangulate(const Vector<Vector2> &p_points) {
 		Vector<Vector2> points = p_points;
 		Vector<Triangle> triangles;
 
@@ -22230,7 +22182,7 @@ public:
 
 		return triangles;
 	}
-};
+} // namespace Delaunay2D
 
 #include "core/typedefs.h"
 #include "core/math/vector2.h"
@@ -22732,149 +22684,6 @@ private:
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
-template <typename T>
-class _WARN_UNUSED_ BinSortedArray {
-	PagedArray<T> array;
-	LocalVector<uint64_t> bin_limits;
-
-	// Implement if elements need to keep track of their own index in the array.
-	_FORCE_INLINE_ virtual void _update_idx(T &r_element, uint64_t p_idx) {}
-
-	_FORCE_INLINE_ void _swap(uint64_t p_a, uint64_t p_b) {
-		SWAP(array[p_a], array[p_b]);
-		_update_idx(array[p_a], p_a);
-		_update_idx(array[p_b], p_b);
-	}
-
-public:
-	uint64_t insert(T &p_element, uint64_t p_bin) {
-		array.push_back(p_element);
-		uint64_t new_idx = array.size() - 1;
-		_update_idx(p_element, new_idx);
-		bin_limits[0] = new_idx;
-		if (p_bin != 0) {
-			new_idx = move(new_idx, p_bin);
-		}
-		return new_idx;
-	}
-
-	uint64_t move(uint64_t p_idx, uint64_t p_bin) {
-		ERR_FAIL_UNSIGNED_INDEX_V(p_idx, array.size(), -1);
-
-		uint64_t current_bin = bin_limits.size() - 1;
-		while (p_idx > bin_limits[current_bin]) {
-			current_bin--;
-		}
-
-		if (p_bin == current_bin) {
-			return p_idx;
-		}
-
-		uint64_t current_idx = p_idx;
-		if (p_bin > current_bin) {
-			while (p_bin > current_bin) {
-				uint64_t swap_idx = 0;
-
-				if (current_bin == bin_limits.size() - 1) {
-					bin_limits.push_back(0);
-				} else {
-					bin_limits[current_bin + 1]++;
-					swap_idx = bin_limits[current_bin + 1];
-				}
-
-				if (current_idx != swap_idx) {
-					_swap(current_idx, swap_idx);
-					current_idx = swap_idx;
-				}
-
-				current_bin++;
-			}
-		} else {
-			while (p_bin < current_bin) {
-				uint64_t swap_idx = bin_limits[current_bin];
-
-				if (current_idx != swap_idx) {
-					_swap(current_idx, swap_idx);
-				}
-
-				if (current_bin == bin_limits.size() - 1 && bin_limits[current_bin] == 0) {
-					bin_limits.resize(bin_limits.size() - 1);
-				} else {
-					bin_limits[current_bin]--;
-				}
-				current_idx = swap_idx;
-				current_bin--;
-			}
-		}
-
-		return current_idx;
-	}
-
-	void remove_at(uint64_t p_idx) {
-		ERR_FAIL_UNSIGNED_INDEX(p_idx, array.size());
-		uint64_t new_idx = move(p_idx, 0);
-		uint64_t swap_idx = array.size() - 1;
-
-		if (new_idx != swap_idx) {
-			_swap(new_idx, swap_idx);
-		}
-
-		if (bin_limits[0] > 0) {
-			bin_limits[0]--;
-		}
-
-		array.pop_back();
-	}
-
-	void set_page_pool(PagedArrayPool<T> *p_page_pool) {
-		array.set_page_pool(p_page_pool);
-	}
-
-	_FORCE_INLINE_ const T &operator[](uint64_t p_index) const {
-		return array[p_index];
-	}
-
-	_FORCE_INLINE_ T &operator[](uint64_t p_index) {
-		return array[p_index];
-	}
-
-	int get_bin_count() {
-		if (array.size() == 0) {
-			return 0;
-		}
-		return bin_limits.size();
-	}
-
-	int get_bin_start(int p_bin) {
-		ERR_FAIL_COND_V(p_bin >= get_bin_count(), ~0U);
-		if ((unsigned int)p_bin == bin_limits.size() - 1) {
-			return 0;
-		}
-		return bin_limits[p_bin + 1] + 1;
-	}
-
-	int get_bin_size(int p_bin) {
-		ERR_FAIL_COND_V(p_bin >= get_bin_count(), 0);
-		if ((unsigned int)p_bin == bin_limits.size() - 1) {
-			return bin_limits[p_bin] + 1;
-		}
-		return bin_limits[p_bin] - bin_limits[p_bin + 1];
-	}
-
-	void reset() {
-		array.reset();
-		bin_limits.clear();
-		bin_limits.push_back(0);
-	}
-
-	BinSortedArray() {
-		bin_limits.push_back(0);
-	}
-
-	virtual ~BinSortedArray() {
-		reset();
-	}
-};
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -23147,31 +22956,6 @@ public:
 
 	inline static void (*set_build_quality)(
 		RSE::ViewportOcclusionCullingBuildQuality p_quality) = &_default_set_build_quality;
-
-	template <typename Impl> static void bind()
-	{
-		is_occluder = &Impl::is_occluder;
-		occluder_allocate = &Impl::occluder_allocate;
-		occluder_initialize = &Impl::occluder_initialize;
-		free_occluder = &Impl::free_occluder;
-		occluder_set_mesh = &Impl::occluder_set_mesh;
-
-		add_scenario = &Impl::add_scenario;
-		remove_scenario = &Impl::remove_scenario;
-		scenario_set_instance = &Impl::scenario_set_instance;
-		scenario_remove_instance = &Impl::scenario_remove_instance;
-
-		add_buffer = &Impl::add_buffer;
-		remove_buffer = &Impl::remove_buffer;
-		buffer_get_ptr = &Impl::buffer_get_ptr;
-		buffer_set_scenario = &Impl::buffer_set_scenario;
-		buffer_set_size = &Impl::buffer_set_size;
-		buffer_update = &Impl::buffer_update;
-
-		buffer_get_debug_texture = &Impl::buffer_get_debug_texture;
-
-		set_build_quality = &Impl::set_build_quality;
-	}
 
 	static void reset()
 	{
@@ -24619,17 +24403,153 @@ public:
 		float children_fade_alpha = 1.0f;
 	};
 
-	class VisibilityArray : public BinSortedArray<InstanceVisibilityData>
-	{
-		_FORCE_INLINE_ void _update_idx(InstanceVisibilityData& r_element, uint64_t p_idx)
-		{
-			r_element.instance->visibility_index = p_idx;
-			if (r_element.instance->scenario && r_element.instance->array_index != -1) {
-				r_element.instance->scenario->instance_data[r_element.instance->array_index]
-					.visibility_index = p_idx;
+class _WARN_UNUSED_ VisibilityArray {
+	PagedArray<InstanceVisibilityData> array;
+	LocalVector<uint64_t> bin_limits;
+
+	// Implement if elements need to keep track of their own index in the array.
+	_FORCE_INLINE_ void _update_idx(InstanceVisibilityData &r_element, uint64_t p_idx) {
+		r_element.instance->visibility_index = p_idx;
+		if (r_element.instance->scenario && r_element.instance->array_index != -1) {
+			r_element.instance->scenario->instance_data[r_element.instance->array_index].visibility_index = p_idx;
+		}
+	}
+
+	_FORCE_INLINE_ void _swap(uint64_t p_a, uint64_t p_b) {
+		SWAP(array[p_a], array[p_b]);
+		_update_idx(array[p_a], p_a);
+		_update_idx(array[p_b], p_b);
+	}
+
+public:
+	uint64_t insert(InstanceVisibilityData &p_element, uint64_t p_bin) {
+		array.push_back(p_element);
+		uint64_t new_idx = array.size() - 1;
+		_update_idx(p_element, new_idx);
+		bin_limits[0] = new_idx;
+		if (p_bin != 0) {
+			new_idx = move(new_idx, p_bin);
+		}
+		return new_idx;
+	}
+
+	uint64_t move(uint64_t p_idx, uint64_t p_bin) {
+		ERR_FAIL_UNSIGNED_INDEX_V(p_idx, array.size(), -1);
+
+		uint64_t current_bin = bin_limits.size() - 1;
+		while (p_idx > bin_limits[current_bin]) {
+			current_bin--;
+		}
+
+		if (p_bin == current_bin) {
+			return p_idx;
+		}
+
+		uint64_t current_idx = p_idx;
+		if (p_bin > current_bin) {
+			while (p_bin > current_bin) {
+				uint64_t swap_idx = 0;
+
+				if (current_bin == bin_limits.size() - 1) {
+					bin_limits.push_back(0);
+				} else {
+					bin_limits[current_bin + 1]++;
+					swap_idx = bin_limits[current_bin + 1];
+				}
+
+				if (current_idx != swap_idx) {
+					_swap(current_idx, swap_idx);
+					current_idx = swap_idx;
+				}
+
+				current_bin++;
+			}
+		} else {
+			while (p_bin < current_bin) {
+				uint64_t swap_idx = bin_limits[current_bin];
+
+				if (current_idx != swap_idx) {
+					_swap(current_idx, swap_idx);
+				}
+
+				if (current_bin == bin_limits.size() - 1 && bin_limits[current_bin] == 0) {
+					bin_limits.resize(bin_limits.size() - 1);
+				} else {
+					bin_limits[current_bin]--;
+				}
+				current_idx = swap_idx;
+				current_bin--;
 			}
 		}
-	};
+
+		return current_idx;
+	}
+
+	void remove_at(uint64_t p_idx) {
+		ERR_FAIL_UNSIGNED_INDEX(p_idx, array.size());
+		uint64_t new_idx = move(p_idx, 0);
+		uint64_t swap_idx = array.size() - 1;
+
+		if (new_idx != swap_idx) {
+			_swap(new_idx, swap_idx);
+		}
+
+		if (bin_limits[0] > 0) {
+			bin_limits[0]--;
+		}
+
+		array.pop_back();
+	}
+
+	void set_page_pool(PagedArrayPool<InstanceVisibilityData> *p_page_pool) {
+		array.set_page_pool(p_page_pool);
+	}
+
+	_FORCE_INLINE_ const InstanceVisibilityData &operator[](uint64_t p_index) const {
+		return array[p_index];
+	}
+
+	_FORCE_INLINE_ InstanceVisibilityData &operator[](uint64_t p_index) {
+		return array[p_index];
+	}
+
+	int get_bin_count() {
+		if (array.size() == 0) {
+			return 0;
+		}
+		return bin_limits.size();
+	}
+
+	int get_bin_start(int p_bin) {
+		ERR_FAIL_COND_V(p_bin >= get_bin_count(), ~0U);
+		if ((unsigned int)p_bin == bin_limits.size() - 1) {
+			return 0;
+		}
+		return bin_limits[p_bin + 1] + 1;
+	}
+
+	int get_bin_size(int p_bin) {
+		ERR_FAIL_COND_V(p_bin >= get_bin_count(), 0);
+		if ((unsigned int)p_bin == bin_limits.size() - 1) {
+			return bin_limits[p_bin] + 1;
+		}
+		return bin_limits[p_bin] - bin_limits[p_bin + 1];
+	}
+
+	void reset() {
+		array.reset();
+		bin_limits.clear();
+		bin_limits.push_back(0);
+	}
+
+	VisibilityArray() {
+		bin_limits.push_back(0);
+	}
+
+	virtual ~VisibilityArray() {
+		reset();
+	}
+};
 
 	struct Scenario
 	{
@@ -26539,7 +26459,7 @@ public:
 
 	RID_Owner<RendererCanvasRender::LightOccluderInstance, true> canvas_light_occluder_owner;
 
-	struct Canvas : public RendererViewport::CanvasBase
+	struct Canvas
 	{
 		HashSet<RID> viewports;
 
@@ -32738,11 +32658,9 @@ public:
 	~ShaderPreprocessor() = default;
 };
 
-class ShaderTypes
+namespace ShaderTypes
 {
-public:
-    ShaderTypes() = delete;
-    ~ShaderTypes() = delete;
+
 
     struct Type
     {
@@ -32751,38 +32669,36 @@ public:
         Vector<ShaderLanguage::ModeInfo> stencil_modes;
     };
 
-    static inline HashMap<RSE::ShaderMode, Type> shader_modes;
-    static inline HashSet<String> shader_types;
-    static inline List<String> shader_types_list;
+    inline HashMap<RSE::ShaderMode, Type> shader_modes;
+    inline HashSet<String> shader_types;
+    inline List<String> shader_types_list;
 
-    static const HashMap<String, ShaderLanguage::FunctionInfo>& get_functions(
+    const HashMap<String, ShaderLanguage::FunctionInfo>& get_functions(
         RSE::ShaderMode p_mode);
-    static const Vector<ShaderLanguage::ModeInfo>& get_modes(RSE::ShaderMode p_mode);
-    static const Vector<ShaderLanguage::ModeInfo>& get_stencil_modes(RSE::ShaderMode p_mode);
-    static const HashSet<String>& get_types();
-    static const List<String>& get_types_list();
+    const Vector<ShaderLanguage::ModeInfo>& get_modes(RSE::ShaderMode p_mode);
+    const Vector<ShaderLanguage::ModeInfo>& get_stencil_modes(RSE::ShaderMode p_mode);
+    const HashSet<String>& get_types();
+    const List<String>& get_types_list();
 
-    static void initialize();
-    static void finalize();
-};
+    void initialize();
+    void finalize();
+} // namespace ShaderTypes
 
 #include "core/io/ip.h"
 
-class ShaderIncludeDB
+namespace ShaderIncludeDB
 {
-private:
-	static HashMap<String, String> built_in_includes;
 
-protected:
+	extern HashMap<String, String> built_in_includes;
 
-public:
-	static void register_built_in_include_file(
+
+	void register_built_in_include_file(
 		const String& p_filename, const String& p_shader_code);
-	static PackedStringArray list_built_in_include_files();
-	static bool has_built_in_include_file(const String& p_filename);
-	static String get_built_in_include_file(const String& p_filename);
-	static String parse_include_files(const String& p_code);
-};
+	PackedStringArray list_built_in_include_files();
+	bool has_built_in_include_file(const String& p_filename);
+	String get_built_in_include_file(const String& p_filename);
+	String parse_include_files(const String& p_code);
+} // namespace ShaderIncludeDB
 
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
@@ -35709,7 +35625,8 @@ struct Projection;
 namespace RendererRD
 {
 
-struct GlobalShaderUniforms
+template <typename BufferT>
+struct RendererGlobalShaderUniformsT
 {
 	enum
 	{
@@ -35759,7 +35676,7 @@ struct GlobalShaderUniforms
 	List<RID> materials_using_buffer;
 	List<RID> materials_using_texture;
 
-	RID buffer;
+	BufferT buffer = BufferT();
 	Value* buffer_values = nullptr;
 	ValueUsage* buffer_usage = nullptr;
 	bool* buffer_dirty_regions = nullptr;
@@ -35772,6 +35689,8 @@ struct GlobalShaderUniforms
 
 	HashMap<RID, int32_t> instance_buffer_pos;
 };
+
+using GlobalShaderUniforms = RendererGlobalShaderUniformsT<RID>;
 
 struct Samplers
 {
@@ -36208,9 +36127,9 @@ public:
 #include "core/math/vector2.h"
 #include "core/string/ustring.h"
 
-class FramebufferCacheRD final
+namespace FramebufferCacheRD
 {
-public:
+
     struct Cache
     {
         Cache* prev = nullptr;
@@ -36234,14 +36153,13 @@ public:
         uint32_t cache_instances_used = 0;
     };
 
-    static inline Data* data = nullptr;
+    inline Data* data = nullptr;
 
-    static void initialize();
-    static void finalize();
-    static bool is_initialized() { return data != nullptr; }
+    void initialize();
+    void finalize();
+    inline bool is_initialized() { return data != nullptr; }
 
-private:
-    static _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
+    _FORCE_INLINE_ uint32_t _hash_pass(const RD::FramebufferPass& p, uint32_t h)
     {
         h = hash_murmur3_one_32(p.depth_attachment, h);
         h = hash_murmur3_one_32(p.depth_resolve_attachment, h);
@@ -36264,7 +36182,7 @@ private:
         return h;
     }
 
-    static _FORCE_INLINE_ bool _compare_pass(
+    _FORCE_INLINE_ bool _compare_pass(
         const RD::FramebufferPass& a, const RD::FramebufferPass& b)
     {
         if (a.depth_attachment != b.depth_attachment) {
@@ -36308,7 +36226,7 @@ private:
         return true;
     }
 
-    static _FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
+    _FORCE_INLINE_ uint32_t _hash_rids(uint32_t h, const RID& arg)
     {
         return hash_murmur3_one_64(arg.get_id(), h);
     }
@@ -36319,14 +36237,14 @@ private:
         return _hash_rids(h, args...);
     }
 
-    static _FORCE_INLINE_ bool _compare_args(
+    _FORCE_INLINE_ bool _compare_args(
         uint32_t idx, const LocalVector<RID>& textures, const RID& arg)
     {
         return textures[idx] == arg;
     }
 
     template <typename... Args>
-    static _FORCE_INLINE_ bool _compare_args(
+    _FORCE_INLINE_ bool _compare_args(
         uint32_t idx, const LocalVector<RID>& textures, const RID& arg, Args... args)
     {
         if (textures[idx] != arg) {
@@ -36335,10 +36253,10 @@ private:
         return _compare_args(idx + 1, textures, args...);
     }
 
-    static void _invalidate(Cache* p_cache);
-    static void _framebuffer_invalidation_callback(void* p_userdata);
+    void _invalidate(Cache* p_cache);
+    void _framebuffer_invalidation_callback(void* p_userdata);
 
-    static RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
+    inline RID _allocate_from_data(uint32_t p_views, uint32_t p_hash, uint32_t p_table_idx,
         const Vector<RID>& p_textures, const Vector<RD::FramebufferPass>& p_passes)
     {
         ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36381,7 +36299,6 @@ private:
         return rid;
     }
 
-public:
     template <typename... Args> static RID get_cache(Args... args)
     {
         ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36438,7 +36355,7 @@ public:
             p_views, h, table_idx, Vector<RID>{args...}, Vector<RD::FramebufferPass>());
     }
 
-    static RID get_cache_multipass(const Vector<RID>& p_textures,
+    inline RID get_cache_multipass(const Vector<RID>& p_textures,
         const Vector<RD::FramebufferPass>& p_passes, uint32_t p_views = 1)
     {
         ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36493,11 +36410,7 @@ public:
         return _allocate_from_data(p_views, h, table_idx, p_textures, p_passes);
     }
 
-    FramebufferCacheRD() = delete;
-    FramebufferCacheRD(const FramebufferCacheRD&) = delete;
-    FramebufferCacheRD& operator=(const FramebufferCacheRD&) = delete;
-    ~FramebufferCacheRD() = delete;
-};
+} // namespace FramebufferCacheRD
 
 class PipelineCacheRD final
 {
@@ -36584,9 +36497,9 @@ public:
 	~PipelineCacheRD();
 };
 
-class UniformSetCacheRD final
+namespace UniformSetCacheRD
 {
-public:
+
 	struct Cache
 	{
 		Cache* prev = nullptr;
@@ -36610,14 +36523,13 @@ public:
 		uint32_t cache_instances_used = 0;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return data != nullptr; }
 
-private:
-	static _FORCE_INLINE_ uint32_t _hash_uniform(const RD::Uniform& u, uint32_t h)
+	_FORCE_INLINE_ uint32_t _hash_uniform(const RD::Uniform& u, uint32_t h)
 	{
 		h = hash_murmur3_one_32(u.uniform_type, h);
 		h = hash_murmur3_one_32(u.binding, h);
@@ -36628,7 +36540,7 @@ private:
 		return hash_fmix32(h);
 	}
 
-	static _FORCE_INLINE_ bool _compare_uniform(const RD::Uniform& a, const RD::Uniform& b)
+	_FORCE_INLINE_ bool _compare_uniform(const RD::Uniform& a, const RD::Uniform& b)
 	{
 		if (a.binding != b.binding) {
 			return false;
@@ -36648,26 +36560,26 @@ private:
 		return true;
 	}
 
-	static _FORCE_INLINE_ uint32_t _hash_args(uint32_t h, const RD::Uniform& arg)
+	_FORCE_INLINE_ uint32_t _hash_args(uint32_t h, const RD::Uniform& arg)
 	{
 		return _hash_uniform(arg, h);
 	}
 
 	template <typename... Args>
-	static uint32_t _hash_args(uint32_t h, const RD::Uniform& arg, Args... args)
+	inline uint32_t _hash_args(uint32_t h, const RD::Uniform& arg, Args... args)
 	{
 		h = _hash_uniform(arg, h);
 		return _hash_args(h, args...);
 	}
 
-	static _FORCE_INLINE_ bool _compare_args(
+	_FORCE_INLINE_ bool _compare_args(
 		uint32_t idx, const LocalVector<RD::Uniform>& uniforms, const RD::Uniform& arg)
 	{
 		return _compare_uniform(uniforms[idx], arg);
 	}
 
 	template <typename... Args>
-	static _FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RD::Uniform>& uniforms,
+	_FORCE_INLINE_ bool _compare_args(uint32_t idx, const LocalVector<RD::Uniform>& uniforms,
 		const RD::Uniform& arg, Args... args)
 	{
 		if (!_compare_uniform(uniforms[idx], arg)) {
@@ -36676,11 +36588,11 @@ private:
 		return _compare_args(idx + 1, uniforms, args...);
 	}
 
-	static void _invalidate(Cache* p_cache);
-	static void _uniform_set_invalidation_callback(void* p_userdata);
+	void _invalidate(Cache* p_cache);
+	void _uniform_set_invalidation_callback(void* p_userdata);
 
 	template <typename Collection>
-	static RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash,
+	inline RID _allocate_from_uniforms(RID p_shader, uint32_t p_set, uint32_t p_hash,
 		uint32_t p_table_idx, const Collection& p_uniforms)
 	{
 		ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36711,7 +36623,6 @@ private:
 		return rid;
 	}
 
-public:
 	template <typename... Args> static RID get_cache(RID p_shader, uint32_t p_set, Args... args)
 	{
 		ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36738,7 +36649,7 @@ public:
 		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, Vector<RD::Uniform>{args...});
 	}
 
-	static RID get_cache_vec(
+	inline RID get_cache_vec(
 		RID p_shader, uint32_t p_set, const LocalVector<RD::Uniform>& p_uniforms)
 	{
 		ERR_FAIL_COND_V(data == nullptr, RID());
@@ -36778,11 +36689,7 @@ public:
 		return _allocate_from_uniforms(p_shader, p_set, h, table_idx, p_uniforms);
 	}
 
-	UniformSetCacheRD() = delete;
-	UniformSetCacheRD(const UniformSetCacheRD&) = delete;
-	UniformSetCacheRD& operator=(const UniformSetCacheRD&) = delete;
-	~UniformSetCacheRD() = delete;
-};
+} // namespace UniformSetCacheRD
 
 // Helper class for automatically deferring compilation of a pipeline to a background task.
 // When attempting to retrieve the pipeline with the getter, the caller will automatically
@@ -38267,12 +38174,9 @@ public:
 		RID fog_uniform_set;
 		RID copy_uniform_set;
 
-		struct
-		{
-			RID process_uniform_set_density;
-			RID process_uniform_set;
-			RID process_uniform_set2;
-		} gi_dependent_sets;
+		RID gi_dependent_sets_process_uniform_set_density;
+		RID gi_dependent_sets_process_uniform_set;
+		RID gi_dependent_sets_process_uniform_set2;
 
 		RID sdfgi_uniform_set;
 		RID sky_uniform_set;
@@ -40770,47 +40674,24 @@ enum ForwardIDType
 	FORWARD_ID_MAX,
 };
 
-class ForwardIDStorage final
+namespace ForwardIDStorage
 {
-private:
-	static ForwardID _default_allocate_forward_id(ForwardIDType p_type) { return -1; }
-	static void _default_free_forward_id(ForwardIDType p_type, ForwardID p_id) {}
-	static void _default_map_forward_id(
-		ForwardIDType p_type, ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
-	{
-	}
-	static bool _default_uses_forward_ids() { return false; }
-
-public:
-	inline static ForwardID (*allocate_forward_id)(ForwardIDType p_type) =
-		&_default_allocate_forward_id;
-	inline static void (*free_forward_id)(ForwardIDType p_type, ForwardID p_id) =
-		&_default_free_forward_id;
-	inline static void (*map_forward_id)(ForwardIDType p_type, ForwardID p_id, uint32_t p_index,
-		uint64_t p_last_pass) = &_default_map_forward_id;
-	inline static bool (*uses_forward_ids)() = &_default_uses_forward_ids;
-
-	template <typename Impl> static void bind()
-	{
-		allocate_forward_id = &Impl::allocate_forward_id;
-		free_forward_id = &Impl::free_forward_id;
-		map_forward_id = &Impl::map_forward_id;
-		uses_forward_ids = &Impl::uses_forward_ids;
-	}
-
-	static void reset()
-	{
-		allocate_forward_id = &_default_allocate_forward_id;
-		free_forward_id = &_default_free_forward_id;
-		map_forward_id = &_default_map_forward_id;
-		uses_forward_ids = &_default_uses_forward_ids;
-	}
-
-	ForwardIDStorage() = delete;
-	ForwardIDStorage(const ForwardIDStorage&) = delete;
-	ForwardIDStorage& operator=(const ForwardIDStorage&) = delete;
-	~ForwardIDStorage() = delete;
+struct ForwardIDAllocator
+{
+	LocalVector<bool> allocations;
+	LocalVector<uint8_t> map;
+	LocalVector<uint64_t> last_pass;
 };
+
+inline ForwardIDAllocator* allocators = nullptr;
+
+void initialize();
+void reset();
+_FORCE_INLINE_ bool uses_forward_ids() { return allocators != nullptr; }
+ForwardID allocate_forward_id(ForwardIDType p_type);
+void free_forward_id(ForwardIDType p_type, ForwardID p_id);
+void map_forward_id(ForwardIDType p_type, ForwardID p_id, uint32_t p_index, uint64_t p_last_pass);
+} // namespace ForwardIDStorage
 
 } // namespace RendererRD
 
@@ -40873,20 +40754,22 @@ public:
 		Dependency dependency;
 	};
 
+	struct RendererShadowTransform
+	{
+		Projection camera;
+		Transform3D transform;
+		float farplane = 0.0;
+		float split = 0.0;
+		float bias_scale = 0.0;
+		float shadow_texel_size = 0.0;
+		float range_begin = 0.0;
+		Rect2 atlas_rect;
+		Vector2 uv_scale;
+	};
+
 	struct LightInstance
 	{
-		struct ShadowTransform
-		{
-			Projection camera;
-			Transform3D transform;
-			float farplane = 0.0;
-			float split = 0.0;
-			float bias_scale = 0.0;
-			float shadow_texel_size = 0.0;
-			float range_begin = 0.0;
-			Rect2 atlas_rect;
-			Vector2 uv_scale;
-		};
+		using ShadowTransform = RendererShadowTransform;
 
 		RSE::LightType light_type = RSE::LIGHT_DIRECTIONAL;
 		ShadowTransform shadow_transform[6];
@@ -43428,6 +43311,39 @@ public:
 namespace RendererSceneRenderImplementation
 {
 
+struct ForwardUbershaderConstants
+{
+	union
+	{
+		uint32_t packed_0;
+		uint32_t cull_mode : 2;
+	};
+};
+
+struct RendererGeometryInstanceLightmapSH
+{
+	Color sh[9];
+};
+
+struct ForwardLTC
+{
+	RID lut1_texture;
+	RID lut2_texture;
+};
+
+struct ForwardLightmapData
+{
+	float normal_xform[12];
+	float texture_size[2];
+	float exposure_normalization;
+	uint32_t flags;
+};
+
+struct ForwardLightmapCaptureData
+{
+	float sh[9 * 4];
+};
+
 class SceneShaderForwardClustered final
 {
 private:
@@ -43537,18 +43453,7 @@ public:
 		uint32_t packed_2;
 	};
 
-	struct UbershaderConstants
-	{
-		union
-		{
-			uint32_t packed_0;
-
-			struct
-			{
-				uint32_t cull_mode : 2;
-			};
-		};
-	};
+	using UbershaderConstants = ForwardUbershaderConstants;
 
 	struct ShaderData : public RendererRD::MaterialStorage::ShaderData
 	{
@@ -44048,11 +43953,7 @@ private:
 		RID texture;
 	};
 
-	struct LTC
-	{
-		RID lut1_texture;
-		RID lut2_texture;
-	};
+	using LTC = ForwardLTC;
 
 	enum PassMode
 	{
@@ -44126,18 +44027,8 @@ private:
 		}
 	};
 
-	struct LightmapData
-	{
-		float normal_xform[12];
-		float texture_size[2];
-		float exposure_normalization;
-		uint32_t flags;
-	};
-
-	struct LightmapCaptureData
-	{
-		float sh[9 * 4];
-	};
+	using LightmapData = ForwardLightmapData;
+	using LightmapCaptureData = ForwardLightmapCaptureData;
 
 	// When changing any of these enums, remember to change the corresponding enums in the shader
 	// files as well.
@@ -44389,10 +44280,7 @@ private:
 	struct GeometryInstanceData;
 	class GeometryInstanceForwardClustered;
 
-	struct GeometryInstanceLightmapSH
-	{
-		Color sh[9];
-	};
+	using GeometryInstanceLightmapSH = RendererSceneRenderImplementation::RendererGeometryInstanceLightmapSH;
 
 	// Cached data for drawing surfaces
 	struct GeometryInstanceSurfaceDataCache
@@ -44971,18 +44859,7 @@ public:
 		};
 	};
 
-	struct UbershaderConstants
-	{
-		union
-		{
-			uint32_t packed_0;
-
-			struct
-			{
-				uint32_t cull_mode : 2;
-			};
-		};
-	};
+	using UbershaderConstants = ForwardUbershaderConstants;
 
 	struct ShaderData : public RendererRD::MaterialStorage::ShaderData
 	{
@@ -45327,11 +45204,7 @@ private:
 
 	static void setup_render_buffer_data(Ref<RenderSceneBuffersRD> p_render_buffers);
 
-	struct LTC
-	{
-		RID lut1_texture;
-		RID lut2_texture;
-	};
+	using LTC = ForwardLTC;
 
 	/* Rendering */
 
@@ -45439,18 +45312,8 @@ private:
 
 	/* Light map */
 
-	struct LightmapData
-	{
-		float normal_xform[12];
-		float texture_size[2];
-		float exposure_normalization;
-		uint32_t flags;
-	};
-
-	struct LightmapCaptureData
-	{
-		float sh[9 * 4];
-	};
+	using LightmapData = ForwardLightmapData;
+	using LightmapCaptureData = ForwardLightmapCaptureData;
 
 	/* Scene state */
 
@@ -45744,10 +45607,7 @@ protected:
 		INSTANCE_DATA_FLAGS_PARTICLE_TRAIL_MASK = 0xFF,
 	};
 
-	struct GeometryInstanceLightmapSH
-	{
-		Color sh[9];
-	};
+	using GeometryInstanceLightmapSH = RendererSceneRenderImplementation::RendererGeometryInstanceLightmapSH;
 
 	// Cached data for drawing surfaces
 	struct GeometryInstanceSurfaceDataCache
@@ -45911,39 +45771,7 @@ protected:
 
 	/* Forward ID */
 
-	class ForwardIDStorageMobile final
-	{
-	public:
-		struct ForwardIDAllocator
-		{
-			LocalVector<bool> allocations;
-			LocalVector<uint8_t> map;
-			LocalVector<uint64_t> last_pass;
-		};
 
-		struct Data
-		{
-			ForwardIDAllocator forward_id_allocators[RendererRD::FORWARD_ID_MAX];
-		};
-
-		static inline Data* data = nullptr;
-
-		static void initialize();
-		static void finalize();
-		static bool is_initialized() { return data != nullptr; }
-
-		static RendererRD::ForwardID allocate_forward_id(RendererRD::ForwardIDType p_type);
-		static void free_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id);
-		static void map_forward_id(RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id,
-			uint32_t p_index, uint64_t p_last_pass);
-
-		static bool uses_forward_ids() { return true; }
-
-		ForwardIDStorageMobile() = delete;
-		ForwardIDStorageMobile(const ForwardIDStorageMobile&) = delete;
-		ForwardIDStorageMobile& operator=(const ForwardIDStorageMobile&) = delete;
-		~ForwardIDStorageMobile() = delete;
-	};
 
 	static void fill_push_constant_instance_indices(
 		SceneState::InstanceData* p_instance_data, const GeometryInstanceForwardMobile* p_instance);
@@ -46560,6 +46388,19 @@ static inline struct
 
 };
 
+struct RendererCanvasLight
+{
+	RID texture;
+
+	struct
+	{
+		bool enabled = false;
+		float z_far;
+		float y_offset;
+		Transform2D directional_xform;
+	} shadow;
+};
+
 class RendererCanvasRenderRD : public RendererCanvasRender
 {
 	enum
@@ -46660,23 +46501,9 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 	/**** POLYGONS ****/
 	/******************/
 
-	static inline struct
-	{
-		RID index_array[4];
-	} primitive_arrays;
+	static inline RID primitive_arrays_index_array[4];
 
-	struct CanvasLight
-	{
-		RID texture;
-
-		struct
-		{
-			bool enabled = false;
-			float z_far;
-			float y_offset;
-			Transform2D directional_xform;
-		} shadow;
-	};
+	using CanvasLight = RendererCanvasLight;
 
 	static inline RID_Owner<CanvasLight> canvas_light_owner;
 
@@ -48931,9 +48758,9 @@ public:
 
 #define XR_PATH_UNSUPPORTED_NAME "unsupported"
 
-class OpenXRInteractionProfileMetadata final
+namespace OpenXRInteractionProfileMetadata
 {
-public:
+
 	struct TopLevelPath
 	{
 		String display_name;
@@ -48961,33 +48788,31 @@ public:
 		const IOPath* get_io_path(const String& p_io_path) const;
 	};
 
-private:
-	static void _register_core_metadata();
+	void _register_core_metadata();
 
-public:
-	static void register_profile_rename(const String& p_old_name, const String& p_new_name);
-	static String check_profile_name(const String& p_name);
+	void register_profile_rename(const String& p_old_name, const String& p_new_name);
+	String check_profile_name(const String& p_name);
 
-	static void register_path_rename(const String& p_old_name, const String& p_new_name);
-	static String check_path_name(const String& p_name);
+	void register_path_rename(const String& p_old_name, const String& p_new_name);
+	String check_path_name(const String& p_name);
 
-	static void register_top_level_path(const String& p_display_name, const String& p_openxr_path,
+	void register_top_level_path(const String& p_display_name, const String& p_openxr_path,
 		const String& p_openxr_extension_names);
-	static bool has_top_level_path(const String& p_openxr_path);
-	static String get_top_level_name(const String& p_openxr_path);
-	static String get_top_level_extensions(const String& p_openxr_path);
+	bool has_top_level_path(const String& p_openxr_path);
+	String get_top_level_name(const String& p_openxr_path);
+	String get_top_level_extensions(const String& p_openxr_path);
 
-	static void register_interaction_profile(const String& p_display_name,
+	void register_interaction_profile(const String& p_display_name,
 		const String& p_openxr_path, const String& p_openxr_extension_names);
-	static bool has_interaction_profile(const String& p_openxr_path);
-	static String get_interaction_profile_extensions(const String& p_openxr_path);
-	static const InteractionProfile* get_profile(const String& p_openxr_path);
-	static PackedStringArray get_interaction_profile_paths();
+	bool has_interaction_profile(const String& p_openxr_path);
+	String get_interaction_profile_extensions(const String& p_openxr_path);
+	const InteractionProfile* get_profile(const String& p_openxr_path);
+	PackedStringArray get_interaction_profile_paths();
 
-	static void register_io_path(const String& p_interaction_profile, const String& p_display_name,
+	void register_io_path(const String& p_interaction_profile, const String& p_display_name,
 		const String& p_toplevel_path, const String& p_openxr_path,
 		const String& p_openxr_extension_names, OpenXRAction::ActionType p_action_type);
-	static const IOPath* get_io_path(const String& p_interaction_profile, const String& p_io_path);
+	const IOPath* get_io_path(const String& p_interaction_profile, const String& p_io_path);
 
 	struct Data
 	{
@@ -48997,17 +48822,13 @@ public:
 		Vector<InteractionProfile> interaction_profiles;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	OpenXRInteractionProfileMetadata() = delete;
-	OpenXRInteractionProfileMetadata(const OpenXRInteractionProfileMetadata&) = delete;
-	OpenXRInteractionProfileMetadata& operator=(const OpenXRInteractionProfileMetadata&) = delete;
-	~OpenXRInteractionProfileMetadata() = delete;
-};
+} // namespace OpenXRInteractionProfileMetadata
 
 ///////////////////////////////////////////////////////////////////////////
 // OpenXRActionMap
@@ -51938,69 +51759,7 @@ struct Material
 	Material() : update_element(this) {}
 };
 
-struct GlobalShaderUniforms
-{
-	enum
-	{
-		BUFFER_DIRTY_REGION_SIZE = 1024
-	};
-
-	struct Variable
-	{
-		HashSet<RID> texture_materials;
-
-		RSE::GlobalShaderParameterType type;
-		int32_t buffer_index;
-		int32_t buffer_elements;
-	};
-
-	HashMap<String, Variable> variables;
-
-	struct Value
-	{
-		float x;
-		float y;
-		float z;
-		float w;
-	};
-
-	struct ValueInt
-	{
-		int32_t x;
-		int32_t y;
-		int32_t z;
-		int32_t w;
-	};
-
-	struct ValueUInt
-	{
-		uint32_t x;
-		uint32_t y;
-		uint32_t z;
-		uint32_t w;
-	};
-
-	struct ValueUsage
-	{
-		uint32_t elements = 0;
-	};
-
-	List<RID> materials_using_buffer;
-	List<RID> materials_using_texture;
-
-	GLuint buffer = GLuint(0);
-	Value* buffer_values = nullptr;
-	ValueUsage* buffer_usage = nullptr;
-	bool* buffer_dirty_regions = nullptr;
-	uint32_t buffer_dirty_region_count = 0;
-
-	uint32_t buffer_size = 0;
-
-	bool must_update_texture_materials = false;
-	bool must_update_buffer_materials = false;
-
-	HashMap<RID, int32_t> instance_buffer_pos;
-};
+using GlobalShaderUniforms = RendererRD::RendererGlobalShaderUniformsT<GLuint>;
 
 class MaterialStorage final
 {
@@ -53162,18 +52921,7 @@ class RasterizerCanvasGLES3 : public RendererCanvasRender
 	/**** LIGHTING ****/
 	/******************/
 
-	struct CanvasLight
-	{
-		RID texture;
-
-		struct
-		{
-			bool enabled = false;
-			float z_far;
-			float y_offset;
-			Transform2D directional_xform;
-		} shadow;
-	};
+	using CanvasLight = RendererCanvasLight;
 
 	static inline RID_Owner<CanvasLight> canvas_light_owner;
 
@@ -53403,18 +53151,7 @@ struct Light
 
 struct LightInstance
 {
-	struct ShadowTransform
-	{
-		Projection camera;
-		Transform3D transform;
-		float farplane;
-		float split;
-		float bias_scale;
-		float shadow_texel_size;
-		float range_begin;
-		Rect2 atlas_rect;
-		Vector2 uv_scale;
-	};
+	using ShadowTransform = RendererRD::LightStorage::RendererShadowTransform;
 
 	ShadowTransform shadow_transform[6];
 	RSE::LightType light_type = RSE::LIGHT_DIRECTIONAL;
@@ -54712,10 +54449,7 @@ private:
 		GeometryInstanceGLES3* owner = nullptr;
 	};
 
-	struct GeometryInstanceLightmapSH
-	{
-		Color sh[9];
-	};
+	using GeometryInstanceLightmapSH = RendererSceneRenderImplementation::RendererGeometryInstanceLightmapSH;
 
 	class GeometryInstanceGLES3 : public RenderGeometryInstance
 	{
@@ -56394,11 +56128,9 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 
 	CPUDescriptorHeapPool::Allocation null_rtv_alloc;
 
-	struct {
-		Microsoft::WRL::ComPtr<ID3D12CommandSignature> draw;
-		Microsoft::WRL::ComPtr<ID3D12CommandSignature> draw_indexed;
-		Microsoft::WRL::ComPtr<ID3D12CommandSignature> dispatch;
-	} indirect_cmd_signatures;
+	Microsoft::WRL::ComPtr<ID3D12CommandSignature> indirect_cmd_sig_draw;
+	Microsoft::WRL::ComPtr<ID3D12CommandSignature> indirect_cmd_sig_draw_indexed;
+	Microsoft::WRL::ComPtr<ID3D12CommandSignature> indirect_cmd_sig_dispatch;
 
 	static void STDMETHODCALLTYPE _debug_message_func(D3D12_MESSAGE_CATEGORY p_category, D3D12_MESSAGE_SEVERITY p_severity, D3D12_MESSAGE_ID p_id, LPCSTR p_description, void *p_context);
 	void _set_object_name(ID3D12Object *p_object, String p_object_name);
@@ -57556,9 +57288,7 @@ private:
 	/// Allocates from the ring buffer for dynamic argument buffers.
 	Alloc allocate_arg_buffer(uint32_t p_size);
 
-	struct {
-		NS::SharedPtr<MTL::ResidencySet> rs;
-	} _frame_state;
+	NS::SharedPtr<MTL::ResidencySet> _frame_state_rs;
 
 #pragma mark - Synchronization
 
@@ -58903,12 +58633,10 @@ private:
 	HashMap clear_states;
 	HashMap empty_draw_states;
 
-	struct {
-		NS::SharedPtr<MTL::DepthStencilState> all;
-		NS::SharedPtr<MTL::DepthStencilState> depth_only;
-		NS::SharedPtr<MTL::DepthStencilState> stencil_only;
-		NS::SharedPtr<MTL::DepthStencilState> none;
-	} clear_depth_stencil_state;
+	NS::SharedPtr<MTL::DepthStencilState> cdss_all;
+	NS::SharedPtr<MTL::DepthStencilState> cdss_depth_only;
+	NS::SharedPtr<MTL::DepthStencilState> cdss_stencil_only;
+	NS::SharedPtr<MTL::DepthStencilState> cdss_none;
 
 public:
 	MTL::RenderPipelineState *get_clear_render_pipeline_state(ClearAttKey &p_key, NS::Error **p_error);
@@ -59375,6 +59103,12 @@ public:
 
 #pragma mark - Uniform Types
 
+struct MetalBindingIndexes {
+	uint32_t buffer = UINT32_MAX;
+	uint32_t texture = UINT32_MAX;
+	uint32_t sampler = UINT32_MAX;
+};
+
 struct API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0), visionos(2.0)) UniformInfo {
 	uint32_t binding;
 	uint32_t active_stages;
@@ -59386,11 +59120,7 @@ struct API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0), visionos(2.0)) UniformI
 	uint32_t arrayLength = 0;
 	bool isMultisampled = false;
 
-	struct Indexes {
-		uint32_t buffer = UINT32_MAX;
-		uint32_t texture = UINT32_MAX;
-		uint32_t sampler = UINT32_MAX;
-	};
+	using Indexes = MetalBindingIndexes;
 	Indexes slot;
 	Indexes arg_buffer;
 
@@ -59461,26 +59191,51 @@ enum class ShaderLoadStrategy {
 };
 
 /// A Metal shader library.
-class MDLibrary : public std::enable_shared_from_this<MDLibrary> {
-protected:
+class MDLibrary final : public std::enable_shared_from_this<MDLibrary> {
+	enum class Mode {
+		LAZY,
+		IMMEDIATE,
+		BINARY,
+	};
+
+	Mode _mode = Mode::IMMEDIATE;
 	ShaderCacheEntry *_entry = nullptr;
 #ifdef DEV_ENABLED
 	NS::SharedPtr<NS::String> _original_source = nullptr;
 #endif
+	NS::SharedPtr<MTL::Library> _library;
+	NS::Error *_error = nullptr;
+	std::shared_mutex _lazy_mu;
+	bool _loaded = false;
+	MTL::Device *_device = nullptr;
+	NS::SharedPtr<NS::String> _source;
+	NS::SharedPtr<MTL::CompileOptions> _options;
+	std::mutex _cv_mutex;
+	std::condition_variable _cv;
+	bool _complete = false;
 
-	MDLibrary(ShaderCacheEntry *p_entry
-#ifdef DEV_ENABLED
-			,
-			NS::String *p_source
-#endif
-	);
+	void _load_lazy();
+	void _wait_immediate();
 
 public:
-	virtual ~MDLibrary();
+	MDLibrary(ShaderCacheEntry *p_entry,
+			MTL::Device *p_device,
+			NS::String *p_source,
+			MTL::CompileOptions *p_options,
+			ShaderLoadStrategy p_strategy);
 
-	virtual MTL::Library *get_library() = 0;
-	virtual NS::Error *get_error() = 0;
-	virtual void set_label(NS::String *p_label);
+	MDLibrary(ShaderCacheEntry *p_entry,
+			MTL::Device *p_device,
+#ifdef DEV_ENABLED
+			NS::String *p_source,
+#endif
+			dispatch_data_t p_data);
+
+	~MDLibrary();
+
+	MTL::Library *get_library();
+	NS::Error *get_error();
+	void set_label(NS::String *p_label) {}
 #ifdef DEV_ENABLED
 	NS::String *get_original_source() const { return _original_source.get(); }
 #endif
@@ -59923,11 +59678,7 @@ public:
 		uint32_t array_length = 0;
 		uint32_t is_multisampled = 0;
 
-		struct Indexes {
-			uint32_t buffer = UINT32_MAX;
-			uint32_t texture = UINT32_MAX;
-			uint32_t sampler = UINT32_MAX;
-		};
+		using Indexes = MetalBindingIndexes;
 		Indexes slot;
 		Indexes arg_buffer;
 
@@ -60549,26 +60300,15 @@ class API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) RenderingDeviceDriverMet
 	NS::SharedPtr<MTL::CommandQueue> device_queue;
 
 	struct Fence {
-		virtual void signal(MTL::CommandBuffer *p_cmd_buffer) = 0;
-		virtual Error wait(uint32_t p_timeout_ms) = 0;
-		virtual ~Fence() = default;
-	};
-
-	struct FenceEvent : Fence {
 		NS::SharedPtr<MTL::SharedEvent> event;
 		uint64_t value = 0;
-		FenceEvent(NS::SharedPtr<MTL::SharedEvent> p_event) :
+		dispatch_semaphore_t semaphore = nullptr;
+		explicit Fence(NS::SharedPtr<MTL::SharedEvent> p_event) :
 				event(p_event) {}
-		void signal(MTL::CommandBuffer *p_cb) override;
-		Error wait(uint32_t p_timeout_ms) override;
-	};
-
-	struct FenceSemaphore : Fence {
-		dispatch_semaphore_t semaphore;
-		FenceSemaphore() :
+		Fence() :
 				semaphore(dispatch_semaphore_create(0)) {}
-		void signal(MTL::CommandBuffer *p_cb) override;
-		Error wait(uint32_t p_timeout_ms) override;
+		void signal(MTL::CommandBuffer *p_cb);
+		Error wait(uint32_t p_timeout_ms);
 	};
 
 	struct Semaphore {
@@ -61610,17 +61350,21 @@ extern void godot_js_display_vk_hide();
 
 class AudioDriverWeb : public AudioDriver
 {
-private:
-	struct AudioContext
+public:
+	enum Mode
 	{
-		bool inited = false;
-		float output_latency = 0.0;
-		int state = -1;
-		int channel_count = 0;
-		int mix_rate = 0;
+		MODE_WORKLET,
+		MODE_SCRIPT_PROCESSOR,
 	};
 
-	static AudioContext audio_context;
+private:
+	static inline bool ctx_inited = false;
+	static inline float ctx_output_latency = 0.0f;
+	static inline int ctx_state = -1;
+	static inline int ctx_channel_count = 0;
+	static inline int ctx_mix_rate = 0;
+
+	Mode mode = MODE_WORKLET;
 
 	float* output_rb = nullptr;
 	float* input_rb = nullptr;
@@ -61629,30 +61373,53 @@ private:
 	int mix_rate = 0;
 	int channel_count = 0;
 
+#ifdef THREADS_ENABLED
+	enum
+	{
+		STATE_LOCK,
+		STATE_PROCESS,
+		STATE_SAMPLES_IN,
+		STATE_SAMPLES_OUT,
+		STATE_MAX,
+	};
+	Mutex mutex;
+	Thread thread;
+	bool quit = false;
+	int32_t state[STATE_MAX] = {0};
+	static void _audio_thread_func(void* p_data);
+#else
+	static void _worklet_process_callback(int p_pos, int p_samples);
+	static void _worklet_capture_callback(int p_pos, int p_samples);
+#endif
+	static void _script_process_callback();
+
 	WASM_EXPORT static void _state_change_callback(int p_state);
 	WASM_EXPORT static void _latency_update_callback(float p_latency);
 	WASM_EXPORT static void _sample_playback_finished_callback(const char* p_playback_object_id);
 
-protected:
 	void _audio_driver_process(int p_from = 0, int p_samples = 0);
 	void _audio_driver_capture(int p_from = 0, int p_samples = 0);
 
 	float* get_output_rb() const { return output_rb; }
-
 	float* get_input_rb() const { return input_rb; }
 
-	virtual Error create(int& p_buffer_samples, int p_channels) = 0;
-	virtual void start(
-		float* p_out_buf, int p_out_buf_size, float* p_in_buf, int p_in_buf_size) = 0;
-
-	virtual void finish_driver() {}
+	Error create(int& p_buffer_samples, int p_channels);
+	void start_driver(float* p_out_buf, int p_out_buf_size, float* p_in_buf, int p_in_buf_size);
+	void finish_driver();
 
 public:
 	static bool is_available();
 
-	virtual Error init() final;
-	virtual void start() final;
-	virtual void finish() final;
+	virtual const char* get_name() const override
+	{
+		return mode == MODE_WORKLET ? "AudioWorklet" : "ScriptProcessor";
+	}
+
+	virtual Error init() override;
+	virtual void start() override;
+	virtual void finish() override;
+	virtual void lock() override;
+	virtual void unlock() override;
 
 	virtual int get_mix_rate() const override;
 	virtual SpeakerMode get_speaker_mode() const override;
@@ -61688,85 +61455,7 @@ public:
 	virtual void set_sample_bus_solo(int p_bus, bool p_enable) override;
 	virtual void set_sample_bus_mute(int p_bus, bool p_enable) override;
 
-	AudioDriverWeb() {}
-};
-
-#ifdef THREADS_ENABLED
-class AudioDriverWorklet : public AudioDriverWeb
-{
-private:
-	enum
-	{
-		STATE_LOCK,
-		STATE_PROCESS,
-		STATE_SAMPLES_IN,
-		STATE_SAMPLES_OUT,
-		STATE_MAX,
-	};
-
-	Mutex mutex;
-	Thread thread;
-	bool quit = false;
-	int32_t state[STATE_MAX] = {0};
-
-	static void _audio_thread_func(void* p_data);
-
-protected:
-	virtual Error create(int& p_buffer_size, int p_output_channels) override;
-	virtual void start(
-		float* p_out_buf, int p_out_buf_size, float* p_in_buf, int p_in_buf_size) override;
-	virtual void finish_driver() override;
-
-public:
-	virtual const char* get_name() const override { return "AudioWorklet"; }
-
-	virtual void lock() override;
-	virtual void unlock() override;
-};
-
-#else
-
-class AudioDriverWorklet : public AudioDriverWeb
-{
-private:
-	static void _process_callback(int p_pos, int p_samples);
-	static void _capture_callback(int p_pos, int p_samples);
-
-protected:
-	virtual Error create(int& p_buffer_size, int p_output_channels) override;
-	virtual void start(
-		float* p_out_buf, int p_out_buf_size, float* p_in_buf, int p_in_buf_size) override;
-
-public:
-	virtual const char* get_name() const override { return "AudioWorklet"; }
-
-	virtual void lock() override {}
-
-	virtual void unlock() override {}
-
-	AudioDriverWorklet() {}
-};
-
-#endif // THREADS_ENABLED
-
-class AudioDriverScriptProcessor : public AudioDriverWeb
-{
-private:
-	static void _process_callback();
-
-protected:
-	virtual Error create(int& p_buffer_size, int p_output_channels) override;
-	virtual void start(
-		float* p_out_buf, int p_out_buf_size, float* p_in_buf, int p_in_buf_size) override;
-
-public:
-	virtual const char* get_name() const override { return "ScriptProcessor"; }
-
-	virtual void lock() override {}
-
-	virtual void unlock() override {}
-
-	AudioDriverScriptProcessor() {}
+	explicit AudioDriverWeb(Mode p_mode = MODE_WORKLET) : mode(p_mode) {}
 };
 
 #include "core/os/os.h"
@@ -62139,34 +61828,32 @@ public:
 
 #include "core/io/ip.h"
 
-class JavaScriptBridge final
+namespace JavaScriptBridge
 {
-public:
-	static void download_buffer(Vector<uint8_t> p_arr, const String& p_name,
+
+	void download_buffer(Vector<uint8_t> p_arr, const String& p_name,
 		const String& p_mime = "application/octet-stream");
-	static bool pwa_needs_update();
-	static Error pwa_update();
-	static void force_fs_sync();
+	bool pwa_needs_update();
+	Error pwa_update();
+	void force_fs_sync();
 
-	JavaScriptBridge() = delete;
-	JavaScriptBridge(const JavaScriptBridge&) = delete;
-	JavaScriptBridge& operator=(const JavaScriptBridge&) = delete;
-	~JavaScriptBridge() = delete;
-};
+} // namespace JavaScriptBridge
 
-#if defined(MACOS_ENABLED)
+#if defined(MACOS_ENABLED) || defined(LINUXBSD_ENABLED) || defined(WINDOWS_ENABLED)
 class CrashHandler {
-	bool disabled;
+	bool disabled = false;
 
 public:
 	void initialize();
-
 	void disable();
 	bool is_disabled() const { return disabled; }
 
 	CrashHandler();
 	~CrashHandler();
 };
+#endif
+
+#if defined(MACOS_ENABLED)
 
 #include "core/os/os.h"
 #include "core/io/ip.h"
@@ -62312,7 +61999,32 @@ public:
 	virtual String get_system_ca_certificates() override;
 	virtual OS::PreferredTextureFormat get_preferred_texture_format() const override;
 
-	virtual void run() = 0;
+	enum RunMode {
+		RUN_MODE_NSAPP,
+		RUN_MODE_HEADLESS,
+		RUN_MODE_EMBEDDED,
+	};
+
+private:
+	RunMode run_mode = RUN_MODE_NSAPP;
+	id delegate = nullptr;
+	bool should_terminate = false;
+	bool main_started = false;
+	CFRunLoopObserverRef pre_wait_observer = nil;
+
+	void terminate();
+	void _run_headless();
+#ifdef TOOLS_ENABLED
+	void _run_embedded();
+#endif
+
+public:
+	void start_main();
+	void cleanup();
+	bool os_should_terminate() const { return should_terminate; }
+	int get_cmd_argc() const { return argc; }
+
+	void run();
 
 	virtual String get_platform_string(PlatformString p_platform_string) const override {
 		switch (p_platform_string) {
@@ -62325,46 +62037,8 @@ public:
 		}
 	}
 
-	OS_MacOS(const char *p_execpath, int p_argc, char **p_argv);
+	OS_MacOS(RunMode p_run_mode, const char *p_execpath, int p_argc, char **p_argv);
 };
-
-class OS_MacOS_NSApp : public OS_MacOS {
-	id delegate = nullptr;
-	bool should_terminate = false;
-	bool main_started = false;
-
-	CFRunLoopObserverRef pre_wait_observer = nil;
-
-	void terminate();
-
-public:
-	void start_main(); // Initializes and runs Godot main loop.
-	void cleanup();
-	bool os_should_terminate() const { return should_terminate; }
-	int get_cmd_argc() const { return argc; }
-
-	virtual void run() override;
-
-	OS_MacOS_NSApp(const char *p_execpath, int p_argc, char **p_argv);
-};
-
-class OS_MacOS_Headless : public OS_MacOS {
-public:
-	virtual void run() override;
-
-	OS_MacOS_Headless(const char *p_execpath, int p_argc, char **p_argv);
-};
-
-#ifdef TOOLS_ENABLED
-
-class OS_MacOS_Embedded : public OS_MacOS {
-public:
-	virtual void run() override;
-
-	OS_MacOS_Embedded(const char *p_execpath, int p_argc, char **p_argv);
-};
-
-#endif
 
 #if defined(UNIX_ENABLED)
 
@@ -62396,11 +62070,11 @@ extern "C" GodotApplication *GodotApp;
 #import <AppKit/AppKit.h>
 #import <Foundation/Foundation.h>
 
-class OS_MacOS_NSApp;
+class OS_MacOS;
 
 @interface GodotApplicationDelegate : NSObject <NSUserInterfaceItemSearching, NSApplicationDelegate, NSMenuItemValidation>
 
-- (GodotApplicationDelegate *)initWithOS:(OS_MacOS_NSApp *)os;
+- (GodotApplicationDelegate *)initWithOS:(OS_MacOS *)os;
 
 - (bool)getHighContrast;
 - (bool)getReduceMotion;
@@ -63531,8 +63205,9 @@ public:
 
 class DisplayServerMacOSEmbedded;
 
-class EmbeddedDebugger final
+namespace EmbeddedDebugger
 {
+
 #ifdef DEBUG_ENABLED
 	typedef Error (*ParseMessageFunc)(const Array& p_args);
 
@@ -63542,30 +63217,28 @@ class EmbeddedDebugger final
 		HashMap<String, ParseMessageFunc> parse_message_handlers;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void _init_parse_message_handlers();
+	void _init_parse_message_handlers();
 
-	static Error _msg_window_size(const Array& p_args);
-	static Error _msg_mouse_set_mode(const Array& p_args);
-	static Error _msg_event(const Array& p_args);
-	static Error _msg_win_event(const Array& p_args);
-	static Error _msg_notification(const Array& p_args);
-	static Error _msg_ime_update(const Array& p_args);
-	static Error _msg_ds_state(const Array& p_args);
+	Error _msg_window_size(const Array& p_args);
+	Error _msg_mouse_set_mode(const Array& p_args);
+	Error _msg_event(const Array& p_args);
+	Error _msg_win_event(const Array& p_args);
+	Error _msg_notification(const Array& p_args);
+	Error _msg_ime_update(const Array& p_args);
+	Error _msg_ds_state(const Array& p_args);
 #endif
 
-public:
-	EmbeddedDebugger() = delete;
 
-	static void initialize(DisplayServerMacOSEmbedded* p_ds);
-	static void deinitialize();
+	void initialize(DisplayServerMacOSEmbedded* p_ds);
+	void deinitialize();
 
 #ifdef DEBUG_ENABLED
-	static Error parse_message(
+	Error parse_message(
 		void* p_user, const String& p_msg, const Array& p_args, bool& r_captured);
 #endif
-};
+} // namespace EmbeddedDebugger
 
 #if defined(MACOS_ENABLED) && defined(GLES3_ENABLED)
 
@@ -64412,19 +64085,6 @@ struct TTSUtterance;
 
 #if defined(LINUXBSD_ENABLED)
 #include "core/os/os.h"
-class CrashHandler {
-	bool disabled;
-
-public:
-	void initialize();
-
-	void disable();
-	bool is_disabled() const { return disabled; }
-
-	CrashHandler();
-	~CrashHandler();
-};
-
 #ifdef ALSA_ENABLED
 
 #include "core/os/mutex.h"
@@ -69006,21 +68666,6 @@ extern DWORD CrashHandlerException(EXCEPTION_POINTERS* ep);
 
 #endif
 
-class CrashHandler
-{
-	bool disabled;
-
-public:
-	void initialize();
-
-	void disable();
-
-	bool is_disabled() const { return disabled; }
-
-	CrashHandler();
-	~CrashHandler();
-};
-
 #ifdef WASAPI_ENABLED
 
 #include "core/os/mutex.h"
@@ -71206,9 +70851,8 @@ class PackedScene;
 #include "core/os/memory.h"
 #include "core/string/ustring.h"
 
-class SceneStrings final
+namespace SceneStrings
 {
-public:
 	struct Data
 	{
 		const String Editor = "Editor";
@@ -71331,16 +70975,16 @@ public:
 		const String FlatButton = "FlatButton";
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize()
+	inline void initialize()
 	{
 		if (!data) {
 			data = memnew(Data);
 		}
 	}
 
-	static void finalize()
+	inline void finalize()
 	{
 		if (data) {
 			memdelete(data);
@@ -71348,9 +70992,9 @@ public:
 		}
 	}
 
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	_FORCE_INLINE_ static Data* _get_data()
+	_FORCE_INLINE_ Data* _get_data()
 	{
 		if (!data) {
 			initialize();
@@ -71358,9 +71002,7 @@ public:
 		return data;
 	}
 
-	SceneStrings() = delete;
-	~SceneStrings() = delete;
-};
+} // namespace SceneStrings
 
 #define SceneString(m_name) SceneStrings::_get_data()->m_name
 
@@ -71723,6 +71365,7 @@ protected:
 	static String _get_name_num_separator();
 
 	friend class SceneState;
+	friend class SceneTreeFTI;
 
 	void _add_child_nocheck(Node* p_child, const String& p_name,
 		InternalMode p_internal_mode = INTERNAL_MODE_DISABLED);
@@ -72622,16 +72265,7 @@ class ResourceFormatSaverTextInstance
 	bool bundle_resources = false;
 	bool skip_editor = false;
 
-	struct NonPersistentKey
-	{ // for resource properties generated on the fly
-		Ref<Resource> base;
-		String property;
-
-		bool operator<(const NonPersistentKey& p_key) const
-		{
-			return base == p_key.base ? property < p_key.property : base < p_key.base;
-		}
-	};
+	using NonPersistentKey = ResourceNonPersistentKey;
 
 	HashSet<Ref<Resource>> resource_set;
 	List<Ref<Resource>> saved_resources;
@@ -75131,17 +74765,14 @@ class SceneTreeFTITests;
 // #define GODOT_SCENE_TREE_FTI_VERIFY
 #endif
 
-#ifdef _3D_DISABLED
-// Stubs
 class SceneTreeFTI final
 {
 public:
 	SceneTreeFTI() = delete;
-
+#ifdef _3D_DISABLED
 	static void initialize() {}
 	static void finalize() {}
 	_FORCE_INLINE_ static bool is_initialized() { return true; }
-
 	static void frame_update(Node* p_root, bool p_frame_start)
 	{
 		(void)p_root;
@@ -75154,7 +74785,6 @@ public:
 		(void)p_enabled;
 	}
 	static bool is_enabled() { return false; }
-
 	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
 	{
 		(void)r_node;
@@ -75162,18 +74792,7 @@ public:
 	}
 	static void node_3d_notify_delete(Node3D* p_node) { (void)p_node; }
 	static void node_3d_request_reset(Node3D* p_node) { (void)p_node; }
-};
 #else
-
-// Important.
-// This class uses raw pointers, so it is essential that on deletion, this class is notified
-// so that any references can be cleared up to prevent dangling pointer access.
-
-class SceneTreeFTI final
-{
-	friend class SceneTreeFTITests;
-
-public:
 	enum TraversalMode : unsigned
 	{
 		TM_DEFAULT,
@@ -75184,77 +74803,47 @@ public:
 	struct Data
 	{
 		static const uint32_t scene_tree_depth_limit = 48;
-
-		// Prev / Curr lists of Node3Ds having local xforms pumped.
 		LocalVector<Node3D*> tick_xform_list[2];
-
-		// The frame lists are changed nodes that need to start traversal,
-		// either longterm (on the tick list) or single frame forced.
 		LocalVector<Node3D*> frame_xform_list;
 		LocalVector<Node3D*> frame_xform_list_forced;
-
-		// Prev / Curr lists of Node3Ds having actively interpolated properties.
 		LocalVector<Node3D*> tick_property_list[2];
-
 		LocalVector<Node3D*> frame_property_list;
 		LocalVector<Node3D*> request_reset_list;
 		LocalVector<Node3D*> dirty_node_depth_lists[scene_tree_depth_limit];
-
-		// When we are using two alternating lists,
-		// which one is current.
 		uint32_t mirror = 0;
-
-		// Global on / off switch for SceneTreeFTI.
 		bool enabled = false;
-
-		// Whether we are in physics ticks, or in a frame.
 		bool in_frame = false;
-
-		// Updating at the start of the frame, or the end on second pass.
 		bool frame_start = true;
-
 		Mutex mutex;
-
 		TraversalMode traversal_mode = TM_DEFAULT;
 		bool use_optimized_traversal_method = true;
-
-		// DEBUGGING
 		bool periodic_debug_log = false;
 		uint32_t debug_node_count = 0;
 		uint32_t debug_nodes_processed = 0;
-
 #ifdef GODOT_SCENE_TREE_FTI_VERIFY
 		SceneTreeFTITests* _tests = nullptr;
 #endif
 	};
 
-	static inline Data* data = nullptr;
+	inline static Data* data = nullptr;
 
-private:
 	static void _update_dirty_nodes(Node* p_node, uint32_t p_current_half_frame,
 		float p_interpolation_fraction, bool p_active,
 		const Transform3D* p_parent_global_xform = nullptr, int p_depth = 0);
 	static void _update_request_resets();
-
 	static void _reset_flags(Node* p_node);
 	static void _reset_node3d_flags(Node3D& r_node);
 	static void _node_3d_notify_set_xform(Node3D& r_node);
 	static void _node_3d_notify_set_property(Node3D& r_node);
-
 	static void _node_add_to_frame_list(Node3D& r_node, bool p_forced);
 	static void _node_remove_from_frame_list(Node3D& r_node, bool p_forced);
-
 	static void _create_depth_lists();
 	static void _clear_depth_lists();
-
-public:
-	SceneTreeFTI() = delete;
 
 	static void initialize();
 	static void finalize();
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	// Hottest function, allow inlining the data->enabled check.
 	static void node_3d_notify_changed(Node3D& r_node, bool p_transform_changed)
 	{
 		if (!data || !data->enabled) {
@@ -75272,13 +74861,8 @@ public:
 
 	static void node_3d_request_reset(Node3D* p_node);
 	static void node_3d_notify_delete(Node3D* p_node);
-
-	// Calculate interpolated xforms, send to visual server.
 	static void frame_update(Node* p_root, bool p_frame_start);
-
-	// Update local xform pumps.
 	static void tick_update();
-
 	static void set_enabled(Node* p_root, bool p_enabled);
 	static bool is_enabled() { return data ? data->enabled : false; }
 
@@ -75288,9 +74872,8 @@ public:
 			data->periodic_debug_log = true;
 		}
 	}
-};
-
 #endif // ndef _3D_DISABLED
+};
 
 class ArrayMesh;
 struct InputEvent;
@@ -75354,13 +74937,7 @@ public:
 	};
 
 
-#ifndef _3D_DISABLED
-	struct ClientPhysicsInterpolation
-	{
-		SelfList<Node3D>::List _node_3d_list;
-		void physics_process();
-	};
-#endif
+
 
 
 	struct Data
@@ -75376,7 +74953,7 @@ public:
 		bool node_threading_disabled = false;
 
 #ifndef _3D_DISABLED
-		ClientPhysicsInterpolation _client_physics_interpolation;
+		SelfList<Node3D>::List _client_physics_interpolation_list;
 #endif
 
 		Window* root = nullptr;
@@ -75504,6 +75081,9 @@ private:
 		const InputEvent& p_input, Viewport* p_viewport);
 
 public:
+#ifndef _3D_DISABLED
+	static void _client_physics_interpolation_process();
+#endif
 	SceneTree() = delete;
 
 	enum
@@ -80988,19 +80568,18 @@ public:
 	~GodotShape2D();
 };
 
-class GodotCollisionSolver2D {
-public:
+namespace GodotCollisionSolver2D
+{
+
 	typedef void (*CallbackResult)(const Vector2 &p_point_A, const Vector2 &p_point_B, void *p_userdata);
 
-private:
-	static bool solve_static_world_boundary(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, real_t p_margin = 0);
-	static bool concave_callback(void *p_userdata, GodotShape2D *p_convex);
-	static bool solve_concave(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
-	static bool solve_separation_ray(const GodotShape2D *p_shape_A, const Vector2 &p_motion_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin = 0);
+	bool solve_static_world_boundary(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, real_t p_margin = 0);
+	bool concave_callback(void *p_userdata, GodotShape2D *p_convex);
+	bool solve_concave(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
+	bool solve_separation_ray(const GodotShape2D *p_shape_A, const Vector2 &p_motion_A, const Transform2D &p_transform_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, Vector2 *r_sep_axis = nullptr, real_t p_margin = 0);
 
-public:
-	static bool solve(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
-};
+	bool solve(const GodotShape2D *p_shape_A, const Transform2D &p_transform_A, const Vector2 &p_motion_A, const GodotShape2D *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, Vector2 *r_sep_axis = nullptr, real_t p_margin_A = 0, real_t p_margin_B = 0);
+} // namespace GodotCollisionSolver2D
 
 class GodotSpace2D;
 class GodotArea2D;
@@ -83450,20 +83029,12 @@ public:
 
 private:
 	template <typename T>
-	class UserPairTestFunction
+	struct UserTestFunction
 	{
-	public:
 		static bool user_pair_check(const T* p_a, const T* p_b)
 		{
-			// return false if no collision, decided by masks etc
 			return p_a->interacts_with(p_b);
 		}
-	};
-
-	template <typename T>
-	class UserCullTestFunction
-	{
-	public:
 		static bool user_cull_check(const T* p_a, const T* p_b)
 		{
 			return true;
@@ -83482,7 +83053,7 @@ private:
 		TREE_FLAG_DYNAMIC = 1 << TREE_DYNAMIC,
 	};
 
-	BVH_Manager<GodotCollisionObject2D, 2, true, 128, UserPairTestFunction<GodotCollisionObject2D>, UserCullTestFunction<GodotCollisionObject2D>, Rect2, Vector2> bvh;
+	BVH_Manager<GodotCollisionObject2D, 2, true, 128, UserTestFunction<GodotCollisionObject2D>, UserTestFunction<GodotCollisionObject2D>, Rect2, Vector2> bvh;
 
 	static void* _pair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int);
 	static void _unpair_callback(void*, uint32_t, GodotCollisionObject2D*, int, uint32_t, GodotCollisionObject2D*, int, void*);
@@ -88415,11 +87986,8 @@ private:
 	int layer_index_in_tile_map_node = -1;
 
 	// Dirty flag. Allows knowing what was modified since the last update.
-	struct
-	{
-		bool flags[DIRTY_FLAGS_MAX] = {false};
-		SelfList<CellData>::List cell_list;
-	} dirty;
+	bool dirty_flags[DIRTY_FLAGS_MAX] = {false};
+	SelfList<CellData>::List dirty_cell_list;
 
 	// Rect cache.
 	mutable Rect2 rect_cache;
@@ -88768,7 +88336,6 @@ public:
 
 class Node3D : public Node
 {
-	friend class SceneTreeFTI;
 	friend class SceneTreeFTITests;
 	friend struct RenderInstance3D;
 
@@ -88902,6 +88469,7 @@ private:
 
 	} data;
 
+	friend class SceneTreeFTI;
 	NodePath visibility_parent_path;
 
 	_FORCE_INLINE_ uint32_t _read_dirty_mask() const
@@ -94999,16 +94567,14 @@ class VehicleWheel3D : public Node3D {
 	real_t m_wheelsSuspensionForce = 0.0f;
 	real_t m_skidInfo = 0.0f;
 
-	struct RaycastInfo {
-		Vector3 m_contactNormalWS;
-		Vector3 m_contactPointWS;
-		real_t m_suspensionLength = 0.0f;
-		Vector3 m_hardPointWS;
-		Vector3 m_wheelDirectionWS;
-		Vector3 m_wheelAxleWS;
-		bool m_isInContact = false;
-		PhysicsBody3D *m_groundObject = nullptr;
-	} m_raycastInfo;
+	Vector3 rc_contactNormalWS;
+	Vector3 rc_contactPointWS;
+	real_t rc_suspensionLength = 0.0f;
+	Vector3 rc_hardPointWS;
+	Vector3 rc_wheelDirectionWS;
+	Vector3 rc_wheelAxleWS;
+	bool rc_isInContact = false;
+	PhysicsBody3D *rc_groundObject = nullptr;
 
 	void _update(PhysicsDirectBodyState3D *s);
 
@@ -95046,9 +94612,9 @@ public:
 	void set_use_as_steering(bool p_enabled) { steers = p_enabled; }
 	bool is_used_as_steering() const { return steers; }
 
-	bool is_in_contact() const { return m_raycastInfo.m_isInContact; }
-	Vector3 get_contact_point() const { return m_raycastInfo.m_contactPointWS; }
-	Vector3 get_contact_normal() const { return m_raycastInfo.m_contactNormalWS; }
+	bool is_in_contact() const { return rc_isInContact; }
+	Vector3 get_contact_point() const { return rc_contactPointWS; }
+	Vector3 get_contact_normal() const { return rc_contactNormalWS; }
 	Node3D *get_contact_body() const;
 
 	void set_roll_influence(real_t p_value) { m_rollInfluence = p_value; }
@@ -96257,7 +95823,7 @@ private:
 	friend class ViewportTexture;
 
 	Viewport* parent = nullptr;
-	Viewport* gui_parent = nullptr; // Whose gui.tooltip_popup it is.
+	Viewport* gui_parent = nullptr; // Whose gui_tooltip_popup it is.
 
 	HashSet<CanvasLayer*> canvas_layers;
 
@@ -96388,59 +95954,56 @@ private:
 	VRSUpdateMode vrs_update_mode = VRS_UPDATE_ONCE;
 	Ref<Texture2D> vrs_texture;
 
-	struct GUI
-	{
-		bool mouse_in_viewport = false;
-		Control* mouse_focus = nullptr;
-		Control* mouse_click_grabber = nullptr;
-		uint32_t mouse_focus_mask = 0;
-		Control* key_focus = nullptr;
-		bool hide_focus = false;
-		bool sending_mouse_enter_exit_notifications = false;
-		Window* subwindow_over = nullptr; // mouse_over and subwindow_over are mutually exclusive.
-										  // At all times at least one of them is nullptr.
-		Window* windowmanager_window_over = nullptr; // Only used in root Viewport.
-		Control* drag_mouse_over = nullptr;
-		Control* tooltip_control = nullptr;
-		Window* tooltip_popup = nullptr;
-		Label* tooltip_label = nullptr;
-		String tooltip_text;
-		Point2 tooltip_pos;
-		Point2 last_mouse_pos;
-		Point2 drag_accum;
-		bool drag_attempted = false;
-		// a SubViewportContainer.
-		String drag_description;
-		Ref<SceneTreeTimer> tooltip_timer;
-		double tooltip_delay = 0.0;
-		bool roots_order_dirty = false;
-		List<Control*> roots;
-		int canvas_sort_index = 0; // for sorting items with canvas as root
-		bool dragging =
-			false; // Is true in the viewport in which dragging started while dragging is active.
-		bool global_dragging =
-			false; // Is true while dragging is active. Only used in root-Viewport and SubViewports
-				   // that are not children of a SubViewportContainer.
-		bool drag_successful = false;
-		Control* target_control = nullptr; // Control that the mouse is over in the innermost nested
-										   // Viewport. Only used in root-Viewport and SubViewports,
-										   // that are not children of a SubViewportContainer.
-		bool embed_subwindows_hint = false;
-		int drag_threshold = 10;
+	bool gui_mouse_in_viewport = false;
+	Control* gui_mouse_focus = nullptr;
+	Control* gui_mouse_click_grabber = nullptr;
+	uint32_t gui_mouse_focus_mask = 0;
+	Control* gui_key_focus = nullptr;
+	bool gui_hide_focus = false;
+	bool gui_sending_mouse_enter_exit_notifications = false;
+	Window* gui_subwindow_over = nullptr; // mouse_over and gui_subwindow_over are mutually exclusive.
+									  // At all times at least one of them is nullptr.
+	Window* gui_windowmanager_window_over = nullptr; // Only used in root Viewport.
+	Control* gui_drag_mouse_over = nullptr;
+	Control* gui_tooltip_control = nullptr;
+	Window* gui_tooltip_popup = nullptr;
+	Label* gui_tooltip_label = nullptr;
+	String gui_tooltip_text;
+	Point2 gui_tooltip_pos;
+	Point2 gui_last_mouse_pos;
+	Point2 gui_drag_accum;
+	bool gui_drag_attempted = false;
+	// a SubViewportContainer.
+	String gui_drag_description;
+	Ref<SceneTreeTimer> gui_tooltip_timer;
+	double gui_tooltip_delay = 0.0;
+	bool gui_roots_order_dirty = false;
+	List<Control*> gui_roots;
+	int gui_canvas_sort_index = 0; // for sorting items with canvas as root
+	bool gui_dragging =
+		false; // Is true in the viewport in which gui_dragging started while gui_dragging is active.
+	bool gui_global_dragging =
+		false; // Is true while gui_dragging is active. Only used in root-Viewport and SubViewports
+			   // that are not children of a SubViewportContainer.
+	bool gui_drag_successful = false;
+	Control* gui_target_control = nullptr; // Control that the mouse is over in the innermost nested
+									   // Viewport. Only used in root-Viewport and SubViewports,
+									   // that are not children of a SubViewportContainer.
+	bool gui_embed_subwindows_hint = false;
+	int gui_drag_threshold = 10;
 
-		Window* subwindow_focused = nullptr;
-		Window* currently_dragged_subwindow = nullptr;
-		SubWindowDrag subwindow_drag = SUB_WINDOW_DRAG_DISABLED;
-		Vector2 subwindow_drag_from;
-		Vector2 subwindow_drag_pos;
-		Rect2i subwindow_drag_close_rect;
-		bool subwindow_drag_close_inside = false;
-		SubWindowResize subwindow_resize_mode;
-		Rect2i subwindow_resize_from_rect;
+	Window* gui_subwindow_focused = nullptr;
+	Window* gui_currently_dragged_subwindow = nullptr;
+	SubWindowDrag gui_subwindow_drag = SUB_WINDOW_DRAG_DISABLED;
+	Vector2 gui_subwindow_drag_from;
+	Vector2 gui_subwindow_drag_pos;
+	Rect2i gui_subwindow_drag_close_rect;
+	bool gui_subwindow_drag_close_inside = false;
+	SubWindowResize gui_subwindow_resize_mode;
+	Rect2i gui_subwindow_resize_from_rect;
 
-		Vector<SubWindow> sub_windows; // Don't obtain references or pointers to the elements, as
-									   // their location can change.
-	} gui;
+	Vector<SubWindow> gui_sub_windows; // Don't obtain references or pointers to the elements, as
+								   // their location can change.
 
 	DefaultCanvasItemTextureFilter default_canvas_item_texture_filter =
 		DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR;
@@ -96690,7 +96253,7 @@ public:
 	Control* gui_get_focus_owner() const;
 	Control* gui_get_hovered_control() const;
 
-	Window* get_focused_subwindow() const { return gui.subwindow_focused; }
+	Window* get_focused_subwindow() const { return gui_subwindow_focused; }
 
 	PackedStringArray get_configuration_warnings() const override;
 
@@ -98045,14 +97608,6 @@ public:
 	};
 
 private:
-	struct Grab
-	{
-		int pos = 0;
-		double uvalue = 0.0;
-		double value_before_dragging = 0.0;
-		bool active = false;
-	} grab;
-
 	int ticks = 0;
 	TickPosition ticks_position = TICK_POSITION_BOTTOM_RIGHT;
 
@@ -98363,13 +97918,6 @@ class ScrollBar : public Control
 
 	bool incr_active = false;
 	bool decr_active = false;
-
-	struct Drag
-	{
-		bool active = false;
-		float pos_at_click = 0.0;
-		float value_at_click = 0.0;
-	} drag;
 
 	double get_grabber_size() const;
 	double get_grabber_min_size() const;
@@ -103140,54 +102688,48 @@ Vector<Vector<String>> get_extractable_message_list();
 
 #include "core/string/ustring.h"
 
-class EditorPaths final
+namespace EditorPaths
 {
-	struct Data
-	{
-		bool paths_valid = false; // If any of the paths can't be created, this is false.
-		String data_dir;		  // Editor data (templates, shader cache, etc.).
-		String config_dir;		  // Editor config (settings, profiles, themes, etc.).
-		String cache_dir;		  // Editor cache (thumbnails, tmp generated files).
-		String temp_dir;		  // Editor temporary directory.
-		String project_data_dir;  // Project-specific data (metadata, shader cache, etc.).
-		bool self_contained = false; // Self-contained means everything goes to `editor_data` dir.
-		String self_contained_file;  // Self-contained file with configuration.
-		String export_templates_folder = "export_templates";
-		String text_editor_themes_folder = "text_editor_themes";
-		String script_templates_folder = "script_templates";
-		String feature_profiles_folder = "feature_profiles";
-	};
-
-	static inline Data* data = nullptr;
-
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	static bool are_paths_valid();
-
-	static String get_data_dir();
-	static String get_config_dir();
-	static String get_cache_dir();
-	static String get_temp_dir();
-	static String get_project_data_dir();
-	static String get_export_templates_dir();
-	static String get_debug_keystore_path();
-	static String get_project_settings_dir();
-	static String get_text_editor_themes_dir();
-	static String get_script_templates_dir();
-	static String get_project_script_templates_dir();
-	static String get_feature_profiles_dir();
-
-	static bool is_self_contained();
-	static String get_self_contained_file();
-
-	EditorPaths() = delete;
-	EditorPaths(const EditorPaths&) = delete;
-	EditorPaths& operator=(const EditorPaths&) = delete;
-	~EditorPaths() = delete;
+struct Data
+{
+	bool paths_valid = false;
+	String data_dir;
+	String config_dir;
+	String cache_dir;
+	String temp_dir;
+	String project_data_dir;
+	bool self_contained = false;
+	String self_contained_file;
+	String export_templates_folder = "export_templates";
+	String text_editor_themes_folder = "text_editor_themes";
+	String script_templates_folder = "script_templates";
+	String feature_profiles_folder = "feature_profiles";
 };
+
+inline Data* data = nullptr;
+
+void initialize();
+void finalize();
+_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
+
+bool are_paths_valid();
+
+String get_data_dir();
+String get_config_dir();
+String get_cache_dir();
+String get_temp_dir();
+String get_project_data_dir();
+String get_export_templates_dir();
+String get_debug_keystore_path();
+String get_project_settings_dir();
+String get_text_editor_themes_dir();
+String get_script_templates_dir();
+String get_project_script_templates_dir();
+String get_feature_profiles_dir();
+
+bool is_self_contained();
+String get_self_contained_file();
+} // namespace EditorPaths
 
 #include "core/io/net_socket.h"
 #include "core/os/mutex.h"
@@ -104771,15 +104313,6 @@ class SpinBox : public Control
 	bool custom_arrow_round = false;
 
 	void _line_edit_input(const InputEvent& p_event);
-
-	struct Drag
-	{
-		double base_val = 0.0;
-		bool allowed = false;
-		bool enabled = false;
-		Vector2 capture_pos;
-		double diff_y = 0.0;
-	} drag;
 
 
 	void _line_edit_editing_toggled(bool p_toggled_on);

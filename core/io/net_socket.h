@@ -1590,6 +1590,17 @@ public:
 		const String& p_path, const HashMap<String, String>& p_map) override;
 };
 
+struct ResourceNonPersistentKey
+{ // for resource properties generated on the fly
+	Ref<Resource> base;
+	String property;
+
+	bool operator<(const ResourceNonPersistentKey& p_key) const
+	{
+		return base == p_key.base ? property < p_key.property : base < p_key.base;
+	}
+};
+
 class ResourceFormatSaverBinaryInstance
 {
 	String local_path;
@@ -1603,16 +1614,7 @@ class ResourceFormatSaverBinaryInstance
 	String magic;
 	HashSet<Ref<Resource>> resource_set;
 
-	struct NonPersistentKey
-	{ // for resource properties generated on the fly
-		Ref<Resource> base;
-		String property;
-
-		bool operator<(const NonPersistentKey& p_key) const
-		{
-			return base == p_key.base ? property < p_key.property : base < p_key.base;
-		}
-	};
+	using NonPersistentKey = ResourceNonPersistentKey;
 
 	HashMap<String, int> string_map;
 	Vector<String> strings;

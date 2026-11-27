@@ -15935,71 +15935,44 @@ AudioDriverXAudio2::AudioDriverXAudio2() {
 #include <imagehlp.h>
 #pragma pack(pop, before_imagehlp)
 
-struct module_data {
-	std::string image_name;
-	std::string module_name;
-	void *base_address = nullptr;
-	DWORD load_size;
-};
-
-class symbol {
-	typedef IMAGEHLP_SYMBOL64 sym_type;
-	sym_type *sym;
-	static const int max_name_len = 1024;
-
-public:
-	symbol(HANDLE process, DWORD64 address) :
-			sym((sym_type *)::operator new(sizeof(*sym) + max_name_len)) {
-		memset(sym, '\0', sizeof(*sym) + max_name_len);
-		sym->SizeOfStruct = sizeof(*sym);
-		sym->MaxNameLength = max_name_len;
-		DWORD64 displacement;
-
-		SymGetSymFromAddr64(process, address, &displacement, sym);
-	}
-
-	std::string name() { return std::string(sym->Name); }
-	std::string undecorated_name() {
-		if (*sym->Name == '\0') {
-			return "<couldn't map PC to fn name>";
+static void *load_all_modules(HANDLE process, std::vector<HMODULE> &module_handles) {
+	void *first_base = nullptr;
+	for (size_t i = 0; i < module_handles.size(); i++) {
+		char image_name[4096];
+		char module_name[4096];
+		MODULEINFO mi = {};
+		GetModuleInformation(process, module_handles[i], &mi, sizeof(mi));
+		if (i == 0) {
+			first_base = mi.lpBaseOfDll;
 		}
-		std::vector<char> und_name(max_name_len);
-		UnDecorateSymbolName(sym->Name, &und_name[0], max_name_len, UNDNAME_COMPLETE);
-		return std::string(&und_name[0], strlen(&und_name[0]));
+		GetModuleFileNameEx(process, module_handles[i], image_name, sizeof(image_name));
+		GetModuleBaseName(process, module_handles[i], module_name, sizeof(module_name));
+		SymLoadModule64(process, nullptr, image_name, module_name, (DWORD64)mi.lpBaseOfDll, mi.SizeOfImage);
 	}
-};
+	return first_base;
+}
 
-class get_mod_info {
-	HANDLE process;
-
-public:
-	get_mod_info(HANDLE h) :
-			process(h) {}
-
-	module_data operator()(HMODULE module) {
-		module_data ret;
-		char temp[4096];
-		MODULEINFO mi;
-
-		GetModuleInformation(process, module, &mi, sizeof(mi));
-		ret.base_address = mi.lpBaseOfDll;
-		ret.load_size = mi.SizeOfImage;
-
-		GetModuleFileNameEx(process, module, temp, sizeof(temp));
-		ret.image_name = temp;
-		GetModuleBaseName(process, module, temp, sizeof(temp));
-		ret.module_name = temp;
-		SymLoadModule64(process, nullptr, ret.image_name.c_str(), ret.module_name.c_str(), (DWORD64)ret.base_address, ret.load_size);
-		return ret;
+static std::string get_undecorated_symbol_name(HANDLE process, DWORD64 address) {
+	static const int max_name_len = 1024;
+	std::vector<char> buf(sizeof(IMAGEHLP_SYMBOL64) + max_name_len, 0);
+	IMAGEHLP_SYMBOL64 *sym = reinterpret_cast<IMAGEHLP_SYMBOL64 *>(buf.data());
+	sym->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
+	sym->MaxNameLength = max_name_len;
+	DWORD64 displacement = 0;
+	SymGetSymFromAddr64(process, address, &displacement, sym);
+	if (*sym->Name == '\0') {
+		return "<couldn't map PC to fn name>";
 	}
-};
+	std::vector<char> und_name(max_name_len, 0);
+	UnDecorateSymbolName(sym->Name, und_name.data(), max_name_len, UNDNAME_COMPLETE);
+	return std::string(und_name.data(), strlen(und_name.data()));
+}
 
 DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	HANDLE process = GetCurrentProcess();
 	HANDLE hThread = GetCurrentThread();
 	DWORD offset_from_symbol = 0;
 	IMAGEHLP_LINE64 line = {};
-	std::vector<module_data> modules;
 	DWORD cbNeeded;
 	std::vector<HMODULE> module_handles(1);
 
@@ -16041,8 +16014,7 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 	EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
 	module_handles.resize(cbNeeded / sizeof(HMODULE));
 	EnumProcessModules(process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
-	std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules), get_mod_info(process));
-	void *base = modules[0].base_address;
+	void *base = load_all_modules(process, module_handles);
 
 	print_error(vformat("Load address: %x\n", (uint64_t)base));
 
@@ -16086,7 +16058,7 @@ DWORD CrashHandlerException(EXCEPTION_POINTERS *ep) {
 			skip_first = false;
 		} else {
 			if (frame.AddrPC.Offset != 0) {
-				std::string fnName = symbol(process, frame.AddrPC.Offset).undecorated_name();
+				std::string fnName = get_undecorated_symbol_name(process, frame.AddrPC.Offset);
 
 				IMAGEHLP_MODULE64 mod_info;
 				memset(&mod_info, 0, sizeof(IMAGEHLP_MODULE64));
@@ -16195,37 +16167,22 @@ struct CrashHandlerData {
 	bool sym_ok = false;
 };
 
-struct module_data {
-	std::string image_name;
-	std::string module_name;
-	void *base_address = nullptr;
-	DWORD load_size;
-};
-
-class get_mod_info {
-	HANDLE process;
-
-public:
-	get_mod_info(HANDLE h) :
-			process(h) {}
-
-	module_data operator()(HMODULE module) {
-		module_data ret;
-		char temp[4096];
-		MODULEINFO mi;
-
-		GetModuleInformation(process, module, &mi, sizeof(mi));
-		ret.base_address = mi.lpBaseOfDll;
-		ret.load_size = mi.SizeOfImage;
-
-		GetModuleFileNameEx(process, module, temp, sizeof(temp));
-		ret.image_name = temp;
-		GetModuleBaseName(process, module, temp, sizeof(temp));
-		ret.module_name = temp;
-		SymLoadModule64(process, nullptr, ret.image_name.c_str(), ret.module_name.c_str(), (DWORD64)ret.base_address, ret.load_size);
-		return ret;
+static void *load_all_modules_mingw(HANDLE process, std::vector<HMODULE> &module_handles) {
+	void *first_base = nullptr;
+	for (size_t i = 0; i < module_handles.size(); i++) {
+		char image_name[4096];
+		char module_name[4096];
+		MODULEINFO mi = {};
+		GetModuleInformation(process, module_handles[i], &mi, sizeof(mi));
+		if (i == 0) {
+			first_base = mi.lpBaseOfDll;
+		}
+		GetModuleFileNameEx(process, module_handles[i], image_name, sizeof(image_name));
+		GetModuleBaseName(process, module_handles[i], module_name, sizeof(module_name));
+		SymLoadModule64(process, nullptr, image_name, module_name, (DWORD64)mi.lpBaseOfDll, mi.SizeOfImage);
 	}
-};
+	return first_base;
+}
 
 int symbol_callback(void *data, uintptr_t pc, const char *filename, int lineno, const char *function) {
 	CrashHandlerData *ch_data = reinterpret_cast<CrashHandlerData *>(data);
@@ -16378,7 +16335,6 @@ extern void CrashHandlerException(int signal) {
 	int64_t image_file_base = get_image_base(exec_path);
 	data.offset = image_mem_base - image_file_base;
 
-	std::vector<module_data> modules;
 	DWORD cbNeeded;
 	std::vector<HMODULE> module_handles(1);
 
@@ -16390,8 +16346,7 @@ extern void CrashHandlerException(int signal) {
 		EnumProcessModules(data.process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
 		module_handles.resize(cbNeeded / sizeof(HMODULE));
 		EnumProcessModules(data.process, &module_handles[0], module_handles.size() * sizeof(HMODULE), &cbNeeded);
-		std::transform(module_handles.begin(), module_handles.end(), std::back_inserter(modules), get_mod_info(data.process));
-		data.base = (uint64_t)modules[0].base_address;
+		data.base = (uint64_t)load_all_modules_mingw(data.process, module_handles);
 	}
 
 	print_error(vformat("Load address: %x\n", (uint64_t)data.offset));

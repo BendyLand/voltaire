@@ -1924,6 +1924,8 @@ enum CursorShape : int
 };
 } // namespace InputClassEnums
 
+class JoypadSDL;
+
 class Input final
 {
 	static inline Mutex _thread_safe_;
@@ -1936,24 +1938,6 @@ public:
 	using MouseMode = InputClassEnums::MouseMode;
 	using CursorShape = InputClassEnums::CursorShape;
 	static Vector<uint32_t> get_joy_touchpad_fingers(int p_device, int p_touchpad);
-
-	class JoypadFeatures
-	{
-	public:
-		virtual ~JoypadFeatures() {}
-
-		virtual bool has_joy_vibration() const { return false; }
-
-		virtual bool has_joy_light() const { return false; }
-
-		virtual void set_joy_light(const Color& p_color) {}
-
-		virtual bool has_joy_motion_sensors() const { return false; }
-
-		virtual void set_joy_motion_sensors_enabled(bool p_enable) {}
-
-		virtual int get_joy_num_touchpads() const { return 0; }
-	};
 
 	static constexpr int32_t JOYPADS_MAX = 16;
 
@@ -2051,7 +2035,7 @@ public:
 		int hat_current = 0;
 		bool has_light = false;
 		bool has_vibration = false;
-		Input::JoypadFeatures* features = nullptr;
+		void* features = nullptr;
 	};
 
 	enum JoyType
@@ -2284,7 +2268,7 @@ public:
 	static void set_gyroscope(const Vector3& p_gyroscope);
 	static void set_joy_axis(int p_device, JoyAxis p_axis, float p_value);
 
-	static void set_joy_features(int p_device, JoypadFeatures* p_features);
+	static void set_joy_features(int p_device, void* p_features);
 
 	static void set_joy_light(int p_device, const Color& p_color);
 	static bool has_joy_light(int p_device);
@@ -2408,13 +2392,7 @@ typedef struct SDL_Gamepad SDL_Gamepad;
 class JoypadSDL
 {
 public:
-	~JoypadSDL();
-
-	Error initialize();
-	void process_events();
-
-private:
-	class Joypad : public Input::JoypadFeatures
+	class Joypad
 	{
 	public:
 		bool attached = false;
@@ -2426,19 +2404,26 @@ private:
 		bool supports_motion_sensors = false;
 		uint64_t ff_effect_timestamp = 0;
 
-		virtual bool has_joy_light() const override;
-		virtual void set_joy_light(const Color& p_color) override;
+		bool has_joy_light() const;
+		void set_joy_light(const Color& p_color);
 
-		virtual bool has_joy_motion_sensors() const override;
-		virtual void set_joy_motion_sensors_enabled(bool p_enable) override;
+		bool has_joy_motion_sensors() const;
+		void set_joy_motion_sensors_enabled(bool p_enable);
 
-		virtual bool has_joy_vibration() const override;
+		bool has_joy_vibration() const;
 
-		virtual int get_joy_num_touchpads() const override;
+		int get_joy_num_touchpads() const;
 
 		SDL_Joystick* get_sdl_joystick() const;
 		SDL_Gamepad* get_sdl_gamepad() const;
 	};
+
+	~JoypadSDL();
+
+	Error initialize();
+	void process_events();
+
+private:
 
 	Joypad joypads[Input::JOYPADS_MAX];
 	HashMap<SDL_JoystickID, int> sdl_instance_id_to_joypad_id;

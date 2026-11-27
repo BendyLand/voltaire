@@ -74,18 +74,17 @@ void SceneTreeTimer::set_ignore_time_scale(bool p_ignore) { ignore_time_scale = 
 bool SceneTreeTimer::is_ignoring_time_scale() { return ignore_time_scale; }
 
 #ifndef _3D_DISABLED
-void SceneTree::ClientPhysicsInterpolation::physics_process()
+void SceneTree::_client_physics_interpolation_process()
 {
-	for (SelfList<Node3D>* E = _node_3d_list.first(); E;) {
+	if (!data) {
+		return;
+	}
+	for (SelfList<Node3D>* E = data->_client_physics_interpolation_list.first(); E;) {
 		Node3D* node_3d = E->self();
-
 		SelfList<Node3D>* current = E;
-
-		// Get the next element here BEFORE we potentially delete one.
 		E = E->next();
-
 		if (!node_3d->update_client_physics_interpolation_data()) {
-			_node_3d_list.remove(current);
+			data->_client_physics_interpolation_list.remove(current);
 		}
 	}
 }
@@ -320,14 +319,14 @@ void SceneTree::set_physics_interpolation_enabled(bool p_enabled)
 void SceneTree::client_physics_interpolation_add_node_3d(SelfList<Node3D>* p_elem)
 {
 	if (data) {
-		data->_client_physics_interpolation._node_3d_list.add(p_elem);
+		data->_client_physics_interpolation_list.add(p_elem);
 	}
 }
 
 void SceneTree::client_physics_interpolation_remove_node_3d(SelfList<Node3D>* p_elem)
 {
 	if (data) {
-		data->_client_physics_interpolation._node_3d_list.remove(p_elem);
+		data->_client_physics_interpolation_list.remove(p_elem);
 	}
 }
 #endif
@@ -348,7 +347,7 @@ void SceneTree::iteration_end()
 
 #ifndef _3D_DISABLED
 		if (data) {
-			data->_client_physics_interpolation.physics_process();
+			_client_physics_interpolation_process();
 		}
 #endif
 	}
@@ -6589,53 +6588,53 @@ ViewportTexture::~ViewportTexture()
 
 void Viewport::_sub_window_update_order()
 {
-	if (gui.sub_windows.size() < 2) {
+	if (gui_sub_windows.size() < 2) {
 		return;
 	}
 
 	// Reorder 'always on top' windows.
-	int last_index = gui.sub_windows.size() - 1;
+	int last_index = gui_sub_windows.size() - 1;
 	for (int index = last_index, insert_index = last_index; index >= 0; index--) {
-		SubWindow sw = gui.sub_windows[index];
+		SubWindow sw = gui_sub_windows[index];
 		Window* parent_window = sw.window->get_parent_visible_window();
 		bool parent_is_always_on_top =
 			(parent_window != nullptr) && parent_window->get_flag(Window::FLAG_ALWAYS_ON_TOP);
 		if (sw.window->get_flag(Window::FLAG_ALWAYS_ON_TOP) ||
 			(parent_is_always_on_top && sw.window->is_exclusive())) {
 			if (index != insert_index) {
-				gui.sub_windows.remove_at(index);
-				gui.sub_windows.insert(insert_index, sw);
+				gui_sub_windows.remove_at(index);
+				gui_sub_windows.insert(insert_index, sw);
 			}
 			insert_index--;
 		}
 	}
 
 	// Reorder exclusive children.
-	for (int parent_index = 0; parent_index < gui.sub_windows.size(); parent_index++) {
-		Window* exclusive_child = gui.sub_windows[parent_index].window->get_exclusive_child();
+	for (int parent_index = 0; parent_index < gui_sub_windows.size(); parent_index++) {
+		Window* exclusive_child = gui_sub_windows[parent_index].window->get_exclusive_child();
 		if (exclusive_child != nullptr && exclusive_child->is_visible()) {
 			int child_index = _sub_window_find(exclusive_child);
 			if (child_index < parent_index) {
-				SubWindow sw = gui.sub_windows[child_index];
-				gui.sub_windows.remove_at(child_index);
-				gui.sub_windows.insert(parent_index, sw);
+				SubWindow sw = gui_sub_windows[child_index];
+				gui_sub_windows.remove_at(child_index);
+				gui_sub_windows.insert(parent_index, sw);
 			}
 		}
 	}
 
-	for (int i = 0; i < gui.sub_windows.size(); i++) {
-		Renderer::canvas_item_set_draw_index(gui.sub_windows[i].canvas_item, i);
+	for (int i = 0; i < gui_sub_windows.size(); i++) {
+		Renderer::canvas_item_set_draw_index(gui_sub_windows[i].canvas_item, i);
 	}
 }
 
 void Viewport::_sub_window_register(Window* p_window)
 {
 	ERR_FAIL_COND(!is_inside_tree());
-	for (int i = 0; i < gui.sub_windows.size(); i++) {
-		ERR_FAIL_COND(gui.sub_windows[i].window == p_window);
+	for (int i = 0; i < gui_sub_windows.size(); i++) {
+		ERR_FAIL_COND(gui_sub_windows[i].window == p_window);
 	}
 
-	if (gui.sub_windows.is_empty()) {
+	if (gui_sub_windows.is_empty()) {
 		subwindow_canvas = Renderer::canvas_create();
 		Renderer::viewport_attach_canvas(viewport, subwindow_canvas);
 		Renderer::viewport_set_canvas_stacking(viewport, subwindow_canvas, SUBWINDOW_CANVAS_LAYER, 0);
@@ -6644,9 +6643,9 @@ void Viewport::_sub_window_register(Window* p_window)
 	sw.canvas_item = Renderer::canvas_item_create();
 	Renderer::canvas_item_set_parent(sw.canvas_item, subwindow_canvas);
 	sw.window = p_window;
-	gui.sub_windows.push_back(sw);
+	gui_sub_windows.push_back(sw);
 
-	if (gui.subwindow_drag == SUB_WINDOW_DRAG_DISABLED) {
+	if (gui_subwindow_drag == SUB_WINDOW_DRAG_DISABLED) {
 		if (p_window->get_flag(Window::FLAG_NO_FOCUS)) {
 			_sub_window_update_order();
 		}
@@ -6655,10 +6654,10 @@ void Viewport::_sub_window_register(Window* p_window)
 		}
 	}
 	else {
-		int index = _sub_window_find(gui.currently_dragged_subwindow);
-		sw = gui.sub_windows[index];
-		gui.sub_windows.remove_at(index);
-		gui.sub_windows.push_back(sw);
+		int index = _sub_window_find(gui_currently_dragged_subwindow);
+		sw = gui_sub_windows[index];
+		gui_sub_windows.remove_at(index);
+		gui_sub_windows.push_back(sw);
 		_sub_window_update_order();
 	}
 
@@ -6676,7 +6675,7 @@ void Viewport::_sub_window_update(Window* p_window)
 		return;
 	}
 
-	SubWindow& sw = gui.sub_windows.write[index];
+	SubWindow& sw = gui_sub_windows.write[index];
 	sw.pending_window_update = false;
 
 	Renderer::canvas_item_clear(sw.canvas_item);
@@ -6685,7 +6684,7 @@ void Viewport::_sub_window_update(Window* p_window)
 	if (!p_window->get_flag(Window::FLAG_BORDERLESS)) {
 		TextServer::set_current_drawn_item_oversampling(get_oversampling());
 
-		Ref<StyleBox> panel = gui.subwindow_focused == p_window
+		Ref<StyleBox> panel = gui_subwindow_focused == p_window
 								  ? p_window->tc_embedded_border
 								  : p_window->tc_embedded_unfocused_border;
 		panel->draw(sw.canvas_item, r);
@@ -6716,9 +6715,9 @@ void Viewport::_sub_window_update(Window* p_window)
 			title_text.draw(sw.canvas_item, r.position + Point2(x, y), title_color);
 		}
 
-		bool pressed = gui.subwindow_focused == sw.window &&
-					   gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
-					   gui.subwindow_drag_close_inside;
+		bool pressed = gui_subwindow_focused == sw.window &&
+					   gui_subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
+					   gui_subwindow_drag_close_inside;
 		Ref<Texture2D> close_icon =
 			pressed ? p_window->tc_close_pressed : p_window->tc_close;
 		close_icon->draw(
@@ -6738,8 +6737,8 @@ void Viewport::_sub_window_update(Window* p_window)
 
 int Viewport::_sub_window_find(Window* p_window) const
 {
-	for (int i = 0; i < gui.sub_windows.size(); i++) {
-		if (gui.sub_windows[i].window == p_window) {
+	for (int i = 0; i < gui_sub_windows.size(); i++) {
+		if (gui_sub_windows[i].window == p_window) {
 			return i;
 		}
 	}
@@ -7059,7 +7058,7 @@ Vector2 Viewport::get_mouse_position() const
 	if (get_section_root_viewport() != SceneTree::get_root()) {
 		// Rely on the most recent mouse coordinate from an InputEventMouse in push_input.
 		// In this case get_screen_transform is not applicable, because it is ambiguous.
-		return gui.last_mouse_pos;
+		return gui_last_mouse_pos;
 	}
 	else if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_MOUSE)) {
 		Transform2D xform = get_screen_transform_internal(true);
@@ -7123,15 +7122,15 @@ Point2 Viewport::wrap_mouse_in_rect(const Vector2& p_relative, const Rect2& p_re
 
 void Viewport::_gui_cancel_tooltip()
 {
-	gui.tooltip_control = nullptr;
-	gui.tooltip_text = "";
+	gui_tooltip_control = nullptr;
+	gui_tooltip_text = "";
 
-	if (gui.tooltip_timer.is_valid()) {
-		gui.tooltip_timer->release_connections();
-		gui.tooltip_timer = Ref<SceneTreeTimer>();
+	if (gui_tooltip_timer.is_valid()) {
+		gui_tooltip_timer->release_connections();
+		gui_tooltip_timer = Ref<SceneTreeTimer>();
 	}
-	if (gui.tooltip_popup) {
-		gui.tooltip_popup->queue_free();
+	if (gui_tooltip_popup) {
+		gui_tooltip_popup->queue_free();
 	}
 }
 
@@ -7143,15 +7142,15 @@ void Viewport::show_tooltip(Control* p_control)
 		return;
 	}
 
-	if (gui.tooltip_timer.is_valid()) {
-		gui.tooltip_timer->release_connections();
-		gui.tooltip_timer = Ref<SceneTreeTimer>();
+	if (gui_tooltip_timer.is_valid()) {
+		gui_tooltip_timer->release_connections();
+		gui_tooltip_timer = Ref<SceneTreeTimer>();
 	}
-	gui.tooltip_control = p_control;
+	gui_tooltip_control = p_control;
 	_gui_show_tooltip_at(p_control->get_size() / 2);
 }
 
-void Viewport::_gui_show_tooltip() { _gui_show_tooltip_at(gui.last_mouse_pos); }
+void Viewport::_gui_show_tooltip() { _gui_show_tooltip_at(gui_last_mouse_pos); }
 
 // `gui_find_control` doesn't take embedded windows into account. So the caller of this function
 // needs to make sure, that there is no embedded window at the specified position.
@@ -7161,7 +7160,7 @@ Control* Viewport::gui_find_control(const Point2& p_global)
 
 	_gui_sort_roots();
 
-	for (List<Control*>::Element* E = gui.roots.back(); E; E = E->prev()) {
+	for (List<Control*>::Element* E = gui_roots.back(); E; E = E->prev()) {
 		Control* sw = E->get();
 		if (!sw->is_visible_in_tree()) {
 			continue;
@@ -7192,34 +7191,34 @@ void Viewport::_perform_drop(Control* p_control)
 
 List<Control*>::Element* Viewport::_gui_add_root_control(Control* p_control)
 {
-	gui.roots_order_dirty = true;
-	return gui.roots.push_back(p_control);
+	gui_roots_order_dirty = true;
+	return gui_roots.push_back(p_control);
 }
 
 void Viewport::gui_set_root_order_dirty()
 {
 	ERR_MAIN_THREAD_GUARD;
-	gui.roots_order_dirty = true;
+	gui_roots_order_dirty = true;
 }
 
 void Viewport::_gui_force_drag_start()
 {
 	Viewport* section_root = get_section_root_viewport();
-	section_root->gui.global_dragging = true;
+	section_root->gui_global_dragging = true;
 }
 
 void Viewport::_gui_force_drag_cancel()
 {
 	Viewport* section_root = get_section_root_viewport();
-	section_root->gui.global_dragging = false;
+	section_root->gui_global_dragging = false;
 }
 
-void Viewport::_gui_remove_root_control(List<Control*>::Element* RI) { gui.roots.erase(RI); }
+void Viewport::_gui_remove_root_control(List<Control*>::Element* RI) { gui_roots.erase(RI); }
 
 void Viewport::_gui_unfocus_control(Control* p_control)
 {
-	if (gui.key_focus == p_control) {
-		gui.key_focus->release_focus();
+	if (gui_key_focus == p_control) {
+		gui_key_focus->release_focus();
 	}
 }
 
@@ -7234,7 +7233,7 @@ void Viewport::_gui_remove_focus_for_window(Node* p_window)
 
 bool Viewport::_gui_control_has_focus(const Control* p_control, bool p_ignore_hidden_focus)
 {
-	return (!p_ignore_hidden_focus || !gui.hide_focus) && gui.key_focus == p_control;
+	return (!p_ignore_hidden_focus || !gui_hide_focus) && gui_key_focus == p_control;
 }
 
 void Viewport::_gui_accept_event()
@@ -7321,59 +7320,59 @@ Viewport::SubWindowResize Viewport::_sub_window_get_resize_margin(
 
 bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 {
-	if (gui.subwindow_drag != SUB_WINDOW_DRAG_DISABLED) {
-		ERR_FAIL_NULL_V(gui.currently_dragged_subwindow, false);
+	if (gui_subwindow_drag != SUB_WINDOW_DRAG_DISABLED) {
+		ERR_FAIL_NULL_V(gui_currently_dragged_subwindow, false);
 
 		if (p_event.type == InputEventType::MOUSE_BUTTON && !p_event.is_pressed() &&
 			p_event.mouse_button.button_index == MouseButton::LEFT) {
-			if (gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
-				if (gui.subwindow_drag_close_rect.has_point(p_event.mouse_button.position)) {
+			if (gui_subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
+				if (gui_subwindow_drag_close_rect.has_point(p_event.mouse_button.position)) {
 					// Close window.
-					gui.currently_dragged_subwindow->_event_callback(
+					gui_currently_dragged_subwindow->_event_callback(
 						DisplayServerEnums::WINDOW_EVENT_CLOSE_REQUEST);
 				}
 			}
-			gui.subwindow_drag = SUB_WINDOW_DRAG_DISABLED;
-			if (gui.currently_dragged_subwindow != nullptr) { // May have been erased.
-				_sub_window_update(gui.currently_dragged_subwindow);
-				gui.currently_dragged_subwindow = nullptr;
+			gui_subwindow_drag = SUB_WINDOW_DRAG_DISABLED;
+			if (gui_currently_dragged_subwindow != nullptr) { // May have been erased.
+				_sub_window_update(gui_currently_dragged_subwindow);
+				gui_currently_dragged_subwindow = nullptr;
 			}
 		}
 
 		if (p_event.type == InputEventType::MOUSE_MOTION) {
 			const Vector2 mm_pos = p_event.mouse_motion.position;
-			if (gui.subwindow_drag == SUB_WINDOW_DRAG_MOVE) {
-				Vector2 diff = mm_pos - gui.subwindow_drag_from;
+			if (gui_subwindow_drag == SUB_WINDOW_DRAG_MOVE) {
+				Vector2 diff = mm_pos - gui_subwindow_drag_from;
 				Rect2i new_rect(
-					gui.subwindow_drag_pos + diff, gui.currently_dragged_subwindow->get_size());
+					gui_subwindow_drag_pos + diff, gui_currently_dragged_subwindow->get_size());
 
-				if (gui.currently_dragged_subwindow->is_clamped_to_embedder()) {
-					new_rect = gui.currently_dragged_subwindow->fit_rect_in_parent(
+				if (gui_currently_dragged_subwindow->is_clamped_to_embedder()) {
+					new_rect = gui_currently_dragged_subwindow->fit_rect_in_parent(
 						new_rect, get_visible_rect());
 				}
 
-				gui.currently_dragged_subwindow->_rect_changed_callback(new_rect);
+				gui_currently_dragged_subwindow->_rect_changed_callback(new_rect);
 
 				if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_CURSOR_SHAPE)) {
 					DisplayServer::cursor_set_shape(DisplayServerEnums::CURSOR_MOVE);
 				}
 			}
-			if (gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
-				gui.subwindow_drag_close_inside = gui.subwindow_drag_close_rect.has_point(mm_pos);
+			if (gui_subwindow_drag == SUB_WINDOW_DRAG_CLOSE) {
+				gui_subwindow_drag_close_inside = gui_subwindow_drag_close_rect.has_point(mm_pos);
 			}
-			if (gui.subwindow_drag == SUB_WINDOW_DRAG_RESIZE) {
-				Vector2i diff = mm_pos - gui.subwindow_drag_from;
-				Size2i min_size = gui.currently_dragged_subwindow->get_min_size();
+			if (gui_subwindow_drag == SUB_WINDOW_DRAG_RESIZE) {
+				Vector2i diff = mm_pos - gui_subwindow_drag_from;
+				Size2i min_size = gui_currently_dragged_subwindow->get_min_size();
 				Size2i min_size_clamped =
-					gui.currently_dragged_subwindow->get_clamped_minimum_size();
+					gui_currently_dragged_subwindow->get_clamped_minimum_size();
 
 				min_size_clamped = min_size_clamped.maxi(1);
 
-				Rect2i r = gui.subwindow_resize_from_rect;
+				Rect2i r = gui_subwindow_resize_from_rect;
 
 				Size2i limit = r.size - min_size_clamped;
 
-				switch (gui.subwindow_resize_mode) {
+				switch (gui_subwindow_resize_mode) {
 				case SUB_WINDOW_RESIZE_TOP_LEFT: {
 					diff.x = MIN(diff.x, limit.x);
 					diff.y = MIN(diff.y, limit.y);
@@ -7426,7 +7425,7 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 				}
 				}
 
-				Size2i max_size = gui.currently_dragged_subwindow->get_max_size();
+				Size2i max_size = gui_currently_dragged_subwindow->get_max_size();
 				if ((max_size.x > 0 || max_size.y > 0) &&
 					(max_size.x >= min_size.x && max_size.y >= min_size.y)) {
 					max_size = max_size.maxi(1);
@@ -7439,11 +7438,11 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 					}
 				}
 
-				gui.currently_dragged_subwindow->_rect_changed_callback(r);
+				gui_currently_dragged_subwindow->_rect_changed_callback(r);
 			}
 
-			if (gui.currently_dragged_subwindow) { // May have been erased.
-				_sub_window_update(gui.currently_dragged_subwindow);
+			if (gui_currently_dragged_subwindow) { // May have been erased.
+				_sub_window_update(gui_currently_dragged_subwindow);
 			}
 		}
 
@@ -7454,8 +7453,8 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 		p_event.mouse_button.button_index == MouseButton::LEFT) {
 		const Vector2 mb_pos = p_event.mouse_button.position;
 		Window* click_on_window = nullptr;
-		for (int i = gui.sub_windows.size() - 1; i >= 0; i--) {
-			SubWindow sw = gui.sub_windows.write[i];
+		for (int i = gui_sub_windows.size() - 1; i >= 0; i--) {
+			SubWindow sw = gui_sub_windows.write[i];
 
 			// Clicked inside window?
 
@@ -7473,9 +7472,9 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 
 					int close_h_ofs = sw.window->tc_close_h_offset;
 					int close_v_ofs = sw.window->tc_close_v_offset;
-					bool pressed = gui.subwindow_focused == sw.window &&
-								   gui.subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
-								   gui.subwindow_drag_close_inside;
+					bool pressed = gui_subwindow_focused == sw.window &&
+								   gui_subwindow_drag == SUB_WINDOW_DRAG_CLOSE &&
+								   gui_subwindow_drag_close_inside;
 					Ref<Texture2D> close_icon = pressed ? sw.window->tc_close_pressed
 														: sw.window->tc_close;
 
@@ -7484,44 +7483,44 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 						Vector2(r.position.x + r.size.x - close_h_ofs, r.position.y - close_v_ofs);
 					close_rect.size = close_icon->get_size();
 
-					if (gui.subwindow_focused != sw.window) {
+					if (gui_subwindow_focused != sw.window) {
 						// Refocus.
 						_sub_window_grab_focus(sw.window);
 					}
 
 					if (close_rect.has_point(mb_pos)) {
-						gui.subwindow_drag = SUB_WINDOW_DRAG_CLOSE;
-						gui.subwindow_drag_close_inside = true; // Starts inside.
-						gui.subwindow_drag_close_rect = close_rect;
+						gui_subwindow_drag = SUB_WINDOW_DRAG_CLOSE;
+						gui_subwindow_drag_close_inside = true; // Starts inside.
+						gui_subwindow_drag_close_rect = close_rect;
 					}
 					else {
-						gui.subwindow_drag = SUB_WINDOW_DRAG_MOVE;
+						gui_subwindow_drag = SUB_WINDOW_DRAG_MOVE;
 					}
 
-					gui.subwindow_drag_from = mb_pos;
-					gui.subwindow_drag_pos = sw.window->get_position();
+					gui_subwindow_drag_from = mb_pos;
+					gui_subwindow_drag_pos = sw.window->get_position();
 
 					_sub_window_update(sw.window);
 				}
 				else {
-					gui.subwindow_resize_mode =
+					gui_subwindow_resize_mode =
 						_sub_window_get_resize_margin(sw.window, mb_pos);
-					if (gui.subwindow_resize_mode != SUB_WINDOW_RESIZE_DISABLED) {
-						if (gui.subwindow_focused != sw.window) {
+					if (gui_subwindow_resize_mode != SUB_WINDOW_RESIZE_DISABLED) {
+						if (gui_subwindow_focused != sw.window) {
 							// Refocus.
 							_sub_window_grab_focus(sw.window);
 						}
 
-						gui.subwindow_resize_from_rect = r;
-						gui.subwindow_drag_from = mb_pos;
-						gui.subwindow_drag = SUB_WINDOW_DRAG_RESIZE;
+						gui_subwindow_resize_from_rect = r;
+						gui_subwindow_drag_from = mb_pos;
+						gui_subwindow_drag = SUB_WINDOW_DRAG_RESIZE;
 						click_on_window = sw.window;
 					}
 				}
 			}
 			if (!click_on_window && r.has_point(mb_pos)) {
 				// Clicked, see if it needs to fetch focus.
-				if (gui.subwindow_focused != sw.window) {
+				if (gui_subwindow_focused != sw.window) {
 					// Refocus.
 					_sub_window_grab_focus(sw.window);
 				}
@@ -7534,17 +7533,17 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 			}
 		}
 
-		gui.currently_dragged_subwindow = click_on_window;
+		gui_currently_dragged_subwindow = click_on_window;
 
-		if (!click_on_window && gui.subwindow_focused) {
+		if (!click_on_window && gui_subwindow_focused) {
 			// No window found and clicked, remove focus.
 			_sub_window_grab_focus(nullptr);
 		}
 	}
 
-	if (gui.subwindow_focused && p_event.type == InputEventType::MOUSE_MOTION) {
+	if (gui_subwindow_focused && p_event.type == InputEventType::MOUSE_MOTION) {
 		SubWindowResize resize = _sub_window_get_resize_margin(
-			gui.subwindow_focused, p_event.mouse_motion.position);
+			gui_subwindow_focused, p_event.mouse_motion.position);
 		if (resize != SUB_WINDOW_RESIZE_DISABLED) {
 			DisplayServerEnums::CursorShape shapes[SUB_WINDOW_RESIZE_MAX] = {
 				DisplayServerEnums::CURSOR_ARROW, DisplayServerEnums::CURSOR_FDIAGSIZE,
@@ -7561,16 +7560,16 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 		}
 	}
 
-	if (gui.subwindow_drag != SUB_WINDOW_DRAG_DISABLED) {
+	if (gui_subwindow_drag != SUB_WINDOW_DRAG_DISABLED) {
 		return true; // Dragging, don't pass the event.
 	}
 
-	if (!gui.subwindow_focused) {
+	if (!gui_subwindow_focused) {
 		// No window focus, check for unfocusable windows under the cursor.
 		if (p_event.is_mouse()) {
 			const Vector2 me_pos = p_event.get_mouse_position();
-			for (int i = gui.sub_windows.size() - 1; i >= 0; i--) {
-				const SubWindow& sw = gui.sub_windows[i];
+			for (int i = gui_sub_windows.size() - 1; i >= 0; i--) {
+				const SubWindow& sw = gui_sub_windows[i];
 				if (!sw.window->get_flag(Window::FLAG_NO_FOCUS) ||
 					sw.window->get_flag(Window::FLAG_MOUSE_PASSTHROUGH)) {
 					continue;
@@ -7589,11 +7588,11 @@ bool Viewport::_sub_windows_forward_input(const InputEvent& p_event)
 	}
 
 	Transform2D window_ofs;
-	window_ofs.set_origin(-gui.subwindow_focused->get_position());
+	window_ofs.set_origin(-gui_subwindow_focused->get_position());
 
 	InputEvent ev = p_event.xformed_by(window_ofs);
 
-	gui.subwindow_focused->_window_input(ev);
+	gui_subwindow_focused->_window_input(ev);
 
 	return true;
 }
@@ -7603,17 +7602,17 @@ void Viewport::_window_start_drag(Window* p_window)
 	int index = _sub_window_find(p_window);
 	ERR_FAIL_COND(index == -1);
 
-	SubWindow sw = gui.sub_windows.write[index];
+	SubWindow sw = gui_sub_windows.write[index];
 
-	if (gui.subwindow_focused != sw.window) {
+	if (gui_subwindow_focused != sw.window) {
 		// Refocus.
 		_sub_window_grab_focus(sw.window);
 	}
 
-	gui.subwindow_drag = SUB_WINDOW_DRAG_MOVE;
-	gui.subwindow_drag_from = get_mouse_position();
-	gui.subwindow_drag_pos = sw.window->get_position();
-	gui.currently_dragged_subwindow = sw.window;
+	gui_subwindow_drag = SUB_WINDOW_DRAG_MOVE;
+	gui_subwindow_drag_from = get_mouse_position();
+	gui_subwindow_drag_pos = sw.window->get_position();
+	gui_currently_dragged_subwindow = sw.window;
 
 	_sub_window_update(sw.window);
 }
@@ -7623,20 +7622,20 @@ void Viewport::_window_start_resize(SubWindowResize p_edge, Window* p_window)
 	int index = _sub_window_find(p_window);
 	ERR_FAIL_COND(index == -1);
 
-	SubWindow sw = gui.sub_windows.write[index];
+	SubWindow sw = gui_sub_windows.write[index];
 	Rect2i r = Rect2i(sw.window->get_position(), sw.window->get_size());
 
-	if (gui.subwindow_focused != sw.window) {
+	if (gui_subwindow_focused != sw.window) {
 		// Refocus.
 		_sub_window_grab_focus(sw.window);
 	}
 
-	gui.subwindow_drag = SUB_WINDOW_DRAG_RESIZE;
-	gui.subwindow_resize_mode = p_edge;
-	gui.subwindow_resize_from_rect = r;
-	gui.subwindow_drag_from = get_mouse_position();
-	gui.subwindow_drag_pos = sw.window->get_position();
-	gui.currently_dragged_subwindow = sw.window;
+	gui_subwindow_drag = SUB_WINDOW_DRAG_RESIZE;
+	gui_subwindow_resize_mode = p_edge;
+	gui_subwindow_resize_from_rect = r;
+	gui_subwindow_drag_from = get_mouse_position();
+	gui_subwindow_drag_pos = sw.window->get_position();
+	gui_currently_dragged_subwindow = sw.window;
 
 	_sub_window_update(sw.window);
 }
@@ -7652,7 +7651,7 @@ void Viewport::_update_mouse_over(const InputEvent& p_mm)
 		_update_mouse_over(mm_pos);
 	}
 	else {
-		Window* receiving_window = SceneTree::get_root()->gui.windowmanager_window_over;
+		Window* receiving_window = SceneTree::get_root()->gui_windowmanager_window_over;
 		if (!receiving_window) {
 			return;
 		}
@@ -7693,7 +7692,7 @@ void Viewport::push_unhandled_input(const InputEvent& p_event, bool p_local_coor
 
 void Viewport::notify_mouse_exited()
 {
-	if (!gui.mouse_in_viewport) {
+	if (!gui_mouse_in_viewport) {
 		WARN_PRINT_ED("The Viewport was previously notified that the mouse has left its area. "
 					  "There is no need to notify it at this time.");
 		return;
@@ -7793,17 +7792,17 @@ void Viewport::set_disable_input_override(bool p_disable)
 String Viewport::gui_get_drag_description() const
 {
 	ERR_READ_THREAD_GUARD_V(String());
-	if (get_section_root_viewport()->gui.drag_description.is_empty()) {
+	if (get_section_root_viewport()->gui_drag_description.is_empty()) {
 		return RTR("Drag-and-drop data");
 	}
 	else {
-		return get_section_root_viewport()->gui.drag_description;
+		return get_section_root_viewport()->gui_drag_description;
 	}
 }
 
 void Viewport::gui_set_drag_description(const String& p_description)
 {
-	gui.drag_description = p_description;
+	gui_drag_description = p_description;
 }
 
 PackedStringArray Viewport::get_configuration_warnings() const
@@ -7821,19 +7820,19 @@ PackedStringArray Viewport::get_configuration_warnings() const
 void Viewport::gui_reset_canvas_sort_index()
 {
 	ERR_MAIN_THREAD_GUARD;
-	gui.canvas_sort_index = 0;
+	gui_canvas_sort_index = 0;
 }
 
 int Viewport::gui_get_canvas_sort_index()
 {
 	ERR_MAIN_THREAD_GUARD_V(0);
-	return gui.canvas_sort_index++;
+	return gui_canvas_sort_index++;
 }
 
 Control* Viewport::gui_get_focus_owner() const
 {
 	ERR_READ_THREAD_GUARD_V(nullptr);
-	return gui.key_focus;
+	return gui_key_focus;
 }
 
 void Viewport::set_msaa_2d(MSAA p_msaa)
@@ -7999,13 +7998,13 @@ bool Viewport::is_snap_2d_vertices_to_pixel_enabled() const
 bool Viewport::gui_is_dragging() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
-	return get_section_root_viewport()->gui.global_dragging;
+	return get_section_root_viewport()->gui_global_dragging;
 }
 
 bool Viewport::gui_is_drag_successful() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
-	return gui.drag_successful;
+	return gui_drag_successful;
 }
 
 void Viewport::gui_cancel_drag()
@@ -8157,7 +8156,7 @@ Viewport* Viewport::get_parent_viewport() const
 void Viewport::set_embedding_subwindows(bool p_embed)
 {
 	ERR_THREAD_GUARD;
-	if (gui.embed_subwindows_hint == p_embed) {
+	if (gui_embed_subwindows_hint == p_embed) {
 		return;
 	}
 
@@ -8166,8 +8165,8 @@ void Viewport::set_embedding_subwindows(bool p_embed)
 	if (!is_inside_tree()) {
 		// Change can happen since no child window is displayed.
 	}
-	else if (gui.embed_subwindows_hint) {
-		if (!gui.sub_windows.is_empty()) {
+	else if (gui_embed_subwindows_hint) {
+		if (!gui_sub_windows.is_empty()) {
 			// Prevent change when this viewport has embedded windows.
 			allow_change = false;
 		}
@@ -8181,8 +8180,8 @@ void Viewport::set_embedding_subwindows(bool p_embed)
 			}
 			vp = vp->get_parent()->get_viewport();
 			if (vp->is_embedding_subwindows()) {
-				for (int i = 0; i < vp->gui.sub_windows.size(); i++) {
-					if (is_ancestor_of(vp->gui.sub_windows[i].window)) {
+				for (int i = 0; i < vp->gui_sub_windows.size(); i++) {
+					if (is_ancestor_of(vp->gui_sub_windows[i].window)) {
 						// Prevent change when this viewport has child windows that are displayed in
 						// an ancestor viewport.
 						allow_change = false;
@@ -8208,7 +8207,7 @@ void Viewport::set_embedding_subwindows(bool p_embed)
 	}
 
 	if (allow_change) {
-		gui.embed_subwindows_hint = p_embed;
+		gui_embed_subwindows_hint = p_embed;
 	}
 	else {
 		WARN_PRINT("Can't change \"gui_embed_subwindows\" while a child window is displayed. "
@@ -8219,19 +8218,19 @@ void Viewport::set_embedding_subwindows(bool p_embed)
 bool Viewport::is_embedding_subwindows() const
 {
 	ERR_READ_THREAD_GUARD_V(false);
-	return gui.embed_subwindows_hint;
+	return gui_embed_subwindows_hint;
 }
 
 void Viewport::set_drag_threshold(int p_threshold)
 {
 	ERR_MAIN_THREAD_GUARD
-	gui.drag_threshold = p_threshold;
+	gui_drag_threshold = p_threshold;
 }
 
 int Viewport::get_drag_threshold() const
 {
 	ERR_READ_THREAD_GUARD_V(10);
-	return gui.drag_threshold;
+	return gui_drag_threshold;
 }
 
 void Viewport::subwindow_set_popup_safe_rect(Window* p_window, const Rect2i& p_rect)
@@ -8239,7 +8238,7 @@ void Viewport::subwindow_set_popup_safe_rect(Window* p_window, const Rect2i& p_r
 	int index = _sub_window_find(p_window);
 	ERR_FAIL_COND(index == -1);
 
-	gui.sub_windows.write[index].parent_safe_rect = p_rect;
+	gui_sub_windows.write[index].parent_safe_rect = p_rect;
 }
 
 Rect2i Viewport::subwindow_get_popup_safe_rect(Window* p_window) const
@@ -8252,7 +8251,7 @@ Rect2i Viewport::subwindow_get_popup_safe_rect(Window* p_window) const
 	}
 	// ERR_FAIL_COND_V(index == -1, Rect2i());
 
-	return gui.sub_windows[index].parent_safe_rect;
+	return gui_sub_windows[index].parent_safe_rect;
 }
 
 void Viewport::set_sdf_oversize(SDFOversize p_sdf_oversize)
@@ -79209,7 +79208,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 	// Check if anything is dirty, in such a case, redraw debug.
 	bool anything_changed = false;
 	for (int i = 0; i < DIRTY_FLAGS_MAX; i++) {
-		if (dirty.flags[i]) {
+		if (dirty_flags[i]) {
 			anything_changed = true;
 			break;
 		}
@@ -79235,7 +79234,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 	}
 	else {
 		// Update dirty cells.
-		for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+		for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 			 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 			CellData& cell_data = *cell_data_list_element->self();
 			quadrants_to_updates.insert(
@@ -79274,7 +79273,7 @@ void TileMapLayer::_debug_update(bool p_force_cleanup)
 		}
 	}
 	else {
-		for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+		for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 			 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 			CellData& cell_data = *cell_data_list_element->self();
 			Ref<DebugQuadrant> debug_quadrant = debug_quadrant_map[_coords_to_quadrant_coords(
@@ -79450,9 +79449,9 @@ void TileMapLayer::_navigation_update(bool p_force_cleanup)
 		}
 	}
 	else {
-		if (_navigation_was_cleaned_up || dirty.flags[DIRTY_FLAGS_TILE_SET] ||
-			dirty.flags[DIRTY_FLAGS_LAYER_IN_TREE] ||
-			dirty.flags[DIRTY_FLAGS_LAYER_NAVIGATION_MAP]) {
+		if (_navigation_was_cleaned_up || dirty_flags[DIRTY_FLAGS_TILE_SET] ||
+			dirty_flags[DIRTY_FLAGS_LAYER_IN_TREE] ||
+			dirty_flags[DIRTY_FLAGS_LAYER_NAVIGATION_MAP]) {
 			// Update all cells.
 			for (KeyValue<Vector2i, CellData>& kv : tile_map_layer_data) {
 				_navigation_update_cell(kv.value);
@@ -79460,7 +79459,7 @@ void TileMapLayer::_navigation_update(bool p_force_cleanup)
 		}
 		else {
 			// Update dirty cells.
-			for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+			for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 				 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 				CellData& cell_data = *cell_data_list_element->self();
 				_navigation_update_cell(cell_data);
@@ -79528,9 +79527,9 @@ void TileMapLayer::_scenes_update(bool p_force_cleanup)
 		}
 	}
 	else {
-		if (_scenes_was_cleaned_up || dirty.flags[DIRTY_FLAGS_TILE_SET] ||
-			dirty.flags[DIRTY_FLAGS_LAYER_IN_TREE] ||
-			dirty.flags[DIRTY_FLAGS_LAYER_HIGHLIGHT_MODE]) {
+		if (_scenes_was_cleaned_up || dirty_flags[DIRTY_FLAGS_TILE_SET] ||
+			dirty_flags[DIRTY_FLAGS_LAYER_IN_TREE] ||
+			dirty_flags[DIRTY_FLAGS_LAYER_HIGHLIGHT_MODE]) {
 			// Update all cells.
 			for (KeyValue<Vector2i, CellData>& kv : tile_map_layer_data) {
 				_scenes_update_cell(kv.value);
@@ -79538,7 +79537,7 @@ void TileMapLayer::_scenes_update(bool p_force_cleanup)
 		}
 		else {
 			// Update dirty cells.
-			for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+			for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 				 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 				CellData& cell_data = *cell_data_list_element->self();
 				_scenes_update_cell(cell_data);
@@ -79601,19 +79600,19 @@ void TileMapLayer::_build_runtime_update_tile_data(bool p_force_cleanup)
 	bool forced_cleanup =
 		p_force_cleanup || !enabled || tile_set.is_null() || !is_visible_in_tree();
 	if (!forced_cleanup) {
-		if (_runtime_update_tile_data_was_cleaned_up || dirty.flags[DIRTY_FLAGS_TILE_SET]) {
+		if (_runtime_update_tile_data_was_cleaned_up || dirty_flags[DIRTY_FLAGS_TILE_SET]) {
 			_runtime_update_needs_all_cells_cleaned_up = true;
 			for (KeyValue<Vector2i, CellData>& E : tile_map_layer_data) {
 				_build_runtime_update_tile_data_for_cell(E.value, false);
 			}
 		}
-		else if (dirty.flags[DIRTY_FLAGS_LAYER_RUNTIME_UPDATE]) {
+		else if (dirty_flags[DIRTY_FLAGS_LAYER_RUNTIME_UPDATE]) {
 			for (KeyValue<Vector2i, CellData>& E : tile_map_layer_data) {
 				_build_runtime_update_tile_data_for_cell(E.value, false, true);
 			}
 		}
 		else {
-			for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+			for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 				 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 				CellData& cell_data = *cell_data_list_element->self();
 				_build_runtime_update_tile_data_for_cell(cell_data, false);
@@ -79635,7 +79634,7 @@ void TileMapLayer::_clear_runtime_update_tile_data()
 		_runtime_update_needs_all_cells_cleaned_up = false;
 	}
 	else {
-		for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+		for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 			 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 			CellData& r_cell_data = *cell_data_list_element->self();
 			_clear_runtime_update_tile_data_for_cell(r_cell_data);
@@ -79895,12 +79894,12 @@ void TileMapLayer::_internal_update(bool p_force_cleanup)
 
 	// Clear the "what is dirty" flags.
 	for (int i = 0; i < DIRTY_FLAGS_MAX; i++) {
-		dirty.flags[i] = false;
+		dirty_flags[i] = false;
 	}
 
 	// List the cells to delete definitely.
 	Vector<Vector2i> to_delete;
-	for (SelfList<CellData>* cell_data_list_element = dirty.cell_list.first();
+	for (SelfList<CellData>* cell_data_list_element = dirty_cell_list.first();
 		 cell_data_list_element; cell_data_list_element = cell_data_list_element->next()) {
 		CellData& cell_data = *cell_data_list_element->self();
 		// Select the cell from tile_map if it is invalid.
@@ -79915,7 +79914,7 @@ void TileMapLayer::_internal_update(bool p_force_cleanup)
 	}
 
 	// Clear the dirty cells list.
-	dirty.cell_list.clear();
+	dirty_cell_list.clear();
 
 	pending_update = false;
 }
@@ -80364,7 +80363,7 @@ void TileMapLayer::set_cell(const Vector2i& p_coords, int p_source_id,
 
 	// Make the given cell dirty.
 	if (!E->value.dirty_list_element.in_list()) {
-		dirty.cell_list.add(&(E->value.dirty_list_element));
+		dirty_cell_list.add(&(E->value.dirty_list_element));
 	}
 	_queue_internal_update();
 
@@ -80536,7 +80535,7 @@ void TileMapLayer::set_highlight_mode(HighlightMode p_highlight_mode)
 		return;
 	}
 	highlight_mode = p_highlight_mode;
-	dirty.flags[DIRTY_FLAGS_LAYER_HIGHLIGHT_MODE] = true;
+	dirty_flags[DIRTY_FLAGS_LAYER_HIGHLIGHT_MODE] = true;
 	_queue_internal_update();
 }
 
@@ -92357,7 +92356,6 @@ void Slider::_notification(int p_what)
 	case NOTIFICATION_VISIBILITY_CHANGED:
 	case NOTIFICATION_EXIT_TREE: {
 		mouse_inside = false;
-		grab.active = false;
 	} break;
 
 	case NOTIFICATION_DRAW: {
@@ -92535,22 +92533,9 @@ Size2 SpinBox::get_minimum_size() const
 
 LineEdit* SpinBox::get_line_edit() { return line_edit; }
 
-void SpinBox::_line_edit_input(const InputEvent& p_event)
-{
-	if (drag.enabled) {
-		line_edit->accept_event();
-	}
-}
+void SpinBox::_line_edit_input(const InputEvent& p_event) {}
 
-void SpinBox::_release_mouse_from_drag_mode()
-{
-	if (drag.enabled) {
-		drag.enabled = false;
-		Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_HIDDEN);
-		warp_mouse(drag.capture_pos);
-		Input::set_mouse_mode(Input::MouseMode::MOUSE_MODE_VISIBLE);
-	}
-}
+void SpinBox::_release_mouse_from_drag_mode() {}
 
 void SpinBox::_arrow_clicked(bool p_up)
 {
@@ -104690,11 +104675,11 @@ void VehicleWheel3D::FTIData::update_world_xform(Transform3D &r_xform, real_t p_
 }
 
 void VehicleWheel3D::_update(PhysicsDirectBodyState3D *s) {
-	if (m_raycastInfo.m_isInContact) {
-		real_t project = m_raycastInfo.m_contactNormalWS.dot(m_raycastInfo.m_wheelDirectionWS);
-		Vector3 relpos = m_raycastInfo.m_contactPointWS - s->get_transform().origin;
+	if (rc_isInContact) {
+		real_t project = rc_contactNormalWS.dot(rc_wheelDirectionWS);
+		Vector3 relpos = rc_contactPointWS - s->get_transform().origin;
 		Vector3 chassis_velocity_at_contact = s->get_linear_velocity() + s->get_angular_velocity().cross(relpos);
-		real_t projVel = m_raycastInfo.m_contactNormalWS.dot(chassis_velocity_at_contact);
+		real_t projVel = rc_contactNormalWS.dot(chassis_velocity_at_contact);
 		if (project >= real_t(-0.1)) {
 			m_suspensionRelativeVelocity = 0.0f;
 			m_clippedInvContactDotSuspension = 10.0f;
@@ -104704,9 +104689,9 @@ void VehicleWheel3D::_update(PhysicsDirectBodyState3D *s) {
 			m_clippedInvContactDotSuspension = inv;
 		}
 	} else {
-		m_raycastInfo.m_suspensionLength = m_suspensionRestLength;
+		rc_suspensionLength = m_suspensionRestLength;
 		m_suspensionRelativeVelocity = 0.0f;
-		m_raycastInfo.m_contactNormalWS = -m_raycastInfo.m_wheelDirectionWS;
+		rc_contactNormalWS = -rc_wheelDirectionWS;
 		m_clippedInvContactDotSuspension = 1.0f;
 	}
 }
@@ -104734,7 +104719,7 @@ void VehicleWheel3D::_notification(int p_what) {
 }
 
 Node3D *VehicleWheel3D::get_contact_body() const {
-	return m_raycastInfo.m_groundObject;
+	return rc_groundObject;
 }
 
 PackedStringArray VehicleWheel3D::get_configuration_warnings() const {
@@ -105335,23 +105320,23 @@ PhysicsBody3D::VehicleWheelContactPoint::VehicleWheelContactPoint(PhysicsDirectB
 }
 
 void PhysicsBody3D::_update_wheel_transform(VehicleWheel3D &wheel, PhysicsDirectBodyState3D *s) {
-	wheel.m_raycastInfo.m_isInContact = false;
+	wheel.rc_isInContact = false;
 	Transform3D chassisTrans = s->get_transform();
-	wheel.m_raycastInfo.m_hardPointWS = chassisTrans.xform(wheel.m_chassisConnectionPointCS);
-	wheel.m_raycastInfo.m_wheelDirectionWS = chassisTrans.get_basis().xform(wheel.m_wheelDirectionCS).normalized();
-	wheel.m_raycastInfo.m_wheelAxleWS = chassisTrans.get_basis().xform(wheel.m_wheelAxleCS).normalized();
+	wheel.rc_hardPointWS = chassisTrans.xform(wheel.m_chassisConnectionPointCS);
+	wheel.rc_wheelDirectionWS = chassisTrans.get_basis().xform(wheel.m_wheelDirectionCS).normalized();
+	wheel.rc_wheelAxleWS = chassisTrans.get_basis().xform(wheel.m_wheelAxleCS).normalized();
 }
 
 void PhysicsBody3D::_update_wheel(int p_idx, PhysicsDirectBodyState3D *s) {
 	VehicleWheel3D &wheel = *vehicle.wheels[p_idx];
 	_update_wheel_transform(wheel, s);
 
-	Vector3 up = -wheel.m_raycastInfo.m_wheelDirectionWS;
-	const Vector3 &right = wheel.m_raycastInfo.m_wheelAxleWS;
+	Vector3 up = -wheel.rc_wheelDirectionWS;
+	const Vector3 &right = wheel.rc_wheelAxleWS;
 	Vector3 fwd = up.cross(right).normalized();
 
 	VehicleWheel3D::FTIData &id = wheel.fti_data;
-	Vector3 origin = wheel.m_raycastInfo.m_hardPointWS + wheel.m_raycastInfo.m_wheelDirectionWS * wheel.m_raycastInfo.m_suspensionLength;
+	Vector3 origin = wheel.rc_hardPointWS + wheel.rc_wheelDirectionWS * wheel.rc_suspensionLength;
 
 	if (is_physics_interpolated_and_enabled()) {
 		id.curr.up = up;
@@ -105376,8 +105361,8 @@ void PhysicsBody3D::_update_wheel(int p_idx, PhysicsDirectBodyState3D *s) {
 void PhysicsBody3D::_update_vehicle_suspension(PhysicsDirectBodyState3D *s) {
 	for (int w_it = 0; w_it < vehicle.wheels.size(); w_it++) {
 		VehicleWheel3D &wheel_info = *vehicle.wheels[w_it];
-		if (wheel_info.m_raycastInfo.m_isInContact) {
-			real_t length_diff = wheel_info.m_suspensionRestLength - wheel_info.m_raycastInfo.m_suspensionLength;
+		if (wheel_info.rc_isInContact) {
+			real_t length_diff = wheel_info.m_suspensionRestLength - wheel_info.rc_suspensionLength;
 			real_t force = wheel_info.m_suspensionStiffness * length_diff * wheel_info.m_clippedInvContactDotSuspension;
 
 			real_t projected_rel_vel = wheel_info.m_suspensionRelativeVelocity;
@@ -105444,17 +105429,17 @@ void PhysicsBody3D::_update_vehicle_friction(PhysicsDirectBodyState3D *s) {
 		vehicle.forward_impulse.write[i] = 0.0f;
 
 		VehicleWheel3D &wheelInfo = *vehicle.wheels[i];
-		if (wheelInfo.m_raycastInfo.m_isInContact) {
+		if (wheelInfo.rc_isInContact) {
 			Basis wheelBasis0 = wheelInfo.m_worldTransform.basis;
 			vehicle.axle.write[i] = wheelBasis0.get_column(Vector3::AXIS_X);
-			const Vector3 &surfNormalWS = wheelInfo.m_raycastInfo.m_contactNormalWS;
+			const Vector3 &surfNormalWS = wheelInfo.rc_contactNormalWS;
 			real_t proj = vehicle.axle[i].dot(surfNormalWS);
 			vehicle.axle.write[i] = (vehicle.axle[i] - surfNormalWS * proj).normalized();
 			vehicle.forward_ws.write[i] = surfNormalWS.cross(vehicle.axle[i]).normalized();
 
-			_resolve_single_bilateral(s, wheelInfo.m_raycastInfo.m_contactPointWS,
-					wheelInfo.m_raycastInfo.m_groundObject,
-					wheelInfo.m_raycastInfo.m_contactPointWS, vehicle.axle[i], vehicle.side_impulse.write[i],
+			_resolve_single_bilateral(s, wheelInfo.rc_contactPointWS,
+					wheelInfo.rc_groundObject,
+					wheelInfo.rc_contactPointWS, vehicle.axle[i], vehicle.side_impulse.write[i],
 					wheelInfo.m_rollInfluence);
 		}
 	}
@@ -105463,13 +105448,13 @@ void PhysicsBody3D::_update_vehicle_friction(PhysicsDirectBodyState3D *s) {
 	for (int wheel = 0; wheel < numWheel; wheel++) {
 		VehicleWheel3D &wheelInfo = *vehicle.wheels[wheel];
 		real_t rollingFriction = 0.0f;
-		if (wheelInfo.m_raycastInfo.m_isInContact) {
+		if (wheelInfo.rc_isInContact) {
 			if (wheelInfo.m_engineForce != 0.0f) {
 				rollingFriction = -wheelInfo.m_engineForce * s->get_step();
 			} else {
 				real_t maxImpulse = wheelInfo.m_brake ? wheelInfo.m_brake : 0.0f;
-				VehicleWheelContactPoint contactPt(s, wheelInfo.m_raycastInfo.m_groundObject,
-						wheelInfo.m_raycastInfo.m_contactPointWS, vehicle.forward_ws[wheel], maxImpulse);
+				VehicleWheelContactPoint contactPt(s, wheelInfo.rc_groundObject,
+						wheelInfo.rc_contactPointWS, vehicle.forward_ws[wheel], maxImpulse);
 				rollingFriction = _calc_rolling_friction(contactPt);
 			}
 		}
@@ -105477,7 +105462,7 @@ void PhysicsBody3D::_update_vehicle_friction(PhysicsDirectBodyState3D *s) {
 		vehicle.forward_impulse.write[wheel] = 0.0f;
 		wheelInfo.m_skidInfo = 1.0f;
 
-		if (wheelInfo.m_raycastInfo.m_isInContact) {
+		if (wheelInfo.rc_isInContact) {
 			real_t maximp = wheelInfo.m_wheelsSuspensionForce * s->get_step() * wheelInfo.m_frictionSlip;
 			real_t maximpSquared = maximp * maximp;
 			vehicle.forward_impulse.write[wheel] = rollingFriction;
@@ -105503,7 +105488,7 @@ void PhysicsBody3D::_update_vehicle_friction(PhysicsDirectBodyState3D *s) {
 
 	for (int wheel = 0; wheel < numWheel; wheel++) {
 		VehicleWheel3D &wheelInfo = *vehicle.wheels[wheel];
-		Vector3 rel_pos = wheelInfo.m_raycastInfo.m_contactPointWS - s->get_transform().origin;
+		Vector3 rel_pos = wheelInfo.rc_contactPointWS - s->get_transform().origin;
 		if (vehicle.forward_impulse[wheel] != 0.0f) {
 			s->apply_impulse(vehicle.forward_ws[wheel] * vehicle.forward_impulse[wheel], rel_pos);
 		}
@@ -105521,9 +105506,9 @@ real_t PhysicsBody3D::_vehicle_ray_cast(int p_idx, PhysicsDirectBodyState3D *s) 
 	_update_wheel_transform(wheel, s);
 
 	real_t raylen = wheel.m_suspensionRestLength + wheel.m_wheelRadius;
-	Vector3 rayvector = wheel.m_raycastInfo.m_wheelDirectionWS * raylen;
-	const Vector3 &source = wheel.m_raycastInfo.m_hardPointWS;
-	wheel.m_raycastInfo.m_contactPointWS = source + rayvector;
+	Vector3 rayvector = wheel.rc_wheelDirectionWS * raylen;
+	const Vector3 &source = wheel.rc_hardPointWS;
+	wheel.rc_contactPointWS = source + rayvector;
 
 	PhysicsDirectSpaceState3D *ss = s->get_space_state();
 	if (ss) {
@@ -105536,19 +105521,19 @@ real_t PhysicsBody3D::_vehicle_ray_cast(int p_idx, PhysicsDirectBodyState3D *s) 
 		PS3DT::RayResult rr;
 		if (ss->intersect_ray(ray_params, rr)) {
 			real_t param = source.distance_to(rr.position) / raylen;
-			wheel.m_raycastInfo.m_contactNormalWS = rr.normal;
-			wheel.m_raycastInfo.m_isInContact = true;
-			wheel.m_raycastInfo.m_groundObject = nullptr;
+			wheel.rc_contactNormalWS = rr.normal;
+			wheel.rc_isInContact = true;
+			wheel.rc_groundObject = nullptr;
 			real_t hit_dist = param * raylen;
-			wheel.m_raycastInfo.m_suspensionLength = CLAMP(hit_dist - wheel.m_wheelRadius, wheel.m_suspensionRestLength - wheel.m_maxSuspensionTravel, wheel.m_suspensionRestLength + wheel.m_maxSuspensionTravel);
-			wheel.m_raycastInfo.m_contactPointWS = rr.position;
+			wheel.rc_suspensionLength = CLAMP(hit_dist - wheel.m_wheelRadius, wheel.m_suspensionRestLength - wheel.m_maxSuspensionTravel, wheel.m_suspensionRestLength + wheel.m_maxSuspensionTravel);
+			wheel.rc_contactPointWS = rr.position;
 			wheel._update(s);
 			return hit_dist;
 		}
 	}
 
-	wheel.m_raycastInfo.m_suspensionLength = wheel.m_suspensionRestLength;
-	wheel.m_raycastInfo.m_groundObject = nullptr;
+	wheel.rc_suspensionLength = wheel.m_suspensionRestLength;
+	wheel.rc_groundObject = nullptr;
 	wheel._update(s);
 	return -1.0f;
 }
@@ -105577,8 +105562,8 @@ void PhysicsBody3D::_step_vehicle(PhysicsDirectBodyState3D *p_state) {
 	for (int i = 0; i < vehicle.wheels.size(); i++) {
 		VehicleWheel3D &wheel = *vehicle.wheels[i];
 		real_t suspensionForce = MIN(wheel.m_wheelsSuspensionForce, wheel.m_maxSuspensionForce);
-		Vector3 impulse = wheel.m_raycastInfo.m_contactNormalWS * suspensionForce * step;
-		Vector3 relative_position = wheel.m_raycastInfo.m_contactPointWS - p_state->get_transform().origin;
+		Vector3 impulse = wheel.rc_contactNormalWS * suspensionForce * step;
+		Vector3 relative_position = wheel.rc_contactPointWS - p_state->get_transform().origin;
 		p_state->apply_impulse(impulse, relative_position);
 	}
 
@@ -105586,10 +105571,10 @@ void PhysicsBody3D::_step_vehicle(PhysicsDirectBodyState3D *p_state) {
 
 	for (int i = 0; i < vehicle.wheels.size(); i++) {
 		VehicleWheel3D &wheel = *vehicle.wheels[i];
-		Vector3 relpos = wheel.m_raycastInfo.m_hardPointWS - p_state->get_transform().origin;
+		Vector3 relpos = wheel.rc_hardPointWS - p_state->get_transform().origin;
 		Vector3 vel = p_state->get_linear_velocity() + p_state->get_angular_velocity().cross(relpos);
 
-		if (wheel.m_raycastInfo.m_isInContact) {
+		if (wheel.rc_isInContact) {
 			const Transform3D &chassisWorldTransform = p_state->get_transform();
 			Vector3 fwd(chassisWorldTransform.basis[0][Vector3::AXIS_Z],
 					chassisWorldTransform.basis[1][Vector3::AXIS_Z],
@@ -105597,8 +105582,8 @@ void PhysicsBody3D::_step_vehicle(PhysicsDirectBodyState3D *p_state) {
 			if (wheel.steers) {
 				fwd = Basis(Vector3(0, 1, 0), wheel.m_steering).xform(fwd);
 			}
-			real_t proj = fwd.dot(wheel.m_raycastInfo.m_contactNormalWS);
-			fwd = (fwd - wheel.m_raycastInfo.m_contactNormalWS * proj).normalized();
+			real_t proj = fwd.dot(wheel.rc_contactNormalWS);
+			fwd = (fwd - wheel.rc_contactNormalWS * proj).normalized();
 			wheel.m_deltaRotation = (fwd.dot(vel) * step) / wheel.m_wheelRadius;
 		}
 
@@ -121472,1342 +121457,6 @@ void MultiplayerSynchronizer::_update_process() {}
 
 #if defined(MODULE_ENET_ENABLED)
 #include <enet/enet.h>
-#include "servers/display/display_server.h"
-
-template <typename T> class TypedArray;
-
-class ENetConnection;
-
-class ENetPacketPeer final : public PacketPeer
-{
-private:
-	ENetPeer* peer = nullptr;
-	List<ENetPacket*> packet_queue;
-	ENetPacket* last_packet = nullptr;
-
-	Error _send(int p_channel, PackedByteArray p_packet, int p_flags);
-
-	friend class ENetConnection;
-	// Internally used by ENetConnection during service, destroy, etc.
-	void _on_disconnect();
-	void _queue_packet(ENetPacket* p_packet);
-
-public:
-	enum
-	{
-		PACKET_THROTTLE_SCALE = ENET_PEER_PACKET_THROTTLE_SCALE,
-		PACKET_LOSS_SCALE = ENET_PEER_PACKET_LOSS_SCALE,
-	};
-
-	enum
-	{
-		FLAG_RELIABLE = ENET_PACKET_FLAG_RELIABLE,
-		FLAG_UNSEQUENCED = ENET_PACKET_FLAG_UNSEQUENCED,
-		FLAG_UNRELIABLE_FRAGMENT = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT,
-		FLAG_ALLOWED = ENET_PACKET_FLAG_RELIABLE | ENET_PACKET_FLAG_UNSEQUENCED |
-					   ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT,
-	};
-
-	enum PeerState
-	{
-		STATE_DISCONNECTED = ENET_PEER_STATE_DISCONNECTED,
-		STATE_CONNECTING = ENET_PEER_STATE_CONNECTING,
-		STATE_ACKNOWLEDGING_CONNECT = ENET_PEER_STATE_ACKNOWLEDGING_CONNECT,
-		STATE_CONNECTION_PENDING = ENET_PEER_STATE_CONNECTION_PENDING,
-		STATE_CONNECTION_SUCCEEDED = ENET_PEER_STATE_CONNECTION_SUCCEEDED,
-		STATE_CONNECTED = ENET_PEER_STATE_CONNECTED,
-		STATE_DISCONNECT_LATER = ENET_PEER_STATE_DISCONNECT_LATER,
-		STATE_DISCONNECTING = ENET_PEER_STATE_DISCONNECTING,
-		STATE_ACKNOWLEDGING_DISCONNECT = ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT,
-		STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE,
-	};
-
-	enum PeerStatistic
-	{
-		PEER_PACKET_LOSS,
-		PEER_PACKET_LOSS_VARIANCE,
-		PEER_PACKET_LOSS_EPOCH,
-		PEER_ROUND_TRIP_TIME,
-		PEER_ROUND_TRIP_TIME_VARIANCE,
-		PEER_LAST_ROUND_TRIP_TIME,
-		PEER_LAST_ROUND_TRIP_TIME_VARIANCE,
-		PEER_PACKET_THROTTLE,
-		PEER_PACKET_THROTTLE_LIMIT,
-		PEER_PACKET_THROTTLE_COUNTER,
-		PEER_PACKET_THROTTLE_EPOCH,
-		PEER_PACKET_THROTTLE_ACCELERATION,
-		PEER_PACKET_THROTTLE_DECELERATION,
-		PEER_PACKET_THROTTLE_INTERVAL,
-	};
-
-	int get_max_packet_size() const override;
-	int get_available_packet_count() const override;
-	Error get_packet(const uint8_t** r_buffer,
-		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
-	Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-
-	void peer_disconnect(int p_data = 0);
-	void peer_disconnect_later(int p_data = 0);
-	void peer_disconnect_now(int p_data = 0);
-
-	void ping();
-	void ping_interval(int p_interval);
-	void reset();
-	int send(uint8_t p_channel, ENetPacket* p_packet);
-	void throttle_configure(int interval, int acceleration, int deceleration);
-	void set_timeout(int p_timeout, int p_timeout_min, int p_timeout_max);
-	double get_statistic(PeerStatistic p_stat);
-	PeerState get_state() const;
-	int get_channels() const;
-	int get_packet_flags() const;
-
-	// Extras
-	int get_remote_port() const;
-
-	// Used by ENetMultiplayer (TODO use meta? If only they where Strings)
-	bool is_active() const;
-
-	ENetPacketPeer(ENetPeer* p_peer);
-	~ENetPacketPeer();
-};
-
-class ENetConnection final : public RefCounted
-{
-public:
-	enum CompressionMode
-	{
-		COMPRESS_NONE = 0,
-		COMPRESS_RANGE_CODER,
-		COMPRESS_FASTLZ,
-		COMPRESS_ZLIB,
-		COMPRESS_ZSTD,
-	};
-
-	enum HostStatistic
-	{
-		HOST_TOTAL_SENT_DATA,
-		HOST_TOTAL_SENT_PACKETS,
-		HOST_TOTAL_RECEIVED_DATA,
-		HOST_TOTAL_RECEIVED_PACKETS,
-	};
-
-	enum EventType
-	{
-		EVENT_ERROR = -1,
-		EVENT_NONE = 0,
-		EVENT_CONNECT,
-		EVENT_DISCONNECT,
-		EVENT_RECEIVE,
-	};
-
-	struct Event
-	{
-		Ref<ENetPacketPeer> peer;
-		enet_uint8 channel_id = 0;
-		enet_uint32 data = 0;
-		ENetPacket* packet = nullptr;
-	};
-
-private:
-	ENetHost* host = nullptr;
-	List<Ref<ENetPacketPeer>> peers;
-
-	EventType _parse_event(const ENetEvent& p_event, Event& r_event);
-	Error _create(ENetAddress* p_address, int p_max_peers, int p_max_channels, int p_in_bandwidth,
-		int p_out_bandwidth);
-	void _broadcast(int p_channel, PackedByteArray p_packet, int p_flags);
-
-	class Compressor final
-	{
-	private:
-		CompressionMode mode = COMPRESS_NONE;
-		Vector<uint8_t> src_mem;
-		Vector<uint8_t> dst_mem;
-		ENetCompressor enet_compressor;
-
-		Compressor(CompressionMode mode);
-
-		static size_t enet_compress(void* context, const ENetBuffer* inBuffers,
-			size_t inBufferCount, size_t inLimit, enet_uint8* outData, size_t outLimit);
-		static size_t enet_decompress(void* context, const enet_uint8* inData, size_t inLimit,
-			enet_uint8* outData, size_t outLimit);
-
-		static void enet_compressor_destroy(void* context) { memdelete((Compressor*)context); }
-
-	public:
-		static void setup(ENetHost* p_host, CompressionMode p_mode);
-	};
-
-public:
-	void broadcast(enet_uint8 p_channel, ENetPacket* p_packet);
-	void socket_send(const String& p_address, int p_port, const PackedByteArray& p_packet);
-	Error create_host(int p_max_peers = 32, int p_max_channels = 0, int p_in_bandwidth = 0,
-		int p_out_bandwidth = 0);
-	void destroy();
-	Ref<ENetPacketPeer> connect_to_host(
-		const String& p_address, int p_port, int p_channels, int p_data = 0);
-	EventType service(int p_timeout, Event& r_event);
-	int check_events(EventType& r_type, Event& r_event);
-	void flush();
-	void bandwidth_limit(int p_in_bandwidth = 0, int p_out_bandwidth = 0);
-	void channel_limit(int p_max_channels);
-	void bandwidth_throttle();
-	void compress(CompressionMode p_mode);
-	double pop_statistic(HostStatistic p_stat);
-	int get_max_channels() const;
-
-	// Extras
-	void get_peers(List<Ref<ENetPacketPeer>>& r_peers);
-	int get_local_port() const;
-
-	// Godot additions
-	Error dtls_server_setup(const Ref<TLSOptions>& p_options);
-	Error dtls_client_setup(const String& p_hostname, const Ref<TLSOptions>& p_options);
-	void refuse_new_connections(bool p_refuse);
-
-	ENetConnection() {}
-	~ENetConnection();
-};
-
-class ENetMultiplayerPeer final : public MultiplayerPeer
-{
-private:
-	enum
-	{
-		SYSMSG_ADD_PEER,
-		SYSMSG_REMOVE_PEER
-	};
-
-	enum
-	{
-		SYSCH_RELIABLE = 0,
-		SYSCH_UNRELIABLE = 1,
-		SYSCH_MAX = 2
-	};
-
-	enum Mode
-	{
-		MODE_NONE,
-		MODE_SERVER,
-		MODE_CLIENT,
-		MODE_MESH,
-	};
-
-	Mode active_mode = MODE_NONE;
-
-	uint32_t unique_id = 0;
-
-	int target_peer = 0;
-
-	ConnectionStatus connection_status = CONNECTION_DISCONNECTED;
-
-	HashMap<int, Ref<ENetConnection>> hosts;
-	HashMap<int, Ref<ENetPacketPeer>> peers;
-
-	struct Packet
-	{
-		ENetPacket* packet = nullptr;
-		int from = 0;
-		int channel = 0;
-		TransferMode transfer_mode = TRANSFER_MODE_RELIABLE;
-	};
-
-	List<Packet> incoming_packets;
-
-	Packet current_packet;
-
-	void _store_packet(int32_t p_source, ENetConnection::Event& p_event);
-	void _pop_current_packet();
-	void _disconnect_inactive_peers();
-	void _destroy_unused(ENetPacket* p_packet);
-
-	_FORCE_INLINE_ bool _is_active() const { return active_mode != MODE_NONE; }
-
-public:
-	virtual void set_target_peer(int p_peer) override;
-
-	virtual int get_packet_peer() const override;
-	virtual TransferMode get_packet_mode() const override;
-	virtual int get_packet_channel() const override;
-
-	virtual void poll() override;
-	virtual void close() override;
-	virtual void disconnect_peer(int p_peer, bool p_force = false) override;
-
-	virtual bool is_server() const override;
-	virtual bool is_server_relay_supported() const override;
-
-	// Overridden so we can instrument the DTLSServer when needed.
-	virtual void set_refuse_new_connections(bool p_enabled) override;
-
-	virtual ConnectionStatus get_connection_status() const override;
-
-	virtual int get_unique_id() const override;
-
-	virtual int get_max_packet_size() const override;
-	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-
-	Error create_server(int p_port, int p_max_clients = 32, int p_max_channels = 0,
-		int p_in_bandwidth = 0, int p_out_bandwidth = 0);
-	Error create_client(const String& p_address, int p_port, int p_channel_count = 0,
-		int p_in_bandwidth = 0, int p_out_bandwidth = 0, int p_local_port = 0);
-	Error create_mesh(int p_id);
-	Error add_mesh_peer(int p_id, Ref<ENetConnection> p_host);
-
-	Ref<ENetConnection> get_host() const;
-	Ref<ENetPacketPeer> get_peer(int p_id) const;
-
-	ENetMultiplayerPeer() {}
-	~ENetMultiplayerPeer();
-};
-
-#include "servers/display/display_server.h"
-
-// ENetPacketPeer
-
-void ENetPacketPeer::peer_disconnect(int p_data)
-{
-	ERR_FAIL_NULL(peer);
-	enet_peer_disconnect(peer, p_data);
-}
-
-void ENetPacketPeer::peer_disconnect_later(int p_data)
-{
-	ERR_FAIL_NULL(peer);
-	enet_peer_disconnect_later(peer, p_data);
-}
-
-void ENetPacketPeer::peer_disconnect_now(int p_data)
-{
-	ERR_FAIL_NULL(peer);
-	enet_peer_disconnect_now(peer, p_data);
-	_on_disconnect();
-}
-
-void ENetPacketPeer::ping()
-{
-	ERR_FAIL_NULL(peer);
-	enet_peer_ping(peer);
-}
-
-void ENetPacketPeer::ping_interval(int p_interval)
-{
-	ERR_FAIL_NULL(peer);
-	enet_peer_ping_interval(peer, p_interval);
-}
-
-int ENetPacketPeer::send(uint8_t p_channel, ENetPacket* p_packet)
-{
-	ERR_FAIL_NULL_V(peer, -1);
-	ERR_FAIL_NULL_V(p_packet, -1);
-	ERR_FAIL_COND_V_MSG(p_channel >= peer->channelCount, -1,
-		vformat("Unable to send packet on channel %d, max channels: %d", p_channel,
-			(int)peer->channelCount));
-	return enet_peer_send(peer, p_channel, p_packet);
-}
-
-void ENetPacketPeer::reset()
-{
-	ERR_FAIL_NULL_MSG(peer, "Peer not connected.");
-	enet_peer_reset(peer);
-	_on_disconnect();
-}
-
-void ENetPacketPeer::throttle_configure(int p_interval, int p_acceleration, int p_deceleration)
-{
-	ERR_FAIL_NULL_MSG(peer, "Peer not connected.");
-	enet_peer_throttle_configure(peer, p_interval, p_acceleration, p_deceleration);
-}
-
-void ENetPacketPeer::set_timeout(int p_timeout, int p_timeout_min, int p_timeout_max)
-{
-	ERR_FAIL_NULL_MSG(peer, "Peer not connected.");
-	ERR_FAIL_COND_MSG(p_timeout > p_timeout_min || p_timeout_min > p_timeout_max,
-		"Timeout limit must be less than minimum timeout, which itself must be less than maximum "
-		"timeout");
-	enet_peer_timeout(peer, p_timeout, p_timeout_min, p_timeout_max);
-}
-
-int ENetPacketPeer::get_max_packet_size() const { return 1 << 24; }
-
-int ENetPacketPeer::get_available_packet_count() const { return packet_queue.size(); }
-
-Error ENetPacketPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	ERR_FAIL_NULL_V(peer, ERR_UNCONFIGURED);
-	ERR_FAIL_COND_V(packet_queue.is_empty(), ERR_UNAVAILABLE);
-	if (last_packet) {
-		enet_packet_destroy(last_packet);
-		last_packet = nullptr;
-	}
-	last_packet = packet_queue.front()->get();
-	packet_queue.pop_front();
-	*r_buffer = (const uint8_t*)(last_packet->data);
-	r_buffer_size = last_packet->dataLength;
-	return OK;
-}
-
-Error ENetPacketPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_NULL_V(peer, ERR_UNCONFIGURED);
-	ENetPacket* packet = enet_packet_create(p_buffer, p_buffer_size, ENET_PACKET_FLAG_RELIABLE);
-	return send(0, packet) < 0 ? FAILED : OK;
-}
-
-int ENetPacketPeer::get_remote_port() const
-{
-	ERR_FAIL_NULL_V(peer, 0);
-	return peer->address.port;
-}
-
-bool ENetPacketPeer::is_active() const { return peer != nullptr; }
-
-double ENetPacketPeer::get_statistic(PeerStatistic p_stat)
-{
-	ERR_FAIL_NULL_V(peer, 0);
-	switch (p_stat) {
-	case PEER_PACKET_LOSS:
-		return peer->packetLoss;
-	case PEER_PACKET_LOSS_VARIANCE:
-		return peer->packetLossVariance;
-	case PEER_PACKET_LOSS_EPOCH:
-		return peer->packetLossEpoch;
-	case PEER_ROUND_TRIP_TIME:
-		return peer->roundTripTime;
-	case PEER_ROUND_TRIP_TIME_VARIANCE:
-		return peer->roundTripTimeVariance;
-	case PEER_LAST_ROUND_TRIP_TIME:
-		return peer->lastRoundTripTime;
-	case PEER_LAST_ROUND_TRIP_TIME_VARIANCE:
-		return peer->lastRoundTripTimeVariance;
-	case PEER_PACKET_THROTTLE:
-		return peer->packetThrottle;
-	case PEER_PACKET_THROTTLE_LIMIT:
-		return peer->packetThrottleLimit;
-	case PEER_PACKET_THROTTLE_COUNTER:
-		return peer->packetThrottleCounter;
-	case PEER_PACKET_THROTTLE_EPOCH:
-		return peer->packetThrottleEpoch;
-	case PEER_PACKET_THROTTLE_ACCELERATION:
-		return peer->packetThrottleAcceleration;
-	case PEER_PACKET_THROTTLE_DECELERATION:
-		return peer->packetThrottleDeceleration;
-	case PEER_PACKET_THROTTLE_INTERVAL:
-		return peer->packetThrottleInterval;
-	}
-	ERR_FAIL_V(0);
-}
-
-ENetPacketPeer::PeerState ENetPacketPeer::get_state() const
-{
-	if (!is_active()) {
-		return STATE_DISCONNECTED;
-	}
-	return (PeerState)peer->state;
-}
-
-int ENetPacketPeer::get_channels() const
-{
-	ERR_FAIL_NULL_V_MSG(peer, 0, "The ENetConnection instance isn't currently active.");
-	return peer->channelCount;
-}
-
-int ENetPacketPeer::get_packet_flags() const
-{
-	ERR_FAIL_COND_V(packet_queue.is_empty(), 0);
-	return packet_queue.front()->get()->flags;
-}
-
-void ENetPacketPeer::_on_disconnect()
-{
-	if (peer) {
-#ifdef GODOT_ENET
-		enet_peer_socket_destroy(peer);
-#endif
-		peer->data = nullptr;
-	}
-	peer = nullptr;
-}
-
-void ENetPacketPeer::_queue_packet(ENetPacket* p_packet)
-{
-	ERR_FAIL_NULL(peer);
-	packet_queue.push_back(p_packet);
-}
-
-Error ENetPacketPeer::_send(int p_channel, PackedByteArray p_packet, int p_flags)
-{
-	ERR_FAIL_NULL_V_MSG(peer, ERR_UNCONFIGURED, "Peer not connected.");
-	ERR_FAIL_COND_V_MSG(p_channel < 0 || p_channel > (int)peer->channelCount, ERR_INVALID_PARAMETER,
-		"Invalid channel");
-	ERR_FAIL_COND_V_MSG(p_flags & ~FLAG_ALLOWED, ERR_INVALID_PARAMETER, "Invalid flags");
-	ENetPacket* packet = enet_packet_create(p_packet.ptr(), p_packet.size(), p_flags);
-	return send(p_channel, packet) == 0 ? OK : FAILED;
-}
-
-ENetPacketPeer::ENetPacketPeer(ENetPeer* p_peer)
-{
-	peer = p_peer;
-	peer->data = this;
-#ifdef GODOT_ENET
-	enet_peer_socket_bind(peer);
-#endif
-}
-
-ENetPacketPeer::~ENetPacketPeer()
-{
-	_on_disconnect();
-	if (last_packet) {
-		enet_packet_destroy(last_packet);
-		last_packet = nullptr;
-	}
-	for (List<ENetPacket*>::Element* E = packet_queue.front(); E; E = E->next()) {
-		enet_packet_destroy(E->get());
-	}
-	packet_queue.clear();
-}
-
-// ENetConnection
-
-void ENetConnection::broadcast(enet_uint8 p_channel, ENetPacket* p_packet)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_MSG(p_channel >= host->channelLimit,
-		vformat("Unable to send packet on channel %d, max channels: %d", p_channel,
-			(int)host->channelLimit));
-	enet_host_broadcast(host, p_channel, p_packet);
-}
-
-Error ENetConnection::create_host(
-	int p_max_peers, int p_max_channels, int p_in_bandwidth, int p_out_bandwidth)
-{
-	return _create(nullptr, p_max_peers, p_max_channels, p_in_bandwidth, p_out_bandwidth);
-}
-
-void ENetConnection::destroy()
-{
-	ERR_FAIL_NULL_MSG(host, "Host already destroyed.");
-	for (const Ref<ENetPacketPeer>& peer : peers) {
-		peer->_on_disconnect();
-	}
-	peers.clear();
-	enet_host_destroy(host);
-	host = nullptr;
-}
-
-Ref<ENetPacketPeer> ENetConnection::connect_to_host(
-	const String& p_address, int p_port, int p_channels, int p_data)
-{
-	Ref<ENetPacketPeer> out;
-	ERR_FAIL_NULL_V_MSG(host, out, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_V_MSG(peers.size(), out, "The ENetConnection is already connected to a peer.");
-	ERR_FAIL_COND_V_MSG(p_port < 1 || p_port > 65535, out,
-		"The remote port number must be between 1 and 65535 (inclusive).");
-
-	IPAddress ip;
-	if (p_address.is_valid_ip_address()) {
-		ip = p_address;
-	}
-	else {
-#ifdef GODOT_ENET
-		ip = IP::resolve_hostname(p_address);
-#else
-		ip = IP::resolve_hostname(p_address, IP::TYPE_IPV4);
-#endif
-		ERR_FAIL_COND_V_MSG(
-			!ip.is_valid(), out, "Couldn't resolve the server IP address or domain name.");
-	}
-
-	ENetAddress address;
-#ifdef GODOT_ENET
-	enet_address_set_ip(&address, ip.get_ipv6(), 16);
-#else
-	ERR_FAIL_COND_V_MSG(!ip.is_ipv4(), out,
-		"Connecting to an IPv6 server isn't supported when using vanilla ENet. Recompile Godot "
-		"with the bundled ENet library.");
-	address.host = *(uint32_t*)ip.get_ipv4();
-#endif
-	address.port = p_port;
-
-	// Initiate connection, allocating enough channels
-	ENetPeer* peer = enet_host_connect(
-		host, &address, p_channels > 0 ? p_channels : ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT, p_data);
-
-	if (peer == nullptr) {
-		return nullptr;
-	}
-	out.instantiate(peer);
-	peers.push_back(out);
-	return out;
-}
-
-ENetConnection::EventType ENetConnection::_parse_event(const ENetEvent& p_event, Event& r_event)
-{
-	switch (p_event.type) {
-	case ENET_EVENT_TYPE_CONNECT: {
-		if (p_event.peer->data == nullptr) {
-			Ref<ENetPacketPeer> pp = memnew(ENetPacketPeer(p_event.peer));
-			peers.push_back(pp);
-		}
-		r_event.peer = Ref<ENetPacketPeer>((ENetPacketPeer*)p_event.peer->data);
-		r_event.data = p_event.data;
-		return EVENT_CONNECT;
-	} break;
-	case ENET_EVENT_TYPE_DISCONNECT: {
-		// A peer disconnected.
-		if (p_event.peer->data != nullptr) {
-			Ref<ENetPacketPeer> pp = Ref<ENetPacketPeer>((ENetPacketPeer*)p_event.peer->data);
-			pp->_on_disconnect();
-			peers.erase(pp);
-			r_event.peer = pp;
-			r_event.data = p_event.data;
-			return EVENT_DISCONNECT;
-		}
-		return EVENT_ERROR;
-	} break;
-	case ENET_EVENT_TYPE_RECEIVE: {
-		// Packet received.
-		if (p_event.peer->data != nullptr) {
-			r_event.peer = Ref<ENetPacketPeer>((ENetPacketPeer*)p_event.peer->data);
-			r_event.channel_id = p_event.channelID;
-			r_event.packet = p_event.packet;
-			return EVENT_RECEIVE;
-		}
-		return EVENT_ERROR;
-	} break;
-	case ENET_EVENT_TYPE_NONE:
-		return EVENT_NONE;
-	default:
-		return EVENT_NONE;
-	}
-}
-
-ENetConnection::EventType ENetConnection::service(int p_timeout, Event& r_event)
-{
-	ERR_FAIL_NULL_V_MSG(host, EVENT_ERROR, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_V(r_event.peer.is_valid(), EVENT_ERROR);
-
-	// Drop peers that have already been disconnected.
-	// NOTE: Forcibly disconnected peers (i.e. peers disconnected via
-	// enet_peer_disconnect*) do not trigger DISCONNECTED events.
-	List<Ref<ENetPacketPeer>>::Element* E = peers.front();
-	while (E) {
-		if (!E->get()->is_active()) {
-			peers.erase(E->get());
-		}
-		E = E->next();
-	}
-
-	ENetEvent event;
-	int ret = enet_host_service(host, &event, p_timeout);
-
-	if (ret < 0) {
-		return EVENT_ERROR;
-	}
-	else if (ret == 0) {
-		return EVENT_NONE;
-	}
-	return _parse_event(event, r_event);
-}
-
-int ENetConnection::check_events(EventType& r_type, Event& r_event)
-{
-	ERR_FAIL_NULL_V_MSG(host, -1, "The ENetConnection instance isn't currently active.");
-	ENetEvent event;
-	int ret = enet_host_check_events(host, &event);
-	if (ret < 0) {
-		r_type = EVENT_ERROR;
-		return ret;
-	}
-	r_type = _parse_event(event, r_event);
-	return ret;
-}
-
-void ENetConnection::flush()
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	enet_host_flush(host);
-}
-
-void ENetConnection::bandwidth_limit(int p_in_bandwidth, int p_out_bandwidth)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	enet_host_bandwidth_limit(host, p_in_bandwidth, p_out_bandwidth);
-}
-
-void ENetConnection::channel_limit(int p_max_channels)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	enet_host_channel_limit(host, p_max_channels);
-}
-
-void ENetConnection::bandwidth_throttle()
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	enet_host_bandwidth_throttle(host);
-}
-
-void ENetConnection::compress(CompressionMode p_mode)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	Compressor::setup(host, p_mode);
-}
-
-double ENetConnection::pop_statistic(HostStatistic p_stat)
-{
-	ERR_FAIL_NULL_V_MSG(host, 0, "The ENetConnection instance isn't currently active.");
-	uint32_t* ptr = nullptr;
-	switch (p_stat) {
-	case HOST_TOTAL_SENT_DATA:
-		ptr = &(host->totalSentData);
-		break;
-	case HOST_TOTAL_SENT_PACKETS:
-		ptr = &(host->totalSentPackets);
-		break;
-	case HOST_TOTAL_RECEIVED_DATA:
-		ptr = &(host->totalReceivedData);
-		break;
-	case HOST_TOTAL_RECEIVED_PACKETS:
-		ptr = &(host->totalReceivedPackets);
-		break;
-	}
-	ERR_FAIL_NULL_V_MSG(ptr, 0, "Invalid statistic: " + itos(p_stat) + ".");
-	uint32_t ret = *ptr;
-	*ptr = 0;
-	return ret;
-}
-
-int ENetConnection::get_max_channels() const
-{
-	ERR_FAIL_NULL_V_MSG(host, 0, "The ENetConnection instance isn't currently active.");
-	return host->channelLimit;
-}
-
-int ENetConnection::get_local_port() const
-{
-	ERR_FAIL_NULL_V_MSG(host, 0, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_V_MSG(!(host->socket), 0, "The ENetConnection instance isn't currently bound.");
-	ENetAddress address;
-	ERR_FAIL_COND_V_MSG(
-		enet_socket_get_address(host->socket, &address), 0, "Unable to get socket address");
-	return address.port;
-}
-
-void ENetConnection::get_peers(List<Ref<ENetPacketPeer>>& r_peers)
-{
-	for (const Ref<ENetPacketPeer>& I : peers) {
-		r_peers.push_back(I);
-	}
-}
-
-Error ENetConnection::dtls_server_setup(const Ref<TLSOptions>& p_options)
-{
-#ifdef GODOT_ENET
-	ERR_FAIL_NULL_V_MSG(
-		host, ERR_UNCONFIGURED, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_V(p_options.is_null() || !p_options->is_server(), ERR_INVALID_PARAMETER);
-	return enet_host_dtls_server_setup(host, p_options.ptr()) ? FAILED : OK;
-#else
-	ERR_FAIL_V_MSG(ERR_UNAVAILABLE, "ENet DTLS support not available in this build.");
-#endif
-}
-
-void ENetConnection::refuse_new_connections(bool p_refuse)
-{
-#ifdef GODOT_ENET
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	enet_host_refuse_new_connections(host, p_refuse);
-#else
-	ERR_FAIL_MSG("ENet DTLS support not available in this build.");
-#endif
-}
-
-Error ENetConnection::dtls_client_setup(const String& p_hostname, const Ref<TLSOptions>& p_options)
-{
-#ifdef GODOT_ENET
-	ERR_FAIL_NULL_V_MSG(
-		host, ERR_UNCONFIGURED, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_V(p_options.is_null() || p_options->is_server(), ERR_INVALID_PARAMETER);
-	return enet_host_dtls_client_setup(host, p_hostname.utf8().get_data(), p_options.ptr()) ? FAILED
-																							: OK;
-#else
-	ERR_FAIL_V_MSG(ERR_UNAVAILABLE, "ENet DTLS support not available in this build.");
-#endif
-}
-
-Error ENetConnection::_create(ENetAddress* p_address, int p_max_peers, int p_max_channels,
-	int p_in_bandwidth, int p_out_bandwidth)
-{
-	ERR_FAIL_COND_V_MSG(
-		host != nullptr, ERR_ALREADY_IN_USE, "The ENetConnection instance is already active.");
-	ERR_FAIL_COND_V_MSG(p_max_peers < 1 || p_max_peers > 4095, ERR_INVALID_PARAMETER,
-		"The number of clients must be set between 1 and 4095 (inclusive).");
-	ERR_FAIL_COND_V_MSG(p_max_channels < 0 || p_max_channels > ENET_PROTOCOL_MAXIMUM_CHANNEL_COUNT,
-		ERR_INVALID_PARAMETER,
-		"Invalid channel count. Must be between 0 and 255 (0 means maximum, i.e. 255)");
-	ERR_FAIL_COND_V_MSG(p_in_bandwidth < 0, ERR_INVALID_PARAMETER,
-		"The incoming bandwidth limit must be greater than or equal to 0 (0 disables the limit).");
-	ERR_FAIL_COND_V_MSG(p_out_bandwidth < 0, ERR_INVALID_PARAMETER,
-		"The outgoing bandwidth limit must be greater than or equal to 0 (0 disables the limit).");
-
-	host = enet_host_create(p_address /* the address to bind the server host to */,
-		p_max_peers /* allow up to p_max_peers connections */,
-		p_max_channels /* allow up to p_max_channel to be used */,
-		p_in_bandwidth /* limit incoming bandwidth if > 0 */,
-		p_out_bandwidth /* limit outgoing bandwidth if > 0 */);
-
-	ERR_FAIL_NULL_V_MSG(host, ERR_CANT_CREATE, "Couldn't create an ENet host.");
-	return OK;
-}
-
-void ENetConnection::_broadcast(int p_channel, PackedByteArray p_packet, int p_flags)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_MSG(p_channel < 0 || p_channel > (int)host->channelLimit, "Invalid channel");
-	ERR_FAIL_COND_MSG(p_flags & ~ENetPacketPeer::FLAG_ALLOWED, "Invalid flags");
-	ENetPacket* pkt = enet_packet_create(p_packet.ptr(), p_packet.size(), p_flags);
-	broadcast(p_channel, pkt);
-}
-
-void ENetConnection::socket_send(
-	const String& p_address, int p_port, const PackedByteArray& p_packet)
-{
-	ERR_FAIL_NULL_MSG(host, "The ENetConnection instance isn't currently active.");
-	ERR_FAIL_COND_MSG(!(host->socket), "The ENetConnection instance isn't currently bound.");
-	ERR_FAIL_COND_MSG(p_port < 1 || p_port > 65535,
-		"The remote port number must be between 1 and 65535 (inclusive).");
-
-	IPAddress ip;
-	if (p_address.is_valid_ip_address()) {
-		ip = p_address;
-	}
-	else {
-#ifdef GODOT_ENET
-		ip = IP::resolve_hostname(p_address);
-#else
-		ip = IP::resolve_hostname(p_address, IP::TYPE_IPV4);
-#endif
-		ERR_FAIL_COND_MSG(!ip.is_valid(), "Couldn't resolve the server IP address or domain name.");
-	}
-
-	ENetAddress address;
-#ifdef GODOT_ENET
-	enet_address_set_ip(&address, ip.get_ipv6(), 16);
-#else
-	ERR_FAIL_COND_MSG(!ip.is_ipv4(),
-		"Connecting to an IPv6 server isn't supported when using vanilla ENet. "
-		"Recompile Godot with the bundled ENet library.");
-	address.host = *(uint32_t*)ip.get_ipv4();
-#endif
-	address.port = p_port;
-
-	ENetBuffer enet_buffers[1];
-	enet_buffers[0].data = (void*)p_packet.ptr();
-	enet_buffers[0].dataLength = p_packet.size();
-
-	enet_socket_send(host->socket, &address, enet_buffers, 1);
-}
-
-ENetConnection::~ENetConnection()
-{
-	if (host) {
-		destroy();
-	}
-}
-
-size_t ENetConnection::Compressor::enet_compress(void* context, const ENetBuffer* inBuffers,
-	size_t inBufferCount, size_t inLimit, enet_uint8* outData, size_t outLimit)
-{
-	Compressor* compressor = (Compressor*)(context);
-
-	if (size_t(compressor->src_mem.size()) < inLimit) {
-		compressor->src_mem.resize(inLimit);
-	}
-
-	size_t total = inLimit;
-	size_t ofs = 0;
-	while (total) {
-		for (size_t i = 0; i < inBufferCount; i++) {
-			const size_t to_copy = MIN(total, inBuffers[i].dataLength);
-			memcpy(&compressor->src_mem.write[ofs], inBuffers[i].data, to_copy);
-			ofs += to_copy;
-			total -= to_copy;
-		}
-	}
-
-	Compression::Mode mode;
-
-	switch (compressor->mode) {
-	case COMPRESS_FASTLZ: {
-		mode = Compression::MODE_FASTLZ;
-	} break;
-	case COMPRESS_ZLIB: {
-		mode = Compression::MODE_DEFLATE;
-	} break;
-	case COMPRESS_ZSTD: {
-		mode = Compression::MODE_ZSTD;
-	} break;
-	default: {
-		ERR_FAIL_V_MSG(0, vformat("Invalid ENet compression mode: %d", compressor->mode));
-	}
-	}
-
-	const int64_t req_size = Compression::get_max_compressed_buffer_size(ofs, mode);
-	if (compressor->dst_mem.size() < req_size) {
-		compressor->dst_mem.resize(req_size);
-	}
-	const int64_t ret =
-		Compression::compress(compressor->dst_mem.ptrw(), compressor->src_mem.ptr(), ofs, mode);
-
-	if (ret < 0) {
-		return 0;
-	}
-
-	const size_t ret_size = size_t(ret);
-	if (ret_size > outLimit) {
-		return 0; // Do not bother
-	}
-
-	memcpy(outData, compressor->dst_mem.ptr(), ret_size);
-
-	return ret;
-}
-
-size_t ENetConnection::Compressor::enet_decompress(
-	void* context, const enet_uint8* inData, size_t inLimit, enet_uint8* outData, size_t outLimit)
-{
-	Compressor* compressor = (Compressor*)(context);
-	int64_t ret = -1;
-	switch (compressor->mode) {
-	case COMPRESS_FASTLZ: {
-		ret = Compression::decompress(outData, outLimit, inData, inLimit, Compression::MODE_FASTLZ);
-	} break;
-	case COMPRESS_ZLIB: {
-		ret =
-			Compression::decompress(outData, outLimit, inData, inLimit, Compression::MODE_DEFLATE);
-	} break;
-	case COMPRESS_ZSTD: {
-		ret = Compression::decompress(outData, outLimit, inData, inLimit, Compression::MODE_ZSTD);
-	} break;
-	default: {
-	}
-	}
-	if (ret < 0) {
-		return 0;
-	}
-	else {
-		return ret;
-	}
-}
-
-void ENetConnection::Compressor::setup(ENetHost* p_host, CompressionMode p_mode)
-{
-	ERR_FAIL_NULL(p_host);
-	switch (p_mode) {
-	case COMPRESS_NONE: {
-		enet_host_compress(p_host, nullptr);
-	} break;
-	case COMPRESS_RANGE_CODER: {
-		enet_host_compress_with_range_coder(p_host);
-	} break;
-	case COMPRESS_FASTLZ:
-	case COMPRESS_ZLIB:
-	case COMPRESS_ZSTD: {
-		Compressor* compressor = memnew(Compressor(p_mode));
-		enet_host_compress(p_host, &(compressor->enet_compressor));
-	} break;
-	}
-}
-
-ENetConnection::Compressor::Compressor(CompressionMode p_mode)
-{
-	mode = p_mode;
-	enet_compressor.context = this;
-	enet_compressor.compress = enet_compress;
-	enet_compressor.decompress = enet_decompress;
-	enet_compressor.destroy = enet_compressor_destroy;
-}
-
-// ENetMultiplayerPeer
-
-void ENetMultiplayerPeer::set_target_peer(int p_peer) { target_peer = p_peer; }
-
-int ENetMultiplayerPeer::get_packet_peer() const
-{
-	ERR_FAIL_COND_V_MSG(!_is_active(), 1, "The multiplayer instance isn't currently active.");
-	ERR_FAIL_COND_V(incoming_packets.is_empty(), 1);
-
-	return incoming_packets.front()->get().from;
-}
-
-MultiplayerPeer::TransferMode ENetMultiplayerPeer::get_packet_mode() const
-{
-	ERR_FAIL_COND_V_MSG(
-		!_is_active(), TRANSFER_MODE_RELIABLE, "The multiplayer instance isn't currently active.");
-	ERR_FAIL_COND_V(incoming_packets.is_empty(), TRANSFER_MODE_RELIABLE);
-	return incoming_packets.front()->get().transfer_mode;
-}
-
-int ENetMultiplayerPeer::get_packet_channel() const
-{
-	ERR_FAIL_COND_V_MSG(!_is_active(), 1, "The multiplayer instance isn't currently active.");
-	ERR_FAIL_COND_V(incoming_packets.is_empty(), 1);
-	int ch = incoming_packets.front()->get().channel;
-	if (ch >= SYSCH_MAX) { // First 2 channels are reserved.
-		return ch - SYSCH_MAX + 1;
-	}
-	return 0;
-}
-
-Error ENetMultiplayerPeer::create_server(
-	int p_port, int p_max_clients, int p_max_channels, int p_in_bandwidth, int p_out_bandwidth)
-{
-	ERR_FAIL_COND_V_MSG(
-		_is_active(), ERR_ALREADY_IN_USE, "The multiplayer instance is already active.");
-	set_refuse_new_connections(false);
-	Ref<ENetConnection> host;
-	host.instantiate();
-	active_mode = MODE_SERVER;
-	unique_id = 1;
-	connection_status = CONNECTION_CONNECTED;
-	hosts[0] = host;
-	return OK;
-}
-
-Error ENetMultiplayerPeer::create_client(const String& p_address, int p_port, int p_channel_count,
-	int p_in_bandwidth, int p_out_bandwidth, int p_local_port)
-{
-	ERR_FAIL_COND_V_MSG(
-		_is_active(), ERR_ALREADY_IN_USE, "The multiplayer instance is already active.");
-	set_refuse_new_connections(false);
-	Ref<ENetConnection> host;
-	host.instantiate();
-	Error err;
-	err = host->create_host(1, 0, p_in_bandwidth, p_out_bandwidth);
-	if (err != OK) {
-		return err;
-	}
-
-	unique_id = generate_unique_id();
-
-	Ref<ENetPacketPeer> peer = host->connect_to_host(
-		p_address, p_port, p_channel_count > 0 ? p_channel_count + SYSCH_MAX : 0, unique_id);
-	if (peer.is_null()) {
-		host->destroy();
-		ERR_FAIL_V_MSG(ERR_CANT_CREATE, "Couldn't connect to the ENet multiplayer server.");
-	}
-
-	// Need to wait for CONNECT event.
-	connection_status = CONNECTION_CONNECTING;
-	active_mode = MODE_CLIENT;
-	peers[1] = peer;
-	hosts[0] = host;
-
-	return OK;
-}
-
-Error ENetMultiplayerPeer::create_mesh(int p_id)
-{
-	ERR_FAIL_COND_V_MSG(p_id <= 0, ERR_INVALID_PARAMETER, "The unique ID must be greater then 0");
-	ERR_FAIL_COND_V_MSG(
-		_is_active(), ERR_ALREADY_IN_USE, "The multiplayer instance is already active.");
-	active_mode = MODE_MESH;
-	unique_id = p_id;
-	connection_status = CONNECTION_CONNECTED;
-	return OK;
-}
-
-Error ENetMultiplayerPeer::add_mesh_peer(int p_id, Ref<ENetConnection> p_host)
-{
-	ERR_FAIL_COND_V(p_host.is_null(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V_MSG(active_mode != MODE_MESH, ERR_UNCONFIGURED,
-		"The multiplayer instance is not configured as a mesh. Call 'create_mesh' first.");
-	List<Ref<ENetPacketPeer>> host_peers;
-	p_host->get_peers(host_peers);
-	ERR_FAIL_COND_V_MSG(host_peers.size() != 1 || host_peers.front()->get()->get_state() !=
-													  ENetPacketPeer::STATE_CONNECTED,
-		ERR_INVALID_PARAMETER,
-		"The provided host must have exactly one peer in the connected state.");
-	hosts[p_id] = p_host;
-	peers[p_id] = host_peers.front()->get();
-	return OK;
-}
-
-void ENetMultiplayerPeer::_store_packet(int32_t p_source, ENetConnection::Event& p_event)
-{
-	Packet packet;
-	packet.packet = p_event.packet;
-	packet.channel = p_event.channel_id;
-	packet.from = p_source;
-	if (p_event.packet->flags & ENET_PACKET_FLAG_RELIABLE) {
-		packet.transfer_mode = TRANSFER_MODE_RELIABLE;
-	}
-	else if (p_event.packet->flags & ENET_PACKET_FLAG_UNSEQUENCED) {
-		packet.transfer_mode = TRANSFER_MODE_UNRELIABLE;
-	}
-	else {
-		packet.transfer_mode = TRANSFER_MODE_UNRELIABLE_ORDERED;
-	}
-	packet.packet->referenceCount++;
-	incoming_packets.push_back(packet);
-}
-
-void ENetMultiplayerPeer::_disconnect_inactive_peers()
-{
-	HashSet<int> to_drop;
-	for (const KeyValue<int, Ref<ENetPacketPeer>>& E : peers) {
-		if (E.value->is_active()) {
-			continue;
-		}
-		to_drop.insert(E.key);
-	}
-	for (const int& P : to_drop) {
-		peers.erase(P);
-		if (hosts.has(P)) {
-			hosts.erase(P);
-		}
-		ERR_CONTINUE(active_mode == MODE_CLIENT && P != TARGET_PEER_SERVER);
-	}
-}
-
-bool ENetMultiplayerPeer::is_server() const { return active_mode == MODE_SERVER; }
-
-bool ENetMultiplayerPeer::is_server_relay_supported() const
-{
-	return active_mode == MODE_SERVER || active_mode == MODE_CLIENT;
-}
-
-void ENetMultiplayerPeer::disconnect_peer(int p_peer, bool p_force)
-{
-	ERR_FAIL_COND(!_is_active() || !peers.has(p_peer));
-	peers[p_peer]->peer_disconnect(0); // Will be removed during next poll.
-	if (active_mode == MODE_CLIENT || active_mode == MODE_SERVER) {
-		hosts[0]->flush();
-	}
-	else {
-		ERR_FAIL_COND(!hosts.has(p_peer));
-		hosts[p_peer]->flush();
-	}
-	if (p_force) {
-		peers.erase(p_peer);
-		if (hosts.has(p_peer)) {
-			hosts.erase(p_peer);
-		}
-		if (active_mode == MODE_CLIENT) {
-			hosts.clear(); // Avoid flushing again.
-			close();
-		}
-	}
-}
-
-void ENetMultiplayerPeer::close()
-{
-	if (!_is_active()) {
-		return;
-	}
-
-	_pop_current_packet();
-
-	for (KeyValue<int, Ref<ENetPacketPeer>>& E : peers) {
-		if (E.value.is_valid() && E.value->get_state() == ENetPacketPeer::STATE_CONNECTED) {
-			E.value->peer_disconnect_now(0);
-		}
-	}
-	for (KeyValue<int, Ref<ENetConnection>>& E : hosts) {
-		E.value->flush();
-		E.value->destroy();
-	}
-
-	active_mode = MODE_NONE;
-	incoming_packets.clear();
-	peers.clear();
-	hosts.clear();
-	unique_id = 0;
-	connection_status = CONNECTION_DISCONNECTED;
-	set_refuse_new_connections(false);
-}
-
-int ENetMultiplayerPeer::get_available_packet_count() const { return incoming_packets.size(); }
-
-Error ENetMultiplayerPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	ERR_FAIL_COND_V_MSG(
-		incoming_packets.is_empty(), ERR_UNAVAILABLE, "No incoming packets available.");
-
-	_pop_current_packet();
-
-	current_packet = incoming_packets.front()->get();
-	incoming_packets.pop_front();
-
-	*r_buffer = (const uint8_t*)(current_packet.packet->data);
-	r_buffer_size = current_packet.packet->dataLength;
-
-	return OK;
-}
-
-Error ENetMultiplayerPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_COND_V_MSG(
-		!_is_active(), ERR_UNCONFIGURED, "The multiplayer instance isn't currently active.");
-	ERR_FAIL_COND_V_MSG(connection_status != CONNECTION_CONNECTED, ERR_UNCONFIGURED,
-		"The multiplayer instance isn't currently connected to any server or client.");
-	ERR_FAIL_COND_V_MSG(target_peer != 0 && !peers.has(Math::abs(target_peer)),
-		ERR_INVALID_PARAMETER, vformat("Invalid target peer: %d", target_peer));
-	ERR_FAIL_COND_V(active_mode == MODE_CLIENT && !peers.has(1), ERR_BUG);
-
-	int packet_flags = 0;
-	int channel = SYSCH_RELIABLE;
-	int tr_channel = get_transfer_channel();
-	switch (get_transfer_mode()) {
-	case TRANSFER_MODE_UNRELIABLE: {
-		packet_flags = ENET_PACKET_FLAG_UNSEQUENCED | ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT;
-		channel = SYSCH_UNRELIABLE;
-	} break;
-	case TRANSFER_MODE_UNRELIABLE_ORDERED: {
-		packet_flags = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT;
-		channel = SYSCH_UNRELIABLE;
-	} break;
-	case TRANSFER_MODE_RELIABLE: {
-		packet_flags = ENET_PACKET_FLAG_RELIABLE;
-		channel = SYSCH_RELIABLE;
-	} break;
-	}
-	if (tr_channel > 0) {
-		channel = SYSCH_MAX + tr_channel - 1;
-	}
-
-#ifdef DEBUG_ENABLED
-	if ((packet_flags & ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT) &&
-		p_buffer_size > ENET_HOST_DEFAULT_MTU) {
-		WARN_PRINT_ONCE(vformat("Sending %d bytes unreliably which is above the MTU (%d), this "
-								"will result in higher packet loss",
-			p_buffer_size, ENET_HOST_DEFAULT_MTU));
-	}
-#endif
-
-	ENetPacket* packet = enet_packet_create(nullptr, p_buffer_size, packet_flags);
-	memcpy(&packet->data[0], p_buffer, p_buffer_size);
-
-	if (is_server()) {
-		if (target_peer == 0) {
-			hosts[0]->broadcast(channel, packet);
-		}
-		else if (target_peer < 0) {
-			// Send to all but one and make copies for sending.
-			int exclude = -target_peer;
-			for (KeyValue<int, Ref<ENetPacketPeer>>& E : peers) {
-				if (E.key == exclude) {
-					continue;
-				}
-				E.value->send(channel, packet);
-			}
-			_destroy_unused(packet);
-		}
-		else {
-			peers[target_peer]->send(channel, packet);
-		}
-		ERR_FAIL_COND_V(!hosts.has(0), ERR_BUG);
-		hosts[0]->flush();
-	}
-	else if (active_mode == MODE_CLIENT) {
-		peers[1]->send(channel, packet); // Send to server for broadcast.
-		ERR_FAIL_COND_V(!hosts.has(0), ERR_BUG);
-		hosts[0]->flush();
-	}
-	else {
-		if (target_peer <= 0) {
-			int exclude = Math::abs(target_peer);
-			for (KeyValue<int, Ref<ENetPacketPeer>>& E : peers) {
-				if (E.key == exclude) {
-					continue;
-				}
-				E.value->send(channel, packet);
-				ERR_CONTINUE(!hosts.has(E.key));
-				hosts[E.key]->flush();
-			}
-			_destroy_unused(packet);
-		}
-		else {
-			peers[target_peer]->send(channel, packet);
-			ERR_FAIL_COND_V(!hosts.has(target_peer), ERR_BUG);
-			hosts[target_peer]->flush();
-		}
-	}
-
-	return OK;
-}
-
-int ENetMultiplayerPeer::get_max_packet_size() const
-{
-	return 1 << 24; // Anything is good
-}
-
-void ENetMultiplayerPeer::_pop_current_packet()
-{
-	if (current_packet.packet) {
-		current_packet.packet->referenceCount--;
-		_destroy_unused(current_packet.packet);
-		current_packet.packet = nullptr;
-		current_packet.from = 0;
-		current_packet.channel = -1;
-	}
-}
-
-MultiplayerPeer::ConnectionStatus ENetMultiplayerPeer::get_connection_status() const
-{
-	return connection_status;
-}
-
-int ENetMultiplayerPeer::get_unique_id() const
-{
-	ERR_FAIL_COND_V_MSG(!_is_active(), 0, "The multiplayer instance isn't currently active.");
-	return unique_id;
-}
-
-void ENetMultiplayerPeer::set_refuse_new_connections(bool p_enabled)
-{
-#ifdef GODOT_ENET
-	if (_is_active()) {
-		for (KeyValue<int, Ref<ENetConnection>>& E : hosts) {
-			E.value->refuse_new_connections(p_enabled);
-		}
-	}
-#endif
-	MultiplayerPeer::set_refuse_new_connections(p_enabled);
-}
-
-Ref<ENetConnection> ENetMultiplayerPeer::get_host() const
-{
-	ERR_FAIL_COND_V(!_is_active(), nullptr);
-	ERR_FAIL_COND_V(active_mode == MODE_MESH, nullptr);
-	return hosts[0];
-}
-
-Ref<ENetPacketPeer> ENetMultiplayerPeer::get_peer(int p_id) const
-{
-	ERR_FAIL_COND_V(!_is_active(), nullptr);
-	ERR_FAIL_COND_V(!peers.has(p_id), nullptr);
-	ERR_FAIL_COND_V(active_mode == MODE_CLIENT && p_id != 1, nullptr);
-	return peers[p_id];
-}
-
-void ENetMultiplayerPeer::_destroy_unused(ENetPacket* p_packet)
-{
-	if (p_packet->referenceCount == 0) {
-		enet_packet_destroy(p_packet);
-	}
-}
-
-ENetMultiplayerPeer::~ENetMultiplayerPeer()
-{
-	if (_is_active()) {
-		close();
-	}
-}
-
-void ENetMultiplayerPeer::poll() {}
 
 // Module registration
 
@@ -124634,573 +123283,6 @@ int godot_mbedtls_ecdsa_der_to_raw(size_t bits, const unsigned char *der, size_t
 
 #if defined(MODULE_UPNP_ENABLED)
 
-struct UPNPDev;
-
-class UPNPDevice final : public RefCounted
-{
-public:
-	enum IGDStatus
-	{
-		IGD_STATUS_OK,
-		IGD_STATUS_HTTP_ERROR,
-		IGD_STATUS_HTTP_EMPTY,
-		IGD_STATUS_NO_URLS,
-		IGD_STATUS_NO_IGD,
-		IGD_STATUS_DISCONNECTED,
-		IGD_STATUS_UNKNOWN_DEVICE,
-		IGD_STATUS_INVALID_CONTROL,
-		IGD_STATUS_MALLOC_ERROR,
-		IGD_STATUS_UNKNOWN_ERROR,
-	};
-
-private:
-	String description_url;
-	String service_type;
-	String igd_control_url;
-	String igd_service_type;
-	String igd_our_addr;
-	IGDStatus igd_status = IGD_STATUS_UNKNOWN_ERROR;
-
-public:
-	static UPNPDevice* create(bool p_notify_postinitialize = true)
-	{
-		return memnew(UPNPDevice);
-	}
-
-	void set_description_url(const String& url);
-	String get_description_url() const;
-
-	void set_service_type(const String& type);
-	String get_service_type() const;
-
-	void set_igd_control_url(const String& url);
-	String get_igd_control_url() const;
-
-	void set_igd_service_type(const String& type);
-	String get_igd_service_type() const;
-
-	void set_igd_our_addr(const String& addr);
-	String get_igd_our_addr() const;
-
-	void set_igd_status(IGDStatus status);
-	IGDStatus get_igd_status() const;
-
-	bool is_valid_gateway() const;
-	String query_external_address() const;
-	int add_port_mapping(int port, int port_internal = 0, String desc = "",
-		String proto = "UDP", int duration = 0) const;
-	int delete_port_mapping(int port, String proto = "UDP") const;
-
-	UPNPDevice() {}
-	~UPNPDevice() {}
-};
-
-class UPNP final : public RefCounted
-{
-private:
-	String discover_multicast_if = "";
-	int discover_local_port = 0;
-	bool discover_ipv6 = false;
-
-	Vector<Ref<UPNPDevice>> devices;
-
-	bool is_common_device(const String& dev) const;
-	void add_device_to_list(UPNPDev* dev, UPNPDev* devlist);
-	void parse_igd(Ref<UPNPDevice> dev, UPNPDev* devlist);
-	char* load_description(const String& url, int* size, int* status_code) const;
-
-public:
-	enum UPNPResult
-	{
-		UPNP_RESULT_SUCCESS,
-		UPNP_RESULT_NOT_AUTHORIZED,
-		UPNP_RESULT_PORT_MAPPING_NOT_FOUND,
-		UPNP_RESULT_INCONSISTENT_PARAMETERS,
-		UPNP_RESULT_NO_SUCH_ENTRY_IN_ARRAY,
-		UPNP_RESULT_ACTION_FAILED,
-		UPNP_RESULT_SRC_IP_WILDCARD_NOT_PERMITTED,
-		UPNP_RESULT_EXT_PORT_WILDCARD_NOT_PERMITTED,
-		UPNP_RESULT_INT_PORT_WILDCARD_NOT_PERMITTED,
-		UPNP_RESULT_REMOTE_HOST_MUST_BE_WILDCARD,
-		UPNP_RESULT_EXT_PORT_MUST_BE_WILDCARD,
-		UPNP_RESULT_NO_PORT_MAPS_AVAILABLE,
-		UPNP_RESULT_CONFLICT_WITH_OTHER_MECHANISM,
-		UPNP_RESULT_CONFLICT_WITH_OTHER_MAPPING,
-		UPNP_RESULT_SAME_PORT_VALUES_REQUIRED,
-		UPNP_RESULT_ONLY_PERMANENT_LEASE_SUPPORTED,
-		UPNP_RESULT_INVALID_GATEWAY,
-		UPNP_RESULT_INVALID_PORT,
-		UPNP_RESULT_INVALID_PROTOCOL,
-		UPNP_RESULT_INVALID_DURATION,
-		UPNP_RESULT_INVALID_ARGS,
-		UPNP_RESULT_INVALID_RESPONSE,
-		UPNP_RESULT_INVALID_PARAM,
-		UPNP_RESULT_HTTP_ERROR,
-		UPNP_RESULT_SOCKET_ERROR,
-		UPNP_RESULT_MEM_ALLOC_ERROR,
-		UPNP_RESULT_NO_GATEWAY,
-		UPNP_RESULT_NO_DEVICES,
-		UPNP_RESULT_UNKNOWN_ERROR,
-	};
-
-	static UPNP* create(bool p_notify_postinitialize = true)
-	{
-		return memnew(UPNP);
-	}
-
-	static int upnp_result(int in);
-
-	int get_device_count() const;
-	Ref<UPNPDevice> get_device(int index) const;
-	void add_device(Ref<UPNPDevice> device);
-	void set_device(int index, Ref<UPNPDevice> device);
-	void remove_device(int index);
-	void clear_devices();
-
-	Ref<UPNPDevice> get_gateway() const;
-
-	int discover(
-		int timeout = 2000, int ttl = 2, const String& device_filter = "InternetGatewayDevice");
-
-	String query_external_address() const;
-
-	int add_port_mapping(int port, int port_internal = 0, String desc = "",
-		String proto = "UDP", int duration = 0) const;
-	int delete_port_mapping(int port, String proto = "UDP") const;
-
-	void set_discover_multicast_if(const String& m_if);
-	String get_discover_multicast_if() const;
-
-	void set_discover_local_port(int port);
-	int get_discover_local_port() const;
-
-	void set_discover_ipv6(bool ipv6);
-	bool is_discover_ipv6() const;
-
-	UPNP() {}
-	~UPNP() {}
-};
-
-#include "servers/display/display_server.h"
-
-#ifndef WEB_ENABLED
-#include <cstdlib>
-#include <miniupnpc/miniupnpc.h>
-#include <miniupnpc/miniwget.h>
-#include <miniupnpc/upnpcommands.h>
-#endif
-
-// UPNPDevice
-
-String UPNPDevice::query_external_address() const
-{
-#ifndef WEB_ENABLED
-	ERR_FAIL_COND_V_MSG(!is_valid_gateway(), "", "The Internet Gateway Device must be valid.");
-
-	char addr[16];
-	int i = UPNP_GetExternalIPAddress(
-		igd_control_url.utf8().get_data(), igd_service_type.utf8().get_data(), (char*)&addr);
-
-	ERR_FAIL_COND_V_MSG(i != UPNPCOMMAND_SUCCESS, "", "Couldn't get external IP address.");
-
-	return String(addr);
-#else
-	return String();
-#endif
-}
-
-int UPNPDevice::add_port_mapping(
-	int port, int port_internal, String desc, String proto, int duration) const
-{
-#ifndef WEB_ENABLED
-	ERR_FAIL_COND_V_MSG(!is_valid_gateway(), UPNP::UPNP_RESULT_INVALID_GATEWAY,
-		"The Internet Gateway Device must be valid.");
-	ERR_FAIL_COND_V_MSG(port < 1 || port > 65535, UPNP::UPNP_RESULT_INVALID_PORT,
-		"The port number must be set between 1 and 65535 (inclusive).");
-	ERR_FAIL_COND_V_MSG(port_internal < 0 || port_internal > 65535, UPNP::UPNP_RESULT_INVALID_PORT,
-		"The port number must be set between 0 and 65535 (inclusive)."); // Needs to allow 0 because
-																		 // 0 signifies "use
-																		 // external port as
-																		 // internal port"
-	ERR_FAIL_COND_V_MSG(proto != "UDP" && proto != "TCP", UPNP::UPNP_RESULT_INVALID_PROTOCOL,
-		"The protocol must be either TCP or UDP.");
-	ERR_FAIL_COND_V_MSG(duration < 0, UPNP::UPNP_RESULT_INVALID_DURATION,
-		"The port mapping's lease duration can't be negative.");
-
-	if (port_internal < 1) {
-		port_internal = port;
-	}
-
-	int i = UPNP_AddPortMapping(igd_control_url.utf8().get_data(),
-		igd_service_type.utf8().get_data(), itos(port).utf8().get_data(),
-		itos(port_internal).utf8().get_data(), igd_our_addr.utf8().get_data(),
-		desc.is_empty() ? nullptr : desc.utf8().get_data(), proto.utf8().get_data(),
-		nullptr, // Remote host, always nullptr as IGDs don't support it
-		duration > 0 ? itos(duration).utf8().get_data() : nullptr);
-
-	ERR_FAIL_COND_V_MSG(
-		i != UPNPCOMMAND_SUCCESS, UPNP::upnp_result(i), "Couldn't add port mapping.");
-
-	return UPNP::UPNP_RESULT_SUCCESS;
-#else
-	return UPNP::UPNP_RESULT_UNKNOWN_ERROR;
-#endif
-}
-
-int UPNPDevice::delete_port_mapping(int port, String proto) const
-{
-#ifndef WEB_ENABLED
-	ERR_FAIL_COND_V_MSG(port < 1 || port > 65535, UPNP::UPNP_RESULT_INVALID_PORT,
-		"The port number must be set between 1 and 65535 (inclusive).");
-	ERR_FAIL_COND_V_MSG(proto != "UDP" && proto != "TCP", UPNP::UPNP_RESULT_INVALID_PROTOCOL,
-		"The protocol must be either TCP or UDP.");
-
-	int i = UPNP_DeletePortMapping(igd_control_url.utf8().get_data(),
-		igd_service_type.utf8().get_data(), itos(port).utf8().get_data(), proto.utf8().get_data(),
-		nullptr // Remote host, always nullptr as IGDs don't support it
-	);
-
-	ERR_FAIL_COND_V_MSG(
-		i != UPNPCOMMAND_SUCCESS, UPNP::upnp_result(i), "Couldn't delete port mapping.");
-
-	return UPNP::UPNP_RESULT_SUCCESS;
-#else
-	return UPNP::UPNP_RESULT_UNKNOWN_ERROR;
-#endif
-}
-
-void UPNPDevice::set_description_url(const String& url) { description_url = url; }
-
-String UPNPDevice::get_description_url() const { return description_url; }
-
-void UPNPDevice::set_service_type(const String& type) { service_type = type; }
-
-String UPNPDevice::get_service_type() const { return service_type; }
-
-void UPNPDevice::set_igd_control_url(const String& url) { igd_control_url = url; }
-
-String UPNPDevice::get_igd_control_url() const { return igd_control_url; }
-
-void UPNPDevice::set_igd_service_type(const String& type) { igd_service_type = type; }
-
-String UPNPDevice::get_igd_service_type() const { return igd_service_type; }
-
-void UPNPDevice::set_igd_our_addr(const String& addr) { igd_our_addr = addr; }
-
-String UPNPDevice::get_igd_our_addr() const { return igd_our_addr; }
-
-void UPNPDevice::set_igd_status(IGDStatus status) { igd_status = status; }
-
-UPNPDevice::IGDStatus UPNPDevice::get_igd_status() const { return igd_status; }
-
-bool UPNPDevice::is_valid_gateway() const { return igd_status == IGD_STATUS_OK; }
-
-// UPNP
-
-bool UPNP::is_common_device(const String& dev) const
-{
-	return dev.is_empty() || dev.contains("InternetGatewayDevice") ||
-		   dev.contains("WANIPConnection") || dev.contains("WANPPPConnection") ||
-		   dev.contains("rootdevice");
-}
-
-int UPNP::discover(int timeout, int ttl, const String& device_filter)
-{
-#ifndef WEB_ENABLED
-	ERR_FAIL_COND_V_MSG(
-		timeout < 0, UPNP_RESULT_INVALID_PARAM, "The response's wait time can't be negative.");
-	ERR_FAIL_COND_V_MSG(ttl < 0 || ttl > 255, UPNP_RESULT_INVALID_PARAM,
-		"The time-to-live must be set between 0 and 255 (inclusive).");
-
-	devices.clear();
-
-	int error = 0;
-	struct UPNPDev* devlist;
-
-	CharString cs = discover_multicast_if.utf8();
-	const char* m_if = cs.length() ? cs.get_data() : nullptr;
-	if (is_common_device(device_filter)) {
-		devlist =
-			upnpDiscover(timeout, m_if, nullptr, discover_local_port, discover_ipv6, ttl, &error);
-	}
-	else {
-		devlist = upnpDiscoverAll(
-			timeout, m_if, nullptr, discover_local_port, discover_ipv6, ttl, &error);
-	}
-
-	if (error != UPNPDISCOVER_SUCCESS) {
-		switch (error) {
-		case UPNPDISCOVER_SOCKET_ERROR:
-			return UPNP_RESULT_SOCKET_ERROR;
-		case UPNPDISCOVER_MEMORY_ERROR:
-			return UPNP_RESULT_MEM_ALLOC_ERROR;
-		default:
-			return UPNP_RESULT_UNKNOWN_ERROR;
-		}
-	}
-
-	if (!devlist) {
-		return UPNP_RESULT_NO_DEVICES;
-	}
-
-	struct UPNPDev* dev = devlist;
-
-	while (dev) {
-		if (device_filter.is_empty() || strstr(dev->st, device_filter.utf8().get_data())) {
-			add_device_to_list(dev, devlist);
-		}
-
-		dev = dev->pNext;
-	}
-
-	freeUPNPDevlist(devlist);
-
-	return UPNP_RESULT_SUCCESS;
-#else
-	return UPNP_RESULT_UNKNOWN_ERROR;
-#endif
-}
-
-void UPNP::add_device_to_list(UPNPDev* dev, UPNPDev* devlist)
-{
-#ifndef WEB_ENABLED
-	Ref<UPNPDevice> new_device;
-	new_device.instantiate();
-
-	new_device->set_description_url(dev->descURL);
-	new_device->set_service_type(dev->st);
-
-	parse_igd(new_device, devlist);
-
-	devices.push_back(new_device);
-#endif
-}
-
-char* UPNP::load_description(const String& url, int* size, int* status_code) const
-{
-#ifndef WEB_ENABLED
-	return (char*)miniwget(url.utf8().get_data(), size, 0, status_code);
-#else
-	return nullptr;
-#endif
-}
-
-void UPNP::parse_igd(Ref<UPNPDevice> dev, UPNPDev* devlist)
-{
-#ifndef WEB_ENABLED
-	int size = 0;
-	int status_code = -1;
-	char* xml = load_description(dev->get_description_url(), &size, &status_code);
-
-	if (status_code != 200) {
-		dev->set_igd_status(UPNPDevice::IGD_STATUS_HTTP_ERROR);
-		return;
-	}
-
-	if (!xml || size < 1) {
-		dev->set_igd_status(UPNPDevice::IGD_STATUS_HTTP_EMPTY);
-		return;
-	}
-
-	struct UPNPUrls urls = {};
-	struct IGDdatas data;
-
-	parserootdesc(xml, size, &data);
-	free(xml);
-	xml = nullptr;
-
-	GetUPNPUrls(&urls, &data, dev->get_description_url().utf8().get_data(), 0);
-
-	char addr[16];
-#if MINIUPNPC_API_VERSION >= 18
-	int i = UPNP_GetValidIGD(devlist, &urls, &data, (char*)&addr, 16, nullptr, 0);
-#else
-	int i = UPNP_GetValidIGD(devlist, &urls, &data, (char*)&addr, 16);
-#endif
-
-	if (i != 1) {
-		FreeUPNPUrls(&urls);
-
-		switch (i) {
-		case 0:
-			dev->set_igd_status(UPNPDevice::IGD_STATUS_NO_IGD);
-			return;
-		case 2:
-			dev->set_igd_status(UPNPDevice::IGD_STATUS_DISCONNECTED);
-			return;
-		case 3:
-			dev->set_igd_status(UPNPDevice::IGD_STATUS_UNKNOWN_DEVICE);
-			return;
-		default:
-			dev->set_igd_status(UPNPDevice::IGD_STATUS_UNKNOWN_ERROR);
-			return;
-		}
-	}
-
-	if (urls.controlURL[0] == '\0') {
-		FreeUPNPUrls(&urls);
-		dev->set_igd_status(UPNPDevice::IGD_STATUS_INVALID_CONTROL);
-		return;
-	}
-
-	dev->set_igd_control_url(urls.controlURL);
-	dev->set_igd_service_type(data.first.servicetype);
-	dev->set_igd_our_addr(addr);
-	dev->set_igd_status(UPNPDevice::IGD_STATUS_OK);
-
-	FreeUPNPUrls(&urls);
-#endif
-}
-
-int UPNP::upnp_result(int in)
-{
-#ifndef WEB_ENABLED
-	switch (in) {
-	case UPNPCOMMAND_SUCCESS:
-		return UPNP_RESULT_SUCCESS;
-	case UPNPCOMMAND_UNKNOWN_ERROR:
-		return UPNP_RESULT_UNKNOWN_ERROR;
-	case UPNPCOMMAND_INVALID_ARGS:
-		return UPNP_RESULT_INVALID_ARGS;
-	case UPNPCOMMAND_HTTP_ERROR:
-		return UPNP_RESULT_HTTP_ERROR;
-	case UPNPCOMMAND_INVALID_RESPONSE:
-		return UPNP_RESULT_INVALID_RESPONSE;
-	case UPNPCOMMAND_MEM_ALLOC_ERROR:
-		return UPNP_RESULT_MEM_ALLOC_ERROR;
-
-	case 402:
-		return UPNP_RESULT_INVALID_ARGS;
-	case 403:
-		return UPNP_RESULT_NOT_AUTHORIZED;
-	case 501:
-		return UPNP_RESULT_ACTION_FAILED;
-	case 606:
-		return UPNP_RESULT_NOT_AUTHORIZED;
-	case 714:
-		return UPNP_RESULT_NO_SUCH_ENTRY_IN_ARRAY;
-	case 715:
-		return UPNP_RESULT_SRC_IP_WILDCARD_NOT_PERMITTED;
-	case 716:
-		return UPNP_RESULT_EXT_PORT_WILDCARD_NOT_PERMITTED;
-	case 718:
-		return UPNP_RESULT_CONFLICT_WITH_OTHER_MAPPING;
-	case 724:
-		return UPNP_RESULT_SAME_PORT_VALUES_REQUIRED;
-	case 725:
-		return UPNP_RESULT_ONLY_PERMANENT_LEASE_SUPPORTED;
-	case 726:
-		return UPNP_RESULT_REMOTE_HOST_MUST_BE_WILDCARD;
-	case 727:
-		return UPNP_RESULT_EXT_PORT_MUST_BE_WILDCARD;
-	case 728:
-		return UPNP_RESULT_NO_PORT_MAPS_AVAILABLE;
-	case 729:
-		return UPNP_RESULT_CONFLICT_WITH_OTHER_MECHANISM;
-	case 732:
-		return UPNP_RESULT_INT_PORT_WILDCARD_NOT_PERMITTED;
-	case 733:
-		return UPNP_RESULT_INCONSISTENT_PARAMETERS;
-	}
-#endif
-
-	return UPNP_RESULT_UNKNOWN_ERROR;
-}
-
-int UPNP::get_device_count() const { return devices.size(); }
-
-Ref<UPNPDevice> UPNP::get_device(int index) const
-{
-	ERR_FAIL_INDEX_V(index, devices.size(), nullptr);
-
-	return devices.get(index);
-}
-
-void UPNP::add_device(Ref<UPNPDevice> device)
-{
-	ERR_FAIL_COND(device.is_null());
-
-	devices.push_back(device);
-}
-
-void UPNP::set_device(int index, Ref<UPNPDevice> device)
-{
-	ERR_FAIL_INDEX(index, devices.size());
-	ERR_FAIL_COND(device.is_null());
-
-	devices.set(index, device);
-}
-
-void UPNP::remove_device(int index)
-{
-	ERR_FAIL_INDEX(index, devices.size());
-
-	devices.remove_at(index);
-}
-
-void UPNP::clear_devices() { devices.clear(); }
-
-Ref<UPNPDevice> UPNP::get_gateway() const
-{
-	ERR_FAIL_COND_V_MSG(devices.is_empty(), nullptr, "Couldn't find any UPNPDevices.");
-
-	for (int i = 0; i < devices.size(); i++) {
-		Ref<UPNPDevice> dev = get_device(i);
-
-		if (dev.is_valid() && dev->is_valid_gateway()) {
-			return dev;
-		}
-	}
-
-	return nullptr;
-}
-
-void UPNP::set_discover_multicast_if(const String& m_if) { discover_multicast_if = m_if; }
-
-String UPNP::get_discover_multicast_if() const { return discover_multicast_if; }
-
-void UPNP::set_discover_local_port(int port) { discover_local_port = port; }
-
-int UPNP::get_discover_local_port() const { return discover_local_port; }
-
-void UPNP::set_discover_ipv6(bool ipv6) { discover_ipv6 = ipv6; }
-
-bool UPNP::is_discover_ipv6() const { return discover_ipv6; }
-
-String UPNP::query_external_address() const
-{
-	Ref<UPNPDevice> dev = get_gateway();
-
-	if (dev.is_null()) {
-		return "";
-	}
-
-	return dev->query_external_address();
-}
-
-int UPNP::add_port_mapping(
-	int port, int port_internal, String desc, String proto, int duration) const
-{
-	Ref<UPNPDevice> dev = get_gateway();
-
-	if (dev.is_null()) {
-		return UPNP_RESULT_NO_GATEWAY;
-	}
-
-	return dev->add_port_mapping(port, port_internal, desc, proto, duration);
-}
-
-int UPNP::delete_port_mapping(int port, String proto) const
-{
-	Ref<UPNPDevice> dev = get_gateway();
-
-	if (dev.is_null()) {
-		return UPNP_RESULT_NO_GATEWAY;
-	}
-
-	return dev->delete_port_mapping(port, proto);
-}
-
 // Module registration
 
 void initialize_upnp_module(ModuleInitializationLevel p_level)
@@ -125219,907 +123301,6 @@ void uninitialize_upnp_module(ModuleInitializationLevel p_level)
 #endif // defined(MODULE_UPNP_ENABLED)
 
 #if defined(MODULE_WEBRTC_ENABLED)
-#include "servers/display/display_server.h"
-
-class WebRTCDataChannel final : public PacketPeer
-{
-public:
-	enum WriteMode
-	{
-		WRITE_MODE_TEXT,
-		WRITE_MODE_BINARY,
-	};
-
-	enum ChannelState
-	{
-		STATE_CONNECTING,
-		STATE_OPEN,
-		STATE_CLOSING,
-		STATE_CLOSED
-	};
-
-private:
-	unsigned int _in_buffer_shift = 16;
-	WriteMode _write_mode = WRITE_MODE_BINARY;
-
-#ifdef WEB_ENABLED
-	String _label;
-	String _protocol;
-
-	bool _was_string = false;
-
-	enum
-	{
-		PACKET_BUFFER_SIZE = 65536 - 5 // 4 bytes for the size, 1 for type
-	};
-
-	int _js_id = 0;
-	RingBuffer<uint8_t> in_buffer;
-	int queue_count = 0;
-	uint8_t packet_buffer[PACKET_BUFFER_SIZE];
-
-	static void _on_open(void* p_obj);
-	static void _on_close(void* p_obj);
-	static void _on_error(void* p_obj);
-	static void _on_message(void* p_obj, const uint8_t* p_data, int p_size, int p_is_string);
-#endif
-
-public:
-	void set_write_mode(WriteMode mode);
-	WriteMode get_write_mode() const;
-	bool was_string_packet() const;
-
-	ChannelState get_ready_state() const;
-	String get_label() const;
-	bool is_ordered() const;
-	int get_id() const;
-	int get_max_packet_life_time() const;
-	int get_max_retransmits() const;
-	String get_protocol() const;
-	bool is_negotiated() const;
-	int get_buffered_amount() const;
-
-	Error poll();
-	void close();
-
-	// PacketPeer
-	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t** r_buffer,
-		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-	virtual int get_max_packet_size() const override;
-
-	WebRTCDataChannel();
-#ifdef WEB_ENABLED
-	WebRTCDataChannel(int js_id);
-#endif
-	~WebRTCDataChannel();
-};
-
-class WebRTCPeerConnection final : public RefCounted
-{
-public:
-	enum ConnectionState
-	{
-		STATE_NEW,
-		STATE_CONNECTING,
-		STATE_CONNECTED,
-		STATE_DISCONNECTED,
-		STATE_FAILED,
-		STATE_CLOSED
-	};
-
-	enum GatheringState
-	{
-		GATHERING_STATE_NEW,
-		GATHERING_STATE_GATHERING,
-		GATHERING_STATE_COMPLETE,
-	};
-
-	enum SignalingState
-	{
-		SIGNALING_STATE_STABLE,
-		SIGNALING_STATE_HAVE_LOCAL_OFFER,
-		SIGNALING_STATE_HAVE_REMOTE_OFFER,
-		SIGNALING_STATE_HAVE_LOCAL_PRANSWER,
-		SIGNALING_STATE_HAVE_REMOTE_PRANSWER,
-		SIGNALING_STATE_CLOSED,
-	};
-
-private:
-	static String default_extension;
-
-#ifdef WEB_ENABLED
-	int _js_id = 0;
-	ConnectionState _conn_state = STATE_NEW;
-	GatheringState _gathering_state = GATHERING_STATE_NEW;
-	SignalingState _signaling_state = SIGNALING_STATE_STABLE;
-
-	static void _on_connection_state_changed(void* p_obj, int p_state);
-	static void _on_gathering_state_changed(void* p_obj, int p_state);
-	static void _on_signaling_state_changed(void* p_obj, int p_state);
-	static void _on_ice_candidate(
-		void* p_obj, const char* p_mid_name, int p_mline_idx, const char* p_candidate);
-	static void _on_data_channel(void* p_obj, int p_channel);
-	static void _on_session_created(void* p_obj, const char* p_type, const char* p_session);
-	static void _on_error(void* p_obj);
-#endif
-
-public:
-	static void set_default_extension(const String& p_name);
-
-	ConnectionState get_connection_state() const;
-	GatheringState get_gathering_state() const;
-	SignalingState get_signaling_state() const;
-
-	Error initialize(const String& p_config_json = "{}");
-	Ref<WebRTCDataChannel> create_data_channel(
-		const String& p_channel_name, const String& p_channel_config_json = "{}");
-	Error create_offer();
-	Error set_remote_description(const String& p_type, const String& p_sdp);
-	Error set_local_description(const String& p_type, const String& p_sdp);
-	Error add_ice_candidate(
-		const String& p_sdp_mid_name, int p_sdp_mline_index_name, const String& p_sdp_name);
-	Error poll();
-	void close();
-
-	static WebRTCPeerConnection* create(bool p_notify_postinitialize = true);
-
-	WebRTCPeerConnection();
-	~WebRTCPeerConnection();
-};
-
-class WebRTCMultiplayerPeer final : public MultiplayerPeer
-{
-private:
-	enum
-	{
-		CH_RELIABLE = 0,
-		CH_ORDERED = 1,
-		CH_UNRELIABLE = 2,
-		CH_RESERVED_MAX = 3
-	};
-
-	enum NetworkMode
-	{
-		MODE_NONE,
-		MODE_SERVER,
-		MODE_CLIENT,
-		MODE_MESH,
-	};
-
-	class ConnectedPeer final : public RefCounted
-	{
-	public:
-		Ref<WebRTCPeerConnection> connection;
-		List<Ref<WebRTCDataChannel>> channels;
-		bool connected;
-
-		ConnectedPeer()
-		{
-			connected = false;
-			for (int i = 0; i < CH_RESERVED_MAX; i++) {
-				channels.push_front(Ref<WebRTCDataChannel>());
-			}
-		}
-	};
-
-	uint32_t unique_id = 0;
-	int target_peer = 0;
-	int client_count = 0;
-	ConnectionStatus connection_status = CONNECTION_DISCONNECTED;
-	int next_packet_peer = 0;
-	int next_packet_channel = 0;
-	NetworkMode network_mode = MODE_NONE;
-
-	HashMap<int, Ref<ConnectedPeer>> peer_map;
-	List<TransferMode> channels_modes;
-
-	void _find_next_peer();
-	Ref<ConnectedPeer> _get_next_peer();
-
-public:
-	WebRTCMultiplayerPeer() {}
-	~WebRTCMultiplayerPeer();
-
-	Error add_peer(
-		const Ref<WebRTCPeerConnection>& p_peer, int p_peer_id, int p_unreliable_lifetime = 1);
-	void remove_peer(int p_peer_id);
-	bool has_peer(int p_peer_id);
-
-	// PacketPeer
-	virtual Error get_packet(const uint8_t** r_buffer,
-		int& r_buffer_size) override; ///< buffer is GONE after next get_packet
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-	virtual int get_available_packet_count() const override;
-	virtual int get_max_packet_size() const override;
-
-	// MultiplayerPeer
-	virtual void set_target_peer(int p_peer_id) override;
-
-	virtual int get_unique_id() const override;
-	virtual int get_packet_peer() const override;
-	virtual int get_packet_channel() const override;
-	virtual TransferMode get_packet_mode() const override;
-
-	virtual bool is_server() const override;
-	virtual bool is_server_relay_supported() const override;
-
-	virtual void poll() override;
-	virtual void close() override;
-	virtual void disconnect_peer(int p_peer_id, bool p_force = false) override;
-
-	virtual ConnectionStatus get_connection_status() const override;
-};
-
-#include "servers/display/display_server.h"
-
-#ifdef WEB_ENABLED
-#include <emscripten.h>
-
-extern "C" {
-typedef void (*RTCChOnOpen)(void* p_obj);
-typedef void (*RTCChOnMessage)(void* p_obj, const uint8_t* p_buffer, int p_size, int p_is_string);
-typedef void (*RTCChOnClose)(void* p_obj);
-typedef void (*RTCChOnError)(void* p_obj);
-
-extern int godot_js_rtc_datachannel_ready_state_get(int p_id);
-extern int godot_js_rtc_datachannel_send(
-	int p_id, const uint8_t* p_buffer, int p_length, int p_raw);
-extern int godot_js_rtc_datachannel_is_ordered(int p_id);
-extern int godot_js_rtc_datachannel_id_get(int p_id);
-extern int godot_js_rtc_datachannel_max_packet_lifetime_get(int p_id);
-extern int godot_js_rtc_datachannel_max_retransmits_get(int p_id);
-extern int godot_js_rtc_datachannel_is_negotiated(int p_id);
-extern int godot_js_rtc_datachannel_get_buffered_amount(int p_id);
-extern char* godot_js_rtc_datachannel_label_get(int p_id); // Must free the returned string.
-extern char* godot_js_rtc_datachannel_protocol_get(int p_id); // Must free the returned string.
-extern void godot_js_rtc_datachannel_destroy(int p_id);
-extern void godot_js_rtc_datachannel_connect(int p_id, void* p_obj, RTCChOnOpen p_on_open,
-	RTCChOnMessage p_on_message, RTCChOnError p_on_error, RTCChOnClose p_on_close);
-extern void godot_js_rtc_datachannel_close(int p_id);
-
-typedef void (*RTCOnIceConnectionStateChange)(void* p_obj, int p_state);
-typedef void (*RTCOnIceGatheringStateChange)(void* p_obj, int p_state);
-typedef void (*RTCOnSignalingStateChange)(void* p_obj, int p_state);
-typedef void (*RTCOnIceCandidate)(
-	void* p_obj, const char* p_mid, int p_mline_idx, const char* p_candidate);
-typedef void (*RTCOnDataChannel)(void* p_obj, int p_id);
-typedef void (*RTCOnSession)(void* p_obj, const char* p_type, const char* p_sdp);
-typedef void (*RTCOnError)(void* p_obj);
-extern int godot_js_rtc_pc_create(const char* p_config, void* p_obj,
-	RTCOnIceConnectionStateChange p_on_connection_state_change,
-	RTCOnIceGatheringStateChange p_on_gathering_state_change,
-	RTCOnSignalingStateChange p_on_signaling_state_change, RTCOnIceCandidate p_on_candidate,
-	RTCOnDataChannel p_on_datachannel);
-extern void godot_js_rtc_pc_close(int p_id);
-extern void godot_js_rtc_pc_destroy(int p_id);
-extern void godot_js_rtc_pc_offer_create(
-	int p_id, void* p_obj, RTCOnSession p_on_session, RTCOnError p_on_error);
-extern void godot_js_rtc_pc_local_description_set(
-	int p_id, const char* p_type, const char* p_sdp, void* p_obj, RTCOnError p_on_error);
-extern void godot_js_rtc_pc_remote_description_set(int p_id, const char* p_type, const char* p_sdp,
-	void* p_obj, RTCOnSession p_on_session, RTCOnError p_on_error);
-extern void godot_js_rtc_pc_ice_candidate_add(
-	int p_id, const char* p_mid_name, int p_mline_idx, const char* p_sdo);
-extern int godot_js_rtc_pc_datachannel_create(
-	int p_id, const char* p_label, const char* p_config);
-}
-#endif
-
-// WebRTCDataChannel
-
-void WebRTCDataChannel::set_write_mode(WriteMode p_mode) { _write_mode = p_mode; }
-
-WebRTCDataChannel::WriteMode WebRTCDataChannel::get_write_mode() const { return _write_mode; }
-
-int WebRTCDataChannel::get_max_packet_size() const { return 1200; }
-
-#ifdef WEB_ENABLED
-
-void WebRTCDataChannel::_on_open(void* p_obj)
-{
-	WebRTCDataChannel* peer = static_cast<WebRTCDataChannel*>(p_obj);
-	peer->in_buffer.resize(peer->_in_buffer_shift);
-}
-
-void WebRTCDataChannel::_on_close(void* p_obj)
-{
-	WebRTCDataChannel* peer = static_cast<WebRTCDataChannel*>(p_obj);
-	peer->close();
-}
-
-void WebRTCDataChannel::_on_error(void* p_obj)
-{
-	WebRTCDataChannel* peer = static_cast<WebRTCDataChannel*>(p_obj);
-	peer->close();
-}
-
-void WebRTCDataChannel::_on_message(
-	void* p_obj, const uint8_t* p_data, int p_size, int p_is_string)
-{
-	WebRTCDataChannel* peer = static_cast<WebRTCDataChannel*>(p_obj);
-	RingBuffer<uint8_t>& in_buffer = peer->in_buffer;
-
-	ERR_FAIL_COND_MSG(in_buffer.space_left() < (int)(p_size + 5), "Buffer full! Dropping data.");
-
-	uint8_t is_string = p_is_string ? 1 : 0;
-	in_buffer.write((uint8_t*)&p_size, 4);
-	in_buffer.write((uint8_t*)&is_string, 1);
-	in_buffer.write(p_data, p_size);
-	peer->queue_count++;
-}
-
-void WebRTCDataChannel::close()
-{
-	in_buffer.resize(0);
-	queue_count = 0;
-	_was_string = false;
-	godot_js_rtc_datachannel_close(_js_id);
-}
-
-Error WebRTCDataChannel::poll() { return OK; }
-
-WebRTCDataChannel::ChannelState WebRTCDataChannel::get_ready_state() const
-{
-	return (ChannelState)godot_js_rtc_datachannel_ready_state_get(_js_id);
-}
-
-int WebRTCDataChannel::get_available_packet_count() const { return queue_count; }
-
-Error WebRTCDataChannel::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	ERR_FAIL_COND_V(get_ready_state() != STATE_OPEN, ERR_UNCONFIGURED);
-
-	if (queue_count == 0) {
-		return ERR_UNAVAILABLE;
-	}
-
-	uint32_t to_read = 0;
-	uint32_t left = 0;
-	uint8_t is_string = 0;
-	r_buffer_size = 0;
-
-	in_buffer.read((uint8_t*)&to_read, 4);
-	--queue_count;
-	left = in_buffer.data_left();
-
-	if (left < to_read + 1) {
-		in_buffer.advance_read(left);
-		return FAILED;
-	}
-
-	in_buffer.read(&is_string, 1);
-	_was_string = is_string == 1;
-	in_buffer.read(packet_buffer, to_read);
-	*r_buffer = packet_buffer;
-	r_buffer_size = to_read;
-
-	return OK;
-}
-
-Error WebRTCDataChannel::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_COND_V(get_ready_state() != STATE_OPEN, ERR_UNCONFIGURED);
-
-	int is_bin = _write_mode == WRITE_MODE_BINARY ? 1 : 0;
-	godot_js_rtc_datachannel_send(_js_id, p_buffer, p_buffer_size, is_bin);
-	return OK;
-}
-
-bool WebRTCDataChannel::was_string_packet() const { return _was_string; }
-
-String WebRTCDataChannel::get_label() const { return _label; }
-
-bool WebRTCDataChannel::is_ordered() const { return godot_js_rtc_datachannel_is_ordered(_js_id); }
-
-int WebRTCDataChannel::get_id() const { return godot_js_rtc_datachannel_id_get(_js_id); }
-
-int WebRTCDataChannel::get_max_packet_life_time() const
-{
-	return godot_js_rtc_datachannel_max_packet_lifetime_get(_js_id);
-}
-
-int WebRTCDataChannel::get_max_retransmits() const
-{
-	return godot_js_rtc_datachannel_max_retransmits_get(_js_id);
-}
-
-String WebRTCDataChannel::get_protocol() const { return _protocol; }
-
-bool WebRTCDataChannel::is_negotiated() const
-{
-	return godot_js_rtc_datachannel_is_negotiated(_js_id);
-}
-
-int WebRTCDataChannel::get_buffered_amount() const
-{
-	return godot_js_rtc_datachannel_get_buffered_amount(_js_id);
-}
-
-WebRTCDataChannel::WebRTCDataChannel() {}
-
-WebRTCDataChannel::WebRTCDataChannel(int js_id)
-{
-	_js_id = js_id;
-
-	godot_js_rtc_datachannel_connect(js_id, this, &_on_open, &_on_message, &_on_error, &_on_close);
-	char* label = godot_js_rtc_datachannel_label_get(js_id);
-	if (label) {
-		_label.clear();
-		_label.append_utf8(label);
-		free(label);
-	}
-	char* protocol = godot_js_rtc_datachannel_protocol_get(js_id);
-	if (protocol) {
-		_protocol.clear();
-		_protocol.append_utf8(protocol);
-		free(protocol);
-	}
-}
-
-WebRTCDataChannel::~WebRTCDataChannel()
-{
-	close();
-	godot_js_rtc_datachannel_destroy(_js_id);
-}
-
-#else
-
-bool WebRTCDataChannel::was_string_packet() const { return false; }
-
-WebRTCDataChannel::ChannelState WebRTCDataChannel::get_ready_state() const { return STATE_CLOSED; }
-
-String WebRTCDataChannel::get_label() const { return String(); }
-
-bool WebRTCDataChannel::is_ordered() const { return true; }
-
-int WebRTCDataChannel::get_id() const { return 65535; }
-
-int WebRTCDataChannel::get_max_packet_life_time() const { return 65535; }
-
-int WebRTCDataChannel::get_max_retransmits() const { return 65535; }
-
-String WebRTCDataChannel::get_protocol() const { return String(); }
-
-bool WebRTCDataChannel::is_negotiated() const { return false; }
-
-int WebRTCDataChannel::get_buffered_amount() const { return 0; }
-
-Error WebRTCDataChannel::poll() { return ERR_UNAVAILABLE; }
-
-void WebRTCDataChannel::close() {}
-
-int WebRTCDataChannel::get_available_packet_count() const { return 0; }
-
-Error WebRTCDataChannel::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	return ERR_UNAVAILABLE;
-}
-
-Error WebRTCDataChannel::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	return ERR_UNAVAILABLE;
-}
-
-WebRTCDataChannel::WebRTCDataChannel() {}
-
-WebRTCDataChannel::~WebRTCDataChannel() {}
-
-#endif // WEB_ENABLED
-
-// WebRTCPeerConnection
-
-String WebRTCPeerConnection::default_extension;
-
-void WebRTCPeerConnection::set_default_extension(const String& p_extension)
-{
-	default_extension = String(p_extension);
-}
-
-WebRTCPeerConnection* WebRTCPeerConnection::create(bool p_notify_postinitialize)
-{
-#ifndef WEB_ENABLED
-	if (default_extension == String()) {
-		WARN_PRINT_ONCE("No default WebRTC extension configured.");
-	}
-#endif
-	return memnew(WebRTCPeerConnection);
-}
-
-#ifdef WEB_ENABLED
-
-void WebRTCPeerConnection::_on_ice_candidate(
-	void* p_obj, const char* p_mid_name, int p_mline_idx, const char* p_candidate)
-{
-	(void)p_obj;
-	(void)p_mid_name;
-	(void)p_mline_idx;
-	(void)p_candidate;
-}
-
-void WebRTCPeerConnection::_on_session_created(
-	void* p_obj, const char* p_type, const char* p_session)
-{
-	(void)p_obj;
-	(void)p_type;
-	(void)p_session;
-}
-
-void WebRTCPeerConnection::_on_connection_state_changed(void* p_obj, int p_state)
-{
-	WebRTCPeerConnection* peer = static_cast<WebRTCPeerConnection*>(p_obj);
-	peer->_conn_state = (ConnectionState)p_state;
-}
-
-void WebRTCPeerConnection::_on_gathering_state_changed(void* p_obj, int p_state)
-{
-	WebRTCPeerConnection* peer = static_cast<WebRTCPeerConnection*>(p_obj);
-	peer->_gathering_state = (GatheringState)p_state;
-}
-
-void WebRTCPeerConnection::_on_signaling_state_changed(void* p_obj, int p_state)
-{
-	WebRTCPeerConnection* peer = static_cast<WebRTCPeerConnection*>(p_obj);
-	peer->_signaling_state = (SignalingState)p_state;
-}
-
-void WebRTCPeerConnection::_on_error(void* p_obj)
-{
-	(void)p_obj;
-	ERR_PRINT("RTCPeerConnection error!");
-}
-
-void WebRTCPeerConnection::_on_data_channel(void* p_obj, int p_id)
-{
-	(void)p_obj;
-	Ref<WebRTCDataChannel> ch(memnew(WebRTCDataChannel(p_id)));
-	(void)ch;
-}
-
-void WebRTCPeerConnection::close()
-{
-	godot_js_rtc_pc_close(_js_id);
-	_conn_state = STATE_CLOSED;
-}
-
-Error WebRTCPeerConnection::create_offer()
-{
-	ERR_FAIL_COND_V(_conn_state != STATE_NEW, FAILED);
-
-	_conn_state = STATE_CONNECTING;
-	godot_js_rtc_pc_offer_create(_js_id, this, &_on_session_created, &_on_error);
-	return OK;
-}
-
-Error WebRTCPeerConnection::set_local_description(const String& p_type, const String& p_sdp)
-{
-	godot_js_rtc_pc_local_description_set(
-		_js_id, p_type.utf8().get_data(), p_sdp.utf8().get_data(), this, &_on_error);
-	return OK;
-}
-
-Error WebRTCPeerConnection::set_remote_description(const String& p_type, const String& p_sdp)
-{
-	if (p_type == "offer") {
-		ERR_FAIL_COND_V(_conn_state != STATE_NEW, FAILED);
-		_conn_state = STATE_CONNECTING;
-	}
-	godot_js_rtc_pc_remote_description_set(_js_id, p_type.utf8().get_data(),
-		p_sdp.utf8().get_data(), this, &_on_session_created, &_on_error);
-	return OK;
-}
-
-Error WebRTCPeerConnection::add_ice_candidate(
-	const String& p_sdp_mid_name, int p_sdp_mline_index_name, const String& p_sdp_name)
-{
-	godot_js_rtc_pc_ice_candidate_add(_js_id, p_sdp_mid_name.utf8().get_data(),
-		p_sdp_mline_index_name, p_sdp_name.utf8().get_data());
-	return OK;
-}
-
-Error WebRTCPeerConnection::initialize(const String& p_config_json)
-{
-	if (_js_id) {
-		godot_js_rtc_pc_destroy(_js_id);
-		_js_id = 0;
-	}
-	_conn_state = STATE_NEW;
-
-	_js_id = godot_js_rtc_pc_create(p_config_json.utf8().get_data(), this,
-		&_on_connection_state_changed, &_on_gathering_state_changed, &_on_signaling_state_changed,
-		&_on_ice_candidate, &_on_data_channel);
-	return _js_id ? OK : FAILED;
-}
-
-Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(
-	const String& p_channel, const String& p_channel_config_json)
-{
-	ERR_FAIL_COND_V(_conn_state != STATE_NEW, nullptr);
-
-	int id = godot_js_rtc_pc_datachannel_create(
-		_js_id, p_channel.utf8().get_data(), p_channel_config_json.utf8().get_data());
-	ERR_FAIL_COND_V(id == 0, nullptr);
-	return memnew(WebRTCDataChannel(id));
-}
-
-Error WebRTCPeerConnection::poll() { return OK; }
-
-WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state() const
-{
-	return _gathering_state;
-}
-
-WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const
-{
-	return _signaling_state;
-}
-
-WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const
-{
-	return _conn_state;
-}
-
-WebRTCPeerConnection::WebRTCPeerConnection() { initialize(); }
-
-WebRTCPeerConnection::~WebRTCPeerConnection()
-{
-	close();
-	if (_js_id) {
-		godot_js_rtc_pc_destroy(_js_id);
-		_js_id = 0;
-	}
-}
-
-#else
-
-WebRTCPeerConnection::ConnectionState WebRTCPeerConnection::get_connection_state() const
-{
-	return STATE_DISCONNECTED;
-}
-
-WebRTCPeerConnection::GatheringState WebRTCPeerConnection::get_gathering_state() const
-{
-	return GATHERING_STATE_NEW;
-}
-
-WebRTCPeerConnection::SignalingState WebRTCPeerConnection::get_signaling_state() const
-{
-	return SIGNALING_STATE_STABLE;
-}
-
-Error WebRTCPeerConnection::initialize(const String& p_config_json) { return ERR_UNAVAILABLE; }
-
-Ref<WebRTCDataChannel> WebRTCPeerConnection::create_data_channel(
-	const String& p_channel_name, const String& p_channel_config_json)
-{
-	return nullptr;
-}
-
-Error WebRTCPeerConnection::create_offer() { return ERR_UNAVAILABLE; }
-
-Error WebRTCPeerConnection::set_remote_description(const String& p_type, const String& p_sdp)
-{
-	return ERR_UNAVAILABLE;
-}
-
-Error WebRTCPeerConnection::set_local_description(const String& p_type, const String& p_sdp)
-{
-	return ERR_UNAVAILABLE;
-}
-
-Error WebRTCPeerConnection::add_ice_candidate(
-	const String& p_sdp_mid, int p_sdp_mline_index_name, const String& p_sdp_name)
-{
-	return ERR_UNAVAILABLE;
-}
-
-Error WebRTCPeerConnection::poll() { return ERR_UNAVAILABLE; }
-
-WebRTCPeerConnection::WebRTCPeerConnection() {}
-
-WebRTCPeerConnection::~WebRTCPeerConnection() {}
-
-void WebRTCPeerConnection::close() {}
-
-#endif // WEB_ENABLED
-
-// WebRTCMultiplayerPeer
-
-void WebRTCMultiplayerPeer::set_target_peer(int p_peer_id) { target_peer = p_peer_id; }
-
-/* Returns the ID of the MultiplayerPeer who sent the most recent packet: */
-int WebRTCMultiplayerPeer::get_packet_peer() const { return next_packet_peer; }
-
-int WebRTCMultiplayerPeer::get_packet_channel() const
-{
-	return next_packet_channel < CH_RESERVED_MAX ? 0 : next_packet_channel - CH_RESERVED_MAX + 1;
-}
-
-MultiplayerPeer::TransferMode WebRTCMultiplayerPeer::get_packet_mode() const
-{
-	ERR_FAIL_INDEX_V(next_packet_channel, channels_modes.size(), TRANSFER_MODE_RELIABLE);
-	return channels_modes.get(next_packet_channel);
-}
-
-bool WebRTCMultiplayerPeer::is_server() const { return unique_id == TARGET_PEER_SERVER; }
-
-void WebRTCMultiplayerPeer::_find_next_peer()
-{
-	HashMap<int, Ref<ConnectedPeer>>::Iterator E = peer_map.find(next_packet_peer);
-	if (E) {
-		++E;
-	}
-	// After last.
-	while (E) {
-		if (!E->value->connected) {
-			++E;
-			continue;
-		}
-		int idx = 0;
-		for (const Ref<WebRTCDataChannel>& F : E->value->channels) {
-			if (F->get_available_packet_count()) {
-				next_packet_channel = idx;
-				next_packet_peer = E->key;
-				return;
-			}
-			idx++;
-		}
-		++E;
-	}
-	E = peer_map.begin();
-	// Before last
-	while (E) {
-		if (!E->value->connected) {
-			++E;
-			continue;
-		}
-		int idx = 0;
-		for (const Ref<WebRTCDataChannel>& F : E->value->channels) {
-			if (F->get_available_packet_count()) {
-				next_packet_channel = idx;
-				next_packet_peer = E->key;
-				return;
-			}
-			idx++;
-		}
-		if (E->key == (int)next_packet_peer) {
-			break;
-		}
-		++E;
-	}
-	// No packet found
-	next_packet_channel = 0;
-	next_packet_peer = 0;
-}
-
-MultiplayerPeer::ConnectionStatus WebRTCMultiplayerPeer::get_connection_status() const
-{
-	return connection_status;
-}
-
-bool WebRTCMultiplayerPeer::is_server_relay_supported() const
-{
-	return network_mode == MODE_SERVER || network_mode == MODE_CLIENT;
-}
-
-int WebRTCMultiplayerPeer::get_unique_id() const
-{
-	ERR_FAIL_COND_V(connection_status == CONNECTION_DISCONNECTED, 1);
-	return unique_id;
-}
-
-bool WebRTCMultiplayerPeer::has_peer(int p_peer_id) { return peer_map.has(p_peer_id); }
-
-void WebRTCMultiplayerPeer::disconnect_peer(int p_peer_id, bool p_force)
-{
-	ERR_FAIL_COND(!peer_map.has(p_peer_id));
-	if (p_force) {
-		peer_map.erase(p_peer_id);
-		if (network_mode == MODE_CLIENT && p_peer_id == TARGET_PEER_SERVER) {
-			connection_status = CONNECTION_DISCONNECTED;
-		}
-	}
-	else {
-		peer_map[p_peer_id]->connection->close(); // Will be removed during next poll.
-	}
-}
-
-Error WebRTCMultiplayerPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	// Peer not available
-	if (next_packet_peer == 0 || !peer_map.has(next_packet_peer)) {
-		_find_next_peer();
-		ERR_FAIL_V(ERR_UNAVAILABLE);
-	}
-	for (Ref<WebRTCDataChannel>& E : peer_map[next_packet_peer]->channels) {
-		if (E->get_available_packet_count()) {
-			Error err = E->get_packet(r_buffer, r_buffer_size);
-			_find_next_peer();
-			return err;
-		}
-	}
-	// Channels for that peer were empty. Bug?
-	_find_next_peer();
-	ERR_FAIL_V(ERR_BUG);
-}
-
-Error WebRTCMultiplayerPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_COND_V(connection_status == CONNECTION_DISCONNECTED, ERR_UNCONFIGURED);
-
-	int ch = get_transfer_channel();
-	if (ch == 0) {
-		switch (get_transfer_mode()) {
-		case TRANSFER_MODE_RELIABLE:
-			ch = CH_RELIABLE;
-			break;
-		case TRANSFER_MODE_UNRELIABLE_ORDERED:
-			ch = CH_ORDERED;
-			break;
-		case TRANSFER_MODE_UNRELIABLE:
-			ch = CH_UNRELIABLE;
-			break;
-		}
-	}
-	else {
-		ch += CH_RESERVED_MAX - 1;
-	}
-
-	if (target_peer > 0) {
-		HashMap<int, Ref<ConnectedPeer>>::Iterator E = peer_map.find(target_peer);
-		ERR_FAIL_COND_V_MSG(
-			!E, ERR_INVALID_PARAMETER, "Invalid target peer: " + itos(target_peer) + ".");
-
-		ERR_FAIL_COND_V_MSG(E->value->channels.size() <= ch, ERR_INVALID_PARAMETER,
-			vformat("Unable to send packet on channel %d, max channels: %d", ch,
-				E->value->channels.size()));
-		ERR_FAIL_COND_V(E->value->channels.get(ch).is_null(), ERR_BUG);
-		return E->value->channels.get(ch)->put_packet(p_buffer, p_buffer_size);
-	}
-	else {
-		int exclude = -target_peer;
-
-		for (KeyValue<int, Ref<ConnectedPeer>>& F : peer_map) {
-			// Exclude packet. If target_peer == 0 then don't exclude any packets
-			if (target_peer != 0 && F.key == exclude) {
-				continue;
-			}
-
-			ERR_CONTINUE_MSG(F.value->channels.size() <= ch,
-				vformat("Unable to send packet on channel %d, max channels: %d", ch,
-					F.value->channels.size()));
-			ERR_CONTINUE(F.value->channels.get(ch).is_null());
-			F.value->channels.get(ch)->put_packet(p_buffer, p_buffer_size);
-		}
-	}
-	return OK;
-}
-
-int WebRTCMultiplayerPeer::get_available_packet_count() const
-{
-	if (next_packet_peer == 0) {
-		return 0; // To be sure next call to get_packet works if size > 0 .
-	}
-	int size = 0;
-	for (const KeyValue<int, Ref<ConnectedPeer>>& E : peer_map) {
-		if (!E.value->connected) {
-			continue;
-		}
-		for (const Ref<WebRTCDataChannel>& F : E.value->channels) {
-			size += F->get_available_packet_count();
-		}
-	}
-	return size;
-}
-
-int WebRTCMultiplayerPeer::get_max_packet_size() const { return 1200; }
-
-WebRTCMultiplayerPeer::~WebRTCMultiplayerPeer() { close(); }
-
-void WebRTCMultiplayerPeer::close() {}
-
-void WebRTCMultiplayerPeer::poll() {}
 
 // Module registration
 
@@ -126134,1781 +123315,6 @@ void initialize_webrtc_module(ModuleInitializationLevel p_level) {}
 #endif // defined(MODULE_WEBRTC_ENABLED)
 
 #if defined(MODULE_WEBSOCKET_ENABLED)
-#include "core/templates/list.h"
-#include "servers/display/display_server.h"
-
-#ifdef WEB_ENABLED
-#include <emscripten.h>
-
-extern "C" {
-typedef void (*WSOnOpen)(void* p_ref, char* p_protocol);
-typedef void (*WSOnMessage)(void* p_ref, const uint8_t* p_buf, int p_buf_len, int p_is_string);
-typedef void (*WSOnClose)(void* p_ref, int p_code, const char* p_reason, int p_is_clean);
-typedef void (*WSOnError)(void* p_ref);
-
-extern int godot_js_websocket_create(void* p_ref, const char* p_url, const char* p_proto,
-	WSOnOpen p_on_open, WSOnMessage p_on_message, WSOnError p_on_error, WSOnClose p_on_close);
-extern int godot_js_websocket_send(int p_id, const uint8_t* p_buf, int p_buf_len, int p_raw);
-extern int godot_js_websocket_buffered_amount(int p_id);
-extern void godot_js_websocket_close(int p_id, int p_code, const char* p_reason);
-extern void godot_js_websocket_destroy(int p_id);
-}
-#else
-#include <wslay/wslay.h>
-
-#define WSL_MAX_HEADER_SIZE 4096
-#endif
-
-template <typename T>
-class PacketBuffer final
-{
-private:
-	typedef struct
-	{
-		uint32_t size;
-		T info;
-	} _Packet;
-
-	Vector<_Packet> _packets;
-	int _queued = 0;
-	int _write_pos = 0;
-	int _read_pos = 0;
-	RingBuffer<uint8_t> _payload;
-
-public:
-	Error write_packet(const uint8_t* p_payload, uint32_t p_size, const T* p_info)
-	{
-		ERR_FAIL_COND_V_MSG(p_payload && (uint32_t)_payload.space_left() < p_size,
-			ERR_OUT_OF_MEMORY, "Buffer payload full! Dropping data.");
-		ERR_FAIL_COND_V_MSG(p_info && _queued >= _packets.size(), ERR_OUT_OF_MEMORY,
-			"Too many packets in queue! Dropping data.");
-
-		// If p_info is nullptr, only the payload is written
-		if (p_info) {
-			ERR_FAIL_COND_V(_write_pos > _packets.size(), ERR_OUT_OF_MEMORY);
-			_Packet p;
-			p.size = p_size;
-			p.info = *p_info;
-			_packets.write[_write_pos] = p;
-			_queued += 1;
-			_write_pos++;
-			if (_write_pos >= _packets.size()) {
-				_write_pos = 0;
-			}
-		}
-
-		// If p_payload is nullptr, only the packet information is written.
-		if (p_payload) {
-			_payload.write((const uint8_t*)p_payload, p_size);
-		}
-
-		return OK;
-	}
-
-	Error read_packet(uint8_t* r_payload, int p_bytes, T* r_info, int& r_read)
-	{
-		ERR_FAIL_COND_V(_queued < 1, ERR_UNAVAILABLE);
-		_Packet p = _packets[_read_pos];
-		_read_pos += 1;
-		if (_read_pos >= _packets.size()) {
-			_read_pos = 0;
-		}
-		_queued -= 1;
-
-		ERR_FAIL_COND_V(_payload.data_left() < (int)p.size, ERR_BUG);
-		ERR_FAIL_COND_V(p_bytes < (int)p.size, ERR_OUT_OF_MEMORY);
-
-		r_read = p.size;
-		memcpy(r_info, &p.info, sizeof(T));
-		_payload.read(r_payload, p.size);
-		return OK;
-	}
-
-	void resize(int p_buf_shift, int p_max_packets)
-	{
-		_payload.resize(p_buf_shift);
-		_packets.resize(p_max_packets);
-		_read_pos = 0;
-		_write_pos = 0;
-		_queued = 0;
-	}
-
-	int packets_left() const { return _queued; }
-
-	int payload_space_left() const { return _payload.space_left(); }
-
-	int packets_space_left() const { return _packets.size() - _queued; }
-
-	void clear()
-	{
-		_payload.resize(0);
-		_packets.resize(0);
-		_read_pos = 0;
-		_write_pos = 0;
-		_queued = 0;
-	}
-
-	PacketBuffer() { clear(); }
-
-	~PacketBuffer() { clear(); }
-};
-
-class WebSocketPeer final : public PacketPeer
-{
-public:
-	enum State
-	{
-		STATE_CONNECTING,
-		STATE_OPEN,
-		STATE_CLOSING,
-		STATE_CLOSED
-	};
-
-	enum WriteMode
-	{
-		WRITE_MODE_TEXT,
-		WRITE_MODE_BINARY,
-	};
-
-	enum
-	{
-		DEFAULT_BUFFER_SIZE = 65535,
-	};
-
-private:
-	Vector<String> supported_protocols;
-	Vector<String> handshake_headers;
-
-	int outbound_buffer_size = DEFAULT_BUFFER_SIZE;
-	int inbound_buffer_size = DEFAULT_BUFFER_SIZE;
-	int max_queued_packets = 4096;
-	uint64_t heartbeat_interval_msec = 0;
-
-	State ready_state = STATE_CLOSED;
-	Vector<uint8_t> packet_buffer;
-	PacketBuffer<uint8_t> in_buffer;
-	uint8_t was_string = 0;
-	int close_code = -1;
-	String close_reason;
-	String selected_protocol;
-	String requested_url;
-
-	Error _send_bind(const PackedByteArray& p_data, WriteMode p_mode = WRITE_MODE_BINARY);
-	Vector<String> _get_supported_protocols() const;
-	Vector<String> _get_handshake_headers() const;
-	void _clear();
-
-#ifdef WEB_ENABLED
-	int peer_sock = -1;
-
-	static void _esws_on_connect(void* obj, char* proto);
-	static void _esws_on_message(
-		void* obj, const uint8_t* p_data, int p_data_size, int p_is_string);
-	static void _esws_on_error(void* obj);
-	static void _esws_on_close(void* obj, int code, const char* reason, int was_clean);
-
-	Error _send(const uint8_t* p_buffer, int p_buffer_size, bool p_binary);
-#else
-	static ssize_t _wsl_recv_callback(
-		wslay_event_context_ptr ctx, uint8_t* data, size_t len, int flags, void* user_data);
-	static void _wsl_recv_start_callback(wslay_event_context_ptr ctx,
-		const struct wslay_event_on_frame_recv_start_arg* arg, void* user_data);
-	static void _wsl_frame_recv_chunk_callback(wslay_event_context_ptr ctx,
-		const struct wslay_event_on_frame_recv_chunk_arg* arg, void* user_data);
-
-	static ssize_t _wsl_send_callback(
-		wslay_event_context_ptr ctx, const uint8_t* data, size_t len, int flags, void* user_data);
-	static int _wsl_genmask_callback(
-		wslay_event_context_ptr ctx, uint8_t* buf, size_t len, void* user_data);
-	static void _wsl_msg_recv_callback(wslay_event_context_ptr ctx,
-		const struct wslay_event_on_msg_recv_arg* arg, void* user_data);
-
-	static wslay_event_callbacks _wsl_callbacks;
-
-	static String _compute_key_response(const String& p_key);
-	static String _generate_key();
-
-	class Resolver final
-	{
-		IP::ResolverID resolver_id = IP::RESOLVER_INVALID_ID;
-		int port = 0;
-
-	public:
-		void try_next_candidate(const Ref<StreamPeerSocket>& p_tcp);
-		void start(const String& p_host, int p_port);
-		void stop();
-
-		Resolver() {}
-	};
-
-	struct PendingMessage
-	{
-		size_t payload_size = 0;
-		uint8_t opcode = 0;
-
-		void clear()
-		{
-			payload_size = 0;
-			opcode = 0;
-		}
-	};
-
-	Resolver resolver;
-	bool is_server = false;
-	Ref<StreamPeerSocket> tcp;
-	Ref<StreamPeer> connection;
-	wslay_event_context_ptr wsl_ctx = nullptr;
-
-	String requested_host;
-	bool pending_request = true;
-	Ref<StreamPeerBuffer> handshake_buffer;
-	String session_key;
-
-	uint64_t last_heartbeat = 0;
-	bool heartbeat_waiting = false;
-	PendingMessage pending_message;
-
-	bool use_tls = true;
-	Ref<TLSOptions> tls_options;
-
-	Error _send(const uint8_t* p_buffer, int p_buffer_size, wslay_opcode p_opcode);
-
-	Error _do_server_handshake();
-	bool _parse_client_request();
-
-	void _do_client_handshake();
-	bool _verify_server_response();
-#endif
-
-public:
-	static WebSocketPeer* create(bool p_notify_postinitialize = true)
-	{
-		return memnew(WebSocketPeer);
-	}
-
-	// PacketPeer
-	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-	virtual int get_max_packet_size() const override { return packet_buffer.size(); }
-
-	// WebSocketPeer
-	Error connect_to_url(
-		const String& p_url, const Ref<TLSOptions>& p_options = Ref<TLSOptions>());
-	Error accept_stream(const Ref<StreamPeer>& p_stream);
-
-	Error send(const uint8_t* p_buffer, int p_buffer_size, WriteMode p_mode);
-	void close(int p_code = 1000, const String& p_reason = "");
-
-	IPAddress get_connected_host() const;
-	uint16_t get_connected_port() const;
-	bool was_string_packet() const { return was_string; }
-	void set_no_delay(bool p_enabled);
-	int get_current_outbound_buffered_amount() const;
-	String get_selected_protocol() const { return selected_protocol; }
-	String get_requested_url() const { return requested_url; }
-
-	void poll();
-	State get_ready_state() const { return ready_state; }
-	int get_close_code() const { return close_code; }
-	String get_close_reason() const { return close_reason; }
-
-	Error send_text(const String& p_text);
-
-	void set_supported_protocols(const Vector<String>& p_protocols);
-	const Vector<String> get_supported_protocols() const;
-
-	void set_handshake_headers(const Vector<String>& p_headers);
-	const Vector<String> get_handshake_headers() const;
-
-	void set_outbound_buffer_size(int p_buffer_size);
-	int get_outbound_buffer_size() const;
-
-	void set_inbound_buffer_size(int p_buffer_size);
-	int get_inbound_buffer_size() const;
-
-	void set_max_queued_packets(int p_max_queued_packets);
-	int get_max_queued_packets() const;
-
-	double get_heartbeat_interval() const;
-	void set_heartbeat_interval(double p_interval);
-
-	WebSocketPeer();
-	~WebSocketPeer();
-};
-
-class WebSocketMultiplayerPeer final : public MultiplayerPeer
-{
-private:
-	Ref<WebSocketPeer> _create_peer();
-
-	enum
-	{
-		SYS_NONE = 0,
-		SYS_ADD = 1,
-		SYS_DEL = 2,
-		SYS_ID = 3,
-
-		PROTO_SIZE = 9
-	};
-
-	struct Packet
-	{
-		int source = 0;
-		uint8_t* data = nullptr;
-		uint32_t size = 0;
-	};
-
-	struct PendingPeer
-	{
-		uint64_t time = 0;
-		Ref<StreamPeerSocket> tcp;
-		Ref<StreamPeer> connection;
-		Ref<WebSocketPeer> ws;
-	};
-
-	uint64_t handshake_timeout = 3000;
-	Ref<WebSocketPeer> peer_config;
-	HashMap<int, PendingPeer> pending_peers;
-	Ref<SocketServer> tcp_server;
-	Ref<TLSOptions> tls_server_options;
-
-	ConnectionStatus connection_status = CONNECTION_DISCONNECTED;
-
-	List<Packet> incoming_packets;
-	HashMap<int, Ref<WebSocketPeer>> peers_map;
-	Packet current_packet;
-
-	int target_peer = 0;
-	int unique_id = 0;
-
-	void _poll_client();
-	void _poll_server();
-	void _clear();
-
-public:
-	/* MultiplayerPeer */
-	virtual void set_target_peer(int p_target_peer) override;
-	virtual int get_packet_peer() const override;
-
-	virtual int get_packet_channel() const override { return 0; }
-
-	virtual TransferMode get_packet_mode() const override { return TRANSFER_MODE_RELIABLE; }
-
-	virtual int get_unique_id() const override;
-
-	virtual bool is_server_relay_supported() const override { return true; }
-
-	virtual int get_max_packet_size() const override;
-	virtual bool is_server() const override;
-	virtual void poll() override;
-	virtual void close() override;
-	virtual void disconnect_peer(int p_peer_id, bool p_force = false) override;
-
-	virtual ConnectionStatus get_connection_status() const override;
-
-	/* PacketPeer */
-	virtual int get_available_packet_count() const override;
-	virtual Error get_packet(const uint8_t** r_buffer, int& r_buffer_size) override;
-	virtual Error put_packet(const uint8_t* p_buffer, int p_buffer_size) override;
-
-	/* WebSocketPeer */
-	Ref<WebSocketPeer> get_peer(int p_peer_id) const;
-
-	Error create_client(const String& p_url, const Ref<TLSOptions>& p_options);
-	Error create_server(int p_port, IPAddress p_bind_ip, const Ref<TLSOptions>& p_options);
-
-	void set_supported_protocols(const Vector<String>& p_protocols);
-	Vector<String> get_supported_protocols() const;
-
-	void set_handshake_headers(const Vector<String>& p_headers);
-	Vector<String> get_handshake_headers() const;
-
-	void set_outbound_buffer_size(int p_buffer_size);
-	int get_outbound_buffer_size() const;
-
-	void set_inbound_buffer_size(int p_buffer_size);
-	int get_inbound_buffer_size() const;
-
-	float get_handshake_timeout() const;
-	void set_handshake_timeout(float p_timeout);
-
-	IPAddress get_peer_address(int p_peer_id) const;
-	int get_peer_port(int p_peer_id) const;
-
-	void set_max_queued_packets(int p_max_queued_packets);
-	int get_max_queued_packets() const;
-
-	WebSocketMultiplayerPeer();
-	~WebSocketMultiplayerPeer();
-};
-
-class RemoteDebuggerPeerWebSocket final
-{
-	Ref<WebSocketPeer> ws_peer;
-
-	int max_queued_messages = 4096;
-
-public:
-	Error connect_to_host(const String& p_uri);
-
-	bool is_peer_connected();
-	int get_max_message_size() const;
-	bool has_message();
-	void close();
-	void poll();
-	bool can_block() const;
-
-	RemoteDebuggerPeerWebSocket(const Ref<WebSocketPeer>& p_peer = Ref<WebSocketPeer>());
-};
-
-#include "servers/display/display_server.h"
-
-// WebSocketPeer (shared configuration)
-
-Error WebSocketPeer::_send_bind(const PackedByteArray& p_message, WriteMode p_mode)
-{
-	return send(p_message.ptr(), p_message.size(), p_mode);
-}
-
-Error WebSocketPeer::send_text(const String& p_text)
-{
-	const CharString cs = p_text.utf8();
-	return send((const uint8_t*)cs.ptr(), cs.length(), WRITE_MODE_TEXT);
-}
-
-void WebSocketPeer::set_supported_protocols(const Vector<String>& p_protocols)
-{
-	// Strip edges from protocols.
-	supported_protocols.resize(p_protocols.size());
-	for (int i = 0; i < p_protocols.size(); i++) {
-		supported_protocols.write[i] = p_protocols[i].strip_edges();
-	}
-}
-
-const Vector<String> WebSocketPeer::get_supported_protocols() const { return supported_protocols; }
-
-Vector<String> WebSocketPeer::_get_supported_protocols() const
-{
-	Vector<String> out;
-	out.append_array(supported_protocols);
-	return out;
-}
-
-void WebSocketPeer::set_handshake_headers(const Vector<String>& p_headers)
-{
-	handshake_headers = p_headers;
-}
-
-const Vector<String> WebSocketPeer::get_handshake_headers() const { return handshake_headers; }
-
-Vector<String> WebSocketPeer::_get_handshake_headers() const
-{
-	Vector<String> out;
-	out.append_array(handshake_headers);
-	return out;
-}
-
-void WebSocketPeer::set_outbound_buffer_size(int p_buffer_size)
-{
-	outbound_buffer_size = p_buffer_size;
-}
-
-int WebSocketPeer::get_outbound_buffer_size() const { return outbound_buffer_size; }
-
-void WebSocketPeer::set_inbound_buffer_size(int p_buffer_size)
-{
-	inbound_buffer_size = p_buffer_size;
-}
-
-int WebSocketPeer::get_inbound_buffer_size() const { return inbound_buffer_size; }
-
-void WebSocketPeer::set_max_queued_packets(int p_max_queued_packets)
-{
-	max_queued_packets = p_max_queued_packets;
-}
-
-int WebSocketPeer::get_max_queued_packets() const { return max_queued_packets; }
-
-double WebSocketPeer::get_heartbeat_interval() const { return heartbeat_interval_msec / 1000.0; }
-
-void WebSocketPeer::set_heartbeat_interval(double p_interval)
-{
-	ERR_FAIL_COND(p_interval < 0);
-	heartbeat_interval_msec = p_interval * 1000.0;
-}
-
-#ifdef WEB_ENABLED
-
-// WebSocketPeer (Emscripten / Web implementation)
-
-void WebSocketPeer::_esws_on_connect(void* p_obj, char* p_proto)
-{
-	WebSocketPeer* peer = static_cast<WebSocketPeer*>(p_obj);
-	peer->ready_state = STATE_OPEN;
-	peer->selected_protocol.clear();
-	peer->selected_protocol.append_utf8(p_proto);
-}
-
-void WebSocketPeer::_esws_on_message(
-	void* p_obj, const uint8_t* p_data, int p_data_size, int p_is_string)
-{
-	WebSocketPeer* peer = static_cast<WebSocketPeer*>(p_obj);
-	uint8_t is_string = p_is_string ? 1 : 0;
-	peer->in_buffer.write_packet(p_data, p_data_size, &is_string);
-}
-
-void WebSocketPeer::_esws_on_error(void* p_obj)
-{
-	WebSocketPeer* peer = static_cast<WebSocketPeer*>(p_obj);
-	peer->ready_state = STATE_CLOSED;
-}
-
-void WebSocketPeer::_esws_on_close(void* p_obj, int p_code, const char* p_reason, int p_was_clean)
-{
-	WebSocketPeer* peer = static_cast<WebSocketPeer*>(p_obj);
-	peer->close_code = p_code;
-	peer->close_reason.clear();
-	peer->close_reason.append_utf8(p_reason);
-	peer->ready_state = STATE_CLOSED;
-}
-
-Error WebSocketPeer::connect_to_url(const String& p_url, const Ref<TLSOptions>& p_tls_options)
-{
-	ERR_FAIL_COND_V(p_url.is_empty(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_tls_options.is_valid() && p_tls_options->is_server(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(
-		ready_state != STATE_CLOSED && ready_state != STATE_CLOSING, ERR_ALREADY_IN_USE);
-
-	_clear();
-
-	String host;
-	String path;
-	String scheme;
-	String fragment;
-	int port = 0;
-	Error err = p_url.parse_url(scheme, host, port, path, fragment);
-	ERR_FAIL_COND_V_MSG(err != OK, err, "Invalid URL: " + p_url);
-
-	if (scheme.is_empty()) {
-		scheme = "ws://";
-	}
-	ERR_FAIL_COND_V_MSG(scheme != "ws://" && scheme != "wss://", ERR_INVALID_PARAMETER,
-		vformat("Invalid protocol: \"%s\" (must be either \"ws://\" or \"wss://\").", scheme));
-
-	String proto_string;
-	for (int i = 0; i < supported_protocols.size(); i++) {
-		if (i != 0) {
-			proto_string += ",";
-		}
-		proto_string += supported_protocols[i];
-	}
-
-	if (handshake_headers.size()) {
-		WARN_PRINT_ONCE("Custom headers are not supported in Web platform.");
-	}
-
-	requested_url = scheme + host;
-
-	if (port && ((scheme == "ws://" && port != 80) || (scheme == "wss://" && port != 443))) {
-		requested_url += ":" + String::num_int64(port);
-	}
-
-	if (!path.is_empty()) {
-		requested_url += path;
-	}
-
-	peer_sock = godot_js_websocket_create(this, requested_url.utf8().get_data(),
-		proto_string.utf8().get_data(), &_esws_on_connect, &_esws_on_message, &_esws_on_error,
-		&_esws_on_close);
-	if (peer_sock == -1) {
-		return FAILED;
-	}
-	in_buffer.resize(Math::nearest_shift((uint32_t)inbound_buffer_size), max_queued_packets);
-	packet_buffer.resize(inbound_buffer_size);
-	ready_state = STATE_CONNECTING;
-	return OK;
-}
-
-Error WebSocketPeer::accept_stream(const Ref<StreamPeer>& p_stream)
-{
-	WARN_PRINT_ONCE("Acting as WebSocket server is not supported in Web platforms.");
-	return ERR_UNAVAILABLE;
-}
-
-Error WebSocketPeer::_send(const uint8_t* p_buffer, int p_buffer_size, bool p_binary)
-{
-	ERR_FAIL_COND_V(outbound_buffer_size > 0 && (get_current_outbound_buffered_amount() +
-													p_buffer_size >= outbound_buffer_size),
-		ERR_OUT_OF_MEMORY);
-
-	if (godot_js_websocket_send(peer_sock, p_buffer, p_buffer_size, p_binary ? 1 : 0) != 0) {
-		return FAILED;
-	}
-	return OK;
-}
-
-Error WebSocketPeer::send(const uint8_t* p_buffer, int p_buffer_size, WriteMode p_mode)
-{
-	return _send(p_buffer, p_buffer_size, p_mode == WRITE_MODE_BINARY);
-}
-
-Error WebSocketPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	return _send(p_buffer, p_buffer_size, true);
-}
-
-Error WebSocketPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	if (in_buffer.packets_left() == 0) {
-		return ERR_UNAVAILABLE;
-	}
-
-	int read = 0;
-	Error err =
-		in_buffer.read_packet(packet_buffer.ptrw(), packet_buffer.size(), &was_string, read);
-	ERR_FAIL_COND_V(err != OK, err);
-
-	*r_buffer = packet_buffer.ptr();
-	r_buffer_size = read;
-
-	return OK;
-}
-
-int WebSocketPeer::get_available_packet_count() const
-{
-	return in_buffer.packets_left();
-}
-
-int WebSocketPeer::get_current_outbound_buffered_amount() const
-{
-	if (peer_sock != -1) {
-		return godot_js_websocket_buffered_amount(peer_sock);
-	}
-	return 0;
-}
-
-void WebSocketPeer::_clear()
-{
-	if (peer_sock != -1) {
-		godot_js_websocket_destroy(peer_sock);
-		peer_sock = -1;
-	}
-	ready_state = STATE_CLOSED;
-	was_string = 0;
-	close_code = -1;
-	close_reason.clear();
-	selected_protocol.clear();
-	requested_url.clear();
-	in_buffer.clear();
-	packet_buffer.clear();
-}
-
-void WebSocketPeer::close(int p_code, const String& p_reason)
-{
-	if (p_code < 0) {
-		if (peer_sock != -1) {
-			godot_js_websocket_destroy(peer_sock);
-			peer_sock = -1;
-		}
-		ready_state = STATE_CLOSED;
-	}
-	if (ready_state == STATE_CONNECTING || ready_state == STATE_OPEN) {
-		ready_state = STATE_CLOSING;
-		if (peer_sock != -1) {
-			godot_js_websocket_close(peer_sock, p_code, p_reason.utf8().get_data());
-		}
-		else {
-			ready_state = STATE_CLOSED;
-		}
-	}
-	in_buffer.clear();
-	packet_buffer.clear();
-}
-
-void WebSocketPeer::poll()
-{
-	// Automatically polled by the navigator.
-}
-
-IPAddress WebSocketPeer::get_connected_host() const
-{
-	ERR_FAIL_V_MSG(IPAddress(), "Not supported in Web export.");
-}
-
-uint16_t WebSocketPeer::get_connected_port() const
-{
-	ERR_FAIL_V_MSG(0, "Not supported in Web export.");
-}
-
-void WebSocketPeer::set_no_delay(bool p_enabled)
-{
-	ERR_FAIL_MSG("'set_no_delay' is not supported in Web export.");
-}
-
-WebSocketPeer::WebSocketPeer() {}
-
-WebSocketPeer::~WebSocketPeer() { _clear(); }
-
-#else
-
-// WebSocketPeer (wslay implementation)
-
-void WebSocketPeer::Resolver::stop()
-{
-	if (resolver_id != IP::RESOLVER_INVALID_ID) {
-		IP::erase_resolve_item(resolver_id);
-		resolver_id = IP::RESOLVER_INVALID_ID;
-	}
-	port = 0;
-}
-
-void WebSocketPeer::Resolver::try_next_candidate(const Ref<StreamPeerSocket>&) {}
-
-void WebSocketPeer::Resolver::start(const String&, int) {}
-
-bool WebSocketPeer::_parse_client_request()
-{
-	Vector<String> psa = String::ascii(Span((const char*)handshake_buffer->get_data_array().ptr(),
-										   handshake_buffer->get_position() - 4))
-							 .split("\r\n");
-	int len = psa.size();
-	ERR_FAIL_COND_V_MSG(
-		len < 4, false, "Not enough response headers, got: " + itos(len) + ", expected >= 4.");
-
-	Vector<String> req = psa[0].split(" ", false);
-	ERR_FAIL_COND_V_MSG(req.size() < 2, false, "Invalid protocol or status code.");
-
-	// Wrong protocol
-	ERR_FAIL_COND_V_MSG(
-		req[0] != "GET" || req[2] != "HTTP/1.1", false, "Invalid method or HTTP version.");
-
-	HashMap<String, String> headers;
-	for (int i = 1; i < len; i++) {
-		Vector<String> header = psa[i].split(":", false, 1);
-		ERR_FAIL_COND_V_MSG(header.size() != 2, false, "Invalid header -> " + psa[i]);
-		String name = header[0].to_lower();
-		String value = header[1].strip_edges();
-		if (headers.has(name)) {
-			headers[name] += "," + value;
-		}
-		else {
-			headers[name] = value;
-		}
-	}
-	requested_host = headers.has("host") ? headers.get("host") : "";
-	requested_url = (use_tls ? "wss://" : "ws://") + requested_host + req[1];
-#define WSL_CHECK(NAME, VALUE)                                                                     \
-	ERR_FAIL_COND_V_MSG(!headers.has(NAME) || headers[NAME].to_lower() != VALUE, false,            \
-		"Missing or invalid header '" + String(NAME) + "'. Expected value '" + VALUE + "'.");
-#define WSL_CHECK_EX(NAME)                                                                         \
-	ERR_FAIL_COND_V_MSG(!headers.has(NAME), false, "Missing header '" + String(NAME) + "'.");
-	WSL_CHECK("upgrade", "websocket");
-	WSL_CHECK("sec-websocket-version", "13");
-	WSL_CHECK_EX("sec-websocket-key");
-	WSL_CHECK_EX("connection");
-#undef WSL_CHECK_EX
-#undef WSL_CHECK
-	session_key = headers["sec-websocket-key"];
-	if (headers.has("sec-websocket-protocol")) {
-		Vector<String> protos = headers["sec-websocket-protocol"].split(",");
-		for (int i = 0; i < protos.size(); i++) {
-			String proto = protos[i].strip_edges();
-			// Check if we have the given protocol
-			for (int j = 0; j < supported_protocols.size(); j++) {
-				if (proto != supported_protocols[j]) {
-					continue;
-				}
-				selected_protocol = proto;
-				break;
-			}
-			// Found a protocol
-			if (!selected_protocol.is_empty()) {
-				break;
-			}
-		}
-		if (selected_protocol.is_empty()) { // Invalid protocol(s) requested
-			return false;
-		}
-	}
-	else if (supported_protocols.size() > 0) { // No protocol requested, but we need one
-		return false;
-	}
-	return true;
-}
-
-Error WebSocketPeer::_do_server_handshake()
-{
-	if (use_tls) {
-		Ref<StreamPeerTLS> tls = static_cast<Ref<StreamPeerTLS>>(connection);
-		if (tls.is_null()) {
-			ERR_FAIL_V_MSG(ERR_BUG, "Couldn't get StreamPeerTLS for WebSocket handshake.");
-			close(-1);
-			return FAILED;
-		}
-		tls->poll();
-		if (tls->get_status() == StreamPeerTLS::STATUS_HANDSHAKING) {
-			return OK; // Pending handshake
-		}
-		else if (tls->get_status() != StreamPeerTLS::STATUS_CONNECTED) {
-			print_verbose(vformat(
-				"WebSocket SSL connection error during handshake (StreamPeerTLS status code %d).",
-				tls->get_status()));
-			close(-1);
-			return FAILED;
-		}
-	}
-
-	if (pending_request) {
-		int read = 0;
-		while (true) {
-			ERR_FAIL_COND_V_MSG(handshake_buffer->get_available_bytes() < 1, ERR_OUT_OF_MEMORY,
-				"WebSocket response headers are too big.");
-			int pos = handshake_buffer->get_position();
-			uint8_t byte;
-			Error err = connection->get_partial_data(&byte, 1, read);
-			if (err != OK) { // Got an error
-				print_verbose(vformat(
-					"WebSocket error while getting partial data (StreamPeer error code %d).", err));
-				close(-1);
-				return FAILED;
-			}
-			else if (read != 1) { // Busy, wait next poll
-				return OK;
-			}
-			handshake_buffer->put_u8(byte);
-			const char* r = (const char*)handshake_buffer->get_data_array().ptr();
-			int l = pos;
-			if (l > 3 && r[l] == '\n' && r[l - 1] == '\r' && r[l - 2] == '\n' && r[l - 3] == '\r') {
-				if (!_parse_client_request()) {
-					close(-1);
-					return FAILED;
-				}
-				String s = "HTTP/1.1 101 Switching Protocols\r\n";
-				s += "Upgrade: websocket\r\n";
-				s += "Connection: Upgrade\r\n";
-				s += "Sec-WebSocket-Accept: " + _compute_key_response(session_key) + "\r\n";
-				if (!selected_protocol.is_empty()) {
-					s += "Sec-WebSocket-Protocol: " + selected_protocol + "\r\n";
-				}
-				for (int i = 0; i < handshake_headers.size(); i++) {
-					s += handshake_headers[i] + "\r\n";
-				}
-				s += "\r\n";
-				CharString cs = s.utf8();
-				handshake_buffer->clear();
-				handshake_buffer->put_data((const uint8_t*)cs.get_data(), cs.length());
-				handshake_buffer->seek(0);
-				pending_request = false;
-				break;
-			}
-		}
-	}
-
-	if (pending_request) { // Still pending.
-		return OK;
-	}
-
-	int left = handshake_buffer->get_available_bytes();
-	if (left) {
-		Vector<uint8_t> data = handshake_buffer->get_data_array();
-		int pos = handshake_buffer->get_position();
-		int sent = 0;
-		Error err = connection->put_partial_data(data.ptr() + pos, left, sent);
-		if (err != OK) {
-			print_verbose(vformat(
-				"WebSocket error while putting partial data (StreamPeer error code %d).", err));
-			close(-1);
-			return err;
-		}
-		handshake_buffer->seek(pos + sent);
-		left -= sent;
-		if (left == 0) {
-			resolver.stop();
-			// Response sent, initialize wslay context.
-			wslay_event_context_server_init(&wsl_ctx, &_wsl_callbacks, this);
-			wslay_event_config_set_no_buffering(wsl_ctx, 1);
-			wslay_event_config_set_max_recv_msg_length(wsl_ctx, inbound_buffer_size);
-			in_buffer.resize(
-				Math::nearest_shift((uint32_t)inbound_buffer_size), max_queued_packets);
-			packet_buffer.resize(inbound_buffer_size);
-			ready_state = STATE_OPEN;
-		}
-	}
-
-	return OK;
-}
-
-void WebSocketPeer::_do_client_handshake() {}
-
-bool WebSocketPeer::_verify_server_response()
-{
-	Vector<String> psa = String::ascii(Span((const char*)handshake_buffer->get_data_array().ptr(),
-										   handshake_buffer->get_position() - 4))
-							 .split("\r\n");
-	int len = psa.size();
-	ERR_FAIL_COND_V_MSG(
-		len < 4, false, "Not enough response headers. Got: " + itos(len) + ", expected >= 4.");
-
-	Vector<String> req = psa[0].split(" ", false);
-	ERR_FAIL_COND_V_MSG(req.size() < 2, false,
-		"Invalid protocol or status code. Got '" + psa[0] + "', expected 'HTTP/1.1 101'.");
-
-	// Wrong protocol
-	ERR_FAIL_COND_V_MSG(req[0] != "HTTP/1.1", false,
-		"Invalid protocol. Got: '" + req[0] + "', expected 'HTTP/1.1'.");
-	ERR_FAIL_COND_V_MSG(
-		req[1] != "101", false, "Invalid status code. Got: '" + req[1] + "', expected '101'.");
-
-	HashMap<String, String> headers;
-	for (int i = 1; i < len; i++) {
-		Vector<String> header = psa[i].split(":", false, 1);
-		ERR_FAIL_COND_V_MSG(header.size() != 2, false, "Invalid header -> " + psa[i] + ".");
-		String name = header[0].to_lower();
-		String value = header[1].strip_edges();
-		if (headers.has(name)) {
-			headers[name] += "," + value;
-		}
-		else {
-			headers[name] = value;
-		}
-	}
-
-#define WSL_CHECK(NAME, VALUE)                                                                     \
-	ERR_FAIL_COND_V_MSG(!headers.has(NAME) || headers[NAME].to_lower() != VALUE, false,            \
-		"Missing or invalid header '" + String(NAME) + "'. Expected value '" + VALUE + "'.");
-#define WSL_CHECK_NC(NAME, VALUE)                                                                  \
-	ERR_FAIL_COND_V_MSG(!headers.has(NAME) || headers[NAME] != VALUE, false,                       \
-		"Missing or invalid header '" + String(NAME) + "'. Expected value '" + VALUE + "'.");
-	WSL_CHECK("connection", "upgrade");
-	WSL_CHECK("upgrade", "websocket");
-	WSL_CHECK_NC("sec-websocket-accept", _compute_key_response(session_key));
-#undef WSL_CHECK_NC
-#undef WSL_CHECK
-	if (supported_protocols.is_empty()) {
-		// We didn't request a custom protocol
-		ERR_FAIL_COND_V_MSG(headers.has("sec-websocket-protocol"), false,
-			"Received unrequested sub-protocol -> " + headers["sec-websocket-protocol"]);
-	}
-	else {
-		// We requested at least one custom protocol but didn't receive one
-		ERR_FAIL_COND_V_MSG(!headers.has("sec-websocket-protocol"), false,
-			"Requested sub-protocol(s) but received none.");
-		// Check received sub-protocol was one of those requested.
-		selected_protocol = headers["sec-websocket-protocol"];
-		bool valid = false;
-		for (int i = 0; i < supported_protocols.size(); i++) {
-			if (supported_protocols[i] != selected_protocol) {
-				continue;
-			}
-			valid = true;
-			break;
-		}
-		if (!valid) {
-			ERR_FAIL_V_MSG(false, "Received unrequested sub-protocol -> " + selected_protocol);
-		}
-	}
-	return true;
-}
-
-Error WebSocketPeer::connect_to_url(const String& p_url, const Ref<TLSOptions>& p_options)
-{
-	ERR_FAIL_COND_V(p_url.is_empty(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(p_options.is_valid() && p_options->is_server(), ERR_INVALID_PARAMETER);
-	ERR_FAIL_COND_V(
-		ready_state != STATE_CLOSED && ready_state != STATE_CLOSING, ERR_ALREADY_IN_USE);
-
-	_clear();
-
-	String host;
-	String path;
-	String scheme;
-	String fragment;
-	int port = 0;
-	Error err = p_url.parse_url(scheme, host, port, path, fragment);
-	ERR_FAIL_COND_V_MSG(err != OK, err, "Invalid URL: " + p_url);
-	if (scheme.is_empty()) {
-		scheme = "ws://";
-	}
-	ERR_FAIL_COND_V_MSG(scheme != "ws://" && scheme != "wss://", ERR_INVALID_PARAMETER,
-		vformat("Invalid protocol: \"%s\" (must be either \"ws://\" or \"wss://\").", scheme));
-
-	use_tls = false;
-	if (scheme == "wss://") {
-		use_tls = true;
-	}
-	if (port == 0) {
-		port = use_tls ? 443 : 80;
-	}
-	if (path.is_empty()) {
-		path = "/";
-	}
-
-	ERR_FAIL_COND_V_MSG(use_tls && !StreamPeerTLS::is_available(), ERR_UNAVAILABLE,
-		"WSS is not available in this build.");
-
-	requested_url = p_url;
-	requested_host = host;
-
-	if (p_options.is_valid()) {
-		tls_options = p_options;
-	}
-	else {
-		tls_options = TLSOptions::client();
-	}
-
-	tcp.instantiate();
-
-	resolver.start(host, port);
-	resolver.try_next_candidate(tcp);
-
-	if (tcp->get_status() != StreamPeerSocket::STATUS_CONNECTING &&
-		tcp->get_status() != StreamPeerSocket::STATUS_CONNECTED) {
-		_clear();
-		return FAILED;
-	}
-	connection = tcp;
-
-	// Prepare handshake request.
-	session_key = _generate_key();
-	String request = "GET " + path + " HTTP/1.1\r\n";
-	String port_string;
-	if ((port != 80 && !use_tls) || (port != 443 && use_tls)) {
-		port_string = ":" + itos(port);
-	}
-	request += "Host: " + host + port_string + "\r\n";
-	request += "Upgrade: websocket\r\n";
-	request += "Connection: Upgrade\r\n";
-	request += "Sec-WebSocket-Key: " + session_key + "\r\n";
-	request += "Sec-WebSocket-Version: 13\r\n";
-	if (supported_protocols.size() > 0) {
-		request += "Sec-WebSocket-Protocol: ";
-		for (int i = 0; i < supported_protocols.size(); i++) {
-			if (i != 0) {
-				request += ",";
-			}
-			request += supported_protocols[i];
-		}
-		request += "\r\n";
-	}
-	for (int i = 0; i < handshake_headers.size(); i++) {
-		request += handshake_headers[i] + "\r\n";
-	}
-	request += "\r\n";
-	CharString cs = request.utf8();
-	handshake_buffer->put_data((const uint8_t*)cs.get_data(), cs.length());
-	handshake_buffer->seek(0);
-	ready_state = STATE_CONNECTING;
-	is_server = false;
-	return OK;
-}
-
-Error WebSocketPeer::accept_stream(const Ref<StreamPeer>& p_stream) { return OK; }
-
-ssize_t WebSocketPeer::_wsl_recv_callback(
-	wslay_event_context_ptr ctx, uint8_t* data, size_t len, int flags, void* user_data)
-{
-	WebSocketPeer* peer = (WebSocketPeer*)user_data;
-	Ref<StreamPeer> conn = peer->connection;
-	if (conn.is_null()) {
-		wslay_event_set_error(ctx, WSLAY_ERR_CALLBACK_FAILURE);
-		return -1;
-	}
-	// Make sure we don't read more than what our buffer can hold.
-	size_t buffer_limit = MIN(peer->in_buffer.payload_space_left(),
-		peer->in_buffer.packets_space_left() *
-			2); // The minimum size of a websocket message is 2 bytes.
-	size_t to_read = MIN(len, buffer_limit);
-	if (to_read == 0) {
-		wslay_event_set_error(ctx, WSLAY_ERR_WOULDBLOCK);
-		return -1;
-	}
-	int read = 0;
-	Error err = conn->get_partial_data(data, to_read, read);
-	if (err != OK) {
-		print_verbose(
-			"Websocket get data error: " + itos(err) + ", read (should be 0!): " + itos(read));
-		wslay_event_set_error(ctx, WSLAY_ERR_CALLBACK_FAILURE);
-		return -1;
-	}
-	if (read == 0) {
-		wslay_event_set_error(ctx, WSLAY_ERR_WOULDBLOCK);
-		return -1;
-	}
-	return read;
-}
-
-void WebSocketPeer::_wsl_recv_start_callback(wslay_event_context_ptr ctx,
-	const struct wslay_event_on_frame_recv_start_arg* arg, void* user_data)
-{
-	WebSocketPeer* peer = (WebSocketPeer*)user_data;
-	uint8_t op = arg->opcode;
-	if (op == WSLAY_TEXT_FRAME || op == WSLAY_BINARY_FRAME) {
-		// Get ready to process a data package.
-		PendingMessage& pm = peer->pending_message;
-		pm.opcode = op;
-	}
-}
-
-void WebSocketPeer::_wsl_frame_recv_chunk_callback(wslay_event_context_ptr ctx,
-	const struct wslay_event_on_frame_recv_chunk_arg* arg, void* user_data)
-{
-	WebSocketPeer* peer = (WebSocketPeer*)user_data;
-	PendingMessage& pm = peer->pending_message;
-	if (pm.opcode != 0) {
-		// Only write the payload.
-		peer->in_buffer.write_packet(arg->data, arg->data_length, nullptr);
-		pm.payload_size += arg->data_length;
-	}
-}
-
-ssize_t WebSocketPeer::_wsl_send_callback(
-	wslay_event_context_ptr ctx, const uint8_t* data, size_t len, int flags, void* user_data)
-{
-	WebSocketPeer* peer = (WebSocketPeer*)user_data;
-	Ref<StreamPeer> conn = peer->connection;
-	if (conn.is_null()) {
-		wslay_event_set_error(ctx, WSLAY_ERR_CALLBACK_FAILURE);
-		return -1;
-	}
-	int sent = 0;
-	Error err = conn->put_partial_data(data, len, sent);
-	if (err != OK) {
-		wslay_event_set_error(ctx, WSLAY_ERR_CALLBACK_FAILURE);
-		return -1;
-	}
-	if (sent == 0) {
-		wslay_event_set_error(ctx, WSLAY_ERR_WOULDBLOCK);
-		return -1;
-	}
-	return sent;
-}
-
-int WebSocketPeer::_wsl_genmask_callback(
-	wslay_event_context_ptr ctx, uint8_t* buf, size_t len, void* user_data)
-{
-	Error err = CryptoCore::generate_random(buf, len);
-	ERR_FAIL_COND_V(err != OK, WSLAY_ERR_CALLBACK_FAILURE);
-	return 0;
-}
-
-void WebSocketPeer::_wsl_msg_recv_callback(
-	wslay_event_context_ptr ctx, const struct wslay_event_on_msg_recv_arg* arg, void* user_data)
-{
-	WebSocketPeer* peer = (WebSocketPeer*)user_data;
-	uint8_t op = arg->opcode;
-
-	if (op == WSLAY_CONNECTION_CLOSE) {
-		// Close request or confirmation.
-		peer->close_code = arg->status_code;
-		size_t len = arg->msg_length;
-		peer->close_reason.clear();
-		if (len > 2 /* first 2 bytes = close code */) {
-			peer->close_reason.append_utf8((char*)arg->msg + 2, len - 2);
-		}
-		if (peer->ready_state == STATE_OPEN) {
-			peer->ready_state = STATE_CLOSING;
-		}
-		return;
-	}
-
-	if (op == WSLAY_PONG) {
-		peer->heartbeat_waiting = false;
-	}
-	else if (op == WSLAY_TEXT_FRAME || op == WSLAY_BINARY_FRAME) {
-		PendingMessage& pm = peer->pending_message;
-		ERR_FAIL_COND(pm.opcode != op);
-		// Only write the packet (since it's now completed).
-		uint8_t is_string = pm.opcode == WSLAY_TEXT_FRAME ? 1 : 0;
-		peer->in_buffer.write_packet(nullptr, pm.payload_size, &is_string);
-		pm.clear();
-	}
-	// Ping.
-}
-
-wslay_event_callbacks WebSocketPeer::_wsl_callbacks = {_wsl_recv_callback, _wsl_send_callback,
-	_wsl_genmask_callback, _wsl_recv_start_callback, _wsl_frame_recv_chunk_callback, nullptr,
-	_wsl_msg_recv_callback};
-
-String WebSocketPeer::_generate_key()
-{
-	// Random key
-	Vector<uint8_t> bkey;
-	int len = 16; // 16 bytes, as per RFC
-	bkey.resize(len);
-	_wsl_genmask_callback(nullptr, bkey.ptrw(), len, nullptr);
-	return CryptoCore::b64_encode_str(bkey.ptrw(), len);
-}
-
-String WebSocketPeer::_compute_key_response(const String& p_key)
-{
-	String key = p_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"; // Magic UUID as per RFC
-	Vector<uint8_t> sha = key.sha1_buffer();
-	return CryptoCore::b64_encode_str(sha.ptr(), sha.size());
-}
-
-void WebSocketPeer::poll()
-{
-	// Nothing to do.
-	if (ready_state == STATE_CLOSED) {
-		return;
-	}
-
-	if (ready_state == STATE_CONNECTING) {
-		if (is_server) {
-			_do_server_handshake();
-		}
-		else {
-			_do_client_handshake();
-		}
-	}
-
-	if (ready_state == STATE_OPEN || ready_state == STATE_CLOSING) {
-		ERR_FAIL_NULL(wsl_ctx);
-		uint64_t ticks = OS::get_ticks_msec();
-		int err = 0;
-		if (heartbeat_interval_msec != 0 && ticks - last_heartbeat > heartbeat_interval_msec &&
-			ready_state == STATE_OPEN) {
-			if (heartbeat_waiting) {
-				wslay_event_context_free(wsl_ctx);
-				wsl_ctx = nullptr;
-				close(-1);
-				return;
-			}
-			heartbeat_waiting = true;
-			struct wslay_event_msg msg;
-			msg.opcode = WSLAY_PING;
-			msg.msg = nullptr;
-			msg.msg_length = 0;
-			err = wslay_event_queue_msg(wsl_ctx, &msg);
-			if (err == 0) {
-				last_heartbeat = ticks;
-			}
-			else {
-				print_verbose("Websocket (wslay) failed to send ping: " + itos(err));
-				wslay_event_context_free(wsl_ctx);
-				wsl_ctx = nullptr;
-				close(-1);
-				return;
-			}
-		}
-		if ((err = wslay_event_recv(wsl_ctx)) != 0 || (err = wslay_event_send(wsl_ctx)) != 0) {
-			// Error close.
-			print_verbose("Websocket (wslay) poll error: " + itos(err));
-			wslay_event_context_free(wsl_ctx);
-			wsl_ctx = nullptr;
-			close(-1);
-			return;
-		}
-		if (wslay_event_get_close_sent(wsl_ctx)) {
-			if (wslay_event_get_close_received(wsl_ctx)) {
-				// Clean close.
-				wslay_event_context_free(wsl_ctx);
-				wsl_ctx = nullptr;
-				close(-1);
-				return;
-			}
-			else if (!wslay_event_get_read_enabled(wsl_ctx)) {
-				// Some protocol error caused wslay to stop processing incoming events, we'll never
-				// receive a close from the other peer.
-				close_code = wslay_event_get_status_code_sent(wsl_ctx);
-				switch (close_code) {
-				case WSLAY_CODE_MESSAGE_TOO_BIG:
-					close_reason = "Message too big";
-					break;
-				case WSLAY_CODE_PROTOCOL_ERROR:
-					close_reason = "Protocol error";
-					break;
-				case WSLAY_CODE_ABNORMAL_CLOSURE:
-					close_reason = "Abnormal closure";
-					break;
-				case WSLAY_CODE_INVALID_FRAME_PAYLOAD_DATA:
-					close_reason = "Invalid frame payload data";
-					break;
-				default:
-					close_reason = "Unknown";
-				}
-				wslay_event_context_free(wsl_ctx);
-				wsl_ctx = nullptr;
-				close(-1);
-				return;
-			}
-		}
-	}
-}
-
-Error WebSocketPeer::_send(const uint8_t* p_buffer, int p_buffer_size, wslay_opcode p_opcode)
-{
-	ERR_FAIL_COND_V(ready_state != STATE_OPEN, FAILED);
-	ERR_FAIL_COND_V(wslay_event_get_queued_msg_count(wsl_ctx) >= (uint32_t)max_queued_packets,
-		ERR_OUT_OF_MEMORY);
-	ERR_FAIL_COND_V(
-		outbound_buffer_size > 0 && (wslay_event_get_queued_msg_length(wsl_ctx) + p_buffer_size >
-										(uint32_t)outbound_buffer_size),
-		ERR_OUT_OF_MEMORY);
-
-	struct wslay_event_msg msg;
-	msg.opcode = p_opcode;
-	msg.msg = p_buffer;
-	msg.msg_length = p_buffer_size;
-
-	// Queue & send message.
-	if (wslay_event_queue_msg(wsl_ctx, &msg) != 0 || wslay_event_send(wsl_ctx) != 0) {
-		close(-1);
-		return FAILED;
-	}
-	return OK;
-}
-
-Error WebSocketPeer::send(const uint8_t* p_buffer, int p_buffer_size, WriteMode p_mode)
-{
-	wslay_opcode opcode = p_mode == WRITE_MODE_TEXT ? WSLAY_TEXT_FRAME : WSLAY_BINARY_FRAME;
-	return _send(p_buffer, p_buffer_size, opcode);
-}
-
-Error WebSocketPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	return _send(p_buffer, p_buffer_size, WSLAY_BINARY_FRAME);
-}
-
-Error WebSocketPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	r_buffer_size = 0;
-
-	ERR_FAIL_COND_V(ready_state != STATE_OPEN, FAILED);
-
-	if (in_buffer.packets_left() == 0) {
-		return ERR_UNAVAILABLE;
-	}
-
-	int read = 0;
-	uint8_t* rw = packet_buffer.ptrw();
-	in_buffer.read_packet(rw, packet_buffer.size(), &was_string, read);
-
-	*r_buffer = rw;
-	r_buffer_size = read;
-
-	return OK;
-}
-
-int WebSocketPeer::get_available_packet_count() const
-{
-	if (ready_state != STATE_OPEN) {
-		return 0;
-	}
-
-	return in_buffer.packets_left();
-}
-
-int WebSocketPeer::get_current_outbound_buffered_amount() const
-{
-	if (ready_state != STATE_OPEN) {
-		return 0;
-	}
-
-	return wslay_event_get_queued_msg_length(wsl_ctx);
-}
-
-void WebSocketPeer::close(int p_code, const String& p_reason)
-{
-	if (p_code < 0) {
-		// Force immediate close.
-		ready_state = STATE_CLOSED;
-	}
-
-	if (ready_state == STATE_OPEN && !wslay_event_get_close_sent(wsl_ctx)) {
-		CharString cs = p_reason.utf8();
-		wslay_event_queue_close(wsl_ctx, p_code, (uint8_t*)cs.ptr(), cs.length());
-		wslay_event_send(wsl_ctx);
-		ready_state = STATE_CLOSING;
-	}
-	else if (ready_state == STATE_CONNECTING || ready_state == STATE_CLOSED) {
-		ready_state = STATE_CLOSED;
-		connection.unref();
-		if (tcp.is_valid()) {
-			tcp->disconnect_from_host();
-			tcp.unref();
-		}
-	}
-
-	if (ready_state == STATE_CLOSED) {
-		heartbeat_waiting = false;
-		in_buffer.clear();
-		packet_buffer.resize(0);
-		pending_message.clear();
-	}
-}
-
-IPAddress WebSocketPeer::get_connected_host() const
-{
-	ERR_FAIL_COND_V(tcp.is_null(), IPAddress());
-	return tcp->get_connected_host();
-}
-
-uint16_t WebSocketPeer::get_connected_port() const
-{
-	ERR_FAIL_COND_V(tcp.is_null(), 0);
-	return tcp->get_connected_port();
-}
-
-void WebSocketPeer::set_no_delay(bool p_enabled)
-{
-	ERR_FAIL_COND(tcp.is_null());
-	tcp->set_no_delay(p_enabled);
-}
-
-void WebSocketPeer::_clear()
-{
-	// Connection info.
-	ready_state = STATE_CLOSED;
-	is_server = false;
-	connection.unref();
-	if (tcp.is_valid()) {
-		tcp->disconnect_from_host();
-		tcp.unref();
-	}
-	if (wsl_ctx) {
-		wslay_event_context_free(wsl_ctx);
-		wsl_ctx = nullptr;
-	}
-
-	resolver.stop();
-	requested_url.clear();
-	requested_host.clear();
-	pending_request = true;
-	handshake_buffer->clear();
-	selected_protocol.clear();
-	session_key.clear();
-
-	// Pending packets info.
-	was_string = 0;
-	in_buffer.clear();
-	packet_buffer.clear();
-
-	// Close code info.
-	close_code = -1;
-	close_reason.clear();
-}
-
-WebSocketPeer::WebSocketPeer() { handshake_buffer.instantiate(); }
-
-WebSocketPeer::~WebSocketPeer() { close(-1); }
-
-#endif // WEB_ENABLED
-
-// WebSocketMultiplayerPeer
-
-WebSocketMultiplayerPeer::WebSocketMultiplayerPeer()
-{
-	peer_config = Ref<WebSocketPeer>(WebSocketPeer::create());
-}
-
-WebSocketMultiplayerPeer::~WebSocketMultiplayerPeer() { _clear(); }
-
-Ref<WebSocketPeer> WebSocketMultiplayerPeer::_create_peer()
-{
-	Ref<WebSocketPeer> peer = Ref<WebSocketPeer>(WebSocketPeer::create());
-	peer->set_supported_protocols(get_supported_protocols());
-	peer->set_handshake_headers(get_handshake_headers());
-	peer->set_inbound_buffer_size(get_inbound_buffer_size());
-	peer->set_outbound_buffer_size(get_outbound_buffer_size());
-	peer->set_max_queued_packets(get_max_queued_packets());
-	return peer;
-}
-
-void WebSocketMultiplayerPeer::_clear()
-{
-	connection_status = CONNECTION_DISCONNECTED;
-	unique_id = 0;
-	peers_map.clear();
-	tcp_server.unref();
-	pending_peers.clear();
-	tls_server_options.unref();
-	if (current_packet.data != nullptr) {
-		memfree(current_packet.data);
-		current_packet.data = nullptr;
-	}
-
-	for (Packet& E : incoming_packets) {
-		memfree(E.data);
-		E.data = nullptr;
-	}
-
-	incoming_packets.clear();
-}
-
-int WebSocketMultiplayerPeer::get_available_packet_count() const { return incoming_packets.size(); }
-
-Error WebSocketMultiplayerPeer::get_packet(const uint8_t** r_buffer, int& r_buffer_size)
-{
-	ERR_FAIL_COND_V(get_connection_status() != CONNECTION_CONNECTED, ERR_UNCONFIGURED);
-
-	r_buffer_size = 0;
-
-	if (current_packet.data != nullptr) {
-		memfree(current_packet.data);
-		current_packet.data = nullptr;
-	}
-
-	ERR_FAIL_COND_V(incoming_packets.is_empty(), ERR_UNAVAILABLE);
-
-	current_packet = incoming_packets.front()->get();
-	incoming_packets.pop_front();
-
-	*r_buffer = current_packet.data;
-	r_buffer_size = current_packet.size;
-
-	return OK;
-}
-
-Error WebSocketMultiplayerPeer::put_packet(const uint8_t* p_buffer, int p_buffer_size)
-{
-	ERR_FAIL_COND_V(get_connection_status() != CONNECTION_CONNECTED, ERR_UNCONFIGURED);
-
-	if (is_server()) {
-		if (target_peer > 0) {
-			ERR_FAIL_COND_V_MSG(!peers_map.has(target_peer), ERR_INVALID_PARAMETER,
-				"Peer not found: " + itos(target_peer));
-			get_peer(target_peer)->put_packet(p_buffer, p_buffer_size);
-		}
-		else {
-			for (KeyValue<int, Ref<WebSocketPeer>>& E : peers_map) {
-				if (target_peer && -target_peer == E.key) {
-					continue; // Excluded.
-				}
-				E.value->put_packet(p_buffer, p_buffer_size);
-			}
-		}
-		return OK;
-	}
-	else {
-		return get_peer(1)->put_packet(p_buffer, p_buffer_size);
-	}
-}
-
-void WebSocketMultiplayerPeer::set_target_peer(int p_target_peer) { target_peer = p_target_peer; }
-
-int WebSocketMultiplayerPeer::get_packet_peer() const
-{
-	ERR_FAIL_COND_V(incoming_packets.is_empty(), 1);
-
-	return incoming_packets.front()->get().source;
-}
-
-int WebSocketMultiplayerPeer::get_unique_id() const { return unique_id; }
-
-int WebSocketMultiplayerPeer::get_max_packet_size() const
-{
-	return get_outbound_buffer_size() - PROTO_SIZE;
-}
-
-Error WebSocketMultiplayerPeer::create_server(
-	int p_port, IPAddress p_bind_ip, const Ref<TLSOptions>& p_options)
-{
-	ERR_FAIL_COND_V(get_connection_status() != CONNECTION_DISCONNECTED, ERR_ALREADY_IN_USE);
-	ERR_FAIL_COND_V(p_options.is_valid() && !p_options->is_server(), ERR_INVALID_PARAMETER);
-	_clear();
-	tcp_server.instantiate();
-	Error err = tcp_server->listen(p_port, p_bind_ip);
-	if (err != OK) {
-		tcp_server.unref();
-		return err;
-	}
-	unique_id = 1;
-	connection_status = CONNECTION_CONNECTED;
-	tls_server_options = p_options;
-	return OK;
-}
-
-Error WebSocketMultiplayerPeer::create_client(const String& p_url, const Ref<TLSOptions>& p_options)
-{
-	ERR_FAIL_COND_V(get_connection_status() != CONNECTION_DISCONNECTED, ERR_ALREADY_IN_USE);
-	ERR_FAIL_COND_V(p_options.is_valid() && p_options->is_server(), ERR_INVALID_PARAMETER);
-	_clear();
-	Ref<WebSocketPeer> peer = _create_peer();
-	Error err = peer->connect_to_url(p_url, p_options);
-	if (err != OK) {
-		return err;
-	}
-	PendingPeer pending;
-	pending.time = OS::get_ticks_msec();
-	pending_peers[1] = pending;
-	peers_map[1] = peer;
-	connection_status = CONNECTION_CONNECTING;
-	return OK;
-}
-
-bool WebSocketMultiplayerPeer::is_server() const { return tcp_server.is_valid(); }
-
-void WebSocketMultiplayerPeer::poll()
-{
-	if (connection_status == CONNECTION_DISCONNECTED) {
-		return;
-	}
-	if (is_server()) {
-		_poll_server();
-	}
-	else {
-		_poll_client();
-	}
-}
-
-MultiplayerPeer::ConnectionStatus WebSocketMultiplayerPeer::get_connection_status() const
-{
-	return connection_status;
-}
-
-Ref<WebSocketPeer> WebSocketMultiplayerPeer::get_peer(int p_id) const
-{
-	ERR_FAIL_COND_V(!peers_map.has(p_id), Ref<WebSocketPeer>());
-	return peers_map[p_id];
-}
-
-void WebSocketMultiplayerPeer::set_supported_protocols(const Vector<String>& p_protocols)
-{
-	peer_config->set_supported_protocols(p_protocols);
-}
-
-Vector<String> WebSocketMultiplayerPeer::get_supported_protocols() const
-{
-	return peer_config->get_supported_protocols();
-}
-
-void WebSocketMultiplayerPeer::set_handshake_headers(const Vector<String>& p_headers)
-{
-	peer_config->set_handshake_headers(p_headers);
-}
-
-Vector<String> WebSocketMultiplayerPeer::get_handshake_headers() const
-{
-	return peer_config->get_handshake_headers();
-}
-
-void WebSocketMultiplayerPeer::set_outbound_buffer_size(int p_buffer_size)
-{
-	peer_config->set_outbound_buffer_size(p_buffer_size);
-}
-
-int WebSocketMultiplayerPeer::get_outbound_buffer_size() const
-{
-	return peer_config->get_outbound_buffer_size();
-}
-
-void WebSocketMultiplayerPeer::set_inbound_buffer_size(int p_buffer_size)
-{
-	peer_config->set_inbound_buffer_size(p_buffer_size);
-}
-
-int WebSocketMultiplayerPeer::get_inbound_buffer_size() const
-{
-	return peer_config->get_inbound_buffer_size();
-}
-
-void WebSocketMultiplayerPeer::set_max_queued_packets(int p_max_queued_packets)
-{
-	peer_config->set_max_queued_packets(p_max_queued_packets);
-}
-
-int WebSocketMultiplayerPeer::get_max_queued_packets() const
-{
-	return peer_config->get_max_queued_packets();
-}
-
-float WebSocketMultiplayerPeer::get_handshake_timeout() const { return handshake_timeout / 1000.0; }
-
-void WebSocketMultiplayerPeer::set_handshake_timeout(float p_timeout)
-{
-	ERR_FAIL_COND(p_timeout <= 0.0);
-	handshake_timeout = p_timeout * 1000;
-}
-
-IPAddress WebSocketMultiplayerPeer::get_peer_address(int p_peer_id) const
-{
-	ERR_FAIL_COND_V(!peers_map.has(p_peer_id), IPAddress());
-	return peers_map[p_peer_id]->get_connected_host();
-}
-
-int WebSocketMultiplayerPeer::get_peer_port(int p_peer_id) const
-{
-	ERR_FAIL_COND_V(!peers_map.has(p_peer_id), 0);
-	return peers_map[p_peer_id]->get_connected_port();
-}
-
-void WebSocketMultiplayerPeer::disconnect_peer(int p_peer_id, bool p_force)
-{
-	ERR_FAIL_COND(!peers_map.has(p_peer_id));
-	peers_map[p_peer_id]->close();
-	if (p_force) {
-		peers_map.erase(p_peer_id);
-		if (!is_server()) {
-			_clear();
-		}
-	}
-}
-
-void WebSocketMultiplayerPeer::close() { _clear(); }
-
-void WebSocketMultiplayerPeer::_poll_server() {}
-
-void WebSocketMultiplayerPeer::_poll_client() {}
-
-// RemoteDebuggerPeerWebSocket
-
-Error RemoteDebuggerPeerWebSocket::connect_to_host(const String& p_uri)
-{
-	ws_peer = Ref<WebSocketPeer>(WebSocketPeer::create());
-	ERR_FAIL_COND_V(ws_peer.is_null(), ERR_BUG);
-
-	Vector<String> protocols;
-	protocols.push_back("binary"); // Compatibility for emscripten TCP-to-WebSocket.
-
-	ws_peer->set_supported_protocols(protocols);
-	ws_peer->set_max_queued_packets(max_queued_messages);
-	ws_peer->set_inbound_buffer_size((1 << 23) - 1);
-	ws_peer->set_outbound_buffer_size((1 << 23) - 1);
-
-	Error err = ws_peer->connect_to_url(p_uri);
-	ERR_FAIL_COND_V(err != OK, err);
-
-	ws_peer->poll();
-	WebSocketPeer::State ready_state = ws_peer->get_ready_state();
-	if (ready_state != WebSocketPeer::STATE_CONNECTING &&
-		ready_state != WebSocketPeer::STATE_OPEN) {
-		ERR_PRINT(
-			vformat("Remote Debugger: Unable to connect. State: %s.", ws_peer->get_ready_state()));
-		return FAILED;
-	}
-
-	return OK;
-}
-
-bool RemoteDebuggerPeerWebSocket::is_peer_connected()
-{
-	return ws_peer.is_valid() && (ws_peer->get_ready_state() == WebSocketPeer::STATE_OPEN ||
-									 ws_peer->get_ready_state() == WebSocketPeer::STATE_CONNECTING);
-}
-
-int RemoteDebuggerPeerWebSocket::get_max_message_size() const
-{
-	ERR_FAIL_COND_V(ws_peer.is_null(), 0);
-	return ws_peer->get_max_packet_size();
-}
-
-void RemoteDebuggerPeerWebSocket::close()
-{
-	if (ws_peer.is_valid()) {
-		ws_peer.unref();
-	}
-}
-
-bool RemoteDebuggerPeerWebSocket::can_block() const
-{
-#ifdef WEB_ENABLED
-	return false;
-#else
-	return true;
-#endif
-}
 
 // Module registration
 
@@ -132925,18 +128331,18 @@ Vector<RenderingServerTypes::BlitToScreen> MobileVRInterface::post_draw_viewport
 	// and add our blits
 	RenderingServerTypes::BlitToScreen blit;
 	blit.render_target = p_render_target;
-	blit.multi_view.use_layer = true;
-	blit.lens_distortion.apply = true;
-	blit.lens_distortion.k1 = k1;
-	blit.lens_distortion.k2 = k2;
-	blit.lens_distortion.upscale = oversample;
-	blit.lens_distortion.aspect_ratio = aspect;
+	blit.multi_view_use_layer = true;
+	blit.lens_distortion_apply = true;
+	blit.lens_distortion_k1 = k1;
+	blit.lens_distortion_k2 = k2;
+	blit.lens_distortion_upscale = oversample;
+	blit.lens_distortion_aspect_ratio = aspect;
 
 	// left eye
 	blit.dst_rect = modified_screen_rect;
 	blit.dst_rect.size.width *= 0.5;
-	blit.multi_view.layer = 0;
-	blit.lens_distortion.eye_center.x =
+	blit.multi_view_layer = 0;
+	blit.lens_distortion_eye_center.x =
 		((-intraocular_dist / 2.0) + (display_width / 4.0)) / (display_width / 2.0);
 	blit_to_screen.push_back(blit);
 
@@ -132944,8 +128350,8 @@ Vector<RenderingServerTypes::BlitToScreen> MobileVRInterface::post_draw_viewport
 	blit.dst_rect = modified_screen_rect;
 	blit.dst_rect.size.width *= 0.5;
 	blit.dst_rect.position.x += blit.dst_rect.size.width;
-	blit.multi_view.layer = 1;
-	blit.lens_distortion.eye_center.x =
+	blit.multi_view_layer = 1;
+	blit.lens_distortion_eye_center.x =
 		((intraocular_dist / 2.0) - (display_width / 4.0)) / (display_width / 2.0);
 	blit_to_screen.push_back(blit);
 
@@ -133109,10 +128515,8 @@ private:
 
 	Size2 render_targetsize;
 	RBMap<unsigned int, RID> texture_cache;
-	struct Touch {
-		bool is_touching = false;
-		Vector2 position;
-	} touches[5];
+	bool touch_is_touching[5] = {};
+	Vector2 touch_position[5];
 
 	static constexpr uint8_t input_source_count = 16;
 
@@ -134041,8 +129445,8 @@ void WebXRInterface::_update_input_source(int p_input_source_id) {
 			Vector2 joy_vector = Vector2(axes[0], axes[1]);
 			Vector2 position = _get_screen_position_from_joy_vector(joy_vector);
 
-			if (touches[touch_index].is_touching) {
-				Vector2 delta = position - touches[touch_index].position;
+			if (touch_is_touching[touch_index]) {
+				Vector2 delta = position - touch_position[touch_index];
 
 				// If position has changed by at least 1 pixel, generate a drag event.
 				if (std::abs(delta.x) >= 1.0 || std::abs(delta.y) >= 1.0) {
@@ -134055,7 +129459,7 @@ void WebXRInterface::_update_input_source(int p_input_source_id) {
 				}
 			}
 
-			touches[touch_index].position = position;
+			touch_position[touch_index] = position;
 		}
 	}
 
@@ -134132,11 +129536,11 @@ void WebXRInterface::_on_input_event(int p_event_type, int p_input_source_id) {
 		if (input_source.target_ray_mode == WebXRInterface::TARGET_RAY_MODE_SCREEN) {
 			int touch_index = input_source.touch_index;
 			if (touch_index >= 0 && touch_index < 5) {
-				touches[touch_index].is_touching = (p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
+				touch_is_touching[touch_index] = (p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
 
 				InputEvent event = InputEvent::make_screen_touch();
 				event.touch.index = touch_index;
-				event.touch.position = touches[touch_index].position;
+				event.touch.position = touch_position[touch_index];
 				event.pressed = (p_event_type == WEBXR_INPUT_EVENT_SELECTSTART);
 
 				Input::parse_input_event(event);
@@ -136083,53 +131487,47 @@ void uninitialize_glslang_module(ModuleInitializationLevel p_level)
 
 struct Projection;
 
-class RaycastOcclusionCull final
+namespace RaycastOcclusionCull
 {
-public:
+
 	using HZBuffer = RendererSceneOcclusionCull::HZBuffer;
 	struct Data;
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
 
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return data != nullptr; }
 
-private:
-	static void _init_embree();
-	static Vector2 _get_jitter(const Rect2& p_viewport_rect, const Size2i& p_buffer_size);
+	void _init_embree();
+	Vector2 _get_jitter(const Rect2& p_viewport_rect, const Size2i& p_buffer_size);
 
-public:
-	static bool is_occluder(RID p_rid);
-	static RID occluder_allocate();
-	static void occluder_initialize(RID p_occluder);
-	static void occluder_set_mesh(
+	bool is_occluder(RID p_rid);
+	RID occluder_allocate();
+	void occluder_initialize(RID p_occluder);
+	void occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices);
-	static void free_occluder(RID p_occluder);
+	void free_occluder(RID p_occluder);
 
-	static void add_scenario(RID p_scenario);
-	static void remove_scenario(RID p_scenario);
-	static void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
+	void add_scenario(RID p_scenario);
+	void remove_scenario(RID p_scenario);
+	void scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
 		const Transform3D& p_xform, bool p_enabled);
-	static void scenario_remove_instance(RID p_scenario, RID p_instance);
+	void scenario_remove_instance(RID p_scenario, RID p_instance);
 
-	static void add_buffer(RID p_buffer);
-	static void remove_buffer(RID p_buffer);
-	static HZBuffer* buffer_get_ptr(RID p_buffer);
-	static void buffer_set_scenario(RID p_buffer, RID p_scenario);
-	static void buffer_set_size(RID p_buffer, const Vector2i& p_size);
-	static void buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
+	void add_buffer(RID p_buffer);
+	void remove_buffer(RID p_buffer);
+	HZBuffer* buffer_get_ptr(RID p_buffer);
+	void buffer_set_scenario(RID p_buffer, RID p_scenario);
+	void buffer_set_size(RID p_buffer, const Vector2i& p_size);
+	void buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
 		const Projection& p_cam_projection, bool p_cam_orthogonal);
 
-	static RID buffer_get_debug_texture(RID p_buffer);
+	RID buffer_get_debug_texture(RID p_buffer);
 
-	static void set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality);
+	void set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality);
 
-	RaycastOcclusionCull() = delete;
-	RaycastOcclusionCull(const RaycastOcclusionCull&) = delete;
-	RaycastOcclusionCull& operator=(const RaycastOcclusionCull&) = delete;
-	~RaycastOcclusionCull() = delete;
-};
+} // namespace RaycastOcclusionCull
 
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
@@ -136766,7 +132164,23 @@ void RaycastOcclusionCull::initialize()
 {
 	ERR_FAIL_COND(data != nullptr);
 	data = memnew(Data);
-	RendererSceneOcclusionCull::bind<RaycastOcclusionCull>();
+	RendererSceneOcclusionCull::is_occluder = &RaycastOcclusionCull::is_occluder;
+	RendererSceneOcclusionCull::occluder_allocate = &RaycastOcclusionCull::occluder_allocate;
+	RendererSceneOcclusionCull::occluder_initialize = &RaycastOcclusionCull::occluder_initialize;
+	RendererSceneOcclusionCull::free_occluder = &RaycastOcclusionCull::free_occluder;
+	RendererSceneOcclusionCull::occluder_set_mesh = &RaycastOcclusionCull::occluder_set_mesh;
+	RendererSceneOcclusionCull::add_scenario = &RaycastOcclusionCull::add_scenario;
+	RendererSceneOcclusionCull::remove_scenario = &RaycastOcclusionCull::remove_scenario;
+	RendererSceneOcclusionCull::scenario_set_instance = &RaycastOcclusionCull::scenario_set_instance;
+	RendererSceneOcclusionCull::scenario_remove_instance = &RaycastOcclusionCull::scenario_remove_instance;
+	RendererSceneOcclusionCull::add_buffer = &RaycastOcclusionCull::add_buffer;
+	RendererSceneOcclusionCull::remove_buffer = &RaycastOcclusionCull::remove_buffer;
+	RendererSceneOcclusionCull::buffer_get_ptr = &RaycastOcclusionCull::buffer_get_ptr;
+	RendererSceneOcclusionCull::buffer_set_scenario = &RaycastOcclusionCull::buffer_set_scenario;
+	RendererSceneOcclusionCull::buffer_set_size = &RaycastOcclusionCull::buffer_set_size;
+	RendererSceneOcclusionCull::buffer_update = &RaycastOcclusionCull::buffer_update;
+	RendererSceneOcclusionCull::buffer_get_debug_texture = &RaycastOcclusionCull::buffer_get_debug_texture;
+	RendererSceneOcclusionCull::set_build_quality = &RaycastOcclusionCull::set_build_quality;
 }
 
 void RaycastOcclusionCull::finalize()
@@ -138641,25 +134055,6 @@ public:
 	int get_max_debug_contacts() const { return (int)debug_contacts.size(); }
 	void set_max_debug_contacts(int p_count) { debug_contacts.resize(p_count); }
 #endif
-};
-
-class JoltMotionFilter3D final
-		: public JPH::BroadPhaseLayerFilter,
-		  public JPH::ObjectLayerFilter,
-		  public JPH::BodyFilter,
-		  public JPH::ShapeFilter {
-	const JoltBody3D &body_self;
-	const JoltSpace3D &space;
-	const HashSet<RID> &excluded_bodies;
-	bool collide_separation_ray = false;
-
-public:
-	virtual bool ShouldCollide(JPH::BroadPhaseLayer p_broad_phase_layer) const override;
-	virtual bool ShouldCollide(JPH::ObjectLayer p_object_layer) const override;
-	virtual bool ShouldCollide(const JPH::BodyID &p_jolt_id) const override;
-	virtual bool ShouldCollideLocked(const JPH::Body &p_jolt_body) const override;
-	virtual bool ShouldCollide(const JPH::Shape *p_jolt_shape, const JPH::SubShapeID &p_jolt_shape_id) const override;
-	virtual bool ShouldCollide(const JPH::Shape *p_jolt_shape_self, const JPH::SubShapeID &p_jolt_shape_id_self, const JPH::Shape *p_jolt_shape_other, const JPH::SubShapeID &p_jolt_shape_id_other) const override;
 };
 
 class JoltQueryFilter3D final
@@ -146583,71 +141978,7 @@ void JoltContactListener3D::post_step() {
 	_flush_area_enters();
 }
 
-// JoltMotionFilter3D / JoltQueryFilter3D
-
-bool JoltMotionFilter3D::ShouldCollide(JPH::BroadPhaseLayer p_broad_phase_layer) const {
-	const JPH::BroadPhaseLayer::Type broad_phase_layer = (JPH::BroadPhaseLayer::Type)p_broad_phase_layer;
-
-	switch (broad_phase_layer) {
-		case (JPH::BroadPhaseLayer::Type)JoltBroadPhaseLayer::BODY_STATIC:
-		case (JPH::BroadPhaseLayer::Type)JoltBroadPhaseLayer::BODY_STATIC_BIG:
-		case (JPH::BroadPhaseLayer::Type)JoltBroadPhaseLayer::BODY_DYNAMIC: {
-			return true;
-		} break;
-		case (JPH::BroadPhaseLayer::Type)JoltBroadPhaseLayer::AREA_DETECTABLE:
-		case (JPH::BroadPhaseLayer::Type)JoltBroadPhaseLayer::AREA_UNDETECTABLE: {
-			return false;
-		} break;
-		default: {
-			ERR_FAIL_V_MSG(false, vformat("Unhandled broad phase layer: '%d'. This should not happen. Please report this.", broad_phase_layer));
-		}
-	}
-}
-
-bool JoltMotionFilter3D::ShouldCollide(JPH::ObjectLayer p_object_layer) const {
-	JPH::BroadPhaseLayer object_broad_phase_layer = JoltBroadPhaseLayer::BODY_STATIC;
-	uint32_t object_collision_layer = 0;
-	uint32_t object_collision_mask = 0;
-
-	space.map_from_object_layer(p_object_layer, object_broad_phase_layer, object_collision_layer, object_collision_mask);
-
-	return (body_self.get_collision_mask() & object_collision_layer) != 0;
-}
-
-bool JoltMotionFilter3D::ShouldCollide(const JPH::BodyID &p_jolt_id) const {
-	return p_jolt_id != body_self.get_jolt_id();
-}
-
-bool JoltMotionFilter3D::ShouldCollideLocked(const JPH::Body &p_jolt_body) const {
-	if (p_jolt_body.IsSoftBody()) {
-		return false;
-	}
-
-	const JoltObject3D *object = reinterpret_cast<const JoltObject3D *>(p_jolt_body.GetUserData());
-	if (excluded_bodies.has(object->get_rid())) {
-		return false;
-	}
-
-	return body_self.get_jolt_body()->GetCollisionGroup().CanCollide(p_jolt_body.GetCollisionGroup());
-}
-
-bool JoltMotionFilter3D::ShouldCollide(const JPH::Shape *p_jolt_shape, const JPH::SubShapeID &p_jolt_shape_id) const {
-	return true;
-}
-
-bool JoltMotionFilter3D::ShouldCollide(const JPH::Shape *p_jolt_shape_self, const JPH::SubShapeID &p_jolt_shape_id_self, const JPH::Shape *p_jolt_shape_other, const JPH::SubShapeID &p_jolt_shape_id_other) const {
-	if (collide_separation_ray) {
-		return true;
-	}
-
-	const JoltCustomMotionShape *motion_shape = static_cast<const JoltCustomMotionShape *>(p_jolt_shape_self);
-	const JPH::ConvexShape &actual_shape_self = motion_shape->get_inner_shape();
-	if (actual_shape_self.GetSubType() == JoltCustomShapeSubType::RAY) {
-		return static_cast<const JoltCustomRayShape &>(actual_shape_self).slide_on_slope;
-	}
-
-	return true;
-}
+// JoltQueryFilter3D
 
 JoltQueryFilter3D::JoltQueryFilter3D(const PhysicsDirectSpaceState3D &p_space_state, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, const HashSet<RID> &p_excluded, bool p_picking) :
 		space(p_space_state.get_space()),
@@ -171977,9 +167308,9 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
             continue;
         }
 
-        BlitMode mode = p_render_targets[i].lens_distortion.apply
+        BlitMode mode = p_render_targets[i].lens_distortion_apply
                             ? BLIT_MODE_LENS
-                            : (p_render_targets[i].multi_view.use_layer ? BLIT_MODE_USE_LAYER
+                            : (p_render_targets[i].multi_view_use_layer ? BLIT_MODE_USE_LAYER
                                                                         : BLIT_MODE_NORMAL);
 
         HashMap<RID, RID>::Iterator it = render_target_descriptors.find(rd_texture);
@@ -172068,13 +167399,13 @@ void RendererCompositorRD::blit_render_targets_to_screen(DisplayServerEnums::Win
         blit->push_constant.dst_rect[2] = dst_rect.size.width / screen_size.width;
         blit->push_constant.dst_rect[3] = dst_rect.size.height / screen_size.height;
 
-        blit->push_constant.layer = p_render_targets[i].multi_view.layer;
-        blit->push_constant.eye_center[0] = p_render_targets[i].lens_distortion.eye_center.x;
-        blit->push_constant.eye_center[1] = p_render_targets[i].lens_distortion.eye_center.y;
-        blit->push_constant.k1 = p_render_targets[i].lens_distortion.k1;
-        blit->push_constant.k2 = p_render_targets[i].lens_distortion.k2;
-        blit->push_constant.upscale = p_render_targets[i].lens_distortion.upscale;
-        blit->push_constant.aspect_ratio = p_render_targets[i].lens_distortion.aspect_ratio;
+        blit->push_constant.layer = p_render_targets[i].multi_view_layer;
+        blit->push_constant.eye_center[0] = p_render_targets[i].lens_distortion_eye_center.x;
+        blit->push_constant.eye_center[1] = p_render_targets[i].lens_distortion_eye_center.y;
+        blit->push_constant.k1 = p_render_targets[i].lens_distortion_k1;
+        blit->push_constant.k2 = p_render_targets[i].lens_distortion_k2;
+        blit->push_constant.upscale = p_render_targets[i].lens_distortion_upscale;
+        blit->push_constant.aspect_ratio = p_render_targets[i].lens_distortion_aspect_ratio;
         blit->push_constant.source_is_srgb =
             !RendererRD::TextureStorage::render_target_is_using_hdr(p_render_targets[i].render_target);
         blit->push_constant.use_debanding =
@@ -175141,7 +170472,7 @@ void RendererCanvasRenderRD::_render_batch(RD::DrawListID p_draw_list,
 		RD::draw_list_bind_vertex_buffers_format(
 			p_draw_list, RendererRD::shader.primitive_vertex_format_id, 1, vb, vo);
 		RD::draw_list_bind_index_array(
-			p_draw_list, primitive_arrays.index_array[MIN(3u, primitive->point_count) - 1]);
+			p_draw_list, primitive_arrays_index_array[MIN(3u, primitive->point_count) - 1]);
 		uint32_t instance_count = p_batch->instance_count;
 		RD::draw_list_draw(p_draw_list, true, instance_count);
 
@@ -175710,13 +171041,13 @@ void RendererCanvasRenderRD::initialize()
 	}
 
 	{ // primitive
-		primitive_arrays.index_array[0] =
+		primitive_arrays_index_array[0] =
 			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 1);
-		primitive_arrays.index_array[1] =
+		primitive_arrays_index_array[1] =
 			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 2);
-		primitive_arrays.index_array[2] =
+		primitive_arrays_index_array[2] =
 			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 3);
-		primitive_arrays.index_array[3] =
+		primitive_arrays_index_array[3] =
 			RD::index_array_create(RendererRD::shader.quad_index_buffer, 0, 6);
 	}
 
@@ -178921,31 +174252,33 @@ Fog::FogShaderData::~FogShaderData()
 
 bool Fog::VolumetricFog::sync_gi_dependent_sets_validity(bool p_ensure_freed)
 {
-	bool null = gi_dependent_sets.process_uniform_set_density.is_null();
+	bool null = gi_dependent_sets_process_uniform_set_density.is_null();
 	bool valid = !null && RD::uniform_set_is_valid(
-							  gi_dependent_sets.process_uniform_set_density);
+							  gi_dependent_sets_process_uniform_set_density);
 
 #ifdef DEV_ENABLED
 	// It's all-or-nothing, or something else has changed that requires dev attention.
-	DEV_ASSERT(null == gi_dependent_sets.process_uniform_set.is_null());
-	DEV_ASSERT(null == gi_dependent_sets.process_uniform_set2.is_null());
+	DEV_ASSERT(null == gi_dependent_sets_process_uniform_set.is_null());
+	DEV_ASSERT(null == gi_dependent_sets_process_uniform_set2.is_null());
 	DEV_ASSERT(
-		valid == RD::uniform_set_is_valid(gi_dependent_sets.process_uniform_set));
+		valid == RD::uniform_set_is_valid(gi_dependent_sets_process_uniform_set));
 	DEV_ASSERT(
-		valid == RD::uniform_set_is_valid(gi_dependent_sets.process_uniform_set2));
+		valid == RD::uniform_set_is_valid(gi_dependent_sets_process_uniform_set2));
 #endif
 
 	if (valid) {
 		if (p_ensure_freed) {
-			RD::free_rid(gi_dependent_sets.process_uniform_set_density);
-			RD::free_rid(gi_dependent_sets.process_uniform_set);
-			RD::free_rid(gi_dependent_sets.process_uniform_set2);
+			RD::free_rid(gi_dependent_sets_process_uniform_set_density);
+			RD::free_rid(gi_dependent_sets_process_uniform_set);
+			RD::free_rid(gi_dependent_sets_process_uniform_set2);
 			valid = false;
 		}
 	}
 
 	if (!valid && !null) {
-		gi_dependent_sets = {};
+		gi_dependent_sets_process_uniform_set_density = RID();
+		gi_dependent_sets_process_uniform_set = RID();
+		gi_dependent_sets_process_uniform_set2 = RID();
 	}
 
 	return valid;
@@ -217285,8 +212618,8 @@ PackedStringArray AudioDriver::get_input_device_list()
 	return list;
 }
 
-AudioDriverDummy AudioDriverManager::dummy_driver;
-AudioDriver* AudioDriverManager::drivers[MAX_DRIVERS] = {
+AudioDriver AudioDriverManager::dummy_driver;
+AudioDriver* AudioDriverManager::drivers[AudioDriverManager::MAX_DRIVERS] = {
 	&AudioDriverManager::dummy_driver,
 };
 int AudioDriverManager::driver_count = 1;
@@ -218720,36 +214053,36 @@ void AudioServer::get_argument_options(
 
 #include "servers/display/display_server.h"
 
-Error AudioDriverDummy::init() {
-	active.clear();
-	exit_thread.clear();
-	samples_in = nullptr;
+Error AudioDriver::init() {
+	_dummy_active.clear();
+	_dummy_exit_thread.clear();
+	_dummy_samples_in = nullptr;
 
-	if (mix_rate == -1) {
-		mix_rate = _get_configured_mix_rate();
+	if (_dummy_mix_rate == -1) {
+		_dummy_mix_rate = _get_configured_mix_rate();
 	}
 
-	channels = get_channels();
-	samples_in = memnew_arr(int32_t, size_t(buffer_frames) * channels);
+	_dummy_channels = get_channels();
+	_dummy_samples_in = memnew_arr(int32_t, size_t(_dummy_buffer_frames) * _dummy_channels);
 
-	if (use_threads) {
-		thread.start(AudioDriverDummy::thread_func, this);
+	if (_dummy_use_threads) {
+		_dummy_thread.start(AudioDriver::_dummy_thread_func, this);
 	}
 
 	return OK;
 }
 
-void AudioDriverDummy::thread_func(void *p_udata) {
-	AudioDriverDummy *ad = static_cast<AudioDriverDummy *>(p_udata);
+void AudioDriver::_dummy_thread_func(void *p_udata) {
+	AudioDriver *ad = static_cast<AudioDriver *>(p_udata);
 
-	uint64_t usdelay = (ad->buffer_frames / float(ad->mix_rate)) * 1000000;
+	uint64_t usdelay = (ad->_dummy_buffer_frames / float(ad->_dummy_mix_rate)) * 1000000;
 
-	while (!ad->exit_thread.is_set()) {
-		if (ad->active.is_set()) {
+	while (!ad->_dummy_exit_thread.is_set()) {
+		if (ad->_dummy_active.is_set()) {
 			ad->lock();
 			ad->start_counting_ticks();
 
-			ad->audio_server_process(ad->buffer_frames, ad->samples_in);
+			ad->audio_server_process(ad->_dummy_buffer_frames, ad->_dummy_samples_in);
 
 			ad->stop_counting_ticks();
 			ad->unlock();
@@ -218759,58 +214092,58 @@ void AudioDriverDummy::thread_func(void *p_udata) {
 	}
 }
 
-void AudioDriverDummy::start() {
-	active.set();
+void AudioDriver::start() {
+	_dummy_active.set();
 }
 
-int AudioDriverDummy::get_mix_rate() const {
-	return mix_rate;
+int AudioDriver::get_mix_rate() const {
+	return _dummy_mix_rate;
 }
 
-AudioDriver::SpeakerMode AudioDriverDummy::get_speaker_mode() const {
-	return speaker_mode;
+AudioDriver::SpeakerMode AudioDriver::get_speaker_mode() const {
+	return SpeakerMode(_dummy_speaker_mode);
 }
 
-void AudioDriverDummy::lock() {
-	mutex.lock();
+void AudioDriver::lock() {
+	_dummy_mutex.lock();
 }
 
-void AudioDriverDummy::unlock() {
-	mutex.unlock();
+void AudioDriver::unlock() {
+	_dummy_mutex.unlock();
 }
 
-void AudioDriverDummy::set_use_threads(bool p_use_threads) {
-	use_threads = p_use_threads;
+void AudioDriver::set_use_threads(bool p_use_threads) {
+	_dummy_use_threads = p_use_threads;
 }
 
-void AudioDriverDummy::set_speaker_mode(SpeakerMode p_mode) {
-	speaker_mode = p_mode;
+void AudioDriver::set_speaker_mode(SpeakerMode p_mode) {
+	_dummy_speaker_mode = p_mode;
 }
 
-void AudioDriverDummy::set_mix_rate(int p_rate) {
-	mix_rate = p_rate;
+void AudioDriver::set_mix_rate(int p_rate) {
+	_dummy_mix_rate = p_rate;
 }
 
-uint32_t AudioDriverDummy::get_channels() const {
+uint32_t AudioDriver::get_channels() const {
 	static const int channels_for_mode[4] = { 2, 4, 8, 16 };
-	return channels_for_mode[speaker_mode];
+	return channels_for_mode[_dummy_speaker_mode];
 }
 
-void AudioDriverDummy::mix_audio(int p_frames, int32_t *p_buffer) {
-	ERR_FAIL_COND(!active.is_set()); // If not active, should not mix.
-	ERR_FAIL_COND(use_threads == true); // If using threads, this will not work well.
+void AudioDriver::mix_audio(int p_frames, int32_t *p_buffer) {
+	ERR_FAIL_COND(!_dummy_active.is_set()); // If not active, should not mix.
+	ERR_FAIL_COND(_dummy_use_threads == true); // If using threads, this will not work well.
 
 	uint32_t todo = p_frames;
 	while (todo) {
-		uint32_t to_mix = MIN(buffer_frames, todo);
+		uint32_t to_mix = MIN(_dummy_buffer_frames, todo);
 		lock();
-		audio_server_process(to_mix, samples_in);
+		audio_server_process(to_mix, _dummy_samples_in);
 		unlock();
 
-		uint32_t total_samples = to_mix * channels;
+		uint32_t total_samples = to_mix * _dummy_channels;
 
 		for (uint32_t i = 0; i < total_samples; i++) {
-			p_buffer[i] = samples_in[i];
+			p_buffer[i] = _dummy_samples_in[i];
 		}
 
 		todo -= to_mix;
@@ -218818,20 +214151,18 @@ void AudioDriverDummy::mix_audio(int p_frames, int32_t *p_buffer) {
 	}
 }
 
-void AudioDriverDummy::finish() {
-	if (use_threads) {
-		exit_thread.set();
-		if (thread.is_started()) {
-			thread.wait_to_finish();
+void AudioDriver::finish() {
+	if (_dummy_use_threads) {
+		_dummy_exit_thread.set();
+		if (_dummy_thread.is_started()) {
+			_dummy_thread.wait_to_finish();
 		}
 	}
 
-	if (samples_in) {
-		memdelete_arr(samples_in);
+	if (_dummy_samples_in) {
+		memdelete_arr(_dummy_samples_in);
 	}
 }
-
-AudioDriverDummy::AudioDriverDummy() {}
 
 #include "servers/display/display_server.h"
 
@@ -253061,72 +248392,72 @@ void RendererSceneRenderImplementation::SceneShaderForwardClustered::ShaderData:
 
 using namespace RendererSceneRenderImplementation;
 
-void RenderForwardMobile::ForwardIDStorageMobile::initialize()
+namespace RendererRD::ForwardIDStorage
 {
-	ERR_FAIL_COND(data != nullptr);
-	data = memnew(Data);
-	RendererRD::ForwardIDStorage::bind<ForwardIDStorageMobile>();
-}
-
-void RenderForwardMobile::ForwardIDStorageMobile::finalize()
+void initialize()
 {
-	if (!data) {
-		return;
+	if (!allocators) {
+		allocators = memnew_arr(ForwardIDAllocator, FORWARD_ID_MAX);
 	}
-	RendererRD::ForwardIDStorage::reset();
-	memdelete(data);
-	data = nullptr;
 }
 
-RendererRD::ForwardID RenderForwardMobile::ForwardIDStorageMobile::allocate_forward_id(
-	RendererRD::ForwardIDType p_type)
+void reset()
 {
-	ERR_FAIL_NULL_V(data, -1);
+	if (allocators) {
+		memdelete_arr(allocators);
+		allocators = nullptr;
+	}
+}
 
+ForwardID allocate_forward_id(ForwardIDType p_type)
+{
+	if (!allocators) {
+		return -1;
+	}
 	int32_t index = -1;
-	for (uint32_t i = 0; i < data->forward_id_allocators[p_type].allocations.size(); i++) {
-		if (data->forward_id_allocators[p_type].allocations[i] == false) {
+	for (uint32_t i = 0; i < allocators[p_type].allocations.size(); i++) {
+		if (allocators[p_type].allocations[i] == false) {
 			index = i;
 			break;
 		}
 	}
-
 	if (index == -1) {
-		index = data->forward_id_allocators[p_type].allocations.size();
-		data->forward_id_allocators[p_type].allocations.push_back(true);
-		data->forward_id_allocators[p_type].map.push_back(0xFF);
-		data->forward_id_allocators[p_type].last_pass.push_back(0);
+		index = allocators[p_type].allocations.size();
+		allocators[p_type].allocations.push_back(true);
+		allocators[p_type].map.push_back(0xFF);
+		allocators[p_type].last_pass.push_back(0);
 	}
 	else {
-		data->forward_id_allocators[p_type].allocations[index] = true;
+		allocators[p_type].allocations[index] = true;
 	}
-
 	return index;
 }
 
-void RenderForwardMobile::ForwardIDStorageMobile::free_forward_id(
-	RendererRD::ForwardIDType p_type, RendererRD::ForwardID p_id)
+void free_forward_id(ForwardIDType p_type, ForwardID p_id)
 {
-	ERR_FAIL_NULL(data);
-	ERR_FAIL_INDEX(
-		p_id, (RendererRD::ForwardID)data->forward_id_allocators[p_type].allocations.size());
-	data->forward_id_allocators[p_type].allocations[p_id] = false;
+	if (!allocators) {
+		return;
+	}
+	ERR_FAIL_INDEX(p_id, (ForwardID)allocators[p_type].allocations.size());
+	allocators[p_type].allocations[p_id] = false;
 }
 
-void RenderForwardMobile::ForwardIDStorageMobile::map_forward_id(RendererRD::ForwardIDType p_type,
-	RendererRD::ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
+void map_forward_id(ForwardIDType p_type, ForwardID p_id, uint32_t p_index, uint64_t p_last_pass)
 {
-	ERR_FAIL_NULL(data);
-	data->forward_id_allocators[p_type].map[p_id] = p_index;
-	data->forward_id_allocators[p_type].last_pass[p_id] = p_last_pass;
+	if (!allocators) {
+		return;
+	}
+	allocators[p_type].map[p_id] = p_index;
+	allocators[p_type].last_pass[p_id] = p_last_pass;
 }
+} // namespace RendererRD::ForwardIDStorage
 
 void RenderForwardMobile::fill_push_constant_instance_indices(
 	SceneState::InstanceData* p_instance_data, const GeometryInstanceForwardMobile* p_instance)
 {
-	ERR_FAIL_NULL(ForwardIDStorageMobile::data);
-	ForwardIDStorageMobile::ForwardIDAllocator* allocators =
-		ForwardIDStorageMobile::data->forward_id_allocators;
+	RendererRD::ForwardIDStorage::ForwardIDAllocator* allocators =
+		RendererRD::ForwardIDStorage::allocators;
+	ERR_FAIL_NULL(allocators);
 
 	uint64_t current_frame = RendererCompositor::get_frame_number();
 
@@ -255967,6 +251298,7 @@ void RenderForwardMobile::initialize()
 		return;
 	}
 	data = memnew(Data);
+	RendererRD::ForwardIDStorage::initialize();
 	SceneShaderForwardMobile::initialize();
 }
 
@@ -255975,7 +251307,7 @@ void RenderForwardMobile::finalize()
 	if (!data) {
 		return;
 	}
-	ForwardIDStorageMobile::finalize();
+	RendererRD::ForwardIDStorage::reset();
 	RendererLightStorage::directional_shadow_atlas_set_size(0);
 
 	if (data->ltc.lut1_texture.is_valid()) {
@@ -278677,9 +274009,9 @@ Vector<RenderingServerTypes::BlitToScreen> OpenXRInterface::post_draw_viewport(
 		RenderingServerTypes::BlitToScreen blit;
 
 		blit.render_target = p_render_target;
-		blit.multi_view.use_layer = true;
-		blit.multi_view.layer = 0;
-		blit.lens_distortion.apply = false;
+		blit.multi_view_use_layer = true;
+		blit.multi_view_layer = 0;
+		blit.lens_distortion_apply = false;
 
 		Size2 render_size = get_render_target_size();
 		Rect2 dst_rect = p_screen_rect;

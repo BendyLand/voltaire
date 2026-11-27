@@ -1012,7 +1012,15 @@ OS::PreferredTextureFormat OS_MacOS::get_preferred_texture_format() const {
 	return PREFERRED_TEXTURE_FORMAT_S3TC_BPTC;
 }
 
-OS_MacOS::OS_MacOS(const char *p_execpath, int p_argc, char **p_argv) {
+static bool sig_received = false;
+static void handle_interrupt(int sig) {
+	if (sig == SIGINT) {
+		sig_received = true;
+	}
+}
+
+OS_MacOS::OS_MacOS(RunMode p_run_mode, const char *p_execpath, int p_argc, char **p_argv) :
+		run_mode(p_run_mode) {
 	execpath = p_execpath;
 	argc = p_argc;
 	argv = p_argv;
@@ -1043,23 +1051,44 @@ OS_MacOS::OS_MacOS(const char *p_execpath, int p_argc, char **p_argv) {
 #endif
 
 	DisplayServerMacOS::register_macos_driver();
+	if (run_mode == RUN_MODE_NSAPP) {
+		[GodotApplication sharedApplication];
+		[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+		NSMenu *main_menu = [[NSMenu alloc] initWithTitle:@""];
+		[NSApp setMainMenu:main_menu];
+		delegate = [[GodotApplicationDelegate alloc] initWithOS:this];
+		ERR_FAIL_NULL(delegate);
+		[NSApp setDelegate:delegate];
+		[NSApp registerUserInterfaceItemSearchHandler:delegate];
+		struct sigaction action;
+		memset(&action, 0, sizeof(action));
+		action.sa_handler = handle_interrupt;
+		sigaction(SIGINT, &action, nullptr);
+	}
+#ifdef TOOLS_ENABLED
+	else if (run_mode == RUN_MODE_EMBEDDED) {
+		DisplayServerMacOSEmbedded::register_embedded_driver();
+	}
+#endif
 }
 
 // MARK: - OS_MacOS_NSApp
 
-void OS_MacOS_NSApp::run() {
-	[NSApp run]; // Note: this call will never return. Use `OS_MacOS_NSApp::cleanup()` for cleanup.
-}
-
-static bool sig_received = false;
-
-static void handle_interrupt(int sig) {
-	if (sig == SIGINT) {
-		sig_received = true;
+void OS_MacOS::run() {
+	if (run_mode == RUN_MODE_HEADLESS) {
+		_run_headless();
+		return;
 	}
+#ifdef TOOLS_ENABLED
+	if (run_mode == RUN_MODE_EMBEDDED) {
+		_run_embedded();
+		return;
+	}
+#endif
+	[NSApp run];
 }
 
-void OS_MacOS_NSApp::start_main() {
+void OS_MacOS::start_main() {
 	Error err;
 	@autoreleasepool {
 		err = Main::setup(execpath, argc, argv);
@@ -1122,7 +1151,7 @@ void OS_MacOS_NSApp::start_main() {
 	terminate();
 }
 
-void OS_MacOS_NSApp::terminate() {
+void OS_MacOS::terminate() {
 	// Note: This method only sends app termination request. Use `OS_MacOS_NSApp::cleanup()` for cleanup.
 	if (pre_wait_observer) {
 		CFRunLoopRemoveObserver(CFRunLoopGetCurrent(), pre_wait_observer, kCFRunLoopCommonModes);
@@ -1134,7 +1163,7 @@ void OS_MacOS_NSApp::terminate() {
 	[NSApp terminate:nil];
 }
 
-void OS_MacOS_NSApp::cleanup() {
+void OS_MacOS::cleanup() {
 	if (MainLoop::is_active()) {
 		MainLoop::finalize();
 	}
@@ -1146,35 +1175,10 @@ void OS_MacOS_NSApp::cleanup() {
 	godot_cleanup_profiler();
 }
 
-OS_MacOS_NSApp::OS_MacOS_NSApp(const char *p_execpath, int p_argc, char **p_argv) :
-		OS_MacOS(p_execpath, p_argc, p_argv) {
-	// Implicitly create shared NSApplication instance.
-	[GodotApplication sharedApplication];
-
-	// In case we are unbundled, make us a proper UI application.
-	[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-
-	// Menu bar setup must go between sharedApplication above and
-	// finishLaunching below, in order to properly emulate the behavior
-	// of NSApplicationMain.
-
-	NSMenu *main_menu = [[NSMenu alloc] initWithTitle:@""];
-	[NSApp setMainMenu:main_menu];
-
-	delegate = [[GodotApplicationDelegate alloc] initWithOS:this];
-	ERR_FAIL_NULL(delegate);
-	[NSApp setDelegate:delegate];
-	[NSApp registerUserInterfaceItemSearchHandler:delegate];
-
-	struct sigaction action;
-	memset(&action, 0, sizeof(action));
-	action.sa_handler = handle_interrupt;
-	sigaction(SIGINT, &action, nullptr);
-}
 
 // MARK: - OS_MacOS_Headless
 
-void OS_MacOS_Headless::run() {
+void OS_MacOS::_run_headless() {
 	CFRunLoopGetCurrent();
 
 	@autoreleasepool {
@@ -1221,15 +1225,12 @@ void OS_MacOS_Headless::run() {
 	Main::cleanup();
 }
 
-OS_MacOS_Headless::OS_MacOS_Headless(const char *p_execpath, int p_argc, char **p_argv) :
-		OS_MacOS(p_execpath, p_argc, p_argv) {
-}
 
 // MARK: - OS_MacOS_Embedded
 
 #ifdef TOOLS_ENABLED
 
-void OS_MacOS_Embedded::run() {
+void OS_MacOS::_run_embedded() {
 	CFRunLoopGetCurrent();
 
 	@autoreleasepool {
@@ -1287,10 +1288,6 @@ void OS_MacOS_Embedded::run() {
 	Main::cleanup();
 }
 
-OS_MacOS_Embedded::OS_MacOS_Embedded(const char *p_execpath, int p_argc, char **p_argv) :
-		OS_MacOS(p_execpath, p_argc, p_argv) {
-	DisplayServerMacOSEmbedded::register_embedded_driver();
-}
 
 #endif
 
@@ -2076,10 +2073,10 @@ GodotApplication *GodotApp = nil;
 	bool reduce_motion;
 	bool reduce_transparency;
 	bool voice_over;
-	OS_MacOS_NSApp *os_mac;
+	OS_MacOS *os_mac;
 }
 
-- (GodotApplicationDelegate *)initWithOS:(OS_MacOS_NSApp *)os {
+- (GodotApplicationDelegate *)initWithOS:(OS_MacOS *)os {
 	self = [super init];
 	if (self) {
 		os_mac = os;
@@ -13338,15 +13335,15 @@ __attribute__((visibility("default"))) int main(int argc, char **argv) {
 	OS_MacOS *os = nullptr;
 	if (is_embedded) {
 #ifdef TOOLS_ENABLED
-		os = memnew(OS_MacOS_Embedded(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+		os = memnew(OS_MacOS(OS_MacOS::RUN_MODE_EMBEDDED, args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
 #else
 		WARN_PRINT("Embedded mode is not supported in release builds.");
 		return EXIT_FAILURE;
 #endif
 	} else if (is_headless) {
-		os = memnew(OS_MacOS_Headless(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+		os = memnew(OS_MacOS(OS_MacOS::RUN_MODE_HEADLESS, args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
 	} else {
-		os = memnew(OS_MacOS_NSApp(args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
+		os = memnew(OS_MacOS(OS_MacOS::RUN_MODE_NSAPP, args[0], remaining_args, remaining_args > 0 ? &args[1] : nullptr));
 	}
 
 #ifdef TOOLS_ENABLED
@@ -13393,7 +13390,7 @@ GDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], 
 	ERR_FAIL_COND_V_MSG(instance != nullptr, nullptr, "Only one Godot Instance may be created.");
 
 	uint32_t remaining_args = p_argc - 1;
-	os = new OS_MacOS_NSApp(p_argv[0], remaining_args, remaining_args > 0 ? &p_argv[1] : nullptr);
+	os = new OS_MacOS(OS_MacOS::RUN_MODE_NSAPP, p_argv[0], remaining_args, remaining_args > 0 ? &p_argv[1] : nullptr);
 
 	@autoreleasepool {
 		Error err = Main::setup(p_argv[0], remaining_args, remaining_args > 0 ? &p_argv[1] : nullptr, false);

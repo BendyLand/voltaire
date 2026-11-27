@@ -49,53 +49,68 @@ VLTR_CLANG_WARNING_PUSH_AND_IGNORE("-Wundefined-var-template")
 // one object of each version of the template can exists; hence the Tag argument.
 // Tags must be unique across the Godot codebase.
 // Also, don't forget to declare the thread_local variable on each use.
+VLTR_CLANG_WARNING_POP
+
+#endif // THREADS_ENABLED
+
 template <int Tag>
 class SafeBinaryMutex {
 	friend class MutexLock<SafeBinaryMutex<Tag>>;
 
+#ifdef THREADS_ENABLED
 	using StdMutexType = THREADING_NAMESPACE::mutex;
-
 	mutable THREADING_NAMESPACE::mutex mutex;
+#endif
 
 	struct TLSData {
+#ifdef THREADS_ENABLED
 		mutable THREADING_NAMESPACE::unique_lock<THREADING_NAMESPACE::mutex> lock;
 		uint32_t count = 0;
 
 		TLSData(SafeBinaryMutex<Tag> &p_mutex) :
 				lock(p_mutex.mutex, THREADING_NAMESPACE::defer_lock) {}
+#else
+		TLSData(SafeBinaryMutex<Tag> &p_mutex) {}
+#endif
 	};
 	static thread_local TLSData tls_data;
 
 public:
 	_ALWAYS_INLINE_ void lock() const {
+#ifdef THREADS_ENABLED
 		if (++tls_data.count == 1) {
 			tls_data.lock.lock();
 		}
+#endif
 	}
 
 	_ALWAYS_INLINE_ void unlock() const {
+#ifdef THREADS_ENABLED
 		DEV_ASSERT(tls_data.count);
 		if (--tls_data.count == 0) {
 			tls_data.lock.unlock();
 		}
+#endif
 	}
 
+#ifdef THREADS_ENABLED
 	_ALWAYS_INLINE_ THREADING_NAMESPACE::unique_lock<THREADING_NAMESPACE::mutex> &_get_lock() const {
 		return const_cast<THREADING_NAMESPACE::unique_lock<THREADING_NAMESPACE::mutex> &>(tls_data.lock);
 	}
 
-	_ALWAYS_INLINE_ SafeBinaryMutex() {
-	}
+	_ALWAYS_INLINE_ SafeBinaryMutex() {}
 
 	_ALWAYS_INLINE_ ~SafeBinaryMutex() {
 		DEV_ASSERT(!tls_data.count);
 	}
+#endif
 };
 
 template <int Tag>
 class MutexLock<SafeBinaryMutex<Tag>> {
 	friend class ConditionVariable;
 
+#ifdef THREADS_ENABLED
 	const SafeBinaryMutex<Tag> &mutex;
 
 public:
@@ -115,36 +130,14 @@ public:
 	_ALWAYS_INLINE_ void temp_unlock() const {
 		mutex.unlock();
 	}
-
-	// TODO: Implement a `try_temp_relock` if needed (will also need a dummy method below).
-};
-
-VLTR_CLANG_WARNING_POP
-
-#else // No threads.
-
-template <int Tag>
-class SafeBinaryMutex {
-	struct TLSData {
-		TLSData(SafeBinaryMutex<Tag> &p_mutex) {}
-	};
-	static thread_local TLSData tls_data;
-
-public:
-	void lock() const {}
-	void unlock() const {}
-};
-
-template <int Tag>
-class MutexLock<SafeBinaryMutex<Tag>> {
+#else
 public:
 	MutexLock(const SafeBinaryMutex<Tag> &p_mutex) {}
 
 	void temp_relock() const {}
 	void temp_unlock() const {}
+#endif
 };
-
-#endif // THREADS_ENABLED
 
 // --- End core/os/safe_binary_mutex.h ---
 
@@ -165,40 +158,40 @@ public:
 // (which is the built-in logic in a semaphore) or you want to provide your
 // own mutex to tie the wait-notify to some other behavior, you need to use this.
 
+#endif // THREADS_ENABLED
+
 class ConditionVariable {
+#ifdef THREADS_ENABLED
 	mutable THREADING_NAMESPACE::condition_variable condition;
+#endif
 
 public:
 	template <typename BinaryMutexT>
 	_ALWAYS_INLINE_ void wait(const MutexLock<BinaryMutexT> &p_lock) const {
+#ifdef THREADS_ENABLED
 		condition.wait(p_lock._get_lock());
+#endif
 	}
 
 	template <int Tag>
 	_ALWAYS_INLINE_ void wait(const MutexLock<SafeBinaryMutex<Tag>> &p_lock) const {
+#ifdef THREADS_ENABLED
 		condition.wait(p_lock.mutex._get_lock());
+#endif
 	}
 
 	_ALWAYS_INLINE_ void notify_one() const {
+#ifdef THREADS_ENABLED
 		condition.notify_one();
+#endif
 	}
 
 	_ALWAYS_INLINE_ void notify_all() const {
+#ifdef THREADS_ENABLED
 		condition.notify_all();
+#endif
 	}
 };
-
-#else // No threads.
-
-class ConditionVariable {
-public:
-	template <typename BinaryMutexT>
-	void wait(const MutexLock<BinaryMutexT> &p_lock) const {}
-	void notify_one() const {}
-	void notify_all() const {}
-};
-
-#endif // THREADS_ENABLED
 
 // --- Folded from core/templates/command_queue_mt.h ---
 #include "core/os/mutex.h"

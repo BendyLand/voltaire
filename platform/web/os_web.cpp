@@ -80,8 +80,8 @@ void OS_Web::initialize() {
 	}
 
 	if (AudioDriverWeb::is_available()) {
-		data->audio_drivers.push_back(memnew(AudioDriverWorklet));
-		data->audio_drivers.push_back(memnew(AudioDriverScriptProcessor));
+		data->audio_drivers.push_back(memnew(AudioDriverWeb(AudioDriverWeb::MODE_WORKLET)));
+		data->audio_drivers.push_back(memnew(AudioDriverWeb(AudioDriverWeb::MODE_SCRIPT_PROCESSOR)));
 	}
 	for (AudioDriverWeb *audio_driver : data->audio_drivers) {
 		AudioDriverManager::add_driver(audio_driver);
@@ -514,18 +514,16 @@ extern void godot_audio_script_start(float *p_in_buf, int p_in_size, float *p_ou
 
 #include <emscripten.h>
 
-AudioDriverWeb::AudioContext AudioDriverWeb::audio_context;
-
 bool AudioDriverWeb::is_available() {
 	return godot_audio_is_available() != 0;
 }
 
 void AudioDriverWeb::_state_change_callback(int p_state) {
-	AudioDriverWeb::audio_context.state = p_state;
+	AudioDriverWeb::ctx_state = p_state;
 }
 
 void AudioDriverWeb::_latency_update_callback(float p_latency) {
-	AudioDriverWeb::audio_context.output_latency = p_latency;
+	AudioDriverWeb::ctx_output_latency = p_latency;
 }
 
 void AudioDriverWeb::_sample_playback_finished_callback(const char *p_playback_object_id) {
@@ -597,13 +595,13 @@ void AudioDriverWeb::_audio_driver_capture(int p_from, int p_samples) {
 
 Error AudioDriverWeb::init() {
 	int latency = Engine::get_audio_output_latency();
-	if (!audio_context.inited) {
-		audio_context.mix_rate = _get_configured_mix_rate();
-		audio_context.channel_count = godot_audio_init(&audio_context.mix_rate, latency, &_state_change_callback, &_latency_update_callback);
-		audio_context.inited = true;
+	if (!ctx_inited) {
+		ctx_mix_rate = _get_configured_mix_rate();
+		ctx_channel_count = godot_audio_init(&ctx_mix_rate, latency, &_state_change_callback, &_latency_update_callback);
+		ctx_inited = true;
 	}
-	mix_rate = audio_context.mix_rate;
-	channel_count = audio_context.channel_count;
+	mix_rate = ctx_mix_rate;
+	channel_count = ctx_channel_count;
 	buffer_length = Math::closest_power_of_2(uint32_t(latency * mix_rate / 1000));
 	Error err = create(buffer_length, channel_count);
 	if (err != OK) {
@@ -631,17 +629,17 @@ Error AudioDriverWeb::init() {
 }
 
 void AudioDriverWeb::start() {
-	start(output_rb, memarr_len(output_rb), input_rb, memarr_len(input_rb));
+	start_driver(output_rb, memarr_len(output_rb), input_rb, memarr_len(input_rb));
 }
 
 void AudioDriverWeb::resume() {
-	if (audio_context.state == 0) { // 'suspended'
+	if (ctx_state == 0) { // 'suspended'
 		godot_audio_resume();
 	}
 }
 
 float AudioDriverWeb::get_latency() {
-	return audio_context.output_latency + (float(buffer_length) / mix_rate);
+	return ctx_output_latency + (float(buffer_length) / mix_rate);
 }
 
 int AudioDriverWeb::get_mix_rate() const {
@@ -865,9 +863,8 @@ void AudioDriverWeb::set_sample_bus_mute(int p_bus, bool p_enable) {
 
 #ifdef THREADS_ENABLED
 
-/// AudioWorkletNode implementation (threads)
-void AudioDriverWorklet::_audio_thread_func(void *p_data) {
-	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(p_data);
+void AudioDriverWeb::_audio_thread_func(void *p_data) {
+	AudioDriverWeb *driver = static_cast<AudioDriverWeb *>(p_data);
 	const int out_samples = memarr_len(driver->get_output_rb());
 	const int in_samples = memarr_len(driver->get_input_rb());
 	int wpos = 0;
@@ -902,76 +899,77 @@ void AudioDriverWorklet::_audio_thread_func(void *p_data) {
 	}
 }
 
-Error AudioDriverWorklet::create(int &p_buffer_size, int p_channels) {
-	if (!godot_audio_has_worklet()) {
-		return ERR_UNAVAILABLE;
-	}
-	return (Error)godot_audio_worklet_create(p_channels);
-}
-
-void AudioDriverWorklet::start(float *p_out_buf, int p_out_buf_size, float *p_in_buf, int p_in_buf_size) {
-	godot_audio_worklet_start(p_in_buf, p_in_buf_size, p_out_buf, p_out_buf_size, state);
-	thread.start(_audio_thread_func, this);
-}
-
-void AudioDriverWorklet::lock() {
-	mutex.lock();
-}
-
-void AudioDriverWorklet::unlock() {
-	mutex.unlock();
-}
-
-void AudioDriverWorklet::finish_driver() {
-	quit = true; // Ask thread to quit.
-	thread.wait_to_finish();
-}
-
 #else // No threads.
 
-/// AudioWorkletNode implementation (no threads)
-Error AudioDriverWorklet::create(int &p_buffer_size, int p_channels) {
-	if (!godot_audio_has_worklet()) {
-		return ERR_UNAVAILABLE;
-	}
-	return (Error)godot_audio_worklet_create(p_channels);
-}
-
-void AudioDriverWorklet::start(float *p_out_buf, int p_out_buf_size, float *p_in_buf, int p_in_buf_size) {
-	_audio_driver_process();
-	godot_audio_worklet_start_no_threads(p_out_buf, p_out_buf_size, &_process_callback, p_in_buf, p_in_buf_size, &_capture_callback);
-}
-
-void AudioDriverWorklet::_process_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
+void AudioDriverWeb::_worklet_process_callback(int p_pos, int p_samples) {
+	AudioDriverWeb *driver = static_cast<AudioDriverWeb *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_process(p_pos, p_samples);
 }
 
-void AudioDriverWorklet::_capture_callback(int p_pos, int p_samples) {
-	AudioDriverWorklet *driver = static_cast<AudioDriverWorklet *>(AudioDriverManager::get_active_driver());
+void AudioDriverWeb::_worklet_capture_callback(int p_pos, int p_samples) {
+	AudioDriverWeb *driver = static_cast<AudioDriverWeb *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_capture(p_pos, p_samples);
 }
 
 #endif // THREADS_ENABLED
 
-/// ScriptProcessorNode implementation
-void AudioDriverScriptProcessor::_process_callback() {
-	AudioDriverScriptProcessor *driver = static_cast<AudioDriverScriptProcessor *>(AudioDriverManager::get_active_driver());
+void AudioDriverWeb::_script_process_callback() {
+	AudioDriverWeb *driver = static_cast<AudioDriverWeb *>(AudioDriverManager::get_active_driver());
 	driver->_audio_driver_capture();
 	driver->_audio_driver_process();
 }
 
-Error AudioDriverScriptProcessor::create(int &p_buffer_samples, int p_channels) {
+Error AudioDriverWeb::create(int &p_buffer_samples, int p_channels) {
+	if (mode == MODE_WORKLET) {
+		if (!godot_audio_has_worklet()) {
+			return ERR_UNAVAILABLE;
+		}
+		return (Error)godot_audio_worklet_create(p_channels);
+	}
 	if (!godot_audio_has_script_processor()) {
 		return ERR_UNAVAILABLE;
 	}
 	return (Error)godot_audio_script_create(&p_buffer_samples, p_channels);
 }
 
-void AudioDriverScriptProcessor::start(float *p_out_buf, int p_out_buf_size, float *p_in_buf, int p_in_buf_size) {
-	godot_audio_script_start(p_in_buf, p_in_buf_size, p_out_buf, p_out_buf_size, &_process_callback);
+void AudioDriverWeb::start_driver(float *p_out_buf, int p_out_buf_size, float *p_in_buf, int p_in_buf_size) {
+	if (mode == MODE_WORKLET) {
+#ifdef THREADS_ENABLED
+		godot_audio_worklet_start(p_in_buf, p_in_buf_size, p_out_buf, p_out_buf_size, state);
+		thread.start(_audio_thread_func, this);
+#else
+		_audio_driver_process();
+		godot_audio_worklet_start_no_threads(p_out_buf, p_out_buf_size, &_worklet_process_callback, p_in_buf, p_in_buf_size, &_worklet_capture_callback);
+#endif
+	} else {
+		godot_audio_script_start(p_in_buf, p_in_buf_size, p_out_buf, p_out_buf_size, &_script_process_callback);
+	}
 }
 
+void AudioDriverWeb::lock() {
+#ifdef THREADS_ENABLED
+	if (mode == MODE_WORKLET) {
+		mutex.lock();
+	}
+#endif
+}
+
+void AudioDriverWeb::unlock() {
+#ifdef THREADS_ENABLED
+	if (mode == MODE_WORKLET) {
+		mutex.unlock();
+	}
+#endif
+}
+
+void AudioDriverWeb::finish_driver() {
+#ifdef THREADS_ENABLED
+	if (mode == MODE_WORKLET) {
+		quit = true;
+		thread.wait_to_finish();
+	}
+#endif
+}
 
 // --- Merged from platform/web/webmidi_driver.cpp ---
 #include "servers/display/display_server.h"

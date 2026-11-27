@@ -3666,25 +3666,25 @@ MTL::RenderPipelineState *MDResourceCache::get_empty_draw_pipeline_state(ClearAt
 
 MTL::DepthStencilState *MDResourceCache::get_depth_stencil_state(bool p_use_depth, bool p_use_stencil) {
 	if (p_use_depth && p_use_stencil) {
-		if (!clear_depth_stencil_state.all) {
-			clear_depth_stencil_state.all = resource_factory->new_depth_stencil_state(true, true);
+		if (!cdss_all) {
+			cdss_all = resource_factory->new_depth_stencil_state(true, true);
 		}
-		return clear_depth_stencil_state.all.get();
+		return cdss_all.get();
 	} else if (p_use_depth) {
-		if (!clear_depth_stencil_state.depth_only) {
-			clear_depth_stencil_state.depth_only = resource_factory->new_depth_stencil_state(true, false);
+		if (!cdss_depth_only) {
+			cdss_depth_only = resource_factory->new_depth_stencil_state(true, false);
 		}
-		return clear_depth_stencil_state.depth_only.get();
+		return cdss_depth_only.get();
 	} else if (p_use_stencil) {
-		if (!clear_depth_stencil_state.stencil_only) {
-			clear_depth_stencil_state.stencil_only = resource_factory->new_depth_stencil_state(false, true);
+		if (!cdss_stencil_only) {
+			cdss_stencil_only = resource_factory->new_depth_stencil_state(false, true);
 		}
-		return clear_depth_stencil_state.stencil_only.get();
+		return cdss_stencil_only.get();
 	} else {
-		if (!clear_depth_stencil_state.none) {
-			clear_depth_stencil_state.none = resource_factory->new_depth_stencil_state(false, false);
+		if (!cdss_none) {
+			cdss_none = resource_factory->new_depth_stencil_state(false, false);
 		}
-		return clear_depth_stencil_state.none.get();
+		return cdss_none.get();
 	}
 }
 
@@ -3994,77 +3994,80 @@ void ShaderCacheEntry::notify_free() {
 
 #pragma mark - MDLibrary
 
-MDLibrary::MDLibrary(ShaderCacheEntry *p_entry
-#ifdef DEV_ENABLED
-		,
-		NS::String *p_source
-#endif
-		) :
+MDLibrary::MDLibrary(ShaderCacheEntry *p_entry,
+		MTL::Device *p_device,
+		NS::String *p_source,
+		MTL::CompileOptions *p_options,
+		ShaderLoadStrategy p_strategy) :
+		_mode(p_strategy == ShaderLoadStrategy::LAZY ? Mode::LAZY : Mode::IMMEDIATE),
 		_entry(p_entry) {
 #ifdef DEV_ENABLED
 	_original_source = NS::RetainPtr(p_source);
 #endif
+	if (_mode == Mode::LAZY) {
+		_device = p_device;
+		_source = NS::RetainPtr(p_source);
+		_options = NS::RetainPtr(p_options);
+	} else {
+		os_signpost_id_t compile_id = (os_signpost_id_t)(uintptr_t)this;
+		os_signpost_interval_begin(LOG_INTERVALS, compile_id, "shader_compile",
+				"shader_name=%{public}s stage=%{public}s hash=%X",
+				p_entry->name.get_data(), SHADER_STAGE_NAMES[p_entry->stage], p_entry->key.short_sha());
+
+		p_device->newLibrary(p_source, p_options, [this, compile_id, p_entry](MTL::Library *library, NS::Error *error) {
+			os_signpost_interval_end(LOG_INTERVALS, compile_id, "shader_compile");
+			if (library) {
+				_library = NS::RetainPtr(library);
+			}
+			_error = error;
+			if (error) {
+				ERR_PRINT(vformat(U"Error compiling shader %s: %s", p_entry->name.get_data(), error->localizedDescription()->utf8String()));
+			}
+
+			std::lock_guard<std::mutex> lock(_cv_mutex);
+			_complete = true;
+			_cv.notify_all();
+		});
+	}
+}
+
+MDLibrary::MDLibrary(ShaderCacheEntry *p_entry,
+		MTL::Device *p_device,
+#ifdef DEV_ENABLED
+		NS::String *p_source,
+#endif
+		dispatch_data_t p_data) :
+		_mode(Mode::BINARY),
+		_entry(p_entry) {
+#ifdef DEV_ENABLED
+	_original_source = NS::RetainPtr(p_source);
+#endif
+	NS::Error *error = nullptr;
+	_library = NS::TransferPtr(p_device->newLibrary(p_data, &error));
+	if (error != nullptr) {
+		_error = error;
+		ERR_PRINT(vformat("Unable to load shader library: %s", error->localizedDescription()->utf8String()));
+	}
 }
 
 MDLibrary::~MDLibrary() {
+	if (_mode == Mode::IMMEDIATE) {
+		_wait_immediate();
+	}
 	_entry->notify_free();
 }
 
-void MDLibrary::set_label(NS::String *p_label) {
-}
-
-#pragma mark - MDLazyLibrary
-
-/// Loads the MTLLibrary when the library is first accessed.
-class MDLazyLibrary final : public MDLibrary {
-	NS::SharedPtr<MTL::Library> _library;
-	NS::Error *_error = nullptr;
-	std::shared_mutex _mu;
-	bool _loaded = false;
-	MTL::Device *_device = nullptr;
-	NS::SharedPtr<NS::String> _source;
-	NS::SharedPtr<MTL::CompileOptions> _options;
-
-	void _load();
-
-public:
-	MDLazyLibrary(ShaderCacheEntry *p_entry,
-			MTL::Device *p_device,
-			NS::String *p_source,
-			MTL::CompileOptions *p_options);
-
-	MTL::Library *get_library() override;
-	NS::Error *get_error() override;
-};
-
-MDLazyLibrary::MDLazyLibrary(ShaderCacheEntry *p_entry,
-		MTL::Device *p_device,
-		NS::String *p_source,
-		MTL::CompileOptions *p_options) :
-		MDLibrary(p_entry
-#ifdef DEV_ENABLED
-				,
-				p_source
-#endif
-				),
-		_device(p_device),
-		_source(NS::RetainPtr(p_source)),
-		_options(NS::RetainPtr(p_options)) {
-}
-
-void MDLazyLibrary::_load() {
+void MDLibrary::_load_lazy() {
 	{
-		std::shared_lock<std::shared_mutex> lock(_mu);
+		std::shared_lock<std::shared_mutex> lock(_lazy_mu);
 		if (_loaded) {
 			return;
 		}
 	}
-
-	std::unique_lock<std::shared_mutex> lock(_mu);
+	std::unique_lock<std::shared_mutex> lock(_lazy_mu);
 	if (_loaded) {
 		return;
 	}
-
 	os_signpost_id_t compile_id = (os_signpost_id_t)(uintptr_t)this;
 	os_signpost_interval_begin(LOG_INTERVALS, compile_id, "shader_compile",
 			"shader_name=%{public}s stage=%{public}s hash=%X",
@@ -4079,154 +4082,35 @@ void MDLazyLibrary::_load() {
 	_loaded = true;
 }
 
-MTL::Library *MDLazyLibrary::get_library() {
-	_load();
-	return _library.get();
+void MDLibrary::_wait_immediate() {
+	std::unique_lock<std::mutex> lock(_cv_mutex);
+	_cv.wait(lock, [this] { return _complete; });
 }
 
-NS::Error *MDLazyLibrary::get_error() {
-	_load();
-	return _error;
-}
-
-#pragma mark - MDImmediateLibrary
-
-/// Loads the MTLLibrary immediately on initialization, using Metal's async compilation API.
-class MDImmediateLibrary final : public MDLibrary {
-	NS::SharedPtr<MTL::Library> _library;
-	NS::Error *_error = nullptr;
-	std::mutex _cv_mutex;
-	std::condition_variable _cv;
-	bool _complete = false;
-
-	void _check_and_wait() {
-		std::unique_lock<std::mutex> lock(_cv_mutex);
-		_cv.wait(lock, [this] { return _complete; });
+MTL::Library *MDLibrary::get_library() {
+	if (_mode == Mode::LAZY) {
+		_load_lazy();
+	} else if (_mode == Mode::IMMEDIATE) {
+		_wait_immediate();
 	}
-
-public:
-	MDImmediateLibrary(ShaderCacheEntry *p_entry,
-			MTL::Device *p_device,
-			NS::String *p_source,
-			MTL::CompileOptions *p_options);
-	~MDImmediateLibrary() override;
-
-	MTL::Library *get_library() override;
-	NS::Error *get_error() override;
-};
-
-MDImmediateLibrary::MDImmediateLibrary(ShaderCacheEntry *p_entry,
-		MTL::Device *p_device,
-		NS::String *p_source,
-		MTL::CompileOptions *p_options) :
-		MDLibrary(p_entry
-#ifdef DEV_ENABLED
-				,
-				p_source
-#endif
-		) {
-	os_signpost_id_t compile_id = (os_signpost_id_t)(uintptr_t)this;
-	os_signpost_interval_begin(LOG_INTERVALS, compile_id, "shader_compile",
-			"shader_name=%{public}s stage=%{public}s hash=%X",
-			p_entry->name.get_data(), SHADER_STAGE_NAMES[p_entry->stage], p_entry->key.short_sha());
-
-	// Use Metal's async compilation API with std::function callback.
-	p_device->newLibrary(p_source, p_options, [this, compile_id, p_entry](MTL::Library *library, NS::Error *error) {
-		os_signpost_interval_end(LOG_INTERVALS, compile_id, "shader_compile");
-		if (library) {
-			_library = NS::RetainPtr(library);
-		}
-		_error = error;
-		if (error) {
-			ERR_PRINT(vformat(U"Error compiling shader %s: %s", p_entry->name.get_data(), error->localizedDescription()->utf8String()));
-		}
-
-		std::lock_guard<std::mutex> lock(_cv_mutex);
-		_complete = true;
-		_cv.notify_all();
-	});
-}
-
-MDImmediateLibrary::~MDImmediateLibrary() {
-	// Wait for the async compilation callback to complete before destroying to avoid segfault.
-	_check_and_wait();
-}
-
-MTL::Library *MDImmediateLibrary::get_library() {
-	_check_and_wait();
 	return _library.get();
 }
 
-NS::Error *MDImmediateLibrary::get_error() {
-	_check_and_wait();
-	return _error;
-}
-
-#pragma mark - MDBinaryLibrary
-
-/// Loads the MTLLibrary from pre-compiled binary data.
-class MDBinaryLibrary final : public MDLibrary {
-	NS::SharedPtr<MTL::Library> _library;
-	NS::Error *_error = nullptr;
-
-public:
-	MDBinaryLibrary(ShaderCacheEntry *p_entry,
-			MTL::Device *p_device,
-#ifdef DEV_ENABLED
-			NS::String *p_source,
-#endif
-			dispatch_data_t p_data);
-
-	MTL::Library *get_library() override;
-	NS::Error *get_error() override;
-};
-
-MDBinaryLibrary::MDBinaryLibrary(ShaderCacheEntry *p_entry,
-		MTL::Device *p_device,
-#ifdef DEV_ENABLED
-		NS::String *p_source,
-#endif
-		dispatch_data_t p_data) :
-		MDLibrary(p_entry
-#ifdef DEV_ENABLED
-				,
-				p_source
-#endif
-		) {
-	NS::Error *error = nullptr;
-	_library = NS::TransferPtr(p_device->newLibrary(p_data, &error));
-	if (error != nullptr) {
-		_error = error;
-		ERR_PRINT(vformat("Unable to load shader library: %s", error->localizedDescription()->utf8String()));
+NS::Error *MDLibrary::get_error() {
+	if (_mode == Mode::LAZY) {
+		_load_lazy();
+	} else if (_mode == Mode::IMMEDIATE) {
+		_wait_immediate();
 	}
-}
-
-MTL::Library *MDBinaryLibrary::get_library() {
-	return _library.get();
-}
-
-NS::Error *MDBinaryLibrary::get_error() {
 	return _error;
 }
-
-#pragma mark - MDLibrary Factory Methods
 
 std::shared_ptr<MDLibrary> MDLibrary::create(ShaderCacheEntry *p_entry,
 		MTL::Device *p_device,
 		NS::String *p_source,
 		MTL::CompileOptions *p_options,
 		ShaderLoadStrategy p_strategy) {
-	std::shared_ptr<MDLibrary> lib;
-	switch (p_strategy) {
-		case ShaderLoadStrategy::IMMEDIATE:
-			[[fallthrough]];
-		default:
-			lib = std::make_shared<MDImmediateLibrary>(p_entry, p_device, p_source, p_options);
-			break;
-		case ShaderLoadStrategy::LAZY:
-			lib = std::make_shared<MDLazyLibrary>(p_entry, p_device, p_source, p_options);
-			break;
-	}
+	std::shared_ptr<MDLibrary> lib = std::make_shared<MDLibrary>(p_entry, p_device, p_source, p_options, p_strategy);
 	p_entry->library = lib;
 	return lib;
 }
@@ -4237,7 +4121,7 @@ std::shared_ptr<MDLibrary> MDLibrary::create(ShaderCacheEntry *p_entry,
 		NS::String *p_source,
 #endif
 		dispatch_data_t p_data) {
-	std::shared_ptr<MDLibrary> lib = std::make_shared<MDBinaryLibrary>(p_entry, p_device,
+	std::shared_ptr<MDLibrary> lib = std::make_shared<MDLibrary>(p_entry, p_device,
 #ifdef DEV_ENABLED
 			p_source,
 #endif
@@ -4245,7 +4129,6 @@ std::shared_ptr<MDLibrary> MDLibrary::create(ShaderCacheEntry *p_entry,
 	p_entry->library = lib;
 	return lib;
 }
-
 
 // --- Merged from drivers/metal/pixel_formats.cpp ---
 #include "servers/display/display_server.h"
@@ -6565,28 +6448,15 @@ MinOsVersion::MinOsVersion(const String &p_version) {
 
 namespace MTL3 {
 
-#pragma mark - FenceEvent / FenceSemaphore
+#pragma mark - Fence
 
-void RenderingDeviceDriverMetal::FenceEvent::signal(MTL::CommandBuffer *p_cb) {
-	if (p_cb) {
-		value++;
-		p_cb->encodeSignalEvent(event.get(), value);
-	}
-}
-
-Error RenderingDeviceDriverMetal::FenceEvent::wait(uint32_t p_timeout_ms) {
-	bool signaled = event->waitUntilSignaledValue(value, p_timeout_ms);
-	if (!signaled) {
-#ifdef DEBUG_ENABLED
-		ERR_PRINT("timeout waiting for fence");
-#endif
-		return ERR_TIMEOUT;
-	}
-	return OK;
-}
-
-void RenderingDeviceDriverMetal::FenceSemaphore::signal(MTL::CommandBuffer *p_cb) {
-	if (p_cb) {
+void RenderingDeviceDriverMetal::Fence::signal(MTL::CommandBuffer *p_cb) {
+	if (event.get()) {
+		if (p_cb) {
+			value++;
+			p_cb->encodeSignalEvent(event.get(), value);
+		}
+	} else if (p_cb) {
 		p_cb->addCompletedHandler([this](MTL::CommandBuffer *) {
 			dispatch_semaphore_signal(semaphore);
 		});
@@ -6595,13 +6465,19 @@ void RenderingDeviceDriverMetal::FenceSemaphore::signal(MTL::CommandBuffer *p_cb
 	}
 }
 
-Error RenderingDeviceDriverMetal::FenceSemaphore::wait(uint32_t p_timeout_ms) {
-	dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, static_cast<int64_t>(p_timeout_ms) * 1000000);
-	long result = dispatch_semaphore_wait(semaphore, timeout);
-	if (result != 0) {
-		return ERR_TIMEOUT;
+Error RenderingDeviceDriverMetal::Fence::wait(uint32_t p_timeout_ms) {
+	if (event.get()) {
+		bool signaled = event->waitUntilSignaledValue(value, p_timeout_ms);
+		if (!signaled) {
+#ifdef DEBUG_ENABLED
+			ERR_PRINT("timeout waiting for fence");
+#endif
+			return ERR_TIMEOUT;
+		}
+		return OK;
 	}
-	return OK;
+	dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, static_cast<int64_t>(p_timeout_ms) * 1000000);
+	return dispatch_semaphore_wait(semaphore, timeout) != 0 ? ERR_TIMEOUT : OK;
 }
 
 #pragma mark - Constructor / Destructor
@@ -6680,9 +6556,9 @@ void RenderingDeviceDriverMetal::remove_residency_set_to_main_queue(MTL::Residen
 RDD::FenceID RenderingDeviceDriverMetal::fence_create() {
 	Fence *fence = nullptr;
 	if (__builtin_available(macOS 12.0, iOS 15.0, tvOS 15.0, visionOS 1.0, *)) {
-		fence = memnew(FenceEvent(NS::TransferPtr(device->newSharedEvent())));
+		fence = memnew(Fence(NS::TransferPtr(device->newSharedEvent())));
 	} else {
-		fence = memnew(FenceSemaphore());
+		fence = memnew(Fence());
 	}
 	return FenceID(fence);
 }
@@ -6921,7 +6797,7 @@ MDCommandBuffer::MDCommandBuffer(MTL::CommandQueue *p_queue, ::RenderingDeviceDr
 		rs_desc->setInitialCapacity(10);
 		rs_desc->setLabel(MTLSTR("Command Residency Set"));
 		NS::Error *error = nullptr;
-		_frame_state.rs = NS::TransferPtr(device->newResidencySet(rs_desc.get(), &error));
+		_frame_state_rs = NS::TransferPtr(device->newResidencySet(rs_desc.get(), &error));
 		CRASH_COND_MSG(error != nullptr, vformat("Failed to create residency set: %s", String(error->localizedDescription()->utf8String())));
 	}
 }
@@ -6967,9 +6843,9 @@ void MDCommandBuffer::commit() {
 	if (use_barriers) {
 		if (_scratch.is_changed()) {
 			Span<MTL::Buffer *const> bufs = _scratch.get_buffers();
-			_frame_state.rs->addAllocations(reinterpret_cast<const MTL::Allocation *const *>(bufs.ptr()), bufs.size());
+			_frame_state_rs->addAllocations(reinterpret_cast<const MTL::Allocation *const *>(bufs.ptr()), bufs.size());
 			_scratch.clear_changed();
-			_frame_state.rs->commit();
+			_frame_state_rs->commit();
 		}
 	}
 	commandBuffer->commit();
@@ -6982,7 +6858,7 @@ MTL::CommandBuffer *MDCommandBuffer::command_buffer() {
 	if (commandBuffer.get() == nullptr) {
 		commandBuffer = NS::RetainPtr(queue->commandBuffer());
 		if (use_barriers) {
-			commandBuffer->useResidencySet(_frame_state.rs.get());
+			commandBuffer->useResidencySet(_frame_state_rs.get());
 		}
 	}
 	return commandBuffer.get();

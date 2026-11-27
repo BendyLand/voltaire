@@ -4911,7 +4911,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indexed_indirect(CommandBuf
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_signatures.draw_indexed.Get(), p_draw_count, indirect_buf_info->resource, p_offset, nullptr, 0);
+	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_sig_draw_indexed.Get(), p_draw_count, indirect_buf_info->resource, p_offset, nullptr, 0);
 }
 
 void RenderingDeviceDriverD3D12::command_render_draw_indexed_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) {
@@ -4925,7 +4925,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indexed_indirect_count(Comm
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_signatures.draw_indexed.Get(), p_max_draw_count, indirect_buf_info->resource, p_offset, count_buf_info->resource, p_count_buffer_offset);
+	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_sig_draw_indexed.Get(), p_max_draw_count, indirect_buf_info->resource, p_offset, count_buf_info->resource, p_count_buffer_offset);
 }
 
 void RenderingDeviceDriverD3D12::command_render_draw_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, uint32_t p_draw_count, uint32_t p_stride) {
@@ -4937,7 +4937,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indirect(CommandBufferID p_
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_signatures.draw.Get(), p_draw_count, indirect_buf_info->resource, p_offset, nullptr, 0);
+	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_sig_draw.Get(), p_draw_count, indirect_buf_info->resource, p_offset, nullptr, 0);
 }
 
 void RenderingDeviceDriverD3D12::command_render_draw_indirect_count(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset, BufferID p_count_buffer, uint64_t p_count_buffer_offset, uint32_t p_max_draw_count, uint32_t p_stride) {
@@ -4951,7 +4951,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indirect_count(CommandBuffe
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_signatures.draw.Get(), p_max_draw_count, indirect_buf_info->resource, p_offset, count_buf_info->resource, p_count_buffer_offset);
+	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_sig_draw.Get(), p_max_draw_count, indirect_buf_info->resource, p_offset, count_buf_info->resource, p_count_buffer_offset);
 }
 
 void RenderingDeviceDriverD3D12::command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets, uint64_t p_dynamic_offsets) {
@@ -5475,7 +5475,7 @@ void RenderingDeviceDriverD3D12::command_compute_dispatch_indirect(CommandBuffer
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_signatures.dispatch.Get(), 1, indirect_buf_info->resource, p_offset, nullptr, 0);
+	cmd_buf_info->cmd_list->ExecuteIndirect(indirect_cmd_sig_dispatch.Get(), 1, indirect_buf_info->resource, p_offset, nullptr, 0);
 }
 
 // ----- PIPELINE -----
@@ -6383,13 +6383,13 @@ Error RenderingDeviceDriverD3D12::_initialize_frames(uint32_t p_frame_count) {
 }
 
 Error RenderingDeviceDriverD3D12::_initialize_command_signatures() {
-	Error err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, sizeof(D3D12_DRAW_ARGUMENTS), &indirect_cmd_signatures.draw);
+	Error err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DRAW, sizeof(D3D12_DRAW_ARGUMENTS), &indirect_cmd_sig_draw);
 	ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
 
-	err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS), &indirect_cmd_signatures.draw_indexed);
+	err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED, sizeof(D3D12_DRAW_INDEXED_ARGUMENTS), &indirect_cmd_sig_draw_indexed);
 	ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
 
-	err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH, sizeof(D3D12_DISPATCH_ARGUMENTS), &indirect_cmd_signatures.dispatch);
+	err = create_command_signature(device.Get(), D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH, sizeof(D3D12_DISPATCH_ARGUMENTS), &indirect_cmd_sig_dispatch);
 	ERR_FAIL_COND_V(err != OK, ERR_CANT_CREATE);
 
 	return OK;

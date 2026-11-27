@@ -369,11 +369,8 @@ static _FORCE_INLINE_ uint32_t fastmod(const uint32_t p_n, const uint64_t p_c, c
 
 #include "core/typedefs.h"
 
-class RID_AllocBase;
-
 class RID
 {
-	friend class RID_AllocBase;
 	uint64_t _id = 0;
 
 public:

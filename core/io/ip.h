@@ -8929,29 +8929,13 @@ extern template class AHashMap<String, int>;
 #define SYNC_RELEASE std::atomic_signal_fence(std::memory_order_release);
 #endif
 
-class RID_AllocBase
+namespace RID_AllocDetail
 {
-	static inline SafeNumeric<uint64_t> base_id{1};
+inline SafeNumeric<uint64_t> base_id{1};
+_ALWAYS_INLINE_ uint64_t gen_id() { return base_id.increment(); }
+} // namespace RID_AllocDetail
 
-protected:
-	static RID _make_from_id(uint64_t p_id)
-	{
-		RID rid;
-		rid._id = p_id;
-		return rid;
-	}
-
-	static RID _gen_rid() { return _make_from_id(_gen_id()); }
-
-	friend struct VariantUtilityFunctions;
-
-	static uint64_t _gen_id() { return base_id.increment(); }
-
-public:
-	virtual ~RID_AllocBase() {}
-};
-
-template <typename T, bool THREAD_SAFE = false> class RID_Alloc : public RID_AllocBase
+template <typename T, bool THREAD_SAFE = false> class RID_Alloc
 {
 	struct Chunk
 	{
@@ -9021,7 +9005,7 @@ template <typename T, bool THREAD_SAFE = false> class RID_Alloc : public RID_All
 		uint32_t free_chunk = free_index / elements_in_chunk;
 		uint32_t free_element = free_index % elements_in_chunk;
 
-		uint32_t validator = 1 + (uint32_t)(_gen_id() % 0x7FFFFFFF);
+		uint32_t validator = 1 + (uint32_t)(RID_AllocDetail::gen_id() % 0x7FFFFFFF);
 		uint64_t id = validator;
 		id <<= 32;
 		id |= free_index;
@@ -9035,7 +9019,7 @@ template <typename T, bool THREAD_SAFE = false> class RID_Alloc : public RID_All
 			mutex.unlock();
 		}
 
-		return _make_from_id(id);
+		return RID::from_uint64(id);
 	}
 
 public:
@@ -9257,7 +9241,7 @@ public:
 		for (size_t i = 0; i < max_alloc; i++) {
 			uint64_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
 			if (validator != 0xFFFFFFFF) {
-				owned.push_back(_make_from_id((validator << 32) | i));
+				owned.push_back(RID::from_uint64((validator << 32) | i));
 			}
 		}
 		if constexpr (THREAD_SAFE) {
@@ -9276,7 +9260,7 @@ public:
 		for (size_t i = 0; i < max_alloc; i++) {
 			uint64_t validator = chunks[i / elements_in_chunk][i % elements_in_chunk].validator;
 			if (validator != 0xFFFFFFFF) {
-				p_rid_buffer[idx] = _make_from_id((validator << 32) | i);
+				p_rid_buffer[idx] = RID::from_uint64((validator << 32) | i);
 				idx++;
 			}
 		}

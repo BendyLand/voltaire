@@ -19362,27 +19362,24 @@ class DisplayServerX11 : public DisplayServerDriver
 	bool app_focused = false;
 	uint64_t time_since_no_focus = 0;
 
-	struct
-	{
-		int opcode;
-		Vector<int> touch_devices;
-		HashMap<int, Vector2> absolute_devices;
-		HashMap<int, Vector2> pen_pressure_range;
-		HashMap<int, Vector2> pen_tilt_x_range;
-		HashMap<int, Vector2> pen_tilt_y_range;
-		HashMap<int, bool> pen_inverted_devices;
-		XIEventMask all_event_mask;
-		HashMap<int, Vector2> state;
-		double pressure;
-		bool pressure_supported;
-		bool pen_inverted;
-		Vector2 tilt;
-		Vector2 mouse_pos_to_filter;
-		Vector2 relative_motion;
-		Vector2 raw_pos;
-		Vector2 old_raw_pos;
-		::Time last_relative_time;
-	} xi;
+	int xi_opcode;
+	Vector<int> xi_touch_devices;
+	HashMap<int, Vector2> xi_absolute_devices;
+	HashMap<int, Vector2> xi_pen_pressure_range;
+	HashMap<int, Vector2> xi_pen_tilt_x_range;
+	HashMap<int, Vector2> xi_pen_tilt_y_range;
+	HashMap<int, bool> xi_pen_inverted_devices;
+	XIEventMask xi_all_event_mask;
+	HashMap<int, Vector2> xi_state;
+	double xi_pressure;
+	bool xi_pressure_supported;
+	bool xi_pen_inverted;
+	Vector2 xi_tilt;
+	Vector2 xi_mouse_pos_to_filter;
+	Vector2 xi_relative_motion;
+	Vector2 xi_raw_pos;
+	Vector2 xi_old_raw_pos;
+	::Time xi_last_relative_time;
 
 	Ref<Image> icon;
 	void _update_window_icon(WindowData& p_wd);
@@ -19795,12 +19792,8 @@ private:
 		void* x_fbconfig = nullptr;
 	};
 
-	// just for convenience, window and display struct
-	struct XWinDisp
-	{
-		::Window x11_window;
-		::Display* x11_display = nullptr;
-	} _x_windisp;
+	::Window _x_windisp_window;
+	::Display* _x_windisp_display = nullptr;
 
 	LocalVector<GLWindow> _windows;
 	LocalVector<GLDisplay> _displays;
@@ -24398,7 +24391,7 @@ bool DisplayServerX11::_refresh_device_info()
 
 	print_verbose("XInput: Refreshing devices.");
 
-	if (!XQueryExtension(x11_display, "XInputExtension", &xi.opcode, &event_base, &error_base)) {
+	if (!XQueryExtension(x11_display, "XInputExtension", &xi_opcode, &event_base, &error_base)) {
 		print_verbose("XInput extension not available. Please upgrade your distribution.");
 		return false;
 	}
@@ -24409,7 +24402,7 @@ bool DisplayServerX11::_refresh_device_info()
 	if (XIQueryVersion(x11_display, &xi_major_query, &xi_minor_query) != Success) {
 		print_verbose(vformat(
 			"XInput 2 not available (server supports %d.%d).", xi_major_query, xi_minor_query));
-		xi.opcode = 0;
+		xi_opcode = 0;
 		return false;
 	}
 
@@ -24422,10 +24415,10 @@ bool DisplayServerX11::_refresh_device_info()
 				xi_minor_query));
 	}
 
-	xi.absolute_devices.clear();
-	xi.touch_devices.clear();
-	xi.pen_inverted_devices.clear();
-	xi.last_relative_time = 0;
+	xi_absolute_devices.clear();
+	xi_touch_devices.clear();
+	xi_pen_inverted_devices.clear();
+	xi_last_relative_time = 0;
 
 	int dev_count;
 	XIDeviceInfo* info = XIQueryDevice(x11_display, XIAllDevices, &dev_count);
@@ -24494,7 +24487,7 @@ bool DisplayServerX11::_refresh_device_info()
 			}
 		}
 		if (direct_touch) {
-			xi.touch_devices.push_back(dev->deviceid);
+			xi_touch_devices.push_back(dev->deviceid);
 			print_verbose("XInput: Using touch device: " + String(dev->name));
 		}
 		if (absolute_mode) {
@@ -24505,21 +24498,21 @@ bool DisplayServerX11::_refresh_device_info()
 			if (resolution_y <= 0) {
 				resolution_y = (abs_y_max - abs_y_min) * abs_resolution_range_mult;
 			}
-			xi.absolute_devices[dev->deviceid] =
+			xi_absolute_devices[dev->deviceid] =
 				Vector2(abs_resolution_mult / resolution_x, abs_resolution_mult / resolution_y);
 			print_verbose("XInput: Absolute pointing device: " + String(dev->name));
 		}
 
-		xi.pressure = 0;
-		xi.pen_pressure_range[dev->deviceid] = Vector2(pressure_min, pressure_max);
-		xi.pen_tilt_x_range[dev->deviceid] = Vector2(tilt_x_min, tilt_x_max);
-		xi.pen_tilt_y_range[dev->deviceid] = Vector2(tilt_y_min, tilt_y_max);
-		xi.pen_inverted_devices[dev->deviceid] = String(dev->name).findn("eraser") > 0;
+		xi_pressure = 0;
+		xi_pen_pressure_range[dev->deviceid] = Vector2(pressure_min, pressure_max);
+		xi_pen_tilt_x_range[dev->deviceid] = Vector2(tilt_x_min, tilt_x_max);
+		xi_pen_tilt_y_range[dev->deviceid] = Vector2(tilt_y_min, tilt_y_max);
+		xi_pen_inverted_devices[dev->deviceid] = String(dev->name).findn("eraser") > 0;
 	}
 
 	XIFreeDeviceInfo(info);
 #ifdef TOUCH_ENABLED
-	if (!xi.touch_devices.size()) {
+	if (!xi_touch_devices.size()) {
 		print_verbose("XInput: No touch devices found.");
 	}
 #endif
@@ -24535,7 +24528,7 @@ void DisplayServerX11::_flush_mouse_motion()
 	for (uint32_t event_index = 0; event_index < polled_events.size(); ++event_index) {
 		XEvent& event = polled_events[event_index];
 		if (XGetEventData(x11_display, &event.xcookie) && event.xcookie.type == GenericEvent &&
-			event.xcookie.extension == xi.opcode) {
+			event.xcookie.extension == xi_opcode) {
 			XIDeviceEvent* event_data = (XIDeviceEvent*)event.xcookie.data;
 			if (event_data->evtype == XI_RawMotion) {
 				XFreeEventData(x11_display, &event.xcookie);
@@ -24547,8 +24540,8 @@ void DisplayServerX11::_flush_mouse_motion()
 		}
 	}
 
-	xi.relative_motion.x = 0;
-	xi.relative_motion.y = 0;
+	xi_relative_motion.x = 0;
+	xi_relative_motion.y = 0;
 }
 
 #ifdef SPEECHD_ENABLED
@@ -29763,7 +29756,7 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 			XISetMask(all_event_mask.mask, XI_HierarchyChanged);
 
 #ifdef TOUCH_ENABLED
-			if (xi.touch_devices.size()) {
+			if (xi_touch_devices.size()) {
 				XISetMask(all_event_mask.mask, XI_TouchBegin);
 				XISetMask(all_event_mask.mask, XI_TouchUpdate);
 				XISetMask(all_event_mask.mask, XI_TouchEnd);
@@ -31000,9 +30993,9 @@ void GLManager_X11::_internal_set_current_window(GLWindow* p_win)
 	_current_window = p_win;
 
 	// quick access to x info
-	_x_windisp.x11_window = _current_window->x11_window;
+	_x_windisp_window = _current_window->x11_window;
 	const GLDisplay& disp = get_current_display();
-	_x_windisp.x11_display = disp.x11_display;
+	_x_windisp_display = disp.x11_display;
 }
 
 void GLManager_X11::window_resize(
@@ -31019,8 +31012,8 @@ void GLManager_X11::window_destroy(DisplayServerEnums::WindowID p_window_id)
 
 	if (_current_window == &win) {
 		_current_window = nullptr;
-		_x_windisp.x11_display = nullptr;
-		_x_windisp.x11_window = -1;
+		_x_windisp_display = nullptr;
+		_x_windisp_window = -1;
 	}
 }
 
@@ -31030,7 +31023,7 @@ void GLManager_X11::release_current()
 		return;
 	}
 
-	if (!glXMakeCurrent(_x_windisp.x11_display, None, nullptr)) {
+	if (!glXMakeCurrent(_x_windisp_display, None, nullptr)) {
 		ERR_PRINT("glXMakeCurrent failed");
 	}
 	_current_window = nullptr;
@@ -31072,13 +31065,13 @@ void GLManager_X11::swap_buffers()
 	}
 
 	// Drain and inspect events right here before letting GLX block in poll()
-	while (XPending(_x_windisp.x11_display)) {
+	while (XPending(_x_windisp_display)) {
 		XEvent ev;
-		XNextEvent(_x_windisp.x11_display, &ev);
+		XNextEvent(_x_windisp_display, &ev);
 
 		if (ev.type == ClientMessage) {
-			Atom wm_protocols = XInternAtom(_x_windisp.x11_display, "WM_PROTOCOLS", True);
-			Atom wm_delete = XInternAtom(_x_windisp.x11_display, "WM_DELETE_WINDOW", True);
+			Atom wm_protocols = XInternAtom(_x_windisp_display, "WM_PROTOCOLS", True);
+			Atom wm_delete = XInternAtom(_x_windisp_display, "WM_DELETE_WINDOW", True);
 			if (ev.xclient.message_type == wm_protocols &&
 				(Atom)ev.xclient.data.l[0] == wm_delete) {
 				fprintf(stderr, "[GLX SWAP] Intercepted WM_DELETE_WINDOW before swap! Exiting.\n");
@@ -31117,10 +31110,10 @@ void GLManager_X11::swap_buffers()
 	static uint64_t swap_count = 0;
 	swap_count++;
 
-	int pending_gl = XPending(_x_windisp.x11_display);
+	int pending_gl = XPending(_x_windisp_display);
 
 	// Do the swap
-	glXSwapBuffers(_x_windisp.x11_display, _x_windisp.x11_window);
+	glXSwapBuffers(_x_windisp_display, _x_windisp_window);
 }
 
 Error GLManager_X11::initialize(Display* p_display)
