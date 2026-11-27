@@ -7784,15 +7784,6 @@ protected:
 		}
 	};
 
-	struct ExpressionNode
-	{
-		bool is_op = false;
-
-		union
-		{
-			ENode* node = nullptr;
-		};
-	};
 
 	ENode* _parse_expression();
 

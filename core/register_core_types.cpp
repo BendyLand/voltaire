@@ -9951,20 +9951,6 @@ void Geometry3D::MeshData::optimize_vertices() {
 	vertices = new_vertices;
 }
 
-struct _FaceClassify {
-	struct _Link {
-		int face = -1;
-		int edge = -1;
-		void clear() {
-			face = -1;
-			edge = -1;
-		}
-	};
-	bool valid = false;
-	int group = -1;
-	_Link links[3];
-	Face3 face;
-};
 
 /*** GEOMETRY WRAPPER ***/
 
@@ -12618,7 +12604,8 @@ bool AStar3D::_solve(Point* p_begin_point, Point* p_end_point, bool p_allow_part
 	bool found_route = false;
 
 	LocalVector<Point*> open_list;
-	SortArray<Point*, SortPoints> sorter;
+	auto sort_points = [](const auto* p_left, const auto* p_right) { return p_left->f_score != p_right->f_score ? (p_left->f_score > p_right->f_score) : (p_left->g_score < p_right->g_score); };
+	SortArray<Point*, decltype(sort_points)> sorter{ sort_points };
 
 	p_begin_point->g_score = 0;
 	p_begin_point->f_score = _estimate_cost(p_begin_point->id, p_end_point->id);
@@ -13083,7 +13070,8 @@ bool AStar2D::_solve(
 	bool found_route = false;
 
 	LocalVector<AStar3D::Point*> open_list;
-	SortArray<AStar3D::Point*, AStar3D::SortPoints> sorter;
+	auto sort_points = [](const auto* p_left, const auto* p_right) { return p_left->f_score != p_right->f_score ? (p_left->f_score > p_right->f_score) : (p_left->g_score < p_right->g_score); };
+	SortArray<AStar3D::Point*, decltype(sort_points)> sorter{ sort_points };
 
 	p_begin_point->g_score = 0;
 	p_begin_point->f_score = _estimate_cost(p_begin_point->id, p_end_point->id);
@@ -13683,7 +13671,8 @@ bool AStarGrid2D::_solve(Point* p_begin_point, Point* p_end_point, bool p_allow_
 	bool found_route = false;
 
 	LocalVector<Point*> open_list;
-	SortArray<Point*, SortPoints> sorter;
+	auto sort_points = [](const auto* p_left, const auto* p_right) { return p_left->f_score != p_right->f_score ? (p_left->f_score > p_right->f_score) : (p_left->g_score < p_right->g_score); };
+	SortArray<Point*, decltype(sort_points)> sorter{ sort_points };
 	LocalVector<Point*> nbors;
 
 	p_begin_point->g_score = 0;
@@ -15912,11 +15901,6 @@ void ConvexHullInternal::merge(IntermediateHull &p_h0, IntermediateHull &p_h1) {
 	}
 }
 
-struct PointComparator {
-	_FORCE_INLINE_ bool operator()(const ConvexHullInternal::Point32 &p_left, const ConvexHullInternal::Point32 &p_right) const {
-		return (p_left.y < p_right.y) || ((p_left.y == p_right.y) && ((p_left.x < p_right.x) || ((p_left.x == p_right.x) && (p_left.z < p_right.z))));
-	}
-};
 
 void ConvexHullInternal::compute(const Vector3 *p_coords, int32_t p_count) {
 	AABB aabb;
@@ -15966,7 +15950,10 @@ void ConvexHullInternal::compute(const Vector3 *p_coords, int32_t p_count) {
 		points[i].index = i;
 	}
 
-	points.sort_custom<PointComparator>();
+	auto pt_cmp = [](const Point32 &p_left, const Point32 &p_right) {
+		return (p_left.y < p_right.y) || ((p_left.y == p_right.y) && ((p_left.x < p_right.x) || ((p_left.x == p_right.x) && (p_left.z < p_right.z))));
+	};
+	points.sort_custom<decltype(pt_cmp)>(pt_cmp);
 
 	vertex_pool.reset(true);
 	original_vertices.resize(p_count);
@@ -60925,19 +60912,10 @@ Vector<FuzzySearchToken> FuzzySearch::_get_tokens(const String& p_query) const
 		});
 	}
 
-	struct TokenComparator
-	{
-		bool operator()(const FuzzySearchToken& p_left, const FuzzySearchToken& p_right) const
-		{
-			if (p_left.string.length() == p_right.string.length()) {
-				return p_left.idx < p_right.idx;
-			}
-			return p_left.string.length() > p_right.string.length();
-		}
+	auto tok_cmp = [](const FuzzySearchToken& p_left, const FuzzySearchToken& p_right) {
+		return p_left.string.length() == p_right.string.length() ? (p_left.idx < p_right.idx) : (p_left.string.length() > p_right.string.length());
 	};
-
-	// Prioritize matching longer tokens before shorter ones since match overlaps are not accepted.
-	tokens.sort_custom<TokenComparator>();
+	tokens.sort_custom<decltype(tok_cmp)>(tok_cmp);
 	return tokens;
 }
 
@@ -60961,23 +60939,13 @@ void FuzzySearch::_sort_and_filter(Vector<Ref<FuzzySearchMatch>>& p_results) con
 		remove_low_scores(p_results, cull_score);
 	}
 
-	struct FuzzySearchResultComparator
-	{
-		bool operator()(
-			const Ref<FuzzySearchMatch>& p_lhs, const Ref<FuzzySearchMatch>& p_rhs) const
-		{
-			// Sort on (score, length, alphanumeric) to ensure consistent ordering.
-			if (p_lhs->score == p_rhs->score) {
-				if (p_lhs->target.length() == p_rhs->target.length()) {
-					return p_lhs->target < p_rhs->target;
-				}
-				return p_lhs->target.length() < p_rhs->target.length();
-			}
-			return p_lhs->score > p_rhs->score;
+	auto res_cmp = [](const Ref<FuzzySearchMatch>& p_lhs, const Ref<FuzzySearchMatch>& p_rhs) {
+		if (p_lhs->score == p_rhs->score) {
+			return p_lhs->target.length() == p_rhs->target.length() ? (p_lhs->target < p_rhs->target) : (p_lhs->target.length() < p_rhs->target.length());
 		}
+		return p_lhs->score > p_rhs->score;
 	};
-
-	SortArray<Ref<FuzzySearchMatch>, FuzzySearchResultComparator> sorter;
+	SortArray<Ref<FuzzySearchMatch>, decltype(res_cmp)> sorter{ res_cmp };
 
 	if (p_results.size() > max_results) {
 		sorter.partial_sort(0, p_results.size(), max_results, p_results.ptrw());
@@ -76880,35 +76848,28 @@ struct FileInfo {
 	}
 };
 
-struct FileInfoTypeComparator {
-	bool operator()(const FileInfo &p_a, const FileInfo &p_b) const {
-		return FileNoCaseComparator()(p_a.name.get_extension() + p_a.type + p_a.name.get_basename(), p_b.name.get_extension() + p_b.type + p_b.name.get_basename());
-	}
-};
-
-struct FileInfoModifiedTimeComparator {
-	bool operator()(const FileInfo &p_a, const FileInfo &p_b) const {
-		return p_a.modified_time > p_b.modified_time;
-	}
-};
-
 void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option);
 
 void sort_file_info_list(List<FileInfo> &r_file_list, FileSortOption p_file_sort_option) {
-	// Sort the file list if needed.
+	auto type_cmp = [](const FileInfo &p_a, const FileInfo &p_b) {
+		return FileNoCaseComparator()(p_a.name.get_extension() + p_a.type + p_a.name.get_basename(), p_b.name.get_extension() + p_b.type + p_b.name.get_basename());
+	};
+	auto time_cmp = [](const FileInfo &p_a, const FileInfo &p_b) {
+		return p_a.modified_time > p_b.modified_time;
+	};
 	switch (p_file_sort_option) {
 		case FileSortOption::FILE_SORT_TYPE:
-			r_file_list.sort_custom<FileInfoTypeComparator>();
+			r_file_list.sort_custom<decltype(type_cmp)>(type_cmp);
 			break;
 		case FileSortOption::FILE_SORT_TYPE_REVERSE:
-			r_file_list.sort_custom<FileInfoTypeComparator>();
+			r_file_list.sort_custom<decltype(type_cmp)>(type_cmp);
 			r_file_list.reverse();
 			break;
 		case FileSortOption::FILE_SORT_MODIFIED_TIME:
-			r_file_list.sort_custom<FileInfoModifiedTimeComparator>();
+			r_file_list.sort_custom<decltype(time_cmp)>(time_cmp);
 			break;
 		case FileSortOption::FILE_SORT_MODIFIED_TIME_REVERSE:
-			r_file_list.sort_custom<FileInfoModifiedTimeComparator>();
+			r_file_list.sort_custom<decltype(time_cmp)>(time_cmp);
 			r_file_list.reverse();
 			break;
 		case FileSortOption::FILE_SORT_NAME_REVERSE:
@@ -77072,13 +77033,6 @@ static void _pre_gen_shape_list(
 	}
 }
 
-struct ScalableNodeCollection
-{
-	HashSet<Node3D*> node_3ds;
-	HashSet<Ref<ImporterMesh>> importer_meshes;
-	HashSet<Ref<Skin>> skins;
-	HashSet<Ref<Animation>> animations;
-};
 
 void _rescale_skin(Vector3 p_scale, Ref<Skin> p_skin)
 {
@@ -78280,27 +78234,7 @@ struct Lightmapper::RDState
 		uint32_t p_index_start, uint32_t p_count, LocalVector<TriangleSort>& p_triangle_sort,
 		LocalVector<ClusterAABB>& p_cluster_aabb);
 
-	struct RasterPushConstant
-	{
-		float atlas_size[2] = {};
-		float uv_offset[2] = {};
-		float to_cell_size[3] = {};
-		uint32_t base_triangle = 0;
-		float to_cell_offset[3] = {};
-		float bias = 0.0;
-		int32_t grid_size[3] = {};
-		uint32_t pad2 = 0;
-	};
 
-	struct RasterSeamsPushConstant
-	{
-		uint32_t base_index = 0;
-		uint32_t slice = 0;
-		float uv_offset[2] = {};
-		uint32_t debug = 0;
-		float blend = 0.0;
-		uint32_t pad[2] = {};
-	};
 
 	struct PushConstant
 	{
@@ -78317,24 +78251,7 @@ struct Lightmapper::RDState
 	Vector<Ref<Image>> shadowmask_textures;
 	Vector<Color> probe_values;
 
-	struct DilateParams
-	{
-		uint32_t radius;
-		uint32_t pad[3];
-	};
 
-	struct DenoiseParams
-	{
-		float spatial_bandwidth;
-		float light_bandwidth;
-		float albedo_bandwidth;
-		float normal_bandwidth;
-
-		int half_search_window;
-		float filter_strength;
-		uint32_t slice_count;
-		uint32_t pad;
-	};
 
 	BakeError _blit_meshes_into_atlas(int p_max_texture_size, int p_denoiser_range,
 		Vector<Ref<Image>>& albedo_images, Vector<Ref<Image>>& emission_images, AABB& bounds,
@@ -80150,31 +80067,9 @@ enum BetsyShaderType
 	BETSY_SHADER_MAX,
 };
 
-struct BC6PushConstant
-{
-	float sizeX;
-	float sizeY;
-	uint32_t padding[2] = {0};
-};
 
-struct BC1PushConstant
-{
-	uint32_t num_refines;
-	uint32_t padding[3] = {0};
-};
 
-struct BC4PushConstant
-{
-	uint32_t channel_idx;
-	uint32_t padding[3] = {0};
-};
 
-struct RGBToRGBAPushConstant
-{
-	uint32_t width;
-	uint32_t height;
-	uint32_t padding[2];
-};
 
 void free_device();
 
@@ -81599,16 +81494,8 @@ RID AccessibilityServerAccessKit::create_sub_text_edit_elements(const RID& p_par
 	}
 
 	// Sort runs in logical order.
-	struct RunCompare
-	{
-		_FORCE_INLINE_ bool operator()(
-			const AccessibilityElement* l, const AccessibilityElement* r) const
-		{
-			return l->run.x < r->run.x;
-		}
-	};
-
-	text_elements.sort_custom<RunCompare>();
+	auto run_cmp = [](const AccessibilityElement* l, const AccessibilityElement* r) { return l->run.x < r->run.x; };
+	text_elements.sort_custom<decltype(run_cmp)>(run_cmp);
 	for (int i = 0; i < text_elements.size(); i++) {
 		RID rid = rid_owner.make_rid(text_elements[i]);
 		root_ae->children.push_back(rid);
@@ -89121,7 +89008,11 @@ Error EGLManager::initialize(void *p_native_display) {
 	return OK;
 }
 
-EGLManager::EGLManager() {
+EGLManager::EGLManager(const char *p_ext_name, EGLenum p_ext_enum, EGLenum p_api_enum, const Vector<EGLint> &p_attribs) :
+		platform_extension_name(p_ext_name),
+		platform_extension_enum(p_ext_enum),
+		platform_api_enum(p_api_enum),
+		platform_context_attribs(p_attribs) {
 }
 
 EGLManager::~EGLManager() {
@@ -96480,7 +96371,7 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 	FragmentDensityMapCapabilities fdm_capabilities;
 	ShaderCapabilities shader_capabilities;
 	StorageBufferCapabilities storage_buffer_capabilities;
-	RenderingShaderContainerFormatVulkan shader_container_format;
+	RenderingShaderContainerFormat shader_container_format;
 	bool buffer_device_address_support = false;
 	bool vulkan_memory_model_support = false;
 	bool vulkan_memory_model_device_scope_support = false;
@@ -102204,7 +102095,7 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(
 		uint32_t smolv_input_size =
 			requires_decompression ? decompressed_code.size() : shader.code_compressed_bytes.size();
 		if (shader.code_compression_flags &
-			RenderingShaderContainerVulkan::COMPRESSION_FLAG_SMOLV) {
+			RenderingShaderContainer::COMPRESSION_FLAG_SMOLV) {
 			decoded_spirv.resize(smolv::GetDecodedBufferSize(smolv_input, smolv_input_size));
 			if (decoded_spirv.is_empty()) {
 				error_text = vformat("Malformed smolv input on shader stage %s.",
@@ -107250,15 +107141,13 @@ const RenderingContextDriverVulkan::Functions& RenderingContextDriverVulkan::fun
 #include <thirdparty/misc/smolv.h>
 #include "servers/display/display_server.h"
 
-// RenderingShaderContainerVulkan
+// RenderingShaderContainer default (Vulkan/SPIR-V) implementation
 
-const uint32_t RenderingShaderContainerVulkan::FORMAT_VERSION = 1;
+uint32_t RenderingShaderContainer::_format() const { return 0x43565053; }
 
-uint32_t RenderingShaderContainerVulkan::_format() const { return 0x43565053; }
+uint32_t RenderingShaderContainer::_format_version() const { return FORMAT_VERSION; }
 
-uint32_t RenderingShaderContainerVulkan::_format_version() const { return FORMAT_VERSION; }
-
-bool RenderingShaderContainerVulkan::_set_code_from_spirv(const ReflectShader& p_shader)
+bool RenderingShaderContainer::_set_code_from_spirv(const ReflectShader& p_shader)
 {
 	const LocalVector<ReflectShaderStage>& p_spirv = p_shader.shader_stages;
 
@@ -107306,43 +107195,7 @@ bool RenderingShaderContainerVulkan::_set_code_from_spirv(const ReflectShader& p
 	return true;
 }
 
-RenderingShaderContainerVulkan::RenderingShaderContainerVulkan(bool p_debug_info_enabled)
-{
-	debug_info_enabled = p_debug_info_enabled;
-}
 
-// RenderingShaderContainerFormatVulkan
-
-Ref<RenderingShaderContainer> RenderingShaderContainerFormatVulkan::create_container() const
-{
-	return memnew(RenderingShaderContainerVulkan(debug_info_enabled));
-}
-
-RenderingDeviceCommons::ShaderLanguageVersion
-RenderingShaderContainerFormatVulkan::get_shader_language_version() const
-{
-	return RDC::SHADER_LANGUAGE_VULKAN_VERSION_1_1;
-}
-
-RenderingDeviceCommons::ShaderSpirvVersion
-RenderingShaderContainerFormatVulkan::get_shader_spirv_version() const
-{
-	return RDC::SHADER_SPIRV_VERSION_1_4;
-}
-
-void RenderingShaderContainerFormatVulkan::set_debug_info_enabled(bool p_debug_info_enabled)
-{
-	debug_info_enabled = p_debug_info_enabled;
-}
-
-bool RenderingShaderContainerFormatVulkan::get_debug_info_enabled() const
-{
-	return debug_info_enabled;
-}
-
-RenderingShaderContainerFormatVulkan::RenderingShaderContainerFormatVulkan() {}
-
-RenderingShaderContainerFormatVulkan::~RenderingShaderContainerFormatVulkan() {}
 
 #ifdef None
 #undef None
@@ -122550,8 +122403,10 @@ void ParticlesStorage::particles_set_view_axis(
 		godot_webgl2_glGetBufferSubData(
 			GL_ARRAY_BUFFER, 0, particles->amount * sizeof(ParticleInstanceData3D), particle_array);
 #endif
-		SortArray<ParticleInstanceData3D, ParticlesViewSort> sorter;
-		sorter.compare.z_dir = axis;
+		auto view_cmp = [axis](const ParticleInstanceData3D& p_a, const ParticleInstanceData3D& p_b) {
+			return axis.dot(Vector3(p_a.xform[3], p_a.xform[7], p_a.xform[11])) < axis.dot(Vector3(p_b.xform[3], p_b.xform[7], p_b.xform[11]));
+		};
+		SortArray<ParticleInstanceData3D, decltype(view_cmp)> sorter{ view_cmp };
 		sorter.sort(particle_array, particles->amount);
 
 #ifndef __EMSCRIPTEN__

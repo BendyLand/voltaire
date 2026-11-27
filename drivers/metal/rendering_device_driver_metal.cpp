@@ -2874,7 +2874,7 @@ Error RenderingDeviceDriverMetal::_initialize(uint32_t p_device_index, uint32_t 
 	pixel_formats = memnew(PixelFormats(device, device_properties->features));
 	device_profile = device_profile_from_properties(device_properties);
 	resource_cache = std::make_unique<MDResourceCache>(device, *pixel_formats, device_properties->limits.maxPerStageBufferCount);
-	shader_container_format = memnew(RenderingShaderContainerFormatMetal(&device_profile));
+	shader_container_format = memnew(RenderingShaderContainerFormat(RenderingShaderContainerFormat::BACKEND_METAL, &device_profile));
 
 	_check_capabilities();
 
@@ -6528,25 +6528,6 @@ uint32_t RenderingShaderContainerMetal::_format_version() const {
 	return FORMAT_VERSION;
 }
 
-Ref<RenderingShaderContainer> RenderingShaderContainerFormatMetal::create_container() const {
-	Ref<RenderingShaderContainerMetal> result;
-	result.instantiate();
-	result->set_export_mode(export_mode);
-	result->set_device_profile(device_profile);
-	return result;
-}
-
-RenderingDeviceCommons::ShaderLanguageVersion RenderingShaderContainerFormatMetal::get_shader_language_version() const {
-	return SHADER_LANGUAGE_VULKAN_VERSION_1_1;
-}
-
-RenderingDeviceCommons::ShaderSpirvVersion RenderingShaderContainerFormatMetal::get_shader_spirv_version() const {
-	return SHADER_SPIRV_VERSION_1_6;
-}
-
-RenderingShaderContainerFormatMetal::RenderingShaderContainerFormatMetal(const MetalDeviceProfile *p_device_profile, bool p_export) :
-		export_mode(p_export), device_profile(p_device_profile) {
-}
 
 String MinOsVersion::to_compiler_os_version() const {
 	if (version == UINT32_MAX) {

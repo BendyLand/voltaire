@@ -820,13 +820,13 @@ public:
 
 	void sort() { sort_custom<Comparator<T>>(); }
 
-	template <typename C> void sort_custom()
+	template <typename C, typename... Args> void sort_custom(Args&&... p_args)
 	{
 		if (size() < 2) {
 			return;
 		}
 
-		SortList<Element, T, &Element::value, &Element::prev_ptr, &Element::next_ptr, C> sorter;
+		SortList<Element, T, &Element::value, &Element::prev_ptr, &Element::next_ptr, C> sorter{p_args...};
 		sorter.sort(_data->first, _data->last);
 	}
 

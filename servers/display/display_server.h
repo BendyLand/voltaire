@@ -2678,103 +2678,19 @@ public:
 
 #include "core/io/ip.h"
 
-#include <type_traits>
-#include <utility>
+struct AudioEffectState;
 
 class AudioEffectInstance final : public RefCounted
 {
 public:
-	using ProcessFn = void (*)(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames);
-	using ProcessSilenceFn = bool (*)(const void* p_state);
-	using FreeFn = void (*)(void* p_state);
+	AudioEffectState* state = nullptr;
 
-	void* state = nullptr;
-	ProcessFn process_fn = nullptr;
-	ProcessSilenceFn process_silence_fn = nullptr;
-	FreeFn free_fn = nullptr;
+	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	bool process_silence() const;
 
-private:
-	const void* state_type_tag = nullptr;
+	static Ref<AudioEffectInstance> create(AudioEffectState* p_state);
 
-	template <typename T, typename = void>
-	struct HasProcessSilence : std::false_type {};
-
-	template <typename T>
-	struct HasProcessSilence<T, std::void_t<decltype(std::declval<const T&>().process_silence())>> : std::true_type {};
-
-	template <typename T>
-	static const void* _state_type_id()
-	{
-		static const char tag = 0;
-		return &tag;
-	}
-
-	template <typename StateT>
-	static void _default_process(void* p_state, const AudioFrame* p_src, AudioFrame* p_dst, int p_frames)
-	{
-		static_cast<StateT*>(p_state)->process(p_src, p_dst, p_frames);
-	}
-
-	template <typename StateT>
-	static bool _default_process_silence(const void* p_state)
-	{
-		return static_cast<const StateT*>(p_state)->process_silence();
-	}
-
-	template <typename StateT>
-	static void _default_free(void* p_state)
-	{
-		memdelete(static_cast<StateT*>(p_state));
-	}
-
-public:
-	_ALWAYS_INLINE_ void process(
-		const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
-	{
-		if (process_fn && state) {
-			process_fn(state, p_src_frames, p_dst_frames, p_frame_count);
-		}
-	}
-
-	_ALWAYS_INLINE_ bool process_silence() const
-	{
-		return (process_silence_fn && state) ? process_silence_fn(state) : false;
-	}
-
-	template <typename T>
-	_ALWAYS_INLINE_ T* get_state() const
-	{
-		return (state_type_tag == _state_type_id<T>()) ? static_cast<T*>(state) : nullptr;
-	}
-
-	template <typename StateT>
-	static Ref<AudioEffectInstance> create(
-		StateT* p_state,
-		ProcessFn p_process_fn = nullptr,
-		ProcessSilenceFn p_process_silence_fn = nullptr,
-		FreeFn p_free_fn = nullptr)
-	{
-		Ref<AudioEffectInstance> ins;
-		ins.instantiate();
-		ins->state = p_state;
-		ins->state_type_tag = _state_type_id<StateT>();
-		ins->process_fn = p_process_fn ? p_process_fn : &_default_process<StateT>;
-		if (p_process_silence_fn) {
-			ins->process_silence_fn = p_process_silence_fn;
-		}
-		else if constexpr (HasProcessSilence<StateT>::value) {
-			ins->process_silence_fn = &_default_process_silence<StateT>;
-		}
-		ins->free_fn = p_free_fn ? p_free_fn : &_default_free<StateT>;
-		return ins;
-	}
-
-	~AudioEffectInstance()
-	{
-		if (free_fn && state) {
-			free_fn(state);
-		}
-	}
+	~AudioEffectInstance();
 };
 
 struct AudioEffectConfig;
@@ -8758,13 +8674,6 @@ public:
 
 		ThemeItemSetter setter;
 
-		struct SortByType
-		{
-			_FORCE_INLINE_ bool operator()(const ThemeItemBind& l, const ThemeItemBind& r) const
-			{
-				return l.data_type < r.data_type;
-			}
-		};
 	};
 
 	struct Data
@@ -11357,6 +11266,7 @@ class RenderingShaderContainer : public RefCounted
 public:
 	static const uint32_t CONTAINER_MAGIC_NUMBER = 0x43535247;
 	static const uint32_t CONTAINER_VERSION = 2;
+	static constexpr uint32_t FORMAT_VERSION = 1;
 
 protected:
 	using RDC = RenderingDeviceCommons;
@@ -11425,8 +11335,8 @@ protected:
 	Vector<ReflectionSpecializationData> reflection_specialization_data;
 	Vector<RDC::ShaderStage> reflection_shader_stages;
 
-	virtual uint32_t _format() const = 0;
-	virtual uint32_t _format_version() const = 0;
+	virtual uint32_t _format() const;
+	virtual uint32_t _format_version() const;
 
 	// These methods will always be called with a valid pointer.
 	virtual uint32_t _from_bytes_header_extra_data(const uint8_t* p_bytes);
@@ -11618,7 +11528,7 @@ protected:
 	virtual void _set_from_shader_reflection_post(const ReflectShader& p_shader);
 
 	// This method will be called when set_code_from_spirv() is called.
-	virtual bool _set_code_from_spirv(const ReflectShader& p_shader) = 0;
+	virtual bool _set_code_from_spirv(const ReflectShader& p_shader);
 
 	void set_from_shader_reflection(const ReflectShader& p_reflection);
 	Error reflect_spirv(const String& p_shader_name, Span<RDC::ShaderStageSPIRVData> p_spirv,
@@ -11628,7 +11538,10 @@ public:
 	enum CompressionFlags
 	{
 		COMPRESSION_FLAG_ZSTD = 0x1,
+		COMPRESSION_FLAG_SMOLV = 0x10000,
 	};
+
+	bool debug_info_enabled = false;
 
 	struct Shader
 	{
@@ -11651,16 +11564,52 @@ public:
 	bool decompress_code(const uint8_t* p_compressed_bytes, uint32_t p_compressed_size,
 		uint32_t p_compressed_flags, uint8_t* p_decompressed_bytes,
 		uint32_t p_decompressed_size) const;
-	RenderingShaderContainer();
+	RenderingShaderContainer(bool p_debug_info_enabled = false);
 	virtual ~RenderingShaderContainer();
 };
 
-class RenderingShaderContainerFormat
+class RenderingShaderContainerFormat final
 {
 public:
-	virtual Ref<RenderingShaderContainer> create_container() const = 0;
-	virtual RDC::ShaderLanguageVersion get_shader_language_version() const = 0;
-	virtual RDC::ShaderSpirvVersion get_shader_spirv_version() const = 0;
+	enum Backend
+	{
+		BACKEND_VULKAN,
+		BACKEND_D3D12,
+		BACKEND_METAL,
+	};
+
+private:
+	Backend backend = BACKEND_VULKAN;
+	bool debug_info_enabled = false;
+	bool export_mode = false;
+	void* lib_d3d12 = nullptr;
+	const void* device_profile = nullptr;
+
+public:
+	Ref<RenderingShaderContainer> create_container() const;
+	RDC::ShaderLanguageVersion get_shader_language_version() const
+	{
+		return RDC::SHADER_LANGUAGE_VULKAN_VERSION_1_1;
+	}
+	RDC::ShaderSpirvVersion get_shader_spirv_version() const
+	{
+		switch (backend) {
+			case BACKEND_D3D12:
+				return RDC::SHADER_SPIRV_VERSION_1_5;
+			case BACKEND_METAL:
+				return RDC::SHADER_SPIRV_VERSION_1_6;
+			default:
+				return RDC::SHADER_SPIRV_VERSION_1_4;
+		}
+	}
+	void set_debug_info_enabled(bool p_debug_info_enabled) { debug_info_enabled = p_debug_info_enabled; }
+	bool get_debug_info_enabled() const { return debug_info_enabled; }
+	void set_lib_d3d12(void* p_lib_d3d12) { lib_d3d12 = p_lib_d3d12; }
+
+	RenderingShaderContainerFormat(Backend p_backend = BACKEND_VULKAN, const void* p_device_profile = nullptr, bool p_export = false)
+		: backend(p_backend), export_mode(p_export), device_profile(p_device_profile)
+	{
+	}
 };
 
 #ifdef DEV_ENABLED
@@ -20009,22 +19958,6 @@ public:
 		Viewport() = default;
 	};
 
-	struct ViewportSort
-	{
-		_FORCE_INLINE_ bool operator()(const RendererViewport::Viewport* p_left,
-			const RendererViewport::Viewport* p_right) const
-		{
-			bool left_is_parent_of_right = p_right->parent == p_left->self;
-			if (left_is_parent_of_right) {
-				return true;
-			}
-			bool right_is_parent_of_left = p_left->parent == p_right->self;
-			if (right_is_parent_of_left) {
-				return false;
-			}
-			return p_left->parent < p_right->parent;
-		}
-	};
 
 private:
 	HashMap<String, RID> timestamp_vp_map;
@@ -21842,23 +21775,6 @@ class AStar3D : public RefCounted
 		real_t abs_f_score = 0;
 	};
 
-	struct SortPoints
-	{
-		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
-		{ // Returns true when the Point A is worse than Point B.
-			if (p_left->f_score > p_right->f_score) {
-				return true;
-			}
-			else if (p_left->f_score < p_right->f_score) {
-				return false;
-			}
-			else {
-				return p_left->g_score <
-					   p_right->g_score; // If the f_costs are the same then prioritize the points
-										 // that are further away from the start.
-			}
-		}
-	};
 
 	struct Segment
 	{
@@ -22073,23 +21989,6 @@ private:
 		Point(const Vector2i& p_id, const Vector2& p_pos) : id(p_id), pos(p_pos) {}
 	};
 
-	struct SortPoints
-	{
-		_FORCE_INLINE_ bool operator()(const Point* p_left, const Point* p_right) const
-		{ // Returns true when the Point A is worse than Point B.
-			if (p_left->f_score > p_right->f_score) {
-				return true;
-			}
-			else if (p_left->f_score < p_right->f_score) {
-				return false;
-			}
-			else {
-				return p_left->g_score <
-					   p_right->g_score; // If the f_costs are the same then prioritize the points
-										 // that are further away from the start.
-			}
-		}
-	};
 
 	LocalVector<bool> solid_mask;
 	LocalVector<LocalVector<Point>> points;
@@ -24692,6 +24591,9 @@ protected:
 	RID texture[CameraServer::FEED_IMAGES]; // texture images needed for this
 
 public:
+	struct PlatformData;
+	PlatformData* impl = nullptr;
+
 	int get_id() const;
 	bool is_active() const;
 	void set_active(bool p_is_active);
@@ -24721,7 +24623,18 @@ public:
 	void set_ycbcr_images(const Ref<Image>& p_y_img, const Ref<Image>& p_cbcr_img);
 	void set_external(int p_width, int p_height);
 
-	virtual FeedFormat get_format() const;
+	FeedFormat get_format() const;
+	String get_device_name() const;
+
+#if defined(LINUXBSD_ENABLED)
+	void init_linux(const String& p_device_name);
+#endif
+#if defined(ANDROID_ENABLED)
+	void init_android(void* p_manager, void* p_metadata, const char* p_id, FeedPosition p_position, int32_t p_orientation);
+	void handle_pause();
+	void handle_resume();
+	void handle_rotation_change();
+#endif
 
 	virtual bool activate_feed();
 	virtual void deactivate_feed();
@@ -27078,27 +26991,6 @@ public:
 	void _item_queue_update(Item* p_item, bool p_update_dependencies);
 	SelfList<Item>::List _item_update_list;
 
-	struct ItemIndexSort
-	{
-		_FORCE_INLINE_ bool operator()(const Item* p_left, const Item* p_right) const
-		{
-			return p_left->index < p_right->index;
-		}
-	};
-
-	struct ItemYSort
-	{
-		_FORCE_INLINE_ bool operator()(const Item* p_left, const Item* p_right) const
-		{
-			const real_t left_y = p_left->ysort_xform.columns[2].y;
-			const real_t right_y = p_right->ysort_xform.columns[2].y;
-			if (Math::is_equal_approx(left_y, right_y)) {
-				return p_left->ysort_index < p_right->ysort_index;
-			}
-
-			return left_y < right_y;
-		}
-	};
 
 	struct LightOccluderPolygon
 	{
@@ -28275,14 +28167,6 @@ public:
 		FunctionNode() : Node(NODE_TYPE_FUNCTION) {}
 	};
 
-	struct UniformOrderComparator
-	{
-		_FORCE_INLINE_ bool operator()(
-			const Pair<String, int>& A, const Pair<String, int>& B) const
-		{
-			return A.second < B.second;
-		}
-	};
 
 	struct Expression
 	{
@@ -28302,11 +28186,6 @@ public:
 		bool is_last_expr = false;
 	};
 
-	struct VarInfo
-	{
-		String name;
-		DataType type;
-	};
 
 	enum CompletionType
 	{
@@ -30229,11 +30108,6 @@ class Curve2D : public Resource
 
 	LocalVector<Point> points;
 
-	struct BakedPoint
-	{
-		real_t ofs = 0.0;
-		Vector2 point;
-	};
 
 	mutable bool baked_cache_dirty = false;
 	mutable PackedVector2Array baked_point_cache;
@@ -35292,18 +35166,7 @@ public:
 class RasterizerSceneDummy final : public RendererSceneRender
 {
 public:
-	class GeometryInstanceDummy final : public RenderGeometryInstance
-	{
-	public:
-		GeometryInstanceDummy() {}
-
-		virtual void set_transform(const Transform3D& p_transform, const AABB& p_aabb,
-			const AABB& p_transformed_aabb) override
-		{
-		}
-	};
-
-	PagedAllocator<GeometryInstanceDummy> geometry_instance_alloc;
+	PagedAllocator<RenderGeometryInstance> geometry_instance_alloc;
 
 public:
 	RenderGeometryInstance* geometry_instance_create(RID p_base) override
@@ -35311,17 +35174,13 @@ public:
 		RSE::InstanceType type = RasterizerDummy::get_base_type(p_base);
 		ERR_FAIL_COND_V(!((1 << type) & RSE::INSTANCE_GEOMETRY_MASK), nullptr);
 
-		GeometryInstanceDummy* ginstance = geometry_instance_alloc.alloc();
-
-		return ginstance;
+		return geometry_instance_alloc.alloc();
 	}
 
 	void geometry_instance_free(RenderGeometryInstance* p_geometry_instance) override
 	{
-		GeometryInstanceDummy* ginstance = static_cast<GeometryInstanceDummy*>(p_geometry_instance);
-		ERR_FAIL_NULL(ginstance);
-
-		geometry_instance_alloc.free(ginstance);
+		ERR_FAIL_NULL(p_geometry_instance);
+		geometry_instance_alloc.free(p_geometry_instance);
 	}
 
 	uint32_t geometry_instance_get_pair_mask() override { return 0; }
@@ -38168,44 +38027,7 @@ private:
 		float area_projector_rect[4];
 	};
 
-	struct VoxelGIPushConstant
-	{
-		int32_t limits[3];
-		uint32_t stack_size;
 
-		float emission_scale;
-		float propagation;
-		float dynamic_range;
-		uint32_t light_count;
-
-		uint32_t cell_offset;
-		uint32_t cell_count;
-		float aniso_strength;
-		float cell_size;
-	};
-
-	struct VoxelGIDynamicPushConstant
-	{
-		int32_t limits[3];
-		uint32_t light_count;
-		int32_t x_dir[3];
-		float z_base;
-		int32_t y_dir[3];
-		float z_sign;
-		int32_t z_dir[3];
-		float pos_multiplier;
-		uint32_t rect_pos[2];
-		uint32_t rect_size[2];
-		uint32_t prev_rect_ofs[2];
-		uint32_t prev_rect_size[2];
-		uint32_t flip_x;
-		uint32_t flip_y;
-		float dynamic_range;
-		uint32_t on_mipmap;
-		float propagation;
-		float cell_size;
-		float pad[2];
-	};
 
 	static inline VoxelGILight* voxel_gi_lights = nullptr;
 	static inline uint32_t voxel_gi_max_lights = 32;
@@ -38274,38 +38096,11 @@ private:
 			PRE_PROCESS_MAX
 		};
 
-		struct PreprocessPushConstant
-		{
-			int32_t scroll[3];
-			int32_t grid_size;
-
-			int32_t probe_offset[3];
-			int32_t step_size;
-
-			int32_t half_size;
-			uint32_t occlusion_index;
-			int32_t cascade;
-			uint32_t pad;
-		};
 
 		ShaderRD preprocess;
 		RID preprocess_shader;
 		PipelineDeferredRD preprocess_pipeline[PRE_PROCESS_MAX];
 
-		struct DebugPushConstant
-		{
-			float grid_size[3];
-			uint32_t max_cascades;
-
-			int32_t screen_size[2];
-			float y_mult;
-
-			float z_near;
-
-			float inv_projection[3][4];
-			float cam_basis[3][3];
-			float cam_origin[3];
-		};
 
 		ShaderRD debug;
 		RID debug_shader;
@@ -38321,26 +38116,7 @@ private:
 			PROBE_DEBUG_MAX
 		};
 
-		struct DebugProbesSceneData
-		{
-			float projection[2][16];
-		};
 
-		struct DebugProbesPushConstant
-		{
-			uint32_t band_power;
-			uint32_t sections_in_band;
-			uint32_t band_mask;
-			float section_arc;
-
-			float grid_size[3];
-			uint32_t cascade;
-
-			uint32_t pad;
-			float y_mult;
-			int32_t probe_debug_index;
-			int32_t probe_axis_size;
-		};
 
 		ShaderRD debug_probes;
 		RID debug_probes_shader;
@@ -38369,21 +38145,6 @@ private:
 			float area_projector_rect[4];
 		};
 
-		struct DirectLightPushConstant
-		{
-			float grid_size[3];
-			uint32_t max_cascades;
-
-			uint32_t cascade;
-			uint32_t light_count;
-			uint32_t process_offset;
-			uint32_t process_increment;
-
-			int32_t probe_axis_size;
-			float bounce_feedback;
-			float y_mult;
-			uint32_t use_occlusion;
-		};
 
 		enum
 		{
@@ -38610,13 +38371,6 @@ public:
 			RID light_aniso_0_data;
 			RID light_aniso_1_data;
 
-			struct SolidCell
-			{
-				uint32_t position;
-				uint32_t albedo;
-				uint32_t static_light;
-				uint32_t static_light_aniso;
-			};
 
 			RID solid_cell_dispatch_buffer_storage;
 			RID solid_cell_dispatch_buffer_call;
@@ -38948,41 +38702,7 @@ public:
 			FOG_SET_MAX,
 		};
 
-		struct FogPushConstant
-		{
-			float position[3];
-			float pad;
 
-			float size[3];
-			float pad2;
-
-			int32_t corner[3];
-			uint32_t shape;
-
-			float transform[16];
-		};
-
-		struct VolumeUBO
-		{
-			float fog_frustum_size_begin[2];
-			float fog_frustum_size_end[2];
-
-			float fog_frustum_end;
-			float z_near;
-			float z_far;
-			float time;
-
-			int32_t fog_volume_size[3];
-			uint32_t directional_light_count;
-
-			uint32_t use_temporal_reprojection;
-			uint32_t temporal_frame;
-			float detail_spread;
-			float temporal_blend;
-
-			float to_prev_view[16];
-			float transform[16];
-		};
 
 		ShaderCompiler compiler;
 		ShaderRD shader;
@@ -39006,49 +38726,6 @@ public:
 			VOLUMETRIC_FOG_PROCESS_SHADER_MAX,
 		};
 
-		struct ParamsUBO
-		{
-			float fog_frustum_size_begin[2];
-			float fog_frustum_size_end[2];
-
-			float fog_frustum_end;
-			float ambient_inject;
-			float z_far;
-			uint32_t filter_axis;
-
-			float ambient_color[3];
-			float sky_contribution;
-
-			int32_t fog_volume_size[3];
-			uint32_t directional_light_count;
-
-			float base_emission[3];
-			float base_density;
-
-			float base_scattering[3];
-			float phase_g;
-
-			float detail_spread;
-			float gi_inject;
-			uint32_t max_voxel_gi_instances;
-			uint32_t cluster_type_size;
-
-			float screen_size[2];
-			uint32_t cluster_shift;
-			uint32_t cluster_width;
-
-			uint32_t max_cluster_element_count_div_32;
-			uint32_t use_temporal_reprojection;
-			uint32_t temporal_frame;
-			float temporal_blend;
-
-			float sky_border_size[2];
-			float pad[2];
-
-			float cam_rotation[12];
-			float to_prev_view[16];
-			float radiance_inverse_xform[12];
-		};
 
 		ShaderRD process_shader;
 
@@ -39439,12 +39116,6 @@ private:
 		float set_color[4];
 	};
 
-	struct CopyToDPPushConstant
-	{
-		float z_far;
-		float z_near;
-		float texel_size[2];
-	};
 
 	struct CopyToOctmapPushConstant
 	{
@@ -39475,19 +39146,7 @@ private:
 		FILTER_MODE_RASTER_MAX = (FILTER_MODE_FLAG_HIGH_QUALITY + 1),
 	};
 
-	struct OctmapFilterPushConstant
-	{
-		float border_size[2];
-		uint32_t pad1;
-		uint32_t pad2;
-	};
 
-	struct OctmapFilterRasterPushConstant
-	{
-		float border_size[2];
-		uint32_t mip_level;
-		uint32_t pad;
-	};
 
 	enum OctmapRoughnessMode
 	{
@@ -40057,14 +39716,6 @@ private:
 		LUMINANCE_REDUCE_MAX
 	};
 
-	struct LuminanceReducePushConstant
-	{
-		int32_t source_size[2];
-		float max_luminance;
-		float min_luminance;
-		float exposure_adjust;
-		float pad[3];
-	};
 
 	ShaderRD luminance_reduce_shader{LuminanceReduceShaderRD()};
 	RID luminance_reduce_shader_version;
@@ -40078,15 +39729,6 @@ private:
 		LUMINANCE_REDUCE_FRAGMENT_MAX
 	};
 
-	struct LuminanceReduceRasterPushConstant
-	{
-		int32_t source_size[2];
-		int32_t dest_size[2];
-		float exposure_adjust;
-		float min_luminance;
-		float max_luminance;
-		uint32_t pad1;
-	};
 
 	ShaderRD luminance_reduce_raster_shader{LuminanceReduceRasterShaderRD()};
 	RID luminance_reduce_raster_shader_version;
@@ -40193,11 +39835,6 @@ private:
 	RID frustum_lines_buffer;
 	RID frustum_lines_array;
 
-	struct ShadowFrustumPushConstant
-	{
-		float mvp[16];
-		float color[4];
-	};
 
 	enum ShadowFrustumPipelines
 	{
@@ -40428,10 +40065,6 @@ private:
 		SS_EFFECTS_MAX
 	};
 
-	struct SSEffectsGatherConstants
-	{
-		float rotation_matrices[80]; // 5 vec4s * 4
-	};
 
 	/* SSIL */
 
@@ -40508,10 +40141,6 @@ private:
 		float pixel_size[2];
 	};
 
-	struct SSILProjectionUniforms
-	{
-		float inv_last_frame_projection_matrix[16];
-	};
 
 	static void gather_ssil(RD::ComputeListID p_compute_list, const RID* p_ssil_slices,
 		const RID* p_edges_slices, const SSILSettings& p_settings, bool p_adaptive_base_pass,
@@ -40607,11 +40236,6 @@ private:
 		SCREEN_SPACE_REFLECTION_DOWNSAMPLE_MAX
 	};
 
-	struct ScreenSpaceReflectionDownsamplePushConstant
-	{
-		int32_t screen_size[2];
-		int32_t pad[2];
-	};
 
 	enum ScreenSpaceReflectionHizMode
 	{
@@ -40622,45 +40246,10 @@ private:
 		SCREEN_SPACE_REFLECTION_HIZ_MAX
 	};
 
-	struct ScreenSpaceReflectionHizPushConstant
-	{
-		int32_t screen_size[2];
-		int32_t pad[2];
-	};
 
-	struct ScreenSpaceReflectionSceneData
-	{
-		float projection[2][16];
-		float inv_projection[2][16];
-		float reprojection[2][16];
-		float eye_offset[2][4];
-	};
 
-	struct ScreenSpaceReflectionPushConstant
-	{
-		int32_t screen_size[2];
-		int32_t mipmaps;
-		int32_t num_steps;
-		float distance_fade;
-		float curve_fade_in;
-		float depth_tolerance;
-		int32_t orthogonal;
-		uint32_t view_index;
-		int32_t pad[3];
-	};
 
-	struct ScreenSpaceReflectionFilterPushConstant
-	{
-		int32_t screen_size[2];
-		uint32_t mip_level;
-		int32_t pad;
-	};
 
-	struct ScreenSpaceReflectionResolvePushConstant
-	{
-		int32_t screen_size[2];
-		int32_t pad[2];
-	};
 
 	/* Subsurface scattering */
 
@@ -40854,16 +40443,6 @@ private:
 		FSR_UPSCALE_PASS_RCAS = 1
 	};
 
-	struct FSRUpscalePushConstant
-	{
-		float resolution_width;
-		float resolution_height;
-		float upscaled_width;
-		float upscaled_height;
-		float sharpness;
-		int pass;
-		int pad[2];
-	};
 
 	ShaderRD fsr_shader{FsrUpscaleShaderRD()};
 	RID shader_version;
@@ -41017,13 +40596,6 @@ public:
 		float p_z_near, float p_z_far);
 
 private:
-	struct TAAResolvePushConstant
-	{
-		float resolution_width;
-		float resolution_height;
-		float disocclusion_threshold;
-		float variance_dynamic;
-	};
 
 	ShaderRD taa_shader{TaaResolveShaderRD()};
 	RID shader_version;
@@ -42077,12 +41649,6 @@ public:
 		Transform3D transform;
 	};
 
-	struct ShadowShrinkStage
-	{
-		RID texture;
-		RID filter_texture;
-		uint32_t size = 0;
-	};
 
 	struct ShadowAtlas
 	{
@@ -43413,18 +42979,6 @@ private:
 
 	void _clear();
 
-	struct StateUniform {
-		float projection[16];
-		float inv_z_far;
-		uint32_t screen_to_clusters_shift; // Shift to obtain coordinates in block indices.
-		uint32_t cluster_screen_width;
-		uint32_t cluster_data_size; // How much data is needed for a single cluster.
-		uint32_t cluster_depth_offset;
-
-		uint32_t pad0;
-		uint32_t pad1;
-		uint32_t pad2;
-	};
 
 	RID state_uniform;
 
@@ -45660,60 +45214,30 @@ private:
 
 		// should eventually be replaced by radix
 
-		struct SortByKey
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->sort.sort_key2 == B->sort.sort_key2)
-						   ? (A->sort.sort_key1 < B->sort.sort_key1)
-						   : (A->sort.sort_key2 < B->sort.sort_key2);
-			}
-		};
-
-		void sort_by_key()
-		{
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
-			sorter.sort(elements.ptr(), elements.size());
-		}
-
 		void sort_by_key_range(uint32_t p_from, uint32_t p_size)
 		{
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) {
+				return (A->sort.sort_key2 == B->sort.sort_key2) ? (A->sort.sort_key1 < B->sort.sort_key1) : (A->sort.sort_key2 < B->sort.sort_key2);
+			};
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr() + p_from, p_size);
 		}
 
-		struct SortByDepth
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->owner->depth < B->owner->depth);
-			}
-		};
+		void sort_by_key() { sort_by_key_range(0, elements.size()); }
 
 		void sort_by_depth()
-		{ // used for shadows
-
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByDepth> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) { return A->owner->depth < B->owner->depth; };
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		struct SortByReverseDepthAndPriority
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->sort.priority == B->sort.priority)
-						   ? (A->owner->depth > B->owner->depth)
-						   : (A->sort.priority < B->sort.priority);
-			}
-		};
-
 		void sort_by_reverse_depth_and_priority()
-		{ // used for alpha
-
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByReverseDepthAndPriority> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) {
+				return (A->sort.priority == B->sort.priority) ? (A->owner->depth > B->owner->depth) : (A->sort.priority < B->sort.priority);
+			};
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
@@ -46672,82 +46196,44 @@ private:
 
 		// should eventually be replaced by radix
 
-		struct SortByKey
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->sort.sort_key2 == B->sort.sort_key2)
-						   ? (A->sort.sort_key1 < B->sort.sort_key1)
-						   : (A->sort.sort_key2 < B->sort.sort_key2);
-			}
-		};
-
-		void sort_by_key()
-		{
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
-			sorter.sort(elements.ptr(), elements.size());
-		}
-
 		void sort_by_key_range(uint32_t p_from, uint32_t p_size)
 		{
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByKey> sorter;
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) {
+				return (A->sort.sort_key2 == B->sort.sort_key2) ? (A->sort.sort_key1 < B->sort.sort_key1) : (A->sort.sort_key2 < B->sort.sort_key2);
+			};
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr() + p_from, p_size);
 		}
 
-		struct SortByKeyAndStencil
+		void sort_by_key() { sort_by_key_range(0, elements.size()); }
+
+		void sort_by_key_and_stencil()
 		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) {
 				bool a_stencil = A->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_STENCIL;
 				bool b_stencil = B->flags & GeometryInstanceSurfaceDataCache::FLAG_USES_STENCIL;
 				if (a_stencil != b_stencil) {
 					return a_stencil < b_stencil;
 				}
-				return (A->sort.sort_key2 == B->sort.sort_key2)
-						   ? (A->sort.sort_key1 < B->sort.sort_key1)
-						   : (A->sort.sort_key2 < B->sort.sort_key2);
-			}
-		};
-
-		void sort_by_key_and_stencil()
-		{
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByKeyAndStencil> sorter;
+				return (A->sort.sort_key2 == B->sort.sort_key2) ? (A->sort.sort_key1 < B->sort.sort_key1) : (A->sort.sort_key2 < B->sort.sort_key2);
+			};
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
-
-		struct SortByDepth
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->owner->depth < B->owner->depth);
-			}
-		};
 
 		void sort_by_depth()
-		{ // used for shadows
-
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByDepth> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) { return A->owner->depth < B->owner->depth; };
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		struct SortByReverseDepthAndPriority
-		{
-			_FORCE_INLINE_ bool operator()(const GeometryInstanceSurfaceDataCache* A,
-				const GeometryInstanceSurfaceDataCache* B) const
-			{
-				return (A->sort.priority == B->sort.priority)
-						   ? (A->owner->depth > B->owner->depth)
-						   : (A->sort.priority < B->sort.priority);
-			}
-		};
-
 		void sort_by_reverse_depth_and_priority()
-		{ // used for alpha
-
-			SortArray<GeometryInstanceSurfaceDataCache*, SortByReverseDepthAndPriority> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurfaceDataCache* A, const GeometryInstanceSurfaceDataCache* B) {
+				return (A->sort.priority == B->sort.priority) ? (A->owner->depth > B->owner->depth) : (A->sort.priority < B->sort.priority);
+			};
+			SortArray<GeometryInstanceSurfaceDataCache*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
@@ -47782,26 +47268,7 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 
 	static inline RID_Owner<CanvasLight> canvas_light_owner;
 
-	struct PositionalShadowRenderPushConstant
-	{
-		float modelview[8];
-		float rotation[4];
-		float direction[2];
-		float z_far;
-		uint32_t pad;
-		float z_near;
-		uint32_t cull_mode;
-		float pad2[2];
-	};
 
-	struct ShadowRenderPushConstant
-	{
-		float projection[16];
-		float modelview[8];
-		float direction[2];
-		float z_far;
-		uint32_t cull_mode;
-	};
 
 	struct OccluderPolygon
 	{
@@ -49895,24 +49362,69 @@ using OpenXRHapticVibration = OpenXRHapticBase;
 ///////////////////////////////////////////////////////////////////////////
 // OpenXRBindingModifier
 
-class OpenXRBindingModifier : public Resource
+class OpenXRBindingModifier final : public Resource
 {
-protected:
+public:
+	enum ModifierType
+	{
+		MODIFIER_NONE,
+		MODIFIER_DPAD,
+		MODIFIER_ANALOG_THRESHOLD,
+	};
+
+private:
 	friend class OpenXRInteractionProfile;
 	friend class OpenXRIPBinding;
 
+	ModifierType modifier_type = MODIFIER_NONE;
 	OpenXRInteractionProfile* interaction_profile = nullptr;
 	OpenXRIPBinding* ip_binding = nullptr;
 
+	PackedByteArray dpad_bindings_data;
+	XrInteractionProfileDpadBindingEXT* dpad_bindings = nullptr;
+	String input_path;
+	Ref<OpenXRActionSet> action_set;
+	XrInteractionProfileAnalogThresholdVALVE analog_threshold = {
+		XR_TYPE_INTERACTION_PROFILE_ANALOG_THRESHOLD_VALVE, nullptr, XR_NULL_HANDLE, XR_NULL_PATH, 0.6f, 0.4f, nullptr, nullptr
+	};
+	Ref<OpenXRHapticBase> on_haptic;
+	Ref<OpenXRHapticBase> off_haptic;
+
 public:
+	explicit OpenXRBindingModifier(ModifierType p_type = MODIFIER_NONE);
+	~OpenXRBindingModifier();
+
+	ModifierType get_modifier_type() const { return modifier_type; }
 	OpenXRInteractionProfile* get_interaction_profile() const { return interaction_profile; }
 	OpenXRIPBinding* get_ip_binding() const { return ip_binding; }
 
-	virtual String get_description() const;
-	virtual PackedByteArray get_ip_modification();
+	void set_action_set(const Ref<OpenXRActionSet>& p_action_set);
+	Ref<OpenXRActionSet> get_action_set() const { return action_set; }
+	void set_input_path(const String& p_input_path);
+	String get_input_path() const { return input_path; }
+	void set_threshold(float p_threshold);
+	float get_threshold() const;
+	void set_threshold_released(float p_threshold);
+	float get_threshold_released() const;
+	void set_center_region(float p_center_region);
+	float get_center_region() const;
+	void set_wedge_angle(float p_wedge_angle);
+	float get_wedge_angle() const;
+	void set_wedge_angle_deg(float p_wedge_angle);
+	float get_wedge_angle_deg() const;
+	void set_is_sticky(bool p_sticky);
+	bool get_is_sticky() const;
+	void set_on_threshold(float p_threshold);
+	float get_on_threshold() const { return analog_threshold.onThreshold; }
+	void set_off_threshold(float p_threshold);
+	float get_off_threshold() const { return analog_threshold.offThreshold; }
+	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_on_haptic() const { return on_haptic; }
+	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
+	Ref<OpenXRHapticBase> get_off_haptic() const { return off_haptic; }
 
-	OpenXRBindingModifier();
-	~OpenXRBindingModifier();
+	String get_description() const;
+	PackedByteArray get_ip_modification();
 };
 
 using OpenXRIPBindingModifier = OpenXRBindingModifier;
@@ -50236,13 +49748,6 @@ public:
 ///////////////////////////////////////////////////////////////////////////
 // XrUuidEXT HashMap Helpers
 
-struct HashMapHasherXrUuidEXT
-{
-	static _FORCE_INLINE_ uint32_t hash(const XrUuidEXT& p_uuid)
-	{
-		return hash_murmur3_buffer(p_uuid.data, XR_UUID_SIZE_EXT);
-	}
-};
 
 template <>
 struct HashMapComparatorDefault<XrUuidEXT>
@@ -50298,44 +49803,12 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// OpenXRStructureBase
-
-// Base class for XrStructureType based headers (with persistence config folded in)
-class OpenXRStructureBase final : public RefCounted
-{
-public:
-	bool has_valid_configuration() const;
-	void* get_header(void* p_next = nullptr);
-	XrStructureType get_structure_type();
-
-	void set_next(const Ref<OpenXRStructureBase> p_next);
-	Ref<OpenXRStructureBase> get_next() const;
-
-	void add_persistence_context(RID p_persistence_context);
-	void remove_persistence_context(RID p_persistence_context);
-
-private:
-	Ref<OpenXRStructureBase> next;
-	Vector<RID> persistence_contexts;
-	Vector<XrSpatialPersistenceContextEXT> context_handles;
-	XrSpatialContextPersistenceConfigEXT persistence_config = {
-		XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT, nullptr, 0, nullptr};
-
-	uint64_t _get_structure_type();
-};
-
-///////////////////////////////////////////////////////////////////////////
 // OpenXRAPI
 
-// Name we add to our extensions if OpenXR 1.1 context is available.
 #define XR_OPENXR_1_1_NAME "OPENXR_1_1"
-
 #define XR_API_VERSION_1_1_0 XR_MAKE_VERSION(1, 1, 0)
 
-// forward declarations, we don't want to include these fully
 class OpenXRInterface;
-class OpenXRExtensionWrapper;
-class OpenXRExtensionWrapperExtension;
 
 class OpenXRAPI final
 {
@@ -50395,11 +49868,6 @@ private:
 	static bool is_extension_supported(const String& p_extension);
 	static bool is_any_extension_enabled(const String& p_extensions);
 
-	struct RequestExtension
-	{
-		String name;
-		bool* enabled;
-	};
 
 	static XrResult attempt_create_instance(XrVersion p_version);
 
@@ -50574,19 +50042,6 @@ private:
 	static const char* check_profile_path(
 		const CharString& p_interaction_profile_name, const char* p_path);
 
-	struct OrderedCompositionLayer
-	{
-		const XrCompositionLayerBaseHeader* composition_layer;
-		int sort_order;
-
-		_FORCE_INLINE_ bool operator()(
-			const OrderedCompositionLayer& a, const OrderedCompositionLayer& b) const
-		{
-			return a.sort_order < b.sort_order ||
-				   (a.sort_order == b.sort_order &&
-					   uint64_t(a.composition_layer) < uint64_t(b.composition_layer));
-		}
-	};
 
 	// state changes
 	static bool poll_events();
@@ -50956,107 +50411,6 @@ public:
 	~OpenXRAPI() = delete;
 };
 
-///////////////////////////////////////////////////////////////////////////
-// OpenXRAPIExtension
-
-class OpenXRAPIExtension final : public RefCounted
-{
-protected:
-	_THREAD_SAFE_CLASS_
-
-#ifndef DISABLE_DEPRECATED
-	static void _bind_compatibility_methods();
-	void _register_composition_layer_provider_bind_compat_104087(
-		OpenXRExtensionWrapperExtension* p_extension);
-	void _unregister_composition_layer_provider_bind_compat_104087(
-		OpenXRExtensionWrapperExtension* p_extension);
-	void _register_projection_views_extension_bind_compat_104087(
-		OpenXRExtensionWrapperExtension* p_extension);
-	void _unregister_projection_views_extension_bind_compat_104087(
-		OpenXRExtensionWrapperExtension* p_extension);
-#endif
-
-public:
-	uint64_t get_openxr_version();
-	uint64_t get_instance();
-	uint64_t get_system_id();
-	uint64_t get_session();
-
-	static bool openxr_is_enabled(bool p_check_run_in_editor = true);
-
-	uint64_t get_instance_proc_addr(const String& p_name);
-	String get_error_string(uint64_t result);
-	String get_swapchain_format_name(int64_t p_swapchain_format);
-	void set_object_name(
-		int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name);
-	void begin_debug_label_region(const String& p_label_name);
-	void end_debug_label_region();
-	void insert_debug_label(const String& p_label_name);
-
-	uint32_t get_view_count() const;
-	uint64_t get_view_configuration() const;
-
-	bool is_initialized();
-	bool is_running();
-
-	uint64_t get_play_space();
-	int64_t get_predicted_display_time();
-	int64_t get_next_frame_time();
-	bool can_render();
-
-	RID find_action(const String& p_name, const RID& p_action_set = RID());
-	uint64_t action_get_handle(RID p_action);
-
-	uint64_t get_hand_tracker(int p_hand_index);
-
-	void register_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
-	void unregister_composition_layer_provider(OpenXRExtensionWrapper* p_extension);
-
-	void register_projection_views_extension(OpenXRExtensionWrapper* p_extension);
-	void unregister_projection_views_extension(OpenXRExtensionWrapper* p_extension);
-
-	void register_frame_info_extension(OpenXRExtensionWrapper* p_extension);
-	void unregister_frame_info_extension(OpenXRExtensionWrapper* p_extension);
-
-	void register_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
-	void unregister_projection_layer_extension(OpenXRExtensionWrapper* p_extension);
-
-	double get_render_state_z_near();
-	double get_render_state_z_far();
-
-	void set_velocity_texture(RID p_render_target);
-	void set_velocity_depth_texture(RID p_render_target);
-	void set_velocity_target_size(const Size2i& p_target_size);
-
-	PackedInt64Array get_supported_swapchain_formats();
-
-	uint64_t openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
-		XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
-		uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size);
-	void openxr_swapchain_free(uint64_t p_swapchain_info);
-	uint64_t openxr_swapchain_get_swapchain(uint64_t p_swapchain_info);
-	void openxr_swapchain_acquire(uint64_t p_swapchain_info);
-	RID openxr_swapchain_get_image(uint64_t p_swapchain_info);
-	void openxr_swapchain_release(uint64_t p_swapchain_info);
-
-	uint64_t get_projection_layer();
-
-	void set_render_region(const Rect2i& p_render_region);
-
-	void update_main_swapchain_size();
-
-	enum OpenXRAlphaBlendModeSupport
-	{
-		OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE = 0,
-		OPENXR_ALPHA_BLEND_MODE_SUPPORT_REAL = 1,
-		OPENXR_ALPHA_BLEND_MODE_SUPPORT_EMULATING = 2,
-	};
-
-	void set_emulate_environment_blend_mode_alpha_blend(bool p_enabled);
-	OpenXRAlphaBlendModeSupport is_environment_blend_mode_alpha_blend_supported();
-
-	OpenXRAPIExtension();
-};
 #endif // defined(MODULE_OPENXR_ENABLED)
 
 #if defined(GLES3_ENABLED)
@@ -51451,11 +50805,16 @@ private:
 	// On EGL the default swap interval is 1 and thus vsync is on by default.
 	bool use_vsync = true;
 
-	virtual const char *_get_platform_extension_name() const = 0;
-	virtual EGLenum _get_platform_extension_enum() const = 0;
-	virtual EGLenum _get_platform_api_enum() const = 0;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const = 0;
-	virtual Vector<EGLint> _get_platform_context_attribs() const = 0;
+	const char *platform_extension_name = nullptr;
+	EGLenum platform_extension_enum = 0;
+	EGLenum platform_api_enum = 0;
+	Vector<EGLint> platform_context_attribs;
+
+	virtual const char *_get_platform_extension_name() const { return platform_extension_name; }
+	virtual EGLenum _get_platform_extension_enum() const { return platform_extension_enum; }
+	virtual EGLenum _get_platform_api_enum() const { return platform_api_enum; }
+	virtual Vector<EGLAttrib> _get_platform_display_attributes() const { return Vector<EGLAttrib>(); }
+	virtual Vector<EGLint> _get_platform_context_attribs() const { return platform_context_attribs; }
 
 #ifdef EGL_ANDROID_blob_cache
 	static String shader_cache_dir;
@@ -51487,9 +50846,11 @@ public:
 	EGLDisplay get_display(DisplayServerEnums::WindowID p_window_id);
 	EGLConfig get_config(DisplayServerEnums::WindowID p_window_id);
 
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
+
 	Error initialize(void *p_native_display = nullptr);
 
-	EGLManager();
+	EGLManager(const char *p_ext_name = nullptr, EGLenum p_ext_enum = 0, EGLenum p_api_enum = 0, const Vector<EGLint> &p_attribs = Vector<EGLint>());
 	virtual ~EGLManager();
 };
 
@@ -56421,60 +55782,30 @@ private:
 
 		// should eventually be replaced by radix
 
-		struct SortByKey
-		{
-			_FORCE_INLINE_ bool operator()(
-				const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) const
-			{
-				return (A->sort.sort_key2 == B->sort.sort_key2)
-						   ? (A->sort.sort_key1 < B->sort.sort_key1)
-						   : (A->sort.sort_key2 < B->sort.sort_key2);
-			}
-		};
-
-		void sort_by_key()
-		{
-			SortArray<GeometryInstanceSurface*, SortByKey> sorter;
-			sorter.sort(elements.ptr(), elements.size());
-		}
-
 		void sort_by_key_range(uint32_t p_from, uint32_t p_size)
 		{
-			SortArray<GeometryInstanceSurface*, SortByKey> sorter;
+			auto cmp = [](const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) {
+				return (A->sort.sort_key2 == B->sort.sort_key2) ? (A->sort.sort_key1 < B->sort.sort_key1) : (A->sort.sort_key2 < B->sort.sort_key2);
+			};
+			SortArray<GeometryInstanceSurface*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr() + p_from, p_size);
 		}
 
-		struct SortByDepth
-		{
-			_FORCE_INLINE_ bool operator()(
-				const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) const
-			{
-				return (A->owner->depth < B->owner->depth);
-			}
-		};
+		void sort_by_key() { sort_by_key_range(0, elements.size()); }
 
 		void sort_by_depth()
-		{ // used for shadows
-
-			SortArray<GeometryInstanceSurface*, SortByDepth> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) { return A->owner->depth < B->owner->depth; };
+			SortArray<GeometryInstanceSurface*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
-		struct SortByReverseDepthAndPriority
-		{
-			_FORCE_INLINE_ bool operator()(
-				const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) const
-			{
-				return (A->sort.priority == B->sort.priority)
-						   ? (A->owner->depth > B->owner->depth)
-						   : (A->sort.priority < B->sort.priority);
-			}
-		};
-
 		void sort_by_reverse_depth_and_priority()
-		{ // used for alpha
-
-			SortArray<GeometryInstanceSurface*, SortByReverseDepthAndPriority> sorter;
+		{
+			auto cmp = [](const GeometryInstanceSurface* A, const GeometryInstanceSurface* B) {
+				return (A->sort.priority == B->sort.priority) ? (A->owner->depth > B->owner->depth) : (A->sort.priority < B->sort.priority);
+			};
+			SortArray<GeometryInstanceSurface*, decltype(cmp)> sorter{ cmp };
 			sorter.sort(elements.ptr(), elements.size());
 		}
 
@@ -56827,12 +56158,6 @@ private:
 		float custom[2];
 	};
 
-	struct ParticlesViewSort {
-		Vector3 z_dir;
-		bool operator()(const ParticleInstanceData3D &p_a, const ParticleInstanceData3D &p_b) const {
-			return z_dir.dot(Vector3(p_a.xform[3], p_a.xform[7], p_a.xform[11])) < z_dir.dot(Vector3(p_b.xform[3], p_b.xform[7], p_b.xform[11]));
-		}
-	};
 
 	struct ParticlesFrameParams {
 		enum {
@@ -57534,19 +56859,7 @@ public:
 	ShaderReflectionD3D12 get_shader_reflection_d3d12() const;
 };
 
-class RenderingShaderContainerFormatD3D12 : public RenderingShaderContainerFormat
-{
-protected:
-	void* lib_d3d12 = nullptr;
 
-public:
-	void set_lib_d3d12(void* p_lib_d3d12);
-	virtual Ref<RenderingShaderContainer> create_container() const override;
-	virtual ShaderLanguageVersion get_shader_language_version() const override;
-	virtual ShaderSpirvVersion get_shader_spirv_version() const override;
-	RenderingShaderContainerFormatD3D12();
-	virtual ~RenderingShaderContainerFormatD3D12();
-};
 
 #include "core/typedefs.h"
 
@@ -57661,7 +56974,7 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 	BarrierCapabilities barrier_capabilities;
 	MiscFeaturesSupport misc_features_support;
 	SamplerCapabilities sampler_capabilities;
-	RenderingShaderContainerFormatD3D12 shader_container_format;
+	RenderingShaderContainerFormat shader_container_format = RenderingShaderContainerFormat(RenderingShaderContainerFormat::BACKEND_D3D12);
 	String pipeline_cache_id;
 	D3D12_HEAP_TYPE dynamic_persistent_upload_heap = D3D12_HEAP_TYPE_UPLOAD;
 
@@ -61215,7 +60528,6 @@ constexpr uint32_t R32UI_ALIGNMENT_CONSTANT_ID = 65535;
 /// Metal buffer index for the view mask when rendering multi-view.
 const uint32_t VIEW_MASK_BUFFER_INDEX = 24;
 
-class RenderingShaderContainerFormatMetal;
 
 class RenderingShaderContainerMetal : public RenderingShaderContainer {
 
@@ -61399,25 +60711,13 @@ protected:
 	virtual bool _set_code_from_spirv(const ReflectShader &p_shader) override;
 };
 
-class RenderingShaderContainerFormatMetal : public RenderingShaderContainerFormat {
-	bool export_mode = false;
 
-	const MetalDeviceProfile *device_profile = nullptr;
-
-public:
-	virtual Ref<RenderingShaderContainer> create_container() const override;
-	virtual ShaderLanguageVersion get_shader_language_version() const override;
-	virtual ShaderSpirvVersion get_shader_spirv_version() const override;
-	RenderingShaderContainerFormatMetal(const MetalDeviceProfile *p_device_profile, bool p_export = false);
-	virtual ~RenderingShaderContainerFormatMetal() = default;
-};
 
 #include <Metal/Metal.hpp>
 
 #include <optional>
 #include <variant>
 
-class RenderingShaderContainerFormatMetal;
 
 #ifdef DEBUG_ENABLED
 #ifndef _DEBUG
@@ -61458,7 +60758,7 @@ protected:
 
 	MetalDeviceProperties *device_properties = nullptr;
 	MetalDeviceProfile device_profile;
-	RenderingShaderContainerFormatMetal *shader_container_format = nullptr;
+	RenderingShaderContainerFormat *shader_container_format = nullptr;
 	PixelFormats *pixel_formats = nullptr;
 	std::unique_ptr<MDResourceCache> resource_cache;
 
@@ -62438,41 +61738,7 @@ public:
 	~VulkanHooks() = delete;
 };
 
-class RenderingShaderContainerVulkan : public RenderingShaderContainer
-{
-public:
-	static const uint32_t FORMAT_VERSION;
 
-	enum CompressionFlagsVulkan
-	{
-		COMPRESSION_FLAG_SMOLV = 0x10000,
-	};
-
-	bool debug_info_enabled = false;
-
-protected:
-	virtual uint32_t _format() const override;
-	virtual uint32_t _format_version() const override;
-	virtual bool _set_code_from_spirv(const ReflectShader& p_shader) override;
-
-public:
-	RenderingShaderContainerVulkan(bool p_debug_info_enabled);
-};
-
-class RenderingShaderContainerFormatVulkan : public RenderingShaderContainerFormat
-{
-private:
-	bool debug_info_enabled = false;
-
-public:
-	virtual Ref<RenderingShaderContainer> create_container() const override;
-	virtual RDC::ShaderLanguageVersion get_shader_language_version() const override;
-	virtual RDC::ShaderSpirvVersion get_shader_spirv_version() const override;
-	void set_debug_info_enabled(bool p_debug_info_enabled);
-	bool get_debug_info_enabled() const;
-	RenderingShaderContainerFormatVulkan();
-	virtual ~RenderingShaderContainerFormatVulkan();
-};
 
 #endif // defined(VULKAN_ENABLED)
 
@@ -73297,39 +72563,8 @@ private:
 		SceneTreeGroup* group = nullptr;
 	};
 
-	struct ComparatorByIndex
-	{
-		bool operator()(const Node* p_left, const Node* p_right) const
-		{
-			static const uint32_t order[3] = {1, 0, 2};
-			uint32_t order_left = order[p_left->data.internal_mode];
-			uint32_t order_right = order[p_right->data.internal_mode];
-			if (order_left == order_right) {
-				return p_left->data.index < p_right->data.index;
-			}
-			return order_left < order_right;
-		}
-	};
 
-	struct ComparatorWithPriority
-	{
-		bool operator()(const Node* p_a, const Node* p_b) const
-		{
-			return p_b->data.process_priority == p_a->data.process_priority
-					   ? p_b->is_greater_than(p_a)
-					   : p_b->data.process_priority > p_a->data.process_priority;
-		}
-	};
 
-	struct ComparatorWithPhysicsPriority
-	{
-		bool operator()(const Node* p_a, const Node* p_b) const
-		{
-			return p_b->data.physics_process_priority == p_a->data.physics_process_priority
-					   ? p_b->is_greater_than(p_a)
-					   : p_b->data.physics_process_priority > p_a->data.physics_process_priority;
-		}
-	};
 
 	// This Data struct is to avoid namespace pollution in derived classes.
 	struct Data
@@ -74096,10 +73331,6 @@ class SceneState : public RefCounted
 		Vector<int> groups;
 	};
 
-	struct DeferredNodePathProperties
-	{
-		String property;
-	};
 
 	Vector<NodeData> nodes;
 
@@ -74365,14 +73596,6 @@ private:
 
 	void _count_resources();
 
-	struct DummyReadData
-	{
-		bool no_placeholders = false;
-		HashMap<Ref<Resource>, int> external_resources;
-		HashMap<String, Ref<Resource>> rev_external_resources;
-		HashMap<Ref<Resource>, int> resource_index_map;
-		HashMap<String, Ref<Resource>> resource_map;
-	};
 
 	void _printerr();
 
@@ -74456,16 +73679,6 @@ class ResourceFormatSaverTextInstance
 	HashMap<Ref<Resource>, String> internal_resources;
 	bool use_compat = true;
 
-	struct ResourceSort
-	{
-		Ref<Resource> resource;
-		String id;
-
-		bool operator<(const ResourceSort& p_right) const
-		{
-			return id.naturalnocasecmp_to(p_right.id) < 0;
-		}
-	};
 
 	static String _write_resources(void* ud, const Ref<Resource>& p_resource);
 	String _write_resource(const Ref<Resource>& res);
@@ -75397,16 +74610,6 @@ protected:
 	};
 
 	// Audio track information for mixng and ending.
-	struct PlayingAudioTrackInfo
-	{
-		AHashMap<int, PlayingAudioStreamInfo> stream_info;
-		double length = 0.0;
-		double time = 0.0;
-		real_t volume = 0.0;
-		bool loop = false;
-		bool backward = false;
-		bool use_blend = false;
-	};
 
 	RootMotionCache root_motion_cache;
 	AHashMap<Animation::TrackCacheID, TrackCache*, HashHasher> track_cache;
@@ -77197,11 +76400,6 @@ public:
 		uint64_t last_pass = 0;
 	};
 
-	struct ProcessGroupSort
-	{
-		_FORCE_INLINE_ bool operator()(
-			const ProcessGroup* p_left, const ProcessGroup* p_right) const;
-	};
 
 #ifndef _3D_DISABLED
 	struct ClientPhysicsInterpolation
@@ -77832,13 +77030,6 @@ private:
 		HashMap<String, uint16_t> ids;
 	};
 
-	struct SortRPCConfig
-	{
-		bool operator()(const RPCConfig& p_a, const RPCConfig& p_b) const
-		{
-			return p_a.name < p_b.name;
-		}
-	};
 
 	enum NetworkNodeIdCompression
 	{
@@ -77892,10 +77083,6 @@ public:
 		int outgoing_size = 0;
 	};
 
-	struct RPCFrame
-	{
-		Vector<RPCNodeInfo> infos;
-	};
 
 	struct SyncInfo
 	{
@@ -77928,17 +77115,7 @@ private:
 		int bandwidth_usage(const Vector<BandwidthFrame>& p_buffer, int p_pointer);
 	};
 
-	class RPCProfiler
-	{
-	private:
-		uint64_t last_profile_time = 0;
-	};
 
-	class ReplicationProfiler
-	{
-	private:
-		uint64_t last_profile_time = 0;
-	};
 
 public:
 	static void initialize();
@@ -81339,13 +80516,6 @@ class ImporterMesh : public Resource
 		String name;
 		uint64_t flags = 0;
 
-		struct LODComparator
-		{
-			_FORCE_INLINE_ bool operator()(const LOD& l, const LOD& r) const
-			{
-				return l.distance < r.distance;
-			}
-		};
 	};
 
 	Vector<Surface> surfaces;
@@ -82612,23 +81782,6 @@ private:
 	Vector<BVH> concave_bvh;
 	int concave_bvh_depth = 0;
 
-	struct BVH_CompareX
-	{
-		_FORCE_INLINE_ bool operator()(const BVH& a, const BVH& b) const
-		{
-			return (a.aabb.position.x + a.aabb.size.x * 0.5) <
-				   (b.aabb.position.x + b.aabb.size.x * 0.5);
-		}
-	};
-
-	struct BVH_CompareY
-	{
-		_FORCE_INLINE_ bool operator()(const BVH& a, const BVH& b) const
-		{
-			return (a.aabb.position.y + a.aabb.size.y * 0.5) <
-				   (b.aabb.position.y + b.aabb.size.y * 0.5);
-		}
-	};
 
 	static constexpr double segment_is_valid_support_threshold = 0.99998;
 	static inline const double segment_is_valid_support_threshold_lower =
@@ -85525,12 +84678,6 @@ public:
 	};
 
 private:
-	struct ExcludedShapeSW
-	{
-		GodotShape2D* local_shape = nullptr;
-		const GodotCollisionObject2D* against_object = nullptr;
-		int against_shape_index = 0;
-	};
 
 	uint64_t elapsed_time[ELAPSED_TIME_MAX] = {};
 
@@ -86392,25 +85539,10 @@ public:
 	};
 
 private:
-	struct NavMap;
-	struct NavRegion;
-	struct NavLink;
-	struct NavAgent;
-	struct NavObstacle;
-
 	struct Data
 	{
 		bool active = true;
 		bool debug_enabled = false;
-
-		LocalVector<NavMap*> active_maps;
-		LocalVector<NavMap*> iteration_maps;
-
-		RID_Owner<NavMap> map_owner;
-		RID_Owner<NavRegion> region_owner;
-		RID_Owner<NavLink> link_owner;
-		RID_Owner<NavAgent> agent_owner;
-		RID_Owner<NavObstacle> obstacle_owner;
 
 #ifdef DEBUG_ENABLED
 		bool debug_navigation_enable_agent_radius;
@@ -87904,17 +87036,36 @@ public:
 		MODIFICATION_STACKHOLDER,
 	};
 
-	struct LookAtData;
-	struct CCDIKData;
-	struct FABRIKData;
-	struct JiggleData;
-	struct TwoBoneIKData;
-	struct PhysicalBonesData;
-	struct StackHolderData;
+	struct JointData {
+		int bone_idx = -1;
+		NodePath bone2d_node;
+		NodePath physical_bone_node;
+		bool rotate_from_joint = false;
+		bool enable_constraint = false;
+		float constraint_angle_min = 0.0f;
+		float constraint_angle_max = float(Math::TAU);
+		bool constraint_angle_invert = false;
+		bool constraint_in_localspace = true;
+		bool joint_draw_gizmo = true;
+		Vector2 magnet_position;
+		bool use_target_rotation = false;
+		bool override_defaults = false;
+		float stiffness = 3.0f;
+		float mass = 0.75f;
+		float damping = 0.75f;
+		bool use_gravity = false;
+		Vector2 gravity = Vector2(0, 6.0f);
+		Vector2 force;
+		Vector2 acceleration;
+		Vector2 velocity;
+		Vector2 last_position;
+		Vector2 dynamic_position;
+		Vector2 last_noncollision_position;
+		bool simulating = false;
+	};
 
 private:
 	Type modification_type = MODIFICATION_NONE;
-	void *mode_data = nullptr;
 
 	SkeletonModificationStack2D *stack = nullptr;
 	int execution_mode = 0; // 0 = process
@@ -87923,24 +87074,59 @@ private:
 	bool enabled = true;
 	bool is_setup = false;
 
+	int bone_idx = -1;
+	NodePath bone2d_node;
+	float additional_rotation = 0.0f;
+	bool enable_constraint = false;
+	float constraint_angle_min = 0.0f;
+	float constraint_angle_max = float(Math::TAU);
+	bool constraint_angle_invert = false;
+	bool constraint_in_localspace = true;
+	Vector<JointData> chain;
+	NodePath tip_node;
+	Vector<Transform2D> transform_chain;
+	float chain_tolerance = 0.01f;
+	int chain_max_iterations = 10;
+	Transform2D target_global_pose;
+	Transform2D origin_global_pose;
+	float stiffness = 3.0f;
+	float mass = 0.75f;
+	float damping = 0.75f;
+	bool use_gravity = false;
+	Vector2 gravity = Vector2(0, 6.0f);
+	bool use_colliders = false;
+	uint32_t collision_mask = 1;
+	float target_minimum_distance = 0.0f;
+	float target_maximum_distance = 0.0f;
+	bool flip_bend_direction = false;
+	NodePath joint_one_bone2d_node;
+	int joint_one_bone_idx = -1;
+	NodePath joint_two_bone2d_node;
+	int joint_two_bone_idx = -1;
+#ifdef TOOLS_ENABLED
+	bool editor_draw_min_max = false;
+#endif // TOOLS_ENABLED
+	bool simulation_active = false;
+	Ref<SkeletonModificationStack2D> held_modification_stack;
+
 	void _alloc_mode_data(Type p_type);
 	void _free_mode_data();
 	void _ensure_mode(Type p_expected);
 
-	LookAtData *_get_lookat();
-	const LookAtData *_get_lookat() const;
-	CCDIKData *_get_ccdik();
-	const CCDIKData *_get_ccdik() const;
-	FABRIKData *_get_fabrik();
-	const FABRIKData *_get_fabrik() const;
-	JiggleData *_get_jiggle();
-	const JiggleData *_get_jiggle() const;
-	TwoBoneIKData *_get_twoboneik();
-	const TwoBoneIKData *_get_twoboneik() const;
-	PhysicalBonesData *_get_physicalbones();
-	const PhysicalBonesData *_get_physicalbones() const;
-	StackHolderData *_get_stackholder();
-	const StackHolderData *_get_stackholder() const;
+	SkeletonModification2D *_get_lookat() { return modification_type == MODIFICATION_LOOKAT ? this : nullptr; }
+	const SkeletonModification2D *_get_lookat() const { return modification_type == MODIFICATION_LOOKAT ? this : nullptr; }
+	SkeletonModification2D *_get_ccdik() { return modification_type == MODIFICATION_CCDIK ? this : nullptr; }
+	const SkeletonModification2D *_get_ccdik() const { return modification_type == MODIFICATION_CCDIK ? this : nullptr; }
+	SkeletonModification2D *_get_fabrik() { return modification_type == MODIFICATION_FABRIK ? this : nullptr; }
+	const SkeletonModification2D *_get_fabrik() const { return modification_type == MODIFICATION_FABRIK ? this : nullptr; }
+	SkeletonModification2D *_get_jiggle() { return modification_type == MODIFICATION_JIGGLE ? this : nullptr; }
+	const SkeletonModification2D *_get_jiggle() const { return modification_type == MODIFICATION_JIGGLE ? this : nullptr; }
+	SkeletonModification2D *_get_twoboneik() { return modification_type == MODIFICATION_TWOBONEIK ? this : nullptr; }
+	const SkeletonModification2D *_get_twoboneik() const { return modification_type == MODIFICATION_TWOBONEIK ? this : nullptr; }
+	SkeletonModification2D *_get_physicalbones() { return modification_type == MODIFICATION_PHYSICALBONES ? this : nullptr; }
+	const SkeletonModification2D *_get_physicalbones() const { return modification_type == MODIFICATION_PHYSICALBONES ? this : nullptr; }
+	SkeletonModification2D *_get_stackholder() { return modification_type == MODIFICATION_STACKHOLDER ? this : nullptr; }
+	const SkeletonModification2D *_get_stackholder() const { return modification_type == MODIFICATION_STACKHOLDER ? this : nullptr; }
 
 	Node2D *_resolve_node_2d(const NodePath &p_path) const;
 	Bone2D *_resolve_bone_2d(const NodePath &p_path, int &r_bone_idx) const;
@@ -89351,11 +88537,6 @@ public:
 		TILE_OFFSET_AXIS_VERTICAL,
 	};
 
-	struct PackedSceneSource
-	{
-		Ref<PackedScene> scene;
-		Vector2 offset;
-	};
 
 	class TerrainsPattern
 	{
@@ -90325,19 +89506,6 @@ public:
 class RenderingQuadrant : public RefCounted
 {
 public:
-	struct CoordsWorldComparator
-	{
-		_ALWAYS_INLINE_ bool operator()(const Vector2& p_a, const Vector2& p_b) const
-		{
-			// We sort the cells by their local coords, as it is needed by rendering.
-			if (p_a.y == p_b.y) {
-				return p_a.x > p_b.x;
-			}
-			else {
-				return p_a.y < p_b.y;
-			}
-		}
-	};
 
 	Vector2i quadrant_coords;
 	SelfList<CellData>::List cells;
@@ -90421,19 +89589,6 @@ public:
 		Vector<Vector<Vector2>> polygons;
 	};
 
-	struct CoordsWorldComparator
-	{
-		_ALWAYS_INLINE_ bool operator()(const Vector2& p_a, const Vector2& p_b) const
-		{
-			// We sort the cells by their local coords, as it is needed by rendering.
-			if (p_a.y == p_b.y) {
-				return p_a.x > p_b.x;
-			}
-			else {
-				return p_a.y < p_b.y;
-			}
-		}
-	};
 
 	Vector2i quadrant_coords;
 	SelfList<CellData>::List cells;
@@ -93026,25 +92181,10 @@ public:
 	};
 
 private:
-	struct NavMap;
-	struct NavRegion;
-	struct NavLink;
-	struct NavAgent;
-	struct NavObstacle;
-
 	struct Data
 	{
 		bool active = true;
 		bool debug_enabled = false;
-
-		LocalVector<NavMap*> active_maps;
-		LocalVector<NavMap*> iteration_maps;
-
-		RID_Owner<NavMap> map_owner;
-		RID_Owner<NavRegion> region_owner;
-		RID_Owner<NavLink> link_owner;
-		RID_Owner<NavAgent> agent_owner;
-		RID_Owner<NavObstacle> obstacle_owner;
 
 #ifdef DEBUG_ENABLED
 		bool debug_dirty = true;
@@ -96307,32 +95447,6 @@ private:
 #endif // _DISABLE_DEPRECATED
 	};
 
-	struct BonePoseBackup
-	{
-		Transform3D pose_cache;
-		Vector3 pose_position;
-		Quaternion pose_rotation;
-		Vector3 pose_scale = Vector3(1, 1, 1);
-		Transform3D global_pose;
-
-		void save(const Bone& p_bone)
-		{
-			pose_cache = p_bone.pose_cache;
-			pose_position = p_bone.pose_position;
-			pose_rotation = p_bone.pose_rotation;
-			pose_scale = p_bone.pose_scale;
-			global_pose = p_bone.global_pose;
-		}
-
-		void restore(Bone& r_bone)
-		{
-			r_bone.pose_cache = pose_cache;
-			r_bone.pose_position = pose_position;
-			r_bone.pose_rotation = pose_rotation;
-			r_bone.pose_scale = pose_scale;
-			r_bone.global_pose = global_pose;
-		}
-	};
 
 	HashSet<SkinReference*> skin_bindings;
 	void _skin_changed();
@@ -103538,28 +102652,6 @@ class FileDialog : public Window
 		int default_idx = 0;
 	};
 
-	struct DirInfo
-	{
-		String name;
-		uint64_t modified_time = 0;
-		bool bundle = false;
-
-		struct NameComparator
-		{
-			bool operator()(const DirInfo& p_a, const DirInfo& p_b) const
-			{
-				return FileNoCaseComparator()(p_a.name, p_b.name);
-			}
-		};
-
-		struct TimeComparator
-		{
-			bool operator()(const DirInfo& p_a, const DirInfo& p_b) const
-			{
-				return p_a.modified_time > p_b.modified_time;
-			}
-		};
-	};
 
 	struct FileInfo
 	{
@@ -103568,29 +102660,7 @@ class FileDialog : public Window
 		String type_sort;
 		uint64_t modified_time = 0;
 
-		struct NameComparator
-		{
-			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
-			{
-				return FileNoCaseComparator()(p_a.name, p_b.name);
-			}
-		};
 
-		struct TypeComparator
-		{
-			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
-			{
-				return FileNoCaseComparator()(p_a.type_sort, p_b.type_sort);
-			}
-		};
-
-		struct TimeComparator
-		{
-			bool operator()(const FileInfo& p_a, const FileInfo& p_b) const
-			{
-				return p_a.modified_time > p_b.modified_time;
-			}
-		};
 	};
 
 	enum class FileSortOption
@@ -104047,13 +103117,6 @@ private:
 		Color color;
 	};
 
-	struct _MinSizeCache
-	{
-		int min_size = 0;
-		int max_size = -1;
-		bool will_stretch = false;
-		int final_size = 0;
-	};
 
 	enum CustomAccessibilityAction
 	{
@@ -105685,14 +104748,6 @@ class EditorFileSystem : public Node
 		void increment();
 	};
 
-	struct DirectoryComparator
-	{
-		bool operator()(
-			const EditorFileSystemDirectory* p_a, const EditorFileSystemDirectory* p_b) const
-		{
-			return p_a->name.filenocasecmp_to(p_b->name) < 0;
-		}
-	};
 
 	void _save_filesystem_cache();
 	void _save_filesystem_cache(EditorFileSystemDirectory* p_dir, Ref<FileAccess> p_file);
@@ -105777,12 +104832,6 @@ class EditorFileSystem : public Node
 
 	bool refresh_queued = false;
 
-	struct ImportThreadData
-	{
-		const ImportFile* reimport_files;
-		int reimport_from;
-		Semaphore* imported_sem = nullptr;
-	};
 
 	static ResourceUID::ID _resource_saver_get_resource_id_for_path(
 		const String& p_path, bool p_generate);
@@ -108375,17 +107424,6 @@ protected:
 	virtual String _get_accessibility_name() const override;
 
 	// Brace matching.
-	struct BraceMatchingData
-	{
-		int open_match_line = -1;
-		int open_match_column = -1;
-		bool open_matching = false;
-		bool open_mismatch = false;
-		int close_match_line = -1;
-		int close_match_column = -1;
-		bool close_matching = false;
-		bool close_mismatch = false;
-	};
 
 	bool highlight_matching_braces_enabled = false;
 
@@ -109917,7 +108955,6 @@ class GLTFNode;
 class GLTFObjectModelProperty;
 class GLTFSkeleton;
 class GLTFSkin;
-class GLTFSpecGloss;
 class GLTFState;
 class GLTFTexture;
 class GLTFTextureSampler;
@@ -110058,7 +109095,6 @@ private:
 	GLTFTextureSamplerIndex sampler = -1;
 
 public:
-	GLTFImageIndex get_src_image() const;
 	void set_src_image(GLTFImageIndex val);
 	GLTFTextureSamplerIndex get_sampler() const;
 	void set_sampler(GLTFTextureSamplerIndex val);
@@ -110108,10 +109144,6 @@ public:
 	void set_vertex_attributes(bool p_attributes);
 
 	Vector<uint8_t> load_buffer_view_data(const Ref<GLTFState> p_gltf_state) const;
-	static GLTFBufferViewIndex write_new_buffer_view_into_state(const Ref<GLTFState>& p_gltf_state,
-		const PackedByteArray& p_input_data, const int64_t p_alignment = 1,
-		const ArrayBufferTarget p_target = TARGET_NONE, const int64_t p_byte_stride = -1,
-		const GLTFBufferIndex p_buffer_index = 0, const bool p_deduplicate = true);
 };
 
 class GLTFAccessor final : public Resource
@@ -110163,13 +109195,8 @@ private:
 	int64_t sparse_values_byte_offset = 0;
 
 	// Trivial helper functions.
-	void _calculate_min_and_max(const PackedFloat64Array& p_numbers);
 	void _determine_pad_skip(int64_t& r_skip_every, int64_t& r_skip_bytes) const;
 	int64_t _determine_padded_byte_count(int64_t p_raw_byte_size) const;
-	PackedFloat64Array _filter_numbers(const PackedFloat64Array& p_numbers) const;
-	static String _get_component_type_name(const GLTFComponentType p_component);
-	static GLTFComponentType _get_indices_component_type_for_size(const int64_t p_size);
-	static GLTFAccessorType _get_accessor_type_from_str(const String& p_string);
 	String _get_accessor_type_name() const;
 	int64_t _get_vector_size() const;
 	static int64_t _get_bytes_per_component(const GLTFComponentType p_component_type);
@@ -110183,28 +109210,18 @@ private:
 		const Vector<Ref<GLTFBufferView>>& p_buffer_views, bool p_sparse_values) const;
 	template <typename T> Vector<T> _decode_as_numbers(const Ref<GLTFState>& p_gltf_state) const;
 
-	void _store_sparse_indices_into_state(const Ref<GLTFState>& p_gltf_state,
-		const PackedInt64Array& p_sparse_indices, const bool p_deduplicate = true);
 
 public:
 	// Property getters and setters.
-	GLTFBufferViewIndex get_buffer_view() const;
-	void set_buffer_view(GLTFBufferViewIndex p_buffer_view);
 
 	int64_t get_byte_offset() const;
 	void set_byte_offset(int64_t p_byte_offset);
 
-	GLTFComponentType get_component_type() const;
-	void set_component_type(GLTFComponentType p_component_type);
 
-	bool get_normalized() const;
-	void set_normalized(bool p_normalized);
 
 	int64_t get_count() const;
 	void set_count(int64_t p_count);
 
-	GLTFAccessorType get_accessor_type() const;
-	void set_accessor_type(GLTFAccessorType p_accessor_type);
 
 	int get_type() const;
 	void set_type(int p_accessor_type);
@@ -110215,94 +109232,24 @@ public:
 	Vector<double> get_max() const;
 	void set_max(const Vector<double>& p_max);
 
-	int64_t get_sparse_count() const;
-	void set_sparse_count(int64_t p_sparse_count);
 
-	GLTFBufferViewIndex get_sparse_indices_buffer_view() const;
-	void set_sparse_indices_buffer_view(GLTFBufferViewIndex p_sparse_indices_buffer_view);
 
-	int64_t get_sparse_indices_byte_offset() const;
-	void set_sparse_indices_byte_offset(int64_t p_sparse_indices_byte_offset);
 
-	GLTFComponentType get_sparse_indices_component_type() const;
-	void set_sparse_indices_component_type(GLTFComponentType p_sparse_indices_component_type);
 
-	GLTFBufferViewIndex get_sparse_values_buffer_view() const;
-	void set_sparse_values_buffer_view(GLTFBufferViewIndex p_sparse_values_buffer_view);
 
-	int64_t get_sparse_values_byte_offset() const;
-	void set_sparse_values_byte_offset(int64_t p_sparse_values_byte_offset);
 
-	bool is_equal_exact(const Ref<GLTFAccessor>& p_other) const;
 
 	// High-level decode functions.
 	PackedColorArray decode_as_colors(const Ref<GLTFState>& p_gltf_state) const;
-	PackedFloat32Array decode_as_float32s(const Ref<GLTFState>& p_gltf_state) const;
-	PackedFloat64Array decode_as_float64s(const Ref<GLTFState>& p_gltf_state) const;
-	PackedInt32Array decode_as_int32s(const Ref<GLTFState>& p_gltf_state) const;
-	PackedInt64Array decode_as_int64s(const Ref<GLTFState>& p_gltf_state) const;
 	Vector<Quaternion> decode_as_quaternions(const Ref<GLTFState>& p_gltf_state) const;
 	PackedVector2Array decode_as_vector2s(const Ref<GLTFState>& p_gltf_state) const;
 	PackedVector3Array decode_as_vector3s(const Ref<GLTFState>& p_gltf_state) const;
 	PackedVector4Array decode_as_vector4s(const Ref<GLTFState>& p_gltf_state) const;
 
 	// Low-level encode functions.
-	static GLTFComponentType get_minimal_integer_component_type_from_ints(
-		const PackedInt64Array& p_numbers);
-	PackedByteArray encode_floats_as_bytes(const PackedFloat64Array& p_input_numbers);
-	PackedByteArray encode_ints_as_bytes(const PackedInt64Array& p_input_numbers);
 
-	GLTFAccessorIndex store_accessor_data_into_state(const Ref<GLTFState>& p_gltf_state,
-		const PackedByteArray& p_data_bytes,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const GLTFBufferIndex p_buffer_index = 0, const bool p_deduplicate = true);
-	static Ref<GLTFAccessor> make_new_accessor_without_data(
-		GLTFAccessorType p_accessor_type = TYPE_SCALAR,
-		GLTFComponentType p_component_type = COMPONENT_TYPE_SINGLE_FLOAT);
 
 	// High-level encode functions.
-	static GLTFAccessorIndex encode_new_accessor_from_colors(const Ref<GLTFState>& p_gltf_state,
-		const PackedColorArray& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_float64s(const Ref<GLTFState>& p_gltf_state,
-		const PackedFloat64Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_int32s(const Ref<GLTFState>& p_gltf_state,
-		const PackedInt32Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_int64s(const Ref<GLTFState>& p_gltf_state,
-		const PackedInt64Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_quaternions(
-		const Ref<GLTFState>& p_gltf_state, const Vector<Quaternion>& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_vector2s(const Ref<GLTFState>& p_gltf_state,
-		const PackedVector2Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_vector3s(const Ref<GLTFState>& p_gltf_state,
-		const PackedVector3Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_vector4s(const Ref<GLTFState>& p_gltf_state,
-		const PackedVector4Array& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_accessor_from_vector4is(const Ref<GLTFState>& p_gltf_state,
-		const Vector<Vector4i>& p_input_data,
-		const GLTFBufferView::ArrayBufferTarget p_buffer_view_target = GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
-	static GLTFAccessorIndex encode_new_sparse_accessor_from_vec3s(
-		const Ref<GLTFState>& p_gltf_state, const PackedVector3Array& p_input_data,
-		const PackedVector3Array& p_base_reference_data, const double p_tolerance_multiplier = 1.0,
-		const GLTFBufferView::ArrayBufferTarget p_main_buffer_view_target =
-			GLTFBufferView::TARGET_NONE,
-		const bool p_deduplicate = true);
 };
 
 class GLTFNode final : public Resource
@@ -110326,8 +109273,6 @@ private:
 	GLTFLightIndex light = -1;
 
 public:
-	String get_original_name();
-	void set_original_name(const String& p_name);
 
 	GLTFNodeIndex get_parent();
 	void set_parent(GLTFNodeIndex p_parent);
@@ -110335,8 +109280,6 @@ public:
 	int get_height();
 	void set_height(int p_height);
 
-	Transform3D get_xform();
-	void set_xform(const Transform3D& p_xform);
 
 	Transform3D get_rest_xform();
 	void set_rest_xform(const Transform3D& p_rest_xform);
@@ -110363,18 +109306,13 @@ public:
 	void set_scale(const Vector3& p_scale);
 
 	Vector<int> get_children();
-	void set_children(const Vector<int>& p_children);
-	void append_child_index(int p_child_index);
 
 	GLTFLightIndex get_light();
-	void set_light(GLTFLightIndex p_light);
 
-	bool get_visible();
 	void set_visible(bool p_visible);
 
 	bool has_additional_data(const String& p_extension_name);
 
-	NodePath get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_skeletons = true);
 };
 
 class GLTFSkeleton final : public Resource
@@ -110403,18 +109341,12 @@ private:
 
 public:
 	Vector<GLTFNodeIndex> get_joints();
-	void set_joints(const Vector<GLTFNodeIndex>& p_joints);
 
-	Vector<GLTFNodeIndex> get_roots();
-	void set_roots(const Vector<GLTFNodeIndex>& p_roots);
 
-	Skeleton3D* get_godot_skeleton();
 
 	TypedArray<String> get_unique_names();
 	void set_unique_names(const TypedArray<String>& p_unique_names);
 
-	BoneAttachment3D* get_bone_attachment(int idx);
-	int32_t get_bone_attachment_count();
 };
 
 class GLTFSkin final : public Resource
@@ -110458,29 +109390,18 @@ private:
 	Ref<Skin> godot_skin;
 
 public:
-	GLTFNodeIndex get_skin_root();
-	void set_skin_root(GLTFNodeIndex p_skin_root);
 
-	Vector<GLTFNodeIndex> get_joints_original();
-	void set_joints_original(const Vector<GLTFNodeIndex>& p_joints_original);
 
 	TypedArray<Transform3D> get_inverse_binds();
 	void set_inverse_binds(const TypedArray<Transform3D>& p_inverse_binds);
 
 	Vector<GLTFNodeIndex> get_joints();
-	void set_joints(const Vector<GLTFNodeIndex>& p_joints);
 
-	Vector<GLTFNodeIndex> get_non_joints();
-	void set_non_joints(const Vector<GLTFNodeIndex>& p_non_joints);
 
-	Vector<GLTFNodeIndex> get_roots();
-	void set_roots(const Vector<GLTFNodeIndex>& p_roots);
 
 	int get_skeleton();
 	void set_skeleton(int p_skeleton);
 
-	Ref<Skin> get_godot_skin();
-	void set_godot_skin(const Ref<Skin>& p_godot_skin);
 };
 
 class GLTFMesh final : public Resource
@@ -110491,12 +109412,8 @@ private:
 	Vector<float> blend_weights;
 
 public:
-	String get_original_name();
-	void set_original_name(const String& p_name);
 	Ref<ImporterMesh> get_mesh();
 	void set_mesh(const Ref<ImporterMesh>& p_mesh);
-	Vector<float> get_blend_weights();
-	void set_blend_weights(const Vector<float>& p_blend_weights);
 };
 
 // Reference and test file:
@@ -110514,7 +109431,6 @@ private:
 	real_t depth_near = 0.05;
 
 public:
-	static void set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop);
 
 	bool get_perspective() const { return perspective; }
 	void set_perspective(bool p_val) { perspective = p_val; }
@@ -110565,15 +109481,8 @@ public:
 	HashMap<int, NodeTrack> node_tracks;
 
 public:
-	static Interpolation godot_to_gltf_interpolation(
-		const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index);
-	static Animation::InterpolationType gltf_to_godot_interpolation(
-		Interpolation p_gltf_interpolation);
 
-	String get_original_name();
-	void set_original_name(const String& p_name);
 
-	bool get_loop() const;
 	void set_loop(bool p_val);
 
 	HashMap<int, GLTFAnimation::NodeTrack>& get_node_tracks();
@@ -110614,22 +109523,12 @@ public:
 	void append_node_path(const NodePath& p_node_path);
 	void append_path_to_property(const NodePath& p_node_path, const String& p_prop_name);
 
-	GLTFAccessor::GLTFAccessorType get_accessor_type() const;
 
-	Ref<Expression> get_gltf_to_godot_expression() const;
-	void set_gltf_to_godot_expression(const Ref<Expression>& p_gltf_to_godot_expr);
 
-	Ref<Expression> get_godot_to_gltf_expression() const;
-	void set_godot_to_gltf_expression(const Ref<Expression>& p_godot_to_gltf_expr);
 
 	bool has_node_paths() const;
 
-	GLTFObjectModelType get_object_model_type() const;
-	void set_object_model_type(GLTFObjectModelType p_type);
 
-	Vector<PackedStringArray> get_json_pointers() const;
-	bool has_json_pointers() const;
-	void set_json_pointers(const Vector<PackedStringArray>& p_json_pointers);
 };
 
 class Light3D;
@@ -110649,8 +109548,6 @@ private:
 	float outer_cone_angle = Math::TAU / 8.0f;
 
 public:
-	static void set_cone_inner_attenuation_conversion_expressions(
-		Ref<GLTFObjectModelProperty>& r_obj_model_prop);
 
 	Color get_color();
 	void set_color(Color p_color);
@@ -110664,11 +109561,7 @@ public:
 	float get_range();
 	void set_range(float p_range);
 
-	float get_inner_cone_angle();
-	void set_inner_cone_angle(float p_inner_cone_angle);
 
-	float get_outer_cone_angle();
-	void set_outer_cone_angle(float p_outer_cone_angle);
 
 	static Ref<GLTFLight> from_node(const Light3D* p_light);
 };
@@ -110676,33 +109569,6 @@ public:
 // KHR_materials_pbrSpecularGlossiness is an archived GLTF extension.
 // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
 
-class GLTFSpecGloss final : public Resource
-{
-	friend class GLTFDocument;
-
-private:
-	Ref<Image> diffuse_img = nullptr;
-	Color diffuse_factor = Color(1.0f, 1.0f, 1.0f);
-	float gloss_factor = 1.0f;
-	Color specular_factor = Color(1.0f, 1.0f, 1.0f);
-	Ref<Image> spec_gloss_img = nullptr;
-
-public:
-	Ref<Image> get_diffuse_img();
-	void set_diffuse_img(Ref<Image> p_diffuse_img);
-
-	Color get_diffuse_factor();
-	void set_diffuse_factor(Color p_diffuse_factor);
-
-	float get_gloss_factor();
-	void set_gloss_factor(float p_gloss_factor);
-
-	Color get_specular_factor();
-	void set_specular_factor(Color p_specular_factor);
-
-	Ref<Image> get_spec_gloss_img();
-	void set_spec_gloss_img(Ref<Image> p_spec_gloss_img);
-};
 
 class GLTFDocumentExtension : public Resource
 {
@@ -110762,10 +109628,7 @@ private:
 
 public:
 	String get_body_type() const;
-	void set_body_type(const String& p_body_type);
 
-	PhysicsBodyType get_physics_body_type() const;
-	void set_physics_body_type(PhysicsBodyType p_body_type);
 
 	real_t get_mass() const;
 	void set_mass(real_t p_mass);
@@ -110779,15 +109642,9 @@ public:
 	Vector3 get_center_of_mass() const;
 	void set_center_of_mass(const Vector3& p_center_of_mass);
 
-	Vector3 get_inertia_diagonal() const;
-	void set_inertia_diagonal(const Vector3& p_inertia_diagonal);
 
-	Quaternion get_inertia_orientation() const;
-	void set_inertia_orientation(const Quaternion& p_inertia_orientation);
 
 #ifndef DISABLE_DEPRECATED
-	Basis get_inertia_tensor() const;
-	void set_inertia_tensor(const Basis& p_inertia_tensor);
 #endif // DISABLE_DEPRECATED
 
 	static Ref<GLTFPhysicsBody> from_node(const Node3D* p_body_node);
@@ -110825,10 +109682,8 @@ public:
 	void set_height(real_t p_height);
 
 	bool get_is_trigger() const;
-	void set_is_trigger(bool p_is_trigger);
 
 	GLTFMeshIndex get_mesh_index() const;
-	void set_mesh_index(GLTFMeshIndex p_mesh_index);
 
 	Ref<ImporterMesh> get_importer_mesh() const;
 	void set_importer_mesh(const Ref<ImporterMesh>& p_importer_mesh);
@@ -110919,11 +109774,6 @@ public:
 
 	void set_bake_fps(double value) { bake_fps = value; }
 
-	void add_used_extension(const String& p_extension, bool p_required = false);
-	GLTFBufferViewIndex append_data_to_buffers(
-		const Vector<uint8_t>& p_data, const bool p_deduplication);
-	GLTFNodeIndex append_gltf_node(
-		Ref<GLTFNode> p_gltf_node, Node* p_godot_scene_node, GLTFNodeIndex p_parent_node_index);
 
 	// Deprecated, use HandleBinaryImageMode instead.
 	enum GLTFHandleBinary
@@ -110950,23 +109800,12 @@ public:
 		handle_binary_image_mode = p_handle_binary_image;
 	}
 
-	int get_major_version() const;
-	void set_major_version(int p_major_version);
 
-	int get_minor_version() const;
-	void set_minor_version(int p_minor_version);
 
 	String get_copyright() const;
-	void set_copyright(const String& p_copyright);
 
-	Vector<uint8_t> get_glb_data() const;
-	void set_glb_data(const Vector<uint8_t>& p_glb_data);
 
-	bool get_use_named_skin_binds() const;
-	void set_use_named_skin_binds(bool p_use_named_skin_binds);
 
-	bool get_discard_meshes_and_materials() const;
-	void set_discard_meshes_and_materials(bool p_discard_meshes_and_materials);
 
 	const Vector<Ref<GLTFNode>>& get_nodes() const { return nodes; }
 
@@ -110996,22 +109835,15 @@ public:
 	void set_materials(const Vector<Ref<Material>>& p_materials) { materials = p_materials; }
 
 	String get_scene_name() const;
-	void set_scene_name(const String& p_scene_name);
 
 	String get_base_path() const;
 	void set_base_path(const String& p_base_path);
 
-	String get_extract_path() const;
-	void set_extract_path(const String& p_extract_path);
 
-	String get_extract_prefix() const;
-	void set_extract_prefix(const String& p_extract_prefix);
 
 	String get_filename() const;
 	void set_filename(const String& p_filename);
 
-	PackedInt32Array get_root_nodes() const;
-	void set_root_nodes(const PackedInt32Array& p_root_nodes);
 
 	const Vector<Ref<GLTFTexture>>& get_textures() const { return textures; }
 
@@ -111055,11 +109887,7 @@ public:
 
 	void set_skeletons(const Vector<Ref<GLTFSkeleton>>& p_skeletons) { skeletons = p_skeletons; }
 
-	bool get_create_animations() const;
-	void set_create_animations(bool p_create_animations);
 
-	bool get_import_as_skeleton_bones() const;
-	void set_import_as_skeleton_bones(bool p_import_as_skeleton_bones);
 
 	const Vector<Ref<GLTFAnimation>>& get_animations() const { return animations; }
 
@@ -111068,10 +109896,8 @@ public:
 		animations = p_animations;
 	}
 
-	Node* get_scene_node(GLTFNodeIndex p_gltf_node_index) const;
 	GLTFNodeIndex get_node_index(Node* p_node) const;
 
-	int get_animation_players_count(int p_anim_player_index) const;
 
 	AnimationPlayer* get_animation_player(int p_anim_player_index) const;
 };
@@ -111140,11 +109966,8 @@ protected:
 public:
 	static void register_gltf_document_extension(
 		Ref<GLTFDocumentExtension> p_extension, bool p_first_priority = false);
-	static void unregister_gltf_document_extension(Ref<GLTFDocumentExtension> p_extension);
 	static void unregister_all_gltf_document_extensions();
 	static Vector<Ref<GLTFDocumentExtension>> get_all_gltf_document_extensions();
-	static Vector<String> get_supported_gltf_extensions();
-	static HashSet<String> get_supported_gltf_extensions_hashset();
 
 	static NodePath _find_material_node_path(
 		Ref<GLTFState> p_state, const Ref<Material>& p_material);
@@ -111155,17 +109978,6 @@ public:
 
 	void set_naming_version(int p_version);
 	int get_naming_version() const;
-	void set_image_format(const String& p_image_format);
-	String get_image_format() const;
-	void set_lossy_quality(float p_lossy_quality);
-	float get_lossy_quality() const;
-	void set_fallback_image_format(const String& p_fallback_image_format);
-	String get_fallback_image_format() const;
-	void set_fallback_image_quality(float p_fallback_image_quality);
-	float get_fallback_image_quality() const;
-	void set_root_node_mode(RootNodeMode p_root_node_mode);
-	RootNodeMode get_root_node_mode() const;
-	void set_texture_map_mode(TextureMapMode p_texture_map_mode);
 
 	TextureMapMode get_texture_map_mode() const { return _texture_map_mode; }
 
@@ -111174,10 +109986,6 @@ public:
 	static String _gen_unique_name_static(HashSet<String>& r_unique_names, const String& p_name);
 
 private:
-	static void _append_khr_texture_transform_ext_json_pointer(
-		PackedStringArray& p_split_json_pointer, const String& p_texture_name,
-		const bool p_is_offset);
-	void _build_parent_hierarchy(Ref<GLTFState> p_state);
 	Error _parse_scenes(Ref<GLTFState> p_state);
 	Error _parse_nodes(Ref<GLTFState> p_state);
 	String _sanitize_animation_name(const String& p_name);
@@ -111189,39 +109997,8 @@ private:
 		StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
 	GLTFTextureSamplerIndex _set_sampler_for_mode(
 		Ref<GLTFState> p_state, StandardMaterial3D::TextureFilter p_filter_mode, bool p_repeats);
-	Ref<GLTFTextureSampler> _get_sampler_for_texture(
-		Ref<GLTFState> p_state, const GLTFTextureIndex p_texture);
 	Error _parse_json(const String& p_path, Ref<GLTFState> p_state);
 	Error _parse_glb(Ref<FileAccess> p_file, Ref<GLTFState> p_state);
-	void _compute_node_heights(Ref<GLTFState> p_state);
-	Error _parse_buffers(Ref<GLTFState> p_state, const String& p_base_path);
-	Error _parse_buffer_views(Ref<GLTFState> p_state);
-	Error _parse_accessors(Ref<GLTFState> p_state);
-	template <typename T>
-	static T _decode_unpack_indexed_data(const T& p_source, const PackedInt32Array& p_indices);
-	PackedFloat32Array _decode_accessor_as_float32s(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedFloat64Array _decode_accessor_as_float64s(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedInt32Array _decode_accessor_as_int32s(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedVector2Array _decode_accessor_as_vec2(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedVector3Array _decode_accessor_as_vec3(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedVector4Array _decode_accessor_as_vec4(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	PackedColorArray _decode_accessor_as_color(const Ref<GLTFState> p_gltf_state,
-		GLTFAccessorIndex p_accessor_index,
-		const PackedInt32Array& p_packed_vertex_ids = PackedInt32Array());
-	Vector<Quaternion> _decode_accessor_as_quaternion(
-		const Ref<GLTFState> p_gltf_state, GLTFAccessorIndex p_accessor_index);
 	Error _parse_meshes(Ref<GLTFState> p_state);
 	Error _serialize_textures(Ref<GLTFState> p_state);
 	Error _serialize_texture_samplers(Ref<GLTFState> p_state);
@@ -111233,12 +110010,6 @@ private:
 		const String& p_resource_uri, const String& p_file_extension, int p_index,
 		Ref<Image> p_image);
 	Error _parse_images(Ref<GLTFState> p_state, const String& p_base_path);
-	Error _parse_textures(Ref<GLTFState> p_state);
-	Error _parse_texture_samplers(Ref<GLTFState> p_state);
-	Error _parse_materials(Ref<GLTFState> p_state);
-	void spec_gloss_to_rough_metal(Ref<GLTFSpecGloss> r_spec_gloss, Ref<StandardMaterial3D> p_material);
-	static void spec_gloss_to_metal_base_color(const Color& p_specular_factor,
-		const Color& p_diffuse, Color& r_base_color, float& r_metallic);
 	Error _parse_skins(Ref<GLTFState> p_state);
 	Error _serialize_skins(Ref<GLTFState> p_state);
 	Error _create_skins(Ref<GLTFState> p_state);
@@ -111252,27 +110023,18 @@ private:
 		const Ref<GLTFAnimation> p_gltf_animation, const GLTFAnimation::Interpolation p_interp,
 		const Vector<double>& p_times, const int p_output_value_accessor_index);
 	Error _serialize_animations(Ref<GLTFState> p_state);
-	bool _does_skinned_mesh_require_placeholder_node(
-		Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
 	BoneAttachment3D* _generate_bone_attachment(
 		Skeleton3D* p_godot_skeleton, const Ref<GLTFNode>& p_bone_node);
-	BoneAttachment3D* _generate_bone_attachment_compat_4pt4(Ref<GLTFState> p_state,
-		Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index);
 	ImporterMeshInstance3D* _generate_mesh_instance(
 		Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	Node3D* _generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index);
 	void _assign_node_names(Ref<GLTFState> p_state);
-	template <typename T>
-	T _interpolate_track(const Vector<double>& p_times, const Vector<T>& p_values,
-		const float p_time, const GLTFAnimation::Interpolation p_interp);
-
 	Error _encode_accessors(Ref<GLTFState> p_state);
 	Error _encode_buffer_views(Ref<GLTFState> p_state);
 	Error _serialize_materials(Ref<GLTFState> p_state);
 	Error _serialize_meshes(Ref<GLTFState> p_state);
 	Error _serialize_nodes(Ref<GLTFState> p_state);
 	Error _serialize_scenes(Ref<GLTFState> p_state);
-	String interpolation_to_string(const GLTFAnimation::Interpolation p_interp);
 	Error _encode_buffer_bins(Ref<GLTFState> p_state, const String& p_path);
 	Error _encode_buffer_glb(Ref<GLTFState> p_state, const String& p_path);
 	PackedByteArray _serialize_glb_buffer(Ref<GLTFState> p_state, Error* r_err);
@@ -111290,10 +110052,6 @@ public:
 private:
 	// https://github.com/microsoft/glTF-SDK/blob/master/GLTFSDK/Source/PBRUtils.cpp#L9
 	// https://bghgary.github.io/glTF/convert-between-workflows-bjs/js/babylon.pbrUtilities.js
-	static float solve_metallic(float p_dielectric_specular, float p_diffuse, float p_specular,
-		float p_one_minus_specular_strength);
-	static float get_perceived_brightness(const Color p_color);
-	static float get_max_component(const Color& p_color);
 
 public:
 	Error append_from_file(const String& p_path, Ref<GLTFState> p_state,
@@ -111308,9 +110066,7 @@ public:
 	Error write_to_filesystem(Ref<GLTFState> p_state, const String& p_path);
 
 public:
-	Error _parse_gltf_state(Ref<GLTFState> p_state, const String& p_search_path);
 	Error _parse_asset_header(Ref<GLTFState> p_state);
-	Error _parse_gltf_extensions(Ref<GLTFState> p_state);
 	void _process_mesh_instances(Ref<GLTFState> p_state, Node* p_scene_root);
 	Node* _generate_scene_node_tree(Ref<GLTFState> p_state);
 	void _generate_scene_node(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index,
@@ -111328,11 +110084,6 @@ public:
 		const GLTFAnimationIndex p_index, const bool p_trimming,
 		const bool p_remove_immutable_tracks);
 	void _convert_mesh_instances(Ref<GLTFState> p_state);
-	GLTFCameraIndex _convert_camera(Ref<GLTFState> p_state, Camera3D* p_camera);
-	void _convert_light_to_gltf(
-		Light3D* p_light, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
-	GLTFLightIndex _convert_light(Ref<GLTFState> p_state, Light3D* p_light);
-	void _convert_spatial(Ref<GLTFState> p_state, Node3D* p_spatial, Ref<GLTFNode> p_node);
 	void _convert_scene_node(Ref<GLTFState> p_state, Node* p_current,
 		const GLTFNodeIndex p_gltf_current, const GLTFNodeIndex p_gltf_root);
 
@@ -111340,22 +110091,14 @@ public:
 		Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
 
 	void _check_visibility(Node* p_node, bool& r_retflag);
-	void _convert_camera_to_gltf(
-		Camera3D* p_camera, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
 	void _convert_grid_map_to_gltf(GridMap* p_grid_map, GLTFNodeIndex p_parent_node_index,
 		GLTFNodeIndex p_root_node_index, Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
-	void _convert_multi_mesh_instance_to_gltf(MultiMeshInstance3D* p_multi_mesh_instance,
-		GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
-		Ref<GLTFNode> p_gltf_node, Ref<GLTFState> p_state);
 	void _convert_skeleton_to_gltf(Skeleton3D* p_scene_parent, Ref<GLTFState> p_state,
 		GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
 		Ref<GLTFNode> p_gltf_node);
 	void _convert_bone_attachment_to_gltf(BoneAttachment3D* p_bone_attachment,
 		Ref<GLTFState> p_state, GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index,
 		Ref<GLTFNode> p_gltf_node);
-	void _convert_mesh_instance_to_gltf(
-		MeshInstance3D* p_mesh_instance, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node);
-	GLTFMeshIndex _convert_mesh_to_gltf(Ref<GLTFState> p_state, MeshInstance3D* p_mesh_instance);
 
 	GLTFNodeIndex _node_and_or_bone_to_gltf_node_index(
 		Ref<GLTFState> p_state, const Vector<String>& p_node_subpath, const Node* p_godot_node);
@@ -112008,15 +110751,6 @@ public:
 	static inline ResourceImporterTexture* singleton = nullptr;
 
 private:
-	struct PackData
-	{
-		Rect2 region;
-		bool is_cropped = false;
-		bool is_mesh = false;
-		Vector<int> chart_pieces;				// one for region, many for mesh
-		Vector<Vector<Vector2>> chart_vertices; // for mesh
-		Ref<Image> image;
-	};
 
 	enum
 	{
@@ -112639,13 +111373,6 @@ class GridMap : public Node3D
 
 	void _recreate_octant_data();
 
-	struct BakeLight
-	{
-		RSE::LightType type = RSE::LightType::LIGHT_DIRECTIONAL;
-		Vector3 pos;
-		Vector3 dir;
-		float param[RSE::LIGHT_PARAM_MAX] = {};
-	};
 
 	_FORCE_INLINE_ Vector3 _octant_get_offset(const OctantKey& p_key) const
 	{
@@ -112938,45 +111665,6 @@ public:
 
 // IWYU pragma: end_keep
 
-#if defined(ANDROID_ENABLED)
-
-#include <jni.h>
-
-class OpenXRAndroidExtension final
-{
-public:
-
-	static HashMap<String, bool *> get_requested_extensions(XrVersion p_version);
-	static void on_before_instance_created();
-	static void *set_instance_create_info_and_get_next_pointer(XrVersion p_xr_version, void *p_next_pointer);
-
-private:
-
-	// Initialize the loader
-	EXT_PROTO_XRRESULT_FUNC1(xrInitializeLoaderKHR, (const XrLoaderInitInfoBaseHeaderKHR *), loaderInitInfo)
-
-public:
-	struct Data
-	{
-		JavaVM *vm;
-		jobject activity_object;
-		bool loader_init_extension_available = false;
-		bool loader_init_android_extension_available = false;
-		bool create_instance_extension_available = false;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRAndroidExtension() = delete;
-	OpenXRAndroidExtension(const OpenXRAndroidExtension&) = delete;
-	OpenXRAndroidExtension& operator=(const OpenXRAndroidExtension&) = delete;
-	~OpenXRAndroidExtension() = delete;
-};
-#endif // defined(ANDROID_ENABLED)
 
 #if defined(D3D12_ENABLED)
 #ifdef D3D12_ENABLED
@@ -113049,41 +111737,5 @@ public:
 #endif // D3D12_ENABLED
 #endif // defined(D3D12_ENABLED)
 
-#if defined(METAL_ENABLED)
-
-#include "core/string/ustring.h"
-
-// Always include this as late as possible.
-
-class OpenXRMetalExtension : public OpenXRGraphicsExtensionWrapper {
-public:
-	virtual HashMap<String, bool *> get_requested_extensions(XrVersion p_version) override;
-
-	virtual void on_instance_created(const XrInstance p_instance) override;
-	virtual void *set_session_create_and_get_next_pointer(void *p_next_pointer) override;
-
-	virtual void get_usable_swapchain_formats(Vector<int64_t> &p_usable_swap_chains) override;
-	virtual void get_usable_depth_formats(Vector<int64_t> &p_usable_swap_chains) override;
-	virtual String get_swapchain_format_name(int64_t p_swapchain_format) const override;
-	virtual bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size, void **r_swapchain_graphics_data) override;
-	virtual void cleanup_swapchain_graphics_data(void **p_swapchain_graphics_data) override;
-	virtual bool create_projection_fov(const XrFovf p_fov, double p_z_near, double p_z_far, Projection &r_camera_matrix) override;
-	virtual RID get_texture(void *p_swapchain_graphics_data, int p_image_index) override;
-	virtual RID get_density_map(void *p_swapchain_graphics_data, int p_image_index) override { return RID(); }
-
-private:
-	static XrGraphicsBindingMetalKHR graphics_binding_metal;
-
-	struct SwapchainGraphicsData {
-		bool is_multiview;
-		Vector<RID> texture_rids;
-	};
-
-	bool check_graphics_api_support();
-
-	EXT_PROTO_XRRESULT_FUNC3(xrGetMetalGraphicsRequirementsKHR, (XrInstance), p_instance, (XrSystemId), p_system_id, (XrGraphicsRequirementsMetalKHR *), p_graphics_requirements)
-	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t), p_image_capacity_input, (uint32_t *), p_image_count_output, (XrSwapchainImageBaseHeader *), p_images)
-};
-#endif // defined(METAL_ENABLED)
 #endif // OPENXR_PLATFORM_INC_EMITTED
 #endif // WANT_OPENXR_PLATFORM_INC

@@ -413,9 +413,7 @@ class WaylandEmbedder {
 		constexpr size_t words() const { return (size / sizeof(uint32_t)); }
 	};
 
-	struct WaylandObjectData {
-		virtual ~WaylandObjectData() = default;
-	};
+	struct WaylandObjectData;
 
 	struct WaylandObject {
 		const struct wl_interface *interface = nullptr;
@@ -428,17 +426,6 @@ class WaylandEmbedder {
 		bool shared = false;
 
 		WaylandObjectData *data = nullptr;
-	};
-
-	struct WaylandDrmGlobalData : WaylandObjectData {
-		String device;
-		LocalVector<uint32_t> formats;
-		bool authenticated;
-		uint32_t capabilities;
-	};
-
-	struct WaylandShmGlobalData : WaylandObjectData {
-		LocalVector<uint32_t> formats;
 	};
 
 	struct Client {
@@ -534,7 +521,7 @@ class WaylandEmbedder {
 		Error send_godot_embedded_client_window_focus_in(uint32_t godot_embedded_client);
 		Error send_godot_embedded_client_window_focus_out(uint32_t godot_embedded_client);
 
-		Error handle_wl_drm_bind(uint32_t p_id, WaylandDrmGlobalData *p_state);
+		Error handle_wl_drm_bind(uint32_t p_id, WaylandObjectData *p_state);
 	};
 
 	// Local IDs are a mess to handle as they strictly depend on their client of
@@ -561,90 +548,45 @@ class WaylandEmbedder {
 		uint32_t get_global_id() const { return (is_valid() && client->global_ids.has(local_id)) ? client->global_ids[local_id].id : INVALID_ID; }
 	};
 
-	struct WaylandSeatInstanceData : WaylandObjectData {
+	struct WaylandObjectData {
+		String device;
+		LocalVector<uint32_t> formats;
+		bool authenticated = false;
+		uint32_t capabilities = 0;
+
 		uint32_t wl_keyboard_id = INVALID_ID;
 		uint32_t wl_pointer_id = INVALID_ID;
 		uint32_t wl_touch_id = INVALID_ID;
-	};
-
-	struct WaylandSeatGlobalData : WaylandObjectData {
-		uint32_t capabilities = 0;
 
 		uint32_t pointed_surface_id = INVALID_ID;
 		uint32_t focused_surface_id = INVALID_ID;
-
-		// Keyboard stuff.
 		uint32_t mods_depressed = 0;
 		uint32_t mods_latched = 0;
 		uint32_t mods_locked = 0;
 		uint32_t group = 0;
-	};
 
-	struct WaylandKeyboardData : WaylandObjectData {
-		uint32_t wl_seat_id = INVALID_ID;
-	};
-
-	struct WaylandPointerData : WaylandObjectData {
-		uint32_t wl_seat_id = INVALID_ID;
-	};
-
-	struct WaylandTouchData : WaylandObjectData {
 		uint32_t wl_seat_id = INVALID_ID;
 		int touch_point_count = 0;
-	};
 
-	struct WaylandSurfaceData : WaylandObjectData {
 		Client *client = nullptr;
 		LocalObjectHandle role_object_handle;
-	};
-
-	struct XdgSurfaceData : WaylandObjectData {
 		uint32_t wl_surface_id = INVALID_ID;
-	};
-
-	struct WaylandSubsurfaceData : WaylandObjectData {
 		Point2i position;
-	};
 
-	struct XdgToplevelData : WaylandObjectData {
 		LocalObjectHandle xdg_surface_handle;
 		LocalObjectHandle parent_handle;
 		uint32_t wl_subsurface_id = INVALID_ID;
-
 		Size2i size;
-
 		bool configured = false;
+		Rect2i anchor_rect;
+		bool disconnected = false;
+
+		HashSet<uint32_t> tablets;
+		uint32_t wl_seat_name = 0;
+		LocalObjectHandle proximal_surface;
+		uint32_t seat_id = INVALID_ID;
 
 		constexpr bool is_embedded() const { return wl_subsurface_id != INVALID_ID; }
-	};
-
-	struct XdgPopupData : WaylandObjectData {
-		LocalObjectHandle parent_handle;
-	};
-
-	struct XdgPositionerData : WaylandObjectData {
-		Rect2i anchor_rect;
-	};
-
-	struct EmbeddedClientData : WaylandObjectData {
-		Client *client = nullptr;
-		bool disconnected = false;
-	};
-
-	struct TabletSeatData : WaylandObjectData {
-		HashSet<uint32_t> tablets;
-
-		uint32_t wl_seat_name = 0;
-
-		LocalObjectHandle proximal_surface;
-	};
-
-	struct TabletData : WaylandObjectData {
-		uint32_t seat_id = INVALID_ID;
-	};
-
-	struct TabletToolData : WaylandObjectData {
-		uint32_t seat_id = INVALID_ID;
 	};
 
 	struct RegistryGlobalInfo {
@@ -2943,66 +2885,29 @@ public:
 #endif // GLES3_ENABLED
 #endif // EGL_ENABLED
 
-#ifdef WAYLAND_ENABLED
-#ifdef EGL_ENABLED
-#ifdef GLES3_ENABLED
-
-#include "servers/display/display_server.h"
-
-class EGLManagerWayland : public EGLManager {
-public:
-	virtual const char *_get_platform_extension_name() const override;
-	virtual EGLenum _get_platform_extension_enum() const override;
-	virtual EGLenum _get_platform_api_enum() const override;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
-	virtual Vector<EGLint> _get_platform_context_attribs() const override;
-};
-
-#endif // GLES3_ENABLED
-#endif // EGL_ENABLED
-#endif // WAYLAND_ENABLED
-
-#ifdef WAYLAND_ENABLED
-#ifdef EGL_ENABLED
-#ifdef GLES3_ENABLED
-
-#include "servers/display/display_server.h"
-
-class EGLManagerWaylandGLES : public EGLManager {
-public:
-	virtual const char *_get_platform_extension_name() const override;
-	virtual EGLenum _get_platform_extension_enum() const override;
-	virtual EGLenum _get_platform_api_enum() const override;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
-	virtual Vector<EGLint> _get_platform_context_attribs() const override;
-};
-
-#endif // GLES3_ENABLED
-#endif // EGL_ENABLED
-#endif // WAYLAND_ENABLED
 
 #ifdef VULKAN_ENABLED
 
 #include "servers/display/display_server.h"
 
-class RenderingContextDriverVulkanWayland : public RenderingContextDriverVulkan {
+class RenderingContextDriverVulkanLinux final : public RenderingContextDriverVulkan {
 private:
-	virtual const char *_get_platform_surface_extension() const override final;
-	// If wp-color-management is supported, we will perform color management externally to the driver.
-	// If wp-color-management is not supported, the driver would not be able to perform color management anyway.
-	virtual bool is_colorspace_externally_managed() const override final { return true; }
+	bool is_wayland = false;
+	virtual const char *_get_platform_surface_extension() const override;
+	virtual bool is_colorspace_externally_managed() const override { return is_wayland; }
 
 protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
+	SurfaceID surface_create(const void *p_platform_data) override;
 
 public:
 	struct WindowPlatformData {
-		struct wl_display *display;
-		struct wl_surface *surface;
+		void *display;
+		struct wl_surface *wl_surface;
+		unsigned long x11_window;
 	};
 
-	RenderingContextDriverVulkanWayland();
-	~RenderingContextDriverVulkanWayland();
+	explicit RenderingContextDriverVulkanLinux(bool p_is_wayland) : is_wayland(p_is_wayland) {}
+	~RenderingContextDriverVulkanLinux() override = default;
 };
 
 #endif // VULKAN_ENABLED
@@ -3807,13 +3712,13 @@ void DisplayServerWayland::show_window(DisplayServerEnums::WindowID p_window_id)
 			union
 			{
 #ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanWayland::WindowPlatformData vulkan;
+				RenderingContextDriverVulkanLinux::WindowPlatformData vulkan;
 #endif
 			} wpd;
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
-				wpd.vulkan.surface = wayland_thread.window_get_wl_surface(wd.id);
-				ERR_FAIL_NULL(wpd.vulkan.surface);
+				wpd.vulkan.wl_surface = wayland_thread.window_get_wl_surface(wd.id);
+				ERR_FAIL_NULL(wpd.vulkan.wl_surface);
 				wpd.vulkan.display = wayland_thread.get_wl_display();
 			}
 #endif
@@ -5112,7 +5017,7 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 #ifdef RD_ENABLED
 #ifdef VULKAN_ENABLED
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanWayland);
+		rendering_context = memnew(RenderingContextDriverVulkanLinux(true));
 	}
 #endif // VULKAN_ENABLED
 
@@ -5195,7 +5100,8 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 		}
 
 		if (rendering_driver == "opengl3") {
-			egl_manager = memnew(EGLManagerWayland);
+			Vector<EGLint> attribs = { EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, 3, EGL_NONE };
+			egl_manager = memnew(EGLManager("EGL_KHR_platform_wayland", EGL_PLATFORM_WAYLAND_KHR, EGL_OPENGL_API, attribs));
 
 			if (egl_manager->initialize(wayland_thread.get_wl_display()) != OK ||
 				egl_manager->open_display(wayland_thread.get_wl_display()) != OK) {
@@ -5219,7 +5125,8 @@ DisplayServerWayland::DisplayServerWayland(const String& p_rendering_driver,
 		}
 
 		if (rendering_driver == "opengl3_es") {
-			egl_manager = memnew(EGLManagerWaylandGLES);
+			Vector<EGLint> attribs = { EGL_CONTEXT_MAJOR_VERSION, 3, EGL_NONE };
+			egl_manager = memnew(EGLManager("EGL_KHR_platform_wayland", EGL_PLATFORM_WAYLAND_KHR, EGL_OPENGL_ES_API, attribs));
 
 			if (egl_manager->initialize(wayland_thread.get_wl_display()) != OK ||
 				egl_manager->open_display(wayland_thread.get_wl_display()) != OK) {
@@ -13043,7 +12950,7 @@ WaylandEmbedder::WaylandObject *WaylandEmbedder::Client::new_global_instance(uin
 	return &new_object;
 }
 
-Error WaylandEmbedder::Client::handle_wl_drm_bind(uint32_t p_id, WaylandDrmGlobalData *p_state) {
+Error WaylandEmbedder::Client::handle_wl_drm_bind(uint32_t p_id, WaylandObjectData *p_state) {
 	ERR_FAIL_NULL_V(p_state, ERR_INVALID_PARAMETER);
 
 	if (p_state->device.is_empty()) {
@@ -13191,7 +13098,7 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 		WaylandObject &object = pair.value;
 
 		if (object.interface == &xdg_toplevel_interface) {
-			XdgToplevelData *data = (XdgToplevelData *)object.data;
+			WaylandObjectData *data = (WaylandObjectData *)object.data;
 			CRASH_COND(data == nullptr);
 
 			if (data->wl_subsurface_id != INVALID_ID) {
@@ -13203,7 +13110,7 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 				continue;
 			}
 
-			XdgSurfaceData *xdg_surf_data = (XdgSurfaceData *)data->xdg_surface_handle.get()->data;
+			WaylandObjectData *xdg_surf_data = (WaylandObjectData *)data->xdg_surface_handle.get()->data;
 			if (xdg_surf_data == nullptr) {
 				continue;
 			}
@@ -13212,7 +13119,7 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 				continue;
 			}
 
-			XdgToplevelData *parent_data = (XdgToplevelData *)data->parent_handle.get()->data;
+			WaylandObjectData *parent_data = (WaylandObjectData *)data->parent_handle.get()->data;
 			if (parent_data == nullptr) {
 				continue;
 			}
@@ -13221,13 +13128,13 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 				continue;
 			}
 
-			XdgSurfaceData *parent_xdg_surf_data = (XdgSurfaceData *)parent_data->xdg_surface_handle.get()->data;
+			WaylandObjectData *parent_xdg_surf_data = (WaylandObjectData *)parent_data->xdg_surface_handle.get()->data;
 			if (parent_xdg_surf_data == nullptr) {
 				continue;
 			}
 
 			for (uint32_t wl_seat_name : wl_seat_names) {
-				WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)registry_globals[wl_seat_name].data;
+				WaylandObjectData *global_seat_data = (WaylandObjectData *)registry_globals[wl_seat_name].data;
 				if (global_seat_data == nullptr) {
 					continue;
 				}
@@ -13279,7 +13186,7 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 
 			if (object->interface == &wl_surface_interface) {
 				for (uint32_t wl_seat_name : wl_seat_names) {
-					WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)registry_globals[wl_seat_name].data;
+					WaylandObjectData *global_seat_data = (WaylandObjectData *)registry_globals[wl_seat_name].data;
 					if (global_seat_data) {
 						if (global_seat_data->pointed_surface_id == global_id) {
 							global_seat_data->pointed_surface_id = INVALID_ID;
@@ -13313,7 +13220,7 @@ void WaylandEmbedder::cleanup_socket(int p_socket) {
 	WaylandObject *eclient = main_client->get_object(eclient_id);
 
 	if (eclient) {
-		EmbeddedClientData *eclient_data = (EmbeddedClientData *)eclient->data;
+		WaylandObjectData *eclient_data = (WaylandObjectData *)eclient->data;
 		ERR_FAIL_NULL(eclient_data);
 
 		if (!eclient_data->disconnected) {
@@ -13664,7 +13571,7 @@ uint32_t WaylandEmbedder::wl_registry_bind(uint32_t p_registry_id, uint32_t p_na
 }
 
 void WaylandEmbedder::seat_name_enter_surface(uint32_t p_seat_name, uint32_t p_wl_surface_id) {
-	WaylandSurfaceData *surf_data = (WaylandSurfaceData *)get_object(p_wl_surface_id)->data;
+	WaylandObjectData *surf_data = (WaylandObjectData *)get_object(p_wl_surface_id)->data;
 	CRASH_COND(surf_data == nullptr);
 
 	Client *client = surf_data->client;
@@ -13679,11 +13586,11 @@ void WaylandEmbedder::seat_name_enter_surface(uint32_t p_seat_name, uint32_t p_w
 
 	DEBUG_LOG_WAYLAND_EMBED_VERBOSE(vformat("KB: Entering surface g0x%x", p_wl_surface_id));
 
-	WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)registry_globals[p_seat_name].data;
+	WaylandObjectData *global_seat_data = (WaylandObjectData *)registry_globals[p_seat_name].data;
 	ERR_FAIL_NULL(global_seat_data);
 
 	for (uint32_t local_seat_id : client->registry_globals_instances[p_seat_name]) {
-		WaylandSeatInstanceData *seat_data = (WaylandSeatInstanceData *)client->get_object(local_seat_id)->data;
+		WaylandObjectData *seat_data = (WaylandObjectData *)client->get_object(local_seat_id)->data;
 		CRASH_COND(seat_data == nullptr);
 
 		uint32_t local_keyboard_id = client->get_local_id(seat_data->wl_keyboard_id);
@@ -13708,7 +13615,7 @@ void WaylandEmbedder::seat_name_enter_surface(uint32_t p_seat_name, uint32_t p_w
 }
 
 void WaylandEmbedder::seat_name_leave_surface(uint32_t p_seat_name, uint32_t p_wl_surface_id) {
-	WaylandSurfaceData *surf_data = (WaylandSurfaceData *)get_object(p_wl_surface_id)->data;
+	WaylandObjectData *surf_data = (WaylandObjectData *)get_object(p_wl_surface_id)->data;
 	CRASH_COND(surf_data == nullptr);
 
 	Client *client = surf_data->client;
@@ -13724,7 +13631,7 @@ void WaylandEmbedder::seat_name_leave_surface(uint32_t p_seat_name, uint32_t p_w
 	DEBUG_LOG_WAYLAND_EMBED_VERBOSE(vformat("KB: Leaving surface g0x%x", p_wl_surface_id));
 
 	for (uint32_t local_seat_id : client->registry_globals_instances[p_seat_name]) {
-		WaylandSeatInstanceData *seat_data = (WaylandSeatInstanceData *)client->get_object(local_seat_id)->data;
+		WaylandObjectData *seat_data = (WaylandObjectData *)client->get_object(local_seat_id)->data;
 		CRASH_COND(seat_data == nullptr);
 
 		uint32_t local_keyboard_id = client->get_local_id(seat_data->wl_keyboard_id);
@@ -13771,7 +13678,7 @@ bool WaylandEmbedder::global_surface_is_window(uint32_t p_wl_surface_id) {
 		return false;
 	}
 
-	WaylandSurfaceData *surface_data = (WaylandSurfaceData *)surface_object->data;
+	WaylandObjectData *surface_data = (WaylandObjectData *)surface_object->data;
 	if (!surface_data->role_object_handle.get()) {
 		return false;
 	}
@@ -14045,12 +13952,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 				// instances are handled by us, we need to track and report the relevant
 				// data ourselves.
 				if (global_info.interface == &wl_drm_interface) {
-					Error err = client->handle_wl_drm_bind(new_local_id, (WaylandDrmGlobalData *)global_info.data);
+					Error err = client->handle_wl_drm_bind(new_local_id, (WaylandObjectData *)global_info.data);
 					if (err != OK) {
 						return MessageStatus::ERROR;
 					}
 				} else if (global_info.interface == &wl_shm_interface) {
-					WaylandShmGlobalData *global_data = (WaylandShmGlobalData *)global_info.data;
+					WaylandObjectData *global_data = (WaylandObjectData *)global_info.data;
 					ERR_FAIL_NULL_V(global_data, MessageStatus::ERROR);
 
 					for (uint32_t format : global_data->formats) {
@@ -14062,7 +13969,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			ERR_FAIL_NULL_V(instance, MessageStatus::UNHANDLED);
 
 			if (global_info.interface == &wl_seat_interface) {
-				WaylandSeatInstanceData *new_data = memnew(WaylandSeatInstanceData);
+				WaylandObjectData *new_data = memnew(WaylandObjectData);
 				instance->data = new_data;
 			}
 
@@ -14073,7 +13980,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	if (object->interface == &wl_compositor_interface && p_opcode == WL_COMPOSITOR_CREATE_SURFACE) {
 		uint32_t new_local_id = body[0];
 
-		WaylandSurfaceData *data = memnew(WaylandSurfaceData);
+		WaylandObjectData *data = memnew(WaylandObjectData);
 		data->client = client;
 
 		uint32_t new_global_id = client->new_object(new_local_id, &wl_surface_interface, object->version, data);
@@ -14086,12 +13993,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	}
 
 	if (object->interface == &wl_surface_interface) {
-		WaylandSurfaceData *surface_data = (WaylandSurfaceData *)object->data;
+		WaylandObjectData *surface_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(surface_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_SURFACE_DESTROY) {
 			for (uint32_t wl_seat_name : wl_seat_names) {
-				WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)registry_globals[wl_seat_name].data;
+				WaylandObjectData *global_seat_data = (WaylandObjectData *)registry_globals[wl_seat_name].data;
 				ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
 
 				if (global_seat_data->pointed_surface_id == global_id) {
@@ -14110,7 +14017,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 				}
 
 				if (role_object && role_object->interface == &xdg_toplevel_interface) {
-					XdgToplevelData *toplevel_data = (XdgToplevelData *)role_object->data;
+					WaylandObjectData *toplevel_data = (WaylandObjectData *)role_object->data;
 					ERR_FAIL_NULL_V(toplevel_data, MessageStatus::ERROR);
 					// xdg shell spec requires clients to first send data and then commit the
 					// surface.
@@ -14131,10 +14038,10 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 		uint32_t global_seat_name = registry_globals_names[global_id];
 
 		RegistryGlobalInfo &seat_global_info = registry_globals[global_seat_name];
-		WaylandSeatGlobalData *global_data = (WaylandSeatGlobalData *)seat_global_info.data;
+		WaylandObjectData *global_data = (WaylandObjectData *)seat_global_info.data;
 		ERR_FAIL_NULL_V(global_data, MessageStatus::ERROR);
 
-		WaylandSeatInstanceData *instance_data = (WaylandSeatInstanceData *)object->data;
+		WaylandObjectData *instance_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(instance_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_SEAT_GET_POINTER) {
@@ -14142,7 +14049,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			// [Request] wl_seat::get_pointer(n);
 			uint32_t new_local_id = body[0];
 
-			WaylandPointerData *new_data = memnew(WaylandPointerData);
+			WaylandObjectData *new_data = memnew(WaylandObjectData);
 			new_data->wl_seat_id = global_id;
 
 			uint32_t new_global_id = client->new_object(new_local_id, &wl_pointer_interface, object->version, new_data);
@@ -14160,7 +14067,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			// [Request] wl_seat::get_keyboard(n);
 			uint32_t new_local_id = body[0];
 
-			WaylandKeyboardData *new_data = memnew(WaylandKeyboardData);
+			WaylandObjectData *new_data = memnew(WaylandObjectData);
 			new_data->wl_seat_id = global_id;
 
 			uint32_t new_global_id = client->new_object(new_local_id, &wl_keyboard_interface, object->version, new_data);
@@ -14178,7 +14085,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			// [Request] wl_seat::get_touch(n);
 			uint32_t new_local_id = body[0];
 
-			WaylandTouchData *new_data = memnew(WaylandTouchData);
+			WaylandObjectData *new_data = memnew(WaylandObjectData);
 			new_data->wl_seat_id = global_id;
 
 			uint32_t new_global_id = client->new_object(new_local_id, &wl_touch_interface, object->version, new_data);
@@ -14195,7 +14102,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	if (object->interface == &xdg_wm_base_interface) {
 		if (p_opcode == XDG_WM_BASE_CREATE_POSITIONER) {
 			uint32_t new_local_id = body[0];
-			uint32_t new_global_id = client->new_object(new_local_id, &xdg_positioner_interface, object->version, memnew(XdgPositionerData));
+			uint32_t new_global_id = client->new_object(new_local_id, &xdg_positioner_interface, object->version, memnew(WaylandObjectData));
 			ERR_FAIL_COND_V(new_global_id == INVALID_ID, MessageStatus::HANDLED);
 
 			send_wayland_method(compositor_socket, global_id, xdg_wm_base_interface, XDG_WM_BASE_CREATE_POSITIONER, { wl_arg_new_id(new_global_id) });
@@ -14211,7 +14118,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 			bool fake = (client != main_client);
 
-			XdgSurfaceData *data = memnew(XdgSurfaceData);
+			WaylandObjectData *data = memnew(WaylandObjectData);
 			data->wl_surface_id = global_surface_id;
 
 			if (fake) {
@@ -14231,10 +14138,10 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	}
 
 	if (object->interface == &xdg_surface_interface) {
-		XdgSurfaceData *xdg_surf_data = (XdgSurfaceData *)object->data;
+		WaylandObjectData *xdg_surf_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(xdg_surf_data, MessageStatus::ERROR);
 
-		WaylandSurfaceData *surface_data = (WaylandSurfaceData *)get_object(xdg_surf_data->wl_surface_id)->data;
+		WaylandObjectData *surface_data = (WaylandObjectData *)get_object(xdg_surf_data->wl_surface_id)->data;
 		ERR_FAIL_NULL_V(surface_data, MessageStatus::ERROR);
 
 		bool is_embedded = client->fake_objects.has(local_id);
@@ -14248,7 +14155,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 			surface_data->role_object_handle = LocalObjectHandle(client, new_local_id);
 
-			XdgPopupData *popup_data = memnew(XdgPopupData);
+			WaylandObjectData *popup_data = memnew(WaylandObjectData);
 			popup_data->parent_handle = LocalObjectHandle(client, local_parent_id);
 
 			if (!is_embedded) {
@@ -14280,20 +14187,20 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 			uint32_t global_parent_id = INVALID_ID;
 			if (local_parent_id != INVALID_ID) {
-				XdgSurfaceData *parent_xdg_surf_data = (XdgSurfaceData *)client->get_object(local_parent_id)->data;
+				WaylandObjectData *parent_xdg_surf_data = (WaylandObjectData *)client->get_object(local_parent_id)->data;
 				ERR_FAIL_NULL_V(parent_xdg_surf_data, MessageStatus::ERROR);
 
-				WaylandSurfaceData *parent_surface_data = (WaylandSurfaceData *)get_object(parent_xdg_surf_data->wl_surface_id)->data;
+				WaylandObjectData *parent_surface_data = (WaylandObjectData *)get_object(parent_xdg_surf_data->wl_surface_id)->data;
 				ERR_FAIL_NULL_V(parent_surface_data, MessageStatus::ERROR);
 
 				WaylandObject *parent_role_obj = parent_surface_data->role_object_handle.get();
 				ERR_FAIL_NULL_V(parent_role_obj, MessageStatus::ERROR);
 
-				XdgPositionerData *pos_data = (XdgPositionerData *)client->get_object(local_positioner_id)->data;
+				WaylandObjectData *pos_data = (WaylandObjectData *)client->get_object(local_positioner_id)->data;
 				ERR_FAIL_NULL_V(pos_data, MessageStatus::ERROR);
 
 				if (parent_role_obj->interface == &xdg_toplevel_interface) {
-					XdgToplevelData *parent_toplevel_data = (XdgToplevelData *)parent_role_obj->data;
+					WaylandObjectData *parent_toplevel_data = (WaylandObjectData *)parent_role_obj->data;
 					ERR_FAIL_NULL_V(parent_toplevel_data, MessageStatus::ERROR);
 
 					if (parent_toplevel_data->is_embedded()) {
@@ -14301,12 +14208,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 						// "redirect" the popup request on the parent window and adjust the
 						// positioner properly if needed.
 
-						XdgToplevelData *main_parent_toplevel_data = (XdgToplevelData *)parent_toplevel_data->parent_handle.get()->data;
+						WaylandObjectData *main_parent_toplevel_data = (WaylandObjectData *)parent_toplevel_data->parent_handle.get()->data;
 						ERR_FAIL_NULL_V(main_parent_toplevel_data, MessageStatus::ERROR);
 
 						global_parent_id = main_parent_toplevel_data->xdg_surface_handle.get_global_id();
 
-						WaylandSubsurfaceData *subsurf_data = (WaylandSubsurfaceData *)get_object(parent_toplevel_data->wl_subsurface_id)->data;
+						WaylandObjectData *subsurf_data = (WaylandObjectData *)get_object(parent_toplevel_data->wl_subsurface_id)->data;
 						ERR_FAIL_NULL_V(subsurf_data, MessageStatus::ERROR);
 
 						Point2i adj_pos = subsurf_data->position + pos_data->anchor_rect.position;
@@ -14329,7 +14236,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 			surface_data->role_object_handle = LocalObjectHandle(client, new_local_id);
 
-			XdgToplevelData *data = memnew(XdgToplevelData);
+			WaylandObjectData *data = memnew(WaylandObjectData);
 			data->xdg_surface_handle = LocalObjectHandle(client, local_id);
 
 			if (is_embedded) {
@@ -14354,7 +14261,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	}
 
 	if (object->interface == &xdg_positioner_interface) {
-		XdgPositionerData *pos_data = (XdgPositionerData *)object->data;
+		WaylandObjectData *pos_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(pos_data, MessageStatus::ERROR);
 
 		if (p_opcode == XDG_POSITIONER_SET_ANCHOR_RECT) {
@@ -14368,32 +14275,32 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 	if (object->interface == &xdg_toplevel_interface && p_opcode == XDG_TOPLEVEL_DESTROY) {
 		if (client->fake_objects.has(local_id)) {
-			XdgToplevelData *data = (XdgToplevelData *)object->data;
+			WaylandObjectData *data = (WaylandObjectData *)object->data;
 			ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
 
-			XdgSurfaceData *xdg_surf_data = nullptr;
+			WaylandObjectData *xdg_surf_data = nullptr;
 			if (data->xdg_surface_handle.is_valid()) {
-				xdg_surf_data = (XdgSurfaceData *)data->xdg_surface_handle.get()->data;
+				xdg_surf_data = (WaylandObjectData *)data->xdg_surface_handle.get()->data;
 				ERR_FAIL_NULL_V(xdg_surf_data, MessageStatus::ERROR);
 			}
 			ERR_FAIL_NULL_V(xdg_surf_data, MessageStatus::ERROR);
 
-			XdgSurfaceData *parent_xdg_surf_data = nullptr;
+			WaylandObjectData *parent_xdg_surf_data = nullptr;
 			{
-				XdgToplevelData *parent_data = nullptr;
+				WaylandObjectData *parent_data = nullptr;
 				if (data->parent_handle.get()) {
-					parent_data = (XdgToplevelData *)data->parent_handle.get()->data;
+					parent_data = (WaylandObjectData *)data->parent_handle.get()->data;
 					ERR_FAIL_NULL_V(parent_data, MessageStatus::ERROR);
 				}
 
 				if (parent_data && parent_data->xdg_surface_handle.get()) {
-					parent_xdg_surf_data = (XdgSurfaceData *)parent_data->xdg_surface_handle.get()->data;
+					parent_xdg_surf_data = (WaylandObjectData *)parent_data->xdg_surface_handle.get()->data;
 					ERR_FAIL_NULL_V(parent_xdg_surf_data, MessageStatus::ERROR);
 				}
 			}
 
 			for (uint32_t wl_seat_name : wl_seat_names) {
-				WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)registry_globals[wl_seat_name].data;
+				WaylandObjectData *global_seat_data = (WaylandObjectData *)registry_globals[wl_seat_name].data;
 				ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
 
 				if (global_seat_data->focused_surface_id == xdg_surf_data->wl_surface_id) {
@@ -14429,7 +14336,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			uint32_t new_local_id = body[0];
 			LocalObjectHandle seat = LocalObjectHandle(client, body[1]);
 
-			TabletSeatData *seat_data = memnew(TabletSeatData);
+			WaylandObjectData *seat_data = memnew(WaylandObjectData);
 			seat_data->wl_seat_name = registry_globals_names[seat.get_global_id()];
 
 			uint32_t new_global_id = client->new_object(new_local_id, &zwp_tablet_seat_v2_interface, object->version, seat_data);
@@ -14441,7 +14348,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 	}
 
 	if (interface == &godot_embedded_client_interface) {
-		EmbeddedClientData *eclient_data = (EmbeddedClientData *)object->data;
+		WaylandObjectData *eclient_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(eclient_data, MessageStatus::ERROR);
 
 		Client *eclient = eclient_data->client;
@@ -14464,7 +14371,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 		ERR_FAIL_COND_V(eclient->embedded_window_id == 0, MessageStatus::ERROR);
 
-		XdgToplevelData *toplevel_data = (XdgToplevelData *)eclient->get_object(eclient->embedded_window_id)->data;
+		WaylandObjectData *toplevel_data = (WaylandObjectData *)eclient->get_object(eclient->embedded_window_id)->data;
 		ERR_FAIL_NULL_V(toplevel_data, MessageStatus::ERROR);
 
 		if (p_opcode == GODOT_EMBEDDED_CLIENT_SET_EMBEDDED_WINDOW_RECT && toplevel_data->wl_subsurface_id != INVALID_ID) {
@@ -14473,7 +14380,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			uint32_t width = body[2];
 			uint32_t height = body[3];
 
-			WaylandSubsurfaceData *subsurf_data = (WaylandSubsurfaceData *)get_object(toplevel_data->wl_subsurface_id)->data;
+			WaylandObjectData *subsurf_data = (WaylandObjectData *)get_object(toplevel_data->wl_subsurface_id)->data;
 			ERR_FAIL_NULL_V(subsurf_data, MessageStatus::ERROR);
 
 			toplevel_data->size.width = width;
@@ -14511,12 +14418,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 				return MessageStatus::HANDLED;
 			}
 
-			XdgToplevelData *parent_toplevel_data = (XdgToplevelData *)client->get_object(main_client_parent_id)->data;
+			WaylandObjectData *parent_toplevel_data = (WaylandObjectData *)client->get_object(main_client_parent_id)->data;
 			ERR_FAIL_NULL_V(parent_toplevel_data, MessageStatus::ERROR);
-			XdgSurfaceData *parent_xdg_surf_data = (XdgSurfaceData *)parent_toplevel_data->xdg_surface_handle.get()->data;
+			WaylandObjectData *parent_xdg_surf_data = (WaylandObjectData *)parent_toplevel_data->xdg_surface_handle.get()->data;
 			ERR_FAIL_NULL_V(parent_xdg_surf_data, MessageStatus::ERROR);
 
-			XdgSurfaceData *xdg_surf_data = (XdgSurfaceData *)toplevel_data->xdg_surface_handle.get()->data;
+			WaylandObjectData *xdg_surf_data = (WaylandObjectData *)toplevel_data->xdg_surface_handle.get()->data;
 			ERR_FAIL_NULL_V(xdg_surf_data, MessageStatus::ERROR);
 
 			if (toplevel_data->wl_subsurface_id != INVALID_ID) {
@@ -14526,7 +14433,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			uint32_t new_sub_id = allocate_global_id();
 			WaylandObject *new_sub_object = get_object(new_sub_id);
 			new_sub_object->interface = &wl_subsurface_interface;
-			new_sub_object->data = memnew(WaylandSubsurfaceData);
+			new_sub_object->data = memnew(WaylandObjectData);
 			new_sub_object->version = get_object(wl_subcompositor_id)->version;
 
 			toplevel_data->wl_subsurface_id = new_sub_id;
@@ -14540,12 +14447,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 			return MessageStatus::HANDLED;
 		} else if (p_opcode == GODOT_EMBEDDED_CLIENT_FOCUS_WINDOW) {
-			XdgSurfaceData *xdg_surf_data = (XdgSurfaceData *)toplevel_data->xdg_surface_handle.get()->data;
+			WaylandObjectData *xdg_surf_data = (WaylandObjectData *)toplevel_data->xdg_surface_handle.get()->data;
 			ERR_FAIL_NULL_V(xdg_surf_data, MessageStatus::ERROR);
 
 			for (uint32_t wl_seat_name : wl_seat_names) {
 				RegistryGlobalInfo &global_seat_info = registry_globals[wl_seat_name];
-				WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+				WaylandObjectData *global_seat_data = (WaylandObjectData *)global_seat_info.data;
 
 				if (global_seat_data->focused_surface_id != INVALID_ID) {
 					seat_name_leave_surface(wl_seat_name, global_seat_data->focused_surface_id);
@@ -14626,7 +14533,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		// wl_drm can't ever be destroyed, so we need to track its state as it's going
 		// to be instanced at least few times.
 		uint32_t global_name = registry_globals_names[p_global_id];
-		WaylandDrmGlobalData *global_data = (WaylandDrmGlobalData *)registry_globals[global_name].data;
+		WaylandObjectData *global_data = (WaylandObjectData *)registry_globals[global_name].data;
 		ERR_FAIL_NULL_V(global_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_DRM_DEVICE) {
@@ -14664,7 +14571,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 
 	if (global_object->interface == &wl_shm_interface) {
 		uint32_t global_name = registry_globals_names[p_global_id];
-		WaylandShmGlobalData *global_data = (WaylandShmGlobalData *)registry_globals[global_name].data;
+		WaylandObjectData *global_data = (WaylandObjectData *)registry_globals[global_name].data;
 		ERR_FAIL_NULL_V(global_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_SHM_FORMAT) {
@@ -14728,18 +14635,18 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 
 					if (global_info.interface == &wl_shm_interface) {
 						DEBUG_LOG_WAYLAND_EMBED_VERBOSE("Allocating global wl_shm data.");
-						global_info.data = memnew(WaylandShmGlobalData);
+						global_info.data = memnew(WaylandObjectData);
 					}
 
 					if (global_info.interface == &wl_seat_interface) {
 						DEBUG_LOG_WAYLAND_EMBED_VERBOSE("Allocating global wl_seat data.");
-						global_info.data = memnew(WaylandSeatGlobalData);
+						global_info.data = memnew(WaylandObjectData);
 						wl_seat_names.push_back(new_global_name);
 					}
 
 					if (global_info.interface == &wl_drm_interface) {
 						DEBUG_LOG_WAYLAND_EMBED_VERBOSE("Allocating global wl_drm data.");
-						global_info.data = memnew(WaylandDrmGlobalData);
+						global_info.data = memnew(WaylandObjectData);
 					}
 
 					registry_globals[new_global_name] = global_info;
@@ -14857,12 +14764,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 	}
 
 	if (object->interface == &wl_keyboard_interface) {
-		WaylandKeyboardData *data = (WaylandKeyboardData *)object->data;
+		WaylandObjectData *data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
 
 		uint32_t global_seat_name = registry_globals_names[data->wl_seat_id];
 		RegistryGlobalInfo &global_seat_info = registry_globals[global_seat_name];
-		WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+		WaylandObjectData *global_seat_data = (WaylandObjectData *)global_seat_info.data;
 		ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_KEYBOARD_ENTER) {
@@ -14904,15 +14811,15 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 	}
 
 	if (object->interface == &wl_pointer_interface) {
-		WaylandPointerData *data = (WaylandPointerData *)object->data;
+		WaylandObjectData *data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
 
 		uint32_t global_seat_name = registry_globals_names[data->wl_seat_id];
 		RegistryGlobalInfo &global_seat_info = registry_globals[global_seat_name];
-		WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+		WaylandObjectData *global_seat_data = (WaylandObjectData *)global_seat_info.data;
 		ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
 
-		WaylandSeatInstanceData *seat_data = (WaylandSeatInstanceData *)object->data;
+		WaylandObjectData *seat_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_POINTER_BUTTON && global_seat_data->pointed_surface_id != INVALID_ID) {
@@ -14945,7 +14852,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		} else if (p_opcode == WL_POINTER_ENTER) {
 			// [Event] wl_pointer::enter(uoff).
 			uint32_t surface = body[1];
-			WaylandSurfaceData *surface_data = (WaylandSurfaceData *)get_object(surface)->data;
+			WaylandObjectData *surface_data = (WaylandObjectData *)get_object(surface)->data;
 			ERR_FAIL_NULL_V(surface_data, MessageStatus::ERROR);
 
 			if (global_seat_data->pointed_surface_id != surface) {
@@ -14956,7 +14863,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		} else if (p_opcode == WL_POINTER_LEAVE) {
 			// [Event] wl_pointer::leave(uo).
 			uint32_t surface = body[1];
-			WaylandSurfaceData *surface_data = (WaylandSurfaceData *)get_object(surface)->data;
+			WaylandObjectData *surface_data = (WaylandObjectData *)get_object(surface)->data;
 			ERR_FAIL_NULL_V(surface_data, MessageStatus::ERROR);
 
 			if (global_seat_data->pointed_surface_id == surface) {
@@ -14969,15 +14876,15 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 	}
 
 	if (object->interface == &wl_touch_interface) {
-		WaylandTouchData *data = (WaylandTouchData *)object->data;
+		WaylandObjectData *data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
 
 		uint32_t global_seat_name = registry_globals_names[data->wl_seat_id];
 		RegistryGlobalInfo &global_seat_info = registry_globals[global_seat_name];
-		WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+		WaylandObjectData *global_seat_data = (WaylandObjectData *)global_seat_info.data;
 		ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
 
-		WaylandSeatInstanceData *seat_data = (WaylandSeatInstanceData *)object->data;
+		WaylandObjectData *seat_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
 		if (p_opcode == WL_TOUCH_DOWN) {
@@ -15033,24 +14940,24 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 			int32_t width = body[2];
 			int32_t height = body[3];
 
-			XdgPopupData *data = (XdgPopupData *)object->data;
+			WaylandObjectData *data = (WaylandObjectData *)object->data;
 			ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
 
-			XdgSurfaceData *parent_xdg_surf_data = (XdgSurfaceData *)data->parent_handle.get()->data;
+			WaylandObjectData *parent_xdg_surf_data = (WaylandObjectData *)data->parent_handle.get()->data;
 			ERR_FAIL_NULL_V(parent_xdg_surf_data, MessageStatus::ERROR);
 
-			WaylandSurfaceData *parent_surface_data = (WaylandSurfaceData *)get_object(parent_xdg_surf_data->wl_surface_id)->data;
+			WaylandObjectData *parent_surface_data = (WaylandObjectData *)get_object(parent_xdg_surf_data->wl_surface_id)->data;
 			ERR_FAIL_NULL_V(parent_surface_data, MessageStatus::ERROR);
 
 			WaylandObject *parent_role_obj = parent_surface_data->role_object_handle.get();
 			ERR_FAIL_NULL_V(parent_role_obj, MessageStatus::ERROR);
 
 			if (parent_role_obj->interface == &xdg_toplevel_interface) {
-				XdgToplevelData *parent_toplevel_data = (XdgToplevelData *)parent_role_obj->data;
+				WaylandObjectData *parent_toplevel_data = (WaylandObjectData *)parent_role_obj->data;
 				ERR_FAIL_NULL_V(parent_toplevel_data, MessageStatus::ERROR);
 
 				if (parent_toplevel_data->is_embedded()) {
-					WaylandSubsurfaceData *subsurf_data = (WaylandSubsurfaceData *)get_object(parent_toplevel_data->wl_subsurface_id)->data;
+					WaylandObjectData *subsurf_data = (WaylandObjectData *)get_object(parent_toplevel_data->wl_subsurface_id)->data;
 					ERR_FAIL_NULL_V(subsurf_data, MessageStatus::ERROR);
 
 					// The coordinates passed will be shifted by the embedded window position,
@@ -15071,12 +14978,12 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		if (p_opcode == ZWP_TABLET_SEAT_V2_TABLET_ADDED) {
 			uint32_t new_id = body[0];
 
-			TabletSeatData *seat_data = (TabletSeatData *)object->data;
+			WaylandObjectData *seat_data = (WaylandObjectData *)object->data;
 			ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
 			seat_data->tablets.insert(new_id);
 
-			TabletData *tablet_data = memnew(TabletData);
+			WaylandObjectData *tablet_data = memnew(WaylandObjectData);
 			ERR_FAIL_NULL_V(tablet_data, MessageStatus::ERROR);
 
 			tablet_data->seat_id = p_global_id;
@@ -15091,10 +14998,10 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		if (p_opcode == ZWP_TABLET_SEAT_V2_TOOL_ADDED) {
 			uint32_t new_id = body[0];
 
-			TabletSeatData *seat_data = (TabletSeatData *)object->data;
+			WaylandObjectData *seat_data = (WaylandObjectData *)object->data;
 			ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
-			TabletToolData *tool_data = memnew(TabletToolData);
+			WaylandObjectData *tool_data = memnew(WaylandObjectData);
 			ERR_FAIL_NULL_V(tool_data, MessageStatus::ERROR);
 
 			tool_data->seat_id = p_global_id;
@@ -15109,13 +15016,13 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 
 	if (object->interface == &zwp_tablet_v2_interface) {
 		if (p_opcode == ZWP_TABLET_V2_REMOVED) {
-			TabletData *tablet_data = (TabletData *)object->data;
+			WaylandObjectData *tablet_data = (WaylandObjectData *)object->data;
 			ERR_FAIL_NULL_V(tablet_data, MessageStatus::ERROR);
 
 			WaylandObject *seat_object = get_object(tablet_data->seat_id);
 			ERR_FAIL_NULL_V(seat_object, MessageStatus::ERROR);
 
-			TabletSeatData *seat_data = (TabletSeatData *)seat_object->data;
+			WaylandObjectData *seat_data = (WaylandObjectData *)seat_object->data;
 			ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
 			seat_data->tablets.erase(p_global_id);
@@ -15125,13 +15032,13 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 	}
 
 	if (object->interface == &zwp_tablet_tool_v2_interface) {
-		TabletToolData *tool_data = (TabletToolData *)object->data;
+		WaylandObjectData *tool_data = (WaylandObjectData *)object->data;
 		ERR_FAIL_NULL_V(tool_data, MessageStatus::ERROR);
 
 		WaylandObject *seat_object = get_object(tool_data->seat_id);
 		ERR_FAIL_NULL_V(seat_object, MessageStatus::ERROR);
 
-		TabletSeatData *seat_data = (TabletSeatData *)seat_object->data;
+		WaylandObjectData *seat_data = (WaylandObjectData *)seat_object->data;
 		ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
 
 		if (p_opcode == ZWP_TABLET_TOOL_V2_PROXIMITY_IN) {
@@ -15176,7 +15083,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		if (p_opcode == ZWP_TABLET_TOOL_V2_DOWN) {
 			// FIXME: Gracefully handle deleted seats (here and in other seat logic).
 			RegistryGlobalInfo &global_seat_info = registry_globals[seat_data->wl_seat_name];
-			WaylandSeatGlobalData *global_wl_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+			WaylandObjectData *global_wl_seat_data = (WaylandObjectData *)global_seat_info.data;
 			ERR_FAIL_NULL_V(global_wl_seat_data, MessageStatus::ERROR);
 
 			if (seat_data->proximal_surface.get_global_id() != INVALID_ID) {
@@ -15762,7 +15669,7 @@ void WaylandEmbedder::handle_fd(int p_fd, int p_revents) {
 			client.embedded_client_id = new_local_id;
 
 			for (uint32_t local_id : main_client->registry_globals_instances[godot_embedding_compositor_name]) {
-				EmbeddedClientData *eclient_data = memnew(EmbeddedClientData);
+				WaylandObjectData *eclient_data = memnew(WaylandObjectData);
 				eclient_data->client = &client;
 
 				main_client->new_fake_object(new_local_id, &godot_embedded_client_interface, 1, eclient_data);
@@ -16020,75 +15927,9 @@ WaylandEmbedder::~WaylandEmbedder() {
 #undef Below
 #endif
 
-#ifdef VULKAN_ENABLED
 
-#include <drivers/vulkan/godot_vulkan.h>
 
-const char *RenderingContextDriverVulkanWayland::_get_platform_surface_extension() const {
-	return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
-}
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanWayland::surface_create(const void *p_platform_data) {
-	const WindowPlatformData *wpd = (const WindowPlatformData *)(p_platform_data);
-
-	VkWaylandSurfaceCreateInfoKHR create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-	create_info.display = wpd->display;
-	create_info.surface = wpd->surface;
-
-	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	VkResult err = vkCreateWaylandSurfaceKHR(instance_get(), &create_info, get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
-	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
-
-	Surface *surface = memnew(Surface);
-	surface->vk_surface = vk_surface;
-	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanWayland::RenderingContextDriverVulkanWayland() {
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanWayland::~RenderingContextDriverVulkanWayland() {
-	// Does nothing.
-}
-
-#endif // VULKAN_ENABLED
-
-#ifdef WAYLAND_ENABLED
-#ifdef EGL_ENABLED
-#ifdef GLES3_ENABLED
-
-const char *EGLManagerWayland::_get_platform_extension_name() const {
-	return "EGL_KHR_platform_wayland";
-}
-
-EGLenum EGLManagerWayland::_get_platform_extension_enum() const {
-	return EGL_PLATFORM_WAYLAND_KHR;
-}
-
-EGLenum EGLManagerWayland::_get_platform_api_enum() const {
-	return EGL_OPENGL_API;
-}
-
-Vector<EGLAttrib> EGLManagerWayland::_get_platform_display_attributes() const {
-	return Vector<EGLAttrib>();
-}
-
-Vector<EGLint> EGLManagerWayland::_get_platform_context_attribs() const {
-	Vector<EGLint> ret;
-	ret.push_back(EGL_CONTEXT_MAJOR_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_CONTEXT_MINOR_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-#endif // GLES3_ENABLED
-#endif // EGL_ENABLED
-#endif // WAYLAND_ENABLED
 
 #ifdef None
 #undef None
@@ -16139,38 +15980,7 @@ Vector<EGLint> EGLManagerWayland::_get_platform_context_attribs() const {
 #undef Below
 #endif
 
-#ifdef WAYLAND_ENABLED
-#ifdef EGL_ENABLED
-#ifdef GLES3_ENABLED
 
-const char *EGLManagerWaylandGLES::_get_platform_extension_name() const {
-	return "EGL_KHR_platform_wayland";
-}
-
-EGLenum EGLManagerWaylandGLES::_get_platform_extension_enum() const {
-	return EGL_PLATFORM_WAYLAND_KHR;
-}
-
-EGLenum EGLManagerWaylandGLES::_get_platform_api_enum() const {
-	return EGL_OPENGL_ES_API;
-}
-
-Vector<EGLAttrib> EGLManagerWaylandGLES::_get_platform_display_attributes() const {
-	return Vector<EGLAttrib>();
-}
-
-Vector<EGLint> EGLManagerWaylandGLES::_get_platform_context_attribs() const {
-	Vector<EGLint> ret;
-	ret.push_back(EGL_CONTEXT_MAJOR_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-#endif // GLES3_ENABLED
-#endif // EGL_ENABLED
-#endif // WAYLAND_ENABLED
 
 #ifdef None
 #undef None
@@ -19420,7 +19230,6 @@ class RenderingContextDriver;
 
 #ifdef GLES3_ENABLED
 class GLManager_X11;
-class GLManagerEGL_X11;
 #endif
 
 #ifdef DBUS_ENABLED
@@ -19462,7 +19271,7 @@ class DisplayServerX11 : public DisplayServerDriver
 
 #if defined(GLES3_ENABLED)
 	GLManager_X11* gl_manager = nullptr;
-	GLManagerEGL_X11* gl_manager_egl = nullptr;
+	EGLManager* gl_manager_egl = nullptr;
 #endif
 #if defined(RD_ENABLED)
 	RenderingContextDriver* rendering_context = nullptr;
@@ -19963,30 +19772,6 @@ public:
 
 #endif // X11_ENABLED
 
-#ifdef VULKAN_ENABLED
-
-#include "servers/display/display_server.h"
-
-#include <X11/Xlib.h>
-
-class RenderingContextDriverVulkanX11 : public RenderingContextDriverVulkan {
-private:
-	virtual const char *_get_platform_surface_extension() const override final;
-
-protected:
-	SurfaceID surface_create(const void *p_platform_data) override final;
-
-public:
-	struct WindowPlatformData {
-		::Window window;
-		Display *display;
-	};
-
-	RenderingContextDriverVulkanX11();
-	~RenderingContextDriverVulkanX11();
-};
-
-#endif // VULKAN_ENABLED
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
@@ -20103,28 +19888,6 @@ public:
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-#if defined(X11_ENABLED) && defined(GLES3_ENABLED)
-
-#include "servers/display/display_server.h"
-
-class GLManagerEGL_X11 : public EGLManager
-{
-private:
-	virtual const char* _get_platform_extension_name() const override;
-	virtual EGLenum _get_platform_extension_enum() const override;
-	virtual EGLenum _get_platform_api_enum() const override;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
-	virtual Vector<EGLint> _get_platform_context_attribs() const override;
-
-public:
-	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
-
-	GLManagerEGL_X11() {}
-
-	~GLManagerEGL_X11() {}
-};
-
-#endif // X11_ENABLED && GLES3_ENABLED
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
@@ -30090,13 +29853,13 @@ DisplayServerEnums::WindowID DisplayServerX11::_create_window(DisplayServerEnums
 			union
 			{
 #ifdef VULKAN_ENABLED
-				RenderingContextDriverVulkanX11::WindowPlatformData vulkan;
+				RenderingContextDriverVulkanLinux::WindowPlatformData vulkan;
 #endif
 			} wpd;
 
 #ifdef VULKAN_ENABLED
 			if (rendering_driver == "vulkan") {
-				wpd.vulkan.window = wd.x11_window;
+				wpd.vulkan.x11_window = wd.x11_window;
 				wpd.vulkan.display = x11_display;
 			}
 #endif
@@ -30575,7 +30338,7 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 #if defined(RD_ENABLED)
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {
-		rendering_context = memnew(RenderingContextDriverVulkanX11);
+		rendering_context = memnew(RenderingContextDriverVulkanLinux(false));
 		Error context_err = rendering_context->initialize();
 		if (context_err != OK) {
 			ERR_PRINT("Failed to initialize Vulkan X11 context driver.");
@@ -30614,7 +30377,8 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 #if defined(GLES3_ENABLED)
 	if (rendering_driver == "opengl3_es") {
-		gl_manager_egl = memnew(GLManagerEGL_X11);
+		Vector<EGLint> attribs = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+		gl_manager_egl = memnew(EGLManager("EGL_KHR_platform_x11", EGL_PLATFORM_X11_KHR, EGL_OPENGL_ES_API, attribs));
 		if (gl_manager_egl->initialize(x11_display) != OK ||
 			gl_manager_egl->open_display(x11_display) != OK) {
 			memdelete(gl_manager_egl);
@@ -30734,8 +30498,8 @@ DisplayServerX11::DisplayServerX11(const String& p_rendering_driver,
 
 #if defined(RD_ENABLED)
 	if (rendering_context) {
-		RenderingContextDriverVulkanX11::WindowPlatformData wpd;
-		wpd.window = x11_win;
+		RenderingContextDriverVulkanLinux::WindowPlatformData wpd;
+		wpd.x11_window = x11_win;
 		wpd.display = x11_display;
 
 		Error err = rendering_context->window_create(DisplayServerEnums::MAIN_WINDOW_ID, &wpd);
@@ -31486,34 +31250,6 @@ GLManager_X11::~GLManager_X11() { release_current(); }
 
 #endif // X11_ENABLED && GLES3_ENABLED
 
-#if defined(X11_ENABLED) && defined(GLES3_ENABLED)
-
-const char *GLManagerEGL_X11::_get_platform_extension_name() const {
-	return "EGL_KHR_platform_x11";
-}
-
-EGLenum GLManagerEGL_X11::_get_platform_extension_enum() const {
-	return EGL_PLATFORM_X11_KHR;
-}
-
-Vector<EGLAttrib> GLManagerEGL_X11::_get_platform_display_attributes() const {
-	return Vector<EGLAttrib>();
-}
-
-EGLenum GLManagerEGL_X11::_get_platform_api_enum() const {
-	return EGL_OPENGL_ES_API;
-}
-
-Vector<EGLint> GLManagerEGL_X11::_get_platform_context_attribs() const {
-	Vector<EGLint> ret;
-	ret.push_back(EGL_CONTEXT_CLIENT_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-#endif // X11_ENABLED && GLES3_ENABLED
 
 #if defined(X11_ENABLED) && defined(GLES3_ENABLED)
 
@@ -33072,39 +32808,52 @@ KeyLocation KeyMappingX11::get_location(unsigned int p_code) {
 
 #include <drivers/vulkan/godot_vulkan.h>
 
-const char* RenderingContextDriverVulkanX11::_get_platform_surface_extension() const
+const char* RenderingContextDriverVulkanLinux::_get_platform_surface_extension() const
 {
+#ifdef WAYLAND_ENABLED
+	if (is_wayland) {
+		return VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME;
+	}
+#endif
+#ifdef X11_ENABLED
 	return VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+#else
+	return nullptr;
+#endif
 }
 
-RenderingContextDriver::SurfaceID RenderingContextDriverVulkanX11::surface_create(
+RenderingContextDriver::SurfaceID RenderingContextDriverVulkanLinux::surface_create(
 	const void* p_platform_data)
 {
 	const WindowPlatformData* wpd = (const WindowPlatformData*)(p_platform_data);
-
-	VkXlibSurfaceCreateInfoKHR create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-	create_info.dpy = wpd->display;
-	create_info.window = wpd->window;
-
 	VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
-	VkResult err = vkCreateXlibSurfaceKHR(instance_get(), &create_info,
-		get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+	VkResult err = VK_ERROR_INITIALIZATION_FAILED;
+
+#ifdef WAYLAND_ENABLED
+	if (is_wayland) {
+		VkWaylandSurfaceCreateInfoKHR create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+		create_info.display = (struct wl_display*)wpd->display;
+		create_info.surface = wpd->wl_surface;
+		err = vkCreateWaylandSurfaceKHR(instance_get(), &create_info,
+			get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+	} else
+#endif
+	{
+#ifdef X11_ENABLED
+		VkXlibSurfaceCreateInfoKHR create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+		create_info.dpy = (Display*)wpd->display;
+		create_info.window = (::Window)wpd->x11_window;
+		err = vkCreateXlibSurfaceKHR(instance_get(), &create_info,
+			get_allocation_callbacks(VK_OBJECT_TYPE_SURFACE_KHR), &vk_surface);
+#endif
+	}
 	ERR_FAIL_COND_V(err != VK_SUCCESS, SurfaceID());
 
 	Surface* surface = memnew(Surface);
 	surface->vk_surface = vk_surface;
 	return SurfaceID(surface);
-}
-
-RenderingContextDriverVulkanX11::RenderingContextDriverVulkanX11()
-{
-	// Does nothing.
-}
-
-RenderingContextDriverVulkanX11::~RenderingContextDriverVulkanX11()
-{
-	// Does nothing.
 }
 
 #endif // VULKAN_ENABLED

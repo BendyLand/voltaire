@@ -660,28 +660,6 @@ void SceneTree::_process_groups_thread(uint32_t p_index, bool p_physics)
 	Node::current_process_thread_group = nullptr;
 }
 
-bool SceneTree::ProcessGroupSort::operator()(
-	const ProcessGroup* p_left, const ProcessGroup* p_right) const
-{
-	int left_order = p_left->owner ? p_left->owner->data.process_thread_group_order : 0;
-	int right_order = p_right->owner ? p_right->owner->data.process_thread_group_order : 0;
-
-	if (left_order == right_order) {
-		int left_threaded = p_left->owner != nullptr && p_left->owner->data.process_thread_group ==
-															Node::PROCESS_THREAD_GROUP_SUB_THREAD
-								? 0
-								: 1;
-		int right_threaded =
-			p_right->owner != nullptr && p_right->owner->data.process_thread_group ==
-											 Node::PROCESS_THREAD_GROUP_SUB_THREAD
-				? 0
-				: 1;
-		return left_threaded < right_threaded;
-	}
-	else {
-		return left_order < right_order;
-	}
-}
 
 void SceneTree::_remove_process_group(Node* p_node)
 {
@@ -3283,7 +3261,13 @@ void Node::_update_children_cache_impl() const
 		idx++;
 	}
 	// Sort them
-	data.children_cache.sort_custom<ComparatorByIndex>();
+	auto idx_cmp = [](const Node* p_left, const Node* p_right) {
+		constexpr uint32_t order[3] = {1, 0, 2};
+		uint32_t order_left = order[p_left->data.internal_mode];
+		uint32_t order_right = order[p_right->data.internal_mode];
+		return order_left == order_right ? (p_left->data.index < p_right->data.index) : (order_left < order_right);
+	};
+	data.children_cache.sort_custom<decltype(idx_cmp)>(idx_cmp);
 	// Update indices
 	data.external_children_count_cache = 0;
 	data.internal_children_back_count_cache = 0;
@@ -11458,8 +11442,9 @@ void ThemeDB::_sort_theme_items()
 	if (!data) {
 		return;
 	}
+	auto sort_by_type = [](const ThemeDB::ThemeItemBind& l, const ThemeDB::ThemeItemBind& r) { return l.data_type < r.data_type; };
 	for (KeyValue<String, List<ThemeDB::ThemeItemBind>>& E : data->theme_item_binds_list) {
-		E.value.sort_custom<ThemeItemBind::SortByType>();
+		E.value.sort_custom<decltype(sort_by_type)>(sort_by_type);
 	}
 }
 
@@ -14000,18 +13985,7 @@ class AnimationNodeStateMachinePlayback : public Resource
 {
 	friend class AnimationNodeStateMachine;
 
-	struct AStarCost
-	{
-		float distance = 0.0;
-		String prev;
-	};
 
-	struct TransitionInfo
-	{
-		String from;
-		String to;
-		String next;
-	};
 
 	struct NextInfo
 	{
@@ -14023,12 +13997,6 @@ class AnimationNodeStateMachinePlayback : public Resource
 		bool break_loop_at_end;
 	};
 
-	struct ChildStateMachineInfo
-	{
-		Ref<AnimationNodeStateMachinePlayback> playback;
-		Vector<String> path;
-		bool is_reset = false;
-	};
 
 	Ref<AnimationNodeStateMachineTransition> default_transition;
 	String base_path;
@@ -35056,17 +35024,6 @@ void TextEdit::add_caret_at_carets(bool p_below)
 	end_multicaret_edit();
 }
 
-struct _CaretSortComparator
-{
-	_FORCE_INLINE_ bool operator()(const Vector3i& a, const Vector3i& b) const
-	{
-		// x is column, y is line, z is caret index.
-		if (a.y == b.y) {
-			return a.x < b.x;
-		}
-		return a.y < b.y;
-	}
-};
 
 Vector<int> TextEdit::get_sorted_carets(bool p_include_ignored_carets) const
 {
@@ -35079,7 +35036,8 @@ Vector<int> TextEdit::get_sorted_carets(bool p_include_ignored_carets) const
 		caret_line_col_indexes.push_back(
 			Vector3i(get_selection_from_column(i), get_selection_from_line(i), i));
 	}
-	caret_line_col_indexes.sort_custom<_CaretSortComparator>();
+	auto caret_cmp = [](const Vector3i& a, const Vector3i& b) { return a.y == b.y ? (a.x < b.x) : (a.y < b.y); };
+	caret_line_col_indexes.sort_custom<decltype(caret_cmp)>(caret_cmp);
 	Vector<int> sorted;
 	sorted.resize(caret_line_col_indexes.size());
 	for (int i = 0; i < caret_line_col_indexes.size(); i++) {
@@ -40152,13 +40110,6 @@ bool (*array_mesh_lightmap_unwrap_callback)(float p_texel_size, const float* p_v
 	float** r_uv, int** r_vertex, int* r_vertex_count, int** r_index, int* r_index_count,
 	int* r_size_hint_x, int* r_size_hint_y) = nullptr;
 
-struct ArrayMeshLightmapSurface
-{
-	Ref<Material> material;
-	LocalVector<SurfaceTool::Vertex> vertices;
-	Mesh::PrimitiveType primitive = Mesh::PrimitiveType::PRIMITIVE_MAX;
-	uint64_t format = 0;
-};
 
 Error ArrayMesh::lightmap_unwrap(const Transform3D& p_base_transform, float p_texel_size)
 {
@@ -48218,111 +48169,6 @@ void TileData::_bind_compatibility_methods() {}
 
 #include "servers/display/display_server.h"
 
-// --- Per-mode payload structs ---
-
-struct SkeletonModification2D::LookAtData {
-	int bone_idx = -1;
-	NodePath bone2d_node;
-	float additional_rotation = 0.0f;
-	bool enable_constraint = false;
-	float constraint_angle_min = 0.0f;
-	float constraint_angle_max = float(Math::TAU);
-	bool constraint_angle_invert = false;
-	bool constraint_in_localspace = true;
-};
-
-struct SkeletonModification2D::CCDIKData {
-	struct JointData {
-		int bone_idx = -1;
-		NodePath bone2d_node;
-		bool rotate_from_joint = false;
-		bool enable_constraint = false;
-		float constraint_angle_min = 0.0f;
-		float constraint_angle_max = float(Math::TAU);
-		bool constraint_angle_invert = false;
-		bool constraint_in_localspace = true;
-		bool joint_draw_gizmo = true;
-	};
-
-	Vector<JointData> chain;
-	NodePath tip_node;
-};
-
-struct SkeletonModification2D::FABRIKData {
-	struct JointData {
-		int bone_idx = -1;
-		NodePath bone2d_node;
-		Vector2 magnet_position;
-		bool use_target_rotation = false;
-		bool joint_draw_gizmo = true;
-	};
-
-	Vector<JointData> chain;
-	Vector<Transform2D> transform_chain;
-	float chain_tolerance = 0.01f;
-	int chain_max_iterations = 10;
-	Transform2D target_global_pose;
-	Transform2D origin_global_pose;
-};
-
-struct SkeletonModification2D::JiggleData {
-	struct JointData {
-		int bone_idx = -1;
-		NodePath bone2d_node;
-		bool override_defaults = false;
-		float stiffness = 3.0f;
-		float mass = 0.75f;
-		float damping = 0.75f;
-		bool use_gravity = false;
-		Vector2 gravity = Vector2(0, 6.0f);
-		Vector2 force;
-		Vector2 acceleration;
-		Vector2 velocity;
-		Vector2 last_position;
-		Vector2 dynamic_position;
-		Vector2 last_noncollision_position;
-	};
-
-	Vector<JointData> chain;
-	float stiffness = 3.0f;
-	float mass = 0.75f;
-	float damping = 0.75f;
-	bool use_gravity = false;
-	Vector2 gravity = Vector2(0, 6.0f);
-	bool use_colliders = false;
-	uint32_t collision_mask = 1;
-};
-
-struct SkeletonModification2D::TwoBoneIKData {
-	float target_minimum_distance = 0.0f;
-	float target_maximum_distance = 0.0f;
-	bool flip_bend_direction = false;
-	NodePath joint_one_bone2d_node;
-	int joint_one_bone_idx = -1;
-	NodePath joint_two_bone2d_node;
-	int joint_two_bone_idx = -1;
-#ifdef TOOLS_ENABLED
-	bool editor_draw_min_max = false;
-#endif // TOOLS_ENABLED
-};
-
-struct SkeletonModification2D::PhysicalBonesData {
-	struct JointData {
-		NodePath physical_bone_node;
-		int bone_idx = -1;
-		bool simulating = false;
-	};
-
-	Vector<JointData> chain;
-	bool simulation_active = false;
-};
-
-struct SkeletonModification2D::StackHolderData {
-	Ref<SkeletonModificationStack2D> held_modification_stack;
-};
-
-// --- Lifecycle & mode payload management ---
-
 SkeletonModification2D::SkeletonModification2D(Type p_type) {
 	stack = nullptr;
 	is_setup = false;
@@ -48335,73 +48181,44 @@ SkeletonModification2D::~SkeletonModification2D() {
 
 void SkeletonModification2D::_alloc_mode_data(Type p_type) {
 	modification_type = p_type;
-	mode_data = nullptr;
-	switch (p_type) {
-		case MODIFICATION_NONE: {
-			editor_draw_gizmo = false;
-		} break;
-		case MODIFICATION_LOOKAT: {
-			mode_data = memnew(LookAtData);
-			editor_draw_gizmo = true;
-		} break;
-		case MODIFICATION_CCDIK: {
-			mode_data = memnew(CCDIKData);
-			editor_draw_gizmo = true;
-		} break;
-		case MODIFICATION_FABRIK: {
-			mode_data = memnew(FABRIKData);
-			editor_draw_gizmo = false;
-		} break;
-		case MODIFICATION_JIGGLE: {
-			mode_data = memnew(JiggleData);
-			editor_draw_gizmo = false;
-		} break;
-		case MODIFICATION_TWOBONEIK: {
-			mode_data = memnew(TwoBoneIKData);
-			editor_draw_gizmo = true;
-		} break;
-		case MODIFICATION_PHYSICALBONES: {
-			mode_data = memnew(PhysicalBonesData);
-			editor_draw_gizmo = false;
-		} break;
-		case MODIFICATION_STACKHOLDER: {
-			mode_data = memnew(StackHolderData);
-			editor_draw_gizmo = false;
-		} break;
-	}
+	editor_draw_gizmo = (p_type == MODIFICATION_LOOKAT || p_type == MODIFICATION_CCDIK || p_type == MODIFICATION_TWOBONEIK);
 }
 
 void SkeletonModification2D::_free_mode_data() {
-	if (!mode_data) {
-		modification_type = MODIFICATION_NONE;
-		return;
-	}
-	switch (modification_type) {
-		case MODIFICATION_NONE:
-			break;
-		case MODIFICATION_LOOKAT:
-			memdelete(static_cast<LookAtData *>(mode_data));
-			break;
-		case MODIFICATION_CCDIK:
-			memdelete(static_cast<CCDIKData *>(mode_data));
-			break;
-		case MODIFICATION_FABRIK:
-			memdelete(static_cast<FABRIKData *>(mode_data));
-			break;
-		case MODIFICATION_JIGGLE:
-			memdelete(static_cast<JiggleData *>(mode_data));
-			break;
-		case MODIFICATION_TWOBONEIK:
-			memdelete(static_cast<TwoBoneIKData *>(mode_data));
-			break;
-		case MODIFICATION_PHYSICALBONES:
-			memdelete(static_cast<PhysicalBonesData *>(mode_data));
-			break;
-		case MODIFICATION_STACKHOLDER:
-			memdelete(static_cast<StackHolderData *>(mode_data));
-			break;
-	}
-	mode_data = nullptr;
+	bone_idx = -1;
+	bone2d_node = NodePath();
+	additional_rotation = 0.0f;
+	enable_constraint = false;
+	constraint_angle_min = 0.0f;
+	constraint_angle_max = float(Math::TAU);
+	constraint_angle_invert = false;
+	constraint_in_localspace = true;
+	chain.clear();
+	tip_node = NodePath();
+	transform_chain.clear();
+	chain_tolerance = 0.01f;
+	chain_max_iterations = 10;
+	target_global_pose = Transform2D();
+	origin_global_pose = Transform2D();
+	stiffness = 3.0f;
+	mass = 0.75f;
+	damping = 0.75f;
+	use_gravity = false;
+	gravity = Vector2(0, 6.0f);
+	use_colliders = false;
+	collision_mask = 1;
+	target_minimum_distance = 0.0f;
+	target_maximum_distance = 0.0f;
+	flip_bend_direction = false;
+	joint_one_bone2d_node = NodePath();
+	joint_one_bone_idx = -1;
+	joint_two_bone2d_node = NodePath();
+	joint_two_bone_idx = -1;
+#ifdef TOOLS_ENABLED
+	editor_draw_min_max = false;
+#endif // TOOLS_ENABLED
+	simulation_active = false;
+	held_modification_stack.unref();
 	modification_type = MODIFICATION_NONE;
 }
 
@@ -48420,62 +48237,6 @@ void SkeletonModification2D::_ensure_mode(Type p_expected) {
 	if (modification_type == MODIFICATION_NONE) {
 		set_modification_type(p_expected);
 	}
-}
-
-SkeletonModification2D::LookAtData *SkeletonModification2D::_get_lookat() {
-	return modification_type == MODIFICATION_LOOKAT ? static_cast<LookAtData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::LookAtData *SkeletonModification2D::_get_lookat() const {
-	return modification_type == MODIFICATION_LOOKAT ? static_cast<const LookAtData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::CCDIKData *SkeletonModification2D::_get_ccdik() {
-	return modification_type == MODIFICATION_CCDIK ? static_cast<CCDIKData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::CCDIKData *SkeletonModification2D::_get_ccdik() const {
-	return modification_type == MODIFICATION_CCDIK ? static_cast<const CCDIKData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::FABRIKData *SkeletonModification2D::_get_fabrik() {
-	return modification_type == MODIFICATION_FABRIK ? static_cast<FABRIKData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::FABRIKData *SkeletonModification2D::_get_fabrik() const {
-	return modification_type == MODIFICATION_FABRIK ? static_cast<const FABRIKData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::JiggleData *SkeletonModification2D::_get_jiggle() {
-	return modification_type == MODIFICATION_JIGGLE ? static_cast<JiggleData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::JiggleData *SkeletonModification2D::_get_jiggle() const {
-	return modification_type == MODIFICATION_JIGGLE ? static_cast<const JiggleData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::TwoBoneIKData *SkeletonModification2D::_get_twoboneik() {
-	return modification_type == MODIFICATION_TWOBONEIK ? static_cast<TwoBoneIKData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::TwoBoneIKData *SkeletonModification2D::_get_twoboneik() const {
-	return modification_type == MODIFICATION_TWOBONEIK ? static_cast<const TwoBoneIKData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::PhysicalBonesData *SkeletonModification2D::_get_physicalbones() {
-	return modification_type == MODIFICATION_PHYSICALBONES ? static_cast<PhysicalBonesData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::PhysicalBonesData *SkeletonModification2D::_get_physicalbones() const {
-	return modification_type == MODIFICATION_PHYSICALBONES ? static_cast<const PhysicalBonesData *>(mode_data) : nullptr;
-}
-
-SkeletonModification2D::StackHolderData *SkeletonModification2D::_get_stackholder() {
-	return modification_type == MODIFICATION_STACKHOLDER ? static_cast<StackHolderData *>(mode_data) : nullptr;
-}
-
-const SkeletonModification2D::StackHolderData *SkeletonModification2D::_get_stackholder() const {
-	return modification_type == MODIFICATION_STACKHOLDER ? static_cast<const StackHolderData *>(mode_data) : nullptr;
 }
 
 // --- Common base helpers ---
@@ -48645,13 +48406,13 @@ void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_
 		case MODIFICATION_NONE:
 			break;
 		case MODIFICATION_LOOKAT: {
-			LookAtData *d = _get_lookat();
+			SkeletonModification2D *d = _get_lookat();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				_resolve_bone_2d(d->bone2d_node, d->bone_idx);
 			}
 		} break;
 		case MODIFICATION_CCDIK: {
-			CCDIKData *d = _get_ccdik();
+			SkeletonModification2D *d = _get_ccdik();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				for (int i = 0; i < d->chain.size(); i++) {
 					_resolve_bone_2d(d->chain[i].bone2d_node, d->chain.write[i].bone_idx);
@@ -48659,7 +48420,7 @@ void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_
 			}
 		} break;
 		case MODIFICATION_FABRIK: {
-			FABRIKData *d = _get_fabrik();
+			SkeletonModification2D *d = _get_fabrik();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				for (int i = 0; i < d->chain.size(); i++) {
 					_resolve_bone_2d(d->chain[i].bone2d_node, d->chain.write[i].bone_idx);
@@ -48667,7 +48428,7 @@ void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_
 			}
 		} break;
 		case MODIFICATION_JIGGLE: {
-			JiggleData *d = _get_jiggle();
+			SkeletonModification2D *d = _get_jiggle();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				for (int i = 0; i < d->chain.size(); i++) {
 					Bone2D *bone_node = _resolve_bone_2d(d->chain[i].bone2d_node, d->chain.write[i].bone_idx);
@@ -48681,14 +48442,14 @@ void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_
 			}
 		} break;
 		case MODIFICATION_TWOBONEIK: {
-			TwoBoneIKData *d = _get_twoboneik();
+			SkeletonModification2D *d = _get_twoboneik();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				_resolve_bone_2d(d->joint_one_bone2d_node, d->joint_one_bone_idx);
 				_resolve_bone_2d(d->joint_two_bone2d_node, d->joint_two_bone_idx);
 			}
 		} break;
 		case MODIFICATION_PHYSICALBONES: {
-			PhysicalBonesData *d = _get_physicalbones();
+			SkeletonModification2D *d = _get_physicalbones();
 			if (d && stack->skeleton && stack->skeleton->is_inside_tree()) {
 				for (int i = 0; i < d->chain.size(); i++) {
 					_resolve_bone_2d(d->chain[i].physical_bone_node, d->chain.write[i].bone_idx);
@@ -48696,7 +48457,7 @@ void SkeletonModification2D::_setup_modification(SkeletonModificationStack2D *p_
 			}
 		} break;
 		case MODIFICATION_STACKHOLDER: {
-			StackHolderData *d = _get_stackholder();
+			SkeletonModification2D *d = _get_stackholder();
 			if (d && d->held_modification_stack.is_valid()) {
 				d->held_modification_stack->set_skeleton(stack->get_skeleton());
 				d->held_modification_stack->setup();
@@ -48717,14 +48478,14 @@ void SkeletonModification2D::_draw_editor_gizmo() {
 		case MODIFICATION_PHYSICALBONES:
 			break;
 		case MODIFICATION_LOOKAT: {
-			const LookAtData *d = _get_lookat();
+			const SkeletonModification2D *d = _get_lookat();
 			if (d && d->bone_idx >= 0 && d->bone_idx < stack->skeleton->get_bone_count()) {
 				Bone2D *operation_bone = stack->skeleton->get_bone(d->bone_idx);
 				editor_draw_angle_constraints(operation_bone, d->constraint_angle_min, d->constraint_angle_max, d->enable_constraint, d->constraint_in_localspace, d->constraint_angle_invert);
 			}
 		} break;
 		case MODIFICATION_CCDIK: {
-			const CCDIKData *d = _get_ccdik();
+			const SkeletonModification2D *d = _get_ccdik();
 			if (d) {
 				for (int i = 0; i < d->chain.size(); i++) {
 					if (!d->chain[i].joint_draw_gizmo || d->chain[i].bone_idx < 0 || d->chain[i].bone_idx >= stack->skeleton->get_bone_count()) {
@@ -48737,7 +48498,7 @@ void SkeletonModification2D::_draw_editor_gizmo() {
 		} break;
 		case MODIFICATION_TWOBONEIK: {
 #ifdef TOOLS_ENABLED
-			const TwoBoneIKData *d = _get_twoboneik();
+			const SkeletonModification2D *d = _get_twoboneik();
 			if (d && d->editor_draw_min_max && d->joint_one_bone_idx >= 0 && d->joint_one_bone_idx < stack->skeleton->get_bone_count()) {
 				Bone2D *bone_one = stack->skeleton->get_bone(d->joint_one_bone_idx);
 				if (bone_one) {
@@ -48755,7 +48516,7 @@ void SkeletonModification2D::_draw_editor_gizmo() {
 #endif // TOOLS_ENABLED
 		} break;
 		case MODIFICATION_STACKHOLDER: {
-			const StackHolderData *d = _get_stackholder();
+			const SkeletonModification2D *d = _get_stackholder();
 			if (d && d->held_modification_stack.is_valid()) {
 				d->held_modification_stack->draw_editor_gizmos();
 			}
@@ -48798,7 +48559,7 @@ void SkeletonModification2D::_execute(float p_delta) {
 // --- Solver implementations ---
 
 void SkeletonModification2D::_execute_lookat(float p_delta) {
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	if (!d) {
 		return;
 	}
@@ -48826,7 +48587,7 @@ void SkeletonModification2D::_execute_lookat(float p_delta) {
 }
 
 void SkeletonModification2D::_execute_ccdik(float p_delta) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	if (!d || d->chain.is_empty()) {
 		return;
 	}
@@ -48842,11 +48603,11 @@ void SkeletonModification2D::_execute_ccdik(float p_delta) {
 }
 
 void SkeletonModification2D::_execute_ccdik_joint(int p_joint_idx, Node2D *p_target, Node2D *p_tip) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	if (!d || p_joint_idx < 0 || p_joint_idx >= d->chain.size()) {
 		return;
 	}
-	CCDIKData::JointData &j = d->chain.write[p_joint_idx];
+	JointData &j = d->chain.write[p_joint_idx];
 	Bone2D *operation_bone = _resolve_bone_2d(j.bone2d_node, j.bone_idx);
 	if (!operation_bone) {
 		return;
@@ -48877,7 +48638,7 @@ void SkeletonModification2D::_execute_ccdik_joint(int p_joint_idx, Node2D *p_tar
 }
 
 void SkeletonModification2D::_execute_fabrik(float p_delta) {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	if (!d || d->chain.size() < 2) {
 		return;
 	}
@@ -48926,7 +48687,7 @@ void SkeletonModification2D::_execute_fabrik(float p_delta) {
 }
 
 void SkeletonModification2D::_fabrik_chain_backwards() {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	const int last_idx = d->chain.size() - 1;
 	Bone2D *last_bone = stack->skeleton->get_bone(d->chain[last_idx].bone_idx);
 	float last_angle = d->transform_chain[last_idx].get_rotation() + last_bone->get_bone_angle();
@@ -48943,7 +48704,7 @@ void SkeletonModification2D::_fabrik_chain_backwards() {
 }
 
 void SkeletonModification2D::_fabrik_chain_forwards() {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	d->transform_chain.write[0].set_origin(d->origin_global_pose.get_origin());
 	const int chain_len = d->chain.size();
 
@@ -48963,7 +48724,7 @@ void SkeletonModification2D::_fabrik_chain_forwards() {
 }
 
 void SkeletonModification2D::_execute_jiggle(float p_delta) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	if (!d || d->chain.is_empty()) {
 		return;
 	}
@@ -48977,11 +48738,11 @@ void SkeletonModification2D::_execute_jiggle(float p_delta) {
 }
 
 void SkeletonModification2D::_execute_jiggle_joint(int p_joint_idx, Node2D *p_target, float p_delta) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	if (!d || p_joint_idx < 0 || p_joint_idx >= d->chain.size()) {
 		return;
 	}
-	JiggleData::JointData &j = d->chain.write[p_joint_idx];
+	JointData &j = d->chain.write[p_joint_idx];
 	Bone2D *operation_bone = _resolve_bone_2d(j.bone2d_node, j.bone_idx);
 	if (!operation_bone) {
 		return;
@@ -49008,7 +48769,7 @@ void SkeletonModification2D::_execute_jiggle_joint(int p_joint_idx, Node2D *p_ta
 }
 
 void SkeletonModification2D::_execute_twoboneik(float p_delta) {
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	if (!d) {
 		return;
 	}
@@ -49065,12 +48826,12 @@ void SkeletonModification2D::_execute_twoboneik(float p_delta) {
 }
 
 void SkeletonModification2D::_execute_physicalbones(float p_delta) {
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	if (!d || !d->simulation_active) {
 		return;
 	}
 	for (int i = 0; i < d->chain.size(); i++) {
-		PhysicalBonesData::JointData &j = d->chain.write[i];
+		JointData &j = d->chain.write[i];
 		if (!j.simulating) {
 			continue;
 		}
@@ -49089,7 +48850,7 @@ void SkeletonModification2D::_execute_physicalbones(float p_delta) {
 }
 
 void SkeletonModification2D::_execute_stackholder(float p_delta) {
-	StackHolderData *d = _get_stackholder();
+	SkeletonModification2D *d = _get_stackholder();
 	if (d && d->held_modification_stack.is_valid()) {
 		d->held_modification_stack->execute(p_delta, execution_mode);
 	}
@@ -49109,7 +48870,7 @@ NodePath SkeletonModification2D::get_target_node() const {
 
 void SkeletonModification2D::set_bone2d_node(const NodePath &p_target_node) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->bone2d_node = p_target_node;
 	if (is_setup) {
@@ -49118,13 +48879,13 @@ void SkeletonModification2D::set_bone2d_node(const NodePath &p_target_node) {
 }
 
 NodePath SkeletonModification2D::get_bone2d_node() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->bone2d_node : NodePath();
 }
 
 void SkeletonModification2D::set_bone_index(int p_idx) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->bone_idx = p_idx;
 	if (is_setup && stack && stack->skeleton && p_idx >= 0 && p_idx < stack->skeleton->get_bone_count()) {
@@ -49136,25 +48897,25 @@ void SkeletonModification2D::set_bone_index(int p_idx) {
 }
 
 int SkeletonModification2D::get_bone_index() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->bone_idx : -1;
 }
 
 void SkeletonModification2D::set_additional_rotation(float p_rotation) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->additional_rotation = p_rotation;
 }
 
 float SkeletonModification2D::get_additional_rotation() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->additional_rotation : 0.0f;
 }
 
 void SkeletonModification2D::set_enable_constraint(bool p_constraint) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->enable_constraint = p_constraint;
 #ifdef TOOLS_ENABLED
@@ -49165,13 +48926,13 @@ void SkeletonModification2D::set_enable_constraint(bool p_constraint) {
 }
 
 bool SkeletonModification2D::get_enable_constraint() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->enable_constraint : false;
 }
 
 void SkeletonModification2D::set_constraint_angle_min(float p_angle_min) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->constraint_angle_min = p_angle_min;
 #ifdef TOOLS_ENABLED
@@ -49182,13 +48943,13 @@ void SkeletonModification2D::set_constraint_angle_min(float p_angle_min) {
 }
 
 float SkeletonModification2D::get_constraint_angle_min() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->constraint_angle_min : 0.0f;
 }
 
 void SkeletonModification2D::set_constraint_angle_max(float p_angle_max) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->constraint_angle_max = p_angle_max;
 #ifdef TOOLS_ENABLED
@@ -49199,13 +48960,13 @@ void SkeletonModification2D::set_constraint_angle_max(float p_angle_max) {
 }
 
 float SkeletonModification2D::get_constraint_angle_max() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->constraint_angle_max : float(Math::TAU);
 }
 
 void SkeletonModification2D::set_constraint_angle_invert(bool p_invert) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->constraint_angle_invert = p_invert;
 #ifdef TOOLS_ENABLED
@@ -49216,13 +48977,13 @@ void SkeletonModification2D::set_constraint_angle_invert(bool p_invert) {
 }
 
 bool SkeletonModification2D::get_constraint_angle_invert() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->constraint_angle_invert : false;
 }
 
 void SkeletonModification2D::set_constraint_in_localspace(bool p_constraint_in_localspace) {
 	_ensure_mode(MODIFICATION_LOOKAT);
-	LookAtData *d = _get_lookat();
+	SkeletonModification2D *d = _get_lookat();
 	ERR_FAIL_NULL(d);
 	d->constraint_in_localspace = p_constraint_in_localspace;
 #ifdef TOOLS_ENABLED
@@ -49233,7 +48994,7 @@ void SkeletonModification2D::set_constraint_in_localspace(bool p_constraint_in_l
 }
 
 bool SkeletonModification2D::get_constraint_in_localspace() const {
-	const LookAtData *d = _get_lookat();
+	const SkeletonModification2D *d = _get_lookat();
 	return d ? d->constraint_in_localspace : true;
 }
 
@@ -49241,31 +49002,31 @@ bool SkeletonModification2D::get_constraint_in_localspace() const {
 
 void SkeletonModification2D::set_tip_node(const NodePath &p_tip_node) {
 	_ensure_mode(MODIFICATION_CCDIK);
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	d->tip_node = p_tip_node;
 }
 
 NodePath SkeletonModification2D::get_tip_node() const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	return d ? d->tip_node : NodePath();
 }
 
 int SkeletonModification2D::get_ccdik_data_chain_length() const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	return d ? d->chain.size() : 0;
 }
 
 void SkeletonModification2D::set_ccdik_data_chain_length(int p_new_length) {
 	ERR_FAIL_COND(p_new_length < 0);
 	_ensure_mode(MODIFICATION_CCDIK);
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	d->chain.resize(p_new_length);
 }
 
 void SkeletonModification2D::set_ccdik_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].bone2d_node = p_target_node;
@@ -49275,14 +49036,14 @@ void SkeletonModification2D::set_ccdik_joint_bone2d_node(int p_joint_idx, const 
 }
 
 NodePath SkeletonModification2D::get_ccdik_joint_bone2d_node(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, NodePath());
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), NodePath(), "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].bone2d_node;
 }
 
 void SkeletonModification2D::set_ccdik_joint_bone_index(int p_joint_idx, int p_bone_idx) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].bone_idx = p_bone_idx;
@@ -49295,28 +49056,28 @@ void SkeletonModification2D::set_ccdik_joint_bone_index(int p_joint_idx, int p_b
 }
 
 int SkeletonModification2D::get_ccdik_joint_bone_index(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, -1);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), -1, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].bone_idx;
 }
 
 void SkeletonModification2D::set_ccdik_joint_rotate_from_joint(int p_joint_idx, bool p_rotate_from_joint) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].rotate_from_joint = p_rotate_from_joint;
 }
 
 bool SkeletonModification2D::get_ccdik_joint_rotate_from_joint(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].rotate_from_joint;
 }
 
 void SkeletonModification2D::set_ccdik_joint_enable_constraint(int p_joint_idx, bool p_constraint) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].enable_constraint = p_constraint;
@@ -49328,14 +49089,14 @@ void SkeletonModification2D::set_ccdik_joint_enable_constraint(int p_joint_idx, 
 }
 
 bool SkeletonModification2D::get_ccdik_joint_enable_constraint(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].enable_constraint;
 }
 
 void SkeletonModification2D::set_ccdik_joint_constraint_angle_min(int p_joint_idx, float p_angle_min) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].constraint_angle_min = p_angle_min;
@@ -49347,14 +49108,14 @@ void SkeletonModification2D::set_ccdik_joint_constraint_angle_min(int p_joint_id
 }
 
 float SkeletonModification2D::get_ccdik_joint_constraint_angle_min(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, 0.0f);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), 0.0f, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].constraint_angle_min;
 }
 
 void SkeletonModification2D::set_ccdik_joint_constraint_angle_max(int p_joint_idx, float p_angle_max) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].constraint_angle_max = p_angle_max;
@@ -49366,14 +49127,14 @@ void SkeletonModification2D::set_ccdik_joint_constraint_angle_max(int p_joint_id
 }
 
 float SkeletonModification2D::get_ccdik_joint_constraint_angle_max(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, 0.0f);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), 0.0f, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].constraint_angle_max;
 }
 
 void SkeletonModification2D::set_ccdik_joint_constraint_angle_invert(int p_joint_idx, bool p_invert) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].constraint_angle_invert = p_invert;
@@ -49385,14 +49146,14 @@ void SkeletonModification2D::set_ccdik_joint_constraint_angle_invert(int p_joint
 }
 
 bool SkeletonModification2D::get_ccdik_joint_constraint_angle_invert(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].constraint_angle_invert;
 }
 
 void SkeletonModification2D::set_ccdik_joint_constraint_in_localspace(int p_joint_idx, bool p_constraint_in_localspace) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].constraint_in_localspace = p_constraint_in_localspace;
@@ -49404,14 +49165,14 @@ void SkeletonModification2D::set_ccdik_joint_constraint_in_localspace(int p_join
 }
 
 bool SkeletonModification2D::get_ccdik_joint_constraint_in_localspace(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].constraint_in_localspace;
 }
 
 void SkeletonModification2D::set_ccdik_joint_editor_draw_gizmo(int p_joint_idx, bool p_draw_gizmo) {
-	CCDIKData *d = _get_ccdik();
+	SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "CCDIK joint out of range!");
 	d->chain.write[p_joint_idx].joint_draw_gizmo = p_draw_gizmo;
@@ -49423,7 +49184,7 @@ void SkeletonModification2D::set_ccdik_joint_editor_draw_gizmo(int p_joint_idx, 
 }
 
 bool SkeletonModification2D::get_ccdik_joint_editor_draw_gizmo(int p_joint_idx) const {
-	const CCDIKData *d = _get_ccdik();
+	const SkeletonModification2D *d = _get_ccdik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "CCDIK joint out of range!");
 	return d->chain[p_joint_idx].joint_draw_gizmo;
@@ -49432,20 +49193,20 @@ bool SkeletonModification2D::get_ccdik_joint_editor_draw_gizmo(int p_joint_idx) 
 // --- FABRIK accessors ---
 
 int SkeletonModification2D::get_fabrik_data_chain_length() const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	return d ? d->chain.size() : 0;
 }
 
 void SkeletonModification2D::set_fabrik_data_chain_length(int p_new_length) {
 	ERR_FAIL_COND(p_new_length < 0);
 	_ensure_mode(MODIFICATION_FABRIK);
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	d->chain.resize(p_new_length);
 }
 
 void SkeletonModification2D::set_fabrik_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node) {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "FABRIK joint out of range!");
 	d->chain.write[p_joint_idx].bone2d_node = p_target_node;
@@ -49455,14 +49216,14 @@ void SkeletonModification2D::set_fabrik_joint_bone2d_node(int p_joint_idx, const
 }
 
 NodePath SkeletonModification2D::get_fabrik_joint_bone2d_node(int p_joint_idx) const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL_V(d, NodePath());
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), NodePath(), "FABRIK joint out of range!");
 	return d->chain[p_joint_idx].bone2d_node;
 }
 
 void SkeletonModification2D::set_fabrik_joint_bone_index(int p_joint_idx, int p_bone_idx) {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "FABRIK joint out of range!");
 	d->chain.write[p_joint_idx].bone_idx = p_bone_idx;
@@ -49475,35 +49236,35 @@ void SkeletonModification2D::set_fabrik_joint_bone_index(int p_joint_idx, int p_
 }
 
 int SkeletonModification2D::get_fabrik_joint_bone_index(int p_joint_idx) const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL_V(d, -1);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), -1, "FABRIK joint out of range!");
 	return d->chain[p_joint_idx].bone_idx;
 }
 
 void SkeletonModification2D::set_fabrik_joint_magnet_position(int p_joint_idx, Vector2 p_magnet_position) {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "FABRIK joint out of range!");
 	d->chain.write[p_joint_idx].magnet_position = p_magnet_position;
 }
 
 Vector2 SkeletonModification2D::get_fabrik_joint_magnet_position(int p_joint_idx) const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL_V(d, Vector2());
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), Vector2(), "FABRIK joint out of range!");
 	return d->chain[p_joint_idx].magnet_position;
 }
 
 void SkeletonModification2D::set_fabrik_joint_use_target_rotation(int p_joint_idx, bool p_use_target_rotation) {
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "FABRIK joint out of range!");
 	d->chain.write[p_joint_idx].use_target_rotation = p_use_target_rotation;
 }
 
 bool SkeletonModification2D::get_fabrik_joint_use_target_rotation(int p_joint_idx) const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), false, "FABRIK joint out of range!");
 	return d->chain[p_joint_idx].use_target_rotation;
@@ -49511,34 +49272,34 @@ bool SkeletonModification2D::get_fabrik_joint_use_target_rotation(int p_joint_id
 
 void SkeletonModification2D::set_chain_tolerance(float p_tolerance) {
 	_ensure_mode(MODIFICATION_FABRIK);
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_COND(p_tolerance <= 0.0f);
 	d->chain_tolerance = p_tolerance;
 }
 
 float SkeletonModification2D::get_chain_tolerance() const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	return d ? d->chain_tolerance : 0.01f;
 }
 
 void SkeletonModification2D::set_chain_max_iterations(int p_iterations) {
 	_ensure_mode(MODIFICATION_FABRIK);
-	FABRIKData *d = _get_fabrik();
+	SkeletonModification2D *d = _get_fabrik();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_COND(p_iterations < 1);
 	d->chain_max_iterations = p_iterations;
 }
 
 int SkeletonModification2D::get_chain_max_iterations() const {
-	const FABRIKData *d = _get_fabrik();
+	const SkeletonModification2D *d = _get_fabrik();
 	return d ? d->chain_max_iterations : 10;
 }
 
 // --- Jiggle accessors ---
 
 void SkeletonModification2D::_update_jiggle_joint_data() {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	if (!d) {
 		return;
 	}
@@ -49554,7 +49315,7 @@ void SkeletonModification2D::_update_jiggle_joint_data() {
 }
 
 void SkeletonModification2D::reset() {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	if (!d || !is_setup || !stack || !stack->skeleton) {
 		return;
 	}
@@ -49579,28 +49340,28 @@ void SkeletonModification2D::reset() {
 void SkeletonModification2D::set_stiffness(float p_stiffness) {
 	ERR_FAIL_COND_MSG(p_stiffness < 0, "Stiffness cannot be set to a negative value!");
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->stiffness = p_stiffness;
 	_update_jiggle_joint_data();
 }
 
 float SkeletonModification2D::get_stiffness() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->stiffness : 3.0f;
 }
 
 void SkeletonModification2D::set_mass(float p_mass) {
 	ERR_FAIL_COND_MSG(p_mass < 0, "Mass cannot be set to a negative value!");
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->mass = p_mass;
 	_update_jiggle_joint_data();
 }
 
 float SkeletonModification2D::get_mass() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->mass : 0.75f;
 }
 
@@ -49608,83 +49369,83 @@ void SkeletonModification2D::set_damping(float p_damping) {
 	ERR_FAIL_COND_MSG(p_damping < 0, "Damping cannot be set to a negative value!");
 	ERR_FAIL_COND_MSG(p_damping > 1, "Damping cannot be more than one!");
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->damping = p_damping;
 	_update_jiggle_joint_data();
 }
 
 float SkeletonModification2D::get_damping() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->damping : 0.75f;
 }
 
 void SkeletonModification2D::set_use_gravity(bool p_use_gravity) {
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->use_gravity = p_use_gravity;
 	_update_jiggle_joint_data();
 }
 
 bool SkeletonModification2D::get_use_gravity() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->use_gravity : false;
 }
 
 void SkeletonModification2D::set_gravity(Vector2 p_gravity) {
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->gravity = p_gravity;
 	_update_jiggle_joint_data();
 }
 
 Vector2 SkeletonModification2D::get_gravity() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->gravity : Vector2(0, 6.0f);
 }
 
 void SkeletonModification2D::set_use_colliders(bool p_use_colliders) {
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->use_colliders = p_use_colliders;
 }
 
 bool SkeletonModification2D::get_use_colliders() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->use_colliders : false;
 }
 
 void SkeletonModification2D::set_collision_mask(int p_mask) {
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->collision_mask = uint32_t(p_mask);
 }
 
 int SkeletonModification2D::get_collision_mask() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? int(d->collision_mask) : 1;
 }
 
 int SkeletonModification2D::get_jiggle_data_chain_length() const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	return d ? d->chain.size() : 0;
 }
 
 void SkeletonModification2D::set_jiggle_data_chain_length(int p_new_length) {
 	ERR_FAIL_COND(p_new_length < 0);
 	_ensure_mode(MODIFICATION_JIGGLE);
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	d->chain.resize(p_new_length);
 	_update_jiggle_joint_data();
 }
 
 void SkeletonModification2D::set_jiggle_joint_bone2d_node(int p_joint_idx, const NodePath &p_target_node) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "Jiggle joint out of range!");
 	d->chain.write[p_joint_idx].bone2d_node = p_target_node;
@@ -49694,14 +49455,14 @@ void SkeletonModification2D::set_jiggle_joint_bone2d_node(int p_joint_idx, const
 }
 
 NodePath SkeletonModification2D::get_jiggle_joint_bone2d_node(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, NodePath());
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), NodePath(), "Jiggle joint out of range!");
 	return d->chain[p_joint_idx].bone2d_node;
 }
 
 void SkeletonModification2D::set_jiggle_joint_bone_index(int p_joint_idx, int p_bone_idx) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "Jiggle joint out of range!");
 	d->chain.write[p_joint_idx].bone_idx = p_bone_idx;
@@ -49714,14 +49475,14 @@ void SkeletonModification2D::set_jiggle_joint_bone_index(int p_joint_idx, int p_
 }
 
 int SkeletonModification2D::get_jiggle_joint_bone_index(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, -1);
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), -1, "Jiggle joint out of range!");
 	return d->chain[p_joint_idx].bone_idx;
 }
 
 void SkeletonModification2D::set_jiggle_joint_override(int p_joint_idx, bool p_override) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].override_defaults = p_override;
@@ -49729,7 +49490,7 @@ void SkeletonModification2D::set_jiggle_joint_override(int p_joint_idx, bool p_o
 }
 
 bool SkeletonModification2D::get_jiggle_joint_override(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), false);
 	return d->chain[p_joint_idx].override_defaults;
@@ -49737,14 +49498,14 @@ bool SkeletonModification2D::get_jiggle_joint_override(int p_joint_idx) const {
 
 void SkeletonModification2D::set_jiggle_joint_stiffness(int p_joint_idx, float p_stiffness) {
 	ERR_FAIL_COND_MSG(p_stiffness < 0, "Stiffness cannot be set to a negative value!");
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].stiffness = p_stiffness;
 }
 
 float SkeletonModification2D::get_jiggle_joint_stiffness(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, -1.0f);
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), -1.0f);
 	return d->chain[p_joint_idx].stiffness;
@@ -49752,14 +49513,14 @@ float SkeletonModification2D::get_jiggle_joint_stiffness(int p_joint_idx) const 
 
 void SkeletonModification2D::set_jiggle_joint_mass(int p_joint_idx, float p_mass) {
 	ERR_FAIL_COND_MSG(p_mass < 0, "Mass cannot be set to a negative value!");
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].mass = p_mass;
 }
 
 float SkeletonModification2D::get_jiggle_joint_mass(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, -1.0f);
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), -1.0f);
 	return d->chain[p_joint_idx].mass;
@@ -49768,42 +49529,42 @@ float SkeletonModification2D::get_jiggle_joint_mass(int p_joint_idx) const {
 void SkeletonModification2D::set_jiggle_joint_damping(int p_joint_idx, float p_damping) {
 	ERR_FAIL_COND_MSG(p_damping < 0, "Damping cannot be set to a negative value!");
 	ERR_FAIL_COND_MSG(p_damping > 1, "Damping cannot be more than one!");
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].damping = p_damping;
 }
 
 float SkeletonModification2D::get_jiggle_joint_damping(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, -1.0f);
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), -1.0f);
 	return d->chain[p_joint_idx].damping;
 }
 
 void SkeletonModification2D::set_jiggle_joint_use_gravity(int p_joint_idx, bool p_use_gravity) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].use_gravity = p_use_gravity;
 }
 
 bool SkeletonModification2D::get_jiggle_joint_use_gravity(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, false);
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), false);
 	return d->chain[p_joint_idx].use_gravity;
 }
 
 void SkeletonModification2D::set_jiggle_joint_gravity(int p_joint_idx, Vector2 p_gravity) {
-	JiggleData *d = _get_jiggle();
+	SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX(p_joint_idx, d->chain.size());
 	d->chain.write[p_joint_idx].gravity = p_gravity;
 }
 
 Vector2 SkeletonModification2D::get_jiggle_joint_gravity(int p_joint_idx) const {
-	const JiggleData *d = _get_jiggle();
+	const SkeletonModification2D *d = _get_jiggle();
 	ERR_FAIL_NULL_V(d, Vector2(0, 0));
 	ERR_FAIL_INDEX_V(p_joint_idx, d->chain.size(), Vector2(0, 0));
 	return d->chain[p_joint_idx].gravity;
@@ -49814,32 +49575,32 @@ Vector2 SkeletonModification2D::get_jiggle_joint_gravity(int p_joint_idx) const 
 void SkeletonModification2D::set_target_minimum_distance(float p_distance) {
 	ERR_FAIL_COND_MSG(p_distance < 0, "Target minimum distance cannot be less than zero!");
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->target_minimum_distance = p_distance;
 }
 
 float SkeletonModification2D::get_target_minimum_distance() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->target_minimum_distance : 0.0f;
 }
 
 void SkeletonModification2D::set_target_maximum_distance(float p_distance) {
 	ERR_FAIL_COND_MSG(p_distance < 0, "Target maximum distance cannot be less than zero!");
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->target_maximum_distance = p_distance;
 }
 
 float SkeletonModification2D::get_target_maximum_distance() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->target_maximum_distance : 0.0f;
 }
 
 void SkeletonModification2D::set_flip_bend_direction(bool p_flip_direction) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->flip_bend_direction = p_flip_direction;
 #ifdef TOOLS_ENABLED
@@ -49850,13 +49611,13 @@ void SkeletonModification2D::set_flip_bend_direction(bool p_flip_direction) {
 }
 
 bool SkeletonModification2D::get_flip_bend_direction() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->flip_bend_direction : false;
 }
 
 void SkeletonModification2D::set_joint_one_bone2d_node(const NodePath &p_node) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->joint_one_bone2d_node = p_node;
 	if (is_setup) {
@@ -49865,13 +49626,13 @@ void SkeletonModification2D::set_joint_one_bone2d_node(const NodePath &p_node) {
 }
 
 NodePath SkeletonModification2D::get_joint_one_bone2d_node() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->joint_one_bone2d_node : NodePath();
 }
 
 void SkeletonModification2D::set_joint_one_bone_idx(int p_bone_idx) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->joint_one_bone_idx = p_bone_idx;
 	if (is_setup && stack && stack->skeleton && p_bone_idx >= 0 && p_bone_idx < stack->skeleton->get_bone_count()) {
@@ -49883,13 +49644,13 @@ void SkeletonModification2D::set_joint_one_bone_idx(int p_bone_idx) {
 }
 
 int SkeletonModification2D::get_joint_one_bone_idx() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->joint_one_bone_idx : -1;
 }
 
 void SkeletonModification2D::set_joint_two_bone2d_node(const NodePath &p_node) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->joint_two_bone2d_node = p_node;
 	if (is_setup) {
@@ -49898,13 +49659,13 @@ void SkeletonModification2D::set_joint_two_bone2d_node(const NodePath &p_node) {
 }
 
 NodePath SkeletonModification2D::get_joint_two_bone2d_node() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->joint_two_bone2d_node : NodePath();
 }
 
 void SkeletonModification2D::set_joint_two_bone_idx(int p_bone_idx) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->joint_two_bone_idx = p_bone_idx;
 	if (is_setup && stack && stack->skeleton && p_bone_idx >= 0 && p_bone_idx < stack->skeleton->get_bone_count()) {
@@ -49916,14 +49677,14 @@ void SkeletonModification2D::set_joint_two_bone_idx(int p_bone_idx) {
 }
 
 int SkeletonModification2D::get_joint_two_bone_idx() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->joint_two_bone_idx : -1;
 }
 
 #ifdef TOOLS_ENABLED
 void SkeletonModification2D::set_editor_draw_min_max(bool p_draw) {
 	_ensure_mode(MODIFICATION_TWOBONEIK);
-	TwoBoneIKData *d = _get_twoboneik();
+	SkeletonModification2D *d = _get_twoboneik();
 	ERR_FAIL_NULL(d);
 	d->editor_draw_min_max = p_draw;
 	if (stack && is_setup) {
@@ -49932,7 +49693,7 @@ void SkeletonModification2D::set_editor_draw_min_max(bool p_draw) {
 }
 
 bool SkeletonModification2D::get_editor_draw_min_max() const {
-	const TwoBoneIKData *d = _get_twoboneik();
+	const SkeletonModification2D *d = _get_twoboneik();
 	return d ? d->editor_draw_min_max : false;
 }
 #endif // TOOLS_ENABLED
@@ -49940,20 +49701,20 @@ bool SkeletonModification2D::get_editor_draw_min_max() const {
 // --- PhysicalBones accessors ---
 
 int SkeletonModification2D::get_physical_bone_chain_length() const {
-	const PhysicalBonesData *d = _get_physicalbones();
+	const SkeletonModification2D *d = _get_physicalbones();
 	return d ? d->chain.size() : 0;
 }
 
 void SkeletonModification2D::set_physical_bone_chain_length(int p_new_length) {
 	ERR_FAIL_COND(p_new_length < 0);
 	_ensure_mode(MODIFICATION_PHYSICALBONES);
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	ERR_FAIL_NULL(d);
 	d->chain.resize(p_new_length);
 }
 
 void SkeletonModification2D::set_physical_bone_node(int p_joint_idx, const NodePath &p_nodepath) {
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	ERR_FAIL_NULL(d);
 	ERR_FAIL_INDEX_MSG(p_joint_idx, d->chain.size(), "Joint index out of range!");
 	d->chain.write[p_joint_idx].physical_bone_node = p_nodepath;
@@ -49963,7 +49724,7 @@ void SkeletonModification2D::set_physical_bone_node(int p_joint_idx, const NodeP
 }
 
 NodePath SkeletonModification2D::get_physical_bone_node(int p_joint_idx) const {
-	const PhysicalBonesData *d = _get_physicalbones();
+	const SkeletonModification2D *d = _get_physicalbones();
 	ERR_FAIL_NULL_V(d, NodePath());
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, d->chain.size(), NodePath(), "Joint index out of range!");
 	return d->chain[p_joint_idx].physical_bone_node;
@@ -49971,7 +49732,7 @@ NodePath SkeletonModification2D::get_physical_bone_node(int p_joint_idx) const {
 
 void SkeletonModification2D::fetch_physical_bones() {
 	_ensure_mode(MODIFICATION_PHYSICALBONES);
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	if (!d || !stack || !stack->skeleton) {
 		return;
 	}
@@ -49981,7 +49742,7 @@ void SkeletonModification2D::fetch_physical_bones() {
 		if (!b) {
 			continue;
 		}
-		PhysicalBonesData::JointData jd;
+		JointData jd;
 		jd.physical_bone_node = stack->skeleton->get_path_to(b);
 		jd.bone_idx = i;
 		d->chain.push_back(jd);
@@ -49990,7 +49751,7 @@ void SkeletonModification2D::fetch_physical_bones() {
 
 void SkeletonModification2D::start_simulation(const Vector<String> &p_bones) {
 	_ensure_mode(MODIFICATION_PHYSICALBONES);
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	ERR_FAIL_NULL(d);
 	d->simulation_active = true;
 	for (int i = 0; i < d->chain.size(); i++) {
@@ -50004,7 +49765,7 @@ void SkeletonModification2D::start_simulation(const Vector<String> &p_bones) {
 }
 
 void SkeletonModification2D::stop_simulation(const Vector<String> &p_bones) {
-	PhysicalBonesData *d = _get_physicalbones();
+	SkeletonModification2D *d = _get_physicalbones();
 	if (!d) {
 		return;
 	}
@@ -50032,7 +49793,7 @@ void SkeletonModification2D::stop_simulation(const Vector<String> &p_bones) {
 
 void SkeletonModification2D::set_held_modification_stack(Ref<SkeletonModificationStack2D> p_held_stack) {
 	_ensure_mode(MODIFICATION_STACKHOLDER);
-	StackHolderData *d = _get_stackholder();
+	SkeletonModification2D *d = _get_stackholder();
 	ERR_FAIL_NULL(d);
 	d->held_modification_stack = p_held_stack;
 	if (is_setup && stack && d->held_modification_stack.is_valid()) {
@@ -50042,7 +49803,7 @@ void SkeletonModification2D::set_held_modification_stack(Ref<SkeletonModificatio
 }
 
 Ref<SkeletonModificationStack2D> SkeletonModification2D::get_held_modification_stack() const {
-	const StackHolderData *d = _get_stackholder();
+	const SkeletonModification2D *d = _get_stackholder();
 	return d ? d->held_modification_stack : Ref<SkeletonModificationStack2D>();
 }
 
@@ -52431,22 +52192,6 @@ struct AnimationCompressionDataState
 	}
 };
 
-struct AnimationCompressionTimeState
-{
-	struct Packet
-	{
-		uint32_t frame;
-		uint32_t offset;
-		uint32_t count;
-	};
-
-	LocalVector<Packet> packets;
-	// used for rollback
-	int32_t key_index = 0;
-	int32_t validated_packet_count = 0;
-	int32_t validated_key_index = -1;
-	bool needs_start_frame = false;
-};
 
 Vector3i Animation::_compress_key(
 	uint32_t p_track, const AABB& p_bounds, int32_t p_key, float p_time)
@@ -55145,14 +54890,6 @@ extern bool (*array_mesh_lightmap_unwrap_callback)(float p_texel_size, const flo
 	float** r_uv, int** r_vertex, int* r_vertex_count, int** r_index, int* r_index_count,
 	int* r_size_hint_x, int* r_size_hint_y);
 
-struct EditorSceneFormatImporterMeshLightmapSurface
-{
-	Ref<Material> material;
-	LocalVector<SurfaceTool::Vertex> vertices;
-	Mesh::PrimitiveType primitive = Mesh::PrimitiveType::PRIMITIVE_MAX;
-	uint64_t format = 0;
-	String name;
-};
 
 static const uint32_t custom_shift[RSE::ARRAY_CUSTOM_COUNT] = {Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT,
 	Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT, Mesh::ARRAY_FORMAT_CUSTOM2_SHIFT,
@@ -76121,15 +75858,6 @@ private:
 	Vector<float> particle_data;
 	Vector<int> particle_order;
 
-	struct SortLifetime
-	{
-		const Particle* particles = nullptr;
-
-		bool operator()(int p_a, int p_b) const
-		{
-			return particles[p_a].time > particles[p_b].time;
-		}
-	};
 
 	//
 
@@ -77402,8 +77130,8 @@ void CPUParticles2D::_update_particle_data_buffer()
 			order[i] = i;
 		}
 		if (draw_order == DRAW_ORDER_LIFETIME) {
-			SortArray<int, SortLifetime> sorter;
-			sorter.compare.particles = r;
+			auto life_cmp = [r](int p_a, int p_b) { return r[p_a].time > r[p_b].time; };
+			SortArray<int, decltype(life_cmp)> sorter{ life_cmp };
 			sorter.sort(order, pc);
 		}
 	}
@@ -114175,27 +113903,7 @@ private:
 	Vector<float> particle_data;
 	Vector<int> particle_order;
 
-	struct SortLifetime
-	{
-		const Particle* particles = nullptr;
 
-		bool operator()(int p_a, int p_b) const
-		{
-			return particles[p_a].time > particles[p_b].time;
-		}
-	};
-
-	struct SortAxis
-	{
-		const Particle* particles = nullptr;
-		Vector3 axis;
-
-		bool operator()(int p_a, int p_b) const
-		{
-			return axis.dot(particles[p_a].transform.origin) <
-				   axis.dot(particles[p_b].transform.origin);
-		}
-	};
 
 	//
 
@@ -115018,8 +114726,8 @@ void CPUParticles3D::_update_particle_data_buffer()
 			order[i] = i;
 		}
 		if (draw_order == DRAW_ORDER_LIFETIME) {
-			SortArray<int, SortLifetime> sorter;
-			sorter.compare.particles = r;
+			auto life_cmp = [r](int p_a, int p_b) { return r[p_a].time > r[p_b].time; };
+			SortArray<int, decltype(life_cmp)> sorter{ life_cmp };
 			sorter.sort(order, pc);
 		}
 		else if (draw_order == DRAW_ORDER_VIEW_DEPTH) {
@@ -115037,9 +114745,8 @@ void CPUParticles3D::_update_particle_data_buffer()
 					dir = dir.normalized();
 				}
 
-				SortArray<int, SortAxis> sorter;
-				sorter.compare.particles = r;
-				sorter.compare.axis = dir;
+				auto axis_cmp = [r, dir](int p_a, int p_b) { return dir.dot(r[p_a].transform.origin) < dir.dot(r[p_b].transform.origin); };
+				SortArray<int, decltype(axis_cmp)> sorter{ axis_cmp };
 				sorter.sort(order, pc);
 			}
 		}
@@ -136633,9 +136340,9 @@ public:
 #include <linux/videodev2.h>
 #include "servers/display/display_server.h"
 
-class CameraFeedLinux final : public CameraFeed
+struct CameraFeed::PlatformData
 {
-private:
+	CameraFeed* owner = nullptr;
 	SafeFlag exit_flag;
 	Thread* thread = nullptr;
 	String device_name;
@@ -136657,15 +136364,8 @@ private:
 	void _unmap_buffers(unsigned int p_count);
 	BufferDecoder _create_buffer_decoder();
 	void _start_thread();
-
-public:
-	String get_device_name() const;
-	bool activate_feed() override;
-	void deactivate_feed() override;
-	FeedFormat get_format() const override;
-
-	CameraFeedLinux(const String& p_device_name);
-	~CameraFeedLinux() override;
+	bool activate();
+	void deactivate() {}
 };
 class CameraLinux final
 {
@@ -136756,16 +136456,14 @@ struct CameraRotationParams {
 	int display_rotation;
 };
 
-class CameraFeedAndroid : public CameraFeed {
-
-private:
+struct CameraFeed::PlatformData {
+	CameraFeed *owner = nullptr;
 	String camera_id;
-	int32_t orientation;
+	int32_t orientation = 0;
 	Ref<Image> image_y;
 	Ref<Image> image_uv;
 	Vector<uint8_t> data_y;
 	Vector<uint8_t> data_uv;
-	// Scratch buffers to avoid reallocations when compacting stride-aligned planes.
 	Vector<uint8_t> scratch_y;
 	Vector<uint8_t> scratch_uv;
 
@@ -136785,8 +136483,6 @@ private:
 	SafeFlag device_error_occurred;
 	bool was_active_before_pause = false;
 
-	// Callback structures - must be instance members, not static, to ensure
-	// correct 'this' pointer is captured for each camera feed instance.
 	ACameraDevice_stateCallbacks device_callbacks = {};
 	AImageReader_ImageListener image_listener = {};
 	ACameraCaptureSession_stateCallbacks session_callbacks = {};
@@ -136794,6 +136490,13 @@ private:
 	void _add_formats();
 	void _set_rotation();
 	void refresh_camera_metadata();
+	bool activate();
+	void deactivate();
+	void handle_pause();
+	void handle_resume();
+	void handle_rotation_change();
+	~PlatformData();
+
 	static std::optional<int> calculate_rotation(const CameraRotationParams &p_params);
 	static int normalize_angle(int p_angle);
 	static int get_display_rotation();
@@ -136806,21 +136509,6 @@ private:
 	static void onSessionReady(void *context, ACameraCaptureSession *session);
 	static void onSessionActive(void *context, ACameraCaptureSession *session);
 	static void onSessionClosed(void *context, ACameraCaptureSession *session);
-
-protected:
-public:
-	bool activate_feed() override;
-	void deactivate_feed() override;
-	bool set_format(int p_index, const Dictionary &p_parameters) override;
-	Array get_formats() const override;
-	FeedFormat get_format() const override;
-	void handle_pause();
-	void handle_resume();
-	void handle_rotation_change();
-
-	CameraFeedAndroid(ACameraManager *manager, ACameraMetadata *metadata, const char *id,
-			CameraFeed::FeedPosition position, int32_t orientation);
-	~CameraFeedAndroid() override;
 };
 
 class CameraAndroid final
@@ -136900,7 +136588,7 @@ void CameraLinux::_update_devices()
 			MutexLock lock(data->camera_mutex);
 
 			for (int i = CameraServer::data->feeds.size() - 1; i >= 0; i--) {
-				Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)CameraServer::data->feeds[i];
+				Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 				if (feed.is_null()) {
 					continue;
 				}
@@ -136937,7 +136625,7 @@ bool CameraLinux::_has_device(const String& p_device_name)
 	ERR_FAIL_NULL_V(CameraServer::data, false);
 
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedLinux> feed = (Ref<CameraFeedLinux>)CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_null()) {
 			continue;
 		}
@@ -136954,7 +136642,9 @@ void CameraLinux::_add_device(const String& p_device_name)
 
 	if (file_descriptor != -1) {
 		if (_is_video_capture_device(file_descriptor)) {
-			Ref<CameraFeedLinux> feed = memnew(CameraFeedLinux(p_device_name));
+			Ref<CameraFeed> feed;
+			feed.instantiate();
+			feed->init_linux(p_device_name);
 			CameraServer::add_feed(feed);
 		}
 	}
@@ -137190,15 +136880,15 @@ void BufferDecoder::decode(StreamingBuffer p_buffer)
 #include <sys/mman.h>
 #include "servers/display/display_server.h"
 
-void CameraFeedLinux::update_buffer_thread_func(void* p_func)
+void CameraFeed::PlatformData::update_buffer_thread_func(void* p_func)
 {
 	if (p_func) {
-		CameraFeedLinux* camera_feed_linux = (CameraFeedLinux*)p_func;
+		CameraFeed::PlatformData* camera_feed_linux = (CameraFeed::PlatformData*)p_func;
 		camera_feed_linux->_update_buffer();
 	}
 }
 
-void CameraFeedLinux::_update_buffer()
+void CameraFeed::PlatformData::_update_buffer()
 {
 	while (!exit_flag.is_set()) {
 		_read_frame();
@@ -137206,7 +136896,7 @@ void CameraFeedLinux::_update_buffer()
 	}
 }
 
-void CameraFeedLinux::_query_device(const String& p_device_name)
+void CameraFeed::PlatformData::_query_device(const String& p_device_name)
 {
 	file_descriptor = open(p_device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 	ERR_FAIL_COND_MSG(file_descriptor == -1,
@@ -137216,7 +136906,7 @@ void CameraFeedLinux::_query_device(const String& p_device_name)
 	if (ioctl(file_descriptor, VIDIOC_QUERYCAP, &capability) == -1) {
 		ERR_FAIL_MSG(vformat("Cannot query device. Error: %d.", errno));
 	}
-	name = String((char*)capability.card);
+	owner->name = String((char*)capability.card);
 
 	for (int index = 0;; index++) {
 		struct v4l2_fmtdesc fmtdesc;
@@ -137262,7 +136952,7 @@ void CameraFeedLinux::_query_device(const String& p_device_name)
 	close(file_descriptor);
 }
 
-void CameraFeedLinux::_add_format(v4l2_fmtdesc p_description, v4l2_frmsize_discrete p_size,
+void CameraFeed::PlatformData::_add_format(v4l2_fmtdesc p_description, v4l2_frmsize_discrete p_size,
 	int p_frame_numerator, int p_frame_denominator)
 {
 	FeedFormat feed_format;
@@ -137274,10 +136964,10 @@ void CameraFeedLinux::_add_format(v4l2_fmtdesc p_description, v4l2_frmsize_discr
 	feed_format.pixel_format = p_description.pixelformat;
 	print_verbose(vformat("%s %dx%d@%d/%dfps", (char*)p_description.description, p_size.width,
 		p_size.height, p_frame_denominator, p_frame_numerator));
-	formats.push_back(feed_format);
+	owner->formats.push_back(feed_format);
 }
 
-bool CameraFeedLinux::_request_buffers()
+bool CameraFeed::PlatformData::_request_buffers()
 {
 	struct v4l2_requestbuffers requestbuffers;
 
@@ -137322,7 +137012,7 @@ bool CameraFeedLinux::_request_buffers()
 	return true;
 }
 
-bool CameraFeedLinux::_start_capturing()
+bool CameraFeed::PlatformData::_start_capturing()
 {
 	for (unsigned int i = 0; i < buffer_count; i++) {
 		struct v4l2_buffer buffer;
@@ -137347,7 +137037,7 @@ bool CameraFeedLinux::_start_capturing()
 	return true;
 }
 
-void CameraFeedLinux::_read_frame()
+void CameraFeed::PlatformData::_read_frame()
 {
 	struct v4l2_buffer buffer;
 	memset(&buffer, 0, sizeof(buffer));
@@ -137369,7 +137059,7 @@ void CameraFeedLinux::_read_frame()
 	}
 }
 
-void CameraFeedLinux::_stop_capturing()
+void CameraFeed::PlatformData::_stop_capturing()
 {
 	enum v4l2_buf_type type;
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -137379,26 +137069,24 @@ void CameraFeedLinux::_stop_capturing()
 	}
 }
 
-void CameraFeedLinux::_unmap_buffers(unsigned int p_count)
+void CameraFeed::PlatformData::_unmap_buffers(unsigned int p_count)
 {
 	for (unsigned int i = 0; i < p_count; i++) {
 		munmap(buffers[i].start, buffers[i].length);
 	}
 }
 
-void CameraFeedLinux::_start_thread()
+void CameraFeed::PlatformData::_start_thread()
 {
 	exit_flag.clear();
 	thread = memnew(Thread);
-	thread->start(CameraFeedLinux::update_buffer_thread_func, this);
+	thread->start(CameraFeed::PlatformData::update_buffer_thread_func, this);
 }
 
-String CameraFeedLinux::get_device_name() const { return device_name; }
-
-bool CameraFeedLinux::activate_feed()
+bool CameraFeed::PlatformData::activate()
 {
 	ERR_FAIL_COND_V_MSG(
-		selected_format == -1, false, "CameraFeed format needs to be set before activating.");
+		owner->selected_format == -1, false, "CameraFeed format needs to be set before activating.");
 	file_descriptor = open(device_name.ascii().get_data(), O_RDWR | O_NONBLOCK, 0);
 	if (_request_buffers() && _start_capturing()) {
 		buffer_decoder = _create_buffer_decoder();
@@ -137408,30 +137096,17 @@ bool CameraFeedLinux::activate_feed()
 	ERR_FAIL_V_MSG(false, "Could not activate feed.");
 }
 
-CameraFeed::FeedFormat CameraFeedLinux::get_format() const
+BufferDecoder CameraFeed::PlatformData::_create_buffer_decoder()
 {
-	FeedFormat feed_format = {};
-	return selected_format == -1 ? feed_format : formats[selected_format];
+	return BufferDecoder(owner, BufferDecoder::MODE_NONE);
 }
 
-CameraFeedLinux::CameraFeedLinux(const String& p_device_name)
+void CameraFeed::init_linux(const String& p_device_name)
 {
-	device_name = p_device_name;
-	_query_device(device_name);
-}
-
-CameraFeedLinux::~CameraFeedLinux()
-{
-	if (is_active()) {
-		deactivate_feed();
-	}
-}
-
-void CameraFeedLinux::deactivate_feed() {}
-
-BufferDecoder CameraFeedLinux::_create_buffer_decoder()
-{
-	return BufferDecoder(this, BufferDecoder::MODE_NONE);
+	impl = memnew(PlatformData);
+	impl->owner = this;
+	impl->device_name = p_device_name;
+	impl->_query_device(p_device_name);
 }
 #endif // defined(LINUXBSD_ENABLED)
 
@@ -137451,42 +137126,6 @@ BufferDecoder CameraFeedLinux::_create_buffer_decoder()
 
 /// @TODO need to implement this
 
-class CameraFeedWindows : public CameraFeed {
-private:
-protected:
-public:
-	CameraFeedWindows();
-	virtual ~CameraFeedWindows();
-
-	bool activate_feed();
-	void deactivate_feed();
-};
-
-CameraFeedWindows::CameraFeedWindows() {
-	///@TODO implement this, should store information about our available camera
-}
-
-CameraFeedWindows::~CameraFeedWindows() {
-	// make sure we stop recording if we are!
-	if (is_active()) {
-		deactivate_feed();
-	};
-
-	///@TODO free up anything used by this
-}
-
-bool CameraFeedWindows::activate_feed() {
-	///@TODO this should activate our camera and start the process of capturing frames
-
-	return true;
-}
-
-///@TODO we should probably have a callback method here that is being called by the
-// camera API which provides frames and call back into the CameraServer to update our texture
-
-void CameraFeedWindows::deactivate_feed() {
-	///@TODO this should deactivate our camera and stop the process of capturing frames
-}
 
 //////////////////////////////////////////////////////////////////////////
 // CameraWindows - Subclass for our camera server on windows
@@ -137558,44 +137197,57 @@ String GetFormatName(const int32_t &format) {
 }
 
 //////////////////////////////////////////////////////////////////////////
-// CameraFeedAndroid - Subclass for our camera feed on Android
-
-CameraFeedAndroid::CameraFeedAndroid(ACameraManager *manager, ACameraMetadata *metadata, const char *id,
-		CameraFeed::FeedPosition position, int32_t orientation) {
-	this->manager = manager;
-	this->metadata = metadata;
-	this->orientation = orientation;
-	_add_formats();
-	camera_id = id;
-	set_position(position);
-
-	// Position
-	switch (position) {
-		case CameraFeed::FEED_BACK:
-			name = vformat("%s | BACK", id);
-			break;
-		case CameraFeed::FEED_FRONT:
-			name = vformat("%s | FRONT", id);
-			break;
-		default:
-			name = vformat("%s", id);
-			break;
-	}
-
-	image_y.instantiate();
-	image_uv.instantiate();
+void CameraFeed::init_android(void *p_manager, void *p_metadata, const char *p_id, FeedPosition p_position, int32_t p_orientation) {
+	name = p_id;
+	position = p_position;
+	impl = memnew(PlatformData);
+	impl->owner = this;
+	impl->manager = static_cast<ACameraManager *>(p_manager);
+	impl->metadata = static_cast<ACameraMetadata *>(p_metadata);
+	impl->camera_id = p_id;
+	impl->orientation = p_orientation;
+	impl->_set_rotation();
+	impl->_add_formats();
+	impl->device_callbacks.context = impl;
+	impl->device_callbacks.onDisconnected = PlatformData::onDisconnected;
+	impl->device_callbacks.onError = PlatformData::onError;
+	impl->image_listener.context = impl;
+	impl->image_listener.onImageAvailable = PlatformData::onImage;
+	impl->session_callbacks.context = impl;
+	impl->session_callbacks.onReady = PlatformData::onSessionReady;
+	impl->session_callbacks.onActive = PlatformData::onSessionActive;
+	impl->session_callbacks.onClosed = PlatformData::onSessionClosed;
 }
 
-CameraFeedAndroid::~CameraFeedAndroid() {
-	if (is_active()) {
-		deactivate_feed();
+CameraFeed::PlatformData::~PlatformData() {
+	if (owner && owner->is_active()) {
+		deactivate();
 	}
 	if (metadata != nullptr) {
 		ACameraMetadata_free(metadata);
+		metadata = nullptr;
 	}
 }
 
-void CameraFeedAndroid::refresh_camera_metadata() {
+void CameraFeed::handle_pause() {
+	if (impl) {
+		impl->handle_pause();
+	}
+}
+
+void CameraFeed::handle_resume() {
+	if (impl) {
+		impl->handle_resume();
+	}
+}
+
+void CameraFeed::handle_rotation_change() {
+	if (impl) {
+		impl->handle_rotation_change();
+	}
+}
+
+void CameraFeed::PlatformData::refresh_camera_metadata() {
 	ERR_FAIL_NULL_MSG(manager, vformat("Camera %s: Cannot refresh metadata, manager is null.", camera_id));
 
 	if (metadata != nullptr) {
@@ -137617,13 +137269,13 @@ void CameraFeedAndroid::refresh_camera_metadata() {
 		ERR_PRINT(vformat("Camera %s: Failed to get sensor orientation after refresh (status: %d).", camera_id, status));
 	}
 
-	formats.clear();
+	owner->formats.clear();
 	_add_formats();
 
 	print_verbose(vformat("Camera %s: Metadata refreshed successfully.", camera_id));
 }
 
-void CameraFeedAndroid::_set_rotation() {
+void CameraFeed::PlatformData::_set_rotation() {
 	if (!metadata) {
 		print_verbose(vformat("Camera %s: Metadata is null in _set_rotation, attempting refresh.", camera_id));
 		refresh_camera_metadata();
@@ -137635,7 +137287,7 @@ void CameraFeedAndroid::_set_rotation() {
 	if (metadata) {
 		CameraRotationParams params;
 		params.sensor_orientation = orientation;
-		params.camera_facing = (position == CameraFeed::FEED_FRONT) ? CameraFacing::FRONT : CameraFacing::BACK;
+		params.camera_facing = (owner->position == CameraFeed::FEED_FRONT) ? CameraFacing::FRONT : CameraFacing::BACK;
 		params.display_rotation = get_app_orientation();
 
 		result = calculate_rotation(params);
@@ -137658,35 +137310,35 @@ void CameraFeedAndroid::_set_rotation() {
 				break;
 		}
 
-		int sign = position == CameraFeed::FEED_FRONT ? 1 : -1;
+		int sign = owner->position == CameraFeed::FEED_FRONT ? 1 : -1;
 		image_rotation = (orientation - display_rotation * sign + 360) % 360;
 	}
 
-	transform = Transform2D();
-	transform = transform.rotated(Math::deg_to_rad(image_rotation));
+	owner->transform = Transform2D();
+	owner->transform = owner->transform.rotated(Math::deg_to_rad(image_rotation));
 }
 
-void CameraFeedAndroid::_add_formats() {
-	// Get supported formats
-	ACameraMetadata_const_entry formats;
-	camera_status_t status = ACameraMetadata_getConstEntry(metadata, ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS, &formats);
+void CameraFeed::PlatformData::_add_formats() {
+	// Get supported owner->formats
+	ACameraMetadata_const_entry owner->formats;
+	camera_status_t status = ACameraMetadata_getConstEntry(metadata, ACAMERA_SCALER_AVAILABLE_STREAM_CONFIGURATIONS, &owner->formats);
 
 	if (status == ACAMERA_OK) {
-		for (uint32_t f = 0; f < formats.count; f += 4) {
+		for (uint32_t f = 0; f < owner->formats.count; f += 4) {
 			// Only support output streams
-			int32_t input = formats.data.i32[f + 3];
+			int32_t input = owner->formats.data.i32[f + 3];
 			if (input) {
 				continue;
 			}
 
 			// Get format and resolution
-			int32_t format = formats.data.i32[f + 0];
+			int32_t format = owner->formats.data.i32[f + 0];
 			if (format == AIMAGE_FORMAT_YUV_420_888 ||
 					format == AIMAGE_FORMAT_RGBA_8888 ||
 					format == AIMAGE_FORMAT_RGB_888) {
 				CameraFeed::FeedFormat feed_format;
-				feed_format.width = formats.data.i32[f + 1];
-				feed_format.height = formats.data.i32[f + 2];
+				feed_format.width = owner->formats.data.i32[f + 1];
+				feed_format.height = owner->formats.data.i32[f + 2];
 				feed_format.format = GetFormatName(format);
 				feed_format.pixel_format = format;
 				this->formats.append(feed_format);
@@ -137695,12 +137347,12 @@ void CameraFeedAndroid::_add_formats() {
 	}
 }
 
-bool CameraFeedAndroid::activate_feed() {
-	ERR_FAIL_COND_V_MSG(formats.is_empty(), false, "No camera formats available.");
-	ERR_FAIL_INDEX_V_MSG(selected_format, formats.size(), false,
-			vformat("CameraFeed format needs to be set before activating. Selected format index: %d (formats size: %d)", selected_format, formats.size()));
-	if (is_active()) {
-		deactivate_feed();
+bool CameraFeed::PlatformData::activate() {
+	ERR_FAIL_COND_V_MSG(owner->formats.is_empty(), false, "No camera owner->formats available.");
+	ERR_FAIL_INDEX_V_MSG(owner->selected_format, owner->formats.size(), false,
+			vformat("CameraFeed format needs to be set before activating. Selected format index: %d (owner->formats size: %d)", owner->selected_format, owner->formats.size()));
+	if (owner->is_active()) {
+		owner->deactivate_feed();
 	};
 
 	// Clear deactivation and error flags before starting activation.
@@ -137721,16 +137373,16 @@ bool CameraFeedAndroid::activate_feed() {
 	camera_status_t c_status = ACameraManager_openCamera(manager, camera_id.utf8().get_data(), &device_callbacks, &device);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to open camera (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
 	// Create image reader
-	const FeedFormat &feed_format = formats[selected_format];
+	const FeedFormat &feed_format = owner->formats[owner->selected_format];
 	media_status_t m_status = AImageReader_new(feed_format.width, feed_format.height, feed_format.pixel_format, 1, &reader);
 	if (m_status != AMEDIA_OK) {
 		print_error(vformat("Camera %s: Failed to create image reader (status: %d)", camera_id, m_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137742,7 +137394,7 @@ bool CameraFeedAndroid::activate_feed() {
 	m_status = AImageReader_setImageListener(reader, &image_listener);
 	if (m_status != AMEDIA_OK) {
 		print_error(vformat("Camera %s: Failed to set image listener (status: %d)", camera_id, m_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137751,7 +137403,7 @@ bool CameraFeedAndroid::activate_feed() {
 	m_status = AImageReader_getWindow(reader, &surface);
 	if (m_status != AMEDIA_OK) {
 		print_error(vformat("Camera %s: Failed to get image surface (status: %d)", camera_id, m_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137759,21 +137411,21 @@ bool CameraFeedAndroid::activate_feed() {
 	c_status = ACaptureSessionOutput_create(surface, &session_output);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to create session output (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
 	c_status = ACaptureSessionOutputContainer_create(&session_output_container);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to create session output container (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
 	c_status = ACaptureSessionOutputContainer_add(session_output_container, session_output);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to add session output to container (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137787,7 +137439,7 @@ bool CameraFeedAndroid::activate_feed() {
 	c_status = ACameraDevice_createCaptureSession(device, session_output_container, &session_callbacks, &session);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to create capture session (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137795,7 +137447,7 @@ bool CameraFeedAndroid::activate_feed() {
 	c_status = ACameraDevice_createCaptureRequest(device, TEMPLATE_PREVIEW, &request);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to create capture request (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137803,14 +137455,14 @@ bool CameraFeedAndroid::activate_feed() {
 	c_status = ACameraOutputTarget_create(surface, &camera_output_target);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to create camera output target (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
 	c_status = ACaptureRequest_addTarget(request, camera_output_target);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to add target to capture request (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
@@ -137818,66 +137470,33 @@ bool CameraFeedAndroid::activate_feed() {
 	c_status = ACameraCaptureSession_setRepeatingRequest(session, nullptr, 1, &request, nullptr);
 	if (c_status != ACAMERA_OK) {
 		print_error(vformat("Camera %s: Failed to start repeating request (status: %d)", camera_id, c_status));
-		deactivate_feed();
+		owner->deactivate_feed();
 		return false;
 	}
 
 	return true;
 }
 
-bool CameraFeedAndroid::set_format(int p_index, const Dictionary &p_parameters) {
-	ERR_FAIL_COND_V_MSG(active, false, "Feed is active.");
-	ERR_FAIL_INDEX_V_MSG(p_index, formats.size(), false, "Invalid format index.");
-
-	selected_format = p_index;
-
-	// Reset base dimensions to force texture recreation on next frame.
-	// This ensures proper handling when switching between different resolutions.
-	base_width = 0;
-	base_height = 0;
-
-	return true;
-}
-
-Array CameraFeedAndroid::get_formats() const {
-	Array result;
-	for (const FeedFormat &feed_format : formats) {
-		Dictionary dictionary;
-		dictionary["width"] = feed_format.width;
-		dictionary["height"] = feed_format.height;
-		dictionary["format"] = feed_format.format;
-		result.push_back(dictionary);
-	}
-	return result;
-}
-
-CameraFeed::FeedFormat CameraFeedAndroid::get_format() const {
-	CameraFeed::FeedFormat feed_format = {};
-	ERR_FAIL_INDEX_V_MSG(selected_format, formats.size(), feed_format,
-			vformat("Invalid format index: %d (formats size: %d)", selected_format, formats.size()));
-	return formats[selected_format];
-}
-
-void CameraFeedAndroid::handle_pause() {
-	if (is_active()) {
+void CameraFeed::PlatformData::handle_pause() {
+	if (owner->is_active()) {
 		was_active_before_pause = true;
-		print_verbose(vformat("Camera %s: Pausing (was active).", camera_id));
-		deactivate_feed();
+		print_verbose(vformat("Camera %s: Pausing (was owner->active).", camera_id));
+		owner->deactivate_feed();
 	} else {
 		was_active_before_pause = false;
 	}
 }
 
-void CameraFeedAndroid::handle_resume() {
+void CameraFeed::PlatformData::handle_resume() {
 	if (was_active_before_pause) {
 		print_verbose(vformat("Camera %s: Resuming.", camera_id));
-		activate_feed();
+		owner->activate_feed();
 		was_active_before_pause = false;
 	}
 }
 
-void CameraFeedAndroid::handle_rotation_change() {
-	if (!is_active()) {
+void CameraFeed::PlatformData::handle_rotation_change() {
+	if (!owner->is_active()) {
 		return;
 	}
 
@@ -137887,7 +137506,7 @@ void CameraFeedAndroid::handle_rotation_change() {
 }
 
 // In-place stride compaction (handles row padding).
-void CameraFeedAndroid::compact_stride_inplace(uint8_t *data, size_t width, int height, size_t stride) {
+void CameraFeed::PlatformData::compact_stride_inplace(uint8_t *data, size_t width, int height, size_t stride) {
 	if (stride <= width) {
 		return;
 	}
@@ -137902,11 +137521,11 @@ void CameraFeedAndroid::compact_stride_inplace(uint8_t *data, size_t width, int 
 	}
 }
 
-void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
-	CameraFeedAndroid *feed = static_cast<CameraFeedAndroid *>(context);
+void CameraFeed::PlatformData::onImage(void *context, AImageReader *p_reader) {
+	CameraFeed::PlatformData *feed = static_cast<CameraFeed::PlatformData *>(context);
 
 	// Check deactivation flag before acquiring mutex to avoid using resources
-	// that may be deleted during deactivate_feed(). This is a racy check but
+	// that may be deleted during owner->deactivate_feed(). This is a racy check but
 	// safe because we only transition is_deactivating from false->true during
 	// deactivation, and back to false only at the start of activation.
 	if (feed->is_deactivating.is_set()) {
@@ -137922,12 +137541,12 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 		return;
 	}
 
-	// If feed is not active, we must still acquire and discard the image to
+	// If feed is not owner->active, we must still acquire and discard the image to
 	// free the buffer slot. Otherwise, with maxImages=1, the buffer stays full
 	// and no new frames will arrive (onImage won't be called again).
-	// This can happen when a frame arrives between activate_feed() returning
-	// and active=true being set in the base class.
-	if (!feed->is_active()) {
+	// This can happen when a frame arrives between owner->activate_feed() returning
+	// and owner->active=true being set in the base class.
+	if (!feed->owner->is_active()) {
 		AImage *pending_image = nullptr;
 		if (AImageReader_acquireNextImage(p_reader, &pending_image) == AMEDIA_OK && pending_image != nullptr) {
 			AImage_delete(pending_image);
@@ -137977,7 +137596,7 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 					feed->scratch_y.resize(len);
 				}
 				memcpy(feed->scratch_y.ptrw(), data, len);
-				CameraFeedAndroid::compact_stride_inplace(feed->scratch_y.ptrw(), width, height, y_row_stride);
+				CameraFeed::PlatformData::compact_stride_inplace(feed->scratch_y.ptrw(), width, height, y_row_stride);
 				data_y.resize(y_size);
 				memcpy(data_y.ptrw(), feed->scratch_y.ptr(), y_size);
 			}
@@ -138028,7 +137647,7 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 				}
 				memcpy(feed->scratch_uv.ptrw(), data, len);
 				if (row_stride != uv_width * 2) {
-					CameraFeedAndroid::compact_stride_inplace(feed->scratch_uv.ptrw(), uv_width * 2, uv_height, row_stride);
+					CameraFeed::PlatformData::compact_stride_inplace(feed->scratch_uv.ptrw(), uv_width * 2, uv_height, row_stride);
 				}
 				data_uv.resize(uv_size);
 				memcpy(data_uv.ptrw(), feed->scratch_uv.ptr(), uv_size);
@@ -138112,17 +137731,17 @@ void CameraFeedAndroid::onImage(void *context, AImageReader *p_reader) {
 	// Release image happens automatically via ScopedAImage.
 }
 
-void CameraFeedAndroid::onSessionReady(void *context, ACameraCaptureSession *session) {
+void CameraFeed::PlatformData::onSessionReady(void *context, ACameraCaptureSession *session) {
 	print_verbose("Capture session ready");
 }
 
-void CameraFeedAndroid::onSessionActive(void *context, ACameraCaptureSession *session) {
-	print_verbose("Capture session active");
+void CameraFeed::PlatformData::onSessionActive(void *context, ACameraCaptureSession *session) {
+	print_verbose("Capture session owner->active");
 }
 
-void CameraFeedAndroid::onSessionClosed(void *context, ACameraCaptureSession *p_session) {
-	CameraFeedAndroid *feed = static_cast<CameraFeedAndroid *>(context);
-	// Only post if deactivate_feed() is waiting for us. This prevents
+void CameraFeed::PlatformData::onSessionClosed(void *context, ACameraCaptureSession *p_session) {
+	CameraFeed::PlatformData *feed = static_cast<CameraFeed::PlatformData *>(context);
+	// Only post if owner->deactivate_feed() is waiting for us. This prevents
 	// spurious posts from error-triggered session closes that could
 	// desynchronize the semaphore count.
 	if (feed->session_close_pending.is_set()) {
@@ -138130,7 +137749,7 @@ void CameraFeedAndroid::onSessionClosed(void *context, ACameraCaptureSession *p_
 	}
 }
 
-void CameraFeedAndroid::deactivate_feed() {
+void CameraFeed::PlatformData::deactivate() {
 	// Signal that deactivation is in progress. This prevents onImage callbacks
 	// from using resources that may be deleted during cleanup.
 	is_deactivating.set();
@@ -138203,20 +137822,20 @@ void CameraFeedAndroid::deactivate_feed() {
 	}
 }
 
-void CameraFeedAndroid::onError(void *context, ACameraDevice *p_device, int error) {
-	CameraFeedAndroid *feed = static_cast<CameraFeedAndroid *>(context);
+void CameraFeed::PlatformData::onError(void *context, ACameraDevice *p_device, int error) {
+	CameraFeed::PlatformData *feed = static_cast<CameraFeed::PlatformData *>(context);
 	print_error(vformat("Camera %s error: %d", feed->camera_id, error));
-	// Mark that an error occurred. This signals to deactivate_feed() that
+	// Mark that an error occurred. This signals to owner->deactivate_feed() that
 	// the session may have been closed by Android, so we shouldn't wait
 	// for onSessionClosed.
 	feed->device_error_occurred.set();
 	onDisconnected(context, p_device);
 }
 
-void CameraFeedAndroid::onDisconnected(void *context, ACameraDevice *p_device) {
-	CameraFeedAndroid *feed = static_cast<CameraFeedAndroid *>(context);
+void CameraFeed::PlatformData::onDisconnected(void *context, ACameraDevice *p_device) {
+	CameraFeed::PlatformData *feed = static_cast<CameraFeed::PlatformData *>(context);
 	// Defer to main thread to avoid reentrancy issues when called from
-	// ACameraDevice_close() during deactivate_feed().
+	// ACameraDevice_close() during owner->deactivate_feed().
 	feed->call_deferred("set_active", false);
 }
 
@@ -138247,7 +137866,7 @@ void CameraAndroid::update_feeds() {
 
 	// Deactivate all feeds before removing to ensure proper cleanup.
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid() && feed->is_active()) {
 			feed->deactivate_feed();
 		}
@@ -138296,7 +137915,9 @@ void CameraAndroid::update_feeds() {
 			continue;
 		}
 
-		Ref<CameraFeedAndroid> feed = memnew(CameraFeedAndroid(data->camera_manager, metadata, id, position, cameraOrientation));
+		Ref<CameraFeed> feed;
+		feed.instantiate();
+		feed->init_android(data->camera_manager, metadata, id, position, cameraOrientation);
 		CameraServer::add_feed(feed);
 	}
 
@@ -138311,7 +137932,7 @@ void CameraAndroid::remove_all_feeds() {
 	// This prevents "Device is closed but session is not notified" warnings
 	// that can occur if feeds are destroyed while still active.
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid() && feed->is_active()) {
 			feed->deactivate_feed();
 		}
@@ -138350,7 +137971,7 @@ void CameraAndroid::set_monitoring_feeds(bool p_monitoring_feeds) {
 void CameraAndroid::handle_application_pause() {
 	ERR_FAIL_NULL(CameraServer::data);
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_pause();
 		}
@@ -138360,7 +137981,7 @@ void CameraAndroid::handle_application_pause() {
 void CameraAndroid::handle_application_resume() {
 	ERR_FAIL_NULL(CameraServer::data);
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_resume();
 		}
@@ -138370,14 +137991,14 @@ void CameraAndroid::handle_application_resume() {
 void CameraAndroid::handle_display_rotation_change(int) {
 	ERR_FAIL_NULL(CameraServer::data);
 	for (int i = 0; i < CameraServer::data->feeds.size(); i++) {
-		Ref<CameraFeedAndroid> feed = CameraServer::data->feeds[i];
+		Ref<CameraFeed> feed = CameraServer::data->feeds[i];
 		if (feed.is_valid()) {
 			feed->handle_rotation_change();
 		}
 	}
 }
 
-std::optional<int> CameraFeedAndroid::calculate_rotation(const CameraRotationParams &p_params) {
+std::optional<int> CameraFeed::PlatformData::calculate_rotation(const CameraRotationParams &p_params) {
 	if (p_params.sensor_orientation < 0 || p_params.sensor_orientation > 270 || p_params.sensor_orientation % 90 != 0) {
 		return std::nullopt;
 	}
@@ -138386,18 +138007,18 @@ std::optional<int> CameraFeedAndroid::calculate_rotation(const CameraRotationPar
 	return normalize_angle(rotation_angle);
 }
 
-int CameraFeedAndroid::normalize_angle(int p_angle) {
+int CameraFeed::PlatformData::normalize_angle(int p_angle) {
 	while (p_angle < 0) {
 		p_angle += 360;
 	}
 	return p_angle % 360;
 }
 
-int CameraFeedAndroid::get_display_rotation() {
+int CameraFeed::PlatformData::get_display_rotation() {
 	return DisplayServer::driver_as<DisplayServerAndroid>()->get_display_rotation();
 }
 
-int CameraFeedAndroid::get_app_orientation() {
+int CameraFeed::PlatformData::get_app_orientation() {
 	GodotIOJavaWrapper *godot_io_java = OS_Android::get_godot_io_java();
 	ERR_FAIL_NULL_V(godot_io_java, 0);
 
@@ -139874,164 +139495,59 @@ constexpr JPH::EShapeSubType MOTION = JPH::EShapeSubType::UserConvex2;
 
 } // namespace JoltCustomShapeSubType
 
-class JoltCustomUserDataShapeSettings final : public JPH::DecoratedShapeSettings {
+class JoltCustomDecoratedShape final : public JPH::DecoratedShape {
+	bool back_face_collision = false;
+
 public:
-	using JPH::DecoratedShapeSettings::DecoratedShapeSettings;
+	static void register_types();
 
-	virtual ShapeResult Create() const override;
-};
+	explicit JoltCustomDecoratedShape(JPH::EShapeSubType p_sub_type) :
+			JPH::DecoratedShape(p_sub_type) {}
 
-class JoltCustomUserDataShape final : public JPH::DecoratedShape {
-public:
-	static void register_type();
-
-	JoltCustomUserDataShape() :
-			JPH::DecoratedShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA) {}
-
-	JoltCustomUserDataShape(const JoltCustomUserDataShapeSettings &p_settings, ShapeResult &p_result) :
-			JPH::DecoratedShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, p_settings, p_result) {
-		if (!p_result.HasError()) {
-			p_result.Set(this);
+	JoltCustomDecoratedShape(JPH::EShapeSubType p_sub_type, const JPH::Shape *p_inner_shape, uint64_t p_user_data, bool p_back_face) :
+			JPH::DecoratedShape(p_sub_type, p_inner_shape), back_face_collision(p_back_face) {
+		if (p_sub_type == JoltCustomShapeSubType::OVERRIDE_USER_DATA) {
+			SetUserData((JPH::uint64)p_user_data);
 		}
 	}
 
+	static JPH::ShapeRefC create_user_data(const JPH::Shape *p_inner_shape, uint64_t p_user_data) {
+		return new JoltCustomDecoratedShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, p_inner_shape, p_user_data, false);
+	}
+
+	static JPH::ShapeRefC create_double_sided(const JPH::Shape *p_inner_shape, bool p_back_face_collision) {
+		return new JoltCustomDecoratedShape(JoltCustomShapeSubType::DOUBLE_SIDED, p_inner_shape, 0, p_back_face_collision);
+	}
+
 	virtual JPH::AABox GetLocalBounds() const override { return mInnerShape->GetLocalBounds(); }
-
 	virtual JPH::AABox GetWorldSpaceBounds(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { return mInnerShape->GetWorldSpaceBounds(p_center_of_mass_transform, p_scale); }
-
 	virtual float GetInnerRadius() const override { return mInnerShape->GetInnerRadius(); }
-
 	virtual JPH::MassProperties GetMassProperties() const override { return mInnerShape->GetMassProperties(); }
-
 	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override { return mInnerShape->GetSurfaceNormal(p_sub_shape_id, p_local_surface_position); }
-
-	virtual JPH::uint64 GetSubShapeUserData(const JPH::SubShapeID &p_sub_shape_id) const override { return GetUserData(); }
-
+	virtual JPH::uint64 GetSubShapeUserData(const JPH::SubShapeID &p_sub_shape_id) const override {
+		return GetSubType() == JoltCustomShapeSubType::OVERRIDE_USER_DATA ? GetUserData() : mInnerShape->GetSubShapeUserData(p_sub_shape_id);
+	}
 	virtual JPH::TransformedShape GetSubShapeTransformedShape(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, JPH::SubShapeID &p_remainder) const override { return mInnerShape->GetSubShapeTransformedShape(p_sub_shape_id, p_position_com, p_rotation, p_scale, p_remainder); }
-
 	virtual void GetSubmergedVolume(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::Plane &p_surface, float &p_total_volume, float &p_submerged_volume, JPH::Vec3 &p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, JPH::RVec3Arg p_base_offset)) const override { mInnerShape->GetSubmergedVolume(p_center_of_mass_transform, p_scale, p_surface, p_total_volume, p_submerged_volume, p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, p_base_offset)); }
 
 #ifdef JPH_DEBUG_RENDERER
 	virtual void Draw(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_use_material_colors, bool p_draw_wireframe) const override { mInnerShape->Draw(p_renderer, p_center_of_mass_transform, p_scale, p_color, p_use_material_colors, p_draw_wireframe); }
-
 	virtual void DrawGetSupportFunction(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_draw_support_direction) const override { mInnerShape->DrawGetSupportFunction(p_renderer, p_center_of_mass_transform, p_scale, p_color, p_draw_support_direction); }
-
 	virtual void DrawGetSupportingFace(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { mInnerShape->DrawGetSupportingFace(p_renderer, p_center_of_mass_transform, p_scale); }
 #endif
 
 	virtual bool CastRay(const JPH::RayCast &p_ray, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::RayCastResult &p_hit) const override { return mInnerShape->CastRay(p_ray, p_sub_shape_id_creator, p_hit); }
-
-	virtual void CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { return mInnerShape->CastRay(p_ray, p_ray_cast_settings, p_sub_shape_id_creator, p_collector, p_shape_filter); }
-
-	virtual void CollidePoint(JPH::Vec3Arg p_point, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CollidePointCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { mInnerShape->CollidePoint(p_point, p_sub_shape_id_creator, p_collector, p_shape_filter); }
-
-	virtual void CollideSoftBodyVertices(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::CollideSoftBodyVertexIterator &p_vertices, JPH::uint p_num_vertices, int p_colliding_shape_index) const override { mInnerShape->CollideSoftBodyVertices(p_center_of_mass_transform, p_scale, p_vertices, p_num_vertices, p_colliding_shape_index); }
-
-	virtual void CollectTransformedShapes(const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::TransformedShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { mInnerShape->CollectTransformedShapes(p_box, p_position_com, p_rotation, p_scale, p_sub_shape_id_creator, p_collector, p_shape_filter); }
-
-	virtual void TransformShape(JPH::Mat44Arg p_center_of_mass_transform, JPH::TransformedShapeCollector &p_collector) const override { mInnerShape->TransformShape(p_center_of_mass_transform, p_collector); }
-
-	virtual void GetTrianglesStart(JPH::Shape::GetTrianglesContext &p_context, const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale) const override { mInnerShape->GetTrianglesStart(p_context, p_box, p_position_com, p_rotation, p_scale); }
-
-	virtual int GetTrianglesNext(JPH::Shape::GetTrianglesContext &p_context, int p_max_triangles_requested, JPH::Float3 *p_triangle_vertices, const JPH::PhysicsMaterial **p_materials = nullptr) const override { return mInnerShape->GetTrianglesNext(p_context, p_max_triangles_requested, p_triangle_vertices, p_materials); }
-
-	virtual JPH::Shape::Stats GetStats() const override { return JPH::Shape::Stats(sizeof(*this), 0); }
-
-	virtual float GetVolume() const override { return mInnerShape->GetVolume(); }
-};
-
-class JoltCustomDoubleSidedShapeSettings final : public JPH::DecoratedShapeSettings {
-public:
-	bool back_face_collision = false;
-
-	JoltCustomDoubleSidedShapeSettings() = default;
-
-	JoltCustomDoubleSidedShapeSettings(const ShapeSettings *p_inner_settings, bool p_back_face_collision) :
-			JPH::DecoratedShapeSettings(p_inner_settings), back_face_collision(p_back_face_collision) {}
-
-	JoltCustomDoubleSidedShapeSettings(const JPH::Shape *p_inner_shape, bool p_back_face_collision) :
-			JPH::DecoratedShapeSettings(p_inner_shape), back_face_collision(p_back_face_collision) {}
-
-	virtual JPH::Shape::ShapeResult Create() const override;
-};
-
-class JoltCustomDoubleSidedShape final : public JPH::DecoratedShape {
-	bool back_face_collision = false;
-
-public:
-	static void register_type();
-
-	JoltCustomDoubleSidedShape() :
-			JPH::DecoratedShape(JoltCustomShapeSubType::DOUBLE_SIDED) {}
-
-	JoltCustomDoubleSidedShape(const JoltCustomDoubleSidedShapeSettings &p_settings, JPH::Shape::ShapeResult &p_result) :
-			JPH::DecoratedShape(JoltCustomShapeSubType::DOUBLE_SIDED, p_settings, p_result), back_face_collision(p_settings.back_face_collision) {
-		if (!p_result.HasError()) {
-			p_result.Set(this);
-		}
-	}
-
-	JoltCustomDoubleSidedShape(const JPH::Shape *p_inner_shape, bool p_back_face_collision) :
-			JPH::DecoratedShape(JoltCustomShapeSubType::DOUBLE_SIDED, p_inner_shape), back_face_collision(p_back_face_collision) {}
-
-	virtual JPH::AABox GetLocalBounds() const override { return mInnerShape->GetLocalBounds(); }
-
-	virtual JPH::AABox GetWorldSpaceBounds(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { return mInnerShape->GetWorldSpaceBounds(p_center_of_mass_transform, p_scale); }
-
-	virtual float GetInnerRadius() const override { return mInnerShape->GetInnerRadius(); }
-
-	virtual JPH::MassProperties GetMassProperties() const override { return mInnerShape->GetMassProperties(); }
-
-	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override { return mInnerShape->GetSurfaceNormal(p_sub_shape_id, p_local_surface_position); }
-
-	virtual JPH::uint64 GetSubShapeUserData(const JPH::SubShapeID &p_sub_shape_id) const override { return mInnerShape->GetSubShapeUserData(p_sub_shape_id); }
-
-	virtual JPH::TransformedShape GetSubShapeTransformedShape(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, JPH::SubShapeID &p_remainder) const override { return mInnerShape->GetSubShapeTransformedShape(p_sub_shape_id, p_position_com, p_rotation, p_scale, p_remainder); }
-
-	virtual void GetSubmergedVolume(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::Plane &p_surface, float &p_total_volume, float &p_submerged_volume, JPH::Vec3 &p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, JPH::RVec3Arg p_base_offset)) const override { mInnerShape->GetSubmergedVolume(p_center_of_mass_transform, p_scale, p_surface, p_total_volume, p_submerged_volume, p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, p_base_offset)); }
-
-#ifdef JPH_DEBUG_RENDERER
-	virtual void Draw(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_use_material_colors, bool p_draw_wireframe) const override { mInnerShape->Draw(p_renderer, p_center_of_mass_transform, p_scale, p_color, p_use_material_colors, p_draw_wireframe); }
-
-	virtual void DrawGetSupportFunction(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_draw_support_direction) const override { mInnerShape->DrawGetSupportFunction(p_renderer, p_center_of_mass_transform, p_scale, p_color, p_draw_support_direction); }
-
-	virtual void DrawGetSupportingFace(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { mInnerShape->DrawGetSupportingFace(p_renderer, p_center_of_mass_transform, p_scale); }
-#endif
-
-	virtual bool CastRay(const JPH::RayCast &p_ray, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::RayCastResult &p_hit) const override { return mInnerShape->CastRay(p_ray, p_sub_shape_id_creator, p_hit); }
-
 	virtual void CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override;
-
 	virtual void CollidePoint(JPH::Vec3Arg p_point, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CollidePointCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { mInnerShape->CollidePoint(p_point, p_sub_shape_id_creator, p_collector, p_shape_filter); }
-
 	virtual void CollideSoftBodyVertices(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::CollideSoftBodyVertexIterator &p_vertices, JPH::uint p_num_vertices, int p_colliding_shape_index) const override { mInnerShape->CollideSoftBodyVertices(p_center_of_mass_transform, p_scale, p_vertices, p_num_vertices, p_colliding_shape_index); }
-
 	virtual void CollectTransformedShapes(const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::TransformedShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { mInnerShape->CollectTransformedShapes(p_box, p_position_com, p_rotation, p_scale, p_sub_shape_id_creator, p_collector, p_shape_filter); }
-
 	virtual void TransformShape(JPH::Mat44Arg p_center_of_mass_transform, JPH::TransformedShapeCollector &p_collector) const override { mInnerShape->TransformShape(p_center_of_mass_transform, p_collector); }
-
 	virtual void GetTrianglesStart(JPH::Shape::GetTrianglesContext &p_context, const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale) const override { mInnerShape->GetTrianglesStart(p_context, p_box, p_position_com, p_rotation, p_scale); }
-
 	virtual int GetTrianglesNext(JPH::Shape::GetTrianglesContext &p_context, int p_max_triangles_requested, JPH::Float3 *p_triangle_vertices, const JPH::PhysicsMaterial **p_materials = nullptr) const override { return mInnerShape->GetTrianglesNext(p_context, p_max_triangles_requested, p_triangle_vertices, p_materials); }
-
 	virtual JPH::Shape::Stats GetStats() const override { return JPH::Shape::Stats(sizeof(*this), 0); }
-
 	virtual float GetVolume() const override { return mInnerShape->GetVolume(); }
 
 	bool should_collide_with_back_faces() const { return back_face_collision; }
-};
-
-class JoltCustomRayShapeSettings final : public JPH::ConvexShapeSettings {
-public:
-	JPH::RefConst<JPH::PhysicsMaterial> material;
-	float length = 1.0f;
-	bool slide_on_slope = false;
-
-	JoltCustomRayShapeSettings() = default;
-	JoltCustomRayShapeSettings(float p_length, bool p_slide_on_slope, const JPH::PhysicsMaterial *p_material = nullptr) :
-			material(p_material), length(p_length), slide_on_slope(p_slide_on_slope) {}
-
-	virtual JPH::ShapeSettings::ShapeResult Create() const override;
 };
 
 class JoltCustomRayShape final : public JPH::ConvexShape {
@@ -140045,22 +139561,12 @@ public:
 	JoltCustomRayShape() :
 			JPH::ConvexShape(JoltCustomShapeSubType::RAY) {}
 
-	JoltCustomRayShape(const JoltCustomRayShapeSettings &p_settings, JPH::Shape::ShapeResult &p_result) :
-			JPH::ConvexShape(JoltCustomShapeSubType::RAY, p_settings, p_result), material(p_settings.material), length(p_settings.length), slide_on_slope(p_settings.slide_on_slope) {
-		if (!p_result.HasError()) {
-			p_result.Set(this);
-		}
-	}
-
 	JoltCustomRayShape(float p_length, bool p_slide_on_slope, const JPH::PhysicsMaterial *p_material = nullptr) :
 			JPH::ConvexShape(JoltCustomShapeSubType::RAY), material(p_material), length(p_length), slide_on_slope(p_slide_on_slope) {}
 
 	virtual JPH::AABox GetLocalBounds() const override;
-
 	virtual float GetInnerRadius() const override;
-
 	virtual JPH::MassProperties GetMassProperties() const override;
-
 	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override { return JPH::Vec3::sAxisZ(); }
 
 	virtual void GetSubmergedVolume(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::Plane &p_surface, float &p_total_volume, float &p_submerged_volume, JPH::Vec3 &p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, JPH::RVec3Arg p_base_offset)) const override {
@@ -140074,17 +139580,11 @@ public:
 #endif
 
 	virtual bool CastRay(const JPH::RayCast &p_ray, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::RayCastResult &p_hit) const override { return false; }
-
 	virtual void CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override {}
-
 	virtual void CollidePoint(JPH::Vec3Arg p_point, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CollidePointCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override {}
-
 	virtual void CollideSoftBodyVertices(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::CollideSoftBodyVertexIterator &p_vertices, JPH::uint p_num_vertices, int p_colliding_shape_index) const override {}
-
 	virtual JPH::Shape::Stats GetStats() const override { return JPH::Shape::Stats(sizeof(*this), 0); }
-
 	virtual float GetVolume() const override { return 0.0f; }
-
 	virtual const JPH::ConvexShape::Support *GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const override;
 };
 
@@ -141484,65 +140984,25 @@ class JoltJoint3D final {
 		AXES_ANGULAR = AXIS_ANGULAR_X,
 	};
 
-	struct HingeData {
-		double limit_lower = 0.0;
-		double limit_upper = 0.0;
-		double limit_spring_frequency = 0.0;
-		double limit_spring_damping = 0.0;
-		double motor_target_speed = 0.0;
-		double motor_max_torque = FLT_MAX;
-		bool limits_enabled = false;
-		bool limit_spring_enabled = false;
-		bool motor_enabled = false;
-	};
-
-	struct SliderData {
-		double limit_upper = 0.0;
-		double limit_lower = 0.0;
-		double limit_spring_frequency = 0.0;
-		double limit_spring_damping = 0.0;
-		double motor_target_speed = 0.0;
-		double motor_max_force = FLT_MAX;
-		bool limits_enabled = true;
-		bool limit_spring_enabled = false;
-		bool motor_enabled = false;
-	};
-
-	struct ConeTwistData {
-		double swing_limit_span = 0.0;
-		double twist_limit_span = 0.0;
-		double swing_motor_target_speed_y = 0.0;
-		double swing_motor_target_speed_z = 0.0;
-		double twist_motor_target_speed = 0.0;
-		double swing_motor_max_torque = FLT_MAX;
-		double twist_motor_max_torque = FLT_MAX;
-		bool swing_limit_enabled = true;
-		bool twist_limit_enabled = true;
-		bool swing_motor_enabled = false;
-		bool twist_motor_enabled = false;
-	};
-
-	struct G6DOFData {
-		double limit_lower[AXIS_COUNT] = {};
-		double limit_upper[AXIS_COUNT] = {};
-		double limit_spring_frequency[AXIS_COUNT] = {};
-		double limit_spring_damping[AXIS_COUNT] = {};
-		double motor_speed[AXIS_COUNT] = {};
-		double motor_limit[AXIS_COUNT] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
-		double spring_stiffness[AXIS_COUNT] = {};
-		double spring_frequency[AXIS_COUNT] = {};
-		double spring_damping[AXIS_COUNT] = {};
-		double spring_equilibrium[AXIS_COUNT] = {};
-		double drive_limit[AXIS_COUNT] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
-		bool drive_limit_set[AXIS_COUNT] = {};
-		Quaternion angular_target_rotation;
-		bool has_angular_target_rotation = false;
-		bool limit_enabled[AXIS_COUNT] = {};
-		bool limit_spring_enabled[AXIS_COUNT] = {};
-		bool motor_enabled[AXIS_COUNT] = {};
-		bool spring_enabled[AXIS_COUNT] = {};
-		bool spring_use_frequency[AXIS_COUNT] = {};
-	};
+	double limit_lower[AXIS_COUNT] = {};
+	double limit_upper[AXIS_COUNT] = {};
+	double limit_spring_frequency[AXIS_COUNT] = {};
+	double limit_spring_damping[AXIS_COUNT] = {};
+	double motor_speed[AXIS_COUNT] = {};
+	double motor_limit[AXIS_COUNT] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+	double spring_stiffness[AXIS_COUNT] = {};
+	double spring_frequency[AXIS_COUNT] = {};
+	double spring_damping[AXIS_COUNT] = {};
+	double spring_equilibrium[AXIS_COUNT] = {};
+	double drive_limit[AXIS_COUNT] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
+	bool drive_limit_set[AXIS_COUNT] = {};
+	Quaternion angular_target_rotation;
+	bool has_angular_target_rotation = false;
+	bool limit_enabled[AXIS_COUNT] = {};
+	bool limit_spring_enabled[AXIS_COUNT] = {};
+	bool motor_enabled[AXIS_COUNT] = {};
+	bool spring_enabled[AXIS_COUNT] = {};
+	bool spring_use_frequency[AXIS_COUNT] = {};
 
 	PS3DE::JointType joint_type = PS3DE::JOINT_TYPE_MAX;
 
@@ -141562,11 +141022,6 @@ class JoltJoint3D final {
 
 	Transform3D local_ref_a;
 	Transform3D local_ref_b;
-
-	HingeData hinge;
-	SliderData slider;
-	ConeTwistData cone_twist;
-	G6DOFData g6dof;
 
 	void _reconfigure(PS3DE::JointType p_type, JoltBody3D *p_body_a, JoltBody3D *p_body_b, const Transform3D &p_local_ref_a, const Transform3D &p_local_ref_b);
 
@@ -141593,8 +141048,8 @@ class JoltJoint3D final {
 
 	// Hinge helpers
 	JPH::Constraint *_build_hinge(JPH::Body *p_jolt_body_a, JPH::Body *p_jolt_body_b, const Transform3D &p_shifted_ref_a, const Transform3D &p_shifted_ref_b, float p_limit) const;
-	bool _is_hinge_sprung() const { return hinge.limit_spring_enabled && hinge.limit_spring_frequency > 0.0; }
-	bool _is_hinge_fixed() const { return hinge.limits_enabled && hinge.limit_lower == hinge.limit_upper && !_is_hinge_sprung(); }
+	bool _is_hinge_sprung() const { return limit_spring_enabled[0] && limit_spring_frequency[0] > 0.0; }
+	bool _is_hinge_fixed() const { return limit_enabled[0] && limit_lower[0] == limit_upper[0] && !_is_hinge_sprung(); }
 	void _update_hinge_motor_state();
 	void _update_hinge_motor_velocity();
 	void _update_hinge_motor_limit();
@@ -141607,8 +141062,8 @@ class JoltJoint3D final {
 
 	// Slider helpers
 	JPH::Constraint *_build_slider(JPH::Body *p_jolt_body_a, JPH::Body *p_jolt_body_b, const Transform3D &p_shifted_ref_a, const Transform3D &p_shifted_ref_b, float p_limit) const;
-	bool _is_slider_sprung() const { return slider.limit_spring_enabled && slider.limit_spring_frequency > 0.0; }
-	bool _is_slider_fixed() const { return slider.limits_enabled && slider.limit_lower == slider.limit_upper && !_is_slider_sprung(); }
+	bool _is_slider_sprung() const { return limit_spring_enabled[0] && limit_spring_frequency[0] > 0.0; }
+	bool _is_slider_fixed() const { return limit_enabled[0] && limit_lower[0] == limit_upper[0] && !_is_slider_sprung(); }
 	void _update_slider_motor_state();
 	void _update_slider_motor_velocity();
 	void _update_slider_motor_limit();
@@ -143898,8 +143353,7 @@ void jolt_initialize() {
 	JPH::RegisterTypes();
 
 	JoltCustomRayShape::register_type();
-	JoltCustomUserDataShape::register_type();
-	JoltCustomDoubleSidedShape::register_type();
+	JoltCustomDecoratedShape::register_types();
 
 	JoltGroupFilter::instance = new JoltGroupFilter();
 	JoltGroupFilter::instance->SetEmbedded();
@@ -146284,10 +145738,33 @@ void JoltJoint3D::_reconfigure(PS3DE::JointType p_type, JoltBody3D *p_body_a, Jo
 	local_ref_a = p_local_ref_a;
 	local_ref_b = p_local_ref_b;
 
-	hinge = HingeData();
-	slider = SliderData();
-	cone_twist = ConeTwistData();
-	g6dof = G6DOFData();
+	for (int i = 0; i < AXIS_COUNT; i++) {
+		limit_lower[i] = 0.0;
+		limit_upper[i] = 0.0;
+		limit_spring_frequency[i] = 0.0;
+		limit_spring_damping[i] = 0.0;
+		motor_speed[i] = 0.0;
+		motor_limit[i] = FLT_MAX;
+		spring_stiffness[i] = 0.0;
+		spring_frequency[i] = 0.0;
+		spring_damping[i] = 0.0;
+		spring_equilibrium[i] = 0.0;
+		drive_limit[i] = FLT_MAX;
+		drive_limit_set[i] = false;
+		limit_enabled[i] = false;
+		limit_spring_enabled[i] = false;
+		motor_enabled[i] = false;
+		spring_enabled[i] = false;
+		spring_use_frequency[i] = false;
+	}
+	angular_target_rotation = Quaternion();
+	has_angular_target_rotation = false;
+	if (joint_type == PS3DE::JOINT_TYPE_SLIDER) {
+		limit_enabled[0] = true;
+	} else if (joint_type == PS3DE::JOINT_TYPE_CONE_TWIST) {
+		limit_enabled[0] = true;
+		limit_enabled[1] = true;
+	}
 
 	if (body_a != nullptr) {
 		body_a->add_joint(this);
@@ -146419,10 +145896,33 @@ void JoltJoint3D::clear() {
 	local_ref_a = Transform3D();
 	local_ref_b = Transform3D();
 
-	hinge = HingeData();
-	slider = SliderData();
-	cone_twist = ConeTwistData();
-	g6dof = G6DOFData();
+	for (int i = 0; i < AXIS_COUNT; i++) {
+		limit_lower[i] = 0.0;
+		limit_upper[i] = 0.0;
+		limit_spring_frequency[i] = 0.0;
+		limit_spring_damping[i] = 0.0;
+		motor_speed[i] = 0.0;
+		motor_limit[i] = FLT_MAX;
+		spring_stiffness[i] = 0.0;
+		spring_frequency[i] = 0.0;
+		spring_damping[i] = 0.0;
+		spring_equilibrium[i] = 0.0;
+		drive_limit[i] = FLT_MAX;
+		drive_limit_set[i] = false;
+		limit_enabled[i] = false;
+		limit_spring_enabled[i] = false;
+		motor_enabled[i] = false;
+		spring_enabled[i] = false;
+		spring_use_frequency[i] = false;
+	}
+	angular_target_rotation = Quaternion();
+	has_angular_target_rotation = false;
+	if (joint_type == PS3DE::JOINT_TYPE_SLIDER) {
+		limit_enabled[0] = true;
+	} else if (joint_type == PS3DE::JOINT_TYPE_CONE_TWIST) {
+		limit_enabled[0] = true;
+		limit_enabled[1] = true;
+	}
 }
 
 void JoltJoint3D::make_pin(JoltBody3D *p_body_a, JoltBody3D *p_body_b, const Vector3 &p_local_a, const Vector3 &p_local_b) {
@@ -146721,9 +146221,9 @@ JPH::Constraint *JoltJoint3D::_build_hinge(JPH::Body *p_jolt_body_a, JPH::Body *
 	constraint_settings.mLimitsMin = -p_limit;
 	constraint_settings.mLimitsMax = p_limit;
 
-	if (hinge.limit_spring_enabled) {
-		constraint_settings.mLimitsSpringSettings.mFrequency = (float)hinge.limit_spring_frequency;
-		constraint_settings.mLimitsSpringSettings.mDamping = (float)hinge.limit_spring_damping;
+	if (limit_spring_enabled[0]) {
+		constraint_settings.mLimitsSpringSettings.mFrequency = (float)limit_spring_frequency[0];
+		constraint_settings.mLimitsSpringSettings.mDamping = (float)limit_spring_damping[0];
 	}
 
 	if (p_jolt_body_a == nullptr) {
@@ -146741,7 +146241,7 @@ void JoltJoint3D::_update_hinge_motor_state() {
 	}
 
 	if (JPH::HingeConstraint *constraint = static_cast<JPH::HingeConstraint *>(jolt_ref.GetPtr())) {
-		constraint->SetMotorState(hinge.motor_enabled ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
+		constraint->SetMotorState(motor_enabled[0] ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
 	}
 }
 
@@ -146752,7 +146252,7 @@ void JoltJoint3D::_update_hinge_motor_velocity() {
 
 	if (JPH::HingeConstraint *constraint = static_cast<JPH::HingeConstraint *>(jolt_ref.GetPtr())) {
 		// We flip the direction since Jolt is CCW but Godot is CW.
-		constraint->SetTargetAngularVelocity((float)-hinge.motor_target_speed);
+		constraint->SetTargetAngularVelocity((float)-motor_speed[0]);
 	}
 }
 
@@ -146763,8 +146263,8 @@ void JoltJoint3D::_update_hinge_motor_limit() {
 
 	if (JPH::HingeConstraint *constraint = static_cast<JPH::HingeConstraint *>(jolt_ref.GetPtr())) {
 		JPH::MotorSettings &motor_settings = constraint->GetMotorSettings();
-		motor_settings.mMinTorqueLimit = (float)-hinge.motor_max_torque;
-		motor_settings.mMaxTorqueLimit = (float)hinge.motor_max_torque;
+		motor_settings.mMinTorqueLimit = (float)-motor_limit[0];
+		motor_settings.mMaxTorqueLimit = (float)motor_limit[0];
 	}
 }
 
@@ -146799,10 +146299,10 @@ double JoltJoint3D::get_hinge_param(PS3DE::HingeJointParam p_param) const {
 			return HINGE_DEFAULT_BIAS;
 		}
 		case PS3DE::HINGE_JOINT_LIMIT_UPPER: {
-			return hinge.limit_upper;
+			return limit_upper[0];
 		}
 		case PS3DE::HINGE_JOINT_LIMIT_LOWER: {
-			return hinge.limit_lower;
+			return limit_lower[0];
 		}
 		case PS3DE::HINGE_JOINT_LIMIT_BIAS: {
 			return HINGE_DEFAULT_LIMIT_BIAS;
@@ -146814,10 +146314,10 @@ double JoltJoint3D::get_hinge_param(PS3DE::HingeJointParam p_param) const {
 			return HINGE_DEFAULT_RELAXATION;
 		}
 		case PS3DE::HINGE_JOINT_MOTOR_TARGET_VELOCITY: {
-			return hinge.motor_target_speed;
+			return motor_speed[0];
 		}
 		case PS3DE::HINGE_JOINT_MOTOR_MAX_IMPULSE: {
-			return hinge.motor_max_torque * estimate_physics_step();
+			return motor_limit[0] * estimate_physics_step();
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -146833,11 +146333,11 @@ void JoltJoint3D::set_hinge_param(PS3DE::HingeJointParam p_param, double p_value
 			}
 		} break;
 		case PS3DE::HINGE_JOINT_LIMIT_UPPER: {
-			hinge.limit_upper = p_value;
+			limit_upper[0] = p_value;
 			_hinge_limits_changed();
 		} break;
 		case PS3DE::HINGE_JOINT_LIMIT_LOWER: {
-			hinge.limit_lower = p_value;
+			limit_lower[0] = p_value;
 			_hinge_limits_changed();
 		} break;
 		case PS3DE::HINGE_JOINT_LIMIT_BIAS: {
@@ -146856,11 +146356,11 @@ void JoltJoint3D::set_hinge_param(PS3DE::HingeJointParam p_param, double p_value
 			}
 		} break;
 		case PS3DE::HINGE_JOINT_MOTOR_TARGET_VELOCITY: {
-			hinge.motor_target_speed = p_value;
+			motor_speed[0] = p_value;
 			_hinge_motor_speed_changed();
 		} break;
 		case PS3DE::HINGE_JOINT_MOTOR_MAX_IMPULSE: {
-			hinge.motor_max_torque = p_value / estimate_physics_step();
+			motor_limit[0] = p_value / estimate_physics_step();
 			_hinge_motor_limit_changed();
 		} break;
 		default: {
@@ -146872,13 +146372,13 @@ void JoltJoint3D::set_hinge_param(PS3DE::HingeJointParam p_param, double p_value
 double JoltJoint3D::get_hinge_jolt_param(JoltPhysicsServer3D::HingeJointParamJolt p_param) const {
 	switch (p_param) {
 		case JoltPhysicsServer3D::HINGE_JOINT_LIMIT_SPRING_FREQUENCY: {
-			return hinge.limit_spring_frequency;
+			return limit_spring_frequency[0];
 		}
 		case JoltPhysicsServer3D::HINGE_JOINT_LIMIT_SPRING_DAMPING: {
-			return hinge.limit_spring_damping;
+			return limit_spring_damping[0];
 		}
 		case JoltPhysicsServer3D::HINGE_JOINT_MOTOR_MAX_TORQUE: {
-			return hinge.motor_max_torque;
+			return motor_limit[0];
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -146889,15 +146389,15 @@ double JoltJoint3D::get_hinge_jolt_param(JoltPhysicsServer3D::HingeJointParamJol
 void JoltJoint3D::set_hinge_jolt_param(JoltPhysicsServer3D::HingeJointParamJolt p_param, double p_value) {
 	switch (p_param) {
 		case JoltPhysicsServer3D::HINGE_JOINT_LIMIT_SPRING_FREQUENCY: {
-			hinge.limit_spring_frequency = p_value;
+			limit_spring_frequency[0] = p_value;
 			_hinge_limit_spring_changed();
 		} break;
 		case JoltPhysicsServer3D::HINGE_JOINT_LIMIT_SPRING_DAMPING: {
-			hinge.limit_spring_damping = p_value;
+			limit_spring_damping[0] = p_value;
 			_hinge_limit_spring_changed();
 		} break;
 		case JoltPhysicsServer3D::HINGE_JOINT_MOTOR_MAX_TORQUE: {
-			hinge.motor_max_torque = p_value;
+			motor_limit[0] = p_value;
 			_hinge_motor_limit_changed();
 		} break;
 		default: {
@@ -146909,10 +146409,10 @@ void JoltJoint3D::set_hinge_jolt_param(JoltPhysicsServer3D::HingeJointParamJolt 
 bool JoltJoint3D::get_hinge_flag(PS3DE::HingeJointFlag p_flag) const {
 	switch (p_flag) {
 		case PS3DE::HINGE_JOINT_FLAG_USE_LIMIT: {
-			return hinge.limits_enabled;
+			return limit_enabled[0];
 		}
 		case PS3DE::HINGE_JOINT_FLAG_ENABLE_MOTOR: {
-			return hinge.motor_enabled;
+			return motor_enabled[0];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -146923,11 +146423,11 @@ bool JoltJoint3D::get_hinge_flag(PS3DE::HingeJointFlag p_flag) const {
 void JoltJoint3D::set_hinge_flag(PS3DE::HingeJointFlag p_flag, bool p_enabled) {
 	switch (p_flag) {
 		case PS3DE::HINGE_JOINT_FLAG_USE_LIMIT: {
-			hinge.limits_enabled = p_enabled;
+			limit_enabled[0] = p_enabled;
 			_hinge_limits_changed();
 		} break;
 		case PS3DE::HINGE_JOINT_FLAG_ENABLE_MOTOR: {
-			hinge.motor_enabled = p_enabled;
+			motor_enabled[0] = p_enabled;
 			_hinge_motor_state_changed();
 		} break;
 		default: {
@@ -146939,7 +146439,7 @@ void JoltJoint3D::set_hinge_flag(PS3DE::HingeJointFlag p_flag, bool p_enabled) {
 bool JoltJoint3D::get_hinge_jolt_flag(JoltPhysicsServer3D::HingeJointFlagJolt p_flag) const {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::HINGE_JOINT_FLAG_USE_LIMIT_SPRING: {
-			return hinge.limit_spring_enabled;
+			return limit_spring_enabled[0];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -146950,7 +146450,7 @@ bool JoltJoint3D::get_hinge_jolt_flag(JoltPhysicsServer3D::HingeJointFlagJolt p_
 void JoltJoint3D::set_hinge_jolt_flag(JoltPhysicsServer3D::HingeJointFlagJolt p_flag, bool p_enabled) {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::HINGE_JOINT_FLAG_USE_LIMIT_SPRING: {
-			hinge.limit_spring_enabled = p_enabled;
+			limit_spring_enabled[0] = p_enabled;
 			_hinge_limit_spring_changed();
 		} break;
 		default: {
@@ -146974,11 +146474,11 @@ void JoltJoint3D::_rebuild_hinge() {
 	float ref_shift = 0.0f;
 	float limit = JPH::JPH_PI;
 
-	if (hinge.limits_enabled && hinge.limit_lower <= hinge.limit_upper) {
-		const double limit_midpoint = (hinge.limit_lower + hinge.limit_upper) / 2.0f;
+	if (limit_enabled[0] && limit_lower[0] <= limit_upper[0]) {
+		const double limit_midpoint = (limit_lower[0] + limit_upper[0]) / 2.0f;
 
 		ref_shift = float(-limit_midpoint);
-		limit = float(hinge.limit_upper - limit_midpoint);
+		limit = float(limit_upper[0] - limit_midpoint);
 	}
 
 	Transform3D shifted_ref_a;
@@ -147017,9 +146517,9 @@ JPH::Constraint *JoltJoint3D::_build_slider(JPH::Body *p_jolt_body_a, JPH::Body 
 	constraint_settings.mLimitsMin = -p_limit;
 	constraint_settings.mLimitsMax = p_limit;
 
-	if (slider.limit_spring_enabled) {
-		constraint_settings.mLimitsSpringSettings.mFrequency = (float)slider.limit_spring_frequency;
-		constraint_settings.mLimitsSpringSettings.mDamping = (float)slider.limit_spring_damping;
+	if (limit_spring_enabled[0]) {
+		constraint_settings.mLimitsSpringSettings.mFrequency = (float)limit_spring_frequency[0];
+		constraint_settings.mLimitsSpringSettings.mDamping = (float)limit_spring_damping[0];
 	}
 
 	if (p_jolt_body_a == nullptr) {
@@ -147037,7 +146537,7 @@ void JoltJoint3D::_update_slider_motor_state() {
 	}
 
 	if (JPH::SliderConstraint *constraint = static_cast<JPH::SliderConstraint *>(jolt_ref.GetPtr())) {
-		constraint->SetMotorState(slider.motor_enabled ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
+		constraint->SetMotorState(motor_enabled[0] ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
 	}
 }
 
@@ -147047,7 +146547,7 @@ void JoltJoint3D::_update_slider_motor_velocity() {
 	}
 
 	if (JPH::SliderConstraint *constraint = static_cast<JPH::SliderConstraint *>(jolt_ref.GetPtr())) {
-		constraint->SetTargetVelocity((float)slider.motor_target_speed);
+		constraint->SetTargetVelocity((float)motor_speed[0]);
 	}
 }
 
@@ -147058,8 +146558,8 @@ void JoltJoint3D::_update_slider_motor_limit() {
 
 	if (JPH::SliderConstraint *constraint = static_cast<JPH::SliderConstraint *>(jolt_ref.GetPtr())) {
 		JPH::MotorSettings &motor_settings = constraint->GetMotorSettings();
-		motor_settings.mMinForceLimit = (float)-slider.motor_max_force;
-		motor_settings.mMaxForceLimit = (float)slider.motor_max_force;
+		motor_settings.mMinForceLimit = (float)-motor_limit[0];
+		motor_settings.mMaxForceLimit = (float)motor_limit[0];
 	}
 }
 
@@ -147091,10 +146591,10 @@ void JoltJoint3D::_slider_motor_limit_changed() {
 double JoltJoint3D::get_slider_param(PS3DE::SliderJointParam p_param) const {
 	switch (p_param) {
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_UPPER: {
-			return slider.limit_upper;
+			return limit_upper[0];
 		}
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_LOWER: {
-			return slider.limit_lower;
+			return limit_lower[0];
 		}
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS: {
 			return SLIDER_DEFAULT_LINEAR_LIMIT_SOFTNESS;
@@ -147165,11 +146665,11 @@ double JoltJoint3D::get_slider_param(PS3DE::SliderJointParam p_param) const {
 void JoltJoint3D::set_slider_param(PS3DE::SliderJointParam p_param, double p_value) {
 	switch (p_param) {
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_UPPER: {
-			slider.limit_upper = p_value;
+			limit_upper[0] = p_value;
 			_slider_limits_changed();
 		} break;
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_LOWER: {
-			slider.limit_lower = p_value;
+			limit_lower[0] = p_value;
 			_slider_limits_changed();
 		} break;
 		case PS3DE::SLIDER_JOINT_LINEAR_LIMIT_SOFTNESS: {
@@ -147281,16 +146781,16 @@ void JoltJoint3D::set_slider_param(PS3DE::SliderJointParam p_param, double p_val
 double JoltJoint3D::get_slider_jolt_param(JoltPhysicsServer3D::SliderJointParamJolt p_param) const {
 	switch (p_param) {
 		case JoltPhysicsServer3D::SLIDER_JOINT_LIMIT_SPRING_FREQUENCY: {
-			return slider.limit_spring_frequency;
+			return limit_spring_frequency[0];
 		}
 		case JoltPhysicsServer3D::SLIDER_JOINT_LIMIT_SPRING_DAMPING: {
-			return slider.limit_spring_damping;
+			return limit_spring_damping[0];
 		}
 		case JoltPhysicsServer3D::SLIDER_JOINT_MOTOR_TARGET_VELOCITY: {
-			return slider.motor_target_speed;
+			return motor_speed[0];
 		}
 		case JoltPhysicsServer3D::SLIDER_JOINT_MOTOR_MAX_FORCE: {
-			return slider.motor_max_force;
+			return motor_limit[0];
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -147301,19 +146801,19 @@ double JoltJoint3D::get_slider_jolt_param(JoltPhysicsServer3D::SliderJointParamJ
 void JoltJoint3D::set_slider_jolt_param(JoltPhysicsServer3D::SliderJointParamJolt p_param, double p_value) {
 	switch (p_param) {
 		case JoltPhysicsServer3D::SLIDER_JOINT_LIMIT_SPRING_FREQUENCY: {
-			slider.limit_spring_frequency = p_value;
+			limit_spring_frequency[0] = p_value;
 			_slider_limit_spring_changed();
 		} break;
 		case JoltPhysicsServer3D::SLIDER_JOINT_LIMIT_SPRING_DAMPING: {
-			slider.limit_spring_damping = p_value;
+			limit_spring_damping[0] = p_value;
 			_slider_limit_spring_changed();
 		} break;
 		case JoltPhysicsServer3D::SLIDER_JOINT_MOTOR_TARGET_VELOCITY: {
-			slider.motor_target_speed = p_value;
+			motor_speed[0] = p_value;
 			_slider_motor_speed_changed();
 		} break;
 		case JoltPhysicsServer3D::SLIDER_JOINT_MOTOR_MAX_FORCE: {
-			slider.motor_max_force = p_value;
+			motor_limit[0] = p_value;
 			_slider_motor_limit_changed();
 		} break;
 		default: {
@@ -147325,13 +146825,13 @@ void JoltJoint3D::set_slider_jolt_param(JoltPhysicsServer3D::SliderJointParamJol
 bool JoltJoint3D::get_slider_jolt_flag(JoltPhysicsServer3D::SliderJointFlagJolt p_flag) const {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_USE_LIMIT: {
-			return slider.limits_enabled;
+			return limit_enabled[0];
 		}
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_USE_LIMIT_SPRING: {
-			return slider.limit_spring_enabled;
+			return limit_spring_enabled[0];
 		}
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_ENABLE_MOTOR: {
-			return slider.motor_enabled;
+			return motor_enabled[0];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -147342,15 +146842,15 @@ bool JoltJoint3D::get_slider_jolt_flag(JoltPhysicsServer3D::SliderJointFlagJolt 
 void JoltJoint3D::set_slider_jolt_flag(JoltPhysicsServer3D::SliderJointFlagJolt p_flag, bool p_enabled) {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_USE_LIMIT: {
-			slider.limits_enabled = p_enabled;
+			limit_enabled[0] = p_enabled;
 			_slider_limits_changed();
 		} break;
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_USE_LIMIT_SPRING: {
-			slider.limit_spring_enabled = p_enabled;
+			limit_spring_enabled[0] = p_enabled;
 			_slider_limit_spring_changed();
 		} break;
 		case JoltPhysicsServer3D::SLIDER_JOINT_FLAG_ENABLE_MOTOR: {
-			slider.motor_enabled = p_enabled;
+			motor_enabled[0] = p_enabled;
 			_slider_motor_state_changed();
 		} break;
 		default: {
@@ -147374,11 +146874,11 @@ void JoltJoint3D::_rebuild_slider() {
 	float ref_shift = 0.0f;
 	float limit = FLT_MAX;
 
-	if (slider.limits_enabled && slider.limit_lower <= slider.limit_upper) {
-		const double limit_midpoint = (slider.limit_lower + slider.limit_upper) / 2.0f;
+	if (limit_enabled[0] && limit_lower[0] <= limit_upper[0]) {
+		const double limit_midpoint = (limit_lower[0] + limit_upper[0]) / 2.0f;
 
 		ref_shift = float(-limit_midpoint);
-		limit = float(slider.limit_upper - limit_midpoint);
+		limit = float(limit_upper[0] - limit_midpoint);
 	}
 
 	Transform3D shifted_ref_a;
@@ -147409,7 +146909,7 @@ JPH::Constraint *JoltJoint3D::_build_swing_twist(JPH::Body *p_jolt_body_a, JPH::
 	const bool twist_span_valid = p_twist_limit_span >= 0 && p_twist_limit_span <= JPH::JPH_PI;
 	const bool swing_span_valid = p_swing_limit_span >= 0 && p_swing_limit_span <= JPH::JPH_PI;
 
-	if (cone_twist.twist_limit_enabled && twist_span_valid) {
+	if (limit_enabled[1] && twist_span_valid) {
 		constraint_settings.mTwistMinAngle = -p_twist_limit_span;
 		constraint_settings.mTwistMaxAngle = p_twist_limit_span;
 	} else {
@@ -147417,7 +146917,7 @@ JPH::Constraint *JoltJoint3D::_build_swing_twist(JPH::Body *p_jolt_body_a, JPH::
 		constraint_settings.mTwistMaxAngle = JPH::JPH_PI;
 	}
 
-	if (cone_twist.swing_limit_enabled && swing_span_valid) {
+	if (limit_enabled[0] && swing_span_valid) {
 		constraint_settings.mNormalHalfConeAngle = p_swing_limit_span;
 		constraint_settings.mPlaneHalfConeAngle = p_swing_limit_span;
 	} else {
@@ -147449,38 +146949,38 @@ JPH::Constraint *JoltJoint3D::_build_swing_twist(JPH::Body *p_jolt_body_a, JPH::
 
 void JoltJoint3D::_update_swing_motor_state() {
 	if (JPH::SwingTwistConstraint *constraint = static_cast<JPH::SwingTwistConstraint *>(jolt_ref.GetPtr())) {
-		constraint->SetSwingMotorState(cone_twist.swing_motor_enabled ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
+		constraint->SetSwingMotorState(motor_enabled[0] ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
 	}
 }
 
 void JoltJoint3D::_update_twist_motor_state() {
 	if (JPH::SwingTwistConstraint *constraint = static_cast<JPH::SwingTwistConstraint *>(jolt_ref.GetPtr())) {
-		constraint->SetTwistMotorState(cone_twist.twist_motor_enabled ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
+		constraint->SetTwistMotorState(motor_enabled[1] ? JPH::EMotorState::Velocity : JPH::EMotorState::Off);
 	}
 }
 
 void JoltJoint3D::_update_cone_twist_motor_velocity() {
 	if (JPH::SwingTwistConstraint *constraint = static_cast<JPH::SwingTwistConstraint *>(jolt_ref.GetPtr())) {
 		// We flip the direction since Jolt is CCW but Godot is CW.
-		constraint->SetTargetAngularVelocityCS({ (float)-cone_twist.twist_motor_target_speed,
-				(float)-cone_twist.swing_motor_target_speed_y,
-				(float)-cone_twist.swing_motor_target_speed_z });
+		constraint->SetTargetAngularVelocityCS({ (float)-motor_speed[2],
+				(float)-motor_speed[0],
+				(float)-motor_speed[1] });
 	}
 }
 
 void JoltJoint3D::_update_swing_motor_limit() {
 	if (JPH::SwingTwistConstraint *constraint = static_cast<JPH::SwingTwistConstraint *>(jolt_ref.GetPtr())) {
 		JPH::MotorSettings &motor_settings = constraint->GetSwingMotorSettings();
-		motor_settings.mMinTorqueLimit = (float)-cone_twist.swing_motor_max_torque;
-		motor_settings.mMaxTorqueLimit = (float)cone_twist.swing_motor_max_torque;
+		motor_settings.mMinTorqueLimit = (float)-motor_limit[0];
+		motor_settings.mMaxTorqueLimit = (float)motor_limit[0];
 	}
 }
 
 void JoltJoint3D::_update_twist_motor_limit() {
 	if (JPH::SwingTwistConstraint *constraint = static_cast<JPH::SwingTwistConstraint *>(jolt_ref.GetPtr())) {
 		JPH::MotorSettings &motor_settings = constraint->GetTwistMotorSettings();
-		motor_settings.mMinTorqueLimit = (float)-cone_twist.twist_motor_max_torque;
-		motor_settings.mMaxTorqueLimit = (float)cone_twist.twist_motor_max_torque;
+		motor_settings.mMinTorqueLimit = (float)-motor_limit[1];
+		motor_settings.mMaxTorqueLimit = (float)motor_limit[1];
 	}
 }
 
@@ -147517,10 +147017,10 @@ void JoltJoint3D::_twist_motor_limit_changed() {
 double JoltJoint3D::get_cone_twist_param(PS3DE::ConeTwistJointParam p_param) const {
 	switch (p_param) {
 		case PS3DE::CONE_TWIST_JOINT_SWING_SPAN: {
-			return cone_twist.swing_limit_span;
+			return limit_upper[0];
 		}
 		case PS3DE::CONE_TWIST_JOINT_TWIST_SPAN: {
-			return cone_twist.twist_limit_span;
+			return limit_upper[1];
 		}
 		case PS3DE::CONE_TWIST_JOINT_BIAS: {
 			return CONE_TWIST_DEFAULT_BIAS;
@@ -147540,11 +147040,11 @@ double JoltJoint3D::get_cone_twist_param(PS3DE::ConeTwistJointParam p_param) con
 void JoltJoint3D::set_cone_twist_param(PS3DE::ConeTwistJointParam p_param, double p_value) {
 	switch (p_param) {
 		case PS3DE::CONE_TWIST_JOINT_SWING_SPAN: {
-			cone_twist.swing_limit_span = p_value;
+			limit_upper[0] = p_value;
 			_cone_twist_limits_changed();
 		} break;
 		case PS3DE::CONE_TWIST_JOINT_TWIST_SPAN: {
-			cone_twist.twist_limit_span = p_value;
+			limit_upper[1] = p_value;
 			_cone_twist_limits_changed();
 		} break;
 		case PS3DE::CONE_TWIST_JOINT_BIAS: {
@@ -147571,19 +147071,19 @@ void JoltJoint3D::set_cone_twist_param(PS3DE::ConeTwistJointParam p_param, doubl
 double JoltJoint3D::get_cone_twist_jolt_param(JoltPhysicsServer3D::ConeTwistJointParamJolt p_param) const {
 	switch (p_param) {
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Y: {
-			return cone_twist.swing_motor_target_speed_y;
+			return motor_speed[0];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Z: {
-			return cone_twist.swing_motor_target_speed_z;
+			return motor_speed[1];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_TWIST_MOTOR_TARGET_VELOCITY: {
-			return cone_twist.twist_motor_target_speed;
+			return motor_speed[2];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_MAX_TORQUE: {
-			return cone_twist.swing_motor_max_torque;
+			return motor_limit[0];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_TWIST_MOTOR_MAX_TORQUE: {
-			return cone_twist.twist_motor_max_torque;
+			return motor_limit[1];
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -147594,23 +147094,23 @@ double JoltJoint3D::get_cone_twist_jolt_param(JoltPhysicsServer3D::ConeTwistJoin
 void JoltJoint3D::set_cone_twist_jolt_param(JoltPhysicsServer3D::ConeTwistJointParamJolt p_param, double p_value) {
 	switch (p_param) {
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Y: {
-			cone_twist.swing_motor_target_speed_y = p_value;
+			motor_speed[0] = p_value;
 			_cone_twist_motor_velocity_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_TARGET_VELOCITY_Z: {
-			cone_twist.swing_motor_target_speed_z = p_value;
+			motor_speed[1] = p_value;
 			_cone_twist_motor_velocity_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_TWIST_MOTOR_TARGET_VELOCITY: {
-			cone_twist.twist_motor_target_speed = p_value;
+			motor_speed[2] = p_value;
 			_cone_twist_motor_velocity_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_SWING_MOTOR_MAX_TORQUE: {
-			cone_twist.swing_motor_max_torque = p_value;
+			motor_limit[0] = p_value;
 			_swing_motor_limit_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_TWIST_MOTOR_MAX_TORQUE: {
-			cone_twist.twist_motor_max_torque = p_value;
+			motor_limit[1] = p_value;
 			_twist_motor_limit_changed();
 		} break;
 		default: {
@@ -147622,16 +147122,16 @@ void JoltJoint3D::set_cone_twist_jolt_param(JoltPhysicsServer3D::ConeTwistJointP
 bool JoltJoint3D::get_cone_twist_jolt_flag(JoltPhysicsServer3D::ConeTwistJointFlagJolt p_flag) const {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_USE_SWING_LIMIT: {
-			return cone_twist.swing_limit_enabled;
+			return limit_enabled[0];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_USE_TWIST_LIMIT: {
-			return cone_twist.twist_limit_enabled;
+			return limit_enabled[1];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_ENABLE_SWING_MOTOR: {
-			return cone_twist.swing_motor_enabled;
+			return motor_enabled[0];
 		}
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_ENABLE_TWIST_MOTOR: {
-			return cone_twist.twist_motor_enabled;
+			return motor_enabled[1];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -147642,19 +147142,19 @@ bool JoltJoint3D::get_cone_twist_jolt_flag(JoltPhysicsServer3D::ConeTwistJointFl
 void JoltJoint3D::set_cone_twist_jolt_flag(JoltPhysicsServer3D::ConeTwistJointFlagJolt p_flag, bool p_enabled) {
 	switch (p_flag) {
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_USE_SWING_LIMIT: {
-			cone_twist.swing_limit_enabled = p_enabled;
+			limit_enabled[0] = p_enabled;
 			_cone_twist_limits_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_USE_TWIST_LIMIT: {
-			cone_twist.twist_limit_enabled = p_enabled;
+			limit_enabled[1] = p_enabled;
 			_cone_twist_limits_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_ENABLE_SWING_MOTOR: {
-			cone_twist.swing_motor_enabled = p_enabled;
+			motor_enabled[0] = p_enabled;
 			_swing_motor_state_changed();
 		} break;
 		case JoltPhysicsServer3D::CONE_TWIST_JOINT_FLAG_ENABLE_TWIST_MOTOR: {
-			cone_twist.twist_motor_enabled = p_enabled;
+			motor_enabled[1] = p_enabled;
 			_twist_motor_state_changed();
 		} break;
 		default: {
@@ -147680,7 +147180,7 @@ void JoltJoint3D::_rebuild_cone_twist() {
 
 	_shift_reference_frames(Vector3(), Vector3(), shifted_ref_a, shifted_ref_b);
 
-	jolt_ref = _build_swing_twist(jolt_body_a, jolt_body_b, shifted_ref_a, shifted_ref_b, (float)cone_twist.swing_limit_span, (float)cone_twist.twist_limit_span);
+	jolt_ref = _build_swing_twist(jolt_body_a, jolt_body_b, shifted_ref_a, shifted_ref_b, (float)limit_upper[0], (float)limit_upper[1]);
 
 	space->add_joint(this);
 
@@ -147699,8 +147199,8 @@ JPH::Constraint *JoltJoint3D::_build_6dof(JPH::Body *p_jolt_body_a, JPH::Body *p
 	JPH::SixDOFConstraintSettings constraint_settings;
 
 	for (int axis = 0; axis < AXIS_COUNT; ++axis) {
-		double lower = g6dof.limit_lower[axis];
-		double upper = g6dof.limit_upper[axis];
+		double lower = limit_lower[axis];
+		double upper = limit_upper[axis];
 
 		if (axis >= AXIS_ANGULAR_X && axis <= AXIS_ANGULAR_Z) {
 			const double temp = lower;
@@ -147708,7 +147208,7 @@ JPH::Constraint *JoltJoint3D::_build_6dof(JPH::Body *p_jolt_body_a, JPH::Body *p
 			upper = -temp;
 		}
 
-		if (!g6dof.limit_enabled[axis] || lower > upper) {
+		if (!limit_enabled[axis] || lower > upper) {
 			constraint_settings.MakeFreeAxis((JoltAxis)axis);
 		} else {
 			constraint_settings.SetLimitedAxis((JoltAxis)axis, (float)lower, (float)upper);
@@ -147743,9 +147243,9 @@ void JoltJoint3D::_update_6dof_limit_spring_parameters(int p_axis) {
 
 	settings.mMode = JPH::ESpringMode::FrequencyAndDamping;
 
-	if (g6dof.limit_spring_enabled[p_axis]) {
-		settings.mFrequency = (float)g6dof.limit_spring_frequency[p_axis];
-		settings.mDamping = (float)g6dof.limit_spring_damping[p_axis];
+	if (limit_spring_enabled[p_axis]) {
+		settings.mFrequency = (float)limit_spring_frequency[p_axis];
+		settings.mDamping = (float)limit_spring_damping[p_axis];
 	} else {
 		settings.mFrequency = 0.0f;
 		settings.mDamping = 0.0f;
@@ -147756,9 +147256,9 @@ void JoltJoint3D::_update_6dof_limit_spring_parameters(int p_axis) {
 
 void JoltJoint3D::_update_6dof_motor_state(int p_axis) {
 	if (JPH::SixDOFConstraint *constraint = static_cast<JPH::SixDOFConstraint *>(jolt_ref.GetPtr())) {
-		if (g6dof.motor_enabled[p_axis]) {
+		if (motor_enabled[p_axis]) {
 			constraint->SetMotorState((JoltAxis)p_axis, JPH::EMotorState::Velocity);
-		} else if (g6dof.spring_enabled[p_axis]) {
+		} else if (spring_enabled[p_axis]) {
 			constraint->SetMotorState((JoltAxis)p_axis, JPH::EMotorState::Position);
 		} else {
 			constraint->SetMotorState((JoltAxis)p_axis, JPH::EMotorState::Off);
@@ -147774,15 +147274,15 @@ void JoltJoint3D::_update_6dof_motor_velocity(int p_axis) {
 
 	if (p_axis >= AXIS_LINEAR_X && p_axis <= AXIS_LINEAR_Z) {
 		constraint->SetTargetVelocityCS(JPH::Vec3(
-				(float)g6dof.motor_speed[AXIS_LINEAR_X],
-				(float)g6dof.motor_speed[AXIS_LINEAR_Y],
-				(float)g6dof.motor_speed[AXIS_LINEAR_Z]));
+				(float)motor_speed[AXIS_LINEAR_X],
+				(float)motor_speed[AXIS_LINEAR_Y],
+				(float)motor_speed[AXIS_LINEAR_Z]));
 	} else {
 		// We flip the direction since Jolt is CCW but Godot is CW.
 		constraint->SetTargetAngularVelocityCS(JPH::Vec3(
-				(float)-g6dof.motor_speed[AXIS_ANGULAR_X],
-				(float)-g6dof.motor_speed[AXIS_ANGULAR_Y],
-				(float)-g6dof.motor_speed[AXIS_ANGULAR_Z]));
+				(float)-motor_speed[AXIS_ANGULAR_X],
+				(float)-motor_speed[AXIS_ANGULAR_Y],
+				(float)-motor_speed[AXIS_ANGULAR_Z]));
 	}
 }
 
@@ -147796,10 +147296,10 @@ void JoltJoint3D::_update_6dof_motor_limit(int p_axis) {
 
 	float limit = FLT_MAX;
 
-	if (g6dof.drive_limit_set[p_axis]) {
-		limit = (float)g6dof.drive_limit[p_axis];
-	} else if (g6dof.motor_enabled[p_axis]) {
-		limit = (float)g6dof.motor_limit[p_axis];
+	if (drive_limit_set[p_axis]) {
+		limit = (float)drive_limit[p_axis];
+	} else if (motor_enabled[p_axis]) {
+		limit = (float)motor_limit[p_axis];
 	}
 
 	if (p_axis >= AXIS_LINEAR_X && p_axis <= AXIS_LINEAR_Z) {
@@ -147817,15 +147317,15 @@ void JoltJoint3D::_update_6dof_spring_parameters(int p_axis) {
 
 	JPH::MotorSettings &motor_settings = constraint->GetMotorSettings((JoltAxis)p_axis);
 
-	if (g6dof.spring_use_frequency[p_axis]) {
+	if (spring_use_frequency[p_axis]) {
 		motor_settings.mSpringSettings.mMode = JPH::ESpringMode::FrequencyAndDamping;
-		motor_settings.mSpringSettings.mFrequency = (float)g6dof.spring_frequency[p_axis];
+		motor_settings.mSpringSettings.mFrequency = (float)spring_frequency[p_axis];
 	} else {
 		motor_settings.mSpringSettings.mMode = JPH::ESpringMode::StiffnessAndDamping;
-		motor_settings.mSpringSettings.mStiffness = (float)g6dof.spring_stiffness[p_axis];
+		motor_settings.mSpringSettings.mStiffness = (float)spring_stiffness[p_axis];
 	}
 
-	motor_settings.mSpringSettings.mDamping = (float)g6dof.spring_damping[p_axis];
+	motor_settings.mSpringSettings.mDamping = (float)spring_damping[p_axis];
 }
 
 void JoltJoint3D::_update_6dof_spring_equilibrium(int p_axis) {
@@ -147836,17 +147336,17 @@ void JoltJoint3D::_update_6dof_spring_equilibrium(int p_axis) {
 
 	if (p_axis >= AXIS_LINEAR_X && p_axis <= AXIS_LINEAR_Z) {
 		const Vector3 target_position = Vector3(
-				(float)g6dof.spring_equilibrium[AXIS_LINEAR_X],
-				(float)g6dof.spring_equilibrium[AXIS_LINEAR_Y],
-				(float)g6dof.spring_equilibrium[AXIS_LINEAR_Z]);
+				(float)spring_equilibrium[AXIS_LINEAR_X],
+				(float)spring_equilibrium[AXIS_LINEAR_Y],
+				(float)spring_equilibrium[AXIS_LINEAR_Z]);
 
 		constraint->SetTargetPositionCS(to_jolt(target_position));
 	} else {
 		// We flip the direction since Jolt is CCW but Godot is CW.
 		const Basis target_orientation = Basis::from_euler(
-				Vector3((float)-g6dof.spring_equilibrium[AXIS_ANGULAR_X],
-						(float)-g6dof.spring_equilibrium[AXIS_ANGULAR_Y],
-						(float)-g6dof.spring_equilibrium[AXIS_ANGULAR_Z]),
+				Vector3((float)-spring_equilibrium[AXIS_ANGULAR_X],
+						(float)-spring_equilibrium[AXIS_ANGULAR_Y],
+						(float)-spring_equilibrium[AXIS_ANGULAR_Z]),
 				EulerOrder::ZYX);
 
 		constraint->SetTargetOrientationCS(to_jolt(target_orientation));
@@ -147854,7 +147354,7 @@ void JoltJoint3D::_update_6dof_spring_equilibrium(int p_axis) {
 }
 
 void JoltJoint3D::_update_6dof_angular_target_rotation() {
-	if (!g6dof.has_angular_target_rotation) {
+	if (!has_angular_target_rotation) {
 		return;
 	}
 
@@ -147863,7 +147363,7 @@ void JoltJoint3D::_update_6dof_angular_target_rotation() {
 		return;
 	}
 
-	const JPH::Quat target_orientation = to_jolt(g6dof.angular_target_rotation);
+	const JPH::Quat target_orientation = to_jolt(angular_target_rotation);
 	constraint->SetTargetOrientationBS(target_orientation);
 }
 
@@ -147919,10 +147419,10 @@ double JoltJoint3D::get_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPa
 
 	switch ((int)p_param) {
 		case PS3DE::G6DOF_JOINT_LINEAR_LOWER_LIMIT: {
-			return g6dof.limit_lower[axis_lin];
+			return limit_lower[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_UPPER_LIMIT: {
-			return g6dof.limit_upper[axis_lin];
+			return limit_upper[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS: {
 			return G6DOF_DEFAULT_LINEAR_LIMIT_SOFTNESS;
@@ -147934,28 +147434,28 @@ double JoltJoint3D::get_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPa
 			return G6DOF_DEFAULT_LINEAR_DAMPING;
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_MOTOR_TARGET_VELOCITY: {
-			return g6dof.motor_speed[axis_lin];
+			return motor_speed[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_MOTOR_FORCE_LIMIT: {
-			return g6dof.motor_limit[axis_lin];
+			return motor_limit[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_STIFFNESS: {
-			return g6dof.spring_stiffness[axis_lin];
+			return spring_stiffness[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_DAMPING: {
-			return g6dof.spring_damping[axis_lin];
+			return spring_damping[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_EQUILIBRIUM_POINT: {
-			return g6dof.spring_equilibrium[axis_lin];
+			return spring_equilibrium[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT: {
-			return g6dof.drive_limit[axis_lin];
+			return drive_limit[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_LOWER_LIMIT: {
-			return g6dof.limit_lower[axis_ang];
+			return limit_lower[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_UPPER_LIMIT: {
-			return g6dof.limit_upper[axis_ang];
+			return limit_upper[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_LIMIT_SOFTNESS: {
 			return G6DOF_DEFAULT_ANGULAR_LIMIT_SOFTNESS;
@@ -147973,22 +147473,22 @@ double JoltJoint3D::get_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPa
 			return G6DOF_DEFAULT_ANGULAR_ERP;
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_MOTOR_TARGET_VELOCITY: {
-			return g6dof.motor_speed[axis_ang];
+			return motor_speed[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_MOTOR_FORCE_LIMIT: {
-			return g6dof.motor_limit[axis_ang];
+			return motor_limit[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_STIFFNESS: {
-			return g6dof.spring_stiffness[axis_ang];
+			return spring_stiffness[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_DAMPING: {
-			return g6dof.spring_damping[axis_ang];
+			return spring_damping[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT: {
-			return g6dof.spring_equilibrium[axis_ang];
+			return spring_equilibrium[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT: {
-			return g6dof.drive_limit[axis_ang];
+			return drive_limit[axis_ang];
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -148002,11 +147502,11 @@ void JoltJoint3D::set_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPara
 
 	switch ((int)p_param) {
 		case PS3DE::G6DOF_JOINT_LINEAR_LOWER_LIMIT: {
-			g6dof.limit_lower[axis_lin] = p_value;
+			limit_lower[axis_lin] = p_value;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_UPPER_LIMIT: {
-			g6dof.limit_upper[axis_lin] = p_value;
+			limit_upper[axis_lin] = p_value;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_LIMIT_SOFTNESS: {
@@ -148025,36 +147525,36 @@ void JoltJoint3D::set_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPara
 			}
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_MOTOR_TARGET_VELOCITY: {
-			g6dof.motor_speed[axis_lin] = p_value;
+			motor_speed[axis_lin] = p_value;
 			_6dof_motor_speed_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_MOTOR_FORCE_LIMIT: {
-			g6dof.motor_limit[axis_lin] = p_value;
+			motor_limit[axis_lin] = p_value;
 			_6dof_motor_limit_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_STIFFNESS: {
-			g6dof.spring_stiffness[axis_lin] = p_value;
+			spring_stiffness[axis_lin] = p_value;
 			_6dof_spring_parameters_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_DAMPING: {
-			g6dof.spring_damping[axis_lin] = p_value;
+			spring_damping[axis_lin] = p_value;
 			_6dof_spring_parameters_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_SPRING_EQUILIBRIUM_POINT: {
-			g6dof.spring_equilibrium[axis_lin] = p_value;
+			spring_equilibrium[axis_lin] = p_value;
 			_6dof_spring_equilibrium_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_LINEAR_DRIVE_FORCE_LIMIT: {
-			g6dof.drive_limit[axis_lin] = p_value;
-			g6dof.drive_limit_set[axis_lin] = true;
+			drive_limit[axis_lin] = p_value;
+			drive_limit_set[axis_lin] = true;
 			_6dof_drive_limit_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_LOWER_LIMIT: {
-			g6dof.limit_lower[axis_ang] = p_value;
+			limit_lower[axis_ang] = p_value;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_UPPER_LIMIT: {
-			g6dof.limit_upper[axis_ang] = p_value;
+			limit_upper[axis_ang] = p_value;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_LIMIT_SOFTNESS: {
@@ -148083,29 +147583,29 @@ void JoltJoint3D::set_6dof_param(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisPara
 			}
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_MOTOR_TARGET_VELOCITY: {
-			g6dof.motor_speed[axis_ang] = p_value;
+			motor_speed[axis_ang] = p_value;
 			_6dof_motor_speed_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_MOTOR_FORCE_LIMIT: {
-			g6dof.motor_limit[axis_ang] = p_value;
+			motor_limit[axis_ang] = p_value;
 			_6dof_motor_limit_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_STIFFNESS: {
-			g6dof.spring_stiffness[axis_ang] = p_value;
+			spring_stiffness[axis_ang] = p_value;
 			_6dof_spring_parameters_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_DAMPING: {
-			g6dof.spring_damping[axis_ang] = p_value;
+			spring_damping[axis_ang] = p_value;
 			_6dof_spring_parameters_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_SPRING_EQUILIBRIUM_POINT: {
-			g6dof.spring_equilibrium[axis_ang] = p_value;
-			g6dof.has_angular_target_rotation = false;
+			spring_equilibrium[axis_ang] = p_value;
+			has_angular_target_rotation = false;
 			_6dof_spring_equilibrium_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_ANGULAR_DRIVE_TORQUE_LIMIT: {
-			g6dof.drive_limit[axis_ang] = p_value;
-			g6dof.drive_limit_set[axis_ang] = true;
+			drive_limit[axis_ang] = p_value;
+			drive_limit_set[axis_ang] = true;
 			_6dof_drive_limit_changed(axis_ang);
 		} break;
 		default: {
@@ -148120,22 +147620,22 @@ bool JoltJoint3D::get_6dof_flag(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisFlag 
 
 	switch ((int)p_flag) {
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT: {
-			return g6dof.limit_enabled[axis_lin];
+			return limit_enabled[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT: {
-			return g6dof.limit_enabled[axis_ang];
+			return limit_enabled[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING: {
-			return g6dof.spring_enabled[axis_ang];
+			return spring_enabled[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING: {
-			return g6dof.spring_enabled[axis_lin];
+			return spring_enabled[axis_lin];
 		}
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR: {
-			return g6dof.motor_enabled[axis_ang];
+			return motor_enabled[axis_ang];
 		}
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_MOTOR: {
-			return g6dof.motor_enabled[axis_lin];
+			return motor_enabled[axis_lin];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -148149,27 +147649,27 @@ void JoltJoint3D::set_6dof_flag(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisFlag 
 
 	switch ((int)p_flag) {
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT: {
-			g6dof.limit_enabled[axis_lin] = p_enabled;
+			limit_enabled[axis_lin] = p_enabled;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_LIMIT: {
-			g6dof.limit_enabled[axis_ang] = p_enabled;
+			limit_enabled[axis_ang] = p_enabled;
 			_6dof_limits_changed();
 		} break;
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING: {
-			g6dof.spring_enabled[axis_ang] = p_enabled;
+			spring_enabled[axis_ang] = p_enabled;
 			_6dof_spring_state_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING: {
-			g6dof.spring_enabled[axis_lin] = p_enabled;
+			spring_enabled[axis_lin] = p_enabled;
 			_6dof_spring_state_changed(axis_lin);
 		} break;
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_MOTOR: {
-			g6dof.motor_enabled[axis_ang] = p_enabled;
+			motor_enabled[axis_ang] = p_enabled;
 			_6dof_motor_state_changed(axis_ang);
 		} break;
 		case PS3DE::G6DOF_JOINT_FLAG_ENABLE_LINEAR_MOTOR: {
-			g6dof.motor_enabled[axis_lin] = p_enabled;
+			motor_enabled[axis_lin] = p_enabled;
 			_6dof_motor_state_changed(axis_lin);
 		} break;
 		default: {
@@ -148181,15 +147681,15 @@ void JoltJoint3D::set_6dof_flag(Vector3::Axis p_axis, PS3DE::G6DOFJointAxisFlag 
 void JoltJoint3D::set_6dof_angular_target_rotation(const Quaternion &p_target_rotation) {
 	ERR_FAIL_COND_MSG(!p_target_rotation.is_finite() || p_target_rotation.length_squared() <= CMP_EPSILON, "Angular target rotation must be a finite, non-zero quaternion.");
 
-	g6dof.angular_target_rotation = p_target_rotation.normalized();
-	g6dof.has_angular_target_rotation = true;
+	angular_target_rotation = p_target_rotation.normalized();
+	has_angular_target_rotation = true;
 	_update_6dof_angular_target_rotation();
 	_wake_up_bodies();
 }
 
 Quaternion JoltJoint3D::get_6dof_angular_target_rotation() const {
-	if (g6dof.has_angular_target_rotation) {
-		return g6dof.angular_target_rotation;
+	if (has_angular_target_rotation) {
+		return angular_target_rotation;
 	}
 
 	const JPH::SixDOFConstraint *constraint = static_cast<const JPH::SixDOFConstraint *>(jolt_ref.GetPtr());
@@ -148198,9 +147698,9 @@ Quaternion JoltJoint3D::get_6dof_angular_target_rotation() const {
 	}
 
 	const Basis target_orientation_cs = Basis::from_euler(
-			Vector3(static_cast<real_t>(-g6dof.spring_equilibrium[AXIS_ANGULAR_X]),
-					static_cast<real_t>(-g6dof.spring_equilibrium[AXIS_ANGULAR_Y]),
-					static_cast<real_t>(-g6dof.spring_equilibrium[AXIS_ANGULAR_Z])),
+			Vector3(static_cast<real_t>(-spring_equilibrium[AXIS_ANGULAR_X]),
+					static_cast<real_t>(-spring_equilibrium[AXIS_ANGULAR_Y]),
+					static_cast<real_t>(-spring_equilibrium[AXIS_ANGULAR_Z])),
 			EulerOrder::ZYX);
 	const Basis constraint_to_body_1 = to_godot(constraint->GetConstraintToBody1Matrix()).basis;
 	const Basis constraint_to_body_2 = to_godot(constraint->GetConstraintToBody2Matrix()).basis;
@@ -148214,16 +147714,16 @@ double JoltJoint3D::get_6dof_jolt_param(Vector3::Axis p_axis, JoltPhysicsServer3
 
 	switch ((int)p_param) {
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_SPRING_FREQUENCY: {
-			return g6dof.spring_frequency[axis_lin];
+			return spring_frequency[axis_lin];
 		}
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_LIMIT_SPRING_FREQUENCY: {
-			return g6dof.limit_spring_frequency[axis_lin];
+			return limit_spring_frequency[axis_lin];
 		}
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_LIMIT_SPRING_DAMPING: {
-			return g6dof.limit_spring_damping[axis_lin];
+			return limit_spring_damping[axis_lin];
 		}
 		case JoltPhysicsServer3D::G6DOF_JOINT_ANGULAR_SPRING_FREQUENCY: {
-			return g6dof.spring_frequency[axis_ang];
+			return spring_frequency[axis_ang];
 		}
 		default: {
 			ERR_FAIL_V_MSG(0.0, vformat("Unhandled parameter: '%d'. This should not happen. Please report this.", p_param));
@@ -148237,19 +147737,19 @@ void JoltJoint3D::set_6dof_jolt_param(Vector3::Axis p_axis, JoltPhysicsServer3D:
 
 	switch ((int)p_param) {
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_SPRING_FREQUENCY: {
-			g6dof.spring_frequency[axis_lin] = p_value;
+			spring_frequency[axis_lin] = p_value;
 			_6dof_spring_parameters_changed(axis_lin);
 		} break;
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_LIMIT_SPRING_FREQUENCY: {
-			g6dof.limit_spring_frequency[axis_lin] = p_value;
+			limit_spring_frequency[axis_lin] = p_value;
 			_6dof_limit_spring_parameters_changed(axis_lin);
 		} break;
 		case JoltPhysicsServer3D::G6DOF_JOINT_LINEAR_LIMIT_SPRING_DAMPING: {
-			g6dof.limit_spring_damping[axis_lin] = p_value;
+			limit_spring_damping[axis_lin] = p_value;
 			_6dof_limit_spring_parameters_changed(axis_lin);
 		} break;
 		case JoltPhysicsServer3D::G6DOF_JOINT_ANGULAR_SPRING_FREQUENCY: {
-			g6dof.spring_frequency[axis_ang] = p_value;
+			spring_frequency[axis_ang] = p_value;
 			_6dof_spring_parameters_changed(axis_ang);
 		} break;
 		default: {
@@ -148264,13 +147764,13 @@ bool JoltJoint3D::get_6dof_jolt_flag(Vector3::Axis p_axis, JoltPhysicsServer3D::
 
 	switch ((int)p_flag) {
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT_SPRING: {
-			return g6dof.limit_spring_enabled[axis_lin];
+			return limit_spring_enabled[axis_lin];
 		}
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING_FREQUENCY: {
-			return g6dof.spring_use_frequency[axis_lin];
+			return spring_use_frequency[axis_lin];
 		}
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING_FREQUENCY: {
-			return g6dof.spring_use_frequency[axis_ang];
+			return spring_use_frequency[axis_ang];
 		}
 		default: {
 			ERR_FAIL_V_MSG(false, vformat("Unhandled flag: '%d'. This should not happen. Please report this.", p_flag));
@@ -148284,15 +147784,15 @@ void JoltJoint3D::set_6dof_jolt_flag(Vector3::Axis p_axis, JoltPhysicsServer3D::
 
 	switch ((int)p_flag) {
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_LINEAR_LIMIT_SPRING: {
-			g6dof.limit_spring_enabled[axis_lin] = p_enabled;
+			limit_spring_enabled[axis_lin] = p_enabled;
 			_6dof_limit_spring_parameters_changed(axis_lin);
 		} break;
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_LINEAR_SPRING_FREQUENCY: {
-			g6dof.spring_use_frequency[axis_lin] = p_enabled;
+			spring_use_frequency[axis_lin] = p_enabled;
 			_6dof_spring_parameters_changed(axis_lin);
 		} break;
 		case JoltPhysicsServer3D::G6DOF_JOINT_FLAG_ENABLE_ANGULAR_SPRING_FREQUENCY: {
-			g6dof.spring_use_frequency[axis_ang] = p_enabled;
+			spring_use_frequency[axis_ang] = p_enabled;
 			_6dof_spring_parameters_changed(axis_ang);
 		} break;
 		default: {
@@ -150190,14 +149690,7 @@ JPH::ShapeRefC JoltShape3D::_build_separation_ray() const {
 					"greater than 0. This shape belongs to %s.",
 					to_string(), _owners_to_string()));
 
-	const JoltCustomRayShapeSettings shape_settings(length, slide_on_slope);
-	const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
-	ERR_FAIL_COND_V_MSG(shape_result.HasError(), nullptr,
-			vformat("Failed to build Jolt Physics separation ray shape with %s. It returned the "
-					"following error: '%s'. This shape belongs to %s.",
-					to_string(), to_godot(shape_result.GetError()), _owners_to_string()));
-
-	return shape_result.Get();
+	return new JoltCustomRayShape(length, slide_on_slope);
 }
 
 JPH::ShapeRefC JoltShape3D::_build_sphere() const {
@@ -150592,27 +150085,13 @@ JPH::ShapeRefC JoltShape3D::with_center_of_mass(const JPH::Shape *p_shape, const
 }
 
 JPH::ShapeRefC JoltShape3D::with_user_data(const JPH::Shape *p_shape, uint64_t p_user_data) {
-	JoltCustomUserDataShapeSettings shape_settings(p_shape);
-	shape_settings.mUserData = (JPH::uint64)p_user_data;
-
-	const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
-	ERR_FAIL_COND_V_MSG(shape_result.HasError(), nullptr,
-			vformat("Failed to override user data. It returned the following error: '%s'.",
-					to_godot(shape_result.GetError())));
-
-	return shape_result.Get();
+	ERR_FAIL_NULL_V(p_shape, nullptr);
+	return JoltCustomDecoratedShape::create_user_data(p_shape, p_user_data);
 }
 
 JPH::ShapeRefC JoltShape3D::with_double_sided(const JPH::Shape *p_shape, bool p_back_face_collision) {
 	ERR_FAIL_NULL_V(p_shape, nullptr);
-
-	const JoltCustomDoubleSidedShapeSettings shape_settings(p_shape, p_back_face_collision);
-	const JPH::ShapeSettings::ShapeResult shape_result = shape_settings.Create();
-	ERR_FAIL_COND_V_MSG(shape_result.HasError(), nullptr,
-			vformat("Failed to make shape double-sided. It returned the following error: '%s'.",
-					to_godot(shape_result.GetError())));
-
-	return shape_result.Get();
+	return JoltCustomDecoratedShape::create_double_sided(p_shape, p_back_face_collision);
 }
 
 JPH::ShapeRefC JoltShape3D::without_custom_shapes(const JPH::Shape *p_shape) {
@@ -150738,16 +150217,16 @@ bool JoltShape3D::is_scale_valid(const Vector3 &p_scale, const Vector3 &p_valid_
 
 namespace {
 
-// --- JoltCustomUserDataShape helpers ---
+// --- JoltCustomDecoratedShape (user data) helpers ---
 
 JPH::Shape *construct_override_user_data() {
-	return new JoltCustomUserDataShape();
+	return new JoltCustomDecoratedShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA);
 }
 
 void collide_override_user_data_vs_shape(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2, JPH::Vec3Arg p_scale1, JPH::Vec3Arg p_scale2, JPH::Mat44Arg p_center_of_mass_transform1, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, const JPH::CollideShapeSettings &p_collide_shape_settings, JPH::CollideShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) {
 	ERR_FAIL_COND(p_shape1->GetSubType() != JoltCustomShapeSubType::OVERRIDE_USER_DATA);
 
-	const JoltCustomUserDataShape *shape1 = static_cast<const JoltCustomUserDataShape *>(p_shape1);
+	const JoltCustomDecoratedShape *shape1 = static_cast<const JoltCustomDecoratedShape *>(p_shape1);
 
 	JPH::CollisionDispatch::sCollideShapeVsShape(shape1->GetInnerShape(), p_shape2, p_scale1, p_scale2, p_center_of_mass_transform1, p_center_of_mass_transform2, p_sub_shape_id_creator1, p_sub_shape_id_creator2, p_collide_shape_settings, p_collector, p_shape_filter);
 }
@@ -150755,7 +150234,7 @@ void collide_override_user_data_vs_shape(const JPH::Shape *p_shape1, const JPH::
 void collide_shape_vs_override_user_data(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2, JPH::Vec3Arg p_scale1, JPH::Vec3Arg p_scale2, JPH::Mat44Arg p_center_of_mass_transform1, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, const JPH::CollideShapeSettings &p_collide_shape_settings, JPH::CollideShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) {
 	ERR_FAIL_COND(p_shape2->GetSubType() != JoltCustomShapeSubType::OVERRIDE_USER_DATA);
 
-	const JoltCustomUserDataShape *shape2 = static_cast<const JoltCustomUserDataShape *>(p_shape2);
+	const JoltCustomDecoratedShape *shape2 = static_cast<const JoltCustomDecoratedShape *>(p_shape2);
 
 	JPH::CollisionDispatch::sCollideShapeVsShape(p_shape1, shape2->GetInnerShape(), p_scale1, p_scale2, p_center_of_mass_transform1, p_center_of_mass_transform2, p_sub_shape_id_creator1, p_sub_shape_id_creator2, p_collide_shape_settings, p_collector, p_shape_filter);
 }
@@ -150763,7 +150242,7 @@ void collide_shape_vs_override_user_data(const JPH::Shape *p_shape1, const JPH::
 void cast_override_user_data_vs_shape(const JPH::ShapeCast &p_shape_cast, const JPH::ShapeCastSettings &p_shape_cast_settings, const JPH::Shape *p_shape, JPH::Vec3Arg p_scale, const JPH::ShapeFilter &p_shape_filter, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, JPH::CastShapeCollector &p_collector) {
 	ERR_FAIL_COND(p_shape_cast.mShape->GetSubType() != JoltCustomShapeSubType::OVERRIDE_USER_DATA);
 
-	const JoltCustomUserDataShape *shape = static_cast<const JoltCustomUserDataShape *>(p_shape_cast.mShape);
+	const JoltCustomDecoratedShape *shape = static_cast<const JoltCustomDecoratedShape *>(p_shape_cast.mShape);
 	const JPH::ShapeCast shape_cast(shape->GetInnerShape(), p_shape_cast.mScale, p_shape_cast.mCenterOfMassStart, p_shape_cast.mDirection);
 
 	JPH::CollisionDispatch::sCastShapeVsShapeLocalSpace(shape_cast, p_shape_cast_settings, p_shape, p_scale, p_shape_filter, p_center_of_mass_transform2, p_sub_shape_id_creator1, p_sub_shape_id_creator2, p_collector);
@@ -150772,21 +150251,21 @@ void cast_override_user_data_vs_shape(const JPH::ShapeCast &p_shape_cast, const 
 void cast_shape_vs_override_user_data(const JPH::ShapeCast &p_shape_cast, const JPH::ShapeCastSettings &p_shape_cast_settings, const JPH::Shape *p_shape, JPH::Vec3Arg p_scale, const JPH::ShapeFilter &p_shape_filter, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, JPH::CastShapeCollector &p_collector) {
 	ERR_FAIL_COND(p_shape->GetSubType() != JoltCustomShapeSubType::OVERRIDE_USER_DATA);
 
-	const JoltCustomUserDataShape *shape = static_cast<const JoltCustomUserDataShape *>(p_shape);
+	const JoltCustomDecoratedShape *shape = static_cast<const JoltCustomDecoratedShape *>(p_shape);
 
 	JPH::CollisionDispatch::sCastShapeVsShapeLocalSpace(p_shape_cast, p_shape_cast_settings, shape->GetInnerShape(), p_scale, p_shape_filter, p_center_of_mass_transform2, p_sub_shape_id_creator1, p_sub_shape_id_creator2, p_collector);
 }
 
-// --- JoltCustomDoubleSidedShape helpers ---
+// --- JoltCustomDecoratedShape (double sided) helpers ---
 
 JPH::Shape *construct_double_sided() {
-	return new JoltCustomDoubleSidedShape();
+	return new JoltCustomDecoratedShape(JoltCustomShapeSubType::DOUBLE_SIDED);
 }
 
 void collide_double_sided_vs_shape(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2, JPH::Vec3Arg p_scale1, JPH::Vec3Arg p_scale2, JPH::Mat44Arg p_center_of_mass_transform1, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, const JPH::CollideShapeSettings &p_collide_shape_settings, JPH::CollideShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) {
 	ERR_FAIL_COND(p_shape1->GetSubType() != JoltCustomShapeSubType::DOUBLE_SIDED);
 
-	const JoltCustomDoubleSidedShape *shape1 = static_cast<const JoltCustomDoubleSidedShape *>(p_shape1);
+	const JoltCustomDecoratedShape *shape1 = static_cast<const JoltCustomDecoratedShape *>(p_shape1);
 
 	JPH::CollideShapeSettings new_collide_shape_settings = p_collide_shape_settings;
 	if (shape1->should_collide_with_back_faces()) {
@@ -150799,7 +150278,7 @@ void collide_double_sided_vs_shape(const JPH::Shape *p_shape1, const JPH::Shape 
 void collide_shape_vs_double_sided(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2, JPH::Vec3Arg p_scale1, JPH::Vec3Arg p_scale2, JPH::Mat44Arg p_center_of_mass_transform1, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, const JPH::CollideShapeSettings &p_collide_shape_settings, JPH::CollideShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) {
 	ERR_FAIL_COND(p_shape2->GetSubType() != JoltCustomShapeSubType::DOUBLE_SIDED);
 
-	const JoltCustomDoubleSidedShape *shape2 = static_cast<const JoltCustomDoubleSidedShape *>(p_shape2);
+	const JoltCustomDecoratedShape *shape2 = static_cast<const JoltCustomDecoratedShape *>(p_shape2);
 
 	JPH::CollideShapeSettings new_collide_shape_settings = p_collide_shape_settings;
 	if (shape2->should_collide_with_back_faces()) {
@@ -150812,7 +150291,7 @@ void collide_shape_vs_double_sided(const JPH::Shape *p_shape1, const JPH::Shape 
 void cast_shape_vs_double_sided(const JPH::ShapeCast &p_shape_cast, const JPH::ShapeCastSettings &p_shape_cast_settings, const JPH::Shape *p_shape, JPH::Vec3Arg p_scale, const JPH::ShapeFilter &p_shape_filter, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, JPH::CastShapeCollector &p_collector) {
 	ERR_FAIL_COND(p_shape->GetSubType() != JoltCustomShapeSubType::DOUBLE_SIDED);
 
-	const JoltCustomDoubleSidedShape *shape = static_cast<const JoltCustomDoubleSidedShape *>(p_shape);
+	const JoltCustomDecoratedShape *shape = static_cast<const JoltCustomDecoratedShape *>(p_shape);
 
 	JPH::ShapeCastSettings new_shape_cast_settings = p_shape_cast_settings;
 	if (shape->should_collide_with_back_faces()) {
@@ -150959,74 +150438,44 @@ private:
 
 } // namespace
 
-// --- JoltCustomUserDataShape ---
+// --- JoltCustomDecoratedShape ---
 
-JPH::ShapeSettings::ShapeResult JoltCustomUserDataShapeSettings::Create() const {
-	if (mCachedResult.IsEmpty()) {
-		new JoltCustomUserDataShape(*this, mCachedResult);
+void JoltCustomDecoratedShape::register_types() {
+	{
+		JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::OVERRIDE_USER_DATA);
+		shape_functions.mConstruct = construct_override_user_data;
+		shape_functions.mColor = JPH::Color::sCyan;
+		for (const JPH::EShapeSubType sub_type : JPH::sAllSubShapeTypes) {
+			JPH::CollisionDispatch::sRegisterCollideShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, sub_type, collide_override_user_data_vs_shape);
+			JPH::CollisionDispatch::sRegisterCollideShape(sub_type, JoltCustomShapeSubType::OVERRIDE_USER_DATA, collide_shape_vs_override_user_data);
+			JPH::CollisionDispatch::sRegisterCastShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, sub_type, cast_override_user_data_vs_shape);
+			JPH::CollisionDispatch::sRegisterCastShape(sub_type, JoltCustomShapeSubType::OVERRIDE_USER_DATA, cast_shape_vs_override_user_data);
+		}
 	}
-
-	return mCachedResult;
-}
-
-void JoltCustomUserDataShape::register_type() {
-	JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::OVERRIDE_USER_DATA);
-
-	shape_functions.mConstruct = construct_override_user_data;
-	shape_functions.mColor = JPH::Color::sCyan;
-
-	for (const JPH::EShapeSubType sub_type : JPH::sAllSubShapeTypes) {
-		JPH::CollisionDispatch::sRegisterCollideShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, sub_type, collide_override_user_data_vs_shape);
-		JPH::CollisionDispatch::sRegisterCollideShape(sub_type, JoltCustomShapeSubType::OVERRIDE_USER_DATA, collide_shape_vs_override_user_data);
-		JPH::CollisionDispatch::sRegisterCastShape(JoltCustomShapeSubType::OVERRIDE_USER_DATA, sub_type, cast_override_user_data_vs_shape);
-		JPH::CollisionDispatch::sRegisterCastShape(sub_type, JoltCustomShapeSubType::OVERRIDE_USER_DATA, cast_shape_vs_override_user_data);
-	}
-}
-
-// --- JoltCustomDoubleSidedShape ---
-
-JPH::ShapeSettings::ShapeResult JoltCustomDoubleSidedShapeSettings::Create() const {
-	if (mCachedResult.IsEmpty()) {
-		new JoltCustomDoubleSidedShape(*this, mCachedResult);
-	}
-
-	return mCachedResult;
-}
-
-void JoltCustomDoubleSidedShape::register_type() {
-	JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::DOUBLE_SIDED);
-
-	shape_functions.mConstruct = construct_double_sided;
-	shape_functions.mColor = JPH::Color::sPurple;
-
-	for (const JPH::EShapeSubType sub_type : JPH::sAllSubShapeTypes) {
-		JPH::CollisionDispatch::sRegisterCollideShape(JoltCustomShapeSubType::DOUBLE_SIDED, sub_type, collide_double_sided_vs_shape);
-		JPH::CollisionDispatch::sRegisterCollideShape(sub_type, JoltCustomShapeSubType::DOUBLE_SIDED, collide_shape_vs_double_sided);
-	}
-
-	for (const JPH::EShapeSubType sub_type : JPH::sConvexSubShapeTypes) {
-		JPH::CollisionDispatch::sRegisterCastShape(sub_type, JoltCustomShapeSubType::DOUBLE_SIDED, cast_shape_vs_double_sided);
+	{
+		JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::DOUBLE_SIDED);
+		shape_functions.mConstruct = construct_double_sided;
+		shape_functions.mColor = JPH::Color::sPurple;
+		for (const JPH::EShapeSubType sub_type : JPH::sAllSubShapeTypes) {
+			JPH::CollisionDispatch::sRegisterCollideShape(JoltCustomShapeSubType::DOUBLE_SIDED, sub_type, collide_double_sided_vs_shape);
+			JPH::CollisionDispatch::sRegisterCollideShape(sub_type, JoltCustomShapeSubType::DOUBLE_SIDED, collide_shape_vs_double_sided);
+		}
+		for (const JPH::EShapeSubType sub_type : JPH::sConvexSubShapeTypes) {
+			JPH::CollisionDispatch::sRegisterCastShape(sub_type, JoltCustomShapeSubType::DOUBLE_SIDED, cast_shape_vs_double_sided);
+		}
 	}
 }
 
-void JoltCustomDoubleSidedShape::CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) const {
-	JPH::RayCastSettings new_ray_cast_settings = p_ray_cast_settings;
-	if (!should_collide_with_back_faces()) {
+void JoltCustomDecoratedShape::CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) const {
+	if (GetSubType() == JoltCustomShapeSubType::DOUBLE_SIDED && !should_collide_with_back_faces()) {
+		JPH::RayCastSettings new_ray_cast_settings = p_ray_cast_settings;
 		new_ray_cast_settings.SetBackFaceMode(JPH::EBackFaceMode::IgnoreBackFaces);
+		return mInnerShape->CastRay(p_ray, new_ray_cast_settings, p_sub_shape_id_creator, p_collector, p_shape_filter);
 	}
-
-	return mInnerShape->CastRay(p_ray, new_ray_cast_settings, p_sub_shape_id_creator, p_collector, p_shape_filter);
+	return mInnerShape->CastRay(p_ray, p_ray_cast_settings, p_sub_shape_id_creator, p_collector, p_shape_filter);
 }
 
 // --- JoltCustomRayShape ---
-
-JPH::ShapeSettings::ShapeResult JoltCustomRayShapeSettings::Create() const {
-	if (mCachedResult.IsEmpty()) {
-		new JoltCustomRayShape(*this, mCachedResult);
-	}
-
-	return mCachedResult;
-}
 
 void JoltCustomRayShape::register_type() {
 	JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::RAY);
@@ -155068,14 +154517,13 @@ int GodotShape2D::_generate_bvh(BVH* p_bvh, int p_len, int p_depth)
 		global_aabb = global_aabb.merge(p_bvh[i].aabb);
 	}
 
-	if (global_aabb.size.x > global_aabb.size.y) {
-		SortArray<BVH, BVH_CompareX> sort;
-		sort.sort(p_bvh, p_len);
-	}
-	else {
-		SortArray<BVH, BVH_CompareY> sort;
-		sort.sort(p_bvh, p_len);
-	}
+	bool use_x = global_aabb.size.x > global_aabb.size.y;
+	auto bvh_cmp = [use_x](const BVH& a, const BVH& b) {
+		return use_x ? ((a.aabb.position.x + a.aabb.size.x * 0.5) < (b.aabb.position.x + b.aabb.size.x * 0.5))
+					 : ((a.aabb.position.y + a.aabb.size.y * 0.5) < (b.aabb.position.y + b.aabb.size.y * 0.5));
+	};
+	SortArray<BVH, decltype(bvh_cmp)> sort{ bvh_cmp };
+	sort.sort(p_bvh, p_len);
 
 	int median = p_len / 2;
 
@@ -162079,7 +161527,8 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 	}
 
 	if (ci->children_order_dirty) {
-		ci->child_items.sort_custom<ItemIndexSort>();
+		auto idx_cmp = [](const Item* p_left, const Item* p_right) { return p_left->index < p_right->index; };
+		ci->child_items.sort_custom<decltype(idx_cmp)>(idx_cmp);
 		ci->children_order_dirty = false;
 	}
 
@@ -162235,7 +161684,12 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 			_collect_ysort_children(ci, p_material_owner, Color(1, 1, 1, 1), child_items, i,
 				child_item_count, p_z, p_canvas_cull_mask);
 
-			SortArray<Item*, ItemYSort> sorter;
+			auto y_cmp = [](const Item* p_left, const Item* p_right) {
+				const real_t left_y = p_left->ysort_xform.columns[2].y;
+				const real_t right_y = p_right->ysort_xform.columns[2].y;
+				return Math::is_equal_approx(left_y, right_y) ? (p_left->ysort_index < p_right->ysort_index) : (left_y < right_y);
+			};
+			SortArray<Item*, decltype(y_cmp)> sorter{ y_cmp };
 			sorter.sort(child_items, child_item_count);
 
 			for (i = 0; i < child_item_count; i++) {
@@ -166349,7 +165803,16 @@ void RendererViewport::draw_viewports(bool p_swap_buffers)
 		viewports.push_back(v);
 	}
 
-	viewports.sort_custom<ViewportSort>();
+	auto viewport_cmp = [](const RendererViewport::Viewport* p_left, const RendererViewport::Viewport* p_right) {
+		if (p_right->parent == p_left->self) {
+			return true;
+		}
+		if (p_left->parent == p_right->self) {
+			return false;
+		}
+		return p_left->parent < p_right->parent;
+	};
+	viewports.sort_custom<decltype(viewport_cmp)>(viewport_cmp);
 
 	HashMap<DisplayServerEnums::WindowID, LocalVector<RenderingServerTypes::BlitToScreen>>
 		blit_to_screen;
@@ -199817,9 +199280,28 @@ bool RenderingShaderContainer::decompress_code(const uint8_t* p_compressed_bytes
 	return true;
 }
 
-RenderingShaderContainer::RenderingShaderContainer() {}
+RenderingShaderContainer::RenderingShaderContainer(bool p_debug_info_enabled) : debug_info_enabled(p_debug_info_enabled) {}
 
 RenderingShaderContainer::~RenderingShaderContainer() {}
+
+Ref<RenderingShaderContainer> RenderingShaderContainerFormat::create_container() const
+{
+#if defined(D3D12_ENABLED)
+	if (backend == BACKEND_D3D12) {
+		return memnew(RenderingShaderContainerD3D12(lib_d3d12));
+	}
+#endif
+#if defined(METAL_ENABLED)
+	if (backend == BACKEND_METAL) {
+		Ref<RenderingShaderContainerMetal> result;
+		result.instantiate();
+		result->set_export_mode(export_mode);
+		result->set_device_profile(static_cast<const MetalDeviceProfile*>(device_profile));
+		return result;
+	}
+#endif
+	return memnew(RenderingShaderContainer(debug_info_enabled));
+}
 
 template <typename T>
 void RenderingShaderContainer::ReflectSymbol<T>::set_spv_reflect(
@@ -219445,6 +218927,15 @@ CameraFeed::CameraFeed(String p_name, FeedPosition p_position)
 
 CameraFeed::~CameraFeed()
 {
+#if defined(LINUXBSD_ENABLED) || defined(ANDROID_ENABLED)
+	if (impl) {
+		if (is_active()) {
+			deactivate_feed();
+		}
+		memdelete(impl);
+		impl = nullptr;
+	}
+#endif
 	// Free our textures
 	ERR_FAIL_NULL(Renderer::data);
 	Renderer::free_rid(texture[CameraServer::FEED_Y_IMAGE]);
@@ -219453,13 +218944,37 @@ CameraFeed::~CameraFeed()
 
 CameraFeed::FeedFormat CameraFeed::get_format() const
 {
-	FeedFormat feed_format = {};
-	return feed_format;
+	return (selected_format >= 0 && selected_format < formats.size()) ? formats[selected_format] : FeedFormat{};
 }
 
-bool CameraFeed::activate_feed() { return false; }
+String CameraFeed::get_device_name() const
+{
+#if defined(LINUXBSD_ENABLED)
+	if (impl) {
+		return impl->device_name;
+	}
+#endif
+	return name;
+}
 
-void CameraFeed::deactivate_feed() {}
+bool CameraFeed::activate_feed()
+{
+#if defined(LINUXBSD_ENABLED) || defined(ANDROID_ENABLED)
+	if (impl) {
+		return impl->activate();
+	}
+#endif
+	return false;
+}
+
+void CameraFeed::deactivate_feed()
+{
+#if defined(LINUXBSD_ENABLED) || defined(ANDROID_ENABLED)
+	if (impl) {
+		impl->deactivate();
+	}
+#endif
+}
 
 void CameraFeed::set_rgb_image(Ref<Image> const&) {}
 
@@ -222242,47 +221757,23 @@ public:
 		float sampleRate, float* indata, float* outdata, int stride);
 };
 
-struct AudioEffectAmplifyState
+struct AudioEffectState
 {
+	enum { MAX_DELAY_MS = 50 };
+
+	AudioEffect::Type effect_type = AudioEffect::EFFECT_AMPLIFY;
 	Ref<AudioEffect> base;
+
 	float mix_volume_db = 0.0f;
 
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectAmplifyInstance = AudioEffectAmplifyState;
-
-struct AudioEffectCaptureState
-{
-	Ref<AudioEffect> base;
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	bool process_silence() const;
-};
-
-using AudioEffectCaptureInstance = AudioEffectCaptureState;
-
-struct AudioEffectChorusState
-{
-	Ref<AudioEffect> base;
-
+	// Chorus
 	Vector<AudioFrame> audio_buffer;
 	unsigned int buffer_pos = 0;
 	unsigned int buffer_mask = 0;
-
 	AudioFrame filter_h[4];
 	uint64_t cycles[4] = {};
 
-	void _process_chunk(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectChorusInstance = AudioEffectChorusState;
-
-struct AudioEffectCompressorState
-{
-	Ref<AudioEffect> base;
-
+	// Compressor
 	float rundb = 0.0f;
 	float averatio = 0.0f;
 	float runratio = 0.0f;
@@ -222291,247 +221782,215 @@ struct AudioEffectCompressorState
 	float gr_meter = 1.0f;
 	int current_channel = -1;
 
-	void set_current_channel(int p_channel) { current_channel = p_channel; }
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectCompressorInstance = AudioEffectCompressorState;
-
-struct AudioEffectDelayState
-{
-	Ref<AudioEffect> base;
-
+	// Delay & Record shared ring buffer
 	Vector<AudioFrame> ring_buffer;
 	unsigned int ring_buffer_pos = 0;
 	unsigned int ring_buffer_mask = 0;
-
 	Vector<AudioFrame> feedback_buffer;
 	unsigned int feedback_buffer_pos = 0;
-
 	AudioFrame h;
 
-	void _process_chunk(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
+	// Distortion
+	float distortion_h[2] = {};
 
-using AudioEffectDelayInstance = AudioEffectDelayState;
-
-struct AudioEffectDistortionState
-{
-	Ref<AudioEffect> base;
-	float h[2] = {};
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectDistortionInstance = AudioEffectDistortionState;
-
-struct AudioEffectEQState
-{
-	Ref<AudioEffect> base;
-
+	// EQ
 	Vector<EQ::BandProcess> bands[2];
 	Vector<float> gains;
 
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectEQInstance = AudioEffectEQState;
-
-struct AudioEffectFilterState
-{
-	Ref<AudioEffect> base;
-
+	// Filter
 	AudioFilterSW filter;
 	AudioFilterSW::Processor filter_process[2][4];
 
-	template <int S>
-	void _process_filter(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-
-	AudioEffectFilterState();
-};
-
-using AudioEffectFilterInstance = AudioEffectFilterState;
-
-struct AudioEffectHardLimiterState
-{
-	Ref<AudioEffect> base;
-
+	// HardLimiter
 	int sample_cursor = 0;
-
-	float release_factor = 0;
-	float attack_factor = 0;
-	float gain = 1;
-	float gain_target = 1;
-
+	float release_factor = 0.0f;
+	float attack_factor = 0.0f;
+	float gain = 1.0f;
+	float gain_target = 1.0f;
 	LocalVector<float> sample_buffer_left;
 	LocalVector<float> sample_buffer_right;
-
 	int gain_samples_to_store = 0;
 	int gain_bucket_cursor = 0;
 	int gain_bucket_size = 0;
 	LocalVector<float> gain_buckets;
 
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectHardLimiterInstance = AudioEffectHardLimiterState;
-
-struct AudioEffectLimiterState
-{
-	Ref<AudioEffect> base;
-	float mix_volume_db = 0.0f;
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectLimiterInstance = AudioEffectLimiterState;
-
-struct AudioEffectPannerState
-{
-	Ref<AudioEffect> base;
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectPannerInstance = AudioEffectPannerState;
-
-struct AudioEffectPhaserState
-{
-	Ref<AudioEffect> base;
-
+	// Phaser
 	float phase = 0.0f;
-	AudioFrame h;
+	float allpass_a[2][6] = {};
+	float allpass_h[2][6] = {};
 
-	class AllpassDelay
+	_ALWAYS_INLINE_ void _allpass_delay(int p_ch, int p_idx, float p_d)
 	{
-		float a = 0.0f;
-		float h = 0.0f;
+		allpass_a[p_ch][p_idx] = (1.f - p_d) / (1.f + p_d);
+	}
+	_ALWAYS_INLINE_ float _allpass_update(int p_ch, int p_idx, float p_s)
+	{
+		float a = allpass_a[p_ch][p_idx];
+		float y = p_s * -a + allpass_h[p_ch][p_idx];
+		allpass_h[p_ch][p_idx] = y * a + p_s;
+		return y;
+	}
 
-	public:
-		_ALWAYS_INLINE_ void delay(float d)
-		{
-			a = (1.f - d) / (1.f + d);
-		}
-
-		_ALWAYS_INLINE_ float update(float s)
-		{
-			float y = s * -a + h;
-			h = y * a + s;
-			return y;
-		}
-	};
-
-	AllpassDelay allpass[2][6];
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectPhaserInstance = AudioEffectPhaserState;
-
-struct AudioEffectPitchShiftState
-{
-	Ref<AudioEffect> base;
-
+	// PitchShift (lazily allocated) & SpectrumAnalyzer shared fft_size
 	int fft_size = 0;
-	SMBPitchShift shift_l;
-	SMBPitchShift shift_r;
+	SMBPitchShift* shift_l = nullptr;
+	SMBPitchShift* shift_r = nullptr;
 
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-};
-
-using AudioEffectPitchShiftInstance = AudioEffectPitchShiftState;
-
-struct AudioEffectRecordState
-{
+	// Record
 	bool is_recording = false;
 	Thread io_thread;
-
-	Vector<AudioFrame> ring_buffer;
 	Vector<float> recording_data;
-
-	unsigned int ring_buffer_pos = 0;
-	unsigned int ring_buffer_mask = 0;
 	unsigned int ring_buffer_read_pos = 0;
+
+	// Reverb (lazily allocated)
+	LocalVector<float> tmp_src;
+	LocalVector<float> tmp_dst;
+	Reverb* reverb = nullptr;
+
+	// SpectrumAnalyzer
+	Vector<Vector<AudioFrame>> fft_history;
+	Vector<float> temporal_fft;
+	int temporal_fft_pos = 0;
+	int fft_count = 0;
+	int fft_pos = 0;
+	float mix_rate = 0.0f;
+
+	// StereoEnhance
+	float* delay_ringbuff = nullptr;
+	unsigned int ringbuff_pos = 0;
+	unsigned int ringbuff_mask = 0;
+
+	void _process_amplify(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_capture(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_chorus_chunk(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_chorus(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_compressor(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_delay_chunk(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_delay(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_distortion(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_eq(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	template <int S>
+	void _process_filter(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_filter_main(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_hard_limiter(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_limiter(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_panner(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_phaser(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_pitch_shift(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_record(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_reverb(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_spectrum_analyzer(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+	void _process_stereo_enhance(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
 
 	void _io_thread_process();
 	void _io_store_buffer();
 	static void _thread_callback(void* _instance);
 	void _update_buffer();
 	static void _update(void* userdata);
-
 	void init();
 	void finish();
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	bool process_silence() const;
-
-	~AudioEffectRecordState() { finish(); }
-};
-
-using AudioEffectRecordInstance = AudioEffectRecordState;
-
-struct AudioEffectReverbState
-{
-	Ref<AudioEffect> base;
-
-	float tmp_src[Reverb::INPUT_BUFFER_MAX_SIZE] = {};
-	float tmp_dst[Reverb::INPUT_BUFFER_MAX_SIZE] = {};
-
-	Reverb reverb[2];
 
 	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	AudioEffectReverbState();
-};
-
-using AudioEffectReverbInstance = AudioEffectReverbState;
-
-struct AudioEffectSpectrumAnalyzerState
-{
-	enum MagnitudeMode
+	bool process_silence() const
 	{
-		MAGNITUDE_AVERAGE,
-		MAGNITUDE_MAX,
-	};
+		return effect_type == AudioEffect::EFFECT_CAPTURE || effect_type == AudioEffect::EFFECT_RECORD;
+	}
 
-	Ref<AudioEffect> base;
-
-	Vector<Vector<AudioFrame>> fft_history;
-	Vector<float> temporal_fft;
-	int temporal_fft_pos = 0;
-	int fft_size = 0;
-	int fft_count = 0;
-	int fft_pos = 0;
-	float mix_rate = 0.0f;
-
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
-	Vector2 get_magnitude_for_frequency_range(
-		float p_begin, float p_end, MagnitudeMode p_mode = MAGNITUDE_MAX) const;
+	explicit AudioEffectState(AudioEffect::Type p_type);
+	~AudioEffectState();
 };
 
-using AudioEffectSpectrumAnalyzerInstance = AudioEffectSpectrumAnalyzerState;
-
-struct AudioEffectStereoEnhanceState
+void AudioEffectInstance::process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
-	Ref<AudioEffect> base;
+	if (state) {
+		state->process(p_src_frames, p_dst_frames, p_frame_count);
+	}
+}
 
-	enum
-	{
-		MAX_DELAY_MS = 50
-	};
+bool AudioEffectInstance::process_silence() const
+{
+	return state ? state->process_silence() : false;
+}
 
-	float* delay_ringbuff = nullptr;
-	unsigned int ringbuff_pos = 0;
-	unsigned int ringbuff_mask = 0;
+Ref<AudioEffectInstance> AudioEffectInstance::create(AudioEffectState* p_state)
+{
+	Ref<AudioEffectInstance> ins;
+	ins.instantiate();
+	ins->state = p_state;
+	return ins;
+}
 
-	void process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count);
+AudioEffectInstance::~AudioEffectInstance()
+{
+	if (state) {
+		memdelete(state);
+		state = nullptr;
+	}
+}
 
-	~AudioEffectStereoEnhanceState();
-};
+AudioEffectState::AudioEffectState(AudioEffect::Type p_type) : effect_type(p_type)
+{
+	if (p_type == AudioEffect::EFFECT_FILTER) {
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 4; j++) {
+				filter_process[i][j].set_filter(&filter);
+			}
+		}
+	} else if (p_type == AudioEffect::EFFECT_PITCH_SHIFT) {
+		shift_l = memnew(SMBPitchShift);
+		shift_r = memnew(SMBPitchShift);
+	} else if (p_type == AudioEffect::EFFECT_REVERB) {
+		reverb = memnew_arr(Reverb, 2);
+		tmp_src.resize(Reverb::INPUT_BUFFER_MAX_SIZE);
+		tmp_dst.resize(Reverb::INPUT_BUFFER_MAX_SIZE);
+		reverb[0].set_mix_rate(AudioServer::get_mix_rate());
+		reverb[0].set_extra_spread_base(0);
+		reverb[1].set_mix_rate(AudioServer::get_mix_rate());
+		reverb[1].set_extra_spread_base(0.000521f);
+	}
+}
 
-using AudioEffectStereoEnhanceInstance = AudioEffectStereoEnhanceState;
+AudioEffectState::~AudioEffectState()
+{
+	if (effect_type == AudioEffect::EFFECT_RECORD) {
+		finish();
+	}
+	if (shift_l) {
+		memdelete(shift_l);
+	}
+	if (shift_r) {
+		memdelete(shift_r);
+	}
+	if (reverb) {
+		memdelete_arr(reverb);
+	}
+	if (delay_ringbuff) {
+		memdelete_arr(delay_ringbuff);
+	}
+}
+
+void AudioEffectState::process(const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
+{
+	switch (effect_type) {
+	case AudioEffect::EFFECT_AMPLIFY: _process_amplify(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_CAPTURE: _process_capture(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_CHORUS: _process_chorus(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_COMPRESSOR: _process_compressor(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_DELAY: _process_delay(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_DISTORTION: _process_distortion(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_EQ: _process_eq(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_FILTER: _process_filter_main(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_HARD_LIMITER: _process_hard_limiter(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_LIMITER: _process_limiter(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_PANNER: _process_panner(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_PHASER: _process_phaser(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_PITCH_SHIFT: _process_pitch_shift(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_RECORD: _process_record(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_REVERB: _process_reverb(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_SPECTRUM_ANALYZER: _process_spectrum_analyzer(p_src_frames, p_dst_frames, p_frame_count); break;
+	case AudioEffect::EFFECT_STEREO_ENHANCE: _process_stereo_enhance(p_src_frames, p_dst_frames, p_frame_count); break;
+	}
+}
 
 void AudioEffect::_init_config(Type p_type)
 {
@@ -222572,14 +222031,7 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 {
 	ERR_FAIL_NULL_V(config, Ref<AudioEffectInstance>());
 	static const int fft_sizes[AudioEffectConfig::FFT_SIZE_MAX] = { 256, 512, 1024, 2048, 4096 };
-	switch (effect_type) {
-	case EFFECT_AMPLIFY: {
-		AudioEffectAmplifyState* state = memnew(AudioEffectAmplifyState);
-		state->base = Ref<AudioEffect>(this);
-		state->mix_volume_db = config->volume_db;
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_CAPTURE: {
+	if (effect_type == EFFECT_CAPTURE) {
 		if (!config->buffer_initialized) {
 			float target_buffer_size = AudioServer::get_mix_rate() * config->buffer_length_seconds;
 			ERR_FAIL_COND_V(
@@ -222588,13 +222040,23 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 			config->buffer_initialized = true;
 		}
 		config->clear_buffer();
-		AudioEffectCaptureState* state = memnew(AudioEffectCaptureState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
 	}
+	AudioEffectState* state = memnew(AudioEffectState(effect_type));
+	state->base = Ref<AudioEffect>(this);
+	switch (effect_type) {
+	case EFFECT_AMPLIFY: {
+		state->mix_volume_db = config->volume_db;
+		break;
+	}
+	case EFFECT_CAPTURE:
+	case EFFECT_COMPRESSOR:
+	case EFFECT_DISTORTION:
+	case EFFECT_FILTER:
+	case EFFECT_LIMITER:
+	case EFFECT_PANNER:
+	case EFFECT_REVERB:
+		break;
 	case EFFECT_CHORUS: {
-		AudioEffectChorusState* state = memnew(AudioEffectChorusState);
-		state->base = Ref<AudioEffect>(this);
 		for (int i = 0; i < 4; i++) {
 			state->filter_h[i] = AudioFrame(0, 0);
 			state->cycles[i] = 0;
@@ -222618,16 +222080,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		for (int i = 0; i < ringbuff_size; i++) {
 			state->audio_buffer.write[i] = AudioFrame(0, 0);
 		}
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_COMPRESSOR: {
-		AudioEffectCompressorState* state = memnew(AudioEffectCompressorState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_DELAY: {
-		AudioEffectDelayState* state = memnew(AudioEffectDelayState);
-		state->base = Ref<AudioEffect>(this);
 		float ring_buffer_max_size = AudioEffectConfig::DELAY_MAX_DELAY_MS + 100;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
@@ -222644,16 +222099,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		state->feedback_buffer.resize(ringbuff_size);
 		state->feedback_buffer_pos = 0;
 		state->h = AudioFrame(0, 0);
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_DISTORTION: {
-		AudioEffectDistortionState* state = memnew(AudioEffectDistortionState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_EQ: {
-		AudioEffectEQState* state = memnew(AudioEffectEQState);
-		state->base = Ref<AudioEffect>(this);
 		state->gains.resize(config->eq.get_band_count());
 		for (int i = 0; i < 2; i++) {
 			state->bands[i].resize(config->eq.get_band_count());
@@ -222661,16 +222109,9 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 				state->bands[i].write[j] = config->eq.get_band_processor(j);
 			}
 		}
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_FILTER: {
-		AudioEffectFilterState* state = memnew(AudioEffectFilterState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_HARD_LIMITER: {
-		AudioEffectHardLimiterState* state = memnew(AudioEffectHardLimiterState);
-		state->base = Ref<AudioEffect>(this);
 		float mix_rate = AudioServer::get_mix_rate();
 		for (int i = 0; i < (int)Math::ceil(mix_rate * config->attack) + 1; i++) {
 			state->sample_buffer_left.push_back(0.0f);
@@ -222681,33 +222122,19 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		for (int i = 0; i < state->gain_samples_to_store; i += state->gain_bucket_size) {
 			state->gain_buckets.push_back(1.0f);
 		}
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_LIMITER: {
-		AudioEffectLimiterState* state = memnew(AudioEffectLimiterState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
-	}
-	case EFFECT_PANNER: {
-		AudioEffectPannerState* state = memnew(AudioEffectPannerState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_PHASER: {
-		AudioEffectPhaserState* state = memnew(AudioEffectPhaserState);
-		state->base = Ref<AudioEffect>(this);
 		state->phase = 0;
 		state->h = AudioFrame(0, 0);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_PITCH_SHIFT: {
-		AudioEffectPitchShiftState* state = memnew(AudioEffectPitchShiftState);
-		state->base = Ref<AudioEffect>(this);
 		state->fft_size = fft_sizes[config->pitch_fft_size];
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_RECORD: {
-		AudioEffectRecordState* state = memnew(AudioEffectRecordState);
+		state->base.unref();
 		state->is_recording = false;
 		float ring_buffer_max_size = AudioEffectConfig::RECORD_IO_BUFFER_SIZE_MS;
 		ring_buffer_max_size /= 1000.0f;
@@ -222727,7 +222154,7 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		config->ensure_thread_stopped();
 		bool is_currently_recording = false;
 		if (config->current_instance.is_valid()) {
-			if (const AudioEffectRecordState* prev = config->current_instance->get_state<AudioEffectRecordState>()) {
+			if (const AudioEffectState* prev = config->current_instance->state; prev && prev->effect_type == EFFECT_RECORD) {
 				is_currently_recording = prev->is_recording;
 			}
 		}
@@ -222738,14 +222165,7 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		config->current_instance = ins;
 		return ins;
 	}
-	case EFFECT_REVERB: {
-		AudioEffectReverbState* state = memnew(AudioEffectReverbState);
-		state->base = Ref<AudioEffect>(this);
-		return AudioEffectInstance::create(state);
-	}
 	case EFFECT_SPECTRUM_ANALYZER: {
-		AudioEffectSpectrumAnalyzerState* state = memnew(AudioEffectSpectrumAnalyzerState);
-		state->base = Ref<AudioEffect>(this);
 		state->fft_size = fft_sizes[config->spectrum_fft_size];
 		state->mix_rate = AudioServer::get_mix_rate();
 		state->fft_count = (config->spectrum_buffer_length / (float(state->fft_size) / state->mix_rate)) + 1;
@@ -222759,12 +222179,10 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 				state->fft_history.write[i].write[j] = AudioFrame(0, 0);
 			}
 		}
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	case EFFECT_STEREO_ENHANCE: {
-		AudioEffectStereoEnhanceState* state = memnew(AudioEffectStereoEnhanceState);
-		state->base = Ref<AudioEffect>(this);
-		float ring_buffer_max_size = AudioEffectStereoEnhanceState::MAX_DELAY_MS + 2;
+		float ring_buffer_max_size = AudioEffectState::MAX_DELAY_MS + 2;
 		ring_buffer_max_size /= 1000.0f;
 		ring_buffer_max_size *= AudioServer::get_mix_rate();
 		int ringbuff_size = (int)ring_buffer_max_size;
@@ -222777,10 +222195,10 @@ Ref<AudioEffectInstance> AudioEffect::instantiate()
 		state->ringbuff_mask = ringbuff_size - 1;
 		state->ringbuff_pos = 0;
 		state->delay_ringbuff = memnew_arr(float, ringbuff_size);
-		return AudioEffectInstance::create(state);
+		break;
 	}
 	}
-	return Ref<AudioEffectInstance>();
+	return AudioEffectInstance::create(state);
 }
 
 #include "servers/display/display_server.h"
@@ -223912,7 +223330,7 @@ AudioStreamPlaybackPolyphonic::~AudioStreamPlaybackPolyphonic()
 
 // 1. Amplify
 
-void AudioEffectAmplifyState::process(
+void AudioEffectState::_process_amplify(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -223931,7 +223349,7 @@ void AudioEffectAmplifyState::process(
 
 // 2. Capture
 
-void AudioEffectCaptureState::process(
+void AudioEffectState::_process_capture(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -223954,11 +223372,10 @@ void AudioEffectCaptureState::process(
 	}
 }
 
-bool AudioEffectCaptureState::process_silence() const { return true; }
 
 // 3. Chorus
 
-void AudioEffectChorusState::process(
+void AudioEffectState::_process_chorus(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	int todo = p_frame_count;
@@ -223966,7 +223383,7 @@ void AudioEffectChorusState::process(
 	while (todo) {
 		int to_mix = MIN(todo, 256);
 
-		_process_chunk(p_src_frames, p_dst_frames, to_mix);
+		_process_chorus_chunk(p_src_frames, p_dst_frames, to_mix);
 
 		p_src_frames += to_mix;
 		p_dst_frames += to_mix;
@@ -223975,7 +223392,7 @@ void AudioEffectChorusState::process(
 	}
 }
 
-void AudioEffectChorusState::_process_chunk(
+void AudioEffectState::_process_chorus_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224064,7 +223481,7 @@ void AudioEffectChorusState::_process_chunk(
 
 // 4. Compressor
 
-void AudioEffectCompressorState::process(
+void AudioEffectState::_process_compressor(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224145,7 +223562,7 @@ void AudioEffectCompressorState::process(
 
 // 5. Delay
 
-void AudioEffectDelayState::process(
+void AudioEffectState::_process_delay(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	int todo = p_frame_count;
@@ -224153,7 +223570,7 @@ void AudioEffectDelayState::process(
 	while (todo) {
 		int to_mix = MIN(todo, 256);
 
-		_process_chunk(p_src_frames, p_dst_frames, to_mix);
+		_process_delay_chunk(p_src_frames, p_dst_frames, to_mix);
 
 		p_src_frames += to_mix;
 		p_dst_frames += to_mix;
@@ -224162,7 +223579,7 @@ void AudioEffectDelayState::process(
 	}
 }
 
-void AudioEffectDelayState::_process_chunk(
+void AudioEffectState::_process_delay_chunk(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224226,7 +223643,7 @@ void AudioEffectDelayState::_process_chunk(
 
 // 6. Distortion
 
-void AudioEffectDistortionState::process(
+void AudioEffectState::_process_distortion(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224248,8 +223665,8 @@ void AudioEffectDistortionState::process(
 	float lofi_mult = std::pow(2.0f, 2.0f + (1.0f - drive_f) * 14.0f);
 
 	for (int i = 0; i < p_frame_count * 2; i++) {
-		float out = undenormalize(src[i] * lpf_ic + lpf_c * h[i & 1]);
-		h[i & 1] = out;
+		float out = undenormalize(src[i] * lpf_ic + lpf_c * distortion_h[i & 1]);
+		distortion_h[i & 1] = out;
 		float a = out;
 		float ha = src[i] - out;
 		a *= pregain_f;
@@ -224289,7 +223706,7 @@ void AudioEffectDistortionState::process(
 
 // 7. EQ
 
-void AudioEffectEQState::process(
+void AudioEffectState::_process_eq(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224325,7 +223742,7 @@ void AudioEffectEQState::process(
 // 8. Filter
 
 template <int S>
-void AudioEffectFilterState::_process_filter(
+void AudioEffectState::_process_filter(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	for (int i = 0; i < p_frame_count; i++) {
@@ -224359,7 +223776,7 @@ void AudioEffectFilterState::_process_filter(
 	}
 }
 
-void AudioEffectFilterState::process(
+void AudioEffectState::_process_filter_main(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224393,18 +223810,10 @@ void AudioEffectFilterState::process(
 	}
 }
 
-AudioEffectFilterState::AudioEffectFilterState()
-{
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 4; j++) {
-			filter_process[i][j].set_filter(&filter);
-		}
-	}
-}
 
 // 9. HardLimiter
 
-void AudioEffectHardLimiterState::process(
+void AudioEffectState::_process_hard_limiter(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224469,7 +223878,7 @@ void AudioEffectHardLimiterState::process(
 
 // 10. Limiter
 
-void AudioEffectLimiterState::process(
+void AudioEffectState::_process_limiter(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224511,7 +223920,7 @@ void AudioEffectLimiterState::process(
 
 // 11. Panner
 
-void AudioEffectPannerState::process(
+void AudioEffectState::_process_panner(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224528,7 +223937,7 @@ void AudioEffectPannerState::process(
 
 // 12. Phaser
 
-void AudioEffectPhaserState::process(
+void AudioEffectState::_process_phaser(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224550,19 +223959,21 @@ void AudioEffectPhaserState::process(
 		float d = dmin + (dmax - dmin) * ((std::sin(phase) + 1.f) / 2.f);
 
 		for (int j = 0; j < 6; j++) {
-			allpass[0][j].delay(d);
-			allpass[1][j].delay(d);
+			_allpass_delay(0, j, d);
+			_allpass_delay(1, j, d);
 		}
 
-		float y = allpass[0][0].update(
-			allpass[0][1].update(allpass[0][2].update(allpass[0][3].update(allpass[0][4].update(
-				allpass[0][5].update(p_src_frames[i].left + h.left * cfg->feedback))))));
+		float y = p_src_frames[i].left + h.left * cfg->feedback;
+		for (int j = 5; j >= 0; j--) {
+			y = _allpass_update(0, j, y);
+		}
 		h.left = y;
 		p_dst_frames[i].left = p_src_frames[i].left + y * cfg->depth;
 
-		y = allpass[1][0].update(
-			allpass[1][1].update(allpass[1][2].update(allpass[1][3].update(allpass[1][4].update(
-				allpass[1][5].update(p_src_frames[i].right + h.right * cfg->feedback))))));
+		y = p_src_frames[i].right + h.right * cfg->feedback;
+		for (int j = 5; j >= 0; j--) {
+			y = _allpass_update(1, j, y);
+		}
 		h.right = y;
 		p_dst_frames[i].right = p_src_frames[i].right + y * cfg->depth;
 	}
@@ -224741,7 +224152,7 @@ void SMBPitchShift::smbFft(float *fftBuffer, long fftFrameSize, long sign)
 }
 /* clang-format on */
 
-void AudioEffectPitchShiftState::process(
+void AudioEffectState::_process_pitch_shift(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -224762,15 +224173,15 @@ void AudioEffectPitchShiftState::process(
 	float* out_l = (float*)p_dst_frames;
 	float* out_r = out_l + 1;
 
-	shift_l.PitchShift(cfg->pitch_scale, p_frame_count, fft_size, cfg->oversampling, sample_rate,
+	shift_l->PitchShift(cfg->pitch_scale, p_frame_count, fft_size, cfg->oversampling, sample_rate,
 		in_l, out_l, 2);
-	shift_r.PitchShift(cfg->pitch_scale, p_frame_count, fft_size, cfg->oversampling, sample_rate,
+	shift_r->PitchShift(cfg->pitch_scale, p_frame_count, fft_size, cfg->oversampling, sample_rate,
 		in_r, out_r, 2);
 }
 
 // 14. Record
 
-void AudioEffectRecordState::process(
+void AudioEffectState::_process_record(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	if (!is_recording) {
@@ -224789,22 +224200,21 @@ void AudioEffectRecordState::process(
 	}
 }
 
-void AudioEffectRecordState::_update_buffer()
+void AudioEffectState::_update_buffer()
 {
 	while (ring_buffer_read_pos < ring_buffer_pos) {
 		_io_store_buffer();
 	}
 }
 
-void AudioEffectRecordState::_update(void* userdata)
+void AudioEffectState::_update(void* userdata)
 {
-	AudioEffectRecordState* ins = static_cast<AudioEffectRecordState*>(userdata);
+	AudioEffectState* ins = static_cast<AudioEffectState*>(userdata);
 	ins->_update_buffer();
 }
 
-bool AudioEffectRecordState::process_silence() const { return true; }
 
-void AudioEffectRecordState::_io_thread_process()
+void AudioEffectState::_io_thread_process()
 {
 	while (is_recording) {
 		_update_buffer();
@@ -224814,7 +224224,7 @@ void AudioEffectRecordState::_io_thread_process()
 	}
 }
 
-void AudioEffectRecordState::_io_store_buffer()
+void AudioEffectState::_io_store_buffer()
 {
 	int to_read = ring_buffer_pos - ring_buffer_read_pos;
 	AudioFrame* rb_buf = ring_buffer.ptrw();
@@ -224829,13 +224239,13 @@ void AudioEffectRecordState::_io_store_buffer()
 	}
 }
 
-void AudioEffectRecordState::_thread_callback(void* _instance)
+void AudioEffectState::_thread_callback(void* _instance)
 {
-	AudioEffectRecordState* aeri = reinterpret_cast<AudioEffectRecordState*>(_instance);
+	AudioEffectState* aeri = reinterpret_cast<AudioEffectState*>(_instance);
 	aeri->_io_thread_process();
 }
 
-void AudioEffectRecordState::init()
+void AudioEffectState::init()
 {
 	ring_buffer_pos = 0;
 	ring_buffer_read_pos = 0;
@@ -224844,7 +224254,7 @@ void AudioEffectRecordState::init()
 	io_thread.start(_thread_callback, this);
 }
 
-void AudioEffectRecordState::finish()
+void AudioEffectState::finish()
 {
 	is_recording = false;
 	if (io_thread.is_started()) {
@@ -224854,11 +224264,12 @@ void AudioEffectRecordState::finish()
 
 // 15. Reverb
 
-void AudioEffectReverbState::process(
+void AudioEffectState::_process_reverb(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
 	ERR_FAIL_NULL(cfg);
+	ERR_FAIL_NULL(reverb);
 
 	for (int i = 0; i < 2; i++) {
 		Reverb& r = reverb[i];
@@ -224873,6 +224284,8 @@ void AudioEffectReverbState::process(
 		r.set_dry(cfg->reverb_dry);
 	}
 
+	float* src_buf = tmp_src.ptr();
+	float* dst_buf = tmp_dst.ptr();
 	int todo = p_frame_count;
 	int offset = 0;
 
@@ -224880,33 +224293,25 @@ void AudioEffectReverbState::process(
 		int to_mix = MIN(todo, Reverb::INPUT_BUFFER_MAX_SIZE);
 
 		for (int j = 0; j < to_mix; j++) {
-			tmp_src[j] = p_src_frames[offset + j].left;
+			src_buf[j] = p_src_frames[offset + j].left;
 		}
 
-		reverb[0].process(tmp_src, tmp_dst, to_mix);
+		reverb[0].process(src_buf, dst_buf, to_mix);
 
 		for (int j = 0; j < to_mix; j++) {
-			p_dst_frames[offset + j].left = tmp_dst[j];
-			tmp_src[j] = p_src_frames[offset + j].right;
+			p_dst_frames[offset + j].left = dst_buf[j];
+			src_buf[j] = p_src_frames[offset + j].right;
 		}
 
-		reverb[1].process(tmp_src, tmp_dst, to_mix);
+		reverb[1].process(src_buf, dst_buf, to_mix);
 
 		for (int j = 0; j < to_mix; j++) {
-			p_dst_frames[offset + j].right = tmp_dst[j];
+			p_dst_frames[offset + j].right = dst_buf[j];
 		}
 
 		offset += to_mix;
 		todo -= to_mix;
 	}
-}
-
-AudioEffectReverbState::AudioEffectReverbState()
-{
-	reverb[0].set_mix_rate(AudioServer::get_mix_rate());
-	reverb[0].set_extra_spread_base(0);
-	reverb[1].set_mix_rate(AudioServer::get_mix_rate());
-	reverb[1].set_extra_spread_base(0.000521f);
 }
 
 // 16. SpectrumAnalyzer
@@ -224968,7 +224373,7 @@ static void _spectrum_smb_fft(float* fftBuffer, long fftFrameSize, long sign)
 	}
 }
 
-void AudioEffectSpectrumAnalyzerState::process(
+void AudioEffectState::_process_spectrum_analyzer(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	for (int i = 0; i < p_frame_count; i++) {
@@ -225013,43 +224418,9 @@ void AudioEffectSpectrumAnalyzerState::process(
 	}
 }
 
-Vector2 AudioEffectSpectrumAnalyzerState::get_magnitude_for_frequency_range(
-	float p_begin, float p_end, MagnitudeMode p_mode) const
-{
-	int fft_index = fft_pos;
-
-	int begin_pos = p_begin * fft_size / (mix_rate * 0.5f);
-	int end_pos = p_end * fft_size / (mix_rate * 0.5f);
-
-	begin_pos = CLAMP(begin_pos, 0, fft_size - 1);
-	end_pos = CLAMP(end_pos, 0, fft_size - 1);
-
-	if (begin_pos > end_pos) {
-		SWAP(begin_pos, end_pos);
-	}
-	const AudioFrame* r = fft_history[fft_index].ptr();
-
-	if (p_mode == MAGNITUDE_AVERAGE) {
-		Vector2 avg;
-		for (int i = begin_pos; i <= end_pos; i++) {
-			avg += Vector2(r[i]);
-		}
-		avg /= float(end_pos - begin_pos + 1);
-		return avg;
-	}
-	else {
-		Vector2 max;
-		for (int i = begin_pos; i <= end_pos; i++) {
-			max.x = MAX(max.x, r[i].left);
-			max.y = MAX(max.y, r[i].right);
-		}
-		return max;
-	}
-}
-
 // 17. StereoEnhance
 
-void AudioEffectStereoEnhanceState::process(
+void AudioEffectState::_process_stereo_enhance(
 	const AudioFrame* p_src_frames, AudioFrame* p_dst_frames, int p_frame_count)
 {
 	const AudioEffectConfig* cfg = base.is_valid() ? base->get_config() : nullptr;
@@ -225089,10 +224460,6 @@ void AudioEffectStereoEnhanceState::process(
 	}
 }
 
-AudioEffectStereoEnhanceState::~AudioEffectStereoEnhanceState()
-{
-	memdelete_arr(delay_ringbuff);
-}
 
 void AudioEffectConfig::clear_buffer()
 {
@@ -225105,7 +224472,7 @@ void AudioEffectConfig::clear_buffer()
 void AudioEffectConfig::ensure_thread_stopped()
 {
 	if (current_instance.is_valid()) {
-		if (AudioEffectRecordState* state = current_instance->get_state<AudioEffectRecordState>()) {
+		if (AudioEffectState* state = current_instance->state; state && state->effect_type == AudioEffect::EFFECT_RECORD) {
 			state->finish();
 		}
 	}
@@ -234498,21 +233865,6 @@ bool NavigationServer2D::get_debug_navigation_enable_link_connections()
 }
 #endif // DEBUG_ENABLED
 
-struct NavigationServer2D::NavMap
-{
-};
-struct NavigationServer2D::NavRegion
-{
-};
-struct NavigationServer2D::NavLink
-{
-};
-struct NavigationServer2D::NavAgent
-{
-};
-struct NavigationServer2D::NavObstacle
-{
-};
 
 void NavigationServer2D::initialize()
 {
@@ -235262,21 +234614,6 @@ bool NavigationServer3D::get_debug_avoidance_enabled() { return data->debug_avoi
 
 #endif // DEBUG_ENABLED
 
-struct NavigationServer3D::NavMap
-{
-};
-struct NavigationServer3D::NavRegion
-{
-};
-struct NavigationServer3D::NavLink
-{
-};
-struct NavigationServer3D::NavAgent
-{
-};
-struct NavigationServer3D::NavObstacle
-{
-};
 
 void NavigationServer3D::initialize()
 {
@@ -264261,13 +263598,6 @@ constexpr uint32_t BASIS_DECOMPRESS_FLAG_KTX2 = 1 << 31;
 void basis_universal_init();
 
 #ifdef TOOLS_ENABLED
-struct BasisRGBAF
-{
-	uint32_t r;
-	uint32_t g;
-	uint32_t b;
-	uint32_t a;
-};
 #endif
 
 Ref<Image> basis_universal_unpacker_ptr(const uint8_t* p_data, int p_size);
@@ -267410,14 +266740,6 @@ class TextServerAdvanced final : public TextServer
 		Vector<TextRun> runs;
 		bool runs_dirty = true;
 
-		struct EmbeddedObject
-		{
-			int start = -1;
-			int end = -1;
-			InlineAlignment inline_align = INLINE_ALIGNMENT_CENTER;
-			Rect2 rect;
-			double baseline = 0;
-		};
 
 		/* Shaped data */
 		TextServer::Direction para_direction = DIRECTION_LTR; // Detected text direction.
@@ -267695,24 +267017,6 @@ class TextServerAdvanced final : public TextServer
 	hb_font_t* _font_get_hb_handle(const RID& p_font, int64_t p_font_size, bool& r_is_color) const;
 	bool _font_is_color(const RID& p_font) const;
 
-	struct GlyphCompare
-	{ // For line breaking reordering.
-
-		_FORCE_INLINE_ bool operator()(const Glyph& l, const Glyph& r) const
-		{
-			if (l.start == r.start) {
-				if (l.count == r.count) {
-					return (l.flags & TextServer::GRAPHEME_IS_VIRTUAL) <
-						   (r.flags & TextServer::GRAPHEME_IS_VIRTUAL);
-				}
-				return l.count > r.count; // Sort first glyph with count & flags, order of the rest
-										  // are irrelevant.
-			}
-			else {
-				return l.start < r.start;
-			}
-		}
-	};
 
 protected:
 	void full_copy(ShapedTextDataAdvanced* p_shaped);
@@ -273446,7 +272750,13 @@ const Glyph* TextServerAdvanced::_shaped_text_sort_logical(const RID& p_shaped)
 
 	if (!sd->sort_valid) {
 		sd->glyphs_logical = sd->glyphs;
-		sd->glyphs_logical.sort_custom<GlyphCompare>();
+		auto glyph_cmp = [](const Glyph& l, const Glyph& r) {
+			if (l.start == r.start) {
+				return l.count == r.count ? ((l.flags & TextServer::GRAPHEME_IS_VIRTUAL) < (r.flags & TextServer::GRAPHEME_IS_VIRTUAL)) : (l.count > r.count);
+			}
+			return l.start < r.start;
+		};
+		sd->glyphs_logical.sort_custom<decltype(glyph_cmp)>(glyph_cmp);
 		sd->sort_valid = true;
 	}
 
@@ -275645,32 +274955,6 @@ String GLTFDocument::_gen_unique_bone_name(
 	return u_name;
 }
 
-void GLTFDocument::_compute_node_heights(Ref<GLTFState> p_state)
-{
-	if (_naming_version < 2) {
-		p_state->root_nodes.clear();
-	}
-	for (GLTFNodeIndex node_i = 0; node_i < p_state->nodes.size(); ++node_i) {
-		Ref<GLTFNode> node = p_state->nodes[node_i];
-		node->height = 0;
-
-		GLTFNodeIndex current_i = node_i;
-		while (current_i >= 0) {
-			const GLTFNodeIndex parent_i = p_state->nodes[current_i]->parent;
-			if (parent_i >= 0) {
-				++node->height;
-			}
-			current_i = parent_i;
-		}
-
-		if (_naming_version < 2) {
-			// This is incorrect, but required for compatibility with previous Godot versions.
-			if (node->height == 0) {
-				p_state->root_nodes.push_back(node_i);
-			}
-		}
-	}
-}
 
 static Vector<uint8_t> _parse_base64_uri(const String& p_uri)
 {
@@ -275704,144 +274988,17 @@ static inline bool _all_buffers_empty(const Vector<Vector<uint8_t>>& p_buffers, 
 	return true;
 }
 
-template <typename T>
-T GLTFDocument::_decode_unpack_indexed_data(const T& p_source, const PackedInt32Array& p_indices)
-{
-	// Handle unpacking indexed data as if it was a regular array.
-	// This isn't a feature of accessors, rather a feature of places using accessors like
-	// indexed meshes, but GLTFDocument needs it in several places when reading accessors.
-	T ret;
-	const int64_t last_index = p_indices[p_indices.size() - 1];
-	ERR_FAIL_COND_V(last_index >= p_source.size(), ret);
-	ret.resize(p_indices.size());
-	for (int64_t i = 0; i < p_indices.size(); i++) {
-		const int64_t source_index = p_indices[i];
-		ret.set(i, p_source[source_index]);
-	}
-	return ret;
-}
-
-PackedFloat32Array GLTFDocument::_decode_accessor_as_float32s(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedFloat32Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedFloat32Array numbers = accessor->decode_as_float32s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return numbers;
-	}
-	return _decode_unpack_indexed_data<PackedFloat32Array>(numbers, p_packed_vertex_ids);
-}
-
-PackedFloat64Array GLTFDocument::_decode_accessor_as_float64s(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedFloat64Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedFloat64Array numbers = accessor->decode_as_float64s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return numbers;
-	}
-	return _decode_unpack_indexed_data<PackedFloat64Array>(numbers, p_packed_vertex_ids);
-}
-
-PackedInt32Array GLTFDocument::_decode_accessor_as_int32s(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedInt32Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedInt32Array numbers = accessor->decode_as_int32s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return numbers;
-	}
-	return _decode_unpack_indexed_data<PackedInt32Array>(numbers, p_packed_vertex_ids);
-}
-
-PackedVector2Array GLTFDocument::_decode_accessor_as_vec2(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedVector2Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedVector2Array vectors = accessor->decode_as_vector2s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return vectors;
-	}
-	return _decode_unpack_indexed_data<PackedVector2Array>(vectors, p_packed_vertex_ids);
-}
-
-PackedVector3Array GLTFDocument::_decode_accessor_as_vec3(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedVector3Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedVector3Array vectors = accessor->decode_as_vector3s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return vectors;
-	}
-	return _decode_unpack_indexed_data<PackedVector3Array>(vectors, p_packed_vertex_ids);
-}
-
-PackedVector4Array GLTFDocument::_decode_accessor_as_vec4(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedVector4Array());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedVector4Array vectors = accessor->decode_as_vector4s(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return vectors;
-	}
-	return _decode_unpack_indexed_data<PackedVector4Array>(vectors, p_packed_vertex_ids);
-}
-
-PackedColorArray GLTFDocument::_decode_accessor_as_color(const Ref<GLTFState> p_gltf_state,
-	GLTFAccessorIndex p_accessor_index, const PackedInt32Array& p_packed_vertex_ids)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), PackedColorArray());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	PackedColorArray colors = accessor->decode_as_colors(p_gltf_state);
-	if (p_packed_vertex_ids.is_empty()) {
-		return colors;
-	}
-	return _decode_unpack_indexed_data<PackedColorArray>(colors, p_packed_vertex_ids);
-}
-
-Vector<Quaternion> GLTFDocument::_decode_accessor_as_quaternion(
-	const Ref<GLTFState> p_gltf_state, GLTFAccessorIndex p_accessor_index)
-{
-	ERR_FAIL_INDEX_V(p_accessor_index, p_gltf_state->accessors.size(), Vector<Quaternion>());
-	Ref<GLTFAccessor> accessor = p_gltf_state->accessors[p_accessor_index];
-	Vector<Quaternion> quaternions = accessor->decode_as_quaternions(p_gltf_state);
-	return quaternions;
-}
-
 void GLTFDocument::set_naming_version(int p_version) { _naming_version = p_version; }
 
 int GLTFDocument::get_naming_version() const { return _naming_version; }
 
-void GLTFDocument::set_image_format(const String& p_image_format)
-{
-	_image_format = p_image_format;
-}
 
-String GLTFDocument::get_image_format() const { return _image_format; }
 
-void GLTFDocument::set_lossy_quality(float p_lossy_quality) { _lossy_quality = p_lossy_quality; }
 
-float GLTFDocument::get_lossy_quality() const { return _lossy_quality; }
 
-void GLTFDocument::set_fallback_image_format(const String& p_fallback_image_format)
-{
-	_fallback_image_format = p_fallback_image_format;
-}
 
-String GLTFDocument::get_fallback_image_format() const { return _fallback_image_format; }
 
-void GLTFDocument::set_fallback_image_quality(float p_fallback_image_quality)
-{
-	_fallback_image_quality = p_fallback_image_quality;
-}
 
-float GLTFDocument::get_fallback_image_quality() const { return _fallback_image_quality; }
 
 Ref<Image> GLTFDocument::_parse_image_bytes_into_image(Ref<GLTFState> p_state,
 	const Vector<uint8_t>& p_bytes, const String& p_mime_type, int p_index,
@@ -275929,24 +275086,6 @@ GLTFTextureSamplerIndex GLTFDocument::_set_sampler_for_mode(
 	return gltf_sampler_i;
 }
 
-Ref<GLTFTextureSampler> GLTFDocument::_get_sampler_for_texture(
-	Ref<GLTFState> p_state, const GLTFTextureIndex p_texture)
-{
-	ERR_FAIL_COND_V_MSG(p_state->textures.is_empty(), Ref<GLTFTextureSampler>(),
-		"glTF import: Tried to read sampler for texture at index " + itos(p_texture) +
-			", but this glTF file does not contain any textures.");
-	ERR_FAIL_INDEX_V(p_texture, p_state->textures.size(), Ref<GLTFTextureSampler>());
-	const GLTFTextureSamplerIndex sampler = p_state->textures[p_texture]->get_sampler();
-
-	if (sampler == -1) {
-		return p_state->default_texture_sampler;
-	}
-	else {
-		ERR_FAIL_INDEX_V(sampler, p_state->texture_samplers.size(), Ref<GLTFTextureSampler>());
-
-		return p_state->texture_samplers[sampler];
-	}
-}
 
 static inline void _set_material_texture_name(const Ref<Texture2D>& p_texture, const String& p_path,
 	const String& p_mat_name, const String& p_suffix)
@@ -275961,106 +275100,8 @@ static inline void _set_material_texture_name(const Ref<Texture2D>& p_texture, c
 	}
 }
 
-void GLTFDocument::spec_gloss_to_rough_metal(
-	Ref<GLTFSpecGloss> r_spec_gloss, Ref<StandardMaterial3D> p_material)
-{
-	if (r_spec_gloss.is_null()) {
-		return;
-	}
-	if (r_spec_gloss->spec_gloss_img.is_null()) {
-		return;
-	}
-	if (r_spec_gloss->diffuse_img.is_null()) {
-		return;
-	}
-	if (p_material.is_null()) {
-		return;
-	}
-	bool has_roughness = false;
-	bool has_metal = false;
-	p_material->set_roughness(1.0f);
-	p_material->set_metallic(1.0f);
-	Ref<Image> rm_img = Image::create_empty(r_spec_gloss->spec_gloss_img->get_width(),
-		r_spec_gloss->spec_gloss_img->get_height(), false, Image::FORMAT_RGBA8);
-	r_spec_gloss->spec_gloss_img->decompress();
-	if (r_spec_gloss->diffuse_img.is_valid()) {
-		r_spec_gloss->diffuse_img->decompress();
-		r_spec_gloss->diffuse_img->resize(r_spec_gloss->spec_gloss_img->get_width(),
-			r_spec_gloss->spec_gloss_img->get_height(), Image::INTERPOLATE_LANCZOS);
-		r_spec_gloss->spec_gloss_img->resize(r_spec_gloss->diffuse_img->get_width(),
-			r_spec_gloss->diffuse_img->get_height(), Image::INTERPOLATE_LANCZOS);
-	}
-	for (int32_t y = 0; y < r_spec_gloss->spec_gloss_img->get_height(); y++) {
-		for (int32_t x = 0; x < r_spec_gloss->spec_gloss_img->get_width(); x++) {
-			const Color specular_pixel =
-				r_spec_gloss->spec_gloss_img->get_pixel(x, y).srgb_to_linear();
-			Color specular = Color(specular_pixel.r, specular_pixel.g, specular_pixel.b);
-			specular *= r_spec_gloss->specular_factor;
-			Color diffuse = Color(1.0f, 1.0f, 1.0f);
-			diffuse *= r_spec_gloss->diffuse_img->get_pixel(x, y).srgb_to_linear();
-			float metallic = 0.0f;
-			Color base_color;
-			spec_gloss_to_metal_base_color(specular, diffuse, base_color, metallic);
-			Color mr = Color(1.0f, 1.0f, 1.0f);
-			mr.g = specular_pixel.a;
-			mr.b = metallic;
-			if (!Math::is_equal_approx(mr.g, 1.0f)) {
-				has_roughness = true;
-			}
-			if (!Math::is_zero_approx(mr.b)) {
-				has_metal = true;
-			}
-			mr.g *= r_spec_gloss->gloss_factor;
-			mr.g = 1.0f - mr.g;
-			rm_img->set_pixel(x, y, mr);
-			if (r_spec_gloss->diffuse_img.is_valid()) {
-				r_spec_gloss->diffuse_img->set_pixel(x, y, base_color.linear_to_srgb());
-			}
-		}
-	}
-	rm_img->generate_mipmaps();
-	r_spec_gloss->diffuse_img->generate_mipmaps();
-	p_material->set_texture(
-		StandardMaterial3D::TEXTURE_ALBEDO, ImageTexture::create_from_image(r_spec_gloss->diffuse_img));
-	Ref<ImageTexture> rm_image_texture = ImageTexture::create_from_image(rm_img);
-	if (has_roughness) {
-		p_material->set_texture(StandardMaterial3D::TEXTURE_ROUGHNESS, rm_image_texture);
-		p_material->set_roughness_texture_channel(StandardMaterial3D::TEXTURE_CHANNEL_GREEN);
-	}
 
-	if (has_metal) {
-		p_material->set_texture(StandardMaterial3D::TEXTURE_METALLIC, rm_image_texture);
-		p_material->set_metallic_texture_channel(StandardMaterial3D::TEXTURE_CHANNEL_BLUE);
-	}
-}
 
-void GLTFDocument::spec_gloss_to_metal_base_color(
-	const Color& p_specular_factor, const Color& p_diffuse, Color& r_base_color, float& r_metallic)
-{
-	const Color DIELECTRIC_SPECULAR = Color(0.04f, 0.04f, 0.04f);
-	Color specular = Color(p_specular_factor.r, p_specular_factor.g, p_specular_factor.b);
-	const float one_minus_specular_strength = 1.0f - get_max_component(specular);
-	const float dielectric_specular_red = DIELECTRIC_SPECULAR.r;
-	float brightness_diffuse = get_perceived_brightness(p_diffuse);
-	const float brightness_specular = get_perceived_brightness(specular);
-	r_metallic = solve_metallic(dielectric_specular_red, brightness_diffuse, brightness_specular,
-		one_minus_specular_strength);
-	const float one_minus_metallic = 1.0f - r_metallic;
-	const Color base_color_from_diffuse =
-		p_diffuse * (one_minus_specular_strength / (1.0f - dielectric_specular_red) /
-						MAX(one_minus_metallic, CMP_EPSILON));
-	const Color base_color_from_specular =
-		(specular - (DIELECTRIC_SPECULAR * (one_minus_metallic))) *
-		(1.0f / MAX(r_metallic, CMP_EPSILON));
-	r_base_color.r =
-		Math::lerp(base_color_from_diffuse.r, base_color_from_specular.r, r_metallic * r_metallic);
-	r_base_color.g =
-		Math::lerp(base_color_from_diffuse.g, base_color_from_specular.g, r_metallic * r_metallic);
-	r_base_color.b =
-		Math::lerp(base_color_from_diffuse.b, base_color_from_specular.b, r_metallic * r_metallic);
-	r_base_color.a = p_diffuse.a;
-	r_base_color = r_base_color.clamp();
-}
 
 bool GLTFDocument::_skins_are_same(const Ref<Skin>& p_skin_a, const Ref<Skin>& p_skin_b)
 {
@@ -276102,24 +275143,6 @@ void GLTFDocument::_remove_duplicate_skins(Ref<GLTFState> p_state)
 	}
 }
 
-String GLTFDocument::interpolation_to_string(const GLTFAnimation::Interpolation p_interp)
-{
-	String interp = "LINEAR";
-	if (p_interp == GLTFAnimation::INTERP_STEP) {
-		interp = "STEP";
-	}
-	else if (p_interp == GLTFAnimation::INTERP_LINEAR) {
-		interp = "LINEAR";
-	}
-	else if (p_interp == GLTFAnimation::INTERP_CATMULLROMSPLINE) {
-		interp = "CATMULLROMSPLINE";
-	}
-	else if (p_interp == GLTFAnimation::INTERP_CUBIC_SPLINE) {
-		interp = "CUBICSPLINE";
-	}
-
-	return interp;
-}
 
 void GLTFDocument::_assign_node_names(Ref<GLTFState> p_state)
 {
@@ -276169,20 +275192,6 @@ BoneAttachment3D* GLTFDocument::_generate_bone_attachment(
 	return bone_attachment;
 }
 
-BoneAttachment3D* GLTFDocument::_generate_bone_attachment_compat_4pt4(Ref<GLTFState> p_state,
-	Skeleton3D* p_skeleton, const GLTFNodeIndex p_node_index, const GLTFNodeIndex p_bone_index)
-{
-	Ref<GLTFNode> gltf_node = p_state->nodes[p_node_index];
-	Ref<GLTFNode> bone_node = p_state->nodes[p_bone_index];
-	BoneAttachment3D* bone_attachment = memnew(BoneAttachment3D);
-	print_verbose("glTF: Creating bone attachment for: " + gltf_node->get_name());
-
-	ERR_FAIL_COND_V(!bone_node->joint, nullptr);
-
-	bone_attachment->set_bone_name(bone_node->get_name());
-
-	return bone_attachment;
-}
 
 ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
 	Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
@@ -276207,31 +275216,8 @@ ImporterMeshInstance3D* GLTFDocument::_generate_mesh_instance(
 	return mi;
 }
 
-GLTFCameraIndex GLTFDocument::_convert_camera(Ref<GLTFState> p_state, Camera3D* p_camera)
-{
-	print_verbose("glTF: Converting camera: " + p_camera->get_name());
 
-	Ref<GLTFCamera> c = GLTFCamera::from_node(p_camera);
-	GLTFCameraIndex camera_index = p_state->cameras.size();
-	p_state->cameras.push_back(c);
-	return camera_index;
-}
 
-GLTFLightIndex GLTFDocument::_convert_light(Ref<GLTFState> p_state, Light3D* p_light)
-{
-	print_verbose("glTF: Converting light: " + p_light->get_name());
-
-	Ref<GLTFLight> l = GLTFLight::from_node(p_light);
-
-	GLTFLightIndex light_index = p_state->lights.size();
-	p_state->lights.push_back(l);
-	return light_index;
-}
-
-void GLTFDocument::_convert_spatial(Ref<GLTFState> p_state, Node3D* p_spatial, Ref<GLTFNode> p_node)
-{
-	p_node->transform = p_spatial->get_transform();
-}
 
 Node3D* GLTFDocument::_generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIndex p_node_index)
 {
@@ -276241,320 +275227,6 @@ Node3D* GLTFDocument::_generate_spatial(Ref<GLTFState> p_state, const GLTFNodeIn
 	print_verbose("glTF: Converting spatial: " + gltf_node->get_name());
 
 	return spatial;
-}
-
-void GLTFDocument::_convert_camera_to_gltf(
-	Camera3D* camera, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node)
-{
-	ERR_FAIL_NULL(camera);
-	GLTFCameraIndex camera_index = _convert_camera(p_state, camera);
-	if (camera_index != -1) {
-		p_gltf_node->camera = camera_index;
-	}
-}
-
-void GLTFDocument::_convert_light_to_gltf(
-	Light3D* light, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node)
-{
-	ERR_FAIL_NULL(light);
-	GLTFLightIndex light_index = _convert_light(p_state, light);
-	if (light_index != -1) {
-		p_gltf_node->light = light_index;
-	}
-}
-
-void GLTFDocument::_convert_multi_mesh_instance_to_gltf(MultiMeshInstance3D* p_multi_mesh_instance,
-	GLTFNodeIndex p_parent_node_index, GLTFNodeIndex p_root_node_index, Ref<GLTFNode> p_gltf_node,
-	Ref<GLTFState> p_state)
-{
-	ERR_FAIL_NULL(p_multi_mesh_instance);
-	Ref<MultiMesh> multi_mesh = p_multi_mesh_instance->get_multimesh();
-	if (multi_mesh.is_null()) {
-		return;
-	}
-	Ref<GLTFMesh> gltf_mesh;
-	gltf_mesh.instantiate();
-	Ref<Mesh> mesh = multi_mesh->get_mesh();
-	if (mesh.is_null()) {
-		return;
-	}
-	gltf_mesh->set_original_name(multi_mesh->get_name());
-	gltf_mesh->set_name(multi_mesh->get_name());
-	gltf_mesh->set_mesh(ImporterMesh::from_mesh(mesh));
-	GLTFMeshIndex mesh_index = p_state->meshes.size();
-	p_state->meshes.push_back(gltf_mesh);
-	for (int32_t instance_i = 0; instance_i < multi_mesh->get_instance_count(); instance_i++) {
-		Transform3D transform;
-		if (multi_mesh->get_transform_format() == MultiMesh::TRANSFORM_2D) {
-			Transform2D xform_2d = multi_mesh->get_instance_transform_2d(instance_i);
-			transform.origin = Vector3(xform_2d.get_origin().x, 0, xform_2d.get_origin().y);
-			real_t rotation = xform_2d.get_rotation();
-			Quaternion quaternion(Vector3(0, 1, 0), rotation);
-			Size2 scale = xform_2d.get_scale();
-			transform.basis.set_quaternion_scale(quaternion, Vector3(scale.x, 0, scale.y));
-			transform = p_multi_mesh_instance->get_transform() * transform;
-		}
-		else if (multi_mesh->get_transform_format() == MultiMesh::TRANSFORM_3D) {
-			transform = p_multi_mesh_instance->get_transform() *
-						multi_mesh->get_instance_transform(instance_i);
-		}
-		Ref<GLTFNode> new_gltf_node;
-		new_gltf_node.instantiate();
-		new_gltf_node->mesh = mesh_index;
-		new_gltf_node->transform = transform;
-		new_gltf_node->set_original_name(p_multi_mesh_instance->get_name());
-		new_gltf_node->set_name(_gen_unique_name(p_state, p_multi_mesh_instance->get_name()));
-		p_gltf_node->children.push_back(p_state->nodes.size());
-		p_state->nodes.push_back(new_gltf_node);
-	}
-}
-
-void GLTFDocument::_convert_mesh_instance_to_gltf(
-	MeshInstance3D* p_scene_parent, Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node)
-{
-	GLTFMeshIndex gltf_mesh_index = _convert_mesh_to_gltf(p_state, p_scene_parent);
-	if (gltf_mesh_index != -1) {
-		p_gltf_node->mesh = gltf_mesh_index;
-	}
-}
-
-bool GLTFDocument::_does_skinned_mesh_require_placeholder_node(
-	Ref<GLTFState> p_state, Ref<GLTFNode> p_gltf_node)
-{
-	if (p_gltf_node->skin < 0) {
-		return false; // Not a skinned mesh.
-	}
-	// Check for child nodes that aren't joints/bones.
-	for (int i = 0; i < p_gltf_node->children.size(); ++i) {
-		Ref<GLTFNode> child = p_state->nodes[p_gltf_node->children[i]];
-		if (!child->joint) {
-			return true;
-		}
-		// Edge case: If a child's skeleton is not yet in the tree, then we must add it as a child
-		// of this node. While the Skeleton3D node isn't a glTF node, it's still a case where we
-		// need a placeholder. This is required to handle this issue:
-		// https://github.com/godotengine/godot/issues/67773
-		const GLTFSkeletonIndex skel_index = child->skeleton;
-		ERR_FAIL_INDEX_V(skel_index, p_state->skeletons.size(), false);
-		if (p_state->skeletons[skel_index]->godot_skeleton->get_parent() == nullptr) {
-			return true;
-		}
-	}
-	return false;
-}
-
-// Deprecated code used when naming_version is 0 or 1 (Godot 4.0 to 4.4).
-
-// Deprecated code used when naming_version is 0 or 1 (Godot 4.0 to 4.4).
-
-template <typename T> struct SceneFormatImporterGLTFInterpolate
-{
-	T lerp(const T& a, const T& b, float c) const { return a + (b - a) * c; }
-
-	T catmull_rom(const T& p0, const T& p1, const T& p2, const T& p3, float t)
-	{
-		const float t2 = t * t;
-		const float t3 = t2 * t;
-
-		return 0.5f *
-			   ((2.0f * p1) + (-p0 + p2) * t + (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
-				   (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3);
-	}
-
-	T hermite(T start, T tan_start, T end, T tan_end, float t)
-	{
-		/* Formula from the glTF 2.0 specification. */
-		const real_t t2 = t * t;
-		const real_t t3 = t2 * t;
-
-		const real_t h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
-		const real_t h10 = t3 - 2.0 * t2 + t;
-		const real_t h01 = -2.0 * t3 + 3.0 * t2;
-		const real_t h11 = t3 - t2;
-
-		return start * h00 + tan_start * h10 + end * h01 + tan_end * h11;
-	}
-};
-
-// thank you for existing, partial specialization
-template <> struct SceneFormatImporterGLTFInterpolate<Quaternion>
-{
-	Quaternion lerp(const Quaternion& a, const Quaternion& b, const float c) const
-	{
-		ERR_FAIL_COND_V_MSG(!a.is_normalized(), Quaternion(),
-			vformat("The quaternion \"a\" %s must be normalized.", a));
-		ERR_FAIL_COND_V_MSG(!b.is_normalized(), Quaternion(),
-			vformat("The quaternion \"b\" %s must be normalized.", b));
-
-		return a.slerp(b, c).normalized();
-	}
-
-	Quaternion catmull_rom(const Quaternion& p0, const Quaternion& p1, const Quaternion& p2,
-		const Quaternion& p3, const float c)
-	{
-		ERR_FAIL_COND_V_MSG(!p1.is_normalized(), Quaternion(),
-			vformat("The quaternion \"p1\" (%s) must be normalized.", p1));
-		ERR_FAIL_COND_V_MSG(!p2.is_normalized(), Quaternion(),
-			vformat("The quaternion \"p2\" (%s) must be normalized.", p2));
-
-		return p1.slerp(p2, c).normalized();
-	}
-
-	Quaternion hermite(const Quaternion start, const Quaternion tan_start, const Quaternion end,
-		const Quaternion tan_end, const float t)
-	{
-		ERR_FAIL_COND_V_MSG(!start.is_normalized(), Quaternion(),
-			vformat("The start quaternion %s must be normalized.", start));
-		ERR_FAIL_COND_V_MSG(!end.is_normalized(), Quaternion(),
-			vformat("The end quaternion %s must be normalized.", end));
-
-		return start.slerp(end, t).normalized();
-	}
-};
-
-template <typename T>
-T GLTFDocument::_interpolate_track(const Vector<double>& p_times, const Vector<T>& p_values,
-	const float p_time, const GLTFAnimation::Interpolation p_interp)
-{
-	ERR_FAIL_COND_V(p_values.is_empty(), T());
-	if (p_times.size() !=
-		(p_values.size() / (p_interp == GLTFAnimation::INTERP_CUBIC_SPLINE ? 3 : 1))) {
-		ERR_PRINT_ONCE("The interpolated values are not corresponding to its times.");
-		return p_values[0];
-	}
-	// could use binary search, worth it?
-	int idx = -1;
-	for (int i = 0; i < p_times.size(); i++) {
-		if (p_times[i] > p_time) {
-			break;
-		}
-		idx++;
-	}
-
-	SceneFormatImporterGLTFInterpolate<T> interp;
-
-	switch (p_interp) {
-	case GLTFAnimation::INTERP_LINEAR: {
-		if (idx == -1) {
-			return p_values[0];
-		}
-		else if (idx >= p_times.size() - 1) {
-			return p_values[p_times.size() - 1];
-		}
-
-		const float c = (p_time - p_times[idx]) / (p_times[idx + 1] - p_times[idx]);
-
-		return interp.lerp(p_values[idx], p_values[idx + 1], c);
-	} break;
-	case GLTFAnimation::INTERP_STEP: {
-		if (idx == -1) {
-			return p_values[0];
-		}
-		else if (idx >= p_times.size() - 1) {
-			return p_values[p_times.size() - 1];
-		}
-
-		return p_values[idx];
-	} break;
-	case GLTFAnimation::INTERP_CATMULLROMSPLINE: {
-		if (idx == -1) {
-			return p_values[1];
-		}
-		else if (idx >= p_times.size() - 1) {
-			return p_values[1 + p_times.size() - 1];
-		}
-
-		const float c = (p_time - p_times[idx]) / (p_times[idx + 1] - p_times[idx]);
-
-		return interp.catmull_rom(
-			p_values[idx - 1], p_values[idx], p_values[idx + 1], p_values[idx + 3], c);
-	} break;
-	case GLTFAnimation::INTERP_CUBIC_SPLINE: {
-		if (idx == -1) {
-			return p_values[1];
-		}
-		else if (idx >= p_times.size() - 1) {
-			return p_values[(p_times.size() - 1) * 3 + 1];
-		}
-
-		const float td = (p_times[idx + 1] - p_times[idx]);
-		const float c = (p_time - p_times[idx]) / td;
-
-		const T& from = p_values[idx * 3 + 1];
-		const T tan_from = td * p_values[idx * 3 + 2];
-		const T& to = p_values[idx * 3 + 4];
-		const T tan_to = td * p_values[idx * 3 + 3];
-
-		return interp.hermite(from, tan_from, to, tan_to, c);
-	} break;
-	}
-
-	ERR_FAIL_V(p_values[0]);
-}
-
-void GLTFDocument::_append_khr_texture_transform_ext_json_pointer(
-	PackedStringArray& p_split_json_pointer, const String& p_texture_name, const bool p_is_offset)
-{
-	p_split_json_pointer.append(p_texture_name);
-	p_split_json_pointer.append("extensions");
-	p_split_json_pointer.append("KHR_texture_transform");
-	if (p_is_offset) {
-		p_split_json_pointer.append("offset");
-	}
-	else {
-		p_split_json_pointer.append("scale");
-	}
-}
-
-float GLTFDocument::solve_metallic(float p_dielectric_specular, float p_diffuse, float p_specular,
-	float p_one_minus_specular_strength)
-{
-	if (p_specular <= p_dielectric_specular) {
-		return 0.0f;
-	}
-
-	const float a = p_dielectric_specular;
-	const float b = p_diffuse * p_one_minus_specular_strength / (1.0f - p_dielectric_specular) +
-					p_specular - 2.0f * p_dielectric_specular;
-	const float c = p_dielectric_specular - p_specular;
-	const float D = b * b - 4.0f * a * c;
-	return CLAMP((-b + Math::sqrt(D)) / (2.0f * a), 0.0f, 1.0f);
-}
-
-float GLTFDocument::get_perceived_brightness(const Color p_color)
-{
-	const Color coeff = Color(R_BRIGHTNESS_COEFF, G_BRIGHTNESS_COEFF, B_BRIGHTNESS_COEFF);
-	const Color value = coeff * (p_color * p_color);
-
-	const float r = value.r;
-	const float g = value.g;
-	const float b = value.b;
-
-	return Math::sqrt(r + g + b);
-}
-
-float GLTFDocument::get_max_component(const Color& p_color)
-{
-	const float r = p_color.r;
-	const float g = p_color.g;
-	const float b = p_color.b;
-
-	return MAX(MAX(r, g), b);
-}
-
-void GLTFDocument::_build_parent_hierarchy(Ref<GLTFState> p_state)
-{
-	// build the hierarchy
-	for (GLTFNodeIndex node_i = 0; node_i < p_state->nodes.size(); node_i++) {
-		for (int j = 0; j < p_state->nodes[node_i]->children.size(); j++) {
-			GLTFNodeIndex child_i = p_state->nodes[node_i]->children[j];
-			ERR_FAIL_INDEX(child_i, p_state->nodes.size());
-			if (p_state->nodes.write[child_i]->parent != -1) {
-				continue;
-			}
-			p_state->nodes.write[child_i]->parent = node_i;
-		}
-	}
 }
 
 Vector<Ref<GLTFDocumentExtension>> GLTFDocument::all_document_extensions;
@@ -276574,11 +275246,6 @@ void GLTFDocument::register_gltf_document_extension(
 	}
 }
 
-void GLTFDocument::unregister_gltf_document_extension(Ref<GLTFDocumentExtension> p_extension)
-{
-	MutexLock lock(all_document_extensions_mutex);
-	all_document_extensions.erase(p_extension);
-}
 
 void GLTFDocument::unregister_all_gltf_document_extensions()
 {
@@ -276592,128 +275259,8 @@ Vector<Ref<GLTFDocumentExtension>> GLTFDocument::get_all_gltf_document_extension
 	return all_document_extensions;
 }
 
-Vector<String> GLTFDocument::get_supported_gltf_extensions()
-{
-	HashSet<String> set = get_supported_gltf_extensions_hashset();
-	Vector<String> vec;
-	for (const String& s : set) {
-		vec.append(s);
-	}
-	vec.sort();
-	return vec;
-}
 
-HashSet<String> GLTFDocument::get_supported_gltf_extensions_hashset()
-{
-	HashSet<String> supported_extensions;
-	// If the extension is supported directly in GLTFDocument, list it here.
-	// Other built-in extensions are supported by GLTFDocumentExtension classes.
-	supported_extensions.insert("GODOT_single_root");
-	supported_extensions.insert("KHR_animation_pointer");
-	supported_extensions.insert("KHR_lights_punctual");
-	supported_extensions.insert("KHR_materials_emissive_strength");
-	supported_extensions.insert("KHR_materials_pbrSpecularGlossiness");
-	supported_extensions.insert("KHR_materials_unlit");
-	supported_extensions.insert("KHR_node_visibility");
-	supported_extensions.insert("KHR_texture_transform");
-	for (Ref<GLTFDocumentExtension> ext : get_all_gltf_document_extensions()) {
-		ERR_CONTINUE(ext.is_null());
-		Vector<String> ext_supported_extensions = ext->get_supported_extensions();
-		for (int i = 0; i < ext_supported_extensions.size(); ++i) {
-			supported_extensions.insert(ext_supported_extensions[i]);
-		}
-	}
-	return supported_extensions;
-}
 
-Error GLTFDocument::_parse_gltf_state(Ref<GLTFState> p_state, const String& p_search_path)
-{
-	Error err;
-
-	/* PARSE BUFFERS */
-	err = _parse_buffers(p_state, p_search_path);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE BUFFER VIEWS */
-	err = _parse_buffer_views(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE ACCESSORS */
-	err = _parse_accessors(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE EXTENSIONS */
-	err = _parse_gltf_extensions(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE SCENE */
-	err = _parse_scenes(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE NODES */
-	err = _parse_nodes(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	if (!p_state->discard_meshes_and_materials) {
-		/* PARSE IMAGES */
-		err = _parse_images(p_state, p_search_path);
-
-		ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-		/* PARSE TEXTURE SAMPLERS */
-		err = _parse_texture_samplers(p_state);
-
-		ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-		/* PARSE TEXTURES */
-		err = _parse_textures(p_state);
-
-		ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-		/* PARSE TEXTURES */
-		err = _parse_materials(p_state);
-
-		ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-	}
-
-	/* PARSE SKINS */
-	err = _parse_skins(p_state);
-
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* DETERMINE SKELETONS */
-	if (p_state->get_import_as_skeleton_bones()) {
-		err = SkinTool::_determine_skeletons(
-			p_state->skins, p_state->nodes, p_state->skeletons, p_state->root_nodes, true);
-	}
-	else {
-		err = SkinTool::_determine_skeletons(p_state->skins, p_state->nodes, p_state->skeletons,
-			Vector<GLTFNodeIndex>(), _naming_version < 2);
-	}
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* ASSIGN SCENE NODE NAMES */
-	// This must be run AFTER determining skeletons, and BEFORE parsing animations.
-	_assign_node_names(p_state);
-
-	/* PARSE MESHES (we have enough info now) */
-	err = _parse_meshes(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE LIGHTS */
-	err = _parse_lights(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE CAMERAS */
-	err = _parse_cameras(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	/* PARSE ANIMATIONS */
-	err = _parse_animations(p_state);
-	ERR_FAIL_COND_V(err != OK, ERR_PARSE_ERROR);
-
-	return OK;
-}
 
 PackedByteArray GLTFDocument::generate_buffer(Ref<GLTFState> p_state)
 {
@@ -276850,17 +275397,8 @@ Error GLTFDocument::append_from_file(
 	return OK;
 }
 
-void GLTFDocument::set_root_node_mode(GLTFDocument::RootNodeMode p_root_node_mode)
-{
-	_root_node_mode = p_root_node_mode;
-}
 
-GLTFDocument::RootNodeMode GLTFDocument::get_root_node_mode() const { return _root_node_mode; }
 
-void GLTFDocument::set_texture_map_mode(GLTFDocument::TextureMapMode p_texture_map_mode)
-{
-	_texture_map_mode = p_texture_map_mode;
-}
 
 void GLTFDocument::set_visibility_mode(VisibilityMode p_visibility_mode)
 {
@@ -276929,9 +275467,7 @@ Error GLTFDocument::_serialize_asset_header(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_serialize_animations(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_textures(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_texture_samplers(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_parse_skins(Ref<GLTFState>) { return OK; }
 
@@ -276941,32 +275477,23 @@ Error GLTFDocument::_parse_nodes(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_parse_meshes(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_materials(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_parse_lights(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_parse_images(Ref<GLTFState>, String const&) { return OK; }
 
-Error GLTFDocument::_parse_gltf_extensions(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_parse_cameras(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_buffer_views(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_buffers(Ref<GLTFState>, String const&) { return OK; }
 
 Error GLTFDocument::_parse_animations(Ref<GLTFState>) { return OK; }
 
-Error GLTFDocument::_parse_accessors(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_encode_buffer_views(Ref<GLTFState>) { return OK; }
 
 Error GLTFDocument::_encode_accessors(Ref<GLTFState>) { return OK; }
 
-GLTFMeshIndex GLTFDocument::_convert_mesh_to_gltf(Ref<GLTFState>, MeshInstance3D*)
-{
-	return GLTFMeshIndex();
-}
 
 void GLTFDocument::_convert_mesh_instances(Ref<GLTFState>) {}
 
@@ -276976,76 +275503,27 @@ Node* GLTFDocument::generate_scene(
 	return nullptr;
 }
 
-void GLTFState::add_used_extension(const String& p_extension_name, bool p_required)
-{
-	if (!extensions_used.has(p_extension_name)) {
-		extensions_used.push_back(p_extension_name);
-	}
-	if (p_required) {
-		if (!extensions_required.has(p_extension_name)) {
-			extensions_required.push_back(p_extension_name);
-		}
-	}
-}
 
-int GLTFState::get_major_version() const { return major_version; }
 
-void GLTFState::set_major_version(int p_major_version) { major_version = p_major_version; }
 
-int GLTFState::get_minor_version() const { return minor_version; }
 
-void GLTFState::set_minor_version(int p_minor_version) { minor_version = p_minor_version; }
 
 String GLTFState::get_copyright() const { return copyright; }
 
-void GLTFState::set_copyright(const String& p_copyright) { copyright = p_copyright; }
 
-Vector<uint8_t> GLTFState::get_glb_data() const { return Vector<uint8_t>(glb_data); }
 
-void GLTFState::set_glb_data(const Vector<uint8_t>& p_glb_data)
-{
-	glb_data = Vector<uint8_t>(p_glb_data);
-}
 
-bool GLTFState::get_use_named_skin_binds() const { return use_named_skin_binds; }
 
-void GLTFState::set_use_named_skin_binds(bool p_use_named_skin_binds)
-{
-	use_named_skin_binds = p_use_named_skin_binds;
-}
 
 String GLTFState::get_scene_name() const { return scene_name; }
 
-void GLTFState::set_scene_name(const String& p_scene_name) { scene_name = p_scene_name; }
 
-PackedInt32Array GLTFState::get_root_nodes() const { return root_nodes; }
 
-void GLTFState::set_root_nodes(const PackedInt32Array& p_root_nodes)
-{
-	root_nodes = PackedInt32Array(p_root_nodes);
-}
 
-bool GLTFState::get_create_animations() const { return create_animations; }
 
-void GLTFState::set_create_animations(bool p_create_animations)
-{
-	create_animations = p_create_animations;
-}
 
-bool GLTFState::get_import_as_skeleton_bones() const { return import_as_skeleton_bones; }
 
-void GLTFState::set_import_as_skeleton_bones(bool p_import_as_skeleton_bones)
-{
-	import_as_skeleton_bones = p_import_as_skeleton_bones;
-}
 
-Node* GLTFState::get_scene_node(GLTFNodeIndex p_gltf_node_index) const
-{
-	if (!scene_nodes.has(p_gltf_node_index)) {
-		return nullptr;
-	}
-	return scene_nodes[p_gltf_node_index];
-}
 
 GLTFNodeIndex GLTFState::get_node_index(Node* p_node) const
 {
@@ -277057,10 +275535,6 @@ GLTFNodeIndex GLTFState::get_node_index(Node* p_node) const
 	return -1;
 }
 
-int GLTFState::get_animation_players_count(int p_anim_player_index) const
-{
-	return animation_players.size();
-}
 
 AnimationPlayer* GLTFState::get_animation_player(int p_anim_player_index) const
 {
@@ -277068,12 +275542,7 @@ AnimationPlayer* GLTFState::get_animation_player(int p_anim_player_index) const
 	return animation_players[p_anim_player_index];
 }
 
-void GLTFState::set_discard_meshes_and_materials(bool p_discard_meshes_and_materials)
-{
-	discard_meshes_and_materials = p_discard_meshes_and_materials;
-}
 
-bool GLTFState::get_discard_meshes_and_materials() const { return discard_meshes_and_materials; }
 
 String GLTFState::get_base_path() const { return base_path; }
 
@@ -277085,16 +275554,9 @@ void GLTFState::set_base_path(const String& p_base_path)
 	}
 }
 
-String GLTFState::get_extract_path() const { return extract_path; }
 
-void GLTFState::set_extract_path(const String& p_extract_path) { extract_path = p_extract_path; }
 
-String GLTFState::get_extract_prefix() const { return extract_prefix; }
 
-void GLTFState::set_extract_prefix(const String& p_extract_prefix)
-{
-	extract_prefix = p_extract_prefix;
-}
 
 String GLTFState::get_filename() const { return filename; }
 
@@ -277106,49 +275568,7 @@ void GLTFState::set_filename(const String& p_filename)
 	}
 }
 
-GLTFBufferViewIndex GLTFState::append_data_to_buffers(
-	const Vector<uint8_t>& p_data, const bool p_deduplication = false)
-{
-	if (p_deduplication) {
-		for (int i = 0; i < buffer_views.size(); i++) {
-			Ref<GLTFBufferView> buffer_view = buffer_views[i];
-			Vector<uint8_t> buffer_view_data = buffer_view->load_buffer_view_data(this);
-			if (buffer_view_data == p_data) {
-				return i;
-			}
-		}
-	}
-	// Append the given data to a buffer and create a buffer view for it.
-	if (unlikely(buffers.is_empty())) {
-		buffers.push_back(Vector<uint8_t>());
-	}
-	Vector<uint8_t>& destination_buffer = buffers.write[0];
-	Ref<GLTFBufferView> buffer_view;
-	buffer_view.instantiate();
-	buffer_view->set_buffer(0);
-	buffer_view->set_byte_offset(destination_buffer.size());
-	buffer_view->set_byte_length(p_data.size());
-	destination_buffer.append_array(p_data);
-	const int new_index = buffer_views.size();
-	buffer_views.push_back(buffer_view);
-	return new_index;
-}
 
-GLTFNodeIndex GLTFState::append_gltf_node(
-	Ref<GLTFNode> p_gltf_node, Node* p_godot_scene_node, GLTFNodeIndex p_parent_node_index)
-{
-	p_gltf_node->set_parent(p_parent_node_index);
-	const GLTFNodeIndex new_index = nodes.size();
-	nodes.append(p_gltf_node);
-	scene_nodes.insert(new_index, p_godot_scene_node);
-	if (p_parent_node_index == -1) {
-		root_nodes.append(new_index);
-	}
-	else if (p_parent_node_index < new_index) {
-		nodes.write[p_parent_node_index]->append_child_index(new_index);
-	}
-	return new_index;
-}
 
 SkinNodeIndex SkinTool::_find_highest_node(
 	Vector<Ref<GLTFNode>>& r_nodes, const Vector<GLTFNodeIndex>& p_subset)
@@ -277930,24 +276350,6 @@ void initialize_gltf_module(ModuleInitializationLevel p_level) {}
 
 // GLTFLight
 
-void GLTFLight::set_cone_inner_attenuation_conversion_expressions(
-	Ref<GLTFObjectModelProperty>& r_obj_model_prop)
-{
-	// Expression to convert glTF innerConeAngle to Godot spot_angle_attenuation.
-	Ref<Expression> gltf_to_godot_expr;
-	gltf_to_godot_expr.instantiate();
-	PackedStringArray gltf_to_godot_args = {"inner_cone_angle"};
-	gltf_to_godot_expr->parse(
-		"0.2 / (1.0 - inner_cone_angle / spot_angle) - 0.1", gltf_to_godot_args);
-	r_obj_model_prop->set_gltf_to_godot_expression(gltf_to_godot_expr);
-	// Expression to convert Godot spot_angle_attenuation to glTF innerConeAngle.
-	Ref<Expression> godot_to_gltf_expr;
-	godot_to_gltf_expr.instantiate();
-	PackedStringArray godot_to_gltf_args = {"godot_spot_angle_att"};
-	godot_to_gltf_expr->parse(
-		"spot_angle * maxf(0.0, 1.0 - (0.2 / (0.1 + godot_spot_angle_att)))", godot_to_gltf_args);
-	r_obj_model_prop->set_godot_to_gltf_expression(godot_to_gltf_expr);
-}
 
 Color GLTFLight::get_color() { return color; }
 
@@ -277965,52 +276367,12 @@ float GLTFLight::get_range() { return range; }
 
 void GLTFLight::set_range(float p_range) { range = p_range; }
 
-float GLTFLight::get_inner_cone_angle() { return inner_cone_angle; }
 
-void GLTFLight::set_inner_cone_angle(float p_inner_cone_angle)
-{
-	inner_cone_angle = p_inner_cone_angle;
-}
 
-float GLTFLight::get_outer_cone_angle() { return outer_cone_angle; }
 
-void GLTFLight::set_outer_cone_angle(float p_outer_cone_angle)
-{
-	outer_cone_angle = p_outer_cone_angle;
-}
 
 Ref<GLTFLight> GLTFLight::from_node(const Light3D*) { return Ref<GLTFLight>(); }
 
-// GLTFSpecGloss
-
-Ref<Image> GLTFSpecGloss::get_diffuse_img() { return diffuse_img; }
-
-void GLTFSpecGloss::set_diffuse_img(Ref<Image> p_diffuse_img) { diffuse_img = p_diffuse_img; }
-
-Color GLTFSpecGloss::get_diffuse_factor() { return diffuse_factor; }
-
-void GLTFSpecGloss::set_diffuse_factor(Color p_diffuse_factor)
-{
-	diffuse_factor = p_diffuse_factor;
-}
-
-float GLTFSpecGloss::get_gloss_factor() { return gloss_factor; }
-
-void GLTFSpecGloss::set_gloss_factor(float p_gloss_factor) { gloss_factor = p_gloss_factor; }
-
-Color GLTFSpecGloss::get_specular_factor() { return specular_factor; }
-
-void GLTFSpecGloss::set_specular_factor(Color p_specular_factor)
-{
-	specular_factor = p_specular_factor;
-}
-
-Ref<Image> GLTFSpecGloss::get_spec_gloss_img() { return spec_gloss_img; }
-
-void GLTFSpecGloss::set_spec_gloss_img(Ref<Image> p_spec_gloss_img)
-{
-	spec_gloss_img = p_spec_gloss_img;
-}
 
 // GLTFDocumentExtension
 
@@ -278138,41 +276500,8 @@ String GLTFPhysicsBody::get_body_type() const
 	return "rigid";
 }
 
-void GLTFPhysicsBody::set_body_type(const String& p_body_type)
-{
-	if (p_body_type == "static") {
-		body_type = PhysicsBodyType::STATIC;
-	}
-	else if (p_body_type == "animatable") {
-		body_type = PhysicsBodyType::ANIMATABLE;
-	}
-	else if (p_body_type == "character") {
-		body_type = PhysicsBodyType::CHARACTER;
-	}
-	else if (p_body_type == "rigid") {
-		body_type = PhysicsBodyType::RIGID;
-	}
-	else if (p_body_type == "vehicle") {
-		body_type = PhysicsBodyType::VEHICLE;
-	}
-	else if (p_body_type == "trigger") {
-		body_type = PhysicsBodyType::TRIGGER;
-	}
-	else {
-		ERR_PRINT("Error setting glTF physics body type: The body type must be one of \"static\", "
-				  "\"animatable\", \"character\", \"rigid\", \"vehicle\", or \"trigger\".");
-	}
-}
 
-GLTFPhysicsBody::PhysicsBodyType GLTFPhysicsBody::get_physics_body_type() const
-{
-	return body_type;
-}
 
-void GLTFPhysicsBody::set_physics_body_type(PhysicsBodyType p_body_type)
-{
-	body_type = p_body_type;
-}
 
 real_t GLTFPhysicsBody::get_mass() const { return mass; }
 
@@ -278199,27 +276528,12 @@ void GLTFPhysicsBody::set_center_of_mass(const Vector3& p_center_of_mass)
 	center_of_mass = p_center_of_mass;
 }
 
-Vector3 GLTFPhysicsBody::get_inertia_diagonal() const { return inertia_diagonal; }
 
-void GLTFPhysicsBody::set_inertia_diagonal(const Vector3& p_inertia_diagonal)
-{
-	inertia_diagonal = p_inertia_diagonal;
-}
 
-Quaternion GLTFPhysicsBody::get_inertia_orientation() const { return inertia_orientation; }
 
-void GLTFPhysicsBody::set_inertia_orientation(const Quaternion& p_inertia_orientation)
-{
-	inertia_orientation = p_inertia_orientation;
-}
 
 #ifndef DISABLE_DEPRECATED
-Basis GLTFPhysicsBody::get_inertia_tensor() const { return Basis::from_scale(inertia_diagonal); }
 
-void GLTFPhysicsBody::set_inertia_tensor(const Basis& p_inertia_tensor)
-{
-	inertia_diagonal = p_inertia_tensor.get_main_diagonal();
-}
 #endif // DISABLE_DEPRECATED
 
 Node3D* GLTFPhysicsBody::to_node() const
@@ -278281,11 +276595,9 @@ void GLTFPhysicsShape::set_height(real_t p_height) { height = p_height; }
 
 bool GLTFPhysicsShape::get_is_trigger() const { return is_trigger; }
 
-void GLTFPhysicsShape::set_is_trigger(bool p_is_trigger) { is_trigger = p_is_trigger; }
 
 GLTFMeshIndex GLTFPhysicsShape::get_mesh_index() const { return mesh_index; }
 
-void GLTFPhysicsShape::set_mesh_index(GLTFMeshIndex p_mesh_index) { mesh_index = p_mesh_index; }
 
 Ref<ImporterMesh> GLTFPhysicsShape::get_importer_mesh() const { return importer_mesh; }
 
@@ -278459,7 +276771,6 @@ GLTFMeshIndex _get_or_insert_mesh_in_state(
 
 // GLTFTexture
 
-GLTFImageIndex GLTFTexture::get_src_image() const { return src_image; }
 
 void GLTFTexture::set_src_image(GLTFImageIndex val) { src_image = val; }
 
@@ -278505,111 +276816,24 @@ Vector<uint8_t> GLTFBufferView::load_buffer_view_data(const Ref<GLTFState> p_glt
 	return buffer_data.slice(byte_offset, byte_end);
 }
 
-GLTFBufferViewIndex GLTFBufferView::write_new_buffer_view_into_state(
-	const Ref<GLTFState>& p_gltf_state, const PackedByteArray& p_input_data,
-	const int64_t p_alignment, const ArrayBufferTarget p_target, const int64_t p_byte_stride,
-	const GLTFBufferIndex p_buffer_index, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_buffer_index < 0, -1, "Buffer index must be greater than or equal to zero.");
-	const bool target_is_indices = p_target == ArrayBufferTarget::TARGET_ELEMENT_ARRAY_BUFFER;
-	const bool target_is_vertex_attributes = p_target == ArrayBufferTarget::TARGET_ARRAY_BUFFER;
-	if (target_is_vertex_attributes) {
-		ERR_FAIL_COND_V_MSG(p_byte_stride < 4 || p_byte_stride % 4 != 0, -1,
-			"glTF export: Vertex attributes using TARGET_ARRAY_BUFFER must have a byte stride that "
-			"is a multiple of 4 as required by section 3.6.2.4 of the glTF specification.");
-	}
-	// Check for duplicate buffer views before adding a new one.
-	Vector<Ref<GLTFBufferView>> state_buffer_views = p_gltf_state->get_buffer_views();
-	const int buffer_view_index = state_buffer_views.size();
-	if (p_deduplicate) {
-		for (int i = 0; i < buffer_view_index; i++) {
-			const Ref<GLTFBufferView>& existing_buffer_view = state_buffer_views[i];
-			if (existing_buffer_view->get_byte_offset() % p_alignment == 0 &&
-				existing_buffer_view->get_byte_length() == p_input_data.size() &&
-				existing_buffer_view->get_byte_stride() == p_byte_stride &&
-				existing_buffer_view->get_indices() == target_is_indices &&
-				existing_buffer_view->get_vertex_attributes() == target_is_vertex_attributes) {
-				if (existing_buffer_view->load_buffer_view_data(p_gltf_state) == p_input_data) {
-					// Duplicate found, return the index of the existing buffer view.
-					return i;
-				}
-			}
-		}
-	}
-	// Write the data into the buffer at the specified index.
-	Vector<PackedByteArray> state_buffers = p_gltf_state->get_buffers();
-	if (state_buffers.size() <= p_buffer_index) {
-		state_buffers.resize(p_buffer_index + 1);
-	}
-	PackedByteArray state_buffer = state_buffers[p_buffer_index];
-	const int64_t input_data_size = p_input_data.size();
-	// This is used by accessors. The byte offset of an accessor MUST be a multiple of the
-	// accessor's component size.
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#data-alignment
-	int64_t byte_offset = state_buffer.size();
-	int64_t padding_bytes = 0;
-	if (byte_offset % p_alignment != 0) {
-		padding_bytes = p_alignment - (byte_offset % p_alignment);
-		byte_offset += padding_bytes;
-	}
-	state_buffer.resize(byte_offset + input_data_size);
-	if (padding_bytes > 0) {
-		memset(state_buffer.ptrw() + (byte_offset - padding_bytes), 0, padding_bytes);
-	}
-	uint8_t* buffer_ptr = state_buffer.ptrw();
-	memcpy(buffer_ptr + byte_offset, p_input_data.ptr(), input_data_size);
-	state_buffers.set(p_buffer_index, state_buffer);
-	p_gltf_state->set_buffers(state_buffers);
-	// Create a new GLTFBufferView that references the new buffer.
-	Ref<GLTFBufferView> buffer_view;
-	buffer_view.instantiate();
-	buffer_view->set_buffer(p_buffer_index);
-	buffer_view->set_byte_offset(byte_offset);
-	buffer_view->set_byte_length(input_data_size);
-	buffer_view->set_byte_stride(p_byte_stride);
-	buffer_view->set_indices(target_is_indices);
-	buffer_view->set_vertex_attributes(target_is_vertex_attributes);
-	// Add the new buffer view to the state.
-	state_buffer_views.append(buffer_view);
-	p_gltf_state->set_buffer_views(state_buffer_views);
-	return buffer_view_index;
-}
 
 // GLTFAccessor
 
-GLTFBufferViewIndex GLTFAccessor::get_buffer_view() const { return buffer_view; }
 
-void GLTFAccessor::set_buffer_view(GLTFBufferViewIndex p_buffer_view)
-{
-	buffer_view = p_buffer_view;
-}
 
 int64_t GLTFAccessor::get_byte_offset() const { return byte_offset; }
 
 void GLTFAccessor::set_byte_offset(int64_t p_byte_offset) { byte_offset = p_byte_offset; }
 
-GLTFAccessor::GLTFComponentType GLTFAccessor::get_component_type() const { return component_type; }
 
-void GLTFAccessor::set_component_type(GLTFComponentType p_component_type)
-{
-	component_type = (GLTFComponentType)p_component_type;
-}
 
-bool GLTFAccessor::get_normalized() const { return normalized; }
 
-void GLTFAccessor::set_normalized(bool p_normalized) { normalized = p_normalized; }
 
 int64_t GLTFAccessor::get_count() const { return count; }
 
 void GLTFAccessor::set_count(int64_t p_count) { count = p_count; }
 
-GLTFAccessor::GLTFAccessorType GLTFAccessor::get_accessor_type() const { return accessor_type; }
 
-void GLTFAccessor::set_accessor_type(GLTFAccessorType p_accessor_type)
-{
-	accessor_type = p_accessor_type;
-}
 
 int GLTFAccessor::get_type() const { return (int)accessor_type; }
 
@@ -278626,84 +276850,18 @@ Vector<double> GLTFAccessor::get_max() const { return Vector<double>(max); }
 
 void GLTFAccessor::set_max(const Vector<double>& p_max) { max = Vector<double>(p_max); }
 
-int64_t GLTFAccessor::get_sparse_count() const { return sparse_count; }
 
-void GLTFAccessor::set_sparse_count(int64_t p_sparse_count) { sparse_count = p_sparse_count; }
 
-GLTFBufferViewIndex GLTFAccessor::get_sparse_indices_buffer_view() const
-{
-	return sparse_indices_buffer_view;
-}
 
-void GLTFAccessor::set_sparse_indices_buffer_view(GLTFBufferViewIndex p_sparse_indices_buffer_view)
-{
-	sparse_indices_buffer_view = p_sparse_indices_buffer_view;
-}
 
-int64_t GLTFAccessor::get_sparse_indices_byte_offset() const { return sparse_indices_byte_offset; }
 
-void GLTFAccessor::set_sparse_indices_byte_offset(int64_t p_sparse_indices_byte_offset)
-{
-	sparse_indices_byte_offset = p_sparse_indices_byte_offset;
-}
 
-GLTFAccessor::GLTFComponentType GLTFAccessor::get_sparse_indices_component_type() const
-{
-	return sparse_indices_component_type;
-}
 
-void GLTFAccessor::set_sparse_indices_component_type(
-	GLTFComponentType p_sparse_indices_component_type)
-{
-	sparse_indices_component_type = (GLTFComponentType)p_sparse_indices_component_type;
-}
 
-GLTFBufferViewIndex GLTFAccessor::get_sparse_values_buffer_view() const
-{
-	return sparse_values_buffer_view;
-}
 
-void GLTFAccessor::set_sparse_values_buffer_view(GLTFBufferViewIndex p_sparse_values_buffer_view)
-{
-	sparse_values_buffer_view = p_sparse_values_buffer_view;
-}
 
-int64_t GLTFAccessor::get_sparse_values_byte_offset() const { return sparse_values_byte_offset; }
 
-void GLTFAccessor::set_sparse_values_byte_offset(int64_t p_sparse_values_byte_offset)
-{
-	sparse_values_byte_offset = p_sparse_values_byte_offset;
-}
 
-void GLTFAccessor::_calculate_min_and_max(const PackedFloat64Array& p_numbers)
-{
-	const int64_t vector_size = _get_vector_size();
-	ERR_FAIL_COND(vector_size <= 0 || p_numbers.size() % vector_size != 0);
-	min.resize(vector_size);
-	max.resize(vector_size);
-	// Initialize min and max with the first vector element values.
-	for (int64_t in_vec = 0; in_vec < vector_size; in_vec++) {
-		min.write[in_vec] = p_numbers[in_vec];
-		max.write[in_vec] = p_numbers[in_vec];
-	}
-	// Iterate over the rest of the vectors.
-	for (int64_t which_vec = vector_size; which_vec < p_numbers.size(); which_vec += vector_size) {
-		for (int64_t in_vec = 0; in_vec < vector_size; in_vec++) {
-			min.write[in_vec] = MIN(p_numbers[which_vec + in_vec], min[in_vec]);
-			max.write[in_vec] = MAX(p_numbers[which_vec + in_vec], max[in_vec]);
-		}
-	}
-	// 3.6.2.5: For floating-point components, JSON-stored minimum and maximum values represent
-	// single precision floats and SHOULD be rounded to single precision before usage to avoid any
-	// potential boundary mismatches.
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#accessors-bounds
-	if (component_type == GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT) {
-		for (int64_t i = 0; i < min.size(); i++) {
-			min.write[i] = (double)(float)min[i];
-			max.write[i] = (double)(float)max[i];
-		}
-	}
-}
 
 void GLTFAccessor::_determine_pad_skip(int64_t& r_skip_every, int64_t& r_skip_bytes) const
 {
@@ -278761,100 +276919,9 @@ int64_t GLTFAccessor::_determine_padded_byte_count(int64_t p_raw_byte_size) cons
 	return p_raw_byte_size;
 }
 
-PackedFloat64Array GLTFAccessor::_filter_numbers(const PackedFloat64Array& p_numbers) const
-{
-	PackedFloat64Array filtered_numbers = p_numbers;
-	for (int64_t i = 0; i < p_numbers.size(); i++) {
-		const double num = p_numbers[i];
-		if (!Math::is_finite(num)) {
-			// 3.6.2.2. "Values of NaN, +Infinity, and -Infinity MUST NOT be present."
-			// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#accessor-data-types
-			filtered_numbers.set(i, 0.0);
-		}
-		else if (component_type == GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT) {
-			filtered_numbers.set(i, (double)(float)num);
-		}
-	}
-	return filtered_numbers;
-}
 
-String GLTFAccessor::_get_component_type_name(const GLTFComponentType p_component)
-{
-	// These names are only for debugging and printing error messages, glTF uses the numeric values.
-	switch (p_component) {
-	case GLTFAccessor::COMPONENT_TYPE_NONE:
-		return "None";
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE:
-		return "Byte";
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE:
-		return "UByte";
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT:
-		return "Short";
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT:
-		return "UShort";
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_INT:
-		return "Int";
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT:
-		return "UInt";
-	case GLTFAccessor::COMPONENT_TYPE_SINGLE_FLOAT:
-		return "Float";
-	case GLTFAccessor::COMPONENT_TYPE_DOUBLE_FLOAT:
-		return "Double";
-	case GLTFAccessor::COMPONENT_TYPE_HALF_FLOAT:
-		return "Half";
-	case GLTFAccessor::COMPONENT_TYPE_SIGNED_LONG:
-		return "Long";
-	case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG:
-		return "ULong";
-	}
 
-	return "<Error>";
-}
 
-GLTFAccessor::GLTFComponentType GLTFAccessor::_get_indices_component_type_for_size(
-	const int64_t p_size)
-{
-	ERR_FAIL_COND_V(p_size < 0, GLTFAccessor::COMPONENT_TYPE_NONE);
-	// 3.7.2.1. indices accessor MUST NOT contain the maximum possible value for the component type
-	// used (i.e., 255 for unsigned bytes, 65535 for unsigned shorts, 4294967295 for unsigned ints).
-	// https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#meshes-overview
-	if (unlikely(p_size > 4294967294LL)) {
-		return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG;
-	}
-	if (p_size > 65534LL) {
-		return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT;
-	}
-	if (p_size > 254LL) {
-		return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT;
-	}
-	return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE;
-}
-
-GLTFAccessor::GLTFAccessorType GLTFAccessor::_get_accessor_type_from_str(const String& p_string)
-{
-	if (p_string == "SCALAR") {
-		return GLTFAccessor::TYPE_SCALAR;
-	}
-	if (p_string == "VEC2") {
-		return GLTFAccessor::TYPE_VEC2;
-	}
-	if (p_string == "VEC3") {
-		return GLTFAccessor::TYPE_VEC3;
-	}
-	if (p_string == "VEC4") {
-		return GLTFAccessor::TYPE_VEC4;
-	}
-	if (p_string == "MAT2") {
-		return GLTFAccessor::TYPE_MAT2;
-	}
-	if (p_string == "MAT3") {
-		return GLTFAccessor::TYPE_MAT3;
-	}
-	if (p_string == "MAT4") {
-		return GLTFAccessor::TYPE_MAT4;
-	}
-	ERR_FAIL_V(GLTFAccessor::TYPE_SCALAR);
-}
 
 String GLTFAccessor::_get_accessor_type_name() const
 {
@@ -278932,21 +276999,6 @@ int64_t GLTFAccessor::_get_bytes_per_vector() const
 	return _determine_padded_byte_count(raw_byte_size);
 }
 
-bool GLTFAccessor::is_equal_exact(const Ref<GLTFAccessor>& p_other) const
-{
-	if (p_other.is_null()) {
-		return false;
-	}
-	return (buffer_view == p_other->buffer_view && byte_offset == p_other->byte_offset &&
-			component_type == p_other->component_type && normalized == p_other->normalized &&
-			count == p_other->count && accessor_type == p_other->accessor_type &&
-			min == p_other->min && max == p_other->max && sparse_count == p_other->sparse_count &&
-			sparse_indices_buffer_view == p_other->sparse_indices_buffer_view &&
-			sparse_indices_byte_offset == p_other->sparse_indices_byte_offset &&
-			sparse_indices_component_type == p_other->sparse_indices_component_type &&
-			sparse_values_buffer_view == p_other->sparse_values_buffer_view &&
-			sparse_values_byte_offset == p_other->sparse_values_byte_offset);
-}
 
 PackedInt64Array GLTFAccessor::_decode_sparse_indices(
 	const Ref<GLTFState>& p_gltf_state, const Vector<Ref<GLTFBufferView>>& p_buffer_views) const
@@ -279219,25 +277271,9 @@ PackedColorArray GLTFAccessor::decode_as_colors(const Ref<GLTFState>& p_gltf_sta
 	return ret;
 }
 
-PackedFloat32Array GLTFAccessor::decode_as_float32s(const Ref<GLTFState>& p_gltf_state) const
-{
-	return _decode_as_numbers<float>(p_gltf_state);
-}
 
-PackedFloat64Array GLTFAccessor::decode_as_float64s(const Ref<GLTFState>& p_gltf_state) const
-{
-	return _decode_as_numbers<double>(p_gltf_state);
-}
 
-PackedInt32Array GLTFAccessor::decode_as_int32s(const Ref<GLTFState>& p_gltf_state) const
-{
-	return _decode_as_numbers<int32_t>(p_gltf_state);
-}
 
-PackedInt64Array GLTFAccessor::decode_as_int64s(const Ref<GLTFState>& p_gltf_state) const
-{
-	return _decode_as_numbers<int64_t>(p_gltf_state);
-}
 
 Vector<Quaternion> GLTFAccessor::decode_as_quaternions(const Ref<GLTFState>& p_gltf_state) const
 {
@@ -279319,524 +277355,25 @@ PackedVector4Array GLTFAccessor::decode_as_vector4s(const Ref<GLTFState>& p_gltf
 	return ret;
 }
 
-void GLTFAccessor::_store_sparse_indices_into_state(const Ref<GLTFState>& p_gltf_state,
-	const PackedInt64Array& p_sparse_indices, const bool p_deduplicate)
-{
-	// The byte offset of a sparse accessor's indices buffer view MUST be a multiple of the indices
-	// primitive componentType.
-	// https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/accessor.sparse.indices.schema.json
-	const int64_t bytes_per_index = _get_bytes_per_component(sparse_indices_component_type);
-	PackedByteArray indices_bytes;
-	indices_bytes.resize(bytes_per_index * p_sparse_indices.size());
-	uint8_t* ret_write = indices_bytes.ptrw();
-	int64_t ret_byte_offset = 0;
-	for (int64_t i = 0; i < p_sparse_indices.size(); i++) {
-		switch (sparse_indices_component_type) {
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE: {
-			*(uint8_t*)&ret_write[ret_byte_offset] = p_sparse_indices[i];
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT: {
-			*(uint16_t*)&ret_write[ret_byte_offset] = p_sparse_indices[i];
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT: {
-			*(uint32_t*)&ret_write[ret_byte_offset] = p_sparse_indices[i];
-		} break;
-		case GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG: {
-			*(uint64_t*)&ret_write[ret_byte_offset] = p_sparse_indices[i];
-		} break;
-		default: {
-			ERR_FAIL_MSG("glTF export: Invalid sparse indices component type '" +
-						 _get_component_type_name(sparse_indices_component_type) +
-						 "' for sparse accessor indices.");
-		} break;
-		}
-		ret_byte_offset += bytes_per_index;
-	}
-	const GLTFBufferViewIndex buffer_view_index =
-		GLTFBufferView::write_new_buffer_view_into_state(p_gltf_state, indices_bytes,
-			bytes_per_index, GLTFBufferView::TARGET_NONE, -1, 0, p_deduplicate);
-	ERR_FAIL_COND_MSG(
-		buffer_view_index == -1, "glTF export: Failed to write sparse indices into glTF state.");
-	set_sparse_indices_buffer_view(buffer_view_index);
-}
 
-GLTFAccessor::GLTFComponentType GLTFAccessor::get_minimal_integer_component_type_from_ints(
-	const PackedInt64Array& p_numbers)
-{
-	bool has_negative = false;
-	for (int64_t i = 0; i < p_numbers.size(); i++) {
-		if (p_numbers[i] < 0) {
-			has_negative = true;
-			break;
-		}
-	}
-	if (has_negative) {
-		GLTFComponentType ret = GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE;
-		for (int64_t i = 0; i < p_numbers.size(); i++) {
-			const int64_t num = p_numbers[i];
-			if (ret == GLTFAccessor::COMPONENT_TYPE_SIGNED_BYTE && (num < -128LL || num > 127LL)) {
-				ret = GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT;
-			}
-			if (ret == GLTFAccessor::COMPONENT_TYPE_SIGNED_SHORT &&
-				(num < -32768LL || num > 32767LL)) {
-				ret = GLTFAccessor::COMPONENT_TYPE_SIGNED_INT;
-			}
-			if (ret == GLTFAccessor::COMPONENT_TYPE_SIGNED_INT &&
-				(num < -2147483648LL || num > 2147483647LL)) {
-				return GLTFAccessor::COMPONENT_TYPE_SIGNED_LONG;
-			}
-		}
-		return ret;
-	}
-	GLTFComponentType ret = GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE;
-	for (int64_t i = 0; i < p_numbers.size(); i++) {
-		const int64_t num = p_numbers[i];
-		// 3.7.2.1. indices accessor MUST NOT contain the maximum possible value for the component
-		// type used (i.e., 255 for unsigned bytes, 65535 for unsigned shorts, 4294967295 for
-		// unsigned ints). https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#meshes-overview
-		if (ret == GLTFAccessor::COMPONENT_TYPE_UNSIGNED_BYTE && num > 254LL) {
-			ret = GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT;
-		}
-		if (ret == GLTFAccessor::COMPONENT_TYPE_UNSIGNED_SHORT && num > 65534LL) {
-			ret = GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT;
-		}
-		if (ret == GLTFAccessor::COMPONENT_TYPE_UNSIGNED_INT && num > 4294967294LL) {
-			return GLTFAccessor::COMPONENT_TYPE_UNSIGNED_LONG;
-		}
-	}
-	return ret;
-}
 
-PackedByteArray GLTFAccessor::encode_floats_as_bytes(const PackedFloat64Array& p_input_numbers)
-{
-	// Filter and update `count`, `min`, and `max` based on the given data.
-	PackedFloat64Array filtered_numbers = _filter_numbers(p_input_numbers);
-	count = filtered_numbers.size() / _get_vector_size();
-	_calculate_min_and_max(filtered_numbers);
-	// Actually encode the data.
-	const int64_t input_size = filtered_numbers.size();
-	const int64_t bytes_per_component = _get_bytes_per_component(component_type);
-	int64_t raw_byte_size = _determine_padded_byte_count(bytes_per_component * input_size);
-	int64_t skip_every = 0;
-	int64_t skip_bytes = 0;
-	_determine_pad_skip(skip_every, skip_bytes);
-	PackedByteArray ret;
-	ret.resize(raw_byte_size);
-	uint8_t* ret_write = ret.ptrw();
-	int64_t ret_byte_offset = 0;
-	for (int64_t i = 0; i < input_size; i++) {
-		switch (component_type) {
-		case COMPONENT_TYPE_NONE: {
-			ERR_FAIL_V_MSG(ret, "glTF export: Invalid component type 'NONE' for glTF accessor.");
-		} break;
-		case COMPONENT_TYPE_SIGNED_BYTE: {
-			*(int8_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_UNSIGNED_BYTE: {
-			*(uint8_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_SIGNED_SHORT: {
-			*(int16_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_UNSIGNED_SHORT: {
-			*(uint16_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_SIGNED_INT: {
-			*(int32_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_UNSIGNED_INT: {
-			*(uint32_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_SINGLE_FLOAT: {
-			*(float*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_DOUBLE_FLOAT: {
-			*(double*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_HALF_FLOAT: {
-			*(uint16_t*)&ret_write[ret_byte_offset] = Math::make_half_float(filtered_numbers[i]);
-		} break;
-		case COMPONENT_TYPE_SIGNED_LONG: {
-			*(int64_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		case COMPONENT_TYPE_UNSIGNED_LONG: {
-			*(uint64_t*)&ret_write[ret_byte_offset] = filtered_numbers[i];
-		} break;
-		default: {
-			ERR_FAIL_V_MSG(ret,
-				"glTF export: Godot does not support writing glTF accessor components of type '" +
-					itos(component_type) + "'.");
-		} break;
-		}
-		ret_byte_offset += bytes_per_component;
-		if (unlikely(skip_every > 0)) {
-			if ((i + 1) % skip_every == 0) {
-				ret_byte_offset += skip_bytes;
-			}
-		}
-	}
-	ERR_FAIL_COND_V_MSG(ret_byte_offset != raw_byte_size, ret,
-		"glTF export: Accessor encoded data did not write exactly the expected number of bytes.");
-	return ret;
-}
 
-GLTFAccessorIndex GLTFAccessor::store_accessor_data_into_state(const Ref<GLTFState>& p_gltf_state,
-	const PackedByteArray& p_data_bytes,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target,
-	const GLTFBufferIndex p_buffer_index, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(p_data_bytes.is_empty(), -1, "glTF export: Cannot store nothing.");
-	const int64_t bytes_per_vec = _get_bytes_per_vector();
-	ERR_FAIL_COND_V_MSG(bytes_per_vec == 0 || p_data_bytes.size() % bytes_per_vec != 0, -1,
-		"glTF export: Tried to store an accessor with data that is not a multiple of the "
-		"accessor's bytes per vector.");
-	count = p_data_bytes.size() / bytes_per_vec;
-	const int64_t alignment = _get_bytes_per_component(component_type);
-	int64_t byte_stride = -1;
-	if (p_buffer_view_target == GLTFBufferView::TARGET_ARRAY_BUFFER) {
-		byte_stride = bytes_per_vec;
-		ERR_FAIL_COND_V_MSG(byte_stride < 4 || byte_stride % 4 != 0, -1,
-			"glTF export: Vertex attributes using TARGET_ARRAY_BUFFER must have a byte stride that "
-			"is a multiple of 4 as required by section 3.6.2.4 of the glTF specification.");
-	}
-	const GLTFBufferViewIndex buffer_view_index = GLTFBufferView::write_new_buffer_view_into_state(
-		p_gltf_state, p_data_bytes, alignment, p_buffer_view_target, byte_stride, 0, p_deduplicate);
-	ERR_FAIL_COND_V_MSG(buffer_view_index == -1, -1,
-		"glTF export: Accessor failed to write new buffer view into glTF state.");
-	set_buffer_view(buffer_view_index);
-	Vector<Ref<GLTFAccessor>> state_accessors = p_gltf_state->get_accessors();
-	const GLTFAccessorIndex accessor_count = state_accessors.size();
-	for (GLTFAccessorIndex i = 0; i < accessor_count; i++) {
-		const Ref<GLTFAccessor>& existing_accessor = state_accessors[i];
-		if (is_equal_exact(existing_accessor)) {
-			return i;
-		}
-	}
-	Ref<GLTFAccessor> self = this;
-	state_accessors.append(self);
-	p_gltf_state->set_accessors(state_accessors);
-	return accessor_count;
-}
 
-Ref<GLTFAccessor> GLTFAccessor::make_new_accessor_without_data(
-	GLTFAccessorType p_accessor_type, GLTFComponentType p_component_type)
-{
-	Ref<GLTFAccessor> accessor;
-	accessor.instantiate();
-	accessor->set_accessor_type(p_accessor_type);
-	accessor->set_component_type(p_component_type);
-	return accessor;
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_colors(const Ref<GLTFState>& p_gltf_state,
-	const PackedColorArray& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedFloat64Array numbers;
-	numbers.resize(p_input_data.size() * 4);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Color& color = p_input_data[i];
-		numbers.set(i * 4, color.r);
-		numbers.set(i * 4 + 1, color.g);
-		numbers.set(i * 4 + 2, color.b);
-		numbers.set(i * 4 + 3, color.a);
-	}
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC4, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_float64s(
-	const Ref<GLTFState>& p_gltf_state, const PackedFloat64Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_SCALAR, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(p_input_data);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_int32s(const Ref<GLTFState>& p_gltf_state,
-	const PackedInt32Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedInt64Array numbers;
-	numbers.resize(p_input_data.size());
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		numbers.set(i, p_input_data[i]);
-	}
-	const GLTFComponentType component_type = get_minimal_integer_component_type_from_ints(numbers);
-	Ref<GLTFAccessor> accessor = make_new_accessor_without_data(TYPE_SCALAR, component_type);
-	PackedByteArray encoded_bytes = accessor->encode_ints_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_int64s(const Ref<GLTFState>& p_gltf_state,
-	const PackedInt64Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	const GLTFComponentType component_type =
-		get_minimal_integer_component_type_from_ints(p_input_data);
-	Ref<GLTFAccessor> accessor = make_new_accessor_without_data(TYPE_SCALAR, component_type);
-	PackedByteArray encoded_bytes = accessor->encode_ints_as_bytes(p_input_data);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_quaternions(
-	const Ref<GLTFState>& p_gltf_state, const Vector<Quaternion>& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedFloat64Array numbers;
-	numbers.resize(p_input_data.size() * 4);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Quaternion& quat = p_input_data[i];
-		numbers.set(i * 4, quat.x);
-		numbers.set(i * 4 + 1, quat.y);
-		numbers.set(i * 4 + 2, quat.z);
-		numbers.set(i * 4 + 3, quat.w);
-	}
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC4, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_vector2s(
-	const Ref<GLTFState>& p_gltf_state, const PackedVector2Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedFloat64Array numbers;
-	numbers.resize(p_input_data.size() * 2);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Vector2& vec = p_input_data[i];
-		numbers.set(i * 2, vec.x);
-		numbers.set(i * 2 + 1, vec.y);
-	}
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC2, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_vector3s(
-	const Ref<GLTFState>& p_gltf_state, const PackedVector3Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedFloat64Array numbers;
-	numbers.resize(p_input_data.size() * 3);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Vector3& vec = p_input_data[i];
-		numbers.set(i * 3, vec.x);
-		numbers.set(i * 3 + 1, vec.y);
-		numbers.set(i * 3 + 2, vec.z);
-	}
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC3, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_vector4s(
-	const Ref<GLTFState>& p_gltf_state, const PackedVector4Array& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedFloat64Array numbers;
-	numbers.resize(p_input_data.size() * 4);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Vector4& vec = p_input_data[i];
-		numbers.set(i * 4, vec.x);
-		numbers.set(i * 4 + 1, vec.y);
-		numbers.set(i * 4 + 2, vec.z);
-		numbers.set(i * 4 + 3, vec.w);
-	}
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC4, COMPONENT_TYPE_SINGLE_FLOAT);
-	PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_accessor_from_vector4is(
-	const Ref<GLTFState>& p_gltf_state, const Vector<Vector4i>& p_input_data,
-	const GLTFBufferView::ArrayBufferTarget p_buffer_view_target, const bool p_deduplicate)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_input_data.is_empty(), -1, "glTF export: Cannot encode an accessor from an empty array.");
-	PackedInt64Array numbers;
-	numbers.resize(p_input_data.size() * 4);
-	for (int64_t i = 0; i < p_input_data.size(); i++) {
-		const Vector4i& vec = p_input_data[i];
-		numbers.set(i * 4, vec.x);
-		numbers.set(i * 4 + 1, vec.y);
-		numbers.set(i * 4 + 2, vec.z);
-		numbers.set(i * 4 + 3, vec.w);
-	}
-	const GLTFComponentType component_type = get_minimal_integer_component_type_from_ints(numbers);
-	Ref<GLTFAccessor> accessor = make_new_accessor_without_data(TYPE_VEC4, component_type);
-	PackedByteArray encoded_bytes = accessor->encode_ints_as_bytes(numbers);
-	ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, encoded_bytes, p_buffer_view_target, 0, p_deduplicate);
-}
 
-GLTFAccessorIndex GLTFAccessor::encode_new_sparse_accessor_from_vec3s(
-	const Ref<GLTFState>& p_gltf_state, const PackedVector3Array& p_input_data,
-	const PackedVector3Array& p_base_reference_data, const double p_tolerance_multiplier,
-	const GLTFBufferView::ArrayBufferTarget p_main_buffer_view_target, const bool p_deduplicate)
-{
-	const int64_t input_size = p_input_data.size();
-	ERR_FAIL_COND_V_MSG(
-		input_size == 0, -1, "glTF export: Cannot encode an accessor from an empty array.");
-	const bool is_base_empty = p_base_reference_data.is_empty();
-	ERR_FAIL_COND_V_MSG(!is_base_empty && p_base_reference_data.size() != input_size, -1,
-		"glTF export: Base reference data must either be empty, or have the same size as the main "
-		"input data.");
-	PackedInt64Array sparse_indices;
-	PackedFloat64Array sparse_values;
-	PackedFloat64Array dense_values;
-	int64_t highest_index = 0;
-	dense_values.resize(input_size * 3);
-	for (int64_t i = 0; i < input_size; i++) {
-		Vector3 vec = p_input_data[i];
-		Vector3 base_ref_vec;
-		Vector3 displacement;
-		if (is_base_empty) {
-			base_ref_vec = Vector3();
-			displacement = vec;
-		}
-		else {
-			base_ref_vec = p_base_reference_data[i];
-			displacement = vec - base_ref_vec;
-		}
-		if ((displacement * p_tolerance_multiplier).is_zero_approx()) {
-			vec = base_ref_vec;
-		}
-		else {
-			highest_index = i;
-			sparse_indices.append(i);
-			sparse_values.append(vec.x);
-			sparse_values.append(vec.y);
-			sparse_values.append(vec.z);
-		}
-		dense_values.set(i * 3, vec.x);
-		dense_values.set(i * 3 + 1, vec.y);
-		dense_values.set(i * 3 + 2, vec.z);
-	}
-	const int64_t sparse_count = sparse_indices.size();
-	const int64_t bytes_per_value_component = _get_bytes_per_component(COMPONENT_TYPE_SINGLE_FLOAT);
-	const GLTFComponentType indices_component_type =
-		_get_indices_component_type_for_size(highest_index);
-	const int64_t sparse_data_bytes =
-		_get_bytes_per_component(indices_component_type) * sparse_count +
-		bytes_per_value_component * sparse_values.size();
-	const int64_t dense_data_bytes = bytes_per_value_component * 3 * input_size;
-	constexpr int64_t sparse_json_fluff = 200;
-	Ref<GLTFAccessor> accessor =
-		make_new_accessor_without_data(TYPE_VEC3, COMPONENT_TYPE_SINGLE_FLOAT);
-	if (sparse_data_bytes + sparse_json_fluff >= dense_data_bytes) {
-		PackedByteArray encoded_bytes = accessor->encode_floats_as_bytes(dense_values);
-		ERR_FAIL_COND_V_MSG(encoded_bytes.is_empty(), -1,
-			"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-		return accessor->store_accessor_data_into_state(
-			p_gltf_state, encoded_bytes, p_main_buffer_view_target, 0, p_deduplicate);
-	}
-	if (sparse_count > 0) {
-		accessor->set_sparse_count(sparse_count);
-		accessor->set_sparse_indices_component_type(indices_component_type);
-		accessor->_store_sparse_indices_into_state(p_gltf_state, sparse_indices, p_deduplicate);
-		const PackedByteArray sparse_values_encoded_bytes =
-			accessor->encode_floats_as_bytes(sparse_values);
-		ERR_FAIL_COND_V_MSG(sparse_values_encoded_bytes.is_empty(), -1,
-			"glTF export: Accessor failed to encode sparse values as bytes.");
-		const GLTFBufferViewIndex sparse_values_buffer_view_index =
-			GLTFBufferView::write_new_buffer_view_into_state(p_gltf_state,
-				sparse_values_encoded_bytes, bytes_per_value_component, GLTFBufferView::TARGET_NONE,
-				-1, 0, p_deduplicate);
-		accessor->set_sparse_values_buffer_view(sparse_values_buffer_view_index);
-	}
-	if (is_base_empty) {
-		accessor->set_count(input_size);
-		const PackedFloat64Array filtered_numbers = accessor->_filter_numbers(dense_values);
-		accessor->_calculate_min_and_max(filtered_numbers);
-		Vector<Ref<GLTFAccessor>> state_accessors = p_gltf_state->get_accessors();
-		const GLTFAccessorIndex accessor_count = state_accessors.size();
-		for (GLTFAccessorIndex i = 0; i < accessor_count; i++) {
-			const Ref<GLTFAccessor>& existing_accessor = state_accessors[i];
-			if (accessor->is_equal_exact(existing_accessor)) {
-				return i;
-			}
-		}
-		state_accessors.append(accessor);
-		p_gltf_state->set_accessors(state_accessors);
-		return accessor_count;
-	}
-	PackedFloat64Array base_reference_values;
-	base_reference_values.resize(input_size * 3);
-	for (int64_t i = 0; i < input_size; i++) {
-		const Vector3& base_ref_vec = p_base_reference_data[i];
-		base_reference_values.set(i * 3, base_ref_vec.x);
-		base_reference_values.set(i * 3 + 1, base_ref_vec.y);
-		base_reference_values.set(i * 3 + 2, base_ref_vec.z);
-	}
-	const PackedByteArray base_reference_encoded_bytes =
-		accessor->encode_floats_as_bytes(base_reference_values);
-	ERR_FAIL_COND_V_MSG(base_reference_encoded_bytes.is_empty(), -1,
-		"glTF export: Accessor failed to encode data as bytes (was the input data empty?).");
-	return accessor->store_accessor_data_into_state(
-		p_gltf_state, base_reference_encoded_bytes, p_main_buffer_view_target, 0, p_deduplicate);
-}
 
-PackedByteArray GLTFAccessor::encode_ints_as_bytes(const PackedInt64Array&)
-{
-	return PackedByteArray();
-}
 
 // GLTFNode
 
-String GLTFNode::get_original_name() { return original_name; }
 
-void GLTFNode::set_original_name(const String& p_name) { original_name = p_name; }
 
 GLTFNodeIndex GLTFNode::get_parent() { return parent; }
 
@@ -279846,9 +277383,7 @@ int GLTFNode::get_height() { return height; }
 
 void GLTFNode::set_height(int p_height) { height = p_height; }
 
-Transform3D GLTFNode::get_xform() { return transform; }
 
-void GLTFNode::set_xform(const Transform3D& p_xform) { transform = p_xform; }
 
 GLTFMeshIndex GLTFNode::get_mesh() { return mesh; }
 
@@ -279886,156 +277421,56 @@ void GLTFNode::set_scale(const Vector3& p_scale)
 
 Vector<int> GLTFNode::get_children() { return Vector<int>(children); }
 
-void GLTFNode::set_children(const Vector<int>& p_children) { children = Vector<int>(p_children); }
 
-void GLTFNode::append_child_index(int p_child_index) { children.append(p_child_index); }
 
 GLTFLightIndex GLTFNode::get_light() { return light; }
 
-void GLTFNode::set_light(GLTFLightIndex p_light) { light = p_light; }
 
-bool GLTFNode::get_visible() { return visible; }
 
 void GLTFNode::set_visible(bool p_visible) { visible = p_visible; }
 
-NodePath GLTFNode::get_scene_node_path(Ref<GLTFState> p_state, bool p_handle_skeletons)
-{
-	ERR_FAIL_COND_V_MSG(
-		p_state.is_null(), NodePath(), "Cannot get scene node path because GLTFState is null.");
-	Vector<String> path;
-	Vector<String> subpath;
-	Ref<GLTFNode> current_gltf_node = this;
-	const int gltf_node_count = p_state->nodes.size();
-	if (p_handle_skeletons && skeleton != -1) {
-		subpath.append(get_name());
-		path.append("Skeleton3D");
-		do {
-			const int parent_index = current_gltf_node->get_parent();
-			ERR_FAIL_INDEX_V(parent_index, gltf_node_count, NodePath());
-			current_gltf_node = p_state->nodes[parent_index];
-		} while (current_gltf_node->skeleton != -1);
-	}
-	const bool is_godot_single_root = p_state->extensions_used.has("GODOT_single_root");
-	while (true) {
-		const int parent_index = current_gltf_node->get_parent();
-		if (is_godot_single_root && parent_index == -1) {
-			break;
-		}
-		path.insert(0, current_gltf_node->get_name());
-		if (!is_godot_single_root && parent_index == -1) {
-			break;
-		}
-		ERR_FAIL_INDEX_V(parent_index, gltf_node_count, NodePath());
-		current_gltf_node = p_state->nodes[parent_index];
-	}
-	if (unlikely(path.is_empty())) {
-		path.append(".");
-	}
-	return NodePath(path, subpath, false);
-}
 
 // GLTFSkeleton
 
 Vector<GLTFNodeIndex> GLTFSkeleton::get_joints() { return Vector<GLTFNodeIndex>(joints); }
 
-void GLTFSkeleton::set_joints(const Vector<GLTFNodeIndex>& p_joints)
-{
-	joints = Vector<GLTFNodeIndex>(p_joints);
-}
 
-Vector<GLTFNodeIndex> GLTFSkeleton::get_roots() { return Vector<GLTFNodeIndex>(roots); }
 
-void GLTFSkeleton::set_roots(const Vector<GLTFNodeIndex>& p_roots)
-{
-	roots = Vector<GLTFNodeIndex>(p_roots);
-}
 
-Skeleton3D* GLTFSkeleton::get_godot_skeleton() { return godot_skeleton; }
 
-BoneAttachment3D* GLTFSkeleton::get_bone_attachment(int idx)
-{
-	ERR_FAIL_INDEX_V(idx, bone_attachments.size(), nullptr);
-	return bone_attachments[idx];
-}
 
-int32_t GLTFSkeleton::get_bone_attachment_count() { return bone_attachments.size(); }
 
 // GLTFSkin
 
-GLTFNodeIndex GLTFSkin::get_skin_root() { return skin_root; }
 
-void GLTFSkin::set_skin_root(GLTFNodeIndex p_skin_root) { skin_root = p_skin_root; }
 
-Vector<GLTFNodeIndex> GLTFSkin::get_joints_original() { return joints_original; }
 
-void GLTFSkin::set_joints_original(const Vector<GLTFNodeIndex>& p_joints_original)
-{
-	joints_original = Vector<GLTFNodeIndex>(p_joints_original);
-}
 
 Vector<GLTFNodeIndex> GLTFSkin::get_joints() { return joints; }
 
-void GLTFSkin::set_joints(const Vector<GLTFNodeIndex>& p_joints)
-{
-	joints = Vector<GLTFNodeIndex>(p_joints);
-}
 
-Vector<GLTFNodeIndex> GLTFSkin::get_non_joints() { return non_joints; }
 
-void GLTFSkin::set_non_joints(const Vector<GLTFNodeIndex>& p_non_joints)
-{
-	non_joints = Vector<GLTFNodeIndex>(p_non_joints);
-}
 
-Vector<GLTFNodeIndex> GLTFSkin::get_roots() { return roots; }
 
-void GLTFSkin::set_roots(const Vector<GLTFNodeIndex>& p_roots)
-{
-	roots = Vector<GLTFNodeIndex>(p_roots);
-}
 
 int GLTFSkin::get_skeleton() { return skeleton; }
 
 void GLTFSkin::set_skeleton(int p_skeleton) { skeleton = p_skeleton; }
 
-Ref<Skin> GLTFSkin::get_godot_skin() { return godot_skin; }
 
-void GLTFSkin::set_godot_skin(const Ref<Skin>& p_godot_skin) { godot_skin = p_godot_skin; }
 
 // GLTFMesh
 
-String GLTFMesh::get_original_name() { return original_name; }
 
-void GLTFMesh::set_original_name(const String& p_name) { original_name = p_name; }
 
 Ref<ImporterMesh> GLTFMesh::get_mesh() { return mesh; }
 
 void GLTFMesh::set_mesh(const Ref<ImporterMesh>& p_mesh) { mesh = p_mesh; }
 
-Vector<float> GLTFMesh::get_blend_weights() { return Vector<float>(blend_weights); }
 
-void GLTFMesh::set_blend_weights(const Vector<float>& p_blend_weights)
-{
-	blend_weights = Vector<float>(p_blend_weights);
-}
 
 // GLTFCamera
 
-void GLTFCamera::set_fov_conversion_expressions(Ref<GLTFObjectModelProperty>& r_obj_model_prop)
-{
-	// Expression to convert glTF yfov in radians to Godot fov in degrees.
-	Ref<Expression> gltf_to_godot_expr;
-	gltf_to_godot_expr.instantiate();
-	PackedStringArray gltf_to_godot_args = {"yfov_rad"};
-	gltf_to_godot_expr->parse("rad_to_deg(yfov_rad)", gltf_to_godot_args);
-	r_obj_model_prop->set_gltf_to_godot_expression(gltf_to_godot_expr);
-	// Expression to convert Godot fov in degrees to glTF yfov in radians.
-	Ref<Expression> godot_to_gltf_expr;
-	godot_to_gltf_expr.instantiate();
-	PackedStringArray godot_to_gltf_args = {"fov_deg"};
-	godot_to_gltf_expr->parse("deg_to_rad(fov_deg)", godot_to_gltf_args);
-	r_obj_model_prop->set_godot_to_gltf_expression(godot_to_gltf_expr);
-}
 
 Ref<GLTFCamera> GLTFCamera::from_node(const Camera3D* p_camera)
 {
@@ -280057,44 +277492,10 @@ Ref<GLTFCamera> GLTFCamera::from_node(const Camera3D* p_camera)
 
 // GLTFAnimation
 
-GLTFAnimation::Interpolation GLTFAnimation::godot_to_gltf_interpolation(
-	const Ref<Animation>& p_godot_animation, int32_t p_godot_anim_track_index)
-{
-	Animation::InterpolationType interpolation =
-		p_godot_animation->track_get_interpolation_type(p_godot_anim_track_index);
-	switch (interpolation) {
-	case Animation::INTERPOLATION_LINEAR:
-	case Animation::INTERPOLATION_LINEAR_ANGLE:
-		return INTERP_LINEAR;
-	case Animation::INTERPOLATION_NEAREST:
-		return INTERP_STEP;
-	case Animation::INTERPOLATION_CUBIC:
-	case Animation::INTERPOLATION_CUBIC_ANGLE:
-		return INTERP_CUBIC_SPLINE;
-	}
-	return INTERP_LINEAR;
-}
 
-Animation::InterpolationType GLTFAnimation::gltf_to_godot_interpolation(
-	Interpolation p_gltf_interpolation)
-{
-	switch (p_gltf_interpolation) {
-	case INTERP_LINEAR:
-		return Animation::INTERPOLATION_LINEAR;
-	case INTERP_STEP:
-		return Animation::INTERPOLATION_NEAREST;
-	case INTERP_CATMULLROMSPLINE:
-	case INTERP_CUBIC_SPLINE:
-		return Animation::INTERPOLATION_CUBIC;
-	}
-	return Animation::INTERPOLATION_LINEAR;
-}
 
-String GLTFAnimation::get_original_name() { return original_name; }
 
-void GLTFAnimation::set_original_name(const String& p_name) { original_name = p_name; }
 
-bool GLTFAnimation::get_loop() const { return loop; }
 
 void GLTFAnimation::set_loop(bool p_val) { loop = p_val; }
 
@@ -280104,69 +277505,15 @@ GLTFAnimation::GLTFAnimation() {}
 
 // GLTFObjectModelProperty
 
-GLTFAccessor::GLTFAccessorType GLTFObjectModelProperty::get_accessor_type() const
-{
-	switch (object_model_type) {
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT2:
-		return GLTFAccessor::TYPE_VEC2;
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT3:
-		return GLTFAccessor::TYPE_VEC3;
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT4:
-		return GLTFAccessor::TYPE_VEC4;
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT2X2:
-		return GLTFAccessor::TYPE_MAT2;
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT3X3:
-		return GLTFAccessor::TYPE_MAT3;
-	case GLTF_OBJECT_MODEL_TYPE_FLOAT4X4:
-		return GLTFAccessor::TYPE_MAT4;
-	default:
-		return GLTFAccessor::TYPE_SCALAR;
-	}
-}
 
-Ref<Expression> GLTFObjectModelProperty::get_gltf_to_godot_expression() const
-{
-	return gltf_to_godot_expr;
-}
 
-void GLTFObjectModelProperty::set_gltf_to_godot_expression(
-	const Ref<Expression>& p_gltf_to_godot_expr)
-{
-	gltf_to_godot_expr = p_gltf_to_godot_expr;
-}
 
-Ref<Expression> GLTFObjectModelProperty::get_godot_to_gltf_expression() const
-{
-	return godot_to_gltf_expr;
-}
 
-void GLTFObjectModelProperty::set_godot_to_gltf_expression(
-	const Ref<Expression>& p_godot_to_gltf_expr)
-{
-	godot_to_gltf_expr = p_godot_to_gltf_expr;
-}
 
-GLTFObjectModelProperty::GLTFObjectModelType GLTFObjectModelProperty::get_object_model_type() const
-{
-	return object_model_type;
-}
 
-void GLTFObjectModelProperty::set_object_model_type(GLTFObjectModelType p_type)
-{
-	object_model_type = p_type;
-}
 
-Vector<PackedStringArray> GLTFObjectModelProperty::get_json_pointers() const
-{
-	return json_pointers;
-}
 
-bool GLTFObjectModelProperty::has_json_pointers() const { return !json_pointers.is_empty(); }
 
-void GLTFObjectModelProperty::set_json_pointers(const Vector<PackedStringArray>& p_json_pointers)
-{
-	json_pointers = p_json_pointers;
-}
 #endif // defined(MODULE_GLTF_ENABLED)
 
 #if defined(MODULE_FBX_ENABLED)
@@ -283782,1309 +281129,16 @@ public:
 #include "servers/display/display_server.h"
 #include "servers/display/display_server.h"
 
+#ifdef VULKAN_ENABLED
+#define WANT_OPENXR_PLATFORM_INC
+#include "servers/display/display_server.h"
+#endif
+
 class JavaObject;
 class MeshInstance3D;
 class Mesh;
 class OpenXRAPI;
-class OpenXRCompositionLayerExtension;
-class OpenXRHandTrackingExtension;
-class SubViewport;
-class Camera3D;
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRCompositionLayer
-
-class OpenXRCompositionLayer final : public Node3D
-{
-public:
-	enum LayerType
-	{
-		LAYER_QUAD,
-		LAYER_CYLINDER,
-		LAYER_EQUIRECT,
-	};
-
-	// Must be identical to Filter enum definition in OpenXRCompositionLayerExtension.
-	enum Filter
-	{
-		FILTER_NEAREST,
-		FILTER_LINEAR,
-		FILTER_CUBIC,
-	};
-
-	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayerExtension.
-	enum MipmapMode
-	{
-		MIPMAP_MODE_DISABLED,
-		MIPMAP_MODE_NEAREST,
-		MIPMAP_MODE_LINEAR,
-	};
-
-	// Must be identical to Wrap enum definition in OpenXRCompositionLayerExtension.
-	enum Wrap
-	{
-		WRAP_CLAMP_TO_BORDER,
-		WRAP_CLAMP_TO_EDGE,
-		WRAP_REPEAT,
-		WRAP_MIRRORED_REPEAT,
-		WRAP_MIRROR_CLAMP_TO_EDGE,
-	};
-
-	// Must be identical to Swizzle enum definition in OpenXRCompositionLayerExtension.
-	enum Swizzle
-	{
-		SWIZZLE_RED,
-		SWIZZLE_GREEN,
-		SWIZZLE_BLUE,
-		SWIZZLE_ALPHA,
-		SWIZZLE_ZERO,
-		SWIZZLE_ONE,
-	};
-
-	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayerExtension.
-	enum EyeVisibility
-	{
-		EYE_VISIBILITY_BOTH,
-		EYE_VISIBILITY_LEFT,
-		EYE_VISIBILITY_RIGHT,
-	};
-
-private:
-	RID composition_layer;
-	LayerType layer_type = LAYER_QUAD;
-
-	// Quad parameters.
-	Size2 quad_size = Size2(1.0, 1.0);
-
-	// Cylinder / Equirect shared parameters.
-	float radius = 1.0;
-	uint32_t fallback_segments = 10;
-
-	// Cylinder parameters.
-	float aspect_ratio = 1.0;
-	float central_angle = Math::PI / 2.0;
-
-	// Equirect parameters.
-	float central_horizontal_angle = Math::PI / 2.0;
-	float upper_vertical_angle = Math::PI / 4.0;
-	float lower_vertical_angle = Math::PI / 4.0;
-
-	SubViewport* layer_viewport = nullptr;
-	bool use_android_surface = false;
-	Size2i android_surface_size = Size2i(1024, 1024);
-	bool enable_hole_punch = false;
-	bool alpha_blend = false;
-	int sort_order = 1;
-	bool protected_content = false;
-	MeshInstance3D* fallback = nullptr;
-	bool should_update_fallback_mesh = false;
-	bool openxr_session_running = false;
-	bool registered = false;
-
-	Filter min_filter = FILTER_LINEAR;
-	Filter mag_filter = FILTER_LINEAR;
-	MipmapMode mipmap_mode = MIPMAP_MODE_LINEAR;
-	Wrap horizontal_wrap = WRAP_CLAMP_TO_BORDER;
-	Wrap vertical_wrap = WRAP_CLAMP_TO_BORDER;
-	Swizzle red_swizzle = SWIZZLE_RED;
-	Swizzle green_swizzle = SWIZZLE_GREEN;
-	Swizzle blue_swizzle = SWIZZLE_BLUE;
-	Swizzle alpha_swizzle = SWIZZLE_ALPHA;
-	float max_anisotropy = 1.0;
-	Color border_color = {0.0, 0.0, 0.0, 0.0};
-	EyeVisibility eye_visibility = EYE_VISIBILITY_BOTH;
-
-	bool _should_use_fallback_node();
-	void _create_fallback_node();
-	void _reset_fallback_material();
-	void _remove_fallback_node();
-
-	void _setup_composition_layer();
-	void _clear_composition_layer();
-
-	void _viewport_size_changed();
-
-	Camera3D* _get_xrcamera3d_ancestor() const;
-
-	void _notification(int p_what);
-
-	void _on_openxr_session_begun();
-	void _on_openxr_session_stopping();
-
-	bool _should_register();
-
-	Ref<Mesh> _create_fallback_mesh();
-	XrStructureType _get_openxr_type() const;
-
-	void update_transform();
-	void update_fallback_mesh();
-
-	static Vector<OpenXRCompositionLayer*> composition_layer_nodes;
-	bool is_viewport_in_use(SubViewport* p_viewport);
-
-public:
-	LayerType get_layer_type() const { return layer_type; }
-
-	void set_layer_viewport(SubViewport* p_viewport);
-	SubViewport* get_layer_viewport() const;
-
-	void set_use_android_surface(bool p_use_android_surface);
-	bool get_use_android_surface() const;
-
-	void set_android_surface_size(Size2i p_size);
-	Size2i get_android_surface_size() const;
-
-	bool get_enable_hole_punch() const;
-
-	int get_sort_order() const;
-
-	void set_alpha_blend(bool p_alpha_blend);
-	bool get_alpha_blend() const;
-
-	Ref<JavaObject> get_android_surface();
-	bool is_natively_supported() const;
-
-	void set_protected_content(bool p_protected_content);
-	bool is_protected_content() const;
-
-	void set_min_filter(Filter p_mode);
-	Filter get_min_filter() const;
-
-	void set_mag_filter(Filter p_mode);
-	Filter get_mag_filter() const;
-
-	void set_mipmap_mode(MipmapMode p_mode);
-	MipmapMode get_mipmap_mode() const;
-
-	void set_horizontal_wrap(Wrap p_mode);
-	Wrap get_horizontal_wrap() const;
-
-	void set_vertical_wrap(Wrap p_mode);
-	Wrap get_vertical_wrap() const;
-
-	void set_red_swizzle(Swizzle p_mode);
-	Swizzle get_red_swizzle() const;
-
-	void set_green_swizzle(Swizzle p_mode);
-	Swizzle get_green_swizzle() const;
-
-	void set_blue_swizzle(Swizzle p_mode);
-	Swizzle get_blue_swizzle() const;
-
-	void set_alpha_swizzle(Swizzle p_mode);
-	Swizzle get_alpha_swizzle() const;
-
-	void set_max_anisotropy(float p_value);
-	float get_max_anisotropy() const;
-
-	void set_border_color(const Color& p_color);
-	Color get_border_color() const;
-
-	void set_eye_visibility(EyeVisibility p_eye_visibility);
-	EyeVisibility get_eye_visibility() const;
-
-	// Quad properties.
-	void set_quad_size(const Size2& p_size);
-	Size2 get_quad_size() const;
-
-	// Cylinder & Equirect shared properties.
-	void set_radius(float p_radius);
-	float get_radius() const;
-
-	void set_fallback_segments(uint32_t p_fallback_segments);
-	uint32_t get_fallback_segments() const;
-
-	// Cylinder properties.
-	void set_aspect_ratio(float p_aspect_ratio);
-	float get_aspect_ratio() const;
-
-	void set_central_angle(float p_angle);
-	float get_central_angle() const;
-
-	// Equirect properties.
-	void set_central_horizontal_angle(float p_angle);
-	float get_central_horizontal_angle() const;
-
-	void set_upper_vertical_angle(float p_angle);
-	float get_upper_vertical_angle() const;
-
-	void set_lower_vertical_angle(float p_angle);
-	float get_lower_vertical_angle() const;
-
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	Vector2 intersects_ray(const Vector3& p_origin, const Vector3& p_direction) const;
-
-	OpenXRCompositionLayer(LayerType p_type = LAYER_QUAD);
-	~OpenXRCompositionLayer() = default;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRHand
-
-class OpenXRHand final : public Node3D
-{
-public:
-	enum Hands
-	{
-		HAND_LEFT,
-		HAND_RIGHT,
-		HAND_MAX
-	};
-
-	enum MotionRange
-	{
-		MOTION_RANGE_UNOBSTRUCTED,
-		MOTION_RANGE_CONFORM_TO_CONTROLLER,
-		MOTION_RANGE_MAX
-	};
-
-	enum SkeletonRig
-	{
-		SKELETON_RIG_OPENXR,
-		SKELETON_RIG_HUMANOID,
-		SKELETON_RIG_MAX
-	};
-
-	enum BoneUpdate
-	{
-		BONE_UPDATE_FULL,
-		BONE_UPDATE_ROTATION_ONLY,
-		BONE_UPDATE_MAX
-	};
-
-private:
-	struct JointData
-	{
-		int bone = -1;
-		int parent_joint = -1;
-	};
-
-	Hands hand = HAND_LEFT;
-	MotionRange motion_range = MOTION_RANGE_UNOBSTRUCTED;
-	NodePath hand_skeleton;
-	SkeletonRig skeleton_rig = SKELETON_RIG_OPENXR;
-	BoneUpdate bone_update = BONE_UPDATE_FULL;
-
-	JointData joints[XR_HAND_JOINT_COUNT_EXT];
-
-	void _set_motion_range();
-
-	Skeleton3D* get_skeleton();
-	void _get_joint_data();
-	void _update_skeleton();
-
-public:
-	OpenXRHand();
-
-	void set_hand(Hands p_hand);
-	Hands get_hand() const;
-
-	void set_motion_range(MotionRange p_motion_range);
-	MotionRange get_motion_range() const;
-
-	void set_hand_skeleton(const NodePath& p_hand_skeleton);
-	NodePath get_hand_skeleton() const;
-
-	void set_skeleton_rig(SkeletonRig p_skeleton_rig);
-	SkeletonRig get_skeleton_rig() const;
-
-	void set_bone_update(BoneUpdate p_bone_update);
-	BoneUpdate get_bone_update() const;
-
-	void _notification(int p_what);
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRVisibilityMask
-
-class OpenXRVisibilityMask final : public Node3D
-{
-public:
-	RenderInstance3D render_instance;
-
-private:
-	void _notification(int p_what);
-	virtual void fti_update_servers_xform() override;
-
-	void _on_openxr_session_begun();
-	void _on_openxr_session_stopping();
-
-public:
-	virtual bool has_render_instance() const override { return true; }
-	RID get_instance() const { return render_instance.get_instance(); }
-	void set_base(const RID& p_base) { render_instance.set_base(p_base); }
-	RID get_base() const { return render_instance.get_base(); }
-
-	AABB get_aabb() const;
-
-	OpenXRVisibilityMask() = default;
-	~OpenXRVisibilityMask() = default;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRRenderModel & OpenXRRenderModelManager
-
-#ifdef MODULE_GLTF_ENABLED
-class OpenXRRenderModel final : public Node3D
-{
-private:
-	RID render_model;
-	Node3D* scene = nullptr;
-	HashMap<String, Node3D*> animatable_nodes;
-
-	void _load_render_model_scene();
-	void _on_render_model_top_level_path_changed(RID p_render_model);
-	void _notification(int p_what);
-
-public:
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	RID get_render_model() const;
-	void set_render_model(RID p_render_model);
-
-	String get_top_level_path() const;
-};
-
-class OpenXRRenderModelManager final : public Node3D
-{
-public:
-	enum RenderModelTracker
-	{
-		RENDER_MODEL_TRACKER_ANY,
-		RENDER_MODEL_TRACKER_NONE_SET,
-		RENDER_MODEL_TRACKER_LEFT_HAND,
-		RENDER_MODEL_TRACKER_RIGHT_HAND,
-	};
-
-	virtual PackedStringArray get_configuration_warnings() const override;
-
-	void set_tracker(RenderModelTracker p_tracker);
-	RenderModelTracker get_tracker() const;
-
-	void set_make_local_to_pose(const String& p_action);
-	String get_make_local_to_pose() const;
-
-private:
-	HashMap<RID, Node3D*> render_models;
-	Node3D* container = nullptr;
-
-	bool is_dirty = false;
-	RenderModelTracker tracker = RENDER_MODEL_TRACKER_ANY;
-	String make_local_to_pose;
-
-	Ref<XRTracker> positional_tracker;
-	XrPath xr_path = XR_NULL_PATH;
-
-	bool _has_filters();
-	void _on_render_model_added(RID p_render_model);
-	void _on_render_model_removed(RID p_render_model);
-	void _on_render_model_top_level_path_changed(RID p_path);
-	void _update_models();
-	void _notification(int p_what);
-};
-#endif // MODULE_GLTF_ENABLED
-
-#include "core/version_generated.gen.h"
-#include "servers/display/display_server.h"
-
-#ifdef XR_USE_PLATFORM_ANDROID
-#include <jni.h>
-#include <openxr/openxr_platform.h>
-#endif
-
-#ifdef ANDROID_ENABLED
-#include <jni.h>
-
-typedef XrResult(XRAPI_PTR* PFN_xrCreateSwapchainAndroidSurfaceKHR)(
-	XrSession session, const XrSwapchainCreateInfo* info, XrSwapchain* swapchain, jobject* surface);
-#endif
-
-#ifdef MODULE_GLTF_ENABLED
-class GLTFDocument;
-class GLTFState;
-class Node3D;
-template <typename T> class TypedArray;
-#endif
-
-class JavaObject;
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXREyeGazeInteractionExtension
-
-class OpenXREyeGazeInteractionExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-
-	static PackedStringArray get_suggested_tracker_names();
-
-	static bool is_available();
-	static bool supports_eye_gaze_interaction();
-
-	static bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
-
-	struct Data
-	{
-		bool available = false;
-		XrSystemEyeGazeInteractionPropertiesEXT properties;
-		bool init_eye_gaze_pose = false;
-		RID eye_tracker;
-		RID eye_action;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXREyeGazeInteractionExtension() = delete;
-	OpenXREyeGazeInteractionExtension(const OpenXREyeGazeInteractionExtension&) = delete;
-	OpenXREyeGazeInteractionExtension& operator=(const OpenXREyeGazeInteractionExtension&) = delete;
-	~OpenXREyeGazeInteractionExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRUserPresenceExtension
-
-class OpenXRUserPresenceExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-
-	static void on_state_ready();
-	static void on_state_stopping();
-
-	static bool on_event_polled(const XrEventDataBuffer& event);
-
-	static bool is_user_present();
-	static bool is_active();
-
-	struct Data
-	{
-		bool available = false;
-		XrSystemUserPresencePropertiesEXT properties;
-		bool user_present = true;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRUserPresenceExtension() = delete;
-	OpenXRUserPresenceExtension(const OpenXRUserPresenceExtension&) = delete;
-	OpenXRUserPresenceExtension& operator=(const OpenXRUserPresenceExtension&) = delete;
-	~OpenXRUserPresenceExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRAndroidThreadSettingsExtension
-
-class OpenXRAndroidThreadSettingsExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void on_instance_created(XrInstance p_instance);
-	static void on_session_created(XrSession p_session);
-
-	enum ThreadType
-	{
-		THREAD_TYPE_APPLICATION_MAIN,
-		THREAD_TYPE_APPLICATION_WORKER,
-		THREAD_TYPE_RENDERER_MAIN,
-		THREAD_TYPE_RENDERER_WORKER,
-	};
-
-	static bool set_application_thread_type(ThreadType p_thread_type, uint32_t p_thread_id = 0);
-
-private:
-	static bool _initialize_openxr_android_thread_settings_extension();
-	static void _set_render_thread_type();
-
-#ifdef XR_USE_PLATFORM_ANDROID
-	EXT_PROTO_XRRESULT_FUNC3(xrSetAndroidApplicationThreadKHR, (XrSession), session,
-		(XrAndroidThreadTypeKHR), threadType, (uint32_t), threadId);
-#endif
-
-public:
-	struct Data
-	{
-		bool available = false;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRAndroidThreadSettingsExtension() = delete;
-	OpenXRAndroidThreadSettingsExtension(const OpenXRAndroidThreadSettingsExtension&) = delete;
-	OpenXRAndroidThreadSettingsExtension& operator=(
-		const OpenXRAndroidThreadSettingsExtension&) = delete;
-	~OpenXRAndroidThreadSettingsExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRDisplayRefreshRateExtension
-
-class OpenXRDisplayRefreshRateExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-	static bool on_event_polled(const XrEventDataBuffer& event);
-
-	static float get_refresh_rate();
-	static void set_refresh_rate(float p_refresh_rate);
-
-private:
-	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateDisplayRefreshRatesFB, (XrSession), session, (uint32_t),
-		displayRefreshRateCapacityInput, (uint32_t*), displayRefreshRateCountOutput, (float*),
-		displayRefreshRates);
-	EXT_PROTO_XRRESULT_FUNC2(
-		xrGetDisplayRefreshRateFB, (XrSession), session, (float*), display_refresh_rate);
-	EXT_PROTO_XRRESULT_FUNC2(
-		xrRequestDisplayRefreshRateFB, (XrSession), session, (float), display_refresh_rate);
-
-public:
-	struct Data
-	{
-		bool display_refresh_rate_ext = false;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRDisplayRefreshRateExtension() = delete;
-	OpenXRDisplayRefreshRateExtension(const OpenXRDisplayRefreshRateExtension&) = delete;
-	OpenXRDisplayRefreshRateExtension& operator=(const OpenXRDisplayRefreshRateExtension&) = delete;
-	~OpenXRDisplayRefreshRateExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRPerformanceSettingsExtension
-
-class OpenXRPerformanceSettingsExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static bool on_event_polled(const XrEventDataBuffer& event);
-
-	static bool is_available();
-
-	static void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
-	static void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
-
-private:
-	static XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
-	static OpenXRInterface::PerfSettingsSubDomain openxr_to_sub_domain(
-		XrPerfSettingsSubDomainEXT p_sub_domain);
-	static OpenXRInterface::PerfSettingsNotificationLevel openxr_to_notification_level(
-		XrPerfSettingsNotificationLevelEXT p_notification_level);
-
-	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
-		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
-
-public:
-	struct Data
-	{
-		bool available = false;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRPerformanceSettingsExtension() = delete;
-	OpenXRPerformanceSettingsExtension(const OpenXRPerformanceSettingsExtension&) = delete;
-	OpenXRPerformanceSettingsExtension& operator=(
-		const OpenXRPerformanceSettingsExtension&) = delete;
-	~OpenXRPerformanceSettingsExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRDebugUtilsExtension
-
-class OpenXRDebugUtilsExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-
-	static bool get_active();
-
-	static void set_object_name(
-		XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
-	static void begin_debug_label_region(const char* p_label_name);
-	static void end_debug_label_region();
-	static void insert_debug_label(const char* p_label_name);
-
-private:
-	static XrBool32 XRAPI_PTR _debug_callback(
-		XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
-		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
-		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
-	static XrBool32 debug_callback(XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
-		XrDebugUtilsMessageTypeFlagsEXT p_message_types,
-		const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data);
-
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateDebugUtilsMessengerEXT, (XrInstance), p_instance,
-		(const XrDebugUtilsMessengerCreateInfoEXT*), p_create_info, (XrDebugUtilsMessengerEXT*),
-		p_messenger)
-	EXT_PROTO_XRRESULT_FUNC1(
-		xrDestroyDebugUtilsMessengerEXT, (XrDebugUtilsMessengerEXT), p_messenger)
-	EXT_PROTO_XRRESULT_FUNC2(xrSetDebugUtilsObjectNameEXT, (XrInstance), p_instance,
-		(const XrDebugUtilsObjectNameInfoEXT*), p_name_info)
-	EXT_PROTO_XRRESULT_FUNC2(xrSessionBeginDebugUtilsLabelRegionEXT, (XrSession), p_session,
-		(const XrDebugUtilsLabelEXT*), p_label_info)
-	EXT_PROTO_XRRESULT_FUNC1(xrSessionEndDebugUtilsLabelRegionEXT, (XrSession), p_session)
-	EXT_PROTO_XRRESULT_FUNC2(xrSessionInsertDebugUtilsLabelEXT, (XrSession), p_session,
-		(const XrDebugUtilsLabelEXT*), p_label_info)
-
-public:
-	struct Data
-	{
-		bool debug_utils_ext = false;
-		XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRDebugUtilsExtension() = delete;
-	OpenXRDebugUtilsExtension(const OpenXRDebugUtilsExtension&) = delete;
-	OpenXRDebugUtilsExtension& operator=(const OpenXRDebugUtilsExtension&) = delete;
-	~OpenXRDebugUtilsExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRVisibilityMaskExtension
-
-class OpenXRVisibilityMaskExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-
-	static void on_session_created(const XrSession p_instance);
-	static void on_session_destroyed();
-
-	static void on_pre_render();
-	static bool on_event_polled(const XrEventDataBuffer& event);
-
-	static bool is_available();
-	static RID get_mesh();
-
-private:
-	struct MeshData
-	{
-		Vector<XrVector2f> vertices;
-		Vector<uint32_t> indices;
-	};
-
-	static void _update_mesh_data(uint32_t p_view);
-	static void _update_mesh();
-
-	EXT_PROTO_XRRESULT_FUNC5(xrGetVisibilityMaskKHR, (XrSession), session,
-		(XrViewConfigurationType), viewConfigurationType, (uint32_t), viewIndex,
-		(XrVisibilityMaskTypeKHR), visibilityMaskType, (XrVisibilityMaskKHR*), visibilityMask);
-
-public:
-	struct Data
-	{
-		bool available = false;
-		bool is_dirty = false;
-		RID shader;
-		RID material;
-		RID mesh;
-		uint32_t mesh_count = 0;
-		MeshData mesh_data[4];
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRVisibilityMaskExtension() = delete;
-	OpenXRVisibilityMaskExtension(const OpenXRVisibilityMaskExtension&) = delete;
-	OpenXRVisibilityMaskExtension& operator=(const OpenXRVisibilityMaskExtension&) = delete;
-	~OpenXRVisibilityMaskExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRCompositionLayerExtension
-
-class OpenXRCompositionLayerExtension final
-{
-public:
-	// Must be identical to Filter enum definition in OpenXRCompositionLayer.
-	enum Filter
-	{
-		FILTER_NEAREST,
-		FILTER_LINEAR,
-		FILTER_CUBIC,
-	};
-
-	// Must be identical to MipmapMode enum definition in OpenXRCompositionLayer.
-	enum MipmapMode
-	{
-		MIPMAP_MODE_DISABLED,
-		MIPMAP_MODE_NEAREST,
-		MIPMAP_MODE_LINEAR,
-	};
-
-	// Must be identical to Wrap enum definition in OpenXRCompositionLayer.
-	enum Wrap
-	{
-		WRAP_CLAMP_TO_BORDER,
-		WRAP_CLAMP_TO_EDGE,
-		WRAP_REPEAT,
-		WRAP_MIRRORED_REPEAT,
-		WRAP_MIRROR_CLAMP_TO_EDGE,
-	};
-
-	// Must be identical to Swizzle enum definition in OpenXRCompositionLayer.
-	enum Swizzle
-	{
-		SWIZZLE_RED,
-		SWIZZLE_GREEN,
-		SWIZZLE_BLUE,
-		SWIZZLE_ALPHA,
-		SWIZZLE_ZERO,
-		SWIZZLE_ONE,
-	};
-
-	// Must be identical to EyeVisibility enum definition in OpenXRCompositionLayer.
-	enum EyeVisibility
-	{
-		EYE_VISIBILITY_BOTH,
-		EYE_VISIBILITY_LEFT,
-		EYE_VISIBILITY_RIGHT,
-	};
-
-	enum PoseSpace
-	{
-		POSE_WORLD_LOCKED,
-		POSE_HEAD_LOCKED,
-	};
-
-	struct SwapchainState
-	{
-		Filter min_filter = Filter::FILTER_LINEAR;
-		Filter mag_filter = Filter::FILTER_LINEAR;
-		MipmapMode mipmap_mode = MipmapMode::MIPMAP_MODE_LINEAR;
-		Wrap horizontal_wrap = Wrap::WRAP_CLAMP_TO_BORDER;
-		Wrap vertical_wrap = Wrap::WRAP_CLAMP_TO_BORDER;
-		Swizzle red_swizzle = Swizzle::SWIZZLE_RED;
-		Swizzle green_swizzle = Swizzle::SWIZZLE_GREEN;
-		Swizzle blue_swizzle = Swizzle::SWIZZLE_BLUE;
-		Swizzle alpha_swizzle = Swizzle::SWIZZLE_ALPHA;
-		float max_anisotropy = 1.0;
-		Color border_color = {0.0, 0.0, 0.0, 0.0};
-	};
-
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_session_created(const XrSession p_session);
-	static void on_session_destroyed();
-	static void on_pre_render();
-
-	static int get_composition_layer_count();
-	static XrCompositionLayerBaseHeader* get_composition_layer(int p_index);
-	static int get_composition_layer_order(int p_index);
-
-	static RID composition_layer_create(XrCompositionLayerBaseHeader* p_openxr_layer);
-	static void composition_layer_free(RID p_layer);
-
-	static void composition_layer_register(RID p_layer);
-	static void composition_layer_unregister(RID p_layer);
-
-#define OPENXR_LAYER_FUNC1_DECL(m_name, m_arg1)                                                    \
-	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1);                          \
-	static void composition_layer_##m_name(RID p_layer, m_arg1 p1);
-
-#define OPENXR_LAYER_FUNC2_DECL(m_name, m_arg1, m_arg2)                                            \
-	static void _composition_layer_##m_name##_rt(RID p_layer, m_arg1 p1, m_arg2 p2);               \
-	static void composition_layer_##m_name(RID p_layer, m_arg1 p1, m_arg2 p2);
-
-	OPENXR_LAYER_FUNC2_DECL(set_viewport, RID, const Size2i&);
-	OPENXR_LAYER_FUNC2_DECL(set_use_android_surface, bool, const Size2i&);
-	OPENXR_LAYER_FUNC1_DECL(set_sort_order, int);
-	OPENXR_LAYER_FUNC1_DECL(set_alpha_blend, bool);
-	OPENXR_LAYER_FUNC1_DECL(set_transform, const Transform3D&);
-	OPENXR_LAYER_FUNC1_DECL(set_protected_content, bool);
-
-	OPENXR_LAYER_FUNC1_DECL(set_min_filter, Filter);
-	OPENXR_LAYER_FUNC1_DECL(set_mag_filter, Filter);
-	OPENXR_LAYER_FUNC1_DECL(set_mipmap_mode, MipmapMode);
-	OPENXR_LAYER_FUNC1_DECL(set_horizontal_wrap, Wrap);
-	OPENXR_LAYER_FUNC1_DECL(set_vertical_wrap, Wrap);
-	OPENXR_LAYER_FUNC1_DECL(set_red_swizzle, Swizzle);
-	OPENXR_LAYER_FUNC1_DECL(set_blue_swizzle, Swizzle);
-	OPENXR_LAYER_FUNC1_DECL(set_green_swizzle, Swizzle);
-	OPENXR_LAYER_FUNC1_DECL(set_alpha_swizzle, Swizzle);
-	OPENXR_LAYER_FUNC1_DECL(set_max_anisotropy, float);
-	OPENXR_LAYER_FUNC1_DECL(set_border_color, const Color&);
-	OPENXR_LAYER_FUNC1_DECL(set_pose_space, PoseSpace);
-	OPENXR_LAYER_FUNC1_DECL(set_eye_visibility, EyeVisibility);
-
-	OPENXR_LAYER_FUNC1_DECL(set_quad_size, const Size2&);
-
-	OPENXR_LAYER_FUNC1_DECL(set_cylinder_radius, float);
-	OPENXR_LAYER_FUNC1_DECL(set_cylinder_aspect_ratio, float);
-	OPENXR_LAYER_FUNC1_DECL(set_cylinder_central_angle, float);
-
-	OPENXR_LAYER_FUNC1_DECL(set_equirect_radius, float);
-	OPENXR_LAYER_FUNC1_DECL(set_equirect_central_horizontal_angle, float);
-	OPENXR_LAYER_FUNC1_DECL(set_equirect_upper_vertical_angle, float);
-	OPENXR_LAYER_FUNC1_DECL(set_equirect_lower_vertical_angle, float);
-
-#undef OPENXR_LAYER_FUNC1_DECL
-#undef OPENXR_LAYER_FUNC2_DECL
-
-	static Ref<JavaObject> composition_layer_get_android_surface(RID p_layer);
-
-	static bool is_available(XrStructureType p_which);
-
-	static bool is_android_surface_swapchain_available()
-	{
-		return data != nullptr && data->android_surface_ext_available;
-	}
-
-private:
-	static void _composition_layer_free_rt(RID p_layer);
-	static void _composition_layer_register_rt(RID p_layer);
-	static void _composition_layer_unregister_rt(RID p_layer);
-
-#ifdef ANDROID_ENABLED
-	static bool create_android_surface_swapchain(
-		XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface);
-
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySwapchain, (XrSwapchain), swapchain)
-	EXT_PROTO_XRRESULT_FUNC4(xrCreateSwapchainAndroidSurfaceKHR, (XrSession), session,
-		(const XrSwapchainCreateInfo*), info, (XrSwapchain*), swapchain, (jobject*), surface)
-#endif
-
-	struct CompositionLayer
-	{
-		union
-		{
-			XrCompositionLayerBaseHeader composition_layer;
-			XrCompositionLayerQuad composition_layer_quad;
-			XrCompositionLayerCylinderKHR composition_layer_cylinder;
-			XrCompositionLayerEquirect2KHR composition_layer_equirect;
-		};
-
-		int sort_order = 1;
-		bool alpha_blend = false;
-		bool extension_property_values_changed = true;
-
-		struct
-		{
-			RID viewport;
-			Size2i viewport_size;
-			OpenXRAPI::OpenXRSwapChainInfo swapchain_info;
-			bool static_image = false;
-			bool swapchain_protected_content = false;
-		} subviewport;
-
-#ifdef ANDROID_ENABLED
-		struct
-		{
-			XrSwapchain swapchain = XR_NULL_HANDLE;
-			Ref<JavaObject> surface;
-		} android_surface;
-#endif
-
-		PoseSpace pose_space = POSE_WORLD_LOCKED;
-		XrSpace layer_reference_space = XR_NULL_HANDLE;
-
-		bool use_android_surface = false;
-		bool protected_content = false;
-		Size2i swapchain_size;
-
-		SwapchainState swapchain_state;
-		bool swapchain_state_is_dirty = false;
-
-		void set_viewport(RID p_viewport, const Size2i& p_size);
-		void set_use_android_surface(bool p_use_android_surface, const Size2i& p_size);
-
-		void set_sort_order(int p_sort_order) { sort_order = p_sort_order; }
-
-		void set_alpha_blend(bool p_alpha_blend);
-
-		void set_protected_content(bool p_protected_content)
-		{
-			protected_content = p_protected_content;
-		}
-
-		void set_transform(const Transform3D& p_transform);
-
-		void set_min_filter(Filter p_mode);
-		void set_mag_filter(Filter p_mode);
-		void set_mipmap_mode(MipmapMode p_mode);
-		void set_horizontal_wrap(Wrap p_mode);
-		void set_vertical_wrap(Wrap p_mode);
-		void set_red_swizzle(Swizzle p_mode);
-		void set_green_swizzle(Swizzle p_mode);
-		void set_blue_swizzle(Swizzle p_mode);
-		void set_alpha_swizzle(Swizzle p_mode);
-		void set_max_anisotropy(float p_value);
-		void set_border_color(const Color& p_color);
-		void set_pose_space(PoseSpace p_pose_space);
-		void set_eye_visibility(EyeVisibility p_eye_visibility);
-
-		void set_quad_size(const Size2& p_size);
-
-		void set_cylinder_radius(float p_radius);
-		void set_cylinder_aspect_ratio(float p_aspect_ratio);
-		void set_cylinder_central_angle(float p_central_angle);
-
-		void set_equirect_radius(float p_radius);
-		void set_equirect_central_horizontal_angle(float p_angle);
-		void set_equirect_upper_vertical_angle(float p_angle);
-		void set_equirect_lower_vertical_angle(float p_angle);
-
-		Ref<JavaObject> get_android_surface();
-		void on_pre_render();
-		XrCompositionLayerBaseHeader* get_composition_layer();
-		void free();
-
-	private:
-		void update_swapchain_state();
-		void update_swapchain_sub_image(XrSwapchainSubImage& r_subimage);
-		bool update_and_acquire_swapchain(bool p_static_image);
-		RID get_current_swapchain_texture();
-		void free_swapchain();
-
-#ifdef ANDROID_ENABLED
-		void create_android_surface();
-#endif
-	};
-
-public:
-	struct Data
-	{
-		bool cylinder_ext_available = false;
-		bool equirect_ext_available = false;
-		bool android_surface_ext_available = false;
-		Mutex composition_layer_mutex;
-		RID_Owner<CompositionLayer, true> composition_layer_owner;
-		LocalVector<CompositionLayer*> registered_composition_layers;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRCompositionLayerExtension() = delete;
-	OpenXRCompositionLayerExtension(const OpenXRCompositionLayerExtension&) = delete;
-	OpenXRCompositionLayerExtension& operator=(const OpenXRCompositionLayerExtension&) = delete;
-	~OpenXRCompositionLayerExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRFBUpdateSwapchainExtension
-
-class OpenXRFBUpdateSwapchainExtension final
-{
-protected:
-	friend class OpenXRFBFoveationExtension;
-
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-
-	static bool is_enabled();
-	static bool is_android_ext_enabled();
-
-	static void update_swapchain_state(XrSwapchain p_swapchain,
-		const OpenXRCompositionLayerExtension::SwapchainState* p_swapchain_state);
-
-	static void update_swapchain_surface_size(XrSwapchain p_swapchain, const Size2i& p_size);
-
-private:
-	static uint32_t filter_to_gl(OpenXRCompositionLayerExtension::Filter p_filter,
-		OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode =
-			OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED);
-	static uint32_t wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap);
-	static uint32_t swizzle_to_gl(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
-
-	static uint32_t filter_to_vk(OpenXRCompositionLayerExtension::Filter p_filter);
-	static uint32_t mipmap_mode_to_vk(OpenXRCompositionLayerExtension::MipmapMode p_mipmap);
-	static uint32_t wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap);
-	static uint32_t swizzle_to_vk(OpenXRCompositionLayerExtension::Swizzle p_swizzle);
-
-	EXT_PROTO_XRRESULT_FUNC2(xrUpdateSwapchainFB, (XrSwapchain), swapchain,
-		(const XrSwapchainStateBaseHeaderFB*), state);
-	EXT_PROTO_XRRESULT_FUNC2(
-		xrGetSwapchainStateFB, (XrSwapchain), swapchain, (XrSwapchainStateBaseHeaderFB*), state);
-
-public:
-	struct Data
-	{
-		String rendering_driver;
-		bool fb_swapchain_update_state_ext = false;
-		bool fb_swapchain_update_state_vulkan_ext = false;
-		bool fb_swapchain_update_state_opengles_ext = false;
-		bool fb_swapchain_update_state_android_ext = false;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize(const String& p_rendering_driver = String());
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRFBUpdateSwapchainExtension() = delete;
-	OpenXRFBUpdateSwapchainExtension(const OpenXRFBUpdateSwapchainExtension&) = delete;
-	OpenXRFBUpdateSwapchainExtension& operator=(const OpenXRFBUpdateSwapchainExtension&) = delete;
-	~OpenXRFBUpdateSwapchainExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRFBFoveationExtension
-
-class OpenXRFBFoveationExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-
-	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-	static void* set_swapchain_create_info_and_get_next_pointer(void* p_next_pointer);
-
-	static void on_main_swapchains_created();
-
-	static bool is_enabled();
-
-	static XrFoveationLevelFB get_foveation_level();
-	static void set_foveation_level(XrFoveationLevelFB p_foveation_level);
-
-	static XrFoveationDynamicFB get_foveation_dynamic();
-	static void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
-
-	static bool is_foveation_eye_tracked_enabled();
-	static void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets);
-
-	static void set_foveation_with_subsampled_images_enabled(bool p_enabled);
-	static bool is_foveation_with_subsampled_images_enabled();
-
-	static void set_foveation_with_subsampled_images_active(bool p_active);
-
-private:
-	static void _update_profile_rt();
-	static void update_profile();
-
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateFoveationProfileFB, (XrSession), session,
-		(const XrFoveationProfileCreateInfoFB*), create_info, (XrFoveationProfileFB*), profile);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroyFoveationProfileFB, (XrFoveationProfileFB), profile);
-	EXT_PROTO_XRRESULT_FUNC2(xrGetFoveationEyeTrackedStateMETA, (XrSession), session,
-		(XrFoveationEyeTrackedStateMETA*), foveationState);
-
-public:
-	struct Data;
-
-	static inline Data* data = nullptr;
-
-	static void initialize(const String& p_rendering_driver = String());
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRFBFoveationExtension() = delete;
-	OpenXRFBFoveationExtension(const OpenXRFBFoveationExtension&) = delete;
-	OpenXRFBFoveationExtension& operator=(const OpenXRFBFoveationExtension&) = delete;
-	~OpenXRFBFoveationExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRFrameSynthesisExtension
-
-class OpenXRFrameSynthesisExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-
-	static void prepare_view_configuration(uint32_t p_view_count);
-	static void* set_view_configuration_and_get_next_pointer(
-		uint32_t p_view, void* p_next_pointer);
-	static void print_view_configuration_info(uint32_t p_view);
-
-	static void on_session_destroyed();
-
-	static void on_main_swapchains_created();
-	static void on_pre_draw_viewport(RID p_render_target);
-	static void on_post_draw_viewport(RID p_render_target);
-	static void* set_projection_views_and_get_next_pointer(int p_view_index, void* p_next_pointer);
-
-	static bool is_available();
-
-	static bool is_enabled();
-	static void set_enabled(bool p_enabled);
-
-	static bool get_relax_frame_interval();
-	static void set_relax_frame_interval(bool p_relax_frame_interval);
-
-	static void skip_next_frame();
-
-protected:
-	static void _set_render_state_enabled_rt(bool p_enabled);
-	static void _set_relax_frame_interval_rt(bool p_relax_frame_interval);
-	static void _set_skip_next_frame_rt();
-
-private:
-	enum SwapchainTypes
-	{
-		SWAPCHAIN_MOTION_VECTOR,
-		SWAPCHAIN_DEPTH,
-		SWAPCHAIN_MAX
-	};
-
-	static void free_swapchains();
-
-	struct RenderState
-	{
-		bool enabled = true;
-		bool relax_frame_interval = false;
-		bool skip_next_frame = false;
-
-		LocalVector<XrFrameSynthesisConfigViewEXT> config_views;
-		OpenXRAPI::OpenXRSwapChainInfo swapchains[SWAPCHAIN_MAX];
-		LocalVector<XrFrameSynthesisInfoEXT> frame_synthesis_info;
-		Transform3D previous_transform;
-	};
-
-public:
-	struct Data
-	{
-		bool frame_synthesis_ext = false;
-		bool enabled = true;
-		bool relax_frame_interval = false;
-		RenderState render_state;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRFrameSynthesisExtension() = delete;
-	OpenXRFrameSynthesisExtension(const OpenXRFrameSynthesisExtension&) = delete;
-	OpenXRFrameSynthesisExtension& operator=(const OpenXRFrameSynthesisExtension&) = delete;
-	~OpenXRFrameSynthesisExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRFutureResult & OpenXRFutureExtension
-
-class OpenXRFutureExtension;
-
-class OpenXRFutureResult final : public RefCounted
-{
-	friend class OpenXRFutureExtension;
-
-protected:
-	void _mark_as_finished();
-	void _mark_as_cancelled();
-
-public:
-	enum ResultStatus
-	{
-		RESULT_RUNNING,
-		RESULT_FINISHED,
-		RESULT_CANCELLED,
-	};
-
-	ResultStatus get_status() const;
-	XrFutureEXT get_future() const;
-
-	void cancel_future();
-
-private:
-	ResultStatus status = RESULT_RUNNING;
-	XrFutureEXT future;
-
-	uint64_t _get_future() const;
-};
-
-class OpenXRFutureExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-	static void on_session_destroyed();
-
-	static void on_process();
-
-	static bool is_active();
-
-	static void cancel_future(XrFutureEXT p_future);
-
-private:
-	static void _cancel_future(uint64_t p_future);
-
-	EXT_PROTO_XRRESULT_FUNC3(xrPollFutureEXT, (XrInstance), instance, (const XrFuturePollInfoEXT*),
-		poll_info, (XrFuturePollResultEXT*), poll_result);
-	EXT_PROTO_XRRESULT_FUNC2(
-		xrCancelFutureEXT, (XrInstance), instance, (const XrFutureCancelInfoEXT*), cancel_info);
-
-public:
-	struct Data
-	{
-		bool future_ext = false;
-		HashMap<XrFutureEXT, Ref<OpenXRFutureResult>> futures;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRFutureExtension() = delete;
-	OpenXRFutureExtension(const OpenXRFutureExtension&) = delete;
-	OpenXRFutureExtension& operator=(const OpenXRFutureExtension&) = delete;
-	~OpenXRFutureExtension() = delete;
-};
-
-///////////////////////////////////////////////////////////////////////////
-// OpenXRHandTrackingExtension
-
-class OpenXRHandTrackingExtension final
+class OpenXRExtensions final
 {
 public:
 	enum HandTrackedHands
@@ -285103,199 +281157,112 @@ public:
 		OPENXR_SOURCE_MAX
 	};
 
-	struct HandTracker
-	{
-		bool is_initialized = false;
-		Ref<XRTracker> godot_tracker;
-		HandTrackedSource source = OPENXR_SOURCE_UNKNOWN;
-	};
-
-	static void on_instance_destroyed();
-	static void on_session_destroyed();
-
-	static void* set_system_properties_and_get_next_pointer(void* p_next_pointer);
-	static void on_state_ready();
-	static void on_process();
-	static void on_state_stopping();
-
-	static bool get_active();
-	static const HandTracker* get_hand_tracker(HandTrackedHands p_hand);
-
-private:
-	static void cleanup_hand_tracking();
-
-public:
 	struct Data
 	{
-		HandTracker hand_trackers[OPENXR_MAX_TRACKED_HANDS];
+		// Eye gaze
+		bool eye_gaze_available = false;
+		XrSystemEyeGazeInteractionPropertiesEXT eye_gaze_properties = {};
+		bool init_eye_gaze_pose = false;
+		RID eye_tracker;
+		RID eye_action;
+
+		// User presence
+		bool user_presence_available = false;
+		XrSystemUserPresencePropertiesEXT user_presence_properties = {};
+		bool user_present = true;
+
+		// Refresh rate & perf settings
+		bool display_refresh_rate_ext = false;
+		bool perf_settings_available = false;
+
+		// Debug utils
+		bool debug_utils_ext = false;
+		XrDebugUtilsMessengerEXT default_messenger = XR_NULL_HANDLE;
+
+		// Hand tracking
 		bool hand_tracking_ext = false;
-		bool hand_motion_range_ext = false;
-		bool hand_tracking_source_ext = false;
-		bool unobstructed_data_source = false;
-		bool controller_data_source = false;
+		bool hand_tracking_active = true;
+
+		// Foveation
+#ifdef VULKAN_ENABLED
+		XrVulkanSwapchainCreateInfoMETA meta_vulkan_swapchain_create_info = {};
+#endif
+		String rendering_driver;
+		bool fb_swapchain_update_ext = false;
+		bool fb_foveation_ext = false;
+		bool fb_foveation_configuration_ext = false;
+		bool fb_foveation_vulkan_ext = false;
+		bool meta_foveation_eye_tracked_ext = false;
+		bool meta_vulkan_swapchain_create_info_ext = false;
+		XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
+		XrFoveationDynamicFB foveation_dynamic = XR_FOVEATION_DYNAMIC_DISABLED_FB;
+		bool foveation_with_subsampled_images_enabled = false;
+		bool foveation_with_subsampled_images_active = false;
+		XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb = {};
+		XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties = {};
 	};
 
 	static inline Data* data = nullptr;
 
-	static void initialize();
+	static void initialize(const String& p_rendering_driver = String());
 	static void finalize();
 	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
 
-	OpenXRHandTrackingExtension() = delete;
-	OpenXRHandTrackingExtension(const OpenXRHandTrackingExtension&) = delete;
-	OpenXRHandTrackingExtension& operator=(const OpenXRHandTrackingExtension&) = delete;
-	~OpenXRHandTrackingExtension() = delete;
-};
+	// Eye gaze
+	static bool supports_eye_gaze_interaction();
+	static bool get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose);
 
-///////////////////////////////////////////////////////////////////////////
-// OpenXRRenderModelData & OpenXRRenderModelExtension
+	// User presence
+	static bool is_user_presence_active();
+	static bool is_user_present();
 
-#ifdef MODULE_GLTF_ENABLED
-class OpenXRRenderModelData final : public RefCounted
-{
-private:
-	Ref<GLTFDocument> gltf_document;
-	Ref<GLTFState> gltf_state;
-	PackedStringArray node_names;
+	// Display refresh rate
+	static float get_refresh_rate() { return 0.0f; }
+	static void set_refresh_rate(float p_refresh_rate) { (void)p_refresh_rate; }
 
-public:
-	Ref<GLTFState> get_gltf_state();
+	// Performance settings
+	static bool is_perf_settings_available() { return data != nullptr && data->perf_settings_available; }
+	static void set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level);
+	static void set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level);
 
-	bool parse_gltf_document(const PackedByteArray& p_bytes);
-	Node3D* new_scene_instance();
+	// Debug utils
+	static bool is_debug_utils_active() { return data != nullptr && data->debug_utils_ext; }
+	static void set_object_name(XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name);
+	static void begin_debug_label_region(const char* p_label_name);
+	static void end_debug_label_region();
+	static void insert_debug_label(const char* p_label_name);
 
-	void set_node_names(const PackedStringArray& p_node_names);
-	PackedStringArray get_node_names() const;
-	const String get_node_name(uint32_t p_node_index) const;
+	// Hand tracking
+	static bool is_hand_tracking_active() { return data != nullptr && data->hand_tracking_active; }
 
-	OpenXRRenderModelData();
-	~OpenXRRenderModelData();
-};
-
-class OpenXRRenderModelExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_session_created(const XrSession p_session);
-	static void on_instance_destroyed();
-	static void on_session_destroyed();
-
-	static bool on_event_polled(const XrEventDataBuffer& event);
-	static void on_sync_actions();
-
-	static bool is_active();
-
-	// Render model.
-	static bool has_render_model(RID p_render_model);
-	static RID render_model_create(XrRenderModelIdEXT p_render_model_id);
-	static void render_model_destroy(RID p_render_model);
-
-	static TypedArray<RID> render_model_get_all();
-	static Node3D* render_model_new_scene_instance(RID p_render_model);
-	static PackedStringArray render_model_get_subaction_paths(RID p_render_model);
-	static XrPath render_model_get_top_level_path(RID p_render_model);
-	static String render_model_get_top_level_path_as_string(RID p_render_model);
-	static XRPose::TrackingConfidence render_model_get_confidence(RID p_render_model);
-	static Transform3D render_model_get_root_transform(RID p_render_model);
-	static uint32_t render_model_get_animatable_node_count(RID p_render_model);
-	static String render_model_get_animatable_node_name(RID p_render_model, uint32_t p_index);
-	static bool render_model_is_animatable_node_visible(RID p_render_model, uint32_t p_index);
-	static Transform3D render_model_get_animatable_node_transform(
-		RID p_render_model, uint32_t p_index);
+	// Foveation
+	static bool is_foveation_enabled();
+	static XrFoveationLevelFB get_foveation_level();
+	static void set_foveation_level(XrFoveationLevelFB p_foveation_level);
+	static XrFoveationDynamicFB get_foveation_dynamic();
+	static void set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic);
+	static bool is_foveation_eye_tracked_enabled();
+	static void get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets) { (void)r_offsets; }
+	static void set_foveation_with_subsampled_images_enabled(bool p_enabled);
+	static bool is_foveation_with_subsampled_images_enabled();
 
 private:
-	static void _clear_interaction_data();
-	static bool _update_interaction_data();
+	static XrPerfSettingsLevelEXT level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level);
+	EXT_PROTO_XRRESULT_FUNC3(xrPerfSettingsSetPerformanceLevelEXT, (XrSession), session,
+		(XrPerfSettingsDomainEXT), domain, (XrPerfSettingsLevelEXT), level)
+	EXT_PROTO_XRRESULT_FUNC2(xrSetDebugUtilsObjectNameEXT, (XrInstance), p_instance,
+		(const XrDebugUtilsObjectNameInfoEXT*), p_name_info)
+	EXT_PROTO_XRRESULT_FUNC2(xrSessionBeginDebugUtilsLabelRegionEXT, (XrSession), p_session,
+		(const XrDebugUtilsLabelEXT*), p_label_info)
+	EXT_PROTO_XRRESULT_FUNC1(xrSessionEndDebugUtilsLabelRegionEXT, (XrSession), p_session)
+	EXT_PROTO_XRRESULT_FUNC2(xrSessionInsertDebugUtilsLabelEXT, (XrSession), p_session,
+		(const XrDebugUtilsLabelEXT*), p_label_info)
 
-	struct RenderModel
-	{
-		XrRenderModelIdEXT xr_render_model_id = XR_NULL_RENDER_MODEL_ID_EXT;
-		XrRenderModelEXT xr_render_model = XR_NULL_HANDLE;
-		uint32_t animatable_node_count = 0;
-		Ref<OpenXRRenderModelData> render_model_data;
-		XrSpace xr_space = XR_NULL_HANDLE;
-		XRPose::TrackingConfidence confidence =
-			XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE;
-		Transform3D root_transform;
-		LocalVector<XrRenderModelNodeStateEXT> node_states;
-		XrPath top_level_path = XR_NULL_PATH;
-	};
-
-	static Ref<OpenXRRenderModelData> _get_render_model_data(
-		XrUuidEXT p_cache_id, uint32_t p_animatable_node_count);
-	static Ref<OpenXRRenderModelData> _load_asset(
-		XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count);
-	static void _clear_render_model_data();
-
-	static RID _render_model_create(uint64_t p_render_model_id);
-
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelEXT, (XrSession), session,
-		(const XrRenderModelCreateInfoEXT*), createInfo, (XrRenderModelEXT*), renderModel);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroyRenderModelEXT, (XrRenderModelEXT), renderModel);
-	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelPropertiesEXT, (XrRenderModelEXT), renderModel,
-		(const XrRenderModelPropertiesGetInfoEXT*), getInfo, (XrRenderModelPropertiesEXT*),
-		properties);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelSpaceEXT, (XrSession), session,
-		(const XrRenderModelSpaceCreateInfoEXT*), createInfo, (XrSpace*), space);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateRenderModelAssetEXT, (XrSession), session,
-		(const XrRenderModelAssetCreateInfoEXT*), createInfo, (XrRenderModelAssetEXT*), asset);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroyRenderModelAssetEXT, (XrRenderModelAssetEXT), asset);
-	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelAssetDataEXT, (XrRenderModelAssetEXT), asset,
-		(const XrRenderModelAssetDataGetInfoEXT*), getInfo, (XrRenderModelAssetDataEXT*), buffer);
-	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelAssetPropertiesEXT, (XrRenderModelAssetEXT), asset,
-		(const XrRenderModelAssetPropertiesGetInfoEXT*), getInfo,
-		(XrRenderModelAssetPropertiesEXT*), properties);
-	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelStateEXT, (XrRenderModelEXT), renderModel,
-		(const XrRenderModelStateGetInfoEXT*), getInfo, (XrRenderModelStateEXT*), state);
-	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateInteractionRenderModelIdsEXT, (XrSession), session,
-		(const XrInteractionRenderModelIdsEnumerateInfoEXT*), getInfo, (uint32_t),
-		renderModelIdCapacityInput, (uint32_t*), renderModelIdCountOutput, (XrRenderModelIdEXT*),
-		renderModelIds);
-	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateRenderModelSubactionPathsEXT, (XrRenderModelEXT),
-		renderModel, (const XrInteractionRenderModelSubactionPathInfoEXT*), info, (uint32_t),
-		pathCapacityInput, (uint32_t*), pathCountOutput, (XrPath*), paths);
-	EXT_PROTO_XRRESULT_FUNC3(xrGetRenderModelPoseTopLevelUserPathEXT, (XrRenderModelEXT),
-		renderModel, (const XrInteractionRenderModelTopLevelUserPathGetInfoEXT*), info, (XrPath*),
-		topLevelUserPath);
-
-	EXT_PROTO_XRRESULT_FUNC4(xrLocateSpace, (XrSpace), space, (XrSpace), baseSpace, (XrTime), time,
-		(XrSpaceLocation*), location);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpace, (XrSpace), space);
-	EXT_PROTO_XRRESULT_FUNC5(xrPathToString, (XrInstance), instance, (XrPath), path, (uint32_t),
-		bufferCapacityInput, (uint32_t*), bufferCountOutput, (char*), buffer);
-
-public:
-	struct Data
-	{
-		bool uuid_ext = false;
-		bool render_model_ext = false;
-		bool interaction_render_model_ext = false;
-		bool xr_sync_has_run = false;
-		bool _interaction_data_dirty = true;
-		HashMap<XrRenderModelIdEXT, RID> interaction_render_models;
-		Vector<XrPath> toplevel_paths;
-		RID_Owner<RenderModel, true> render_model_owner;
-		HashMap<XrUuidEXT, Ref<OpenXRRenderModelData>, HashMapHasherXrUuidEXT>
-			render_model_data_cache;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRRenderModelExtension() = delete;
-	OpenXRRenderModelExtension(const OpenXRRenderModelExtension&) = delete;
-	OpenXRRenderModelExtension& operator=(const OpenXRRenderModelExtension&) = delete;
-	~OpenXRRenderModelExtension() = delete;
+	OpenXRExtensions() = delete;
+	OpenXRExtensions(const OpenXRExtensions&) = delete;
+	OpenXRExtensions& operator=(const OpenXRExtensions&) = delete;
+	~OpenXRExtensions() = delete;
 };
-#endif // MODULE_GLTF_ENABLED
-
-#include <openxr/openxr.h>
-#include "servers/display/display_server.h"
 
 class OpenXRInteractionProfileExtension final
 {
@@ -285373,953 +281340,14 @@ public:
 	static HashMap<String, bool*> get_all_requested_extensions(XrVersion p_version);
 };
 
-class OpenXRDpadBindingModifier final : public OpenXRBindingModifier
-{
-private:
-	PackedByteArray dpad_bindings_data;
-	XrInteractionProfileDpadBindingEXT* dpad_bindings = nullptr;
-	String input_path;
-	Ref<OpenXRActionSet> action_set;
-	Ref<OpenXRHapticBase> on_haptic;
-	Ref<OpenXRHapticBase> off_haptic;
-
-public:
-	OpenXRDpadBindingModifier();
-
-	void set_action_set(const Ref<OpenXRActionSet>& p_action_set);
-	Ref<OpenXRActionSet> get_action_set() const;
-
-	void set_input_path(const String& p_input_path);
-	String get_input_path() const;
-
-	void set_threshold(float p_threshold);
-	float get_threshold() const;
-
-	void set_threshold_released(float p_threshold);
-	float get_threshold_released() const;
-
-	void set_center_region(float p_center_region);
-	float get_center_region() const;
-
-	void set_wedge_angle(float p_wedge_angle);
-	float get_wedge_angle() const;
-
-	void set_wedge_angle_deg(float p_wedge_angle);
-	float get_wedge_angle_deg() const;
-
-	void set_is_sticky(bool p_sticky);
-	bool get_is_sticky() const;
-
-	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
-	Ref<OpenXRHapticBase> get_on_haptic() const;
-
-	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
-	Ref<OpenXRHapticBase> get_off_haptic() const;
-
-	virtual String get_description() const override { return "DPad modifier"; }
-	virtual PackedByteArray get_ip_modification() override;
-};
-
-class OpenXRAnalogThresholdModifier final : public OpenXRBindingModifier
-{
-private:
-	XrInteractionProfileAnalogThresholdVALVE analog_threshold;
-	Ref<OpenXRHapticBase> on_haptic;
-	Ref<OpenXRHapticBase> off_haptic;
-
-public:
-	OpenXRAnalogThresholdModifier();
-
-	void set_on_threshold(float p_threshold);
-	float get_on_threshold() const;
-
-	void set_off_threshold(float p_threshold);
-	float get_off_threshold() const;
-
-	void set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic);
-	Ref<OpenXRHapticBase> get_on_haptic() const;
-
-	void set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic);
-	Ref<OpenXRHapticBase> get_off_haptic() const;
-
-	virtual String get_description() const override { return "Analog threshold modifier"; }
-	virtual PackedByteArray get_ip_modification() override;
-};
-
-#include <openxr/openxr.h>
-#include "servers/display/display_server.h"
-
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/display/display_server.h"
-#endif
-
-#define XR_NULL_ENTITY 0x7FFFFFFF
-
-// Persistence configuration (folded into OpenXRStructureBase)
-using OpenXRSpatialContextPersistenceConfig = OpenXRStructureBase;
-
-// Consolidated capability configuration wrapper for XrSpatialCapabilityConfigurationBaseHeaderEXT
-class OpenXRSpatialCapabilityConfigurationBaseHeader final : public RefCounted
-{
-public:
-	enum CapabilityType
-	{
-		CAPABILITY_NONE,
-		CAPABILITY_ANCHOR,
-		CAPABILITY_PLANE_TRACKING,
-		CAPABILITY_QR_CODE,
-		CAPABILITY_MICRO_QR_CODE,
-		CAPABILITY_ARUCO,
-		CAPABILITY_APRIL_TAG,
-	};
-
-	enum ArucoDict
-	{
-		ARUCO_DICT_4X4_50 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT,
-		ARUCO_DICT_4X4_100 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_100_EXT,
-		ARUCO_DICT_4X4_250 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_250_EXT,
-		ARUCO_DICT_4X4_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_4X4_1000_EXT,
-		ARUCO_DICT_5X5_50 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_50_EXT,
-		ARUCO_DICT_5X5_100 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_100_EXT,
-		ARUCO_DICT_5X5_250 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_250_EXT,
-		ARUCO_DICT_5X5_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_5X5_1000_EXT,
-		ARUCO_DICT_6X6_50 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_50_EXT,
-		ARUCO_DICT_6X6_100 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_100_EXT,
-		ARUCO_DICT_6X6_250 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_250_EXT,
-		ARUCO_DICT_6X6_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_6X6_1000_EXT,
-		ARUCO_DICT_7X7_50 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_50_EXT,
-		ARUCO_DICT_7X7_100 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_100_EXT,
-		ARUCO_DICT_7X7_250 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_250_EXT,
-		ARUCO_DICT_7X7_1000 = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT,
-	};
-
-	enum AprilTagDict
-	{
-		APRIL_TAG_DICT_16H5 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT,
-		APRIL_TAG_DICT_25H9 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_25H9_EXT,
-		APRIL_TAG_DICT_36H10 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H10_EXT,
-		APRIL_TAG_DICT_36H11 = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT,
-	};
-
-	OpenXRSpatialCapabilityConfigurationBaseHeader(CapabilityType p_capability_type = CAPABILITY_NONE);
-	~OpenXRSpatialCapabilityConfigurationBaseHeader();
-
-	void set_capability_type(CapabilityType p_capability_type);
-	CapabilityType get_capability_type() const { return capability_type; }
-
-	bool has_valid_configuration() const;
-	uint64_t _get_configurationgd();
-	XrSpatialCapabilityConfigurationBaseHeaderEXT* get_configuration();
-
-	Vector<XrSpatialComponentTypeEXT> get_enabled_components() const { return enabled_components; }
-
-	// Plane tracking configuration queries
-	bool get_supports_mesh_2d();
-	bool get_supports_polygons();
-	bool get_supports_labels();
-
-	// ArUco dictionary configuration
-	void set_aruco_dict(XrSpatialMarkerArucoDictEXT p_dict);
-	XrSpatialMarkerArucoDictEXT get_aruco_dict() const;
-
-	// AprilTag dictionary configuration
-	void set_april_dict(XrSpatialMarkerAprilTagDictEXT p_dict);
-	XrSpatialMarkerAprilTagDictEXT get_april_dict() const;
-
-private:
-	CapabilityType capability_type = CAPABILITY_NONE;
-	int supports_mesh_2d = -1;
-	int supports_polygons = -1;
-	int supports_labels = -1;
-	XrSpatialMarkerArucoDictEXT aruco_dict = XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT;
-	XrSpatialMarkerAprilTagDictEXT april_dict = XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT;
-
-	Vector<XrSpatialComponentTypeEXT> enabled_components;
-
-	union ConfigPayload
-	{
-		XrSpatialCapabilityConfigurationBaseHeaderEXT base;
-		XrSpatialCapabilityConfigurationAnchorEXT anchor;
-		XrSpatialCapabilityConfigurationPlaneTrackingEXT plane;
-		XrSpatialCapabilityConfigurationQrCodeEXT qrcode;
-		XrSpatialCapabilityConfigurationMicroQrCodeEXT micro_qrcode;
-		XrSpatialCapabilityConfigurationArucoMarkerEXT aruco;
-		XrSpatialCapabilityConfigurationAprilTagEXT april_tag;
-
-		ConfigPayload()
-			: base{XR_TYPE_UNKNOWN, nullptr, XR_SPATIAL_CAPABILITY_MAX_ENUM_EXT, 0, nullptr}
-		{
-		}
-	} config;
-
-	PackedInt64Array _get_enabled_components() const;
-	void _set_aruco_dict(ArucoDict p_dict);
-	ArucoDict _get_aruco_dict() const;
-	void _set_april_dict(AprilTagDict p_dict);
-	AprilTagDict _get_april_dict() const;
-};
-
-// Consolidated wrapper class for spatial component data returned by discovery and update queries
-class OpenXRSpatialComponentData final : public RefCounted
-{
-public:
-	enum ComponentKind
-	{
-		COMPONENT_NONE,
-		COMPONENT_QUERY_RESULT,
-		COMPONENT_BOUNDED_2D,
-		COMPONENT_BOUNDED_3D,
-		COMPONENT_PARENT,
-		COMPONENT_MESH_2D,
-		COMPONENT_MESH_3D,
-		COMPONENT_ANCHOR,
-		COMPONENT_PERSISTENCE,
-		COMPONENT_PLANE_ALIGNMENT,
-		COMPONENT_POLYGON_2D,
-		COMPONENT_PLANE_SEMANTIC_LABEL,
-		COMPONENT_MARKER,
-	};
-
-	enum PlaneAlignment
-	{
-		PLANE_ALIGNMENT_HORIZONTAL_UPWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT,
-		PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD = XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT,
-		PLANE_ALIGNMENT_VERTICAL = XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT,
-		PLANE_ALIGNMENT_ARBITRARY = XR_SPATIAL_PLANE_ALIGNMENT_ARBITRARY_EXT,
-	};
-
-	enum PlaneSemanticLabel
-	{
-		PLANE_SEMANTIC_LABEL_UNCATEGORIZED = XR_SPATIAL_PLANE_SEMANTIC_LABEL_UNCATEGORIZED_EXT,
-		PLANE_SEMANTIC_LABEL_FLOOR = XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT,
-		PLANE_SEMANTIC_LABEL_WALL = XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT,
-		PLANE_SEMANTIC_LABEL_CEILING = XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT,
-		PLANE_SEMANTIC_LABEL_TABLE = XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT,
-	};
-
-	enum MarkerType
-	{
-		MARKER_TYPE_UNKNOWN,
-		MARKER_TYPE_QRCODE,
-		MARKER_TYPE_MICRO_QRCODE,
-		MARKER_TYPE_ARUCO,
-		MARKER_TYPE_APRIL_TAG,
-		MARKER_TYPE_MAX
-	};
-
-	OpenXRSpatialComponentData(ComponentKind p_kind = COMPONENT_NONE);
-	~OpenXRSpatialComponentData();
-
-	OpenXRSpatialComponentData(const OpenXRSpatialComponentData&) = delete;
-	OpenXRSpatialComponentData& operator=(const OpenXRSpatialComponentData&) = delete;
-
-	void set_component_kind(ComponentKind p_kind);
-	ComponentKind get_component_kind() const { return component_kind; }
-
-	void set_capacity(uint32_t p_capacity);
-	int64_t get_capacity() const { return capacity; }
-
-	int64_t _get_component_typegd() const;
-	XrSpatialComponentTypeEXT get_component_type() const;
-	void* get_structure_data(void* p_next);
-
-	// COMPONENT_QUERY_RESULT accessors
-	XrSpatialEntityIdEXT get_entity_id(int64_t p_index) const;
-	XrSpatialEntityTrackingStateEXT get_entity_state(int64_t p_index) const;
-	static String get_entity_tracking_state_name(XrSpatialEntityTrackingStateEXT p_tracking_state);
-
-	// COMPONENT_BOUNDED_2D / COMPONENT_BOUNDED_3D accessors
-	Transform3D get_center_pose(int64_t p_index) const;
-	Transform3D get_center_pose_2d(int64_t p_index) const;
-	Transform3D get_center_pose_3d(int64_t p_index) const;
-	Vector2 get_size_2d(int64_t p_index) const;
-	Vector3 get_size_3d(int64_t p_index) const;
-
-	// COMPONENT_PARENT accessors
-	RID get_parent(int64_t p_index) const;
-
-	// COMPONENT_MESH_2D / COMPONENT_MESH_3D / COMPONENT_POLYGON_2D accessors
-	Transform3D get_transform(int64_t p_index) const;
-	PackedVector2Array get_vertices(RID p_snapshot, int64_t p_index) const;
-	PackedInt32Array get_indices(RID p_snapshot, int64_t p_index) const;
-	Ref<Mesh> get_mesh(int64_t p_index) const;
-
-	// COMPONENT_ANCHOR accessors
-	Transform3D get_entity_pose(int64_t p_index) const;
-
-	// COMPONENT_PERSISTENCE accessors
-	XrUuid get_persistent_uuid(int64_t p_index) const;
-	XrSpatialPersistenceStateEXT get_persistent_state(int64_t p_index) const;
-	static String get_persistence_state_name(XrSpatialPersistenceStateEXT p_state);
-
-	// COMPONENT_PLANE_ALIGNMENT accessors
-	XrSpatialPlaneAlignmentEXT get_plane_alignment(int64_t p_index) const;
-
-	// COMPONENT_PLANE_SEMANTIC_LABEL accessors
-	XrSpatialPlaneSemanticLabelEXT get_plane_semantic_label(int64_t p_index) const;
-
-	// COMPONENT_MARKER accessors
-	MarkerType get_marker_type(int64_t p_index) const;
-	uint32_t get_marker_id(int64_t p_index) const;
-	XrSpatialBufferEXT get_marker_data(int64_t p_index) const;
-
-private:
-	ComponentKind component_kind = COMPONENT_NONE;
-	uint32_t capacity = 0;
-	void* data_ptr = nullptr;
-	XrSpatialEntityTrackingStateEXT* entity_states_ptr = nullptr;
-
-	union StructurePayload
-	{
-		XrSpatialComponentDataQueryResultEXT query_result;
-		XrSpatialComponentBounded2DListEXT bounded2d_list;
-		XrSpatialComponentBounded3DListEXT bounded3d_list;
-		XrSpatialComponentParentListEXT parent_list;
-		XrSpatialComponentMesh2DListEXT mesh2d_list;
-		XrSpatialComponentMesh3DListEXT mesh3d_list;
-		XrSpatialComponentAnchorListEXT anchor_list;
-		XrSpatialComponentPersistenceListEXT persistence_list;
-		XrSpatialComponentPlaneAlignmentListEXT plane_alignment_list;
-		XrSpatialComponentPolygon2DListEXT polygon2d_list;
-		XrSpatialComponentPlaneSemanticLabelListEXT plane_semantic_label_list;
-		XrSpatialComponentMarkerListEXT marker_list;
-
-		StructurePayload()
-			: query_result{XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT, nullptr, 0, 0, nullptr,
-				  0, 0, nullptr}
-		{
-		}
-	} structure;
-
-	void _free_buffers();
-	void _init_structure_header();
-
-	uint64_t _get_entity_id(int64_t p_index) const;
-	String _get_persistent_uuid(int64_t p_index) const;
-	uint64_t _get_persistent_state(int64_t p_index) const;
-	PlaneAlignment _get_plane_alignment(int64_t p_index) const;
-	PlaneSemanticLabel _get_plane_semantic_label(int64_t p_index) const;
-};
-
-// Unified tracker for spatial entities (generic, anchor, plane, marker), composing XRTracker
-class OpenXRSpatialEntityTracker final : public RefCounted
-{
-public:
-	enum EntityType
-	{
-		ENTITY_GENERIC,
-		ENTITY_ANCHOR,
-		ENTITY_PLANE,
-		ENTITY_MARKER,
-	};
-
-	enum EntityTrackingState
-	{
-		ENTITY_TRACKING_STATE_STOPPED = XR_SPATIAL_ENTITY_TRACKING_STATE_STOPPED_EXT,
-		ENTITY_TRACKING_STATE_PAUSED = XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT,
-		ENTITY_TRACKING_STATE_TRACKING = XR_SPATIAL_ENTITY_TRACKING_STATE_TRACKING_EXT,
-	};
-
-	OpenXRSpatialEntityTracker(EntityType p_entity_type = ENTITY_GENERIC);
-	~OpenXRSpatialEntityTracker() override;
-
-	const Ref<XRTracker>& get_xr_tracker() const { return xr_tracker; }
-
-	// Composed XRTracker forwarding helpers
-	void set_tracker_type(XRServer::TrackerType p_type) { xr_tracker->set_tracker_type(p_type); }
-	XRServer::TrackerType get_tracker_type() const { return xr_tracker->get_tracker_type(); }
-	void set_tracker_name(const String& p_name) { xr_tracker->set_tracker_name(p_name); }
-	String get_tracker_name() const { return xr_tracker->get_tracker_name(); }
-	void set_tracker_desc(const String& p_desc) { xr_tracker->set_tracker_desc(p_desc); }
-	String get_tracker_desc() const { return xr_tracker->get_tracker_desc(); }
-	void set_has_tracking_data(bool p_has_tracking_data)
-	{
-		xr_tracker->set_has_tracking_data(p_has_tracking_data);
-	}
-	bool get_has_tracking_data() const { return xr_tracker->get_has_tracking_data(); }
-	bool has_pose(const String& p_action_name) const { return xr_tracker->has_pose(p_action_name); }
-	Ref<XRPose> get_pose(const String& p_action_name) const
-	{
-		return xr_tracker->get_pose(p_action_name);
-	}
-	void invalidate_pose(const String& p_action_name)
-	{
-		xr_tracker->invalidate_pose(p_action_name);
-	}
-	void set_pose(const String& p_action_name, const Transform3D& p_transform,
-		const Vector3& p_linear_velocity, const Vector3& p_angular_velocity,
-		const XRPose::TrackingConfidence p_tracking_confidence =
-			XRPose::XR_TRACKING_CONFIDENCE_HIGH)
-	{
-		xr_tracker->set_pose(p_action_name, p_transform, p_linear_velocity, p_angular_velocity,
-			p_tracking_confidence);
-	}
-
-	void set_entity_type(EntityType p_entity_type) { entity_type = p_entity_type; }
-	EntityType get_entity_type() const { return entity_type; }
-
-	void set_spatial_context(const RID& p_spatial_context);
-	RID get_spatial_context() const;
-
-	void set_entity(const RID& p_entity);
-	RID get_entity() const;
-
-	void set_spatial_tracking_state(const XrSpatialEntityTrackingStateEXT p_state);
-	XrSpatialEntityTrackingStateEXT get_spatial_tracking_state() const;
-
-	void add_next(Ref<OpenXRStructureBase> p_next);
-	void remove_next(Ref<OpenXRStructureBase> p_next);
-	Ref<OpenXRStructureBase> get_next() const;
-
-	// Anchor fields & methods
-	bool has_uuid() const;
-	XrUuid get_uuid() const;
-	void set_uuid(const XrUuid& p_uuid);
-
-	// Shared Plane / Marker bounds
-	void set_bounds_size(const Vector2& p_bounds_size);
-	Vector2 get_bounds_size() const;
-
-	// Plane fields & methods
-	void set_plane_alignment(OpenXRSpatialComponentData::PlaneAlignment p_plane_alignment);
-	OpenXRSpatialComponentData::PlaneAlignment get_plane_alignment() const;
-
-	void set_plane_label(const String& p_plane_label);
-	String get_plane_label() const;
-
-	void set_mesh_data(const Transform3D& p_origin, const PackedVector2Array& p_vertices,
-		const PackedInt32Array& p_indices = PackedInt32Array());
-	void clear_mesh_data();
-
-	Transform3D get_mesh_offset() const;
-	Ref<Mesh> get_mesh() { return mesh.mesh; }
-#ifndef PHYSICS_3D_DISABLED
-	Ref<Shape3D> get_shape(real_t p_thickness = 0.01);
-#endif
-
-	// Marker fields & methods
-	void set_marker_type(OpenXRSpatialComponentData::MarkerType p_marker_type);
-	OpenXRSpatialComponentData::MarkerType get_marker_type() const;
-
-	void set_marker_id(uint32_t p_id);
-	uint32_t get_marker_id() const;
-
-private:
-	Ref<XRTracker> xr_tracker;
-	EntityType entity_type = ENTITY_GENERIC;
-	RID spatial_context;
-	RID spatial_entity;
-	XrSpatialEntityTrackingStateEXT spatial_tracking_state =
-		XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT;
-	Ref<OpenXRStructureBase> next;
-
-	// Anchor data
-	XrUuid uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	// Plane & Marker data
-	Vector2 bounds_size;
-	OpenXRSpatialComponentData::PlaneAlignment plane_alignment =
-		OpenXRSpatialComponentData::PLANE_ALIGNMENT_HORIZONTAL_UPWARD;
-	String plane_label;
-
-	struct MeshData
-	{
-		bool has_mesh_data = false;
-		Transform3D origin;
-		PackedVector2Array vertices;
-		PackedInt32Array indices;
-
-		Ref<Mesh> mesh;
-#ifndef PHYSICS_3D_DISABLED
-		Ref<Shape3D> shape3d;
-#endif
-	} mesh;
-
-	struct Edge
-	{
-		int32_t a;
-		int32_t b;
-
-		static _FORCE_INLINE_ uint32_t hash(const Edge& p_edge)
-		{
-			uint32_t h = hash_murmur3_one_32(p_edge.a);
-			return hash_murmur3_one_32(p_edge.b, h);
-		}
-
-		bool operator==(const Edge& p_edge) const { return (a == p_edge.a && b == p_edge.b); }
-
-		Edge(int32_t p_a = 0, int32_t p_b = 0)
-		{
-			a = p_a;
-			b = p_b;
-			if (a < b) {
-				SWAP(a, b);
-			}
-		}
-	};
-
-	OpenXRSpatialComponentData::MarkerType marker_type =
-		OpenXRSpatialComponentData::MARKER_TYPE_UNKNOWN;
-	uint32_t marker_id = 0;
-
-	void _set_spatial_tracking_state(const EntityTrackingState p_state);
-	EntityTrackingState _get_spatial_tracking_state() const;
-
-	String _get_uuid() const;
-	void _set_uuid(const String& p_uuid);
-	static bool uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b);
-};
-
-using OpenXRAnchorTracker = OpenXRSpatialEntityTracker;
-using OpenXRMarkerTracker = OpenXRSpatialEntityTracker;
-using OpenXRPlaneTracker = OpenXRSpatialEntityTracker;
-
-// Spatial entity extension
-class OpenXRSpatialEntityExtension final
-{
-public:
-	enum Capability
-	{
-		CAPABILITY_PLANE_TRACKING = XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
-		CAPABILITY_MARKER_TRACKING_QR_CODE = XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,
-		CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE =
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT,
-		CAPABILITY_MARKER_TRACKING_ARUCO_MARKER =
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,
-		CAPABILITY_MARKER_TRACKING_APRIL_TAG = XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,
-		CAPABILITY_ANCHOR = XR_SPATIAL_CAPABILITY_ANCHOR_EXT,
-	};
-
-	enum ComponentType
-	{
-		COMPONENT_TYPE_BOUNDED_2D = XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT,
-		COMPONENT_TYPE_BOUNDED_3D = XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT,
-		COMPONENT_TYPE_PARENT = XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT,
-		COMPONENT_TYPE_MESH_3D = XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT,
-		COMPONENT_TYPE_PLANE_ALIGNMENT = XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT,
-		COMPONENT_TYPE_MESH_2D = XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT,
-		COMPONENT_TYPE_POLYGON_2D = XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT,
-		COMPONENT_TYPE_PLANE_SEMANTIC_LABEL = XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT,
-		COMPONENT_TYPE_MARKER = XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT,
-		COMPONENT_TYPE_ANCHOR = XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT,
-		COMPONENT_TYPE_PERSISTENCE = XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT,
-	};
-
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-	static void on_session_destroyed();
-
-	static bool on_event_polled(const XrEventDataBuffer& event);
-
-	static bool get_active();
-	static bool supports_capability(XrSpatialCapabilityEXT p_capability);
-	static bool supports_component_type(
-		XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type);
-
-	// Spatial contexts
-	static bool get_spatial_context_ready(RID p_spatial_context);
-	static void free_spatial_context(RID p_spatial_context);
-	static XrSpatialContextEXT get_spatial_context_handle(RID p_spatial_context);
-
-	// Update query
-	static RID update_spatial_entities(RID p_spatial_context, const LocalVector<RID>& p_entities,
-		const LocalVector<XrSpatialComponentTypeEXT>& p_component_types,
-		Ref<OpenXRStructureBase> p_next);
-
-	// Snapshot data
-	static void free_spatial_snapshot(RID p_spatial_snapshot);
-	static XrSpatialSnapshotEXT get_spatial_snapshot_handle(RID p_spatial_snapshot);
-	static RID get_spatial_snapshot_context(RID p_spatial_snapshot);
-
-	// Buffers from snapshot
-	static String get_string(RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static PackedByteArray get_uint8_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static Vector<uint16_t> get_uint16_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static Vector<uint32_t> get_uint32_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static PackedFloat32Array get_float_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static PackedVector2Array get_vector2_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-	static PackedVector3Array get_vector3_buffer(
-		RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id);
-
-	// Entities
-	static RID find_spatial_entity(XrSpatialEntityIdEXT p_entity_id);
-	static RID add_spatial_entity(
-		RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id, XrSpatialEntityEXT p_entity);
-	static RID make_spatial_entity(RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id);
-	static XrSpatialEntityIdEXT get_spatial_entity_id(RID p_entity);
-	static RID get_spatial_entity_context(RID p_entity);
-	static void free_spatial_entity(RID p_entity);
-
-	static String get_spatial_capability_name(XrSpatialCapabilityEXT p_capability);
-	static String get_spatial_component_type_name(XrSpatialComponentTypeEXT p_component_type);
-	static String get_spatial_feature_name(XrSpatialCapabilityFeatureEXT p_feature);
-
-private:
-	// Capabilities
-	struct SpatialEntityCapabality
-	{
-		Vector<XrSpatialComponentTypeEXT> component_types;
-		Vector<XrSpatialCapabilityFeatureEXT> features;
-	};
-	static bool _load_capabilities();
-
-	static bool _supports_capability(Capability p_capability);
-	static bool _supports_component_type(Capability p_capability, ComponentType p_component_type);
-
-	// Spatial context
-	struct SpatialContextData
-	{
-		XrSpatialContextEXT spatial_context = XR_NULL_HANDLE;
-	};
-
-	static uint64_t _get_spatial_context_handle(RID p_spatial_context);
-
-	// Snapshot data
-	struct SpatialSnapshotData
-	{
-		RID spatial_context;
-		XrSpatialSnapshotEXT spatial_snapshot = XR_NULL_HANDLE;
-	};
-
-	static uint64_t _get_spatial_snapshot_handle(RID p_spatial_snapshot);
-
-	// Buffers from snapshot
-	static String _get_string(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedByteArray _get_uint8_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedInt32Array _get_uint16_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedInt32Array _get_uint32_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedFloat32Array _get_float_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedVector2Array _get_vector2_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-	static PackedVector3Array _get_vector3_buffer(RID p_spatial_snapshot, uint64_t p_buffer_id);
-
-	// Entities
-	struct SpatialEntityData
-	{
-		RID spatial_context;
-		XrSpatialEntityIdEXT entity_id = XR_NULL_ENTITY;
-		XrSpatialEntityEXT entity = XR_NULL_HANDLE;
-	};
-
-	static RID _find_entity(uint64_t p_entity_id);
-	static RID _add_entity(RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity);
-	static RID _make_entity(RID p_spatial_context, uint64_t p_entity_id);
-	static uint64_t _get_entity_id(RID p_entity);
-
-	// OpenXR API call wrappers
-	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateSpatialCapabilitiesEXT, (XrInstance), instance,
-		(XrSystemId), system_id, (uint32_t), capability_capacity_input, (uint32_t*),
-		capability_count_output, (XrSpatialCapabilityEXT*), capabilities);
-	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSpatialCapabilityComponentTypesEXT, (XrInstance), instance,
-		(XrSystemId), systemId, (XrSpatialCapabilityEXT), capability,
-		(XrSpatialCapabilityComponentTypesEXT*), capability_components);
-	EXT_PROTO_XRRESULT_FUNC6(xrEnumerateSpatialCapabilityFeaturesEXT, (XrInstance), instance,
-		(XrSystemId), systemId, (XrSpatialCapabilityEXT), capability, (uint32_t),
-		capability_feature_capacity_input, (uint32_t*), capability_feature_count_output,
-		(XrSpatialCapabilityFeatureEXT*), capability_features);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialContextAsyncEXT, (XrSession), session,
-		(const XrSpatialContextCreateInfoEXT*), create_info, (XrFutureEXT*), future);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialContextCompleteEXT, (XrSession), session, (XrFutureEXT),
-		future, (XrCreateSpatialContextCompletionEXT*), completion);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialContextEXT, (XrSpatialContextEXT), spatial_context);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialDiscoverySnapshotAsyncEXT, (XrSpatialContextEXT),
-		spatial_context, (const XrSpatialDiscoverySnapshotCreateInfoEXT*), create_info,
-		(XrFutureEXT*), future);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialDiscoverySnapshotCompleteEXT, (XrSpatialContextEXT),
-		spatial_context, (const XrCreateSpatialDiscoverySnapshotCompletionInfoEXT*),
-		create_snapshot_completion_info, (XrCreateSpatialDiscoverySnapshotCompletionEXT*),
-		completion);
-	EXT_PROTO_XRRESULT_FUNC3(xrQuerySpatialComponentDataEXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialComponentDataQueryConditionEXT*), query_condition,
-		(XrSpatialComponentDataQueryResultEXT*), query_result);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialSnapshotEXT, (XrSpatialSnapshotEXT), snapshot);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialEntityFromIdEXT, (XrSpatialContextEXT), spatial_context,
-		(const XrSpatialEntityFromIdCreateInfoEXT*), create_info, (XrSpatialEntityEXT*),
-		spatial_entity);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialEntityEXT, (XrSpatialEntityEXT), spatial_entity);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialUpdateSnapshotEXT, (XrSpatialContextEXT),
-		spatial_context, (const XrSpatialUpdateSnapshotCreateInfoEXT*), createInfo,
-		(XrSpatialSnapshotEXT*), snapshot);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferStringEXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (char*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint8EXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (uint8_t*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint16EXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (uint16_t*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferUint32EXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (uint32_t*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferFloatEXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (float*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferVector2fEXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (XrVector2f*), buffer);
-	EXT_PROTO_XRRESULT_FUNC5(xrGetSpatialBufferVector3fEXT, (XrSpatialSnapshotEXT), snapshot,
-		(const XrSpatialBufferGetInfoEXT*), info, (uint32_t), buffer_capacity_input, (uint32_t*),
-		buffer_count_output, (XrVector3f*), buffer);
-
-public:
-	struct Data
-	{
-		bool spatial_entity_ext = false;
-		HashMap<XrSpatialCapabilityEXT, SpatialEntityCapabality> supported_capabilities;
-		int capabilities_load_state = 0;
-		RID_Owner<SpatialContextData> spatial_context_owner;
-		RID_Owner<SpatialSnapshotData> spatial_snapshot_owner;
-		RID_Owner<SpatialEntityData> spatial_entity_owner;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRSpatialEntityExtension() = delete;
-	OpenXRSpatialEntityExtension(const OpenXRSpatialEntityExtension&) = delete;
-	OpenXRSpatialEntityExtension& operator=(const OpenXRSpatialEntityExtension&) = delete;
-	~OpenXRSpatialEntityExtension() = delete;
-};
-
-// (Persistent) anchor logic
-class OpenXRSpatialAnchorCapability final
-{
-public:
-	enum PersistenceScope
-	{
-		PERSISTENCE_SCOPE_SYSTEM_MANAGED = XR_SPATIAL_PERSISTENCE_SCOPE_SYSTEM_MANAGED_EXT,
-		PERSISTENCE_SCOPE_LOCAL_ANCHORS = XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT,
-	};
-
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void on_instance_destroyed();
-	static void on_session_created(const XrSession p_session);
-	static void on_session_destroyed();
-
-	static void on_process();
-
-	static bool is_spatial_anchor_supported();
-	static bool is_spatial_persistence_supported();
-
-	// Persistence scopes
-	static bool is_persistence_scope_supported(XrSpatialPersistenceScopeEXT p_scope);
-
-	static XrSpatialPersistenceContextEXT get_persistence_context_handle(RID p_persistence_context);
-	static void free_persistence_context(RID p_persistence_context);
-
-	static Ref<OpenXRAnchorTracker> create_new_anchor(const Transform3D& p_transform,
-		RID p_spatial_context = RID(),
-		Ref<OpenXRStructureBase> p_next = Ref<OpenXRStructureBase>());
-	static void remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker);
-
-	static String get_spatial_persistence_scope_name(XrSpatialPersistenceScopeEXT p_scope);
-	static String get_spatial_persistence_context_result_name(
-		XrSpatialPersistenceContextResultEXT p_result);
-
-private:
-	static bool _load_supported_persistence_scopes();
-
-	struct PersistenceContextData
-	{
-		XrSpatialPersistenceScopeEXT scope;
-		XrSpatialPersistenceContextEXT persistence_context = XR_NULL_HANDLE;
-	};
-
-	static bool _is_persistence_scope_supported(PersistenceScope p_scope);
-	static uint64_t _get_persistence_context_handle(RID p_persistence_context);
-
-	static void _on_persistence_context_completed(RID p_persistence_context);
-	static Ref<OpenXRFutureResult> _create_spatial_context();
-	static void _on_spatial_context_created(RID p_spatial_context);
-	static void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-	EXT_PROTO_XRRESULT_FUNC4(xrCreateSpatialAnchorEXT, (XrSpatialContextEXT), spatialContext,
-		(const XrSpatialAnchorCreateInfoEXT*), create_info, (XrSpatialEntityIdEXT*),
-		anchor_entity_id, (XrSpatialEntityEXT*), anchor_entity);
-
-	EXT_PROTO_XRRESULT_FUNC5(xrEnumerateSpatialPersistenceScopesEXT, (XrInstance), instance,
-		(XrSystemId), system_id, (uint32_t), persistence_scope_capacity_input, (uint32_t*),
-		persistence_scope_count_output, (XrSpatialPersistenceScopeEXT*), persistence_scopes);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialPersistenceContextAsyncEXT, (XrSession), session,
-		(const XrSpatialPersistenceContextCreateInfoEXT*), create_info, (XrFutureEXT*), future);
-	EXT_PROTO_XRRESULT_FUNC3(xrCreateSpatialPersistenceContextCompleteEXT, (XrSession), session,
-		(XrFutureEXT), future, (XrCreateSpatialPersistenceContextCompletionEXT*), completion);
-	EXT_PROTO_XRRESULT_FUNC1(xrDestroySpatialPersistenceContextEXT,
-		(XrSpatialPersistenceContextEXT), persistence_context);
-
-	EXT_PROTO_XRRESULT_FUNC3(xrPersistSpatialEntityAsyncEXT, (XrSpatialPersistenceContextEXT),
-		persistence_context, (const XrSpatialEntityPersistInfoEXT*), persist_info, (XrFutureEXT*),
-		future);
-	EXT_PROTO_XRRESULT_FUNC3(xrPersistSpatialEntityCompleteEXT, (XrSpatialPersistenceContextEXT),
-		persistence_context, (XrFutureEXT), future, (XrPersistSpatialEntityCompletionEXT*),
-		completion);
-	EXT_PROTO_XRRESULT_FUNC3(xrUnpersistSpatialEntityAsyncEXT, (XrSpatialPersistenceContextEXT),
-		persistence_context, (const XrSpatialEntityUnpersistInfoEXT*), unpersist_info,
-		(XrFutureEXT*), future);
-	EXT_PROTO_XRRESULT_FUNC3(xrUnpersistSpatialEntityCompleteEXT, (XrSpatialPersistenceContextEXT),
-		persistence_context, (XrFutureEXT), future, (XrUnpersistSpatialEntityCompletionEXT*),
-		completion);
-
-public:
-	struct Data
-	{
-		bool spatial_anchor_ext = false;
-		bool spatial_persistence_ext = false;
-		bool spatial_persistence_operations_ext = false;
-		bool spatial_anchor_supported = false;
-		RID spatial_context;
-		RID persistence_context;
-		bool need_discovery = false;
-		int discovery_cooldown = 0;
-		Ref<OpenXRFutureResult> discovery_query_result;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> anchor_configuration;
-		Ref<OpenXRSpatialContextPersistenceConfig> persistence_configuration;
-		Vector<XrSpatialPersistenceScopeEXT> supported_persistence_scopes;
-		RID_Owner<PersistenceContextData> persistence_context_owner;
-		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>> anchor_trackers;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRSpatialAnchorCapability() = delete;
-	OpenXRSpatialAnchorCapability(const OpenXRSpatialAnchorCapability&) = delete;
-	OpenXRSpatialAnchorCapability& operator=(const OpenXRSpatialAnchorCapability&) = delete;
-	~OpenXRSpatialAnchorCapability() = delete;
-};
-
-// Marker tracking logic
-class OpenXRSpatialMarkerTrackingCapability final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_session_created(const XrSession p_session);
-	static void on_session_destroyed();
-
-	static void on_process();
-
-	static bool is_qrcode_supported();
-	static bool is_micro_qrcode_supported();
-	static bool is_aruco_supported();
-	static bool is_april_tag_supported();
-
-private:
-	static Ref<OpenXRFutureResult> _create_spatial_context();
-	static void _on_spatial_context_created(RID p_spatial_context);
-	static void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-public:
-	struct Data
-	{
-		bool spatial_marker_tracking_ext = false;
-		RID spatial_context;
-		bool need_discovery = false;
-		int discovery_cooldown = 0;
-		Ref<OpenXRFutureResult> discovery_query_result;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> qrcode_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> micro_qrcode_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> aruco_configuration;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> april_tag_configuration;
-		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRMarkerTracker>>> marker_trackers;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRSpatialMarkerTrackingCapability() = delete;
-	OpenXRSpatialMarkerTrackingCapability(const OpenXRSpatialMarkerTrackingCapability&) = delete;
-	OpenXRSpatialMarkerTrackingCapability& operator=(
-		const OpenXRSpatialMarkerTrackingCapability&) = delete;
-	~OpenXRSpatialMarkerTrackingCapability() = delete;
-};
-
-// Plane tracking logic
-class OpenXRSpatialPlaneTrackingCapability final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_session_created(const XrSession p_session);
-	static void on_session_destroyed();
-
-	static void on_process();
-
-	static bool is_supported();
-
-private:
-	static Ref<OpenXRFutureResult> _create_spatial_context();
-	static void _on_spatial_context_created(RID p_spatial_context);
-	static void _on_spatial_discovery_recommended(RID p_spatial_context);
-
-public:
-	struct Data
-	{
-		bool spatial_plane_tracking_ext = false;
-		bool spatial_plane_tracking_supported = false;
-		RID spatial_context;
-		bool need_discovery = false;
-		int discovery_cooldown = 0;
-		Ref<OpenXRFutureResult> discovery_query_result;
-		Ref<OpenXRSpatialCapabilityConfigurationBaseHeader> plane_configuration;
-		HashMap<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRPlaneTracker>>> plane_trackers;
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXRSpatialPlaneTrackingCapability() = delete;
-	OpenXRSpatialPlaneTrackingCapability(const OpenXRSpatialPlaneTrackingCapability&) = delete;
-	OpenXRSpatialPlaneTrackingCapability& operator=(
-		const OpenXRSpatialPlaneTrackingCapability&) = delete;
-	~OpenXRSpatialPlaneTrackingCapability() = delete;
-};
-
-#include "servers/display/display_server.h"
-
-#ifdef ANDROID_ENABLED
-#endif
-
-#define WANT_OPENXR_PLATFORM_INC
-#include "servers/display/display_server.h" // IWYU pragma: keep.
-
 #ifdef VULKAN_ENABLED
-#include "servers/display/display_server.h"
-
-// Always include this as late as possible.
 #define WANT_OPENXR_PLATFORM_INC
-#include "servers/display/display_server.h" // IWYU pragma: keep.
+#include "servers/display/display_server.h"
 
 class OpenXRVulkanExtension final
 {
 public:
-
 	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
 	static void on_instance_created(const XrInstance p_instance);
 	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
 
@@ -286348,9 +281376,7 @@ public:
 	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index);
 
 private:
-	static XrGraphicsBindingVulkanKHR
-		graphics_binding_vulkan; // declaring this as static so we don't need to know its size and
-								 // we only need it once when creating our session
+	static XrGraphicsBindingVulkanKHR graphics_binding_vulkan;
 
 	struct SwapchainGraphicsData
 	{
@@ -286397,104 +281423,6 @@ public:
 	OpenXRVulkanExtension& operator=(const OpenXRVulkanExtension&) = delete;
 	~OpenXRVulkanExtension() = delete;
 };
-#endif
-
-#ifdef METAL_ENABLED
-#define WANT_OPENXR_PLATFORM_INC
-#include "servers/display/display_server.h"
-#endif
-
-#if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
-#ifdef GLES3_ENABLED
-
-#include "servers/display/display_server.h"
-
-// Always include this as late as possible.
-#define WANT_OPENXR_PLATFORM_INC
-#include "servers/display/display_server.h" // IWYU pragma: keep.
-
-class OpenXROpenGLExtension final
-{
-public:
-	static HashMap<String, bool*> get_requested_extensions(XrVersion p_version);
-
-	static void on_instance_created(const XrInstance p_instance);
-	static void* set_session_create_and_get_next_pointer(void* p_next_pointer);
-
-	static void get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains);
-	static void get_usable_depth_formats(Vector<int64_t>& p_usable_swap_chains);
-	static String get_swapchain_format_name(int64_t p_swapchain_format);
-	static bool get_swapchain_image_data(XrSwapchain p_swapchain, int64_t p_swapchain_format,
-		uint32_t p_width, uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size,
-		void** r_swapchain_graphics_data);
-	static void cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data);
-	static bool create_projection_fov(
-		const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix);
-	static RID get_texture(void* p_swapchain_graphics_data, int p_image_index);
-
-	static RID get_density_map(void* p_swapchain_graphics_data, int p_image_index)
-	{
-		return RID();
-	}
-
-private:
-
-#ifdef WIN32
-	static XrGraphicsBindingOpenGLWin32KHR graphics_binding_gl;
-#elif defined(ANDROID_ENABLED)
-	static XrGraphicsBindingOpenGLESAndroidKHR graphics_binding_gl;
-#elif defined(LINUXBSD_ENABLED)
-#ifdef X11_ENABLED
-	static XrGraphicsBindingOpenGLXlibKHR graphics_binding_gl;
-#endif
-#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	static XrGraphicsBindingEGLMNDX graphics_binding_egl;
-
-#endif
-#else
-#error "OpenXR with OpenGL isn't supported on this platform"
-#endif
-
-	struct SwapchainGraphicsData
-	{
-		bool is_multiview;
-		Vector<RID> texture_rids;
-	};
-
-	static bool check_graphics_api_support(XrVersion p_desired_version);
-
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	EXT_PROTO_XRRESULT_FUNC3(xrGetOpenGLESGraphicsRequirementsKHR, (XrInstance), p_instance,
-		(XrSystemId), p_system_id, (XrGraphicsRequirementsOpenGLESKHR*), p_graphics_requirements)
-#else
-	EXT_PROTO_XRRESULT_FUNC3(xrGetOpenGLGraphicsRequirementsKHR, (XrInstance), p_instance,
-		(XrSystemId), p_system_id, (XrGraphicsRequirementsOpenGLKHR*), p_graphics_requirements)
-#endif
-	EXT_PROTO_XRRESULT_FUNC4(xrEnumerateSwapchainImages, (XrSwapchain), p_swapchain, (uint32_t),
-		p_image_capacity_input, (uint32_t*), p_image_count_output, (XrSwapchainImageBaseHeader*),
-		p_images)
-
-public:
-	struct Data
-	{
-#if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-		bool egl_extension_enabled = false;
-#endif
-	};
-
-	static inline Data* data = nullptr;
-
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	OpenXROpenGLExtension() = delete;
-	OpenXROpenGLExtension(const OpenXROpenGLExtension&) = delete;
-	OpenXROpenGLExtension& operator=(const OpenXROpenGLExtension&) = delete;
-	~OpenXROpenGLExtension() = delete;
-};
-
-#endif // GLES3_ENABLED
 #endif
 
 #ifdef D3D12_ENABLED
@@ -286628,42 +281556,42 @@ String OpenXRAPI::get_error_string(XrResult result) { return String(); }
 void OpenXRAPI::set_object_name(
 	XrObjectType p_object_type, uint64_t p_object_handle, const String& p_object_name)
 {
-	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
+	if (!OpenXRExtensions::is_debug_utils_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	OpenXRDebugUtilsExtension::set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
+	OpenXRExtensions::set_object_name(p_object_type, p_object_handle, p_object_name.utf8().get_data());
 }
 
 void OpenXRAPI::begin_debug_label_region(const String& p_label_name)
 {
-	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
+	if (!OpenXRExtensions::is_debug_utils_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	OpenXRDebugUtilsExtension::begin_debug_label_region(p_label_name.utf8().get_data());
+	OpenXRExtensions::begin_debug_label_region(p_label_name.utf8().get_data());
 }
 
 void OpenXRAPI::end_debug_label_region()
 {
-	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
+	if (!OpenXRExtensions::is_debug_utils_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	OpenXRDebugUtilsExtension::end_debug_label_region();
+	OpenXRExtensions::end_debug_label_region();
 }
 
 void OpenXRAPI::insert_debug_label(const String& p_label_name)
 {
-	if (!OpenXRDebugUtilsExtension::is_initialized() || !OpenXRDebugUtilsExtension::get_active()) {
+	if (!OpenXRExtensions::is_debug_utils_active()) {
 		// Not enabled/active? Ignore.
 		return;
 	}
 
-	OpenXRDebugUtilsExtension::insert_debug_label(p_label_name.utf8().get_data());
+	OpenXRExtensions::insert_debug_label(p_label_name.utf8().get_data());
 }
 
 bool OpenXRAPI::load_layer_properties()
@@ -287424,7 +282352,7 @@ RID OpenXRAPI::get_density_map_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+	if (OpenXRExtensions::is_foveation_enabled()) {
 		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
 	}
 
@@ -287458,8 +282386,8 @@ const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer()
 
 float OpenXRAPI::get_display_refresh_rate()
 {
-	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
-		return OpenXRDisplayRefreshRateExtension::get_refresh_rate();
+	if (OpenXRExtensions::is_initialized()) {
+		return OpenXRExtensions::get_refresh_rate();
 	}
 
 	return 0.0;
@@ -287467,8 +282395,8 @@ float OpenXRAPI::get_display_refresh_rate()
 
 void OpenXRAPI::set_display_refresh_rate(float p_refresh_rate)
 {
-	if (OpenXRDisplayRefreshRateExtension::is_initialized()) {
-		OpenXRDisplayRefreshRateExtension::set_refresh_rate(p_refresh_rate);
+	if (OpenXRExtensions::is_initialized()) {
+		OpenXRExtensions::set_refresh_rate(p_refresh_rate);
 	}
 }
 
@@ -287493,13 +282421,13 @@ void OpenXRAPI::set_render_region(const Rect2i& p_render_region)
 
 bool OpenXRAPI::is_foveation_supported()
 {
-	return OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled();
+	return OpenXRExtensions::is_foveation_enabled();
 }
 
 int OpenXRAPI::get_foveation_level()
 {
-	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
-		switch (OpenXRFBFoveationExtension::get_foveation_level()) {
+	if (OpenXRExtensions::is_foveation_enabled()) {
+		switch (OpenXRExtensions::get_foveation_level()) {
 		case XR_FOVEATION_LEVEL_NONE_FB:
 			return 0;
 		case XR_FOVEATION_LEVEL_LOW_FB:
@@ -287519,41 +282447,41 @@ int OpenXRAPI::get_foveation_level()
 void OpenXRAPI::set_foveation_level(int p_foveation_level)
 {
 	ERR_FAIL_UNSIGNED_INDEX(p_foveation_level, 4);
-	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
+	if (OpenXRExtensions::is_foveation_enabled()) {
 		XrFoveationLevelFB levels[] = {XR_FOVEATION_LEVEL_NONE_FB, XR_FOVEATION_LEVEL_LOW_FB,
 			XR_FOVEATION_LEVEL_MEDIUM_FB, XR_FOVEATION_LEVEL_HIGH_FB};
-		OpenXRFBFoveationExtension::set_foveation_level(levels[p_foveation_level]);
+		OpenXRExtensions::set_foveation_level(levels[p_foveation_level]);
 	}
 }
 
 bool OpenXRAPI::get_foveation_dynamic()
 {
-	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
-		return OpenXRFBFoveationExtension::get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
+	if (OpenXRExtensions::is_foveation_enabled()) {
+		return OpenXRExtensions::get_foveation_dynamic() == XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB;
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_dynamic(bool p_foveation_dynamic)
 {
-	if (OpenXRFBFoveationExtension::is_initialized() && OpenXRFBFoveationExtension::is_enabled()) {
-		OpenXRFBFoveationExtension::set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
+	if (OpenXRExtensions::is_foveation_enabled()) {
+		OpenXRExtensions::set_foveation_dynamic(p_foveation_dynamic ? XR_FOVEATION_DYNAMIC_LEVEL_ENABLED_FB
 														   : XR_FOVEATION_DYNAMIC_DISABLED_FB);
 	}
 }
 
 bool OpenXRAPI::get_foveation_with_subsampled_images()
 {
-	if (OpenXRFBFoveationExtension::is_initialized()) {
-		return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
+	if (OpenXRExtensions::is_initialized()) {
+		return OpenXRExtensions::is_foveation_with_subsampled_images_enabled();
 	}
 	return false;
 }
 
 void OpenXRAPI::set_foveation_with_subsampled_images(bool p_enabled)
 {
-	if (OpenXRFBFoveationExtension::is_initialized()) {
-		OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_enabled(p_enabled);
+	if (OpenXRExtensions::is_initialized()) {
+		OpenXRExtensions::set_foveation_with_subsampled_images_enabled(p_enabled);
 	}
 }
 
@@ -288998,372 +283926,6 @@ void OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(
 	XrMatrix4x4f_CreateProjection(result, tanLeft, tanRight, tanUp, tanDown, nearZ, farZ);
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRStructureBase
-
-void OpenXRStructureBase::set_next(const Ref<OpenXRStructureBase> p_next) { next = p_next; }
-
-Ref<OpenXRStructureBase> OpenXRStructureBase::get_next() const { return next; }
-
-bool OpenXRStructureBase::has_valid_configuration() const
-{
-	if (persistence_contexts.is_empty()) {
-		return false;
-	}
-
-	ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
-
-	if (!OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
-		return false;
-	}
-
-	return true;
-}
-
-void* OpenXRStructureBase::get_header(void* p_next)
-{
-	void* n = p_next;
-	if (get_next().is_valid()) {
-		n = get_next()->get_header(n);
-	}
-
-	if (has_valid_configuration()) {
-		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
-
-		context_handles.resize(persistence_contexts.size());
-
-		XrSpatialPersistenceContextEXT* ptr = context_handles.ptrw();
-		int i = 0;
-		for (const RID& rid : persistence_contexts) {
-			ptr[i++] = OpenXRSpatialAnchorCapability::get_persistence_context_handle(rid);
-		}
-
-		persistence_config.next = n;
-		persistence_config.persistenceContextCount = (uint32_t)context_handles.size();
-		persistence_config.persistenceContexts = context_handles.ptr();
-
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&persistence_config;
-	}
-
-	return n;
-}
-
-XrStructureType OpenXRStructureBase::get_structure_type()
-{
-	if (!persistence_contexts.is_empty()) {
-		return XR_TYPE_SPATIAL_CONTEXT_PERSISTENCE_CONFIG_EXT;
-	}
-
-	XrStructureType* header = (XrStructureType*)get_header();
-	if (header == nullptr) {
-		return XR_TYPE_UNKNOWN;
-	}
-	return *header;
-}
-
-void OpenXRStructureBase::add_persistence_context(RID p_persistence_context)
-{
-	ERR_FAIL_COND(persistence_contexts.has(p_persistence_context));
-
-	persistence_contexts.push_back(p_persistence_context);
-}
-
-void OpenXRStructureBase::remove_persistence_context(RID p_persistence_context)
-{
-	ERR_FAIL_COND(!persistence_contexts.has(p_persistence_context));
-
-	persistence_contexts.erase(p_persistence_context);
-}
-
-uint64_t OpenXRStructureBase::_get_structure_type() { return (uint64_t)get_structure_type(); }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRAPIExtension
-
-uint64_t OpenXRAPIExtension::get_openxr_version()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_openxr_version();
-}
-
-uint64_t OpenXRAPIExtension::get_instance()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_instance();
-}
-
-uint64_t OpenXRAPIExtension::get_system_id()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_system_id();
-}
-
-uint64_t OpenXRAPIExtension::get_session()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_session();
-}
-
-bool OpenXRAPIExtension::openxr_is_enabled(bool p_check_run_in_editor)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-	return OpenXRAPI::openxr_is_enabled(p_check_run_in_editor);
-}
-
-uint64_t OpenXRAPIExtension::get_instance_proc_addr(const String& p_name)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	CharString str = p_name.utf8();
-	PFN_xrVoidFunction addr = nullptr;
-	XrResult result = OpenXRAPI::get_instance_proc_addr(str.get_data(), &addr);
-	if (result != XR_SUCCESS) {
-		return 0;
-	}
-	return reinterpret_cast<uint64_t>(addr);
-}
-
-String OpenXRAPIExtension::get_error_string(uint64_t result)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
-	return OpenXRAPI::get_error_string((XrResult)result);
-}
-
-String OpenXRAPIExtension::get_swapchain_format_name(int64_t p_swapchain_format)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), String());
-	return OpenXRAPI::get_swapchain_format_name(p_swapchain_format);
-}
-
-void OpenXRAPIExtension::set_object_name(
-	int64_t p_object_type, uint64_t p_object_handle, const String& p_object_name)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::set_object_name(XrObjectType(p_object_type), p_object_handle, p_object_name);
-}
-
-void OpenXRAPIExtension::begin_debug_label_region(const String& p_label_name)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::begin_debug_label_region(p_label_name);
-}
-
-void OpenXRAPIExtension::end_debug_label_region()
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::end_debug_label_region();
-}
-
-void OpenXRAPIExtension::insert_debug_label(const String& p_label_name)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::insert_debug_label(p_label_name);
-}
-
-uint32_t OpenXRAPIExtension::get_view_count() const
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint32_t)OpenXRAPI::get_view_count();
-}
-
-uint64_t OpenXRAPIExtension::get_view_configuration() const
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_view_configuration();
-}
-
-bool OpenXRAPIExtension::is_initialized()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-	return OpenXRAPI::is_initialized();
-}
-
-bool OpenXRAPIExtension::is_running()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-	return OpenXRAPI::is_running();
-}
-
-uint64_t OpenXRAPIExtension::get_play_space()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_play_space();
-}
-
-int64_t OpenXRAPIExtension::get_predicted_display_time()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (XrTime)OpenXRAPI::get_predicted_display_time();
-}
-
-int64_t OpenXRAPIExtension::get_next_frame_time()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-
-	WARN_PRINT_ONCE("OpenXR: Next frame timing called, verify this is intended.");
-
-	return (XrTime)OpenXRAPI::get_next_frame_time();
-}
-
-bool OpenXRAPIExtension::can_render()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-	return OpenXRAPI::can_render();
-}
-
-RID OpenXRAPIExtension::find_action(const String& p_name, const RID& p_action_set)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
-	return OpenXRAPI::find_action(p_name, p_action_set);
-}
-
-uint64_t OpenXRAPIExtension::action_get_handle(RID p_action)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	XrAction action_handle = OpenXRAPI::action_get_handle(p_action);
-	return (uint64_t)action_handle;
-}
-
-uint64_t OpenXRAPIExtension::get_hand_tracker(int p_hand_index)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_hand_tracker(p_hand_index);
-}
-
-double OpenXRAPIExtension::get_render_state_z_near()
-{
-	ERR_NOT_ON_RENDER_THREAD_V(0.0);
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
-	return OpenXRAPI::get_render_state_z_near();
-}
-
-double OpenXRAPIExtension::get_render_state_z_far()
-{
-	ERR_NOT_ON_RENDER_THREAD_V(0.0);
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0.0);
-	return OpenXRAPI::get_render_state_z_far();
-}
-
-void OpenXRAPIExtension::set_velocity_texture(RID p_render_target)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::set_velocity_texture(p_render_target);
-}
-
-void OpenXRAPIExtension::set_velocity_depth_texture(RID p_render_target)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::set_velocity_depth_texture(p_render_target);
-}
-
-void OpenXRAPIExtension::set_velocity_target_size(const Size2i& p_target_size)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::set_velocity_target_size(p_target_size);
-}
-
-PackedInt64Array OpenXRAPIExtension::get_supported_swapchain_formats()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedInt64Array());
-	return OpenXRAPI::get_supported_swapchain_formats();
-}
-
-uint64_t OpenXRAPIExtension::openxr_swapchain_create(XrSwapchainCreateFlags p_create_flags,
-	XrSwapchainUsageFlags p_usage_flags, int64_t p_swapchain_format, uint32_t p_width,
-	uint32_t p_height, uint32_t p_sample_count, uint32_t p_array_size)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-
-	OpenXRAPI::OpenXRSwapChainInfo* new_swapchain_info = memnew(OpenXRAPI::OpenXRSwapChainInfo);
-	new_swapchain_info->create(p_create_flags, p_usage_flags, p_swapchain_format, p_width, p_height,
-		p_sample_count, p_array_size);
-	return reinterpret_cast<uint64_t>(new_swapchain_info);
-}
-
-void OpenXRAPIExtension::openxr_swapchain_free(uint64_t p_swapchain_info)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
-		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
-	swapchain_info->free();
-	memfree(swapchain_info);
-}
-
-uint64_t OpenXRAPIExtension::openxr_swapchain_get_swapchain(uint64_t p_swapchain_info)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-
-	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
-		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
-	XrSwapchain swapchain = swapchain_info->get_swapchain();
-	return (uint64_t)swapchain;
-}
-
-void OpenXRAPIExtension::openxr_swapchain_acquire(uint64_t p_swapchain_info)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
-		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
-	bool should_render = true;
-	swapchain_info->acquire(should_render);
-}
-
-RID OpenXRAPIExtension::openxr_swapchain_get_image(uint64_t p_swapchain_info)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
-
-	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
-		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
-	return swapchain_info->get_image();
-}
-
-void OpenXRAPIExtension::openxr_swapchain_release(uint64_t p_swapchain_info)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	OpenXRAPI::OpenXRSwapChainInfo* swapchain_info =
-		reinterpret_cast<OpenXRAPI::OpenXRSwapChainInfo*>(p_swapchain_info);
-	swapchain_info->release();
-}
-
-uint64_t OpenXRAPIExtension::get_projection_layer()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), 0);
-	return (uint64_t)OpenXRAPI::get_projection_layer();
-}
-
-void OpenXRAPIExtension::set_render_region(const Rect2i& p_render_region)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::set_render_region(p_render_region);
-}
-
-void OpenXRAPIExtension::update_main_swapchain_size()
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::update_main_swapchain_size();
-}
-
-void OpenXRAPIExtension::set_emulate_environment_blend_mode_alpha_blend(bool p_enabled)
-{
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	OpenXRAPI::set_emulate_environment_blend_mode_alpha_blend(p_enabled);
-}
-
-OpenXRAPIExtension::OpenXRAlphaBlendModeSupport
-OpenXRAPIExtension::is_environment_blend_mode_alpha_blend_supported()
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), OPENXR_ALPHA_BLEND_MODE_SUPPORT_NONE);
-	return (OpenXRAPIExtension::OpenXRAlphaBlendModeSupport)
-		OpenXRAPI::is_environment_blend_mode_alpha_blend_supported();
-}
-
-OpenXRAPIExtension::OpenXRAPIExtension() {}
 
 #ifdef None
 #undef None
@@ -289460,6 +284022,9 @@ void uninitialize_openxr_module(ModuleInitializationLevel p_level)
 
 	if (OpenXRInteractionProfileExtension::is_initialized()) {
 		OpenXRInteractionProfileExtension::finalize();
+	}
+	if (OpenXRExtensions::is_initialized()) {
+		OpenXRExtensions::finalize();
 	}
 
 	// cleanup our extension wrappers
@@ -289894,11 +284459,11 @@ bool OpenXRInterface::is_hand_tracking_supported()
 		return false;
 	}
 	else {
-		if (!OpenXRHandTrackingExtension::is_initialized()) {
+		if (!OpenXRExtensions::is_initialized()) {
 			return false;
 		}
 		else {
-			return OpenXRHandTrackingExtension::get_active();
+			return OpenXRExtensions::is_hand_tracking_active();
 		}
 	}
 }
@@ -289931,11 +284496,11 @@ bool OpenXRInterface::is_eye_gaze_interaction_supported()
 		return false;
 	}
 	else {
-		if (!OpenXREyeGazeInteractionExtension::is_initialized()) {
+		if (!OpenXRExtensions::is_initialized()) {
 			return false;
 		}
 		else {
-			return OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction();
+			return OpenXRExtensions::supports_eye_gaze_interaction();
 		}
 	}
 }
@@ -290385,7 +284950,7 @@ bool OpenXRInterface::is_user_presence_supported() const
 		return false;
 	}
 	else {
-		return OpenXRUserPresenceExtension::is_initialized() && OpenXRUserPresenceExtension::is_active();
+		return OpenXRExtensions::is_user_presence_active();
 	}
 }
 
@@ -290396,7 +284961,7 @@ bool OpenXRInterface::is_user_present() const
 		return true;
 	}
 	else {
-		return OpenXRUserPresenceExtension::is_user_present();
+		return OpenXRExtensions::is_user_present();
 	}
 }
 
@@ -290442,15 +285007,15 @@ XRInterface::VRSTextureFormat OpenXRInterface::get_vrs_texture_format()
 
 void OpenXRInterface::set_cpu_level(PerfSettingsLevel p_level)
 {
-	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
-		OpenXRPerformanceSettingsExtension::set_cpu_level(p_level);
+	if (OpenXRExtensions::is_perf_settings_available()) {
+		OpenXRExtensions::set_cpu_level(p_level);
 	}
 }
 
 void OpenXRInterface::set_gpu_level(PerfSettingsLevel p_level)
 {
-	if (OpenXRPerformanceSettingsExtension::is_initialized() && OpenXRPerformanceSettingsExtension::is_available()) {
-		OpenXRPerformanceSettingsExtension::set_gpu_level(p_level);
+	if (OpenXRExtensions::is_perf_settings_available()) {
+		OpenXRExtensions::set_gpu_level(p_level);
 	}
 }
 
@@ -290669,15 +285234,134 @@ OpenXRHapticBase::OpenXRHapticBase()
 }
 
 ////////////////////////////////////////////////////////////////////////////
-// OpenXRBindingModifier
+// OpenXRBindingModifier (unified with DPad & AnalogThreshold)
 
-PackedByteArray OpenXRBindingModifier::get_ip_modification() { return PackedByteArray(); }
-
-String OpenXRBindingModifier::get_description() const { return ""; }
-
-OpenXRBindingModifier::OpenXRBindingModifier() {}
+OpenXRBindingModifier::OpenXRBindingModifier(ModifierType p_type) : modifier_type(p_type)
+{
+	if (p_type == MODIFIER_DPAD) {
+		dpad_bindings_data.resize(sizeof(XrInteractionProfileDpadBindingEXT));
+		dpad_bindings = (XrInteractionProfileDpadBindingEXT*)dpad_bindings_data.ptrw();
+		dpad_bindings->type = XR_TYPE_INTERACTION_PROFILE_DPAD_BINDING_EXT;
+		dpad_bindings->next = nullptr;
+		dpad_bindings->binding = XR_NULL_PATH;
+		dpad_bindings->actionSet = XR_NULL_HANDLE;
+		dpad_bindings->forceThreshold = 0.6f;
+		dpad_bindings->forceThresholdReleased = 0.4f;
+		dpad_bindings->centerRegion = 0.1f;
+		dpad_bindings->wedgeAngle = Math::deg_to_rad(90.0f);
+		dpad_bindings->isSticky = false;
+		dpad_bindings->onHaptic = nullptr;
+		dpad_bindings->offHaptic = nullptr;
+	}
+}
 
 OpenXRBindingModifier::~OpenXRBindingModifier() {}
+
+void OpenXRBindingModifier::set_action_set(const Ref<OpenXRActionSet>& p_action_set) { action_set = p_action_set; }
+void OpenXRBindingModifier::set_input_path(const String& p_input_path) { input_path = p_input_path; emit_changed(); }
+
+void OpenXRBindingModifier::set_threshold(float p_threshold)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_threshold < 0.0f || p_threshold > 1.0f);
+	dpad_bindings->forceThreshold = p_threshold;
+	emit_changed();
+}
+float OpenXRBindingModifier::get_threshold() const { ERR_FAIL_NULL_V(dpad_bindings, 0.0f); return dpad_bindings->forceThreshold; }
+
+void OpenXRBindingModifier::set_threshold_released(float p_threshold)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_threshold < 0.0f || p_threshold > 1.0f);
+	dpad_bindings->forceThresholdReleased = p_threshold;
+	emit_changed();
+}
+float OpenXRBindingModifier::get_threshold_released() const { ERR_FAIL_NULL_V(dpad_bindings, 0.0f); return dpad_bindings->forceThresholdReleased; }
+
+void OpenXRBindingModifier::set_center_region(float p_center_region)
+{
+	ERR_FAIL_NULL(dpad_bindings);
+	ERR_FAIL_COND(p_center_region < 0.0f || p_center_region > 1.0f);
+	dpad_bindings->centerRegion = p_center_region;
+	emit_changed();
+}
+float OpenXRBindingModifier::get_center_region() const { ERR_FAIL_NULL_V(dpad_bindings, 0.0f); return dpad_bindings->centerRegion; }
+
+void OpenXRBindingModifier::set_wedge_angle(float p_wedge_angle) { ERR_FAIL_NULL(dpad_bindings); dpad_bindings->wedgeAngle = p_wedge_angle; emit_changed(); }
+float OpenXRBindingModifier::get_wedge_angle() const { ERR_FAIL_NULL_V(dpad_bindings, 0.0f); return dpad_bindings->wedgeAngle; }
+
+void OpenXRBindingModifier::set_wedge_angle_deg(float p_wedge_angle) { ERR_FAIL_NULL(dpad_bindings); dpad_bindings->wedgeAngle = Math::deg_to_rad(p_wedge_angle); emit_changed(); }
+float OpenXRBindingModifier::get_wedge_angle_deg() const { ERR_FAIL_NULL_V(dpad_bindings, 0.0f); return Math::rad_to_deg(dpad_bindings->wedgeAngle); }
+
+void OpenXRBindingModifier::set_is_sticky(bool p_sticky) { ERR_FAIL_NULL(dpad_bindings); dpad_bindings->isSticky = p_sticky; emit_changed(); }
+bool OpenXRBindingModifier::get_is_sticky() const { ERR_FAIL_NULL_V(dpad_bindings, false); return dpad_bindings->isSticky; }
+
+void OpenXRBindingModifier::set_on_threshold(float p_threshold)
+{
+	ERR_FAIL_COND(p_threshold < 0.0f || p_threshold > 1.0f);
+	analog_threshold.onThreshold = p_threshold;
+	emit_changed();
+}
+void OpenXRBindingModifier::set_off_threshold(float p_threshold)
+{
+	ERR_FAIL_COND(p_threshold < 0.0f || p_threshold > 1.0f);
+	analog_threshold.offThreshold = p_threshold;
+	emit_changed();
+}
+void OpenXRBindingModifier::set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic) { on_haptic = p_haptic; emit_changed(); }
+void OpenXRBindingModifier::set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic) { off_haptic = p_haptic; emit_changed(); }
+
+String OpenXRBindingModifier::get_description() const
+{
+	if (modifier_type == MODIFIER_DPAD) return "DPad modifier";
+	if (modifier_type == MODIFIER_ANALOG_THRESHOLD) return "Analog threshold modifier";
+	return "";
+}
+
+PackedByteArray OpenXRBindingModifier::get_ip_modification()
+{
+	if (modifier_type == MODIFIER_DPAD) {
+		ERR_FAIL_NULL_V(dpad_bindings, PackedByteArray());
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedByteArray());
+		if (!OpenXRInteractionProfileExtension::is_initialized() ||
+			!OpenXRInteractionProfileExtension::is_profile_available(OpenXRInteractionProfileExtension::PROFILE_DPAD_BINDING)) {
+			WARN_PRINT("DPad binding extension is not enabled or available.");
+			return PackedByteArray();
+		}
+		dpad_bindings->binding = OpenXRAPI::get_xr_path(input_path);
+		ERR_FAIL_COND_V(dpad_bindings->binding == XR_NULL_PATH, PackedByteArray());
+		ERR_FAIL_COND_V(action_set.is_null(), PackedByteArray());
+		RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
+		dpad_bindings->actionSet = OpenXRAPI::action_set_get_handle(action_set_rid);
+		ERR_FAIL_COND_V(dpad_bindings->actionSet == XR_NULL_HANDLE, PackedByteArray());
+		dpad_bindings->onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
+		dpad_bindings->offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
+		return dpad_bindings_data;
+	}
+	if (modifier_type == MODIFIER_ANALOG_THRESHOLD) {
+		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedByteArray());
+		if (!OpenXRInteractionProfileExtension::is_initialized() ||
+			!OpenXRInteractionProfileExtension::is_profile_available(OpenXRInteractionProfileExtension::PROFILE_VALVE_ANALOG_THRESHOLD)) {
+			WARN_PRINT("Analog threshold extension is not enabled or available.");
+			return PackedByteArray();
+		}
+		ERR_FAIL_NULL_V(ip_binding, PackedByteArray());
+		Ref<OpenXRAction> action = ip_binding->get_action();
+		ERR_FAIL_COND_V(action.is_null(), PackedByteArray());
+		RID action_rid = OpenXRAPI::find_action(action->get_name_with_set());
+		analog_threshold.action = OpenXRAPI::action_get_handle(action_rid);
+		ERR_FAIL_COND_V(analog_threshold.action == XR_NULL_HANDLE, PackedByteArray());
+		analog_threshold.binding = OpenXRAPI::get_xr_path(ip_binding->get_binding_path());
+		ERR_FAIL_COND_V(analog_threshold.binding == XR_NULL_PATH, PackedByteArray());
+		analog_threshold.onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
+		analog_threshold.offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
+		PackedByteArray ret;
+		ret.resize(sizeof(XrInteractionProfileAnalogThresholdVALVE));
+		memcpy(ret.ptrw(), &analog_threshold, sizeof(XrInteractionProfileAnalogThresholdVALVE));
+		return ret;
+	}
+	return PackedByteArray();
+}
 
 ////////////////////////////////////////////////////////////////////////////
 // OpenXRIPBinding & OpenXRInteractionProfile
@@ -291732,4283 +286416,133 @@ Ref<OpenXRActionSet> OpenXRActionMap::find_action_set(String const&) const
 #include "servers/display/display_server.h"
 
 ////////////////////////////////////////////////////////////////////////////
-// OpenXRCompositionLayer
+// OpenXRExtensions (unified EyeGaze, UserPresence, RefreshRate, PerfSettings, DebugUtils, HandTracking, Foveation)
 
-Vector<OpenXRCompositionLayer*> OpenXRCompositionLayer::composition_layer_nodes;
-
-static const char* HOLE_PUNCH_SHADER_CODE =
-	"shader_type spatial;\n"
-	"render_mode blend_mix, depth_draw_opaque, cull_back, shadow_to_opacity, shadows_disabled;\n"
-	"void fragment() {\n"
-	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
-	"}\n";
-
-OpenXRCompositionLayer::OpenXRCompositionLayer(LayerType p_type) : layer_type(p_type)
-{
-	if (!OpenXRCompositionLayerExtension::is_initialized()) {
-		return;
-	}
-
-	switch (layer_type) {
-	case LAYER_QUAD: {
-		XrCompositionLayerQuad openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_QUAD,
-			nullptr,
-			0,
-			XR_NULL_HANDLE,
-			XR_EYE_VISIBILITY_BOTH,
-			{},
-			{{0, 0, 0, 0}, {0, 0, 0}},
-			{(float)quad_size.x, (float)quad_size.y},
-		};
-		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
-			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
-	} break;
-	case LAYER_CYLINDER: {
-		XrCompositionLayerCylinderKHR openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR,
-			nullptr,
-			0,
-			XR_NULL_HANDLE,
-			XR_EYE_VISIBILITY_BOTH,
-			{},
-			{{0, 0, 0, 0}, {0, 0, 0}},
-			radius,
-			central_angle,
-			aspect_ratio,
-		};
-		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
-			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
-	} break;
-	case LAYER_EQUIRECT: {
-		XrCompositionLayerEquirect2KHR openxr_composition_layer = {
-			XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR,
-			nullptr,
-			0,
-			XR_NULL_HANDLE,
-			XR_EYE_VISIBILITY_BOTH,
-			{},
-			{{0, 0, 0, 0}, {0, 0, 0}},
-			radius,
-			central_horizontal_angle,
-			upper_vertical_angle,
-			-lower_vertical_angle,
-		};
-		composition_layer = OpenXRCompositionLayerExtension::composition_layer_create(
-			(XrCompositionLayerBaseHeader*)&openxr_composition_layer);
-	} break;
-	}
-}
-
-XrStructureType OpenXRCompositionLayer::_get_openxr_type() const
-{
-	switch (layer_type) {
-	case LAYER_QUAD:
-		return XR_TYPE_COMPOSITION_LAYER_QUAD;
-	case LAYER_CYLINDER:
-		return XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR;
-	case LAYER_EQUIRECT:
-		return XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR;
-	}
-	return XR_TYPE_COMPOSITION_LAYER_QUAD;
-}
-
-Ref<Mesh> OpenXRCompositionLayer::_create_fallback_mesh()
-{
-	if (layer_type == LAYER_QUAD) {
-		Ref<PrimitiveMesh> mesh;
-		mesh.instantiate(PrimitiveMesh::MESH_QUAD);
-		mesh->set_plane_size(quad_size);
-		return mesh;
-	}
-	Ref<Mesh> m = memnew(Mesh);
-	return m;
-}
-
-bool OpenXRCompositionLayer::_should_use_fallback_node()
-{
-	if (Engine::is_editor_hint() || !OpenXRAPI::is_allocated()) {
-		return true;
-	}
-	else if (openxr_session_running) {
-		return enable_hole_punch || !is_natively_supported();
-	}
-	return false;
-}
-
-void OpenXRCompositionLayer::_create_fallback_node()
-{
-	ERR_FAIL_COND(fallback);
-	fallback = memnew(MeshInstance3D);
-	fallback->set_cast_shadows_setting(RenderInstance3D::SHADOW_CASTING_SETTING_OFF);
-	add_child(fallback, false, INTERNAL_MODE_FRONT);
-	should_update_fallback_mesh = true;
-}
-
-void OpenXRCompositionLayer::_remove_fallback_node()
-{
-	ERR_FAIL_COND(fallback == nullptr);
-	remove_child(fallback);
-	fallback->queue_free();
-	fallback = nullptr;
-}
-
-void OpenXRCompositionLayer::_setup_composition_layer()
-{
-	if (use_android_surface || layer_viewport) {
-		if (OpenXRCompositionLayerExtension::is_initialized()) {
-			OpenXRCompositionLayerExtension::composition_layer_register(composition_layer);
-			registered = true;
-
-			if (layer_viewport) {
-				OpenXRCompositionLayerExtension::composition_layer_set_viewport(composition_layer,
-					layer_viewport->get_viewport_rid(), layer_viewport->get_size());
-			}
-		}
-	}
-}
-
-void OpenXRCompositionLayer::_clear_composition_layer()
-{
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_unregister(composition_layer);
-		registered = false;
-
-		if (!use_android_surface) {
-			OpenXRCompositionLayerExtension::composition_layer_set_viewport(
-				composition_layer, RID(), Size2i());
-		}
-	}
-}
-
-void OpenXRCompositionLayer::_viewport_size_changed()
-{
-	if (layer_viewport && openxr_session_running &&
-		OpenXRCompositionLayerExtension::is_initialized() && is_natively_supported() &&
-		is_visible_in_tree() && is_inside_tree()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_viewport(
-			composition_layer, layer_viewport->get_viewport_rid(), layer_viewport->get_size());
-	}
-}
-
-void OpenXRCompositionLayer::_on_openxr_session_begun()
-{
-	openxr_session_running = true;
-	if (_should_register()) {
-		_setup_composition_layer();
-	}
-	if (!fallback && _should_use_fallback_node()) {
-		_create_fallback_node();
-	}
-}
-
-void OpenXRCompositionLayer::_on_openxr_session_stopping()
-{
-	openxr_session_running = false;
-	if (fallback && !_should_use_fallback_node()) {
-		_remove_fallback_node();
-	}
-	_clear_composition_layer();
-}
-
-void OpenXRCompositionLayer::update_fallback_mesh() { should_update_fallback_mesh = true; }
-
-bool OpenXRCompositionLayer::_should_register()
-{
-	return !registered && openxr_session_running && is_inside_tree() && is_visible_in_tree() &&
-		   is_natively_supported();
-}
-
-bool OpenXRCompositionLayer::is_viewport_in_use(SubViewport* p_viewport)
-{
-	ERR_FAIL_NULL_V(p_viewport, false);
-	for (const OpenXRCompositionLayer* other_composition_layer : composition_layer_nodes) {
-		if (other_composition_layer != this && other_composition_layer->is_inside_tree() &&
-			other_composition_layer->get_layer_viewport() == p_viewport) {
-			return true;
-		}
-	}
-	return false;
-}
-
-void OpenXRCompositionLayer::set_use_android_surface(bool p_use_android_surface)
-{
-	if (use_android_surface == p_use_android_surface) {
-		return;
-	}
-
-	use_android_surface = p_use_android_surface;
-	if (use_android_surface) {
-		set_layer_viewport(nullptr);
-		if (OpenXRCompositionLayerExtension::is_initialized()) {
-			OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
-				composition_layer, true, android_surface_size);
-		}
-		if (_should_register()) {
-			_setup_composition_layer();
-		}
-	}
-	else {
-		if (OpenXRCompositionLayerExtension::is_initialized()) {
-			OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
-				composition_layer, false, Size2i());
-		}
-	}
-}
-
-bool OpenXRCompositionLayer::get_use_android_surface() const { return use_android_surface; }
-
-void OpenXRCompositionLayer::set_android_surface_size(Size2i p_size)
-{
-	if (android_surface_size == p_size) {
-		return;
-	}
-
-	android_surface_size = p_size;
-	if (use_android_surface && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
-			composition_layer, true, android_surface_size);
-	}
-}
-
-Size2i OpenXRCompositionLayer::get_android_surface_size() const { return android_surface_size; }
-
-SubViewport* OpenXRCompositionLayer::get_layer_viewport() const { return layer_viewport; }
-
-bool OpenXRCompositionLayer::get_enable_hole_punch() const { return enable_hole_punch; }
-
-int OpenXRCompositionLayer::get_sort_order() const { return sort_order; }
-
-void OpenXRCompositionLayer::set_alpha_blend(bool p_alpha_blend)
-{
-	alpha_blend = p_alpha_blend;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(
-			composition_layer, p_alpha_blend);
-	}
-	if (fallback) {
-		_reset_fallback_material();
-	}
-}
-
-bool OpenXRCompositionLayer::get_alpha_blend() const { return alpha_blend; }
-
-bool OpenXRCompositionLayer::is_natively_supported() const
-{
-	if (OpenXRCompositionLayerExtension::is_initialized() && OpenXRAPI::is_allocated()) {
-		return OpenXRCompositionLayerExtension::is_available(_get_openxr_type());
-	}
-	return false;
-}
-
-void OpenXRCompositionLayer::set_protected_content(bool p_protected_content)
-{
-	if (protected_content == p_protected_content) {
-		return;
-	}
-	protected_content = p_protected_content;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_protected_content(
-			composition_layer, p_protected_content);
-	}
-}
-
-bool OpenXRCompositionLayer::is_protected_content() const { return protected_content; }
-
-void OpenXRCompositionLayer::set_min_filter(Filter p_mode)
-{
-	if (min_filter == p_mode) {
-		return;
-	}
-	min_filter = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_min_filter(
-			composition_layer, (OpenXRCompositionLayerExtension::Filter)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Filter OpenXRCompositionLayer::get_min_filter() const { return min_filter; }
-
-void OpenXRCompositionLayer::set_mag_filter(Filter p_mode)
-{
-	if (mag_filter == p_mode) {
-		return;
-	}
-	mag_filter = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_mag_filter(
-			composition_layer, (OpenXRCompositionLayerExtension::Filter)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Filter OpenXRCompositionLayer::get_mag_filter() const { return mag_filter; }
-
-void OpenXRCompositionLayer::set_mipmap_mode(MipmapMode p_mode)
-{
-	if (mipmap_mode == p_mode) {
-		return;
-	}
-	mipmap_mode = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode(
-			composition_layer, (OpenXRCompositionLayerExtension::MipmapMode)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::MipmapMode OpenXRCompositionLayer::get_mipmap_mode() const
-{
-	return mipmap_mode;
-}
-
-void OpenXRCompositionLayer::set_horizontal_wrap(Wrap p_mode)
-{
-	if (horizontal_wrap == p_mode) {
-		return;
-	}
-	horizontal_wrap = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap(
-			composition_layer, (OpenXRCompositionLayerExtension::Wrap)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Wrap OpenXRCompositionLayer::get_horizontal_wrap() const
-{
-	return horizontal_wrap;
-}
-
-void OpenXRCompositionLayer::set_vertical_wrap(Wrap p_mode)
-{
-	if (vertical_wrap == p_mode) {
-		return;
-	}
-	vertical_wrap = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap(
-			composition_layer, (OpenXRCompositionLayerExtension::Wrap)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Wrap OpenXRCompositionLayer::get_vertical_wrap() const
-{
-	return vertical_wrap;
-}
-
-void OpenXRCompositionLayer::set_red_swizzle(Swizzle p_mode)
-{
-	if (red_swizzle == p_mode) {
-		return;
-	}
-	red_swizzle = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle(
-			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_red_swizzle() const
-{
-	return red_swizzle;
-}
-
-void OpenXRCompositionLayer::set_green_swizzle(Swizzle p_mode)
-{
-	if (green_swizzle == p_mode) {
-		return;
-	}
-	green_swizzle = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle(
-			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_green_swizzle() const
-{
-	return green_swizzle;
-}
-
-void OpenXRCompositionLayer::set_blue_swizzle(Swizzle p_mode)
-{
-	if (blue_swizzle == p_mode) {
-		return;
-	}
-	blue_swizzle = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle(
-			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_blue_swizzle() const
-{
-	return blue_swizzle;
-}
-
-void OpenXRCompositionLayer::set_alpha_swizzle(Swizzle p_mode)
-{
-	if (alpha_swizzle == p_mode) {
-		return;
-	}
-	alpha_swizzle = p_mode;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle(
-			composition_layer, (OpenXRCompositionLayerExtension::Swizzle)p_mode);
-	}
-}
-
-OpenXRCompositionLayer::Swizzle OpenXRCompositionLayer::get_alpha_swizzle() const
-{
-	return alpha_swizzle;
-}
-
-void OpenXRCompositionLayer::set_max_anisotropy(float p_value)
-{
-	if (max_anisotropy == p_value) {
-		return;
-	}
-	max_anisotropy = p_value;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy(
-			composition_layer, p_value);
-	}
-}
-
-float OpenXRCompositionLayer::get_max_anisotropy() const { return max_anisotropy; }
-
-void OpenXRCompositionLayer::set_border_color(const Color& p_color)
-{
-	if (border_color == p_color) {
-		return;
-	}
-	border_color = p_color;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_border_color(
-			composition_layer, p_color);
-	}
-}
-
-Color OpenXRCompositionLayer::get_border_color() const { return border_color; }
-
-void OpenXRCompositionLayer::set_eye_visibility(EyeVisibility p_eye_visibility)
-{
-	if (eye_visibility == p_eye_visibility) {
-		return;
-	}
-	eye_visibility = p_eye_visibility;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility(
-			composition_layer, (OpenXRCompositionLayerExtension::EyeVisibility)p_eye_visibility);
-	}
-}
-
-OpenXRCompositionLayer::EyeVisibility OpenXRCompositionLayer::get_eye_visibility() const
-{
-	return eye_visibility;
-}
-
-void OpenXRCompositionLayer::set_quad_size(const Size2& p_size)
-{
-	quad_size = p_size;
-	if (layer_type == LAYER_QUAD && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_quad_size(composition_layer, p_size);
-	}
-	update_fallback_mesh();
-}
-
-Size2 OpenXRCompositionLayer::get_quad_size() const { return quad_size; }
-
-void OpenXRCompositionLayer::set_radius(float p_radius)
-{
-	ERR_FAIL_COND(p_radius <= 0);
-	radius = p_radius;
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		if (layer_type == LAYER_CYLINDER) {
-			OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
-				composition_layer, p_radius);
-		}
-		else if (layer_type == LAYER_EQUIRECT) {
-			OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
-				composition_layer, p_radius);
-		}
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_radius() const { return radius; }
-
-void OpenXRCompositionLayer::set_fallback_segments(uint32_t p_fallback_segments)
-{
-	ERR_FAIL_COND(p_fallback_segments == 0);
-	fallback_segments = p_fallback_segments;
-	update_fallback_mesh();
-}
-
-uint32_t OpenXRCompositionLayer::get_fallback_segments() const { return fallback_segments; }
-
-void OpenXRCompositionLayer::set_aspect_ratio(float p_aspect_ratio)
-{
-	ERR_FAIL_COND(p_aspect_ratio <= 0);
-	aspect_ratio = p_aspect_ratio;
-	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
-			composition_layer, p_aspect_ratio);
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_aspect_ratio() const { return aspect_ratio; }
-
-void OpenXRCompositionLayer::set_central_angle(float p_central_angle)
-{
-	ERR_FAIL_COND(p_central_angle <= 0);
-	central_angle = p_central_angle;
-	if (layer_type == LAYER_CYLINDER && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
-			composition_layer, p_central_angle);
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_central_angle() const { return central_angle; }
-
-void OpenXRCompositionLayer::set_central_horizontal_angle(float p_angle)
-{
-	ERR_FAIL_COND(p_angle <= 0);
-	central_horizontal_angle = p_angle;
-	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
-			composition_layer, p_angle);
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_central_horizontal_angle() const
-{
-	return central_horizontal_angle;
-}
-
-void OpenXRCompositionLayer::set_upper_vertical_angle(float p_angle)
-{
-	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
-	upper_vertical_angle = p_angle;
-	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
-			composition_layer, p_angle);
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_upper_vertical_angle() const
-{
-	return upper_vertical_angle;
-}
-
-void OpenXRCompositionLayer::set_lower_vertical_angle(float p_angle)
-{
-	ERR_FAIL_COND(p_angle <= 0 || p_angle > (Math::PI / 2.0));
-	lower_vertical_angle = p_angle;
-	if (layer_type == LAYER_EQUIRECT && OpenXRCompositionLayerExtension::is_initialized()) {
-		OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
-			composition_layer, -p_angle);
-	}
-	update_fallback_mesh();
-}
-
-float OpenXRCompositionLayer::get_lower_vertical_angle() const
-{
-	return lower_vertical_angle;
-}
-
-Ref<JavaObject> OpenXRCompositionLayer::get_android_surface()
-{
-	if (OpenXRCompositionLayerExtension::is_initialized()) {
-		return OpenXRCompositionLayerExtension::composition_layer_get_android_surface(
-			composition_layer);
-	}
-	return Ref<JavaObject>();
-}
-
-Vector2 OpenXRCompositionLayer::intersects_ray(
-	const Vector3& p_origin, const Vector3& p_direction) const
-{
-	switch (layer_type) {
-	case LAYER_QUAD: {
-		Transform3D quad_transform = get_global_transform();
-		Vector3 quad_normal = quad_transform.basis.get_column(2);
-
-		float denom = quad_normal.dot(p_direction);
-		if (Math::abs(denom) > 0.0001) {
-			Vector3 vector = quad_transform.origin - p_origin;
-			float t = vector.dot(quad_normal) / denom;
-			if (t < 0.0) {
-				return Vector2(-1.0, -1.0);
-			}
-			Vector3 intersection = p_origin + p_direction * t;
-
-			Vector3 relative_point = intersection - quad_transform.origin;
-			Vector2 projected_point = Vector2(relative_point.dot(quad_transform.basis.get_column(0)),
-				relative_point.dot(quad_transform.basis.get_column(1)));
-			if (Math::abs(projected_point.x) > quad_size.x / 2.0) {
-				return Vector2(-1.0, -1.0);
-			}
-			if (Math::abs(projected_point.y) > quad_size.y / 2.0) {
-				return Vector2(-1.0, -1.0);
-			}
-
-			float u = 0.5 + (projected_point.x / quad_size.x);
-			float v = 1.0 - (0.5 + (projected_point.y / quad_size.y));
-
-			return Vector2(u, v);
-		}
-		return Vector2(-1.0, -1.0);
-	}
-	case LAYER_CYLINDER: {
-		Transform3D cylinder_transform = get_global_transform();
-		Vector3 cylinder_axis = cylinder_transform.basis.get_column(1);
-
-		Vector3 offset = p_origin - cylinder_transform.origin;
-		float a = p_direction.dot(p_direction - cylinder_axis * p_direction.dot(cylinder_axis));
-		float b = 2.0 * (p_direction.dot(offset - cylinder_axis * offset.dot(cylinder_axis)));
-		float c =
-			offset.dot(offset - cylinder_axis * offset.dot(cylinder_axis)) - (radius * radius);
-
-		float discriminant = b * b - 4.0 * a * c;
-		if (discriminant < 0.0) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
-		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
-		float t = MAX(t0, t1);
-
-		if (t < 0.0) {
-			return Vector2(-1.0, -1.0);
-		}
-		Vector3 intersection = p_origin + p_direction * t;
-
-		Basis correction = cylinder_transform.basis.inverse();
-		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
-		Vector3 relative_point = correction.xform(intersection - cylinder_transform.origin);
-
-		Vector2 projected_point = Vector2(relative_point.x, relative_point.z);
-		float intersection_angle = Math::atan2(projected_point.y, projected_point.x);
-		if (Math::abs(intersection_angle) > central_angle / 2.0) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		float arc_length = radius * central_angle;
-		float height = aspect_ratio * arc_length;
-		if (Math::abs(relative_point.y) > height / 2.0) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		float u = 0.5 + (intersection_angle / central_angle);
-		float v = 1.0 - (0.5 + (relative_point.y / height));
-
-		return Vector2(u, v);
-	}
-	case LAYER_EQUIRECT: {
-		Transform3D equirect_transform = get_global_transform();
-
-		Vector3 offset = p_origin - equirect_transform.origin;
-		float a = p_direction.dot(p_direction);
-		float b = 2.0 * offset.dot(p_direction);
-		float c = offset.dot(offset) - (radius * radius);
-
-		float discriminant = b * b - 4.0 * a * c;
-		if (discriminant < 0.0) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		float t0 = (-b - Math::sqrt(discriminant)) / (2.0 * a);
-		float t1 = (-b + Math::sqrt(discriminant)) / (2.0 * a);
-		float t = MAX(t0, t1);
-
-		if (t < 0.0) {
-			return Vector2(-1.0, -1.0);
-		}
-		Vector3 intersection = p_origin + p_direction * t;
-
-		Basis correction = equirect_transform.basis.inverse();
-		correction.rotate(Vector3(0.0, 1.0, 0.0), -Math::PI / 2.0);
-		Vector3 relative_point = correction.xform(intersection - equirect_transform.origin);
-
-		float horizontal_intersection_angle = Math::atan2(relative_point.z, relative_point.x);
-		if (Math::abs(horizontal_intersection_angle) > central_horizontal_angle / 2.0) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		float vertical_intersection_angle =
-			Math::acos(relative_point.y / radius) - (Math::PI / 2.0);
-		if (vertical_intersection_angle < 0) {
-			if (Math::abs(vertical_intersection_angle) > upper_vertical_angle) {
-				return Vector2(-1.0, -1.0);
-			}
-		}
-		else if (vertical_intersection_angle > lower_vertical_angle) {
-			return Vector2(-1.0, -1.0);
-		}
-
-		if (upper_vertical_angle != lower_vertical_angle) {
-			vertical_intersection_angle -= (-upper_vertical_angle + lower_vertical_angle) / 2.0;
-		}
-
-		float u = 0.5 + (horizontal_intersection_angle / central_horizontal_angle);
-		float v = 0.5 + (vertical_intersection_angle / (upper_vertical_angle + lower_vertical_angle));
-
-		return Vector2(u, v);
-	}
-	}
-	return Vector2(-1.0, -1.0);
-}
-
-void OpenXRCompositionLayer::_reset_fallback_material()
-{
-	ERR_FAIL_NULL(fallback);
-
-	if (fallback->get_mesh().is_null()) {
-		return;
-	}
-
-	if (enable_hole_punch && !Engine::is_editor_hint() && is_natively_supported()) {
-		Ref<ShaderMaterial> material = fallback->get_surface_override_material(0);
-		if (material.is_null()) {
-			Ref<Shader> shader;
-			shader.instantiate();
-			shader->set_code(HOLE_PUNCH_SHADER_CODE);
-
-			material.instantiate();
-			material->set_shader(shader);
-			fallback->set_surface_override_material(0, material);
-		}
-	}
-	else if (layer_viewport) {
-		Ref<StandardMaterial3D> material = fallback->get_surface_override_material(0);
-		if (material.is_null()) {
-			material.instantiate();
-			material->set_shading_mode(StandardMaterial3D::SHADING_MODE_UNSHADED);
-			material->set_local_to_scene(true);
-			fallback->set_surface_override_material(0, material);
-		}
-		material->set_transparency(get_alpha_blend() ? StandardMaterial3D::TRANSPARENCY_ALPHA
-													 : StandardMaterial3D::TRANSPARENCY_DISABLED);
-		material->set_texture(StandardMaterial3D::TEXTURE_ALBEDO, layer_viewport->get_texture());
-	}
-	else {
-		fallback->set_surface_override_material(0, Ref<Material>());
-	}
-}
-
-PackedStringArray OpenXRCompositionLayer::get_configuration_warnings() const
-{
-	PackedStringArray warnings = Node3D::get_configuration_warnings();
-
-	if (!get_transform().basis.is_orthonormal()) {
-		warnings.push_back(RTR("OpenXR composition layers must have orthonormalized transforms "
-							   "(ie. no scale or shearing)."));
-	}
-
-	if (enable_hole_punch && get_sort_order() >= 0) {
-		warnings.push_back(
-			RTR("Hole punching won't work as expected unless the sort order is less than zero."));
-	}
-
-	return warnings;
-}
-
-Camera3D* OpenXRCompositionLayer::_get_xrcamera3d_ancestor() const
-{
-	Node* parent = get_parent();
-	while (parent != nullptr) {
-		Camera3D* camera = dynamic_cast<Camera3D*>(parent);
-		if (camera != nullptr && camera->is_xr_enabled()) {
-			return camera;
-		}
-		parent = parent->get_parent();
-	}
-	return nullptr;
-}
-
-void OpenXRCompositionLayer::set_layer_viewport(SubViewport* p_viewport) {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRHand
-
-OpenXRHand::OpenXRHand() {}
-
-void OpenXRHand::set_hand(Hands p_hand)
-{
-	ERR_FAIL_INDEX(p_hand, HAND_MAX);
-
-	hand = p_hand;
-}
-
-OpenXRHand::Hands OpenXRHand::get_hand() const { return hand; }
-
-void OpenXRHand::set_hand_skeleton(const NodePath& p_hand_skeleton)
-{
-	hand_skeleton = p_hand_skeleton;
-}
-
-void OpenXRHand::set_motion_range(MotionRange p_motion_range)
-{
-	ERR_FAIL_INDEX(p_motion_range, MOTION_RANGE_MAX);
-	motion_range = p_motion_range;
-
-	_set_motion_range();
-}
-
-OpenXRHand::MotionRange OpenXRHand::get_motion_range() const { return motion_range; }
-
-NodePath OpenXRHand::get_hand_skeleton() const { return hand_skeleton; }
-
-void OpenXRHand::set_skeleton_rig(SkeletonRig p_skeleton_rig)
-{
-	ERR_FAIL_INDEX(p_skeleton_rig, SKELETON_RIG_MAX);
-
-	skeleton_rig = p_skeleton_rig;
-}
-
-OpenXRHand::SkeletonRig OpenXRHand::get_skeleton_rig() const { return skeleton_rig; }
-
-void OpenXRHand::set_bone_update(BoneUpdate p_bone_update)
-{
-	ERR_FAIL_INDEX(p_bone_update, BONE_UPDATE_MAX);
-
-	bone_update = p_bone_update;
-}
-
-OpenXRHand::BoneUpdate OpenXRHand::get_bone_update() const { return bone_update; }
-
-void OpenXRHand::_get_joint_data()
-{
-	static const String bone_names[SKELETON_RIG_MAX][XR_HAND_JOINT_COUNT_EXT] = {
-		{"Palm", "Wrist", "Thumb_Metacarpal", "Thumb_Proximal", "Thumb_Distal", "Thumb_Tip",
-			"Index_Metacarpal", "Index_Proximal", "Index_Intermediate", "Index_Distal", "Index_Tip",
-			"Middle_Metacarpal", "Middle_Proximal", "Middle_Intermediate", "Middle_Distal",
-			"Middle_Tip", "Ring_Metacarpal", "Ring_Proximal", "Ring_Intermediate", "Ring_Distal",
-			"Ring_Tip", "Little_Metacarpal", "Little_Proximal", "Little_Intermediate",
-			"Little_Distal", "Little_Tip"},
-		{"Palm", "Hand", "ThumbMetacarpal", "ThumbProximal", "ThumbDistal", "ThumbTip",
-			"IndexMetacarpal", "IndexProximal", "IndexIntermediate", "IndexDistal", "IndexTip",
-			"MiddleMetacarpal", "MiddleProximal", "MiddleIntermediate", "MiddleDistal", "MiddleTip",
-			"RingMetacarpal", "RingProximal", "RingIntermediate", "RingDistal", "RingTip",
-			"LittleMetacarpal", "LittleProximal", "LittleIntermediate", "LittleDistal",
-			"LittleTip"}};
-
-	static const String bone_name_formats[SKELETON_RIG_MAX][2] = {
-		{"<bone>_L", "<bone>_R"},
-		{"Left<bone>", "Right<bone>"}};
-
-	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
-		joints[i].bone = -1;
-		joints[i].parent_joint = -1;
-	}
-
-	Skeleton3D* skeleton = get_skeleton();
-	if (!skeleton) {
-		return;
-	}
-
-	int bones[XR_HAND_JOINT_COUNT_EXT];
-	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
-		String bone_name =
-			bone_name_formats[skeleton_rig][hand].replace("<bone>", bone_names[skeleton_rig][i]);
-		bones[i] = skeleton->find_bone(bone_name);
-	}
-
-	for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
-		const int bone = bones[i];
-		if (bone == -1) {
-			continue;
-		}
-
-		const int parent_bone = skeleton->get_bone_parent(bone);
-		if (parent_bone == -1) {
-			joints[i].bone = bone;
-			joints[i].parent_joint = XR_HAND_JOINT_PALM_EXT;
-			continue;
-		}
-
-		for (int j = 0; j < XR_HAND_JOINT_COUNT_EXT; ++j) {
-			if (bones[j] == parent_bone) {
-				joints[i].bone = bone;
-				joints[i].parent_joint = j;
-				break;
-			}
-		}
-	}
-}
-
-void OpenXRHand::_notification(int p_what)
-{
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		_get_joint_data();
-		set_process_internal(true);
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		set_process_internal(false);
-		for (int i = 0; i < XR_HAND_JOINT_COUNT_EXT; i++) {
-			joints[i].bone = -1;
-			joints[i].parent_joint = -1;
-		}
-	} break;
-	case NOTIFICATION_INTERNAL_PROCESS: {
-		_update_skeleton();
-	} break;
-	default: {
-	} break;
-	}
-}
-
-void OpenXRHand::_update_skeleton() {}
-
-void OpenXRHand::_set_motion_range() {}
-
-Skeleton3D* OpenXRHand::get_skeleton() { return nullptr; }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRVisibilityMask
-
-void OpenXRVisibilityMask::fti_update_servers_xform()
-{
-	render_instance.fti_update_servers_xform(this);
-}
-
-void OpenXRVisibilityMask::_notification(int p_what)
-{
-	render_instance.notification(this, p_what);
-
-	switch (p_what) {
-	case NOTIFICATION_ENTER_TREE: {
-		if (OpenXRVisibilityMaskExtension::is_initialized() &&
-			OpenXRVisibilityMaskExtension::is_available()) {
-			set_base(OpenXRVisibilityMaskExtension::get_mesh());
-		}
-	} break;
-	case NOTIFICATION_EXIT_TREE: {
-		set_base(RID());
-	} break;
-	}
-}
-
-void OpenXRVisibilityMask::_on_openxr_session_begun()
-{
-	if (is_inside_tree()) {
-		if (OpenXRVisibilityMaskExtension::is_initialized() &&
-			OpenXRVisibilityMaskExtension::is_available()) {
-			set_base(OpenXRVisibilityMaskExtension::get_mesh());
-		}
-	}
-}
-
-void OpenXRVisibilityMask::_on_openxr_session_stopping() { set_base(RID()); }
-
-AABB OpenXRVisibilityMask::get_aabb() const
-{
-	AABB ret;
-	ret.position = Vector3(-1000.0, -1000.0, -1000.0);
-	ret.size = Vector3(2000.0, 2000.0, 2000.0);
-	return ret;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRRenderModel & OpenXRRenderModelManager
-
-#ifdef MODULE_GLTF_ENABLED
-
-void OpenXRRenderModel::_load_render_model_scene() {}
-
-String OpenXRRenderModel::get_top_level_path() const
-{
-	String ret;
-
-	if (render_model.is_valid() && OpenXRRenderModelExtension::is_initialized()) {
-		ret = OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(render_model);
-	}
-
-	return ret;
-}
-
-RID OpenXRRenderModel::get_render_model() const { return render_model; }
-
-void OpenXRRenderModel::set_render_model(RID p_render_model)
-{
-	render_model = p_render_model;
-	if (is_inside_tree() && render_model.is_valid()) {
-		_load_render_model_scene();
-	}
-}
-
-bool OpenXRRenderModelManager::_has_filters() { return tracker != 0; }
-
-void OpenXRRenderModelManager::_on_render_model_added(RID p_render_model)
-{
-	if (_has_filters()) {
-		is_dirty = true;
-	}
-	else {
-		_update_models();
-	}
-}
-
-void OpenXRRenderModelManager::_on_render_model_removed(RID p_render_model)
-{
-	if (_has_filters()) {
-		is_dirty = true;
-	}
-	else {
-		_update_models();
-	}
-}
-
-void OpenXRRenderModelManager::_on_render_model_top_level_path_changed(RID p_path)
-{
-	if (_has_filters()) {
-		is_dirty = true;
-	}
-}
-
-void OpenXRRenderModelManager::set_tracker(RenderModelTracker p_tracker)
-{
-	if (tracker != p_tracker) {
-		tracker = p_tracker;
-		is_dirty = true;
-
-		if (tracker == RENDER_MODEL_TRACKER_ANY || tracker == RENDER_MODEL_TRACKER_NONE_SET) {
-			xr_path = XR_NULL_PATH;
-		}
-		else if (!Engine::is_editor_hint()) {
-			if (OpenXRAPI::is_allocated() && XRServer::is_initialized()) {
-				String toplevel_path;
-				String tracker_name;
-				if (tracker == RENDER_MODEL_TRACKER_LEFT_HAND) {
-					tracker_name = "left_hand";
-					toplevel_path = "/user/hand/left";
-				}
-				else if (tracker == RENDER_MODEL_TRACKER_RIGHT_HAND) {
-					tracker_name = "right_hand";
-					toplevel_path = "/user/hand/right";
-				}
-				else {
-					ERR_FAIL_MSG("Unsupported tracker value set.");
-				}
-
-				positional_tracker = XRServer::get_tracker(tracker_name);
-				if (positional_tracker.is_null()) {
-					WARN_PRINT("OpenXR: Can't find tracker " + tracker_name);
-				}
-
-				xr_path = OpenXRAPI::get_xr_path(toplevel_path);
-				if (xr_path == XR_NULL_PATH) {
-					WARN_PRINT("OpenXR: Can't find path for " + toplevel_path);
-				}
-			}
-		}
-
-		set_process_internal(true);
-	}
-}
-
-OpenXRRenderModelManager::RenderModelTracker OpenXRRenderModelManager::get_tracker() const
-{
-	return tracker;
-}
-
-void OpenXRRenderModelManager::set_make_local_to_pose(const String& p_action)
-{
-	if (make_local_to_pose != p_action) {
-		make_local_to_pose = p_action;
-
-		if (container) {
-			container->set_transform(Transform3D());
-		}
-	}
-}
-
-String OpenXRRenderModelManager::get_make_local_to_pose() const { return make_local_to_pose; }
-
-void OpenXRRenderModelManager::_update_models() {}
-
-#endif // MODULE_GLTF_ENABLED
-
-#include "servers/display/display_server.h"
-
-#include "servers/display/display_server.h"
-
-#ifdef XR_USE_PLATFORM_ANDROID
-#include <unistd.h>
-#endif
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXREyeGazeInteractionExtension
-
-void OpenXREyeGazeInteractionExtension::initialize()
+void OpenXRExtensions::initialize(const String& p_rendering_driver)
 {
 	if (!data) {
 		data = memnew(Data);
 	}
+	data->rendering_driver = p_rendering_driver;
 }
 
-void OpenXREyeGazeInteractionExtension::finalize()
+void OpenXRExtensions::finalize()
 {
-	if (!data) {
-		return;
+	if (data) {
+		memdelete(data);
+		data = nullptr;
 	}
-	memdelete(data);
-	data = nullptr;
 }
 
-HashMap<String, bool*> OpenXREyeGazeInteractionExtension::get_requested_extensions(
-	XrVersion p_version)
+bool OpenXRExtensions::supports_eye_gaze_interaction()
 {
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/eye_gaze_interaction") &&
-		(!OS::has_feature("mobile") ||
-			OS::has_feature(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME))) {
-		request_extensions[XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME] = &data->available;
+	if (!data || !data->eye_gaze_available || !data->eye_gaze_properties.supportsEyeGazeInteraction) {
+		return false;
 	}
-
-	return request_extensions;
+	return OS::has_feature("permission_xr_eye_tracking") || !OS::has_feature("mobile");
 }
 
-void* OpenXREyeGazeInteractionExtension::set_system_properties_and_get_next_pointer(
-	void* p_next_pointer)
+bool OpenXRExtensions::get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose)
 {
-	if (!data->available) {
-		return p_next_pointer;
+	if (!data || !OpenXRAPI::is_allocated()) {
+		return false;
 	}
-
-	data->properties.type = XR_TYPE_SYSTEM_EYE_GAZE_INTERACTION_PROPERTIES_EXT;
-	data->properties.next = p_next_pointer;
-	data->properties.supportsEyeGazeInteraction = false;
-
-	return &data->properties;
-}
-
-PackedStringArray OpenXREyeGazeInteractionExtension::get_suggested_tracker_names()
-{
-	PackedStringArray arr = {"/user/eyes_ext"};
-	return arr;
-}
-
-bool OpenXREyeGazeInteractionExtension::is_available() { return data != nullptr && data->available; }
-
-bool OpenXREyeGazeInteractionExtension::supports_eye_gaze_interaction()
-{
-	if (data->available && data->properties.supportsEyeGazeInteraction) {
-		return !OS::has_feature("mobile") ||
-			   OS::has_feature("PERMISSION_XR_EXT_eye_gaze_interaction");
-	}
-
-	return false;
-}
-
-bool OpenXREyeGazeInteractionExtension::get_eye_gaze_pose(double p_dist, Vector3& r_eye_pose)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-
 	if (!data->init_eye_gaze_pose) {
 		data->init_eye_gaze_pose = true;
-
 		data->eye_tracker = OpenXRAPI::find_tracker("/user/eyes_ext");
-		if (data->eye_tracker.is_null()) {
-			WARN_PRINT("Couldn't obtain eye tracker");
-		}
-
 		data->eye_action = OpenXRAPI::find_action("eye_gaze_pose");
-		if (data->eye_action.is_null()) {
-			WARN_PRINT("Couldn't obtain pose action for `eye_gaze_pose`, make sure to add this to "
-					   "your action map.");
-		}
 	}
-
 	if (data->eye_tracker.is_null() || data->eye_action.is_null()) {
 		return false;
 	}
-
-	Transform3D eye_transform;
+	Transform3D eye_pose;
 	Vector3 linear_velocity;
 	Vector3 angular_velocity;
 	XRPose::TrackingConfidence confidence = OpenXRAPI::get_action_pose(
-		data->eye_action, data->eye_tracker, eye_transform, linear_velocity, angular_velocity);
+		data->eye_action, data->eye_tracker, eye_pose, linear_velocity, angular_velocity);
 	if (confidence == XRPose::XR_TRACKING_CONFIDENCE_NONE) {
 		return false;
 	}
-
-	r_eye_pose = eye_transform.origin + eye_transform.basis[2] * p_dist;
-
+	r_eye_pose = eye_pose.origin + eye_pose.basis[2] * p_dist;
 	return true;
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRUserPresenceExtension
-
-void OpenXRUserPresenceExtension::initialize()
+bool OpenXRExtensions::is_user_presence_active()
 {
-	if (!data) {
-		data = memnew(Data);
-	}
+	return data && data->user_presence_available && data->user_presence_properties.supportsUserPresence;
 }
 
-void OpenXRUserPresenceExtension::finalize()
+bool OpenXRExtensions::is_user_present()
 {
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
+	ERR_FAIL_COND_V_MSG(!is_user_presence_active(), false,
+		"XR_EXT_user_presence extension is not enabled or supported on this device.");
+	return data->user_present;
 }
 
-void* OpenXRUserPresenceExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
-{
-	if (!data->available) {
-		return p_next_pointer;
-	}
-
-	data->properties.type = XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT;
-	data->properties.next = p_next_pointer;
-	data->properties.supportsUserPresence = false;
-
-	return &data->properties;
-}
-
-bool OpenXRUserPresenceExtension::is_active()
-{
-	return data->available && data->properties.supportsUserPresence;
-}
-
-void OpenXRUserPresenceExtension::on_state_ready() { data->user_present = true; }
-
-void OpenXRUserPresenceExtension::on_state_stopping() { data->user_present = false; }
-
-bool OpenXRUserPresenceExtension::is_user_present()
-{
-	return data != nullptr && data->user_present;
-}
-
-HashMap<String, bool*> OpenXRUserPresenceExtension::get_requested_extensions(XrVersion)
-{
-	return HashMap<String, bool*>();
-}
-
-bool OpenXRUserPresenceExtension::on_event_polled(const XrEventDataBuffer&) { return false; }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRAndroidThreadSettingsExtension
-
-void OpenXRAndroidThreadSettingsExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRAndroidThreadSettingsExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRAndroidThreadSettingsExtension::get_requested_extensions(XrVersion)
-{
-	HashMap<String, bool*> request_extensions;
-
-#ifdef XR_USE_PLATFORM_ANDROID
-	request_extensions[XR_KHR_ANDROID_THREAD_SETTINGS_EXTENSION_NAME] = &data->available;
-#endif
-
-	return request_extensions;
-}
-
-void OpenXRAndroidThreadSettingsExtension::on_instance_created(XrInstance)
-{
-	if (!data->available) {
-		return;
-	}
-
-	if (!_initialize_openxr_android_thread_settings_extension()) {
-		print_error("OpenXR: Failed to initialize android thread settings extension");
-		data->available = false;
-	}
-}
-
-bool OpenXRAndroidThreadSettingsExtension::set_application_thread_type(
-	ThreadType p_thread_type, uint32_t p_thread_id)
-{
-	if (!data->available) {
-		return false;
-	}
-
-#ifdef XR_USE_PLATFORM_ANDROID
-	XrAndroidThreadTypeKHR thread_type{};
-	switch (p_thread_type) {
-	case THREAD_TYPE_APPLICATION_MAIN:
-		thread_type = XR_ANDROID_THREAD_TYPE_APPLICATION_MAIN_KHR;
-		break;
-	case THREAD_TYPE_APPLICATION_WORKER:
-		thread_type = XR_ANDROID_THREAD_TYPE_APPLICATION_WORKER_KHR;
-		break;
-	case THREAD_TYPE_RENDERER_MAIN:
-		thread_type = XR_ANDROID_THREAD_TYPE_RENDERER_MAIN_KHR;
-		break;
-	case THREAD_TYPE_RENDERER_WORKER:
-		thread_type = XR_ANDROID_THREAD_TYPE_RENDERER_WORKER_KHR;
-		break;
-	default:
-		print_error(
-			vformat("OpenXR: Failed to set android application thread; invalid thread type %d",
-				p_thread_type));
-		return false;
-	}
-
-	XrResult result = xrSetAndroidApplicationThreadKHR(
-		OpenXRAPI::get_session(), thread_type, p_thread_id == 0 ? gettid() : p_thread_id);
-	if (result != XR_SUCCESS) {
-		print_error(vformat("OpenXR: Failed to set android application thread; %s",
-			OpenXRAPI::get_error_string(result)));
-		return false;
-	}
-#endif
-
-	return true;
-}
-
-bool OpenXRAndroidThreadSettingsExtension::_initialize_openxr_android_thread_settings_extension()
-{
-#ifdef XR_USE_PLATFORM_ANDROID
-	EXT_INIT_XR_FUNC_V(xrSetAndroidApplicationThreadKHR);
-#endif
-	return true;
-}
-
-void OpenXRAndroidThreadSettingsExtension::_set_render_thread_type()
-{
-	if (Thread::is_main_thread()) {
-		return;
-	}
-
-	set_application_thread_type(THREAD_TYPE_RENDERER_MAIN);
-}
-
-void OpenXRAndroidThreadSettingsExtension::on_session_created(XrSession) {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRDisplayRefreshRateExtension
-
-void OpenXRDisplayRefreshRateExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRDisplayRefreshRateExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRDisplayRefreshRateExtension::get_requested_extensions(XrVersion)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_FB_DISPLAY_REFRESH_RATE_EXTENSION_NAME] = &data->display_refresh_rate_ext;
-
-	return request_extensions;
-}
-
-void OpenXRDisplayRefreshRateExtension::on_instance_created(const XrInstance)
-{
-	if (data->display_refresh_rate_ext) {
-		EXT_INIT_XR_FUNC(xrEnumerateDisplayRefreshRatesFB);
-		EXT_INIT_XR_FUNC(xrGetDisplayRefreshRateFB);
-		EXT_INIT_XR_FUNC(xrRequestDisplayRefreshRateFB);
-	}
-}
-
-void OpenXRDisplayRefreshRateExtension::on_instance_destroyed()
-{
-	data->display_refresh_rate_ext = false;
-}
-
-bool OpenXRDisplayRefreshRateExtension::on_event_polled(const XrEventDataBuffer& event)
-{
-	switch (event.type) {
-	case XR_TYPE_EVENT_DATA_DISPLAY_REFRESH_RATE_CHANGED_FB: {
-		const XrEventDataDisplayRefreshRateChangedFB* event_fb =
-			(const XrEventDataDisplayRefreshRateChangedFB*)&event;
-
-		OpenXRInterface* xr_interface = OpenXRAPI::get_xr_interface();
-		if (xr_interface) {
-			xr_interface->on_refresh_rate_changes(event_fb->toDisplayRefreshRate);
-		}
-
-		return true;
-	} break;
-	default:
-		return false;
-	}
-}
-
-void OpenXRDisplayRefreshRateExtension::set_refresh_rate(float) {}
-
-float OpenXRDisplayRefreshRateExtension::get_refresh_rate() { return 0.0f; }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRPerformanceSettingsExtension
-
-void OpenXRPerformanceSettingsExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRPerformanceSettingsExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRPerformanceSettingsExtension::get_requested_extensions(XrVersion)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_EXT_PERFORMANCE_SETTINGS_EXTENSION_NAME] = &data->available;
-
-	return request_extensions;
-}
-
-void OpenXRPerformanceSettingsExtension::on_instance_created(const XrInstance)
-{
-	if (data->available) {
-		EXT_INIT_XR_FUNC(xrPerfSettingsSetPerformanceLevelEXT);
-	}
-}
-
-bool OpenXRPerformanceSettingsExtension::on_event_polled(const XrEventDataBuffer& event)
-{
-	switch (event.type) {
-	case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT: {
-		const XrEventDataPerfSettingsEXT* perf_settings_event =
-			(const XrEventDataPerfSettingsEXT*)&event;
-
-		OpenXRInterface::PerfSettingsSubDomain sub_domain =
-			openxr_to_sub_domain(perf_settings_event->subDomain);
-		OpenXRInterface::PerfSettingsNotificationLevel from_level =
-			openxr_to_notification_level(perf_settings_event->fromLevel);
-		OpenXRInterface::PerfSettingsNotificationLevel to_level =
-			openxr_to_notification_level(perf_settings_event->toLevel);
-
-		OpenXRInterface* openxr_interface = OpenXRAPI::get_xr_interface();
-
-		if (perf_settings_event->domain == XR_PERF_SETTINGS_DOMAIN_CPU_EXT) {
-			openxr_interface->on_cpu_level_changed(sub_domain, from_level, to_level);
-		}
-		else if (perf_settings_event->domain == XR_PERF_SETTINGS_DOMAIN_GPU_EXT) {
-			openxr_interface->on_gpu_level_changed(sub_domain, from_level, to_level);
-		}
-		else {
-			print_error(vformat(
-				"OpenXR: no matching performance settings domain for %s", perf_settings_event->domain));
-		}
-		return true;
-	} break;
-	default:
-		return false;
-	}
-}
-
-bool OpenXRPerformanceSettingsExtension::is_available() { return data != nullptr && data->available; }
-
-void OpenXRPerformanceSettingsExtension::set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level)
-{
-	XrSession session = OpenXRAPI::get_session();
-	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
-
-	XrResult result =
-		xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_CPU_EXT, xr_level);
-	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: failed to set CPU performance level [%s]",
-			OpenXRAPI::get_error_string(result)));
-	}
-}
-
-void OpenXRPerformanceSettingsExtension::set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level)
-{
-	XrSession session = OpenXRAPI::get_session();
-	XrPerfSettingsLevelEXT xr_level = level_to_openxr(p_level);
-
-	XrResult result =
-		xrPerfSettingsSetPerformanceLevelEXT(session, XR_PERF_SETTINGS_DOMAIN_GPU_EXT, xr_level);
-	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: failed to set GPU performance level [%s]",
-			OpenXRAPI::get_error_string(result)));
-	}
-}
-
-XrPerfSettingsLevelEXT OpenXRPerformanceSettingsExtension::level_to_openxr(
-	OpenXRInterface::PerfSettingsLevel p_level)
+XrPerfSettingsLevelEXT OpenXRExtensions::level_to_openxr(OpenXRInterface::PerfSettingsLevel p_level)
 {
 	switch (p_level) {
-	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_POWER_SAVINGS:
-		return XR_PERF_SETTINGS_LEVEL_POWER_SAVINGS_EXT;
-	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_SUSTAINED_LOW:
-		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_LOW_EXT;
-	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_SUSTAINED_HIGH:
-		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
-	case OpenXRInterface::PerfSettingsLevel::PERF_SETTINGS_LEVEL_BOOST:
-		return XR_PERF_SETTINGS_LEVEL_BOOST_EXT;
-	default:
-		print_error("Invalid performance settings level.");
-		return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
+	case OpenXRInterface::PERF_SETTINGS_LEVEL_POWER_SAVINGS: return XR_PERF_SETTINGS_LEVEL_POWER_SAVINGS_EXT;
+	case OpenXRInterface::PERF_SETTINGS_LEVEL_SUSTAINED_LOW: return XR_PERF_SETTINGS_LEVEL_SUSTAINED_LOW_EXT;
+	case OpenXRInterface::PERF_SETTINGS_LEVEL_SUSTAINED_HIGH: return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
+	case OpenXRInterface::PERF_SETTINGS_LEVEL_BOOST: return XR_PERF_SETTINGS_LEVEL_BOOST_EXT;
+	default: return XR_PERF_SETTINGS_LEVEL_SUSTAINED_HIGH_EXT;
 	}
 }
 
-OpenXRInterface::PerfSettingsSubDomain OpenXRPerformanceSettingsExtension::openxr_to_sub_domain(
-	XrPerfSettingsSubDomainEXT p_sub_domain)
+void OpenXRExtensions::set_cpu_level(OpenXRInterface::PerfSettingsLevel p_level)
 {
-	switch (p_sub_domain) {
-	case XR_PERF_SETTINGS_SUB_DOMAIN_COMPOSITING_EXT:
-		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_COMPOSITING;
-	case XR_PERF_SETTINGS_SUB_DOMAIN_RENDERING_EXT:
-		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_RENDERING;
-	case XR_PERF_SETTINGS_SUB_DOMAIN_THERMAL_EXT:
-		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_THERMAL;
-	default:
-		print_error("Invalid performance settings sub domain.");
-		return OpenXRInterface::PerfSettingsSubDomain::PERF_SETTINGS_SUB_DOMAIN_COMPOSITING;
+	if (!is_perf_settings_available()) return;
+	XrResult result = xrPerfSettingsSetPerformanceLevelEXT(
+		OpenXRAPI::get_session(), XR_PERF_SETTINGS_DOMAIN_CPU_EXT, level_to_openxr(p_level));
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to set CPU performance level [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 }
 
-OpenXRInterface::PerfSettingsNotificationLevel
-OpenXRPerformanceSettingsExtension::openxr_to_notification_level(
-	XrPerfSettingsNotificationLevelEXT p_notification_level)
+void OpenXRExtensions::set_gpu_level(OpenXRInterface::PerfSettingsLevel p_level)
 {
-	switch (p_notification_level) {
-	case XR_PERF_SETTINGS_NOTIF_LEVEL_NORMAL_EXT:
-		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_NORMAL;
-	case XR_PERF_SETTINGS_NOTIF_LEVEL_WARNING_EXT:
-		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_WARNING;
-	case XR_PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED_EXT:
-		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_IMPAIRED;
-	default:
-		print_error("Invalid performance settings notification level.");
-		return OpenXRInterface::PerfSettingsNotificationLevel::PERF_SETTINGS_NOTIF_LEVEL_NORMAL;
+	if (!is_perf_settings_available()) return;
+	XrResult result = xrPerfSettingsSetPerformanceLevelEXT(
+		OpenXRAPI::get_session(), XR_PERF_SETTINGS_DOMAIN_GPU_EXT, level_to_openxr(p_level));
+	if (XR_FAILED(result)) {
+		ERR_PRINT("OpenXR: Failed to set GPU performance level [" + OpenXRAPI::get_error_string(result) + "]");
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRDebugUtilsExtension
-
-void OpenXRDebugUtilsExtension::initialize()
+void OpenXRExtensions::set_object_name(XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name)
 {
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRDebugUtilsExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRDebugUtilsExtension::get_requested_extensions(XrVersion)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_EXT_DEBUG_UTILS_EXTENSION_NAME] = &data->debug_utils_ext;
-
-	return request_extensions;
-}
-
-void OpenXRDebugUtilsExtension::on_instance_destroyed()
-{
-	if (data->default_messenger != XR_NULL_HANDLE) {
-		XrResult result = xrDestroyDebugUtilsMessengerEXT(data->default_messenger);
-		if (XR_FAILED(result)) {
-			ERR_PRINT("OpenXR: Failed to destroy debug callback [" +
-					  OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		data->default_messenger = XR_NULL_HANDLE;
-	}
-
-	xrCreateDebugUtilsMessengerEXT_ptr = nullptr;
-	xrDestroyDebugUtilsMessengerEXT_ptr = nullptr;
-	xrSetDebugUtilsObjectNameEXT_ptr = nullptr;
-	xrSessionBeginDebugUtilsLabelRegionEXT_ptr = nullptr;
-	xrSessionEndDebugUtilsLabelRegionEXT_ptr = nullptr;
-	xrSessionInsertDebugUtilsLabelEXT_ptr = nullptr;
-	data->debug_utils_ext = false;
-}
-
-bool OpenXRDebugUtilsExtension::get_active() { return data != nullptr && data->debug_utils_ext; }
-
-void OpenXRDebugUtilsExtension::set_object_name(
-	XrObjectType p_object_type, uint64_t p_object_handle, const char* p_object_name)
-{
-	ERR_FAIL_COND(!data->debug_utils_ext);
-	ERR_FAIL_NULL(xrSetDebugUtilsObjectNameEXT_ptr);
-
-	const XrDebugUtilsObjectNameInfoEXT space_name_info = {
-		XR_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-		nullptr,
-		p_object_type,
-		p_object_handle,
-		p_object_name,
+	if (!is_debug_utils_active() || !xrSetDebugUtilsObjectNameEXT_ptr) return;
+	const XrDebugUtilsObjectNameInfoEXT name_info = {
+		XR_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr, p_object_type, p_object_handle, p_object_name,
 	};
-
-	XrResult result = xrSetDebugUtilsObjectNameEXT_ptr(OpenXRAPI::get_instance(), &space_name_info);
-	if (XR_FAILED(result)) {
-		ERR_PRINT(
-			"OpenXR: Failed to set object name [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-}
-
-void OpenXRDebugUtilsExtension::begin_debug_label_region(const char* p_label_name)
-{
-	ERR_FAIL_COND(!data->debug_utils_ext);
-	ERR_FAIL_NULL(xrSessionBeginDebugUtilsLabelRegionEXT_ptr);
-
-	const XrDebugUtilsLabelEXT session_active_region_label = {
-		XR_TYPE_DEBUG_UTILS_LABEL_EXT,
-		nullptr,
-		p_label_name,
-	};
-
-	XrResult result = xrSessionBeginDebugUtilsLabelRegionEXT_ptr(
-		OpenXRAPI::get_session(), &session_active_region_label);
-	if (XR_FAILED(result)) {
-		ERR_PRINT(
-			"OpenXR: Failed to begin label region [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-}
-
-void OpenXRDebugUtilsExtension::end_debug_label_region()
-{
-	ERR_FAIL_COND(!data->debug_utils_ext);
-	ERR_FAIL_NULL(xrSessionEndDebugUtilsLabelRegionEXT_ptr);
-
-	XrResult result = xrSessionEndDebugUtilsLabelRegionEXT_ptr(OpenXRAPI::get_session());
-	if (XR_FAILED(result)) {
-		ERR_PRINT(
-			"OpenXR: Failed to end label region [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-}
-
-void OpenXRDebugUtilsExtension::insert_debug_label(const char* p_label_name)
-{
-	ERR_FAIL_COND(!data->debug_utils_ext);
-	ERR_FAIL_NULL(xrSessionInsertDebugUtilsLabelEXT_ptr);
-
-	const XrDebugUtilsLabelEXT session_active_region_label = {
-		XR_TYPE_DEBUG_UTILS_LABEL_EXT,
-		nullptr,
-		p_label_name,
-	};
-
-	XrResult result = xrSessionInsertDebugUtilsLabelEXT_ptr(
-		OpenXRAPI::get_session(), &session_active_region_label);
-	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to insert label [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-}
-
-XrBool32 XRAPI_PTR OpenXRDebugUtilsExtension::_debug_callback(
-	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
-	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
-	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
-{
-	if (OpenXRDebugUtilsExtension::is_initialized()) {
-		return OpenXRDebugUtilsExtension::debug_callback(
-			p_message_severity, p_message_types, p_callback_data, p_user_data);
-	}
-
-	return XR_FALSE;
-}
-
-XrBool32 OpenXRDebugUtilsExtension::debug_callback(
-	XrDebugUtilsMessageSeverityFlagsEXT p_message_severity,
-	XrDebugUtilsMessageTypeFlagsEXT p_message_types,
-	const XrDebugUtilsMessengerCallbackDataEXT* p_callback_data, void*)
-{
-	String msg;
-
-	ERR_FAIL_NULL_V(p_callback_data, XR_FALSE);
-
-	if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
-		msg = ", type: General";
-	}
-	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-		msg = ", type: Validation";
-	}
-	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
-		msg = ", type: Performance";
-	}
-	else if (p_message_types == XR_DEBUG_UTILS_MESSAGE_TYPE_CONFORMANCE_BIT_EXT) {
-		msg = ", type: Conformance";
-	}
-	else {
-		msg = ", type: Unknown (" + String::num_uint64(p_message_types) + ")";
-	}
-
-	if (p_callback_data->functionName) {
-		msg += ", function Name: " + String(p_callback_data->functionName);
-	}
-	if (p_callback_data->messageId) {
-		msg += "\nMessage ID: " + String(p_callback_data->messageId);
-	}
-	if (p_callback_data->message) {
-		msg += "\nMessage: " + String(p_callback_data->message);
-	}
-
-	if (p_callback_data->objectCount > 0) {
-		String objects;
-
-		for (uint32_t i = 0; i < p_callback_data->objectCount; i++) {
-			if (!objects.is_empty()) {
-				objects += ", ";
-			}
-			objects += p_callback_data->objects[i].objectName;
-		}
-
-		msg += "\nObjects: " + objects;
-	}
-
-	if (p_callback_data->sessionLabelCount > 0) {
-		String labels;
-
-		for (uint32_t i = 0; i < p_callback_data->sessionLabelCount; i++) {
-			if (!labels.is_empty()) {
-				labels += ", ";
-			}
-			labels += p_callback_data->sessionLabels[i].labelName;
-		}
-
-		msg += "\nLabels: " + labels;
-	}
-
-	if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-		ERR_PRINT("OpenXR: Severity: Error" + msg);
-	}
-	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-		WARN_PRINT("OpenXR: Severity: Warning" + msg);
-	}
-	else if (p_message_severity == XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-		print_verbose("OpenXR: Severity: Verbose" + msg);
-	}
-
-	return XR_FALSE;
-}
-
-void OpenXRDebugUtilsExtension::on_instance_created(const XrInstance) {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRVisibilityMaskExtension
-
-static const char* VISIBILITY_MASK_SHADER_CODE =
-	"shader_type spatial;\n"
-	"render_mode unshaded, shadows_disabled, cull_disabled;\n"
-	"void vertex() {\n"
-	"\tif (int(VERTEX.z) == VIEW_INDEX) {\n"
-	"\t\tVERTEX.z = -1.0;\n"
-	"\t\tVERTEX += EYE_OFFSET;\n"
-	"\t\tPOSITION = PROJECTION_MATRIX * vec4(VERTEX, 1.0);\n"
-	"\t\tPOSITION.xy /= POSITION.w;\n"
-	"\t\tPOSITION.z = 1.0;\n"
-	"\t\tPOSITION.w = 1.0;\n"
-	"\t} else {\n"
-	"\t\tPOSITION = vec4(2.0, 2.0, 2.0, 1.0);\n"
-	"\t}\n"
-	"}\n"
-	"void fragment() {\n"
-	"\tALBEDO = vec3(0.0, 0.0, 0.0);\n"
-	"}\n";
-
-void OpenXRVisibilityMaskExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRVisibilityMaskExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRVisibilityMaskExtension::get_requested_extensions(XrVersion)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_KHR_VISIBILITY_MASK_EXTENSION_NAME] = &data->available;
-
-	return request_extensions;
-}
-
-void OpenXRVisibilityMaskExtension::on_instance_created(const XrInstance)
-{
-	if (data->available) {
-		EXT_INIT_XR_FUNC(xrGetVisibilityMaskKHR);
-	}
-}
-
-void OpenXRVisibilityMaskExtension::on_session_created(const XrSession)
-{
-	if (data->available) {
-		ERR_FAIL_NULL(Renderer::data);
-		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-		data->shader = Renderer::shader_create();
-		Renderer::shader_set_code(data->shader, VISIBILITY_MASK_SHADER_CODE);
-
-		data->material = Renderer::material_create();
-		Renderer::material_set_shader(data->material, data->shader);
-		Renderer::material_set_render_priority(data->material, 99);
-
-		data->mesh_count = OpenXRAPI::get_view_count();
-		for (uint32_t i = 0; i < data->mesh_count; i++) {
-			_update_mesh_data(i);
-		}
-
-		_update_mesh();
-	}
-}
-
-void OpenXRVisibilityMaskExtension::on_session_destroyed()
-{
-	ERR_FAIL_NULL(Renderer::data);
-
-	if (data->mesh.is_valid()) {
-		Renderer::free_rid(data->mesh);
-		data->mesh = RID();
-	}
-
-	if (data->material.is_valid()) {
-		Renderer::free_rid(data->material);
-		data->material = RID();
-	}
-
-	if (data->shader.is_valid()) {
-		Renderer::free_rid(data->shader);
-		data->shader = RID();
-	}
-
-	data->mesh_count = 0;
-}
-
-void OpenXRVisibilityMaskExtension::on_pre_render() { _update_mesh(); }
-
-bool OpenXRVisibilityMaskExtension::on_event_polled(const XrEventDataBuffer& event)
-{
-	if (event.type == XR_TYPE_EVENT_DATA_VISIBILITY_MASK_CHANGED_KHR) {
-		const XrEventDataVisibilityMaskChangedKHR* vismask_event =
-			(const XrEventDataVisibilityMaskChangedKHR*)&event;
-
-		print_verbose("OpenXR EVENT: Visibility mask changed for view " +
-					  String::num_uint64(vismask_event->viewIndex));
-
-		if (data->available) {
-			_update_mesh_data(vismask_event->viewIndex);
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-bool OpenXRVisibilityMaskExtension::is_available() { return data != nullptr && data->available; }
-
-RID OpenXRVisibilityMaskExtension::get_mesh() { return data ? data->mesh : RID(); }
-
-void OpenXRVisibilityMaskExtension::_update_mesh_data(uint32_t p_view)
-{
-	if (data->available) {
-		ERR_FAIL_UNSIGNED_INDEX(p_view, 4);
-		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-		XrSession session = OpenXRAPI::get_session();
-		XrViewConfigurationType view_configuration_type = OpenXRAPI::get_view_configuration();
-
-		XrVisibilityMaskKHR visibility_mask_data = {
-			XR_TYPE_VISIBILITY_MASK_KHR,
-			nullptr,
-			0,
-			0,
-			nullptr,
-			0,
-			0,
-			nullptr,
-		};
-
-		XrResult result = xrGetVisibilityMaskKHR(session, view_configuration_type, p_view,
-			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
-		if (XR_FAILED(result)) {
-			return;
-		}
-
-		data->mesh_data[p_view].vertices.resize(visibility_mask_data.vertexCountOutput);
-		data->mesh_data[p_view].indices.resize(visibility_mask_data.indexCountOutput);
-
-		visibility_mask_data.vertexCapacityInput = visibility_mask_data.vertexCountOutput;
-		visibility_mask_data.vertices = data->mesh_data[p_view].vertices.ptrw();
-		visibility_mask_data.indexCapacityInput = visibility_mask_data.indexCountOutput;
-		visibility_mask_data.indices = data->mesh_data[p_view].indices.ptrw();
-
-		result = xrGetVisibilityMaskKHR(session, view_configuration_type, p_view,
-			XR_VISIBILITY_MASK_TYPE_HIDDEN_TRIANGLE_MESH_KHR, &visibility_mask_data);
-		if (XR_FAILED(result)) {
-			return;
-		}
-
-		data->is_dirty = true;
-	}
-}
-
-void OpenXRVisibilityMaskExtension::_update_mesh() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRCompositionLayerExtension
-
-void OpenXRCompositionLayerExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRCompositionLayerExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRCompositionLayerExtension::get_requested_extensions(
-	XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_KHR_COMPOSITION_LAYER_CYLINDER_EXTENSION_NAME] =
-		&data->cylinder_ext_available;
-	request_extensions[XR_KHR_COMPOSITION_LAYER_EQUIRECT2_EXTENSION_NAME] =
-		&data->equirect_ext_available;
-
-#ifdef ANDROID_ENABLED
-	request_extensions[XR_KHR_ANDROID_SURFACE_SWAPCHAIN_EXTENSION_NAME] =
-		&data->android_surface_ext_available;
-#endif
-
-	return request_extensions;
-}
-
-void OpenXRCompositionLayerExtension::on_instance_created(const XrInstance p_instance)
-{
-#ifdef ANDROID_ENABLED
-	EXT_INIT_XR_FUNC(xrDestroySwapchain);
-	if (data->android_surface_ext_available) {
-		EXT_INIT_XR_FUNC(xrCreateSwapchainAndroidSurfaceKHR);
-	}
-#endif
-}
-
-void OpenXRCompositionLayerExtension::on_pre_render()
-{
-	for (CompositionLayer* composition_layer : data->registered_composition_layers) {
-		composition_layer->on_pre_render();
-	}
-}
-
-int OpenXRCompositionLayerExtension::get_composition_layer_count()
-{
-	return data->registered_composition_layers.size();
-}
-
-XrCompositionLayerBaseHeader* OpenXRCompositionLayerExtension::get_composition_layer(int p_index)
-{
-	ERR_FAIL_UNSIGNED_INDEX_V(
-		(unsigned int)p_index, data->registered_composition_layers.size(), nullptr);
-	return data->registered_composition_layers[p_index]->get_composition_layer();
-}
-
-int OpenXRCompositionLayerExtension::get_composition_layer_order(int p_index)
-{
-	ERR_FAIL_UNSIGNED_INDEX_V((unsigned int)p_index, data->registered_composition_layers.size(), 1);
-	return data->registered_composition_layers[p_index]->sort_order;
-}
-
-RID OpenXRCompositionLayerExtension::composition_layer_create(
-	XrCompositionLayerBaseHeader* p_openxr_layer)
-{
-	RID rid = data->composition_layer_owner.make_rid();
-	CompositionLayer* layer = data->composition_layer_owner.get_or_null(rid);
-
-	switch (p_openxr_layer->type) {
-	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
-		layer->composition_layer_quad = *(XrCompositionLayerQuad*)p_openxr_layer;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
-		layer->composition_layer_cylinder = *(XrCompositionLayerCylinderKHR*)p_openxr_layer;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
-		layer->composition_layer_equirect = *(XrCompositionLayerEquirect2KHR*)p_openxr_layer;
-	} break;
-	default: {
-		ERR_PRINT(vformat("Invalid OpenXR composition layer type: %s", p_openxr_layer->type));
-		data->composition_layer_owner.free(rid);
-		return RID();
-	}
-	}
-
-	return rid;
-}
-
-Ref<JavaObject> OpenXRCompositionLayerExtension::composition_layer_get_android_surface(RID p_layer)
-{
-	MutexLock lock(data->composition_layer_mutex);
-	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
-	ERR_FAIL_NULL_V(layer, Ref<JavaObject>());
-	return layer->get_android_surface();
-}
-
-void OpenXRCompositionLayerExtension::_composition_layer_register_rt(RID p_layer)
-{
-	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
-	ERR_FAIL_NULL(layer);
-	data->registered_composition_layers.push_back(layer);
-}
-
-void OpenXRCompositionLayerExtension::_composition_layer_unregister_rt(RID p_layer)
-{
-	CompositionLayer* layer = data->composition_layer_owner.get_or_null(p_layer);
-	ERR_FAIL_NULL(layer);
-	data->registered_composition_layers.erase(layer);
-}
-
-bool OpenXRCompositionLayerExtension::is_available(XrStructureType p_which)
-{
-	switch (p_which) {
-	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
-		return true;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
-		return data != nullptr && data->cylinder_ext_available;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
-		return data != nullptr && data->equirect_ext_available;
-	} break;
-	default: {
-		ERR_PRINT(vformat("Unsupported composition layer type: %s", p_which));
-		return false;
-	}
-	}
-}
-
-#ifdef ANDROID_ENABLED
-bool OpenXRCompositionLayerExtension::create_android_surface_swapchain(
-	XrSwapchainCreateInfo* p_info, XrSwapchain* r_swapchain, jobject* r_surface)
-{
-	if (data->android_surface_ext_available) {
-		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-
-		XrResult result = xrCreateSwapchainAndroidSurfaceKHR(
-			OpenXRAPI::get_session(), p_info, r_swapchain, r_surface);
-		if (XR_FAILED(result)) {
-			print_line("OpenXR: Failed to create Android surface swapchain [",
-				OpenXRAPI::get_error_string(result), "]");
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-#endif
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_viewport(
-	RID p_viewport, const Size2i& p_size)
-{
-	ERR_FAIL_COND(use_android_surface);
-
-	if (subviewport.viewport != p_viewport) {
-		if (subviewport.viewport.is_valid()) {
-			RID rt = Renderer::viewport_get_render_target(subviewport.viewport);
-			RendererTextureStorage::render_target_set_override(rt, RID(), RID(), RID(), RID());
-		}
-
-		subviewport.viewport = p_viewport;
-
-		if (subviewport.viewport.is_valid()) {
-			subviewport.viewport_size = p_size;
-		}
-		else {
-			free_swapchain();
-			subviewport.viewport_size = Size2i();
-		}
-	}
-	else if (subviewport.viewport_size != p_size) {
-		subviewport.viewport_size = p_size;
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_use_android_surface(
-	bool p_use_android_surface, const Size2i& p_size)
-{
-#ifdef ANDROID_ENABLED
-	if (p_use_android_surface == use_android_surface) {
-		if (use_android_surface && swapchain_size != p_size) {
-			if (OpenXRFBUpdateSwapchainExtension::is_initialized() &&
-				OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled()) {
-				swapchain_size = p_size;
-				OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(
-					android_surface.swapchain, swapchain_size);
-			}
-		}
-		return;
-	}
-
-	use_android_surface = p_use_android_surface;
-
-	if (use_android_surface) {
-		if (!OpenXRCompositionLayerExtension::is_android_surface_swapchain_available()) {
-			ERR_PRINT_ONCE("OpenXR: Cannot use Android surface for composition layer because the "
-						   "extension isn't available");
-		}
-
-		if (subviewport.viewport.is_valid()) {
-			set_viewport(RID(), Size2i());
-		}
-
-		swapchain_size = p_size;
-	}
-	else {
-		free_swapchain();
-	}
-#endif
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_alpha_blend(bool p_alpha_blend)
-{
-	if (alpha_blend != p_alpha_blend) {
-		alpha_blend = p_alpha_blend;
-		if (alpha_blend) {
-			composition_layer.layerFlags |= XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-		}
-		else {
-			composition_layer.layerFlags &= ~XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-		}
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_transform(
-	const Transform3D& p_transform)
-{
-	Transform3D xf;
-
-	if (pose_space == POSE_HEAD_LOCKED) {
-		xf = p_transform;
-	}
-	else {
-		Transform3D reference_frame = XRServer::get_reference_frame();
-		xf = reference_frame.inverse() * p_transform;
-	}
-
-	Quaternion quat(xf.basis.orthonormalized());
-
-	if (Math::is_zero_approx(quat.length())) {
-		quat = Quaternion();
-	}
-
-	XrPosef pose = {{(float)quat.x, (float)quat.y, (float)quat.z, (float)quat.w},
-		{(float)xf.origin.x, (float)xf.origin.y, (float)xf.origin.z}};
-
-	switch (composition_layer.type) {
-	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
-		composition_layer_quad.pose = pose;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
-		composition_layer_cylinder.pose = pose;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
-		composition_layer_equirect.pose = pose;
-	} break;
-	default: {
-		ERR_PRINT(vformat("Cannot set transform on unsupported composition layer type: %s",
-			composition_layer.type));
-	}
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_min_filter(Filter p_mode)
-{
-	swapchain_state.min_filter = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_mag_filter(Filter p_mode)
-{
-	swapchain_state.mag_filter = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_mipmap_mode(MipmapMode p_mode)
-{
-	swapchain_state.mipmap_mode = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_horizontal_wrap(Wrap p_mode)
-{
-	swapchain_state.horizontal_wrap = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_vertical_wrap(Wrap p_mode)
-{
-	swapchain_state.vertical_wrap = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_red_swizzle(Swizzle p_mode)
-{
-	swapchain_state.red_swizzle = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_green_swizzle(Swizzle p_mode)
-{
-	swapchain_state.green_swizzle = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_blue_swizzle(Swizzle p_mode)
-{
-	swapchain_state.blue_swizzle = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_alpha_swizzle(Swizzle p_mode)
-{
-	swapchain_state.alpha_swizzle = p_mode;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_max_anisotropy(float p_value)
-{
-	swapchain_state.max_anisotropy = p_value;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_border_color(const Color& p_color)
-{
-	swapchain_state.border_color = p_color;
-	swapchain_state_is_dirty = true;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_pose_space(PoseSpace p_pose_space)
-{
-	pose_space = p_pose_space;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_eye_visibility(
-	EyeVisibility p_eye_visibility)
-{
-	XrEyeVisibility eye_visibility;
-
-	switch (p_eye_visibility) {
-	case EYE_VISIBILITY_BOTH: {
-		eye_visibility = XR_EYE_VISIBILITY_BOTH;
-	} break;
-	case EYE_VISIBILITY_LEFT: {
-		eye_visibility = XR_EYE_VISIBILITY_LEFT;
-	} break;
-	case EYE_VISIBILITY_RIGHT: {
-		eye_visibility = XR_EYE_VISIBILITY_RIGHT;
-	} break;
-	default: {
-		eye_visibility = XR_EYE_VISIBILITY_BOTH;
-	}
-	}
-
-	switch (composition_layer.type) {
-	case XR_TYPE_COMPOSITION_LAYER_QUAD: {
-		composition_layer_quad.eyeVisibility = eye_visibility;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR: {
-		composition_layer_cylinder.eyeVisibility = eye_visibility;
-	} break;
-	case XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR: {
-		composition_layer_equirect.eyeVisibility = eye_visibility;
-	} break;
-	default: {
-		ERR_PRINT(vformat("%s does not support setting eye visibility.", composition_layer.type));
-	}
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_quad_size(const Size2& p_size)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_QUAD);
-	composition_layer_quad.size = {(float)p_size.x, (float)p_size.y};
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_radius(float p_radius)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
-	composition_layer_cylinder.radius = p_radius;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_aspect_ratio(
-	float p_aspect_ratio)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
-	composition_layer_cylinder.aspectRatio = p_aspect_ratio;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_cylinder_central_angle(
-	float p_central_angle)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_CYLINDER_KHR);
-	composition_layer_cylinder.centralAngle = p_central_angle;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_radius(float p_radius)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
-	composition_layer_equirect.radius = p_radius;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_central_horizontal_angle(
-	float p_angle)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
-	composition_layer_equirect.centralHorizontalAngle = p_angle;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_upper_vertical_angle(
-	float p_angle)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
-	composition_layer_equirect.upperVerticalAngle = p_angle;
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::set_equirect_lower_vertical_angle(
-	float p_angle)
-{
-	ERR_FAIL_COND(composition_layer.type != XR_TYPE_COMPOSITION_LAYER_EQUIRECT2_KHR);
-	composition_layer_equirect.lowerVerticalAngle = p_angle;
-}
-
-Ref<JavaObject> OpenXRCompositionLayerExtension::CompositionLayer::get_android_surface()
-{
-#ifdef ANDROID_ENABLED
-	if (use_android_surface) {
-		MutexLock lock(OpenXRCompositionLayerExtension::data->composition_layer_mutex);
-		if (android_surface.surface.is_null()) {
-			create_android_surface();
-		}
-		return android_surface.surface;
-	}
-#endif
-	return Ref<JavaObject>();
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::on_pre_render()
-{
-#ifdef ANDROID_ENABLED
-	if (use_android_surface) {
-		MutexLock lock(OpenXRCompositionLayerExtension::data->composition_layer_mutex);
-		if (android_surface.surface.is_null()) {
-			create_android_surface();
-		}
-		return;
-	}
-#endif
-
-	if (subviewport.viewport.is_valid() && OpenXRAPI::is_allocated() && OpenXRAPI::is_running()) {
-		RSE::ViewportUpdateMode update_mode =
-			Renderer::viewport_get_update_mode(subviewport.viewport);
-		if (update_mode == RSE::VIEWPORT_UPDATE_ONCE ||
-			update_mode == RSE::VIEWPORT_UPDATE_ALWAYS) {
-			if (update_and_acquire_swapchain(update_mode == RSE::VIEWPORT_UPDATE_ONCE)) {
-				RID rt = Renderer::viewport_get_render_target(subviewport.viewport);
-				RendererTextureStorage::render_target_set_override(
-					rt, get_current_swapchain_texture(), RID(), RID(), RID());
-			}
-		}
-	}
-
-	if (swapchain_state_is_dirty) {
-		update_swapchain_state();
-		swapchain_state_is_dirty = false;
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::free()
-{
-	if (use_android_surface) {
-		free_swapchain();
-	}
-	else {
-		set_viewport(RID(), Size2i());
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::update_swapchain_state()
-{
-	if (!OpenXRFBUpdateSwapchainExtension::is_initialized()) {
-		return;
-	}
-
-#ifdef ANDROID_ENABLED
-	if (use_android_surface) {
-		if (android_surface.swapchain == XR_NULL_HANDLE) {
-			return;
-		}
-
-		OpenXRFBUpdateSwapchainExtension::update_swapchain_state(
-			android_surface.swapchain, &swapchain_state);
-	}
-	else
-#endif
-	{
-		if (subviewport.swapchain_info.get_swapchain() == XR_NULL_HANDLE) {
-			return;
-		}
-
-		OpenXRFBUpdateSwapchainExtension::update_swapchain_state(
-			subviewport.swapchain_info.get_swapchain(), &swapchain_state);
-	}
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::update_swapchain_sub_image(
-	XrSwapchainSubImage& r_subimage)
-{
-#ifdef ANDROID_ENABLED
-	if (use_android_surface) {
-		r_subimage.swapchain = android_surface.swapchain;
-	}
-	else
-#endif
-	{
-		XrSwapchain swapchain = subviewport.swapchain_info.get_swapchain();
-
-		if (swapchain && subviewport.swapchain_info.is_image_acquired()) {
-			subviewport.swapchain_info.release();
-		}
-
-		r_subimage.swapchain = swapchain;
-	}
-
-	r_subimage.imageRect.extent.width = swapchain_size.width;
-	r_subimage.imageRect.extent.height = swapchain_size.height;
-}
-
-bool OpenXRCompositionLayerExtension::CompositionLayer::update_and_acquire_swapchain(
-	bool p_static_image)
-{
-	ERR_FAIL_COND_V(use_android_surface, false);
-
-	if (!OpenXRAPI::is_allocated() || !OpenXRCompositionLayerExtension::is_initialized()) {
-		return false;
-	}
-	if (!OpenXRCompositionLayerExtension::is_available(composition_layer.type)) {
-		return false;
-	}
-
-	if (subviewport.swapchain_info.get_swapchain() != XR_NULL_HANDLE) {
-		if (swapchain_size == subviewport.viewport_size && !p_static_image &&
-			!subviewport.static_image &&
-			protected_content == subviewport.swapchain_protected_content) {
-			bool should_render = true;
-			return subviewport.swapchain_info.acquire(should_render);
-		}
-
-		subviewport.swapchain_info.queue_free();
-	}
-
-	int64_t swapchain_format = OpenXRAPI::get_color_swapchain_format();
-	const uint32_t sample_count = 1;
-	const uint32_t array_size = 1;
-	XrSwapchainCreateFlags create_flags = 0;
-	if (p_static_image) {
-		create_flags |= XR_SWAPCHAIN_CREATE_STATIC_IMAGE_BIT;
-	}
-	if (protected_content) {
-		create_flags |= XR_SWAPCHAIN_CREATE_PROTECTED_CONTENT_BIT;
-	}
-	if (!subviewport.swapchain_info.create(create_flags,
-			XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT |
-				XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
-			swapchain_format, subviewport.viewport_size.width, subviewport.viewport_size.height,
-			sample_count, array_size)) {
-		swapchain_size = Size2i();
-		return false;
-	}
-
-	swapchain_state_is_dirty = true;
-
-	bool should_render = true;
-	bool ret = subviewport.swapchain_info.acquire(should_render);
-
-	swapchain_size = subviewport.viewport_size;
-	subviewport.static_image = p_static_image;
-	subviewport.swapchain_protected_content = protected_content;
-	return ret;
-}
-
-RID OpenXRCompositionLayerExtension::CompositionLayer::get_current_swapchain_texture()
-{
-	ERR_FAIL_COND_V(use_android_surface, RID());
-
-	if (!OpenXRAPI::is_allocated()) {
-		return RID();
-	}
-
-	return subviewport.swapchain_info.get_image();
-}
-
-void OpenXRCompositionLayerExtension::CompositionLayer::free_swapchain()
-{
-#ifdef ANDROID_ENABLED
-	if (use_android_surface) {
-		if (android_surface.swapchain != XR_NULL_HANDLE) {
-			OpenXRCompositionLayerExtension::xrDestroySwapchain(android_surface.swapchain);
-			android_surface.swapchain = XR_NULL_HANDLE;
-			android_surface.surface.unref();
-		}
-	}
-	else
-#endif
-	{
-		if (subviewport.swapchain_info.get_swapchain() != XR_NULL_HANDLE) {
-			subviewport.swapchain_info.queue_free();
-		}
-		subviewport.static_image = false;
-	}
-
-	swapchain_size = Size2i();
-}
-
-#ifdef ANDROID_ENABLED
-void OpenXRCompositionLayerExtension::CompositionLayer::create_android_surface()
-{
-	ERR_FAIL_COND(
-		android_surface.swapchain != XR_NULL_HANDLE || android_surface.surface.is_valid());
-
-	XrSwapchainCreateFlags create_flags = 0;
-	if (protected_content) {
-		create_flags = XR_SWAPCHAIN_CREATE_PROTECTED_CONTENT_BIT;
-	}
-
-	XrSwapchainCreateInfo info = {
-		XR_TYPE_SWAPCHAIN_CREATE_INFO,
-		nullptr,
-		create_flags,
-		XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT |
-			XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT,
-		0,
-		0,
-		(uint32_t)swapchain_size.x,
-		(uint32_t)swapchain_size.y,
-		0,
-		0,
-		0,
-	};
-
-	jobject surface = nullptr;
-	OpenXRCompositionLayerExtension::create_android_surface_swapchain(
-		&info, &android_surface.swapchain, &surface);
-
-	swapchain_state_is_dirty = true;
-
-	if (surface) {
-		android_surface.surface.instantiate(
-			JavaClassWrapper::wrap("android.view.Surface"), surface);
-	}
-}
-#endif
-
-void OpenXRCompositionLayerExtension::composition_layer_set_viewport(
-	RID p_layer, RID p_viewport, const Vector2i& p_size)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_use_android_surface(
-	RID p_layer, bool p_enable, const Vector2i& p_size)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_unregister(RID p_layer) {}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_vertical_wrap(
-	RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_red_swizzle(
-	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_quad_size(
-	RID p_layer, const Vector2& p_size)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_protected_content(
-	RID p_layer, bool p_protected)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_mipmap_mode(
-	RID p_layer, OpenXRCompositionLayerExtension::MipmapMode p_mode)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_min_filter(
-	RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_max_anisotropy(
-	RID p_layer, float p_anisotropy)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_mag_filter(
-	RID p_layer, OpenXRCompositionLayerExtension::Filter p_filter)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_horizontal_wrap(
-	RID p_layer, OpenXRCompositionLayerExtension::Wrap p_wrap)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_green_swizzle(
-	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_eye_visibility(
-	RID p_layer, OpenXRCompositionLayerExtension::EyeVisibility p_visibility)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_equirect_upper_vertical_angle(
-	RID p_layer, float p_angle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_equirect_radius(
-	RID p_layer, float p_radius)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_equirect_lower_vertical_angle(
-	RID p_layer, float p_angle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_equirect_central_horizontal_angle(
-	RID p_layer, float p_angle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_radius(
-	RID p_layer, float p_radius)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_central_angle(
-	RID p_layer, float p_angle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_cylinder_aspect_ratio(
-	RID p_layer, float p_ratio)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_border_color(
-	RID p_layer, const Color& p_color)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_blue_swizzle(
-	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_alpha_swizzle(
-	RID p_layer, OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_set_alpha_blend(RID p_layer, bool p_blend)
-{
-}
-
-void OpenXRCompositionLayerExtension::composition_layer_register(RID p_layer) {}
-
-XrCompositionLayerBaseHeader*
-OpenXRCompositionLayerExtension::CompositionLayer::get_composition_layer()
-{
-	return &composition_layer;
-}
-
-void OpenXRCompositionLayerExtension::on_session_created(XrSession_T* p_session) {}
-
-void OpenXRCompositionLayerExtension::on_session_destroyed() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRFrameSynthesisExtension
-
-void OpenXRFrameSynthesisExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRFrameSynthesisExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-void OpenXRFrameSynthesisExtension::prepare_view_configuration(uint32_t p_view_count)
-{
-	if (!data->frame_synthesis_ext) {
-		return;
-	}
-
-	data->render_state.config_views.resize(p_view_count);
-
-	for (XrFrameSynthesisConfigViewEXT& config_view : data->render_state.config_views) {
-		config_view.type = XR_TYPE_FRAME_SYNTHESIS_CONFIG_VIEW_EXT;
-		config_view.next = nullptr;
-		config_view.recommendedMotionVectorImageRectWidth = 0;
-		config_view.recommendedMotionVectorImageRectHeight = 0;
-	}
-}
-
-void* OpenXRFrameSynthesisExtension::set_view_configuration_and_get_next_pointer(
-	uint32_t p_view, void* p_next_pointer)
-{
-	if (!data->frame_synthesis_ext) {
-		return nullptr;
-	}
-
-	ERR_FAIL_UNSIGNED_INDEX_V(p_view, data->render_state.config_views.size(), nullptr);
-
-	XrFrameSynthesisConfigViewEXT& config_view = data->render_state.config_views[p_view];
-	config_view.next = p_next_pointer;
-
-	return &config_view;
-}
-
-void OpenXRFrameSynthesisExtension::on_session_destroyed()
-{
-	if (!data->frame_synthesis_ext) {
-		return;
-	}
-
-	free_swapchains();
-}
-
-void OpenXRFrameSynthesisExtension::on_pre_draw_viewport(RID p_render_target)
-{
-	if (!data->frame_synthesis_ext) {
-		return;
-	}
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	if (!data->enabled || data->render_state.config_views.size() != 2 ||
-		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
-		OpenXRAPI::set_velocity_texture(RID());
-		OpenXRAPI::set_velocity_depth_texture(RID());
-		data->render_state.previous_transform = XRServer::get_world_origin();
-		return;
-	}
-
-	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
-		bool should_render = true;
-		data->render_state.swapchains[i].acquire(should_render);
-	}
-
-	OpenXRAPI::set_velocity_texture(
-		data->render_state.swapchains[SWAPCHAIN_MOTION_VECTOR].get_image());
-	OpenXRAPI::set_velocity_depth_texture(
-		data->render_state.swapchains[SWAPCHAIN_DEPTH].get_image());
-
-	uint32_t width = data->render_state.config_views[0].recommendedMotionVectorImageRectWidth;
-	uint32_t height = data->render_state.config_views[0].recommendedMotionVectorImageRectHeight;
-	OpenXRAPI::set_velocity_target_size(Size2i(width, height));
-
-	Transform3D world_transform = XRServer::get_world_origin();
-	Transform3D delta_transform =
-		data->render_state.previous_transform.affine_inverse() * world_transform;
-	Quaternion delta_quat = delta_transform.basis.get_quaternion();
-	Vector3 delta_origin = delta_transform.origin;
-
-	float z_far = OpenXRAPI::get_render_state_z_far();
-	float z_near = OpenXRAPI::get_render_state_z_near();
-
-	for (XrFrameSynthesisInfoEXT& frame_synthesis_info : data->render_state.frame_synthesis_info) {
-		frame_synthesis_info.layerFlags =
-			data->render_state.relax_frame_interval
-				? XR_FRAME_SYNTHESIS_INFO_REQUEST_RELAXED_FRAME_INTERVAL_BIT_EXT
-				: 0;
-
-		frame_synthesis_info.appSpaceDeltaPose = {
-			{(float)delta_quat.x, (float)delta_quat.y, (float)delta_quat.z, (float)delta_quat.w},
-			{(float)delta_origin.x, (float)delta_origin.y, (float)delta_origin.z}};
-
-		if (z_far != z_near) {
-			frame_synthesis_info.nearZ = z_far;
-			frame_synthesis_info.farZ = z_near;
-		}
-	}
-
-	data->render_state.previous_transform = world_transform;
-}
-
-void OpenXRFrameSynthesisExtension::on_post_draw_viewport(RID p_render_target)
-{
-	if (!data->frame_synthesis_ext || !data->enabled ||
-		data->render_state.config_views.size() != 2 ||
-		data->render_state.frame_synthesis_info.size() != 2 || data->render_state.skip_next_frame) {
-		return;
-	}
-
-	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
-		data->render_state.swapchains[i].release();
-	}
-}
-
-void* OpenXRFrameSynthesisExtension::set_projection_views_and_get_next_pointer(
-	int p_view_index, void* p_next_pointer)
-{
-	if (!data->frame_synthesis_ext || !data->enabled ||
-		data->render_state.config_views.size() != 2 ||
-		data->render_state.frame_synthesis_info.size() != 2) {
-		return nullptr;
-	}
-
-	if (data->render_state.skip_next_frame) {
-		if (p_view_index == 1) {
-			data->render_state.skip_next_frame = false;
-		}
-		return nullptr;
-	}
-
-	data->render_state.frame_synthesis_info[p_view_index].next = p_next_pointer;
-	return &data->render_state.frame_synthesis_info[p_view_index];
-}
-
-bool OpenXRFrameSynthesisExtension::is_available()
-{
-	return data != nullptr && data->frame_synthesis_ext;
-}
-
-bool OpenXRFrameSynthesisExtension::is_enabled()
-{
-	return data != nullptr && data->frame_synthesis_ext && data->enabled;
-}
-
-bool OpenXRFrameSynthesisExtension::get_relax_frame_interval()
-{
-	return data != nullptr && data->relax_frame_interval;
-}
-
-void OpenXRFrameSynthesisExtension::_set_render_state_enabled_rt(bool p_enabled)
-{
-	data->render_state.enabled = p_enabled;
-}
-
-void OpenXRFrameSynthesisExtension::_set_relax_frame_interval_rt(bool p_relax_frame_interval)
-{
-	data->render_state.relax_frame_interval = p_relax_frame_interval;
-}
-
-void OpenXRFrameSynthesisExtension::free_swapchains()
-{
-	for (int i = 0; i < SWAPCHAIN_MAX; i++) {
-		data->render_state.swapchains[i].queue_free();
-	}
-}
-
-void OpenXRFrameSynthesisExtension::_set_skip_next_frame_rt()
-{
-	data->render_state.skip_next_frame = true;
-}
-
-HashMap<String, bool*> OpenXRFrameSynthesisExtension::get_requested_extensions(
-	XrVersion p_version)
-{
-	return HashMap<String, bool*>();
-}
-
-void OpenXRFrameSynthesisExtension::on_instance_created(XrInstance_T* p_instance) {}
-
-void OpenXRFrameSynthesisExtension::on_instance_destroyed() {}
-
-void OpenXRFrameSynthesisExtension::print_view_configuration_info(unsigned int p_view_config) {}
-
-void OpenXRFrameSynthesisExtension::on_main_swapchains_created() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRFutureResult & OpenXRFutureExtension
-
-void OpenXRFutureExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRFutureExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-OpenXRFutureResult::ResultStatus OpenXRFutureResult::get_status() const { return status; }
-
-XrFutureEXT OpenXRFutureResult::get_future() const { return future; }
-
-uint64_t OpenXRFutureResult::_get_future() const { return (uint64_t)future; }
-
-void OpenXRFutureResult::cancel_future()
-{
-	ERR_FAIL_COND(status != RESULT_RUNNING);
-	ERR_FAIL_COND(!OpenXRFutureExtension::is_initialized());
-
-	OpenXRFutureExtension::cancel_future(future);
-}
-
-void OpenXRFutureResult::_mark_as_cancelled() {}
-
-void OpenXRFutureResult::_mark_as_finished() {}
-
-HashMap<String, bool*> OpenXRFutureExtension::get_requested_extensions(XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_EXT_FUTURE_EXTENSION_NAME] = &data->future_ext;
-
-	return request_extensions;
-}
-
-void OpenXRFutureExtension::on_instance_created(const XrInstance p_instance)
-{
-	if (data->future_ext) {
-		EXT_INIT_XR_FUNC(xrPollFutureEXT);
-		EXT_INIT_XR_FUNC(xrCancelFutureEXT);
-
-		data->future_ext = xrPollFutureEXT_ptr && xrCancelFutureEXT_ptr;
-	}
-}
-
-void OpenXRFutureExtension::on_instance_destroyed()
-{
-	xrPollFutureEXT_ptr = nullptr;
-	xrCancelFutureEXT_ptr = nullptr;
-}
-
-void OpenXRFutureExtension::on_session_destroyed()
-{
-	if (!is_active()) {
-		return;
-	}
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	for (const KeyValue<XrFutureEXT, Ref<OpenXRFutureResult>>& element : data->futures) {
-		XrFutureCancelInfoEXT cancel_info = {
-			XR_TYPE_FUTURE_CANCEL_INFO_EXT,
-			nullptr,
-			element.key,
-		};
-		XrResult result = xrCancelFutureEXT_ptr(OpenXRAPI::get_instance(), &cancel_info);
-		if (XR_FAILED(result)) {
-			WARN_PRINT(
-				"OpenXR: Failed to cancel future [" + OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		element.value->_mark_as_cancelled();
-	}
-	data->futures.clear();
-}
-
-bool OpenXRFutureExtension::is_active() { return data != nullptr && data->future_ext; }
-
-void OpenXRFutureExtension::cancel_future(XrFutureEXT p_future)
-{
-	ERR_FAIL_COND(!data->futures.has(p_future));
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	XrFutureCancelInfoEXT cancel_info = {
-		XR_TYPE_FUTURE_CANCEL_INFO_EXT,
-		nullptr,
-		p_future,
-	};
-	XrResult result = xrCancelFutureEXT_ptr(OpenXRAPI::get_instance(), &cancel_info);
-	if (XR_FAILED(result)) {
-		WARN_PRINT(
-			"OpenXR: Failed to cancel future [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	data->futures[p_future]->_mark_as_cancelled();
-	data->futures.erase(p_future);
-}
-
-void OpenXRFutureExtension::_cancel_future(uint64_t p_future)
-{
-	cancel_future((XrFutureEXT)p_future);
-}
-
-void OpenXRFutureExtension::on_process()
-{
-	if (!is_active()) {
-		return;
-	}
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	Vector<XrFutureEXT> completed;
-	for (const KeyValue<XrFutureEXT, Ref<OpenXRFutureResult>>& element : data->futures) {
-		XrFuturePollInfoEXT poll_info = {
-			XR_TYPE_FUTURE_POLL_INFO_EXT,
-			nullptr,
-			element.key,
-		};
-		XrFuturePollResultEXT poll_result = {
-			XR_TYPE_FUTURE_POLL_RESULT_EXT,
-			nullptr,
-			XR_FUTURE_STATE_MAX_ENUM_EXT,
-		};
-		XrResult result = xrPollFutureEXT_ptr(OpenXRAPI::get_instance(), &poll_info, &poll_result);
-		if (XR_FAILED(result)) {
-			ERR_PRINT("OpenXR: Failed to obtain future status [" +
-					  OpenXRAPI::get_error_string(result) + "]");
-			continue;
-		}
-		if (poll_result.state == XR_FUTURE_STATE_READY_EXT) {
-			element.value->_mark_as_finished();
-			completed.push_back(element.key);
-		}
-	}
-
-	for (const XrFutureEXT& future : completed) {
-		data->futures.erase(future);
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRHandTrackingExtension
-
-void OpenXRHandTrackingExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRHandTrackingExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-void OpenXRHandTrackingExtension::on_session_destroyed() { cleanup_hand_tracking(); }
-
-void OpenXRHandTrackingExtension::on_state_stopping() { cleanup_hand_tracking(); }
-
-const OpenXRHandTrackingExtension::HandTracker* OpenXRHandTrackingExtension::get_hand_tracker(
-	HandTrackedHands p_hand)
-{
-	ERR_FAIL_UNSIGNED_INDEX_V(p_hand, OPENXR_MAX_TRACKED_HANDS, nullptr);
-
-	return &data->hand_trackers[p_hand];
-}
-
-bool OpenXRHandTrackingExtension::get_active() { return true; }
-
-void OpenXRHandTrackingExtension::cleanup_hand_tracking() {}
-
-void OpenXRHandTrackingExtension::on_instance_destroyed() {}
-
-void* OpenXRHandTrackingExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
-{
-	return p_next_pointer;
-}
-
-void OpenXRHandTrackingExtension::on_state_ready() {}
-
-void OpenXRHandTrackingExtension::on_process() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRRenderModelExtension
-
-#ifdef MODULE_GLTF_ENABLED
-#include "servers/display/display_server.h"
-
-OpenXRRenderModelData::OpenXRRenderModelData() = default;
-OpenXRRenderModelData::~OpenXRRenderModelData() = default;
-
-Ref<GLTFState> OpenXRRenderModelData::get_gltf_state() { return gltf_state; }
-
-void OpenXRRenderModelExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRRenderModelExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-void OpenXRRenderModelExtension::on_instance_created(const XrInstance p_instance)
-{
-	EXT_INIT_XR_FUNC(xrLocateSpace);
-	EXT_INIT_XR_FUNC(xrDestroySpace);
-	EXT_INIT_XR_FUNC(xrPathToString);
-
-	if (data->render_model_ext) {
-		EXT_INIT_XR_FUNC(xrCreateRenderModelEXT);
-		EXT_INIT_XR_FUNC(xrDestroyRenderModelEXT);
-		EXT_INIT_XR_FUNC(xrGetRenderModelPropertiesEXT);
-		EXT_INIT_XR_FUNC(xrCreateRenderModelSpaceEXT);
-		EXT_INIT_XR_FUNC(xrCreateRenderModelAssetEXT);
-		EXT_INIT_XR_FUNC(xrDestroyRenderModelAssetEXT);
-		EXT_INIT_XR_FUNC(xrGetRenderModelAssetDataEXT);
-		EXT_INIT_XR_FUNC(xrGetRenderModelAssetPropertiesEXT);
-		EXT_INIT_XR_FUNC(xrGetRenderModelStateEXT);
-	}
-
-	if (data->interaction_render_model_ext) {
-		EXT_INIT_XR_FUNC(xrEnumerateInteractionRenderModelIdsEXT);
-		EXT_INIT_XR_FUNC(xrEnumerateRenderModelSubactionPathsEXT);
-		EXT_INIT_XR_FUNC(xrGetRenderModelPoseTopLevelUserPathEXT);
-	}
-}
-
-void OpenXRRenderModelExtension::on_session_created(const XrSession p_session)
-{
-	data->_interaction_data_dirty = true;
-}
-
-void OpenXRRenderModelExtension::on_instance_destroyed()
-{
-	xrCreateRenderModelEXT_ptr = nullptr;
-	xrDestroyRenderModelEXT_ptr = nullptr;
-	xrGetRenderModelPropertiesEXT_ptr = nullptr;
-	xrCreateRenderModelSpaceEXT_ptr = nullptr;
-	xrCreateRenderModelAssetEXT_ptr = nullptr;
-	xrDestroyRenderModelAssetEXT_ptr = nullptr;
-	xrGetRenderModelAssetDataEXT_ptr = nullptr;
-	xrGetRenderModelAssetPropertiesEXT_ptr = nullptr;
-	xrGetRenderModelStateEXT_ptr = nullptr;
-	xrEnumerateInteractionRenderModelIdsEXT_ptr = nullptr;
-	xrEnumerateRenderModelSubactionPathsEXT_ptr = nullptr;
-	xrGetRenderModelPoseTopLevelUserPathEXT_ptr = nullptr;
-
-	data->uuid_ext = false;
-	data->render_model_ext = false;
-	data->interaction_render_model_ext = false;
-}
-
-void OpenXRRenderModelExtension::on_session_destroyed()
-{
-	_clear_interaction_data();
-	_clear_render_model_data();
-	data->xr_sync_has_run = false;
-}
-
-bool OpenXRRenderModelExtension::on_event_polled(const XrEventDataBuffer& event)
-{
-	if (event.type == XR_TYPE_EVENT_DATA_INTERACTION_RENDER_MODELS_CHANGED_EXT) {
-		data->_interaction_data_dirty = true;
-		return true;
-	}
-	else if (event.type == XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED) {
-		data->_interaction_data_dirty = true;
-		return false;
-	}
-
-	return false;
-}
-
-void OpenXRRenderModelExtension::on_sync_actions()
-{
-	if (!is_active()) {
-		return;
-	}
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	data->xr_sync_has_run = true;
-
-	if (data->_interaction_data_dirty) {
-		_update_interaction_data();
-	}
-
-	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
-
-	for (const RID& rid : owned) {
-		RenderModel* render_model = data->render_model_owner.get_or_null(rid);
-		if (render_model && render_model->xr_space != XR_NULL_HANDLE) {
-			XrSpaceLocation render_model_location = {
-				XR_TYPE_SPACE_LOCATION,
-				nullptr,
-				0,
-				{{0.0, 0.0, 0.0, 1.0}, {0.0, 0.0, 0.0}},
-			};
-
-			XrResult result = xrLocateSpace(render_model->xr_space, OpenXRAPI::get_play_space(),
-				OpenXRAPI::get_predicted_display_time(), &render_model_location);
-			ERR_CONTINUE_MSG(XR_FAILED(result), "OpenXR: Failed to locate render model space [" +
-													OpenXRAPI::get_error_string(result) + "]");
-
-			render_model->confidence = OpenXRAPI::transform_from_location(
-				render_model_location, render_model->root_transform);
-
-			if (!render_model->node_states.is_empty()) {
-				XrRenderModelStateGetInfoEXT get_state_info = {
-					XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT,
-					nullptr,
-					OpenXRAPI::get_predicted_display_time(),
-				};
-
-				XrRenderModelStateEXT state = {
-					XR_TYPE_RENDER_MODEL_STATE_EXT,
-					nullptr,
-					render_model->animatable_node_count,
-					render_model->node_states.ptr(),
-				};
-
-				result = xrGetRenderModelStateEXT(
-					render_model->xr_render_model, &get_state_info, &state);
-				if (XR_FAILED(result)) {
-					ERR_PRINT("OpenXR: Failed to update node states [" +
-							  OpenXRAPI::get_error_string(result) + "]");
-				}
-			}
-
-			XrPath new_path = XR_NULL_PATH;
-
-			if (data->toplevel_paths.is_empty()) {
-				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/left"));
-				data->toplevel_paths.push_back(OpenXRAPI::get_xr_path("/user/hand/right"));
-			}
-
-			XrInteractionRenderModelTopLevelUserPathGetInfoEXT info = {
-				XR_TYPE_INTERACTION_RENDER_MODEL_TOP_LEVEL_USER_PATH_GET_INFO_EXT,
-				nullptr,
-				(uint32_t)data->toplevel_paths.size(),
-				data->toplevel_paths.ptr(),
-			};
-			result = xrGetRenderModelPoseTopLevelUserPathEXT(
-				render_model->xr_render_model, &info, &new_path);
-			if (XR_FAILED(result)) {
-				ERR_PRINT("OpenXR: Failed to update the top level path for render models [" +
-						  OpenXRAPI::get_error_string(result) + "]");
-			}
-			else if (new_path != render_model->top_level_path) {
-				print_verbose("OpenXR: Render model top level path changed to " +
-							  OpenXRAPI::get_xr_path_name(new_path));
-				render_model->top_level_path = new_path;
-			}
-		}
-	}
-}
-
-bool OpenXRRenderModelExtension::is_active()
-{
-	return data != nullptr && data->render_model_ext && data->interaction_render_model_ext;
-}
-
-void OpenXRRenderModelExtension::_clear_interaction_data()
-{
-	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
-		render_model_destroy(e.value);
-	}
-	data->interaction_render_models.clear();
-}
-
-bool OpenXRRenderModelExtension::_update_interaction_data()
-{
-	ERR_FAIL_COND_V_MSG(!data->interaction_render_model_ext, false,
-		"Interaction render model extension hasn't been enabled.");
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-
-	XrSession session = OpenXRAPI::get_session();
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, false);
-
-	if (!data->xr_sync_has_run) {
-		return true;
-	}
-
-	data->_interaction_data_dirty = false;
-
-	XrInteractionRenderModelIdsEnumerateInfoEXT interaction_info = {
-		XR_TYPE_INTERACTION_RENDER_MODEL_IDS_ENUMERATE_INFO_EXT,
-		nullptr,
-	};
-
-	uint32_t interaction_count = 0;
-	XrResult result = xrEnumerateInteractionRenderModelIdsEXT(
-		session, &interaction_info, 0, &interaction_count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction id count [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	LocalVector<XrRenderModelIdEXT> render_model_interaction_ids;
-	render_model_interaction_ids.resize(interaction_count);
-
-	if (!render_model_interaction_ids.is_empty()) {
-		result = xrEnumerateInteractionRenderModelIdsEXT(session, &interaction_info,
-			render_model_interaction_ids.size(), &interaction_count,
-			render_model_interaction_ids.ptr());
-		if (XR_FAILED(result)) {
-			ERR_FAIL_V_MSG(false, "OpenXR: Failed to obtain render model interaction ids [" +
-									  OpenXRAPI::get_error_string(result) + "]");
-		}
-	}
-
-	LocalVector<XrRenderModelIdEXT> erase_ids;
-	for (const KeyValue<XrRenderModelIdEXT, RID>& e : data->interaction_render_models) {
-		if (!render_model_interaction_ids.has(e.key)) {
-			if (e.value.is_valid()) {
-				render_model_destroy(e.value);
-			}
-			erase_ids.push_back(e.key);
-		}
-	}
-
-	for (const XrRenderModelIdEXT& id : erase_ids) {
-		data->interaction_render_models.erase(id);
-	}
-
-	for (const XrRenderModelIdEXT& id : render_model_interaction_ids) {
-		if (!data->interaction_render_models.has(id)) {
-			data->interaction_render_models[id] = render_model_create(id);
-		}
-	}
-
-	return true;
-}
-
-bool OpenXRRenderModelExtension::has_render_model(RID p_render_model)
-{
-	return data->render_model_owner.owns(p_render_model);
-}
-
-RID OpenXRRenderModelExtension::render_model_create(XrRenderModelIdEXT p_render_model_id)
-{
-	ERR_FAIL_COND_V_MSG(
-		!data->render_model_ext, RID(), "Render model extension hasn't been enabled.");
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
-
-	XrSession session = OpenXRAPI::get_session();
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, RID());
-
-	RenderModel render_model;
-	render_model.xr_render_model_id = p_render_model_id;
-
-	const HashSet<String> supported_gltf_extensions_hash_set =
-		GLTFDocument::get_supported_gltf_extensions_hashset();
-	Vector<CharString> supported_gltf_extensions_char_string;
-	supported_gltf_extensions_char_string.resize(supported_gltf_extensions_hash_set.size());
-	int64_t supported_gltf_extension_index = 0;
-	for (const String& ext : supported_gltf_extensions_hash_set) {
-		supported_gltf_extensions_char_string.set(supported_gltf_extension_index, ext.utf8());
-		supported_gltf_extension_index++;
-	}
-	Vector<const char*> supported_gltf_extensions;
-	supported_gltf_extensions.resize(supported_gltf_extensions_char_string.size());
-	for (int64_t i = 0; i < supported_gltf_extensions_char_string.size(); i++) {
-		supported_gltf_extensions.write[i] = supported_gltf_extensions_char_string[i].get_data();
-	}
-
-	XrRenderModelCreateInfoEXT create_info = {
-		XR_TYPE_RENDER_MODEL_CREATE_INFO_EXT,
-		nullptr,
-		p_render_model_id,
-		uint32_t(supported_gltf_extensions.size()),
-		supported_gltf_extensions.ptr(),
-	};
-
-	XrResult result = xrCreateRenderModelEXT(session, &create_info, &render_model.xr_render_model);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create render model [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	XrRenderModelPropertiesGetInfoEXT properties_info = {
-		XR_TYPE_RENDER_MODEL_PROPERTIES_GET_INFO_EXT,
-		nullptr,
-	};
-
-	XrRenderModelPropertiesEXT properties = {
-		XR_TYPE_RENDER_MODEL_PROPERTIES_EXT,
-		nullptr,
-		{},
-		0,
-	};
-
-	result =
-		xrGetRenderModelPropertiesEXT(render_model.xr_render_model, &properties_info, &properties);
-	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to get render model properties [" +
-				  OpenXRAPI::get_error_string(result) + "]");
-	}
-	else {
-		render_model.animatable_node_count = properties.animatableNodeCount;
-		render_model.render_model_data =
-			_get_render_model_data(properties.cacheId, properties.animatableNodeCount);
-	}
-
-	XrRenderModelSpaceCreateInfoEXT space_create_info = {
-		XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT,
-		nullptr,
-		render_model.xr_render_model,
-	};
-
-	result = xrCreateRenderModelSpaceEXT(session, &space_create_info, &render_model.xr_space);
-	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to create render model space [" +
-				  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	if (render_model.animatable_node_count > 0) {
-		render_model.node_states.resize(render_model.animatable_node_count);
-	}
-
-	return data->render_model_owner.make_rid(render_model);
-}
-
-RID OpenXRRenderModelExtension::_render_model_create(uint64_t p_render_model_id)
-{
-	RID ret;
-
-	ERR_FAIL_COND_V(p_render_model_id == XR_NULL_RENDER_MODEL_ID_EXT, ret);
-
-	if (is_active()) {
-		ret = render_model_create(XrRenderModelIdEXT(p_render_model_id));
-	}
-
-	return ret;
-}
-
-void OpenXRRenderModelExtension::render_model_destroy(RID p_render_model)
-{
-	ERR_FAIL_COND_MSG(!data->render_model_ext, "Render model extension hasn't been enabled.");
-
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL(render_model);
-
-	if (render_model->xr_space != XR_NULL_HANDLE) {
-		xrDestroySpace(render_model->xr_space);
-	}
-
-	render_model->node_states.clear();
-
-	XrResult result = xrDestroyRenderModelEXT(render_model->xr_render_model);
-	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to destroy render model [" +
-				  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	data->render_model_owner.free(p_render_model);
-}
-
-Node3D* OpenXRRenderModelExtension::render_model_new_scene_instance(RID p_render_model)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, nullptr);
-
-	if (render_model->render_model_data.is_null()) {
-		return nullptr;
-	}
-
-	return render_model->render_model_data->new_scene_instance();
-}
-
-PackedStringArray OpenXRRenderModelExtension::render_model_get_subaction_paths(RID p_render_model)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedStringArray());
-
-	XrInstance instance = OpenXRAPI::get_instance();
-	ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, PackedStringArray());
-
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, PackedStringArray());
-
-	PackedStringArray subaction_paths;
-
-	XrInteractionRenderModelSubactionPathInfoEXT subaction_info = {
-		XR_TYPE_INTERACTION_RENDER_MODEL_SUBACTION_PATH_INFO_EXT,
-		nullptr,
-	};
-
-	uint32_t capacity;
-
-	XrResult result = xrEnumerateRenderModelSubactionPathsEXT(
-		render_model->xr_render_model, &subaction_info, 0, &capacity, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(
-			PackedStringArray(), "OpenXR: Failed to obtain render model subaction path count [" +
-									 OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	if (capacity > 0) {
-		LocalVector<XrPath> paths;
-		paths.resize(capacity);
-
-		result = xrEnumerateRenderModelSubactionPathsEXT(
-			render_model->xr_render_model, &subaction_info, capacity, &capacity, paths.ptr());
-		if (XR_FAILED(result)) {
-			ERR_FAIL_V_MSG(PackedStringArray(),
-				"OpenXR: Failed to obtain render model subaction paths [" +
-					OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		for (uint32_t i = 0; i < capacity; i++) {
-			char buffer[1024];
-			uint32_t size = 0;
-			xrPathToString(instance, paths[i], 1024, &size, buffer);
-			if (size > 0) {
-				subaction_paths.push_back(String(buffer));
-			}
-		}
-	}
-
-	return subaction_paths;
-}
-
-XrPath OpenXRRenderModelExtension::render_model_get_top_level_path(RID p_render_model)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
-
-	return render_model->top_level_path;
-}
-
-String OpenXRRenderModelExtension::render_model_get_top_level_path_as_string(RID p_render_model)
-{
-	String ret;
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	if (is_active() && has_render_model(p_render_model)) {
-		XrPath path = render_model_get_top_level_path(p_render_model);
-		if (path == XR_NULL_PATH) {
-			return "None";
-		}
-		else {
-			return OpenXRAPI::get_xr_path_name(path);
-		}
-	}
-
-	return ret;
-}
-
-XRPose::TrackingConfidence OpenXRRenderModelExtension::render_model_get_confidence(
-	RID p_render_model)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, XRPose::TrackingConfidence::XR_TRACKING_CONFIDENCE_NONE);
-
-	return render_model->confidence;
-}
-
-Transform3D OpenXRRenderModelExtension::render_model_get_root_transform(RID p_render_model)
-{
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), Transform3D());
-
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, Transform3D());
-
-	real_t world_scale = XRServer::get_world_scale();
-	Transform3D root_transform =
-		render_model->root_transform.scaled(Vector3(world_scale, world_scale, world_scale));
-
-	return XRServer::get_reference_frame() * root_transform;
-}
-
-uint32_t OpenXRRenderModelExtension::render_model_get_animatable_node_count(RID p_render_model)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, 0);
-
-	return render_model->animatable_node_count;
-}
-
-String OpenXRRenderModelExtension::render_model_get_animatable_node_name(
-	RID p_render_model, uint32_t p_index)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, String());
-
-	if (render_model->render_model_data.is_null()) {
-		return String();
-	}
-
-	return render_model->render_model_data->get_node_name(p_index);
-}
-
-bool OpenXRRenderModelExtension::render_model_is_animatable_node_visible(
-	RID p_render_model, uint32_t p_index)
-{
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, false);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, false);
-
-	if (render_model->node_states.is_empty()) {
-		return false;
-	}
-
-	return render_model->node_states[p_index].isVisible;
-}
-
-Transform3D OpenXRRenderModelExtension::render_model_get_animatable_node_transform(
-	RID p_render_model, uint32_t p_index)
-{
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	RenderModel* render_model = data->render_model_owner.get_or_null(p_render_model);
-	ERR_FAIL_NULL_V(render_model, Transform3D());
-	ERR_FAIL_UNSIGNED_INDEX_V(p_index, render_model->animatable_node_count, Transform3D());
-
-	if (render_model->node_states.is_empty()) {
-		return Transform3D();
-	}
-
-	return OpenXRAPI::transform_from_pose(render_model->node_states[p_index].nodePose);
-}
-
-Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_get_render_model_data(
-	XrUuidEXT p_cache_id, uint32_t p_animatable_node_count)
-{
-	if (data->render_model_data_cache.has(p_cache_id)) {
-		return data->render_model_data_cache[p_cache_id];
-	}
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), nullptr);
-
-	XrSession session = OpenXRAPI::get_session();
-	ERR_FAIL_COND_V(session == XR_NULL_HANDLE, nullptr);
-
-	XrRenderModelAssetEXT asset;
-	XrRenderModelAssetCreateInfoEXT create_info = {
-		XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT,
-		nullptr,
-		p_cache_id,
-	};
-
-	XrResult result = xrCreateRenderModelAssetEXT(session, &create_info, &asset);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to create render model asset [" +
-									OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	Ref<OpenXRRenderModelData> render_model_data = _load_asset(asset, p_animatable_node_count);
-
-	result = xrDestroyRenderModelAssetEXT(asset);
-	if (XR_FAILED(result)) {
-		ERR_PRINT("OpenXR: Failed to destroy render model asset [" +
-				  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	data->render_model_data_cache[p_cache_id] = render_model_data;
-
-	return render_model_data;
-}
-
-Ref<OpenXRRenderModelData> OpenXRRenderModelExtension::_load_asset(
-	XrRenderModelAssetEXT p_asset, uint32_t p_animatable_node_count)
-{
-	XrRenderModelAssetDataGetInfoEXT get_info = {
-		XR_TYPE_RENDER_MODEL_ASSET_DATA_GET_INFO_EXT,
-		nullptr,
-	};
-
-	XrRenderModelAssetDataEXT asset_data = {
-		XR_TYPE_RENDER_MODEL_ASSET_DATA_EXT,
-		nullptr,
-		0,
-		0,
-		nullptr,
-	};
-
-	XrResult result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer size [" +
-									OpenXRAPI::get_error_string(result) + "]");
-	}
-	ERR_FAIL_COND_V(asset_data.bufferCountOutput == 0, nullptr);
-
-	PackedByteArray buffer;
-	buffer.resize(asset_data.bufferCountOutput);
-	asset_data.buffer = buffer.ptrw();
-	asset_data.bufferCapacityInput = asset_data.bufferCountOutput;
-
-	result = xrGetRenderModelAssetDataEXT(p_asset, &get_info, &asset_data);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model buffer [" +
-									OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	PackedStringArray node_names;
-
-	if (p_animatable_node_count > 0) {
-		Vector<XrRenderModelAssetNodePropertiesEXT> node_properties;
-		node_properties.resize(p_animatable_node_count);
-
-		XrRenderModelAssetPropertiesGetInfoEXT properties_info = {
-			XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_GET_INFO_EXT,
-			nullptr,
-		};
-
-		XrRenderModelAssetPropertiesEXT asset_properties = {
-			XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_EXT,
-			nullptr,
-			uint32_t(node_properties.size()),
-			node_properties.ptrw(),
-		};
-
-		result = xrGetRenderModelAssetPropertiesEXT(p_asset, &properties_info, &asset_properties);
-		if (XR_FAILED(result)) {
-			ERR_FAIL_V_MSG(nullptr, "OpenXR: Failed to get render model property info [" +
-										OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		node_names.resize(p_animatable_node_count);
-		String* node_names_ptrw = node_names.ptrw();
-		for (uint32_t i = 0; i < p_animatable_node_count; i++) {
-			node_names_ptrw[i] = String(node_properties[i].uniqueName);
-		}
-	}
-
-	Ref<OpenXRRenderModelData> render_model_data;
-	render_model_data.instantiate();
-
-	render_model_data->parse_gltf_document(buffer);
-	render_model_data->set_node_names(node_names);
-
-	return render_model_data;
-}
-
-void OpenXRRenderModelExtension::_clear_render_model_data()
-{
-	data->toplevel_paths.clear();
-	data->render_model_data_cache.clear();
-
-	LocalVector<RID> owned = data->render_model_owner.get_owned_list();
-	for (const RID& rid : owned) {
-		render_model_destroy(rid);
-	}
-}
-
-bool OpenXRRenderModelData::parse_gltf_document(const PackedByteArray& p_bytes)
-{
-	Ref<GLTFState> new_state;
-	new_state.instantiate();
-	Ref<GLTFDocument> new_gltf_document;
-	new_gltf_document.instantiate();
-
-	Error err = new_gltf_document->append_from_buffer(p_bytes, "", new_state);
-	if (err != OK) {
-		ERR_FAIL_V_MSG(false, "OpenXR: Failed to parse GLTF data.");
-	}
-
-	gltf_document = new_gltf_document;
-	gltf_state = new_state;
-	return true;
-}
-
-void OpenXRRenderModelData::set_node_names(const PackedStringArray& p_node_names)
-{
-	node_names = p_node_names;
-}
-
-PackedStringArray OpenXRRenderModelData::get_node_names() const { return node_names; }
-
-const String OpenXRRenderModelData::get_node_name(uint32_t p_node_index) const
-{
-	ERR_FAIL_UNSIGNED_INDEX_V(p_node_index, node_names.size(), String());
-
-	return node_names[p_node_index];
-}
-
-Node3D* OpenXRRenderModelData::new_scene_instance()
-{
-	return nullptr;
-}
-
-HashMap<String, bool*> OpenXRRenderModelExtension::get_requested_extensions(XrVersion p_version)
-{
-	return HashMap<String, bool*>();
-}
-#endif // MODULE_GLTF_ENABLED
-
-////////////////////////////////////////////////////////////////////////////
-// Platform-header dependent extensions (included last to isolate X11/driver macros)
-
-#define Window OpenXRX11Window
-#define WANT_OPENXR_PLATFORM_INC
-#include "servers/display/display_server.h"
-#undef Window
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRFBUpdateSwapchainExtension
-
-#ifndef GL_CUBIC_IMG
-#define GL_CUBIC_IMG 0x9139
-#endif
-#ifndef GL_CUBIC_MIPMAP_LINEAR_IMG
-#define GL_CUBIC_MIPMAP_LINEAR_IMG 0x913B
-#endif
-#ifndef GL_CUBIC_MIPMAP_NEAREST_IMG
-#define GL_CUBIC_MIPMAP_NEAREST_IMG 0x913A
-#endif
-#ifndef GL_CLAMP_TO_BORDER
-#define GL_CLAMP_TO_BORDER 0x812D
-#endif
-
-void OpenXRFBUpdateSwapchainExtension::initialize(const String& p_rendering_driver)
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-	data->rendering_driver = p_rendering_driver;
-}
-
-void OpenXRFBUpdateSwapchainExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRFBUpdateSwapchainExtension::get_requested_extensions(
-	XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_EXTENSION_NAME] =
-		&data->fb_swapchain_update_state_ext;
-
-	if (data->rendering_driver == "vulkan") {
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_VULKAN_EXTENSION_NAME] =
-			&data->fb_swapchain_update_state_vulkan_ext;
-#endif
-	}
-	else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-		request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_OPENGL_ES_EXTENSION_NAME] =
-			&data->fb_swapchain_update_state_opengles_ext;
-#endif
-	}
-
-#ifdef ANDROID_ENABLED
-	request_extensions[XR_FB_SWAPCHAIN_UPDATE_STATE_ANDROID_SURFACE_EXTENSION_NAME] =
-		&data->fb_swapchain_update_state_android_ext;
-#endif
-
-	return request_extensions;
-}
-
-void OpenXRFBUpdateSwapchainExtension::on_instance_created(const XrInstance p_instance)
-{
-	if (data->fb_swapchain_update_state_ext) {
-		EXT_INIT_XR_FUNC(xrUpdateSwapchainFB);
-		EXT_INIT_XR_FUNC(xrGetSwapchainStateFB);
-	}
-}
-
-void OpenXRFBUpdateSwapchainExtension::on_instance_destroyed()
-{
-	data->fb_swapchain_update_state_ext = false;
-	data->fb_swapchain_update_state_vulkan_ext = false;
-	data->fb_swapchain_update_state_opengles_ext = false;
-}
-
-bool OpenXRFBUpdateSwapchainExtension::is_enabled()
-{
-	return data != nullptr && data->fb_swapchain_update_state_ext;
-}
-
-bool OpenXRFBUpdateSwapchainExtension::is_android_ext_enabled()
-{
-	return data != nullptr && data->fb_swapchain_update_state_android_ext;
-}
-
-void OpenXRFBUpdateSwapchainExtension::update_swapchain_state(XrSwapchain p_swapchain,
-	const OpenXRCompositionLayerExtension::SwapchainState* p_swapchain_state)
-{
-	if (!p_swapchain_state) {
-		return;
-	}
-
-	if (data->rendering_driver == "vulkan") {
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-		if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_vulkan_ext) {
-			return;
-		}
-
-		Color border_color = p_swapchain_state->border_color;
-		XrSwapchainStateSamplerVulkanFB swapchain_state = {
-			XR_TYPE_SWAPCHAIN_STATE_SAMPLER_VULKAN_FB,
-			nullptr,
-			(VkFilter)filter_to_vk(p_swapchain_state->min_filter),
-			(VkFilter)filter_to_vk(p_swapchain_state->mag_filter),
-			(VkSamplerMipmapMode)mipmap_mode_to_vk(p_swapchain_state->mipmap_mode),
-			(VkSamplerAddressMode)wrap_to_vk(p_swapchain_state->horizontal_wrap),
-			(VkSamplerAddressMode)wrap_to_vk(p_swapchain_state->vertical_wrap),
-			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->red_swizzle),
-			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->green_swizzle),
-			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->blue_swizzle),
-			(VkComponentSwizzle)swizzle_to_vk(p_swapchain_state->alpha_swizzle),
-			p_swapchain_state->max_anisotropy,
-			{border_color.r, border_color.g, border_color.b, border_color.a},
-		};
-
-		XrResult result =
-			xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
-		if (XR_FAILED(result)) {
-			print_error(vformat(
-				"OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
-			return;
-		}
-#endif
-	}
-	else if (data->rendering_driver == "opengl3" || data->rendering_driver == "opengl3_es") {
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-		if (!data->fb_swapchain_update_state_ext ||
-			!data->fb_swapchain_update_state_opengles_ext) {
-			return;
-		}
-
-		Color border_color = p_swapchain_state->border_color;
-		XrSwapchainStateSamplerOpenGLESFB swapchain_state = {
-			XR_TYPE_SWAPCHAIN_STATE_SAMPLER_OPENGL_ES_FB,
-			nullptr,
-			filter_to_gl(p_swapchain_state->min_filter, p_swapchain_state->mipmap_mode),
-			filter_to_gl(p_swapchain_state->mag_filter),
-			wrap_to_gl(p_swapchain_state->horizontal_wrap),
-			wrap_to_gl(p_swapchain_state->vertical_wrap),
-			swizzle_to_gl(p_swapchain_state->red_swizzle),
-			swizzle_to_gl(p_swapchain_state->green_swizzle),
-			swizzle_to_gl(p_swapchain_state->blue_swizzle),
-			swizzle_to_gl(p_swapchain_state->alpha_swizzle),
-			p_swapchain_state->max_anisotropy,
-			{border_color.r, border_color.g, border_color.b, border_color.a},
-		};
-
-		XrResult result =
-			xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
-		if (XR_FAILED(result)) {
-			print_error(vformat(
-				"OpenXR: Failed to update swapchain [%s]", OpenXRAPI::get_error_string(result)));
-			return;
-		}
-#endif
-	}
+	xrSetDebugUtilsObjectNameEXT(OpenXRAPI::get_instance(), &name_info);
 }
 
-void OpenXRFBUpdateSwapchainExtension::update_swapchain_surface_size(
-	XrSwapchain p_swapchain, const Size2i& p_size)
+void OpenXRExtensions::begin_debug_label_region(const char* p_label_name)
 {
-#ifdef ANDROID_ENABLED
-	if (!data->fb_swapchain_update_state_ext || !data->fb_swapchain_update_state_android_ext) {
-		return;
-	}
-
-	XrSwapchainStateAndroidSurfaceDimensionsFB swapchain_state = {
-		XR_TYPE_SWAPCHAIN_STATE_ANDROID_SURFACE_DIMENSIONS_FB,
-		nullptr,
-		(uint32_t)p_size.width,
-		(uint32_t)p_size.height,
-	};
-
-	XrResult result =
-		xrUpdateSwapchainFB(p_swapchain, (XrSwapchainStateBaseHeaderFB*)&swapchain_state);
-	if (XR_FAILED(result)) {
-		print_error(vformat("OpenXR: Failed to update swapchain surface size [%s]",
-			OpenXRAPI::get_error_string(result)));
-	}
-#endif
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::filter_to_gl(
-	OpenXRCompositionLayerExtension::Filter p_filter,
-	OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode)
-{
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	switch (p_mipmap_mode) {
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED:
-		switch (p_filter) {
-		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
-			return GL_NEAREST;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
-			return GL_LINEAR;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
-			return GL_CUBIC_IMG;
-		}
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_NEAREST:
-		switch (p_filter) {
-		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
-			return GL_NEAREST_MIPMAP_NEAREST;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
-			return GL_LINEAR_MIPMAP_NEAREST;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
-			return GL_CUBIC_MIPMAP_NEAREST_IMG;
-		}
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_LINEAR:
-		switch (p_filter) {
-		case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
-			return GL_NEAREST_MIPMAP_LINEAR;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
-			return GL_LINEAR_MIPMAP_LINEAR;
-		case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
-			return GL_CUBIC_MIPMAP_LINEAR_IMG;
-		}
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::wrap_to_gl(OpenXRCompositionLayerExtension::Wrap p_wrap)
-{
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	switch (p_wrap) {
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_BORDER:
-		return GL_CLAMP_TO_BORDER;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_EDGE:
-		return GL_CLAMP_TO_EDGE;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_REPEAT:
-		return GL_REPEAT;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRRORED_REPEAT:
-		return GL_MIRRORED_REPEAT;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRROR_CLAMP_TO_EDGE:
-		return GL_CLAMP_TO_EDGE;
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::swizzle_to_gl(
-	OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	switch (p_swizzle) {
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_RED:
-		return GL_RED;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_GREEN:
-		return GL_GREEN;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_BLUE:
-		return GL_BLUE;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ALPHA:
-		return GL_ALPHA;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ZERO:
-		return GL_ZERO;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ONE:
-		return GL_ONE;
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::filter_to_vk(
-	OpenXRCompositionLayerExtension::Filter p_filter)
-{
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	switch (p_filter) {
-	case OpenXRCompositionLayerExtension::Filter::FILTER_NEAREST:
-		return VK_FILTER_NEAREST;
-	case OpenXRCompositionLayerExtension::Filter::FILTER_LINEAR:
-		return VK_FILTER_LINEAR;
-	case OpenXRCompositionLayerExtension::Filter::FILTER_CUBIC:
-		return VK_FILTER_CUBIC_EXT;
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::mipmap_mode_to_vk(
-	OpenXRCompositionLayerExtension::MipmapMode p_mipmap_mode)
-{
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	switch (p_mipmap_mode) {
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_DISABLED:
-		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_NEAREST:
-		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-	case OpenXRCompositionLayerExtension::MipmapMode::MIPMAP_MODE_LINEAR:
-		return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::wrap_to_vk(OpenXRCompositionLayerExtension::Wrap p_wrap)
-{
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	switch (p_wrap) {
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_BORDER:
-		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_CLAMP_TO_EDGE:
-		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_REPEAT:
-		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRRORED_REPEAT:
-		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	case OpenXRCompositionLayerExtension::Wrap::WRAP_MIRROR_CLAMP_TO_EDGE:
-		return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-	}
-#endif
-	return 0;
-}
-
-uint32_t OpenXRFBUpdateSwapchainExtension::swizzle_to_vk(
-	OpenXRCompositionLayerExtension::Swizzle p_swizzle)
-{
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	switch (p_swizzle) {
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_RED:
-		return VK_COMPONENT_SWIZZLE_R;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_GREEN:
-		return VK_COMPONENT_SWIZZLE_G;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_BLUE:
-		return VK_COMPONENT_SWIZZLE_B;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ALPHA:
-		return VK_COMPONENT_SWIZZLE_A;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ZERO:
-		return VK_COMPONENT_SWIZZLE_ZERO;
-	case OpenXRCompositionLayerExtension::Swizzle::SWIZZLE_ONE:
-		return VK_COMPONENT_SWIZZLE_ONE;
-	}
-#endif
-	return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRFBFoveationExtension
-
-struct OpenXRFBFoveationExtension::Data
-{
-#ifdef VULKAN_ENABLED
-	XrVulkanSwapchainCreateInfoMETA meta_vulkan_swapchain_create_info;
-#endif
-	String rendering_driver;
-	bool fb_foveation_ext = false;
-	bool fb_foveation_configuration_ext = false;
-	bool fb_foveation_vulkan_ext = false;
-	bool meta_foveation_eye_tracked_ext = false;
-	bool meta_vulkan_swapchain_create_info_ext = false;
-	XrFoveationLevelFB foveation_level = XR_FOVEATION_LEVEL_NONE_FB;
-	XrFoveationDynamicFB foveation_dynamic = XR_FOVEATION_DYNAMIC_DISABLED_FB;
-	bool foveation_with_subsampled_images_enabled = false;
-	bool foveation_with_subsampled_images_active = false;
-	XrSwapchainCreateInfoFoveationFB swapchain_create_info_foveation_fb;
-	XrSystemFoveationEyeTrackedPropertiesMETA meta_foveation_eye_tracked_properties;
-	XrFoveationEyeTrackedProfileCreateInfoMETA meta_foveation_eye_tracked_create_info;
-};
-
-void OpenXRFBFoveationExtension::initialize(const String& p_rendering_driver)
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-	data->rendering_driver = p_rendering_driver;
-}
-
-void OpenXRFBFoveationExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
+	if (!is_debug_utils_active() || !xrSessionBeginDebugUtilsLabelRegionEXT_ptr) return;
+	const XrDebugUtilsLabelEXT label_info = { XR_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr, p_label_name };
+	xrSessionBeginDebugUtilsLabelRegionEXT(OpenXRAPI::get_session(), &label_info);
 }
 
-void OpenXRFBFoveationExtension::on_instance_created(const XrInstance p_instance)
+void OpenXRExtensions::end_debug_label_region()
 {
-	if (data->fb_foveation_ext) {
-		EXT_INIT_XR_FUNC(xrCreateFoveationProfileFB);
-		EXT_INIT_XR_FUNC(xrDestroyFoveationProfileFB);
-	}
-
-	if (data->meta_foveation_eye_tracked_ext) {
-		EXT_INIT_XR_FUNC(xrGetFoveationEyeTrackedStateMETA);
-	}
+	if (!is_debug_utils_active() || !xrSessionEndDebugUtilsLabelRegionEXT_ptr) return;
+	xrSessionEndDebugUtilsLabelRegionEXT(OpenXRAPI::get_session());
 }
 
-void OpenXRFBFoveationExtension::on_instance_destroyed()
+void OpenXRExtensions::insert_debug_label(const char* p_label_name)
 {
-	data->fb_foveation_ext = false;
-	data->fb_foveation_configuration_ext = false;
-	data->meta_foveation_eye_tracked_ext = false;
+	if (!is_debug_utils_active() || !xrSessionInsertDebugUtilsLabelEXT_ptr) return;
+	const XrDebugUtilsLabelEXT label_info = { XR_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr, p_label_name };
+	xrSessionInsertDebugUtilsLabelEXT(OpenXRAPI::get_session(), &label_info);
 }
 
-bool OpenXRFBFoveationExtension::is_enabled()
+bool OpenXRExtensions::is_foveation_enabled()
 {
-	bool enabled = OpenXRFBUpdateSwapchainExtension::is_initialized() &&
-				   OpenXRFBUpdateSwapchainExtension::is_enabled() && data->fb_foveation_ext &&
-				   data->fb_foveation_configuration_ext;
+	if (!data) return false;
+	bool enabled = data->fb_swapchain_update_ext && data->fb_foveation_ext && data->fb_foveation_configuration_ext;
 #ifdef XR_USE_GRAPHICS_API_VULKAN
 	if (data->rendering_driver == "vulkan") {
 		enabled = enabled && data->fb_foveation_vulkan_ext;
@@ -296017,159 +286551,44 @@ bool OpenXRFBFoveationExtension::is_enabled()
 	return enabled;
 }
 
-void* OpenXRFBFoveationExtension::set_system_properties_and_get_next_pointer(void* p_next_pointer)
-{
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	if (data->rendering_driver == "vulkan") {
-		data->meta_foveation_eye_tracked_properties.next = p_next_pointer;
-		return &data->meta_foveation_eye_tracked_properties;
-	}
-#endif
-	return p_next_pointer;
-}
-
-void* OpenXRFBFoveationExtension::set_swapchain_create_info_and_get_next_pointer(
-	void* p_next_pointer)
-{
-	void* next = p_next_pointer;
-	if (is_enabled() && data->foveation_level > 0) {
-		data->swapchain_create_info_foveation_fb.next = next;
-		next = &data->swapchain_create_info_foveation_fb;
-
-#ifdef VULKAN_ENABLED
-		if (data->meta_vulkan_swapchain_create_info_ext) {
-			data->meta_vulkan_swapchain_create_info.additionalCreateFlags = 0;
-			if (data->meta_foveation_eye_tracked_ext &&
-				data->meta_foveation_eye_tracked_properties.supportsFoveationEyeTracked) {
-				data->meta_vulkan_swapchain_create_info.additionalCreateFlags |=
-					VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
-			}
-			if (data->foveation_with_subsampled_images_enabled &&
-				data->foveation_with_subsampled_images_active) {
-				data->meta_vulkan_swapchain_create_info.additionalCreateFlags |=
-					VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
-			}
-
-			data->meta_vulkan_swapchain_create_info.next = next;
-			next = &data->meta_vulkan_swapchain_create_info;
-		}
-#endif
-	}
-
-	return next;
-}
-
-void OpenXRFBFoveationExtension::on_main_swapchains_created() { update_profile(); }
-
-XrFoveationLevelFB OpenXRFBFoveationExtension::get_foveation_level()
+XrFoveationLevelFB OpenXRExtensions::get_foveation_level()
 {
 	return data ? data->foveation_level : XR_FOVEATION_LEVEL_NONE_FB;
 }
 
-void OpenXRFBFoveationExtension::set_foveation_level(XrFoveationLevelFB p_foveation_level)
+void OpenXRExtensions::set_foveation_level(XrFoveationLevelFB p_foveation_level)
 {
-	data->foveation_level = p_foveation_level;
-	update_profile();
+	if (data) data->foveation_level = p_foveation_level;
 }
 
-XrFoveationDynamicFB OpenXRFBFoveationExtension::get_foveation_dynamic()
+XrFoveationDynamicFB OpenXRExtensions::get_foveation_dynamic()
 {
 	return data ? data->foveation_dynamic : XR_FOVEATION_DYNAMIC_DISABLED_FB;
 }
 
-void OpenXRFBFoveationExtension::set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic)
+void OpenXRExtensions::set_foveation_dynamic(XrFoveationDynamicFB p_foveation_dynamic)
 {
-	data->foveation_dynamic = p_foveation_dynamic;
-	update_profile();
+	if (data) data->foveation_dynamic = p_foveation_dynamic;
 }
 
-bool OpenXRFBFoveationExtension::is_foveation_eye_tracked_enabled()
+bool OpenXRExtensions::is_foveation_eye_tracked_enabled()
 {
-	return is_enabled() && data->meta_foveation_eye_tracked_ext &&
+	return is_foveation_enabled() && data->meta_foveation_eye_tracked_ext &&
 		   data->meta_vulkan_swapchain_create_info_ext &&
 		   data->meta_foveation_eye_tracked_properties.supportsFoveationEyeTracked;
 }
 
-void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_enabled(bool p_enabled)
+void OpenXRExtensions::set_foveation_with_subsampled_images_enabled(bool p_enabled)
 {
-	data->foveation_with_subsampled_images_enabled = p_enabled;
+	if (data) data->foveation_with_subsampled_images_enabled = p_enabled;
 }
 
-bool OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled()
+bool OpenXRExtensions::is_foveation_with_subsampled_images_enabled()
 {
-	return is_enabled() && data->foveation_level > 0 &&
+	return is_foveation_enabled() && data->foveation_level > 0 &&
 		   data->meta_vulkan_swapchain_create_info_ext &&
 		   data->foveation_with_subsampled_images_enabled;
 }
-
-void OpenXRFBFoveationExtension::set_foveation_with_subsampled_images_active(bool p_active)
-{
-	data->foveation_with_subsampled_images_active = p_active;
-}
-
-void OpenXRFBFoveationExtension::update_profile() {}
-
-void OpenXRFBFoveationExtension::get_fragment_density_offsets(LocalVector<Vector2i>& r_offsets) {}
-
-HashMap<String, bool*> OpenXRFBFoveationExtension::get_requested_extensions(XrVersion p_version)
-{
-	return HashMap<String, bool*>();
-}
-
-#ifdef None
-#undef None
-#endif
-#ifdef Status
-#undef Status
-#endif
-#ifdef Bool
-#undef Bool
-#endif
-#ifdef True
-#undef True
-#endif
-#ifdef False
-#undef False
-#endif
-#ifdef CursorShape
-#undef CursorShape
-#endif
-#ifdef KeyPress
-#undef KeyPress
-#endif
-#ifdef KeyRelease
-#undef KeyRelease
-#endif
-#ifdef FocusIn
-#undef FocusIn
-#endif
-#ifdef FocusOut
-#undef FocusOut
-#endif
-#ifdef Expose
-#undef Expose
-#endif
-#ifdef FontChange
-#undef FontChange
-#endif
-#ifdef Unsorted
-#undef Unsorted
-#endif
-#ifdef Always
-#undef Always
-#endif
-#ifdef Above
-#undef Above
-#endif
-#ifdef Below
-#undef Below
-#endif
-
-#include "servers/display/display_server.h"
-
-#ifndef XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME
-#define XR_LOGITECH_MX_INK_STYLUS_INTERACTION_EXTENSION_NAME "XR_LOGITECH_mx_ink_stylus_interaction"
-#endif
 
 #ifndef XR_VALVE_FRAME_CONTROLLER_INTERACTION_EXTENSION_NAME
 #define XR_VALVE_FRAME_CONTROLLER_INTERACTION_EXTENSION_NAME "XR_VALVE_frame_controller_interaction"
@@ -296433,2951 +286852,6 @@ bool OpenXRInteractionProfileExtension::is_available(int p_subindex) const
 	return flags[p_subindex];
 }
 
-////////////////////////////////////////////////////////////////////////////
-// OpenXRDpadBindingModifier
-
-OpenXRDpadBindingModifier::OpenXRDpadBindingModifier()
-{
-	ERR_FAIL_COND(
-		dpad_bindings_data.resize_initialized(sizeof(XrInteractionProfileDpadBindingEXT)) != OK);
-	dpad_bindings = (XrInteractionProfileDpadBindingEXT*)dpad_bindings_data.ptrw();
-
-	dpad_bindings->type = XR_TYPE_INTERACTION_PROFILE_DPAD_BINDING_EXT;
-	dpad_bindings->next = nullptr;
-
-	dpad_bindings->forceThreshold = 0.6;
-	dpad_bindings->forceThresholdReleased = 0.4;
-	dpad_bindings->centerRegion = 0.1;
-	dpad_bindings->wedgeAngle = Math::deg_to_rad(90.0);
-	dpad_bindings->isSticky = false;
-}
-
-void OpenXRDpadBindingModifier::set_action_set(const Ref<OpenXRActionSet>& p_action_set)
-{
-	action_set = p_action_set;
-}
-
-Ref<OpenXRActionSet> OpenXRDpadBindingModifier::get_action_set() const { return action_set; }
-
-void OpenXRDpadBindingModifier::set_input_path(const String& p_input_path)
-{
-	input_path = p_input_path;
-	emit_changed();
-}
-
-String OpenXRDpadBindingModifier::get_input_path() const { return input_path; }
-
-void OpenXRDpadBindingModifier::set_threshold(float p_threshold)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
-
-	dpad_bindings->forceThreshold = p_threshold;
-	emit_changed();
-}
-
-float OpenXRDpadBindingModifier::get_threshold() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
-	return dpad_bindings->forceThreshold;
-}
-
-void OpenXRDpadBindingModifier::set_threshold_released(float p_threshold)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
-
-	dpad_bindings->forceThresholdReleased = p_threshold;
-	emit_changed();
-}
-
-float OpenXRDpadBindingModifier::get_threshold_released() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
-	return dpad_bindings->forceThresholdReleased;
-}
-
-void OpenXRDpadBindingModifier::set_center_region(float p_center_region)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	ERR_FAIL_COND(p_center_region < 0.0 || p_center_region > 1.0);
-
-	dpad_bindings->centerRegion = p_center_region;
-	emit_changed();
-}
-
-float OpenXRDpadBindingModifier::get_center_region() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
-	return dpad_bindings->centerRegion;
-}
-
-void OpenXRDpadBindingModifier::set_wedge_angle(float p_wedge_angle)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	dpad_bindings->wedgeAngle = p_wedge_angle;
-	emit_changed();
-}
-
-float OpenXRDpadBindingModifier::get_wedge_angle() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
-	return dpad_bindings->wedgeAngle;
-}
-
-void OpenXRDpadBindingModifier::set_wedge_angle_deg(float p_wedge_angle)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	dpad_bindings->wedgeAngle = Math::deg_to_rad(p_wedge_angle);
-	emit_changed();
-}
-
-float OpenXRDpadBindingModifier::get_wedge_angle_deg() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, 0.0);
-	return Math::rad_to_deg(dpad_bindings->wedgeAngle);
-}
-
-void OpenXRDpadBindingModifier::set_is_sticky(bool p_sticky)
-{
-	ERR_FAIL_NULL(dpad_bindings);
-	dpad_bindings->isSticky = p_sticky;
-	emit_changed();
-}
-
-bool OpenXRDpadBindingModifier::get_is_sticky() const
-{
-	ERR_FAIL_NULL_V(dpad_bindings, false);
-	return dpad_bindings->isSticky;
-}
-
-void OpenXRDpadBindingModifier::set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic)
-{
-	on_haptic = p_haptic;
-	emit_changed();
-}
-
-Ref<OpenXRHapticBase> OpenXRDpadBindingModifier::get_on_haptic() const { return on_haptic; }
-
-void OpenXRDpadBindingModifier::set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic)
-{
-	off_haptic = p_haptic;
-	emit_changed();
-}
-
-Ref<OpenXRHapticBase> OpenXRDpadBindingModifier::get_off_haptic() const { return off_haptic; }
-
-PackedByteArray OpenXRDpadBindingModifier::get_ip_modification()
-{
-	ERR_FAIL_NULL_V(dpad_bindings, PackedByteArray());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), PackedByteArray());
-
-	if (!OpenXRInteractionProfileExtension::is_initialized() ||
-		!OpenXRInteractionProfileExtension::is_profile_available(
-			OpenXRInteractionProfileExtension::PROFILE_DPAD_BINDING)) {
-		WARN_PRINT("DPad binding extension is not enabled or available.");
-		return PackedByteArray();
-	}
-
-	dpad_bindings->binding = OpenXRAPI::get_xr_path(input_path);
-	ERR_FAIL_COND_V(dpad_bindings->binding == XR_NULL_PATH, PackedByteArray());
-
-	ERR_FAIL_COND_V(action_set.is_null(), PackedByteArray());
-	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
-	ERR_FAIL_COND_V(!action_set_rid.is_valid(), PackedByteArray());
-	dpad_bindings->actionSet = OpenXRAPI::action_set_get_handle(action_set_rid);
-
-	dpad_bindings->onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
-	dpad_bindings->offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
-
-	return dpad_bindings_data;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRAnalogThresholdModifier
-
-OpenXRAnalogThresholdModifier::OpenXRAnalogThresholdModifier()
-{
-	analog_threshold.type = XR_TYPE_INTERACTION_PROFILE_ANALOG_THRESHOLD_VALVE;
-	analog_threshold.next = nullptr;
-
-	analog_threshold.onThreshold = 0.6;
-	analog_threshold.offThreshold = 0.4;
-}
-
-void OpenXRAnalogThresholdModifier::set_on_threshold(float p_threshold)
-{
-	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
-
-	analog_threshold.onThreshold = p_threshold;
-	emit_changed();
-}
-
-float OpenXRAnalogThresholdModifier::get_on_threshold() const
-{
-	return analog_threshold.onThreshold;
-}
-
-void OpenXRAnalogThresholdModifier::set_off_threshold(float p_threshold)
-{
-	ERR_FAIL_COND(p_threshold < 0.0 || p_threshold > 1.0);
-
-	analog_threshold.offThreshold = p_threshold;
-	emit_changed();
-}
-
-float OpenXRAnalogThresholdModifier::get_off_threshold() const
-{
-	return analog_threshold.offThreshold;
-}
-
-void OpenXRAnalogThresholdModifier::set_on_haptic(const Ref<OpenXRHapticBase>& p_haptic)
-{
-	on_haptic = p_haptic;
-	emit_changed();
-}
-
-Ref<OpenXRHapticBase> OpenXRAnalogThresholdModifier::get_on_haptic() const { return on_haptic; }
-
-void OpenXRAnalogThresholdModifier::set_off_haptic(const Ref<OpenXRHapticBase>& p_haptic)
-{
-	off_haptic = p_haptic;
-	emit_changed();
-}
-
-Ref<OpenXRHapticBase> OpenXRAnalogThresholdModifier::get_off_haptic() const { return off_haptic; }
-
-PackedByteArray OpenXRAnalogThresholdModifier::get_ip_modification()
-{
-	PackedByteArray ret;
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	if (!OpenXRInteractionProfileExtension::is_initialized() ||
-		!OpenXRInteractionProfileExtension::is_profile_available(
-			OpenXRInteractionProfileExtension::PROFILE_VALVE_ANALOG_THRESHOLD)) {
-		WARN_PRINT("Analog threshold extension is not enabled or available.");
-		return ret;
-	}
-
-	ERR_FAIL_NULL_V(ip_binding, ret);
-
-	Ref<OpenXRAction> action = ip_binding->get_action();
-	ERR_FAIL_COND_V(action.is_null(), ret);
-
-	Ref<OpenXRActionSet> action_set = action->get_action_set();
-	ERR_FAIL_COND_V(action_set.is_null(), ret);
-	RID action_set_rid = OpenXRAPI::find_action_set(action_set->get_name());
-	ERR_FAIL_COND_V(!action_set_rid.is_valid(), ret);
-
-	RID action_rid = OpenXRAPI::find_action(action->get_name(), action_set_rid);
-	ERR_FAIL_COND_V(!action_rid.is_valid(), ret);
-
-	analog_threshold.action = OpenXRAPI::action_get_handle(action_rid);
-
-	analog_threshold.binding = OpenXRAPI::get_xr_path(ip_binding->get_binding_path());
-	ERR_FAIL_COND_V(analog_threshold.binding == XR_NULL_PATH, ret);
-
-	analog_threshold.onHaptic = on_haptic.is_valid() ? on_haptic->get_xr_structure() : nullptr;
-	analog_threshold.offHaptic = off_haptic.is_valid() ? off_haptic->get_xr_structure() : nullptr;
-
-	ERR_FAIL_COND_V(ret.resize(sizeof(XrInteractionProfileAnalogThresholdVALVE)) != OK, ret);
-	memcpy(ret.ptrw(), &analog_threshold, sizeof(XrInteractionProfileAnalogThresholdVALVE));
-
-	return ret;
-}
-
-#include <cstring>
-#include <openxr/openxr.h>
-#include "servers/display/display_server.h"
-
-#include "servers/display/display_server.h"
-#include "servers/display/display_server.h"
-
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/display/display_server.h"
-#endif
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialCapabilityConfigurationBaseHeader
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::OpenXRSpatialCapabilityConfigurationBaseHeader(
-	CapabilityType p_capability_type)
-{
-	set_capability_type(p_capability_type);
-}
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::~OpenXRSpatialCapabilityConfigurationBaseHeader() {}
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::set_capability_type(
-	CapabilityType p_capability_type)
-{
-	capability_type = p_capability_type;
-	enabled_components.clear();
-
-	if (capability_type == CAPABILITY_ARUCO) {
-		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/aruco_dict");
-		aruco_dict = (XrSpatialMarkerArucoDictEXT)(XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT + dict);
-	}
-	else if (capability_type == CAPABILITY_APRIL_TAG) {
-		int dict = GLOBAL_GET_CACHED(int, "xr/openxr/extensions/spatial_entity/april_tag_dict");
-		april_dict =
-			(XrSpatialMarkerAprilTagDictEXT)(XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT + dict);
-	}
-}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::has_valid_configuration() const
-{
-	switch (capability_type) {
-	case CAPABILITY_ANCHOR: {
-		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), false);
-		return OpenXRSpatialAnchorCapability::is_spatial_anchor_supported();
-	}
-	case CAPABILITY_PLANE_TRACKING: {
-		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), false);
-		return OpenXRSpatialPlaneTrackingCapability::is_supported();
-	}
-	case CAPABILITY_QR_CODE: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
-		return OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported();
-	}
-	case CAPABILITY_MICRO_QR_CODE: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
-		return OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported();
-	}
-	case CAPABILITY_ARUCO: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
-		return OpenXRSpatialMarkerTrackingCapability::is_aruco_supported();
-	}
-	case CAPABILITY_APRIL_TAG: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), false);
-		return OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported();
-	}
-	case CAPABILITY_NONE:
-	default:
-		return false;
-	}
-}
-
-uint64_t OpenXRSpatialCapabilityConfigurationBaseHeader::_get_configurationgd()
-{
-	return (uint64_t)get_configuration();
-}
-
-XrSpatialCapabilityConfigurationBaseHeaderEXT*
-OpenXRSpatialCapabilityConfigurationBaseHeader::get_configuration()
-{
-	switch (capability_type) {
-	case CAPABILITY_ANCHOR: {
-		ERR_FAIL_COND_V(!OpenXRSpatialAnchorCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT);
-		if (OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()) {
-			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT);
-		}
-
-		config.anchor = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_ANCHOR_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.anchor;
-	}
-	case CAPABILITY_PLANE_TRACKING: {
-		ERR_FAIL_COND_V(!OpenXRSpatialPlaneTrackingCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialPlaneTrackingCapability::is_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT);
-
-		if (get_supports_mesh_2d()) {
-			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT);
-		}
-		else if (get_supports_polygons()) {
-			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT);
-		}
-		if (get_supports_labels()) {
-			enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT);
-		}
-
-		config.plane = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.plane;
-	}
-	case CAPABILITY_QR_CODE: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
-
-		config.qrcode = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.qrcode;
-	}
-	case CAPABILITY_MICRO_QR_CODE: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
-
-		config.micro_qrcode = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.micro_qrcode;
-	}
-	case CAPABILITY_ARUCO: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
-
-		config.aruco = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-			aruco_dict,
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.aruco;
-	}
-	case CAPABILITY_APRIL_TAG: {
-		ERR_FAIL_COND_V(!OpenXRSpatialMarkerTrackingCapability::is_initialized(), nullptr);
-		if (!OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()) {
-			return nullptr;
-		}
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), nullptr);
-
-		enabled_components.clear();
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT);
-		enabled_components.push_back(XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT);
-
-		config.april_tag = {
-			XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT,
-			nullptr,
-			XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,
-			(uint32_t)enabled_components.size(),
-			enabled_components.ptr(),
-			april_dict,
-		};
-		return (XrSpatialCapabilityConfigurationBaseHeaderEXT*)&config.april_tag;
-	}
-	case CAPABILITY_NONE:
-	default:
-		return nullptr;
-	}
-}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_mesh_2d()
-{
-	if (supports_mesh_2d == -1) {
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-		supports_mesh_2d =
-			OpenXRSpatialEntityExtension::supports_component_type(
-				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT)
-				? 1
-				: 0;
-	}
-
-	return supports_mesh_2d == 1;
-}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_polygons()
-{
-	if (supports_polygons == -1) {
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-		supports_polygons =
-			OpenXRSpatialEntityExtension::supports_component_type(
-				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT, XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT)
-				? 1
-				: 0;
-	}
-
-	return supports_polygons == 1;
-}
-
-bool OpenXRSpatialCapabilityConfigurationBaseHeader::get_supports_labels()
-{
-	if (supports_labels == -1) {
-		ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-		supports_labels =
-			OpenXRSpatialEntityExtension::supports_component_type(
-				XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,
-				XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT)
-				? 1
-				: 0;
-	}
-
-	return supports_labels == 1;
-}
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::set_aruco_dict(
-	XrSpatialMarkerArucoDictEXT p_dict)
-{
-	aruco_dict = p_dict;
-}
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_aruco_dict(ArucoDict p_dict)
-{
-	set_aruco_dict((XrSpatialMarkerArucoDictEXT)p_dict);
-}
-
-XrSpatialMarkerArucoDictEXT OpenXRSpatialCapabilityConfigurationBaseHeader::get_aruco_dict() const
-{
-	return aruco_dict;
-}
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::ArucoDict
-OpenXRSpatialCapabilityConfigurationBaseHeader::_get_aruco_dict() const
-{
-	return (ArucoDict)get_aruco_dict();
-}
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::set_april_dict(
-	XrSpatialMarkerAprilTagDictEXT p_dict)
-{
-	april_dict = p_dict;
-}
-
-void OpenXRSpatialCapabilityConfigurationBaseHeader::_set_april_dict(AprilTagDict p_dict)
-{
-	set_april_dict((XrSpatialMarkerAprilTagDictEXT)p_dict);
-}
-
-XrSpatialMarkerAprilTagDictEXT
-OpenXRSpatialCapabilityConfigurationBaseHeader::get_april_dict() const
-{
-	return april_dict;
-}
-
-OpenXRSpatialCapabilityConfigurationBaseHeader::AprilTagDict
-OpenXRSpatialCapabilityConfigurationBaseHeader::_get_april_dict() const
-{
-	return (AprilTagDict)get_april_dict();
-}
-
-PackedInt64Array OpenXRSpatialCapabilityConfigurationBaseHeader::_get_enabled_components() const
-{
-	PackedInt64Array components;
-
-	for (const XrSpatialComponentTypeEXT& component_type : enabled_components) {
-		components.push_back((int64_t)component_type);
-	}
-
-	return components;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialComponentData
-
-OpenXRSpatialComponentData::OpenXRSpatialComponentData(ComponentKind p_kind)
-	: component_kind(p_kind)
-{
-	_init_structure_header();
-}
-
-OpenXRSpatialComponentData::~OpenXRSpatialComponentData() { _free_buffers(); }
-
-void OpenXRSpatialComponentData::_free_buffers()
-{
-	if (data_ptr != nullptr) {
-		memfree(data_ptr);
-		data_ptr = nullptr;
-	}
-	if (entity_states_ptr != nullptr) {
-		memfree(entity_states_ptr);
-		entity_states_ptr = nullptr;
-	}
-	capacity = 0;
-}
-
-void OpenXRSpatialComponentData::_init_structure_header()
-{
-	switch (component_kind) {
-	case COMPONENT_QUERY_RESULT:
-		structure.query_result = {
-			XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT,
-			nullptr,
-			capacity,
-			0,
-			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
-			capacity,
-			0,
-			entity_states_ptr,
-		};
-		break;
-	case COMPONENT_BOUNDED_2D:
-		structure.bounded2d_list = {
-			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_2D_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialBounded2DDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_BOUNDED_3D:
-		structure.bounded3d_list = {
-			XR_TYPE_SPATIAL_COMPONENT_BOUNDED_3D_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrBoxf*>(data_ptr),
-		};
-		break;
-	case COMPONENT_PARENT:
-		structure.parent_list = {
-			XR_TYPE_SPATIAL_COMPONENT_PARENT_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialEntityIdEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_MESH_2D:
-		structure.mesh2d_list = {
-			XR_TYPE_SPATIAL_COMPONENT_MESH_2D_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_MESH_3D:
-		structure.mesh3d_list = {
-			XR_TYPE_SPATIAL_COMPONENT_MESH_3D_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialMeshDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_ANCHOR:
-		structure.anchor_list = {
-			XR_TYPE_SPATIAL_COMPONENT_ANCHOR_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrPosef*>(data_ptr),
-		};
-		break;
-	case COMPONENT_PERSISTENCE:
-		structure.persistence_list = {
-			XR_TYPE_SPATIAL_COMPONENT_PERSISTENCE_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialPersistenceDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_PLANE_ALIGNMENT:
-		structure.plane_alignment_list = {
-			XR_TYPE_SPATIAL_COMPONENT_PLANE_ALIGNMENT_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialPlaneAlignmentEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_POLYGON_2D:
-		structure.polygon2d_list = {
-			XR_TYPE_SPATIAL_COMPONENT_POLYGON_2D_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialPolygon2DDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_PLANE_SEMANTIC_LABEL:
-		structure.plane_semantic_label_list = {
-			XR_TYPE_SPATIAL_COMPONENT_PLANE_SEMANTIC_LABEL_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialPlaneSemanticLabelEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_MARKER:
-		structure.marker_list = {
-			XR_TYPE_SPATIAL_COMPONENT_MARKER_LIST_EXT,
-			nullptr,
-			capacity,
-			static_cast<XrSpatialMarkerDataEXT*>(data_ptr),
-		};
-		break;
-	case COMPONENT_NONE:
-	default:
-		break;
-	}
-}
-
-void OpenXRSpatialComponentData::set_component_kind(ComponentKind p_kind)
-{
-	if (component_kind == p_kind) {
-		return;
-	}
-	_free_buffers();
-	component_kind = p_kind;
-	_init_structure_header();
-}
-
-void OpenXRSpatialComponentData::set_capacity(uint32_t p_capacity)
-{
-	if (component_kind == COMPONENT_NONE) {
-		_free_buffers();
-		return;
-	}
-
-	if (p_capacity == 0) {
-		_free_buffers();
-		_init_structure_header();
-		return;
-	}
-
-	size_t elem_size = 0;
-	switch (component_kind) {
-	case COMPONENT_QUERY_RESULT:
-		elem_size = sizeof(XrSpatialEntityIdEXT);
-		break;
-	case COMPONENT_BOUNDED_2D:
-		elem_size = sizeof(XrSpatialBounded2DDataEXT);
-		break;
-	case COMPONENT_BOUNDED_3D:
-		elem_size = sizeof(XrBoxf);
-		break;
-	case COMPONENT_PARENT:
-		elem_size = sizeof(XrSpatialEntityIdEXT);
-		break;
-	case COMPONENT_MESH_2D:
-	case COMPONENT_MESH_3D:
-		elem_size = sizeof(XrSpatialMeshDataEXT);
-		break;
-	case COMPONENT_ANCHOR:
-		elem_size = sizeof(XrPosef);
-		break;
-	case COMPONENT_PERSISTENCE:
-		elem_size = sizeof(XrSpatialPersistenceDataEXT);
-		break;
-	case COMPONENT_PLANE_ALIGNMENT:
-		elem_size = sizeof(XrSpatialPlaneAlignmentEXT);
-		break;
-	case COMPONENT_POLYGON_2D:
-		elem_size = sizeof(XrSpatialPolygon2DDataEXT);
-		break;
-	case COMPONENT_PLANE_SEMANTIC_LABEL:
-		elem_size = sizeof(XrSpatialPlaneSemanticLabelEXT);
-		break;
-	case COMPONENT_MARKER:
-		elem_size = sizeof(XrSpatialMarkerDataEXT);
-		break;
-	case COMPONENT_NONE:
-	default:
-		return;
-	}
-
-	uint32_t old_capacity = capacity;
-	data_ptr = memrealloc(data_ptr, elem_size * p_capacity);
-	ERR_FAIL_NULL(data_ptr);
-	if (p_capacity > old_capacity) {
-		memset(static_cast<uint8_t*>(data_ptr) + elem_size * old_capacity, 0,
-			elem_size * (p_capacity - old_capacity));
-	}
-
-	if (component_kind == COMPONENT_QUERY_RESULT) {
-		entity_states_ptr = static_cast<XrSpatialEntityTrackingStateEXT*>(memrealloc(
-			entity_states_ptr, sizeof(XrSpatialEntityTrackingStateEXT) * p_capacity));
-		ERR_FAIL_NULL(entity_states_ptr);
-		if (p_capacity > old_capacity) {
-			memset(entity_states_ptr + old_capacity, 0,
-				sizeof(XrSpatialEntityTrackingStateEXT) * (p_capacity - old_capacity));
-		}
-	}
-
-	capacity = p_capacity;
-	_init_structure_header();
-}
-
-int64_t OpenXRSpatialComponentData::_get_component_typegd() const
-{
-	return (int64_t)get_component_type();
-}
-
-XrSpatialComponentTypeEXT OpenXRSpatialComponentData::get_component_type() const
-{
-	switch (component_kind) {
-	case COMPONENT_BOUNDED_2D:
-		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_2D_EXT;
-	case COMPONENT_BOUNDED_3D:
-		return XR_SPATIAL_COMPONENT_TYPE_BOUNDED_3D_EXT;
-	case COMPONENT_PARENT:
-		return XR_SPATIAL_COMPONENT_TYPE_PARENT_EXT;
-	case COMPONENT_MESH_2D:
-		return XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT;
-	case COMPONENT_MESH_3D:
-		return XR_SPATIAL_COMPONENT_TYPE_MESH_3D_EXT;
-	case COMPONENT_ANCHOR:
-		return XR_SPATIAL_COMPONENT_TYPE_ANCHOR_EXT;
-	case COMPONENT_PERSISTENCE:
-		return XR_SPATIAL_COMPONENT_TYPE_PERSISTENCE_EXT;
-	case COMPONENT_PLANE_ALIGNMENT:
-		return XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT;
-	case COMPONENT_POLYGON_2D:
-		return XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT;
-	case COMPONENT_PLANE_SEMANTIC_LABEL:
-		return XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT;
-	case COMPONENT_MARKER:
-		return XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT;
-	case COMPONENT_QUERY_RESULT:
-	case COMPONENT_NONE:
-	default:
-		return XR_SPATIAL_COMPONENT_TYPE_MAX_ENUM_EXT;
-	}
-}
-
-void* OpenXRSpatialComponentData::get_structure_data(void* p_next)
-{
-	switch (component_kind) {
-	case COMPONENT_QUERY_RESULT:
-		structure.query_result.next = p_next;
-		structure.query_result.entityIdCountOutput = 0;
-		structure.query_result.entityStateCountOutput = 0;
-		return &structure.query_result;
-	case COMPONENT_BOUNDED_2D:
-		structure.bounded2d_list.next = p_next;
-		return &structure.bounded2d_list;
-	case COMPONENT_BOUNDED_3D:
-		structure.bounded3d_list.next = p_next;
-		return &structure.bounded3d_list;
-	case COMPONENT_PARENT:
-		structure.parent_list.next = p_next;
-		return &structure.parent_list;
-	case COMPONENT_MESH_2D:
-		structure.mesh2d_list.next = p_next;
-		return &structure.mesh2d_list;
-	case COMPONENT_MESH_3D:
-		structure.mesh3d_list.next = p_next;
-		return &structure.mesh3d_list;
-	case COMPONENT_ANCHOR:
-		structure.anchor_list.next = p_next;
-		return &structure.anchor_list;
-	case COMPONENT_PERSISTENCE:
-		structure.persistence_list.next = p_next;
-		return &structure.persistence_list;
-	case COMPONENT_PLANE_ALIGNMENT:
-		structure.plane_alignment_list.next = p_next;
-		return &structure.plane_alignment_list;
-	case COMPONENT_POLYGON_2D:
-		structure.polygon2d_list.next = p_next;
-		return &structure.polygon2d_list;
-	case COMPONENT_PLANE_SEMANTIC_LABEL:
-		structure.plane_semantic_label_list.next = p_next;
-		return &structure.plane_semantic_label_list;
-	case COMPONENT_MARKER:
-		structure.marker_list.next = p_next;
-		return &structure.marker_list;
-	case COMPONENT_NONE:
-	default:
-		return nullptr;
-	}
-}
-
-XrSpatialEntityIdEXT OpenXRSpatialComponentData::get_entity_id(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_QUERY_RESULT, XR_NULL_ENTITY);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_NULL_ENTITY);
-
-	return static_cast<const XrSpatialEntityIdEXT*>(data_ptr)[p_index];
-}
-
-uint64_t OpenXRSpatialComponentData::_get_entity_id(int64_t p_index) const
-{
-	return (uint64_t)get_entity_id(p_index);
-}
-
-XrSpatialEntityTrackingStateEXT OpenXRSpatialComponentData::get_entity_state(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(
-		component_kind != COMPONENT_QUERY_RESULT, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_ENTITY_TRACKING_STATE_MAX_ENUM_EXT);
-
-	return entity_states_ptr[p_index];
-}
-
-String OpenXRSpatialComponentData::get_entity_tracking_state_name(
-	XrSpatialEntityTrackingStateEXT p_tracking_state)
-{
-	XR_ENUM_SWITCH(XrSpatialEntityTrackingStateEXT, p_tracking_state)
-}
-
-Transform3D OpenXRSpatialComponentData::get_center_pose(int64_t p_index) const
-{
-	if (component_kind == COMPONENT_BOUNDED_2D) {
-		return get_center_pose_2d(p_index);
-	}
-	if (component_kind == COMPONENT_BOUNDED_3D) {
-		return get_center_pose_3d(p_index);
-	}
-	ERR_FAIL_V(Transform3D());
-}
-
-Transform3D OpenXRSpatialComponentData::get_center_pose_2d(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Transform3D());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	const XrSpatialBounded2DDataEXT* arr =
-		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr);
-	return OpenXRAPI::transform_from_pose(arr[p_index].center);
-}
-
-Transform3D OpenXRSpatialComponentData::get_center_pose_3d(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Transform3D());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	const XrBoxf* arr = static_cast<const XrBoxf*>(data_ptr);
-	return OpenXRAPI::transform_from_pose(arr[p_index].center);
-}
-
-Vector2 OpenXRSpatialComponentData::get_size_2d(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_2D, Vector2());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector2());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector2());
-
-	const XrExtent2Df& extents =
-		static_cast<const XrSpatialBounded2DDataEXT*>(data_ptr)[p_index].extents;
-	return Vector2(extents.width, extents.height);
-}
-
-Vector3 OpenXRSpatialComponentData::get_size_3d(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_BOUNDED_3D, Vector3());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Vector3());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Vector3());
-
-	const XrExtent3Df& extents = static_cast<const XrBoxf*>(data_ptr)[p_index].extents;
-	return Vector3(extents.width, extents.height, extents.depth);
-}
-
-RID OpenXRSpatialComponentData::get_parent(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_PARENT, RID());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, RID());
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), RID());
-
-	const XrSpatialEntityIdEXT* arr = static_cast<const XrSpatialEntityIdEXT*>(data_ptr);
-	return OpenXRSpatialEntityExtension::find_spatial_entity(arr[p_index]);
-}
-
-Transform3D OpenXRSpatialComponentData::get_transform(int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	switch (component_kind) {
-	case COMPONENT_MESH_2D:
-	case COMPONENT_MESH_3D:
-		return OpenXRAPI::transform_from_pose(
-			static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].origin);
-	case COMPONENT_POLYGON_2D:
-		return OpenXRAPI::transform_from_pose(
-			static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].origin);
-	default:
-		ERR_FAIL_V(Transform3D());
-	}
-}
-
-PackedVector2Array OpenXRSpatialComponentData::get_vertices(RID p_snapshot, int64_t p_index) const
-{
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedVector2Array());
-
-	const XrSpatialBufferEXT* buffer = nullptr;
-	if (component_kind == COMPONENT_MESH_2D) {
-		buffer = &static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].vertexBuffer;
-	}
-	else if (component_kind == COMPONENT_POLYGON_2D) {
-		buffer = &static_cast<const XrSpatialPolygon2DDataEXT*>(data_ptr)[p_index].vertexBuffer;
-	}
-	else {
-		ERR_FAIL_V(PackedVector2Array());
-	}
-
-	if (buffer->bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
-		return PackedVector2Array();
-	}
-
-	ERR_FAIL_COND_V(
-		buffer->bufferType != XR_SPATIAL_BUFFER_TYPE_VECTOR2F_EXT, PackedVector2Array());
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedVector2Array());
-
-	return OpenXRSpatialEntityExtension::get_vector2_buffer(p_snapshot, buffer->bufferId);
-}
-
-PackedInt32Array OpenXRSpatialComponentData::get_indices(RID p_snapshot, int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_2D, PackedInt32Array());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, PackedInt32Array());
-
-	const XrSpatialBufferEXT& buffer =
-		static_cast<const XrSpatialMeshDataEXT*>(data_ptr)[p_index].indexBuffer;
-	if (buffer.bufferId == XR_NULL_SPATIAL_BUFFER_ID_EXT) {
-		return PackedInt32Array();
-	}
-
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), PackedInt32Array());
-
-	PackedInt32Array ret;
-
-	switch (buffer.bufferType) {
-	case XR_SPATIAL_BUFFER_TYPE_UINT8_EXT: {
-		PackedByteArray data =
-			OpenXRSpatialEntityExtension::get_uint8_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	case XR_SPATIAL_BUFFER_TYPE_UINT16_EXT: {
-		Vector<uint16_t> data =
-			OpenXRSpatialEntityExtension::get_uint16_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	case XR_SPATIAL_BUFFER_TYPE_UINT32_EXT: {
-		Vector<uint32_t> data =
-			OpenXRSpatialEntityExtension::get_uint32_buffer(p_snapshot, buffer.bufferId);
-
-		ret.resize(data.size());
-		int count = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < count; i++) {
-			ptr[i] = data[i];
-		}
-	} break;
-	default: {
-		ERR_FAIL_V_MSG(PackedInt32Array(), "OpenXR: Unsupported buffer type for indices.");
-	} break;
-	}
-
-	return ret;
-}
-
-Ref<Mesh> OpenXRSpatialComponentData::get_mesh(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_MESH_3D, nullptr);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, nullptr);
-
-	// TODO implement, need to convert mesh data to Godot mesh resource
-	return nullptr;
-}
-
-Transform3D OpenXRSpatialComponentData::get_entity_pose(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_ANCHOR, Transform3D());
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, Transform3D());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), Transform3D());
-
-	return OpenXRAPI::transform_from_pose(static_cast<const XrPosef*>(data_ptr)[p_index]);
-}
-
-XrUuid OpenXRSpatialComponentData::get_persistent_uuid(int64_t p_index) const
-{
-	XrUuid null_uuid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-	ERR_FAIL_COND_V(component_kind != COMPONENT_PERSISTENCE, null_uuid);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_uuid);
-
-	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistUuid;
-}
-
-String OpenXRSpatialComponentData::_get_persistent_uuid(int64_t p_index) const
-{
-	return OpenXRUtil::string_from_xruuid(get_persistent_uuid(p_index));
-}
-
-XrSpatialPersistenceStateEXT OpenXRSpatialComponentData::get_persistent_state(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(
-		component_kind != COMPONENT_PERSISTENCE, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PERSISTENCE_STATE_MAX_ENUM_EXT);
-
-	return static_cast<const XrSpatialPersistenceDataEXT*>(data_ptr)[p_index].persistState;
-}
-
-uint64_t OpenXRSpatialComponentData::_get_persistent_state(int64_t p_index) const
-{
-	return (uint64_t)get_persistent_state(p_index);
-}
-
-String OpenXRSpatialComponentData::get_persistence_state_name(XrSpatialPersistenceStateEXT p_state)
-{
-	XR_ENUM_SWITCH(XrSpatialPersistenceStateEXT, p_state)
-}
-
-XrSpatialPlaneAlignmentEXT OpenXRSpatialComponentData::get_plane_alignment(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(
-		component_kind != COMPONENT_PLANE_ALIGNMENT, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_ALIGNMENT_MAX_ENUM_EXT);
-
-	return static_cast<const XrSpatialPlaneAlignmentEXT*>(data_ptr)[p_index];
-}
-
-OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialComponentData::_get_plane_alignment(
-	int64_t p_index) const
-{
-	return (PlaneAlignment)get_plane_alignment(p_index);
-}
-
-XrSpatialPlaneSemanticLabelEXT OpenXRSpatialComponentData::get_plane_semantic_label(
-	int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_PLANE_SEMANTIC_LABEL,
-		XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, XR_SPATIAL_PLANE_SEMANTIC_LABEL_MAX_ENUM_EXT);
-
-	return static_cast<const XrSpatialPlaneSemanticLabelEXT*>(data_ptr)[p_index];
-}
-
-OpenXRSpatialComponentData::PlaneSemanticLabel
-OpenXRSpatialComponentData::_get_plane_semantic_label(int64_t p_index) const
-{
-	return (PlaneSemanticLabel)get_plane_semantic_label(p_index);
-}
-
-OpenXRSpatialComponentData::MarkerType OpenXRSpatialComponentData::get_marker_type(
-	int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, MARKER_TYPE_UNKNOWN);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, MARKER_TYPE_UNKNOWN);
-
-	switch (static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].capability) {
-	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT:
-		return MARKER_TYPE_QRCODE;
-	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT:
-		return MARKER_TYPE_MICRO_QRCODE;
-	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT:
-		return MARKER_TYPE_ARUCO;
-	case XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT:
-		return MARKER_TYPE_APRIL_TAG;
-	default:
-		return MARKER_TYPE_UNKNOWN;
-	}
-}
-
-uint32_t OpenXRSpatialComponentData::get_marker_id(int64_t p_index) const
-{
-	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, 0);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, 0);
-
-	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].markerId;
-}
-
-XrSpatialBufferEXT OpenXRSpatialComponentData::get_marker_data(int64_t p_index) const
-{
-	XrSpatialBufferEXT null_buffer = {
-		XR_NULL_SPATIAL_BUFFER_ID_EXT, XR_SPATIAL_BUFFER_TYPE_UNKNOWN_EXT};
-
-	ERR_FAIL_COND_V(component_kind != COMPONENT_MARKER, null_buffer);
-	ERR_FAIL_INDEX_V(p_index, (int64_t)capacity, null_buffer);
-
-	return static_cast<const XrSpatialMarkerDataEXT*>(data_ptr)[p_index].data;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialEntityTracker
-
-OpenXRSpatialEntityTracker::OpenXRSpatialEntityTracker(EntityType p_entity_type)
-	: entity_type(p_entity_type)
-{
-	xr_tracker.instantiate(XRServer::TrackerType::TRACKER_ANCHOR);
-}
-
-OpenXRSpatialEntityTracker::~OpenXRSpatialEntityTracker()
-{
-	if (spatial_entity.is_valid()) {
-		if (OpenXRSpatialEntityExtension::is_initialized()) {
-			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
-			spatial_entity = RID();
-		}
-	}
-}
-
-void OpenXRSpatialEntityTracker::set_spatial_context(const RID& p_spatial_context)
-{
-	// Trackers shouldn't be switching spatial contexts; always create a new tracker for new
-	// contexts
-	ERR_FAIL_COND(spatial_context.is_valid() && spatial_context != p_spatial_context);
-	spatial_context = p_spatial_context;
-}
-
-RID OpenXRSpatialEntityTracker::get_spatial_context() const { return spatial_context; }
-
-void OpenXRSpatialEntityTracker::set_entity(const RID& p_entity)
-{
-	if (spatial_entity.is_valid()) {
-		if (spatial_entity == p_entity) {
-			return;
-		}
-
-		if (OpenXRSpatialEntityExtension::is_initialized()) {
-			OpenXRSpatialEntityExtension::free_spatial_entity(spatial_entity);
-			spatial_entity = RID();
-		}
-	}
-
-	spatial_entity = p_entity;
-
-	if (p_entity.is_valid()) {
-		ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
-
-		XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(p_entity);
-
-		String tracker_name = String("openxr/spatial_entity/") + String::num_int64(entity_id);
-		set_tracker_name(tracker_name);
-	}
-	else {
-		set_tracker_name("openxr/spatial_entity/null");
-	}
-}
-
-RID OpenXRSpatialEntityTracker::get_entity() const { return spatial_entity; }
-
-void OpenXRSpatialEntityTracker::set_spatial_tracking_state(
-	const XrSpatialEntityTrackingStateEXT p_state)
-{
-	if (spatial_tracking_state != p_state) {
-		spatial_tracking_state = p_state;
-	}
-}
-
-void OpenXRSpatialEntityTracker::_set_spatial_tracking_state(const EntityTrackingState p_state)
-{
-	set_spatial_tracking_state((XrSpatialEntityTrackingStateEXT)p_state);
-}
-
-XrSpatialEntityTrackingStateEXT OpenXRSpatialEntityTracker::get_spatial_tracking_state() const
-{
-	return spatial_tracking_state;
-}
-
-OpenXRSpatialEntityTracker::EntityTrackingState
-OpenXRSpatialEntityTracker::_get_spatial_tracking_state() const
-{
-	return (EntityTrackingState)get_spatial_tracking_state();
-}
-
-void OpenXRSpatialEntityTracker::add_next(Ref<OpenXRStructureBase> p_next)
-{
-	// Prepend p_next to next
-	if (p_next.is_valid()) {
-		if (next.is_valid()) {
-			p_next->set_next(next);
-		}
-
-		next = p_next;
-	}
-}
-
-void OpenXRSpatialEntityTracker::remove_next(Ref<OpenXRStructureBase> p_next)
-{
-	if (p_next.is_null()) {
-		return;
-	}
-
-	Ref<OpenXRStructureBase> prev;
-	for (Ref<OpenXRStructureBase> n = next; n.is_valid(); n = n->get_next()) {
-		if (n == p_next) {
-			if (prev.is_null()) {
-				next = p_next->get_next();
-			}
-			else {
-				prev->set_next(p_next->get_next());
-			}
-
-			p_next->set_next(nullptr);
-			break;
-		}
-
-		prev = n;
-	}
-}
-
-Ref<OpenXRStructureBase> OpenXRSpatialEntityTracker::get_next() const { return next; }
-
-bool OpenXRSpatialEntityTracker::has_uuid() const
-{
-	for (int i = 0; i < XR_UUID_SIZE; i++) {
-		if (uuid.data[i] != 0) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-XrUuid OpenXRSpatialEntityTracker::get_uuid() const { return uuid; }
-
-void OpenXRSpatialEntityTracker::set_uuid(const XrUuid& p_uuid)
-{
-	if (uuid_is_equal(uuid, p_uuid)) {
-		return;
-	}
-
-	uuid = p_uuid;
-}
-
-String OpenXRSpatialEntityTracker::_get_uuid() const { return OpenXRUtil::string_from_xruuid(uuid); }
-
-void OpenXRSpatialEntityTracker::_set_uuid(const String& p_uuid)
-{
-	set_uuid(OpenXRUtil::xruuid_from_string(p_uuid));
-}
-
-bool OpenXRSpatialEntityTracker::uuid_is_equal(const XrUuid& p_a, const XrUuid& p_b)
-{
-	for (int i = 0; i < XR_UUID_SIZE; i++) {
-		if (p_a.data[i] != p_b.data[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-void OpenXRSpatialEntityTracker::set_bounds_size(const Vector2& p_bounds_size)
-{
-	if (entity_type == ENTITY_PLANE) {
-		if (Math::abs(bounds_size.x - p_bounds_size.x) > 0.001 ||
-			Math::abs(bounds_size.y - p_bounds_size.y) > 0.001) {
-			bounds_size = p_bounds_size;
-
-			if (!mesh.has_mesh_data) {
-				// Bounds changing only effects mesh data if we don't have polygon data.
-				clear_mesh_data();
-			}
-		}
-	}
-	else {
-		bounds_size = p_bounds_size;
-	}
-}
-
-Vector2 OpenXRSpatialEntityTracker::get_bounds_size() const { return bounds_size; }
-
-void OpenXRSpatialEntityTracker::set_plane_alignment(
-	OpenXRSpatialComponentData::PlaneAlignment p_plane_alignment)
-{
-	if (plane_alignment != p_plane_alignment) {
-		plane_alignment = p_plane_alignment;
-	}
-}
-
-OpenXRSpatialComponentData::PlaneAlignment OpenXRSpatialEntityTracker::get_plane_alignment() const
-{
-	return plane_alignment;
-}
-
-void OpenXRSpatialEntityTracker::set_plane_label(const String& p_plane_label)
-{
-	if (plane_label != p_plane_label) {
-		plane_label = p_plane_label;
-
-		// Also copy to description, should do something nicer here.
-		set_tracker_desc(plane_label);
-	}
-}
-
-String OpenXRSpatialEntityTracker::get_plane_label() const { return plane_label; }
-
-void OpenXRSpatialEntityTracker::set_mesh_data(const Transform3D& p_origin,
-	const PackedVector2Array& p_vertices, const PackedInt32Array& p_indices)
-{
-	if (p_vertices.size() < 3) {
-		if (mesh.has_mesh_data) {
-			clear_mesh_data();
-		}
-	}
-	else {
-		bool has_changed = !mesh.has_mesh_data;
-
-		mesh.has_mesh_data = true;
-		mesh.origin = p_origin;
-
-		if (mesh.vertices.size() != p_vertices.size()) {
-			has_changed = true;
-		}
-		else {
-			// Compare the vertices with a bit of margin, we ignore small jittering on vertices.
-			for (uint32_t i = 0; i < p_vertices.size() && !has_changed; i++) {
-				const Vector2& a = p_vertices[i];
-				const Vector2& b = mesh.vertices[i];
-				has_changed = (Math::abs(a.x - b.x) > 0.001) || (Math::abs(a.y - b.y) > 0.001);
-			}
-		}
-		if (has_changed) {
-			mesh.vertices = p_vertices;
-		}
-
-		if (p_indices.is_empty()) {
-			// Assume polygon, turn into triangle strip...
-			int count = (p_vertices.size() - 2) * 3;
-
-			if (has_changed || mesh.indices.size() != count) {
-				has_changed = true;
-
-				int offset = 1;
-				mesh.indices.resize(count);
-				int32_t* idx = mesh.indices.ptrw();
-				for (int i = 0; i < count; i += 3) {
-					idx[i + 0] = 0;
-					idx[i + 2] = offset++;
-					idx[i + 1] = offset;
-				}
-			}
-		}
-		else {
-			if (mesh.indices.size() != p_indices.size()) {
-				has_changed = true;
-			}
-			else {
-				for (uint32_t i = 0; i < p_indices.size() && !has_changed; i++) {
-					has_changed = mesh.indices[i] != p_indices[i];
-				}
-			}
-			if (has_changed) {
-				mesh.indices = p_indices;
-			}
-		}
-
-		if (has_changed) {
-			mesh.mesh.unref();
-#ifndef PHYSICS_3D_DISABLED
-			mesh.shape3d.unref();
-#endif
-		}
-	}
-}
-
-void OpenXRSpatialEntityTracker::clear_mesh_data()
-{
-	mesh.mesh.unref();
-#ifndef PHYSICS_3D_DISABLED
-	mesh.shape3d.unref();
-#endif
-
-	if (mesh.has_mesh_data) {
-		mesh.has_mesh_data = false;
-		mesh.origin = Transform3D();
-		mesh.vertices.clear();
-		mesh.indices.clear();
-	}
-}
-
-Transform3D OpenXRSpatialEntityTracker::get_mesh_offset() const
-{
-	Transform3D offset;
-
-	if (mesh.has_mesh_data) {
-		offset = mesh.origin;
-
-		Ref<XRPose> pose = get_pose(SNAME("default"));
-		if (pose.is_valid()) {
-			offset = pose->get_transform().inverse() * offset;
-		}
-
-		if (XRServer::is_initialized()) {
-			offset.origin *= XRServer::get_world_scale();
-		}
-	}
-
-	return offset;
-}
-
-#ifndef PHYSICS_3D_DISABLED
-Ref<Shape3D> OpenXRSpatialEntityTracker::get_shape(real_t p_thickness)
-{
-	if (mesh.shape3d.is_valid()) {
-		return mesh.shape3d;
-	}
-
-	if (mesh.has_mesh_data) {
-		Ref<Shape3D> shape;
-		Vector<Vector3> faces;
-
-		int isize = mesh.indices.size();
-		const Vector2* vr = mesh.vertices.ptr();
-		const int32_t* ir = mesh.indices.ptr();
-
-		HashMap<Edge, int, Edge> edge_counts;
-		for (int i = 0; i < isize; i += 3) {
-			for (int j = 0; j < 3; j++) {
-				Edge e(ir[i + j], ir[i + ((j + 1) % 3)]);
-				edge_counts[e]++;
-			}
-		}
-
-		thread_local LocalVector<Edge> outer_edges;
-		outer_edges.clear();
-		for (const KeyValue<Edge, int>& e : edge_counts) {
-			if (e.value > 1) {
-				outer_edges.push_back(e.key);
-			}
-		}
-
-		faces.resize(2 * isize + 6 * outer_edges.size());
-		Vector3* write = faces.ptrw();
-
-		for (int i = 0; i < isize; i += 3) {
-			Vector3 a = Vector3(vr[ir[i]].x, vr[ir[i]].y, 0.0);
-			Vector3 b = Vector3(vr[ir[i + 1]].x, vr[ir[i + 1]].y, 0.0);
-			Vector3 c = Vector3(vr[ir[i + 2]].x, vr[ir[i + 2]].y, 0.0);
-
-			*write++ = a;
-			*write++ = b;
-			*write++ = c;
-
-			a.z = -p_thickness;
-			b.z = -p_thickness;
-			c.z = -p_thickness;
-
-			*write++ = a;
-			*write++ = c;
-			*write++ = b;
-		}
-
-		for (const Edge& edge : outer_edges) {
-			Vector3 a = Vector3(vr[edge.a].x, vr[edge.a].y, 0.0);
-			Vector3 b = Vector3(vr[edge.b].x, vr[edge.b].y, 0.0);
-			Vector3 c = b + Vector3(0.0, 0.0, -p_thickness);
-			Vector3 d = a + Vector3(0.0, 0.0, -p_thickness);
-
-			*write++ = a;
-			*write++ = b;
-			*write++ = c;
-
-			*write++ = a;
-			*write++ = c;
-			*write++ = d;
-		}
-
-		shape = memnew(Shape3D(Shape3D::SHAPE_CONCAVE_POLYGON));
-		shape->set_faces(faces);
-
-		mesh.shape3d = shape;
-	}
-	else if (bounds_size.x > 0.0 && bounds_size.y > 0.0) {
-		Ref<Shape3D> box_shape = memnew(Shape3D(Shape3D::SHAPE_BOX));
-		box_shape->set_size(Vector3(bounds_size.x, bounds_size.y, p_thickness));
-
-		mesh.shape3d = box_shape;
-	}
-
-	return mesh.shape3d;
-}
-#endif // PHYSICS_3D_DISABLED
-
-void OpenXRSpatialEntityTracker::set_marker_type(
-	OpenXRSpatialComponentData::MarkerType p_marker_type)
-{
-	marker_type = p_marker_type;
-}
-
-OpenXRSpatialComponentData::MarkerType OpenXRSpatialEntityTracker::get_marker_type() const
-{
-	return marker_type;
-}
-
-void OpenXRSpatialEntityTracker::set_marker_id(uint32_t p_id) { marker_id = p_id; }
-
-uint32_t OpenXRSpatialEntityTracker::get_marker_id() const { return marker_id; }
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialEntityExtension
-
-void OpenXRSpatialEntityExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRSpatialEntityExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRSpatialEntityExtension::get_requested_extensions(XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled")) {
-		request_extensions[XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME] = &data->spatial_entity_ext;
-	}
-
-	return request_extensions;
-}
-
-void OpenXRSpatialEntityExtension::on_instance_created(const XrInstance p_instance)
-{
-	if (data->spatial_entity_ext) {
-		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilitiesEXT);
-		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityComponentTypesEXT);
-		EXT_INIT_XR_FUNC(xrEnumerateSpatialCapabilityFeaturesEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialContextAsyncEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialContextCompleteEXT);
-		EXT_INIT_XR_FUNC(xrDestroySpatialContextEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialDiscoverySnapshotAsyncEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialDiscoverySnapshotCompleteEXT);
-		EXT_INIT_XR_FUNC(xrQuerySpatialComponentDataEXT);
-		EXT_INIT_XR_FUNC(xrDestroySpatialSnapshotEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialEntityFromIdEXT);
-		EXT_INIT_XR_FUNC(xrDestroySpatialEntityEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialUpdateSnapshotEXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferStringEXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint8EXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint16EXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferUint32EXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferFloatEXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferVector2fEXT);
-		EXT_INIT_XR_FUNC(xrGetSpatialBufferVector3fEXT);
-	}
-}
-
-void OpenXRSpatialEntityExtension::on_instance_destroyed()
-{
-	data->supported_capabilities.clear();
-	data->capabilities_load_state = 0;
-
-	xrEnumerateSpatialCapabilitiesEXT_ptr = nullptr;
-	xrEnumerateSpatialCapabilityComponentTypesEXT_ptr = nullptr;
-	xrEnumerateSpatialCapabilityFeaturesEXT_ptr = nullptr;
-	xrCreateSpatialContextAsyncEXT_ptr = nullptr;
-	xrCreateSpatialContextCompleteEXT_ptr = nullptr;
-	xrDestroySpatialContextEXT_ptr = nullptr;
-	xrCreateSpatialDiscoverySnapshotAsyncEXT_ptr = nullptr;
-	xrCreateSpatialDiscoverySnapshotCompleteEXT_ptr = nullptr;
-	xrQuerySpatialComponentDataEXT_ptr = nullptr;
-	xrDestroySpatialSnapshotEXT_ptr = nullptr;
-	xrCreateSpatialEntityFromIdEXT_ptr = nullptr;
-	xrDestroySpatialEntityEXT_ptr = nullptr;
-	xrCreateSpatialUpdateSnapshotEXT_ptr = nullptr;
-	xrGetSpatialBufferStringEXT_ptr = nullptr;
-	xrGetSpatialBufferUint8EXT_ptr = nullptr;
-	xrGetSpatialBufferUint16EXT_ptr = nullptr;
-	xrGetSpatialBufferUint32EXT_ptr = nullptr;
-	xrGetSpatialBufferFloatEXT_ptr = nullptr;
-	xrGetSpatialBufferVector2fEXT_ptr = nullptr;
-	xrGetSpatialBufferVector3fEXT_ptr = nullptr;
-}
-
-bool OpenXRSpatialEntityExtension::get_active()
-{
-	return data != nullptr && data->spatial_entity_ext;
-}
-
-bool OpenXRSpatialEntityExtension::_load_capabilities()
-{
-	if (data->capabilities_load_state == 0) {
-		if (!data->spatial_entity_ext) {
-			return false;
-		}
-
-		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-
-		XrInstance instance = OpenXRAPI::get_instance();
-		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
-		XrSystemId system_id = OpenXRAPI::get_system_id();
-		ERR_FAIL_COND_V(system_id == 0, false);
-
-		data->capabilities_load_state = 2;
-
-		Vector<XrSpatialCapabilityEXT> capabilities;
-		uint32_t capability_size = 0;
-		XrResult result =
-			xrEnumerateSpatialCapabilitiesEXT(instance, system_id, 0, &capability_size, nullptr);
-		if (XR_FAILED(result)) {
-			ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capability count [" +
-									  OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		if (capability_size > 0) {
-			capabilities.resize(capability_size);
-			result = xrEnumerateSpatialCapabilitiesEXT(
-				instance, system_id, capabilities.size(), &capability_size, capabilities.ptrw());
-			if (XR_FAILED(result)) {
-				ERR_FAIL_V_MSG(false, "OpenXR: Failed to get spatial entity capabilities [" +
-										  OpenXRAPI::get_error_string(result) + "]");
-			}
-
-			for (const XrSpatialCapabilityEXT& capability : capabilities) {
-				print_verbose("OpenXR: Found spatial entity capability " +
-							  get_spatial_capability_name(capability) + ".");
-
-				SpatialEntityCapabality& spatial_entity_capability =
-					data->supported_capabilities[capability];
-
-				XrSpatialCapabilityComponentTypesEXT component_types = {
-					XR_TYPE_SPATIAL_CAPABILITY_COMPONENT_TYPES_EXT,
-					nullptr,
-					0,
-					0,
-					nullptr,
-				};
-				result = xrEnumerateSpatialCapabilityComponentTypesEXT(
-					instance, system_id, capability, &component_types);
-				if (XR_FAILED(result)) {
-					ERR_PRINT("OpenXR: Failed to get spatial entity component type count [" +
-							  OpenXRAPI::get_error_string(result) + "]");
-				}
-				else if (component_types.componentTypeCountOutput > 0) {
-					spatial_entity_capability.component_types.resize(
-						component_types.componentTypeCountOutput);
-					component_types.componentTypeCapacityInput =
-						spatial_entity_capability.component_types.size();
-					component_types.componentTypeCountOutput = 0;
-					component_types.componentTypes =
-						spatial_entity_capability.component_types.ptrw();
-					result = xrEnumerateSpatialCapabilityComponentTypesEXT(
-						instance, system_id, capability, &component_types);
-					if (XR_FAILED(result)) {
-						ERR_PRINT("OpenXR: Failed to get spatial entity component types [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-					}
-					else if (is_print_verbose_enabled()) {
-						for (const XrSpatialComponentTypeEXT& component_type :
-							spatial_entity_capability.component_types) {
-							print_verbose("- component type " +
-										  get_spatial_component_type_name(component_type));
-						}
-					}
-				}
-
-				result = xrEnumerateSpatialCapabilityFeaturesEXT(
-					instance, system_id, capability, 0, &capability_size, nullptr);
-				if (XR_FAILED(result)) {
-					ERR_PRINT("OpenXR: Failed to get spatial entity feature count [" +
-							  OpenXRAPI::get_error_string(result) + "]");
-				}
-				else if (capability_size > 0) {
-					spatial_entity_capability.features.resize(capability_size);
-					result = xrEnumerateSpatialCapabilityFeaturesEXT(instance, system_id,
-						capability, spatial_entity_capability.features.size(), &capability_size,
-						spatial_entity_capability.features.ptrw());
-					if (XR_FAILED(result)) {
-						ERR_PRINT("OpenXR: Failed to get spatial entity features [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-					}
-					else if (is_print_verbose_enabled()) {
-						for (const XrSpatialCapabilityFeatureEXT& feature :
-							spatial_entity_capability.features) {
-							print_verbose("- feature " + get_spatial_feature_name(feature));
-						}
-					}
-				}
-			}
-		}
-
-		data->capabilities_load_state = 1;
-	}
-
-	return data->capabilities_load_state == 1;
-}
-
-bool OpenXRSpatialEntityExtension::supports_capability(XrSpatialCapabilityEXT p_capability)
-{
-	if (!_load_capabilities()) {
-		return false;
-	}
-
-	return data->supported_capabilities.has(p_capability);
-}
-
-bool OpenXRSpatialEntityExtension::_supports_capability(Capability p_capability)
-{
-	return supports_capability((XrSpatialCapabilityEXT)p_capability);
-}
-
-bool OpenXRSpatialEntityExtension::supports_component_type(
-	XrSpatialCapabilityEXT p_capability, XrSpatialComponentTypeEXT p_component_type)
-{
-	if (!_load_capabilities()) {
-		return false;
-	}
-
-	if (data->supported_capabilities.has(p_capability)) {
-		return data->supported_capabilities[p_capability].component_types.has(p_component_type);
-	}
-	return false;
-}
-
-bool OpenXRSpatialEntityExtension::_supports_component_type(
-	Capability p_capability, ComponentType p_component_type)
-{
-	return supports_component_type(
-		(XrSpatialCapabilityEXT)p_capability, (XrSpatialComponentTypeEXT)p_component_type);
-}
-
-bool OpenXRSpatialEntityExtension::get_spatial_context_ready(RID p_spatial_context)
-{
-	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
-	ERR_FAIL_NULL_V(context_data, false);
-
-	return context_data->spatial_context != XR_NULL_HANDLE;
-}
-
-void OpenXRSpatialEntityExtension::free_spatial_context(RID p_spatial_context)
-{
-	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
-	ERR_FAIL_NULL(context_data);
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	if (context_data->spatial_context != XR_NULL_HANDLE) {
-		XrResult result = xrDestroySpatialContextEXT(context_data->spatial_context);
-		if (XR_FAILED(result)) {
-			WARN_PRINT("OpenXR: Failed to destroy the spatial context [" +
-					   OpenXRAPI::get_error_string(result) + "]");
-		}
-		context_data->spatial_context = XR_NULL_HANDLE;
-
-		data->spatial_context_owner.free(p_spatial_context);
-	}
-}
-
-XrSpatialContextEXT OpenXRSpatialEntityExtension::get_spatial_context_handle(
-	RID p_spatial_context)
-{
-	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
-	ERR_FAIL_NULL_V(context_data, XR_NULL_HANDLE);
-
-	return context_data->spatial_context;
-}
-
-uint64_t OpenXRSpatialEntityExtension::_get_spatial_context_handle(RID p_spatial_context)
-{
-	return (uint64_t)get_spatial_context_handle(p_spatial_context);
-}
-
-RID OpenXRSpatialEntityExtension::update_spatial_entities(RID p_spatial_context,
-	const LocalVector<RID>& p_entities,
-	const LocalVector<XrSpatialComponentTypeEXT>& p_component_types,
-	Ref<OpenXRStructureBase> p_next)
-{
-	if (!get_active()) {
-		return RID();
-	}
-
-	ERR_FAIL_COND_V(p_entities.is_empty(), RID());
-
-	SpatialContextData* context_data = data->spatial_context_owner.get_or_null(p_spatial_context);
-	ERR_FAIL_NULL_V(context_data, RID());
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
-
-	thread_local LocalVector<XrSpatialEntityEXT> entities;
-
-	entities.resize(p_entities.size());
-	XrSpatialEntityEXT* ptr = entities.ptr();
-	for (const RID& rid : p_entities) {
-		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(rid);
-		*ptr = entity_data ? entity_data->entity : XR_NULL_HANDLE;
-		ptr++;
-	}
-
-	void* next = nullptr;
-	if (p_next.is_valid()) {
-		next = p_next->get_header(next);
-	}
-
-	SpatialSnapshotData spatial_snapshot_data;
-	spatial_snapshot_data.spatial_context = p_spatial_context;
-
-	XrSpatialUpdateSnapshotCreateInfoEXT create_info = {
-		XR_TYPE_SPATIAL_UPDATE_SNAPSHOT_CREATE_INFO_EXT,
-		next,
-		(uint32_t)entities.size(),
-		entities.ptr(),
-		(uint32_t)p_component_types.size(),
-		p_component_types.is_empty() ? nullptr : p_component_types.ptr(),
-		OpenXRAPI::get_play_space(),
-		OpenXRAPI::get_predicted_display_time(),
-	};
-	XrResult result = xrCreateSpatialUpdateSnapshotEXT(
-		context_data->spatial_context, &create_info, &spatial_snapshot_data.spatial_snapshot);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create update snapshot [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return data->spatial_snapshot_owner.make_rid(spatial_snapshot_data);
-}
-
-void OpenXRSpatialEntityExtension::free_spatial_snapshot(RID p_spatial_snapshot)
-{
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL(snapshot_data);
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	if (snapshot_data->spatial_snapshot != XR_NULL_HANDLE) {
-		XrResult result = xrDestroySpatialSnapshotEXT(snapshot_data->spatial_snapshot);
-		if (XR_FAILED(result)) {
-			WARN_PRINT("OpenXR: Failed to destroy the spatial snapshot [" +
-					   OpenXRAPI::get_error_string(result) + "]");
-		}
-		snapshot_data->spatial_snapshot = XR_NULL_HANDLE;
-	}
-
-	data->spatial_snapshot_owner.free(p_spatial_snapshot);
-}
-
-XrSpatialSnapshotEXT OpenXRSpatialEntityExtension::get_spatial_snapshot_handle(
-	RID p_spatial_snapshot)
-{
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, XR_NULL_HANDLE);
-
-	return snapshot_data->spatial_snapshot;
-}
-
-RID OpenXRSpatialEntityExtension::get_spatial_snapshot_context(RID p_spatial_snapshot)
-{
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, RID());
-
-	return snapshot_data->spatial_context;
-}
-
-uint64_t OpenXRSpatialEntityExtension::_get_spatial_snapshot_handle(RID p_spatial_snapshot)
-{
-	return (uint64_t)get_spatial_snapshot_handle(p_spatial_snapshot);
-}
-
-String OpenXRSpatialEntityExtension::get_string(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	String ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferStringEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	LocalVector<char> buffer;
-	buffer.resize(count + 1);
-	buffer[count] = '\0';
-
-	result = xrGetSpatialBufferStringEXT(
-		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret = String::utf8(buffer.ptr());
-	return ret;
-}
-
-PackedByteArray OpenXRSpatialEntityExtension::get_uint8_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	PackedByteArray ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferUint8EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-
-	result = xrGetSpatialBufferUint8EXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (uint8_t*)ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(PackedByteArray(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return ret;
-}
-
-Vector<uint16_t> OpenXRSpatialEntityExtension::get_uint16_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	Vector<uint16_t> ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferUint16EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-
-	result = xrGetSpatialBufferUint16EXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(Vector<uint16_t>(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return ret;
-}
-
-Vector<uint32_t> OpenXRSpatialEntityExtension::get_uint32_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	Vector<uint32_t> ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferUint32EXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-
-	result = xrGetSpatialBufferUint32EXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(Vector<uint32_t>(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return ret;
-}
-
-PackedFloat32Array OpenXRSpatialEntityExtension::get_float_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	PackedFloat32Array ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferFloatEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-
-	result = xrGetSpatialBufferFloatEXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(PackedFloat32Array(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return ret;
-}
-
-PackedVector2Array OpenXRSpatialEntityExtension::get_vector2_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	PackedVector2Array ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferVector2fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-#ifdef REAL_T_IS_DOUBLE
-	LocalVector<XrVector2f> buffer;
-	buffer.resize(count);
-
-	result = xrGetSpatialBufferVector2fEXT(
-		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-	Vector2* ptr = ret.ptrw();
-	for (uint32_t i = 0; i < count; i++) {
-		ptr[i].x = buffer[i].x;
-		ptr[i].y = buffer[i].y;
-	}
-#else
-	ret.resize(count);
-
-	result = xrGetSpatialBufferVector2fEXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector2f*)ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(PackedVector2Array(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-#endif
-
-	return ret;
-}
-
-PackedVector3Array OpenXRSpatialEntityExtension::get_vector3_buffer(
-	RID p_spatial_snapshot, XrSpatialBufferIdEXT p_buffer_id)
-{
-	PackedVector3Array ret;
-
-	SpatialSnapshotData* snapshot_data =
-		data->spatial_snapshot_owner.get_or_null(p_spatial_snapshot);
-	ERR_FAIL_NULL_V(snapshot_data, ret);
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), ret);
-
-	XrSpatialBufferGetInfoEXT info = {
-		XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT,
-		nullptr,
-		p_buffer_id,
-	};
-
-	uint32_t count = 0;
-	XrResult result =
-		xrGetSpatialBufferVector3fEXT(snapshot_data->spatial_snapshot, &info, 0, &count, nullptr);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(ret,
-			"OpenXR: Failed to get buffer size [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-#ifdef REAL_T_IS_DOUBLE
-	LocalVector<XrVector3f> buffer;
-	buffer.resize(count);
-
-	result = xrGetSpatialBufferVector3fEXT(
-		snapshot_data->spatial_snapshot, &info, buffer.size(), &count, buffer.ptr());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(
-			ret, "OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	ret.resize(count);
-	Vector3* ptr = ret.ptrw();
-	for (uint32_t i = 0; i < count; i++) {
-		ptr[i].x = buffer[i].x;
-		ptr[i].y = buffer[i].y;
-		ptr[i].z = buffer[i].z;
-	}
-#else
-	ret.resize(count);
-
-	result = xrGetSpatialBufferVector3fEXT(
-		snapshot_data->spatial_snapshot, &info, ret.size(), &count, (XrVector3f*)ret.ptrw());
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(PackedVector3Array(),
-			"OpenXR: Failed to get buffer [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-#endif
-
-	return ret;
-}
-
-String OpenXRSpatialEntityExtension::_get_string(RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	return get_string(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-}
-
-PackedByteArray OpenXRSpatialEntityExtension::_get_uint8_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	return get_uint8_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-}
-
-PackedInt32Array OpenXRSpatialEntityExtension::_get_uint16_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	PackedInt32Array ret;
-	Vector<uint16_t> buffer =
-		get_uint16_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-
-	if (!buffer.is_empty()) {
-		ret.resize(buffer.size());
-
-		int size = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < size; i++) {
-			ptr[i] = buffer[i];
-		}
-	}
-
-	return ret;
-}
-
-PackedInt32Array OpenXRSpatialEntityExtension::_get_uint32_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	PackedInt32Array ret;
-	Vector<uint32_t> buffer =
-		get_uint32_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-
-	if (!buffer.is_empty()) {
-		ret.resize(buffer.size());
-
-		int size = ret.size();
-		int32_t* ptr = ret.ptrw();
-		for (int i = 0; i < size; i++) {
-			ptr[i] = buffer[i];
-		}
-	}
-
-	return ret;
-}
-
-PackedFloat32Array OpenXRSpatialEntityExtension::_get_float_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	return get_float_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-}
-
-PackedVector2Array OpenXRSpatialEntityExtension::_get_vector2_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	return get_vector2_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-}
-
-PackedVector3Array OpenXRSpatialEntityExtension::_get_vector3_buffer(
-	RID p_spatial_snapshot, uint64_t p_buffer_id)
-{
-	return get_vector3_buffer(p_spatial_snapshot, (XrSpatialBufferIdEXT)p_buffer_id);
-}
-
-RID OpenXRSpatialEntityExtension::find_spatial_entity(XrSpatialEntityIdEXT p_entity_id)
-{
-	ERR_FAIL_COND_V(!get_active(), RID());
-
-	LocalVector<RID> entities = data->spatial_entity_owner.get_owned_list();
-	for (const RID& entity : entities) {
-		SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(entity);
-		ERR_FAIL_NULL_V(entity_data, RID());
-
-		if (entity_data->entity_id == p_entity_id) {
-			return entity;
-		}
-	}
-
-	return RID();
-}
-
-RID OpenXRSpatialEntityExtension::_find_entity(uint64_t p_entity_id)
-{
-	return find_spatial_entity((XrSpatialEntityIdEXT)p_entity_id);
-}
-
-RID OpenXRSpatialEntityExtension::add_spatial_entity(
-	RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id, XrSpatialEntityEXT p_entity)
-{
-	ERR_FAIL_COND_V(!get_active(), RID());
-
-	SpatialEntityData spatial_entity_data;
-	spatial_entity_data.spatial_context = p_spatial_context;
-	spatial_entity_data.entity_id = p_entity_id;
-	spatial_entity_data.entity = p_entity;
-
-	return data->spatial_entity_owner.make_rid(spatial_entity_data);
-}
-
-RID OpenXRSpatialEntityExtension::_add_entity(
-	RID p_spatial_context, uint64_t p_entity_id, uint64_t p_entity)
-{
-	return add_spatial_entity(
-		p_spatial_context, (XrSpatialEntityIdEXT)p_entity_id, (XrSpatialEntityEXT)p_entity);
-}
-
-RID OpenXRSpatialEntityExtension::make_spatial_entity(
-	RID p_spatial_context, XrSpatialEntityIdEXT p_entity_id)
-{
-	ERR_FAIL_COND_V(!get_active(), RID());
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), RID());
-
-	SpatialEntityData spatial_entity_data;
-	spatial_entity_data.spatial_context = p_spatial_context;
-	spatial_entity_data.entity_id = p_entity_id;
-	XrSpatialEntityFromIdCreateInfoEXT create_info = {
-		XR_TYPE_SPATIAL_ENTITY_FROM_ID_CREATE_INFO_EXT,
-		nullptr,
-		p_entity_id,
-	};
-	XrResult result = xrCreateSpatialEntityFromIdEXT(
-		get_spatial_context_handle(p_spatial_context), &create_info, &spatial_entity_data.entity);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(RID(), "OpenXR: Failed to create spatial entity [" +
-								  OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	return data->spatial_entity_owner.make_rid(spatial_entity_data);
-}
-
-RID OpenXRSpatialEntityExtension::_make_entity(RID p_spatial_context, uint64_t p_entity_id)
-{
-	return make_spatial_entity(p_spatial_context, (XrSpatialEntityIdEXT)p_entity_id);
-}
-
-XrSpatialEntityIdEXT OpenXRSpatialEntityExtension::get_spatial_entity_id(RID p_entity)
-{
-	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
-	ERR_FAIL_NULL_V(entity_data, XR_NULL_ENTITY);
-
-	return entity_data->entity_id;
-}
-
-uint64_t OpenXRSpatialEntityExtension::_get_entity_id(RID p_entity)
-{
-	return (uint64_t)get_spatial_entity_id(p_entity);
-}
-
-RID OpenXRSpatialEntityExtension::get_spatial_entity_context(RID p_entity)
-{
-	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
-	ERR_FAIL_NULL_V(entity_data, RID());
-
-	return entity_data->spatial_context;
-}
-
-void OpenXRSpatialEntityExtension::free_spatial_entity(RID p_entity)
-{
-	SpatialEntityData* entity_data = data->spatial_entity_owner.get_or_null(p_entity);
-	ERR_FAIL_NULL(entity_data);
-	ERR_FAIL_COND(entity_data->entity == XR_NULL_HANDLE);
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	XrResult result = xrDestroySpatialEntityEXT_ptr(entity_data->entity);
-	if (XR_FAILED(result)) {
-		WARN_PRINT("OpenXR: Failed to destroy spatial entity [" +
-				   OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	data->spatial_entity_owner.free(p_entity);
-}
-
-String OpenXRSpatialEntityExtension::get_spatial_capability_name(
-	XrSpatialCapabilityEXT p_capability)
-{
-	XR_ENUM_SWITCH(XrSpatialCapabilityEXT, p_capability)
-}
-
-String OpenXRSpatialEntityExtension::get_spatial_component_type_name(
-	XrSpatialComponentTypeEXT p_component_type)
-{
-	XR_ENUM_SWITCH(XrSpatialComponentTypeEXT, p_component_type)
-}
-
-String OpenXRSpatialEntityExtension::get_spatial_feature_name(
-	XrSpatialCapabilityFeatureEXT p_feature)
-{
-	XR_ENUM_SWITCH(XrSpatialCapabilityFeatureEXT, p_feature)
-}
-
-void OpenXRSpatialEntityExtension::on_session_destroyed() {}
-
-bool OpenXRSpatialEntityExtension::on_event_polled(const XrEventDataBuffer& p_event)
-{
-	return false;
-}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialAnchorCapability
-
-void OpenXRSpatialAnchorCapability::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRSpatialAnchorCapability::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRSpatialAnchorCapability::get_requested_extensions(XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
-		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_spatial_anchors")) {
-		request_extensions[XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME] = &data->spatial_anchor_ext;
-		if (GLOBAL_GET_CACHED(
-				bool, "xr/openxr/extensions/spatial_entity/enable_persistent_anchors")) {
-			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_EXTENSION_NAME] =
-				&data->spatial_persistence_ext;
-			request_extensions[XR_EXT_SPATIAL_PERSISTENCE_OPERATIONS_EXTENSION_NAME] =
-				&data->spatial_persistence_operations_ext;
-		}
-	}
-
-	return request_extensions;
-}
-
-void OpenXRSpatialAnchorCapability::on_instance_created(const XrInstance p_instance)
-{
-	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
-
-	if (data->spatial_anchor_ext) {
-		EXT_INIT_XR_FUNC(xrCreateSpatialAnchorEXT);
-	}
-
-	if (data->spatial_persistence_ext) {
-		ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-		XrResult xr_result =
-			OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceScopesEXT",
-				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
-		if (xr_result != XR_SUCCESS) {
-			print_verbose("OpenXR: xrEnumerateSpatialPersistenceScopesEXT is not supported, "
-						  "falling back to xrEnumerateSpatialPersistenceStoresEXT!");
-			xr_result = OpenXRAPI::get_instance_proc_addr("xrEnumerateSpatialPersistenceStoresEXT",
-				(PFN_xrVoidFunction*)&xrEnumerateSpatialPersistenceScopesEXT_ptr);
-		}
-		ERR_FAIL_COND(XR_FAILED(xr_result));
-
-		EXT_INIT_XR_FUNC(xrCreateSpatialPersistenceContextAsyncEXT);
-		EXT_INIT_XR_FUNC(xrCreateSpatialPersistenceContextCompleteEXT);
-		EXT_INIT_XR_FUNC(xrDestroySpatialPersistenceContextEXT);
-	}
-
-	if (data->spatial_persistence_operations_ext) {
-		EXT_INIT_XR_FUNC(xrPersistSpatialEntityAsyncEXT);
-		EXT_INIT_XR_FUNC(xrPersistSpatialEntityCompleteEXT);
-		EXT_INIT_XR_FUNC(xrUnpersistSpatialEntityAsyncEXT);
-		EXT_INIT_XR_FUNC(xrUnpersistSpatialEntityCompleteEXT);
-	}
-}
-
-void OpenXRSpatialAnchorCapability::on_instance_destroyed()
-{
-	xrCreateSpatialAnchorEXT_ptr = nullptr;
-
-	xrEnumerateSpatialPersistenceScopesEXT_ptr = nullptr;
-	xrCreateSpatialPersistenceContextAsyncEXT_ptr = nullptr;
-	xrCreateSpatialPersistenceContextCompleteEXT_ptr = nullptr;
-	xrDestroySpatialPersistenceContextEXT_ptr = nullptr;
-}
-
-bool OpenXRSpatialAnchorCapability::is_spatial_anchor_supported()
-{
-	return data != nullptr && data->spatial_anchor_supported;
-}
-
-bool OpenXRSpatialAnchorCapability::is_spatial_persistence_supported()
-{
-	if (!is_spatial_anchor_supported()) {
-		return false;
-	}
-
-	return data->spatial_persistence_ext;
-}
-
-bool OpenXRSpatialAnchorCapability::_load_supported_persistence_scopes()
-{
-	ERR_FAIL_COND_V(!is_spatial_persistence_supported(), false);
-
-	if (data->supported_persistence_scopes.is_empty()) {
-		ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), false);
-
-		uint32_t size;
-		XrInstance instance = OpenXRAPI::get_instance();
-		XrSystemId system_id = OpenXRAPI::get_system_id();
-
-		ERR_FAIL_COND_V(instance == XR_NULL_HANDLE, false);
-
-		XrResult result =
-			xrEnumerateSpatialPersistenceScopesEXT(instance, system_id, 0, &size, nullptr);
-		if (XR_FAILED(result)) {
-			ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scope count [" +
-									  OpenXRAPI::get_error_string(result) + "]");
-		}
-
-		if (size > 0) {
-			data->supported_persistence_scopes.resize(size);
-			result = xrEnumerateSpatialPersistenceScopesEXT(instance, system_id,
-				data->supported_persistence_scopes.size(), &size,
-				data->supported_persistence_scopes.ptrw());
-			if (XR_FAILED(result)) {
-				ERR_FAIL_V_MSG(false, "OpenXR: Failed to query persistence scopes [" +
-										  OpenXRAPI::get_error_string(result) + "]");
-			}
-		}
-
-		if (is_print_verbose_enabled()) {
-			if (!data->supported_persistence_scopes.is_empty()) {
-				print_verbose("OpenXR: Supported spatial persistence scopes:");
-				for (const XrSpatialPersistenceScopeEXT& scope :
-					data->supported_persistence_scopes) {
-					print_verbose(" - " + get_spatial_persistence_scope_name(scope));
-				}
-			}
-			else {
-				WARN_PRINT("OpenXR: No persistence scopes found!");
-			}
-		}
-	}
-
-	return true;
-}
-
-bool OpenXRSpatialAnchorCapability::is_persistence_scope_supported(
-	XrSpatialPersistenceScopeEXT p_scope)
-{
-	if (!is_spatial_persistence_supported()) {
-		return false;
-	}
-
-	if (!_load_supported_persistence_scopes()) {
-		return false;
-	}
-
-	return data->supported_persistence_scopes.has(p_scope);
-}
-
-bool OpenXRSpatialAnchorCapability::_is_persistence_scope_supported(PersistenceScope p_scope)
-{
-	return is_persistence_scope_supported((XrSpatialPersistenceScopeEXT)p_scope);
-}
-
-XrSpatialPersistenceContextEXT OpenXRSpatialAnchorCapability::get_persistence_context_handle(
-	RID p_persistence_context)
-{
-	PersistenceContextData* persistence_context_data =
-		data->persistence_context_owner.get_or_null(p_persistence_context);
-	ERR_FAIL_NULL_V(persistence_context_data, XR_NULL_HANDLE);
-
-	return persistence_context_data->persistence_context;
-}
-
-uint64_t OpenXRSpatialAnchorCapability::_get_persistence_context_handle(RID p_persistence_context)
-{
-	return (uint64_t)get_persistence_context_handle(p_persistence_context);
-}
-
-void OpenXRSpatialAnchorCapability::free_persistence_context(RID p_persistence_context)
-{
-	PersistenceContextData* persistence_context_data =
-		data->persistence_context_owner.get_or_null(p_persistence_context);
-	ERR_FAIL_NULL(persistence_context_data);
-
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-	if (persistence_context_data->persistence_context != XR_NULL_HANDLE) {
-		XrResult result =
-			xrDestroySpatialPersistenceContextEXT(persistence_context_data->persistence_context);
-		if (XR_FAILED(result)) {
-			WARN_PRINT("OpenXR: Failed to destroy the persistence context [" +
-					   OpenXRAPI::get_error_string(result) + "]");
-		}
-		persistence_context_data->persistence_context = XR_NULL_HANDLE;
-	}
-
-	data->persistence_context_owner.free(p_persistence_context);
-}
-
-void OpenXRSpatialAnchorCapability::_on_persistence_context_completed(RID p_persistence_context)
-{
-	data->persistence_context = p_persistence_context;
-
-	_create_spatial_context();
-}
-
-void OpenXRSpatialAnchorCapability::_on_spatial_context_created(RID p_spatial_context)
-{
-	data->spatial_context = p_spatial_context;
-	data->need_discovery = true;
-}
-
-void OpenXRSpatialAnchorCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
-{
-	if (p_spatial_context == data->spatial_context) {
-		data->need_discovery = true;
-	}
-}
-
-Ref<OpenXRAnchorTracker> OpenXRSpatialAnchorCapability::create_new_anchor(
-	const Transform3D& p_transform, RID p_spatial_context, Ref<OpenXRStructureBase> p_next)
-{
-	Ref<OpenXRAnchorTracker> tracker;
-
-	ERR_FAIL_COND_V_MSG(!is_spatial_anchor_supported(), tracker,
-		"OpenXR: Spatial entity anchor capability is not supported on this hardware!");
-
-	ERR_FAIL_COND_V(!OpenXRAPI::is_allocated(), tracker);
-	ERR_FAIL_COND_V(!XRServer::is_initialized(), tracker);
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), tracker);
-
-	XrPosef pose = OpenXRAPI::pose_from_transform(p_transform);
-
-	RID sc = p_spatial_context.is_valid() ? p_spatial_context : data->spatial_context;
-	ERR_FAIL_COND_V(sc.is_null(), tracker);
-
-	void* next = nullptr;
-	if (p_next.is_valid()) {
-		next = p_next->get_header(next);
-	}
-
-	XrSpatialAnchorCreateInfoEXT create_info = {
-		XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT,
-		next,
-		OpenXRAPI::get_play_space(),
-		OpenXRAPI::get_predicted_display_time(),
-		pose,
-	};
-	XrSpatialEntityIdEXT entity_id;
-	XrSpatialEntityEXT entity;
-	XrResult result = xrCreateSpatialAnchorEXT(
-		OpenXRSpatialEntityExtension::get_spatial_context_handle(sc), &create_info, &entity_id,
-		&entity);
-	if (XR_FAILED(result)) {
-		ERR_FAIL_V_MSG(tracker,
-			"OpenXR: Failed to create anchor [" + OpenXRAPI::get_error_string(result) + "]");
-	}
-
-	tracker.instantiate(OpenXRSpatialEntityTracker::ENTITY_ANCHOR);
-	tracker->set_spatial_context(sc);
-	tracker->set_entity(OpenXRSpatialEntityExtension::add_spatial_entity(sc, entity_id, entity));
-	tracker->set_tracker_desc("Anchor");
-	tracker->set_pose(SNAME("default"), p_transform, Vector3(), Vector3());
-	tracker->add_next(p_next);
-
-	data->anchor_trackers[sc][entity_id] = tracker;
-	XRServer::add_tracker(tracker->get_xr_tracker());
-
-	return tracker;
-}
-
-void OpenXRSpatialAnchorCapability::remove_anchor(Ref<OpenXRAnchorTracker> p_anchor_tracker)
-{
-	ERR_FAIL_COND(p_anchor_tracker.is_null());
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	ERR_FAIL_COND(!XRServer::is_initialized());
-	ERR_FAIL_COND(!OpenXRSpatialEntityExtension::is_initialized());
-
-	ERR_FAIL_COND_MSG(p_anchor_tracker->has_uuid(),
-		"OpenXR: This anchor is persistent. It must first be made unpersistent.");
-
-	XRServer::remove_tracker(p_anchor_tracker->get_xr_tracker());
-
-	RID entity = p_anchor_tracker->get_entity();
-	ERR_FAIL_COND(entity.is_null());
-
-	XrSpatialEntityIdEXT entity_id = OpenXRSpatialEntityExtension::get_spatial_entity_id(entity);
-	ERR_FAIL_COND(entity_id == XR_NULL_ENTITY);
-
-	for (KeyValue<RID, HashMap<XrSpatialEntityIdEXT, Ref<OpenXRAnchorTracker>>>& anchors :
-		data->anchor_trackers) {
-		if (anchors.value.has(entity_id)) {
-			anchors.value.erase(entity_id);
-			break;
-		}
-	}
-
-	p_anchor_tracker->set_entity(RID());
-}
-
-String OpenXRSpatialAnchorCapability::get_spatial_persistence_scope_name(
-	XrSpatialPersistenceScopeEXT p_scope)
-{
-	XR_ENUM_SWITCH(XrSpatialPersistenceScopeEXT, p_scope)
-}
-
-String OpenXRSpatialAnchorCapability::get_spatial_persistence_context_result_name(
-	XrSpatialPersistenceContextResultEXT p_result)
-{
-	XR_ENUM_SWITCH(XrSpatialPersistenceContextResultEXT, p_result)
-}
-
-Ref<OpenXRFutureResult> OpenXRSpatialAnchorCapability::_create_spatial_context()
-{
-	Ref<OpenXRFutureResult> oxfr = memnew(OpenXRFutureResult);
-	return oxfr;
-}
-
-void OpenXRSpatialAnchorCapability::on_session_created(XrSession_T* p_session) {}
-
-void OpenXRSpatialAnchorCapability::on_session_destroyed() {}
-
-void OpenXRSpatialAnchorCapability::on_process() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialMarkerTrackingCapability
-
-void OpenXRSpatialMarkerTrackingCapability::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRSpatialMarkerTrackingCapability::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRSpatialMarkerTrackingCapability::get_requested_extensions(
-	XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
-		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_marker_tracking")) {
-		request_extensions[XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME] =
-			&data->spatial_marker_tracking_ext;
-	}
-
-	return request_extensions;
-}
-
-bool OpenXRSpatialMarkerTrackingCapability::is_qrcode_supported()
-{
-	if (!data->spatial_marker_tracking_ext) {
-		return false;
-	}
-
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-	return OpenXRSpatialEntityExtension::supports_capability(
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT);
-}
-
-bool OpenXRSpatialMarkerTrackingCapability::is_micro_qrcode_supported()
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-	return OpenXRSpatialEntityExtension::supports_capability(
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT);
-}
-
-bool OpenXRSpatialMarkerTrackingCapability::is_aruco_supported()
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-	return OpenXRSpatialEntityExtension::supports_capability(
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT);
-}
-
-bool OpenXRSpatialMarkerTrackingCapability::is_april_tag_supported()
-{
-	ERR_FAIL_COND_V(!OpenXRSpatialEntityExtension::is_initialized(), false);
-
-	return OpenXRSpatialEntityExtension::supports_capability(
-		XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT);
-}
-
-void OpenXRSpatialMarkerTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
-{
-	data->spatial_context = p_spatial_context;
-	data->need_discovery = true;
-}
-
-void OpenXRSpatialMarkerTrackingCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
-{
-	if (p_spatial_context == data->spatial_context) {
-		data->need_discovery = true;
-	}
-}
-
-void OpenXRSpatialMarkerTrackingCapability::on_session_created(XrSession_T* p_session) {}
-
-void OpenXRSpatialMarkerTrackingCapability::on_session_destroyed() {}
-
-void OpenXRSpatialMarkerTrackingCapability::on_process() {}
-
-////////////////////////////////////////////////////////////////////////////
-// OpenXRSpatialPlaneTrackingCapability
-
-void OpenXRSpatialPlaneTrackingCapability::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXRSpatialPlaneTrackingCapability::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-HashMap<String, bool*> OpenXRSpatialPlaneTrackingCapability::get_requested_extensions(
-	XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-	if (GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enabled") &&
-		GLOBAL_GET_CACHED(bool, "xr/openxr/extensions/spatial_entity/enable_plane_tracking")) {
-		request_extensions[XR_EXT_SPATIAL_PLANE_TRACKING_EXTENSION_NAME] =
-			&data->spatial_plane_tracking_ext;
-	}
-
-	return request_extensions;
-}
-
-bool OpenXRSpatialPlaneTrackingCapability::is_supported()
-{
-	return data != nullptr && data->spatial_plane_tracking_supported;
-}
-
-void OpenXRSpatialPlaneTrackingCapability::_on_spatial_context_created(RID p_spatial_context)
-{
-	data->spatial_context = p_spatial_context;
-	data->need_discovery = true;
-}
-
-void OpenXRSpatialPlaneTrackingCapability::_on_spatial_discovery_recommended(RID p_spatial_context)
-{
-	if (p_spatial_context == data->spatial_context) {
-		data->need_discovery = true;
-	}
-}
-
-void OpenXRSpatialPlaneTrackingCapability::on_session_created(XrSession_T* p_session) {}
-
-void OpenXRSpatialPlaneTrackingCapability::on_session_destroyed() {}
-
-void OpenXRSpatialPlaneTrackingCapability::on_process() {}
-
 #if defined(VULKAN_ENABLED)
 #include "servers/display/display_server.h"
 
@@ -299432,22 +286906,22 @@ void OpenXRVulkanExtension::set_direct_queue_family_and_index(
 
 bool OpenXRVulkanExtension::use_fragment_density_offsets()
 {
-	if (!OpenXRFBFoveationExtension::is_initialized()) {
+	if (!OpenXRExtensions::is_initialized()) {
 		return false;
 	}
 
-	return OpenXRFBFoveationExtension::is_foveation_eye_tracked_enabled();
+	return OpenXRExtensions::is_foveation_eye_tracked_enabled();
 }
 
 void OpenXRVulkanExtension::get_fragment_density_offsets(
 	LocalVector<VkOffset2D>& r_vk_offsets, const Vector2i& p_granularity)
 {
-	if (!OpenXRFBFoveationExtension::is_initialized()) {
+	if (!OpenXRExtensions::is_initialized()) {
 		return;
 	}
 
 	LocalVector<Vector2i> offsets;
-	OpenXRFBFoveationExtension::get_fragment_density_offsets(offsets);
+	OpenXRExtensions::get_fragment_density_offsets(offsets);
 
 	r_vk_offsets.reserve(offsets.size());
 	for (Vector2i offset : offsets) {
@@ -299459,11 +286933,11 @@ void OpenXRVulkanExtension::get_fragment_density_offsets(
 
 bool OpenXRVulkanExtension::use_subsampled_images()
 {
-	if (!OpenXRFBFoveationExtension::is_initialized()) {
+	if (!OpenXRExtensions::is_initialized()) {
 		return false;
 	}
 
-	return OpenXRFBFoveationExtension::is_foveation_with_subsampled_images_enabled();
+	return OpenXRExtensions::is_foveation_with_subsampled_images_enabled();
 }
 
 XrGraphicsBindingVulkanKHR OpenXRVulkanExtension::graphics_binding_vulkan;
@@ -299861,430 +287335,4 @@ bool OpenXRVulkanExtension::get_swapchain_image_data(XrSwapchain_T* p_swapchain,
 #endif
 #endif // defined(VULKAN_ENABLED)
 
-#if defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
-
-#ifdef GLES3_ENABLED
-
-#include "servers/display/display_server.h"
-
-void OpenXROpenGLExtension::initialize()
-{
-	if (!data) {
-		data = memnew(Data);
-	}
-}
-
-void OpenXROpenGLExtension::finalize()
-{
-	if (!data) {
-		return;
-	}
-	memdelete(data);
-	data = nullptr;
-}
-
-// OpenXR requires us to submit sRGB textures so that it recognizes the content
-// as being in sRGB color space. We do fall back on "normal" textures but this
-// will likely result in incorrect colors as OpenXR will double the sRGB conversion.
-// All major XR runtimes support sRGB textures.
-
-// In OpenGL output of the fragment shader is assumed to be in the color space of
-// the developers choice, however a linear to sRGB HW conversion can be enabled
-// through enabling GL_FRAMEBUFFER_SRGB if an sRGB color attachment is used.
-// This is a global setting.
-// See: https://www.khronos.org/opengl/wiki/Framebuffer
-
-// In OpenGLES output of the fragment shader is assumed to be in linear color space
-// and will be converted by default to sRGB if an sRGB color attachment is used.
-// The extension GL_EXT_sRGB_write_control was introduced to enable turning this
-// feature off.
-// See: https://registry.khronos.org/OpenGL/extensions/EXT/EXT_sRGB_write_control.txt
-
-HashMap<String, bool*> OpenXROpenGLExtension::get_requested_extensions(XrVersion p_version)
-{
-	HashMap<String, bool*> request_extensions;
-
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	request_extensions[XR_KHR_OPENGL_ES_ENABLE_EXTENSION_NAME] = nullptr;
-#else
-	request_extensions[XR_KHR_OPENGL_ENABLE_EXTENSION_NAME] = nullptr;
-#endif
-#if defined(LINUXBSD_ENABLED) && defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	request_extensions[XR_MNDX_EGL_ENABLE_EXTENSION_NAME] = &data->egl_extension_enabled;
-#endif
-
-	return request_extensions;
-}
-
-void OpenXROpenGLExtension::on_instance_created(const XrInstance p_instance)
-{
-	// Obtain pointers to functions we're accessing here.
-	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	EXT_INIT_XR_FUNC(xrGetOpenGLESGraphicsRequirementsKHR);
-#else
-	EXT_INIT_XR_FUNC(xrGetOpenGLGraphicsRequirementsKHR);
-#endif
-	EXT_INIT_XR_FUNC(xrEnumerateSwapchainImages);
-}
-
-#ifdef WIN32
-XrGraphicsBindingOpenGLWin32KHR OpenXROpenGLExtension::graphics_binding_gl;
-#elif defined(ANDROID_ENABLED)
-XrGraphicsBindingOpenGLESAndroidKHR OpenXROpenGLExtension::graphics_binding_gl;
-#elif defined(LINUXBSD_ENABLED)
-#ifdef X11_ENABLED
-XrGraphicsBindingOpenGLXlibKHR OpenXROpenGLExtension::graphics_binding_gl;
-#endif
-#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-XrGraphicsBindingEGLMNDX OpenXROpenGLExtension::graphics_binding_egl;
-#endif
-#endif
-
-void* OpenXROpenGLExtension::set_session_create_and_get_next_pointer(void* p_next_pointer)
-{
-	GLint gl_version_major = 0;
-	GLint gl_version_minor = 0;
-	glGetIntegerv(GL_MAJOR_VERSION, &gl_version_major);
-	glGetIntegerv(GL_MINOR_VERSION, &gl_version_minor);
-
-	XrVersion desired_version = XR_MAKE_VERSION(gl_version_major, gl_version_minor, 0);
-
-	if (!check_graphics_api_support(desired_version)) {
-		__print_line("OpenXR: Trying to initialize with OpenGL anyway...");
-		// return p_next_pointer;
-	}
-
-#ifdef WIN32
-	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
-	graphics_binding_gl.next = p_next_pointer;
-
-	graphics_binding_gl.hDC =
-		(HDC)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_VIEW);
-	graphics_binding_gl.hGLRC =
-		(HGLRC)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
-#elif defined(ANDROID_ENABLED)
-	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR;
-	graphics_binding_gl.next = p_next_pointer;
-
-	graphics_binding_gl.display =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
-	graphics_binding_gl.config =
-		(EGLConfig)0; // https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/master/src/tests/hello_xr/graphicsplugin_opengles.cpp#L122
-	graphics_binding_gl.context =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
-#else
-#if defined(EGL_ENABLED) && defined(WAYLAND_ENABLED)
-	if (DisplayServer::get_name() == "Wayland") {
-		ERR_FAIL_COND_V_MSG(!data->egl_extension_enabled, p_next_pointer,
-			"OpenXR cannot initialize on Wayland without the XR_MNDX_egl_enable extension.");
-
-		graphics_binding_egl.type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX;
-		graphics_binding_egl.next = p_next_pointer;
-
-		graphics_binding_egl.getProcAddress = eglGetProcAddress;
-		graphics_binding_egl.display =
-			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_DISPLAY);
-		graphics_binding_egl.config =
-			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::EGL_CONFIG);
-		graphics_binding_egl.context =
-			(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
-
-		return &graphics_binding_egl;
-	}
-#endif
-#if defined(X11_ENABLED)
-	graphics_binding_gl.type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR;
-	graphics_binding_gl.next = p_next_pointer;
-
-	void* display_handle =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::DISPLAY_HANDLE);
-	void* glxcontext_handle =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::OPENGL_CONTEXT);
-	void* glxdrawable_handle =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::WINDOW_HANDLE);
-	void* glx_fbconfig_handle =
-		(void*)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_FBCONFIG);
-	VisualID glx_visualid =
-		(VisualID)DisplayServer::window_get_native_handle(DisplayServerEnums::GLX_VISUALID);
-
-	graphics_binding_gl.xDisplay = (Display*)display_handle;
-	graphics_binding_gl.glxContext = (GLXContext)glxcontext_handle;
-	graphics_binding_gl.glxDrawable = (GLXDrawable)glxdrawable_handle;
-	graphics_binding_gl.glxFBConfig = (GLXFBConfig)glx_fbconfig_handle;
-	graphics_binding_gl.visualid = glx_visualid;
-#endif
-#endif
-
-#if defined(WIN32) || defined(ANDROID_ENABLED) || defined(X11_ENABLED)
-	return &graphics_binding_gl;
-#else
-	return p_next_pointer;
-#endif
-}
-
-void OpenXROpenGLExtension::get_usable_swapchain_formats(Vector<int64_t>& p_usable_swap_chains)
-{
-	p_usable_swap_chains.push_back(GL_SRGB8_ALPHA8);
-	p_usable_swap_chains.push_back(GL_RGBA8);
-}
-
-void OpenXROpenGLExtension::get_usable_depth_formats(Vector<int64_t>& p_usable_depth_formats)
-{
-	p_usable_depth_formats.push_back(GL_DEPTH_COMPONENT32F);
-	p_usable_depth_formats.push_back(GL_DEPTH24_STENCIL8);
-	p_usable_depth_formats.push_back(GL_DEPTH32F_STENCIL8);
-	p_usable_depth_formats.push_back(GL_DEPTH_COMPONENT24);
-}
-
-bool OpenXROpenGLExtension::get_swapchain_image_data(XrSwapchain p_swapchain,
-	int64_t p_swapchain_format, uint32_t p_width, uint32_t p_height, uint32_t p_sample_count,
-	uint32_t p_array_size, void** r_swapchain_graphics_data)
-{
-	uint32_t swapchain_length;
-	XrResult result = xrEnumerateSwapchainImages(p_swapchain, 0, &swapchain_length, nullptr);
-	if (XR_FAILED(result)) {
-		// print_line("OpenXR: Failed to get swapchain image count [",
-		// OpenXRAPI::get_error_string(result), "]");
-		return false;
-	}
-
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	LocalVector<XrSwapchainImageOpenGLESKHR> images;
-#else
-	LocalVector<XrSwapchainImageOpenGLKHR> images;
-#endif
-	images.resize(swapchain_length);
-
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-	for (XrSwapchainImageOpenGLESKHR& image : images) {
-		image.type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
-#else
-	for (XrSwapchainImageOpenGLKHR& image : images) {
-		image.type = XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR;
-#endif
-		image.next = nullptr;
-		image.image = 0;
-	}
-
-	result = xrEnumerateSwapchainImages(p_swapchain, swapchain_length, &swapchain_length,
-		(XrSwapchainImageBaseHeader*)images.ptr());
-	if (XR_FAILED(result)) {
-		// print_line("OpenXR: Failed to get swapchain images [",
-		// OpenXRAPI::get_error_string(result), "]");
-		return false;
-	}
-
-	SwapchainGraphicsData* data = memnew(SwapchainGraphicsData);
-	if (data == nullptr) {
-		// print_line("OpenXR: Failed to allocate memory for swapchain data");
-		return false;
-	}
-	*r_swapchain_graphics_data = data;
-	data->is_multiview = (p_array_size > 1);
-
-	Image::Format format = Image::FORMAT_RGBA8;
-
-	Vector<RID> texture_rids;
-
-	for (uint64_t i = 0; i < swapchain_length; i++) {
-		RID texture_rid = GLES3::TextureStorage::texture_create_from_native_handle(
-			p_array_size == 1 ? RSE::TEXTURE_TYPE_2D : RSE::TEXTURE_TYPE_LAYERED, format,
-			images[i].image, p_width, p_height, 1, p_array_size);
-
-		texture_rids.push_back(texture_rid);
-	}
-
-	data->texture_rids = texture_rids;
-
-	return true;
-}
-
-bool OpenXROpenGLExtension::create_projection_fov(
-	const XrFovf p_fov, double p_z_near, double p_z_far, Projection& r_camera_matrix)
-{
-	OpenXRUtil::XrMatrix4x4f matrix;
-	OpenXRUtil::XrMatrix4x4f_CreateProjectionFov(&matrix, p_fov, (float)p_z_near, (float)p_z_far);
-
-	for (int j = 0; j < 4; j++) {
-		for (int i = 0; i < 4; i++) {
-			r_camera_matrix.columns[j][i] = matrix.m[j * 4 + i];
-		}
-	}
-
-	return true;
-}
-
-RID OpenXROpenGLExtension::get_texture(void* p_swapchain_graphics_data, int p_image_index)
-{
-	SwapchainGraphicsData* data = (SwapchainGraphicsData*)p_swapchain_graphics_data;
-	ERR_FAIL_NULL_V(data, RID());
-
-	ERR_FAIL_INDEX_V(p_image_index, data->texture_rids.size(), RID());
-	return data->texture_rids[p_image_index];
-}
-
-void OpenXROpenGLExtension::cleanup_swapchain_graphics_data(void** p_swapchain_graphics_data)
-{
-	if (*p_swapchain_graphics_data == nullptr) {
-		return;
-	}
-
-	SwapchainGraphicsData* data = (SwapchainGraphicsData*)*p_swapchain_graphics_data;
-
-	for (const RID& texture_rid : data->texture_rids) {
-		GLES3::TextureStorage::texture_free(texture_rid);
-	}
-	data->texture_rids.clear();
-
-	memdelete(data);
-	*p_swapchain_graphics_data = nullptr;
-}
-
-#define ENUM_TO_STRING_CASE(e)                                                                     \
-	case e: {                                                                                      \
-		return String(#e);                                                                         \
-	} break;
-
-String OpenXROpenGLExtension::get_swapchain_format_name(int64_t p_swapchain_format)
-{
-	// These are somewhat different per platform, will need to weed some stuff out...
-	switch (p_swapchain_format) {
-#ifdef XR_USE_GRAPHICS_API_OPENGL_ES
-		// using definitions from GLES3/gl3.h
-
-		ENUM_TO_STRING_CASE(GL_RGBA4)
-		ENUM_TO_STRING_CASE(GL_RGB5_A1)
-		ENUM_TO_STRING_CASE(GL_RGB565)
-		ENUM_TO_STRING_CASE(GL_RGB8)
-		ENUM_TO_STRING_CASE(GL_RGBA8)
-		ENUM_TO_STRING_CASE(GL_RGB10_A2)
-		ENUM_TO_STRING_CASE(GL_RGBA32F)
-		ENUM_TO_STRING_CASE(GL_RGB32F)
-		ENUM_TO_STRING_CASE(GL_RGBA16F)
-		ENUM_TO_STRING_CASE(GL_RGB16F)
-		ENUM_TO_STRING_CASE(GL_R11F_G11F_B10F)
-		ENUM_TO_STRING_CASE(GL_UNSIGNED_INT_10F_11F_11F_REV)
-		ENUM_TO_STRING_CASE(GL_RGB9_E5)
-		ENUM_TO_STRING_CASE(GL_UNSIGNED_INT_5_9_9_9_REV)
-		ENUM_TO_STRING_CASE(GL_RGBA32UI)
-		ENUM_TO_STRING_CASE(GL_RGB32UI)
-		ENUM_TO_STRING_CASE(GL_RGBA16UI)
-		ENUM_TO_STRING_CASE(GL_RGB16UI)
-		ENUM_TO_STRING_CASE(GL_RGBA8UI)
-		ENUM_TO_STRING_CASE(GL_RGB8UI)
-		ENUM_TO_STRING_CASE(GL_RGBA32I)
-		ENUM_TO_STRING_CASE(GL_RGB32I)
-		ENUM_TO_STRING_CASE(GL_RGBA16I)
-		ENUM_TO_STRING_CASE(GL_RGB16I)
-		ENUM_TO_STRING_CASE(GL_RGBA8I)
-		ENUM_TO_STRING_CASE(GL_RGB8I)
-		ENUM_TO_STRING_CASE(GL_RG)
-		ENUM_TO_STRING_CASE(GL_RG_INTEGER)
-		ENUM_TO_STRING_CASE(GL_R8)
-		ENUM_TO_STRING_CASE(GL_RG8)
-		ENUM_TO_STRING_CASE(GL_R16F)
-		ENUM_TO_STRING_CASE(GL_R32F)
-		ENUM_TO_STRING_CASE(GL_RG16F)
-		ENUM_TO_STRING_CASE(GL_RG32F)
-		ENUM_TO_STRING_CASE(GL_R8I)
-		ENUM_TO_STRING_CASE(GL_R8UI)
-		ENUM_TO_STRING_CASE(GL_R16I)
-		ENUM_TO_STRING_CASE(GL_R16UI)
-		ENUM_TO_STRING_CASE(GL_R32I)
-		ENUM_TO_STRING_CASE(GL_R32UI)
-		ENUM_TO_STRING_CASE(GL_RG8I)
-		ENUM_TO_STRING_CASE(GL_RG8UI)
-		ENUM_TO_STRING_CASE(GL_RG16I)
-		ENUM_TO_STRING_CASE(GL_RG16UI)
-		ENUM_TO_STRING_CASE(GL_RG32I)
-		ENUM_TO_STRING_CASE(GL_RG32UI)
-		ENUM_TO_STRING_CASE(GL_R8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RG8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGB8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGBA8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGB10_A2UI)
-		ENUM_TO_STRING_CASE(GL_SRGB)
-		ENUM_TO_STRING_CASE(GL_SRGB8)
-		ENUM_TO_STRING_CASE(GL_SRGB8_ALPHA8)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_R11_EAC)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_SIGNED_R11_EAC)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_RG11_EAC)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_SIGNED_RG11_EAC)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGB8_ETC2)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_ETC2)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_RGBA8_ETC2_EAC)
-		ENUM_TO_STRING_CASE(GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT16)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT24)
-		ENUM_TO_STRING_CASE(GL_DEPTH24_STENCIL8)
-
-#else
-		// using definitions from GLAD
-		ENUM_TO_STRING_CASE(GL_R8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RG8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGB8_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGBA8_SNORM)
-		ENUM_TO_STRING_CASE(GL_R16_SNORM)
-		ENUM_TO_STRING_CASE(GL_RG16_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGB16_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGBA16_SNORM)
-		ENUM_TO_STRING_CASE(GL_RGB4)
-		ENUM_TO_STRING_CASE(GL_RGB5)
-		ENUM_TO_STRING_CASE(GL_RGB8)
-		ENUM_TO_STRING_CASE(GL_RGB10)
-		ENUM_TO_STRING_CASE(GL_RGB12)
-		ENUM_TO_STRING_CASE(GL_RGB16)
-		ENUM_TO_STRING_CASE(GL_RGBA2)
-		ENUM_TO_STRING_CASE(GL_RGBA4)
-		ENUM_TO_STRING_CASE(GL_RGB5_A1)
-		ENUM_TO_STRING_CASE(GL_RGBA8)
-		ENUM_TO_STRING_CASE(GL_RGB10_A2)
-		ENUM_TO_STRING_CASE(GL_RGBA12)
-		ENUM_TO_STRING_CASE(GL_RGBA16)
-		ENUM_TO_STRING_CASE(GL_RGBA32F)
-		ENUM_TO_STRING_CASE(GL_RGB32F)
-		ENUM_TO_STRING_CASE(GL_RGBA16F)
-		ENUM_TO_STRING_CASE(GL_RGB16F)
-		ENUM_TO_STRING_CASE(GL_RGBA32UI)
-		ENUM_TO_STRING_CASE(GL_RGB32UI)
-		ENUM_TO_STRING_CASE(GL_RGBA16UI)
-		ENUM_TO_STRING_CASE(GL_RGB16UI)
-		ENUM_TO_STRING_CASE(GL_RGBA8UI)
-		ENUM_TO_STRING_CASE(GL_RGB8UI)
-		ENUM_TO_STRING_CASE(GL_RGBA32I)
-		ENUM_TO_STRING_CASE(GL_RGB32I)
-		ENUM_TO_STRING_CASE(GL_RGBA16I)
-		ENUM_TO_STRING_CASE(GL_RGB16I)
-		ENUM_TO_STRING_CASE(GL_RGBA8I)
-		ENUM_TO_STRING_CASE(GL_RGB8I)
-		ENUM_TO_STRING_CASE(GL_RGB10_A2UI)
-		ENUM_TO_STRING_CASE(GL_SRGB)
-		ENUM_TO_STRING_CASE(GL_SRGB8)
-		ENUM_TO_STRING_CASE(GL_SRGB_ALPHA)
-		ENUM_TO_STRING_CASE(GL_SRGB8_ALPHA8)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT16)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT24)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT32)
-		ENUM_TO_STRING_CASE(GL_DEPTH24_STENCIL8)
-		ENUM_TO_STRING_CASE(GL_R11F_G11F_B10F)
-		ENUM_TO_STRING_CASE(GL_DEPTH_COMPONENT32F)
-		ENUM_TO_STRING_CASE(GL_DEPTH32F_STENCIL8)
-#endif
-	default: {
-		return String("Swapchain format 0x") + String::num_int64(p_swapchain_format, 16);
-	} break;
-	}
-}
-
-bool OpenXROpenGLExtension::check_graphics_api_support(unsigned long p_api) { return false; }
-
-#endif // GLES3_ENABLED
-#ifdef ENUM_TO_STRING_CASE
-#undef ENUM_TO_STRING_CASE
-#endif
-#endif // defined(GLES3_ENABLED) && !defined(MACOS_ENABLED)
 #endif // MODULE_OPENXR_ENABLED

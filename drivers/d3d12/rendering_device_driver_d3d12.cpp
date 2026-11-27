@@ -5955,6 +5955,7 @@ RenderingDeviceDriverD3D12::RenderingDeviceDriverD3D12(RenderingContextDriverD3D
 	DEV_ASSERT(p_context_driver != nullptr);
 
 	this->context_driver = p_context_driver;
+	glsl_type_singleton_init_or_ref();
 }
 
 RenderingDeviceDriverD3D12::~RenderingDeviceDriverD3D12() {
@@ -5970,6 +5971,7 @@ RenderingDeviceDriverD3D12::~RenderingDeviceDriverD3D12() {
 		D3D12Hooks::cleanup_device();
 	}
 
+	glsl_type_singleton_decref();
 	glsl_type_singleton_decref();
 }
 
@@ -7951,35 +7953,6 @@ RenderingShaderContainerD3D12::ShaderReflectionD3D12 RenderingShaderContainerD3D
 	return reflection;
 }
 
-// RenderingShaderContainerFormatD3D12
-
-void RenderingShaderContainerFormatD3D12::set_lib_d3d12(void *p_lib_d3d12) {
-	lib_d3d12 = p_lib_d3d12;
-}
-
-Ref<RenderingShaderContainer> RenderingShaderContainerFormatD3D12::create_container() const {
-	return memnew(RenderingShaderContainerD3D12(lib_d3d12));
-}
-
-RenderingDeviceCommons::ShaderLanguageVersion RenderingShaderContainerFormatD3D12::get_shader_language_version() const {
-	// NIR-DXIL is Vulkan 1.1-conformant.
-	return SHADER_LANGUAGE_VULKAN_VERSION_1_1;
-}
-
-RenderingDeviceCommons::ShaderSpirvVersion RenderingShaderContainerFormatD3D12::get_shader_spirv_version() const {
-	// The SPIR-V part of Mesa supports 1.6, but:
-	// - SPIRV-Reflect won't be able to parse the compute workgroup size.
-	// - We want to play it safe with NIR-DXIL.
-	return SHADER_SPIRV_VERSION_1_5;
-}
-
-RenderingShaderContainerFormatD3D12::RenderingShaderContainerFormatD3D12() {
-	glsl_type_singleton_init_or_ref();
-}
-
-RenderingShaderContainerFormatD3D12::~RenderingShaderContainerFormatD3D12() {
-	glsl_type_singleton_decref();
-}
 
 // === Merged from modules/openxr/extensions/platform/openxr_d3d12_extension.cpp ===
 #include "core/version_generated.gen.h"
