@@ -6798,14 +6798,13 @@ public:
 // Home for state needed from global functions
 // that cannot be stored in Engine or OS due to e.g. circular includes
 
-class CoreGlobals
+namespace CoreGlobals
 {
-public:
-	static inline bool leak_reporting_enabled = true;
-	static inline bool print_line_enabled = true;
-	static inline bool print_error_enabled = true;
-	static inline bool print_ready = false;
-};
+	inline bool leak_reporting_enabled = true;
+	inline bool print_line_enabled = true;
+	inline bool print_error_enabled = true;
+	inline bool print_ready = false;
+} // namespace CoreGlobals
 #include "core/typedefs.h"
 
 namespace Math {
@@ -9654,9 +9653,8 @@ public:
 
 struct _IP_ResolverPrivate;
 
-class IP final
+namespace IP
 {
-public:
 	enum ResolverStatus
 	{
 		RESOLVER_STATUS_NONE,
@@ -9689,34 +9687,30 @@ public:
 		List<IPAddress> ip_addresses;
 	};
 
-	static inline _IP_ResolverPrivate* resolver = nullptr;
-
-private:
-	static void _default_resolve_hostname(
+	inline _IP_ResolverPrivate* resolver = nullptr;
+	inline void _default_resolve_hostname(
 		List<IPAddress>& r_addresses, const String& p_hostname, Type p_type)
 	{
 		(void)r_addresses;
 		(void)p_hostname;
 		(void)p_type;
 	}
-	static void _default_get_local_interfaces(HashMap<String, Interface_Info>* r_interfaces)
+	inline void _default_get_local_interfaces(HashMap<String, Interface_Info>* r_interfaces)
 	{
 		(void)r_interfaces;
 	}
 
-	static Vector<String> _get_local_addresses();
+	Vector<String> _get_local_addresses();
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return resolver != nullptr; }
 
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return resolver != nullptr; }
-
-	inline static void (*_resolve_hostname)(List<IPAddress>& r_addresses, const String& p_hostname,
+	inline void (*_resolve_hostname)(List<IPAddress>& r_addresses, const String& p_hostname,
 		Type p_type) = &_default_resolve_hostname;
-	inline static void (*get_local_interfaces)(
+	inline void (*get_local_interfaces)(
 		HashMap<String, Interface_Info>* r_interfaces) = &_default_get_local_interfaces;
 
-	static void bind(
+	inline void bind(
 		void (*p_resolve)(List<IPAddress>&, const String&, Type),
 		void (*p_get_ifaces)(HashMap<String, Interface_Info>*))
 	{
@@ -9724,24 +9718,19 @@ public:
 		get_local_interfaces = p_get_ifaces;
 	}
 
-	static void reset_backend();
+	void reset_backend();
 
-	static IPAddress resolve_hostname(const String& p_hostname, Type p_type = TYPE_ANY);
-	static Vector<String> resolve_hostname_addresses(
+	IPAddress resolve_hostname(const String& p_hostname, Type p_type = TYPE_ANY);
+	Vector<String> resolve_hostname_addresses(
 		const String& p_hostname, Type p_type = TYPE_ANY);
 	// async resolver hostname
-	static ResolverID resolve_hostname_queue_item(const String& p_hostname, Type p_type = TYPE_ANY);
-	static ResolverStatus get_resolve_item_status(ResolverID p_id);
-	static IPAddress get_resolve_item_address(ResolverID p_id);
-	static void get_local_addresses(List<IPAddress>* r_addresses);
+	ResolverID resolve_hostname_queue_item(const String& p_hostname, Type p_type = TYPE_ANY);
+	ResolverStatus get_resolve_item_status(ResolverID p_id);
+	IPAddress get_resolve_item_address(ResolverID p_id);
+	void get_local_addresses(List<IPAddress>* r_addresses);
 
-	static void erase_resolve_item(ResolverID p_id);
+	void erase_resolve_item(ResolverID p_id);
 
-	static void clear_cache(const String& p_hostname = "");
-
-	IP() = delete;
-	IP(const IP&) = delete;
-	IP& operator=(const IP&) = delete;
-	~IP() = delete;
-};
+	void clear_cache(const String& p_hostname = "");
+} // namespace IP
 

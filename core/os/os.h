@@ -1458,10 +1458,7 @@ struct InputEvent
 		int event_index = -1;
 	};
 
-	struct ShortcutData
-	{
-		const Shortcut* shortcut = nullptr;
-	};
+
 
 	// Common header fields
 	InputEventType type = InputEventType::INVALID;
@@ -1483,7 +1480,7 @@ struct InputEvent
 		ScreenDragData screen_drag;
 		GestureData gesture;
 		MIDIData midi;
-		ShortcutData shortcut;
+		const Shortcut* shortcut;
 	};
 
 	ActionData action;
@@ -2922,24 +2919,19 @@ class Translation;
 
 class TranslationDomain : public RefCounted
 {
-	struct PseudolocalizationConfig
-	{
-		bool enabled = false;
-		bool accents_enabled = true;
-		bool double_vowels_enabled = false;
-		bool fake_bidi_enabled = false;
-		bool override_enabled = false;
-		bool skip_placeholders_enabled = true;
-		float expansion_ratio = 0.0;
-		String prefix = "[";
-		String suffix = "]";
-	};
-
 	bool enabled = true;
 
 	String locale_override;
 	HashSet<Ref<Translation>> translations;
-	PseudolocalizationConfig pseudolocalization;
+	bool pseudoloc_enabled = false;
+	bool pseudoloc_accents_enabled = true;
+	bool pseudoloc_double_vowels_enabled = false;
+	bool pseudoloc_fake_bidi_enabled = false;
+	bool pseudoloc_override_enabled = false;
+	bool pseudoloc_skip_placeholders_enabled = true;
+	float pseudoloc_expansion_ratio = 0.0f;
+	String pseudoloc_prefix = "[";
+	String pseudoloc_suffix = "]";
 
 	String _get_override_string(const String& p_message) const;
 	String _double_vowels(const String& p_message) const;

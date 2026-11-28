@@ -468,15 +468,15 @@ static const D3D12_COMPARISON_FUNC RD_TO_D3D12_COMPARE_OP[RDD::COMPARE_OP_MAX] =
 	D3D12_COMPARISON_FUNC_ALWAYS,
 };
 
-uint32_t RenderingDeviceDriverD3D12::SubgroupCapabilities::supported_stages_flags_rd() const {
+uint32_t RenderingDeviceDriverD3D12::_subgroup_supported_stages_flags_rd() const {
 	// If there's a way to check exactly which are supported, I have yet to find it.
 	return (
 			RenderingDeviceCommons::ShaderStage::SHADER_STAGE_FRAGMENT_BIT |
 			RenderingDeviceCommons::ShaderStage::SHADER_STAGE_COMPUTE_BIT);
 }
 
-uint32_t RenderingDeviceDriverD3D12::SubgroupCapabilities::supported_operations_flags_rd() const {
-	if (!wave_ops_supported) {
+uint32_t RenderingDeviceDriverD3D12::_subgroup_supported_operations_flags_rd() const {
+	if (!subgroup_wave_ops_supported) {
 		return 0;
 	} else {
 		return (
@@ -933,7 +933,7 @@ RDD::BufferID RenderingDeviceDriverD3D12::buffer_create(uint64_t p_size, uint32_
 	ComPtr<ID3D12Resource> buffer;
 	ComPtr<D3D12MA::Allocation> allocation;
 	HRESULT res;
-	if (barrier_capabilities.enhanced_barriers_supported) {
+	if (barrier_capabilities_enhanced_barriers_supported) {
 		res = allocator->CreateResource3(
 				&allocation_desc,
 				&resource_desc,
@@ -1296,7 +1296,7 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create(const TextureFormat &p
 
 		// If views of different families are wanted, special setup is needed for proper sharing among them.
 		// If the driver reports relaxed casting is, leverage its new extended resource creation API (via D3D12MA).
-		if (p_format.shareable_formats.size() && format_capabilities.relaxed_casting_supported) {
+		if (p_format.shareable_formats.size() && format_capabilities_relaxed_casting_supported) {
 			relaxed_casting_available = true;
 			relaxed_casting_formats = ALLOCA_ARRAY(DXGI_FORMAT, p_format.shareable_formats.size() + 1);
 			relaxed_casting_formats[0] = RD_TO_D3D12_FORMAT[p_format.format].general_format;
@@ -1392,9 +1392,9 @@ RDD::TextureID RenderingDeviceDriverD3D12::texture_create(const TextureFormat &p
 	D3D12_CLEAR_VALUE *clear_value_ptr = (resource_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) ? &clear_value : nullptr;
 	{
 		HRESULT res = E_FAIL;
-		if (barrier_capabilities.enhanced_barriers_supported || (cross_family_sharing && relaxed_casting_available)) {
+		if (barrier_capabilities_enhanced_barriers_supported || (cross_family_sharing && relaxed_casting_available)) {
 			// Create with undefined layout if enhanced barriers are supported. Leave as common otherwise for interop with legacy barriers.
-			D3D12_BARRIER_LAYOUT initial_layout = barrier_capabilities.enhanced_barriers_supported ? D3D12_BARRIER_LAYOUT_UNDEFINED : D3D12_BARRIER_LAYOUT_COMMON;
+			D3D12_BARRIER_LAYOUT initial_layout = barrier_capabilities_enhanced_barriers_supported ? D3D12_BARRIER_LAYOUT_UNDEFINED : D3D12_BARRIER_LAYOUT_COMMON;
 			res = allocator->CreateResource3(
 					&allocation_desc,
 					&resource_desc,
@@ -1856,7 +1856,7 @@ uint32_t RenderingDeviceDriverD3D12::texture_get_usages_supported_by_format(Data
 bool RenderingDeviceDriverD3D12::texture_can_make_shared_with_format(TextureID p_texture, DataFormat p_format, bool &r_raw_reinterpretation) {
 	r_raw_reinterpretation = false;
 
-	if (format_capabilities.relaxed_casting_supported) {
+	if (format_capabilities_relaxed_casting_supported) {
 		// Relaxed casting is supported, there should be no need to check for format family compatibility.
 		return true;
 	} else {
@@ -1923,7 +1923,7 @@ RDD::SamplerID RenderingDeviceDriverD3D12::sampler_create(const SamplerState &p_
 	bool use_anisotropy = p_state.use_anisotropy && p_state.min_filter == RDD::SAMPLER_FILTER_LINEAR && p_state.mag_filter == RDD::SAMPLER_FILTER_LINEAR;
 
 	// Nearest mipmap is a separate D3D12 capability.
-	if (!sampler_capabilities.aniso_filter_with_point_mip_supported && p_state.mip_filter == RDD::SAMPLER_FILTER_NEAREST) {
+	if (!sampler_capabilities_aniso_filter_with_point_mip_supported && p_state.mip_filter == RDD::SAMPLER_FILTER_NEAREST) {
 		use_anisotropy = false;
 	}
 
@@ -2287,7 +2287,7 @@ void RenderingDeviceDriverD3D12::command_pipeline_barrier(CommandBufferID p_cmd_
 		VectorView<RDD::BufferBarrier> p_buffer_barriers,
 		VectorView<RDD::TextureBarrier> p_texture_barriers,
 		VectorView<AccelerationStructureBarrier> p_acceleration_structure_barriers) {
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		// Enhanced barriers are a requirement for this function.
 		return;
 	}
@@ -3670,7 +3670,7 @@ uint32_t RenderingDeviceDriverD3D12::uniform_sets_get_dynamic_offsets(VectorView
 // ----- COMMANDS -----
 
 void RenderingDeviceDriverD3D12::command_uniform_set_prepare_for_use(CommandBufferID p_cmd_buffer, UniformSetID p_uniform_set, ShaderID p_shader, uint32_t p_set_index) {
-	if (barrier_capabilities.enhanced_barriers_supported) {
+	if (barrier_capabilities_enhanced_barriers_supported) {
 		return;
 	}
 
@@ -3839,7 +3839,7 @@ void RenderingDeviceDriverD3D12::command_clear_buffer(CommandBufferID p_cmd_buff
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 	BufferInfo *buf_info = (BufferInfo *)p_buffer.id;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, buf_info, 0, 1, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		_resource_transitions_flush(cmd_buf_info);
 	}
@@ -3882,7 +3882,7 @@ void RenderingDeviceDriverD3D12::command_copy_buffer(CommandBufferID p_cmd_buffe
 	BufferInfo *src_buf_info = (BufferInfo *)p_src_buffer.id;
 	BufferInfo *buf_loc_info = (BufferInfo *)p_buf_locfer.id;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, src_buf_info, 0, 1, D3D12_RESOURCE_STATE_COPY_SOURCE);
 		_resource_transition_batch(cmd_buf_info, buf_loc_info, 0, 1, D3D12_RESOURCE_STATE_COPY_DEST);
 		_resource_transitions_flush(cmd_buf_info);
@@ -3898,7 +3898,7 @@ void RenderingDeviceDriverD3D12::command_copy_texture(CommandBufferID p_cmd_buff
 	TextureInfo *src_tex_info = (TextureInfo *)p_src_texture.id;
 	TextureInfo *dst_tex_info = (TextureInfo *)p_dst_texture.id;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		// Batch all barrier transitions for the textures before performing the copies.
 		for (uint32_t i = 0; i < p_regions.size(); i++) {
 			uint32_t layer_count = MIN(p_regions[i].src_subresources.layer_count, p_regions[i].dst_subresources.layer_count);
@@ -3939,7 +3939,7 @@ void RenderingDeviceDriverD3D12::command_resolve_texture(CommandBufferID p_cmd_b
 
 	UINT src_subresource = D3D12CalcSubresource(p_src_mipmap, p_src_layer, 0, src_tex_info->desc.MipLevels, src_tex_info->desc.ArraySize());
 	UINT dst_subresource = D3D12CalcSubresource(p_dst_mipmap, p_dst_layer, 0, dst_tex_info->desc.MipLevels, dst_tex_info->desc.ArraySize());
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, src_tex_info, src_subresource, 1, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
 		_resource_transition_batch(cmd_buf_info, dst_tex_info, dst_subresource, 1, D3D12_RESOURCE_STATE_RESOLVE_DEST);
 		_resource_transitions_flush(cmd_buf_info);
@@ -3971,7 +3971,7 @@ void RenderingDeviceDriverD3D12::command_clear_color_texture(CommandBufferID p_c
 	};
 
 	if ((tex_info->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)) {
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_transition_subresources(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 
@@ -3993,7 +3993,7 @@ void RenderingDeviceDriverD3D12::command_clear_color_texture(CommandBufferID p_c
 		// Clear via UAV.
 		_command_check_descriptor_sets(p_cmd_buffer);
 
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_transition_subresources(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		}
 
@@ -4035,7 +4035,7 @@ void RenderingDeviceDriverD3D12::command_clear_depth_stencil_texture(CommandBuff
 	}
 
 	if ((tex_info->desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)) {
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			uint32_t num_planes = format_get_plane_count(tex_info->format);
 
 			for (uint32_t i = 0; i < p_subresources.layer_count; i++) {
@@ -4085,7 +4085,7 @@ void RenderingDeviceDriverD3D12::command_copy_buffer_to_texture(CommandBufferID 
 	BufferInfo *buf_info = (BufferInfo *)p_src_buffer.id;
 	TextureInfo *tex_info = (TextureInfo *)p_dst_texture.id;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, buf_info, 0, 1, D3D12_RESOURCE_STATE_COPY_SOURCE);
 	}
 
@@ -4114,7 +4114,7 @@ void RenderingDeviceDriverD3D12::command_copy_buffer_to_texture(CommandBufferID 
 				tex_info->desc.MipLevels,
 				tex_info->desc.ArraySize());
 
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_resource_transition_batch(cmd_buf_info, tex_info, dst_subresource, 1, D3D12_RESOURCE_STATE_COPY_DEST);
 			_resource_transitions_flush(cmd_buf_info);
 		}
@@ -4136,7 +4136,7 @@ void RenderingDeviceDriverD3D12::command_copy_texture_to_buffer(CommandBufferID 
 	TextureInfo *tex_info = (TextureInfo *)p_src_texture.id;
 	BufferInfo *buf_info = (BufferInfo *)p_buf_locfer.id;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, buf_info, 0, 1, D3D12_RESOURCE_STATE_COPY_DEST);
 	}
 
@@ -4154,7 +4154,7 @@ void RenderingDeviceDriverD3D12::command_copy_texture_to_buffer(CommandBufferID 
 				tex_info->desc.MipLevels,
 				tex_info->desc.ArraySize());
 
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_resource_transition_batch(cmd_buf_info, tex_info, src_subresource, 1, D3D12_RESOURCE_STATE_COPY_SOURCE);
 			_resource_transitions_flush(cmd_buf_info);
 		}
@@ -4314,7 +4314,7 @@ void RenderingDeviceDriverD3D12::command_begin_render_pass(CommandBufferID p_cmd
 		}
 	};
 
-	if (fb_info->is_screen || !barrier_capabilities.enhanced_barriers_supported) {
+	if (fb_info->is_screen || !barrier_capabilities_enhanced_barriers_supported) {
 		// Screen framebuffers must perform this transition even if enhanced barriers are supported.
 		for (uint32_t i = 0; i < fb_info->attachments.size(); i++) {
 			TextureInfo *tex_info = (TextureInfo *)fb_info->attachments[i].id;
@@ -4446,7 +4446,7 @@ static const uint32_t RD_RENDER_PASS_LAYOUT_TO_STAGE_BITS[RDD::TEXTURE_LAYOUT_MA
 };
 
 void RenderingDeviceDriverD3D12::_render_pass_enhanced_barriers_flush(CommandBufferID p_cmd_buffer) {
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		return;
 	}
 
@@ -4539,7 +4539,7 @@ void RenderingDeviceDriverD3D12::_end_render_pass(CommandBufferID p_cmd_buffer) 
 			for (uint32_t layer = 0; layer < src_tex_info->layers; layer++) {
 				uint32_t src_subresource = D3D12CalcSubresource(src_tex_info->base_mip + mip, src_tex_info->base_layer + layer, 0, src_tex_info->desc.MipLevels, src_tex_info->desc.ArraySize());
 
-				if (barrier_capabilities.enhanced_barriers_supported) {
+				if (barrier_capabilities_enhanced_barriers_supported) {
 					cmd_buf_info->render_pass_state.attachment_layouts[color_index].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout = TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL;
 				} else {
 					_resource_transition_batch(cmd_buf_info, src_tex_info, src_subresource, 1, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
@@ -4547,7 +4547,7 @@ void RenderingDeviceDriverD3D12::_end_render_pass(CommandBufferID p_cmd_buffer) 
 
 				uint32_t dst_subresource = D3D12CalcSubresource(dst_tex_info->base_mip + mip, dst_tex_info->base_layer + layer, 0, dst_tex_info->desc.MipLevels, dst_tex_info->desc.ArraySize());
 
-				if (barrier_capabilities.enhanced_barriers_supported) {
+				if (barrier_capabilities_enhanced_barriers_supported) {
 					// This should have already been done when beginning the subpass.
 					DEV_ASSERT(cmd_buf_info->render_pass_state.attachment_layouts[resolve_index].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout == TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL);
 				} else {
@@ -4609,7 +4609,7 @@ void RenderingDeviceDriverD3D12::command_end_render_pass(CommandBufferID p_cmd_b
 		}
 	};
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		for (uint32_t i = 0; i < pass_info->attachments.size(); i++) {
 			if (pass_info->attachments[i].store_op == ATTACHMENT_STORE_OP_DONT_CARE) {
 				TextureInfo *tex_info = (TextureInfo *)fb_info->attachments[i].id;
@@ -4806,7 +4806,6 @@ void RenderingDeviceDriverD3D12::command_bind_render_pipeline(CommandBufferID p_
 
 	const PipelineInfo *pipeline_info = (const PipelineInfo *)p_pipeline.id;
 	const ShaderInfo *shader_info_in = pipeline_info->shader_info;
-	const RenderPipelineInfo &render_info = pipeline_info->render_info;
 
 	if (cmd_buf_info->graphics_pso != pipeline_info->pso.Get()) {
 		cmd_buf_info->cmd_list->SetPipelineState(pipeline_info->pso.Get());
@@ -4823,29 +4822,29 @@ void RenderingDeviceDriverD3D12::command_bind_render_pipeline(CommandBufferID p_
 		cmd_buf_info->graphics_root_signature_crc = shader_info_in->root_signature_crc;
 	}
 
-	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.primitive_topology != render_info.dyn_params.primitive_topology)) {
-		cmd_buf_info->cmd_list->IASetPrimitiveTopology(render_info.dyn_params.primitive_topology);
-		cmd_buf_info->dyn_params.primitive_topology = render_info.dyn_params.primitive_topology;
+	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.primitive_topology != pipeline_info->dyn_params.primitive_topology)) {
+		cmd_buf_info->cmd_list->IASetPrimitiveTopology(pipeline_info->dyn_params.primitive_topology);
+		cmd_buf_info->dyn_params.primitive_topology = pipeline_info->dyn_params.primitive_topology;
 	}
 
-	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.blend_constant != render_info.dyn_params.blend_constant)) {
-		cmd_buf_info->cmd_list->OMSetBlendFactor(render_info.dyn_params.blend_constant.as_float4_buffer());
-		cmd_buf_info->dyn_params.blend_constant = render_info.dyn_params.blend_constant;
+	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.blend_constant != pipeline_info->dyn_params.blend_constant)) {
+		cmd_buf_info->cmd_list->OMSetBlendFactor(pipeline_info->dyn_params.blend_constant.as_float4_buffer());
+		cmd_buf_info->dyn_params.blend_constant = pipeline_info->dyn_params.blend_constant;
 	}
 
-	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.stencil_reference != render_info.dyn_params.stencil_reference)) {
-		cmd_buf_info->cmd_list->OMSetStencilRef(render_info.dyn_params.stencil_reference);
-		cmd_buf_info->dyn_params.stencil_reference = render_info.dyn_params.stencil_reference;
+	if (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.stencil_reference != pipeline_info->dyn_params.stencil_reference)) {
+		cmd_buf_info->cmd_list->OMSetStencilRef(pipeline_info->dyn_params.stencil_reference);
+		cmd_buf_info->dyn_params.stencil_reference = pipeline_info->dyn_params.stencil_reference;
 	}
 
-	if (misc_features_support.depth_bounds_supported && (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.depth_bounds_min != render_info.dyn_params.depth_bounds_min) || (cmd_buf_info->dyn_params.depth_bounds_max != render_info.dyn_params.depth_bounds_max))) {
-		cmd_buf_info->cmd_list_1->OMSetDepthBounds(render_info.dyn_params.depth_bounds_min, render_info.dyn_params.depth_bounds_max);
-		cmd_buf_info->dyn_params.depth_bounds_min = render_info.dyn_params.depth_bounds_min;
-		cmd_buf_info->dyn_params.depth_bounds_max = render_info.dyn_params.depth_bounds_max;
+	if (misc_features_support_depth_bounds_supported && (cmd_buf_info->pending_dyn_params || (cmd_buf_info->dyn_params.depth_bounds_min != pipeline_info->dyn_params.depth_bounds_min) || (cmd_buf_info->dyn_params.depth_bounds_max != pipeline_info->dyn_params.depth_bounds_max))) {
+		cmd_buf_info->cmd_list_1->OMSetDepthBounds(pipeline_info->dyn_params.depth_bounds_min, pipeline_info->dyn_params.depth_bounds_max);
+		cmd_buf_info->dyn_params.depth_bounds_min = pipeline_info->dyn_params.depth_bounds_min;
+		cmd_buf_info->dyn_params.depth_bounds_max = pipeline_info->dyn_params.depth_bounds_max;
 	}
 
 	cmd_buf_info->pending_dyn_params = false;
-	cmd_buf_info->render_pass_state.vf_info = render_info.vf_info;
+	cmd_buf_info->render_pass_state.vf_info = pipeline_info->vf_info;
 }
 
 void RenderingDeviceDriverD3D12::command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count, uint32_t p_dynamic_offsets) {
@@ -4906,7 +4905,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indexed_indirect(CommandBuf
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 	_bind_vertex_buffers(cmd_buf_info);
 	BufferInfo *indirect_buf_info = (BufferInfo *)p_indirect_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, indirect_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transitions_flush(cmd_buf_info);
 	}
@@ -4919,7 +4918,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indexed_indirect_count(Comm
 	_bind_vertex_buffers(cmd_buf_info);
 	BufferInfo *indirect_buf_info = (BufferInfo *)p_indirect_buffer.id;
 	BufferInfo *count_buf_info = (BufferInfo *)p_count_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, indirect_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transition_batch(cmd_buf_info, count_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transitions_flush(cmd_buf_info);
@@ -4932,7 +4931,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indirect(CommandBufferID p_
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 	_bind_vertex_buffers(cmd_buf_info);
 	BufferInfo *indirect_buf_info = (BufferInfo *)p_indirect_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, indirect_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transitions_flush(cmd_buf_info);
 	}
@@ -4945,7 +4944,7 @@ void RenderingDeviceDriverD3D12::command_render_draw_indirect_count(CommandBuffe
 	_bind_vertex_buffers(cmd_buf_info);
 	BufferInfo *indirect_buf_info = (BufferInfo *)p_indirect_buffer.id;
 	BufferInfo *count_buf_info = (BufferInfo *)p_count_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, indirect_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transition_batch(cmd_buf_info, count_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transitions_flush(cmd_buf_info);
@@ -4976,12 +4975,12 @@ void RenderingDeviceDriverD3D12::command_render_bind_vertex_buffers(CommandBuffe
 		cmd_buf_info->render_pass_state.vertex_buffer_views[i] = {};
 		cmd_buf_info->render_pass_state.vertex_buffer_views[i].BufferLocation = buffer_info->gpu_virtual_address + dynamic_offset + p_offsets[i];
 		cmd_buf_info->render_pass_state.vertex_buffer_views[i].SizeInBytes = buffer_info->size - p_offsets[i];
-		if (!barrier_capabilities.enhanced_barriers_supported) {
+		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_resource_transition_batch(cmd_buf_info, buffer_info, 0, 1, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		}
 	}
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
@@ -4997,7 +4996,7 @@ void RenderingDeviceDriverD3D12::command_render_bind_index_buffer(CommandBufferI
 	d3d12_ib_view.SizeInBytes = buffer_info->size - p_offset;
 	d3d12_ib_view.Format = p_format == INDEX_BUFFER_FORMAT_UINT16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
 
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, buffer_info, 0, 1, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 		_resource_transitions_flush(cmd_buf_info);
 	}
@@ -5142,7 +5141,8 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 	CD3DX12_PIPELINE_STATE_STREAM1 pipeline_desc = {};
 
 	const RenderPassInfo *pass_info = (const RenderPassInfo *)p_render_pass.id;
-	RenderPipelineInfo render_info;
+	const VertexFormatInfo *render_vf_info = nullptr;
+	DynParams render_dyn_params;
 
 	// Attachments.
 	{
@@ -5175,7 +5175,7 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 		const VertexFormatInfo *vf_info = (const VertexFormatInfo *)p_vertex_format.id;
 		(&pipeline_desc.InputLayout)->pInputElementDescs = vf_info->input_elem_descs.ptr();
 		(&pipeline_desc.InputLayout)->NumElements = vf_info->input_elem_descs.size();
-		render_info.vf_info = vf_info;
+		render_vf_info = vf_info;
 	}
 
 	// Input assembly & tessellation.
@@ -5184,9 +5184,9 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 	if (p_render_primitive == RENDER_PRIMITIVE_TESSELATION_PATCH) {
 		// Is there any way to get the true point count limit?
 		ERR_FAIL_COND_V(p_rasterization_state.patch_control_points < 1 || p_rasterization_state.patch_control_points > 32, PipelineID());
-		render_info.dyn_params.primitive_topology = (D3D12_PRIMITIVE_TOPOLOGY)((int)D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + p_rasterization_state.patch_control_points);
+		render_dyn_params.primitive_topology = (D3D12_PRIMITIVE_TOPOLOGY)((int)D3D_PRIMITIVE_TOPOLOGY_1_CONTROL_POINT_PATCHLIST + p_rasterization_state.patch_control_points);
 	} else {
-		render_info.dyn_params.primitive_topology = RD_PRIMITIVE_TO_D3D12_TOPOLOGY[p_render_primitive];
+		render_dyn_params.primitive_topology = RD_PRIMITIVE_TO_D3D12_TOPOLOGY[p_render_primitive];
 	}
 	if (p_render_primitive == RENDER_PRIMITIVE_TRIANGLE_STRIPS_WITH_RESTART_INDEX) {
 		// TODO: This is right for 16-bit indices; for 32-bit there's a different enum value to set, but we don't know at this point.
@@ -5273,16 +5273,16 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 		(&pipeline_desc.DepthStencilState)->BackFace.StencilDepthFailOp = RD_TO_D3D12_STENCIL_OP[p_depth_stencil_state.back_op.depth_fail];
 		(&pipeline_desc.DepthStencilState)->BackFace.StencilFunc = RD_TO_D3D12_COMPARE_OP[p_depth_stencil_state.back_op.compare];
 
-		if (misc_features_support.depth_bounds_supported) {
-			render_info.dyn_params.depth_bounds_min = p_depth_stencil_state.enable_depth_range ? p_depth_stencil_state.depth_range_min : 0.0f;
-			render_info.dyn_params.depth_bounds_max = p_depth_stencil_state.enable_depth_range ? p_depth_stencil_state.depth_range_max : 1.0f;
+		if (misc_features_support_depth_bounds_supported) {
+			render_dyn_params.depth_bounds_min = p_depth_stencil_state.enable_depth_range ? p_depth_stencil_state.depth_range_min : 0.0f;
+			render_dyn_params.depth_bounds_max = p_depth_stencil_state.enable_depth_range ? p_depth_stencil_state.depth_range_max : 1.0f;
 		} else {
 			if (p_depth_stencil_state.enable_depth_range) {
 				WARN_PRINT_ONCE("Depth bounds test is not supported by the GPU driver.");
 			}
 		}
 
-		render_info.dyn_params.stencil_reference = p_depth_stencil_state.front_op.reference;
+		render_dyn_params.stencil_reference = p_depth_stencil_state.front_op.reference;
 	}
 
 	// Blend states.
@@ -5329,7 +5329,7 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 		(&pipeline_desc.BlendState)->IndependentBlendEnable = !all_attachments_same_blend;
 	}
 
-	render_info.dyn_params.blend_constant = p_blend_state.blend_constant;
+	render_dyn_params.blend_constant = p_blend_state.blend_constant;
 
 	// Multiview
 	// We are using render target slices for each view.
@@ -5375,7 +5375,8 @@ RDD::PipelineID RenderingDeviceDriverD3D12::render_pipeline_create(
 	PipelineInfo *pipeline_info = memnew(PipelineInfo);
 	pipeline_info->pso = pso;
 	pipeline_info->shader_info = shader_info_in;
-	pipeline_info->render_info = render_info;
+	pipeline_info->vf_info = render_vf_info;
+	pipeline_info->dyn_params = render_dyn_params;
 
 	return PipelineID(pipeline_info);
 }
@@ -5452,7 +5453,7 @@ void RenderingDeviceDriverD3D12::command_bind_compute_uniform_sets(CommandBuffer
 
 void RenderingDeviceDriverD3D12::command_compute_dispatch(CommandBufferID p_cmd_buffer, uint32_t p_x_groups, uint32_t p_y_groups, uint32_t p_z_groups) {
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
@@ -5470,7 +5471,7 @@ void RenderingDeviceDriverD3D12::command_compute_dispatch(CommandBufferID p_cmd_
 void RenderingDeviceDriverD3D12::command_compute_dispatch_indirect(CommandBufferID p_cmd_buffer, BufferID p_indirect_buffer, uint64_t p_offset) {
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 	BufferInfo *indirect_buf_info = (BufferInfo *)p_indirect_buffer.id;
-	if (!barrier_capabilities.enhanced_barriers_supported) {
+	if (!barrier_capabilities_enhanced_barriers_supported) {
 		_resource_transition_batch(cmd_buf_info, indirect_buf_info, 0, 1, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
 		_resource_transitions_flush(cmd_buf_info);
 	}
@@ -5644,7 +5645,7 @@ void RenderingDeviceDriverD3D12::timestamp_query_pool_get_results(QueryPoolID p_
 }
 
 uint64_t RenderingDeviceDriverD3D12::timestamp_query_result_to_time(uint64_t p_result) {
-	return p_result / (double)device_limits.timestamp_frequency * 1000000000.0;
+	return p_result / (double)device_limits_timestamp_frequency * 1000000000.0;
 }
 
 void RenderingDeviceDriverD3D12::command_timestamp_query_pool_reset(CommandBufferID p_cmd_buffer, QueryPoolID p_pool_id, uint32_t p_query_count) {
@@ -5823,7 +5824,7 @@ uint64_t RenderingDeviceDriverD3D12::limit_get(Limit p_limit) {
 		case LIMIT_MAX_TEXTURE_SIZE_CUBE:
 			return D3D12_REQ_TEXTURECUBE_DIMENSION;
 		case LIMIT_MAX_TEXTURES_PER_SHADER_STAGE:
-			return device_limits.max_srvs_per_shader_stage;
+			return device_limits_max_srvs_per_shader_stage;
 		case LIMIT_MAX_UNIFORM_BUFFER_SIZE:
 			return 65536;
 		case LIMIT_MAX_VIEWPORT_DIMENSIONS_X:
@@ -5848,11 +5849,11 @@ uint64_t RenderingDeviceDriverD3D12::limit_get(Limit p_limit) {
 		// but at this time I don't know the implications on the transpilation to DXIL, etc.
 		case LIMIT_SUBGROUP_MIN_SIZE:
 		case LIMIT_SUBGROUP_MAX_SIZE:
-			return subgroup_capabilities.size;
+			return subgroup_size;
 		case LIMIT_SUBGROUP_IN_SHADERS:
-			return subgroup_capabilities.supported_stages_flags_rd();
+			return _subgroup_supported_stages_flags_rd();
 		case LIMIT_SUBGROUP_OPERATIONS:
-			return subgroup_capabilities.supported_operations_flags_rd();
+			return _subgroup_supported_operations_flags_rd();
 		case LIMIT_MAX_SHADER_VARYINGS:
 			return MIN(D3D12_VS_OUTPUT_REGISTER_COUNT, D3D12_PS_INPUT_REGISTER_COUNT);
 		default: {
@@ -5867,7 +5868,7 @@ uint64_t RenderingDeviceDriverD3D12::limit_get(Limit p_limit) {
 uint64_t RenderingDeviceDriverD3D12::api_trait_get(ApiTrait p_trait) {
 	switch (p_trait) {
 		case API_TRAIT_HONORS_PIPELINE_BARRIERS:
-			return barrier_capabilities.enhanced_barriers_supported;
+			return barrier_capabilities_enhanced_barriers_supported;
 		case API_TRAIT_SHADER_CHANGE_INVALIDATION:
 			return (uint64_t)SHADER_CHANGE_INVALIDATION_ALL_OR_NONE_ACCORDING_TO_LAYOUT_HASH;
 		case API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT:
@@ -5881,7 +5882,7 @@ uint64_t RenderingDeviceDriverD3D12::api_trait_get(ApiTrait p_trait) {
 		case API_TRAIT_USE_GENERAL_IN_COPY_QUEUES:
 			return true;
 		case API_TRAIT_BUFFERS_REQUIRE_TRANSITIONS:
-			return !barrier_capabilities.enhanced_barriers_supported;
+			return !barrier_capabilities_enhanced_barriers_supported;
 		case API_TRAIT_TEXTURE_OUTPUTS_REQUIRE_CLEARS:
 			return true;
 		default:
@@ -5892,7 +5893,7 @@ uint64_t RenderingDeviceDriverD3D12::api_trait_get(ApiTrait p_trait) {
 bool RenderingDeviceDriverD3D12::has_feature(Features p_feature) {
 	switch (p_feature) {
 		case SUPPORTS_HALF_FLOAT:
-			return shader_capabilities.native_16bit_ops;
+			return shader_capabilities_native_16bit_ops;
 		case SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
 			return true;
 		case SUPPORTS_BUFFER_DEVICE_ADDRESS:
@@ -6133,11 +6134,11 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 	multiview_capabilities.max_view_count = 0;
 	multiview_capabilities.max_instance_count = 0;
 	multiview_capabilities.is_supported = false;
-	subgroup_capabilities.size = 0;
-	subgroup_capabilities.wave_ops_supported = false;
-	shader_capabilities.shader_model = (D3D_SHADER_MODEL)0;
-	shader_capabilities.native_16bit_ops = false;
-	format_capabilities.relaxed_casting_supported = false;
+	subgroup_size = 0;
+	subgroup_wave_ops_supported = false;
+	shader_capabilities_shader_model = (D3D_SHADER_MODEL)0;
+	shader_capabilities_native_16bit_ops = false;
+	format_capabilities_relaxed_casting_supported = false;
 
 	{
 		static const D3D_SHADER_MODEL SMS_TO_CHECK[] = {
@@ -6155,7 +6156,7 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 			shader_model.HighestShaderModel = SMS_TO_CHECK[i];
 			res = device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shader_model, sizeof(shader_model));
 			if (SUCCEEDED(res)) {
-				shader_capabilities.shader_model = shader_model.HighestShaderModel;
+				shader_capabilities_shader_model = shader_model.HighestShaderModel;
 				break;
 			}
 			if (res == E_INVALIDARG) {
@@ -6166,11 +6167,11 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 
 #define D3D_SHADER_MODEL_TO_STRING(m_sm) vformat("%d.%d", (m_sm >> 4), (m_sm & 0xf))
 
-		ERR_FAIL_COND_V_MSG(shader_capabilities.shader_model < SMS_TO_CHECK[ARRAY_SIZE(SMS_TO_CHECK) - 1], ERR_UNAVAILABLE,
+		ERR_FAIL_COND_V_MSG(shader_capabilities_shader_model < SMS_TO_CHECK[ARRAY_SIZE(SMS_TO_CHECK) - 1], ERR_UNAVAILABLE,
 				vformat("No support for any of the suitable shader models (%s-%s) has been found.", D3D_SHADER_MODEL_TO_STRING(SMS_TO_CHECK[ARRAY_SIZE(SMS_TO_CHECK) - 1]), D3D_SHADER_MODEL_TO_STRING(SMS_TO_CHECK[0])));
 
 		print_verbose("- Shader:");
-		print_verbose("  model: " + D3D_SHADER_MODEL_TO_STRING(shader_capabilities.shader_model));
+		print_verbose("  model: " + D3D_SHADER_MODEL_TO_STRING(shader_capabilities_shader_model));
 	}
 
 	shader_container_format.set_lib_d3d12(context_driver->lib_d3d12);
@@ -6183,14 +6184,14 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 	D3D12_FEATURE_DATA_D3D12_OPTIONS1 options1 = {};
 	res = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS1, &options1, sizeof(options1));
 	if (SUCCEEDED(res)) {
-		subgroup_capabilities.size = options1.WaveLaneCountMin;
-		subgroup_capabilities.wave_ops_supported = options1.WaveOps;
+		subgroup_size = options1.WaveLaneCountMin;
+		subgroup_wave_ops_supported = options1.WaveOps;
 	}
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS2 options2 = {};
 	res = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS2, &options2, sizeof(options2));
 	if (SUCCEEDED(res)) {
-		misc_features_support.depth_bounds_supported = options2.DepthBoundsTestSupported;
+		misc_features_support_depth_bounds_supported = options2.DepthBoundsTestSupported;
 	}
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS3 options3 = {};
@@ -6210,7 +6211,7 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 	D3D12_FEATURE_DATA_D3D12_OPTIONS4 options4 = {};
 	res = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &options4, sizeof(options4));
 	if (SUCCEEDED(res)) {
-		shader_capabilities.native_16bit_ops = options4.Native16BitShaderOpsSupported;
+		shader_capabilities_native_16bit_ops = options4.Native16BitShaderOpsSupported;
 	}
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS6 options6 = {};
@@ -6230,14 +6231,14 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 	D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
 	res = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &options12, sizeof(options12));
 	if (SUCCEEDED(res)) {
-		format_capabilities.relaxed_casting_supported = options12.RelaxedFormatCastingSupported;
-		barrier_capabilities.enhanced_barriers_supported = options12.EnhancedBarriersSupported;
+		format_capabilities_relaxed_casting_supported = options12.RelaxedFormatCastingSupported;
+		barrier_capabilities_enhanced_barriers_supported = options12.EnhancedBarriersSupported;
 	}
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS19 options19 = {};
 	res = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS19, &options19, sizeof(options19));
 	if (SUCCEEDED(res)) {
-		sampler_capabilities.aniso_filter_with_point_mip_supported = options19.AnisoFilterWithPointMipSupported;
+		sampler_capabilities_aniso_filter_with_point_mip_supported = options19.AnisoFilterWithPointMipSupported;
 	}
 
 	if (fsr_capabilities.pipeline_supported || fsr_capabilities.primitive_supported || fsr_capabilities.attachment_supported) {
@@ -6263,23 +6264,23 @@ Error RenderingDeviceDriverD3D12::_check_capabilities() {
 		print_verbose("- D3D12 multiview not supported");
 	}
 
-	if (format_capabilities.relaxed_casting_supported) {
+	if (format_capabilities_relaxed_casting_supported) {
 #if 0
 		print_verbose("- Relaxed casting supported");
 #else
 		// Certain configurations (Windows 11 with an updated NVIDIA driver) crash when using relaxed casting.
 		// Therefore, we disable it temporarily until we can assure that it's reliable.
 		// There are fallbacks in place that work in every case, if less efficient.
-		format_capabilities.relaxed_casting_supported = false;
+		format_capabilities_relaxed_casting_supported = false;
 		print_verbose("- Relaxed casting supported (but disabled for now)");
 #endif
 	} else {
 		print_verbose("- Relaxed casting not supported");
 	}
 
-	print_verbose(String("- D3D12 16-bit ops supported: ") + (shader_capabilities.native_16bit_ops ? "yes" : "no"));
+	print_verbose(String("- D3D12 16-bit ops supported: ") + (shader_capabilities_native_16bit_ops ? "yes" : "no"));
 
-	if (misc_features_support.depth_bounds_supported) {
+	if (misc_features_support_depth_bounds_supported) {
 		print_verbose("- Depth bounds test supported");
 	} else {
 		print_verbose("- Depth bounds test not supported");
@@ -6294,15 +6295,15 @@ Error RenderingDeviceDriverD3D12::_get_device_limits() {
 	ERR_FAIL_COND_V_MSG(!SUCCEEDED(res), ERR_UNAVAILABLE, "CheckFeatureSupport failed with error " + vformat("0x%08ux", (uint64_t)res) + ".");
 
 	// https://docs.microsoft.com/en-us/windows/win32/direct3d12/hardware-support
-	device_limits.max_srvs_per_shader_stage = options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1 ? 128 : UINT64_MAX;
-	device_limits.max_cbvs_per_shader_stage = options.ResourceBindingTier <= D3D12_RESOURCE_BINDING_TIER_2 ? 14 : UINT64_MAX;
-	device_limits.max_samplers_across_all_stages = options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1 ? 16 : 2048;
+	device_limits_max_srvs_per_shader_stage = options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1 ? 128 : UINT64_MAX;
+	device_limits_max_cbvs_per_shader_stage = options.ResourceBindingTier <= D3D12_RESOURCE_BINDING_TIER_2 ? 14 : UINT64_MAX;
+	device_limits_max_samplers_across_all_stages = options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1 ? 16 : 2048;
 	if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_1) {
-		device_limits.max_uavs_across_all_stages = feature_level <= 110 ? 8 : 64;
+		device_limits_max_uavs_across_all_stages = feature_level <= 110 ? 8 : 64;
 	} else if (options.ResourceBindingTier == D3D12_RESOURCE_BINDING_TIER_2) {
-		device_limits.max_uavs_across_all_stages = 64;
+		device_limits_max_uavs_across_all_stages = 64;
 	} else {
-		device_limits.max_uavs_across_all_stages = UINT64_MAX;
+		device_limits_max_uavs_across_all_stages = UINT64_MAX;
 	}
 
 	// Retrieving the timestamp frequency requires creating a command queue that will be discarded immediately.
@@ -6312,7 +6313,7 @@ Error RenderingDeviceDriverD3D12::_get_device_limits() {
 	res = device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(unused_command_queue.GetAddressOf()));
 	ERR_FAIL_COND_V(!SUCCEEDED(res), ERR_CANT_CREATE);
 
-	res = unused_command_queue->GetTimestampFrequency(&device_limits.timestamp_frequency);
+	res = unused_command_queue->GetTimestampFrequency(&device_limits_timestamp_frequency);
 	if (!SUCCEEDED(res)) {
 		print_verbose("D3D12: GetTimestampFrequency failed with error " + vformat("0x%08ux", (uint64_t)res) + ". Timestamps will be inaccurate.");
 	}

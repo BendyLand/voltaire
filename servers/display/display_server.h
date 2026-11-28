@@ -7508,18 +7508,13 @@ public:
 
 class FontVariation : public Font
 {
-	struct Variation
-	{
-		real_t embolden = 0.f;
-		int face_index = 0;
-		Transform2D transform;
-	};
-
 	mutable Ref<Font> theme_font;
 
 	Ref<Font> base_font;
 
-	Variation variation;
+	real_t variation_embolden = 0.f;
+	int variation_face_index = 0;
+	Transform2D variation_transform;
 	int extra_spacing[TextServer::SPACING_MAX];
 	float baseline_offset = 0.0;
 	int64_t palette_index = 0;
@@ -8517,60 +8512,59 @@ public:
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 
-class RendererGI
+namespace RendererGI
 {
-public:
 	/* VOXEL GI FUNCTION POINTERS */
-	inline static bool (*owns_voxel_gi)(RID p_rid) = nullptr;
-	inline static RID (*voxel_gi_allocate)() = nullptr;
-	inline static void (*voxel_gi_free)(RID p_voxel_gi) = nullptr;
-	inline static void (*voxel_gi_initialize)(RID p_voxel_gi) = nullptr;
+	inline bool (*owns_voxel_gi)(RID p_rid) = nullptr;
+	inline RID (*voxel_gi_allocate)() = nullptr;
+	inline void (*voxel_gi_free)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_initialize)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_allocate_data)(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
+	inline void (*voxel_gi_allocate_data)(RID p_voxel_gi, const Transform3D& p_to_cell_xform,
 		const AABB& p_aabb, const Vector3i& p_octree_size, const Vector<uint8_t>& p_octree_cells,
 		const Vector<uint8_t>& p_data_cells, const Vector<uint8_t>& p_distance_field,
 		const Vector<int>& p_level_counts) = nullptr;
 
-	inline static AABB (*voxel_gi_get_bounds)(RID p_voxel_gi) = nullptr;
-	inline static Vector3i (*voxel_gi_get_octree_size)(RID p_voxel_gi) = nullptr;
-	inline static Vector<uint8_t> (*voxel_gi_get_octree_cells)(RID p_voxel_gi) = nullptr;
-	inline static Vector<uint8_t> (*voxel_gi_get_data_cells)(RID p_voxel_gi) = nullptr;
-	inline static Vector<uint8_t> (*voxel_gi_get_distance_field)(RID p_voxel_gi) = nullptr;
-	inline static Vector<int> (*voxel_gi_get_level_counts)(RID p_voxel_gi) = nullptr;
-	inline static Transform3D (*voxel_gi_get_to_cell_xform)(RID p_voxel_gi) = nullptr;
+	inline AABB (*voxel_gi_get_bounds)(RID p_voxel_gi) = nullptr;
+	inline Vector3i (*voxel_gi_get_octree_size)(RID p_voxel_gi) = nullptr;
+	inline Vector<uint8_t> (*voxel_gi_get_octree_cells)(RID p_voxel_gi) = nullptr;
+	inline Vector<uint8_t> (*voxel_gi_get_data_cells)(RID p_voxel_gi) = nullptr;
+	inline Vector<uint8_t> (*voxel_gi_get_distance_field)(RID p_voxel_gi) = nullptr;
+	inline Vector<int> (*voxel_gi_get_level_counts)(RID p_voxel_gi) = nullptr;
+	inline Transform3D (*voxel_gi_get_to_cell_xform)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_dynamic_range)(RID p_voxel_gi, float p_range) = nullptr;
-	inline static float (*voxel_gi_get_dynamic_range)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_dynamic_range)(RID p_voxel_gi, float p_range) = nullptr;
+	inline float (*voxel_gi_get_dynamic_range)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_propagation)(RID p_voxel_gi, float p_range) = nullptr;
-	inline static float (*voxel_gi_get_propagation)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_propagation)(RID p_voxel_gi, float p_range) = nullptr;
+	inline float (*voxel_gi_get_propagation)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_energy)(RID p_voxel_gi, float p_energy) = nullptr;
-	inline static float (*voxel_gi_get_energy)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_energy)(RID p_voxel_gi, float p_energy) = nullptr;
+	inline float (*voxel_gi_get_energy)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_baked_exposure_normalization)(
+	inline void (*voxel_gi_set_baked_exposure_normalization)(
 		RID p_voxel_gi, float p_baked_exposure) = nullptr;
-	inline static float (*voxel_gi_get_baked_exposure_normalization)(RID p_voxel_gi) = nullptr;
+	inline float (*voxel_gi_get_baked_exposure_normalization)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_bias)(RID p_voxel_gi, float p_bias) = nullptr;
-	inline static float (*voxel_gi_get_bias)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_bias)(RID p_voxel_gi, float p_bias) = nullptr;
+	inline float (*voxel_gi_get_bias)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_normal_bias)(RID p_voxel_gi, float p_range) = nullptr;
-	inline static float (*voxel_gi_get_normal_bias)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_normal_bias)(RID p_voxel_gi, float p_range) = nullptr;
+	inline float (*voxel_gi_get_normal_bias)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_interior)(RID p_voxel_gi, bool p_enable) = nullptr;
-	inline static bool (*voxel_gi_is_interior)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_interior)(RID p_voxel_gi, bool p_enable) = nullptr;
+	inline bool (*voxel_gi_is_interior)(RID p_voxel_gi) = nullptr;
 
-	inline static void (*voxel_gi_set_use_two_bounces)(RID p_voxel_gi, bool p_enable) = nullptr;
-	inline static bool (*voxel_gi_is_using_two_bounces)(RID p_voxel_gi) = nullptr;
+	inline void (*voxel_gi_set_use_two_bounces)(RID p_voxel_gi, bool p_enable) = nullptr;
+	inline bool (*voxel_gi_is_using_two_bounces)(RID p_voxel_gi) = nullptr;
 
-	inline static uint32_t (*voxel_gi_get_version)(RID p_probe) = nullptr;
+	inline uint32_t (*voxel_gi_get_version)(RID p_probe) = nullptr;
 
 	/* SDFGI FUNCTION POINTERS */
-	inline static void (*sdfgi_reset)() = nullptr;
+	inline void (*sdfgi_reset)() = nullptr;
 
 	/* BIND TEMPLATE */
-	template <typename T> static void bind()
+	template <typename T> inline void bind()
 	{
 		owns_voxel_gi = T::owns_voxel_gi;
 		voxel_gi_allocate = T::voxel_gi_allocate;
@@ -8603,7 +8597,7 @@ public:
 		voxel_gi_get_version = T::voxel_gi_get_version;
 		sdfgi_reset = T::sdfgi_reset;
 	}
-};
+} // namespace RendererGI
 
 #include "core/io/net_socket.h"
 
@@ -11640,10 +11634,6 @@ public:
 		uint32_t buffers_used = 0;
 	};
 
-	struct WorkaroundsState
-	{
-		bool draw_list_found = false;
-	};
 
 	enum AttachmentOperation
 	{
@@ -11797,7 +11787,7 @@ private:
 	bool driver_honors_barriers : 1;
 	bool driver_clears_with_copy_engine : 1;
 	bool driver_buffers_require_transitions : 1;
-	WorkaroundsState workarounds_state;
+	bool workarounds_draw_list_found = false;
 	TightLocalVector<Frame> frames;
 	uint32_t frame = 0;
 
@@ -14080,7 +14070,6 @@ class RendererCanvasRender;
 class RendererSceneRender;
 
 class RendererFog;
-class RendererGI;
 
 class RendererCompositor final
 {
@@ -15581,18 +15570,11 @@ struct API
 
 }; // namespace LightStorage
 
-class RendererLightStorage final
+namespace RendererLightStorage
 {
-private:
-	static inline LightStorage::API api;
+	inline LightStorage::API api;
 
-public:
-	RendererLightStorage() = delete;
-	RendererLightStorage(const RendererLightStorage&) = delete;
-	RendererLightStorage& operator=(const RendererLightStorage&) = delete;
-	~RendererLightStorage() = delete;
-
-	template <typename StorageImpl> static void bind()
+	template <typename StorageImpl> inline void bind()
 	{
 		/* Light API */
 		api.directional_light_allocate = &StorageImpl::directional_light_allocate;
@@ -15772,249 +15754,249 @@ public:
 	}
 
 	/* Light API */
-	_FORCE_INLINE_ static RID directional_light_allocate()
+	_FORCE_INLINE_ RID directional_light_allocate()
 	{
 		return api.directional_light_allocate();
 	}
 
-	_FORCE_INLINE_ static void directional_light_initialize(RID p_rid)
+	_FORCE_INLINE_ void directional_light_initialize(RID p_rid)
 	{
 		api.directional_light_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static RID omni_light_allocate() { return api.omni_light_allocate(); }
+	_FORCE_INLINE_ RID omni_light_allocate() { return api.omni_light_allocate(); }
 
-	_FORCE_INLINE_ static void omni_light_initialize(RID p_rid)
+	_FORCE_INLINE_ void omni_light_initialize(RID p_rid)
 	{
 		api.omni_light_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static RID spot_light_allocate() { return api.spot_light_allocate(); }
+	_FORCE_INLINE_ RID spot_light_allocate() { return api.spot_light_allocate(); }
 
-	_FORCE_INLINE_ static void spot_light_initialize(RID p_rid)
+	_FORCE_INLINE_ void spot_light_initialize(RID p_rid)
 	{
 		api.spot_light_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static RID area_light_allocate() { return api.area_light_allocate(); }
+	_FORCE_INLINE_ RID area_light_allocate() { return api.area_light_allocate(); }
 
-	_FORCE_INLINE_ static void area_light_initialize(RID p_rid)
+	_FORCE_INLINE_ void area_light_initialize(RID p_rid)
 	{
 		api.area_light_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static void light_free(RID p_rid) { api.light_free(p_rid); }
+	_FORCE_INLINE_ void light_free(RID p_rid) { api.light_free(p_rid); }
 
-	_FORCE_INLINE_ static void light_set_color(RID p_light, const Color& p_color)
+	_FORCE_INLINE_ void light_set_color(RID p_light, const Color& p_color)
 	{
 		api.light_set_color(p_light, p_color);
 	}
 
-	_FORCE_INLINE_ static void light_set_param(RID p_light, RSE::LightParam p_param, float p_value)
+	_FORCE_INLINE_ void light_set_param(RID p_light, RSE::LightParam p_param, float p_value)
 	{
 		api.light_set_param(p_light, p_param, p_value);
 	}
 
-	_FORCE_INLINE_ static void light_set_shadow(RID p_light, bool p_enabled)
+	_FORCE_INLINE_ void light_set_shadow(RID p_light, bool p_enabled)
 	{
 		api.light_set_shadow(p_light, p_enabled);
 	}
 
-	_FORCE_INLINE_ static void light_set_projector(RID p_light, RID p_texture)
+	_FORCE_INLINE_ void light_set_projector(RID p_light, RID p_texture)
 	{
 		api.light_set_projector(p_light, p_texture);
 	}
 
-	_FORCE_INLINE_ static void light_set_negative(RID p_light, bool p_enable)
+	_FORCE_INLINE_ void light_set_negative(RID p_light, bool p_enable)
 	{
 		api.light_set_negative(p_light, p_enable);
 	}
 
-	_FORCE_INLINE_ static void light_set_cull_mask(RID p_light, uint32_t p_mask)
+	_FORCE_INLINE_ void light_set_cull_mask(RID p_light, uint32_t p_mask)
 	{
 		api.light_set_cull_mask(p_light, p_mask);
 	}
 
-	_FORCE_INLINE_ static void light_set_distance_fade(
+	_FORCE_INLINE_ void light_set_distance_fade(
 		RID p_light, bool p_enabled, float p_begin, float p_shadow, float p_length)
 	{
 		api.light_set_distance_fade(p_light, p_enabled, p_begin, p_shadow, p_length);
 	}
 
-	_FORCE_INLINE_ static void light_set_reverse_cull_face_mode(RID p_light, bool p_enabled)
+	_FORCE_INLINE_ void light_set_reverse_cull_face_mode(RID p_light, bool p_enabled)
 	{
 		api.light_set_reverse_cull_face_mode(p_light, p_enabled);
 	}
 
-	_FORCE_INLINE_ static void light_set_shadow_caster_mask(RID p_light, uint32_t p_caster_mask)
+	_FORCE_INLINE_ void light_set_shadow_caster_mask(RID p_light, uint32_t p_caster_mask)
 	{
 		api.light_set_shadow_caster_mask(p_light, p_caster_mask);
 	}
 
-	_FORCE_INLINE_ static uint32_t light_get_shadow_caster_mask(RID p_light)
+	_FORCE_INLINE_ uint32_t light_get_shadow_caster_mask(RID p_light)
 	{
 		return api.light_get_shadow_caster_mask(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_set_bake_mode(RID p_light, RSE::LightBakeMode p_bake_mode)
+	_FORCE_INLINE_ void light_set_bake_mode(RID p_light, RSE::LightBakeMode p_bake_mode)
 	{
 		api.light_set_bake_mode(p_light, p_bake_mode);
 	}
 
-	_FORCE_INLINE_ static void light_set_max_sdfgi_cascade(RID p_light, uint32_t p_cascade)
+	_FORCE_INLINE_ void light_set_max_sdfgi_cascade(RID p_light, uint32_t p_cascade)
 	{
 		api.light_set_max_sdfgi_cascade(p_light, p_cascade);
 	}
 
-	_FORCE_INLINE_ static void light_omni_set_shadow_mode(
+	_FORCE_INLINE_ void light_omni_set_shadow_mode(
 		RID p_light, RSE::LightOmniShadowMode p_mode)
 	{
 		api.light_omni_set_shadow_mode(p_light, p_mode);
 	}
 
-	_FORCE_INLINE_ static void light_directional_set_shadow_mode(
+	_FORCE_INLINE_ void light_directional_set_shadow_mode(
 		RID p_light, RSE::LightDirectionalShadowMode p_mode)
 	{
 		api.light_directional_set_shadow_mode(p_light, p_mode);
 	}
 
-	_FORCE_INLINE_ static void light_directional_set_blend_splits(RID p_light, bool p_enable)
+	_FORCE_INLINE_ void light_directional_set_blend_splits(RID p_light, bool p_enable)
 	{
 		api.light_directional_set_blend_splits(p_light, p_enable);
 	}
 
-	_FORCE_INLINE_ static bool light_directional_get_blend_splits(RID p_light)
+	_FORCE_INLINE_ bool light_directional_get_blend_splits(RID p_light)
 	{
 		return api.light_directional_get_blend_splits(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_directional_set_sky_mode(
+	_FORCE_INLINE_ void light_directional_set_sky_mode(
 		RID p_light, RSE::LightDirectionalSkyMode p_mode)
 	{
 		api.light_directional_set_sky_mode(p_light, p_mode);
 	}
 
-	_FORCE_INLINE_ static RSE::LightDirectionalSkyMode light_directional_get_sky_mode(RID p_light)
+	_FORCE_INLINE_ RSE::LightDirectionalSkyMode light_directional_get_sky_mode(RID p_light)
 	{
 		return api.light_directional_get_sky_mode(p_light);
 	}
 
-	_FORCE_INLINE_ static RSE::LightDirectionalShadowMode light_directional_get_shadow_mode(
+	_FORCE_INLINE_ RSE::LightDirectionalShadowMode light_directional_get_shadow_mode(
 		RID p_light)
 	{
 		return api.light_directional_get_shadow_mode(p_light);
 	}
 
-	_FORCE_INLINE_ static RSE::LightOmniShadowMode light_omni_get_shadow_mode(RID p_light)
+	_FORCE_INLINE_ RSE::LightOmniShadowMode light_omni_get_shadow_mode(RID p_light)
 	{
 		return api.light_omni_get_shadow_mode(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_area_set_size(RID p_light, const Vector2& p_size)
+	_FORCE_INLINE_ void light_area_set_size(RID p_light, const Vector2& p_size)
 	{
 		api.light_area_set_size(p_light, p_size);
 	}
 
-	_FORCE_INLINE_ static Vector2 light_area_get_size(RID p_light)
+	_FORCE_INLINE_ Vector2 light_area_get_size(RID p_light)
 	{
 		return api.light_area_get_size(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_area_set_normalize_energy(RID p_light, bool p_enabled)
+	_FORCE_INLINE_ void light_area_set_normalize_energy(RID p_light, bool p_enabled)
 	{
 		api.light_area_set_normalize_energy(p_light, p_enabled);
 	}
 
-	_FORCE_INLINE_ static bool light_area_get_normalize_energy(RID p_light)
+	_FORCE_INLINE_ bool light_area_get_normalize_energy(RID p_light)
 	{
 		return api.light_area_get_normalize_energy(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_area_set_texture(RID p_light, RID p_texture)
+	_FORCE_INLINE_ void light_area_set_texture(RID p_light, RID p_texture)
 	{
 		api.light_area_set_texture(p_light, p_texture);
 	}
 
-	_FORCE_INLINE_ static RID light_area_get_texture(RID p_light)
+	_FORCE_INLINE_ RID light_area_get_texture(RID p_light)
 	{
 		return api.light_area_get_texture(p_light);
 	}
 
-	_FORCE_INLINE_ static bool light_has_shadow(RID p_light)
+	_FORCE_INLINE_ bool light_has_shadow(RID p_light)
 	{
 		return api.light_has_shadow(p_light);
 	}
 
-	_FORCE_INLINE_ static bool light_has_projector(RID p_light)
+	_FORCE_INLINE_ bool light_has_projector(RID p_light)
 	{
 		return api.light_has_projector(p_light);
 	}
 
-	_FORCE_INLINE_ static RSE::LightType light_get_type(RID p_light)
+	_FORCE_INLINE_ RSE::LightType light_get_type(RID p_light)
 	{
 		return api.light_get_type(p_light);
 	}
 
-	_FORCE_INLINE_ static AABB light_get_aabb(RID p_light) { return api.light_get_aabb(p_light); }
+	_FORCE_INLINE_ AABB light_get_aabb(RID p_light) { return api.light_get_aabb(p_light); }
 
-	_FORCE_INLINE_ static float light_get_param(RID p_light, RSE::LightParam p_param)
+	_FORCE_INLINE_ float light_get_param(RID p_light, RSE::LightParam p_param)
 	{
 		return api.light_get_param(p_light, p_param);
 	}
 
-	_FORCE_INLINE_ static Color light_get_color(RID p_light)
+	_FORCE_INLINE_ Color light_get_color(RID p_light)
 	{
 		return api.light_get_color(p_light);
 	}
 
-	_FORCE_INLINE_ static bool light_get_reverse_cull_face_mode(RID p_light)
+	_FORCE_INLINE_ bool light_get_reverse_cull_face_mode(RID p_light)
 	{
 		return api.light_get_reverse_cull_face_mode(p_light);
 	}
 
-	_FORCE_INLINE_ static RSE::LightBakeMode light_get_bake_mode(RID p_light)
+	_FORCE_INLINE_ RSE::LightBakeMode light_get_bake_mode(RID p_light)
 	{
 		return api.light_get_bake_mode(p_light);
 	}
 
-	_FORCE_INLINE_ static uint32_t light_get_max_sdfgi_cascade(RID p_light)
+	_FORCE_INLINE_ uint32_t light_get_max_sdfgi_cascade(RID p_light)
 	{
 		return api.light_get_max_sdfgi_cascade(p_light);
 	}
 
-	_FORCE_INLINE_ static uint64_t light_get_version(RID p_light)
+	_FORCE_INLINE_ uint64_t light_get_version(RID p_light)
 	{
 		return api.light_get_version(p_light);
 	}
 
-	_FORCE_INLINE_ static uint32_t light_get_cull_mask(RID p_light)
+	_FORCE_INLINE_ uint32_t light_get_cull_mask(RID p_light)
 	{
 		return api.light_get_cull_mask(p_light);
 	}
 
 	/* Light Instance API */
-	_FORCE_INLINE_ static RID light_instance_create(RID p_light)
+	_FORCE_INLINE_ RID light_instance_create(RID p_light)
 	{
 		return api.light_instance_create(p_light);
 	}
 
-	_FORCE_INLINE_ static void light_instance_free(RID p_light_instance)
+	_FORCE_INLINE_ void light_instance_free(RID p_light_instance)
 	{
 		api.light_instance_free(p_light_instance);
 	}
 
-	_FORCE_INLINE_ static void light_instance_set_transform(
+	_FORCE_INLINE_ void light_instance_set_transform(
 		RID p_light_instance, const Transform3D& p_transform)
 	{
 		api.light_instance_set_transform(p_light_instance, p_transform);
 	}
 
-	_FORCE_INLINE_ static void light_instance_set_aabb(RID p_light_instance, const AABB& p_aabb)
+	_FORCE_INLINE_ void light_instance_set_aabb(RID p_light_instance, const AABB& p_aabb)
 	{
 		api.light_instance_set_aabb(p_light_instance, p_aabb);
 	}
 
-	_FORCE_INLINE_ static void light_instance_set_shadow_transform(RID p_light_instance,
+	_FORCE_INLINE_ void light_instance_set_shadow_transform(RID p_light_instance,
 		const Projection& p_projection, const Transform3D& p_transform, float p_far, float p_split,
 		int p_pass, float p_shadow_texel_size, float p_bias_scale = 1.0, float p_range_begin = 0,
 		const Vector2& p_uv_scale = Vector2())
@@ -16023,269 +16005,269 @@ public:
 			p_split, p_pass, p_shadow_texel_size, p_bias_scale, p_range_begin, p_uv_scale);
 	}
 
-	_FORCE_INLINE_ static void light_instance_mark_visible(RID p_light_instance)
+	_FORCE_INLINE_ void light_instance_mark_visible(RID p_light_instance)
 	{
 		api.light_instance_mark_visible(p_light_instance);
 	}
 
-	_FORCE_INLINE_ static bool light_instances_can_render_shadow_cube() { return true; }
+	_FORCE_INLINE_ bool light_instances_can_render_shadow_cube() { return true; }
 
-	_FORCE_INLINE_ static bool light_instance_is_shadow_visible_at_position(
+	_FORCE_INLINE_ bool light_instance_is_shadow_visible_at_position(
 		RID p_light, const Vector3& p_position)
 	{
 		return api.light_instance_is_shadow_visible_at_position(p_light, p_position);
 	}
 
 	/* Probe API */
-	_FORCE_INLINE_ static RID reflection_probe_allocate()
+	_FORCE_INLINE_ RID reflection_probe_allocate()
 	{
 		return api.reflection_probe_allocate();
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_initialize(RID p_rid)
+	_FORCE_INLINE_ void reflection_probe_initialize(RID p_rid)
 	{
 		api.reflection_probe_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_free(RID p_rid)
+	_FORCE_INLINE_ void reflection_probe_free(RID p_rid)
 	{
 		api.reflection_probe_free(p_rid);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_update_mode(
+	_FORCE_INLINE_ void reflection_probe_set_update_mode(
 		RID p_probe, RSE::ReflectionProbeUpdateMode p_mode)
 	{
 		api.reflection_probe_set_update_mode(p_probe, p_mode);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_resolution(RID p_probe, int p_resolution)
+	_FORCE_INLINE_ void reflection_probe_set_resolution(RID p_probe, int p_resolution)
 	{
 		api.reflection_probe_set_resolution(p_probe, p_resolution);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_intensity(RID p_probe, float p_intensity)
+	_FORCE_INLINE_ void reflection_probe_set_intensity(RID p_probe, float p_intensity)
 	{
 		api.reflection_probe_set_intensity(p_probe, p_intensity);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_blend_distance(
+	_FORCE_INLINE_ void reflection_probe_set_blend_distance(
 		RID p_probe, float p_blend_distance)
 	{
 		api.reflection_probe_set_blend_distance(p_probe, p_blend_distance);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_ambient_mode(
+	_FORCE_INLINE_ void reflection_probe_set_ambient_mode(
 		RID p_probe, RSE::ReflectionProbeAmbientMode p_mode)
 	{
 		api.reflection_probe_set_ambient_mode(p_probe, p_mode);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_ambient_color(RID p_probe, const Color& p_color)
+	_FORCE_INLINE_ void reflection_probe_set_ambient_color(RID p_probe, const Color& p_color)
 	{
 		api.reflection_probe_set_ambient_color(p_probe, p_color);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_ambient_energy(RID p_probe, float p_energy)
+	_FORCE_INLINE_ void reflection_probe_set_ambient_energy(RID p_probe, float p_energy)
 	{
 		api.reflection_probe_set_ambient_energy(p_probe, p_energy);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_max_distance(RID p_probe, float p_distance)
+	_FORCE_INLINE_ void reflection_probe_set_max_distance(RID p_probe, float p_distance)
 	{
 		api.reflection_probe_set_max_distance(p_probe, p_distance);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_size(RID p_probe, const Vector3& p_size)
+	_FORCE_INLINE_ void reflection_probe_set_size(RID p_probe, const Vector3& p_size)
 	{
 		api.reflection_probe_set_size(p_probe, p_size);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_origin_offset(
+	_FORCE_INLINE_ void reflection_probe_set_origin_offset(
 		RID p_probe, const Vector3& p_offset)
 	{
 		api.reflection_probe_set_origin_offset(p_probe, p_offset);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_as_interior(RID p_probe, bool p_enable)
+	_FORCE_INLINE_ void reflection_probe_set_as_interior(RID p_probe, bool p_enable)
 	{
 		api.reflection_probe_set_as_interior(p_probe, p_enable);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_enable_box_projection(
+	_FORCE_INLINE_ void reflection_probe_set_enable_box_projection(
 		RID p_probe, bool p_enable)
 	{
 		api.reflection_probe_set_enable_box_projection(p_probe, p_enable);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable)
+	_FORCE_INLINE_ void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable)
 	{
 		api.reflection_probe_set_enable_shadows(p_probe, p_enable);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers)
+	_FORCE_INLINE_ void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers)
 	{
 		api.reflection_probe_set_cull_mask(p_probe, p_layers);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers)
+	_FORCE_INLINE_ void reflection_probe_set_reflection_mask(RID p_probe, uint32_t p_layers)
 	{
 		api.reflection_probe_set_reflection_mask(p_probe, p_layers);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio)
+	_FORCE_INLINE_ void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_ratio)
 	{
 		api.reflection_probe_set_mesh_lod_threshold(p_probe, p_ratio);
 	}
 
-	_FORCE_INLINE_ static AABB reflection_probe_get_aabb(RID p_probe)
+	_FORCE_INLINE_ AABB reflection_probe_get_aabb(RID p_probe)
 	{
 		return api.reflection_probe_get_aabb(p_probe);
 	}
 
-	_FORCE_INLINE_ static RSE::ReflectionProbeUpdateMode reflection_probe_get_update_mode(
+	_FORCE_INLINE_ RSE::ReflectionProbeUpdateMode reflection_probe_get_update_mode(
 		RID p_probe)
 	{
 		return api.reflection_probe_get_update_mode(p_probe);
 	}
 
-	_FORCE_INLINE_ static uint32_t reflection_probe_get_cull_mask(RID p_probe)
+	_FORCE_INLINE_ uint32_t reflection_probe_get_cull_mask(RID p_probe)
 	{
 		return api.reflection_probe_get_cull_mask(p_probe);
 	}
 
-	_FORCE_INLINE_ static uint32_t reflection_probe_get_reflection_mask(RID p_probe)
+	_FORCE_INLINE_ uint32_t reflection_probe_get_reflection_mask(RID p_probe)
 	{
 		return api.reflection_probe_get_reflection_mask(p_probe);
 	}
 
-	_FORCE_INLINE_ static Vector3 reflection_probe_get_size(RID p_probe)
+	_FORCE_INLINE_ Vector3 reflection_probe_get_size(RID p_probe)
 	{
 		return api.reflection_probe_get_size(p_probe);
 	}
 
-	_FORCE_INLINE_ static Vector3 reflection_probe_get_origin_offset(RID p_probe)
+	_FORCE_INLINE_ Vector3 reflection_probe_get_origin_offset(RID p_probe)
 	{
 		return api.reflection_probe_get_origin_offset(p_probe);
 	}
 
-	_FORCE_INLINE_ static float reflection_probe_get_origin_max_distance(RID p_probe)
+	_FORCE_INLINE_ float reflection_probe_get_origin_max_distance(RID p_probe)
 	{
 		return api.reflection_probe_get_origin_max_distance(p_probe);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_renders_shadows(RID p_probe)
+	_FORCE_INLINE_ bool reflection_probe_renders_shadows(RID p_probe)
 	{
 		return api.reflection_probe_renders_shadows(p_probe);
 	}
 
-	_FORCE_INLINE_ static float reflection_probe_get_mesh_lod_threshold(RID p_probe)
+	_FORCE_INLINE_ float reflection_probe_get_mesh_lod_threshold(RID p_probe)
 	{
 		return api.reflection_probe_get_mesh_lod_threshold(p_probe);
 	}
 
 	/* Reflection Atlas */
-	_FORCE_INLINE_ static RID reflection_atlas_create() { return api.reflection_atlas_create(); }
+	_FORCE_INLINE_ RID reflection_atlas_create() { return api.reflection_atlas_create(); }
 
-	_FORCE_INLINE_ static void reflection_atlas_free(RID p_ref_atlas)
+	_FORCE_INLINE_ void reflection_atlas_free(RID p_ref_atlas)
 	{
 		api.reflection_atlas_free(p_ref_atlas);
 	}
 
-	_FORCE_INLINE_ static void reflection_atlas_set_size(
+	_FORCE_INLINE_ void reflection_atlas_set_size(
 		RID p_ref_atlas, int p_reflection_size, int p_reflection_count)
 	{
 		api.reflection_atlas_set_size(p_ref_atlas, p_reflection_size, p_reflection_count);
 	}
 
-	_FORCE_INLINE_ static int reflection_atlas_get_size(RID p_ref_atlas)
+	_FORCE_INLINE_ int reflection_atlas_get_size(RID p_ref_atlas)
 	{
 		return api.reflection_atlas_get_size(p_ref_atlas);
 	}
 
 	/* Reflection Probe Instance */
-	_FORCE_INLINE_ static RID reflection_probe_instance_create(RID p_probe)
+	_FORCE_INLINE_ RID reflection_probe_instance_create(RID p_probe)
 	{
 		return api.reflection_probe_instance_create(p_probe);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_instance_free(RID p_instance)
+	_FORCE_INLINE_ void reflection_probe_instance_free(RID p_instance)
 	{
 		api.reflection_probe_instance_free(p_instance);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_instance_set_transform(
+	_FORCE_INLINE_ void reflection_probe_instance_set_transform(
 		RID p_instance, const Transform3D& p_transform)
 	{
 		api.reflection_probe_instance_set_transform(p_instance, p_transform);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_has_atlas_index(RID p_instance)
+	_FORCE_INLINE_ bool reflection_probe_has_atlas_index(RID p_instance)
 	{
 		return api.reflection_probe_has_atlas_index(p_instance);
 	}
 
-	_FORCE_INLINE_ static void reflection_probe_release_atlas_index(RID p_instance)
+	_FORCE_INLINE_ void reflection_probe_release_atlas_index(RID p_instance)
 	{
 		api.reflection_probe_release_atlas_index(p_instance);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_instance_needs_redraw(RID p_instance)
+	_FORCE_INLINE_ bool reflection_probe_instance_needs_redraw(RID p_instance)
 	{
 		return api.reflection_probe_instance_needs_redraw(p_instance);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_instance_has_reflection(RID p_instance)
+	_FORCE_INLINE_ bool reflection_probe_instance_has_reflection(RID p_instance)
 	{
 		return api.reflection_probe_instance_has_reflection(p_instance);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_instance_begin_render(
+	_FORCE_INLINE_ bool reflection_probe_instance_begin_render(
 		RID p_instance, RID p_reflection_atlas)
 	{
 		return api.reflection_probe_instance_begin_render(p_instance, p_reflection_atlas);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_instance_end_render(
+	_FORCE_INLINE_ bool reflection_probe_instance_end_render(
 		RID p_instance, RID p_reflection_atlas)
 	{
 		return api.reflection_probe_instance_end_render(p_instance, p_reflection_atlas);
 	}
 
-	_FORCE_INLINE_ static Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(
+	_FORCE_INLINE_ Ref<RenderSceneBuffers> reflection_probe_atlas_get_render_buffers(
 		RID p_reflection_atlas)
 	{
 		return api.reflection_probe_atlas_get_render_buffers(p_reflection_atlas);
 	}
 
-	_FORCE_INLINE_ static bool reflection_probe_instance_postprocess_step(RID p_instance)
+	_FORCE_INLINE_ bool reflection_probe_instance_postprocess_step(RID p_instance)
 	{
 		return api.reflection_probe_instance_postprocess_step(p_instance);
 	}
 
 	/* Lightmap */
-	_FORCE_INLINE_ static RID lightmap_allocate() { return api.lightmap_allocate(); }
+	_FORCE_INLINE_ RID lightmap_allocate() { return api.lightmap_allocate(); }
 
-	_FORCE_INLINE_ static void lightmap_initialize(RID p_rid) { api.lightmap_initialize(p_rid); }
+	_FORCE_INLINE_ void lightmap_initialize(RID p_rid) { api.lightmap_initialize(p_rid); }
 
-	_FORCE_INLINE_ static void lightmap_free(RID p_rid) { api.lightmap_free(p_rid); }
+	_FORCE_INLINE_ void lightmap_free(RID p_rid) { api.lightmap_free(p_rid); }
 
-	_FORCE_INLINE_ static void lightmap_set_textures(
+	_FORCE_INLINE_ void lightmap_set_textures(
 		RID p_lightmap, RID p_light, bool p_uses_spherical_harmonics)
 	{
 		api.lightmap_set_textures(p_lightmap, p_light, p_uses_spherical_harmonics);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_probe_bounds(RID p_lightmap, const AABB& p_bounds)
+	_FORCE_INLINE_ void lightmap_set_probe_bounds(RID p_lightmap, const AABB& p_bounds)
 	{
 		api.lightmap_set_probe_bounds(p_lightmap, p_bounds);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_probe_interior(RID p_lightmap, bool p_interior)
+	_FORCE_INLINE_ void lightmap_set_probe_interior(RID p_lightmap, bool p_interior)
 	{
 		api.lightmap_set_probe_interior(p_lightmap, p_interior);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_probe_capture_data(RID p_lightmap,
+	_FORCE_INLINE_ void lightmap_set_probe_capture_data(RID p_lightmap,
 		const PackedVector3Array& p_points, const PackedColorArray& p_point_sh,
 		const PackedInt32Array& p_tetrahedra, const PackedInt32Array& p_bsp_tree)
 	{
@@ -16293,69 +16275,69 @@ public:
 			p_lightmap, p_points, p_point_sh, p_tetrahedra, p_bsp_tree);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_baked_exposure_normalization(
+	_FORCE_INLINE_ void lightmap_set_baked_exposure_normalization(
 		RID p_lightmap, float p_exposure)
 	{
 		api.lightmap_set_baked_exposure_normalization(p_lightmap, p_exposure);
 	}
 
-	_FORCE_INLINE_ static PackedVector3Array lightmap_get_probe_capture_points(RID p_lightmap)
+	_FORCE_INLINE_ PackedVector3Array lightmap_get_probe_capture_points(RID p_lightmap)
 	{
 		return api.lightmap_get_probe_capture_points(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static PackedColorArray lightmap_get_probe_capture_sh(RID p_lightmap)
+	_FORCE_INLINE_ PackedColorArray lightmap_get_probe_capture_sh(RID p_lightmap)
 	{
 		return api.lightmap_get_probe_capture_sh(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static PackedInt32Array lightmap_get_probe_capture_tetrahedra(RID p_lightmap)
+	_FORCE_INLINE_ PackedInt32Array lightmap_get_probe_capture_tetrahedra(RID p_lightmap)
 	{
 		return api.lightmap_get_probe_capture_tetrahedra(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap)
+	_FORCE_INLINE_ PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap)
 	{
 		return api.lightmap_get_probe_capture_bsp_tree(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static AABB lightmap_get_aabb(RID p_lightmap)
+	_FORCE_INLINE_ AABB lightmap_get_aabb(RID p_lightmap)
 	{
 		return api.lightmap_get_aabb(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static void lightmap_tap_sh_light(
+	_FORCE_INLINE_ void lightmap_tap_sh_light(
 		RID p_lightmap, const Vector3& p_point, Color* r_sh)
 	{
 		api.lightmap_tap_sh_light(p_lightmap, p_point, r_sh);
 	}
 
-	_FORCE_INLINE_ static bool lightmap_is_interior(RID p_lightmap)
+	_FORCE_INLINE_ bool lightmap_is_interior(RID p_lightmap)
 	{
 		return api.lightmap_is_interior(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_probe_capture_update_speed(float p_speed)
+	_FORCE_INLINE_ void lightmap_set_probe_capture_update_speed(float p_speed)
 	{
 		api.lightmap_set_probe_capture_update_speed(p_speed);
 	}
 
-	_FORCE_INLINE_ static float lightmap_get_probe_capture_update_speed()
+	_FORCE_INLINE_ float lightmap_get_probe_capture_update_speed()
 	{
 		return api.lightmap_get_probe_capture_update_speed();
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow)
+	_FORCE_INLINE_ void lightmap_set_shadowmask_textures(RID p_lightmap, RID p_shadow)
 	{
 		api.lightmap_set_shadowmask_textures(p_lightmap, p_shadow);
 	}
 
-	_FORCE_INLINE_ static RSE::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap)
+	_FORCE_INLINE_ RSE::ShadowmaskMode lightmap_get_shadowmask_mode(RID p_lightmap)
 	{
 		return api.lightmap_get_shadowmask_mode(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static void lightmap_set_shadowmask_mode(
+	_FORCE_INLINE_ void lightmap_set_shadowmask_mode(
 		RID p_lightmap, RSE::ShadowmaskMode p_mode)
 	{
 		api.lightmap_set_shadowmask_mode(p_lightmap, p_mode);
@@ -16363,66 +16345,66 @@ public:
 
 	/* Lightmap Instance */
 
-	_FORCE_INLINE_ static RID lightmap_instance_create(RID p_lightmap)
+	_FORCE_INLINE_ RID lightmap_instance_create(RID p_lightmap)
 	{
 		return api.lightmap_instance_create(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static void lightmap_instance_free(RID p_lightmap)
+	_FORCE_INLINE_ void lightmap_instance_free(RID p_lightmap)
 	{
 		api.lightmap_instance_free(p_lightmap);
 	}
 
-	_FORCE_INLINE_ static void lightmap_instance_set_transform(
+	_FORCE_INLINE_ void lightmap_instance_set_transform(
 		RID p_lightmap, const Transform3D& p_transform)
 	{
 		api.lightmap_instance_set_transform(p_lightmap, p_transform);
 	}
 
 	/* Shadow Atlas */
-	_FORCE_INLINE_ static RID shadow_atlas_create() { return api.shadow_atlas_create(); }
+	_FORCE_INLINE_ RID shadow_atlas_create() { return api.shadow_atlas_create(); }
 
-	_FORCE_INLINE_ static void shadow_atlas_free(RID p_atlas) { api.shadow_atlas_free(p_atlas); }
+	_FORCE_INLINE_ void shadow_atlas_free(RID p_atlas) { api.shadow_atlas_free(p_atlas); }
 
-	_FORCE_INLINE_ static void shadow_atlas_set_size(
+	_FORCE_INLINE_ void shadow_atlas_set_size(
 		RID p_atlas, int p_size, bool p_use_16_bits = true)
 	{
 		api.shadow_atlas_set_size(p_atlas, p_size, p_use_16_bits);
 	}
 
-	_FORCE_INLINE_ static void shadow_atlas_set_quadrant_subdivision(
+	_FORCE_INLINE_ void shadow_atlas_set_quadrant_subdivision(
 		RID p_atlas, int p_quadrant, int p_subdivision)
 	{
 		api.shadow_atlas_set_quadrant_subdivision(p_atlas, p_quadrant, p_subdivision);
 	}
 
-	_FORCE_INLINE_ static bool shadow_atlas_update_light(
+	_FORCE_INLINE_ bool shadow_atlas_update_light(
 		RID p_atlas, RID p_light_instance, float p_coverage, uint64_t p_light_version)
 	{
 		return api.shadow_atlas_update_light(
 			p_atlas, p_light_instance, p_coverage, p_light_version);
 	}
 
-	_FORCE_INLINE_ static void shadow_atlas_update(RID p_atlas)
+	_FORCE_INLINE_ void shadow_atlas_update(RID p_atlas)
 	{
 		api.shadow_atlas_update(p_atlas);
 	}
 
-	_FORCE_INLINE_ static void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true)
+	_FORCE_INLINE_ void directional_shadow_atlas_set_size(int p_size, bool p_16_bits = true)
 	{
 		api.directional_shadow_atlas_set_size(p_size, p_16_bits);
 	}
 
-	_FORCE_INLINE_ static int get_directional_light_shadow_size(RID p_light_instance)
+	_FORCE_INLINE_ int get_directional_light_shadow_size(RID p_light_instance)
 	{
 		return api.get_directional_light_shadow_size(p_light_instance);
 	}
 
-	_FORCE_INLINE_ static void set_directional_shadow_count(int p_count)
+	_FORCE_INLINE_ void set_directional_shadow_count(int p_count)
 	{
 		api.set_directional_shadow_count(p_count);
 	}
-};
+} // namespace RendererLightStorage
 
 struct InstanceShaderParam
 {
@@ -16479,19 +16461,12 @@ struct API
 
 }; // namespace MaterialStorage
 
-class RendererMaterialStorage final
+namespace RendererMaterialStorage
 {
-private:
-    static inline MaterialStorage::API api;
-
-public:
-    RendererMaterialStorage() = delete;
-    RendererMaterialStorage(const RendererMaterialStorage&) = delete;
-    RendererMaterialStorage& operator=(const RendererMaterialStorage&) = delete;
-    ~RendererMaterialStorage() = delete;
+    inline MaterialStorage::API api;
 
     template <typename StorageImpl>
-    static void bind()
+    inline void bind()
     {
         /* GLOBAL SHADER UNIFORM API */
         api.global_shader_parameter_remove = &StorageImpl::global_shader_parameter_remove;
@@ -16532,170 +16507,170 @@ public:
     }
 
     /* GLOBAL SHADER UNIFORM API */
-    _FORCE_INLINE_ static void global_shader_parameter_remove(const String& p_name)
+    _FORCE_INLINE_ void global_shader_parameter_remove(const String& p_name)
     {
         api.global_shader_parameter_remove(p_name);
     }
 
-    _FORCE_INLINE_ static Vector<String> global_shader_parameter_get_list()
+    _FORCE_INLINE_ Vector<String> global_shader_parameter_get_list()
     {
         return api.global_shader_parameter_get_list();
     }
 
-    _FORCE_INLINE_ static RSE::GlobalShaderParameterType global_shader_parameter_get_type(
+    _FORCE_INLINE_ RSE::GlobalShaderParameterType global_shader_parameter_get_type(
         const String& p_name)
     {
         return api.global_shader_parameter_get_type(p_name);
     }
 
-    _FORCE_INLINE_ static void global_shader_parameters_load_settings(bool p_load_textures = true)
+    _FORCE_INLINE_ void global_shader_parameters_load_settings(bool p_load_textures = true)
     {
         api.global_shader_parameters_load_settings(p_load_textures);
     }
 
-    _FORCE_INLINE_ static void global_shader_parameters_clear()
+    _FORCE_INLINE_ void global_shader_parameters_clear()
     {
         api.global_shader_parameters_clear();
     }
 
-    _FORCE_INLINE_ static int32_t global_shader_parameters_instance_allocate(RID p_instance)
+    _FORCE_INLINE_ int32_t global_shader_parameters_instance_allocate(RID p_instance)
     {
         return api.global_shader_parameters_instance_allocate(p_instance);
     }
 
-    _FORCE_INLINE_ static void global_shader_parameters_instance_free(RID p_instance)
+    _FORCE_INLINE_ void global_shader_parameters_instance_free(RID p_instance)
     {
         api.global_shader_parameters_instance_free(p_instance);
     }
 
     /* SHADER API */
-    _FORCE_INLINE_ static RID shader_allocate()
+    _FORCE_INLINE_ RID shader_allocate()
     {
         return api.shader_allocate();
     }
 
-    _FORCE_INLINE_ static void shader_initialize(RID p_rid, bool p_embedded = true)
+    _FORCE_INLINE_ void shader_initialize(RID p_rid, bool p_embedded = true)
     {
         api.shader_initialize(p_rid, p_embedded);
     }
 
-    _FORCE_INLINE_ static void shader_free(RID p_rid)
+    _FORCE_INLINE_ void shader_free(RID p_rid)
     {
         api.shader_free(p_rid);
     }
 
-    _FORCE_INLINE_ static void shader_set_code(RID p_shader, const String& p_code)
+    _FORCE_INLINE_ void shader_set_code(RID p_shader, const String& p_code)
     {
         api.shader_set_code(p_shader, p_code);
     }
 
-    _FORCE_INLINE_ static void shader_set_path_hint(RID p_shader, const String& p_path)
+    _FORCE_INLINE_ void shader_set_path_hint(RID p_shader, const String& p_path)
     {
         api.shader_set_path_hint(p_shader, p_path);
     }
 
-    _FORCE_INLINE_ static String shader_get_code(RID p_shader)
+    _FORCE_INLINE_ String shader_get_code(RID p_shader)
     {
         return api.shader_get_code(p_shader);
     }
 
-    _FORCE_INLINE_ static void shader_set_default_texture_parameter(
+    _FORCE_INLINE_ void shader_set_default_texture_parameter(
         RID p_shader, const String& p_name, RID p_texture, int p_index)
     {
         api.shader_set_default_texture_parameter(p_shader, p_name, p_texture, p_index);
     }
 
-    _FORCE_INLINE_ static RID shader_get_default_texture_parameter(
+    _FORCE_INLINE_ RID shader_get_default_texture_parameter(
         RID p_shader, const String& p_name, int p_index)
     {
         return api.shader_get_default_texture_parameter(p_shader, p_name, p_index);
     }
 
-    _FORCE_INLINE_ static RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
+    _FORCE_INLINE_ RenderingServerTypes::ShaderNativeSourceCode shader_get_native_source_code(
         RID p_shader)
     {
         return api.shader_get_native_source_code(p_shader);
     }
 
-    _FORCE_INLINE_ static void shader_embedded_set_lock()
+    _FORCE_INLINE_ void shader_embedded_set_lock()
     {
         api.shader_embedded_set_lock();
     }
 
-    _FORCE_INLINE_ static const HashSet<RID>& shader_embedded_set_get()
+    _FORCE_INLINE_ const HashSet<RID>& shader_embedded_set_get()
     {
         return api.shader_embedded_set_get();
     }
 
-    _FORCE_INLINE_ static void shader_embedded_set_unlock()
+    _FORCE_INLINE_ void shader_embedded_set_unlock()
     {
         api.shader_embedded_set_unlock();
     }
 
     /* MATERIAL API */
-    _FORCE_INLINE_ static RID material_allocate()
+    _FORCE_INLINE_ RID material_allocate()
     {
         return api.material_allocate();
     }
 
-    _FORCE_INLINE_ static void material_initialize(RID p_rid)
+    _FORCE_INLINE_ void material_initialize(RID p_rid)
     {
         api.material_initialize(p_rid);
     }
 
-    _FORCE_INLINE_ static void material_free(RID p_rid)
+    _FORCE_INLINE_ void material_free(RID p_rid)
     {
         api.material_free(p_rid);
     }
 
-    _FORCE_INLINE_ static void material_set_render_priority(RID p_material, int priority)
+    _FORCE_INLINE_ void material_set_render_priority(RID p_material, int priority)
     {
         api.material_set_render_priority(p_material, priority);
     }
 
-    _FORCE_INLINE_ static void material_set_shader(RID p_shader_material, RID p_shader)
+    _FORCE_INLINE_ void material_set_shader(RID p_shader_material, RID p_shader)
     {
         api.material_set_shader(p_shader_material, p_shader);
     }
 
-    _FORCE_INLINE_ static void material_set_next_pass(RID p_material, RID p_next_material)
+    _FORCE_INLINE_ void material_set_next_pass(RID p_material, RID p_next_material)
     {
         api.material_set_next_pass(p_material, p_next_material);
     }
 
-    _FORCE_INLINE_ static bool material_is_animated(RID p_material)
+    _FORCE_INLINE_ bool material_is_animated(RID p_material)
     {
         return api.material_is_animated(p_material);
     }
 
-    _FORCE_INLINE_ static bool material_casts_shadows(RID p_material)
+    _FORCE_INLINE_ bool material_casts_shadows(RID p_material)
     {
         return api.material_casts_shadows(p_material);
     }
 
-    _FORCE_INLINE_ static RSE::CullMode material_get_cull_mode(RID p_material)
+    _FORCE_INLINE_ RSE::CullMode material_get_cull_mode(RID p_material)
     {
         return api.material_get_cull_mode(p_material);
     }
 
-    _FORCE_INLINE_ static void material_get_instance_shader_parameters(
+    _FORCE_INLINE_ void material_get_instance_shader_parameters(
         RID p_material, List<InstanceShaderParam>* r_parameters)
     {
         api.material_get_instance_shader_parameters(p_material, r_parameters);
     }
 
-    _FORCE_INLINE_ static void material_update_dependency(RID p_material, DependencyTracker* p_instance)
+    _FORCE_INLINE_ void material_update_dependency(RID p_material, DependencyTracker* p_instance)
     {
         api.material_update_dependency(p_material, p_instance);
     }
 
-    _FORCE_INLINE_ static void finalize()
+    _FORCE_INLINE_ void finalize()
     {
         if (api.finalize) {
             api.finalize();
         }
     }
-};
+} // namespace RendererMaterialStorage
 #include "core/math/vector2.h"
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
@@ -17315,18 +17290,11 @@ struct API
 
 }; // namespace TextureStorage
 
-class RendererTextureStorage final
+namespace RendererTextureStorage
 {
-private:
-	static inline TextureStorage::API api;
+	inline TextureStorage::API api;
 
-public:
-	RendererTextureStorage() = delete;
-	RendererTextureStorage(const RendererTextureStorage&) = delete;
-	RendererTextureStorage& operator=(const RendererTextureStorage&) = delete;
-	~RendererTextureStorage() = delete;
-
-	template <typename StorageImpl> static void bind()
+	template <typename StorageImpl> inline void bind()
 	{
 		api.set_default_clear_color = &StorageImpl::set_default_clear_color;
 		api.get_default_clear_color = &StorageImpl::get_default_clear_color;
@@ -17440,474 +17408,474 @@ public:
 	}
 
 	/* CANVAS TEXTURE API */
-	_FORCE_INLINE_ static RID canvas_texture_allocate() { return api.canvas_texture_allocate(); }
+	_FORCE_INLINE_ RID canvas_texture_allocate() { return api.canvas_texture_allocate(); }
 
-	_FORCE_INLINE_ static void canvas_texture_initialize(RID p_rid)
+	_FORCE_INLINE_ void canvas_texture_initialize(RID p_rid)
 	{
 		api.canvas_texture_initialize(p_rid);
 	}
 
-	_FORCE_INLINE_ static void canvas_texture_free(RID p_rid) { api.canvas_texture_free(p_rid); }
+	_FORCE_INLINE_ void canvas_texture_free(RID p_rid) { api.canvas_texture_free(p_rid); }
 
-	_FORCE_INLINE_ static void canvas_texture_set_channel(
+	_FORCE_INLINE_ void canvas_texture_set_channel(
 		RID p_canvas_texture, RSE::CanvasTextureChannel p_channel, RID p_texture)
 	{
 		api.canvas_texture_set_channel(p_canvas_texture, p_channel, p_texture);
 	}
 
-	_FORCE_INLINE_ static void canvas_texture_set_shading_parameters(
+	_FORCE_INLINE_ void canvas_texture_set_shading_parameters(
 		RID p_canvas_texture, const Color& p_base_color, float p_shininess)
 	{
 		api.canvas_texture_set_shading_parameters(p_canvas_texture, p_base_color, p_shininess);
 	}
 
-	_FORCE_INLINE_ static void canvas_texture_set_texture_filter(
+	_FORCE_INLINE_ void canvas_texture_set_texture_filter(
 		RID p_canvas_texture, RSE::CanvasItemTextureFilter p_filter)
 	{
 		api.canvas_texture_set_texture_filter(p_canvas_texture, p_filter);
 	}
 
-	_FORCE_INLINE_ static void canvas_texture_set_texture_repeat(
+	_FORCE_INLINE_ void canvas_texture_set_texture_repeat(
 		RID p_canvas_texture, RSE::CanvasItemTextureRepeat p_repeat)
 	{
 		api.canvas_texture_set_texture_repeat(p_canvas_texture, p_repeat);
 	}
 
 	/* TEXTURE 2D / GENERAL API */
-	_FORCE_INLINE_ static RID texture_allocate() { return api.texture_allocate(); }
+	_FORCE_INLINE_ RID texture_allocate() { return api.texture_allocate(); }
 
-	_FORCE_INLINE_ static void texture_free(RID p_rid) { api.texture_free(p_rid); }
+	_FORCE_INLINE_ void texture_free(RID p_rid) { api.texture_free(p_rid); }
 
-	_FORCE_INLINE_ static void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
+	_FORCE_INLINE_ void texture_2d_initialize(RID p_texture, const Ref<Image>& p_image)
 	{
 		api.texture_2d_initialize(p_texture, p_image);
 	}
 
-	_FORCE_INLINE_ static void texture_2d_update(
+	_FORCE_INLINE_ void texture_2d_update(
 		RID p_texture, const Ref<Image>& p_image, int p_layer)
 	{
 		api.texture_2d_update(p_texture, p_image, p_layer);
 	}
 
-	_FORCE_INLINE_ static Ref<Image> texture_2d_get(RID p_texture)
+	_FORCE_INLINE_ Ref<Image> texture_2d_get(RID p_texture)
 	{
 		return api.texture_2d_get(p_texture);
 	}
 
-	_FORCE_INLINE_ static Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer)
+	_FORCE_INLINE_ Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer)
 	{
 		return api.texture_2d_layer_get(p_texture, p_layer);
 	}
 
-	_FORCE_INLINE_ static void texture_2d_placeholder_initialize(RID p_texture)
+	_FORCE_INLINE_ void texture_2d_placeholder_initialize(RID p_texture)
 	{
 		api.texture_2d_placeholder_initialize(p_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_2d_layered_initialize(
+	_FORCE_INLINE_ void texture_2d_layered_initialize(
 		RID p_texture, const Vector<Ref<Image>>& p_layers, RSE::TextureLayeredType p_layered_type)
 	{
 		api.texture_2d_layered_initialize(p_texture, p_layers, p_layered_type);
 	}
 
-	_FORCE_INLINE_ static void texture_2d_layered_placeholder_initialize(
+	_FORCE_INLINE_ void texture_2d_layered_placeholder_initialize(
 		RID p_texture, RSE::TextureLayeredType p_layered_type)
 	{
 		api.texture_2d_layered_placeholder_initialize(p_texture, p_layered_type);
 	}
 
-	_FORCE_INLINE_ static void texture_3d_initialize(RID p_texture, Image::Format p_format,
+	_FORCE_INLINE_ void texture_3d_initialize(RID p_texture, Image::Format p_format,
 		int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>>& p_data)
 	{
 		api.texture_3d_initialize(
 			p_texture, p_format, p_width, p_height, p_depth, p_mipmaps, p_data);
 	}
 
-	_FORCE_INLINE_ static void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
+	_FORCE_INLINE_ void texture_3d_update(RID p_texture, const Vector<Ref<Image>>& p_data)
 	{
 		api.texture_3d_update(p_texture, p_data);
 	}
 
-	_FORCE_INLINE_ static Vector<Ref<Image>> texture_3d_get(RID p_texture)
+	_FORCE_INLINE_ Vector<Ref<Image>> texture_3d_get(RID p_texture)
 	{
 		return api.texture_3d_get(p_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_3d_placeholder_initialize(RID p_texture)
+	_FORCE_INLINE_ void texture_3d_placeholder_initialize(RID p_texture)
 	{
 		api.texture_3d_placeholder_initialize(p_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_proxy_initialize(RID p_texture, RID p_base)
+	_FORCE_INLINE_ void texture_proxy_initialize(RID p_texture, RID p_base)
 	{
 		api.texture_proxy_initialize(p_texture, p_base);
 	}
 
-	_FORCE_INLINE_ static void texture_proxy_update(RID p_proxy, RID p_base)
+	_FORCE_INLINE_ void texture_proxy_update(RID p_proxy, RID p_base)
 	{
 		api.texture_proxy_update(p_proxy, p_base);
 	}
 
-	_FORCE_INLINE_ static void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
+	_FORCE_INLINE_ void texture_drawable_initialize(RID p_texture, int p_width, int p_height,
 		RSE::TextureDrawableFormat p_format, const Color& p_color, bool p_has_mipmaps)
 	{
 		api.texture_drawable_initialize(
 			p_texture, p_width, p_height, p_format, p_color, p_has_mipmaps);
 	}
 
-	_FORCE_INLINE_ static void texture_drawable_generate_mipmaps(RID p_texture)
+	_FORCE_INLINE_ void texture_drawable_generate_mipmaps(RID p_texture)
 	{
 		api.texture_drawable_generate_mipmaps(p_texture);
 	}
 
-	_FORCE_INLINE_ static RID texture_drawable_get_default_material()
+	_FORCE_INLINE_ RID texture_drawable_get_default_material()
 	{
 		return api.texture_drawable_get_default_material();
 	}
 
-	_FORCE_INLINE_ static void texture_external_initialize(
+	_FORCE_INLINE_ void texture_external_initialize(
 		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 	{
 		api.texture_external_initialize(p_texture, p_width, p_height, p_external_buffer);
 	}
 
-	_FORCE_INLINE_ static void texture_external_update(
+	_FORCE_INLINE_ void texture_external_update(
 		RID p_texture, int p_width, int p_height, uint64_t p_external_buffer)
 	{
 		api.texture_external_update(p_texture, p_width, p_height, p_external_buffer);
 	}
 
-	_FORCE_INLINE_ static uint64_t texture_get_native_handle(RID p_texture, bool p_srgb)
+	_FORCE_INLINE_ uint64_t texture_get_native_handle(RID p_texture, bool p_srgb)
 	{
 		return api.texture_get_native_handle(p_texture, p_srgb);
 	}
 
-	_FORCE_INLINE_ static void texture_set_format(RID p_texture, Image::Format p_format)
+	_FORCE_INLINE_ void texture_set_format(RID p_texture, Image::Format p_format)
 	{
 		api.texture_set_format(p_texture, p_format);
 	}
 
-	_FORCE_INLINE_ static Image::Format texture_get_format(RID p_texture)
+	_FORCE_INLINE_ Image::Format texture_get_format(RID p_texture)
 	{
 		return api.texture_get_format(p_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_set_path(RID p_texture, const String& p_path)
+	_FORCE_INLINE_ void texture_set_path(RID p_texture, const String& p_path)
 	{
 		api.texture_set_path(p_texture, p_path);
 	}
 
-	_FORCE_INLINE_ static String texture_get_path(RID p_texture)
+	_FORCE_INLINE_ String texture_get_path(RID p_texture)
 	{
 		return api.texture_get_path(p_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_set_size_override(RID p_texture, int p_width, int p_height)
+	_FORCE_INLINE_ void texture_set_size_override(RID p_texture, int p_width, int p_height)
 	{
 		api.texture_set_size_override(p_texture, p_width, p_height);
 	}
 
-	_FORCE_INLINE_ static void texture_replace(RID p_texture, RID p_by_texture)
+	_FORCE_INLINE_ void texture_replace(RID p_texture, RID p_by_texture)
 	{
 		api.texture_replace(p_texture, p_by_texture);
 	}
 
-	_FORCE_INLINE_ static void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
+	_FORCE_INLINE_ void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable)
 	{
 		api.texture_set_force_redraw_if_visible(p_texture, p_enable);
 	}
 
-	_FORCE_INLINE_ static Size2 texture_size_with_proxy(RID p_proxy)
+	_FORCE_INLINE_ Size2 texture_size_with_proxy(RID p_proxy)
 	{
 		return api.texture_size_with_proxy(p_proxy);
 	}
 
 	/* DECAL API */
-	_FORCE_INLINE_ static RID decal_allocate() { return api.decal_allocate(); }
+	_FORCE_INLINE_ RID decal_allocate() { return api.decal_allocate(); }
 
-	_FORCE_INLINE_ static void decal_initialize(RID p_rid) { api.decal_initialize(p_rid); }
+	_FORCE_INLINE_ void decal_initialize(RID p_rid) { api.decal_initialize(p_rid); }
 
-	_FORCE_INLINE_ static void decal_free(RID p_rid) { api.decal_free(p_rid); }
+	_FORCE_INLINE_ void decal_free(RID p_rid) { api.decal_free(p_rid); }
 
-	_FORCE_INLINE_ static void decal_set_size(RID p_decal, const Vector3& p_size)
+	_FORCE_INLINE_ void decal_set_size(RID p_decal, const Vector3& p_size)
 	{
 		api.decal_set_size(p_decal, p_size);
 	}
 
-	_FORCE_INLINE_ static void decal_set_texture(
+	_FORCE_INLINE_ void decal_set_texture(
 		RID p_decal, RSE::DecalTexture p_type, RID p_texture)
 	{
 		api.decal_set_texture(p_decal, p_type, p_texture);
 	}
 
-	_FORCE_INLINE_ static void decal_set_emission_energy(RID p_decal, float p_energy)
+	_FORCE_INLINE_ void decal_set_emission_energy(RID p_decal, float p_energy)
 	{
 		api.decal_set_emission_energy(p_decal, p_energy);
 	}
 
-	_FORCE_INLINE_ static void decal_set_albedo_mix(RID p_decal, float p_mix)
+	_FORCE_INLINE_ void decal_set_albedo_mix(RID p_decal, float p_mix)
 	{
 		api.decal_set_albedo_mix(p_decal, p_mix);
 	}
 
-	_FORCE_INLINE_ static void decal_set_modulate(RID p_decal, const Color& p_modulate)
+	_FORCE_INLINE_ void decal_set_modulate(RID p_decal, const Color& p_modulate)
 	{
 		api.decal_set_modulate(p_decal, p_modulate);
 	}
 
-	_FORCE_INLINE_ static void decal_set_cull_mask(RID p_decal, uint32_t p_layers)
+	_FORCE_INLINE_ void decal_set_cull_mask(RID p_decal, uint32_t p_layers)
 	{
 		api.decal_set_cull_mask(p_decal, p_layers);
 	}
 
-	_FORCE_INLINE_ static void decal_set_distance_fade(
+	_FORCE_INLINE_ void decal_set_distance_fade(
 		RID p_decal, bool p_enabled, float p_begin, float p_length)
 	{
 		api.decal_set_distance_fade(p_decal, p_enabled, p_begin, p_length);
 	}
 
-	_FORCE_INLINE_ static void decal_set_fade(RID p_decal, float p_above, float p_below)
+	_FORCE_INLINE_ void decal_set_fade(RID p_decal, float p_above, float p_below)
 	{
 		api.decal_set_fade(p_decal, p_above, p_below);
 	}
 
-	_FORCE_INLINE_ static void decal_set_normal_fade(RID p_decal, float p_fade)
+	_FORCE_INLINE_ void decal_set_normal_fade(RID p_decal, float p_fade)
 	{
 		api.decal_set_normal_fade(p_decal, p_fade);
 	}
 
-	_FORCE_INLINE_ static AABB decal_get_aabb(RID p_decal) { return api.decal_get_aabb(p_decal); }
+	_FORCE_INLINE_ AABB decal_get_aabb(RID p_decal) { return api.decal_get_aabb(p_decal); }
 
-	_FORCE_INLINE_ static uint32_t decal_get_cull_mask(RID p_decal)
+	_FORCE_INLINE_ uint32_t decal_get_cull_mask(RID p_decal)
 	{
 		return api.decal_get_cull_mask(p_decal);
 	}
 
-	_FORCE_INLINE_ static RID decal_instance_create(RID p_decal)
+	_FORCE_INLINE_ RID decal_instance_create(RID p_decal)
 	{
 		return api.decal_instance_create(p_decal);
 	}
 
-	_FORCE_INLINE_ static void decal_instance_free(RID p_decal_instance)
+	_FORCE_INLINE_ void decal_instance_free(RID p_decal_instance)
 	{
 		api.decal_instance_free(p_decal_instance);
 	}
 
-	_FORCE_INLINE_ static void decal_instance_set_transform(
+	_FORCE_INLINE_ void decal_instance_set_transform(
 		RID p_decal_instance, const Transform3D& p_transform)
 	{
 		api.decal_instance_set_transform(p_decal_instance, p_transform);
 	}
 
-	_FORCE_INLINE_ static void decal_instance_set_sorting_offset(
+	_FORCE_INLINE_ void decal_instance_set_sorting_offset(
 		RID p_decal_instance, float p_sorting_offset)
 	{
 		api.decal_instance_set_sorting_offset(p_decal_instance, p_sorting_offset);
 	}
 
 	/* RENDER TARGET API */
-	_FORCE_INLINE_ static RID render_target_create() { return api.render_target_create(); }
+	_FORCE_INLINE_ RID render_target_create() { return api.render_target_create(); }
 
-	_FORCE_INLINE_ static void render_target_free(RID p_render_target)
+	_FORCE_INLINE_ void render_target_free(RID p_render_target)
 	{
 		api.render_target_free(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_position(RID p_render_target, int p_x, int p_y)
+	_FORCE_INLINE_ void render_target_set_position(RID p_render_target, int p_x, int p_y)
 	{
 		api.render_target_set_position(p_render_target, p_x, p_y);
 	}
 
-	_FORCE_INLINE_ static Point2i render_target_get_position(RID p_render_target)
+	_FORCE_INLINE_ Point2i render_target_get_position(RID p_render_target)
 	{
 		return api.render_target_get_position(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_size(
+	_FORCE_INLINE_ void render_target_set_size(
 		RID p_render_target, int p_width, int p_height, uint32_t p_view_count)
 	{
 		api.render_target_set_size(p_render_target, p_width, p_height, p_view_count);
 	}
 
-	_FORCE_INLINE_ static Size2i render_target_get_size(RID p_render_target)
+	_FORCE_INLINE_ Size2i render_target_get_size(RID p_render_target)
 	{
 		return api.render_target_get_size(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_transparent(
+	_FORCE_INLINE_ void render_target_set_transparent(
 		RID p_render_target, bool p_is_transparent)
 	{
 		api.render_target_set_transparent(p_render_target, p_is_transparent);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_direct_to_screen(
+	_FORCE_INLINE_ void render_target_set_direct_to_screen(
 		RID p_render_target, bool p_direct_to_screen)
 	{
 		api.render_target_set_direct_to_screen(p_render_target, p_direct_to_screen);
 	}
 
-	_FORCE_INLINE_ static RID render_target_get_texture(RID p_render_target)
+	_FORCE_INLINE_ RID render_target_get_texture(RID p_render_target)
 	{
 		return api.render_target_get_texture(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
+	_FORCE_INLINE_ void render_target_set_msaa(RID p_render_target, RSE::ViewportMSAA p_msaa)
 	{
 		api.render_target_set_msaa(p_render_target, p_msaa);
 	}
 
-	_FORCE_INLINE_ static RSE::ViewportMSAA render_target_get_msaa(RID p_render_target)
+	_FORCE_INLINE_ RSE::ViewportMSAA render_target_get_msaa(RID p_render_target)
 	{
 		return api.render_target_get_msaa(p_render_target);
 	}
 
-	_FORCE_INLINE_ static bool render_target_get_msaa_needs_resolve(RID p_render_target)
+	_FORCE_INLINE_ bool render_target_get_msaa_needs_resolve(RID p_render_target)
 	{
 		return api.render_target_get_msaa_needs_resolve(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_do_msaa_resolve(RID p_render_target)
+	_FORCE_INLINE_ void render_target_do_msaa_resolve(RID p_render_target)
 	{
 		api.render_target_do_msaa_resolve(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
+	_FORCE_INLINE_ void render_target_set_use_hdr(RID p_render_target, bool p_use_hdr)
 	{
 		api.render_target_set_use_hdr(p_render_target, p_use_hdr);
 	}
 
-	_FORCE_INLINE_ static bool render_target_is_using_hdr(RID p_render_target)
+	_FORCE_INLINE_ bool render_target_is_using_hdr(RID p_render_target)
 	{
 		return api.render_target_is_using_hdr(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_use_debanding(
+	_FORCE_INLINE_ void render_target_set_use_debanding(
 		RID p_render_target, bool p_use_debanding)
 	{
 		api.render_target_set_use_debanding(p_render_target, p_use_debanding);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_vrs_mode(
+	_FORCE_INLINE_ void render_target_set_vrs_mode(
 		RID p_render_target, RSE::ViewportVRSMode p_mode)
 	{
 		api.render_target_set_vrs_mode(p_render_target, p_mode);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_vrs_update_mode(
+	_FORCE_INLINE_ void render_target_set_vrs_update_mode(
 		RID p_render_target, RSE::ViewportVRSUpdateMode p_mode)
 	{
 		api.render_target_set_vrs_update_mode(p_render_target, p_mode);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_vrs_texture(RID p_render_target, RID p_texture)
+	_FORCE_INLINE_ void render_target_set_vrs_texture(RID p_render_target, RID p_texture)
 	{
 		api.render_target_set_vrs_texture(p_render_target, p_texture);
 	}
 
-	_FORCE_INLINE_ static void render_target_request_clear(
+	_FORCE_INLINE_ void render_target_request_clear(
 		RID p_render_target, const Color& p_clear_color)
 	{
 		api.render_target_request_clear(p_render_target, p_clear_color);
 	}
 
-	_FORCE_INLINE_ static bool render_target_is_clear_requested(RID p_render_target)
+	_FORCE_INLINE_ bool render_target_is_clear_requested(RID p_render_target)
 	{
 		return api.render_target_is_clear_requested(p_render_target);
 	}
 
-	_FORCE_INLINE_ static Color render_target_get_clear_request_color(RID p_render_target)
+	_FORCE_INLINE_ Color render_target_get_clear_request_color(RID p_render_target)
 	{
 		return api.render_target_get_clear_request_color(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_do_clear_request(RID p_render_target)
+	_FORCE_INLINE_ void render_target_do_clear_request(RID p_render_target)
 	{
 		api.render_target_do_clear_request(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_sdf_size_and_scale(
+	_FORCE_INLINE_ void render_target_set_sdf_size_and_scale(
 		RID p_render_target, RSE::ViewportSDFOversize p_size, RSE::ViewportSDFScale p_scale)
 	{
 		api.render_target_set_sdf_size_and_scale(p_render_target, p_size, p_scale);
 	}
 
-	_FORCE_INLINE_ static Rect2i render_target_get_sdf_rect(RID p_render_target)
+	_FORCE_INLINE_ Rect2i render_target_get_sdf_rect(RID p_render_target)
 	{
 		return api.render_target_get_sdf_rect(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
+	_FORCE_INLINE_ void render_target_mark_sdf_enabled(RID p_render_target, bool p_enabled)
 	{
 		api.render_target_mark_sdf_enabled(p_render_target, p_enabled);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_override(RID p_render_target, RID p_color_texture,
+	_FORCE_INLINE_ void render_target_set_override(RID p_render_target, RID p_color_texture,
 		RID p_depth_texture, RID p_velocity = RID(), RID p_velocity_depth = RID())
 	{
 		api.render_target_set_override(
 			p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
 	}
 
-	_FORCE_INLINE_ static RID render_target_get_override_color(RID p_render_target)
+	_FORCE_INLINE_ RID render_target_get_override_color(RID p_render_target)
 	{
 		return api.render_target_get_override_color(p_render_target);
 	}
 
-	_FORCE_INLINE_ static RID render_target_get_override_depth(RID p_render_target)
+	_FORCE_INLINE_ RID render_target_get_override_depth(RID p_render_target)
 	{
 		return api.render_target_get_override_depth(p_render_target);
 	}
 
-	_FORCE_INLINE_ static RID render_target_get_override_velocity(RID p_render_target)
+	_FORCE_INLINE_ RID render_target_get_override_velocity(RID p_render_target)
 	{
 		return api.render_target_get_override_velocity(p_render_target);
 	}
 
-	_FORCE_INLINE_ static RID render_target_get_override_velocity_depth(RID p_render_target)
+	_FORCE_INLINE_ RID render_target_get_override_velocity_depth(RID p_render_target)
 	{
 		return api.render_target_get_override_velocity_depth(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_render_region(
+	_FORCE_INLINE_ void render_target_set_render_region(
 		RID p_render_target, const Rect2i& p_render_region)
 	{
 		api.render_target_set_render_region(p_render_target, p_render_region);
 	}
 
-	_FORCE_INLINE_ static Rect2i render_target_get_render_region(RID p_render_target)
+	_FORCE_INLINE_ Rect2i render_target_get_render_region(RID p_render_target)
 	{
 		return api.render_target_get_render_region(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_velocity_target_size(
+	_FORCE_INLINE_ void render_target_set_velocity_target_size(
 		RID p_render_target, const Size2i& p_target_size)
 	{
 		api.render_target_set_velocity_target_size(p_render_target, p_target_size);
 	}
 
-	_FORCE_INLINE_ static Size2i render_target_get_velocity_target_size(RID p_render_target)
+	_FORCE_INLINE_ Size2i render_target_get_velocity_target_size(RID p_render_target)
 	{
 		return api.render_target_get_velocity_target_size(p_render_target);
 	}
 
-	_FORCE_INLINE_ static bool render_target_was_used(RID p_render_target)
+	_FORCE_INLINE_ bool render_target_was_used(RID p_render_target)
 	{
 		return api.render_target_was_used(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void render_target_set_as_unused(RID p_render_target)
+	_FORCE_INLINE_ void render_target_set_as_unused(RID p_render_target)
 	{
 		api.render_target_set_as_unused(p_render_target);
 	}
 
-	_FORCE_INLINE_ static void set_default_clear_color(const Color& p_color)
+	_FORCE_INLINE_ void set_default_clear_color(const Color& p_color)
 	{
 		if (api.set_default_clear_color) {
 			api.set_default_clear_color(p_color);
 		}
 	}
 
-	_FORCE_INLINE_ static Color get_default_clear_color()
+	_FORCE_INLINE_ Color get_default_clear_color()
 	{
 		if (api.get_default_clear_color) {
 			return api.get_default_clear_color();
@@ -17915,7 +17883,7 @@ public:
 		return Color();
 
 	}
-};
+} // namespace RendererTextureStorage
 
 namespace Geometry3D
 {
@@ -21917,48 +21885,44 @@ struct Transform3D;
 struct Basis;
 struct Quaternion;
 
-class TransformInterpolator {
-public:
+namespace TransformInterpolator
+{
 	enum Method {
 		INTERP_LERP,
 		INTERP_SLERP,
 		INTERP_SCALED_SLERP,
 	};
-
-private:
-	_FORCE_INLINE_ static bool _sign(real_t p_val) { return p_val >= 0; }
-	static real_t _vec3_sum(const Vector3 &p_pt) { return p_pt.x + p_pt.y + p_pt.z; }
-	static real_t _vec3_normalize(Vector3 &p_vec);
-	_FORCE_INLINE_ static bool _vec3_is_equal_approx(const Vector3 &p_a, const Vector3 &p_b, real_t p_tolerance) {
+	_FORCE_INLINE_ bool _sign(real_t p_val) { return p_val >= 0; }
+	inline real_t _vec3_sum(const Vector3 &p_pt) { return p_pt.x + p_pt.y + p_pt.z; }
+	real_t _vec3_normalize(Vector3 &p_vec);
+	_FORCE_INLINE_ bool _vec3_is_equal_approx(const Vector3 &p_a, const Vector3 &p_b, real_t p_tolerance) {
 		return Math::is_equal_approx(p_a.x, p_b.x, p_tolerance) && Math::is_equal_approx(p_a.y, p_b.y, p_tolerance) && Math::is_equal_approx(p_a.z, p_b.z, p_tolerance);
 	}
-	static Vector3 _basis_orthonormalize(Basis &r_basis);
-	static Method _test_basis(Basis p_basis, bool r_needed_normalize, Quaternion &r_quat);
-	static Basis _basis_slerp_unchecked(Basis p_from, Basis p_to, real_t p_fraction);
-	static Quaternion _quat_slerp_unchecked(const Quaternion &p_from, const Quaternion &p_to, real_t p_fraction);
-	static Quaternion _basis_to_quat_unchecked(const Basis &p_basis);
-	static bool _basis_is_orthogonal(const Basis &p_basis, real_t p_epsilon = 0.01f);
-	static bool _basis_is_orthogonal_any_scale(const Basis &p_basis);
+	Vector3 _basis_orthonormalize(Basis &r_basis);
+	Method _test_basis(Basis p_basis, bool r_needed_normalize, Quaternion &r_quat);
+	Basis _basis_slerp_unchecked(Basis p_from, Basis p_to, real_t p_fraction);
+	Quaternion _quat_slerp_unchecked(const Quaternion &p_from, const Quaternion &p_to, real_t p_fraction);
+	Quaternion _basis_to_quat_unchecked(const Basis &p_basis);
+	bool _basis_is_orthogonal(const Basis &p_basis, real_t p_epsilon = 0.01f);
+	bool _basis_is_orthogonal_any_scale(const Basis &p_basis);
 
-	static void interpolate_basis_linear(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
-	static void interpolate_basis_scaled_slerp(Basis p_prev, Basis p_curr, Basis &r_result, real_t p_fraction);
-
-public:
-	static void interpolate_transform_2d(const Transform2D &p_prev, const Transform2D &p_curr, Transform2D &r_result, real_t p_fraction);
+	void interpolate_basis_linear(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
+	void interpolate_basis_scaled_slerp(Basis p_prev, Basis p_curr, Basis &r_result, real_t p_fraction);
+	void interpolate_transform_2d(const Transform2D &p_prev, const Transform2D &p_curr, Transform2D &r_result, real_t p_fraction);
 
 	// Generic functions, use when you don't know what method should be used, e.g. from GDScript.
 	// These will be slower.
-	static void interpolate_transform_3d(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction);
-	static void interpolate_basis(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
+	void interpolate_transform_3d(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction);
+	void interpolate_basis(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction);
 
 	// Optimized function when you know ahead of time the method.
-	static void interpolate_transform_3d_via_method(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction, Method p_method);
-	static void interpolate_basis_via_method(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction, Method p_method);
+	void interpolate_transform_3d_via_method(const Transform3D &p_prev, const Transform3D &p_curr, Transform3D &r_result, real_t p_fraction, Method p_method);
+	void interpolate_basis_via_method(const Basis &p_prev, const Basis &p_curr, Basis &r_result, real_t p_fraction, Method p_method);
 
-	static real_t checksum_transform_3d(const Transform3D &p_transform);
+	real_t checksum_transform_3d(const Transform3D &p_transform);
 
-	static Method find_method(const Basis &p_a, const Basis &p_b);
-};
+	Method find_method(const Basis &p_a, const Basis &p_b);
+} // namespace TransformInterpolator
 
 #include "core/io/ip.h"
 #include "core/string/ustring.h"
@@ -22095,26 +22059,24 @@ namespace Delaunay2D
 /*
 https://www.flipcode.com/archives/Efficient_Polygon_Triangulation.shtml
 */
-class Triangulate {
-public:
+namespace Triangulate
+{
 	// triangulate a contour/polygon, places results in STL vector
 	// as series of triangles.
-	static bool triangulate(const Vector<Vector2> &p_contour, Vector<int> &r_result);
+	bool triangulate(const Vector<Vector2> &p_contour, Vector<int> &r_result);
 
 	// compute area of a contour/polygon
-	static real_t get_area(const Vector<Vector2> &p_contour);
+	real_t get_area(const Vector<Vector2> &p_contour);
 
 	// decide if point Px/Py is inside triangle defined by
 	// (Ax,Ay) (Bx,By) (Cx,Cy)
-	static bool is_inside_triangle(real_t p_ax, real_t p_ay, real_t p_bx, real_t p_by, real_t p_cx, real_t p_cy, real_t p_px, real_t p_py, bool p_include_edges);
+	bool is_inside_triangle(real_t p_ax, real_t p_ay, real_t p_bx, real_t p_by, real_t p_cx, real_t p_cy, real_t p_px, real_t p_py, bool p_include_edges);
+	bool snip(const Vector<Vector2> &p_contour, int p_u, int p_v, int p_w, int p_n, const Vector<int> &p_values, bool p_relaxed);
+} // namespace Triangulate
 
-private:
-	static bool snip(const Vector<Vector2> &p_contour, int p_u, int p_v, int p_w, int p_n, const Vector<int> &p_values, bool p_relaxed);
-};
-
-class Geometry2D {
-public:
-	static real_t get_closest_points_between_segments(const Vector2 &p_p1, const Vector2 &p_q1, const Vector2 &p_p2, const Vector2 &p_q2, Vector2 &p_c1, Vector2 &p_c2) {
+namespace Geometry2D
+{
+	inline real_t get_closest_points_between_segments(const Vector2 &p_p1, const Vector2 &p_q1, const Vector2 &p_p2, const Vector2 &p_q2, Vector2 &p_c1, Vector2 &p_c2) {
 		Vector2 d1 = p_q1 - p_p1; // Direction vector of segment S1.
 		Vector2 d2 = p_q2 - p_p2; // Direction vector of segment S2.
 		Vector2 r = p_p1 - p_p2;
@@ -22172,13 +22134,7 @@ public:
 		return Math::sqrt((p_c1 - p_c2).dot(p_c1 - p_c2));
 	}
 
-#ifndef DISABLE_DEPRECATED
-	static Vector2 get_closest_point_to_segment(const Vector2 &p_point, const Vector2 *p_segment) {
-		return get_closest_point_to_segment(p_point, p_segment[0], p_segment[1]);
-	}
-#endif // DISABLE_DEPRECATED
-
-	static Vector2 get_closest_point_to_segment(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
+	inline Vector2 get_closest_point_to_segment(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
 		Vector2 p = p_point - p_segment_a;
 		Vector2 n = p_segment_b - p_segment_a;
 		real_t l2 = n.length_squared();
@@ -22198,16 +22154,22 @@ public:
 	}
 
 #ifndef DISABLE_DEPRECATED
-	static real_t get_distance_to_segment(const Vector2 &p_point, const Vector2 *p_segment) {
+	inline Vector2 get_closest_point_to_segment(const Vector2 &p_point, const Vector2 *p_segment) {
+		return get_closest_point_to_segment(p_point, p_segment[0], p_segment[1]);
+	}
+#endif // DISABLE_DEPRECATED
+
+	inline real_t get_distance_to_segment(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
+		return p_point.distance_to(get_closest_point_to_segment(p_point, p_segment_a, p_segment_b));
+	}
+
+#ifndef DISABLE_DEPRECATED
+	inline real_t get_distance_to_segment(const Vector2 &p_point, const Vector2 *p_segment) {
 		return get_distance_to_segment(p_point, p_segment[0], p_segment[1]);
 	}
 #endif // DISABLE_DEPRECATED
 
-	static real_t get_distance_to_segment(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
-		return p_point.distance_to(get_closest_point_to_segment(p_point, p_segment_a, p_segment_b));
-	}
-
-	static bool is_point_in_triangle(const Vector2 &p_point, const Vector2 &p_a, const Vector2 &p_b, const Vector2 &p_c) {
+	inline bool is_point_in_triangle(const Vector2 &p_point, const Vector2 &p_a, const Vector2 &p_b, const Vector2 &p_c) {
 		Vector2 an = p_a - p_point;
 		Vector2 bn = p_b - p_point;
 		Vector2 cn = p_c - p_point;
@@ -22221,13 +22183,7 @@ public:
 		return (cn.cross(an) > 0) == orientation;
 	}
 
-#ifndef DISABLE_DEPRECATED
-	static Vector2 get_closest_point_to_segment_uncapped(const Vector2 &p_point, const Vector2 *p_segment) {
-		return get_closest_point_to_segment_uncapped(p_point, p_segment[0], p_segment[1]);
-	}
-#endif // DISABLE_DEPRECATED
-
-	static Vector2 get_closest_point_to_segment_uncapped(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
+	inline Vector2 get_closest_point_to_segment_uncapped(const Vector2 &p_point, const Vector2 &p_segment_a, const Vector2 &p_segment_b) {
 		Vector2 p = p_point - p_segment_a;
 		Vector2 n = p_segment_b - p_segment_a;
 		real_t l2 = n.length_squared();
@@ -22240,9 +22196,15 @@ public:
 		return p_segment_a + n * d; // Inside.
 	}
 
+#ifndef DISABLE_DEPRECATED
+	inline Vector2 get_closest_point_to_segment_uncapped(const Vector2 &p_point, const Vector2 *p_segment) {
+		return get_closest_point_to_segment_uncapped(p_point, p_segment[0], p_segment[1]);
+	}
+#endif // DISABLE_DEPRECATED
+
 	VLTR_MSVC_WARNING_PUSH_AND_IGNORE(4723) // Potential divide by 0. False positive (see: GH-44274).
 
-	static bool line_intersects_line(const Vector2 &p_from_a, const Vector2 &p_dir_a, const Vector2 &p_from_b, const Vector2 &p_dir_b, Vector2 &r_result) {
+	inline bool line_intersects_line(const Vector2 &p_from_a, const Vector2 &p_dir_a, const Vector2 &p_from_b, const Vector2 &p_dir_b, Vector2 &r_result) {
 		// See http://paulbourke.net/geometry/pointlineplane/
 
 		const real_t denom = p_dir_b.y * p_dir_a.x - p_dir_b.x * p_dir_a.y;
@@ -22258,7 +22220,7 @@ public:
 
 	VLTR_MSVC_WARNING_POP
 
-	static bool segment_intersects_segment(const Vector2 &p_from_a, const Vector2 &p_to_a, const Vector2 &p_from_b, const Vector2 &p_to_b, Vector2 *r_result) {
+	inline bool segment_intersects_segment(const Vector2 &p_from_a, const Vector2 &p_to_a, const Vector2 &p_from_b, const Vector2 &p_to_b, Vector2 *r_result) {
 		Vector2 B = p_to_a - p_from_a;
 		Vector2 C = p_from_b - p_from_a;
 		Vector2 D = p_to_b - p_from_a;
@@ -22297,11 +22259,11 @@ public:
 		return true;
 	}
 
-	static inline bool is_point_in_circle(const Vector2 &p_point, const Vector2 &p_circle_pos, real_t p_circle_radius) {
+	inline bool is_point_in_circle(const Vector2 &p_point, const Vector2 &p_circle_pos, real_t p_circle_radius) {
 		return p_point.distance_squared_to(p_circle_pos) <= p_circle_radius * p_circle_radius;
 	}
 
-	static real_t segment_intersects_circle(const Vector2 &p_from, const Vector2 &p_to, const Vector2 &p_circle_pos, real_t p_circle_radius) {
+	inline real_t segment_intersects_circle(const Vector2 &p_from, const Vector2 &p_to, const Vector2 &p_circle_pos, real_t p_circle_radius) {
 		Vector2 line_vec = p_to - p_from;
 		Vector2 vec_to_line = p_from - p_circle_pos;
 
@@ -22336,7 +22298,7 @@ public:
 		return -1;
 	}
 
-	static bool segment_intersects_rect(const Vector2 &p_from, const Vector2 &p_to, const Rect2 &p_rect) {
+	inline bool segment_intersects_rect(const Vector2 &p_from, const Vector2 &p_to, const Rect2 &p_rect) {
 		if (p_rect.has_point(p_from) || p_rect.has_point(p_to)) {
 			return true;
 		}
@@ -22377,41 +22339,44 @@ public:
 		END_ROUND
 	};
 
-	static Vector<Vector<Point2>> merge_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
+	Vector<Vector<Point2>> _polypaths_do_operation(PolyBooleanOperation p_op, const Vector<Point2> &p_polypath_a, const Vector<Point2> &p_polypath_b, bool p_is_a_open = false);
+	Vector<Vector<Point2>> _polypath_offset(const Vector<Point2> &p_polypath, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type);
+
+	inline Vector<Vector<Point2>> merge_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
 		return _polypaths_do_operation(OPERATION_UNION, p_polygon_a, p_polygon_b);
 	}
 
-	static Vector<Vector<Point2>> clip_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
+	inline Vector<Vector<Point2>> clip_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
 		return _polypaths_do_operation(OPERATION_DIFFERENCE, p_polygon_a, p_polygon_b);
 	}
 
-	static Vector<Vector<Point2>> intersect_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
+	inline Vector<Vector<Point2>> intersect_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
 		return _polypaths_do_operation(OPERATION_INTERSECTION, p_polygon_a, p_polygon_b);
 	}
 
-	static Vector<Vector<Point2>> exclude_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
+	inline Vector<Vector<Point2>> exclude_polygons(const Vector<Point2> &p_polygon_a, const Vector<Point2> &p_polygon_b) {
 		return _polypaths_do_operation(OPERATION_XOR, p_polygon_a, p_polygon_b);
 	}
 
-	static Vector<Vector<Point2>> clip_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon) {
+	inline Vector<Vector<Point2>> clip_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon) {
 		return _polypaths_do_operation(OPERATION_DIFFERENCE, p_polyline, p_polygon, true);
 	}
 
-	static Vector<Vector<Point2>> intersect_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon) {
+	inline Vector<Vector<Point2>> intersect_polyline_with_polygon(const Vector<Vector2> &p_polyline, const Vector<Vector2> &p_polygon) {
 		return _polypaths_do_operation(OPERATION_INTERSECTION, p_polyline, p_polygon, true);
 	}
 
-	static Vector<Vector<Point2>> offset_polygon(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type) {
+	inline Vector<Vector<Point2>> offset_polygon(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type) {
 		return _polypath_offset(p_polygon, p_delta, p_join_type, END_POLYGON);
 	}
 
-	static Vector<Vector<Point2>> offset_polyline(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type) {
+	inline Vector<Vector<Point2>> offset_polyline(const Vector<Vector2> &p_polygon, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type) {
 		ERR_FAIL_COND_V_MSG(p_end_type == END_POLYGON, Vector<Vector<Point2>>(), "Attempt to offset a polyline like a polygon (use offset_polygon instead).");
 
 		return _polypath_offset(p_polygon, p_delta, p_join_type, p_end_type);
 	}
 
-	static Vector<int> triangulate_delaunay(const Vector<Vector2> &p_points) {
+	inline Vector<int> triangulate_delaunay(const Vector<Vector2> &p_points) {
 		Vector<Delaunay2D::Triangle> tr = Delaunay2D::triangulate(p_points);
 		Vector<int> triangles;
 
@@ -22425,7 +22390,7 @@ public:
 		return triangles;
 	}
 
-	static Vector<int> triangulate_polygon(const Vector<Vector2> &p_polygon) {
+	inline Vector<int> triangulate_polygon(const Vector<Vector2> &p_polygon) {
 		Vector<int> triangles;
 		if (!Triangulate::triangulate(p_polygon, triangles)) {
 			return Vector<int>(); //fail
@@ -22435,7 +22400,7 @@ public:
 
 	// Assumes cartesian coordinate system with +x to the right, +y up.
 	// If using screen coordinates (+x to the right, +y down) the result will need to be flipped.
-	static bool is_polygon_clockwise(const Vector<Vector2> &p_polygon) {
+	inline bool is_polygon_clockwise(const Vector<Vector2> &p_polygon) {
 		int c = p_polygon.size();
 		if (c < 3) {
 			return false;
@@ -22452,7 +22417,7 @@ public:
 	}
 
 	// Alternate implementation that should be faster.
-	static bool is_point_in_polygon(const Vector2 &p_point, const Vector<Vector2> &p_polygon) {
+	inline bool is_point_in_polygon(const Vector2 &p_point, const Vector<Vector2> &p_polygon) {
 		int c = p_polygon.size();
 		if (c < 3) {
 			return false;
@@ -22487,7 +22452,7 @@ public:
 		return (intersections & 1);
 	}
 
-	static bool is_segment_intersecting_polygon(const Vector2 &p_from, const Vector2 &p_to, const Vector<Vector2> &p_polygon) {
+	inline bool is_segment_intersecting_polygon(const Vector2 &p_from, const Vector2 &p_to, const Vector<Vector2> &p_polygon) {
 		int c = p_polygon.size();
 		const Vector2 *p = p_polygon.ptr();
 		for (int i = 0; i < c; i++) {
@@ -22500,13 +22465,13 @@ public:
 		return false;
 	}
 
-	static real_t vec2_cross(const Point2 &p_o, const Point2 &p_a, const Point2 &p_b) {
+	inline real_t vec2_cross(const Point2 &p_o, const Point2 &p_a, const Point2 &p_b) {
 		return (real_t)(p_a.x - p_o.x) * (p_b.y - p_o.y) - (real_t)(p_a.y - p_o.y) * (p_b.x - p_o.x);
 	}
 
 	// Returns a list of points on the convex hull in counter-clockwise order.
 	// Note: the last point in the returned list is the same as the first one.
-	static Vector<Point2> convex_hull(Vector<Point2> p_points) {
+	inline Vector<Point2> convex_hull(Vector<Point2> p_points) {
 		int n = p_points.size(), k = 0;
 		Vector<Point2> H;
 		H.resize(2 * n);
@@ -22534,7 +22499,7 @@ public:
 		return H;
 	}
 
-	static Vector<Point2i> bresenham_line(const Point2i &p_from, const Point2i &p_to) {
+	inline Vector<Point2i> bresenham_line(const Point2i &p_from, const Point2i &p_to) {
 		Vector<Point2i> points;
 
 		Vector2i delta = (p_to - p_from).abs() * 2;
@@ -22572,18 +22537,15 @@ public:
 		return points;
 	}
 
-	static void merge_many_polygons(const Vector<Vector<Point2>> &p_polygons, Vector<Vector<Vector2>> &r_out_polygons, Vector<Vector<Vector2>> &r_out_holes);
-	static Vector<Vector<Vector2>> decompose_many_polygons_in_convex(const Vector<Vector<Point2>> &p_polygons, const Vector<Vector<Point2>> &p_holes);
+	void merge_many_polygons(const Vector<Vector<Point2>> &p_polygons, Vector<Vector<Vector2>> &r_out_polygons, Vector<Vector<Vector2>> &r_out_holes);
+	Vector<Vector<Vector2>> decompose_many_polygons_in_convex(const Vector<Vector<Point2>> &p_polygons, const Vector<Vector<Point2>> &p_holes);
 
-	static Vector<Vector<Vector2>> decompose_polygon_in_convex(const Vector<Point2> &p_polygon);
+	Vector<Vector<Vector2>> decompose_polygon_in_convex(const Vector<Point2> &p_polygon);
 
-	static void make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_result, Size2i &r_size);
-	static Vector<Vector3i> partial_pack_rects(const Vector<Vector2i> &p_sizes, const Size2i &p_atlas_size);
+	void make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_result, Size2i &r_size);
+	Vector<Vector3i> partial_pack_rects(const Vector<Vector2i> &p_sizes, const Size2i &p_atlas_size);
 
-private:
-	static Vector<Vector<Point2>> _polypaths_do_operation(PolyBooleanOperation p_op, const Vector<Point2> &p_polypath_a, const Vector<Point2> &p_polypath_b, bool p_is_a_open = false);
-	static Vector<Vector<Point2>> _polypath_offset(const Vector<Point2> &p_polypath, real_t p_delta, PolyJoinType p_join_type, PolyEndType p_end_type);
-};
+} // namespace Geometry2D
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
@@ -22597,9 +22559,8 @@ private:
 
 #include <cfloat> // FLT_MIN, FLT_MAX
 
-class RendererSceneOcclusionCull final
+namespace RendererSceneOcclusionCull
 {
-public:
 	class HZBuffer
 	{
 	public:
@@ -22783,84 +22744,80 @@ public:
 
 		~HZBuffer();
 	};
-
-private:
-	static void _print_warning()
+	inline void _print_warning()
 	{
 		WARN_PRINT_ONCE("Occlusion culling is disabled at build-time.");
 	}
 
-	static bool _default_is_occluder(RID p_rid) { return false; }
-	static RID _default_occluder_allocate() { return RID(); }
-	static void _default_occluder_initialize(RID p_occluder) {}
-	static void _default_free_occluder(RID p_occluder) { _print_warning(); }
-	static void _default_occluder_set_mesh(
+	inline bool _default_is_occluder(RID p_rid) { return false; }
+	inline RID _default_occluder_allocate() { return RID(); }
+	inline void _default_occluder_initialize(RID p_occluder) {}
+	inline void _default_free_occluder(RID p_occluder) { _print_warning(); }
+	inline void _default_occluder_set_mesh(
 		RID p_occluder, const PackedVector3Array& p_vertices, const PackedInt32Array& p_indices)
 	{
 		_print_warning();
 	}
 
-	static void _default_add_scenario(RID p_scenario) {}
-	static void _default_remove_scenario(RID p_scenario) {}
-	static void _default_scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
+	inline void _default_add_scenario(RID p_scenario) {}
+	inline void _default_remove_scenario(RID p_scenario) {}
+	inline void _default_scenario_set_instance(RID p_scenario, RID p_instance, RID p_occluder,
 		const Transform3D& p_xform, bool p_enabled)
 	{
 		_print_warning();
 	}
-	static void _default_scenario_remove_instance(RID p_scenario, RID p_instance)
+	inline void _default_scenario_remove_instance(RID p_scenario, RID p_instance)
 	{
 		_print_warning();
 	}
 
-	static void _default_add_buffer(RID p_buffer) { _print_warning(); }
-	static void _default_remove_buffer(RID p_buffer) { _print_warning(); }
-	static HZBuffer* _default_buffer_get_ptr(RID p_buffer) { return nullptr; }
-	static void _default_buffer_set_scenario(RID p_buffer, RID p_scenario) { _print_warning(); }
-	static void _default_buffer_set_size(RID p_buffer, const Vector2i& p_size) { _print_warning(); }
-	static void _default_buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
+	inline void _default_add_buffer(RID p_buffer) { _print_warning(); }
+	inline void _default_remove_buffer(RID p_buffer) { _print_warning(); }
+	inline HZBuffer* _default_buffer_get_ptr(RID p_buffer) { return nullptr; }
+	inline void _default_buffer_set_scenario(RID p_buffer, RID p_scenario) { _print_warning(); }
+	inline void _default_buffer_set_size(RID p_buffer, const Vector2i& p_size) { _print_warning(); }
+	inline void _default_buffer_update(RID p_buffer, const Transform3D& p_cam_transform,
 		const Projection& p_cam_projection, bool p_cam_orthogonal)
 	{
 	}
 
-	static RID _default_buffer_get_debug_texture(RID p_buffer)
+	inline RID _default_buffer_get_debug_texture(RID p_buffer)
 	{
 		_print_warning();
 		return RID();
 	}
 
-	static void _default_set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality) {}
-
-public:
-	inline static bool (*is_occluder)(RID p_rid) = &_default_is_occluder;
-	inline static RID (*occluder_allocate)() = &_default_occluder_allocate;
-	inline static void (*occluder_initialize)(RID p_occluder) = &_default_occluder_initialize;
-	inline static void (*free_occluder)(RID p_occluder) = &_default_free_occluder;
-	inline static void (*occluder_set_mesh)(RID p_occluder, const PackedVector3Array& p_vertices,
+	inline void _default_set_build_quality(RSE::ViewportOcclusionCullingBuildQuality p_quality) {}
+	inline bool (*is_occluder)(RID p_rid) = &_default_is_occluder;
+	inline RID (*occluder_allocate)() = &_default_occluder_allocate;
+	inline void (*occluder_initialize)(RID p_occluder) = &_default_occluder_initialize;
+	inline void (*free_occluder)(RID p_occluder) = &_default_free_occluder;
+	inline void (*occluder_set_mesh)(RID p_occluder, const PackedVector3Array& p_vertices,
 		const PackedInt32Array& p_indices) = &_default_occluder_set_mesh;
 
-	inline static void (*add_scenario)(RID p_scenario) = &_default_add_scenario;
-	inline static void (*remove_scenario)(RID p_scenario) = &_default_remove_scenario;
-	inline static void (*scenario_set_instance)(RID p_scenario, RID p_instance, RID p_occluder,
+	inline void (*add_scenario)(RID p_scenario) = &_default_add_scenario;
+	inline void (*remove_scenario)(RID p_scenario) = &_default_remove_scenario;
+	inline void (*scenario_set_instance)(RID p_scenario, RID p_instance, RID p_occluder,
 		const Transform3D& p_xform, bool p_enabled) = &_default_scenario_set_instance;
-	inline static void (*scenario_remove_instance)(
+	inline void (*scenario_remove_instance)(
 		RID p_scenario, RID p_instance) = &_default_scenario_remove_instance;
 
-	inline static void (*add_buffer)(RID p_buffer) = &_default_add_buffer;
-	inline static void (*remove_buffer)(RID p_buffer) = &_default_remove_buffer;
-	inline static HZBuffer* (*buffer_get_ptr)(RID p_buffer) = &_default_buffer_get_ptr;
-	inline static void (*buffer_set_scenario)(
+	inline void (*add_buffer)(RID p_buffer) = &_default_add_buffer;
+	inline void (*remove_buffer)(RID p_buffer) = &_default_remove_buffer;
+	inline HZBuffer* (*buffer_get_ptr)(RID p_buffer) = &_default_buffer_get_ptr;
+	inline void (*buffer_set_scenario)(
 		RID p_buffer, RID p_scenario) = &_default_buffer_set_scenario;
-	inline static void (*buffer_set_size)(
+	inline void (*buffer_set_size)(
 		RID p_buffer, const Vector2i& p_size) = &_default_buffer_set_size;
-	inline static void (*buffer_update)(RID p_buffer, const Transform3D& p_cam_transform,
+	inline void (*buffer_update)(RID p_buffer, const Transform3D& p_cam_transform,
 		const Projection& p_cam_projection, bool p_cam_orthogonal) = &_default_buffer_update;
 
-	inline static RID (*buffer_get_debug_texture)(RID p_buffer) = &_default_buffer_get_debug_texture;
+	inline RID (*buffer_get_debug_texture)(RID p_buffer) = &_default_buffer_get_debug_texture;
 
-	inline static void (*set_build_quality)(
+	inline void (*set_build_quality)(
 		RSE::ViewportOcclusionCullingBuildQuality p_quality) = &_default_set_build_quality;
 
-	static void reset()
+	inline void reset()
 	{
 		is_occluder = &_default_is_occluder;
 		occluder_allocate = &_default_occluder_allocate;
@@ -22884,12 +22841,7 @@ public:
 
 		set_build_quality = &_default_set_build_quality;
 	}
-
-	RendererSceneOcclusionCull() = delete;
-	RendererSceneOcclusionCull(const RendererSceneOcclusionCull&) = delete;
-	RendererSceneOcclusionCull& operator=(const RendererSceneOcclusionCull&) = delete;
-	~RendererSceneOcclusionCull() = delete;
-};
+} // namespace RendererSceneOcclusionCull
 
 #include "core/os/os.h"
 #include "core/io/ip.h"
@@ -23753,11 +23705,9 @@ public:
 class CameraFeed;
 template <typename T> class TypedArray;
 
-class CameraServer final
+namespace CameraServer
 {
-	static inline Mutex _thread_safe_;
-
-public:
+	inline Mutex _thread_safe_;
 	enum FeedImage
 	{
 		FEED_RGBA_IMAGE = 0,
@@ -23767,7 +23717,7 @@ public:
 		FEED_IMAGES = 2
 	};
 
-	static inline constexpr const char feeds_updated_signal_name[] = "camera_feeds_updated";
+	inline constexpr const char feeds_updated_signal_name[] = "camera_feeds_updated";
 
 	struct Data
 	{
@@ -23779,38 +23729,34 @@ public:
 		void* camera_manager = nullptr;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
+	inline void _default_initialize_backend() {}
+	inline void _default_finalize_backend() {}
+	void _default_set_monitoring_feeds(bool p_monitoring_feeds);
+	inline void _default_handle_application_pause() {}
+	inline void _default_handle_application_resume() {}
+	inline void _default_handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
 
-private:
-	static void _default_initialize_backend() {}
-	static void _default_finalize_backend() {}
-	static void _default_set_monitoring_feeds(bool p_monitoring_feeds);
-	static void _default_handle_application_pause() {}
-	static void _default_handle_application_resume() {}
-	static void _default_handle_display_rotation_change(int p_orientation) { (void)p_orientation; }
+	inline void (*_initialize_backend)() = &_default_initialize_backend;
+	inline void (*_finalize_backend)() = &_default_finalize_backend;
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-	inline static void (*_initialize_backend)() = &_default_initialize_backend;
-	inline static void (*_finalize_backend)() = &_default_finalize_backend;
-
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	static void set_monitoring_feeds_state(bool p_monitoring_feeds);
-	_FORCE_INLINE_ static bool is_monitoring_feeds()
+	void set_monitoring_feeds_state(bool p_monitoring_feeds);
+	_FORCE_INLINE_ bool is_monitoring_feeds()
 	{
 		return data ? data->monitoring_feeds : false;
 	}
 
-	inline static void (*set_monitoring_feeds)(
+	inline void (*set_monitoring_feeds)(
 		bool p_monitoring_feeds) = &_default_set_monitoring_feeds;
-	inline static void (*handle_application_pause)() = &_default_handle_application_pause;
-	inline static void (*handle_application_resume)() = &_default_handle_application_resume;
-	inline static void (*handle_display_rotation_change)(
+	inline void (*handle_application_pause)() = &_default_handle_application_pause;
+	inline void (*handle_application_resume)() = &_default_handle_application_resume;
+	inline void (*handle_display_rotation_change)(
 		int p_orientation) = &_default_handle_display_rotation_change;
 
-	static void bind(
+	inline void bind(
 		void (*p_init)(),
 		void (*p_fin)(),
 		void (*p_set_mon)(bool),
@@ -23826,7 +23772,7 @@ public:
 		handle_display_rotation_change = p_rot ? p_rot : &_default_handle_display_rotation_change;
 	}
 
-	static void reset_backend()
+	inline void reset_backend()
 	{
 		_initialize_backend = &_default_initialize_backend;
 		_finalize_backend = &_default_finalize_backend;
@@ -23838,26 +23784,21 @@ public:
 
 	// Right now we identify our feed by it's ID when it's used in the background.
 	// May see if we can change this to purely relying on CameraFeed objects or by name.
-	static int get_free_id();
-	static int get_feed_index(int p_id);
-	static Ref<CameraFeed> get_feed_by_id(int p_id);
+	int get_free_id();
+	int get_feed_index(int p_id);
+	Ref<CameraFeed> get_feed_by_id(int p_id);
 
 	// Add and remove feeds.
-	static void add_feed(const Ref<CameraFeed>& p_feed);
-	static void remove_feed(const Ref<CameraFeed>& p_feed);
+	void add_feed(const Ref<CameraFeed>& p_feed);
+	void remove_feed(const Ref<CameraFeed>& p_feed);
 
 	// Get our feeds.
-	static Ref<CameraFeed> get_feed(int p_index);
-	static int get_feed_count();
+	Ref<CameraFeed> get_feed(int p_index);
+	int get_feed_count();
 
 	// Intended for use with custom CameraServer implementation.
-	static RID feed_texture(int p_id, FeedImage p_texture);
-
-	CameraServer() = delete;
-	CameraServer(const CameraServer&) = delete;
-	CameraServer& operator=(const CameraServer&) = delete;
-	~CameraServer() = delete;
-};
+	RID feed_texture(int p_id, FeedImage p_texture);
+} // namespace CameraServer
 
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
@@ -25155,19 +25096,7 @@ public:
 
 		uint32_t shadow_count;
 
-		struct SDFGI
-		{
-			// have arrays here because SDFGI functions expects this, plus regions can have areas
-			AABB region_aabb[SDFGI_MAX_CASCADES *
-							 SDFGI_MAX_REGIONS_PER_CASCADE]; // max 3 regions per cascade
-			uint32_t region_cascade[SDFGI_MAX_CASCADES *
-									SDFGI_MAX_REGIONS_PER_CASCADE]; // max 3 regions per cascade
-			uint32_t region_count = 0;
 
-			uint32_t cascade_light_index[SDFGI_MAX_CASCADES];
-			uint32_t cascade_light_count = 0;
-
-		} sdfgi;
 
 		SpinLock lock;
 
@@ -26656,36 +26585,33 @@ public:
 
 	void set_physics_interpolation_enabled(bool p_enabled)
 	{
-		_interpolation_data.interpolation_enabled = p_enabled;
+		interpolation_enabled = p_enabled;
 	}
 
-	struct InterpolationData
-	{
-		void notify_free_canvas_item(RID p_rid, RendererCanvasCull::Item& r_canvas_item);
-		void notify_free_canvas_light(RID p_rid, RendererCanvasRender::Light& r_canvas_light);
-		void notify_free_canvas_light_occluder(
-			RID p_rid, RendererCanvasRender::LightOccluderInstance& r_canvas_light_occluder);
+	void notify_free_canvas_item(RID p_rid, RendererCanvasCull::Item& r_canvas_item);
+	void notify_free_canvas_light(RID p_rid, RendererCanvasRender::Light& r_canvas_light);
+	void notify_free_canvas_light_occluder(
+		RID p_rid, RendererCanvasRender::LightOccluderInstance& r_canvas_light_occluder);
 
-		LocalVector<RID> canvas_item_transform_update_lists[2];
-		LocalVector<RID>* canvas_item_transform_update_list_curr =
-			&canvas_item_transform_update_lists[0];
-		LocalVector<RID>* canvas_item_transform_update_list_prev =
-			&canvas_item_transform_update_lists[1];
+	LocalVector<RID> canvas_item_transform_update_lists[2];
+	LocalVector<RID>* canvas_item_transform_update_list_curr =
+		&canvas_item_transform_update_lists[0];
+	LocalVector<RID>* canvas_item_transform_update_list_prev =
+		&canvas_item_transform_update_lists[1];
 
-		LocalVector<RID> canvas_light_transform_update_lists[2];
-		LocalVector<RID>* canvas_light_transform_update_list_curr =
-			&canvas_light_transform_update_lists[0];
-		LocalVector<RID>* canvas_light_transform_update_list_prev =
-			&canvas_light_transform_update_lists[1];
+	LocalVector<RID> canvas_light_transform_update_lists[2];
+	LocalVector<RID>* canvas_light_transform_update_list_curr =
+		&canvas_light_transform_update_lists[0];
+	LocalVector<RID>* canvas_light_transform_update_list_prev =
+		&canvas_light_transform_update_lists[1];
 
-		LocalVector<RID> canvas_light_occluder_transform_update_lists[2];
-		LocalVector<RID>* canvas_light_occluder_transform_update_list_curr =
-			&canvas_light_occluder_transform_update_lists[0];
-		LocalVector<RID>* canvas_light_occluder_transform_update_list_prev =
-			&canvas_light_occluder_transform_update_lists[1];
+	LocalVector<RID> canvas_light_occluder_transform_update_lists[2];
+	LocalVector<RID>* canvas_light_occluder_transform_update_list_curr =
+		&canvas_light_occluder_transform_update_lists[0];
+	LocalVector<RID>* canvas_light_occluder_transform_update_list_prev =
+		&canvas_light_occluder_transform_update_lists[1];
 
-		bool interpolation_enabled = false;
-	} _interpolation_data;
+	bool interpolation_enabled = false;
 
 	RendererCanvasCull();
 	~RendererCanvasCull();
@@ -38225,22 +38151,14 @@ class RenderSceneBuffersRD;
 namespace RendererRD
 {
 
-class CopyEffects final
+namespace CopyEffects
 {
-public:
 	enum RasterEffects
 	{
 		RASTER_EFFECT_COPY = 1 << 0,
 		RASTER_EFFECT_GAUSSIAN_BLUR = 1 << 1,
 		RASTER_EFFECT_OCTMAP = 1 << 2,
 	};
-
-	CopyEffects() = delete;
-	~CopyEffects() = delete;
-	CopyEffects(const CopyEffects&) = delete;
-	CopyEffects& operator=(const CopyEffects&) = delete;
-
-private:
 	enum BlurRasterMode
 	{
 		BLUR_MIPMAP,
@@ -38256,23 +38174,6 @@ private:
 	enum
 	{
 		BLUR_FLAG_USE_ORTHOGONAL_PROJECTION = (1 << 1),
-	};
-
-	struct BlurRasterPushConstant
-	{
-		float dest_pixel_size[2];
-		float source_pixel_size[2];
-		float pad[2];
-		uint32_t flags;
-		float level;
-		float glow_strength;
-		float glow_bloom;
-		float glow_hdr_threshold;
-		float glow_hdr_scale;
-		float glow_exposure;
-		float glow_white;
-		float glow_luminance_cap;
-		float luminance_multiplier;
 	};
 
 	enum CopyMode
@@ -38307,26 +38208,6 @@ private:
 		COPY_FLAG_SANITIZE_INF_NAN = (1 << 9),
 	};
 
-	struct CopyPushConstant
-	{
-		int32_t section[4];
-		int32_t target[2];
-		uint32_t flags;
-		float luminance_multiplier;
-		float glow_strength;
-		float glow_bloom;
-		float glow_hdr_threshold;
-		float glow_hdr_scale;
-		float glow_exposure;
-		float glow_white;
-		float glow_luminance_cap;
-		float glow_auto_exposure_scale;
-		float camera_z_far;
-		float camera_z_near;
-		float octmap_border_size[2];
-		float set_color[4];
-	};
-
 	enum CopyToFBMode
 	{
 		COPY_TO_FB_COPY,
@@ -38349,29 +38230,6 @@ private:
 		COPY_TO_FB_FLAG_LINEAR = (1 << 6),
 		COPY_TO_FB_FLAG_NORMAL = (1 << 7),
 		COPY_TO_FB_FLAG_USE_SRC_SECTION = (1 << 8),
-	};
-
-	struct CopyToFbPushConstant
-	{
-		float section[4];
-		float pixel_size[2];
-		float luminance_multiplier;
-		uint32_t flags;
-		float set_color[4];
-	};
-
-
-	struct CopyToOctmapPushConstant
-	{
-		float border_size;
-		uint32_t pad[3];
-	};
-
-	struct OctmapDownsamplerPushConstant
-	{
-		float border_size;
-		uint32_t size;
-		uint32_t pad[2];
 	};
 
 	enum OctmapDownsamplerMode
@@ -38399,17 +38257,6 @@ private:
 		ROUGHNESS_MODE_MAX,
 	};
 
-	struct OctmapRoughnessPushConstant
-	{
-		uint32_t sample_count;
-		float roughness;
-		uint32_t source_size;
-		uint32_t dest_size;
-		float border_size[2];
-		uint32_t use_direct_write;
-		uint32_t pad;
-	};
-
 	enum SpecularMergeMode
 	{
 		SPECULAR_MERGE_ADD,
@@ -38427,18 +38274,15 @@ private:
 	{
 		uint32_t raster_effects = 0;
 
-		BlurRasterPushConstant blur_raster_push_constant;
 		ShaderRD blur_raster_shader{BlurRasterShaderRD()};
 		RID blur_raster_shader_version;
 		PipelineCacheRD blur_raster_pipelines[BLUR_MODE_MAX];
 		RID blur_raster_glow_sampler;
 
-		CopyPushConstant copy_push_constant;
 		ShaderRD copy_shader{CopyShaderRD()};
 		RID copy_shader_version;
 		PipelineDeferredRD copy_pipelines[COPY_MODE_MAX];
 
-		CopyToFbPushConstant copy_to_fb_push_constant;
 		ShaderRD copy_to_fb_shader{CopyToFbShaderRD()};
 		RID copy_to_fb_shader_version;
 		PipelineCacheRD copy_to_fb_pipelines[COPY_TO_FB_MAX];
@@ -38447,12 +38291,10 @@ private:
 		RID cube_to_dp_shader_version;
 		PipelineCacheRD cube_to_dp_pipeline;
 
-		CopyToOctmapPushConstant cube_to_octmap_push_constant;
 		ShaderRD cube_to_octmap_shader{CubeToOctmapShaderRD()};
 		RID cube_to_octmap_shader_version;
 		PipelineCacheRD cube_to_octmap_pipeline;
 
-		OctmapDownsamplerPushConstant octmap_downsampler_push_constant;
 		ShaderRD octmap_downsampler_compute_shader{OctmapDownsamplerShaderRD()};
 		ShaderRD octmap_downsampler_raster_shader{OctmapDownsamplerRasterShaderRD()};
 		RID octmap_downsampler_shader_version;
@@ -38468,7 +38310,6 @@ private:
 		RID filter_coefficient_buffer;
 		bool filter_use_high_quality = false;
 
-		OctmapRoughnessPushConstant roughness_push_constant;
 		ShaderRD roughness_compute_shader{OctmapRoughnessShaderRD()};
 		ShaderRD roughness_raster_shader{OctmapRoughnessRasterShaderRD()};
 		RID roughness_shader_version;
@@ -38480,98 +38321,89 @@ private:
 		PipelineCacheRD specular_merge_pipelines[SPECULAR_MERGE_MAX];
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
+	void initialize(uint32_t p_raster_effects = 0);
+	void finalize();
+	inline bool is_initialized() { return data != nullptr; }
 
-public:
-	static void initialize(uint32_t p_raster_effects = 0);
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	inline uint32_t get_raster_effects() { return data ? data->raster_effects : 0; }
 
-	static uint32_t get_raster_effects() { return data ? data->raster_effects : 0; }
-
-	static void copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
+	void copy_to_rect(RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_rect,
 		bool p_flip_y = false, bool p_force_luminance = false, bool p_all_source = false,
 		bool p_8_bit_dst = false, bool p_alpha_to_one = false, bool p_sanitize_inf_nan = false);
-	static void copy_octmap_to_panorama(RID p_source_octmap, RID p_dest_panorama,
+	void copy_octmap_to_panorama(RID p_source_octmap, RID p_dest_panorama,
 		const Size2i& p_panorama_size, float p_lod, bool p_is_array,
 		const Size2& p_source_octmap_border_size);
-	static void copy_depth_to_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
+	void copy_depth_to_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
 		const Rect2i& p_rect, bool p_flip_y = false);
-	static void copy_depth_to_rect_and_linearize(RID p_source_rd_texture, RID p_dest_texture,
+	void copy_depth_to_rect_and_linearize(RID p_source_rd_texture, RID p_dest_texture,
 		const Rect2i& p_rect, bool p_flip_y, float p_z_near, float p_z_far);
-	static void copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
+	void copy_to_fb_rect(RID p_source_rd_texture, RID p_dest_framebuffer,
 		const Rect2i& p_rect, bool p_flip_y = false, bool p_force_luminance = false,
 		bool p_alpha_to_zero = false, bool p_srgb = false, RID p_secondary = RID(),
 		bool p_multiview = false, bool alpha_to_one = false, bool p_linear = false,
 		bool p_normal = false, const Rect2& p_src_rect = Rect2(),
 		float p_linear_luminance_multiplier = 1.0, bool p_bilinear_filtering = true);
-	static void copy_to_atlas_fb(RID p_source_rd_texture, RID p_dest_framebuffer,
+	void copy_to_atlas_fb(RID p_source_rd_texture, RID p_dest_framebuffer,
 		const Rect2& p_uv_rect, RD::DrawListID p_draw_list, bool p_flip_y = false,
 		bool p_panorama = false);
-	static void copy_to_drawlist(RD::DrawListID p_draw_list, RD::FramebufferFormatID p_fb_format,
+	void copy_to_drawlist(RD::DrawListID p_draw_list, RD::FramebufferFormatID p_fb_format,
 		RID p_source_rd_texture, bool p_linear = false, float p_linear_luminance_multiplier = 1.0);
-	static void copy_raster(RID p_source_texture, RID p_dest_framebuffer);
+	void copy_raster(RID p_source_texture, RID p_dest_framebuffer);
 
-	static void gaussian_blur(RID p_source_rd_texture, RID p_texture, const Rect2i& p_region,
+	void gaussian_blur(RID p_source_rd_texture, RID p_texture, const Rect2i& p_region,
 		const Size2i& p_size, bool p_8bit_dst = false);
-	static void gaussian_blur_raster(
+	void gaussian_blur_raster(
 		RID p_source_rd_texture, RID p_dest_texture, const Rect2i& p_region, const Size2i& p_size);
-	static void gaussian_glow(RID p_source_rd_texture, RID p_back_texture, const Size2i& p_size,
+	void gaussian_glow(RID p_source_rd_texture, RID p_back_texture, const Size2i& p_size,
 		float p_strength = 1.0, bool p_first_pass = false, float p_luminance_cap = 16.0,
 		float p_exposure = 1.0, float p_bloom = 0.0, float p_hdr_bleed_threshold = 1.0,
 		float p_hdr_bleed_scale = 1.0, RID p_auto_exposure = RID(),
 		float p_auto_exposure_scale = 1.0);
-	static void gaussian_glow_downsample_raster(RID p_source_rd_texture, RID p_dest_texture,
+	void gaussian_glow_downsample_raster(RID p_source_rd_texture, RID p_dest_texture,
 		float p_luminance_multiplier, const Size2i& p_size, float p_strength = 1.0,
 		bool p_first_pass = false, float p_luminance_cap = 16.0, float p_exposure = 1.0,
 		float p_bloom = 0.0, float p_hdr_bleed_threshold = 1.0, float p_hdr_bleed_scale = 1.0);
-	static void gaussian_glow_upsample_raster(RID p_source_rd_texture, RID p_dest_texture,
+	void gaussian_glow_upsample_raster(RID p_source_rd_texture, RID p_dest_texture,
 		RID p_blend_texture, float p_luminance_multiplier, const Size2i& p_source_size,
 		const Size2i& p_dest_size, float p_level, float p_base_strength, bool p_use_debanding);
 
-	static void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
-	static void make_mipmap_raster(
+	void make_mipmap(RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
+	void make_mipmap_raster(
 		RID p_source_rd_texture, RID p_dest_texture, const Size2i& p_size);
 
-	static void set_color(
+	void set_color(
 		RID p_dest_texture, const Color& p_color, const Rect2i& p_region, bool p_8bit_dst = false);
-	static void set_color_raster(RID p_dest_texture, const Color& p_color, const Rect2i& p_region);
+	void set_color_raster(RID p_dest_texture, const Color& p_color, const Rect2i& p_region);
 
-	static void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer,
+	void copy_cubemap_to_dp(RID p_source_rd_texture, RID p_dst_framebuffer,
 		const Rect2& p_rect, const Vector2& p_dst_size, float p_z_near, float p_z_far,
 		bool p_dp_flip);
-	static void copy_cubemap_to_octmap(
+	void copy_cubemap_to_octmap(
 		RID p_source_rd_texture, RID p_dst_framebuffer, float p_border_size);
-	static void octmap_downsample(
+	void octmap_downsample(
 		RID p_source_octmap, RID p_dest_octmap, const Size2i& p_size, float p_border_size);
-	static void octmap_downsample_raster(
+	void octmap_downsample_raster(
 		RID p_source_octmap, RID p_dest_framebuffer, const Size2i& p_size, float p_border_size);
-	static void octmap_filter(RID p_source_octmap, const Vector<RID>& p_dest_octmap,
+	void octmap_filter(RID p_source_octmap, const Vector<RID>& p_dest_octmap,
 		bool p_use_array, float p_border_size);
-	static void octmap_filter_raster(
+	void octmap_filter_raster(
 		RID p_source_octmap, RID p_dest_framebuffer, uint32_t p_mip_level, float p_border_size);
-	static void octmap_roughness(RID p_source_rd_texture, RID p_dest_texture,
+	void octmap_roughness(RID p_source_rd_texture, RID p_dest_texture,
 		uint32_t p_sample_count, float p_roughness, uint32_t p_source_size, uint32_t p_dest_size,
 		float p_border_size);
-	static void octmap_roughness_raster(RID p_source_rd_texture, RID p_dest_framebuffer,
+	void octmap_roughness_raster(RID p_source_rd_texture, RID p_dest_framebuffer,
 		uint32_t p_sample_count, float p_roughness, uint32_t p_source_size, uint32_t p_dest_size,
 		float p_border_size);
 
-	static void merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_base,
+	void merge_specular(RID p_dest_framebuffer, RID p_specular, RID p_base,
 		RID p_reflection, uint32_t p_view_count);
-};
+} // namespace CopyEffects
 
 class Resolve final
 {
 private:
 	bool prefer_raster_effects;
-
-	struct ResolvePushConstant
-	{
-		int32_t screen_size[2];
-		int32_t samples;
-		uint32_t pad;
-	};
 
 	enum ResolveMode
 	{
@@ -38581,12 +38413,10 @@ private:
 		RESOLVE_MODE_MAX
 	};
 
-	ResolvePushConstant resolve_push_constant;
 	ShaderRD resolve_shader{ResolveShaderRD()};
 	RID resolve_shader_version;
 	RID resolve_pipelines[RESOLVE_MODE_MAX];
 
-	ResolvePushConstant resolve_raster_push_constant;
 	ShaderRD resolve_raster_shader{ResolveRasterShaderRD()};
 	RID resolve_raster_shader_version;
 	PipelineCacheRD resolve_raster_pipeline;
@@ -38602,44 +38432,8 @@ public:
 	void resolve_depth_raster(RID p_source_rd_texture, RID p_dest_framebuffer, int p_samples);
 };
 
-class SortEffects final
-{
-private:
-	enum SortMode
-	{
-		SORT_MODE_BLOCK,
-		SORT_MODE_STEP,
-		SORT_MODE_INNER,
-		SORT_MODE_MAX
-	};
-
-	struct PushConstant
-	{
-		uint32_t total_elements;
-		uint32_t pad[3];
-		int32_t job_params[4];
-	};
-
-	ShaderRD shader{SortShaderRD()};
-	RID shader_version;
-	RID pipelines[SORT_MODE_MAX];
-
-public:
-	SortEffects();
-	~SortEffects();
-
-	void sort_buffer(RID p_uniform_set, int p_size);
-};
-
 class MotionVectorsStore final
 {
-	struct PushConstant
-	{
-		float reprojection_matrix[16];
-		float resolution[2];
-		uint32_t pad[2];
-	};
-
 	ShaderRD motion_shader{MotionVectorsStoreShaderRD()};
 	RID shader_version;
 	RID pipeline;
@@ -38679,37 +38473,6 @@ class BokehDOF final
 private:
 	bool prefer_raster_effects;
 
-	struct BokehPushConstant
-	{
-		uint32_t size[2];
-		float z_far;
-		float z_near;
-
-		uint32_t orthogonal;
-		float blur_size;
-		float blur_scale;
-		uint32_t steps;
-
-		uint32_t blur_near_active;
-		float blur_near_begin;
-		float blur_near_end;
-		uint32_t blur_far_active;
-
-		float blur_far_begin;
-		float blur_far_end;
-		uint32_t second_pass;
-		uint32_t half_size;
-
-		uint32_t use_jitter;
-		float jitter_seed;
-		uint32_t use_physical_near;
-		uint32_t use_physical_far;
-
-		float blur_size_near;
-		float blur_size_far;
-		uint32_t pad[2];
-	};
-
 	enum BokehMode
 	{
 		BOKEH_GEN_BLUR_SIZE,
@@ -38722,7 +38485,6 @@ private:
 		BOKEH_MAX
 	};
 
-	BokehPushConstant push_constant;
 	ShaderRD compute_shader{BokehDofShaderRD()};
 	ShaderRD raster_shader{BokehDofRasterShaderRD()};
 	RID shader_version;
@@ -38830,58 +38592,14 @@ private:
 											   // specify specializations for all variants.
 	};
 
-	struct TonemapPushConstant
-	{
-		float bcs[3];	// 12 - 12
-		uint32_t flags; //  4 - 16
-
-		float pixel_size[2];	//  8 - 24
-		uint32_t tonemapper;	//  4 - 28
-		float output_max_value; //  4 - 32
-
-		uint32_t glow_texture_size[2]; //  8 - 40
-		float glow_intensity;		   //  4 - 44
-		float glow_map_strength;	   //  4 - 48
-
-		uint32_t glow_mode;	  //  4 - 52
-		float glow_levels[7]; // 28 - 80
-
-		float exposure;				//  4 - 84
-		float white;				//  4 - 88
-		float auto_exposure_scale;	//  4 - 92
-		float luminance_multiplier; //  4 - 96
-
-		float tonemapper_params[4]; //  16 - 112
-	};
-
-	struct TonemapPushConstantMobile
-	{
-		float bcs[3];				// 12 - 12
-		float luminance_multiplier; //  4 - 16
-
-		float src_pixel_size[2];  //  8 - 24
-		float dest_pixel_size[2]; //  8 - 32
-
-		float glow_intensity;	 //  4 - 36
-		float glow_map_strength; //  4 - 40
-		float exposure;			 //  4 - 44
-		float white;			 //  4 - 48
-
-		float tonemapper_params[4]; //  16 - 64
-		float output_max_value;		//  4 - 68
-		float pad[3];				//  12 - 80
-	};
-
 	/* tonemap actually writes to a framebuffer, which is
 	 * better to do using the raster pipeline rather than
 	 * compute, as that framebuffer might be in different formats
 	 */
-	TonemapPushConstant tonemap_push_constant;
 	ShaderRD tonemap_shader{TonemapShaderRD()};
 	RID tonemap_shader_version;
 	PipelineCacheRD tonemap_pipelines[TONEMAP_MODE_MAX];
 
-	TonemapPushConstantMobile tonemap_mobile_push_constant;
 	ShaderRD tonemap_mobile_shader{TonemapMobileShaderRD()};
 	RID tonemap_mobile_shader_version;
 	PipelineCacheRD tonemap_mobile_pipelines[TONEMAP_MOBILE_MODE_MAX];
@@ -39015,41 +38733,16 @@ private:
 		SMAA_MAX,
 	};
 
-	struct SMAAEdgePushConstant
-	{
-		float inv_size[2];
-		float threshold;
-		float pad;
-	};
-
-	struct SMAAWeightPushConstant
-	{
-		float inv_size[2];
-		uint32_t size[2];
-
-		float subsample_indices[4];
-	};
-
-	struct SMAABlendPushConstant
-	{
-		float inv_size[2];
-		uint32_t use_debanding;
-		float pad;
-	};
-
 	enum SMAABlendFlags
 	{
 		SMAA_BLEND_FLAG_USE_8_BIT_DEBANDING = (1 << 0),
 		SMAA_BLEND_FLAG_USE_10_BIT_DEBANDING = (1 << 1),
 	};
 
-	SMAAEdgePushConstant edge_push_constant;
 	ShaderRD edge_shader{SmaaEdgeDetectionShaderRD()};
 	RID edge_shader_version;
-	SMAAWeightPushConstant weight_push_constant;
 	ShaderRD weight_shader{SmaaWeightCalculationShaderRD()};
 	RID weight_shader_version;
-	SMAABlendPushConstant blend_push_constant;
 	ShaderRD blend_shader{SmaaBlendingShaderRD()};
 	RID blend_shader_version;
 	RID search_tex;
@@ -39091,18 +38784,9 @@ private:
 	RID shadow_frustum_shader_version;
 	PipelineCacheRD shadow_frustum_pipelines[SFP_MAX];
 
-	struct MotionVectorsPushConstant
-	{
-		float reprojection_matrix[16];
-		float resolution[2];
-		uint32_t force_derive_from_depth;
-		uint32_t pad;
-	};
-
 	ShaderRD motion_vectors_shader{MotionVectorsShaderRD()};
 	RID motion_vectors_shader_version;
 	PipelineCacheRD motion_vectors_pipeline;
-	MotionVectorsPushConstant motion_vectors_push_constant;
 
 	void _create_frustum_arrays();
 
@@ -39175,34 +38859,28 @@ class RenderSceneBuffersRD;
 namespace RendererRD
 {
 
-class SSEffects final
+namespace SSEffects
 {
-public:
-	SSEffects() = delete;
-	~SSEffects() = delete;
-	SSEffects(const SSEffects&) = delete;
-	SSEffects& operator=(const SSEffects&) = delete;
 
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
+	void initialize();
+	void finalize();
 
 	/* Last Frame */
 
-	static void allocate_last_frame_buffer(
+	void allocate_last_frame_buffer(
 		Ref<RenderSceneBuffersRD> p_render_buffers, bool p_use_ssil, bool p_use_ssr);
-	static void copy_internal_texture_to_last_frame(Ref<RenderSceneBuffersRD> p_render_buffers);
+	void copy_internal_texture_to_last_frame(Ref<RenderSceneBuffersRD> p_render_buffers);
 
 	/* SS Downsampler */
 
-	static void downsample_depth(
+	void downsample_depth(
 		Ref<RenderSceneBuffersRD> p_render_buffers, uint32_t p_view, const Projection& p_projection);
 
 	/* SSIL */
-	static void ssil_set_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size,
+	void ssil_set_quality(RSE::EnvironmentSSILQuality p_quality, bool p_half_size,
 		float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
 
-	struct SSILRenderBuffers
+	struct SSRenderBuffers
 	{
 		bool half_size = false;
 		int buffer_width;
@@ -39221,25 +38899,16 @@ public:
 		Size2i full_screen_size;
 	};
 
-	static void ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
-		SSILRenderBuffers& p_ssil_buffers, const SSILSettings& p_settings);
-	static void screen_space_indirect_lighting(Ref<RenderSceneBuffersRD> p_render_buffers,
-		SSILRenderBuffers& p_ssil_buffers, uint32_t p_view, RID p_normal_buffer,
+	void ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRenderBuffers& p_ssil_buffers, const SSILSettings& p_settings);
+	void screen_space_indirect_lighting(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRenderBuffers& p_ssil_buffers, uint32_t p_view, RID p_normal_buffer,
 		const Projection& p_projection, const Projection& p_last_projection,
 		const SSILSettings& p_settings);
 
 	/* SSAO */
-	static void ssao_set_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size,
+	void ssao_set_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_half_size,
 		float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to);
-
-	struct SSAORenderBuffers
-	{
-		bool half_size = false;
-		int buffer_width;
-		int buffer_height;
-		int half_buffer_width;
-		int half_buffer_height;
-	};
 
 	struct SSAOSettings
 	{
@@ -39253,14 +38922,14 @@ public:
 		Size2i full_screen_size;
 	};
 
-	static void ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
-		SSAORenderBuffers& p_ssao_buffers, const SSAOSettings& p_settings);
-	static void generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers,
-		SSAORenderBuffers& p_ssao_buffers, uint32_t p_view, RID p_normal_buffer,
+	void ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRenderBuffers& p_ssao_buffers, const SSAOSettings& p_settings);
+	void generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers,
+		SSRenderBuffers& p_ssao_buffers, uint32_t p_view, RID p_normal_buffer,
 		const Projection& p_projection, const SSAOSettings& p_settings);
 
 	/* Screen Space Reflection */
-	static void ssr_set_half_size(bool p_half_size);
+	void ssr_set_half_size(bool p_half_size);
 
 	struct SSRRenderBuffers
 	{
@@ -39269,33 +38938,21 @@ public:
 		bool half_size = false;
 	};
 
-	static void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
+	void ssr_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
 		SSRRenderBuffers& p_ssr_buffers, const RDC::DataFormat p_color_format);
-	static void screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers,
+	void screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffers,
 		SSRRenderBuffers& p_ssr_buffers, const RID* p_normal_roughness_slices, int p_max_steps,
 		float p_fade_in, float p_fade_out, float p_tolerance, const Projection* p_projections,
 		const Projection* p_reprojections, const Vector3* p_eye_offsets);
 
 	/* subsurface scattering */
-	static void sss_set_quality(RSE::SubSurfaceScatteringQuality p_quality);
-	static RSE::SubSurfaceScatteringQuality sss_get_quality();
-	static void sss_set_scale(float p_scale, float p_depth_scale);
+	void sss_set_quality(RSE::SubSurfaceScatteringQuality p_quality);
+	RSE::SubSurfaceScatteringQuality sss_get_quality();
+	void sss_set_scale(float p_scale, float p_depth_scale);
 
-	static void sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_diffuse,
+	void sub_surface_scattering(Ref<RenderSceneBuffersRD> p_render_buffers, RID p_diffuse,
 		RID p_depth, const Projection& p_camera, const Size2i& p_screen_size);
-
-private:
 	/* SS Downsampler */
-
-	struct SSEffectsDownsamplePushConstant
-	{
-		float pixel_size[2];
-		float z_far;
-		float z_near;
-		uint32_t orthogonal;
-		float radius_sq;
-		uint32_t pad[2];
-	};
 
 	enum SSEffectsMode
 	{
@@ -39329,64 +38986,7 @@ private:
 		SSIL_MAX
 	};
 
-	struct SSILGatherPushConstant
-	{
-		int32_t screen_size[2];
-		int pass;
-		int quality;
-
-		float half_screen_pixel_size[2];
-		float half_screen_pixel_size_x025[2];
-
-		float NDC_to_view_mul[2];
-		float NDC_to_view_add[2];
-
-		float pad2[2];
-		float z_near;
-		float z_far;
-
-		float radius;
-		float intensity;
-		int size_multiplier;
-		int pad;
-
-		float fade_out_mul;
-		float fade_out_add;
-		float normal_rejection_amount;
-		float inv_radius_near_limit;
-
-		uint32_t is_orthogonal;
-		float neg_inv_radius;
-		float load_counter_avg_div;
-		float adaptive_sample_limit;
-
-		int32_t pass_coord_offset[2];
-		float pass_uv_offset[2];
-	};
-
-	struct SSILImportanceMapPushConstant
-	{
-		float half_screen_pixel_size[2];
-		float intensity;
-		float pad;
-	};
-
-	struct SSILBlurPushConstant
-	{
-		float edge_sharpness;
-		float pad;
-		float half_screen_pixel_size[2];
-	};
-
-	struct SSILInterleavePushConstant
-	{
-		float inv_sharpness;
-		uint32_t size_modifier;
-		float pixel_size[2];
-	};
-
-
-	static void gather_ssil(RD::ComputeListID p_compute_list, const RID* p_ssil_slices,
+	void gather_ssil(RD::ComputeListID p_compute_list, const RID* p_ssil_slices,
 		const RID* p_edges_slices, const SSILSettings& p_settings, bool p_adaptive_base_pass,
 		RID p_gather_uniform_set, RID p_importance_map_uniform_set, RID p_projection_uniform_set);
 
@@ -39409,63 +39009,7 @@ private:
 		SSAO_MAX
 	};
 
-	struct SSAOGatherPushConstant
-	{
-		int32_t screen_size[2];
-		int pass;
-		int quality;
-
-		float half_screen_pixel_size[2];
-		int size_multiplier;
-		float detail_intensity;
-
-		float NDC_to_view_mul[2];
-		float NDC_to_view_add[2];
-
-		float pad[2];
-		float half_screen_pixel_size_x025[2];
-
-		float radius;
-		float intensity;
-		float shadow_power;
-		float shadow_clamp;
-
-		float fade_out_mul;
-		float fade_out_add;
-		float horizon_angle_threshold;
-		float inv_radius_near_limit;
-
-		uint32_t is_orthogonal;
-		float neg_inv_radius;
-		float load_counter_avg_div;
-		float adaptive_sample_limit;
-
-		int32_t pass_coord_offset[2];
-		float pass_uv_offset[2];
-	};
-
-	struct SSAOImportanceMapPushConstant
-	{
-		float half_screen_pixel_size[2];
-		float intensity;
-		float power;
-	};
-
-	struct SSAOBlurPushConstant
-	{
-		float edge_sharpness;
-		float pad;
-		float half_screen_pixel_size[2];
-	};
-
-	struct SSAOInterleavePushConstant
-	{
-		float inv_sharpness;
-		uint32_t size_modifier;
-		float pixel_size[2];
-	};
-
-	static void gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_slices,
+	void gather_ssao(RD::ComputeListID p_compute_list, const RID* p_ao_slices,
 		const SSAOSettings& p_settings, bool p_adaptive_base_pass, RID p_gather_uniform_set,
 		RID p_importance_map_uniform_set);
 
@@ -39505,21 +39049,6 @@ private:
 		SUBSURFACE_SCATTERING_MODE_MAX
 	};
 
-	struct SubSurfaceScatteringPushConstant
-	{
-		int32_t screen_size[2];
-		float camera_z_far;
-		float camera_z_near;
-
-		uint32_t vertical;
-		uint32_t orthogonal;
-		float unit_size;
-		float scale;
-
-		float depth_scale;
-		uint32_t pad[3];
-	};
-
 	struct Data
 	{
 		RSE::EnvironmentSSAOQuality ssao_quality = RSE::ENV_SSAO_QUALITY_MEDIUM;
@@ -39542,7 +39071,6 @@ private:
 		float sss_scale = 0.05f;
 		float sss_depth_scale = 0.01f;
 
-		SSEffectsDownsamplePushConstant ss_effects_downsample_push_constant;
 		ShaderRD ss_effects_downsample_shader{SsEffectsDownsampleShaderRD()};
 		RID ss_effects_downsample_shader_version;
 		bool ss_effects_used_half_size_last_frame = false;
@@ -39552,35 +39080,27 @@ private:
 		RID ss_effects_mirror_sampler;
 		PipelineDeferredRD ss_effects_pipelines[SS_EFFECTS_MAX];
 
-		SSILGatherPushConstant ssil_gather_push_constant;
 		ShaderRD ssil_gather_shader{SsilShaderRD()};
 		RID ssil_gather_shader_version;
 		RID ssil_projection_uniform_buffer;
-		SSILImportanceMapPushConstant ssil_importance_map_push_constant;
 		ShaderRD ssil_importance_map_shader{SsilImportanceMapShaderRD()};
 		RID ssil_importance_map_shader_version;
 		RID ssil_importance_map_load_counter;
 		RID ssil_counter_uniform_set;
-		SSILBlurPushConstant ssil_blur_push_constant;
 		ShaderRD ssil_blur_shader{SsilBlurShaderRD()};
 		RID ssil_blur_shader_version;
-		SSILInterleavePushConstant ssil_interleave_push_constant;
 		ShaderRD ssil_interleave_shader{SsilInterleaveShaderRD()};
 		RID ssil_interleave_shader_version;
 		PipelineDeferredRD ssil_pipelines[SSIL_MAX];
 
-		SSAOGatherPushConstant ssao_gather_push_constant;
 		ShaderRD ssao_gather_shader{SsaoShaderRD()};
 		RID ssao_gather_shader_version;
-		SSAOImportanceMapPushConstant ssao_importance_map_push_constant;
 		ShaderRD ssao_importance_map_shader{SsaoImportanceMapShaderRD()};
 		RID ssao_importance_map_shader_version;
 		RID ssao_importance_map_load_counter;
 		RID ssao_counter_uniform_set;
-		SSAOBlurPushConstant ssao_blur_push_constant;
 		ShaderRD ssao_blur_shader{SsaoBlurShaderRD()};
 		RID ssao_blur_shader_version;
-		SSAOInterleavePushConstant ssao_interleave_push_constant;
 		ShaderRD ssao_interleave_shader{SsaoInterleaveShaderRD()};
 		RID ssao_interleave_shader_version;
 		PipelineDeferredRD ssao_pipelines[SSAO_MAX];
@@ -39602,14 +39122,14 @@ private:
 		RID ssr_resolve_shader_version;
 		PipelineDeferredRD ssr_resolve_pipeline;
 
-		SubSurfaceScatteringPushConstant sss_push_constant;
 		ShaderRD sss_shader{SubsurfaceScatteringShaderRD()};
 		RID sss_shader_version;
 		PipelineDeferredRD sss_pipelines[SUBSURFACE_SCATTERING_MODE_MAX];
 	};
 
-	static inline Data* data = nullptr;
-};
+	inline Data* data = nullptr;
+	inline bool is_initialized() { return data != nullptr; }
+} // namespace SSEffects
 
 } // namespace RendererRD
 
@@ -43669,8 +43189,8 @@ public:
 		Transform3D ss_effects_data_ssil_last_frame_transform;
 		Projection ss_effects_data_ssr_last_frame_projections[RendererSceneRender::MAX_RENDER_VIEWS];
 		Transform3D ss_effects_data_ssr_last_frame_transform;
-		RendererRD::SSEffects::SSILRenderBuffers ss_effects_data_ssil;
-		RendererRD::SSEffects::SSAORenderBuffers ss_effects_data_ssao;
+		RendererRD::SSEffects::SSRenderBuffers ss_effects_data_ssil;
+		RendererRD::SSEffects::SSRenderBuffers ss_effects_data_ssao;
 		RendererRD::SSEffects::SSRRenderBuffers ss_effects_data_ssr;
 
 		enum DepthFrameBufferType
@@ -43803,21 +43323,7 @@ private:
 		const RendererRD::Samplers& p_samplers, uint32_t p_uniform_buffer_index,
 		bool p_use_directional_shadow_atlas = false);
 
-	struct BestFitNormal
-	{
-		ShaderRD shader{BestFitNormalShaderRD()};
-		RID shader_version;
-		RID pipeline;
-		RID texture;
-	};
 
-	struct IntegrateDFG
-	{
-		ShaderRD shader{IntegrateDfgShaderRD()};
-		RID shader_version;
-		RID pipeline;
-		RID texture;
-	};
 
 	using LTC = ForwardLTC;
 
@@ -44510,8 +44016,14 @@ public:
 	{
 		RID render_base_uniform_set;
 		uint64_t lightmap_texture_array_version = 0xFFFFFFFF;
-		BestFitNormal best_fit_normal;
-		IntegrateDFG dfg_lut;
+		ShaderRD best_fit_normal_shader{BestFitNormalShaderRD()};
+		RID best_fit_normal_shader_version;
+		RID best_fit_normal_pipeline;
+		RID best_fit_normal_texture;
+		ShaderRD dfg_lut_shader{IntegrateDfgShaderRD()};
+		RID dfg_lut_shader_version;
+		RID dfg_lut_pipeline;
+		RID dfg_lut_texture;
 		LTC ltc;
 		SceneState scene_state;
 		HashMap<Size2i, RID> sdfgi_framebuffer_size_cache;
@@ -46376,20 +45888,14 @@ class RendererCanvasRenderRD : public RendererCanvasRender
 		SHADOW_RENDER_SDF_LINES,
 	};
 
-	struct ShadowRender
-	{
-		ShaderRD shader;
-		RID shader_version;
-		RID render_pipelines[2];
-		RID sdf_render_pipelines[2];
-		RD::VertexFormatID vertex_format;
-		RD::VertexFormatID sdf_vertex_format;
-		RD::FramebufferFormatID framebuffer_format;
-		RD::FramebufferFormatID sdf_framebuffer_format;
-
-		ShadowRender() : shader(CanvasOcclusionShaderRD()) {}
-	};
-	static inline ShadowRender shadow_render;
+	static inline ShaderRD shadow_render_shader{CanvasOcclusionShaderRD()};
+	static inline RID shadow_render_shader_version;
+	static inline RID shadow_render_pipelines[2];
+	static inline RID shadow_render_sdf_pipelines[2];
+	static inline RD::VertexFormatID shadow_render_vertex_format;
+	static inline RD::VertexFormatID shadow_render_sdf_vertex_format;
+	static inline RD::FramebufferFormatID shadow_render_framebuffer_format;
+	static inline RD::FramebufferFormatID shadow_render_sdf_framebuffer_format;
 
 	// state that does not vary across rendering all items
 
@@ -47427,7 +46933,6 @@ public:
 namespace RendererRD
 {
 
-class SortEffects;
 
 class ParticlesStorage final
 {
@@ -47443,7 +46948,6 @@ public:
 
 private:
 	/* EFFECTS */
-	static inline SortEffects* sort_effects = nullptr;
 
 	/* PARTICLES */
 
@@ -48900,15 +48404,7 @@ private:
 	// When LOCAL_FLOOR isn't supported, we use an approach based on the example code in the
 	// OpenXR spec in order to emulate it.
 	// See: https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_local_floor
-	struct LocalFloorEmulation
-	{
-		bool enabled = false;
-		XrSpace local_space = XR_NULL_HANDLE;
-		XrSpace stage_space = XR_NULL_HANDLE;
-		bool should_reset_floor_height = false;
-	};
 
-	static bool reset_emulated_floor_height();
 
 	static bool load_layer_properties();
 	static bool load_supported_extensions();
@@ -49437,7 +48933,6 @@ public:
 		RID velocity_texture;
 		RID velocity_depth_texture;
 		Size2i velocity_target_size;
-		LocalFloorEmulation local_floor_emulation;
 		RID_Owner<Tracker, true> tracker_owner;
 		bool interaction_profile_changed = true;
 		RID_Owner<ActionSet, true> action_set_owner;
@@ -49856,12 +49351,7 @@ private:
 	EGLenum platform_extension_enum = 0;
 	EGLenum platform_api_enum = 0;
 	Vector<EGLint> platform_context_attribs;
-
-	virtual const char *_get_platform_extension_name() const { return platform_extension_name; }
-	virtual EGLenum _get_platform_extension_enum() const { return platform_extension_enum; }
-	virtual EGLenum _get_platform_api_enum() const { return platform_api_enum; }
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const { return Vector<EGLAttrib>(); }
-	virtual Vector<EGLint> _get_platform_context_attribs() const { return platform_context_attribs; }
+	Vector<EGLAttrib> platform_display_attributes;
 
 #ifdef EGL_ANDROID_blob_cache
 	static String shader_cache_dir;
@@ -49893,12 +49383,12 @@ public:
 	EGLDisplay get_display(DisplayServerEnums::WindowID p_window_id);
 	EGLConfig get_config(DisplayServerEnums::WindowID p_window_id);
 
-	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
+	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
 
 	Error initialize(void *p_native_display = nullptr);
 
-	EGLManager(const char *p_ext_name = nullptr, EGLenum p_ext_enum = 0, EGLenum p_api_enum = 0, const Vector<EGLint> &p_attribs = Vector<EGLint>());
-	virtual ~EGLManager();
+	EGLManager(const char *p_ext_name = nullptr, EGLenum p_ext_enum = 0, EGLenum p_api_enum = 0, const Vector<EGLint> &p_attribs = Vector<EGLint>(), const Vector<EGLAttrib> &p_display_attribs = Vector<EGLAttrib>());
+	~EGLManager();
 };
 
 #endif // EGL_ENABLED
@@ -49906,18 +49396,15 @@ public:
 #ifdef GLES3_ENABLED
 #include <cstdint>
 
-class RasterizerUtilGLES3 final
+namespace RasterizerUtilGLES3
 {
-private:
-	static bool gles_over_gl;
+	extern bool gles_over_gl;
+	inline void set_gles_over_gl(bool p_gles_over_gl) { gles_over_gl = p_gles_over_gl; }
+	inline bool is_gles_over_gl() { return gles_over_gl; }
 
-public:
-	static void set_gles_over_gl(bool p_gles_over_gl) { gles_over_gl = p_gles_over_gl; }
-	static bool is_gles_over_gl() { return gles_over_gl; }
-
-	static void clear_depth(float p_depth);
-	static void clear_stencil(int32_t p_stencil);
-};
+	void clear_depth(float p_depth);
+	void clear_stencil(int32_t p_stencil);
+} // namespace RasterizerUtilGLES3
 
 #ifdef GLES3_ENABLED
 
@@ -49927,13 +49414,8 @@ public:
 namespace GLES3
 {
 
-class Effects final
+namespace Effects
 {
-public:
-	Effects() = delete;
-	~Effects() = delete;
-	Effects(const Effects&) = delete;
-	Effects& operator=(const Effects&) = delete;
 
 	struct GlowLevel
 	{
@@ -49941,8 +49423,6 @@ public:
 		GLuint color = 0;
 		GLuint fbo = 0;
 	};
-
-private:
 	struct Data
 	{
 		CopyShaderGLES3 copy_shader;
@@ -49973,82 +49453,80 @@ private:
 		GLuint quad_array = 0;
 	};
 
-	static inline Data* data = nullptr;
+	inline Data* data = nullptr;
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return data != nullptr; }
 
-public:
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return data != nullptr; }
-
-	static void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
-	static void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
+	void copy_to_rect(const Rect2& p_rect, bool p_linear_to_srgb = false);
+	void copy_to_rect_3d(const Rect2& p_rect, float p_layer, int p_type, float p_lod = 0.0f,
 		bool p_linear_to_srgb = false);
-	static void copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
+	void copy_with_lens_distortion(const Rect2& p_rect, float p_layer,
 		const Vector2& p_eye_center, float p_k1, float p_k2, float p_upscale,
 		float p_aspect_ration, bool p_linear_to_srgb = false);
-	static void copy_to_and_from_rect(const Rect2& p_rect);
-	static void copy_screen(float p_multiply = 1.0);
-	static void copy_with_exposure(float p_exposure, float p_multiply);
-	static void copy_cube_to_rect(const Rect2& p_rect);
-	static void copy_cube_to_panorama(float p_mip_level);
-	static void bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region);
-	static void gaussian_blur(
+	void copy_to_and_from_rect(const Rect2& p_rect);
+	void copy_screen(float p_multiply = 1.0);
+	void copy_with_exposure(float p_exposure, float p_multiply);
+	void copy_cube_to_rect(const Rect2& p_rect);
+	void copy_cube_to_panorama(float p_mip_level);
+	void bilinear_blur(GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region);
+	void gaussian_blur(
 		GLuint p_source_texture, int p_mipmap_count, const Rect2i& p_region, const Size2i& p_size);
-	static void set_color(const Color& p_color, const Rect2i& p_region);
-	static void draw_screen_triangle();
-	static void draw_screen_quad();
+	void set_color(const Color& p_color, const Rect2i& p_region);
+	void draw_screen_triangle();
+	void draw_screen_quad();
 
-	static void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
+	void filter_radiance(GLuint p_source_cubemap, GLuint p_dest_cubemap,
 		GLuint p_dest_framebuffer, int p_source_size, int p_mipmap_count, int p_layer);
 
-	static void draw_feed();
+	void draw_feed();
 
-	static void set_intensity(float p_value)
+	inline void set_intensity(float p_value)
 	{
 		if (data) {
 			data->glow_intensity = p_value;
 		}
 	}
-	static void set_luminance_multiplier(float p_luminance_multiplier)
+	inline void set_luminance_multiplier(float p_luminance_multiplier)
 	{
 		if (data) {
 			data->luminance_multiplier = p_luminance_multiplier;
 		}
 	}
-	static void set_glow_bloom(float p_bloom)
+	inline void set_glow_bloom(float p_bloom)
 	{
 		if (data) {
 			data->glow_bloom = p_bloom;
 		}
 	}
-	static void set_glow_hdr_bleed_threshold(float p_threshold)
+	inline void set_glow_hdr_bleed_threshold(float p_threshold)
 	{
 		if (data) {
 			data->glow_hdr_bleed_threshold = p_threshold;
 		}
 	}
-	static void set_glow_hdr_bleed_scale(float p_scale)
+	inline void set_glow_hdr_bleed_scale(float p_scale)
 	{
 		if (data) {
 			data->glow_hdr_bleed_scale = p_scale;
 		}
 	}
-	static void set_glow_hdr_luminance_cap(float p_cap)
+	inline void set_glow_hdr_luminance_cap(float p_cap)
 	{
 		if (data) {
 			data->glow_hdr_luminance_cap = p_cap;
 		}
 	}
-	static void process_glow(GLuint p_source_color, Size2i p_size, const GlowLevel* p_glow_buffers,
+	void process_glow(GLuint p_source_color, Size2i p_size, const GlowLevel* p_glow_buffers,
 		uint32_t p_view = 0, bool p_use_multiview = false);
 
-	static void post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
+	void post_copy(GLuint p_dest_framebuffer, Size2i p_dest_size, GLuint p_source_color,
 		GLuint p_source_depth, bool p_ssao_enabled, int p_ssao_quality_level, float p_ssao_strength,
 		float p_ssao_radius, Size2i p_source_size, float p_luminance_multiplier,
 		const GlowLevel* p_glow_buffers, float p_glow_intensity, float p_srgb_white,
 		uint32_t p_view = 0, bool p_use_multiview = false, uint64_t p_spec_constants = 0,
 		bool p_bilinear_filtering = true);
-};
+} // namespace Effects
 
 } // namespace GLES3
 #endif // GLES3_ENABLED
@@ -50070,85 +49548,78 @@ typedef void (*PFNEGLIMAGETARGETTEXTURE2DOESPROC)(GLenum, void*);
 namespace GLES3
 {
 
-class Config final
+namespace Config
 {
-private:
-	static inline bool _initialized = false;
+	inline bool _initialized = false;
 
-public:
-	Config() = delete;
-	~Config() = delete;
-	Config(const Config&) = delete;
-	Config& operator=(const Config&) = delete;
+	void initialize();
+	void finalize();
+	inline bool is_initialized() { return _initialized; }
 
-	static void initialize();
-	static void finalize();
-	static bool is_initialized() { return _initialized; }
+	inline bool use_nearest_mip_filter = false;
+	inline bool use_depth_prepass = true;
 
-	static inline bool use_nearest_mip_filter = false;
-	static inline bool use_depth_prepass = true;
+	inline GLint max_vertex_texture_image_units = 0;
+	inline GLint max_texture_image_units = 0;
+	inline GLint max_texture_size = 0;
+	inline GLint max_viewport_size[2] = {0, 0};
+	inline GLint max_vertex_attribs = 0;
+	inline GLint64 max_uniform_buffer_size = 0;
+	inline uint32_t max_shader_varyings = 0;
 
-	static inline GLint max_vertex_texture_image_units = 0;
-	static inline GLint max_texture_image_units = 0;
-	static inline GLint max_texture_size = 0;
-	static inline GLint max_viewport_size[2] = {0, 0};
-	static inline GLint max_vertex_attribs = 0;
-	static inline GLint64 max_uniform_buffer_size = 0;
-	static inline uint32_t max_shader_varyings = 0;
+	inline int64_t max_renderable_elements = 0;
+	inline int64_t max_renderable_lights = 0;
+	inline int64_t max_lights_per_object = 0;
 
-	static inline int64_t max_renderable_elements = 0;
-	static inline int64_t max_renderable_lights = 0;
-	static inline int64_t max_lights_per_object = 0;
+	inline bool generate_wireframes = false;
 
-	static inline bool generate_wireframes = false;
+	inline HashSet<String> extensions;
 
-	static inline HashSet<String> extensions;
+	inline bool float_texture_supported = false;
+	inline bool float_texture_linear_supported = false;
+	inline bool s3tc_supported = false;
+	inline bool rgtc_supported = false;
+	inline bool bptc_supported = false;
+	inline bool etc2_supported = false;
+	inline bool astc_supported = false;
+	inline bool astc_hdr_supported = false;
+	inline bool astc_layered_supported = false;
+	inline bool astc_3d_supported = false;
+	inline bool srgb_framebuffer_supported = false;
+	inline bool unorm16_texture_supported = false;
 
-	static inline bool float_texture_supported = false;
-	static inline bool float_texture_linear_supported = false;
-	static inline bool s3tc_supported = false;
-	static inline bool rgtc_supported = false;
-	static inline bool bptc_supported = false;
-	static inline bool etc2_supported = false;
-	static inline bool astc_supported = false;
-	static inline bool astc_hdr_supported = false;
-	static inline bool astc_layered_supported = false;
-	static inline bool astc_3d_supported = false;
-	static inline bool srgb_framebuffer_supported = false;
-	static inline bool unorm16_texture_supported = false;
+	inline bool force_vertex_shading = false;
+	inline bool specular_occlusion = false;
 
-	static inline bool force_vertex_shading = false;
-	static inline bool specular_occlusion = false;
+	inline bool support_anisotropic_filter = false;
+	inline float anisotropic_level = 0.0f;
 
-	static inline bool support_anisotropic_filter = false;
-	static inline float anisotropic_level = 0.0f;
-
-	static inline GLint msaa_max_samples = 0;
-	static inline bool msaa_supported = false;
-	static inline bool msaa_multiview_supported = false;
-	static inline bool rt_msaa_supported = false;
-	static inline bool rt_msaa_multiview_supported = false;
-	static inline bool multiview_supported = false;
-	static inline bool external_texture_supported = false;
+	inline GLint msaa_max_samples = 0;
+	inline bool msaa_supported = false;
+	inline bool msaa_multiview_supported = false;
+	inline bool rt_msaa_supported = false;
+	inline bool rt_msaa_multiview_supported = false;
+	inline bool multiview_supported = false;
+	inline bool external_texture_supported = false;
 
 	// Adreno 3XX compatibility.
-	static inline bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
+	inline bool disable_particles_workaround = false; // Set to 'true' to disable 'GPUParticles'.
 
 	// PowerVR GE 8320 workaround.
-	static inline bool disable_transform_feedback_shader_cache = false;
+	inline bool disable_transform_feedback_shader_cache = false;
 
 	// ANGLE shader workaround.
-	static inline bool polyfill_half2float = true;
+	inline bool polyfill_half2float = true;
 
 #ifdef ANDROID_ENABLED
-	static inline PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR =
+	inline PFNGLFRAMEBUFFERTEXTUREMULTIVIEWOVRPROC eglFramebufferTextureMultiviewOVR =
 		nullptr;
-	static inline PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
-	static inline PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC
+	inline PFNGLTEXSTORAGE3DMULTISAMPLEPROC eglTexStorage3DMultisample = nullptr;
+	inline PFNGLFRAMEBUFFERTEXTURE2DMULTISAMPLEEXTPROC
 		eglFramebufferTexture2DMultisampleEXT = nullptr;
-	static inline PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
+	inline PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC
 		eglFramebufferTextureMultisampleMultiviewOVR = nullptr;
-	static inline PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
+	inline PFNEGLIMAGETARGETTEXTURE2DOESPROC eglEGLImageTargetTexture2DOES = nullptr;
 
 #define glFramebufferTextureMultiviewOVR GLES3::Config::eglFramebufferTextureMultiviewOVR
 #define glTexStorage3DMultisample GLES3::Config::eglTexStorage3DMultisample
@@ -50157,7 +49628,7 @@ public:
 	GLES3::Config::eglFramebufferTextureMultisampleMultiviewOVR
 #define glEGLImageTargetTexture2DOES GLES3::Config::eglEGLImageTargetTexture2DOES
 #endif // ANDROID_ENABLED
-};
+} // namespace Config
 
 } // namespace GLES3
 
@@ -51018,13 +50489,8 @@ private:
 	static inline GLuint tex_blit_quad = 0;
 	static inline GLuint tex_blit_quad_array = 0;
 
-	struct CanvasSdfShader
-	{
-		CanvasSdfShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	static inline CanvasSdfShader sdf_shader;
+	static inline CanvasSdfShaderGLES3 sdf_shader;
+	static inline RID sdf_shader_version;
 
 	static inline TextureAtlas texture_atlas;
 	static inline RID default_gl_textures[DEFAULT_GL_TEXTURE_MAX];
@@ -55854,58 +55320,31 @@ class RenderingDeviceDriverD3D12 : public RenderingDeviceDriver {
 	static const D3D12Format RD_TO_D3D12_FORMAT[RDD::DATA_FORMAT_MAX];
 	static const DXGI_COLOR_SPACE_TYPE RD_TO_DXGI_COLOR_SPACE_TYPE[RDD::COLOR_SPACE_MAX];
 
-	struct DeviceLimits {
-		uint64_t max_srvs_per_shader_stage = 0;
-		uint64_t max_cbvs_per_shader_stage = 0;
-		uint64_t max_samplers_across_all_stages = 0;
-		uint64_t max_uavs_across_all_stages = 0;
-		uint64_t timestamp_frequency = 0;
-	};
-
-	struct SubgroupCapabilities {
-		uint32_t size = 0;
-		bool wave_ops_supported = false;
-		uint32_t supported_stages_flags_rd() const;
-		uint32_t supported_operations_flags_rd() const;
-	};
-
-	struct ShaderCapabilities {
-		D3D_SHADER_MODEL shader_model = (D3D_SHADER_MODEL)0;
-		bool native_16bit_ops = false;
-	};
-
-	struct FormatCapabilities {
-		bool relaxed_casting_supported = false;
-	};
-
-	struct BarrierCapabilities {
-		bool enhanced_barriers_supported = false;
-	};
-
-	struct MiscFeaturesSupport {
-		bool depth_bounds_supported = false;
-	};
-
-	struct SamplerCapabilities {
-		bool aniso_filter_with_point_mip_supported = false;
-	};
 
 	RenderingContextDriverD3D12 *context_driver = nullptr;
 	RenderingContextDriver::Device context_device;
 	Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
-	DeviceLimits device_limits;
+	uint64_t device_limits_max_srvs_per_shader_stage = 0;
+	uint64_t device_limits_max_cbvs_per_shader_stage = 0;
+	uint64_t device_limits_max_samplers_across_all_stages = 0;
+	uint64_t device_limits_max_uavs_across_all_stages = 0;
+	uint64_t device_limits_timestamp_frequency = 0;
 	RDD::Capabilities device_capabilities;
 	uint32_t feature_level = 0; // Major * 10 + minor.
-	SubgroupCapabilities subgroup_capabilities;
+	uint32_t subgroup_size = 0;
+	bool subgroup_wave_ops_supported = false;
+	uint32_t _subgroup_supported_stages_flags_rd() const;
+	uint32_t _subgroup_supported_operations_flags_rd() const;
 	RDD::MultiviewCapabilities multiview_capabilities;
 	FragmentShadingRateCapabilities fsr_capabilities;
 	FragmentDensityMapCapabilities fdm_capabilities;
-	ShaderCapabilities shader_capabilities;
-	FormatCapabilities format_capabilities;
-	BarrierCapabilities barrier_capabilities;
-	MiscFeaturesSupport misc_features_support;
-	SamplerCapabilities sampler_capabilities;
+	D3D_SHADER_MODEL shader_capabilities_shader_model = (D3D_SHADER_MODEL)0;
+	bool shader_capabilities_native_16bit_ops = false;
+	bool format_capabilities_relaxed_casting_supported = false;
+	bool barrier_capabilities_enhanced_barriers_supported = false;
+	bool misc_features_support_depth_bounds_supported = false;
+	bool sampler_capabilities_aniso_filter_with_point_mip_supported = false;
 	RenderingShaderContainerFormat shader_container_format = RenderingShaderContainerFormat(RenderingShaderContainerFormat::BACKEND_D3D12);
 	String pipeline_cache_id;
 	D3D12_HEAP_TYPE dynamic_persistent_upload_heap = D3D12_HEAP_TYPE_UPLOAD;
@@ -56488,15 +55927,11 @@ public:
 	/**** PIPELINE ****/
 	/******************/
 
-	struct RenderPipelineInfo {
-		const VertexFormatInfo *vf_info = nullptr;
-		DynParams dyn_params;
-	};
-
 	struct PipelineInfo {
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
 		const ShaderInfo *shader_info = nullptr;
-		RenderPipelineInfo render_info;
+		const VertexFormatInfo *vf_info = nullptr;
+		DynParams dyn_params;
 	};
 
 	virtual void pipeline_free(PipelineID p_pipeline) override final;
@@ -59519,15 +58954,9 @@ public:
 	Vector<StageData> mtl_shaders; // compliment to shaders
 
 private:
-	struct ToolchainProperties {
-		MinOsVersion os_version_min_required;
-		uint32_t metal_version = UINT32_MAX;
-
-		_FORCE_INLINE_ bool is_null() const { return os_version_min_required.is_null() || metal_version == UINT32_MAX; }
-		_FORCE_INLINE_ bool is_valid() const { return !is_null(); }
-	};
-
-	ToolchainProperties compiler_props;
+	MinOsVersion compiler_props_os_version_min_required;
+	uint32_t compiler_props_metal_version = UINT32_MAX;
+	_FORCE_INLINE_ bool _compiler_props_is_valid() const { return !compiler_props_os_version_min_required.is_null() && compiler_props_metal_version != UINT32_MAX; }
 
 	void _initialize_toolchain_properties();
 
@@ -62188,7 +61617,7 @@ class EmbeddedProcessMacOS;
 #ifdef GLES3_ENABLED
 class GLManagerLegacy_MacOS;
 #ifdef ANGLE_ENABLED
-class GLManagerANGLE_MacOS;
+class EGLManager;
 #endif
 #endif
 
@@ -62278,7 +61707,7 @@ private:
 #if defined(GLES3_ENABLED)
 	GLManagerLegacy_MacOS *gl_manager_legacy = nullptr;
 #if defined(ANGLE_ENABLED)
-	GLManagerANGLE_MacOS *gl_manager_angle = nullptr;
+	EGLManager *gl_manager_angle = nullptr;
 #endif
 #endif
 	String rendering_driver;
@@ -62582,20 +62011,7 @@ public:
 #undef BitMap
 #undef FontVariation
 
-class GLManagerANGLE_MacOS : public EGLManager {
-private:
-	virtual const char *_get_platform_extension_name() const override;
-	virtual EGLenum _get_platform_extension_enum() const override;
-	virtual EGLenum _get_platform_api_enum() const override;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
-	virtual Vector<EGLint> _get_platform_context_attribs() const override;
 
-public:
-	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {}
-
-	GLManagerANGLE_MacOS() {}
-	~GLManagerANGLE_MacOS() {}
-};
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 
@@ -63151,24 +62567,22 @@ GODOT_CLANG_WARNING_PUSH
 
 #include "core/os/os.h"
 
-class KeyMappingMacOS {
-	KeyMappingMacOS() {}
+namespace KeyMappingMacOS
+{
 
-	static bool is_numpad_key(unsigned int p_key);
-
-public:
-	static void initialize();
+	bool is_numpad_key(unsigned int p_key);
+	void initialize();
 
 	// Mappings input.
-	static Key translate_key(unsigned int p_key);
-	static unsigned int unmap_key(Key p_key);
-	static Key remap_key(unsigned int p_key, unsigned int p_state, bool p_unicode);
-	static KeyLocation translate_location(unsigned int p_key);
+	Key translate_key(unsigned int p_key);
+	unsigned int unmap_key(Key p_key);
+	Key remap_key(unsigned int p_key, unsigned int p_state, bool p_unicode);
+	KeyLocation translate_location(unsigned int p_key);
 
 	// Mapping for menu shortcuts.
-	static String keycode_get_native_string(Key p_keycode);
-	static unsigned int keycode_get_native_mask(Key p_keycode);
-};
+	String keycode_get_native_string(Key p_keycode);
+	unsigned int keycode_get_native_mask(Key p_keycode);
+} // namespace KeyMappingMacOS
 
 #include "core/io/ip.h"
 
@@ -63858,14 +63272,12 @@ public:
 
 #import <UIKit/UIKit.h>
 
-class KeyMappingAppleEmbedded {
-	KeyMappingAppleEmbedded() {}
-
-public:
-	static void initialize();
-	static Key remap_key(CFIndex p_keycode);
-	static KeyLocation key_location(CFIndex p_keycode);
-};
+namespace KeyMappingAppleEmbedded
+{
+	void initialize();
+	Key remap_key(CFIndex p_keycode);
+	KeyLocation key_location(CFIndex p_keycode);
+} // namespace KeyMappingAppleEmbedded
 
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
@@ -67763,10 +67175,6 @@ public:
 		bool double_tap = false;
 	};
 
-	struct MouseEventInfo {
-		bool valid = false;
-		Point2 pos;
-	};
 
 	enum {
 		JOY_EVENT_BUTTON = 0,
@@ -67792,7 +67200,8 @@ private:
 	uint32_t buttons_state = MouseButtonMask::NONE;
 
 	Vector<TouchPos> touch;
-	MouseEventInfo mouse_event_info;
+	bool mouse_event_valid = false;
+	Point2 mouse_event_pos;
 	Point2 hover_prev_pos; // needed to calculate the relative position on hover events
 
 	void _set_key_modifier_state(Ref<InputEventWithModifiers> ev, Key p_keycode);
@@ -68467,6 +67876,59 @@ jclass jni_find_class(JNIEnv *p_env, const char *p_class_name);
 #endif // ANDROID_ENABLED
 #endif // defined(ANDROID_ENABLED)
 
+#if defined(WINDOWS_ENABLED) || defined(UNIX_ENABLED)
+#if defined(WINDOWS_ENABLED)
+#include <windows.h>
+#endif
+#include "core/io/file_access.h"
+
+class FileAccessPipe final : public FileAccess {
+#ifdef WINDOWS_ENABLED
+	using PipeHandle = HANDLE;
+	HANDLE fd[2] = { nullptr, nullptr };
+#else
+	using PipeHandle = int;
+	bool unlink_on_close = false;
+	int fd[2] = { -1, -1 };
+#endif
+	mutable Error last_error = OK;
+	String path;
+	String path_src;
+	void _close();
+
+public:
+	Error open_existing(PipeHandle p_rfd, PipeHandle p_wfd, bool p_blocking);
+	virtual Error open_internal(const String &p_path, int p_mode_flags) override;
+	virtual bool is_open() const override;
+	virtual String get_path() const override;
+	virtual String get_path_absolute() const override;
+	virtual void seek(uint64_t p_position) override {}
+	virtual void seek_end(int64_t p_position = 0) override {}
+	virtual uint64_t get_position() const override { return 0; }
+	virtual uint64_t get_length() const override;
+	virtual bool eof_reached() const override { return false; }
+	virtual uint64_t get_buffer(uint8_t *p_dst, uint64_t p_length) const override;
+	virtual Error get_error() const override;
+	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
+	virtual void flush() override {}
+	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override;
+	virtual bool file_exists(const String &p_name) override { return false; }
+	virtual uint64_t _get_modified_time(const String &p_file) override { return 0; }
+	virtual uint64_t _get_access_time(const String &p_file) override { return 0; }
+	virtual int64_t _get_size(const String &p_file) override { return -1; }
+	virtual uint32_t _get_unix_permissions(const String &p_file) override { return 0; }
+	virtual Error _set_unix_permissions(const String &p_file, uint32_t p_permissions) override { return ERR_UNAVAILABLE; }
+	virtual bool _get_hidden_attribute(const String &p_file) override { return false; }
+	virtual Error _set_hidden_attribute(const String &p_file, bool p_hidden) override { return ERR_UNAVAILABLE; }
+	virtual bool _get_read_only_attribute(const String &p_file) override { return false; }
+	virtual Error _set_read_only_attribute(const String &p_file, bool p_ro) override { return ERR_UNAVAILABLE; }
+	virtual void close() override;
+
+	FileAccessPipe() {}
+	virtual ~FileAccessPipe();
+};
+#endif // WINDOWS_ENABLED || UNIX_ENABLED
+
 #if defined(_WIN32)
 #ifdef _WIN32
 #include "core/os/os.h"
@@ -69078,67 +68540,6 @@ public:
 
 #endif // WINDOWS_ENABLED
 
-#ifdef WINDOWS_ENABLED
-
-#include "core/io/file_access.h"
-
-#include <windows.h>
-
-class FileAccessWindowsPipe : public FileAccess {
-	HANDLE fd[2] = { nullptr, nullptr };
-
-	mutable Error last_error = OK;
-
-	String path;
-	String path_src;
-
-	void _close();
-
-public:
-	Error open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_blocking);
-
-	virtual Error open_internal(const String &p_path, int p_mode_flags) override; ///< open a file
-	virtual bool is_open() const override; ///< true when file is open
-
-	virtual String get_path() const override; /// returns the path for the current open file
-	virtual String get_path_absolute() const override; /// returns the absolute path for the current open file
-
-	virtual void seek(uint64_t p_position) override {}
-	virtual void seek_end(int64_t p_position = 0) override {}
-	virtual uint64_t get_position() const override { return 0; }
-	virtual uint64_t get_length() const override;
-
-	virtual bool eof_reached() const override { return false; }
-
-	virtual uint64_t get_buffer(uint8_t *p_dst, uint64_t p_length) const override;
-
-	virtual Error get_error() const override; ///< get last error
-
-	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
-	virtual void flush() override {}
-	virtual bool store_buffer(const uint8_t *p_src, uint64_t p_length) override; ///< store an array of bytes
-
-	virtual bool file_exists(const String &p_name) override { return false; }
-
-	uint64_t _get_modified_time(const String &p_file) override { return 0; }
-	virtual uint64_t _get_access_time(const String &p_file) override { return 0; }
-	virtual int64_t _get_size(const String &p_file) override { return -1; }
-	virtual uint32_t _get_unix_permissions(const String &p_file) override { return 0; }
-	virtual Error _set_unix_permissions(const String &p_file, uint32_t p_permissions) override { return ERR_UNAVAILABLE; }
-
-	virtual bool _get_hidden_attribute(const String &p_file) override { return false; }
-	virtual Error _set_hidden_attribute(const String &p_file, bool p_hidden) override { return ERR_UNAVAILABLE; }
-	virtual bool _get_read_only_attribute(const String &p_file) override { return false; }
-	virtual Error _set_read_only_attribute(const String &p_file, bool p_ro) override { return ERR_UNAVAILABLE; }
-
-	virtual void close() override;
-
-	FileAccessWindowsPipe() {}
-	virtual ~FileAccessWindowsPipe();
-};
-
-#endif // WINDOWS_ENABLED
-
 #if defined(WINDOWS_ENABLED)
 
 #include "core/io/ip.h"
@@ -69168,13 +68569,12 @@ void init_thread_win();
 #include "core/string/ustring.h"
 #include "core/io/ip.h"
 
-class WindowsUtils {
-	static HashMap<String, Vector<String>> temp_pdbs;
-
-public:
-	static Error copy_and_rename_pdb(const String &p_dll_path);
-	static void remove_temp_pdbs(const String &p_dll_path);
-};
+namespace WindowsUtils
+{
+	extern HashMap<String, Vector<String>> temp_pdbs;
+	Error copy_and_rename_pdb(const String &p_dll_path);
+	void remove_temp_pdbs(const String &p_dll_path);
+} // namespace WindowsUtils
 
 #endif // WINDOWS_ENABLED
 
@@ -69219,20 +68619,7 @@ public:
 
 #include <windows.h>
 
-class GLManagerANGLE_Windows : public EGLManager {
-private:
-	virtual const char *_get_platform_extension_name() const override;
-	virtual EGLenum _get_platform_extension_enum() const override;
-	virtual EGLenum _get_platform_api_enum() const override;
-	virtual Vector<EGLAttrib> _get_platform_display_attributes() const override;
-	virtual Vector<EGLint> _get_platform_context_attribs() const override;
 
-public:
-	void window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height);
-
-	GLManagerANGLE_Windows() {}
-	~GLManagerANGLE_Windows() {}
-};
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
 
@@ -69515,7 +68902,7 @@ class DisplayServerWindows : public DisplayServerDriver {
 
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
-	GLManagerANGLE_Windows *gl_manager_angle = nullptr;
+	EGLManager *gl_manager_angle = nullptr;
 #endif
 	GLManagerNative_Windows *gl_manager_native = nullptr;
 #endif
@@ -70088,18 +69475,16 @@ VLTR_GCC_WARNING_POP
 
 #include <winuser.h>
 
-class KeyMappingWindows {
-	KeyMappingWindows() {}
+namespace KeyMappingWindows
+{
+	void initialize();
 
-public:
-	static void initialize();
-
-	static Key get_keysym(unsigned int p_code);
-	static unsigned int get_scancode(Key p_keycode);
-	static Key get_scansym(unsigned int p_code, bool p_extended);
-	static bool is_extended_key(unsigned int p_code);
-	static KeyLocation get_location(unsigned int p_code, bool p_extended);
-};
+	Key get_keysym(unsigned int p_code);
+	unsigned int get_scancode(Key p_keycode);
+	Key get_scansym(unsigned int p_code, bool p_extended);
+	bool is_extended_key(unsigned int p_code);
+	KeyLocation get_location(unsigned int p_code, bool p_extended);
+} // namespace KeyMappingWindows
 
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
@@ -72341,27 +71726,21 @@ private:
 	bool capture_included = false;
 	void _check_capture_included();
 
-	struct Compression
+	enum
 	{
-		enum
-		{
-			MAX_DATA_TRACK_SIZE = 16384,
-			BLEND_SHAPE_RANGE = 8, // -8.0 to 8.0.
-			FORMAT_VERSION = 1
-		};
+		COMPRESSION_BLEND_SHAPE_RANGE = 8
+	};
 
-		struct Page
-		{
-			Vector<uint8_t> data;
-			double time_offset;
-		};
+	struct CompressionPage
+	{
+		Vector<uint8_t> data;
+		double time_offset;
+	};
 
-		uint32_t fps = 120;
-		LocalVector<Page> pages;
-		LocalVector<AABB> bounds; // Used by position and scale tracks (which contain index to track
-								  // and index to bounds).
-		bool enabled = false;
-	} compression;
+	uint32_t compression_fps = 120;
+	LocalVector<CompressionPage> compression_pages;
+	LocalVector<AABB> compression_bounds;
+	bool compression_enabled = false;
 
 	Vector3i _compress_key(
 		uint32_t p_track, const AABB& p_bounds, int32_t p_key = -1, float p_time = 0.0);
@@ -72960,18 +72339,7 @@ protected:
 		~TrackCache() = default;
 	};
 
-	struct RootMotionCache
-	{
-		Vector3 loc = Vector3(0, 0, 0);
-		Quaternion rot = Quaternion(0, 0, 0, 1);
-		Vector3 scale = Vector3(1, 1, 1);
-	};
 
-	// Audio stream information for each audio stream placed on the track.
-
-	// Audio track information for mixng and ending.
-
-	RootMotionCache root_motion_cache;
 	AHashMap<Animation::TrackCacheID, TrackCache*, HashHasher> track_cache;
 	AHashMap<Ref<Animation>, LocalVector<TrackCache*>> animation_track_num_to_track_cache;
 	HashSet<TrackCache*> playing_caches;
@@ -72981,7 +72349,6 @@ protected:
 	void _clear_caches(bool p_clear_track_cache = true);
 	void _clear_audio_streams();
 	void _clear_playing_caches();
-	void _init_root_motion_cache();
 	bool _update_caches();
 	void _create_track_num_to_track_cache_for_animation(const Ref<Animation>& p_animation);
 
@@ -73031,26 +72398,7 @@ protected:
 	void _blend_process(double p_delta, bool p_update_only = false);
 	virtual void _blend_post_process();
 
-	/* ---- Capture feature ---- */
-	struct CaptureCache
-	{
-		Ref<Animation> animation;
-		double remain = 0.0;
-		double step = 0.0;
-		Tween::TransitionType trans_type = Tween::TRANS_LINEAR;
-		Tween::EaseType ease_type = Tween::EASE_IN;
 
-		void clear()
-		{
-			animation.unref();
-			remain = 0.0;
-			step = 0.0;
-		}
-
-		~CaptureCache() { clear(); }
-	};
-
-	CaptureCache capture_cache;
 
 	void blend_capture(double p_delta); // To blend capture track with all other animations.
 
@@ -74161,15 +73509,12 @@ private:
 		double blend_left = 0.0;
 	};
 
-	struct Playback
-	{
-		PlaybackData current;
-		String assigned;
-		bool seeked = false;
-		bool internal_seeked = false;
-		bool started = false;
-		LocalVector<Blend> blend;
-	} playback;
+	PlaybackData playback_current;
+	String playback_assigned;
+	bool playback_seeked = false;
+	bool playback_internal_seeked = false;
+	bool playback_started = false;
+	LocalVector<Blend> playback_blend;
 
 	struct BlendKey
 	{
@@ -76054,22 +75399,17 @@ class CanvasLayer : public Node
 	bool follow_viewport = false;
 	float follow_viewport_scale = 1.0;
 
-	struct ParallaxState
-	{
-		Point2 offset;
-		real_t scale = 1.0;
-		Point2 base_offset;
-		Point2 base_scale = Vector2(1, 1);
-		Point2 screen_offset;
-		String group_name;
-		Point2 limit_begin;
-		Point2 limit_end;
-		Point2 final_offset;
-		bool ignore_camera_zoom = false;
-	};
-
 	bool parallax_enabled = false;
-	ParallaxState parallax;
+	Point2 parallax_offset;
+	real_t parallax_scale = 1.0;
+	Point2 parallax_base_offset;
+	Point2 parallax_base_scale = Vector2(1, 1);
+	Point2 parallax_screen_offset;
+	String parallax_group_name;
+	Point2 parallax_limit_begin;
+	Point2 parallax_limit_end;
+	Point2 parallax_final_offset;
+	bool parallax_ignore_camera_zoom = false;
 
 	void _update_xform();
 	void _update_locrotscale() const;
@@ -78844,49 +78184,7 @@ public:
 	};
 
 private:
-	struct BoxPrismParams
-	{
-		Vector3 size = Vector3(1.0f, 1.0f, 1.0f);
-		float left_to_right = 0.5f;
-		int subdivide_w = 0;
-		int subdivide_h = 0;
-		int subdivide_d = 0;
-	};
 
-	struct PlaneParams
-	{
-		Size2 size = Size2(2.0f, 2.0f);
-		Vector3 center_offset;
-		Orientation orientation = FACE_Y;
-	};
-
-	struct RadialParams
-	{
-		float radius = 0.5f;
-		float top_radius = 0.5f;
-		float bottom_radius = 0.5f;
-		float inner_radius = 0.5f;
-		float outer_radius = 1.0f;
-		float height = 2.0f;
-		int radial_segments = 64;
-		int rings = 8;
-		int ring_segments = 32;
-		bool cap_top = true;
-		bool cap_bottom = true;
-		bool is_hemisphere = false;
-	};
-
-	struct TrailParams
-	{
-		float ribbon_size = 1.0f;
-		int radial_steps = 8;
-		int sections = 5;
-		float section_length = 0.2f;
-		int section_rings = 3;
-		int section_segments = 3;
-		RibbonShape ribbon_shape = SHAPE_CROSS;
-		Ref<Curve> curve;
-	};
 
 	struct TextMeshState
 	{
@@ -78998,10 +78296,34 @@ private:
 	Mesh::PrimitiveType primitive_type = Mesh::PRIMITIVE_TRIANGLES;
 	float texel_size = 0.2f;
 
-	BoxPrismParams box_prism;
-	PlaneParams plane;
-	RadialParams radial;
-	TrailParams trail;
+	Vector3 box_prism_size = Vector3(1.0f, 1.0f, 1.0f);
+	float box_prism_left_to_right = 0.5f;
+	int box_prism_subdivide_w = 0;
+	int box_prism_subdivide_h = 0;
+	int box_prism_subdivide_d = 0;
+	Size2 plane_size = Size2(2.0f, 2.0f);
+	Vector3 plane_center_offset;
+	Orientation plane_orientation = FACE_Y;
+	float radial_radius = 0.5f;
+	float radial_top_radius = 0.5f;
+	float radial_bottom_radius = 0.5f;
+	float radial_inner_radius = 0.5f;
+	float radial_outer_radius = 1.0f;
+	float radial_height = 2.0f;
+	int radial_radial_segments = 64;
+	int radial_rings = 8;
+	int radial_ring_segments = 32;
+	bool radial_cap_top = true;
+	bool radial_cap_bottom = true;
+	bool radial_is_hemisphere = false;
+	float trail_ribbon_size = 1.0f;
+	int trail_radial_steps = 8;
+	int trail_sections = 5;
+	float trail_section_length = 0.2f;
+	int trail_section_rings = 3;
+	int trail_section_segments = 3;
+	RibbonShape trail_ribbon_shape = SHAPE_CROSS;
+	Ref<Curve> trail_curve;
 	std::unique_ptr<TextMeshState> text_state;
 
 	void _apply_mesh_type_defaults(MeshType p_type);
@@ -89797,28 +89119,28 @@ bool jolt_is_initialized();
 #include <Jolt/Math/Quat.h>
 #include <Jolt/Math/Vec3.h>
 
-class JoltMath {
-public:
+namespace JoltMath
+{
 	// Note that `p_basis` is mutated to be right-handed orthonormal.
-	static void decompose(Basis &p_basis, Vector3 &r_scale);
+	void decompose(Basis &p_basis, Vector3 &r_scale);
 
 	// Note that `p_transform` is mutated to be right-handed orthonormal.
-	static _FORCE_INLINE_ void decompose(Transform3D &p_transform, Vector3 &r_scale) {
+	_FORCE_INLINE_ void decompose(Transform3D &p_transform, Vector3 &r_scale) {
 		decompose(p_transform.basis, r_scale);
 	}
 
-	static _FORCE_INLINE_ void decomposed(const Basis &p_basis, Basis &r_new_basis, Vector3 &r_scale) {
+	_FORCE_INLINE_ void decomposed(const Basis &p_basis, Basis &r_new_basis, Vector3 &r_scale) {
 		Basis new_basis = p_basis;
 		decompose(new_basis, r_scale);
 		r_new_basis = new_basis;
 	}
 
-	static _FORCE_INLINE_ void decomposed(const Transform3D &p_transform, Transform3D &r_new_transform, Vector3 &r_scale) {
+	_FORCE_INLINE_ void decomposed(const Transform3D &p_transform, Transform3D &r_new_transform, Vector3 &r_scale) {
 		Transform3D new_transform;
 		decompose(new_transform, r_scale);
 		r_new_transform = new_transform;
 	}
-};
+} // namespace JoltMath
 
 _FORCE_INLINE_ Vector3 to_godot(const JPH::Vec3 &p_vec) {
 	return Vector3((real_t)p_vec.GetX(), (real_t)p_vec.GetY(), (real_t)p_vec.GetZ());
@@ -96935,25 +96257,20 @@ public:
 		STRETCH_KEEP_ASPECT_COVERED,
 	};
 
-	struct TextureSet
-	{
-		Ref<Texture2D> normal;
-		Ref<Texture2D> pressed;
-		Ref<Texture2D> hover;
-		Ref<Texture2D> disabled;
-		Ref<Texture2D> focused;
-		Ref<BitMap> click_mask;
-		StretchMode stretch_mode = STRETCH_KEEP;
-		Rect2 texture_region;
-		Rect2 position_rect;
-		bool ignore_texture_size = false;
-		bool tile = false;
-		bool hflip = false;
-		bool vflip = false;
-	};
-
 	ButtonBehavior behavior;
-	TextureSet textures;
+	Ref<Texture2D> tex_normal;
+	Ref<Texture2D> tex_pressed;
+	Ref<Texture2D> tex_hover;
+	Ref<Texture2D> tex_disabled;
+	Ref<Texture2D> tex_focused;
+	Ref<BitMap> tex_click_mask;
+	StretchMode tex_stretch_mode = STRETCH_KEEP;
+	Rect2 tex_texture_region;
+	Rect2 tex_position_rect;
+	bool tex_ignore_texture_size = false;
+	bool tex_tile = false;
+	bool tex_hflip = false;
+	bool tex_vflip = false;
 
 private:
 	Style style = STYLE_STANDARD;
@@ -97121,28 +96438,28 @@ public:
 	void set_swatch_color(const Color& p_color);
 	Color get_swatch_color() const { return swatch_color; }
 
-	void set_texture_normal(const Ref<Texture2D>& p_normal) { textures.normal = p_normal; }
-	void set_texture_pressed(const Ref<Texture2D>& p_pressed) { textures.pressed = p_pressed; }
-	void set_texture_hover(const Ref<Texture2D>& p_hover) { textures.hover = p_hover; }
-	void set_texture_disabled(const Ref<Texture2D>& p_disabled) { textures.disabled = p_disabled; }
-	void set_texture_focused(const Ref<Texture2D>& p_focused) { textures.focused = p_focused; }
-	void set_click_mask(const Ref<BitMap>& p_click_mask) { textures.click_mask = p_click_mask; }
+	void set_texture_normal(const Ref<Texture2D>& p_normal) { tex_normal = p_normal; }
+	void set_texture_pressed(const Ref<Texture2D>& p_pressed) { tex_pressed = p_pressed; }
+	void set_texture_hover(const Ref<Texture2D>& p_hover) { tex_hover = p_hover; }
+	void set_texture_disabled(const Ref<Texture2D>& p_disabled) { tex_disabled = p_disabled; }
+	void set_texture_focused(const Ref<Texture2D>& p_focused) { tex_focused = p_focused; }
+	void set_click_mask(const Ref<BitMap>& p_click_mask) { tex_click_mask = p_click_mask; }
 
-	Ref<Texture2D> get_texture_normal() const { return textures.normal; }
-	Ref<Texture2D> get_texture_pressed() const { return textures.pressed; }
-	Ref<Texture2D> get_texture_hover() const { return textures.hover; }
-	Ref<Texture2D> get_texture_disabled() const { return textures.disabled; }
-	Ref<Texture2D> get_texture_focused() const { return textures.focused; }
-	Ref<BitMap> get_click_mask() const { return textures.click_mask; }
+	Ref<Texture2D> get_texture_normal() const { return tex_normal; }
+	Ref<Texture2D> get_texture_pressed() const { return tex_pressed; }
+	Ref<Texture2D> get_texture_hover() const { return tex_hover; }
+	Ref<Texture2D> get_texture_disabled() const { return tex_disabled; }
+	Ref<Texture2D> get_texture_focused() const { return tex_focused; }
+	Ref<BitMap> get_click_mask() const { return tex_click_mask; }
 
-	void set_ignore_texture_size(bool p_ignore) { textures.ignore_texture_size = p_ignore; }
-	bool get_ignore_texture_size() const { return textures.ignore_texture_size; }
-	void set_stretch_mode(StretchMode p_mode) { textures.stretch_mode = p_mode; }
-	StretchMode get_stretch_mode() const { return textures.stretch_mode; }
-	void set_flip_h(bool p_flip) { textures.hflip = p_flip; }
-	bool is_flipped_h() const { return textures.hflip; }
-	void set_flip_v(bool p_flip) { textures.vflip = p_flip; }
-	bool is_flipped_v() const { return textures.vflip; }
+	void set_ignore_texture_size(bool p_ignore) { tex_ignore_texture_size = p_ignore; }
+	bool get_ignore_texture_size() const { return tex_ignore_texture_size; }
+	void set_stretch_mode(StretchMode p_mode) { tex_stretch_mode = p_mode; }
+	StretchMode get_stretch_mode() const { return tex_stretch_mode; }
+	void set_flip_h(bool p_flip) { tex_hflip = p_flip; }
+	bool is_flipped_h() const { return tex_hflip; }
+	void set_flip_v(bool p_flip) { tex_vflip = p_flip; }
+	bool is_flipped_v() const { return tex_vflip; }
 
 	void set_text_overrun_behavior(TextServer::OverrunBehavior p_behavior);
 	TextServer::OverrunBehavior get_text_overrun_behavior() const;
@@ -101412,16 +100729,13 @@ public:
 		bool keep_alive = true;
 
 	private:
-		struct Cache
-		{
-			bool dirty = true;
-			Vector2 from_pos; // In graph space.
-			Vector2 to_pos;	  // In graph space.
-			Color from_color;
-			Color to_color;
-			Rect2 aabb;				// In local screen space.
-			Line2D* line = nullptr; // In local screen space.
-		} _cache;
+		bool cache_dirty = true;
+		Vector2 cache_from_pos;
+		Vector2 cache_to_pos;
+		Color cache_from_color;
+		Color cache_to_color;
+		Rect2 cache_aabb;
+		Line2D* cache_line = nullptr;
 
 		friend class GraphEdit;
 	};
@@ -102713,13 +102027,12 @@ public:
 	~EditorFileSystem();
 };
 
-class EditorScale {
-	static float _scale;
-
-public:
-	static void set_scale(float p_scale);
-	static float get_scale();
-};
+namespace EditorScale
+{
+	extern float _scale;
+	void set_scale(float p_scale);
+	float get_scale();
+} // namespace EditorScale
 
 #define EDSCALE (EditorScale::get_scale())
 #endif
@@ -106471,31 +105784,8 @@ private:
 		int tc_scrollbar_h_separation = 0;
 		int tc_scrollbar_v_separation = 0;
 
-	struct Cache
-	{
-		enum ClickType
-		{
-			CLICK_NONE,
-			CLICK_TITLE,
-			CLICK_BUTTON,
-		};
-
-		ClickType click_type = Cache::CLICK_NONE;
-		int click_index = -1;
-		int click_id = -1;
-		TreeItem* click_item = nullptr;
-		int click_column = 0;
-		int hover_header_column = -1;
-		bool hover_header_row = false;
-		Point2 click_pos;
-
-		TreeItem* hover_item = nullptr;
-		int hover_column = -1;
-		int hover_button_index_in_column = -1;
-
-		bool rtl = false;
-		int font_height = -1;
-	} cache;
+	bool cache_rtl = false;
+	int cache_font_height = -1;
 
 	int _get_title_button_height() const;
 	Size2 _get_cell_icon_size(const TreeItem::Cell& p_cell) const;

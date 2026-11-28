@@ -6103,12 +6103,12 @@ void CanvasLayer::_notification(int p_what)
 
 	switch (p_what) {
 	case NOTIFICATION_ENTER_TREE: {
-		parallax.group_name = "__cameras_" + itos(get_viewport().get_id());
-		add_to_group(parallax.group_name);
+		parallax_group_name = "__cameras_" + itos(get_viewport().get_id());
+		add_to_group(parallax_group_name);
 	} break;
 
 	case NOTIFICATION_EXIT_TREE: {
-		remove_from_group(parallax.group_name);
+		remove_from_group(parallax_group_name);
 	} break;
 	}
 }
@@ -6301,15 +6301,15 @@ void CanvasLayer::set_parallax_enabled(bool p_enabled)
 		return;
 	}
 
-	if (parallax_enabled && is_inside_tree() && !parallax.group_name.is_empty()) {
-		remove_from_group(parallax.group_name);
+	if (parallax_enabled && is_inside_tree() && !parallax_group_name.is_empty()) {
+		remove_from_group(parallax_group_name);
 	}
 
 	parallax_enabled = p_enabled;
 
 	if (parallax_enabled && is_inside_tree()) {
-		parallax.group_name = "__cameras_" + itos(get_viewport().get_id());
-		add_to_group(parallax.group_name);
+		parallax_group_name = "__cameras_" + itos(get_viewport().get_id());
+		add_to_group(parallax_group_name);
 		_update_scroll();
 	}
 }
@@ -6321,61 +6321,61 @@ void CanvasLayer::_camera_moved(const Transform2D& p_transform, const Point2& p_
 		return;
 	}
 
-	parallax.screen_offset = p_screen_offset;
+	parallax_screen_offset = p_screen_offset;
 
 	set_scroll_scale(p_transform.get_scale().dot(Vector2(0.5, 0.5)));
 	set_scroll_offset(p_transform.get_origin());
 }
 
-void CanvasLayer::set_scroll_scale(real_t p_scale) { parallax.scale = p_scale; }
+void CanvasLayer::set_scroll_scale(real_t p_scale) { parallax_scale = p_scale; }
 
-real_t CanvasLayer::get_scroll_scale() const { return parallax.scale; }
+real_t CanvasLayer::get_scroll_scale() const { return parallax_scale; }
 
 void CanvasLayer::set_scroll_offset(const Point2& p_ofs)
 {
-	parallax.offset = p_ofs;
+	parallax_offset = p_ofs;
 	_update_scroll();
 }
 
-Point2 CanvasLayer::get_scroll_offset() const { return parallax.offset; }
+Point2 CanvasLayer::get_scroll_offset() const { return parallax_offset; }
 
 void CanvasLayer::set_scroll_base_offset(const Point2& p_ofs)
 {
-	parallax.base_offset = p_ofs;
+	parallax_base_offset = p_ofs;
 	_update_scroll();
 }
 
-Point2 CanvasLayer::get_scroll_base_offset() const { return parallax.base_offset; }
+Point2 CanvasLayer::get_scroll_base_offset() const { return parallax_base_offset; }
 
 void CanvasLayer::set_scroll_base_scale(const Point2& p_ofs)
 {
-	parallax.base_scale = p_ofs;
+	parallax_base_scale = p_ofs;
 	_update_scroll();
 }
 
-Point2 CanvasLayer::get_scroll_base_scale() const { return parallax.base_scale; }
+Point2 CanvasLayer::get_scroll_base_scale() const { return parallax_base_scale; }
 
 void CanvasLayer::set_limit_begin(const Point2& p_ofs)
 {
-	parallax.limit_begin = p_ofs;
+	parallax_limit_begin = p_ofs;
 	_update_scroll();
 }
 
-Point2 CanvasLayer::get_limit_begin() const { return parallax.limit_begin; }
+Point2 CanvasLayer::get_limit_begin() const { return parallax_limit_begin; }
 
 void CanvasLayer::set_limit_end(const Point2& p_ofs)
 {
-	parallax.limit_end = p_ofs;
+	parallax_limit_end = p_ofs;
 	_update_scroll();
 }
 
-Point2 CanvasLayer::get_limit_end() const { return parallax.limit_end; }
+Point2 CanvasLayer::get_limit_end() const { return parallax_limit_end; }
 
-void CanvasLayer::set_ignore_camera_zoom(bool p_ignore) { parallax.ignore_camera_zoom = p_ignore; }
+void CanvasLayer::set_ignore_camera_zoom(bool p_ignore) { parallax_ignore_camera_zoom = p_ignore; }
 
-bool CanvasLayer::is_ignore_camera_zoom() const { return parallax.ignore_camera_zoom; }
+bool CanvasLayer::is_ignore_camera_zoom() const { return parallax_ignore_camera_zoom; }
 
-Vector2 CanvasLayer::get_final_offset() const { return parallax.final_offset; }
+Vector2 CanvasLayer::get_final_offset() const { return parallax_final_offset; }
 
 void CanvasLayer::_update_scroll()
 {
@@ -6383,41 +6383,41 @@ void CanvasLayer::_update_scroll()
 		return;
 	}
 
-	Vector2 scroll_ofs = parallax.base_offset + parallax.offset * parallax.base_scale;
+	Vector2 scroll_ofs = parallax_base_offset + parallax_offset * parallax_base_scale;
 
 	Size2 vps = get_viewport_size();
 	scroll_ofs = -scroll_ofs;
-	if (parallax.limit_begin.x < parallax.limit_end.x) {
-		if (scroll_ofs.x < parallax.limit_begin.x) {
-			scroll_ofs.x = parallax.limit_begin.x;
+	if (parallax_limit_begin.x < parallax_limit_end.x) {
+		if (scroll_ofs.x < parallax_limit_begin.x) {
+			scroll_ofs.x = parallax_limit_begin.x;
 		}
-		else if (scroll_ofs.x + vps.x > parallax.limit_end.x) {
-			scroll_ofs.x = parallax.limit_end.x - vps.x;
+		else if (scroll_ofs.x + vps.x > parallax_limit_end.x) {
+			scroll_ofs.x = parallax_limit_end.x - vps.x;
 		}
 	}
 
-	if (parallax.limit_begin.y < parallax.limit_end.y) {
-		if (scroll_ofs.y < parallax.limit_begin.y) {
-			scroll_ofs.y = parallax.limit_begin.y;
+	if (parallax_limit_begin.y < parallax_limit_end.y) {
+		if (scroll_ofs.y < parallax_limit_begin.y) {
+			scroll_ofs.y = parallax_limit_begin.y;
 		}
-		else if (scroll_ofs.y + vps.y > parallax.limit_end.y) {
-			scroll_ofs.y = parallax.limit_end.y - vps.y;
+		else if (scroll_ofs.y + vps.y > parallax_limit_end.y) {
+			scroll_ofs.y = parallax_limit_end.y - vps.y;
 		}
 	}
 	scroll_ofs = -scroll_ofs;
 
-	parallax.final_offset = scroll_ofs;
+	parallax_final_offset = scroll_ofs;
 
-	real_t scroll_scale = parallax.scale;
+	real_t scroll_scale = parallax_scale;
 	for (int i = 0; i < get_child_count(); i++) {
 		ParallaxLayer* l = dynamic_cast<ParallaxLayer*>(get_child(i));
 		if (!l) {
 			continue;
 		}
 
-		if (parallax.ignore_camera_zoom) {
+		if (parallax_ignore_camera_zoom) {
 			l->set_base_offset_and_scale(
-				(scroll_ofs + parallax.screen_offset * (scroll_scale - 1.0)) / scroll_scale, 1.0);
+				(scroll_ofs + parallax_screen_offset * (scroll_scale - 1.0)) / scroll_scale, 1.0);
 		}
 		else {
 			l->set_base_offset_and_scale(scroll_ofs, scroll_scale);
@@ -15630,18 +15630,6 @@ bool AnimationMixer::is_dummy() const { return dummy; }
 
 void AnimationMixer::_clear_caches(bool p_clear_track_cache) {}
 
-void AnimationMixer::_init_root_motion_cache()
-{
-	root_motion_cache.loc = Vector3(0, 0, 0);
-	root_motion_cache.rot = Quaternion(0, 0, 0, 1);
-	root_motion_cache.scale = Vector3(1, 1, 1);
-	root_motion_position = Vector3(0, 0, 0);
-	root_motion_rotation = Quaternion(0, 0, 0, 1);
-	root_motion_scale = Vector3(0, 0, 0);
-	root_motion_position_accumulator = Vector3(0, 0, 0);
-	root_motion_rotation_accumulator = Quaternion(0, 0, 0, 1);
-	root_motion_scale_accumulator = Vector3(1, 1, 1);
-}
 
 void AnimationMixer::_create_track_num_to_track_cache_for_animation(
 	const Ref<Animation>& p_animation)
@@ -15677,40 +15665,7 @@ bool AnimationMixer::_blend_pre_process(
 
 void AnimationMixer::_blend_capture(double p_delta) { blend_capture(p_delta); }
 
-void AnimationMixer::blend_capture(double p_delta)
-{
-	if (capture_cache.animation.is_null()) {
-		return;
-	}
-
-	capture_cache.remain -= p_delta * capture_cache.step;
-	if (Animation::is_less_or_equal_approx(capture_cache.remain, 0)) {
-		if (capture_cache.animation.is_valid()) {
-			animation_track_num_to_track_cache.erase(capture_cache.animation);
-		}
-		capture_cache.clear();
-		return;
-	}
-
-	real_t weight = Tween::run_equation(
-		capture_cache.trans_type, capture_cache.ease_type, capture_cache.remain, 0.0, 1.0, 1.0);
-
-	// Blend with other animations.
-	real_t inv = 1.0 - weight;
-	for (AnimationInstance& ai : animation_instances) {
-		ai.playback_info.weight *= inv;
-	}
-
-	// Build capture animation instance.
-	PlaybackInfo pi;
-	pi.weight = weight;
-
-	AnimationInstance ai;
-	ai.animation = capture_cache.animation;
-	ai.playback_info = pi;
-
-	animation_instances.push_back(ai);
-}
+void AnimationMixer::blend_capture(double p_delta) {}
 
 void AnimationMixer::_blend_calc_total_weight()
 {
@@ -16157,9 +16112,8 @@ void AnimationPlayer::_process_playback_data(PlaybackData& cd, double p_delta, f
 
 float AnimationPlayer::get_current_blend_amount()
 {
-	Playback& c = playback;
 	float blend = 1.0;
-	for (const Blend& b : c.blend) {
+	for (const Blend& b : playback_blend) {
 		blend = blend - b.blend_left;
 	}
 	return MAX(0, blend);
@@ -16167,32 +16121,30 @@ float AnimationPlayer::get_current_blend_amount()
 
 void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started)
 {
-	Playback& c = playback;
-
-	bool seeked = c.seeked; // The animation may be changed during process, so it is safer that the
+	bool seeked = playback_seeked; // The animation may be changed during process, so it is safer that the
 							// state is changed before process.
-	bool internal_seeked = c.internal_seeked;
+	bool internal_seeked = playback_internal_seeked;
 
 	if (!Math::is_zero_approx(p_delta)) {
-		c.seeked = false;
-		c.internal_seeked = false;
+		playback_seeked = false;
+		playback_internal_seeked = false;
 	}
 
 	// Second, process current animation to check if the animation end reached.
 	_process_playback_data(
-		c.current, p_delta, get_current_blend_amount(), seeked, internal_seeked, p_started, true);
+		playback_current, p_delta, get_current_blend_amount(), seeked, internal_seeked, p_started, true);
 
 	// Finally, if not end the animation, do blending.
 	if (end_reached) {
-		playback.blend.clear();
+		playback_blend.clear();
 		if (end_notify) {
-			finished_anim = playback.assigned;
+			finished_anim = playback_assigned;
 		}
 		return;
 	}
 	LocalVector<int> to_erase;
-	for (uint32_t i = 0; i < c.blend.size(); i++) {
-		Blend& b = c.blend[i];
+	for (uint32_t i = 0; i < playback_blend.size(); i++) {
+		Blend& b = playback_blend[i];
 		b.blend_left = MAX(0, b.blend_left - Math::abs(speed_scale * p_delta) / b.blend_time);
 		if (Animation::is_less_or_equal_approx(b.blend_left, 0)) {
 			to_erase.push_back(i);
@@ -16204,7 +16156,7 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started)
 		_process_playback_data(b.data, p_delta, b.blend_left, false, false, false);
 	}
 	for (int i = to_erase.size() - 1; i >= 0; i--) {
-		c.blend.remove_at(to_erase[i]);
+		playback_blend.remove_at(to_erase[i]);
 	}
 }
 
@@ -16268,7 +16220,7 @@ void AnimationPlayer::play_section_with_markers(const String& p_name,
 	String name = p_name;
 
 	if (name == String()) {
-		name = playback.assigned;
+		name = playback_assigned;
 	}
 
 	AnimationData* ad = animation_set.getptr(name);
@@ -16294,12 +16246,12 @@ void AnimationPlayer::play_section_with_markers(const String& p_name,
 	if (!p_start_marker.is_empty() && Animation::is_less_approx(start_time, 0)) {
 		WARN_PRINT_ED(vformat("Negative time start marker: %s is invalid in the section, so the "
 							  "start of the animation: %s is used instead.",
-			p_start_marker, playback.current.animation_name));
+			p_start_marker, playback_current.animation_name));
 	}
 	if (!p_end_marker.is_empty() && Animation::is_less_approx(end_time, 0)) {
 		WARN_PRINT_ED(vformat("Negative time end marker: %s is invalid in the section, so the end "
 							  "of the animation: %s is used instead.",
-			p_end_marker, playback.current.animation_name));
+			p_end_marker, playback_current.animation_name));
 	}
 
 	play_section(name, start_time, end_time, p_custom_blend, p_custom_scale, p_from_end);
@@ -16317,10 +16269,10 @@ bool AnimationPlayer::is_playing() const { return playing; }
 
 String AnimationPlayer::get_current_animation() const
 {
-	return (is_playing() ? playback.assigned : String());
+	return (is_playing() ? playback_assigned : String());
 }
 
-String AnimationPlayer::get_assigned_animation() const { return playback.assigned; }
+String AnimationPlayer::get_assigned_animation() const { return playback_assigned; }
 
 void AnimationPlayer::pause() { _stop_internal(false, false); }
 
@@ -16335,7 +16287,7 @@ float AnimationPlayer::get_playing_speed() const
 	if (!playing) {
 		return 0;
 	}
-	return speed_scale * playback.current.speed_scale;
+	return speed_scale * playback_current.speed_scale;
 }
 
 void AnimationPlayer::seek_internal(
@@ -16345,36 +16297,36 @@ void AnimationPlayer::seek_internal(
 		return;
 	}
 
-	bool is_backward = Animation::is_less_approx(p_time, playback.current.pos);
+	bool is_backward = Animation::is_less_approx(p_time, playback_current.pos);
 
 	_check_immediately_after_start();
 
-	playback.current.pos = p_time;
-	if (!playback.current.is_enabled) {
-		if (!playback.assigned.is_empty()) {
-			AnimationData* ad = animation_set.getptr(playback.assigned);
-			ERR_FAIL_NULL_MSG(ad, vformat("Animation not found: %s.", playback.assigned));
-			playback.current.is_enabled = true;
-			playback.current.animation_name = playback.assigned;
-			playback.current.animation_length = ad->animation->get_length();
+	playback_current.pos = p_time;
+	if (!playback_current.is_enabled) {
+		if (!playback_assigned.is_empty()) {
+			AnimationData* ad = animation_set.getptr(playback_assigned);
+			ERR_FAIL_NULL_MSG(ad, vformat("Animation not found: %s.", playback_assigned));
+			playback_current.is_enabled = true;
+			playback_current.animation_name = playback_assigned;
+			playback_current.animation_length = ad->animation->get_length();
 		}
-		if (!playback.current.is_enabled) {
+		if (!playback_current.is_enabled) {
 			return; // There is no animation.
 		}
 	}
 
-	double start = playback.current.get_start_time();
-	double end = playback.current.get_end_time();
+	double start = playback_current.get_start_time();
+	double end = playback_current.get_end_time();
 
 	// Clamp the seek position.
 	p_time = CLAMP(p_time, start, end);
 
-	playback.seeked = true;
-	playback.internal_seeked = p_is_internal_seek;
+	playback_seeked = true;
+	playback_internal_seeked = p_is_internal_seek;
 
 	if (p_update) {
 		_process_animation(is_backward ? -0.0 : 0.0, p_update_only);
-		playback.seeked =
+		playback_seeked =
 			false; // If animation was proceeded here, no more seek in internal process.
 	}
 }
@@ -16392,101 +16344,101 @@ void AnimationPlayer::advance(double p_time)
 
 void AnimationPlayer::_check_immediately_after_start()
 {
-	if (playback.started) {
+	if (playback_started) {
 		_process_animation(
 			0); // Force process current key for Discrete/Method/Audio/AnimationPlayback. Then,
 				// started flag is cleared.
 	}
 }
 
-bool AnimationPlayer::is_valid() const { return playback.current.is_enabled; }
+bool AnimationPlayer::is_valid() const { return playback_current.is_enabled; }
 
 double AnimationPlayer::get_current_animation_position() const
 {
 	ERR_FAIL_COND_V_MSG(
-		!playback.current.is_enabled, 0, "AnimationPlayer has no current animation.");
-	return playback.current.pos;
+		!playback_current.is_enabled, 0, "AnimationPlayer has no current animation.");
+	return playback_current.pos;
 }
 
 double AnimationPlayer::get_current_animation_length() const
 {
 	ERR_FAIL_COND_V_MSG(
-		!playback.current.is_enabled, 0, "AnimationPlayer has no current animation.");
-	return playback.current.animation_length;
+		!playback_current.is_enabled, 0, "AnimationPlayer has no current animation.");
+	return playback_current.animation_length;
 }
 
 void AnimationPlayer::set_section_with_markers(
 	const String& p_start_marker, const String& p_end_marker)
 {
-	ERR_FAIL_COND_MSG(!playback.current.is_enabled, "AnimationPlayer has no current animation.");
+	ERR_FAIL_COND_MSG(!playback_current.is_enabled, "AnimationPlayer has no current animation.");
 	ERR_FAIL_COND_MSG(p_start_marker == p_end_marker && !p_start_marker.is_empty(),
 		vformat("Start marker and end marker cannot be the same marker: %s.", p_start_marker));
 	ERR_FAIL_COND_MSG(
 		!p_start_marker.is_empty() &&
-			!animation_set[playback.current.animation_name].animation->has_marker(p_start_marker),
+			!animation_set[playback_current.animation_name].animation->has_marker(p_start_marker),
 		vformat("Marker %s not found in animation: %s.", p_start_marker,
-			playback.current.animation_name));
+			playback_current.animation_name));
 	ERR_FAIL_COND_MSG(
 		!p_end_marker.is_empty() &&
-			!animation_set[playback.current.animation_name].animation->has_marker(p_end_marker),
+			!animation_set[playback_current.animation_name].animation->has_marker(p_end_marker),
 		vformat("Marker %s not found in animation: %s.", p_end_marker,
-			playback.current.animation_name));
+			playback_current.animation_name));
 	double start_time =
-		!p_start_marker.is_empty() ? animation_set[playback.current.animation_name].animation->get_marker_time(
+		!p_start_marker.is_empty() ? animation_set[playback_current.animation_name].animation->get_marker_time(
 							 p_start_marker)
 					   : -1;
 	double end_time =
-		!p_end_marker.is_empty() ? animation_set[playback.current.animation_name].animation->get_marker_time(
+		!p_end_marker.is_empty() ? animation_set[playback_current.animation_name].animation->get_marker_time(
 						   p_end_marker)
 					 : -1;
 	if (!p_start_marker.is_empty() && Animation::is_less_approx(start_time, 0)) {
 		WARN_PRINT_ONCE_ED(vformat("Marker %s time must be positive in animation: %s.",
-			p_start_marker, playback.current.animation_name));
+			p_start_marker, playback_current.animation_name));
 	}
 	if (!p_end_marker.is_empty() && Animation::is_less_approx(end_time, 0)) {
 		WARN_PRINT_ONCE_ED(vformat("Marker %s time must be positive in animation: %s.",
-			p_end_marker, playback.current.animation_name));
+			p_end_marker, playback_current.animation_name));
 	}
 	set_section(start_time, end_time);
 }
 
 void AnimationPlayer::set_section(double p_start_time, double p_end_time)
 {
-	ERR_FAIL_COND_MSG(!playback.current.is_enabled, "AnimationPlayer has no current animation.");
+	ERR_FAIL_COND_MSG(!playback_current.is_enabled, "AnimationPlayer has no current animation.");
 	ERR_FAIL_COND_MSG(Animation::is_greater_or_equal_approx(p_start_time, 0) &&
 						  Animation::is_greater_or_equal_approx(p_end_time, 0) &&
 						  Animation::is_greater_or_equal_approx(p_start_time, p_end_time),
 		vformat("Start time %f is greater than end time %f.", p_start_time, p_end_time));
-	playback.current.start_time = p_start_time;
-	playback.current.end_time = p_end_time;
-	playback.current.pos = CLAMP(
-		playback.current.pos, playback.current.get_start_time(), playback.current.get_end_time());
+	playback_current.start_time = p_start_time;
+	playback_current.end_time = p_end_time;
+	playback_current.pos = CLAMP(
+		playback_current.pos, playback_current.get_start_time(), playback_current.get_end_time());
 }
 
 void AnimationPlayer::reset_section()
 {
-	playback.current.start_time = -1;
-	playback.current.end_time = -1;
+	playback_current.start_time = -1;
+	playback_current.end_time = -1;
 }
 
 double AnimationPlayer::get_section_start_time() const
 {
-	ERR_FAIL_COND_V_MSG(!playback.current.is_enabled, playback.current.start_time,
+	ERR_FAIL_COND_V_MSG(!playback_current.is_enabled, playback_current.start_time,
 		"AnimationPlayer has no current animation.");
-	return playback.current.get_start_time();
+	return playback_current.get_start_time();
 }
 
 double AnimationPlayer::get_section_end_time() const
 {
-	ERR_FAIL_COND_V_MSG(!playback.current.is_enabled, playback.current.end_time,
+	ERR_FAIL_COND_V_MSG(!playback_current.is_enabled, playback_current.end_time,
 		"AnimationPlayer has no current animation.");
-	return playback.current.get_end_time();
+	return playback_current.get_end_time();
 }
 
 bool AnimationPlayer::has_section() const
 {
-	return Animation::is_greater_or_equal_approx(playback.current.start_time, 0) ||
-		   Animation::is_greater_or_equal_approx(playback.current.end_time, 0);
+	return Animation::is_greater_or_equal_approx(playback_current.start_time, 0) ||
+		   Animation::is_greater_or_equal_approx(playback_current.end_time, 0);
 }
 
 void AnimationPlayer::set_autoplay(const String& p_name)
@@ -16517,9 +16469,9 @@ bool AnimationPlayer::is_clear_cache_on_stop_enabled() const { return clear_cach
 void AnimationPlayer::_animation_changed(const String& p_name)
 {
 	AnimationMixer::_animation_changed(p_name);
-	if (playback.current.is_enabled && playback.current.animation_name == p_name &&
+	if (playback_current.is_enabled && playback_current.animation_name == p_name &&
 		animation_set.has(p_name)) {
-		playback.current.animation_length = animation_set[p_name].animation->get_length();
+		playback_current.animation_length = animation_set[p_name].animation->get_length();
 	}
 }
 
@@ -21130,12 +21082,12 @@ Ref<GraphEdit::Connection> GraphEdit::get_closest_connection_at_point(
 	Ref<GraphEdit::Connection> closest_connection;
 	float closest_distance = p_max_distance;
 	for (const Ref<Connection>& conn : connections) {
-		if (conn->_cache.aabb.distance_to(transformed_point) > p_max_distance) {
+		if (conn->cache_aabb.distance_to(transformed_point) > p_max_distance) {
 			continue;
 		}
 
 		Vector<Vector2> points =
-			get_connection_line(conn->_cache.from_pos * zoom, conn->_cache.to_pos * zoom);
+			get_connection_line(conn->cache_from_pos * zoom, conn->cache_to_pos * zoom);
 		for (int i = 0; i < points.size() - 1; i++) {
 			const real_t distance =
 				Geometry2D::get_distance_to_segment(transformed_point, points[i], points[i + 1]);
@@ -21157,12 +21109,12 @@ List<Ref<GraphEdit::Connection>> GraphEdit::get_connections_intersecting_with_re
 
 	List<Ref<Connection>> intersecting_connections;
 	for (const Ref<Connection>& conn : connections) {
-		if (!conn->_cache.aabb.intersects(transformed_rect)) {
+		if (!conn->cache_aabb.intersects(transformed_rect)) {
 			continue;
 		}
 
 		Vector<Vector2> points =
-			get_connection_line(conn->_cache.from_pos * zoom, conn->_cache.to_pos * zoom);
+			get_connection_line(conn->cache_from_pos * zoom, conn->cache_to_pos * zoom);
 		for (int i = 0; i < points.size() - 1; i++) {
 			if (Geometry2D::segment_intersects_rect(points[i], points[i + 1], transformed_rect)) {
 				intersecting_connections.push_back(conn);
@@ -21391,7 +21343,7 @@ void GraphEdit::_update_zoom_label()
 void GraphEdit::_invalidate_connection_line_cache()
 {
 	for (Ref<Connection>& conn : connections) {
-		conn->_cache.dirty = true;
+		conn->cache_dirty = true;
 	}
 }
 
@@ -23754,7 +23706,7 @@ int Tree::compute_item_height(TreeItem* p_item) const
 	for (int i = 0; i < columns.size(); i++) {
 		height = MAX(height, p_item->get_minimum_size(i).y);
 	}
-	int font_height = cache.font_height != -1 ? cache.font_height
+	int font_height = cache_font_height != -1 ? cache_font_height
 											  : tc_font->get_height(tc_font_size);
 	int item_min_height = MAX(font_height, p_item->get_custom_minimum_height());
 	if (height < item_min_height) {
@@ -23790,7 +23742,7 @@ int Tree::get_item_height(TreeItem* p_item) const
 
 Point2i Tree::convert_rtl_position(const Point2i& p_pos, int p_width) const
 {
-	if (cache.rtl) {
+	if (cache_rtl) {
 		return Point2i(get_size().width - p_pos.x - p_width, p_pos.y);
 	}
 	return p_pos;
@@ -23798,7 +23750,7 @@ Point2i Tree::convert_rtl_position(const Point2i& p_pos, int p_width) const
 
 Point2 Tree::convert_rtl_position(const Point2& p_pos, int p_width) const
 {
-	if (cache.rtl) {
+	if (cache_rtl) {
 		return Point2(get_size().width - p_pos.x - p_width, p_pos.y);
 	}
 	return p_pos;
@@ -23806,7 +23758,7 @@ Point2 Tree::convert_rtl_position(const Point2& p_pos, int p_width) const
 
 Rect2i Tree::convert_rtl_rect(const Rect2i& p_rect) const
 {
-	if (cache.rtl) {
+	if (cache_rtl) {
 		return Rect2i(
 			Point2i(get_size().width - p_rect.position.x - p_rect.size.x, p_rect.position.y),
 			p_rect.size);
@@ -24429,7 +24381,7 @@ void Tree::set_self_modulate(const Color& p_self_modulate)
 
 void Tree::_update_all()
 {
-	cache.font_height = tc_font->get_height(tc_font_size);
+	cache_font_height = tc_font->get_height(tc_font_size);
 	for (int i = 0; i < columns.size(); i++) {
 		update_column(i);
 	}
@@ -25317,7 +25269,7 @@ void Tree::_find_button_at_pos(
 	}
 
 	Point2 pos = p_pos;
-	if (cache.rtl) {
+	if (cache_rtl) {
 		pos.x = get_size().width - pos.x - 1;
 	}
 	Point2 margin_offset = tc_panel_style->get_offset();
@@ -25407,7 +25359,7 @@ Tree::FindColumnButtonResult Tree::_find_column_and_button_at_pos(
 			x -= tc_h_separation;
 		}
 
-		if (!cache.rtl && !p_item->cells[col].buttons.is_empty()) {
+		if (!cache_rtl && !p_item->cells[col].buttons.is_empty()) {
 			int button_w = 0;
 			for (int j = p_item->cells[col].buttons.size() - 1; j >= 0; j--) {
 				const Ref<Texture2D>& b = p_item->cells[col].buttons[j].texture;
@@ -50162,10 +50114,10 @@ void Animation::clear()
 	tracks.clear();
 	loop_mode = LOOP_NONE;
 	length = 1;
-	compression.enabled = false;
-	compression.bounds.clear();
-	compression.pages.clear();
-	compression.fps = 120;
+	compression_enabled = false;
+	compression_bounds.clear();
+	compression_pages.clear();
+	compression_fps = 120;
 	emit_changed();
 }
 
@@ -50566,7 +50518,7 @@ Vector3i Animation::_compress_key(
 			try_blend_shape_track_interpolate(p_track, p_time, &blend);
 		}
 
-		blend = (blend / float(Compression::BLEND_SHAPE_RANGE)) * 0.5 + 0.5;
+		blend = (blend / float(COMPRESSION_BLEND_SHAPE_RANGE)) * 0.5 + 0.5;
 		values[0] = CLAMP(int32_t(blend * 65535.0), 0, 65535);
 	} break;
 	default: {
@@ -50693,18 +50645,18 @@ bool Animation::_fetch_compressed(uint32_t p_compressed_track, double p_time,
 	Vector3i& r_current_value, double& r_current_time, Vector3i& r_next_value, double& r_next_time,
 	uint32_t* key_index) const
 {
-	ERR_FAIL_COND_V(!compression.enabled, false);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression.bounds.size(), false);
+	ERR_FAIL_COND_V(!compression_enabled, false);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression_bounds.size(), false);
 	p_time = CLAMP(p_time, 0, length);
 	if (key_index) {
 		*key_index = 0;
 	}
 
-	double frame_to_sec = 1.0 / double(compression.fps);
+	double frame_to_sec = 1.0 / double(compression_fps);
 
 	int32_t page_index = -1;
-	for (uint32_t i = 0; i < compression.pages.size(); i++) {
-		if (compression.pages[i].time_offset > p_time) {
+	for (uint32_t i = 0; i < compression_pages.size(); i++) {
+		if (compression_pages[i].time_offset > p_time) {
 			break;
 		}
 		page_index = i;
@@ -50712,8 +50664,8 @@ bool Animation::_fetch_compressed(uint32_t p_compressed_track, double p_time,
 
 	ERR_FAIL_COND_V(page_index == -1, false); // should not happen
 
-	double page_base_time = compression.pages[page_index].time_offset;
-	const uint8_t* page_data = compression.pages[page_index].data.ptr();
+	double page_base_time = compression_pages[page_index].time_offset;
+	const uint8_t* page_data = compression_pages[page_index].data.ptr();
 	// Little endian assumed. No major big endian hardware exists any longer, but in case it does it
 	// will need to be supported.
 	const uint32_t* indices = (const uint32_t*)page_data;
@@ -50846,14 +50798,14 @@ template <uint32_t COMPONENTS>
 void Animation::_get_compressed_key_indices_in_range(
 	uint32_t p_compressed_track, double p_time, double p_delta, LocalVector<int>* r_indices) const
 {
-	ERR_FAIL_COND(!compression.enabled);
-	ERR_FAIL_UNSIGNED_INDEX(p_compressed_track, compression.bounds.size());
+	ERR_FAIL_COND(!compression_enabled);
+	ERR_FAIL_UNSIGNED_INDEX(p_compressed_track, compression_bounds.size());
 
-	double frame_to_sec = 1.0 / double(compression.fps);
+	double frame_to_sec = 1.0 / double(compression_fps);
 	uint32_t key_index = 0;
 
-	for (uint32_t p = 0; p < compression.pages.size(); p++) {
-		if (compression.pages[p].time_offset >= p_time + p_delta) {
+	for (uint32_t p = 0; p < compression_pages.size(); p++) {
+		if (compression_pages[p].time_offset >= p_time + p_delta) {
 			// Page beyond range
 			return;
 		}
@@ -50862,8 +50814,8 @@ void Animation::_get_compressed_key_indices_in_range(
 
 		uint32_t page_index = p;
 
-		double page_base_time = compression.pages[page_index].time_offset;
-		const uint8_t* page_data = compression.pages[page_index].data.ptr();
+		double page_base_time = compression_pages[page_index].time_offset;
+		const uint8_t* page_data = compression_pages[page_index].data.ptr();
 		// Little endian assumed. No major big endian hardware exists any longer, but in case it
 		// does it will need to be supported.
 		const uint32_t* indices = (const uint32_t*)page_data;
@@ -50933,12 +50885,12 @@ void Animation::_get_compressed_key_indices_in_range(
 
 int Animation::_get_compressed_key_count(uint32_t p_compressed_track) const
 {
-	ERR_FAIL_COND_V(!compression.enabled, -1);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression.bounds.size(), -1);
+	ERR_FAIL_COND_V(!compression_enabled, -1);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression_bounds.size(), -1);
 
 	int key_count = 0;
 
-	for (const Compression::Page& page : compression.pages) {
+	for (const CompressionPage& page : compression_pages) {
 		const uint8_t* page_data = page.data.ptr();
 		// Little endian assumed. No major big endian hardware exists any longer, but in case it
 		// does it will need to be supported.
@@ -50967,24 +50919,24 @@ Vector3 Animation::_uncompress_pos_scale(uint32_t p_compressed_track, const Vect
 {
 	Vector3 pos_norm(
 		float(p_value.x) / 65535.0, float(p_value.y) / 65535.0, float(p_value.z) / 65535.0);
-	return compression.bounds[p_compressed_track].position +
-		   pos_norm * compression.bounds[p_compressed_track].size;
+	return compression_bounds[p_compressed_track].position +
+		   pos_norm * compression_bounds[p_compressed_track].size;
 }
 
 float Animation::_uncompress_blend_shape(const Vector3i& p_value) const
 {
 	float bsn = float(p_value.x) / 65535.0;
-	return (bsn * 2.0 - 1.0) * float(Compression::BLEND_SHAPE_RANGE);
+	return (bsn * 2.0 - 1.0) * float(COMPRESSION_BLEND_SHAPE_RANGE);
 }
 
 template <uint32_t COMPONENTS>
 bool Animation::_fetch_compressed_by_index(
 	uint32_t p_compressed_track, int p_index, Vector3i& r_value, double& r_time) const
 {
-	ERR_FAIL_COND_V(!compression.enabled, false);
-	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression.bounds.size(), false);
+	ERR_FAIL_COND_V(!compression_enabled, false);
+	ERR_FAIL_UNSIGNED_INDEX_V(p_compressed_track, compression_bounds.size(), false);
 
-	for (const Compression::Page& page : compression.pages) {
+	for (const CompressionPage& page : compression_pages) {
 		const uint8_t* page_data = page.data.ptr();
 		// Little endian assumed. No major big endian hardware exists any longer, but in case it
 		// does it will need to be supported.
@@ -51038,7 +50990,7 @@ bool Animation::_fetch_compressed_by_index(
 					}
 				}
 
-				r_time = page.time_offset + double(frame) / double(compression.fps);
+				r_time = page.time_offset + double(frame) / double(compression_fps);
 				for (uint32_t l = 0; l < COMPONENTS; l++) {
 					r_value[l] = decode[l];
 				}
@@ -51873,66 +51825,66 @@ void PrimitiveMesh::_apply_mesh_type_defaults(MeshType p_type)
 
 	switch (p_type) {
 		case MESH_BOX: {
-			box_prism.size = Vector3(1.0f, 1.0f, 1.0f);
+			box_prism_size = Vector3(1.0f, 1.0f, 1.0f);
 		} break;
 		case MESH_CAPSULE: {
-			radial.radius = 0.5f;
-			radial.height = 2.0f;
-			radial.radial_segments = 64;
-			radial.rings = 8;
+			radial_radius = 0.5f;
+			radial_height = 2.0f;
+			radial_radial_segments = 64;
+			radial_rings = 8;
 		} break;
 		case MESH_CYLINDER: {
-			radial.top_radius = 0.5f;
-			radial.bottom_radius = 0.5f;
-			radial.height = 2.0f;
-			radial.radial_segments = 64;
-			radial.rings = 4;
-			radial.cap_top = true;
-			radial.cap_bottom = true;
+			radial_top_radius = 0.5f;
+			radial_bottom_radius = 0.5f;
+			radial_height = 2.0f;
+			radial_radial_segments = 64;
+			radial_rings = 4;
+			radial_cap_top = true;
+			radial_cap_bottom = true;
 		} break;
 		case MESH_PLANE: {
-			plane.size = Size2(2.0f, 2.0f);
-			plane.orientation = FACE_Y;
+			plane_size = Size2(2.0f, 2.0f);
+			plane_orientation = FACE_Y;
 		} break;
 		case MESH_QUAD: {
-			plane.size = Size2(1.0f, 1.0f);
-			plane.orientation = FACE_Z;
+			plane_size = Size2(1.0f, 1.0f);
+			plane_orientation = FACE_Z;
 		} break;
 		case MESH_PRISM: {
-			box_prism.left_to_right = 0.5f;
-			box_prism.size = Vector3(1.0f, 1.0f, 1.0f);
+			box_prism_left_to_right = 0.5f;
+			box_prism_size = Vector3(1.0f, 1.0f, 1.0f);
 		} break;
 		case MESH_SPHERE: {
-			radial.radius = 0.5f;
-			radial.height = 1.0f;
-			radial.radial_segments = 64;
-			radial.rings = 32;
-			radial.is_hemisphere = false;
+			radial_radius = 0.5f;
+			radial_height = 1.0f;
+			radial_radial_segments = 64;
+			radial_rings = 32;
+			radial_is_hemisphere = false;
 		} break;
 		case MESH_TORUS: {
-			radial.inner_radius = 0.5f;
-			radial.outer_radius = 1.0f;
-			radial.rings = 64;
-			radial.ring_segments = 32;
+			radial_inner_radius = 0.5f;
+			radial_outer_radius = 1.0f;
+			radial_rings = 64;
+			radial_ring_segments = 32;
 		} break;
 		case MESH_POINT: {
 			primitive_type = Mesh::PRIMITIVE_POINTS;
 		} break;
 		case MESH_TUBE_TRAIL: {
-			radial.radius = 0.5f;
-			radial.cap_top = true;
-			radial.cap_bottom = true;
-			trail.radial_steps = 8;
-			trail.sections = 5;
-			trail.section_length = 0.2f;
-			trail.section_rings = 3;
+			radial_radius = 0.5f;
+			radial_cap_top = true;
+			radial_cap_bottom = true;
+			trail_radial_steps = 8;
+			trail_sections = 5;
+			trail_section_length = 0.2f;
+			trail_section_rings = 3;
 		} break;
 		case MESH_RIBBON_TRAIL: {
-			trail.ribbon_size = 1.0f;
-			trail.sections = 5;
-			trail.section_length = 0.2f;
-			trail.section_segments = 3;
-			trail.ribbon_shape = SHAPE_CROSS;
+			trail_ribbon_size = 1.0f;
+			trail_sections = 5;
+			trail_section_length = 0.2f;
+			trail_section_segments = 3;
+			trail_ribbon_shape = SHAPE_CROSS;
 		} break;
 		case MESH_TEXT: {
 			_ensure_text_state();
@@ -52156,9 +52108,9 @@ void PrimitiveMesh::_update_lightmap_size()
 
 	switch (mesh_type) {
 		case MESH_BOX: {
-			float width = (box_prism.size.x + box_prism.size.z) / texel_size;
+			float width = (box_prism_size.x + box_prism_size.z) / texel_size;
 			float length =
-				(box_prism.size.y + box_prism.size.y + MAX(box_prism.size.x, box_prism.size.z)) /
+				(box_prism_size.y + box_prism_size.y + MAX(box_prism_size.x, box_prism_size.z)) /
 				texel_size;
 
 			lightmap_hint.x = MAX(1.0, width) + 2.0 * padding;
@@ -52166,25 +52118,25 @@ void PrimitiveMesh::_update_lightmap_size()
 			set_lightmap_size_hint(lightmap_hint);
 		} break;
 		case MESH_CAPSULE: {
-			float radial_length = radial.radius * Math::PI * 0.5;
+			float radial_length = radial_radius * Math::PI * 0.5;
 			float vertical_length =
-				radial_length * 2 + (radial.height - 2.0 * radial.radius);
+				radial_length * 2 + (radial_height - 2.0 * radial_radius);
 
 			lightmap_hint.x = MAX(1.0, 4.0 * radial_length / texel_size) + padding;
 			lightmap_hint.y = MAX(1.0, vertical_length / texel_size) + padding;
 			set_lightmap_size_hint(lightmap_hint);
 		} break;
 		case MESH_CYLINDER: {
-			float top_circumference = radial.top_radius * Math::PI * 2.0;
-			float bottom_circumference = radial.bottom_radius * Math::PI * 2.0;
+			float top_circumference = radial_top_radius * Math::PI * 2.0;
+			float bottom_circumference = radial_bottom_radius * Math::PI * 2.0;
 
 			float width = MAX(top_circumference, bottom_circumference) / texel_size + padding;
 			width = MAX(
-				width, (((radial.top_radius + radial.bottom_radius) / texel_size) + padding) * 2.0);
+				width, (((radial_top_radius + radial_bottom_radius) / texel_size) + padding) * 2.0);
 			lightmap_hint.x = MAX(1.0, width);
 
 			float height =
-				((radial.height + (MAX(radial.top_radius, radial.bottom_radius) * 2.0)) /
+				((radial_height + (MAX(radial_top_radius, radial_bottom_radius) * 2.0)) /
 					texel_size) +
 				(2.0 * padding);
 			lightmap_hint.y = MAX(1.0, height);
@@ -52192,28 +52144,28 @@ void PrimitiveMesh::_update_lightmap_size()
 		} break;
 		case MESH_PLANE:
 		case MESH_QUAD: {
-			lightmap_hint.x = MAX(1.0, (plane.size.x / texel_size) + padding);
-			lightmap_hint.y = MAX(1.0, (plane.size.y / texel_size) + padding);
+			lightmap_hint.x = MAX(1.0, (plane_size.x / texel_size) + padding);
+			lightmap_hint.y = MAX(1.0, (plane_size.y / texel_size) + padding);
 			set_lightmap_size_hint(lightmap_hint);
 		} break;
 		case MESH_PRISM: {
-			float width = (box_prism.size.x + box_prism.size.z) / texel_size;
-			float length = (box_prism.size.y + box_prism.size.y + box_prism.size.z) / texel_size;
+			float width = (box_prism_size.x + box_prism_size.z) / texel_size;
+			float length = (box_prism_size.y + box_prism_size.y + box_prism_size.z) / texel_size;
 
 			lightmap_hint.x = MAX(1.0, width) + 2.0 * padding;
 			lightmap_hint.y = MAX(1.0, length) + 3.0 * padding;
 			set_lightmap_size_hint(lightmap_hint);
 		} break;
 		case MESH_SPHERE: {
-			float width = radial.radius * Math::TAU;
+			float width = radial_radius * Math::TAU;
 			lightmap_hint.x = MAX(1.0, (width / texel_size) + padding);
-			float height = (radial.is_hemisphere ? 1.0 : 0.5) * radial.height * Math::PI;
+			float height = (radial_is_hemisphere ? 1.0 : 0.5) * radial_height * Math::PI;
 			lightmap_hint.y = MAX(1.0, (height / texel_size) + padding);
 			set_lightmap_size_hint(lightmap_hint);
 		} break;
 		case MESH_TORUS: {
-			float min_radius = radial.inner_radius;
-			float max_radius = radial.outer_radius;
+			float min_radius = radial_inner_radius;
+			float max_radius = radial_outer_radius;
 			if (min_radius > max_radius) {
 				SWAP(min_radius, max_radius);
 			}
@@ -52239,56 +52191,56 @@ void PrimitiveMesh::_update() const
 	switch (mesh_type) {
 		case MESH_BOX:
 		case MESH_PRISM: {
-			aabb = AABB(-box_prism.size * 0.5f, box_prism.size);
+			aabb = AABB(-box_prism_size * 0.5f, box_prism_size);
 		} break;
 		case MESH_CAPSULE: {
 			aabb = AABB(
-				Vector3(-radial.radius, -radial.height * 0.5f, -radial.radius),
-				Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+				Vector3(-radial_radius, -radial_height * 0.5f, -radial_radius),
+				Vector3(radial_radius * 2.0f, radial_height, radial_radius * 2.0f));
 		} break;
 		case MESH_CYLINDER: {
-			float max_r = MAX(radial.top_radius, radial.bottom_radius);
+			float max_r = MAX(radial_top_radius, radial_bottom_radius);
 			aabb = AABB(
-				Vector3(-max_r, -radial.height * 0.5f, -max_r),
-				Vector3(max_r * 2.0f, radial.height, max_r * 2.0f));
+				Vector3(-max_r, -radial_height * 0.5f, -max_r),
+				Vector3(max_r * 2.0f, radial_height, max_r * 2.0f));
 		} break;
 		case MESH_PLANE:
 		case MESH_QUAD: {
-			switch (plane.orientation) {
+			switch (plane_orientation) {
 				case FACE_X:
 					aabb = AABB(
-						Vector3(0.0f, -plane.size.y * 0.5f, -plane.size.x * 0.5f) +
-							plane.center_offset,
-						Vector3(0.0f, plane.size.y, plane.size.x));
+						Vector3(0.0f, -plane_size.y * 0.5f, -plane_size.x * 0.5f) +
+							plane_center_offset,
+						Vector3(0.0f, plane_size.y, plane_size.x));
 					break;
 				case FACE_Y:
 					aabb = AABB(
-						Vector3(-plane.size.x * 0.5f, 0.0f, -plane.size.y * 0.5f) +
-							plane.center_offset,
-						Vector3(plane.size.x, 0.0f, plane.size.y));
+						Vector3(-plane_size.x * 0.5f, 0.0f, -plane_size.y * 0.5f) +
+							plane_center_offset,
+						Vector3(plane_size.x, 0.0f, plane_size.y));
 					break;
 				case FACE_Z:
 					aabb = AABB(
-						Vector3(-plane.size.x * 0.5f, -plane.size.y * 0.5f, 0.0f) +
-							plane.center_offset,
-						Vector3(plane.size.x, plane.size.y, 0.0f));
+						Vector3(-plane_size.x * 0.5f, -plane_size.y * 0.5f, 0.0f) +
+							plane_center_offset,
+						Vector3(plane_size.x, plane_size.y, 0.0f));
 					break;
 			}
 		} break;
 		case MESH_SPHERE: {
-			if (radial.is_hemisphere) {
+			if (radial_is_hemisphere) {
 				aabb = AABB(
-					Vector3(-radial.radius, 0.0f, -radial.radius),
-					Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+					Vector3(-radial_radius, 0.0f, -radial_radius),
+					Vector3(radial_radius * 2.0f, radial_height, radial_radius * 2.0f));
 			} else {
 				aabb = AABB(
-					Vector3(-radial.radius, -radial.height * 0.5f, -radial.radius),
-					Vector3(radial.radius * 2.0f, radial.height, radial.radius * 2.0f));
+					Vector3(-radial_radius, -radial_height * 0.5f, -radial_radius),
+					Vector3(radial_radius * 2.0f, radial_height, radial_radius * 2.0f));
 			}
 		} break;
 		case MESH_TORUS: {
-			float max_r = MAX(radial.inner_radius, radial.outer_radius);
-			float min_r = MIN(radial.inner_radius, radial.outer_radius);
+			float max_r = MAX(radial_inner_radius, radial_outer_radius);
+			float min_r = MIN(radial_inner_radius, radial_outer_radius);
 			float h = (max_r - min_r) * 0.5f;
 			aabb = AABB(Vector3(-max_r, -h, -max_r), Vector3(max_r * 2.0f, h * 2.0f, max_r * 2.0f));
 		} break;
@@ -52296,22 +52248,22 @@ void PrimitiveMesh::_update() const
 			aabb = AABB();
 		} break;
 		case MESH_TUBE_TRAIL: {
-			float total_depth = trail.section_length * trail.sections;
+			float total_depth = trail_section_length * trail_sections;
 			aabb = AABB(
-				Vector3(-radial.radius, -total_depth * 0.5f, -radial.radius),
-				Vector3(radial.radius * 2.0f, total_depth, radial.radius * 2.0f));
+				Vector3(-radial_radius, -total_depth * 0.5f, -radial_radius),
+				Vector3(radial_radius * 2.0f, total_depth, radial_radius * 2.0f));
 		} break;
 		case MESH_RIBBON_TRAIL: {
-			float total_depth = trail.section_length * trail.sections;
-			float half_s = trail.ribbon_size * 0.5f;
-			if (trail.ribbon_shape == SHAPE_CROSS) {
+			float total_depth = trail_section_length * trail_sections;
+			float half_s = trail_ribbon_size * 0.5f;
+			if (trail_ribbon_shape == SHAPE_CROSS) {
 				aabb = AABB(
 					Vector3(-half_s, -total_depth * 0.5f, -half_s),
-					Vector3(trail.ribbon_size, total_depth, trail.ribbon_size));
+					Vector3(trail_ribbon_size, total_depth, trail_ribbon_size));
 			} else {
 				aabb = AABB(
 					Vector3(-half_s, -total_depth * 0.5f, 0.0f),
-					Vector3(trail.ribbon_size, total_depth, 0.0f));
+					Vector3(trail_ribbon_size, total_depth, 0.0f));
 			}
 		} break;
 		case MESH_TEXT: {
@@ -52325,7 +52277,7 @@ int PrimitiveMesh::get_builtin_bind_pose_count() const
 	switch (mesh_type) {
 		case MESH_TUBE_TRAIL:
 		case MESH_RIBBON_TRAIL:
-			return trail.sections + 1;
+			return trail_sections + 1;
 		default:
 			return 0;
 	}
@@ -52336,10 +52288,10 @@ Transform3D PrimitiveMesh::get_builtin_bind_pose(int p_index) const
 	switch (mesh_type) {
 		case MESH_TUBE_TRAIL:
 		case MESH_RIBBON_TRAIL: {
-			float depth = trail.section_length * trail.sections;
+			float depth = trail_section_length * trail_sections;
 
 			Transform3D xform;
-			xform.origin.y = depth / 2.0f - trail.section_length * float(p_index);
+			xform.origin.y = depth / 2.0f - trail_section_length * float(p_index);
 			xform.origin.y = -xform.origin.y; // bind is an inverse transform, so negate y
 
 			return xform;
@@ -52353,193 +52305,193 @@ Transform3D PrimitiveMesh::get_builtin_bind_pose(int p_index) const
 
 void PrimitiveMesh::set_size(const Vector3& p_size)
 {
-	if (p_size.is_equal_approx(box_prism.size)) {
+	if (p_size.is_equal_approx(box_prism_size)) {
 		return;
 	}
 
-	box_prism.size = p_size;
+	box_prism_size = p_size;
 	_update_lightmap_size();
 	request_update();
 }
 
-Vector3 PrimitiveMesh::get_size() const { return box_prism.size; }
+Vector3 PrimitiveMesh::get_size() const { return box_prism_size; }
 
 void PrimitiveMesh::set_plane_size(const Size2& p_size)
 {
-	if (p_size == plane.size) {
+	if (p_size == plane_size) {
 		return;
 	}
-	plane.size = p_size;
+	plane_size = p_size;
 	_update_lightmap_size();
 	request_update();
 }
 
-Size2 PrimitiveMesh::get_plane_size() const { return plane.size; }
+Size2 PrimitiveMesh::get_plane_size() const { return plane_size; }
 
 void PrimitiveMesh::set_subdivide_width(int p_divisions)
 {
-	if (p_divisions == box_prism.subdivide_w || (box_prism.subdivide_w == 0 && p_divisions < 0)) {
+	if (p_divisions == box_prism_subdivide_w || (box_prism_subdivide_w == 0 && p_divisions < 0)) {
 		return;
 	}
-	box_prism.subdivide_w = p_divisions > 0 ? p_divisions : 0;
+	box_prism_subdivide_w = p_divisions > 0 ? p_divisions : 0;
 	request_update();
 }
 
-int PrimitiveMesh::get_subdivide_width() const { return box_prism.subdivide_w; }
+int PrimitiveMesh::get_subdivide_width() const { return box_prism_subdivide_w; }
 
 void PrimitiveMesh::set_subdivide_height(int p_divisions)
 {
-	if (p_divisions == box_prism.subdivide_h || (box_prism.subdivide_h == 0 && p_divisions < 0)) {
+	if (p_divisions == box_prism_subdivide_h || (box_prism_subdivide_h == 0 && p_divisions < 0)) {
 		return;
 	}
-	box_prism.subdivide_h = p_divisions > 0 ? p_divisions : 0;
+	box_prism_subdivide_h = p_divisions > 0 ? p_divisions : 0;
 	request_update();
 }
 
-int PrimitiveMesh::get_subdivide_height() const { return box_prism.subdivide_h; }
+int PrimitiveMesh::get_subdivide_height() const { return box_prism_subdivide_h; }
 
 void PrimitiveMesh::set_subdivide_depth(int p_divisions)
 {
-	if (p_divisions == box_prism.subdivide_d || (box_prism.subdivide_d == 0 && p_divisions < 0)) {
+	if (p_divisions == box_prism_subdivide_d || (box_prism_subdivide_d == 0 && p_divisions < 0)) {
 		return;
 	}
-	box_prism.subdivide_d = p_divisions > 0 ? p_divisions : 0;
+	box_prism_subdivide_d = p_divisions > 0 ? p_divisions : 0;
 	request_update();
 }
 
-int PrimitiveMesh::get_subdivide_depth() const { return box_prism.subdivide_d; }
+int PrimitiveMesh::get_subdivide_depth() const { return box_prism_subdivide_d; }
 
 void PrimitiveMesh::set_center_offset(const Vector3& p_offset)
 {
-	if (p_offset.is_equal_approx(plane.center_offset)) {
+	if (p_offset.is_equal_approx(plane_center_offset)) {
 		return;
 	}
-	plane.center_offset = p_offset;
+	plane_center_offset = p_offset;
 	request_update();
 }
 
-Vector3 PrimitiveMesh::get_center_offset() const { return plane.center_offset; }
+Vector3 PrimitiveMesh::get_center_offset() const { return plane_center_offset; }
 
 void PrimitiveMesh::set_orientation(Orientation p_orientation)
 {
-	if (p_orientation == plane.orientation) {
+	if (p_orientation == plane_orientation) {
 		return;
 	}
-	plane.orientation = p_orientation;
+	plane_orientation = p_orientation;
 	request_update();
 }
 
-PrimitiveMesh::Orientation PrimitiveMesh::get_orientation() const { return plane.orientation; }
+PrimitiveMesh::Orientation PrimitiveMesh::get_orientation() const { return plane_orientation; }
 
 void PrimitiveMesh::set_left_to_right(float p_left_to_right)
 {
-	if (Math::is_equal_approx(p_left_to_right, box_prism.left_to_right)) {
+	if (Math::is_equal_approx(p_left_to_right, box_prism_left_to_right)) {
 		return;
 	}
-	box_prism.left_to_right = p_left_to_right;
+	box_prism_left_to_right = p_left_to_right;
 	request_update();
 }
 
-float PrimitiveMesh::get_left_to_right() const { return box_prism.left_to_right; }
+float PrimitiveMesh::get_left_to_right() const { return box_prism_left_to_right; }
 
 // Capsule / Cylinder / Sphere / Torus parameters.
 
 void PrimitiveMesh::set_radius(float p_radius)
 {
-	if (Math::is_equal_approx(radial.radius, p_radius)) {
+	if (Math::is_equal_approx(radial_radius, p_radius)) {
 		return;
 	}
 
-	radial.radius = p_radius;
-	if (mesh_type == MESH_CAPSULE && radial.radius > radial.height * 0.5f) {
-		radial.height = radial.radius * 2.0f;
+	radial_radius = p_radius;
+	if (mesh_type == MESH_CAPSULE && radial_radius > radial_height * 0.5f) {
+		radial_height = radial_radius * 2.0f;
 	}
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_radius() const { return radial.radius; }
+float PrimitiveMesh::get_radius() const { return radial_radius; }
 
 void PrimitiveMesh::set_top_radius(float p_radius)
 {
-	if (Math::is_equal_approx(p_radius, radial.top_radius)) {
+	if (Math::is_equal_approx(p_radius, radial_top_radius)) {
 		return;
 	}
 
-	radial.top_radius = p_radius;
+	radial_top_radius = p_radius;
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_top_radius() const { return radial.top_radius; }
+float PrimitiveMesh::get_top_radius() const { return radial_top_radius; }
 
 void PrimitiveMesh::set_bottom_radius(float p_radius)
 {
-	if (Math::is_equal_approx(p_radius, radial.bottom_radius)) {
+	if (Math::is_equal_approx(p_radius, radial_bottom_radius)) {
 		return;
 	}
 
-	radial.bottom_radius = p_radius;
+	radial_bottom_radius = p_radius;
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_bottom_radius() const { return radial.bottom_radius; }
+float PrimitiveMesh::get_bottom_radius() const { return radial_bottom_radius; }
 
 void PrimitiveMesh::set_inner_radius(float p_inner_radius)
 {
-	if (Math::is_equal_approx(p_inner_radius, radial.inner_radius)) {
+	if (Math::is_equal_approx(p_inner_radius, radial_inner_radius)) {
 		return;
 	}
-	radial.inner_radius = p_inner_radius;
+	radial_inner_radius = p_inner_radius;
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_inner_radius() const { return radial.inner_radius; }
+float PrimitiveMesh::get_inner_radius() const { return radial_inner_radius; }
 
 void PrimitiveMesh::set_outer_radius(float p_outer_radius)
 {
-	if (Math::is_equal_approx(p_outer_radius, radial.outer_radius)) {
+	if (Math::is_equal_approx(p_outer_radius, radial_outer_radius)) {
 		return;
 	}
-	radial.outer_radius = p_outer_radius;
+	radial_outer_radius = p_outer_radius;
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_outer_radius() const { return radial.outer_radius; }
+float PrimitiveMesh::get_outer_radius() const { return radial_outer_radius; }
 
 void PrimitiveMesh::set_height(float p_height)
 {
-	if (Math::is_equal_approx(radial.height, p_height)) {
+	if (Math::is_equal_approx(radial_height, p_height)) {
 		return;
 	}
 
-	radial.height = p_height;
-	if (mesh_type == MESH_CAPSULE && radial.radius > radial.height * 0.5f) {
-		radial.radius = radial.height * 0.5f;
+	radial_height = p_height;
+	if (mesh_type == MESH_CAPSULE && radial_radius > radial_height * 0.5f) {
+		radial_radius = radial_height * 0.5f;
 	}
 	_update_lightmap_size();
 	request_update();
 }
 
-float PrimitiveMesh::get_height() const { return radial.height; }
+float PrimitiveMesh::get_height() const { return radial_height; }
 
 void PrimitiveMesh::set_radial_segments(int p_segments)
 {
-	if (p_segments == radial.radial_segments || (radial.radial_segments == 4 && p_segments < 4)) {
+	if (p_segments == radial_radial_segments || (radial_radial_segments == 4 && p_segments < 4)) {
 		return;
 	}
-	radial.radial_segments = p_segments > 4 ? p_segments : 4;
+	radial_radial_segments = p_segments > 4 ? p_segments : 4;
 	request_update();
 }
 
-int PrimitiveMesh::get_radial_segments() const { return radial.radial_segments; }
+int PrimitiveMesh::get_radial_segments() const { return radial_radial_segments; }
 
 void PrimitiveMesh::set_rings(int p_rings)
 {
-	if (p_rings == radial.rings) {
+	if (p_rings == radial_rings) {
 		return;
 	}
 	if (mesh_type == MESH_TORUS) {
@@ -52549,151 +52501,151 @@ void PrimitiveMesh::set_rings(int p_rings)
 	} else {
 		ERR_FAIL_COND(p_rings < 0);
 	}
-	radial.rings = p_rings;
+	radial_rings = p_rings;
 	request_update();
 }
 
-int PrimitiveMesh::get_rings() const { return radial.rings; }
+int PrimitiveMesh::get_rings() const { return radial_rings; }
 
 void PrimitiveMesh::set_ring_segments(int p_ring_segments)
 {
-	if (p_ring_segments == radial.ring_segments) {
+	if (p_ring_segments == radial_ring_segments) {
 		return;
 	}
 	ERR_FAIL_COND(p_ring_segments < 3);
-	radial.ring_segments = p_ring_segments;
+	radial_ring_segments = p_ring_segments;
 	request_update();
 }
 
-int PrimitiveMesh::get_ring_segments() const { return radial.ring_segments; }
+int PrimitiveMesh::get_ring_segments() const { return radial_ring_segments; }
 
 void PrimitiveMesh::set_cap_top(bool p_cap_top)
 {
-	if (p_cap_top == radial.cap_top) {
+	if (p_cap_top == radial_cap_top) {
 		return;
 	}
-	radial.cap_top = p_cap_top;
+	radial_cap_top = p_cap_top;
 	request_update();
 }
 
-bool PrimitiveMesh::is_cap_top() const { return radial.cap_top; }
+bool PrimitiveMesh::is_cap_top() const { return radial_cap_top; }
 
 void PrimitiveMesh::set_cap_bottom(bool p_cap_bottom)
 {
-	if (p_cap_bottom == radial.cap_bottom) {
+	if (p_cap_bottom == radial_cap_bottom) {
 		return;
 	}
-	radial.cap_bottom = p_cap_bottom;
+	radial_cap_bottom = p_cap_bottom;
 	request_update();
 }
 
-bool PrimitiveMesh::is_cap_bottom() const { return radial.cap_bottom; }
+bool PrimitiveMesh::is_cap_bottom() const { return radial_cap_bottom; }
 
 void PrimitiveMesh::set_is_hemisphere(bool p_is_hemisphere)
 {
-	if (p_is_hemisphere == radial.is_hemisphere) {
+	if (p_is_hemisphere == radial_is_hemisphere) {
 		return;
 	}
-	radial.is_hemisphere = p_is_hemisphere;
+	radial_is_hemisphere = p_is_hemisphere;
 	_update_lightmap_size();
 	request_update();
 }
 
-bool PrimitiveMesh::get_is_hemisphere() const { return radial.is_hemisphere; }
+bool PrimitiveMesh::get_is_hemisphere() const { return radial_is_hemisphere; }
 
 // TubeTrail / RibbonTrail parameters.
 
 void PrimitiveMesh::set_radial_steps(int p_radial_steps)
 {
-	if (p_radial_steps == trail.radial_steps) {
+	if (p_radial_steps == trail_radial_steps) {
 		return;
 	}
 	ERR_FAIL_COND(p_radial_steps < 3 || p_radial_steps > 128);
-	trail.radial_steps = p_radial_steps;
+	trail_radial_steps = p_radial_steps;
 	request_update();
 }
 
-int PrimitiveMesh::get_radial_steps() const { return trail.radial_steps; }
+int PrimitiveMesh::get_radial_steps() const { return trail_radial_steps; }
 
 void PrimitiveMesh::set_sections(int p_sections)
 {
-	if (p_sections == trail.sections) {
+	if (p_sections == trail_sections) {
 		return;
 	}
 	ERR_FAIL_COND(p_sections < 2 || p_sections > 128);
-	trail.sections = p_sections;
+	trail_sections = p_sections;
 	request_update();
 }
 
-int PrimitiveMesh::get_sections() const { return trail.sections; }
+int PrimitiveMesh::get_sections() const { return trail_sections; }
 
 void PrimitiveMesh::set_section_length(float p_section_length)
 {
-	if (p_section_length == trail.section_length) {
+	if (p_section_length == trail_section_length) {
 		return;
 	}
-	trail.section_length = p_section_length;
+	trail_section_length = p_section_length;
 	request_update();
 }
 
-float PrimitiveMesh::get_section_length() const { return trail.section_length; }
+float PrimitiveMesh::get_section_length() const { return trail_section_length; }
 
 void PrimitiveMesh::set_section_rings(int p_section_rings)
 {
-	if (p_section_rings == trail.section_rings) {
+	if (p_section_rings == trail_section_rings) {
 		return;
 	}
 	ERR_FAIL_COND(p_section_rings < 1 || p_section_rings > 1024);
-	trail.section_rings = p_section_rings;
+	trail_section_rings = p_section_rings;
 	request_update();
 }
 
-int PrimitiveMesh::get_section_rings() const { return trail.section_rings; }
+int PrimitiveMesh::get_section_rings() const { return trail_section_rings; }
 
 void PrimitiveMesh::set_section_segments(int p_section_segments)
 {
-	if (p_section_segments == trail.section_segments) {
+	if (p_section_segments == trail_section_segments) {
 		return;
 	}
 	ERR_FAIL_COND(p_section_segments < 1 || p_section_segments > 1024);
-	trail.section_segments = p_section_segments;
+	trail_section_segments = p_section_segments;
 	request_update();
 }
 
-int PrimitiveMesh::get_section_segments() const { return trail.section_segments; }
+int PrimitiveMesh::get_section_segments() const { return trail_section_segments; }
 
 void PrimitiveMesh::set_ribbon_size(float p_size)
 {
-	if (Math::is_equal_approx(p_size, trail.ribbon_size)) {
+	if (Math::is_equal_approx(p_size, trail_ribbon_size)) {
 		return;
 	}
-	trail.ribbon_size = p_size;
+	trail_ribbon_size = p_size;
 	request_update();
 }
 
-float PrimitiveMesh::get_ribbon_size() const { return trail.ribbon_size; }
+float PrimitiveMesh::get_ribbon_size() const { return trail_ribbon_size; }
 
 void PrimitiveMesh::set_ribbon_shape(RibbonShape p_shape)
 {
-	if (p_shape == trail.ribbon_shape) {
+	if (p_shape == trail_ribbon_shape) {
 		return;
 	}
-	trail.ribbon_shape = p_shape;
+	trail_ribbon_shape = p_shape;
 	request_update();
 }
 
-PrimitiveMesh::RibbonShape PrimitiveMesh::get_ribbon_shape() const { return trail.ribbon_shape; }
+PrimitiveMesh::RibbonShape PrimitiveMesh::get_ribbon_shape() const { return trail_ribbon_shape; }
 
 void PrimitiveMesh::set_curve(const Ref<Curve>& p_curve)
 {
-	if (trail.curve == p_curve) {
+	if (trail_curve == p_curve) {
 		return;
 	}
-	trail.curve = p_curve;
+	trail_curve = p_curve;
 	request_update();
 }
 
-Ref<Curve> PrimitiveMesh::get_curve() const { return trail.curve; }
+Ref<Curve> PrimitiveMesh::get_curve() const { return trail_curve; }
 
 void PrimitiveMesh::_curve_changed() { request_update(); }
 
@@ -62314,33 +62266,33 @@ Ref<Font> FontVariation::get_base_font() const { return base_font; }
 
 void FontVariation::set_variation_embolden(float p_strength)
 {
-	if (variation.embolden != p_strength) {
-		variation.embolden = p_strength;
+	if (variation_embolden != p_strength) {
+		variation_embolden = p_strength;
 		_invalidate_rids();
 	}
 }
 
-float FontVariation::get_variation_embolden() const { return variation.embolden; }
+float FontVariation::get_variation_embolden() const { return variation_embolden; }
 
 void FontVariation::set_variation_transform(Transform2D p_transform)
 {
-	if (variation.transform != p_transform) {
-		variation.transform = p_transform;
+	if (variation_transform != p_transform) {
+		variation_transform = p_transform;
 		_invalidate_rids();
 	}
 }
 
-Transform2D FontVariation::get_variation_transform() const { return variation.transform; }
+Transform2D FontVariation::get_variation_transform() const { return variation_transform; }
 
 void FontVariation::set_variation_face_index(int p_face_index)
 {
-	if (variation.face_index != p_face_index) {
-		variation.face_index = p_face_index;
+	if (variation_face_index != p_face_index) {
+		variation_face_index = p_face_index;
 		_invalidate_rids();
 	}
 }
 
-int FontVariation::get_variation_face_index() const { return variation.face_index; }
+int FontVariation::get_variation_face_index() const { return variation_face_index; }
 
 void FontVariation::set_spacing(TextServer::SpacingType p_spacing, int p_value)
 {
@@ -90112,19 +90064,19 @@ void Button::set_swatch_color(const Color& p_color)
 
 bool Button::has_point(const Point2& p_point) const
 {
-	if (style == STYLE_TEXTURE && textures.click_mask.is_valid()) {
+	if (style == STYLE_TEXTURE && tex_click_mask.is_valid()) {
 		Point2 point = p_point;
 		Rect2 rect;
-		Size2 mask_size = textures.click_mask->get_size();
+		Size2 mask_size = tex_click_mask->get_size();
 
-		if (!textures.position_rect.has_area()) {
+		if (!tex_position_rect.has_area()) {
 			rect.size = mask_size;
 		}
-		else if (textures.tile) {
+		else if (tex_tile) {
 			rect.size = mask_size;
-			if (textures.position_rect.has_point(point)) {
-				int cols = (int)Math::ceil(textures.position_rect.size.x / mask_size.x);
-				int rows = (int)Math::ceil(textures.position_rect.size.y / mask_size.y);
+			if (tex_position_rect.has_point(point)) {
+				int cols = (int)Math::ceil(tex_position_rect.size.x / mask_size.x);
+				int rows = (int)Math::ceil(tex_position_rect.size.y / mask_size.y);
 				int col = (int)(point.x / mask_size.x) % cols;
 				int row = (int)(point.y / mask_size.y) % rows;
 				point.x -= mask_size.x * col;
@@ -90132,21 +90084,21 @@ bool Button::has_point(const Point2& p_point) const
 			}
 		}
 		else {
-			Point2 ofs = textures.position_rect.position;
-			Size2 scale = mask_size / textures.position_rect.size;
+			Point2 ofs = tex_position_rect.position;
+			Size2 scale = mask_size / tex_position_rect.size;
 
-			if (textures.stretch_mode == STRETCH_KEEP_ASPECT_COVERED) {
+			if (tex_stretch_mode == STRETCH_KEEP_ASPECT_COVERED) {
 				float min = MIN(scale.x, scale.y);
 				scale.x = min;
 				scale.y = min;
-				ofs -= textures.texture_region.position / min;
+				ofs -= tex_texture_region.position / min;
 			}
 
 			point -= ofs;
 			point *= scale;
 
-			rect.position = textures.texture_region.position.maxf(0);
-			rect.size = mask_size.min(textures.texture_region.size);
+			rect.position = tex_texture_region.position.maxf(0);
+			rect.size = mask_size.min(tex_texture_region.size);
 		}
 
 		if (!rect.has_point(point)) {
@@ -90154,7 +90106,7 @@ bool Button::has_point(const Point2& p_point) const
 		}
 
 		Point2i p = point;
-		return textures.click_mask->get_bitv(p);
+		return tex_click_mask->get_bitv(p);
 	}
 
 	ERR_READ_THREAD_GUARD_V(false);
@@ -90229,18 +90181,18 @@ Size2 Button::get_minimum_size() const
 
 	if (style == STYLE_TEXTURE) {
 		Size2 rscale = Control::get_minimum_size();
-		if (!textures.ignore_texture_size) {
-			if (textures.normal.is_valid()) {
-				rscale = textures.normal->get_size();
+		if (!tex_ignore_texture_size) {
+			if (tex_normal.is_valid()) {
+				rscale = tex_normal->get_size();
 			}
-			else if (textures.pressed.is_valid()) {
-				rscale = textures.pressed->get_size();
+			else if (tex_pressed.is_valid()) {
+				rscale = tex_pressed->get_size();
 			}
-			else if (textures.hover.is_valid()) {
-				rscale = textures.hover->get_size();
+			else if (tex_hover.is_valid()) {
+				rscale = tex_hover->get_size();
 			}
-			else if (textures.click_mask.is_valid()) {
-				rscale = textures.click_mask->get_size();
+			else if (tex_click_mask.is_valid()) {
+				rscale = tex_click_mask->get_size();
 			}
 			else {
 				rscale = Size2();
@@ -90324,42 +90276,42 @@ void Button::_notification(int p_what)
 
 			switch (draw_mode) {
 			case DRAW_NORMAL:
-				texdraw = textures.normal;
+				texdraw = tex_normal;
 				break;
 			case DRAW_HOVER_PRESSED:
 			case DRAW_PRESSED:
-				texdraw = textures.pressed.is_valid()
-							  ? textures.pressed
-							  : (textures.hover.is_valid() ? textures.hover : textures.normal);
+				texdraw = tex_pressed.is_valid()
+							  ? tex_pressed
+							  : (tex_hover.is_valid() ? tex_hover : tex_normal);
 				break;
 			case DRAW_HOVER:
-				texdraw = textures.hover.is_valid()
-							  ? textures.hover
-							  : ((textures.pressed.is_valid() && is_pressed()) ? textures.pressed
-																			   : textures.normal);
+				texdraw = tex_hover.is_valid()
+							  ? tex_hover
+							  : ((tex_pressed.is_valid() && is_pressed()) ? tex_pressed
+																			   : tex_normal);
 				break;
 			case DRAW_DISABLED:
-				texdraw = textures.disabled.is_valid() ? textures.disabled : textures.normal;
+				texdraw = tex_disabled.is_valid() ? tex_disabled : tex_normal;
 				break;
 			}
 
 			Point2 ofs;
 			Size2 size;
-			bool draw_focus = (has_focus(true) && textures.focused.is_valid());
+			bool draw_focus = (has_focus(true) && tex_focused.is_valid());
 			bool draw_focus_only = draw_focus && texdraw.is_null();
 			if (draw_focus_only) {
-				texdraw = textures.focused;
+				texdraw = tex_focused;
 			}
 
-			if (texdraw.is_valid() || textures.click_mask.is_valid()) {
+			if (texdraw.is_valid() || tex_click_mask.is_valid()) {
 				const Size2 texdraw_size = texdraw.is_valid()
 											   ? texdraw->get_size()
-											   : Size2(textures.click_mask->get_size());
+											   : Size2(tex_click_mask->get_size());
 				size = texdraw_size;
-				textures.texture_region = Rect2(Point2(), texdraw_size);
-				textures.tile = false;
+				tex_texture_region = Rect2(Point2(), texdraw_size);
+				tex_tile = false;
 
-				switch (textures.stretch_mode) {
+				switch (tex_stretch_mode) {
 				case STRETCH_KEEP:
 					break;
 				case STRETCH_SCALE:
@@ -90367,7 +90319,7 @@ void Button::_notification(int p_what)
 					break;
 				case STRETCH_TILE:
 					size = get_size();
-					textures.tile = true;
+					tex_tile = true;
 					break;
 				case STRETCH_KEEP_CENTERED:
 					ofs = (get_size() - texdraw_size) / 2;
@@ -90381,7 +90333,7 @@ void Button::_notification(int p_what)
 						tex_width = _size.width;
 						tex_height = texdraw_size.height * tex_width / texdraw_size.width;
 					}
-					if (textures.stretch_mode == STRETCH_KEEP_ASPECT_CENTERED) {
+					if (tex_stretch_mode == STRETCH_KEEP_ASPECT_CENTERED) {
 						ofs.x = (_size.width - tex_width) / 2;
 						ofs.y = (_size.height - tex_height) / 2;
 					}
@@ -90394,30 +90346,30 @@ void Button::_notification(int p_what)
 					float scale = MAX(scale_size.width, scale_size.height);
 					Size2 scaled_tex_size = texdraw_size * scale;
 					Point2 ofs2 = ((scaled_tex_size - size) / scale).abs() / 2.0f;
-					textures.texture_region = Rect2(ofs2, size / scale);
+					tex_texture_region = Rect2(ofs2, size / scale);
 				} break;
 				}
 
-				textures.position_rect = Rect2(ofs, size);
-				size.width *= textures.hflip ? -1.0f : 1.0f;
-				size.height *= textures.vflip ? -1.0f : 1.0f;
+				tex_position_rect = Rect2(ofs, size);
+				size.width *= tex_hflip ? -1.0f : 1.0f;
+				size.height *= tex_vflip ? -1.0f : 1.0f;
 
 				if (!draw_focus_only && texdraw.is_valid()) {
-					if (textures.tile) {
+					if (tex_tile) {
 						draw_texture_rect(texdraw.ptr(), Rect2(ofs, size), true);
 					}
 					else {
 						draw_texture_rect_region(
-							texdraw.ptr(), Rect2(ofs, size), textures.texture_region);
+							texdraw.ptr(), Rect2(ofs, size), tex_texture_region);
 					}
 				}
 			}
 			else {
-				textures.position_rect = Rect2();
+				tex_position_rect = Rect2();
 			}
 
 			if (draw_focus) {
-				draw_texture_rect(textures.focused.ptr(), Rect2(ofs, size), false);
+				draw_texture_rect(tex_focused.ptr(), Rect2(ofs, size), false);
 			}
 		}
 		else if (style == STYLE_COLOR_SWATCH) {
@@ -129988,9 +129940,9 @@ void CameraLinux::finalize()
 	if (!CameraServer::data) {
 		return;
 	}
-	CameraServer::CameraServer::data->exit_flag.set();
-	if (CameraServer::CameraServer::data->camera_thread.is_started()) {
-		CameraServer::CameraServer::data->camera_thread.wait_to_finish();
+	CameraServer::data->exit_flag.set();
+	if (CameraServer::data->camera_thread.is_started()) {
+		CameraServer::data->camera_thread.wait_to_finish();
 	}
 }
 
@@ -154423,7 +154375,7 @@ void RendererCanvasCull::_collect_ysort_children(RendererCanvasCull::Item* p_can
 				// To y-sort according to the item's final position, physics interpolation
 				// and transform snapping need to be applied before y-sorting.
 				Transform2D child_xform;
-				if (!_interpolation_data.interpolation_enabled || !child_items[i]->interpolated ||
+				if (!interpolation_enabled || !child_items[i]->interpolated ||
 					!child_items[i]->on_interpolate_transform_list) {
 					child_xform = child_items[i]->xform_curr;
 				}
@@ -154707,7 +154659,7 @@ void RendererCanvasCull::_cull_canvas_item(Item* p_canvas_item, const Transform2
 		final_xform = p_parent_xform;
 	}
 	else {
-		if (!_interpolation_data.interpolation_enabled || !ci->interpolated ||
+		if (!interpolation_enabled || !ci->interpolated ||
 			!ci->on_interpolate_transform_list) {
 			self_xform = ci->xform_curr;
 		}
@@ -155046,13 +154998,13 @@ void RendererCanvasCull::canvas_item_set_transform(RID p_item, const Transform2D
 	Item* canvas_item = canvas_item_owner.get_or_null(p_item);
 	ERR_FAIL_NULL(canvas_item);
 
-	if (_interpolation_data.interpolation_enabled && canvas_item->interpolated) {
+	if (interpolation_enabled && canvas_item->interpolated) {
 		if (!canvas_item->on_interpolate_transform_list) {
-			_interpolation_data.canvas_item_transform_update_list_curr->push_back(p_item);
+			canvas_item_transform_update_list_curr->push_back(p_item);
 			canvas_item->on_interpolate_transform_list = true;
 		}
 		else {
-			DEV_ASSERT(_interpolation_data.canvas_item_transform_update_list_curr->size() > 0);
+			DEV_ASSERT(canvas_item_transform_update_list_curr->size() > 0);
 		}
 	}
 
@@ -156660,13 +156612,13 @@ void RendererCanvasCull::canvas_light_set_transform(RID p_light, const Transform
 	RendererCanvasRender::Light* clight = canvas_light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(clight);
 
-	if (_interpolation_data.interpolation_enabled && clight->interpolated) {
+	if (interpolation_enabled && clight->interpolated) {
 		if (!clight->on_interpolate_transform_list) {
-			_interpolation_data.canvas_light_transform_update_list_curr->push_back(p_light);
+			canvas_light_transform_update_list_curr->push_back(p_light);
 			clight->on_interpolate_transform_list = true;
 		}
 		else {
-			DEV_ASSERT(_interpolation_data.canvas_light_transform_update_list_curr->size() > 0);
+			DEV_ASSERT(canvas_light_transform_update_list_curr->size() > 0);
 		}
 	}
 
@@ -156919,15 +156871,15 @@ void RendererCanvasCull::canvas_light_occluder_set_transform(
 		canvas_light_occluder_owner.get_or_null(p_occluder);
 	ERR_FAIL_NULL(occluder);
 
-	if (_interpolation_data.interpolation_enabled && occluder->interpolated) {
+	if (interpolation_enabled && occluder->interpolated) {
 		if (!occluder->on_interpolate_transform_list) {
-			_interpolation_data.canvas_light_occluder_transform_update_list_curr->push_back(
+			canvas_light_occluder_transform_update_list_curr->push_back(
 				p_occluder);
 			occluder->on_interpolate_transform_list = true;
 		}
 		else {
 			DEV_ASSERT(
-				_interpolation_data.canvas_light_occluder_transform_update_list_curr->size() > 0);
+				canvas_light_occluder_transform_update_list_curr->size() > 0);
 		}
 	}
 
@@ -157098,7 +157050,7 @@ void RendererCanvasCull::_item_queue_update(Item* p_item, bool p_update_dependen
 
 void RendererCanvasCull::tick()
 {
-	if (_interpolation_data.interpolation_enabled) {
+	if (interpolation_enabled) {
 		update_interpolation_tick(true);
 	}
 }
@@ -157107,8 +157059,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 {
 #define GODOT_UPDATE_INTERPOLATION_TICK(m_list_prev, m_list_curr, m_type, m_owner_list)            \
 	/* Detect any that were on the previous transform list that are no longer active. */           \
-	for (unsigned int n = 0; n < _interpolation_data.m_list_prev->size(); n++) {                   \
-		const RID& rid = (*_interpolation_data.m_list_prev)[n];                                    \
+	for (unsigned int n = 0; n < m_list_prev->size(); n++) {                   \
+		const RID& rid = (*m_list_prev)[n];                                    \
 		m_type* item = m_owner_list.get_or_null(rid);                                              \
 		/* no longer active? (either the instance deleted or no longer being transformed) */       \
 		if (item && !item->on_interpolate_transform_list) {                                        \
@@ -157119,8 +157071,8 @@ void RendererCanvasCull::update_interpolation_tick(bool p_process)
 for any in the transform list (being actively interpolated), */                                    \
 	/* keep the previous transform value up to date and ready for next tick */                     \
 	if (p_process) {                                                                               \
-		for (unsigned int n = 0; n < _interpolation_data.m_list_curr->size(); n++) {               \
-			const RID& rid = (*_interpolation_data.m_list_curr)[n];                                \
+		for (unsigned int n = 0; n < m_list_curr->size(); n++) {               \
+			const RID& rid = (*m_list_curr)[n];                                \
 			m_type* item = m_owner_list.get_or_null(rid);                                          \
 			if (item) {                                                                            \
 				item->xform_prev = item->xform_curr;                                               \
@@ -157128,8 +157080,8 @@ for any in the transform list (being actively interpolated), */                 
 			}                                                                                      \
 		}                                                                                          \
 	}                                                                                              \
-	SWAP(_interpolation_data.m_list_curr, _interpolation_data.m_list_prev);                        \
-	_interpolation_data.m_list_curr->clear();
+	SWAP(m_list_curr, m_list_prev);                        \
+	m_list_curr->clear();
 
 	GODOT_UPDATE_INTERPOLATION_TICK(canvas_item_transform_update_list_prev,
 		canvas_item_transform_update_list_curr, Item, canvas_item_owner);
@@ -157142,7 +157094,7 @@ for any in the transform list (being actively interpolated), */                 
 #undef GODOT_UPDATE_INTERPOLATION_TICK
 }
 
-void RendererCanvasCull::InterpolationData::notify_free_canvas_item(
+void RendererCanvasCull::notify_free_canvas_item(
 	RID p_rid, RendererCanvasCull::Item& r_canvas_item)
 {
 	r_canvas_item.on_interpolate_transform_list = false;
@@ -157156,7 +157108,7 @@ void RendererCanvasCull::InterpolationData::notify_free_canvas_item(
 	canvas_item_transform_update_list_prev->erase_multiple_unordered(p_rid);
 }
 
-void RendererCanvasCull ::InterpolationData::notify_free_canvas_light(
+void RendererCanvasCull::notify_free_canvas_light(
 	RID p_rid, RendererCanvasRender::Light& r_canvas_light)
 {
 	r_canvas_light.on_interpolate_transform_list = false;
@@ -157170,7 +157122,7 @@ void RendererCanvasCull ::InterpolationData::notify_free_canvas_light(
 	canvas_light_transform_update_list_prev->erase_multiple_unordered(p_rid);
 }
 
-void RendererCanvasCull::InterpolationData::notify_free_canvas_light_occluder(
+void RendererCanvasCull::notify_free_canvas_light_occluder(
 	RID p_rid, RendererCanvasRender::LightOccluderInstance& r_canvas_light_occluder)
 {
 	r_canvas_light_occluder.on_interpolate_transform_list = false;
@@ -157628,7 +157580,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						continue;
 					}
 
-					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -157680,7 +157632,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					Vector2 offset = tsize / 2.0;
 					Rect2 local_rect = Rect2(-offset + cl->texture_offset, tsize);
 
-					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -157720,7 +157672,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 				if (cl->enabled) {
 					cl->filter_next_ptr = directional_lights;
 					directional_lights = cl;
-					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->interpolation_enabled ||
 						!cl->interpolated) {
 						cl->xform_cache = xf * cl->xform_curr;
 					}
@@ -157766,7 +157718,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 					if (!F->enabled) {
 						continue;
 					}
-					if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
+					if (!Renderer::canvas->interpolation_enabled ||
 						!F->interpolated) {
 						F->xform_cache = xf * F->xform_curr;
 					}
@@ -157870,7 +157822,7 @@ void RendererViewport::_draw_viewport(Viewport* p_viewport)
 						if (!F->enabled) {
 							continue;
 						}
-						if (!Renderer::canvas->_interpolation_data.interpolation_enabled ||
+						if (!Renderer::canvas->interpolation_enabled ||
 							!F->interpolated) {
 							F->xform_cache = xf * F->xform_curr;
 						}
@@ -168546,7 +168498,7 @@ void RendererCanvasRenderRD::canvas_render_items(RID p_to_render_target, RCR::It
 			}
 
 			Transform2D final_xform;
-			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated ||
+			if (!Renderer::canvas->interpolation_enabled || !l->interpolated ||
 				!l->on_interpolate_transform_list) {
 				final_xform = l->xform_curr;
 			}
@@ -169093,7 +169045,7 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			Vector<RID> buffer;
 			buffer.push_back(oc->vertex_buffer);
 			oc->vertex_array =
-				RD::vertex_array_create(4 * lc / 2, shadow_render.vertex_format, buffer);
+				RD::vertex_array_create(4 * lc / 2, shadow_render_vertex_format, buffer);
 			oc->index_array = RD::index_array_create(oc->index_buffer, 0, 3 * lc);
 		}
 	}
@@ -169163,7 +169115,7 @@ void RendererCanvasRenderRD::occluder_polygon_set_shape(
 			Vector<RID> buffer;
 			buffer.push_back(oc->sdf_vertex_buffer);
 			oc->sdf_vertex_array =
-				RD::vertex_array_create(p_points.size(), shadow_render.sdf_vertex_format, buffer);
+				RD::vertex_array_create(p_points.size(), shadow_render_sdf_vertex_format, buffer);
 		}
 	}
 }
@@ -170812,7 +170764,7 @@ void RendererCanvasRenderRD::initialize()
 		versions.push_back("\n#define MODE_SHADOW\n");
 		versions.push_back("\n#define MODE_SHADOW\n#define POSITIONAL_SHADOW\n");
 		versions.push_back("\n#define MODE_SDF\n");
-		shadow_render.shader.initialize(versions);
+		shadow_render_shader.initialize(versions);
 
 		{
 			Vector<RD::AttachmentFormat> attachments;
@@ -170828,7 +170780,7 @@ void RendererCanvasRenderRD::initialize()
 			af_depth.usage_flags = RDC::TEXTURE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 			attachments.push_back(af_depth);
 
-			shadow_render.framebuffer_format = RD::framebuffer_format_create(attachments);
+			shadow_render_framebuffer_format = RD::framebuffer_format_create(attachments);
 		}
 
 		{
@@ -170841,7 +170793,7 @@ void RendererCanvasRenderRD::initialize()
 								   RDC::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT;
 			attachments.push_back(af_color);
 
-			shadow_render.sdf_framebuffer_format = RD::framebuffer_format_create(attachments);
+			shadow_render_sdf_framebuffer_format = RD::framebuffer_format_create(attachments);
 		}
 
 		Vector<RDC::VertexAttribute> vf;
@@ -170851,14 +170803,14 @@ void RendererCanvasRenderRD::initialize()
 		vd.location = 0;
 		vd.offset = 0;
 		vf.push_back(vd);
-		shadow_render.vertex_format = RD::vertex_format_create(vf);
+		shadow_render_vertex_format = RD::vertex_format_create(vf);
 
 		vd.format = RDC::DATA_FORMAT_R32G32_SFLOAT;
 		vd.stride = sizeof(float) * 2;
 		vf.write[0] = vd;
-		shadow_render.sdf_vertex_format = RD::vertex_format_create(vf);
+		shadow_render_sdf_vertex_format = RD::vertex_format_create(vf);
 
-		shadow_render.shader_version = shadow_render.shader.version_create();
+		shadow_render_shader_version = shadow_render_shader.version_create();
 
 		for (int i = 0; i < 2; i++) {
 			RDC::PipelineRasterizationState rs;
@@ -170866,31 +170818,31 @@ void RendererCanvasRenderRD::initialize()
 			ds.enable_depth_write = true;
 			ds.enable_depth_test = true;
 			ds.depth_compare_operator = RDC::COMPARE_OP_LESS;
-			shadow_render.render_pipelines[i] = RD::render_pipeline_create(
-				shadow_render.shader.version_get_shader(
-					shadow_render.shader_version, ShadowRenderMode(i)),
-				shadow_render.framebuffer_format, shadow_render.vertex_format,
+			shadow_render_pipelines[i] = RD::render_pipeline_create(
+				shadow_render_shader.version_get_shader(
+					shadow_render_shader_version, ShadowRenderMode(i)),
+				shadow_render_framebuffer_format, shadow_render_vertex_format,
 				RDC::RENDER_PRIMITIVE_TRIANGLES, rs, RDC::PipelineMultisampleState(), ds,
 				RDC::PipelineColorBlendState::create_disabled(), 0);
 		}
 
 		for (int i = 0; i < 2; i++) {
-			shadow_render.sdf_render_pipelines[i] = RD::render_pipeline_create(
-				shadow_render.shader.version_get_shader(
-					shadow_render.shader_version, SHADOW_RENDER_MODE_SDF),
-				shadow_render.sdf_framebuffer_format, shadow_render.sdf_vertex_format,
+			shadow_render_sdf_pipelines[i] = RD::render_pipeline_create(
+				shadow_render_shader.version_get_shader(
+					shadow_render_shader_version, SHADOW_RENDER_MODE_SDF),
+				shadow_render_sdf_framebuffer_format, shadow_render_sdf_vertex_format,
 				i == 0 ? RDC::RENDER_PRIMITIVE_TRIANGLES : RDC::RENDER_PRIMITIVE_LINES,
 				RDC::PipelineRasterizationState(), RDC::PipelineMultisampleState(),
 				RDC::PipelineDepthStencilState(), RDC::PipelineColorBlendState::create_disabled(),
 				0);
 		}
 
-		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
-			shadow_render.shader_version, SHADOW_RENDER_MODE_DIRECTIONAL_SHADOW));
-		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
-			shadow_render.shader_version, SHADOW_RENDER_MODE_POSITIONAL_SHADOW));
-		RD::shader_destroy_modules(shadow_render.shader.version_get_shader(
-			shadow_render.shader_version, SHADOW_RENDER_MODE_SDF));
+		RD::shader_destroy_modules(shadow_render_shader.version_get_shader(
+			shadow_render_shader_version, SHADOW_RENDER_MODE_DIRECTIONAL_SHADOW));
+		RD::shader_destroy_modules(shadow_render_shader.version_get_shader(
+			shadow_render_shader_version, SHADOW_RENDER_MODE_POSITIONAL_SHADOW));
+		RD::shader_destroy_modules(shadow_render_shader.version_get_shader(
+			shadow_render_shader_version, SHADOW_RENDER_MODE_SDF));
 	}
 
 	{ // bindings
@@ -171146,9 +171098,9 @@ void RendererCanvasRenderRD::finalize()
 
 	// shadow rendering
 	{
-		if (shadow_render.shader_version.is_valid()) {
-			shadow_render.shader.version_free(shadow_render.shader_version);
-			shadow_render.shader_version = RID();
+		if (shadow_render_shader_version.is_valid()) {
+			shadow_render_shader.version_free(shadow_render_shader_version);
+			shadow_render_shader_version = RID();
 		}
 		// this will also automatically clear all pipelines
 		if (RendererRD::state.shadow_sampler.is_valid()) {
@@ -174665,10 +174617,6 @@ Resolve::Resolve(bool p_prefer_raster_effects)
 	}
 }
 
-/* SortEffects */
-
-SortEffects::~SortEffects() { shader.version_free(shader_version); }
-
 /* MotionVectorsStore */
 
 MotionVectorsStore::MotionVectorsStore()
@@ -175487,7 +175435,7 @@ void SSEffects::ssil_set_quality(RSE::EnvironmentSSILQuality p_quality, bool p_h
 }
 
 void SSEffects::ssil_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
-	SSILRenderBuffers& p_ssil_buffers, const SSILSettings& p_settings)
+	SSRenderBuffers& p_ssil_buffers, const SSILSettings& p_settings)
 {
 	ERR_FAIL_NULL(data);
 
@@ -175563,7 +175511,7 @@ void SSEffects::ssao_set_quality(RSE::EnvironmentSSAOQuality p_quality, bool p_h
 }
 
 void SSEffects::ssao_allocate_buffers(Ref<RenderSceneBuffersRD> p_render_buffers,
-	SSAORenderBuffers& p_ssao_buffers, const SSAOSettings& p_settings)
+	SSRenderBuffers& p_ssao_buffers, const SSAOSettings& p_settings)
 {
 	ERR_FAIL_NULL(data);
 
@@ -175700,14 +175648,14 @@ void SSEffects::screen_space_reflection(Ref<RenderSceneBuffersRD> p_render_buffe
 }
 
 void SSEffects::screen_space_indirect_lighting(Ref<RenderSceneBuffersRD> p_render_buffers,
-	SSILRenderBuffers& p_ssil_buffers, uint32_t p_view, RID p_normal_buffer,
+	SSRenderBuffers& p_ssil_buffers, uint32_t p_view, RID p_normal_buffer,
 	const Projection& p_projection, const Projection& p_last_projection,
 	const SSILSettings& p_settings)
 {
 }
 
 void SSEffects::generate_ssao(Ref<RenderSceneBuffersRD> p_render_buffers,
-	SSAORenderBuffers& p_ssao_buffers, uint32_t p_view, RID p_normal_buffer,
+	SSRenderBuffers& p_ssao_buffers, uint32_t p_view, RID p_normal_buffer,
 	const Projection& p_projection, const SSAOSettings& p_settings)
 {
 }
@@ -193336,10 +193284,10 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 				raytracing_list_command->instruction_data_size);
 		} break;
 		case RecordedCommand::TYPE_COMPUTE_LIST: {
-			if (driver_workarounds.avoid_compute_after_draw && workarounds_state.draw_list_found) {
+			if (driver_workarounds.avoid_compute_after_draw && workarounds_draw_list_found) {
 				// Avoid compute after draw workaround. Refer to the comment that enables this in
 				// the Vulkan driver for more information.
-				workarounds_state.draw_list_found = false;
+				workarounds_draw_list_found = false;
 
 				// Create or reuse a command buffer and finish recording the current one.
 				driver->command_buffer_end(r_command_buffer);
@@ -193366,7 +193314,7 @@ void RenderingDeviceGraph::_run_render_commands(int32_t p_level,
 		case RecordedCommand::TYPE_DRAW_LIST: {
 			if (driver_workarounds.avoid_compute_after_draw) {
 				// Indicate that a draw list was encountered for the workaround.
-				workarounds_state.draw_list_found = true;
+				workarounds_draw_list_found = true;
 			}
 
 			const RecordedCommand* draw_list_command =
@@ -194861,7 +194809,7 @@ void RenderingDeviceGraph::end(bool p_reorder_commands, bool p_full_barriers,
 
 		if (driver_workarounds.avoid_compute_after_draw) {
 			// Reset the state of the workaround.
-			workarounds_state.draw_list_found = false;
+			workarounds_draw_list_found = false;
 		}
 
 #if PRINT_DRAW_LIST_STATS
@@ -238437,10 +238385,6 @@ void ParticlesStorage::finalize()
 		particles_shader.default_shader = RID();
 	}
 
-	if (sort_effects) {
-		memdelete(sort_effects);
-		sort_effects = nullptr;
-	}
 }
 
 bool ParticlesStorage::free(RID p_rid)
@@ -245096,7 +245040,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 16;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
-			u.append_id(data->best_fit_normal.texture);
+			u.append_id(data->best_fit_normal_texture);
 			uniforms.push_back(u);
 		}
 
@@ -245104,7 +245048,7 @@ void RenderForwardClustered::_update_render_base_uniform_set()
 			RD::Uniform u;
 			u.binding = 17;
 			u.uniform_type = RDC::UNIFORM_TYPE_TEXTURE;
-			u.append_id(data->dfg_lut.texture);
+			u.append_id(data->dfg_lut_texture);
 			uniforms.push_back(u);
 		}
 
@@ -247320,13 +247264,13 @@ void RenderForwardClustered::finalize()
 	RD::free_rid(data->shadow_sampler);
 	RendererLightStorage::directional_shadow_atlas_set_size(0);
 
-	RD::free_rid(data->best_fit_normal.pipeline);
-	RD::free_rid(data->best_fit_normal.texture);
-	data->best_fit_normal.shader.version_free(data->best_fit_normal.shader_version);
+	RD::free_rid(data->best_fit_normal_pipeline);
+	RD::free_rid(data->best_fit_normal_texture);
+	data->best_fit_normal_shader.version_free(data->best_fit_normal_shader_version);
 
-	RD::free_rid(data->dfg_lut.pipeline);
-	RD::free_rid(data->dfg_lut.texture);
-	data->dfg_lut.shader.version_free(data->dfg_lut.shader_version);
+	RD::free_rid(data->dfg_lut_pipeline);
+	RD::free_rid(data->dfg_lut_texture);
+	data->dfg_lut_shader.version_free(data->dfg_lut_shader_version);
 
 	if (data->ltc.lut1_texture.is_valid()) {
 		Renderer::free_rid(data->ltc.lut1_texture);

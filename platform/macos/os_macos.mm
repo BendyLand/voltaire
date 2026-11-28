@@ -2582,6 +2582,7 @@ constexpr static NSEventModifierFlags FLAGS = NSEventModifierFlagCommand | NSEve
 #if defined(GLES3_ENABLED)
 #if defined(ANGLE_ENABLED)
 #include "servers/display/display_server.h"
+#import <EGL/eglext_angle.h>
 #endif
 #include "servers/display/display_server.h"
 
@@ -6420,7 +6421,7 @@ DisplayServerMacOS::DisplayServerMacOS(const String &p_rendering_driver, Display
 		rendering_driver = "opengl3_angle";
 	}
 	if (rendering_driver == "opengl3_angle") {
-		gl_manager_angle = memnew(GLManagerANGLE_MacOS);
+		gl_manager_angle = memnew(EGLManager("EGL_ANGLE_platform_angle", EGL_PLATFORM_ANGLE_ANGLE, EGL_OPENGL_ES_API, Vector<EGLint>{ EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE }, Vector<EGLAttrib>{ EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE, EGL_NONE }));
 		if (gl_manager_angle->initialize() != OK || gl_manager_angle->open_display(nullptr) != OK) {
 			memdelete(gl_manager_angle);
 			gl_manager_angle = nullptr;
@@ -13232,35 +13233,7 @@ GODOT_CLANG_WARNING_POP
 #include <cstdio>
 #include <cstdlib>
 
-const char *GLManagerANGLE_MacOS::_get_platform_extension_name() const {
-	return "EGL_ANGLE_platform_angle";
-}
 
-EGLenum GLManagerANGLE_MacOS::_get_platform_extension_enum() const {
-	return EGL_PLATFORM_ANGLE_ANGLE;
-}
-
-Vector<EGLAttrib> GLManagerANGLE_MacOS::_get_platform_display_attributes() const {
-	Vector<EGLAttrib> ret;
-	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
-	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-EGLenum GLManagerANGLE_MacOS::_get_platform_api_enum() const {
-	return EGL_OPENGL_ES_API;
-}
-
-Vector<EGLint> GLManagerANGLE_MacOS::_get_platform_context_attribs() const {
-	Vector<EGLint> ret;
-	ret.push_back(EGL_CONTEXT_CLIENT_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
 
 #endif // MACOS_ENABLED && GLES3_ENABLED
 #endif // ANGLE_ENABLED

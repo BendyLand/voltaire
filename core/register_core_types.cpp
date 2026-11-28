@@ -5287,7 +5287,7 @@ void Shortcut::set_events_list(const List<InputEvent>* p_events)
 
 bool Shortcut::matches_event(const InputEvent& p_event) const
 {
-	if (p_event.type == InputEventType::SHORTCUT && p_event.shortcut.shortcut == this) {
+	if (p_event.type == InputEventType::SHORTCUT && p_event.shortcut == this) {
 		return true;
 	}
 
@@ -5975,7 +5975,7 @@ InputEvent InputEvent::make_shortcut(const Shortcut* p_shortcut)
 	InputEvent ie;
 	ie.type = InputEventType::SHORTCUT;
 	ie.pressed = true;
-	ie.shortcut = ShortcutData{p_shortcut};
+	ie.shortcut = p_shortcut;
 	return ie;
 }
 
@@ -6655,8 +6655,8 @@ String InputEvent::as_text() const
 			itos((int64_t)midi.message));
 
 	case InputEventType::SHORTCUT:
-		ERR_FAIL_NULL_V(shortcut.shortcut, "None");
-		return vformat(RTR("Input Event with Shortcut=%s"), shortcut.shortcut->get_as_text());
+		ERR_FAIL_NULL_V(shortcut, "None");
+		return vformat(RTR("Input Event with Shortcut=%s"), shortcut->get_as_text());
 
 	default:
 		return String();
@@ -14492,61 +14492,35 @@ public:
 		}
 	};
 
-	template <typename UWord, typename UHWord>
-	class DMul {
-	private:
-		static uint32_t high(uint64_t p_value) {
-			return (uint32_t)(p_value >> 32);
+	static uint32_t _dmul_high(uint64_t p_value) { return (uint32_t)(p_value >> 32); }
+	static uint32_t _dmul_low(uint64_t p_value) { return (uint32_t)p_value; }
+	static uint64_t _dmul_mul(uint32_t p_left, uint32_t p_right) { return (uint64_t)p_left * (uint64_t)p_right; }
+	static void _dmul_shl_half(uint64_t &p_value) { p_value <<= 32; }
+	static uint64_t _dmul_high(Int128 p_value) { return p_value.high; }
+	static uint64_t _dmul_low(Int128 p_value) { return p_value.low; }
+	static Int128 _dmul_mul(uint64_t p_left, uint64_t p_right) { return Int128::mul(p_left, p_right); }
+	static void _dmul_shl_half(Int128 &p_value) {
+		p_value.high = p_value.low;
+		p_value.low = 0;
+	}
+	template <typename UWord>
+	static void dmul(UWord p_a, UWord p_b, UWord &r_low, UWord &r_high) {
+		UWord p00 = _dmul_mul(_dmul_low(p_a), _dmul_low(p_b));
+		UWord p01 = _dmul_mul(_dmul_low(p_a), _dmul_high(p_b));
+		UWord p10 = _dmul_mul(_dmul_high(p_a), _dmul_low(p_b));
+		UWord p11 = _dmul_mul(_dmul_high(p_a), _dmul_high(p_b));
+		UWord p0110 = UWord(_dmul_low(p01)) + UWord(_dmul_low(p10));
+		p11 += _dmul_high(p01);
+		p11 += _dmul_high(p10);
+		p11 += _dmul_high(p0110);
+		_dmul_shl_half(p0110);
+		p00 += p0110;
+		if (p00 < p0110) {
+			++p11;
 		}
-
-		static uint32_t low(uint64_t p_value) {
-			return (uint32_t)p_value;
-		}
-
-		static uint64_t mul(uint32_t p_left, uint32_t p_right) {
-			return (uint64_t)p_left * (uint64_t)p_right;
-		}
-
-		static void shl_half(uint64_t &p_value) {
-			p_value <<= 32;
-		}
-
-		static uint64_t high(Int128 p_value) {
-			return p_value.high;
-		}
-
-		static uint64_t low(Int128 p_value) {
-			return p_value.low;
-		}
-
-		static Int128 mul(uint64_t p_left, uint64_t p_right) {
-			return Int128::mul(p_left, p_right);
-		}
-
-		static void shl_half(Int128 &p_value) {
-			p_value.high = p_value.low;
-			p_value.low = 0;
-		}
-
-	public:
-		static void mul(UWord p_a, UWord p_b, UWord &r_low, UWord &r_high) {
-			UWord p00 = mul(low(p_a), low(p_b));
-			UWord p01 = mul(low(p_a), high(p_b));
-			UWord p10 = mul(high(p_a), low(p_b));
-			UWord p11 = mul(high(p_a), high(p_b));
-			UWord p0110 = UWord(low(p01)) + UWord(low(p10));
-			p11 += high(p01);
-			p11 += high(p10);
-			p11 += high(p0110);
-			shl_half(p0110);
-			p00 += p0110;
-			if (p00 < p0110) {
-				++p11;
-			}
-			r_low = p00;
-			r_high = p11;
-		}
-	};
+		r_low = p00;
+		r_high = p11;
+	}
 
 private:
 	class IntermediateHull {
@@ -14671,7 +14645,7 @@ ConvexHullInternal::Int128 ConvexHullInternal::Int128::mul(int64_t p_left, int64
 		negative = !negative;
 		p_right = -p_right;
 	}
-	DMul<uint64_t, uint32_t>::mul((uint64_t)p_left, (uint64_t)p_right, result.low, result.high);
+	dmul((uint64_t)p_left, (uint64_t)p_right, result.low, result.high);
 	return negative ? -result : result;
 #endif
 }
@@ -14686,7 +14660,7 @@ ConvexHullInternal::Int128 ConvexHullInternal::Int128::mul(uint64_t p_left, uint
 			: "cc");
 
 #else
-	DMul<uint64_t, uint32_t>::mul(p_left, p_right, result.low, result.high);
+	dmul(p_left, p_right, result.low, result.high);
 #endif
 
 	return result;
@@ -14741,8 +14715,8 @@ int32_t ConvexHullInternal::Rational128::compare(const Rational128 &p_other) con
 	}
 
 	Int128 nbd_low, nbd_high, dbn_low, dbn_high;
-	DMul<Int128, uint64_t>::mul(numerator, p_other.denominator, nbd_low, nbd_high);
-	DMul<Int128, uint64_t>::mul(denominator, p_other.numerator, dbn_low, dbn_high);
+	dmul(numerator, p_other.denominator, nbd_low, nbd_high);
+	dmul(denominator, p_other.numerator, dbn_low, dbn_high);
 
 	int32_t cmp = nbd_high.ucmp(dbn_high);
 	if (cmp) {
@@ -56005,7 +55979,7 @@ String TranslationDomain::_get_override_string(const String& p_message) const
 {
 	String res;
 	for (int i = 0; i < p_message.length(); i++) {
-		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+		if (pseudoloc_skip_placeholders_enabled && _is_placeholder(p_message, i)) {
 			res += p_message[i];
 			res += p_message[i + 1];
 			i++;
@@ -56020,7 +55994,7 @@ String TranslationDomain::_double_vowels(const String& p_message) const
 {
 	String res;
 	for (int i = 0; i < p_message.length(); i++) {
-		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+		if (pseudoloc_skip_placeholders_enabled && _is_placeholder(p_message, i)) {
 			res += p_message[i];
 			res += p_message[i + 1];
 			i++;
@@ -56041,7 +56015,7 @@ String TranslationDomain::_replace_with_accented_string(const String& p_message)
 {
 	String res;
 	for (int i = 0; i < p_message.length(); i++) {
-		if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+		if (pseudoloc_skip_placeholders_enabled && _is_placeholder(p_message, i)) {
 			res += p_message[i];
 			res += p_message[i + 1];
 			i++;
@@ -56071,7 +56045,7 @@ String TranslationDomain::_wrap_with_fakebidi_characters(const String& p_message
 			res += p_message[i];
 			res += fakebidiprefix;
 		}
-		else if (pseudolocalization.skip_placeholders_enabled && _is_placeholder(p_message, i)) {
+		else if (pseudoloc_skip_placeholders_enabled && _is_placeholder(p_message, i)) {
 			res += fakebidisuffix;
 			res += p_message[i];
 			res += p_message[i + 1];
@@ -56088,9 +56062,9 @@ String TranslationDomain::_wrap_with_fakebidi_characters(const String& p_message
 
 String TranslationDomain::_add_padding(const String& p_message, int p_length) const
 {
-	String underscores = String("_").repeat(p_length * pseudolocalization.expansion_ratio / 2);
-	String prefix = pseudolocalization.prefix + underscores;
-	String suffix = underscores + pseudolocalization.suffix;
+	String underscores = String("_").repeat(p_length * pseudoloc_expansion_ratio / 2);
+	String prefix = pseudoloc_prefix + underscores;
+	String suffix = underscores + pseudoloc_suffix;
 
 	return prefix + p_message + suffix;
 }
@@ -56284,9 +56258,9 @@ String TranslationDomain::translate(
 	}
 
 	if (res.is_empty()) {
-		return pseudolocalization.enabled ? pseudolocalize(p_message) : p_message;
+		return pseudoloc_enabled ? pseudolocalize(p_message) : p_message;
 	}
-	return pseudolocalization.enabled ? pseudolocalize(res) : res;
+	return pseudoloc_enabled ? pseudolocalize(res) : res;
 }
 
 String TranslationDomain::translate_plural(const String& p_message,
@@ -56330,91 +56304,91 @@ bool TranslationDomain::is_enabled() const { return enabled; }
 
 void TranslationDomain::set_enabled(bool p_enabled) { enabled = p_enabled; }
 
-bool TranslationDomain::is_pseudolocalization_enabled() const { return pseudolocalization.enabled; }
+bool TranslationDomain::is_pseudolocalization_enabled() const { return pseudoloc_enabled; }
 
 void TranslationDomain::set_pseudolocalization_enabled(bool p_enabled)
 {
-	pseudolocalization.enabled = p_enabled;
+	pseudoloc_enabled = p_enabled;
 }
 
 bool TranslationDomain::is_pseudolocalization_accents_enabled() const
 {
-	return pseudolocalization.accents_enabled;
+	return pseudoloc_accents_enabled;
 }
 
 void TranslationDomain::set_pseudolocalization_accents_enabled(bool p_enabled)
 {
-	pseudolocalization.accents_enabled = p_enabled;
+	pseudoloc_accents_enabled = p_enabled;
 }
 
 bool TranslationDomain::is_pseudolocalization_double_vowels_enabled() const
 {
-	return pseudolocalization.double_vowels_enabled;
+	return pseudoloc_double_vowels_enabled;
 }
 
 void TranslationDomain::set_pseudolocalization_double_vowels_enabled(bool p_enabled)
 {
-	pseudolocalization.double_vowels_enabled = p_enabled;
+	pseudoloc_double_vowels_enabled = p_enabled;
 }
 
 bool TranslationDomain::is_pseudolocalization_fake_bidi_enabled() const
 {
-	return pseudolocalization.fake_bidi_enabled;
+	return pseudoloc_fake_bidi_enabled;
 }
 
 void TranslationDomain::set_pseudolocalization_fake_bidi_enabled(bool p_enabled)
 {
-	pseudolocalization.fake_bidi_enabled = p_enabled;
+	pseudoloc_fake_bidi_enabled = p_enabled;
 }
 
 bool TranslationDomain::is_pseudolocalization_override_enabled() const
 {
-	return pseudolocalization.override_enabled;
+	return pseudoloc_override_enabled;
 }
 
 void TranslationDomain::set_pseudolocalization_override_enabled(bool p_enabled)
 {
-	pseudolocalization.override_enabled = p_enabled;
+	pseudoloc_override_enabled = p_enabled;
 }
 
 bool TranslationDomain::is_pseudolocalization_skip_placeholders_enabled() const
 {
-	return pseudolocalization.skip_placeholders_enabled;
+	return pseudoloc_skip_placeholders_enabled;
 }
 
 void TranslationDomain::set_pseudolocalization_skip_placeholders_enabled(bool p_enabled)
 {
-	pseudolocalization.skip_placeholders_enabled = p_enabled;
+	pseudoloc_skip_placeholders_enabled = p_enabled;
 }
 
 float TranslationDomain::get_pseudolocalization_expansion_ratio() const
 {
-	return pseudolocalization.expansion_ratio;
+	return pseudoloc_expansion_ratio;
 }
 
 void TranslationDomain::set_pseudolocalization_expansion_ratio(float p_ratio)
 {
-	pseudolocalization.expansion_ratio = p_ratio;
+	pseudoloc_expansion_ratio = p_ratio;
 }
 
 String TranslationDomain::get_pseudolocalization_prefix() const
 {
-	return pseudolocalization.prefix;
+	return pseudoloc_prefix;
 }
 
 void TranslationDomain::set_pseudolocalization_prefix(const String& p_prefix)
 {
-	pseudolocalization.prefix = p_prefix;
+	pseudoloc_prefix = p_prefix;
 }
 
 String TranslationDomain::get_pseudolocalization_suffix() const
 {
-	return pseudolocalization.suffix;
+	return pseudoloc_suffix;
 }
 
 void TranslationDomain::set_pseudolocalization_suffix(const String& p_suffix)
 {
-	pseudolocalization.suffix = p_suffix;
+	pseudoloc_suffix = p_suffix;
 }
 
 String TranslationDomain::pseudolocalize(const String& p_message) const
@@ -56425,19 +56399,19 @@ String TranslationDomain::pseudolocalize(const String& p_message) const
 
 	String message = p_message;
 	int length = message.length();
-	if (pseudolocalization.override_enabled) {
+	if (pseudoloc_override_enabled) {
 		message = _get_override_string(message);
 	}
 
-	if (pseudolocalization.double_vowels_enabled) {
+	if (pseudoloc_double_vowels_enabled) {
 		message = _double_vowels(message);
 	}
 
-	if (pseudolocalization.accents_enabled) {
+	if (pseudoloc_accents_enabled) {
 		message = _replace_with_accented_string(message);
 	}
 
-	if (pseudolocalization.fake_bidi_enabled) {
+	if (pseudoloc_fake_bidi_enabled) {
 		message = _wrap_with_fakebidi_characters(message);
 	}
 
@@ -84225,19 +84199,15 @@ int EGLManager::_get_gldisplay_id(void *p_display) {
 	new_gldisplay.display = p_display;
 
 	if (GLAD_EGL_VERSION_1_5) {
-		Vector<EGLAttrib> attribs = _get_platform_display_attributes();
-		new_gldisplay.egl_display = eglGetPlatformDisplay(_get_platform_extension_enum(), new_gldisplay.display, (attribs.size() > 0) ? attribs.ptr() : nullptr);
+		new_gldisplay.egl_display = eglGetPlatformDisplay(platform_extension_enum, new_gldisplay.display, (platform_display_attributes.size() > 0) ? platform_display_attributes.ptr() : nullptr);
 	} else if (GLAD_EGL_EXT_platform_base) {
 #ifdef EGL_EXT_platform_base
-		// eglGetPlatformDisplayEXT wants its attributes as EGLint, so we'll truncate
-		// what we already have. It's a bit naughty but I'm really not sure what else
-		// we could do here.
 		Vector<EGLint> attribs;
-		for (const EGLAttrib &attrib : _get_platform_display_attributes()) {
+		for (const EGLAttrib &attrib : platform_display_attributes) {
 			attribs.push_back((EGLint)attrib);
 		}
 
-		new_gldisplay.egl_display = eglGetPlatformDisplayEXT(_get_platform_extension_enum(), new_gldisplay.display, (attribs.size() > 0) ? attribs.ptr() : nullptr);
+		new_gldisplay.egl_display = eglGetPlatformDisplayEXT(platform_extension_enum, new_gldisplay.display, (attribs.size() > 0) ? attribs.ptr() : nullptr);
 #endif // EGL_EXT_platform_base
 	} else {
 		NativeDisplayType *native_display_type = (NativeDisplayType *)new_gldisplay.display;
@@ -84252,7 +84222,7 @@ int EGLManager::_get_gldisplay_id(void *p_display) {
 		ERR_FAIL_V_MSG(-1, "Can't initialize an EGL display.");
 	}
 
-	if (!eglBindAPI(_get_platform_api_enum())) {
+	if (!eglBindAPI(platform_api_enum)) {
 		ERR_FAIL_V_MSG(-1, "OpenGL not supported.");
 	}
 
@@ -84362,8 +84332,7 @@ Error EGLManager::_gldisplay_create_context(GLDisplay &p_gldisplay) {
 	ERR_FAIL_COND_V(eglGetError() != EGL_SUCCESS, ERR_BUG);
 	ERR_FAIL_COND_V(config_count == 0, ERR_UNCONFIGURED);
 
-	Vector<EGLint> context_attribs = _get_platform_context_attribs();
-	p_gldisplay.egl_context = eglCreateContext(p_gldisplay.egl_display, p_gldisplay.egl_config, EGL_NO_CONTEXT, (context_attribs.size() > 0) ? context_attribs.ptr() : nullptr);
+	p_gldisplay.egl_context = eglCreateContext(p_gldisplay.egl_display, p_gldisplay.egl_config, EGL_NO_CONTEXT, (platform_context_attribs.size() > 0) ? platform_context_attribs.ptr() : nullptr);
 	ERR_FAIL_COND_V_MSG(p_gldisplay.egl_context == EGL_NO_CONTEXT, ERR_CANT_CREATE, vformat("Can't create an EGL context. Error code: %d", eglGetError()));
 
 	return OK;
@@ -84600,10 +84569,10 @@ Error EGLManager::initialize(void *p_native_display) {
 #ifdef EGL_EXT_platform_base
 		// eglGetPlatformDisplayEXT wants its attributes as EGLint.
 		Vector<EGLint> attribs;
-		for (const EGLAttrib &attrib : _get_platform_display_attributes()) {
+		for (const EGLAttrib &attrib : platform_display_attributes) {
 			attribs.push_back((EGLint)attrib);
 		}
-		tmp_display = eglGetPlatformDisplayEXT(_get_platform_extension_enum(), p_native_display, attribs.ptr());
+		tmp_display = eglGetPlatformDisplayEXT(platform_extension_enum, p_native_display, attribs.ptr());
 #endif // EGL_EXT_platform_base
 	} else {
 		WARN_PRINT("EGL: EGL_EXT_platform_base not found during init, using default platform.");
@@ -84662,7 +84631,7 @@ Error EGLManager::initialize(void *p_native_display) {
 
 	// If the above method fails, we don't support client extensions, so there's nothing to check.
 	if (eglGetError() == EGL_SUCCESS) {
-		const char *platform = _get_platform_extension_name();
+		const char *platform = platform_extension_name;
 		if (!client_extensions_string.split(" ").has(platform)) {
 			ERR_FAIL_V_MSG(ERR_UNAVAILABLE, vformat("EGL platform extension \"%s\" not found.", platform));
 		}
@@ -84671,11 +84640,19 @@ Error EGLManager::initialize(void *p_native_display) {
 	return OK;
 }
 
-EGLManager::EGLManager(const char *p_ext_name, EGLenum p_ext_enum, EGLenum p_api_enum, const Vector<EGLint> &p_attribs) :
+void EGLManager::window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {
+#if defined(WINDOWS_ENABLED) && defined(ANGLE_ENABLED)
+	window_make_current(p_window_id);
+	eglWaitNative(EGL_CORE_NATIVE_ENGINE);
+#endif
+}
+
+EGLManager::EGLManager(const char *p_ext_name, EGLenum p_ext_enum, EGLenum p_api_enum, const Vector<EGLint> &p_attribs, const Vector<EGLAttrib> &p_display_attribs) :
 		platform_extension_name(p_ext_name),
 		platform_extension_enum(p_ext_enum),
 		platform_api_enum(p_api_enum),
-		platform_context_attribs(p_attribs) {
+		platform_context_attribs(p_attribs),
+		platform_display_attributes(p_display_attribs) {
 }
 
 EGLManager::~EGLManager() {
@@ -86791,7 +86768,7 @@ DirAccessWindows::~DirAccessWindows() {
 
 #include <winbase.h>
 
-Error FileAccessWindowsPipe::open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_blocking) {
+Error FileAccessPipe::open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_blocking) {
 	// Open pipe using handles created by CreatePipe(rfd, wfd, NULL, 4096) call in the OS.execute_with_pipe.
 	_close();
 
@@ -86810,7 +86787,7 @@ Error FileAccessWindowsPipe::open_existing(HANDLE p_rfd, HANDLE p_wfd, bool p_bl
 	return OK;
 }
 
-Error FileAccessWindowsPipe::open_internal(const String &p_path, int p_mode_flags) {
+Error FileAccessPipe::open_internal(const String &p_path, int p_mode_flags) {
 	_close();
 
 	path_src = p_path;
@@ -86834,7 +86811,7 @@ Error FileAccessWindowsPipe::open_internal(const String &p_path, int p_mode_flag
 	return OK;
 }
 
-void FileAccessWindowsPipe::_close() {
+void FileAccessPipe::_close() {
 	if (fd[0] == nullptr) {
 		return;
 	}
@@ -86846,19 +86823,19 @@ void FileAccessWindowsPipe::_close() {
 	fd[1] = nullptr;
 }
 
-bool FileAccessWindowsPipe::is_open() const {
+bool FileAccessPipe::is_open() const {
 	return (fd[0] != nullptr || fd[1] != nullptr);
 }
 
-String FileAccessWindowsPipe::get_path() const {
+String FileAccessPipe::get_path() const {
 	return path_src;
 }
 
-String FileAccessWindowsPipe::get_path_absolute() const {
+String FileAccessPipe::get_path_absolute() const {
 	return path_src;
 }
 
-uint64_t FileAccessWindowsPipe::get_length() const {
+uint64_t FileAccessPipe::get_length() const {
 	ERR_FAIL_COND_V_MSG(fd[0] == nullptr, -1, "Pipe must be opened before use.");
 
 	DWORD buf_rem = 0;
@@ -86866,7 +86843,7 @@ uint64_t FileAccessWindowsPipe::get_length() const {
 	return buf_rem;
 }
 
-uint64_t FileAccessWindowsPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+uint64_t FileAccessPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
 	ERR_FAIL_COND_V_MSG(fd[0] == nullptr, -1, "Pipe must be opened before use.");
 	ERR_FAIL_COND_V(!p_dst && p_length > 0, -1);
 
@@ -86879,11 +86856,11 @@ uint64_t FileAccessWindowsPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) co
 	return read;
 }
 
-Error FileAccessWindowsPipe::get_error() const {
+Error FileAccessPipe::get_error() const {
 	return last_error;
 }
 
-bool FileAccessWindowsPipe::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+bool FileAccessPipe::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	ERR_FAIL_COND_V_MSG(fd[1] == nullptr, false, "Pipe must be opened before use.");
 	ERR_FAIL_COND_V(!p_src && p_length > 0, false);
 
@@ -86898,11 +86875,11 @@ bool FileAccessWindowsPipe::store_buffer(const uint8_t *p_src, uint64_t p_length
 	}
 }
 
-void FileAccessWindowsPipe::close() {
+void FileAccessPipe::close() {
 	_close();
 }
 
-FileAccessWindowsPipe::~FileAccessWindowsPipe() {
+FileAccessPipe::~FileAccessPipe() {
 	_close();
 }
 
@@ -88292,93 +88269,7 @@ SDL_Gamepad* JoypadSDL::Joypad::get_sdl_gamepad() const
 #ifdef UNIX_ENABLED
 
 #include "servers/display/display_server.h"
-#if defined(UNIX_ENABLED)
 
-class FileAccessUnixPipe : public FileAccess
-{
-	bool unlink_on_close = false;
-
-	int fd[2] = {-1, -1};
-
-	mutable Error last_error = OK;
-	String path;
-	String path_src;
-
-	void _close();
-
-public:
-	Error open_existing(int p_rfd, int p_wfd, bool p_blocking);
-	virtual Error open_internal(const String& p_path, int p_mode_flags) override; ///< open a file
-
-	virtual bool is_open() const override; ///< true when file is open
-
-	virtual String get_path() const override; /// returns the path for the current open file
-	virtual String
-	get_path_absolute() const override; /// returns the absolute path for the current open file
-
-	virtual void seek(uint64_t p_position) override {}
-
-	virtual void seek_end(int64_t p_position = 0) override {}
-
-	virtual uint64_t get_position() const override { return 0; }
-
-	virtual uint64_t get_length() const override;
-
-	virtual bool eof_reached() const override { return false; }
-
-	virtual uint64_t get_buffer(uint8_t* p_dst, uint64_t p_length) const override;
-
-	virtual Error get_error() const override; ///< get last error
-
-	virtual Error resize(int64_t p_length) override { return ERR_UNAVAILABLE; }
-
-	virtual void flush() override {}
-
-	virtual bool store_buffer(
-		const uint8_t* p_src, uint64_t p_length) override; ///< store an array of bytes
-
-	virtual bool file_exists(const String& p_path) override { return false; }
-
-	virtual uint64_t _get_modified_time(const String& p_file) override { return 0; }
-
-	virtual uint64_t _get_access_time(const String& p_file) override { return 0; }
-
-	virtual int64_t _get_size(const String& p_file) override { return -1; }
-
-	virtual uint32_t _get_unix_permissions(
-		const String& p_file) override
-	{
-		return 0;
-	}
-
-	virtual Error _set_unix_permissions(
-		const String& p_file, uint32_t p_permissions) override
-	{
-		return ERR_UNAVAILABLE;
-	}
-
-	virtual bool _get_hidden_attribute(const String& p_file) override { return false; }
-
-	virtual Error _set_hidden_attribute(const String& p_file, bool p_hidden) override
-	{
-		return ERR_UNAVAILABLE;
-	}
-
-	virtual bool _get_read_only_attribute(const String& p_file) override { return false; }
-
-	virtual Error _set_read_only_attribute(const String& p_file, bool p_ro) override
-	{
-		return ERR_UNAVAILABLE;
-	}
-
-	virtual void close() override;
-
-	FileAccessUnixPipe() {}
-
-	virtual ~FileAccessUnixPipe();
-};
-
-#endif // UNIX_ENABLED
 
 void init_thread_posix();
 
@@ -88517,7 +88408,7 @@ void OS_Unix::initialize_core()
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_USERDATA);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_FILESYSTEM);
-	FileAccess::make_default<FileAccessUnixPipe>(FileAccess::ACCESS_PIPE);
+	FileAccess::make_default<FileAccessPipe>(FileAccess::ACCESS_PIPE);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
@@ -90709,7 +90600,7 @@ FileAccessUnix::~FileAccessUnix() {
 typedef typeof(void(int)) *sighandler_t;
 #endif
 
-Error FileAccessUnixPipe::open_existing(int p_rfd, int p_wfd, bool p_blocking) {
+Error FileAccessPipe::open_existing(int p_rfd, int p_wfd, bool p_blocking) {
 	// Open pipe using handles created by pipe(fd) call in the OS.execute_with_pipe.
 	_close();
 
@@ -90728,7 +90619,7 @@ Error FileAccessUnixPipe::open_existing(int p_rfd, int p_wfd, bool p_blocking) {
 	return OK;
 }
 
-Error FileAccessUnixPipe::open_internal(const String &p_path, int p_mode_flags) {
+Error FileAccessPipe::open_internal(const String &p_path, int p_mode_flags) {
 	_close();
 
 	path_src = p_path;
@@ -90770,7 +90661,7 @@ Error FileAccessUnixPipe::open_internal(const String &p_path, int p_mode_flags) 
 	return OK;
 }
 
-void FileAccessUnixPipe::_close() {
+void FileAccessPipe::_close() {
 	if (fd[0] < 0) {
 		return;
 	}
@@ -90788,19 +90679,19 @@ void FileAccessUnixPipe::_close() {
 	unlink_on_close = false;
 }
 
-bool FileAccessUnixPipe::is_open() const {
+bool FileAccessPipe::is_open() const {
 	return (fd[0] >= 0 || fd[1] >= 0);
 }
 
-String FileAccessUnixPipe::get_path() const {
+String FileAccessPipe::get_path() const {
 	return path_src;
 }
 
-String FileAccessUnixPipe::get_path_absolute() const {
+String FileAccessPipe::get_path_absolute() const {
 	return path_src;
 }
 
-uint64_t FileAccessUnixPipe::get_length() const {
+uint64_t FileAccessPipe::get_length() const {
 	ERR_FAIL_COND_V_MSG(fd[0] < 0, 0, "Pipe must be opened before use.");
 
 	int buf_rem = 0;
@@ -90808,7 +90699,7 @@ uint64_t FileAccessUnixPipe::get_length() const {
 	return buf_rem;
 }
 
-uint64_t FileAccessUnixPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
+uint64_t FileAccessPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) const {
 	ERR_FAIL_COND_V_MSG(fd[0] < 0, -1, "Pipe must be opened before use.");
 	ERR_FAIL_COND_V(!p_dst && p_length > 0, -1);
 
@@ -90824,11 +90715,11 @@ uint64_t FileAccessUnixPipe::get_buffer(uint8_t *p_dst, uint64_t p_length) const
 	return read;
 }
 
-Error FileAccessUnixPipe::get_error() const {
+Error FileAccessPipe::get_error() const {
 	return last_error;
 }
 
-bool FileAccessUnixPipe::store_buffer(const uint8_t *p_src, uint64_t p_length) {
+bool FileAccessPipe::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	ERR_FAIL_COND_V_MSG(fd[1] < 0, false, "Pipe must be opened before use.");
 	ERR_FAIL_COND_V(!p_src && p_length > 0, false);
 
@@ -90845,11 +90736,11 @@ bool FileAccessUnixPipe::store_buffer(const uint8_t *p_src, uint64_t p_length) {
 	}
 }
 
-void FileAccessUnixPipe::close() {
+void FileAccessPipe::close() {
 	_close();
 }
 
-FileAccessUnixPipe::~FileAccessUnixPipe() {
+FileAccessPipe::~FileAccessPipe() {
 	_close();
 }
 
@@ -91941,80 +91832,55 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 		BinaryMutex submit_mutex;
 	};
 
-	struct SubgroupCapabilities
-	{
-		uint32_t size = 0;
-		uint32_t min_size = 0;
-		uint32_t max_size = 0;
-		VkShaderStageFlags supported_stages = 0;
-		VkSubgroupFeatureFlags supported_operations = 0;
-		VkBool32 quad_operations_in_all_stages = false;
-		bool size_control_is_supported = false;
+	uint32_t subgroup_capabilities_size = 0;
+	uint32_t subgroup_capabilities_min_size = 0;
+	uint32_t subgroup_capabilities_max_size = 0;
+	VkShaderStageFlags subgroup_capabilities_supported_stages = 0;
+	VkSubgroupFeatureFlags subgroup_capabilities_supported_operations = 0;
+	VkBool32 subgroup_capabilities_quad_operations_in_all_stages = false;
+	bool subgroup_capabilities_size_control_is_supported = false;
+	uint32_t subgroup_capabilities_supported_stages_flags_rd() const;
+	String subgroup_capabilities_supported_stages_desc() const;
+	uint32_t subgroup_capabilities_supported_operations_flags_rd() const;
+	String subgroup_capabilities_supported_operations_desc() const;
 
-		uint32_t supported_stages_flags_rd() const;
-		String supported_stages_desc() const;
-		uint32_t supported_operations_flags_rd() const;
-		String supported_operations_desc() const;
-	};
+	bool shader_capabilities_shader_float16_is_supported = false;
+	bool shader_capabilities_shader_int8_is_supported = false;
 
-	struct ShaderCapabilities
-	{
-		bool shader_float16_is_supported = false;
-		bool shader_int8_is_supported = false;
-	};
+	bool storage_buffer_capabilities_storage_buffer_16_bit_access_is_supported = false;
+	bool storage_buffer_capabilities_uniform_and_storage_buffer_16_bit_access_is_supported = false;
+	bool storage_buffer_capabilities_storage_push_constant_16_is_supported = false;
+	bool storage_buffer_capabilities_storage_input_output_16 = false;
 
-	struct StorageBufferCapabilities
-	{
-		bool storage_buffer_16_bit_access_is_supported = false;
-		bool uniform_and_storage_buffer_16_bit_access_is_supported = false;
-		bool storage_push_constant_16_is_supported = false;
-		bool storage_input_output_16 = false;
-	};
+	bool acceleration_structure_capabilities_acceleration_structure_support = false;
+	uint32_t acceleration_structure_capabilities_min_acceleration_structure_scratch_offset_alignment = 0;
 
-	struct AccelerationStructureCapabilities
-	{
-		bool acceleration_structure_support = false;
-		uint32_t min_acceleration_structure_scratch_offset_alignment = 0;
-	};
+	bool raytracing_capabilities_raytracing_pipeline_support = false;
+	uint32_t raytracing_capabilities_shader_group_handle_size = 0;
+	uint32_t raytracing_capabilities_shader_group_handle_alignment = 0;
+	uint32_t raytracing_capabilities_shader_group_handle_size_aligned = 0;
+	uint32_t raytracing_capabilities_shader_group_base_alignment = 0;
+	bool raytracing_capabilities_validation = false;
 
-	struct RaytracingCapabilities
-	{
-		bool raytracing_pipeline_support = false;
-		uint32_t shader_group_handle_size = 0;
-		uint32_t shader_group_handle_alignment = 0;
-		uint32_t shader_group_handle_size_aligned = 0;
-		uint32_t shader_group_base_alignment = 0;
-		bool validation = false;
-	};
-
-	struct DeviceFunctions
-	{
-		PFN_vkCreateSwapchainKHR CreateSwapchainKHR = nullptr;
-		PFN_vkDestroySwapchainKHR DestroySwapchainKHR = nullptr;
-		PFN_vkGetSwapchainImagesKHR GetSwapchainImagesKHR = nullptr;
-		PFN_vkAcquireNextImageKHR AcquireNextImageKHR = nullptr;
-		PFN_vkQueuePresentKHR QueuePresentKHR = nullptr;
-		PFN_vkCreateRenderPass2KHR CreateRenderPass2KHR = nullptr;
-		PFN_vkCmdEndRenderPass2KHR EndRenderPass2KHR = nullptr;
-
-		// Debug marker extensions.
-		PFN_vkCmdDebugMarkerBeginEXT CmdDebugMarkerBeginEXT = nullptr;
-		PFN_vkCmdDebugMarkerEndEXT CmdDebugMarkerEndEXT = nullptr;
-		PFN_vkCmdDebugMarkerInsertEXT CmdDebugMarkerInsertEXT = nullptr;
-		PFN_vkDebugMarkerSetObjectNameEXT DebugMarkerSetObjectNameEXT = nullptr;
-
-		// Debug device fault.
-		PFN_vkGetDeviceFaultInfoEXT GetDeviceFaultInfoEXT = nullptr;
-
-		// Raytracing extensions.
-		PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR = nullptr;
-		PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR = nullptr;
-		PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizesKHR = nullptr;
-		PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR = nullptr;
-		PFN_vkCreateRayTracingPipelinesKHR CreateRaytracingPipelinesKHR = nullptr;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR GetRayTracingShaderGroupHandlesKHR = nullptr;
-		PFN_vkCmdTraceRaysKHR CmdTraceRaysKHR = nullptr;
-	};
+	PFN_vkCreateSwapchainKHR device_functions_CreateSwapchainKHR = nullptr;
+	PFN_vkDestroySwapchainKHR device_functions_DestroySwapchainKHR = nullptr;
+	PFN_vkGetSwapchainImagesKHR device_functions_GetSwapchainImagesKHR = nullptr;
+	PFN_vkAcquireNextImageKHR device_functions_AcquireNextImageKHR = nullptr;
+	PFN_vkQueuePresentKHR device_functions_QueuePresentKHR = nullptr;
+	PFN_vkCreateRenderPass2KHR device_functions_CreateRenderPass2KHR = nullptr;
+	PFN_vkCmdEndRenderPass2KHR device_functions_EndRenderPass2KHR = nullptr;
+	PFN_vkCmdDebugMarkerBeginEXT device_functions_CmdDebugMarkerBeginEXT = nullptr;
+	PFN_vkCmdDebugMarkerEndEXT device_functions_CmdDebugMarkerEndEXT = nullptr;
+	PFN_vkCmdDebugMarkerInsertEXT device_functions_CmdDebugMarkerInsertEXT = nullptr;
+	PFN_vkDebugMarkerSetObjectNameEXT device_functions_DebugMarkerSetObjectNameEXT = nullptr;
+	PFN_vkGetDeviceFaultInfoEXT device_functions_GetDeviceFaultInfoEXT = nullptr;
+	PFN_vkCreateAccelerationStructureKHR device_functions_CreateAccelerationStructureKHR = nullptr;
+	PFN_vkDestroyAccelerationStructureKHR device_functions_DestroyAccelerationStructureKHR = nullptr;
+	PFN_vkGetAccelerationStructureBuildSizesKHR device_functions_GetAccelerationStructureBuildSizesKHR = nullptr;
+	PFN_vkCmdBuildAccelerationStructuresKHR device_functions_CmdBuildAccelerationStructuresKHR = nullptr;
+	PFN_vkCreateRayTracingPipelinesKHR device_functions_CreateRaytracingPipelinesKHR = nullptr;
+	PFN_vkGetRayTracingShaderGroupHandlesKHR device_functions_GetRayTracingShaderGroupHandlesKHR = nullptr;
+	PFN_vkCmdTraceRaysKHR device_functions_CmdTraceRaysKHR = nullptr;
 
 	// Debug marker extensions.
 	VkDebugReportObjectTypeEXT _convert_to_debug_report_objectType(VkObjectType p_object_type);
@@ -92032,19 +91898,14 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 	TightLocalVector<TightLocalVector<Queue>> queue_families;
 	TightLocalVector<VkQueueFamilyProperties> queue_family_properties;
 	RDD::Capabilities device_capabilities;
-	SubgroupCapabilities subgroup_capabilities;
 	MultiviewCapabilities multiview_capabilities;
 	FragmentShadingRateCapabilities fsr_capabilities;
 	FragmentDensityMapCapabilities fdm_capabilities;
-	ShaderCapabilities shader_capabilities;
-	StorageBufferCapabilities storage_buffer_capabilities;
 	RenderingShaderContainerFormat shader_container_format;
 	bool buffer_device_address_support = false;
 	bool vulkan_memory_model_support = false;
 	bool vulkan_memory_model_device_scope_support = false;
-	AccelerationStructureCapabilities acceleration_structure_capabilities;
 	bool ray_query_support = false;
-	RaytracingCapabilities raytracing_capabilities;
 	bool pipeline_cache_control_support = false;
 	bool device_fault_support = false;
 	bool framebuffer_depth_resolve = false;
@@ -92057,24 +91918,11 @@ class RenderingDeviceDriverVulkan : public RenderingDeviceDriver
 	uint8_t swappy_mode =
 		2; // See default value for display/window/frame_pacing/android/swappy_mode.
 #endif
-	DeviceFunctions device_functions;
-
-	struct PendingFlushes
-	{
-		LocalVector<VmaAllocation> allocations;
-		LocalVector<VkDeviceSize> offsets;
-		LocalVector<VkDeviceSize> sizes;
-	};
-
-	PendingFlushes pending_flushes;
-
-	struct PipelineStatistics
-	{
-		Ref<FileAccess> file_access;
-		Mutex file_access_mutex;
-	};
-
-	PipelineStatistics pipeline_statistics;
+	LocalVector<VmaAllocation> pending_flushes_allocations;
+	LocalVector<VkDeviceSize> pending_flushes_offsets;
+	LocalVector<VkDeviceSize> pending_flushes_sizes;
+	Ref<FileAccess> pipeline_statistics_file_access;
+	Mutex pipeline_statistics_file_access_mutex;
 	RDC::DriverWorkarounds driver_workarounds;
 
 	void _register_requested_device_extension(const CharString& p_extension_name, bool p_required);
@@ -93114,160 +92962,160 @@ static_assert(ENUM_MEMBERS_EQUAL(RDC::COMPARE_OP_ALWAYS, VK_COMPARE_OP_ALWAYS));
 
 static_assert(ARRAYS_COMPATIBLE_FIELDWISE(Rect2i, VkRect2D));
 
-uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_flags_rd() const
+uint32_t RenderingDeviceDriverVulkan::subgroup_capabilities_supported_stages_flags_rd() const
 {
 	uint32_t flags = 0;
 
-	if (supported_stages & VK_SHADER_STAGE_VERTEX_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_VERTEX_BIT) {
 		flags += RDC::SHADER_STAGE_VERTEX_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
 		flags += RDC::SHADER_STAGE_TESSELATION_CONTROL_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
 		flags += RDC::SHADER_STAGE_TESSELATION_EVALUATION_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
 		// FIXME: Add shader stage geometry bit.
 	}
-	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
 		flags += RDC::SHADER_STAGE_FRAGMENT_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
 		flags += RDC::SHADER_STAGE_COMPUTE_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_RAYGEN_BIT_KHR) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_RAYGEN_BIT_KHR) {
 		flags += RDC::SHADER_STAGE_RAYGEN_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_ANY_HIT_BIT_KHR) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_ANY_HIT_BIT_KHR) {
 		flags += RDC::SHADER_STAGE_ANY_HIT_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) {
 		flags += RDC::SHADER_STAGE_CLOSEST_HIT_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_MISS_BIT_KHR) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_MISS_BIT_KHR) {
 		flags += RDC::SHADER_STAGE_MISS_BIT;
 	}
-	if (supported_stages & VK_SHADER_STAGE_INTERSECTION_BIT_KHR) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_INTERSECTION_BIT_KHR) {
 		flags += RDC::SHADER_STAGE_INTERSECTION_BIT;
 	}
 
 	return flags;
 }
 
-String RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_desc() const
+String RenderingDeviceDriverVulkan::subgroup_capabilities_supported_stages_desc() const
 {
 	String res;
 
-	if (supported_stages & VK_SHADER_STAGE_VERTEX_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_VERTEX_BIT) {
 		res += ", STAGE_VERTEX";
 	}
-	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
 		res += ", STAGE_TESSELLATION_CONTROL";
 	}
-	if (supported_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
 		res += ", STAGE_TESSELLATION_EVALUATION";
 	}
-	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
 		res += ", STAGE_GEOMETRY";
 	}
-	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
 		res += ", STAGE_FRAGMENT";
 	}
-	if (supported_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
+	if (subgroup_capabilities_supported_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
 		res += ", STAGE_COMPUTE";
 	}
 
 	// These are not defined on Android GRMBL.
-	if (supported_stages & 0x00000100 /* VK_SHADER_STAGE_RAYGEN_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00000100 /* VK_SHADER_STAGE_RAYGEN_BIT_KHR */) {
 		res += ", STAGE_RAYGEN_KHR";
 	}
-	if (supported_stages & 0x00000200 /* VK_SHADER_STAGE_ANY_HIT_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00000200 /* VK_SHADER_STAGE_ANY_HIT_BIT_KHR */) {
 		res += ", STAGE_ANY_HIT_KHR";
 	}
-	if (supported_stages & 0x00000400 /* VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00000400 /* VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR */) {
 		res += ", STAGE_CLOSEST_HIT_KHR";
 	}
-	if (supported_stages & 0x00000800 /* VK_SHADER_STAGE_MISS_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00000800 /* VK_SHADER_STAGE_MISS_BIT_KHR */) {
 		res += ", STAGE_MISS_KHR";
 	}
-	if (supported_stages & 0x00001000 /* VK_SHADER_STAGE_INTERSECTION_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00001000 /* VK_SHADER_STAGE_INTERSECTION_BIT_KHR */) {
 		res += ", STAGE_INTERSECTION_KHR";
 	}
-	if (supported_stages & 0x00002000 /* VK_SHADER_STAGE_CALLABLE_BIT_KHR */) {
+	if (subgroup_capabilities_supported_stages & 0x00002000 /* VK_SHADER_STAGE_CALLABLE_BIT_KHR */) {
 		res += ", STAGE_CALLABLE_KHR";
 	}
-	if (supported_stages & 0x00000040 /* VK_SHADER_STAGE_TASK_BIT_NV */) {
+	if (subgroup_capabilities_supported_stages & 0x00000040 /* VK_SHADER_STAGE_TASK_BIT_NV */) {
 		res += ", STAGE_TASK_NV";
 	}
-	if (supported_stages & 0x00000080 /* VK_SHADER_STAGE_MESH_BIT_NV */) {
+	if (subgroup_capabilities_supported_stages & 0x00000080 /* VK_SHADER_STAGE_MESH_BIT_NV */) {
 		res += ", STAGE_MESH_NV";
 	}
 
 	return res.substr(2); // Remove first ", ".
 }
 
-uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_operations_flags_rd() const
+uint32_t RenderingDeviceDriverVulkan::subgroup_capabilities_supported_operations_flags_rd() const
 {
 	uint32_t flags = 0;
 
-	if (supported_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) {
 		flags += RDC::SUBGROUP_BASIC_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) {
 		flags += RDC::SUBGROUP_VOTE_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) {
 		flags += RDC::SUBGROUP_ARITHMETIC_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) {
 		flags += RDC::SUBGROUP_BALLOT_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) {
 		flags += RDC::SUBGROUP_SHUFFLE_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) {
 		flags += RDC::SUBGROUP_SHUFFLE_RELATIVE_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) {
 		flags += RDC::SUBGROUP_CLUSTERED_BIT;
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) {
 		flags += RDC::SUBGROUP_QUAD_BIT;
 	}
 
 	return flags;
 }
 
-String RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_operations_desc() const
+String RenderingDeviceDriverVulkan::subgroup_capabilities_supported_operations_desc() const
 {
 	String res;
 
-	if (supported_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_BASIC_BIT) {
 		res += ", FEATURE_BASIC";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_VOTE_BIT) {
 		res += ", FEATURE_VOTE";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT) {
 		res += ", FEATURE_ARITHMETIC";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_BALLOT_BIT) {
 		res += ", FEATURE_BALLOT";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT) {
 		res += ", FEATURE_SHUFFLE";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT) {
 		res += ", FEATURE_SHUFFLE_RELATIVE";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT) {
 		res += ", FEATURE_CLUSTERED";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_QUAD_BIT) {
 		res += ", FEATURE_QUAD";
 	}
-	if (supported_operations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV) {
+	if (subgroup_capabilities_supported_operations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV) {
 		res += ", FEATURE_PARTITIONED_NV";
 	}
 
@@ -93799,9 +93647,9 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 				"required to use the Vulkan-based renderers in Godot.");
 #endif
 			if (enabled_device_extension_names.has(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
-				shader_capabilities.shader_float16_is_supported =
+				shader_capabilities_shader_float16_is_supported =
 					device_features_vk_1_2.shaderFloat16;
-				shader_capabilities.shader_int8_is_supported = device_features_vk_1_2.shaderInt8;
+				shader_capabilities_shader_int8_is_supported = device_features_vk_1_2.shaderInt8;
 			}
 			if (enabled_device_extension_names.has(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
 				buffer_device_address_support = device_features_vk_1_2.bufferDeviceAddress;
@@ -93814,8 +93662,8 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		}
 		else {
 			if (enabled_device_extension_names.has(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
-				shader_capabilities.shader_float16_is_supported = shader_features.shaderFloat16;
-				shader_capabilities.shader_int8_is_supported = shader_features.shaderInt8;
+				shader_capabilities_shader_float16_is_supported = shader_features.shaderFloat16;
+				shader_capabilities_shader_int8_is_supported = shader_features.shaderInt8;
 			}
 			if (enabled_device_extension_names.has(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
 				buffer_device_address_support = buffer_device_address_features.bufferDeviceAddress;
@@ -93858,13 +93706,13 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		}
 
 		if (enabled_device_extension_names.has(VK_KHR_16BIT_STORAGE_EXTENSION_NAME)) {
-			storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported =
+			storage_buffer_capabilities_storage_buffer_16_bit_access_is_supported =
 				storage_feature.storageBuffer16BitAccess;
-			storage_buffer_capabilities.uniform_and_storage_buffer_16_bit_access_is_supported =
+			storage_buffer_capabilities_uniform_and_storage_buffer_16_bit_access_is_supported =
 				storage_feature.uniformAndStorageBuffer16BitAccess;
-			storage_buffer_capabilities.storage_push_constant_16_is_supported =
+			storage_buffer_capabilities_storage_push_constant_16_is_supported =
 				storage_feature.storagePushConstant16;
-			storage_buffer_capabilities.storage_input_output_16 =
+			storage_buffer_capabilities_storage_input_output_16 =
 				storage_feature.storageInputOutput16;
 		}
 
@@ -93884,14 +93732,14 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 #endif
 
 		if (enabled_device_extension_names.has(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-			acceleration_structure_capabilities.acceleration_structure_support =
+			acceleration_structure_capabilities_acceleration_structure_support =
 				acceleration_structure_features.accelerationStructure;
 		}
 
 		if (enabled_device_extension_names.has(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
-			raytracing_capabilities.raytracing_pipeline_support =
+			raytracing_capabilities_raytracing_pipeline_support =
 				raytracing_pipeline_features.rayTracingPipeline;
-			raytracing_capabilities.validation =
+			raytracing_capabilities_validation =
 				raytracing_validation_features.rayTracingValidation;
 		}
 	}
@@ -93914,9 +93762,9 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 			subgroup_properties.pNext = next_properties;
 			next_properties = &subgroup_properties;
 
-			subgroup_capabilities.size_control_is_supported =
+			subgroup_capabilities_size_control_is_supported =
 				enabled_device_extension_names.has(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
-			if (subgroup_capabilities.size_control_is_supported) {
+			if (subgroup_capabilities_size_control_is_supported) {
 				subgroup_size_control_properties.sType =
 					VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES;
 				subgroup_size_control_properties.pNext = next_properties;
@@ -93951,14 +93799,14 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 			next_properties = &fdmo_properties;
 		}
 
-		if (acceleration_structure_capabilities.acceleration_structure_support) {
+		if (acceleration_structure_capabilities_acceleration_structure_support) {
 			acceleration_structure_properties.sType =
 				VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
 			acceleration_structure_properties.pNext = next_properties;
 			next_properties = &acceleration_structure_properties;
 		}
 
-		if (raytracing_capabilities.raytracing_pipeline_support) {
+		if (raytracing_capabilities_raytracing_pipeline_support) {
 			raytracing_properties.sType =
 				VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 			raytracing_properties.pNext = next_properties;
@@ -93969,23 +93817,23 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		physical_device_properties_2.pNext = next_properties;
 		functions.GetPhysicalDeviceProperties2(physical_device, &physical_device_properties_2);
 
-		subgroup_capabilities.size = subgroup_properties.subgroupSize;
-		subgroup_capabilities.min_size = subgroup_properties.subgroupSize;
-		subgroup_capabilities.max_size = subgroup_properties.subgroupSize;
-		subgroup_capabilities.supported_stages = subgroup_properties.supportedStages;
-		subgroup_capabilities.supported_operations = subgroup_properties.supportedOperations;
+		subgroup_capabilities_size = subgroup_properties.subgroupSize;
+		subgroup_capabilities_min_size = subgroup_properties.subgroupSize;
+		subgroup_capabilities_max_size = subgroup_properties.subgroupSize;
+		subgroup_capabilities_supported_stages = subgroup_properties.supportedStages;
+		subgroup_capabilities_supported_operations = subgroup_properties.supportedOperations;
 
 		// Note: quadOperationsInAllStages will be true if:
 		// - supportedStages has VK_SHADER_STAGE_ALL_GRAPHICS + VK_SHADER_STAGE_COMPUTE_BIT.
 		// - supportedOperations has VK_SUBGROUP_FEATURE_QUAD_BIT.
-		subgroup_capabilities.quad_operations_in_all_stages =
+		subgroup_capabilities_quad_operations_in_all_stages =
 			subgroup_properties.quadOperationsInAllStages;
 
-		if (subgroup_capabilities.size_control_is_supported &&
+		if (subgroup_capabilities_size_control_is_supported &&
 			(subgroup_size_control_properties.requiredSubgroupSizeStages &
 				VK_SHADER_STAGE_COMPUTE_BIT)) {
-			subgroup_capabilities.min_size = subgroup_size_control_properties.minSubgroupSize;
-			subgroup_capabilities.max_size = subgroup_size_control_properties.maxSubgroupSize;
+			subgroup_capabilities_min_size = subgroup_size_control_properties.minSubgroupSize;
+			subgroup_capabilities_max_size = subgroup_size_control_properties.maxSubgroupSize;
 		}
 
 		if (fsr_capabilities.pipeline_supported || fsr_capabilities.primitive_supported ||
@@ -94083,48 +93931,46 @@ Error RenderingDeviceDriverVulkan::_check_device_capabilities()
 		}
 
 		print_verbose("- Vulkan subgroup:");
-		print_verbose("  size: " + itos(subgroup_capabilities.size));
-		print_verbose("  min size: " + itos(subgroup_capabilities.min_size));
-		print_verbose("  max size: " + itos(subgroup_capabilities.max_size));
-		print_verbose("  stages: " + subgroup_capabilities.supported_stages_desc());
-		print_verbose("  supported ops: " + subgroup_capabilities.supported_operations_desc());
-		if (subgroup_capabilities.quad_operations_in_all_stages) {
+		print_verbose("  size: " + itos(subgroup_capabilities_size));
+		print_verbose("  min size: " + itos(subgroup_capabilities_min_size));
+		print_verbose("  max size: " + itos(subgroup_capabilities_max_size));
+		print_verbose("  stages: " + subgroup_capabilities_supported_stages_desc());
+		print_verbose("  supported ops: " + subgroup_capabilities_supported_operations_desc());
+		if (subgroup_capabilities_quad_operations_in_all_stages) {
 			print_verbose("  quad operations in all stages");
 		}
 
-		if (acceleration_structure_capabilities.acceleration_structure_support) {
+		if (acceleration_structure_capabilities_acceleration_structure_support) {
 			print_verbose("- Vulkan Acceleration Structure supported");
-			acceleration_structure_capabilities
-				.min_acceleration_structure_scratch_offset_alignment =
+			acceleration_structure_capabilities_min_acceleration_structure_scratch_offset_alignment =
 				acceleration_structure_properties.minAccelerationStructureScratchOffsetAlignment;
 			print_verbose("  min acceleration structure scratch offset alignment: " +
-						  itos(acceleration_structure_capabilities
-								   .min_acceleration_structure_scratch_offset_alignment));
+						  itos(acceleration_structure_capabilities_min_acceleration_structure_scratch_offset_alignment));
 		}
 		else {
 			print_verbose("- Vulkan Acceleration Structure not supported");
 		}
 
-		if (raytracing_capabilities.raytracing_pipeline_support) {
-			raytracing_capabilities.shader_group_handle_size =
+		if (raytracing_capabilities_raytracing_pipeline_support) {
+			raytracing_capabilities_shader_group_handle_size =
 				raytracing_properties.shaderGroupHandleSize;
-			raytracing_capabilities.shader_group_handle_alignment =
+			raytracing_capabilities_shader_group_handle_alignment =
 				raytracing_properties.shaderGroupHandleAlignment;
-			raytracing_capabilities.shader_group_handle_size_aligned =
-				_align_up(raytracing_capabilities.shader_group_handle_size,
-					raytracing_capabilities.shader_group_handle_alignment);
-			raytracing_capabilities.shader_group_base_alignment =
+			raytracing_capabilities_shader_group_handle_size_aligned =
+				_align_up(raytracing_capabilities_shader_group_handle_size,
+					raytracing_capabilities_shader_group_handle_alignment);
+			raytracing_capabilities_shader_group_base_alignment =
 				raytracing_properties.shaderGroupBaseAlignment;
 
 			print_verbose("- Vulkan Raytracing supported");
 			print_verbose("  shader group handle size: " +
-						  itos(raytracing_capabilities.shader_group_handle_size));
+						  itos(raytracing_capabilities_shader_group_handle_size));
 			print_verbose("  shader group handle alignment: " +
-						  itos(raytracing_capabilities.shader_group_handle_alignment));
+						  itos(raytracing_capabilities_shader_group_handle_alignment));
 			print_verbose("  shader group handle size aligned: " +
-						  itos(raytracing_capabilities.shader_group_handle_size_aligned));
+						  itos(raytracing_capabilities_shader_group_handle_size_aligned));
 			print_verbose("  shader group base alignment: " +
-						  itos(raytracing_capabilities.shader_group_base_alignment));
+						  itos(raytracing_capabilities_shader_group_base_alignment));
 		}
 		else {
 			print_verbose("- Vulkan Raytracing not supported");
@@ -94201,8 +94047,8 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 	VkPhysicalDeviceShaderFloat16Int8FeaturesKHR shader_features = {};
 	shader_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES_KHR;
 	shader_features.pNext = create_info_next;
-	shader_features.shaderFloat16 = shader_capabilities.shader_float16_is_supported;
-	shader_features.shaderInt8 = shader_capabilities.shader_int8_is_supported;
+	shader_features.shaderFloat16 = shader_capabilities_shader_float16_is_supported;
+	shader_features.shaderInt8 = shader_capabilities_shader_int8_is_supported;
 	create_info_next = &shader_features;
 
 	VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address_features = {};
@@ -94288,31 +94134,31 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 #endif
 
 	VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features = {};
-	if (acceleration_structure_capabilities.acceleration_structure_support) {
+	if (acceleration_structure_capabilities_acceleration_structure_support) {
 		acceleration_structure_features.sType =
 			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 		acceleration_structure_features.pNext = create_info_next;
 		acceleration_structure_features.accelerationStructure =
-			acceleration_structure_capabilities.acceleration_structure_support;
+			acceleration_structure_capabilities_acceleration_structure_support;
 		create_info_next = &acceleration_structure_features;
 	}
 
 	VkPhysicalDeviceRayTracingPipelineFeaturesKHR raytracing_pipeline_features = {};
-	if (raytracing_capabilities.raytracing_pipeline_support) {
+	if (raytracing_capabilities_raytracing_pipeline_support) {
 		raytracing_pipeline_features.sType =
 			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 		raytracing_pipeline_features.pNext = create_info_next;
 		raytracing_pipeline_features.rayTracingPipeline =
-			raytracing_capabilities.raytracing_pipeline_support;
+			raytracing_capabilities_raytracing_pipeline_support;
 		create_info_next = &raytracing_pipeline_features;
 	}
 
 	VkPhysicalDeviceRayTracingValidationFeaturesNV raytracing_validation_features = {};
-	if (raytracing_capabilities.validation) {
+	if (raytracing_capabilities_validation) {
 		raytracing_validation_features.sType =
 			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV;
 		raytracing_validation_features.pNext = create_info_next;
-		raytracing_validation_features.rayTracingValidation = raytracing_capabilities.validation;
+		raytracing_validation_features.rayTracingValidation = raytracing_capabilities_validation;
 		create_info_next = &raytracing_validation_features;
 	}
 
@@ -94325,13 +94171,13 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 		vulkan_1_1_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
 		vulkan_1_1_features.pNext = create_info_next;
 		vulkan_1_1_features.storageBuffer16BitAccess =
-			storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported;
+			storage_buffer_capabilities_storage_buffer_16_bit_access_is_supported;
 		vulkan_1_1_features.uniformAndStorageBuffer16BitAccess =
-			storage_buffer_capabilities.uniform_and_storage_buffer_16_bit_access_is_supported;
+			storage_buffer_capabilities_uniform_and_storage_buffer_16_bit_access_is_supported;
 		vulkan_1_1_features.storagePushConstant16 =
-			storage_buffer_capabilities.storage_push_constant_16_is_supported;
+			storage_buffer_capabilities_storage_push_constant_16_is_supported;
 		vulkan_1_1_features.storageInputOutput16 =
-			storage_buffer_capabilities.storage_input_output_16;
+			storage_buffer_capabilities_storage_input_output_16;
 		vulkan_1_1_features.multiview = multiview_capabilities.is_supported;
 		vulkan_1_1_features.multiviewGeometryShader =
 			multiview_capabilities.geometry_shader_is_supported;
@@ -94349,12 +94195,12 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 		storage_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR;
 		storage_features.pNext = create_info_next;
 		storage_features.storageBuffer16BitAccess =
-			storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported;
+			storage_buffer_capabilities_storage_buffer_16_bit_access_is_supported;
 		storage_features.uniformAndStorageBuffer16BitAccess =
-			storage_buffer_capabilities.uniform_and_storage_buffer_16_bit_access_is_supported;
+			storage_buffer_capabilities_uniform_and_storage_buffer_16_bit_access_is_supported;
 		storage_features.storagePushConstant16 =
-			storage_buffer_capabilities.storage_push_constant_16_is_supported;
-		storage_features.storageInputOutput16 = storage_buffer_capabilities.storage_input_output_16;
+			storage_buffer_capabilities_storage_push_constant_16_is_supported;
+		storage_features.storageInputOutput16 = storage_buffer_capabilities_storage_input_output_16;
 		create_info_next = &storage_features;
 
 		const bool enable_1_1_features =
@@ -94400,69 +94246,69 @@ Error RenderingDeviceDriverVulkan::_initialize_device(
 
 	const RenderingContextDriverVulkan::Functions& functions = context_driver->functions_get();
 	if (functions.GetDeviceProcAddr != nullptr) {
-		device_functions.CreateSwapchainKHR = PFN_vkCreateSwapchainKHR(
+		device_functions_CreateSwapchainKHR = PFN_vkCreateSwapchainKHR(
 			functions.GetDeviceProcAddr(vk_device, "vkCreateSwapchainKHR"));
-		device_functions.DestroySwapchainKHR = PFN_vkDestroySwapchainKHR(
+		device_functions_DestroySwapchainKHR = PFN_vkDestroySwapchainKHR(
 			functions.GetDeviceProcAddr(vk_device, "vkDestroySwapchainKHR"));
-		device_functions.GetSwapchainImagesKHR = PFN_vkGetSwapchainImagesKHR(
+		device_functions_GetSwapchainImagesKHR = PFN_vkGetSwapchainImagesKHR(
 			functions.GetDeviceProcAddr(vk_device, "vkGetSwapchainImagesKHR"));
-		device_functions.AcquireNextImageKHR = PFN_vkAcquireNextImageKHR(
+		device_functions_AcquireNextImageKHR = PFN_vkAcquireNextImageKHR(
 			functions.GetDeviceProcAddr(vk_device, "vkAcquireNextImageKHR"));
-		device_functions.QueuePresentKHR =
+		device_functions_QueuePresentKHR =
 			PFN_vkQueuePresentKHR(functions.GetDeviceProcAddr(vk_device, "vkQueuePresentKHR"));
 
 		if (enabled_device_extension_names.has(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME)) {
-			device_functions.CreateRenderPass2KHR = PFN_vkCreateRenderPass2KHR(
+			device_functions_CreateRenderPass2KHR = PFN_vkCreateRenderPass2KHR(
 				functions.GetDeviceProcAddr(vk_device, "vkCreateRenderPass2KHR"));
-			device_functions.EndRenderPass2KHR = PFN_vkCmdEndRenderPass2KHR(
+			device_functions_EndRenderPass2KHR = PFN_vkCmdEndRenderPass2KHR(
 				functions.GetDeviceProcAddr(vk_device, "vkCmdEndRenderPass2KHR"));
 		}
 
 		// Debug marker extensions.
 		if (enabled_device_extension_names.has(VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
-			device_functions.CmdDebugMarkerBeginEXT =
+			device_functions_CmdDebugMarkerBeginEXT =
 				(PFN_vkCmdDebugMarkerBeginEXT)functions.GetDeviceProcAddr(
 					vk_device, "vkCmdDebugMarkerBeginEXT");
-			device_functions.CmdDebugMarkerEndEXT =
+			device_functions_CmdDebugMarkerEndEXT =
 				(PFN_vkCmdDebugMarkerEndEXT)functions.GetDeviceProcAddr(
 					vk_device, "vkCmdDebugMarkerEndEXT");
-			device_functions.CmdDebugMarkerInsertEXT =
+			device_functions_CmdDebugMarkerInsertEXT =
 				(PFN_vkCmdDebugMarkerInsertEXT)functions.GetDeviceProcAddr(
 					vk_device, "vkCmdDebugMarkerInsertEXT");
-			device_functions.DebugMarkerSetObjectNameEXT =
+			device_functions_DebugMarkerSetObjectNameEXT =
 				(PFN_vkDebugMarkerSetObjectNameEXT)functions.GetDeviceProcAddr(
 					vk_device, "vkDebugMarkerSetObjectNameEXT");
 		}
 
 		// Debug device fault extension.
 		if (device_fault_support) {
-			device_functions.GetDeviceFaultInfoEXT =
+			device_functions_GetDeviceFaultInfoEXT =
 				(PFN_vkGetDeviceFaultInfoEXT)functions.GetDeviceProcAddr(
 					vk_device, "vkGetDeviceFaultInfoEXT");
 		}
 
 		// Device raytracing extensions.
 		if (enabled_device_extension_names.has(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-			device_functions.CreateAccelerationStructureKHR = PFN_vkCreateAccelerationStructureKHR(
+			device_functions_CreateAccelerationStructureKHR = PFN_vkCreateAccelerationStructureKHR(
 				functions.GetDeviceProcAddr(vk_device, "vkCreateAccelerationStructureKHR"));
-			device_functions.DestroyAccelerationStructureKHR =
+			device_functions_DestroyAccelerationStructureKHR =
 				PFN_vkDestroyAccelerationStructureKHR(
 					functions.GetDeviceProcAddr(vk_device, "vkDestroyAccelerationStructureKHR"));
-			device_functions.GetAccelerationStructureBuildSizesKHR =
+			device_functions_GetAccelerationStructureBuildSizesKHR =
 				PFN_vkGetAccelerationStructureBuildSizesKHR(functions.GetDeviceProcAddr(
 					vk_device, "vkGetAccelerationStructureBuildSizesKHR"));
-			device_functions.CmdBuildAccelerationStructuresKHR =
+			device_functions_CmdBuildAccelerationStructuresKHR =
 				PFN_vkCmdBuildAccelerationStructuresKHR(
 					functions.GetDeviceProcAddr(vk_device, "vkCmdBuildAccelerationStructuresKHR"));
 		}
 
 		if (enabled_device_extension_names.has(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
-			device_functions.CreateRaytracingPipelinesKHR = PFN_vkCreateRayTracingPipelinesKHR(
+			device_functions_CreateRaytracingPipelinesKHR = PFN_vkCreateRayTracingPipelinesKHR(
 				functions.GetDeviceProcAddr(vk_device, "vkCreateRayTracingPipelinesKHR"));
-			device_functions.GetRayTracingShaderGroupHandlesKHR =
+			device_functions_GetRayTracingShaderGroupHandlesKHR =
 				PFN_vkGetRayTracingShaderGroupHandlesKHR(
 					functions.GetDeviceProcAddr(vk_device, "vkGetRayTracingShaderGroupHandlesKHR"));
-			device_functions.CmdTraceRaysKHR =
+			device_functions_CmdTraceRaysKHR =
 				PFN_vkCmdTraceRaysKHR(functions.GetDeviceProcAddr(vk_device, "vkCmdTraceRaysKHR"));
 		}
 	}
@@ -94525,8 +94371,8 @@ VkResult RenderingDeviceDriverVulkan::_create_render_pass(VkDevice p_device,
 	const VkRenderPassCreateInfo2* p_create_info, const VkAllocationCallbacks* p_allocator,
 	VkRenderPass* p_render_pass)
 {
-	if (device_functions.CreateRenderPass2KHR != nullptr) {
-		return device_functions.CreateRenderPass2KHR(
+	if (device_functions_CreateRenderPass2KHR != nullptr) {
+		return device_functions_CreateRenderPass2KHR(
 			p_device, p_create_info, p_allocator, p_render_pass);
 	}
 	else {
@@ -94862,14 +94708,14 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 		Engine::is_generate_spirv_debug_info_enabled());
 
 #if RECORD_PIPELINE_STATISTICS
-	pipeline_statistics.file_access =
+	pipeline_statistics_file_access =
 		FileAccess::open(RECORD_PIPELINE_STATISTICS_PATH, FileAccess::WRITE);
-	ERR_FAIL_NULL_V_MSG(pipeline_statistics.file_access, ERR_CANT_CREATE,
+	ERR_FAIL_NULL_V_MSG(pipeline_statistics_file_access, ERR_CANT_CREATE,
 		"Couldn't write Vulkan pipeline statistics file.");
 
-	pipeline_statistics.file_access->store_csv_line(
+	pipeline_statistics_file_access->store_csv_line(
 		{"name", "hash", "stage", "spec", "glslang", "re-spirv", "time"});
-	pipeline_statistics.file_access->flush();
+	pipeline_statistics_file_access->flush();
 #endif
 
 	return OK;
@@ -95180,14 +95026,14 @@ void RenderingDeviceDriverVulkan::buffer_flush(BufferID p_buffer)
 
 	if (needs_flushing) {
 		if (buf_info->is_dynamic()) {
-			pending_flushes.allocations.push_back(buf_info->alloc_handle);
-			pending_flushes.offsets.push_back(buf_info->frame_idx * buf_info->size);
-			pending_flushes.sizes.push_back(buf_info->size);
+			pending_flushes_allocations.push_back(buf_info->alloc_handle);
+			pending_flushes_offsets.push_back(buf_info->frame_idx * buf_info->size);
+			pending_flushes_sizes.push_back(buf_info->size);
 		}
 		else {
-			pending_flushes.allocations.push_back(buf_info->alloc_handle);
-			pending_flushes.offsets.push_back(0u);
-			pending_flushes.sizes.push_back(VK_WHOLE_SIZE);
+			pending_flushes_allocations.push_back(buf_info->alloc_handle);
+			pending_flushes_offsets.push_back(0u);
+			pending_flushes_sizes.push_back(VK_WHOLE_SIZE);
 		}
 	}
 }
@@ -96394,16 +96240,16 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 		wait_semaphores_stages.push_back(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	}
 
-	if (!pending_flushes.allocations.is_empty()) {
+	if (!pending_flushes_allocations.is_empty()) {
 		// We must do this now, even if p_cmd_buffers is empty; because afterwards
-		// pending_flushes.allocations could become dangling. We cannot delay this call for the next
+		// pending_flushes_allocations could become dangling. We cannot delay this call for the next
 		// frame(s).
-		err = vmaFlushAllocations(allocator, pending_flushes.allocations.size(),
-			pending_flushes.allocations.ptr(), pending_flushes.offsets.ptr(),
-			pending_flushes.sizes.ptr());
-		pending_flushes.allocations.clear();
-		pending_flushes.offsets.clear();
-		pending_flushes.sizes.clear();
+		err = vmaFlushAllocations(allocator, pending_flushes_allocations.size(),
+			pending_flushes_allocations.ptr(), pending_flushes_offsets.ptr(),
+			pending_flushes_sizes.ptr());
+		pending_flushes_allocations.clear();
+		pending_flushes_offsets.clear();
+		pending_flushes_sizes.clear();
 		ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, FAILED,
 			vformat("Couldn't flush Vulkan memory allocations (VkResult error %d).", err));
 	}
@@ -96508,11 +96354,11 @@ Error RenderingDeviceDriverVulkan::command_queue_execute_and_present(CommandQueu
 		}
 		else {
 			printf("[VK] QueuePresentKHR called for window %d\n", (int)p_window);
-			err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
+			err = device_functions_QueuePresentKHR(device_queue.queue, &present_info);
 			printf("[VK] QueuePresentKHR result = %d\n", (int)err);
 		}
 #else
-		err = device_functions.QueuePresentKHR(device_queue.queue, &present_info);
+		err = device_functions_QueuePresentKHR(device_queue.queue, &present_info);
 #endif
 
 		device_queue.submit_mutex.unlock();
@@ -96874,7 +96720,7 @@ void RenderingDeviceDriverVulkan::_swap_chain_release(SwapChain* swap_chain)
 			SwappyVk_destroySwapchain(vk_device, swap_chain->vk_swapchain);
 		}
 #endif
-		device_functions.DestroySwapchainKHR(vk_device, swap_chain->vk_swapchain,
+		device_functions_DestroySwapchainKHR(vk_device, swap_chain->vk_swapchain,
 			VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SWAPCHAIN_KHR));
 		swap_chain->vk_swapchain = VK_NULL_HANDLE;
 	}
@@ -97170,7 +97016,7 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 	swap_create_info.compositeAlpha = composite_alpha;
 	swap_create_info.presentMode = present_mode;
 	swap_create_info.clipped = true;
-	err = device_functions.CreateSwapchainKHR(vk_device, &swap_create_info,
+	err = device_functions_CreateSwapchainKHR(vk_device, &swap_create_info,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_SWAPCHAIN_KHR), &swap_chain->vk_swapchain);
 	ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, ERR_CANT_CREATE,
 		vformat("Couldn't create Vulkan swapchain (VkResult error %d).", err));
@@ -97210,13 +97056,13 @@ Error RenderingDeviceDriverVulkan::swap_chain_resize(
 #endif
 
 	uint32_t image_count = 0;
-	err = device_functions.GetSwapchainImagesKHR(
+	err = device_functions_GetSwapchainImagesKHR(
 		vk_device, swap_chain->vk_swapchain, &image_count, nullptr);
 	ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, ERR_CANT_CREATE,
 		vformat("Couldn't get Vulkan swapchain images (VkResult error %d).", err));
 
 	swap_chain->images.resize(image_count);
-	err = device_functions.GetSwapchainImagesKHR(
+	err = device_functions_GetSwapchainImagesKHR(
 		vk_device, swap_chain->vk_swapchain, &image_count, swap_chain->images.ptr());
 	ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, ERR_CANT_CREATE,
 		vformat("Couldn't get Vulkan swapchain images (VkResult error %d).", err));
@@ -97381,7 +97227,7 @@ RDD::FramebufferID RenderingDeviceDriverVulkan::swap_chain_acquire_framebuffer(
 	swap_chain->command_queues_acquired.push_back(command_queue);
 	swap_chain->command_queues_acquired_semaphores.push_back(semaphore_index);
 
-	err = device_functions.AcquireNextImageKHR(vk_device, swap_chain->vk_swapchain, UINT64_MAX,
+	err = device_functions_AcquireNextImageKHR(vk_device, swap_chain->vk_swapchain, UINT64_MAX,
 		semaphore, VK_NULL_HANDLE, &swap_chain->image_index);
 	if (err == VK_ERROR_OUT_OF_DATE_KHR) {
 		// Out of date leaves the semaphore in a signaled state that will never finish, so it's
@@ -99125,7 +98971,7 @@ RDD::RenderPassID RenderingDeviceDriverVulkan::render_pass_create(
 	create_info.pCorrelatedViewMasks = p_view_count == 1 ? nullptr : &correlation_mask;
 
 	// Multiview.
-	if (p_view_count > 1 && device_functions.CreateRenderPass2KHR == nullptr) {
+	if (p_view_count > 1 && device_functions_CreateRenderPass2KHR == nullptr) {
 		// This is only required when not using vkCreateRenderPass2.
 		// We add it if vkCreateRenderPass2KHR is not supported,
 		// resulting this in being passed to our vkCreateRenderPass fallback.
@@ -99253,7 +99099,7 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 	DEV_ASSERT(command_buffer->active_framebuffer != nullptr && "A framebuffer must be active.");
 	DEV_ASSERT(command_buffer->active_render_pass != nullptr && "A render pass must be active.");
 
-	if (device_functions.EndRenderPass2KHR != nullptr && fdm_capabilities.offset_supported &&
+	if (device_functions_EndRenderPass2KHR != nullptr && fdm_capabilities.offset_supported &&
 		command_buffer->active_render_pass->uses_fragment_density_map) {
 		LocalVector<VkOffset2D> fragment_density_offsets;
 		if (VulkanHooks::is_bound()) {
@@ -99270,7 +99116,7 @@ void RenderingDeviceDriverVulkan::command_end_render_pass(CommandBufferID p_cmd_
 			subpass_end_info.sType = VK_STRUCTURE_TYPE_SUBPASS_END_INFO;
 			subpass_end_info.pNext = &offset_info;
 
-			device_functions.EndRenderPass2KHR(
+			device_functions_EndRenderPass2KHR(
 				command_buffer->vk_command_buffer, &subpass_end_info);
 		}
 		else {
@@ -100013,7 +99859,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 
 #if RECORD_PIPELINE_STATISTICS
 	{
-		MutexLock lock(pipeline_statistics.file_access_mutex);
+		MutexLock lock(pipeline_statistics_file_access_mutex);
 		uint64_t pipeline_creation_time =
 			OS::get_ticks_usec() - pipeline_start_time;
 		for (uint32_t i = 0; i < shader_info->vk_stages_create_info.size(); i++) {
@@ -100026,10 +99872,10 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 					respv_size[i] > 0 ? respv_size[i] : shader_info->spirv_stage_bytes[i].size()),
 				String::num_uint64(respv_run_time[i] + pipeline_creation_time)};
 
-			pipeline_statistics.file_access->store_csv_line(csv_array);
+			pipeline_statistics_file_access->store_csv_line(csv_array);
 		}
 
-		pipeline_statistics.file_access->flush();
+		pipeline_statistics_file_access->flush();
 	}
 #endif
 
@@ -100127,7 +99973,7 @@ RDD::AccelerationStructureID RenderingDeviceDriverVulkan::blas_create(
 	VkAccelerationStructureBuildSizesInfoKHR size_info = {};
 	size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-	device_functions.GetAccelerationStructureBuildSizesKHR(vk_device,
+	device_functions_GetAccelerationStructureBuildSizesKHR(vk_device,
 		VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &accel_info->build_info,
 		max_primitive_counts.ptr(), &size_info);
 	_acceleration_structure_create(
@@ -100181,7 +100027,7 @@ RDD::AccelerationStructureID RenderingDeviceDriverVulkan::tlas_create(
 
 	VkAccelerationStructureBuildSizesInfoKHR size_info = {};
 	size_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	device_functions.GetAccelerationStructureBuildSizesKHR(vk_device,
+	device_functions_GetAccelerationStructureBuildSizesKHR(vk_device,
 		VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &accel_info->build_info,
 		&p_max_instance_count, &size_info);
 
@@ -100238,7 +100084,7 @@ void RenderingDeviceDriverVulkan::_acceleration_structure_create(
 
 	// Scratch address must be a multiple of minAccelerationStructureScratchOffsetAlignment.
 	r_accel_info->scratch_alignment =
-		acceleration_structure_capabilities.min_acceleration_structure_scratch_offset_alignment;
+		acceleration_structure_capabilities_min_acceleration_structure_scratch_offset_alignment;
 	r_accel_info->scratch_size = p_size_info.buildScratchSize + r_accel_info->scratch_alignment;
 
 	VkAccelerationStructureCreateInfoKHR accel_create_info = {};
@@ -100246,7 +100092,7 @@ void RenderingDeviceDriverVulkan::_acceleration_structure_create(
 	accel_create_info.type = p_type;
 	accel_create_info.size = p_size_info.accelerationStructureSize;
 	accel_create_info.buffer = ((const BufferInfo*)buffer.id)->vk_buffer;
-	VkResult err = device_functions.CreateAccelerationStructureKHR(
+	VkResult err = device_functions_CreateAccelerationStructureKHR(
 		vk_device, &accel_create_info, nullptr, &r_accel_info->vk_acceleration_structure);
 	ERR_FAIL_COND_MSG(err,
 		vformat(
@@ -100266,7 +100112,7 @@ void RenderingDeviceDriverVulkan::acceleration_structure_free(
 		buffer_free(accel_info->buffer);
 	}
 	if (accel_info->vk_acceleration_structure) {
-		device_functions.DestroyAccelerationStructureKHR(
+		device_functions_DestroyAccelerationStructureKHR(
 			vk_device, accel_info->vk_acceleration_structure, nullptr);
 	}
 	VersatileResource::free(resources_allocator, accel_info);
@@ -100294,11 +100140,11 @@ RenderingDeviceDriverVulkan::_sbt_to_vk_strided_device_address_region(
 		vk_strided_device_address_region.size = p_sbt.size;
 
 		DEV_ASSERT((vk_strided_device_address_region.deviceAddress &
-					   (raytracing_capabilities.shader_group_base_alignment - 1)) == 0 &&
+					   (raytracing_capabilities_shader_group_base_alignment - 1)) == 0 &&
 				   "Shader binding table address must be aligned to "
 				   "API_TRAIT_SHADER_GROUP_BASE_ALIGNMENT.");
 		DEV_ASSERT((vk_strided_device_address_region.stride &
-					   (raytracing_capabilities.shader_group_handle_alignment - 1)) == 0 &&
+					   (raytracing_capabilities_shader_group_handle_alignment - 1)) == 0 &&
 				   "Shader binding table stride must be aligned to "
 				   "API_TRAIT_SHADER_GROUP_HANDLE_ALIGNMENT.");
 	}
@@ -100319,7 +100165,7 @@ void RenderingDeviceDriverVulkan::command_build_blas(CommandBufferID p_cmd_buffe
 
 	const VkAccelerationStructureBuildRangeInfoKHR* range_infos = accel_info->range_infos.ptr();
 
-	device_functions.CmdBuildAccelerationStructuresKHR(
+	device_functions_CmdBuildAccelerationStructuresKHR(
 		command_buffer->vk_command_buffer, 1, build_info, &range_infos);
 #endif
 }
@@ -100343,7 +100189,7 @@ void RenderingDeviceDriverVulkan::command_build_tlas(CommandBufferID p_cmd_buffe
 
 	const VkAccelerationStructureBuildRangeInfoKHR* range_infos = accel_info->range_infos.ptr();
 
-	device_functions.CmdBuildAccelerationStructuresKHR(
+	device_functions_CmdBuildAccelerationStructuresKHR(
 		command_buffer->vk_command_buffer, 1, build_info, &range_infos);
 #endif
 }
@@ -100378,7 +100224,7 @@ void RenderingDeviceDriverVulkan::command_trace_rays(CommandBufferID p_cmd_buffe
 	VkStridedDeviceAddressRegionKHR miss_sbt = _sbt_to_vk_strided_device_address_region(p_miss_sbt);
 	VkStridedDeviceAddressRegionKHR hit_sbt = _sbt_to_vk_strided_device_address_region(p_hit_sbt);
 	VkStridedDeviceAddressRegionKHR callable_sbt = {};
-	device_functions.CmdTraceRaysKHR(command_buffer->vk_command_buffer, &raygen_sbt, &miss_sbt,
+	device_functions_CmdTraceRaysKHR(command_buffer->vk_command_buffer, &raygen_sbt, &miss_sbt,
 		&hit_sbt, &callable_sbt, p_width, p_height, p_depth);
 #endif
 }
@@ -100493,7 +100339,7 @@ RDD::RaytracingPipelineID RenderingDeviceDriverVulkan::raytracing_pipeline_creat
 	pipeline_create_info.maxPipelineRayRecursionDepth = p_max_trace_recursion_depth;
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
-	VkResult err = device_functions.CreateRaytracingPipelinesKHR(vk_device, VK_NULL_HANDLE,
+	VkResult err = device_functions_CreateRaytracingPipelinesKHR(vk_device, VK_NULL_HANDLE,
 		pipelines_cache.vk_cache, 1, &pipeline_create_info, nullptr, &vk_pipeline);
 	ERR_FAIL_COND_V_MSG(err, RaytracingPipelineID(),
 		vformat("Couldn't create Vulkan raytracing pipelines (VkResult error %d).", err));
@@ -100516,16 +100362,16 @@ bool RenderingDeviceDriverVulkan::raytracing_pipeline_get_shader_group_handles(
 	VectorView<uint32_t> p_group_indices, uint8_t* r_data, uint32_t p_data_stride_bytes)
 {
 #if VULKAN_RAYTRACING_ENABLED
-	ERR_FAIL_COND_V_MSG(p_data_stride_bytes < raytracing_capabilities.shader_group_handle_size,
+	ERR_FAIL_COND_V_MSG(p_data_stride_bytes < raytracing_capabilities_shader_group_handle_size,
 		false,
 		vformat("Data stride (%d) must be greater than or equal to the size of the shader group "
 				"handles (%d).",
-			p_data_stride_bytes, raytracing_capabilities.shader_group_handle_size));
+			p_data_stride_bytes, raytracing_capabilities_shader_group_handle_size));
 
 	for (uint32_t i = 0; i < p_group_indices.size(); i++) {
-		VkResult err = device_functions.GetRayTracingShaderGroupHandlesKHR(vk_device,
+		VkResult err = device_functions_GetRayTracingShaderGroupHandlesKHR(vk_device,
 			(VkPipeline)p_pipeline.id, p_group_index_offset + p_group_indices[i], 1,
-			raytracing_capabilities.shader_group_handle_size, r_data);
+			raytracing_capabilities_shader_group_handle_size, r_data);
 		ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, false,
 			vformat(
 				"Couldn't get Vulkan raytracing shader group handles (VkResult error %d).", err));
@@ -100823,14 +100669,14 @@ void RenderingDeviceDriverVulkan::command_insert_breadcrumb(
 
 void RenderingDeviceDriverVulkan::on_device_lost() const
 {
-	if (device_functions.GetDeviceFaultInfoEXT == nullptr) {
+	if (device_functions_GetDeviceFaultInfoEXT == nullptr) {
 		_err_print_error(FUNCTION_STR, __FILE__, __LINE__, "VK_EXT_device_fault not available.");
 		return;
 	}
 
 	VkDeviceFaultCountsEXT fault_counts = {};
 	fault_counts.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
-	VkResult vkres = device_functions.GetDeviceFaultInfoEXT(vk_device, &fault_counts, nullptr);
+	VkResult vkres = device_functions_GetDeviceFaultInfoEXT(vk_device, &fault_counts, nullptr);
 
 	if (vkres != VK_SUCCESS) {
 		_err_print_error(FUNCTION_STR, __FILE__, __LINE__,
@@ -100853,7 +100699,7 @@ void RenderingDeviceDriverVulkan::on_device_lost() const
 				  fault_counts.addressInfoCount * sizeof(VkDeviceFaultAddressInfoEXT))
 			: nullptr;
 	fault_counts.vendorBinarySize = 0;
-	vkres = device_functions.GetDeviceFaultInfoEXT(vk_device, &fault_counts, &fault_info);
+	vkres = device_functions_GetDeviceFaultInfoEXT(vk_device, &fault_counts, &fault_info);
 	if (vkres != VK_SUCCESS) {
 		_err_print_error(FUNCTION_STR, __FILE__, __LINE__,
 			"vkGetDeviceFaultInfoEXT returned " + itos(vkres) +
@@ -101274,15 +101120,15 @@ uint64_t RenderingDeviceDriverVulkan::limit_get(RDC::Limit p_limit)
 	case RDC::LIMIT_MAX_VIEWPORT_DIMENSIONS_Y:
 		return limits.maxViewportDimensions[1];
 	case RDC::LIMIT_SUBGROUP_SIZE:
-		return subgroup_capabilities.size;
+		return subgroup_capabilities_size;
 	case RDC::LIMIT_SUBGROUP_MIN_SIZE:
-		return subgroup_capabilities.min_size;
+		return subgroup_capabilities_min_size;
 	case RDC::LIMIT_SUBGROUP_MAX_SIZE:
-		return subgroup_capabilities.max_size;
+		return subgroup_capabilities_max_size;
 	case RDC::LIMIT_SUBGROUP_IN_SHADERS:
-		return subgroup_capabilities.supported_stages_flags_rd();
+		return subgroup_capabilities_supported_stages_flags_rd();
 	case RDC::LIMIT_SUBGROUP_OPERATIONS:
-		return subgroup_capabilities.supported_operations_flags_rd();
+		return subgroup_capabilities_supported_operations_flags_rd();
 	case RDC::LIMIT_MAX_SHADER_VARYINGS:
 		// The Vulkan spec states that built in varyings like gl_FragCoord should count against
 		// this, but in practice, that doesn't seem to be the case. The validation layers don't even
@@ -101308,11 +101154,11 @@ uint64_t RenderingDeviceDriverVulkan::api_trait_get(ApiTrait p_trait)
 	case API_TRAIT_ACCELERATION_STRUCTURE_INSTANCE_SIZE:
 		return sizeof(VkAccelerationStructureInstanceKHR);
 	case API_TRAIT_SHADER_GROUP_HANDLE_SIZE:
-		return raytracing_capabilities.shader_group_handle_size;
+		return raytracing_capabilities_shader_group_handle_size;
 	case API_TRAIT_SHADER_GROUP_HANDLE_ALIGNMENT:
-		return raytracing_capabilities.shader_group_handle_alignment;
+		return raytracing_capabilities_shader_group_handle_alignment;
 	case API_TRAIT_SHADER_GROUP_BASE_ALIGNMENT:
-		return raytracing_capabilities.shader_group_base_alignment;
+		return raytracing_capabilities_shader_group_base_alignment;
 	default:
 		return RenderingDeviceDriver::api_trait_get(p_trait);
 	}
@@ -101322,9 +101168,9 @@ bool RenderingDeviceDriverVulkan::has_feature(RDC::Features p_feature)
 {
 	switch (p_feature) {
 	case RDC::SUPPORTS_HALF_FLOAT:
-		return shader_capabilities.shader_float16_is_supported &&
+		return shader_capabilities_shader_float16_is_supported &&
 			   physical_device_features.shaderInt16 &&
-			   storage_buffer_capabilities.storage_buffer_16_bit_access_is_supported;
+			   storage_buffer_capabilities_storage_buffer_16_bit_access_is_supported;
 	case RDC::SUPPORTS_FRAGMENT_SHADER_WITH_ONLY_SIDE_EFFECTS:
 		return true;
 	case RDC::SUPPORTS_BUFFER_DEVICE_ADDRESS:
@@ -101343,11 +101189,11 @@ bool RenderingDeviceDriverVulkan::has_feature(RDC::Features p_feature)
 	case RDC::SUPPORTS_POINT_SIZE:
 		return true;
 	case RDC::SUPPORTS_RAY_QUERY:
-		return acceleration_structure_capabilities.acceleration_structure_support &&
+		return acceleration_structure_capabilities_acceleration_structure_support &&
 			   ray_query_support;
 	case RDC::SUPPORTS_RAYTRACING_PIPELINE:
-		return acceleration_structure_capabilities.acceleration_structure_support &&
-			   raytracing_capabilities.raytracing_pipeline_support;
+		return acceleration_structure_capabilities_acceleration_structure_support &&
+			   raytracing_capabilities_raytracing_pipeline_support;
 	case RDC::SUPPORTS_HDR_OUTPUT:
 #if defined(WINDOWS_ENABLED)
 		// When using a Vulkan swapchain on Windows, some configurations
@@ -122399,19 +122245,19 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 	// Load
 	CanvasSdfShaderGLES3::ShaderVariant variant =
 		shrink ? CanvasSdfShaderGLES3::MODE_LOAD_SHRINK : CanvasSdfShaderGLES3::MODE_LOAD;
-	bool success = sdf_shader.shader.version_bind_shader(sdf_shader.shader_version, variant);
+	bool success = sdf_shader.version_bind_shader(sdf_shader_version, variant);
 	if (!success) {
 		return;
 	}
 
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SIZE, size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::STRIDE, 0, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader.shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SIZE, size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::STRIDE, 0, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader_version, variant);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, rt->sdf_texture_write);
@@ -122429,19 +122275,19 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 	int stride = Math::nearest_power_of_2_templated(MAX(size.width, size.height) / 2);
 
 	variant = CanvasSdfShaderGLES3::MODE_PROCESS;
-	success = sdf_shader.shader.version_bind_shader(sdf_shader.shader_version, variant);
+	success = sdf_shader.version_bind_shader(sdf_shader_version, variant);
 	if (!success) {
 		return;
 	}
 
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SIZE, size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader.shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SIZE, size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader_version, variant);
 
 	bool swap = false;
 
@@ -122452,8 +122298,8 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 			rt->sdf_texture_process[swap ? 0 : 1], 0);
 		glBindTexture(GL_TEXTURE_2D, rt->sdf_texture_process[swap ? 1 : 0]);
 
-		sdf_shader.shader.version_set_uniform(
-			CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader.shader_version, variant);
+		sdf_shader.version_set_uniform(
+			CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader_version, variant);
 
 		Effects::draw_screen_triangle();
 
@@ -122463,19 +122309,19 @@ void GLES3::TextureStorage::render_target_sdf_process(RID p_render_target)
 
 	// Store
 	variant = shrink ? CanvasSdfShaderGLES3::MODE_STORE_SHRINK : CanvasSdfShaderGLES3::MODE_STORE;
-	success = sdf_shader.shader.version_bind_shader(sdf_shader.shader_version, variant);
+	success = sdf_shader.version_bind_shader(sdf_shader_version, variant);
 	if (!success) {
 		return;
 	}
 
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SIZE, size, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader.shader_version, variant);
-	sdf_shader.shader.version_set_uniform(
-		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader.shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::BASE_SIZE, r.size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SIZE, size, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::STRIDE, stride, sdf_shader_version, variant);
+	sdf_shader.version_set_uniform(
+		CanvasSdfShaderGLES3::SHIFT, shift, sdf_shader_version, variant);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glFramebufferTexture2D(
@@ -122795,8 +122641,8 @@ void GLES3::TextureStorage::initialize()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	{
-		sdf_shader.shader.initialize();
-		sdf_shader.shader_version = sdf_shader.shader.version_create();
+		sdf_shader.initialize();
+		sdf_shader_version = sdf_shader.version_create();
 	}
 
 	// Initialize texture placeholder data for the `texture_*_placeholder_initialize()` methods.
@@ -122849,9 +122695,9 @@ void GLES3::TextureStorage::finalize()
 		glDeleteFramebuffers(1, &texture_atlas.framebuffer);
 		texture_atlas.framebuffer = 0;
 	}
-	if (sdf_shader.shader_version.is_valid()) {
-		sdf_shader.shader.version_free(sdf_shader.shader_version);
-		sdf_shader.shader_version = RID();
+	if (sdf_shader_version.is_valid()) {
+		sdf_shader.version_free(sdf_shader_version);
+		sdf_shader_version = RID();
 	}
 	texture_2d_placeholder.unref();
 	texture_2d_array_placeholder.clear();
@@ -123133,7 +122979,7 @@ void RasterizerCanvasGLES3::canvas_render_items(RID p_to_render_target, RCR::Ite
 			}
 
 			Transform2D final_xform;
-			if (!Renderer::canvas->_interpolation_data.interpolation_enabled || !l->interpolated) {
+			if (!Renderer::canvas->interpolation_enabled || !l->interpolated) {
 				final_xform = l->xform_curr;
 			}
 			else {

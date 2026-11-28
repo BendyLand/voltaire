@@ -5623,7 +5623,7 @@ void RenderingContextDriverMetal::surface_destroy(SurfaceID p_surface) {
 #include <spirv_parser.hpp>
 
 void RenderingShaderContainerMetal::_initialize_toolchain_properties() {
-	if (compiler_props.is_valid()) {
+	if (_compiler_props_is_valid()) {
 		return;
 	}
 
@@ -5676,15 +5676,15 @@ void RenderingShaderContainerMetal::_initialize_toolchain_properties() {
 			continue;
 		}
 		if (name_val[0] == "__ENVIRONMENT_OS_VERSION_MIN_REQUIRED__") {
-			compiler_props.os_version_min_required = MinOsVersion((uint32_t)name_val[1].to_int());
+			compiler_props_os_version_min_required = MinOsVersion((uint32_t)name_val[1].to_int());
 		} else if (name_val[0] == "__METAL_VERSION__") {
 			uint32_t ver = (uint32_t)name_val[1].to_int();
 			uint32_t maj = ver / 100;
 			uint32_t min = (ver % 100) / 10;
-			compiler_props.metal_version = make_msl_version(maj, min);
+			compiler_props_metal_version = make_msl_version(maj, min);
 		}
 
-		if (compiler_props.is_valid()) {
+		if (_compiler_props_is_valid()) {
 			break;
 		}
 	}
@@ -5941,10 +5941,10 @@ bool RenderingShaderContainerMetal::_set_code_from_spirv(const ReflectShader &p_
 	// Determine Metal language version.
 	uint32_t msl_version = 0;
 	{
-		if (export_mode && compiler_props.is_valid()) {
+		if (export_mode && _compiler_props_is_valid()) {
 			// Use the properties determined by the toolchain and minimum OS version.
-			msl_version = compiler_props.metal_version;
-			mtl_reflection_data.os_min_version = compiler_props.os_version_min_required;
+			msl_version = compiler_props_metal_version;
+			mtl_reflection_data.os_min_version = compiler_props_os_version_min_required;
 		} else {
 			msl_version = device_profile->features.msl_version;
 			mtl_reflection_data.os_min_version = MinOsVersion();
@@ -6298,7 +6298,7 @@ bool RenderingShaderContainerMetal::_set_code_from_spirv(const ReflectShader &p_
 		memcpy(binary_data.ptrw(), source.c_str(), stage_data.source_size);
 
 		if (export_mode) {
-			if (compiler_props.is_valid()) {
+			if (_compiler_props_is_valid()) {
 				// Try to compile the Metal source code.
 				::Vector<uint8_t> library_data;
 				Error compile_err = compile_metal_source(source.c_str(), stage_data, library_data);

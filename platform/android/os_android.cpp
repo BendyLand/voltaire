@@ -8479,11 +8479,11 @@ void AndroidInputHandler::process_touch_event(int p_event, int p_pointer, const 
 void AndroidInputHandler::_cancel_mouse_event_info(bool p_source_mouse_relative) {
 	buttons_state = uint32_t();
 	_parse_mouse_event_info(uint32_t(), false, true, false, p_source_mouse_relative);
-	mouse_event_info.valid = false;
+	mouse_event_valid = false;
 }
 
 void AndroidInputHandler::_parse_mouse_event_info(uint32_t event_buttons_mask, bool p_pressed, bool p_canceled, bool p_double_click, bool p_source_mouse_relative) {
-	if (!mouse_event_info.valid) {
+	if (!mouse_event_valid) {
 		return;
 	}
 
@@ -8494,9 +8494,9 @@ void AndroidInputHandler::_parse_mouse_event_info(uint32_t event_buttons_mask, b
 		ev->set_position(hover_prev_pos);
 		ev->set_global_position(hover_prev_pos);
 	} else {
-		ev->set_position(mouse_event_info.pos);
-		ev->set_global_position(mouse_event_info.pos);
-		hover_prev_pos = mouse_event_info.pos;
+		ev->set_position(mouse_event_pos);
+		ev->set_global_position(mouse_event_pos);
+		hover_prev_pos = mouse_event_pos;
 	}
 	ev->set_pressed(p_pressed);
 	ev->set_canceled(p_canceled);
@@ -8512,7 +8512,7 @@ void AndroidInputHandler::_parse_mouse_event_info(uint32_t event_buttons_mask, b
 
 void AndroidInputHandler::_release_mouse_event_info(bool p_source_mouse_relative) {
 	_parse_mouse_event_info(uint32_t(), false, false, false, p_source_mouse_relative);
-	mouse_event_info.valid = false;
+	mouse_event_valid = false;
 }
 
 void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_android_buttons_mask, Point2 p_event_pos, Vector2 p_delta, bool p_double_click, bool p_source_mouse_relative, float p_pressure, Vector2 p_tilt) {
@@ -8539,8 +8539,8 @@ void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_an
 			_release_mouse_event_info();
 			_release_all_touch();
 
-			mouse_event_info.valid = true;
-			mouse_event_info.pos = p_event_pos;
+			mouse_event_valid = true;
+			mouse_event_pos = p_event_pos;
 			_parse_mouse_event_info(event_buttons_mask, true, false, p_double_click, p_source_mouse_relative);
 		} break;
 
@@ -8554,7 +8554,7 @@ void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_an
 		} break;
 
 		case AMOTION_EVENT_ACTION_MOVE: {
-			if (!p_source_mouse_relative && !mouse_event_info.valid) {
+			if (!p_source_mouse_relative && !mouse_event_valid) {
 				return;
 			}
 
@@ -8571,7 +8571,7 @@ void AndroidInputHandler::process_mouse_event(int p_event_action, int p_event_an
 				ev->set_global_position(p_event_pos);
 				ev->set_relative(p_event_pos - hover_prev_pos);
 				ev->set_relative_screen_position(ev->get_relative());
-				mouse_event_info.pos = p_event_pos;
+				mouse_event_pos = p_event_pos;
 				hover_prev_pos = p_event_pos;
 			}
 			ev->set_button_mask(event_buttons_mask);

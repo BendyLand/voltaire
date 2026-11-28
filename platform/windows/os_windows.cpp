@@ -433,7 +433,7 @@ void OS_Windows::initialize() {
 	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_RESOURCES);
 	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_USERDATA);
 	FileAccess::make_default<FileAccessWindows>(FileAccess::ACCESS_FILESYSTEM);
-	FileAccess::make_default<FileAccessWindowsPipe>(FileAccess::ACCESS_PIPE);
+	FileAccess::make_default<FileAccessPipe>(FileAccess::ACCESS_PIPE);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_RESOURCES);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_USERDATA);
 	DirAccess::make_default<DirAccessWindows>(DirAccess::ACCESS_FILESYSTEM);
@@ -1543,11 +1543,11 @@ Dictionary OS_Windows::execute_with_pipe(const String &p_path, const List<String
 	process_map->insert(pid, pi);
 	process_map_mutex.unlock();
 
-	Ref<FileAccessWindowsPipe> main_pipe;
+	Ref<FileAccessPipe> main_pipe;
 	main_pipe.instantiate();
 	main_pipe->open_existing(pipe_out[0], pipe_in[1], p_blocking);
 
-	Ref<FileAccessWindowsPipe> err_pipe;
+	Ref<FileAccessPipe> err_pipe;
 	err_pipe.instantiate();
 	err_pipe->open_existing(pipe_err[0], nullptr, p_blocking);
 
@@ -11104,6 +11104,10 @@ void DisplayServerWindows::tablet_set_current_driver(const String &p_driver) {
 	}
 }
 
+#if defined(GLES3_ENABLED) && defined(ANGLE_ENABLED)
+#include <EGL/eglext_angle.h>
+#endif
+
 DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, DisplayServerEnums::WindowMode p_mode, DisplayServerEnums::VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, DisplayServerEnums::Context p_context, int64_t p_parent_window, Error &r_error) {
 	KeyMappingWindows::initialize();
 
@@ -11553,7 +11557,7 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Dis
 	}
 
 	if (rendering_driver == "opengl3_angle") {
-		gl_manager_angle = memnew(GLManagerANGLE_Windows);
+		gl_manager_angle = memnew(EGLManager("EGL_ANGLE_platform_angle", EGL_PLATFORM_ANGLE_ANGLE, EGL_OPENGL_ES_API, Vector<EGLint>{ EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE }, Vector<EGLAttrib>{ EGL_PLATFORM_ANGLE_TYPE_ANGLE, EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE, EGL_NONE }));
 		tested_drivers.set_flag(DRIVER_ID_COMPAT_ANGLE_D3D11);
 
 		if (gl_manager_angle->initialize() != OK) {
@@ -14612,40 +14616,7 @@ HRESULT STDMETHODCALLTYPE DropTargetWindows::Drop(IDataObject *pDataObj, DWORD g
 
 #include <EGL/eglext_angle.h>
 
-const char *GLManagerANGLE_Windows::_get_platform_extension_name() const {
-	return "EGL_ANGLE_platform_angle";
-}
 
-EGLenum GLManagerANGLE_Windows::_get_platform_extension_enum() const {
-	return EGL_PLATFORM_ANGLE_ANGLE;
-}
-
-Vector<EGLAttrib> GLManagerANGLE_Windows::_get_platform_display_attributes() const {
-	Vector<EGLAttrib> ret;
-	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
-	ret.push_back(EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-EGLenum GLManagerANGLE_Windows::_get_platform_api_enum() const {
-	return EGL_OPENGL_ES_API;
-}
-
-Vector<EGLint> GLManagerANGLE_Windows::_get_platform_context_attribs() const {
-	Vector<EGLint> ret;
-	ret.push_back(EGL_CONTEXT_CLIENT_VERSION);
-	ret.push_back(3);
-	ret.push_back(EGL_NONE);
-
-	return ret;
-}
-
-void GLManagerANGLE_Windows::window_resize(DisplayServerEnums::WindowID p_window_id, int p_width, int p_height) {
-	window_make_current(p_window_id);
-	eglWaitNative(EGL_CORE_NATIVE_ENGINE);
-}
 
 #endif // WINDOWS_ENABLED && GLES3_ENABLED
 #endif // defined(ANGLE_ENABLED)

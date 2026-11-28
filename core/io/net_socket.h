@@ -373,13 +373,11 @@ public:
 
 class String;
 
-class CryptoCore {
-private:
-	static bool initialized;
-
-public:
-	static void initialize();
-	static void finalize();
+namespace CryptoCore
+{
+	extern bool initialized;
+	void initialize();
+	void finalize();
 
 	enum HashAlgorithm {
 		HASH_ALG_MD5,
@@ -431,19 +429,19 @@ public:
 		Error finish(uint8_t *r_dst, size_t p_dst_size);
 	};
 
-	static Error generate_random(uint8_t *r_buffer, size_t p_buffer_len);
+	Error generate_random(uint8_t *r_buffer, size_t p_buffer_len);
 
-	static String b64_encode_str(const uint8_t *p_src, size_t p_src_len);
-	static Error b64_encode(uint8_t *r_dst, size_t p_dst_len, size_t *r_len, const uint8_t *p_src, size_t p_src_len);
-	static Error b64_decode(uint8_t *r_dst, size_t p_dst_len, size_t *r_len, const uint8_t *p_src, size_t p_src_len);
+	String b64_encode_str(const uint8_t *p_src, size_t p_src_len);
+	Error b64_encode(uint8_t *r_dst, size_t p_dst_len, size_t *r_len, const uint8_t *p_src, size_t p_src_len);
+	Error b64_decode(uint8_t *r_dst, size_t p_dst_len, size_t *r_len, const uint8_t *p_src, size_t p_src_len);
 
-	static Error md5(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[16]);
-	static Error sha1(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[20]);
-	static Error sha256(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[32]);
+	Error md5(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[16]);
+	Error sha1(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[20]);
+	Error sha256(const uint8_t *p_src, size_t p_src_len, unsigned char r_hash[32]);
 
-	static Error encrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
-	static Error decrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
-};
+	Error encrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
+	Error decrypt_cfb(const uint8_t *p_src, uint8_t *r_dst, size_t p_length, const uint8_t *p_key, size_t p_key_length, const uint8_t p_iv[16]);
+} // namespace CryptoCore
 
 class AESContext : public RefCounted
 {
@@ -3382,13 +3380,8 @@ enum PackFileFlags
 
 class PackSource;
 
-class PackedData final
+namespace PackedData
 {
-	friend class FileAccessPack;
-	friend class DirAccessPack;
-	friend class PackSource;
-
-public:
 	struct PackedFile
 	{
 		String pack;
@@ -3401,8 +3394,6 @@ public:
 		bool delta;
 		String salt;
 	};
-
-private:
 	struct PackedDir
 	{
 		PackedDir* parent = nullptr;
@@ -3432,8 +3423,6 @@ private:
 			b = *((uint64_t*)&p_buf[8]);
 		}
 	};
-
-public:
 	struct Data
 	{
 		HashMap<PathMD5, PackedFile, PathMD5> files;
@@ -3443,14 +3432,12 @@ public:
 		bool disabled = false;
 	};
 
-	static inline Data* data = nullptr;
-
-private:
-	static void _free_packed_dirs(PackedDir* p_dir);
-	static void _get_file_paths(
+	inline Data* data = nullptr;
+	void _free_packed_dirs(PackedDir* p_dir);
+	void _get_file_paths(
 		PackedDir* p_dir, const String& p_parent_dir, HashSet<String>& r_paths);
 
-	_FORCE_INLINE_ static PathMD5 _get_simplified_path(const String& p_path)
+	_FORCE_INLINE_ PathMD5 _get_simplified_path(const String& p_path)
 	{
 		String simplified_path = p_path;
 		if (simplified_path.begins_with("uid://")) {
@@ -3459,51 +3446,44 @@ private:
 		simplified_path = simplified_path.simplify_path().trim_prefix("res://");
 		return PathMD5(simplified_path.md5_buffer());
 	}
+	void initialize();
+	void finalize();
+	_FORCE_INLINE_ bool is_initialized() { return data != nullptr; }
 
-public:
-	static void initialize();
-	static void finalize();
-	_FORCE_INLINE_ static bool is_initialized() { return data != nullptr; }
-
-	static void add_pack_source(PackSource* p_source);
-	static void add_path(const String& p_pkg_path, const String& p_path, uint64_t p_ofs,
+	void add_pack_source(PackSource* p_source);
+	void add_path(const String& p_pkg_path, const String& p_path, uint64_t p_ofs,
 		uint64_t p_size, const uint8_t* p_md5, PackSource* p_src, bool p_replace_files,
 		bool p_encrypted = false, bool p_bundle = false, bool p_delta = false,
 		const String& p_salt = String()); // for PackSource
-	static void remove_path(const String& p_path);
-	static uint8_t* get_file_hash(const String& p_path);
-	static Vector<PackedFile> get_delta_patches(const String& p_path);
-	static bool has_delta_patches(const String& p_path);
-	static HashSet<String> get_file_paths();
+	void remove_path(const String& p_path);
+	uint8_t* get_file_hash(const String& p_path);
+	Vector<PackedFile> get_delta_patches(const String& p_path);
+	bool has_delta_patches(const String& p_path);
+	HashSet<String> get_file_paths();
 
-	static void set_disabled(bool p_disabled)
+	inline void set_disabled(bool p_disabled)
 	{
 		if (data != nullptr) {
 			data->disabled = p_disabled;
 		}
 	}
 
-	_FORCE_INLINE_ static bool is_disabled() { return data != nullptr ? data->disabled : true; }
+	_FORCE_INLINE_ bool is_disabled() { return data != nullptr ? data->disabled : true; }
 
-	static Error add_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
+	Error add_pack(const String& p_path, bool p_replace_files, uint64_t p_offset,
 		const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
 
-	static void clear();
+	void clear();
 
-	_FORCE_INLINE_ static Ref<FileAccess> try_open_path(
+	_FORCE_INLINE_ Ref<FileAccess> try_open_path(
 		const String& p_path, const Vector<uint8_t>& p_decryption_key = Vector<uint8_t>());
-	_FORCE_INLINE_ static bool has_path(const String& p_path);
+	_FORCE_INLINE_ bool has_path(const String& p_path);
 
-	_FORCE_INLINE_ static int64_t get_size(const String& p_path);
+	_FORCE_INLINE_ int64_t get_size(const String& p_path);
 
-	_FORCE_INLINE_ static Ref<DirAccess> try_open_directory(const String& p_path);
-	_FORCE_INLINE_ static bool has_directory(const String& p_path);
-
-	PackedData() = delete;
-	PackedData(const PackedData&) = delete;
-	PackedData& operator=(const PackedData&) = delete;
-	~PackedData() = delete;
-};
+	_FORCE_INLINE_ Ref<DirAccess> try_open_directory(const String& p_path);
+	_FORCE_INLINE_ bool has_directory(const String& p_path);
+} // namespace PackedData
 
 class PackSource final
 {
