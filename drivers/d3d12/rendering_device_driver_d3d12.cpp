@@ -963,7 +963,7 @@ RDD::BufferID RenderingDeviceDriverD3D12::buffer_create(uint64_t p_size, uint32_
 		res = buffer->Map(0, &VOID_RANGE, &persistent_ptr);
 		ERR_FAIL_COND_V_MSG(!SUCCEEDED(res), BufferID(), "Map failed with error " + vformat("0x%08ux", (uint64_t)res) + ".");
 
-		BufferDynamicInfo *dyn_buffer = VersatileResource::allocate<BufferDynamicInfo>(resources_allocator);
+		BufferInfo *dyn_buffer = VersatileResource::allocate<BufferInfo>(resources_allocator);
 		buf_info = dyn_buffer;
 #ifdef DEBUG_ENABLED
 		dyn_buffer->last_frame_mapped = p_frames_drawn - 1ul;
@@ -995,7 +995,7 @@ void RenderingDeviceDriverD3D12::buffer_free(BufferID p_buffer) {
 	BufferInfo *buf_info = (BufferInfo *)p_buffer.id;
 	if (buf_info->is_dynamic()) {
 		buf_info->resource->Unmap(0, &VOID_RANGE);
-		VersatileResource::free(resources_allocator, (BufferDynamicInfo *)buf_info);
+		VersatileResource::free(resources_allocator, (BufferInfo *)buf_info);
 	} else {
 		VersatileResource::free(resources_allocator, buf_info);
 	}
@@ -1020,7 +1020,7 @@ void RenderingDeviceDriverD3D12::buffer_unmap(BufferID p_buffer) {
 }
 
 uint8_t *RenderingDeviceDriverD3D12::buffer_persistent_map_advance(BufferID p_buffer, uint64_t p_frames_drawn) {
-	BufferDynamicInfo *buf_info = (BufferDynamicInfo *)p_buffer.id;
+	BufferInfo *buf_info = (BufferInfo *)p_buffer.id;
 	ERR_FAIL_COND_V_MSG(!buf_info->is_dynamic(), nullptr, "Buffer must have BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT. Use buffer_map() instead.");
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_V_MSG(buf_info->last_frame_mapped == p_frames_drawn, nullptr, "Buffers with BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT must only be mapped once per frame. Otherwise there could be race conditions with the GPU. Amalgamate all data uploading into one map(), use an extra buffer or remove the bit.");
@@ -1039,7 +1039,7 @@ uint64_t RenderingDeviceDriverD3D12::buffer_get_dynamic_offsets(Span<BufferID> p
 		if (!buf_info->is_dynamic()) {
 			continue;
 		}
-		const BufferDynamicInfo *dyn_buf = (const BufferDynamicInfo *)buf.id;
+		const BufferInfo *dyn_buf = (const BufferInfo *)buf.id;
 		mask |= dyn_buf->frame_idx << shift;
 		// We can encode the frame index in 2 bits since frame_count won't be > 4.
 		shift += 2UL;
@@ -1186,8 +1186,8 @@ void RenderingDeviceDriverD3D12::_discard_texture_subresources(const TextureInfo
 		planes = format_get_plane_count(p_tex_info->format);
 	}
 	D3D12_DISCARD_REGION dr = {};
-	dr.NumRects = p_cmd_buf_info->render_pass_state.region_is_all ? 0 : 1;
-	dr.pRects = p_cmd_buf_info->render_pass_state.region_is_all ? nullptr : &p_cmd_buf_info->render_pass_state.region_rect;
+	dr.NumRects = p_cmd_buf_info->rp_region_is_all ? 0 : 1;
+	dr.pRects = p_cmd_buf_info->rp_region_is_all ? nullptr : &p_cmd_buf_info->rp_region_rect;
 	dr.FirstSubresource = UINT_MAX;
 	dr.NumSubresources = 0;
 	for (uint32_t u = 0; u < planes; u++) {
@@ -3534,7 +3534,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 							"Uniform set exceeded the limit of dynamic/persistent buffers. (" + itos(MAX_DYNAMIC_BUFFERS) + ").");
 
 					UniformSetInfo::DynamicBuffer &dynamic_buffer = dynamic_buffers[num_dynamic_buffers++];
-					dynamic_buffer.info = (const BufferDynamicInfo *)buf_info;
+					dynamic_buffer.info = (const BufferInfo *)buf_info;
 					dynamic_buffer.binding = i;
 				}
 
@@ -3581,7 +3581,7 @@ RDD::UniformSetID RenderingDeviceDriverD3D12::uniform_set_create(VectorView<Boun
 							"Uniform set exceeded the limit of dynamic/persistent buffers. (" + itos(MAX_DYNAMIC_BUFFERS) + ").");
 
 					UniformSetInfo::DynamicBuffer &dynamic_buffer = dynamic_buffers[num_dynamic_buffers++];
-					dynamic_buffer.info = (const BufferDynamicInfo *)buf_info;
+					dynamic_buffer.info = (const BufferInfo *)buf_info;
 					dynamic_buffer.binding = i;
 				}
 
@@ -4293,7 +4293,7 @@ void RenderingDeviceDriverD3D12::command_begin_render_pass(CommandBufferID p_cmd
 	const RenderPassInfo *pass_info = (const RenderPassInfo *)p_render_pass.id;
 	const FramebufferInfo *fb_info = (const FramebufferInfo *)p_framebuffer.id;
 
-	DEV_ASSERT(cmd_buf_info->render_pass_state.current_subpass == UINT32_MAX);
+	DEV_ASSERT(cmd_buf_info->rp_current_subpass == UINT32_MAX);
 
 	auto _transition_subresources = [&](TextureInfo *p_texture_info, D3D12_RESOURCE_STATES p_states) {
 		uint32_t planes = 1;
@@ -4334,22 +4334,22 @@ void RenderingDeviceDriverD3D12::command_begin_render_pass(CommandBufferID p_cmd
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->render_pass_state.region_rect = CD3DX12_RECT(
+	cmd_buf_info->rp_region_rect = CD3DX12_RECT(
 			p_rect.position.x,
 			p_rect.position.y,
 			p_rect.position.x + p_rect.size.x,
 			p_rect.position.y + p_rect.size.y);
-	cmd_buf_info->render_pass_state.region_is_all = (cmd_buf_info->render_pass_state.region_rect.left == 0 &&
-			cmd_buf_info->render_pass_state.region_rect.top == 0 &&
-			cmd_buf_info->render_pass_state.region_rect.right == fb_info->size.x &&
-			cmd_buf_info->render_pass_state.region_rect.bottom == fb_info->size.y);
+	cmd_buf_info->rp_region_is_all = (cmd_buf_info->rp_region_rect.left == 0 &&
+			cmd_buf_info->rp_region_rect.top == 0 &&
+			cmd_buf_info->rp_region_rect.right == fb_info->size.x &&
+			cmd_buf_info->rp_region_rect.bottom == fb_info->size.y);
 
-	cmd_buf_info->render_pass_state.attachment_layouts.resize(pass_info->attachments.size());
+	cmd_buf_info->rp_attachment_layouts.resize(pass_info->attachments.size());
 
 	for (uint32_t i = 0; i < pass_info->attachments.size(); i++) {
 		const Attachment &attachment = pass_info->attachments[i];
 
-		for (RenderPassState::AttachmentLayout::AspectLayout &aspect_layout : cmd_buf_info->render_pass_state.attachment_layouts[i].aspect_layouts) {
+		for (RenderPassAspectLayout &aspect_layout : cmd_buf_info->rp_attachment_layouts[i]) {
 			aspect_layout.cur_layout = attachment.initial_layout;
 			aspect_layout.expected_layout = attachment.initial_layout;
 		}
@@ -4368,9 +4368,9 @@ void RenderingDeviceDriverD3D12::command_begin_render_pass(CommandBufferID p_cmd
 		cmd_buf_info->cmd_list_5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, COMBINERS);
 	}
 
-	cmd_buf_info->render_pass_state.current_subpass = UINT32_MAX;
-	cmd_buf_info->render_pass_state.fb_info = fb_info;
-	cmd_buf_info->render_pass_state.pass_info = pass_info;
+	cmd_buf_info->rp_current_subpass = UINT32_MAX;
+	cmd_buf_info->rp_fb_info = fb_info;
+	cmd_buf_info->rp_pass_info = pass_info;
 	command_next_render_subpass(p_cmd_buffer, p_cmd_buffer_type);
 
 	AttachmentClear *clears = ALLOCA_ARRAY(AttachmentClear, pass_info->attachments.size());
@@ -4458,13 +4458,13 @@ void RenderingDeviceDriverD3D12::_render_pass_enhanced_barriers_flush(CommandBuf
 
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 
-	for (uint32_t i = 0; i < cmd_buf_info->render_pass_state.attachment_layouts.size(); i++) {
-		RenderPassState::AttachmentLayout &attachment_layout = cmd_buf_info->render_pass_state.attachment_layouts[i];
-		TextureID tex = cmd_buf_info->render_pass_state.fb_info->attachments[i];
+	for (uint32_t i = 0; i < cmd_buf_info->rp_attachment_layouts.size(); i++) {
+		RenderPassAttachmentLayout &attachment_layout = cmd_buf_info->rp_attachment_layouts[i];
+		TextureID tex = cmd_buf_info->rp_fb_info->attachments[i];
 		TextureInfo *tex_info = (TextureInfo *)tex.id;
 
 		for (uint32_t j = 0; j < TEXTURE_ASPECT_MAX; j++) {
-			RenderPassState::AttachmentLayout::AspectLayout &aspect_layout = attachment_layout.aspect_layouts[j];
+			RenderPassAspectLayout &aspect_layout = attachment_layout[j];
 
 			if (aspect_layout.cur_layout != aspect_layout.expected_layout) {
 				src_stages = src_stages | RD_RENDER_PASS_LAYOUT_TO_STAGE_BITS[aspect_layout.cur_layout];
@@ -4496,11 +4496,11 @@ void RenderingDeviceDriverD3D12::_render_pass_enhanced_barriers_flush(CommandBuf
 void RenderingDeviceDriverD3D12::_end_render_pass(CommandBufferID p_cmd_buffer) {
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 
-	DEV_ASSERT(cmd_buf_info->render_pass_state.current_subpass != UINT32_MAX);
+	DEV_ASSERT(cmd_buf_info->rp_current_subpass != UINT32_MAX);
 
-	const FramebufferInfo *fb_info = cmd_buf_info->render_pass_state.fb_info;
-	const RenderPassInfo *pass_info = cmd_buf_info->render_pass_state.pass_info;
-	const Subpass &subpass = pass_info->subpasses[cmd_buf_info->render_pass_state.current_subpass];
+	const FramebufferInfo *fb_info = cmd_buf_info->rp_fb_info;
+	const RenderPassInfo *pass_info = cmd_buf_info->rp_pass_info;
+	const Subpass &subpass = pass_info->subpasses[cmd_buf_info->rp_current_subpass];
 
 	if (fb_info->is_screen) {
 		// Screen framebuffers must transition back to present state when the render pass is finished.
@@ -4540,7 +4540,7 @@ void RenderingDeviceDriverD3D12::_end_render_pass(CommandBufferID p_cmd_buffer) 
 				uint32_t src_subresource = D3D12CalcSubresource(src_tex_info->base_mip + mip, src_tex_info->base_layer + layer, 0, src_tex_info->desc.MipLevels, src_tex_info->desc.ArraySize());
 
 				if (barrier_capabilities_enhanced_barriers_supported) {
-					cmd_buf_info->render_pass_state.attachment_layouts[color_index].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout = TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL;
+					cmd_buf_info->rp_attachment_layouts[color_index][TEXTURE_ASPECT_COLOR].expected_layout = TEXTURE_LAYOUT_RESOLVE_SRC_OPTIMAL;
 				} else {
 					_resource_transition_batch(cmd_buf_info, src_tex_info, src_subresource, 1, D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
 				}
@@ -4549,7 +4549,7 @@ void RenderingDeviceDriverD3D12::_end_render_pass(CommandBufferID p_cmd_buffer) 
 
 				if (barrier_capabilities_enhanced_barriers_supported) {
 					// This should have already been done when beginning the subpass.
-					DEV_ASSERT(cmd_buf_info->render_pass_state.attachment_layouts[resolve_index].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout == TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL);
+					DEV_ASSERT(cmd_buf_info->rp_attachment_layouts[resolve_index][TEXTURE_ASPECT_COLOR].expected_layout == TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL);
 				} else {
 					_resource_transition_batch(cmd_buf_info, dst_tex_info, dst_subresource, 1, D3D12_RESOURCE_STATE_RESOLVE_DEST);
 				}
@@ -4581,10 +4581,10 @@ void RenderingDeviceDriverD3D12::command_end_render_pass(CommandBufferID p_cmd_b
 	_end_render_pass(p_cmd_buffer);
 
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
-	DEV_ASSERT(cmd_buf_info->render_pass_state.current_subpass != UINT32_MAX);
+	DEV_ASSERT(cmd_buf_info->rp_current_subpass != UINT32_MAX);
 
-	const FramebufferInfo *fb_info = cmd_buf_info->render_pass_state.fb_info;
-	const RenderPassInfo *pass_info = cmd_buf_info->render_pass_state.pass_info;
+	const FramebufferInfo *fb_info = cmd_buf_info->rp_fb_info;
+	const RenderPassInfo *pass_info = cmd_buf_info->rp_pass_info;
 
 	if (fb_info->vrs_attachment && fsr_capabilities.attachment_supported) {
 		cmd_buf_info->cmd_list_5->RSSetShadingRateImage(nullptr);
@@ -4629,7 +4629,7 @@ void RenderingDeviceDriverD3D12::command_end_render_pass(CommandBufferID p_cmd_b
 	for (uint32_t i = 0; i < pass_info->attachments.size(); i++) {
 		const Attachment &attachment = pass_info->attachments[i];
 
-		for (RenderPassState::AttachmentLayout::AspectLayout &aspect_layout : cmd_buf_info->render_pass_state.attachment_layouts[i].aspect_layouts) {
+		for (RenderPassAspectLayout &aspect_layout : cmd_buf_info->rp_attachment_layouts[i]) {
 			aspect_layout.expected_layout = attachment.final_layout;
 		}
 	}
@@ -4643,34 +4643,34 @@ void RenderingDeviceDriverD3D12::command_end_render_pass(CommandBufferID p_cmd_b
 		}
 	}
 
-	cmd_buf_info->render_pass_state.current_subpass = UINT32_MAX;
+	cmd_buf_info->rp_current_subpass = UINT32_MAX;
 }
 
 void RenderingDeviceDriverD3D12::command_next_render_subpass(CommandBufferID p_cmd_buffer, CommandBufferType p_cmd_buffer_type) {
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 
-	if (cmd_buf_info->render_pass_state.current_subpass == UINT32_MAX) {
-		cmd_buf_info->render_pass_state.current_subpass = 0;
+	if (cmd_buf_info->rp_current_subpass == UINT32_MAX) {
+		cmd_buf_info->rp_current_subpass = 0;
 	} else {
 		_end_render_pass(p_cmd_buffer);
-		cmd_buf_info->render_pass_state.current_subpass++;
+		cmd_buf_info->rp_current_subpass++;
 	}
 
-	const FramebufferInfo *fb_info = cmd_buf_info->render_pass_state.fb_info;
-	const RenderPassInfo *pass_info = cmd_buf_info->render_pass_state.pass_info;
-	const Subpass &subpass = pass_info->subpasses[cmd_buf_info->render_pass_state.current_subpass];
+	const FramebufferInfo *fb_info = cmd_buf_info->rp_fb_info;
+	const RenderPassInfo *pass_info = cmd_buf_info->rp_pass_info;
+	const Subpass &subpass = pass_info->subpasses[cmd_buf_info->rp_current_subpass];
 
 	for (uint32_t i = 0; i < subpass.input_references.size(); i++) {
 		const AttachmentReference &input_reference = subpass.input_references[i];
 		uint32_t attachment = input_reference.attachment;
 
 		if (attachment != AttachmentReference::UNUSED) {
-			RenderPassState::AttachmentLayout &attachment_layout = cmd_buf_info->render_pass_state.attachment_layouts[attachment];
+			RenderPassAttachmentLayout &attachment_layout = cmd_buf_info->rp_attachment_layouts[attachment];
 
 			// Vulkan cares about aspect bits only for input attachments.
 			for (uint32_t j = 0; j < TEXTURE_ASPECT_MAX; j++) {
 				if (input_reference.aspect & (1 << j)) {
-					attachment_layout.aspect_layouts[j].expected_layout = input_reference.layout;
+					attachment_layout[j].expected_layout = input_reference.layout;
 				}
 			}
 		}
@@ -4686,7 +4686,7 @@ void RenderingDeviceDriverD3D12::command_next_render_subpass(CommandBufferID p_c
 			uint32_t rt_index = fb_info->attachments_handle_inds[attachment];
 			rtv_handles[i] = get_cpu_handle(fb_info->rtv_alloc.cpu_handle, rt_index, rtv_descriptor_heap_pool.increment_size);
 
-			cmd_buf_info->render_pass_state.attachment_layouts[attachment].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout = color_reference.layout;
+			cmd_buf_info->rp_attachment_layouts[attachment][TEXTURE_ASPECT_COLOR].expected_layout = color_reference.layout;
 		}
 	}
 
@@ -4696,9 +4696,9 @@ void RenderingDeviceDriverD3D12::command_next_render_subpass(CommandBufferID p_c
 			uint32_t ds_index = fb_info->attachments_handle_inds[subpass.depth_stencil_reference.attachment];
 			dsv_handle = get_cpu_handle(fb_info->dsv_alloc.cpu_handle, ds_index, dsv_descriptor_heap_pool.increment_size);
 
-			RenderPassState::AttachmentLayout &attachment_layout = cmd_buf_info->render_pass_state.attachment_layouts[subpass.depth_stencil_reference.attachment];
-			attachment_layout.aspect_layouts[TEXTURE_ASPECT_DEPTH].expected_layout = subpass.depth_stencil_reference.layout;
-			attachment_layout.aspect_layouts[TEXTURE_ASPECT_STENCIL].expected_layout = subpass.depth_stencil_reference.layout;
+			RenderPassAttachmentLayout &attachment_layout = cmd_buf_info->rp_attachment_layouts[subpass.depth_stencil_reference.attachment];
+			attachment_layout[TEXTURE_ASPECT_DEPTH].expected_layout = subpass.depth_stencil_reference.layout;
+			attachment_layout[TEXTURE_ASPECT_STENCIL].expected_layout = subpass.depth_stencil_reference.layout;
 		}
 	}
 
@@ -4709,7 +4709,7 @@ void RenderingDeviceDriverD3D12::command_next_render_subpass(CommandBufferID p_c
 		if (attachment != AttachmentReference::UNUSED) {
 			// Vulkan expects the layout to be in color attachment layout, but D3D12 wants resolve destination.
 			DEV_ASSERT(resolve_reference.layout == TEXTURE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-			cmd_buf_info->render_pass_state.attachment_layouts[attachment].aspect_layouts[TEXTURE_ASPECT_COLOR].expected_layout = TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL;
+			cmd_buf_info->rp_attachment_layouts[attachment][TEXTURE_ASPECT_COLOR].expected_layout = TEXTURE_LAYOUT_RESOLVE_DST_OPTIMAL;
 		}
 	}
 
@@ -4751,9 +4751,9 @@ void RenderingDeviceDriverD3D12::command_render_set_scissor(CommandBufferID p_cm
 void RenderingDeviceDriverD3D12::command_render_clear_attachments(CommandBufferID p_cmd_buffer, VectorView<AttachmentClear> p_attachment_clears, VectorView<Rect2i> p_rects) {
 	const CommandBufferInfo *cmd_buf_info = (const CommandBufferInfo *)p_cmd_buffer.id;
 
-	DEV_ASSERT(cmd_buf_info->render_pass_state.current_subpass != UINT32_MAX);
-	const FramebufferInfo *fb_info = cmd_buf_info->render_pass_state.fb_info;
-	const RenderPassInfo *pass_info = cmd_buf_info->render_pass_state.pass_info;
+	DEV_ASSERT(cmd_buf_info->rp_current_subpass != UINT32_MAX);
+	const FramebufferInfo *fb_info = cmd_buf_info->rp_fb_info;
+	const RenderPassInfo *pass_info = cmd_buf_info->rp_pass_info;
 
 	for (uint32_t i = 0; i < p_attachment_clears.size(); i++) {
 		uint32_t attachment = UINT32_MAX;
@@ -4762,7 +4762,7 @@ void RenderingDeviceDriverD3D12::command_render_clear_attachments(CommandBufferI
 			attachment = p_attachment_clears[i].color_attachment;
 			is_render_target = true;
 		} else {
-			attachment = pass_info->subpasses[cmd_buf_info->render_pass_state.current_subpass].depth_stencil_reference.attachment;
+			attachment = pass_info->subpasses[cmd_buf_info->rp_current_subpass].depth_stencil_reference.attachment;
 		}
 
 		for (uint32_t j = 0; j < p_rects.size(); j++) {
@@ -4771,7 +4771,7 @@ void RenderingDeviceDriverD3D12::command_render_clear_attachments(CommandBufferI
 					p_rects[j].position.y,
 					p_rects[j].position.x + p_rects[j].size.x,
 					p_rects[j].position.y + p_rects[j].size.y);
-			const D3D12_RECT *rect_ptr = cmd_buf_info->render_pass_state.region_is_all ? nullptr : &rect;
+			const D3D12_RECT *rect_ptr = cmd_buf_info->rp_region_is_all ? nullptr : &rect;
 
 			if (is_render_target) {
 				uint32_t color_idx = fb_info->attachments_handle_inds[attachment];
@@ -4844,7 +4844,7 @@ void RenderingDeviceDriverD3D12::command_bind_render_pipeline(CommandBufferID p_
 	}
 
 	cmd_buf_info->pending_dyn_params = false;
-	cmd_buf_info->render_pass_state.vf_info = pipeline_info->vf_info;
+	cmd_buf_info->rp_vf_info = pipeline_info->vf_info;
 }
 
 void RenderingDeviceDriverD3D12::command_bind_render_uniform_sets(CommandBufferID p_cmd_buffer, VectorView<UniformSetID> p_uniform_sets, ShaderID p_shader, uint32_t p_first_set_index, uint32_t p_set_count, uint32_t p_dynamic_offsets) {
@@ -4956,12 +4956,12 @@ void RenderingDeviceDriverD3D12::command_render_draw_indirect_count(CommandBuffe
 void RenderingDeviceDriverD3D12::command_render_bind_vertex_buffers(CommandBufferID p_cmd_buffer, uint32_t p_binding_count, const BufferID *p_buffers, const uint64_t *p_offsets, uint64_t p_dynamic_offsets) {
 	CommandBufferInfo *cmd_buf_info = (CommandBufferInfo *)p_cmd_buffer.id;
 
-	DEV_ASSERT(cmd_buf_info->render_pass_state.current_subpass != UINT32_MAX);
+	DEV_ASSERT(cmd_buf_info->rp_current_subpass != UINT32_MAX);
 
 	// Vertex buffer views are set deferredly, to be sure we already know the strides by then,
 	// which is only true once the pipeline has been bound. Otherwise, we'd need that the pipeline
 	// is always bound first, which would be not kind of us. [[DEFERRED_VERTEX_BUFFERS]]
-	DEV_ASSERT(p_binding_count <= ARRAY_SIZE(cmd_buf_info->render_pass_state.vertex_buffer_views));
+	DEV_ASSERT(p_binding_count <= ARRAY_SIZE(cmd_buf_info->rp_vertex_buffer_views));
 	for (uint32_t i = 0; i < p_binding_count; i++) {
 		BufferInfo *buffer_info = (BufferInfo *)p_buffers[i].id;
 
@@ -4972,9 +4972,9 @@ void RenderingDeviceDriverD3D12::command_render_bind_vertex_buffers(CommandBuffe
 			dynamic_offset = buffer_frame_idx * buffer_info->size;
 		}
 
-		cmd_buf_info->render_pass_state.vertex_buffer_views[i] = {};
-		cmd_buf_info->render_pass_state.vertex_buffer_views[i].BufferLocation = buffer_info->gpu_virtual_address + dynamic_offset + p_offsets[i];
-		cmd_buf_info->render_pass_state.vertex_buffer_views[i].SizeInBytes = buffer_info->size - p_offsets[i];
+		cmd_buf_info->rp_vertex_buffer_views[i] = {};
+		cmd_buf_info->rp_vertex_buffer_views[i].BufferLocation = buffer_info->gpu_virtual_address + dynamic_offset + p_offsets[i];
+		cmd_buf_info->rp_vertex_buffer_views[i].SizeInBytes = buffer_info->size - p_offsets[i];
 		if (!barrier_capabilities_enhanced_barriers_supported) {
 			_resource_transition_batch(cmd_buf_info, buffer_info, 0, 1, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		}
@@ -4984,7 +4984,7 @@ void RenderingDeviceDriverD3D12::command_render_bind_vertex_buffers(CommandBuffe
 		_resource_transitions_flush(cmd_buf_info);
 	}
 
-	cmd_buf_info->render_pass_state.vertex_buffer_count = p_binding_count;
+	cmd_buf_info->rp_vertex_buffer_count = p_binding_count;
 }
 
 void RenderingDeviceDriverD3D12::command_render_bind_index_buffer(CommandBufferID p_cmd_buffer, BufferID p_buffer, IndexBufferFormat p_format, uint64_t p_offset) {
@@ -5007,12 +5007,12 @@ void RenderingDeviceDriverD3D12::command_render_bind_index_buffer(CommandBufferI
 // [[DEFERRED_VERTEX_BUFFERS]]
 void RenderingDeviceDriverD3D12::_bind_vertex_buffers(CommandBufferInfo *p_cmd_buf_info) {
 	RenderPassState &render_pass_state = p_cmd_buf_info->render_pass_state;
-	if (render_pass_state.vertex_buffer_count && render_pass_state.vf_info) {
-		for (uint32_t i = 0; i < render_pass_state.vertex_buffer_count; i++) {
-			render_pass_state.vertex_buffer_views[i].StrideInBytes = render_pass_state.vf_info->vertex_buffer_strides[i];
+	if (rp_vertex_buffer_count && rp_vf_info) {
+		for (uint32_t i = 0; i < rp_vertex_buffer_count; i++) {
+			rp_vertex_buffer_views[i].StrideInBytes = rp_vf_info->vertex_buffer_strides[i];
 		}
-		p_cmd_buf_info->cmd_list->IASetVertexBuffers(0, render_pass_state.vertex_buffer_count, render_pass_state.vertex_buffer_views);
-		render_pass_state.vertex_buffer_count = 0;
+		p_cmd_buf_info->cmd_list->IASetVertexBuffers(0, rp_vertex_buffer_count, rp_vertex_buffer_views);
+		rp_vertex_buffer_count = 0;
 	}
 }
 

@@ -1451,12 +1451,7 @@ struct InputEvent
 		int controller_value = 0;
 	};
 
-	struct ActionData
-	{
-		String action;
-		float strength = 1.0f;
-		int event_index = -1;
-	};
+
 
 
 
@@ -1483,7 +1478,9 @@ struct InputEvent
 		const Shortcut* shortcut;
 	};
 
-	ActionData action;
+	String action_name;
+	float action_strength = 1.0f;
+	int action_event_index = -1;
 
 	InputEvent() = default;
 
@@ -2336,11 +2333,10 @@ public:
 	~Input() = delete;
 };
 
-class DefaultControllerMappings
+namespace DefaultControllerMappings
 {
-public:
-	static const char* mappings[];
-};
+	extern const char* mappings[];
+} // namespace DefaultControllerMappings
 
 /**
  * Encodes the input event as a byte array.

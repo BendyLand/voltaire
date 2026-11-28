@@ -32,6 +32,8 @@
 #ifndef SERVERS_DISPLAY_SERVER_H
 #define SERVERS_DISPLAY_SERVER_H
 
+#include <array>
+
 #include "core/os/os.h"
 #include "core/io/net_socket.h"
 #include "core/io/ip.h"
@@ -1061,14 +1063,9 @@ public:
 	typedef Vector<String> (*GetRenderingDriversFunction)();
 
 private:
-	struct DisplayServerCreate
-	{
-		const char* name;
-		CreateFunction create_function;
-		GetRenderingDriversFunction get_rendering_drivers_function;
-	};
-
-	static DisplayServerCreate server_create_functions[MAX_SERVERS];
+	static const char* server_create_names[MAX_SERVERS];
+	static CreateFunction server_create_functions[MAX_SERVERS];
+	static GetRenderingDriversFunction server_get_drivers_functions[MAX_SERVERS];
 	static int server_create_count;
 
 	static bool window_early_clear_override_enabled;
@@ -2196,13 +2193,7 @@ namespace AccessibilityServer
 		MAX_SERVERS = 64
 	};
 
-	struct AccessibilityServerCreate
-	{
-		const char* name;
-		CreateFunction create_function;
-	};
-
-	inline AccessibilityServerCreate server_create_functions[MAX_SERVERS] = {{"dummy", &AccessibilityServerDriver::create_dummy}};
+	inline Pair<const char*, CreateFunction> server_create_functions[MAX_SERVERS] = {{"dummy", &AccessibilityServerDriver::create_dummy}};
 	inline int server_create_count = 1;
 	void register_create_function(const char* p_name, CreateFunction p_function);
 	int get_create_function_count();
@@ -7100,25 +7091,20 @@ class Font : public Resource
 			direction = p_direction;
 			orientation = p_orientation;
 		}
-	};
 
-	struct ShapedTextKeyHasher
-	{
-		_FORCE_INLINE_ static uint32_t hash(const ShapedTextKey& p_a)
+		_FORCE_INLINE_ uint32_t hash() const
 		{
-			uint32_t hash = p_a.text.hash();
-			hash = hash_murmur3_one_32(p_a.font_size, hash);
-			hash = hash_murmur3_one_float(p_a.width, hash);
-			hash = hash_murmur3_one_32(p_a.brk_flags | (p_a.jst_flags << 6) |
-										   (p_a.direction << 12) | (p_a.orientation << 15),
-				hash);
-			return hash_fmix32(hash);
+			uint32_t h = text.hash();
+			h = hash_murmur3_one_32(font_size, h);
+			h = hash_murmur3_one_float(width, h);
+			h = hash_murmur3_one_32(brk_flags | (jst_flags << 6) | (direction << 12) | (orientation << 15), h);
+			return hash_fmix32(h);
 		}
 	};
 
 	// Shaped string cache.
-	mutable LRUCache<ShapedTextKey, Ref<TextLine>, ShapedTextKeyHasher> cache;
-	mutable LRUCache<ShapedTextKey, Ref<TextParagraph>, ShapedTextKeyHasher> cache_wrap;
+	mutable LRUCache<ShapedTextKey, Ref<TextLine>> cache;
+	mutable LRUCache<ShapedTextKey, Ref<TextParagraph>> cache_wrap;
 
 protected:
 	// Output.
@@ -11716,32 +11702,29 @@ private:
 		bool partial_coverage = false;
 	};
 
-	struct BarrierGroup
-	{
-		uint32_t src_stages = 0;
-		uint32_t dst_stages = 0;
-		RDD::MemoryAccessBarrier memory_barrier;
-		LocalVector<RDD::TextureBarrier> normalization_barriers;
-		LocalVector<RDD::TextureBarrier> transition_barriers;
+	uint32_t barrier_group_src_stages = 0;
+	uint32_t barrier_group_dst_stages = 0;
+	RDD::MemoryAccessBarrier barrier_group_memory_barrier;
+	LocalVector<RDD::TextureBarrier> barrier_group_normalization_barriers;
+	LocalVector<RDD::TextureBarrier> barrier_group_transition_barriers;
 #if USE_BUFFER_BARRIERS
-		LocalVector<RDD::BufferBarrier> buffer_barriers;
+	LocalVector<RDD::BufferBarrier> barrier_group_buffer_barriers;
 #endif
-		LocalVector<RDD::AccelerationStructureBarrier> acceleration_structure_barriers;
+	LocalVector<RDD::AccelerationStructureBarrier> barrier_group_acceleration_structure_barriers;
 
-		void clear()
-		{
-			src_stages = 0;
-			dst_stages = 0;
-			memory_barrier.src_access = 0;
-			memory_barrier.dst_access = 0;
-			normalization_barriers.clear();
-			transition_barriers.clear();
+	void _clear_barrier_group()
+	{
+		barrier_group_src_stages = 0;
+		barrier_group_dst_stages = 0;
+		barrier_group_memory_barrier.src_access = 0;
+		barrier_group_memory_barrier.dst_access = 0;
+		barrier_group_normalization_barriers.clear();
+		barrier_group_transition_barriers.clear();
 #if USE_BUFFER_BARRIERS
-			buffer_barriers.clear();
+		barrier_group_buffer_barriers.clear();
 #endif
-			acceleration_structure_barriers.clear();
-		}
-	};
+		barrier_group_acceleration_structure_barriers.clear();
+	}
 
 	struct SecondaryCommandBuffer
 	{
@@ -11783,7 +11766,6 @@ private:
 	int32_t command_timestamp_index = -1;
 	int32_t command_synchronization_index = -1;
 	bool command_synchronization_pending = false;
-	BarrierGroup barrier_group;
 	bool driver_honors_barriers : 1;
 	bool driver_clears_with_copy_engine : 1;
 	bool driver_buffers_require_transitions : 1;
@@ -12966,13 +12948,6 @@ private:
 		}
 	};
 
-	struct VertexDescriptionHash
-	{
-		static _FORCE_INLINE_ uint32_t hash(const VertexDescriptionKey& p_key)
-		{
-			return p_key.hash();
-		}
-	};
 
 	struct VertexDescriptionCache
 	{
@@ -13199,7 +13174,7 @@ private:
 		bool bound = false;
 	};
 
-	struct DrawList
+	struct CommandListState
 	{
 		Rect2i viewport;
 		bool active = false;
@@ -13214,10 +13189,23 @@ private:
 		RID st_vertex_array;
 		RID st_index_array;
 		uint32_t st_draw_count = 0;
+		RDD::RaytracingPipelineID st_pipeline_driver_id;
+		RID st_layout_defining_shader;
+		RDD::ShaderID st_layout_defining_shader_driver_id;
+		uint32_t st_layout_defining_shader_layout_hash = 0;
+		uint32_t st_local_group_size[3] = {0, 0, 0};
+		uint8_t st_push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
+		uint32_t st_push_constant_size = 0;
+		RDD::BufferID st_sbt_buffer;
+		uint32_t st_raygen_shader_count = 0;
+		uint32_t st_miss_shader_count = 0;
+		uint32_t st_trace_count = 0;
+		uint32_t st_dispatch_count = 0;
 
 		uint32_t val_vertex_array_size = 0;
 		uint32_t val_index_array_count = 0;
 #ifdef DEBUG_ENABLED
+		bool val_active = true;
 		uint32_t val_dynamic_state = 0;
 		VertexFormatID val_vertex_format = RDC::INVALID_ID;
 		uint32_t val_vertex_max_instances_allowed = 0xFFFFFFFF;
@@ -13230,6 +13218,7 @@ private:
 		uint32_t val_pipeline_dynamic_state = 0;
 		VertexFormatID val_pipeline_vertex_format = RDC::INVALID_ID;
 		RID val_pipeline_shader;
+		uint32_t val_invalid_set_from = 0;
 		bool val_pipeline_uses_restart_indices = false;
 		uint32_t val_pipeline_primitive_divisor = 0;
 		uint32_t val_pipeline_primitive_minimum = 0;
@@ -13240,64 +13229,6 @@ private:
 
 	static void _draw_list_start(const Rect2i& p_viewport);
 	static void _draw_list_end(Rect2i* r_last_viewport = nullptr);
-
-	struct RaytracingList
-	{
-		bool active = false;
-
-		ListSetState st_sets[MAX_UNIFORM_SETS];
-		uint32_t st_set_count = 0;
-		RID st_pipeline;
-		RDD::RaytracingPipelineID st_pipeline_driver_id;
-		RID st_layout_defining_shader;
-		RDD::ShaderID st_layout_defining_shader_driver_id;
-		uint32_t st_layout_defining_shader_layout_hash = 0;
-		uint8_t st_push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
-		uint32_t st_push_constant_size = 0;
-		RDD::BufferID st_sbt_buffer;
-		uint32_t st_raygen_shader_count = 0;
-		uint32_t st_miss_shader_count = 0;
-		uint32_t st_trace_count = 0;
-
-#ifdef DEBUG_ENABLED
-		bool val_active = true;
-		Vector<uint32_t> val_set_formats;
-		Vector<bool> val_set_bound;
-		Vector<RID> val_set_rids;
-		bool val_pipeline_active = false;
-		RID val_pipeline_shader;
-		uint32_t val_invalid_set_from = 0;
-		uint32_t val_pipeline_push_constant_size = 0;
-		bool val_pipeline_push_constant_supplied = false;
-#endif
-	};
-
-	struct ComputeList
-	{
-		bool active = false;
-
-		ListSetState st_sets[MAX_UNIFORM_SETS];
-		uint32_t st_set_count = 0;
-		RID st_pipeline;
-		RID st_pipeline_shader;
-		RDD::ShaderID st_pipeline_shader_driver_id;
-		uint32_t st_pipeline_shader_layout_hash = 0;
-		uint32_t st_local_group_size[3] = {0, 0, 0};
-		uint8_t st_push_constant_data[MAX_PUSH_CONSTANT_SIZE] = {};
-		uint32_t st_push_constant_size = 0;
-		uint32_t st_dispatch_count = 0;
-
-#ifdef DEBUG_ENABLED
-		Vector<uint32_t> val_set_formats;
-		Vector<bool> val_set_bound;
-		Vector<RID> val_set_rids;
-		bool val_pipeline_active = false;
-		RID val_pipeline_shader;
-		uint32_t val_invalid_set_from = 0;
-		uint32_t val_pipeline_push_constant_size = 0;
-		bool val_pipeline_push_constant_supplied = false;
-#endif
-	};
 
 	struct TransferWorker
 	{
@@ -13454,7 +13385,7 @@ private:
 		RID_Owner<RDD::SamplerID, true> sampler_owner;
 		RID_Owner<Buffer, true> vertex_buffer_owner;
 
-		HashMap<VertexDescriptionKey, VertexFormatID, VertexDescriptionHash> vertex_format_cache;
+		HashMap<VertexDescriptionKey, VertexFormatID> vertex_format_cache;
 		HashMap<VertexFormatID, VertexDescriptionCache> vertex_formats;
 
 		RID_Owner<VertexArray, true> vertex_array_owner;
@@ -13480,7 +13411,7 @@ private:
 		RID_Owner<AccelerationStructure, true> acceleration_structure_owner;
 		RID_Owner<HitShaderBindingTable, true> hit_sbt_owner;
 
-		DrawList draw_list;
+		CommandListState draw_list;
 		uint32_t draw_list_subpass_count = 0;
 #ifdef DEBUG_ENABLED
 		FramebufferFormatID draw_list_framebuffer_format = RDC::INVALID_ID;
@@ -13488,9 +13419,8 @@ private:
 		uint32_t draw_list_current_subpass = 0;
 		LocalVector<RID> draw_list_bound_textures;
 
-		RaytracingList raytracing_list;
-
-		ComputeList compute_list;
+		CommandListState raytracing_list;
+		CommandListState compute_list;
 
 		TightLocalVector<TransferWorker*> transfer_worker_pool;
 		uint32_t transfer_worker_pool_size = 0;
@@ -17117,19 +17047,15 @@ public:
 #include "core/io/ip.h"
 #include "core/math/vector2.h"
 
-struct RenderTargetSetOverrideFn
+
+template <typename T, typename BaseT = T>
+struct InstanceSort
 {
-	void (*ptr)(RID, RID, RID, RID, RID) = nullptr;
+	float depth = 0.0f;
+	T* instance = nullptr;
+	BaseT* base = nullptr;
 
-	void operator=(void (*p_ptr)(RID, RID, RID, RID, RID)) { ptr = p_ptr; }
-
-	_FORCE_INLINE_ void operator()(RID p_render_target, RID p_color_texture, RID p_depth_texture,
-		RID p_velocity = RID(), RID p_velocity_depth = RID()) const
-	{
-		if (ptr) {
-			ptr(p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
-		}
-	}
+	bool operator<(const InstanceSort& p_sort) const { return depth < p_sort.depth; }
 };
 
 namespace TextureStorage
@@ -17269,7 +17195,7 @@ struct API
 	Rect2i (*render_target_get_sdf_rect)(RID p_render_target) = nullptr;
 	void (*render_target_mark_sdf_enabled)(RID p_render_target, bool p_enabled) = nullptr;
 
-	RenderTargetSetOverrideFn render_target_set_override;
+	void (*render_target_set_override)(RID, RID, RID, RID, RID) = nullptr;
 
 	RID (*render_target_get_override_color)(RID p_render_target) = nullptr;
 	RID (*render_target_get_override_depth)(RID p_render_target) = nullptr;
@@ -17812,8 +17738,10 @@ namespace RendererTextureStorage
 	_FORCE_INLINE_ void render_target_set_override(RID p_render_target, RID p_color_texture,
 		RID p_depth_texture, RID p_velocity = RID(), RID p_velocity_depth = RID())
 	{
-		api.render_target_set_override(
-			p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
+		if (api.render_target_set_override) {
+			api.render_target_set_override(
+				p_render_target, p_color_texture, p_depth_texture, p_velocity, p_velocity_depth);
+		}
 	}
 
 	_FORCE_INLINE_ RID render_target_get_override_color(RID p_render_target)
@@ -17915,35 +17843,28 @@ public:
 private:
 	struct Data
 	{
-		struct Backend
+		enum
 		{
-			enum
-			{
-				MAX_INSTANCE_CULL = 8192,
-				MAX_INSTANCE_LIGHTS = 4,
-				LIGHT_CACHE_DIRTY = -1,
-				MAX_LIGHTS_CULLED = 256,
-				MAX_ROOM_CULL = 32,
-				MAX_EXTERIOR_PORTALS = 128,
-				MAX_LIGHT_SAMPLERS = 256,
-				INSTANCE_ROOMLESS_MASK = (1 << 20)
-			};
-
-			// Active subsystem driver
-			RendererCompositor* compositor = nullptr;
-
-			// Frame profiling & debug tracking
-			uint64_t frame_profile_frame = 0;
-			Vector<RenderingServerTypes::FrameProfileArea> frame_profile;
-			double frame_setup_time = 0.0;
-			bool print_gpu_profile = false;
-			HashMap<String, float> print_gpu_profile_task_time;
-			uint64_t print_frame_profile_ticks_from = 0;
-			uint32_t print_frame_profile_frame_count = 0;
-
-			int changes = 0;
-			RID test_cube;
+			MAX_INSTANCE_CULL = 8192,
+			MAX_INSTANCE_LIGHTS = 4,
+			LIGHT_CACHE_DIRTY = -1,
+			MAX_LIGHTS_CULLED = 256,
+			MAX_ROOM_CULL = 32,
+			MAX_EXTERIOR_PORTALS = 128,
+			MAX_LIGHT_SAMPLERS = 256,
+			INSTANCE_ROOMLESS_MASK = (1 << 20)
 		};
+
+		RendererCompositor* backend_compositor = nullptr;
+		uint64_t backend_frame_profile_frame = 0;
+		Vector<RenderingServerTypes::FrameProfileArea> backend_frame_profile;
+		double backend_frame_setup_time = 0.0;
+		bool backend_print_gpu_profile = false;
+		HashMap<String, float> backend_print_gpu_profile_task_time;
+		uint64_t backend_print_frame_profile_ticks_from = 0;
+		uint32_t backend_print_frame_profile_frame_count = 0;
+		int backend_changes = 0;
+		RID backend_test_cube;
 
 		int mm_policy = 0;
 		bool render_loop_enabled = true;
@@ -17951,8 +17872,6 @@ private:
 		RID test_texture;
 		RID white_texture;
 		RID test_material;
-
-		Backend backend;
 	};
 
 	static RID _make_test_cube();
@@ -19002,7 +18921,7 @@ public:
 	static void redraw_request()
 	{
 		if (data) {
-			data->backend.changes++;
+			data->backend_changes++;
 		}
 	}
 
@@ -20104,13 +20023,11 @@ namespace Delaunay3D
 			triangle[1] = p_b;
 			triangle[2] = p_c;
 		}
-	};
 
-	struct TriangleHasher {
-		_FORCE_INLINE_ static uint32_t hash(const Triangle &p_triangle) {
-			uint32_t h = hash_djb2_one_32(p_triangle.triangle[0]);
-			h = hash_djb2_one_32(p_triangle.triangle[1], h);
-			return hash_fmix32(hash_djb2_one_32(p_triangle.triangle[2], h));
+		_FORCE_INLINE_ uint32_t hash() const {
+			uint32_t h = hash_djb2_one_32(triangle[0]);
+			h = hash_djb2_one_32(triangle[1], h);
+			return hash_fmix32(hash_djb2_one_32(triangle[2], h));
 		}
 	};
 
@@ -20270,7 +20187,7 @@ namespace Delaunay3D
 			circum_sphere_compute(points, root);
 		}
 
-		AHashMap<Triangle, uint32_t, TriangleHasher> triangles_inserted;
+		AHashMap<Triangle, uint32_t> triangles_inserted;
 		LocalVector<Triangle> triangles;
 
 		for (uint32_t i = 0; i < point_count; i++) {
@@ -22888,19 +22805,13 @@ namespace XRServer
 
 	// As we may be updating our main state for our next frame while we're still rendering our
 	// previous frame, we need to keep copies around.
-	struct RenderState
-	{
-		double world_scale = 1.0; /* scale by which we multiply our tracker positions */
-		Transform3D world_origin; /* our world origin point, maps a location in our virtual world to
-									 the origin point in our real world tracking volume */
-		Transform3D reference_frame; /* our reference frame */
-	};
-
 	struct Data
 	{
-		double world_scale = 1.0; /* scale by which we multiply our tracker positions */
+		double world_scale = 1.0;
 		bool camera_locked_to_origin = false;
-		RenderState render_state;
+		double render_world_scale = 1.0;
+		Transform3D render_world_origin;
+		Transform3D render_reference_frame;
 	};
 
 	inline Data* data = nullptr;
@@ -25823,12 +25734,6 @@ struct Item
 	using CommandClipIgnore = Command;
 	using CommandAnimationSlice = Command;
 
-	struct ViewportRender
-	{
-		Renderer* owner = nullptr;
-		void* udata = nullptr;
-		Rect2 rect;
-	};
 
 	Transform2D xform_curr;
 	Transform2D xform_prev;
@@ -25880,7 +25785,6 @@ struct Item
 	Item* final_clip_owner = nullptr;
 	Item* material_owner = nullptr;
 	Item* canvas_group_owner = nullptr;
-	ViewportRender* vp_render = nullptr;
 	bool distance_field;
 	bool light_masked;
 	bool repeat_source;
@@ -25950,7 +25854,6 @@ struct Item
 		last_command = nullptr;
 		current_block = 0;
 		light_mask = 1;
-		vp_render = nullptr;
 		next = nullptr;
 		final_clip_owner = nullptr;
 		canvas_group_owner = nullptr;
@@ -34635,7 +34538,7 @@ using RDummy = RasterizerDummy;
 namespace RendererRD
 {
 
-struct DecalAtlas
+struct TextureAtlasRD
 {
 	struct SortItem
 	{
@@ -34670,47 +34573,7 @@ struct DecalAtlas
 	bool dirty = false;
 };
 
-struct AreaLightAtlas
-{
-	struct SortItem
-	{
-		RID texture;
-		Vector2i pos;
-		Size2i size;
-		Vector2i pixel_size;
 
-		bool operator<(const SortItem& p_item) const { return size.width > p_item.size.width; }
-	};
-
-	struct MipMap
-	{
-		RID texture;
-		RID fb;
-		Size2i size;
-	};
-
-	struct Texture
-	{
-		uint32_t users = 0;
-		Rect2 uv_rect;
-	};
-
-	HashMap<RID, Texture> textures;
-	RID texture;
-	Vector<MipMap> texture_mipmaps;
-	int mipmaps = 1;
-	Size2i size;
-	bool dirty = false;
-};
-
-struct TexBlitShader
-{
-	ShaderRD shader{BlitShaderRD()};
-	ShaderCompiler compiler;
-	RID default_shader;
-	RID default_material;
-	bool initialized = false;
-};
 
 class TextureStorage final
 {
@@ -34718,33 +34581,30 @@ public:
 	typedef void (*InvalidationCallback)(bool, void*);
 	typedef InvalidationCallback CanvasTextureInvalidationCallback;
 
-	static inline TexBlitShader tex_blit_shader;
+	static inline ShaderRD tex_blit_shader{BlitShaderRD()};
+	static inline ShaderCompiler tex_blit_shader_compiler;
+	static inline RID tex_blit_shader_default_shader;
+	static inline RID tex_blit_shader_default_material;
+	static inline bool tex_blit_shader_initialized = false;
 
 	enum
 	{
 		SAMPLERS_BINDING_FIRST_INDEX = 1,
 	};
 
-	struct RenderTargetSDF
+	struct RenderTargetSDFPushConstant
 	{
-		struct PushConstant
-		{
-			int32_t size[2];
-			int32_t stride = 0;
-			int32_t shift = 0;
-			int32_t base_size[2];
-			float pad[2];
-		};
-
-		ShaderRD shader;
-		ShaderCompiler compiler;
-		RID shader_version;
-		RID pipeline;
-
-		RenderTargetSDF() : shader(CanvasSdfShaderRD()) {}
+		int32_t size[2];
+		int32_t stride = 0;
+		int32_t shift = 0;
+		int32_t base_size[2];
+		float pad[2];
 	};
 
-	static inline RenderTargetSDF rt_sdf;
+	static inline ShaderRD rt_sdf_shader{CanvasSdfShaderRD()};
+	static inline ShaderCompiler rt_sdf_compiler;
+	static inline RID rt_sdf_shader_version;
+	static inline RID rt_sdf_pipeline;
 
 	enum TextureType
 	{
@@ -35010,14 +34870,6 @@ public:
 		uint32_t cull_mask = 0xFFFFFFFF;
 	};
 
-	struct DecalInstanceSort
-	{
-		DecalInstance* decal_instance = nullptr;
-		Decal* decal = nullptr;
-		float depth = 0.0;
-
-		bool operator<(const DecalInstanceSort& p_sort) const { return depth < p_sort.depth; }
-	};
 
 	struct DecalData
 	{
@@ -35062,11 +34914,11 @@ public:
 			RenderingDeviceCommons::TEXTURE_SWIZZLE_IDENTITY;
 	};
 
-	static inline AreaLightAtlas area_light_atlas;
-	static inline DecalAtlas decal_atlas;
+	static inline TextureAtlasRD area_light_atlas;
+	static inline TextureAtlasRD decal_atlas;
 	static inline uint32_t decal_count = 0;
 	static inline uint32_t max_decals = 0;
-	static inline DecalInstanceSort* decal_sort = nullptr;
+	static inline InstanceSort<DecalInstance, Decal>* decal_sort = nullptr;
 	static inline DecalData* decals = nullptr;
 	static inline RID decal_buffer;
 
@@ -36939,24 +36791,8 @@ public:
 			LocalVector<Mipmap> mipmaps;
 		};
 
-		struct DownsampleLayer
-		{
-			struct Mipmap
-			{
-				RID view;
-				Size2i size;
-
-				// Used only for the raster version.
-				RID octmap_view;
-				RID framebuffer;
-			};
-
-			LocalVector<Mipmap> mipmaps;
-		};
-
 		RID radiance_base_octmap;
 		RID downsampled_radiance_octmap;
-		DownsampleLayer downsampled_layer;
 		RID coefficient_buffer;
 
 		bool dirty = true;
@@ -36976,21 +36812,13 @@ public:
 
 	/* Sky shader */
 
-	struct SkyShader
-	{
-		ShaderRD shader{SkyShaderRD()};
-		ShaderCompiler compiler;
-
-		RID default_shader;
-		RID default_material;
-		RID default_shader_rd;
-		RID default_multiview_shader_rd; // This is lazily initialized, use "get_default_shader_rd"
-										 // instead.
-
-		RID get_default_shader_rd(bool p_is_multiview = false);
-	};
-
-	SkyShader sky_shader;
+	ShaderRD sky_shader{SkyShaderRD()};
+	ShaderCompiler sky_shader_compiler;
+	RID sky_shader_default_shader;
+	RID sky_shader_default_material;
+	RID sky_shader_default_shader_rd;
+	RID sky_shader_default_multiview_shader_rd;
+	RID sky_shader_get_default_shader_rd(bool p_is_multiview = false);
 
 	using SkyMaterialData = RendererRD::MaterialStorage::TypedMaterialData<SkyShaderData>;
 
@@ -37224,30 +37052,7 @@ private:
 
 	static inline RID_Owner<VoxelGIInstance> voxel_gi_instance_owner;
 
-	struct VoxelGILight
-	{
-		uint32_t type;
-		float energy;
-		float radius;
-		float attenuation;
 
-		float color[3];
-		float cos_spot_angle;
-
-		float position[3];
-		float inv_spot_attenuation;
-
-		float direction[3];
-		uint32_t has_shadow;
-
-		float area_width[4];
-		float area_height[4];
-		float area_projector_rect[4];
-	};
-
-
-
-	static inline VoxelGILight* voxel_gi_lights = nullptr;
 	static inline uint32_t voxel_gi_max_lights = 32;
 	static inline RID voxel_gi_lights_uniform;
 
@@ -37298,110 +37103,76 @@ private:
 
 	/* SDFGI */
 
-	struct SDFGIShader
+	enum SDFGIPreprocessShaderVersion
 	{
-		enum SDFGIPreprocessShaderVersion
-		{
-			PRE_PROCESS_SCROLL,
-			PRE_PROCESS_SCROLL_OCCLUSION,
-			PRE_PROCESS_JUMP_FLOOD_INITIALIZE,
-			PRE_PROCESS_JUMP_FLOOD_INITIALIZE_HALF,
-			PRE_PROCESS_JUMP_FLOOD,
-			PRE_PROCESS_JUMP_FLOOD_OPTIMIZED,
-			PRE_PROCESS_JUMP_FLOOD_UPSCALE,
-			PRE_PROCESS_OCCLUSION,
-			PRE_PROCESS_STORE,
-			PRE_PROCESS_MAX
-		};
-
-
-		ShaderRD preprocess;
-		RID preprocess_shader;
-		PipelineDeferredRD preprocess_pipeline[PRE_PROCESS_MAX];
-
-
-		ShaderRD debug;
-		RID debug_shader;
-		RID debug_shader_version;
-		PipelineDeferredRD debug_pipeline;
-
-		enum ProbeDebugMode
-		{
-			PROBE_DEBUG_PROBES,
-			PROBE_DEBUG_PROBES_MULTIVIEW,
-			PROBE_DEBUG_VISIBILITY,
-			PROBE_DEBUG_VISIBILITY_MULTIVIEW,
-			PROBE_DEBUG_MAX
-		};
-
-
-
-		ShaderRD debug_probes;
-		RID debug_probes_shader;
-		RID debug_probes_shader_version;
-
-		PipelineCacheRD debug_probes_pipeline[PROBE_DEBUG_MAX];
-
-		struct Light
-		{
-			float color[3];
-			float energy;
-
-			float direction[3];
-			uint32_t has_shadow;
-
-			float position[3];
-			float attenuation;
-
-			uint32_t type;
-			float cos_spot_angle;
-			float inv_spot_attenuation;
-			float radius;
-
-			float area_width[4];
-			float area_height[4];
-			float area_projector_rect[4];
-		};
-
-
-		enum
-		{
-			DIRECT_LIGHT_MODE_STATIC,
-			DIRECT_LIGHT_MODE_DYNAMIC,
-			DIRECT_LIGHT_MODE_MAX
-		};
-
-		ShaderRD direct_light;
-		RID direct_light_shader;
-		PipelineDeferredRD direct_light_pipeline[DIRECT_LIGHT_MODE_MAX];
-
-		enum
-		{
-			INTEGRATE_MODE_PROCESS,
-			INTEGRATE_MODE_STORE,
-			INTEGRATE_MODE_SCROLL,
-			INTEGRATE_MODE_SCROLL_STORE,
-			INTEGRATE_MODE_MAX
-		};
-
-
-		ShaderRD integrate;
-		RID integrate_shader;
-		PipelineDeferredRD integrate_pipeline[INTEGRATE_MODE_MAX];
-
-		RID integrate_default_sky_uniform_set;
-
-		SDFGIShader()
-			: preprocess(SdfgiPreprocessShaderRD()),
-			  debug(SdfgiDebugShaderRD()),
-			  debug_probes(SdfgiDebugProbesShaderRD()),
-			  direct_light(SdfgiDirectLightShaderRD()),
-			  integrate(SdfgiIntegrateShaderRD())
-		{
-		}
+		PRE_PROCESS_SCROLL,
+		PRE_PROCESS_SCROLL_OCCLUSION,
+		PRE_PROCESS_JUMP_FLOOD_INITIALIZE,
+		PRE_PROCESS_JUMP_FLOOD_INITIALIZE_HALF,
+		PRE_PROCESS_JUMP_FLOOD,
+		PRE_PROCESS_JUMP_FLOOD_OPTIMIZED,
+		PRE_PROCESS_JUMP_FLOOD_UPSCALE,
+		PRE_PROCESS_OCCLUSION,
+		PRE_PROCESS_STORE,
+		PRE_PROCESS_MAX
 	};
 
-	static inline SDFGIShader sdfgi_shader;
+	enum ProbeDebugMode
+	{
+		PROBE_DEBUG_PROBES,
+		PROBE_DEBUG_PROBES_MULTIVIEW,
+		PROBE_DEBUG_VISIBILITY,
+		PROBE_DEBUG_VISIBILITY_MULTIVIEW,
+		PROBE_DEBUG_MAX
+	};
+
+	struct SDFGILight
+	{
+		float color[3];
+		float energy;
+		float direction[3];
+		uint32_t has_shadow;
+		float position[3];
+		float attenuation;
+		uint32_t type;
+		float cos_spot_angle;
+		float inv_spot_attenuation;
+		float radius;
+		float area_width[4];
+		float area_height[4];
+		float area_projector_rect[4];
+	};
+
+	enum
+	{
+		DIRECT_LIGHT_MODE_STATIC,
+		DIRECT_LIGHT_MODE_DYNAMIC,
+		DIRECT_LIGHT_MODE_MAX,
+		INTEGRATE_MODE_PROCESS = 0,
+		INTEGRATE_MODE_STORE,
+		INTEGRATE_MODE_SCROLL,
+		INTEGRATE_MODE_SCROLL_STORE,
+		INTEGRATE_MODE_MAX
+	};
+
+	static inline ShaderRD sdfgi_shader_preprocess{SdfgiPreprocessShaderRD()};
+	static inline RID sdfgi_shader_preprocess_shader;
+	static inline PipelineDeferredRD sdfgi_shader_preprocess_pipeline[PRE_PROCESS_MAX];
+	static inline ShaderRD sdfgi_shader_debug{SdfgiDebugShaderRD()};
+	static inline RID sdfgi_shader_debug_shader;
+	static inline RID sdfgi_shader_debug_shader_version;
+	static inline PipelineDeferredRD sdfgi_shader_debug_pipeline;
+	static inline ShaderRD sdfgi_shader_debug_probes{SdfgiDebugProbesShaderRD()};
+	static inline RID sdfgi_shader_debug_probes_shader;
+	static inline RID sdfgi_shader_debug_probes_shader_version;
+	static inline PipelineCacheRD sdfgi_shader_debug_probes_pipeline[PROBE_DEBUG_MAX];
+	static inline ShaderRD sdfgi_shader_direct_light{SdfgiDirectLightShaderRD()};
+	static inline RID sdfgi_shader_direct_light_shader;
+	static inline PipelineDeferredRD sdfgi_shader_direct_light_pipeline[DIRECT_LIGHT_MODE_MAX];
+	static inline ShaderRD sdfgi_shader_integrate{SdfgiIntegrateShaderRD()};
+	static inline RID sdfgi_shader_integrate_shader;
+	static inline PipelineDeferredRD sdfgi_shader_integrate_pipeline[INTEGRATE_MODE_MAX];
+	static inline RID sdfgi_shader_integrate_default_sky_uniform_set;
 
 public:
 	static bool is_initialized() { return _initialized; }
@@ -37742,16 +37513,6 @@ static void sdfgi_reset();
 		float exposure_normalization;
 	};
 
-	struct SceneData
-	{
-		float inv_projection[2][16];
-		float cam_transform[16];
-		float eye_offset[2][4];
-
-		int32_t screen_size[2];
-		float pad1;
-		float pad2;
-	};
 
 	struct PushConstant
 	{
@@ -37868,59 +37629,43 @@ public:
 	};
 
 	/* Volumetric Fog */
-	struct VolumetricFogShader
+	enum ShaderGroup
 	{
-		enum ShaderGroup
-		{
-			SHADER_GROUP_BASE,
-			SHADER_GROUP_NO_ATOMICS,
-			SHADER_GROUP_VULKAN_MEMORY_MODEL,
-			SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS,
-		};
-
-		enum FogSet
-		{
-			FOG_SET_BASE,
-			FOG_SET_UNIFORMS,
-			FOG_SET_MATERIAL,
-			FOG_SET_MAX,
-		};
-
-
-
-		ShaderCompiler compiler;
-		ShaderRD shader;
-		RID volume_ubo;
-
-		RID default_shader;
-		RID default_material;
-		RID default_shader_rd;
-
-		RID base_uniform_set;
-
-		RID params_ubo;
-
-		enum
-		{
-			VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY,
-			VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY_WITH_SDFGI,
-			VOLUMETRIC_FOG_PROCESS_SHADER_FILTER,
-			VOLUMETRIC_FOG_PROCESS_SHADER_FOG,
-			VOLUMETRIC_FOG_PROCESS_SHADER_COPY,
-			VOLUMETRIC_FOG_PROCESS_SHADER_MAX,
-		};
-
-
-		ShaderRD process_shader;
-
-		RID process_shader_version;
-		PipelineDeferredRD process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
-
-		VolumetricFogShader()
-			: shader(VolumetricFogShaderRD()), process_shader(VolumetricFogProcessShaderRD())
-		{
-		}
+		SHADER_GROUP_BASE,
+		SHADER_GROUP_NO_ATOMICS,
+		SHADER_GROUP_VULKAN_MEMORY_MODEL,
+		SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS,
 	};
+
+	enum FogSet
+	{
+		FOG_SET_BASE,
+		FOG_SET_UNIFORMS,
+		FOG_SET_MATERIAL,
+		FOG_SET_MAX,
+	};
+
+	enum
+	{
+		VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY,
+		VOLUMETRIC_FOG_PROCESS_SHADER_DENSITY_WITH_SDFGI,
+		VOLUMETRIC_FOG_PROCESS_SHADER_FILTER,
+		VOLUMETRIC_FOG_PROCESS_SHADER_FOG,
+		VOLUMETRIC_FOG_PROCESS_SHADER_COPY,
+		VOLUMETRIC_FOG_PROCESS_SHADER_MAX,
+	};
+
+	static inline ShaderCompiler volumetric_fog_compiler;
+	static inline ShaderRD volumetric_fog_shader{VolumetricFogShaderRD()};
+	static inline RID volumetric_fog_volume_ubo;
+	static inline RID volumetric_fog_default_shader;
+	static inline RID volumetric_fog_default_material;
+	static inline RID volumetric_fog_default_shader_rd;
+	static inline RID volumetric_fog_base_uniform_set;
+	static inline RID volumetric_fog_params_ubo;
+	static inline ShaderRD volumetric_fog_process_shader{VolumetricFogProcessShaderRD()};
+	static inline RID volumetric_fog_process_shader_version;
+	static inline PipelineDeferredRD volumetric_fog_process_pipelines[VOLUMETRIC_FOG_PROCESS_SHADER_MAX];
 
 	struct FogShaderData : public RendererRD::MaterialStorage::ShaderData
 	{
@@ -38037,7 +37782,6 @@ private:
 
 	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 3;
 
-	static inline VolumetricFogShader volumetric_fog;
 
 	static Vector3i _point_get_position_in_froxel_volume(const Vector3& p_point, float fog_end,
 		const Vector2& fog_near_size, const Vector2& fog_far_size,
@@ -39221,7 +38965,7 @@ public:
 		RESOURCE_ID_DYNAMIC = 0xFFFFFFFF
 	};
 
-	struct Resources
+	struct Scratch
 	{
 		LocalVector<RID> rids;
 		LocalVector<LocalVector<RID>> mip_slice_rids;
@@ -39229,8 +38973,12 @@ public:
 		LocalVector<FfxResourceDescription> descriptions;
 		LocalVector<uint32_t> dynamic_list;
 		LocalVector<uint32_t> free_list;
+		LocalVector<FfxGpuJobDescription> gpu_jobs;
+		RID ubo_ring_buffer[FSR2_UBO_RING_BUFFER_SIZE];
+		uint32_t ubo_ring_buffer_index = 0;
+		FfxDevice device = nullptr;
 
-		uint32_t add(
+		uint32_t add_resource(
 			RID p_rid, bool p_dynamic, uint32_t p_id, FfxResourceDescription p_description)
 		{
 			uint32_t ret_index;
@@ -39260,7 +39008,7 @@ public:
 			return ret_index;
 		}
 
-		void remove(uint32_t p_index)
+		void remove_resource(uint32_t p_index)
 		{
 			DEV_ASSERT(p_index < rids.size());
 			free_list.push_back(p_index);
@@ -39270,17 +39018,6 @@ public:
 			descriptions[p_index] = {};
 			dynamic_list.erase(p_index);
 		}
-
-		uint32_t size() const { return rids.size(); }
-	};
-
-	struct Scratch
-	{
-		Resources resources;
-		LocalVector<FfxGpuJobDescription> gpu_jobs;
-		RID ubo_ring_buffer[FSR2_UBO_RING_BUFFER_SIZE];
-		uint32_t ubo_ring_buffer_index = 0;
-		FfxDevice device = nullptr;
 	};
 
 	Scratch scratch;
@@ -40222,14 +39959,6 @@ public:
 		float projector_rect[4];
 	};
 
-	struct LightInstanceDepthSort
-	{
-		float depth;
-		LightInstance* light_instance;
-		Light* light;
-
-		bool operator<(const LightInstanceDepthSort& p_sort) const { return depth < p_sort.depth; }
-	};
 
 	struct DirectionalLightData
 	{
@@ -40349,16 +40078,6 @@ public:
 		float local_matrix[16];
 	};
 
-	struct ReflectionProbeInstanceSort
-	{
-		float size;
-		ReflectionProbeInstance* probe_instance;
-
-		bool operator<(const ReflectionProbeInstanceSort& p_sort) const
-		{
-			return size < p_sort.size;
-		}
-	};
 
 	struct Lightmap
 	{
@@ -40441,9 +40160,9 @@ public:
 	static inline LightData* omni_lights = nullptr;
 	static inline LightData* spot_lights = nullptr;
 	static inline LightData* area_lights = nullptr;
-	static inline LightInstanceDepthSort* omni_light_sort = nullptr;
-	static inline LightInstanceDepthSort* spot_light_sort = nullptr;
-	static inline LightInstanceDepthSort* area_light_sort = nullptr;
+	static inline InstanceSort<LightInstance, Light>* omni_light_sort = nullptr;
+	static inline InstanceSort<LightInstance, Light>* spot_light_sort = nullptr;
+	static inline InstanceSort<LightInstance, Light>* area_light_sort = nullptr;
 	static inline RID omni_light_buffer;
 	static inline RID spot_light_buffer;
 	static inline RID area_light_buffer;
@@ -40459,7 +40178,7 @@ public:
 	static inline uint32_t max_reflections = 0;
 	static inline uint32_t reflection_count = 0;
 	static inline ReflectionData* reflections = nullptr;
-	static inline ReflectionProbeInstanceSort* reflection_sort = nullptr;
+	static inline InstanceSort<ReflectionProbeInstance>* reflection_sort = nullptr;
 	static inline RID reflection_buffer;
 
 	static inline bool using_lightmap_array = false;
@@ -43863,13 +43582,6 @@ private:
 
 	// Global data about the scene that can be used to pre-allocate resources without relying on
 	// culling.
-	struct GlobalSurfaceData
-	{
-		bool screen_texture_used = false;
-		bool normal_texture_used = false;
-		bool depth_texture_used = false;
-		bool sss_used = false;
-	};
 
 	/* Render List */
 
@@ -44038,7 +43750,10 @@ public:
 
 		GlobalPipelineData global_pipeline_data_compiled = {};
 		GlobalPipelineData global_pipeline_data_required = {};
-		GlobalSurfaceData global_surface_data;
+		bool global_surface_screen_texture_used = false;
+		bool global_surface_normal_texture_used = false;
+		bool global_surface_depth_texture_used = false;
+		bool global_surface_sss_used = false;
 
 		RenderList render_list[RENDER_LIST_MAX];
 
@@ -45256,11 +44971,6 @@ public:
 
 	// Global data about the scene that can be used to pre-allocate resources without relying on
 	// culling.
-	struct GlobalSurfaceData
-	{
-		bool screen_texture_used = false;
-		bool depth_texture_used = false;
-	};
 
 	struct Data
 	{
@@ -45281,7 +44991,10 @@ public:
 
 		GlobalPipelineData global_pipeline_data_compiled = {};
 		GlobalPipelineData global_pipeline_data_required = {};
-		GlobalSurfaceData global_surface_data;
+		bool global_surface_screen_texture_used = false;
+		bool global_surface_normal_texture_used = false;
+		bool global_surface_depth_texture_used = false;
+		bool global_surface_sss_used = false;
 	};
 
 	static inline Data* data = nullptr;
@@ -46313,57 +46026,21 @@ private:
 
 	/* Skeleton */
 
-	struct SkeletonShader
+	enum
 	{
-		struct PushConstant
-		{
-			uint32_t has_normal;
-			uint32_t has_tangent;
-			uint32_t has_skeleton;
-			uint32_t has_blend_shape;
-
-			uint32_t vertex_count;
-			uint32_t vertex_stride;
-			uint32_t skin_stride;
-			uint32_t skin_weight_offset;
-
-			uint32_t blend_shape_count;
-			uint32_t normalized_blend_shapes;
-			uint32_t normal_tangent_stride;
-			uint32_t pad1;
-			float skeleton_transform_x[2];
-			float skeleton_transform_y[2];
-
-			float skeleton_transform_offset[2];
-			float inverse_transform_x[2];
-
-			float inverse_transform_y[2];
-			float inverse_transform_offset[2];
-		};
-
-		enum
-		{
-			UNIFORM_SET_INSTANCE = 0,
-			UNIFORM_SET_SURFACE = 1,
-			UNIFORM_SET_SKELETON = 2,
-		};
-
-		enum
-		{
-			SHADER_MODE_2D,
-			SHADER_MODE_3D,
-			SHADER_MODE_MAX
-		};
-
-		ShaderRD shader{SkeletonShaderRD()};
-		RID version;
-		RID version_shader[SHADER_MODE_MAX];
-		RID pipeline[SHADER_MODE_MAX];
-
-		RID default_skeleton_uniform_set;
+		SKELETON_UNIFORM_SET_INSTANCE = 0,
+		SKELETON_UNIFORM_SET_SURFACE = 1,
+		SKELETON_UNIFORM_SET_SKELETON = 2,
+		SKELETON_SHADER_MODE_2D = 0,
+		SKELETON_SHADER_MODE_3D,
+		SKELETON_SHADER_MODE_MAX
 	};
 
-	static inline SkeletonShader* skeleton_shader = nullptr;
+	static inline ShaderRD skeleton_shader{SkeletonShaderRD()};
+	static inline RID skeleton_shader_version;
+	static inline RID skeleton_shader_version_shader[SKELETON_SHADER_MODE_MAX];
+	static inline RID skeleton_shader_pipeline[SKELETON_SHADER_MODE_MAX];
+	static inline RID skeleton_shader_default_uniform_set;
 
 	struct Skeleton
 	{
@@ -47175,84 +46852,38 @@ private:
 	static void _particles_free_data(Particles* particles);
 	static void _particles_update_buffers(Particles* particles);
 
-	struct ParticlesShader
+	struct ParticlesShaderPushConstant
 	{
-		struct PushConstant
-		{
-			float lifetime;
-			uint32_t clear;
-			uint32_t total_particles;
-			uint32_t trail_size;
+		float lifetime;
+		uint32_t clear;
+		uint32_t total_particles;
+		uint32_t trail_size;
 
-			uint32_t use_fractional_delta;
-			uint32_t sub_emitter_mode;
-			uint32_t can_emit;
-			uint32_t trail_pass;
-		};
-
-		ShaderRD shader;
-		ShaderCompiler compiler;
-
-		RID default_shader;
-		RID default_material;
-		RID default_shader_rd;
-
-		RID base_uniform_set;
-
-		struct CopyPushConstant
-		{
-			float sort_direction[3];
-			uint32_t total_particles;
-
-			uint32_t trail_size;
-			uint32_t trail_total;
-			float frame_delta;
-			float frame_remainder;
-
-			float align_up[3];
-			uint32_t align_mode;
-
-			uint32_t lifetime_split;
-			uint32_t lifetime_reverse;
-			uint32_t motion_vectors_current_offset;
-
-			struct
-			{
-				uint32_t order_by_lifetime : 1;
-				uint32_t copy_mode_2d : 1;
-			};
-
-			float inv_emission_transform[12];
-
-			uint32_t align_src;
-			uint32_t align_axis;
-			uint32_t pad1;
-			uint32_t pad2;
-		};
-
-		enum
-		{
-			MAX_USERDATAS = 6
-		};
-
-		enum
-		{
-			COPY_MODE_FILL_INSTANCES,
-			COPY_MODE_FILL_SORT_BUFFER,
-			COPY_MODE_FILL_INSTANCES_WITH_SORT_BUFFER,
-			COPY_MODE_MAX,
-		};
-
-		ShaderRD copy_shader;
-		RID copy_shader_version;
-		PipelineDeferredRD copy_pipelines[MAX_USERDATAS + 1][COPY_MODE_MAX];
-
-		LocalVector<float> pose_update_buffer;
-
-		ParticlesShader() : shader(ParticlesShaderRD()), copy_shader(ParticlesCopyShaderRD()) {}
+		uint32_t use_fractional_delta;
+		uint32_t sub_emitter_mode;
+		uint32_t can_emit;
+		uint32_t trail_pass;
 	};
 
-	static inline ParticlesShader particles_shader;
+	enum
+	{
+		PARTICLES_MAX_USERDATAS = 6,
+		PARTICLES_COPY_MODE_FILL_INSTANCES = 0,
+		PARTICLES_COPY_MODE_FILL_SORT_BUFFER,
+		PARTICLES_COPY_MODE_FILL_INSTANCES_WITH_SORT_BUFFER,
+		PARTICLES_COPY_MODE_MAX,
+	};
+
+	static inline ShaderRD particles_shader{ParticlesShaderRD()};
+	static inline ShaderCompiler particles_shader_compiler;
+	static inline RID particles_shader_default_shader;
+	static inline RID particles_shader_default_material;
+	static inline RID particles_shader_default_shader_rd;
+	static inline RID particles_shader_base_uniform_set;
+	static inline ShaderRD particles_shader_copy_shader{ParticlesCopyShaderRD()};
+	static inline RID particles_shader_copy_shader_version;
+	static inline PipelineDeferredRD particles_shader_copy_pipelines[PARTICLES_MAX_USERDATAS + 1][PARTICLES_COPY_MODE_MAX];
+	static inline LocalVector<float> particles_shader_pose_update_buffer;
 
 	static inline SelfList<Particles>::List particle_update_list;
 
@@ -47277,7 +46908,7 @@ private:
 
 		bool uses_time = false;
 
-		bool userdatas_used[ParticlesShader::MAX_USERDATAS] = {};
+		bool userdatas_used[PARTICLES_MAX_USERDATAS] = {};
 		uint32_t userdata_count = 0;
 
 		virtual bool is_animated() const override;
@@ -47336,7 +46967,7 @@ public:
 	ParticlesStorage& operator=(const ParticlesStorage&) = delete;
 
 	static void initialize();
-	static bool is_initialized() { return particles_shader.default_shader.is_valid(); }
+	static bool is_initialized() { return particles_shader_default_shader.is_valid(); }
 	static void finalize();
 
 	static bool free(RID p_rid);
@@ -48600,44 +48231,6 @@ private:
 	// convenience
 	static void copy_string_to_char_buffer(const String& p_string, char* p_buffer, int p_buffer_len);
 
-	// Render state, Only accessible in rendering thread
-	struct RenderState
-	{
-		bool running = false;
-		bool should_render = false;
-		bool has_xr_viewport = false;
-		XrTime predicted_display_time = 0;
-		XrSpace play_space = XR_NULL_HANDLE;
-		XrEnvironmentBlendMode environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-		double render_target_size_multiplier = 1.0;
-		uint64_t frame = 0;
-		Rect2i render_region;
-
-		LocalVector<XrView> views;
-		LocalVector<XrCompositionLayerProjectionView> projection_views;
-		LocalVector<XrCompositionLayerDepthInfoKHR>
-			depth_views; // Only used by Composition Layer Depth Extension if available
-		bool submit_depth_buffer = false;  // if set to true we submit depth buffers to OpenXR if a
-										   // suitable extension is enabled.
-		bool use_subsampled_images = true; // We need to default to true for the warning to be shown
-										   // if we fallback immediately at startup.
-		bool view_pose_valid = false;
-
-		double z_near = 0.0;
-		double z_far = 0.0;
-
-		XrCompositionLayerProjection projection_layer = {
-			XR_TYPE_COMPOSITION_LAYER_PROJECTION, // type
-			nullptr,							  // next
-			0,									  // layerFlags
-			XR_NULL_HANDLE,						  // space
-			0,									  // viewCount
-			nullptr								  // views
-		};
-
-		Size2i main_swapchain_size;
-		OpenXRSwapChainInfo main_swapchains[OPENXR_SWAPCHAIN_MAX];
-	};
 
 	static void _allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_depth_buffer);
 	static void _set_render_session_running_rt(bool p_is_running);
@@ -48816,9 +48409,9 @@ public:
 
 	static int64_t get_depth_swapchain_format() { return data->depth_swapchain_format; }
 
-	static double get_render_state_z_near() { return data->render_state.z_near; }
+	static double get_render_state_z_near() { return data->rs_z_near; }
 
-	static double get_render_state_z_far() { return data->render_state.z_far; }
+	static double get_render_state_z_far() { return data->rs_z_far; }
 
 	// action map
 	static String get_default_action_map_resource_name();
@@ -48938,7 +48531,33 @@ public:
 		RID_Owner<ActionSet, true> action_set_owner;
 		RID_Owner<Action, true> action_owner;
 		RID_Owner<InteractionProfile, true> interaction_profile_owner;
-		RenderState render_state;
+		bool rs_running = false;
+		bool rs_should_render = false;
+		bool rs_has_xr_viewport = false;
+		XrTime rs_predicted_display_time = 0;
+		XrSpace rs_play_space = XR_NULL_HANDLE;
+		XrEnvironmentBlendMode rs_environment_blend_mode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+		double rs_render_target_size_multiplier = 1.0;
+		uint64_t rs_frame = 0;
+		Rect2i rs_render_region;
+		LocalVector<XrView> rs_views;
+		LocalVector<XrCompositionLayerProjectionView> rs_projection_views;
+		LocalVector<XrCompositionLayerDepthInfoKHR> rs_depth_views;
+		bool rs_submit_depth_buffer = false;
+		bool rs_use_subsampled_images = true;
+		bool rs_view_pose_valid = false;
+		double rs_z_near = 0.0;
+		double rs_z_far = 0.0;
+		XrCompositionLayerProjection rs_projection_layer = {
+			XR_TYPE_COMPOSITION_LAYER_PROJECTION,
+			nullptr,
+			0,
+			XR_NULL_HANDLE,
+			0,
+			nullptr
+		};
+		Size2i rs_main_swapchain_size;
+		OpenXRSwapChainInfo rs_main_swapchains[OPENXR_SWAPCHAIN_MAX];
 	};
 
 	static inline Data* data = nullptr;
@@ -50466,14 +50085,6 @@ struct TextureAtlas
 	bool dirty = false;
 };
 
-struct TexBlitShader
-{
-	CopyShaderGLES3 shader;
-	RID default_shader;
-	RID default_material;
-	RID default_version;
-	bool initialized = false;
-};
 
 class TextureStorage final
 {
@@ -50484,7 +50095,9 @@ private:
 
 	static inline GLuint current_fbo = 0;
 
-	static inline TexBlitShader tex_blit_shader;
+	static inline RID tex_blit_default_shader;
+	static inline RID tex_blit_default_material;
+	static inline bool tex_blit_initialized = false;
 	static inline GLuint tex_blit_fbo = 0;
 	static inline GLuint tex_blit_quad = 0;
 	static inline GLuint tex_blit_quad_array = 0;
@@ -51471,13 +51084,8 @@ struct Skeleton
 class MeshStorage final
 {
 private:
-	struct SkeletonShader
-	{
-		SkeletonShaderGLES3 shader;
-		RID shader_version;
-	};
-
-	static inline SkeletonShader* skeleton_shader = nullptr;
+	static inline SkeletonShaderGLES3 skeleton_shader;
+	static inline RID skeleton_shader_version;
 
 	/* Mesh */
 
@@ -51969,17 +51577,11 @@ public:
 		return skeleton_owner.get_or_null(p_skeleton) != nullptr;
 	}
 
-	static inline void initialize()
-	{
-	    skeleton_shader = memnew(SkeletonShader);
-	}
+	static inline void initialize() {}
 
 	static inline void finalize()
 	{
-	    if (skeleton_shader) {
-	        memdelete(skeleton_shader);
-	        skeleton_shader = nullptr;
-	    }
+		skeleton_shader_version = RID();
 	}
 };
 
@@ -53584,13 +53186,6 @@ private:
 	RSE::ViewportDebugDraw debug_draw = RSE::VIEWPORT_DEBUG_DRAW_DISABLED;
 	static inline uint64_t scene_pass = 0;
 
-	template <typename T> struct InstanceSort
-	{
-		float depth;
-		T* instance = nullptr;
-
-		bool operator<(const InstanceSort& p_sort) const { return depth < p_sort.depth; }
-	};
 
 	RID scene_globals_shader_default_version;
 	RID scene_globals_default_material;
@@ -54747,16 +54342,11 @@ private:
 	template <typename T>
 	static void _particles_reverse_lifetime_sort(Particles *particles);
 
-	struct ParticlesShader {
-		RID default_shader;
-		RID default_material;
-		RID default_shader_version;
-
-		ParticlesCopyShaderGLES3 copy_shader;
-		RID copy_shader_version;
-	};
-
-	static inline ParticlesShader particles_shader;
+	static inline RID particles_shader_default_shader;
+	static inline RID particles_shader_default_material;
+	static inline RID particles_shader_default_shader_version;
+	static inline ParticlesCopyShaderGLES3 particles_shader_copy_shader;
+	static inline RID particles_shader_copy_shader_version;
 
 	static inline SelfList<Particles>::List particle_update_list;
 
@@ -55123,17 +54713,17 @@ enum ResourceClass
 	RES_CLASS_UAV,
 };
 
-struct RenderingDXIL
+namespace RenderingDXIL
 {
-	static uint32_t patch_specialization_constant(
+	uint32_t patch_specialization_constant(
 		RenderingDeviceCommons::PipelineSpecializationConstantType p_type, const void* p_value,
 		const uint64_t (&p_stages_bit_offsets)[D3D12_BITCODE_OFFSETS_NUM_STAGES],
 		HashMap<RenderingDeviceCommons::ShaderStage, Vector<uint8_t>>& r_stages_bytecodes,
 		bool p_is_first_patch);
 
-	static void sign_bytecode(
+	void sign_bytecode(
 		RenderingDeviceCommons::ShaderStage p_stage, Vector<uint8_t>& r_dxil_blob);
-};
+} // namespace RenderingDXIL
 
 class RenderingShaderContainerD3D12 : public RenderingShaderContainer
 {
@@ -55467,18 +55057,14 @@ private:
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_virtual_address = {};
 		DataFormat texel_format = DATA_FORMAT_MAX;
 		uint64_t size = 0;
-		bool flag_is_dynamic = false;
-
-		bool is_dynamic() const { return flag_is_dynamic; }
-	};
-
-	struct BufferDynamicInfo : BufferInfo {
 		uint32_t frame_idx = UINT32_MAX;
 		uint8_t *persistent_ptr = nullptr;
 #ifdef DEBUG_ENABLED
-		// For tracking that a persistent buffer isn't mapped twice in the same frame.
 		uint64_t last_frame_mapped = 0;
 #endif
+		bool flag_is_dynamic = false;
+
+		bool is_dynamic() const { return flag_is_dynamic; }
 	};
 
 public:
@@ -55658,27 +55244,11 @@ private:
 	// Belongs to RENDERING-SUBPASS, but needed here.
 	struct FramebufferInfo;
 	struct RenderPassInfo;
-	struct RenderPassState {
-		struct AttachmentLayout {
-			struct AspectLayout {
-				TextureLayout cur_layout = TEXTURE_LAYOUT_UNDEFINED;
-				TextureLayout expected_layout = TEXTURE_LAYOUT_UNDEFINED;
-			};
-
-			AspectLayout aspect_layouts[TEXTURE_ASPECT_MAX];
-		};
-
-		uint32_t current_subpass = UINT32_MAX;
-		const FramebufferInfo *fb_info = nullptr;
-		const RenderPassInfo *pass_info = nullptr;
-		CD3DX12_RECT region_rect = {};
-		bool region_is_all = false;
-		LocalVector<AttachmentLayout> attachment_layouts;
-
-		const VertexFormatInfo *vf_info = nullptr;
-		D3D12_VERTEX_BUFFER_VIEW vertex_buffer_views[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = {};
-		uint32_t vertex_buffer_count = 0;
+	struct RenderPassAspectLayout {
+		TextureLayout cur_layout = TEXTURE_LAYOUT_UNDEFINED;
+		TextureLayout expected_layout = TEXTURE_LAYOUT_UNDEFINED;
 	};
+	using RenderPassAttachmentLayout = std::array<RenderPassAspectLayout, TEXTURE_ASPECT_MAX>;
 
 	struct DynParams {
 		D3D12_PRIMITIVE_TOPOLOGY primitive_topology = {};
@@ -55712,7 +55282,15 @@ private:
 		uint32_t graphics_root_signature_crc = 0;
 		uint32_t compute_root_signature_crc = 0;
 
-		RenderPassState render_pass_state;
+		uint32_t rp_current_subpass = UINT32_MAX;
+		const FramebufferInfo *rp_fb_info = nullptr;
+		const RenderPassInfo *rp_pass_info = nullptr;
+		CD3DX12_RECT rp_region_rect = {};
+		bool rp_region_is_all = false;
+		LocalVector<RenderPassAttachmentLayout> rp_attachment_layouts;
+		const VertexFormatInfo *rp_vf_info = nullptr;
+		D3D12_VERTEX_BUFFER_VIEW rp_vertex_buffer_views[D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = {};
+		uint32_t rp_vertex_buffer_count = 0;
 		bool descriptor_heaps_set = false;
 
 		HashMap<ResourceInfo::States *, BarrierRequest> res_barriers_requests;
@@ -55877,7 +55455,7 @@ private:
 		SamplerDescriptorHeapAllocation *sampler_descriptor_heap_alloc = nullptr;
 
 		struct DynamicBuffer {
-			const BufferDynamicInfo *info = nullptr;
+			const BufferInfo *info = nullptr;
 			uint32_t binding = UINT_MAX;
 		};
 
@@ -56938,28 +56516,26 @@ public:
 
 protected:
 	static constexpr IndexType INVALID = std::numeric_limits<IndexType>::max();
-	typedef struct IndexValue {
-		IndexType value = INVALID;
-	} IndexValue;
 
-	// Returns a reference to the value at the index.
-	// If the index has not been initialized, add an empty element at
-	// the end of the values array, and set the index to its position.
 	ValueType &get_value(KeyType p_idx) {
-		IndexValue *val_idx = p_idx < LinearCount ? &_linear_indexes[p_idx] : _inflection_indexes.getptr(p_idx);
-		if (val_idx == nullptr || val_idx->value == INVALID) {
+		IndexType *val_idx = p_idx < LinearCount ? &_linear_indexes[p_idx] : _inflection_indexes.getptr(p_idx);
+		if (val_idx == nullptr || *val_idx == INVALID) {
 			_values.push_back({});
 			if (val_idx == nullptr) {
-				val_idx = &_inflection_indexes.insert(p_idx, {})->value;
+				val_idx = &_inflection_indexes.insert(p_idx, INVALID)->value;
 			}
-			val_idx->value = _values.size() - 1;
+			*val_idx = _values.size() - 1;
 		}
-		return _values[val_idx->value];
+		return _values[*val_idx];
 	}
 
 	TightLocalVector<ValueType> _values;
-	HashMap<KeyType, IndexValue> _inflection_indexes;
-	IndexValue _linear_indexes[LinearCount];
+	HashMap<KeyType, IndexType> _inflection_indexes;
+	std::array<IndexType, LinearCount> _linear_indexes = [] {
+		std::array<IndexType, LinearCount> a{};
+		a.fill(INVALID);
+		return a;
+	}();
 };
 
 /**************************************************************************/
@@ -58763,16 +58339,12 @@ struct MetalDeviceProfile {
 		Tier2 = 1,
 	};
 
-	struct Features {
-		uint32_t msl_version = 0;
-		bool use_argument_buffers = false;
-		bool simdPermute = false;
-	};
-
 	Platform platform = Platform::macOS;
 	GPU gpu = GPU::Apple4;
 	MinOsVersion min_os_version;
-	Features features;
+	uint32_t msl_version = 0;
+	bool use_argument_buffers = false;
+	bool simdPermute = false;
 
 	struct MinimumRequirements {
 		GPU gpu = GPU::Apple1;
@@ -58784,7 +58356,7 @@ struct MetalDeviceProfile {
 	};
 
 	MinimumRequirements get_minimum_requirements() const {
-		return { gpu, features.msl_version };
+		return { gpu, msl_version };
 	}
 
 	static const MetalDeviceProfile *get_profile(Platform p_platform, GPU p_gpu, MinOsVersion p_min_os_version);
@@ -59160,14 +58732,20 @@ public:
 public:
 	struct BufferInfo {
 		NS::SharedPtr<MTL::Buffer> metal_buffer;
+		uint64_t size_bytes = 0;
+#ifdef DEBUG_ENABLED
+		uint64_t last_frame_mapped = 0;
+#endif
 
 		_FORCE_INLINE_ bool is_dynamic() const { return _frame_idx != UINT32_MAX; }
 		_FORCE_INLINE_ uint32_t frame_index() const { return _frame_idx; }
 		_FORCE_INLINE_ void set_frame_index(uint32_t p_frame_index) { _frame_idx = p_frame_index; }
+		uint32_t next_frame_index(uint32_t p_frame_count) {
+			_frame_idx = (_frame_idx + 1u) % p_frame_count;
+			return _frame_idx;
+		}
 
 	protected:
-		// If dynamic buffer, then its range is [0; RenderingDeviceDriverMetal::frame_count)
-		// else it's UINT32_MAX.
 		uint32_t _frame_idx = UINT32_MAX;
 	};
 
@@ -59520,19 +59098,6 @@ public:
 	~RenderingDeviceDriverMetal();
 };
 
-// Defined outside because we need to forward declare it in metal3_objects.h
-struct API_AVAILABLE(macos(11.0), ios(14.0), tvos(14.0)) MetalBufferDynamicInfo : public RenderingDeviceDriverMetal::BufferInfo {
-	uint64_t size_bytes; // Contains the real buffer size / frame_count.
-	uint32_t next_frame_index(uint32_t p_frame_count) {
-		// This is the next frame index to use for this buffer.
-		_frame_idx = (_frame_idx + 1u) % p_frame_count;
-		return _frame_idx;
-	}
-#ifdef DEBUG_ENABLED
-	// For tracking that a persistent buffer isn't mapped twice in the same frame.
-	uint64_t last_frame_mapped = 0;
-#endif
-};
 
 #include <Metal/Metal.hpp>
 
@@ -60820,18 +60385,11 @@ class InputEventWithModifiers;
 class DisplayServerWeb : public DisplayServerDriver {
 
 private:
-	struct JSTouchEvent {
-		uint32_t identifier[32] = { 0 };
-		double coords[64] = { 0 };
-	};
-	JSTouchEvent touch_event;
-
-	struct JSKeyEvent {
-		char code[32] = { 0 };
-		char key[32] = { 0 };
-		uint8_t modifiers[4] = { 0 };
-	};
-	JSKeyEvent key_event;
+	uint32_t touch_event_identifier[32] = { 0 };
+	double touch_event_coords[64] = { 0 };
+	char key_event_code[32] = { 0 };
+	char key_event_key[32] = { 0 };
+	uint8_t key_event_modifiers[4] = { 0 };
 
 #ifdef GLES3_ENABLED
 	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webgl_ctx = 0;
@@ -74924,16 +74482,6 @@ private:
 	Color modulate = Color(1, 1, 1, 1);
 	Color self_modulate = Color(1, 1, 1, 1);
 
-	struct Data
-	{
-		// An unordered vector of `CanvasItem` children only.
-		// This is a subset of the `Node::children`, purely
-		// an optimization for faster traversal.
-		LocalVector<CanvasItem*> canvas_item_children;
-		uint32_t index_in_parent = UINT32_MAX;
-	};
-
-	Data data;
 
 	int light_mask = 1;
 	uint32_t visibility_layer = 1;
@@ -77674,6 +77222,7 @@ public:
 		Vector<float> weights;
 
 		bool operator==(const Vertex& p_vertex) const;
+		uint32_t hash() const;
 	};
 
 	enum CustomFormat
@@ -77757,27 +77306,18 @@ public:
 	static void strip_mesh_arrays(PackedVector3Array& r_vertices, PackedInt32Array& r_indices);
 
 private:
-	struct VertexHasher
-	{
-		static _FORCE_INLINE_ uint32_t hash(const Vertex& p_vtx);
-	};
-
 	struct SmoothGroupVertex
 	{
 		Vector3 vertex;
 		uint32_t smooth_group = 0;
 		bool operator==(const SmoothGroupVertex& p_vertex) const;
+		uint32_t hash() const;
 
 		SmoothGroupVertex(const Vertex& p_vertex)
 		{
 			vertex = p_vertex.vertex;
 			smooth_group = p_vertex.smooth_group;
 		}
-	};
-
-	struct SmoothGroupVertexHasher
-	{
-		static _FORCE_INLINE_ uint32_t hash(const SmoothGroupVertex& p_vtx);
 	};
 
 	struct TriangleHasher
@@ -78218,13 +77758,10 @@ private:
 
 			GlyphMeshKey(uint64_t p_font_id, uint32_t p_gl_id) :
 					font_id(p_font_id), gl_id(p_gl_id) {}
-		};
 
-		struct GlyphMeshKeyHasher
-		{
-			_FORCE_INLINE_ static uint32_t hash(const GlyphMeshKey& p_a)
+			_FORCE_INLINE_ uint32_t hash() const
 			{
-				return hash_murmur3_buffer(&p_a, sizeof(GlyphMeshKey));
+				return hash_murmur3_buffer(this, sizeof(GlyphMeshKey));
 			}
 		};
 
@@ -78237,7 +77774,7 @@ private:
 			Vector2 max_p = Vector2(-Math::INF, -Math::INF);
 		};
 
-		mutable HashMap<GlyphMeshKey, GlyphMeshData, GlyphMeshKeyHasher> cache;
+		mutable HashMap<GlyphMeshKey, GlyphMeshData> cache;
 
 		mutable RID text_rid;
 		mutable Vector<RID> lines_rid;
@@ -86906,18 +86443,15 @@ public:
 				   one_way_collision_margin == p_other.one_way_collision_margin &&
 				   (!one_way_collision || y_origin == p_other.y_origin);
 		}
-	};
 
-	struct PhysicsBodyKeyHasher
-	{
-		static uint32_t hash(const PhysicsBodyKey& p_hash)
+		uint32_t hash() const
 		{
-			uint32_t h = hash_murmur3_one_32(p_hash.physics_layer);
-			h = hash_murmur3_one_real(p_hash.linear_velocity.x);
-			h = hash_murmur3_one_real(p_hash.linear_velocity.y, h);
-			h = hash_murmur3_one_real(p_hash.angular_velocity, h);
-			if (p_hash.one_way_collision) {
-				h = hash_murmur3_one_32(p_hash.y_origin, h);
+			uint32_t h = hash_murmur3_one_32(physics_layer);
+			h = hash_murmur3_one_real(linear_velocity.x);
+			h = hash_murmur3_one_real(linear_velocity.y, h);
+			h = hash_murmur3_one_real(angular_velocity, h);
+			if (one_way_collision) {
+				h = hash_murmur3_one_32(y_origin, h);
 			}
 			return h;
 		}
@@ -86933,7 +86467,7 @@ public:
 	Vector2i quadrant_coords;
 	SelfList<CellData>::List cells;
 
-	HashMap<PhysicsBodyKey, PhysicsBodyValue, PhysicsBodyKeyHasher> bodies;
+	HashMap<PhysicsBodyKey, PhysicsBodyValue> bodies;
 	LocalVector<Ref<Shape2D>> shapes;
 
 	SelfList<PhysicsQuadrant> dirty_quadrant_list_element;
@@ -90940,17 +90474,14 @@ private:
 			priority = p_priority;
 			outline_size = p_outline_size;
 		}
-	};
 
-	struct SurfaceKeyHasher
-	{
-		_FORCE_INLINE_ static uint32_t hash(const SurfaceKey& p_a)
+		_FORCE_INLINE_ uint32_t hash() const
 		{
-			return hash_murmur3_buffer(&p_a, sizeof(SurfaceKey));
+			return hash_murmur3_buffer(this, sizeof(SurfaceKey));
 		}
 	};
 
-	HashMap<SurfaceKey, SurfaceData, SurfaceKeyHasher> surfaces;
+	HashMap<SurfaceKey, SurfaceData> surfaces;
 
 	HorizontalAlignment horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER;
 	VerticalAlignment vertical_alignment = VERTICAL_ALIGNMENT_CENTER;
@@ -99891,15 +99422,6 @@ class FileDialog : public Window
 	};
 
 
-	struct FileInfo
-	{
-		String name;
-		String match_string;
-		String type_sort;
-		uint64_t modified_time = 0;
-
-
-	};
 
 	enum class FileSortOption
 	{
@@ -102466,39 +101988,31 @@ private:
 	String language;
 	TextDirection text_direction = TEXT_DIRECTION_AUTO;
 	TextServer::StructuredTextParser st_parser = TextServer::STRUCTURED_TEXT_DEFAULT;
-	struct Selection
+	enum SelectionMode
 	{
-		Item* click_frame = nullptr;
-		int click_line = 0;
-		Item* click_item = nullptr;
-		int click_char = 0;
-
-		Item* from_frame = nullptr;
-		int from_line = 0;
-		Item* from_item = nullptr;
-		int from_char = 0;
-		mutable bool from_line_found = false;
-
-		Item* to_frame = nullptr;
-		int to_line = 0;
-		Item* to_item = nullptr;
-		int to_char = 0;
-		mutable bool to_line_found = false;
-
-		enum SelectionMode
-		{
-			SINGLE_CLICK,
-			DOUBLE_CLICK,
-			TRIPLE_CLICK,
-		};
-
-		SelectionMode selection_mode = SINGLE_CLICK;
-		bool active = false;  // anything selected? i.e. from, to, etc. valid?
-		bool enabled = false; // allow selections?
-		bool drag_attempt = false;
+		SINGLE_CLICK,
+		DOUBLE_CLICK,
+		TRIPLE_CLICK,
 	};
 
-	Selection selection;
+	Item* sel_click_frame = nullptr;
+	int sel_click_line = 0;
+	Item* sel_click_item = nullptr;
+	int sel_click_char = 0;
+	Item* sel_from_frame = nullptr;
+	int sel_from_line = 0;
+	Item* sel_from_item = nullptr;
+	int sel_from_char = 0;
+	mutable bool sel_from_line_found = false;
+	Item* sel_to_frame = nullptr;
+	int sel_to_line = 0;
+	Item* sel_to_item = nullptr;
+	int sel_to_char = 0;
+	mutable bool sel_to_line_found = false;
+	SelectionMode sel_selection_mode = SINGLE_CLICK;
+	bool sel_active = false;
+	bool sel_enabled = false;
+	bool sel_drag_attempt = false;
 	uint64_t last_double_click = 0;
 	Vector2 last_double_click_pos;
 	bool deselect_on_focus_loss_enabled = true;
@@ -103000,18 +102514,13 @@ private:
 	bool spin_box_mode = false;
 	float right_icon_scale = 1.0;
 
-	struct Selection
-	{
-		int begin = 0;
-		int end = 0;
-		int start_column = 0;
-		bool enabled = false;
-		bool creating = false;
-		bool double_click = false;
-		bool drag_attempt = false;
-	};
-
-	Selection selection;
+	int sel_begin = 0;
+	int sel_end = 0;
+	int sel_start_column = 0;
+	bool sel_enabled = false;
+	bool sel_creating = false;
+	bool sel_double_click = false;
+	bool sel_drag_attempt = false;
 
 	struct TextOperation
 	{

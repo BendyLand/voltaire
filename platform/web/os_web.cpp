@@ -2095,10 +2095,9 @@ void DisplayServerWeb::dom2godot_mod(Ref<InputEventWithModifiers> ev, int p_mod,
 
 void DisplayServerWeb::key_callback(int p_pressed, int p_repeat, int p_modifiers) {
 	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
-	JSKeyEvent &key_event = ds->key_event;
 
-	const String code = String::utf8(key_event.code);
-	const String key = String::utf8(key_event.key);
+	const String code = String::utf8(ds->key_event_code);
+	const String key = String::utf8(ds->key_event_key);
 
 #ifdef PROXY_TO_PTHREAD_ENABLED
 	if (!Thread::is_main_thread()) {
@@ -2667,14 +2666,13 @@ void DisplayServerWeb::touch_callback(int p_type, int p_count) {
 void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
 	DisplayServerWeb *ds = DisplayServer::driver_as<DisplayServerWeb>();
 
-	const JSTouchEvent &touch_event = ds->touch_event;
 	for (int i = 0; i < p_count; i++) {
-		Point2 point(touch_event.coords[i * 2], touch_event.coords[i * 2 + 1]);
+		Point2 point(ds->touch_event_coords[i * 2], ds->touch_event_coords[i * 2 + 1]);
 		if (p_type == 2) {
 			// touchmove
 			Ref<InputEventScreenDrag> ev;
 			ev.instantiate();
-			ev->set_index(touch_event.identifier[i]);
+			ev->set_index(ds->touch_event_identifier[i]);
 			ev->set_position(point);
 
 			Point2 &prev = ds->touches[i];
@@ -2691,7 +2689,7 @@ void DisplayServerWeb::_touch_callback(int p_type, int p_count) {
 			OS_Web::resume_audio();
 
 			ev.instantiate();
-			ev->set_index(touch_event.identifier[i]);
+			ev->set_index(ds->touch_event_identifier[i]);
 			ev->set_position(point);
 			ev->set_pressed(p_type == 0);
 			ds->touches[i] = point;
@@ -3090,12 +3088,12 @@ DisplayServerWeb::DisplayServerWeb(const String &p_rendering_driver, DisplayServ
 	godot_js_input_mouse_button_cb(&DisplayServerWeb::mouse_button_callback);
 	godot_js_input_mouse_move_cb(&DisplayServerWeb::mouse_move_callback);
 	godot_js_input_mouse_wheel_cb(&DisplayServerWeb::mouse_wheel_callback);
-	godot_js_input_touch_cb(&DisplayServerWeb::touch_callback, touch_event.identifier, touch_event.coords);
-	godot_js_input_key_cb(&DisplayServerWeb::key_callback, key_event.code, key_event.key);
+	godot_js_input_touch_cb(&DisplayServerWeb::touch_callback, touch_event_identifier, touch_event_coords);
+	godot_js_input_key_cb(&DisplayServerWeb::key_callback, key_event_code, key_event_key);
 	godot_js_input_paste_cb(&DisplayServerWeb::update_clipboard_callback);
 	godot_js_input_drop_files_cb(&DisplayServerWeb::drop_files_js_callback);
 	godot_js_input_gamepad_cb(&DisplayServerWeb::gamepad_callback);
-	godot_js_set_ime_cb(&DisplayServerWeb::ime_callback, &DisplayServerWeb::key_callback, key_event.code, key_event.key);
+	godot_js_set_ime_cb(&DisplayServerWeb::ime_callback, &DisplayServerWeb::key_callback, key_event_code, key_event_key);
 
 	// JS Display interface (js/libs/library_godot_display.js)
 	godot_js_display_fullscreen_cb(&DisplayServerWeb::fullscreen_change_callback);

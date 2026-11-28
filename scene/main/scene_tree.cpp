@@ -26582,7 +26582,7 @@ void LineEdit::unedit()
 		DisplayServer::virtual_keyboard_hide();
 	}
 
-	if (deselect_on_focus_loss_enabled && !selection.drag_attempt) {
+	if (deselect_on_focus_loss_enabled && !sel_drag_attempt) {
 		deselect();
 	}
 }
@@ -26681,8 +26681,8 @@ void LineEdit::_swap_current_input_direction()
 
 void LineEdit::_move_caret_left(bool p_select, bool p_move_by_word)
 {
-	if (selection.enabled && !p_select) {
-		set_caret_column(selection.begin);
+	if (sel_enabled && !p_select) {
+		set_caret_column(sel_begin);
 		deselect();
 		return;
 	}
@@ -26723,8 +26723,8 @@ void LineEdit::_move_caret_left(bool p_select, bool p_move_by_word)
 
 void LineEdit::_move_caret_right(bool p_select, bool p_move_by_word)
 {
-	if (selection.enabled && !p_select) {
-		set_caret_column(selection.end);
+	if (sel_enabled && !p_select) {
+		set_caret_column(sel_end);
 		deselect();
 		return;
 	}
@@ -26783,7 +26783,7 @@ void LineEdit::_backspace(bool p_word, bool p_all_to_left)
 		return;
 	}
 
-	if (selection.enabled) {
+	if (sel_enabled) {
 		selection_delete();
 		return;
 	}
@@ -26832,7 +26832,7 @@ void LineEdit::_delete(bool p_word, bool p_all_to_right)
 		return;
 	}
 
-	if (selection.enabled) {
+	if (sel_enabled) {
 		selection_delete();
 		return;
 	}
@@ -26971,14 +26971,14 @@ void LineEdit::_update_theme_item_cache()
 
 void LineEdit::copy_text()
 {
-	if (selection.enabled && !pass) {
+	if (sel_enabled && !pass) {
 		DisplayServer::clipboard_set(get_selected_text());
 	}
 }
 
 void LineEdit::cut_text()
 {
-	if (editable && selection.enabled && !pass) {
+	if (editable && sel_enabled && !pass) {
 		DisplayServer::clipboard_set(get_selected_text());
 		selection_delete();
 	}
@@ -27051,8 +27051,8 @@ void LineEdit::redo()
 
 void LineEdit::shift_selection_check_pre(bool p_shift)
 {
-	if (!selection.enabled && p_shift) {
-		selection.start_column = caret_column;
+	if (!sel_enabled && p_shift) {
+		sel_start_column = caret_column;
 	}
 	if (!p_shift) {
 		deselect();
@@ -27333,10 +27333,10 @@ void LineEdit::show_virtual_keyboard()
 
 	if (DisplayServer::has_feature(DisplayServerEnums::FEATURE_VIRTUAL_KEYBOARD) &&
 		virtual_keyboard_enabled) {
-		if (selection.enabled) {
+		if (sel_enabled) {
 			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
 				DisplayServerEnums::VirtualKeyboardType(virtual_keyboard_type), max_length,
-				selection.begin, selection.end);
+				sel_begin, sel_end);
 		}
 		else {
 			DisplayServer::virtual_keyboard_show(text, get_global_rect(),
@@ -27423,12 +27423,12 @@ Size2 LineEdit::get_minimum_size() const
 	return style_min_size + min_size;
 }
 
-bool LineEdit::has_selection() const { return selection.enabled; }
+bool LineEdit::has_selection() const { return sel_enabled; }
 
 String LineEdit::get_selected_text()
 {
-	if (selection.enabled) {
-		return text.substr(selection.begin, selection.end - selection.begin);
+	if (sel_enabled) {
+		return text.substr(sel_begin, sel_end - sel_begin);
 	}
 	else {
 		return String();
@@ -27437,20 +27437,20 @@ String LineEdit::get_selected_text()
 
 int LineEdit::get_selection_from_column() const
 {
-	ERR_FAIL_COND_V(!selection.enabled, -1);
-	return selection.begin;
+	ERR_FAIL_COND_V(!sel_enabled, -1);
+	return sel_begin;
 }
 
 int LineEdit::get_selection_to_column() const
 {
-	ERR_FAIL_COND_V(!selection.enabled, -1);
-	return selection.end;
+	ERR_FAIL_COND_V(!sel_enabled, -1);
+	return sel_end;
 }
 
 void LineEdit::selection_delete()
 {
-	if (selection.enabled) {
-		delete_text(selection.begin, selection.end);
+	if (sel_enabled) {
+		delete_text(sel_begin, sel_end);
 	}
 
 	deselect();
@@ -27471,16 +27471,16 @@ void LineEdit::selection_fill_at_caret()
 		return;
 	}
 
-	selection.begin = caret_column;
-	selection.end = selection.start_column;
+	sel_begin = caret_column;
+	sel_end = sel_start_column;
 
-	if (selection.end < selection.begin) {
-		int aux = selection.end;
-		selection.end = selection.begin;
-		selection.begin = aux;
+	if (sel_end < sel_begin) {
+		int aux = sel_end;
+		sel_end = sel_begin;
+		sel_begin = aux;
 	}
 
-	selection.enabled = (selection.begin != selection.end);
+	sel_enabled = (sel_begin != sel_end);
 	queue_accessibility_update();
 }
 
@@ -27589,7 +27589,7 @@ void LineEdit::set_deselect_on_focus_loss_enabled(const bool p_enabled)
 	}
 
 	deselect_on_focus_loss_enabled = p_enabled;
-	if (p_enabled && selection.enabled && !has_focus()) {
+	if (p_enabled && sel_enabled && !has_focus()) {
 		deselect();
 	}
 }
@@ -30693,13 +30693,13 @@ int RichTextLabel::get_visible_line_count() const
 
 void RichTextLabel::set_selection_enabled(bool p_enabled)
 {
-	if (selection.enabled == p_enabled) {
+	if (sel_enabled == p_enabled) {
 		return;
 	}
 
-	selection.enabled = p_enabled;
+	sel_enabled = p_enabled;
 	if (!p_enabled) {
-		if (selection.active) {
+		if (sel_active) {
 			deselect();
 		}
 		set_focus_mode(FOCUS_ACCESSIBILITY);
@@ -30717,21 +30717,21 @@ void RichTextLabel::set_deselect_on_focus_loss_enabled(const bool p_enabled)
 	}
 
 	deselect_on_focus_loss_enabled = p_enabled;
-	if (p_enabled && selection.active && !has_focus()) {
+	if (p_enabled && sel_active && !has_focus()) {
 		deselect();
 	}
 }
 
 bool RichTextLabel::_is_click_inside_selection() const
 {
-	if (selection.active && selection.enabled && selection.click_frame && selection.from_frame &&
-		selection.to_frame) {
-		const Line& l_click = selection.click_frame->frame->lines[selection.click_line];
-		const Line& l_from = selection.from_frame->frame->lines[selection.from_line];
-		const Line& l_to = selection.to_frame->frame->lines[selection.to_line];
-		return (l_click.char_offset + selection.click_char >=
-				   l_from.char_offset + selection.from_char) &&
-			   (l_click.char_offset + selection.click_char <= l_to.char_offset + selection.to_char);
+	if (sel_active && sel_enabled && sel_click_frame && sel_from_frame &&
+		sel_to_frame) {
+		const Line& l_click = sel_click_frame->frame->lines[sel_click_line];
+		const Line& l_from = sel_from_frame->frame->lines[sel_from_line];
+		const Line& l_to = sel_to_frame->frame->lines[sel_to_line];
+		return (l_click.char_offset + sel_click_char >=
+				   l_from.char_offset + sel_from_char) &&
+			   (l_click.char_offset + sel_click_char <= l_to.char_offset + sel_to_char);
 	}
 	else {
 		return false;
@@ -30823,15 +30823,15 @@ bool RichTextLabel::_search_line(
 	}
 
 	if (sp != -1) {
-		selection.from_frame = p_frame;
-		selection.from_line = p_line;
-		selection.from_item = _get_item_at_pos(l.from, it_to, sp);
-		selection.from_char = sp;
-		selection.to_frame = p_frame;
-		selection.to_line = p_line;
-		selection.to_item = _get_item_at_pos(l.from, it_to, sp + p_string.length());
-		selection.to_char = sp + p_string.length();
-		selection.active = true;
+		sel_from_frame = p_frame;
+		sel_from_line = p_line;
+		sel_from_item = _get_item_at_pos(l.from, it_to, sp);
+		sel_from_char = sp;
+		sel_to_frame = p_frame;
+		sel_to_line = p_line;
+		sel_to_item = _get_item_at_pos(l.from, it_to, sp + p_string.length());
+		sel_to_char = sp + p_string.length();
+		sel_active = true;
 		queue_accessibility_update();
 		return true;
 	}
@@ -30848,35 +30848,35 @@ String RichTextLabel::_get_line_text(Item* p_frame, int p_line) const
 	ERR_FAIL_COND_V(p_line < 0 || p_line >= (int)fr.lines.size(), txt);
 
 	int start = 0; // Unless the current line is the `from` line.
-	if (!selection.from_line_found && p_frame == selection.from_frame) {
-		if (p_line < selection.from_line) {
+	if (!sel_from_line_found && p_frame == sel_from_frame) {
+		if (p_line < sel_from_line) {
 			return txt; // Skip the lines with smaller line numbers in the same `from` frame.
 		}
-		selection.from_line_found = true;
-		start = selection.from_char;
+		sel_from_line_found = true;
+		start = sel_from_char;
 	}
 	const bool from_this =
-		selection.from_line_found; // Used to detect cases starting from a sub-frame.
+		sel_from_line_found; // Used to detect cases starting from a sub-frame.
 
 	Line& l = fr.lines[p_line];
 
 	Item* it_to =
 		(p_line + 1 < (int)fr.lines.size()) ? fr.lines[p_line + 1].from : nullptr;
-	for (Item* it = l.from; !selection.to_line_found && it && it != it_to;
+	for (Item* it = l.from; !sel_to_line_found && it && it != it_to;
 		 it = _get_next_item(it)) {
 		if (it->type == ITEM_TABLE) {
 			for (Item* E : it->subitems) {
 				ERR_CONTINUE(E->type != ITEM_FRAME); // Children should all be frames.
-				for (int i = 0; !selection.to_line_found && i < (int)E->frame->lines.size(); i++) {
+				for (int i = 0; !sel_to_line_found && i < (int)E->frame->lines.size(); i++) {
 					txt += _get_line_text(E, i);
 				}
-				if (selection.to_line_found) {
+				if (sel_to_line_found) {
 					break;
 				}
 			}
 			continue;
 		}
-		if (!selection.from_line_found) {
+		if (!sel_from_line_found) {
 			continue;
 		}
 		if (it->type == ITEM_DROPCAP) {
@@ -30893,21 +30893,21 @@ String RichTextLabel::_get_line_text(Item* p_frame, int p_line) const
 		}
 	}
 
-	if (!selection.from_line_found) {
+	if (!sel_from_line_found) {
 		return txt; // Empty.
 	}
 
 	int chars = -1; // Unless the current line is the `to` line.
-	if (p_frame == selection.to_frame && p_line == selection.to_line) {
-		selection.to_line_found = true;
+	if (p_frame == sel_to_frame && p_line == sel_to_line) {
+		sel_to_line_found = true;
 
-		if (from_this ^ selection.from_line_found) {
+		if (from_this ^ sel_from_line_found) {
 			// For cases text from child frame to parent frame is considered to be on the same line,
 			// even if the line numbers are different. `start` has been reset to 0.
-			chars = selection.to_char - selection.from_char;
+			chars = sel_to_char - sel_from_char;
 		}
 		else {
-			chars = selection.to_char - start;
+			chars = sel_to_char - start;
 		}
 	}
 
@@ -30934,7 +30934,7 @@ PopupMenu* RichTextLabel::get_menu() const
 
 bool RichTextLabel::is_menu_visible() const { return menu && menu->is_visible(); }
 
-bool RichTextLabel::is_selection_enabled() const { return selection.enabled; }
+bool RichTextLabel::is_selection_enabled() const { return sel_enabled; }
 
 bool RichTextLabel::is_deselect_on_focus_loss_enabled() const
 {
@@ -30953,35 +30953,35 @@ bool RichTextLabel::is_drag_and_drop_selection_enabled() const
 
 int RichTextLabel::get_selection_from() const
 {
-	if (!selection.active || !selection.enabled) {
+	if (!sel_active || !sel_enabled) {
 		return -1;
 	}
 
-	return selection.from_frame->frame->lines[selection.from_line].char_offset +
-		   selection.from_char;
+	return sel_from_frame->frame->lines[sel_from_line].char_offset +
+		   sel_from_char;
 }
 
 int RichTextLabel::get_selection_to() const
 {
-	if (!selection.active || !selection.enabled) {
+	if (!sel_active || !sel_enabled) {
 		return -1;
 	}
 
-	return selection.to_frame->frame->lines[selection.to_line].char_offset + selection.to_char - 1;
+	return sel_to_frame->frame->lines[sel_to_line].char_offset + sel_to_char - 1;
 }
 
 float RichTextLabel::get_selection_line_offset() const
 {
-	if (selection.active && selection.from_frame && selection.from_line >= 0 &&
-		selection.from_line < (int)selection.from_frame->frame->lines.size()) {
-		const Line& from_l = selection.from_frame->frame->lines[selection.from_line];
+	if (sel_active && sel_from_frame && sel_from_line >= 0 &&
+		sel_from_line < (int)sel_from_frame->frame->lines.size()) {
+		const Line& from_l = sel_from_frame->frame->lines[sel_from_line];
 		// Selected frame paragraph offset.
 		float line_offset = from_l.offset.y;
 
 		// Add wrapped line offset.
 		for (int i = 0; i < from_l.text_buf->get_line_count(); i++) {
 			Vector2i range = from_l.text_buf->get_line_range(i);
-			if (range.x <= selection.from_char && range.y >= selection.from_char) {
+			if (range.x <= sel_from_char && range.y >= sel_from_char) {
 				break;
 			}
 			line_offset += from_l.text_buf->get_line_ascent(i) +
@@ -30989,7 +30989,7 @@ float RichTextLabel::get_selection_line_offset() const
 		}
 
 		// Add nested frame (e.g. table cell) offset.
-		Item* it = selection.from_frame;
+		Item* it = sel_from_frame;
 		while (it->frame->parent_frame != nullptr) {
 			line_offset += it->frame->parent_frame->frame->lines[it->line].offset.y;
 			it = it->frame->parent_frame;
@@ -39954,16 +39954,16 @@ bool SurfaceTool::Vertex::operator==(const Vertex& p_vertex) const
 	return true;
 }
 
-uint32_t SurfaceTool::VertexHasher::hash(const Vertex& p_vtx)
+uint32_t SurfaceTool::Vertex::hash() const
 {
 	uint32_t h =
-		hash_djb2_buffer((const uint8_t*)p_vtx.bones.ptr(), p_vtx.bones.size() * sizeof(int));
+		hash_djb2_buffer((const uint8_t*)bones.ptr(), bones.size() * sizeof(int));
 	h = hash_djb2_buffer(
-		(const uint8_t*)p_vtx.weights.ptr(), p_vtx.weights.size() * sizeof(float), h);
+		(const uint8_t*)weights.ptr(), weights.size() * sizeof(float), h);
 
 	const int64_t length =
-		(int64_t)&p_vtx.vertex - (int64_t)&p_vtx.smooth_group + sizeof(p_vtx.vertex);
-	const void* key = &p_vtx.smooth_group;
+		(int64_t)&vertex - (int64_t)&smooth_group + sizeof(vertex);
+	const void* key = &smooth_group;
 	h = hash_murmur3_buffer(key, length, h);
 	return h;
 }
@@ -39981,10 +39981,10 @@ bool SurfaceTool::SmoothGroupVertex::operator==(const SmoothGroupVertex& p_verte
 	return true;
 }
 
-uint32_t SurfaceTool::SmoothGroupVertexHasher::hash(const SmoothGroupVertex& p_vtx)
+uint32_t SurfaceTool::SmoothGroupVertex::hash() const
 {
-	uint32_t h = HashMapHasherDefault::hash(p_vtx.vertex);
-	h = hash_murmur3_one_32(p_vtx.smooth_group, h);
+	uint32_t h = HashMapHasherDefault::hash(vertex);
+	h = hash_murmur3_one_32(smooth_group, h);
 	h = hash_fmix32(h);
 	return h;
 }
@@ -40258,7 +40258,7 @@ void SurfaceTool::index()
 		return; // already indexed
 	}
 
-	AHashMap<Vertex&, int, VertexHasher> indices = vertex_array.size();
+	AHashMap<Vertex&, int> indices = vertex_array.size();
 
 	uint32_t new_size = 0;
 	for (Vertex& vertex : vertex_array) {
@@ -40490,7 +40490,7 @@ void SurfaceTool::generate_normals(bool p_flip)
 
 	ERR_FAIL_COND((vertex_array.size() % 3) != 0);
 
-	AHashMap<SmoothGroupVertex, Vector3, SmoothGroupVertexHasher> smooth_hash = vertex_array.size();
+	AHashMap<SmoothGroupVertex, Vector3> smooth_hash = vertex_array.size();
 
 	for (uint32_t vi = 0; vi < vertex_array.size(); vi += 3) {
 		Vertex* v = &vertex_array[vi];
@@ -123338,14 +123338,11 @@ private:
 			from_clip = p_from_clip;
 			to_clip = p_to_clip;
 		}
-	};
 
-	struct TransitionKeyHasher
-	{
-		static _FORCE_INLINE_ uint32_t hash(const TransitionKey& p_key)
+		_FORCE_INLINE_ uint32_t hash() const
 		{
-			uint32_t h = hash_murmur3_one_32(p_key.from_clip);
-			return hash_murmur3_one_32(p_key.to_clip, h);
+			uint32_t h = hash_murmur3_one_32(from_clip);
+			return hash_murmur3_one_32(to_clip, h);
 		}
 	};
 
@@ -123359,7 +123356,7 @@ private:
 	double time = 0;
 	uint64_t version = 1; // Used to stop playback instances for incompatibility.
 	LocalVector<Clip> clips;
-	HashMap<TransitionKey, Transition, TransitionKeyHasher> transition_map;
+	HashMap<TransitionKey, Transition> transition_map;
 
 	// Playlist & Synchronized state (MODE_PLAYLIST / MODE_SYNCHRONIZED)
 	bool shuffle = false;
@@ -132759,7 +132756,11 @@ public:
 	bool should_collide_with_back_faces() const { return back_face_collision; }
 };
 
-class JoltCustomRayShape final : public JPH::ConvexShape {
+class JoltCustomConvexShape final : public JPH::ConvexShape {
+	mutable JPH::ConvexShape::SupportBuffer inner_support_buffer;
+	JPH::Vec3 motion = JPH::Vec3::sZero();
+	const JPH::ConvexShape *inner_shape = nullptr;
+
 public:
 	JPH::RefConst<JPH::PhysicsMaterial> material;
 	float length = 0.0f;
@@ -132767,17 +132768,26 @@ public:
 
 	static void register_type();
 
-	JoltCustomRayShape() :
+	JoltCustomConvexShape() :
 			JPH::ConvexShape(JoltCustomShapeSubType::RAY) {}
 
-	JoltCustomRayShape(float p_length, bool p_slide_on_slope, const JPH::PhysicsMaterial *p_material = nullptr) :
+	JoltCustomConvexShape(float p_length, bool p_slide_on_slope, const JPH::PhysicsMaterial *p_material = nullptr) :
 			JPH::ConvexShape(JoltCustomShapeSubType::RAY), material(p_material), length(p_length), slide_on_slope(p_slide_on_slope) {}
 
-	virtual JPH::AABox GetLocalBounds() const override;
-	virtual float GetInnerRadius() const override;
-	virtual JPH::MassProperties GetMassProperties() const override;
-	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override { return JPH::Vec3::sAxisZ(); }
+	explicit JoltCustomConvexShape(const JPH::ConvexShape &p_shape) :
+			JPH::ConvexShape(JoltCustomShapeSubType::MOTION), inner_shape(&p_shape) {}
 
+	virtual JPH::AABox GetLocalBounds() const override;
+	virtual float GetInnerRadius() const override { return inner_shape ? 0.0f : 0.0001f; }
+	virtual JPH::MassProperties GetMassProperties() const override;
+	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override {
+		return inner_shape ? JPH::Vec3::sZero() : JPH::Vec3::sAxisZ();
+	}
+	virtual void GetSupportingFace(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_direction, JPH::Vec3Arg p_scale, JPH::Mat44Arg p_center_of_mass_transform, JPH::Shape::SupportingFace &p_vertices) const override {
+		if (!inner_shape) {
+			JPH::ConvexShape::GetSupportingFace(p_sub_shape_id, p_direction, p_scale, p_center_of_mass_transform, p_vertices);
+		}
+	}
 	virtual void GetSubmergedVolume(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::Plane &p_surface, float &p_total_volume, float &p_submerged_volume, JPH::Vec3 &p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, JPH::RVec3Arg p_base_offset)) const override {
 		p_total_volume = 0.0f;
 		p_submerged_volume = 0.0f;
@@ -132795,79 +132805,8 @@ public:
 	virtual JPH::Shape::Stats GetStats() const override { return JPH::Shape::Stats(sizeof(*this), 0); }
 	virtual float GetVolume() const override { return 0.0f; }
 	virtual const JPH::ConvexShape::Support *GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const override;
-};
 
-class JoltCustomMotionShape final : public JPH::ConvexShape {
-	mutable JPH::ConvexShape::SupportBuffer inner_support_buffer;
-
-	JPH::Vec3 motion = JPH::Vec3::sZero();
-
-	const JPH::ConvexShape &inner_shape;
-
-public:
-	explicit JoltCustomMotionShape(const JPH::ConvexShape &p_shape) :
-			JPH::ConvexShape(JoltCustomShapeSubType::MOTION), inner_shape(p_shape) {}
-
-	virtual bool MustBeStatic() const override { return false; }
-
-	virtual JPH::Vec3 GetCenterOfMass() const override { ERR_FAIL_V_MSG(JPH::Vec3::sZero(), "Not implemented."); }
-
-	virtual JPH::AABox GetLocalBounds() const override;
-
-	virtual JPH::uint GetSubShapeIDBitsRecursive() const override { ERR_FAIL_V_MSG(0, "Not implemented."); }
-
-	virtual JPH::AABox GetWorldSpaceBounds(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { ERR_FAIL_V_MSG(JPH::AABox(), "Not implemented."); }
-
-	virtual float GetInnerRadius() const override { ERR_FAIL_V_MSG(0.0f, "Not implemented."); }
-
-	virtual JPH::MassProperties GetMassProperties() const override { ERR_FAIL_V_MSG(JPH::MassProperties(), "Not implemented."); }
-
-	virtual const JPH::PhysicsMaterial *GetMaterial(const JPH::SubShapeID &p_sub_shape_id) const override { ERR_FAIL_V_MSG(nullptr, "Not implemented."); }
-
-	virtual JPH::Vec3 GetSurfaceNormal(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_local_surface_position) const override { ERR_FAIL_V_MSG(JPH::Vec3::sZero(), "Not implemented."); }
-
-	virtual void GetSupportingFace(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_direction, JPH::Vec3Arg p_scale, JPH::Mat44Arg p_center_of_mass_transform, JPH::Shape::SupportingFace &p_vertices) const override;
-
-	virtual JPH::uint64 GetSubShapeUserData(const JPH::SubShapeID &p_sub_shape_id) const override { ERR_FAIL_V_MSG(0, "Not implemented."); }
-
-	virtual JPH::TransformedShape GetSubShapeTransformedShape(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, JPH::SubShapeID &p_remainder) const override { ERR_FAIL_V_MSG(JPH::TransformedShape(), "Not implemented."); }
-
-	virtual void GetSubmergedVolume(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::Plane &p_surface, float &p_total_volume, float &p_submerged_volume, JPH::Vec3 &p_center_of_buoyancy JPH_IF_DEBUG_RENDERER(, JPH::RVec3Arg p_base_offset)) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual const JPH::ConvexShape::Support *GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const override;
-
-#ifdef JPH_DEBUG_RENDERER
-	virtual void Draw(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_use_material_colors, bool p_draw_wireframe) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void DrawGetSupportFunction(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_draw_support_direction) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void DrawGetSupportingFace(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale) const override { ERR_FAIL_MSG("Not implemented."); }
-#endif
-
-	virtual bool CastRay(const JPH::RayCast &p_ray, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::RayCastResult &p_hit) const override { ERR_FAIL_V_MSG(false, "Not implemented."); }
-
-	virtual void CastRay(const JPH::RayCast &p_ray, const JPH::RayCastSettings &p_ray_cast_settings, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CastRayCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void CollidePoint(JPH::Vec3Arg p_point, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::CollidePointCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void CollideSoftBodyVertices(JPH::Mat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, const JPH::CollideSoftBodyVertexIterator &p_vertices, JPH::uint p_num_vertices, int p_colliding_shape_index) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void CollectTransformedShapes(const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale, const JPH::SubShapeIDCreator &p_sub_shape_id_creator, JPH::TransformedShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter = JPH::ShapeFilter()) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void TransformShape(JPH::Mat44Arg p_center_of_mass_transform, JPH::TransformedShapeCollector &p_collector) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual void GetTrianglesStart(JPH::Shape::GetTrianglesContext &p_context, const JPH::AABox &p_box, JPH::Vec3Arg p_position_com, JPH::QuatArg p_rotation, JPH::Vec3Arg p_scale) const override { ERR_FAIL_MSG("Not implemented."); }
-
-	virtual int GetTrianglesNext(JPH::Shape::GetTrianglesContext &p_context, int p_max_triangles_requested, JPH::Float3 *p_triangle_vertices, const JPH::PhysicsMaterial **p_materials = nullptr) const override { ERR_FAIL_V_MSG(0, "Not implemented."); }
-
-	virtual JPH::Shape::Stats GetStats() const override { return JPH::Shape::Stats(sizeof(*this), 0); }
-
-	virtual float GetVolume() const override { ERR_FAIL_V_MSG(0.0f, "Not implemented."); }
-
-	virtual bool IsValidScale(JPH::Vec3Arg p_scale) const override { ERR_FAIL_V_MSG(false, "Not implemented."); }
-
-	const JPH::ConvexShape &get_inner_shape() const { return inner_shape; }
-
+	const JPH::ConvexShape &get_inner_shape() const { return *inner_shape; }
 	void set_motion(JPH::Vec3Arg p_motion) { motion = p_motion; }
 };
 
@@ -136496,7 +136435,7 @@ void jolt_initialize() {
 
 	JPH::RegisterTypes();
 
-	JoltCustomRayShape::register_type();
+	JoltCustomConvexShape::register_type();
 	JoltCustomDecoratedShape::register_types();
 
 	JoltGroupFilter::instance = new JoltGroupFilter();
@@ -142352,7 +142291,7 @@ bool _cast_motion_impl(JoltSpace3D *p_space, const JPH::Shape &p_jolt_shape, con
 
 	const JPH::RVec3 base_offset = transform_com.GetTranslation();
 
-	JoltCustomMotionShape motion_shape(static_cast<const JPH::ConvexShape &>(p_jolt_shape));
+	JoltCustomConvexShape motion_shape(static_cast<const JPH::ConvexShape &>(p_jolt_shape));
 
 	auto collides = [&](const JPH::Body &p_other_body, float p_fraction) {
 		motion_shape.set_motion(motion_local * p_fraction);
@@ -142776,7 +142715,7 @@ JPH::ShapeRefC JoltShape3D::_build_separation_ray() const {
 					"greater than 0. This shape belongs to %s.",
 					to_string(), _owners_to_string()));
 
-	return new JoltCustomRayShape(length, slide_on_slope);
+	return new JoltCustomConvexShape(length, slide_on_slope);
 }
 
 JPH::ShapeRefC JoltShape3D::_build_sphere() const {
@@ -143389,35 +143328,42 @@ void cast_shape_vs_double_sided(const JPH::ShapeCast &p_shape_cast, const JPH::S
 
 // --- JoltCustomRayShape helpers ---
 
-class JoltCustomRayShapeSupport final : public JPH::ConvexShape::Support {
+class JoltCustomConvexSupport final : public JPH::ConvexShape::Support {
 public:
-	explicit JoltCustomRayShapeSupport(float p_length) :
-			length(p_length) {}
+	explicit JoltCustomConvexSupport(float p_length) :
+			motion(0.0f, 0.0f, p_length) {}
+
+	JoltCustomConvexSupport(JPH::Vec3Arg p_motion, const JPH::ConvexShape::Support *p_inner_support) :
+			motion(p_motion), inner_support(p_inner_support) {}
 
 	virtual JPH::Vec3 GetSupport(JPH::Vec3Arg p_direction) const override {
-		if (p_direction.GetZ() > 0.0f) {
-			return JPH::Vec3(0.0f, 0.0f, length);
-		} else {
-			return JPH::Vec3::sZero();
+		if (inner_support) {
+			JPH::Vec3 support = inner_support->GetSupport(p_direction);
+			if (p_direction.Dot(motion) > 0) {
+				support += motion;
+			}
+			return support;
 		}
+		return p_direction.GetZ() > 0.0f ? motion : JPH::Vec3::sZero();
 	}
 
-	virtual float GetConvexRadius() const override { return 0.0f; }
+	virtual float GetConvexRadius() const override { return inner_support ? inner_support->GetConvexRadius() : 0.0f; }
 
 private:
-	float length = 0.0f;
+	JPH::Vec3 motion = JPH::Vec3::sZero();
+	const JPH::ConvexShape::Support *inner_support = nullptr;
 };
 
-static_assert(sizeof(JoltCustomRayShapeSupport) <= sizeof(JPH::ConvexShape::SupportBuffer), "Size of SeparationRayShape3D support is larger than size of support buffer.");
+static_assert(sizeof(JoltCustomConvexSupport) <= sizeof(JPH::ConvexShape::SupportBuffer), "Size of JoltCustomConvexSupport is larger than size of support buffer.");
 
 JPH::Shape *construct_ray() {
-	return new JoltCustomRayShape();
+	return new JoltCustomConvexShape();
 }
 
 void collide_ray_vs_shape(const JPH::Shape *p_shape1, const JPH::Shape *p_shape2, JPH::Vec3Arg p_scale1, JPH::Vec3Arg p_scale2, JPH::Mat44Arg p_center_of_mass_transform1, JPH::Mat44Arg p_center_of_mass_transform2, const JPH::SubShapeIDCreator &p_sub_shape_id_creator1, const JPH::SubShapeIDCreator &p_sub_shape_id_creator2, const JPH::CollideShapeSettings &p_collide_shape_settings, JPH::CollideShapeCollector &p_collector, const JPH::ShapeFilter &p_shape_filter) {
 	ERR_FAIL_COND(p_shape1->GetSubType() != JoltCustomShapeSubType::RAY);
 
-	const JoltCustomRayShape *shape1 = static_cast<const JoltCustomRayShape *>(p_shape1);
+	const JoltCustomConvexShape *shape1 = static_cast<const JoltCustomConvexShape *>(p_shape1);
 
 	const float margin = p_collide_shape_settings.mMaxSeparationDistance;
 	const float ray_length = shape1->length;
@@ -143498,29 +143444,7 @@ void cast_noop(const JPH::ShapeCast &p_shape_cast, const JPH::ShapeCastSettings 
 
 // --- JoltCustomMotionShape helpers ---
 
-class JoltMotionConvexSupport final : public JPH::ConvexShape::Support {
-public:
-	JoltMotionConvexSupport(JPH::Vec3Arg p_motion, const JPH::ConvexShape::Support *p_inner_support) :
-			motion(p_motion),
-			inner_support(p_inner_support) {}
 
-	virtual JPH::Vec3 GetSupport(JPH::Vec3Arg p_direction) const override {
-		JPH::Vec3 support = inner_support->GetSupport(p_direction);
-
-		if (p_direction.Dot(motion) > 0) {
-			support += motion;
-		}
-
-		return support;
-	}
-
-	virtual float GetConvexRadius() const override { return inner_support->GetConvexRadius(); }
-
-private:
-	JPH::Vec3 motion = JPH::Vec3::sZero();
-
-	const JPH::ConvexShape::Support *inner_support = nullptr;
-};
 
 } // namespace
 
@@ -143563,7 +143487,7 @@ void JoltCustomDecoratedShape::CastRay(const JPH::RayCast &p_ray, const JPH::Ray
 
 // --- JoltCustomRayShape ---
 
-void JoltCustomRayShape::register_type() {
+void JoltCustomConvexShape::register_type() {
 	JPH::ShapeFunctions &shape_functions = JPH::ShapeFunctions::sGet(JoltCustomShapeSubType::RAY);
 
 	shape_functions.mConstruct = construct_ray;
@@ -143596,52 +143520,40 @@ void JoltCustomRayShape::register_type() {
 	}
 }
 
-JPH::AABox JoltCustomRayShape::GetLocalBounds() const {
+JPH::AABox JoltCustomConvexShape::GetLocalBounds() const {
+	if (inner_shape) {
+		JPH::AABox aabb = inner_shape->GetLocalBounds();
+		JPH::AABox aabb_translated = aabb;
+		aabb_translated.Translate(motion);
+		aabb.Encapsulate(aabb_translated);
+		return aabb;
+	}
 	const float radius = GetInnerRadius();
 	return JPH::AABox(JPH::Vec3(-radius, -radius, 0.0f), JPH::Vec3(radius, radius, length));
 }
 
-float JoltCustomRayShape::GetInnerRadius() const {
-	return 0.0001f;
-}
-
-JPH::MassProperties JoltCustomRayShape::GetMassProperties() const {
+JPH::MassProperties JoltCustomConvexShape::GetMassProperties() const {
 	JPH::MassProperties mass_properties;
-
-	mass_properties.mMass = 1.0f;
-	mass_properties.mInertia = JPH::Mat44::sIdentity();
-
+	if (!inner_shape) {
+		mass_properties.mMass = 1.0f;
+		mass_properties.mInertia = JPH::Mat44::sIdentity();
+	}
 	return mass_properties;
 }
 
 #ifdef JPH_DEBUG_RENDERER
-
-void JoltCustomRayShape::Draw(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_use_material_colors, bool p_draw_wireframe) const {
-	p_renderer->DrawArrow(p_center_of_mass_transform.GetTranslation(), p_center_of_mass_transform * JPH::Vec3(0, 0, length * p_scale.GetZ()), p_use_material_colors ? GetMaterial()->GetDebugColor() : p_color, 0.1f);
+void JoltCustomConvexShape::Draw(JPH::DebugRenderer *p_renderer, JPH::RMat44Arg p_center_of_mass_transform, JPH::Vec3Arg p_scale, JPH::ColorArg p_color, bool p_use_material_colors, bool p_draw_wireframe) const {
+	if (!inner_shape) {
+		p_renderer->DrawArrow(p_center_of_mass_transform.GetTranslation(), p_center_of_mass_transform * JPH::Vec3(0, 0, length * p_scale.GetZ()), p_use_material_colors ? GetMaterial()->GetDebugColor() : p_color, 0.1f);
+	}
 }
-
 #endif
 
-const JPH::ConvexShape::Support *JoltCustomRayShape::GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const {
-	return new (&p_buffer) JoltCustomRayShapeSupport(p_scale.GetZ() * length);
-}
-
-// --- JoltCustomMotionShape ---
-
-JPH::AABox JoltCustomMotionShape::GetLocalBounds() const {
-	JPH::AABox aabb = inner_shape.GetLocalBounds();
-	JPH::AABox aabb_translated = aabb;
-	aabb_translated.Translate(motion);
-	aabb.Encapsulate(aabb_translated);
-
-	return aabb;
-}
-
-void JoltCustomMotionShape::GetSupportingFace(const JPH::SubShapeID &p_sub_shape_id, JPH::Vec3Arg p_direction, JPH::Vec3Arg p_scale, JPH::Mat44Arg p_center_of_mass_transform, JPH::Shape::SupportingFace &p_vertices) const {
-}
-
-const JPH::ConvexShape::Support *JoltCustomMotionShape::GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const {
-	return new (&p_buffer) JoltMotionConvexSupport(motion, inner_shape.GetSupportFunction(p_mode, inner_support_buffer, p_scale));
+const JPH::ConvexShape::Support *JoltCustomConvexShape::GetSupportFunction(JPH::ConvexShape::ESupportMode p_mode, JPH::ConvexShape::SupportBuffer &p_buffer, JPH::Vec3Arg p_scale) const {
+	if (inner_shape) {
+		return new (&p_buffer) JoltCustomConvexSupport(motion, inner_shape->GetSupportFunction(p_mode, inner_support_buffer, p_scale));
+	}
+	return new (&p_buffer) JoltCustomConvexSupport(p_scale.GetZ() * length);
 }
 #endif // defined(MODULE_JOLT_PHYSICS_ENABLED)
 
@@ -151694,9 +151606,9 @@ void Renderer::pre_draw(bool p_will_draw)
 
 /* STATE & QUERIES */
 
-double Renderer::get_frame_setup_time_cpu() { return data ? data->backend.frame_setup_time : 0.0; }
+double Renderer::get_frame_setup_time_cpu() { return data ? data->backend_frame_setup_time : 0.0; }
 
-bool Renderer::has_changed() { return data && data->backend.changes > 0; }
+bool Renderer::has_changed() { return data && data->backend_changes > 0; }
 
 Color Renderer::get_default_clear_color()
 {
@@ -151756,12 +151668,12 @@ void Renderer::set_frame_profiling_enabled(bool p_enable)
 
 uint64_t Renderer::get_frame_profile_frame()
 {
-	return data ? data->backend.frame_profile_frame : 0;
+	return data ? data->backend_frame_profile_frame : 0;
 }
 
 Vector<RenderingServerTypes::FrameProfileArea> Renderer::get_frame_profile()
 {
-	return data ? data->backend.frame_profile : Vector<RenderingServerTypes::FrameProfileArea>();
+	return data ? data->backend_frame_profile : Vector<RenderingServerTypes::FrameProfileArea>();
 }
 
 void Renderer::sdfgi_set_debug_probe_select(const Vector3& p_position, const Vector3& p_dir)
@@ -151775,7 +151687,7 @@ void Renderer::set_print_gpu_profile(bool p_enable)
 {
 	RendererUtilities::capturing_timestamps = p_enable;
 	if (data) {
-		data->backend.print_gpu_profile = p_enable;
+		data->backend_print_gpu_profile = p_enable;
 	}
 }
 
@@ -151784,10 +151696,10 @@ RID Renderer::get_test_cube()
 	if (!data) {
 		return RID();
 	}
-	if (!data->backend.test_cube.is_valid()) {
-		data->backend.test_cube = _make_test_cube();
+	if (!data->backend_test_cube.is_valid()) {
+		data->backend_test_cube = _make_test_cube();
 	}
-	return data->backend.test_cube;
+	return data->backend_test_cube;
 }
 
 bool Renderer::has_os_feature(const String& p_feature)
@@ -154554,7 +154466,7 @@ void RendererCanvasCull::_attach_canvas_item_for_draw(RendererCanvasCull::Item* 
 
 	if (((ci->commands != nullptr || ci->visibility_notifier) &&
 			p_clip_rect.intersects(p_global_rect, true)) ||
-		ci->vp_render || ci->copy_back_buffer) {
+		ci->copy_back_buffer) {
 		// Something to draw?
 
 		if (ci->update_when_visible) {
@@ -171315,13 +171227,13 @@ bool SkyRD::SkyShaderData::casts_shadows() const { return false; }
 
 RenderingServerTypes::ShaderNativeSourceCode SkyRD::SkyShaderData::get_native_source_code() const
 {
-	return RendererSceneRenderRD::data->sky.sky_shader.shader.version_get_native_source_code(
+	return RendererSceneRenderRD::data->sky.sky_shader.version_get_native_source_code(
 		version);
 }
 
 Pair<ShaderRD*, RID> SkyRD::SkyShaderData::get_native_shader_and_version() const
 {
-	return {&RendererSceneRenderRD::data->sky.sky_shader.shader, version};
+	return {&RendererSceneRenderRD::data->sky.sky_shader, version};
 }
 
 SkyRD::SkyShaderData::~SkyShaderData()
@@ -171329,7 +171241,7 @@ SkyRD::SkyShaderData::~SkyShaderData()
 	ERR_FAIL_NULL(RendererSceneRenderRD::data);
 	// pipeline variants will clear themselves if shader is gone
 	if (version.is_valid()) {
-		RendererSceneRenderRD::data->sky.sky_shader.shader.version_free(version);
+		RendererSceneRenderRD::data->sky.sky_shader.version_free(version);
 	}
 }
 
@@ -171414,7 +171326,6 @@ void SkyRD::ReflectionData::clear_reflection_data()
 		RD::free_rid(downsampled_radiance_octmap);
 	}
 	downsampled_radiance_octmap = RID();
-	downsampled_layer.mipmaps.clear();
 	coefficient_buffer = RID();
 }
 
@@ -171696,19 +171607,19 @@ void SkyRD::set_texture_format(RDC::DataFormat p_texture_format)
 SkyRD::~SkyRD()
 {
 	// cleanup anything created in init...
-	if (sky_shader.default_material.is_valid()) {
+	if (sky_shader_default_material.is_valid()) {
 		SkyMaterialData* md = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
-			sky_shader.default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
+			sky_shader_default_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
 		if (md && md->shader_data && md->shader_data->version.is_valid()) {
-			sky_shader.shader.version_free(md->shader_data->version);
+			sky_shader.version_free(md->shader_data->version);
 			md->shader_data->version = RID();
 		}
-		MaterialStorage::material_free(sky_shader.default_material);
-		sky_shader.default_material = RID();
+		MaterialStorage::material_free(sky_shader_default_material);
+		sky_shader_default_material = RID();
 	}
-	if (sky_shader.default_shader.is_valid()) {
-		MaterialStorage::shader_free(sky_shader.default_shader);
-		sky_shader.default_shader = RID();
+	if (sky_shader_default_shader.is_valid()) {
+		MaterialStorage::shader_free(sky_shader_default_shader);
+		sky_shader_default_shader = RID();
 	}
 	if (sky_scene_state_directional_light_buffer.is_valid()) {
 		RD::free_rid(sky_scene_state_directional_light_buffer);
@@ -172142,7 +172053,7 @@ void SkyRD::draw_sky(RD::DrawListID p_draw_list, Ref<RenderSceneBuffersRD> p_ren
 		&shader_data
 			 ->pipelines[is_multiview ? SKY_VERSION_BACKGROUND_MULTIVIEW : SKY_VERSION_BACKGROUND];
 
-	RID default_shader_rd = sky_shader.get_default_shader_rd(is_multiview);
+	RID default_shader_rd = sky_shader_get_default_shader_rd(is_multiview);
 
 	RID texture_uniform_set;
 	float border_size = 0.0;
@@ -172296,7 +172207,7 @@ SkyRD::SkyMaterialData* SkyRD::_get_sky_material_data(RID p_env)
 	}
 
 	if (!material_data) {
-		sky_material = sky_shader.default_material;
+		sky_material = sky_shader_default_material;
 		material_data = static_cast<SkyMaterialData*>(MaterialStorage::material_get_data(
 			sky_material, RendererRD::MaterialStorage::SHADER_TYPE_SKY));
 	}
@@ -172423,7 +172334,7 @@ void RendererRD::SkyRD::update_radiance_buffers(Ref<RenderSceneBuffersRD> p_rend
 {
 }
 
-RID RendererRD::SkyRD::SkyShader::get_default_shader_rd(bool p_wireframe) { return RID(); }
+RID RendererRD::SkyRD::sky_shader_get_default_shader_rd(bool p_wireframe) { return RID(); }
 
 RendererRD::SkyRD::SkyRD() {}
 
@@ -172477,16 +172388,16 @@ void SkyRD::init()
 	actions.render_mode_defines["disable_fog"] = "#define DISABLE_FOG\n";
 	actions.render_mode_defines["use_debanding"] = "#define USE_DEBANDING\n";
 
-	sky_shader.compiler.initialize(actions);
+	sky_shader_compiler.initialize(actions);
 
 	MaterialStorage::shader_set_data_request_function(
 		MaterialStorage::SHADER_TYPE_SKY, _create_sky_shader_funcs);
 	MaterialStorage::material_set_data_request_function(
 		MaterialStorage::SHADER_TYPE_SKY, _create_sky_material_funcs);
 
-	sky_shader.default_shader = MaterialStorage::shader_allocate();
-	MaterialStorage::shader_initialize(sky_shader.default_shader);
-	MaterialStorage::shader_set_code(sky_shader.default_shader,
+	sky_shader_default_shader = MaterialStorage::shader_allocate();
+	MaterialStorage::shader_initialize(sky_shader_default_shader);
+	MaterialStorage::shader_set_code(sky_shader_default_shader,
 		R"(
 shader_type sky;
 
@@ -172495,10 +172406,10 @@ void sky() {
 }
 )");
 
-	sky_shader.default_material = MaterialStorage::material_allocate();
-	MaterialStorage::material_initialize(sky_shader.default_material);
+	sky_shader_default_material = MaterialStorage::material_allocate();
+	MaterialStorage::material_initialize(sky_shader_default_material);
 	MaterialStorage::material_set_shader(
-		sky_shader.default_material, sky_shader.default_shader);
+		sky_shader_default_material, sky_shader_default_shader);
 }
 #undef RB_SCOPE_SKY
 #undef RB_HALF_TEXTURE
@@ -173211,7 +173122,7 @@ void GI::SDFGI::pre_process_gi(const Transform3D& p_transform, RenderDataRD* p_r
 	for (uint32_t i = 0; i < cascades.size(); i++) {
 		SDFGI::Cascade& cascade = cascades[i];
 
-		SDFGIShader::Light lights[SDFGI::MAX_DYNAMIC_LIGHTS];
+		SDFGILight lights[SDFGI::MAX_DYNAMIC_LIGHTS];
 		uint32_t idx = 0;
 		for (uint32_t j = 0;
 			 j < (uint32_t)p_render_data->sdfgi_update_data->directional_lights->size(); j++) {
@@ -173515,18 +173426,18 @@ void GI::finalize()
 		}
 	}
 
-	sdfgi_shader.debug_pipeline.free();
+	sdfgi_shader_debug_pipeline.free();
 
-	for (int i = 0; i < SDFGIShader::DIRECT_LIGHT_MODE_MAX; i++) {
-		sdfgi_shader.direct_light_pipeline[i].free();
+	for (int i = 0; i < DIRECT_LIGHT_MODE_MAX; i++) {
+		sdfgi_shader_direct_light_pipeline[i].free();
 	}
 
-	for (int i = 0; i < SDFGIShader::INTEGRATE_MODE_MAX; i++) {
-		sdfgi_shader.integrate_pipeline[i].free();
+	for (int i = 0; i < INTEGRATE_MODE_MAX; i++) {
+		sdfgi_shader_integrate_pipeline[i].free();
 	}
 
-	for (int i = 0; i < SDFGIShader::PRE_PROCESS_MAX; i++) {
-		sdfgi_shader.preprocess_pipeline[i].free();
+	for (int i = 0; i < PRE_PROCESS_MAX; i++) {
+		sdfgi_shader_preprocess_pipeline[i].free();
 	}
 
 	for (int i = 0; i < VOXEL_GI_SHADER_VERSION_MAX; i++) {
@@ -173545,25 +173456,25 @@ void GI::finalize()
 		voxel_gi_debug_shader.version_free(voxel_gi_debug_shader_version);
 		voxel_gi_debug_shader_version = RID();
 	}
-	if (sdfgi_shader.preprocess_shader.is_valid()) {
-		sdfgi_shader.preprocess.version_free(sdfgi_shader.preprocess_shader);
-		sdfgi_shader.preprocess_shader = RID();
+	if (sdfgi_shader_preprocess_shader.is_valid()) {
+		sdfgi_shader_preprocess.version_free(sdfgi_shader_preprocess_shader);
+		sdfgi_shader_preprocess_shader = RID();
 	}
-	if (sdfgi_shader.direct_light_shader.is_valid()) {
-		sdfgi_shader.direct_light.version_free(sdfgi_shader.direct_light_shader);
-		sdfgi_shader.direct_light_shader = RID();
+	if (sdfgi_shader_direct_light_shader.is_valid()) {
+		sdfgi_shader_direct_light.version_free(sdfgi_shader_direct_light_shader);
+		sdfgi_shader_direct_light_shader = RID();
 	}
-	if (sdfgi_shader.integrate_shader.is_valid()) {
-		sdfgi_shader.integrate.version_free(sdfgi_shader.integrate_shader);
-		sdfgi_shader.integrate_shader = RID();
+	if (sdfgi_shader_integrate_shader.is_valid()) {
+		sdfgi_shader_integrate.version_free(sdfgi_shader_integrate_shader);
+		sdfgi_shader_integrate_shader = RID();
 	}
-	if (sdfgi_shader.debug_shader_version.is_valid()) {
-		sdfgi_shader.debug.version_free(sdfgi_shader.debug_shader_version);
-		sdfgi_shader.debug_shader_version = RID();
+	if (sdfgi_shader_debug_shader_version.is_valid()) {
+		sdfgi_shader_debug.version_free(sdfgi_shader_debug_shader_version);
+		sdfgi_shader_debug_shader_version = RID();
 	}
-	if (sdfgi_shader.debug_probes_shader_version.is_valid()) {
-		sdfgi_shader.debug_probes.version_free(sdfgi_shader.debug_probes_shader_version);
-		sdfgi_shader.debug_probes_shader_version = RID();
+	if (sdfgi_shader_debug_probes_shader_version.is_valid()) {
+		sdfgi_shader_debug_probes.version_free(sdfgi_shader_debug_probes_shader_version);
+		sdfgi_shader_debug_probes_shader_version = RID();
 	}
 }
 
@@ -173579,9 +173490,6 @@ void GI::free()
 		RD::free_rid(sdfgi_ubo);
 	}
 
-	if (voxel_gi_lights) {
-		memdelete_arr(voxel_gi_lights);
-	}
 }
 
 Ref<GI::SDFGI> GI::create_sdfgi(
@@ -173850,15 +173758,15 @@ void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 		preprocess_modes.push_back("\n#define MODE_OCCLUSION\n");
 		preprocess_modes.push_back("\n#define MODE_STORE\n");
 
-		sdfgi_shader.preprocess.initialize(preprocess_modes);
-		sdfgi_shader.preprocess_shader = sdfgi_shader.preprocess.version_create();
+		sdfgi_shader_preprocess.initialize(preprocess_modes);
+		sdfgi_shader_preprocess_shader = sdfgi_shader_preprocess.version_create();
 
 		Vector<String> direct_light_modes;
 		direct_light_modes.push_back("\n#define MODE_STATIC\n");
 		direct_light_modes.push_back("\n#define MODE_DYNAMIC\n");
 
-		sdfgi_shader.direct_light.initialize(direct_light_modes);
-		sdfgi_shader.direct_light_shader = sdfgi_shader.direct_light.version_create();
+		sdfgi_shader_direct_light.initialize(direct_light_modes);
+		sdfgi_shader_direct_light_shader = sdfgi_shader_direct_light.version_create();
 
 		Vector<String> integrate_modes;
 		integrate_modes.push_back("\n#define MODE_PROCESS\n");
@@ -173866,14 +173774,14 @@ void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 		integrate_modes.push_back("\n#define MODE_SCROLL\n");
 		integrate_modes.push_back("\n#define MODE_SCROLL_STORE\n");
 
-		sdfgi_shader.integrate.initialize(integrate_modes);
-		sdfgi_shader.integrate_shader = sdfgi_shader.integrate.version_create();
+		sdfgi_shader_integrate.initialize(integrate_modes);
+		sdfgi_shader_integrate_shader = sdfgi_shader_integrate.version_create();
 
 		Vector<String> debug_modes;
 		debug_modes.push_back("\n");
 
-		sdfgi_shader.debug.initialize(debug_modes);
-		sdfgi_shader.debug_shader_version = sdfgi_shader.debug.version_create();
+		sdfgi_shader_debug.initialize(debug_modes);
+		sdfgi_shader_debug_shader_version = sdfgi_shader_debug.version_create();
 
 		Vector<String> debug_probes_modes;
 		debug_probes_modes.push_back("\n#define MODE_PROBES\n");
@@ -173881,8 +173789,8 @@ void RendererRD::GI::initialize(RendererRD::SkyRD* p_sky)
 		debug_probes_modes.push_back("\n#define MODE_VISIBILITY\n");
 		debug_probes_modes.push_back("\n#define MODE_VISIBILITY\n#define MODE_MULTIVIEW\n");
 
-		sdfgi_shader.debug_probes.initialize(debug_probes_modes);
-		sdfgi_shader.debug_probes_shader_version = sdfgi_shader.debug_probes.version_create();
+		sdfgi_shader_debug_probes.initialize(debug_probes_modes);
+		sdfgi_shader_debug_probes_shader_version = sdfgi_shader_debug_probes.version_create();
 	}
 
 	_initialized = true;
@@ -173900,12 +173808,12 @@ int Fog::_get_fog_shader_group()
 	bool use_vulkan_memory_model = RD::has_feature(RDC::SUPPORTS_VULKAN_MEMORY_MODEL);
 	if (use_vulkan_memory_model) {
 		return use_32_bit_atomics
-				   ? VolumetricFogShader::SHADER_GROUP_VULKAN_MEMORY_MODEL
-				   : VolumetricFogShader::SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS;
+				   ? SHADER_GROUP_VULKAN_MEMORY_MODEL
+				   : SHADER_GROUP_VULKAN_MEMORY_MODEL_NO_ATOMICS;
 	}
 	else {
-		return use_32_bit_atomics ? VolumetricFogShader::SHADER_GROUP_BASE
-								  : VolumetricFogShader::SHADER_GROUP_NO_ATOMICS;
+		return use_32_bit_atomics ? SHADER_GROUP_BASE
+								  : SHADER_GROUP_NO_ATOMICS;
 	}
 }
 
@@ -173920,9 +173828,9 @@ int Fog::_get_fog_process_variant(int p_idx)
 {
 	bool use_32_bit_atomics = RD::has_feature(RDC::SUPPORTS_IMAGE_ATOMIC_32_BIT);
 	bool use_vulkan_memory_model = RD::has_feature(RDC::SUPPORTS_VULKAN_MEMORY_MODEL);
-	return (use_vulkan_memory_model ? (VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX * 2)
+	return (use_vulkan_memory_model ? (VOLUMETRIC_FOG_PROCESS_SHADER_MAX * 2)
 									: 0) +
-		   (use_32_bit_atomics ? 0 : VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX) +
+		   (use_32_bit_atomics ? 0 : VOLUMETRIC_FOG_PROCESS_SHADER_MAX) +
 		   p_idx;
 }
 
@@ -174057,23 +173965,23 @@ void Fog::fog_instance_free(RID p_rid) { fog_volume_instance_owner.free(p_rid); 
 
 void Fog::free_fog_shader()
 {
-	for (int i = 0; i < VolumetricFogShader::VOLUMETRIC_FOG_PROCESS_SHADER_MAX; i++) {
-		volumetric_fog.process_pipelines[i].free();
+	for (int i = 0; i < VOLUMETRIC_FOG_PROCESS_SHADER_MAX; i++) {
+		volumetric_fog_process_pipelines[i].free();
 	}
-	if (volumetric_fog.process_shader_version.is_valid()) {
-		volumetric_fog.process_shader.version_free(volumetric_fog.process_shader_version);
+	if (volumetric_fog_process_shader_version.is_valid()) {
+		volumetric_fog_process_shader.version_free(volumetric_fog_process_shader_version);
 	}
-	if (volumetric_fog.volume_ubo.is_valid()) {
-		RD::free_rid(volumetric_fog.volume_ubo);
+	if (volumetric_fog_volume_ubo.is_valid()) {
+		RD::free_rid(volumetric_fog_volume_ubo);
 	}
-	if (volumetric_fog.params_ubo.is_valid()) {
-		RD::free_rid(volumetric_fog.params_ubo);
+	if (volumetric_fog_params_ubo.is_valid()) {
+		RD::free_rid(volumetric_fog_params_ubo);
 	}
-	if (volumetric_fog.default_shader.is_valid()) {
-		MaterialStorage::shader_free(volumetric_fog.default_shader);
+	if (volumetric_fog_default_shader.is_valid()) {
+		MaterialStorage::shader_free(volumetric_fog_default_shader);
 	}
-	if (volumetric_fog.default_material.is_valid()) {
-		MaterialStorage::material_free(volumetric_fog.default_material);
+	if (volumetric_fog_default_material.is_valid()) {
+		MaterialStorage::material_free(volumetric_fog_default_material);
 	}
 }
 
@@ -174100,20 +174008,20 @@ void Fog::FogShaderData::set_code(const String& p_code)
 
 	actions.uniforms = &uniforms;
 
-	Error err = RendererRD::Fog::volumetric_fog.compiler.compile(
+	Error err = RendererRD::Fog::volumetric_fog_compiler.compile(
 		RSE::SHADER_FOG, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Fog shader compilation failed.");
 
 	if (version.is_null()) {
-		version = RendererRD::Fog::volumetric_fog.shader.version_create();
+		version = RendererRD::Fog::volumetric_fog_shader.version_create();
 	}
 	else {
 		pipeline.free();
 	}
 
-	RendererRD::Fog::volumetric_fog.shader.version_set_compute_code(version, gen_code.code,
+	RendererRD::Fog::volumetric_fog_shader.version_set_compute_code(version, gen_code.code,
 		gen_code.uniforms, gen_code.stage_globals[ShaderCompiler::STAGE_COMPUTE], gen_code.defines);
-	ERR_FAIL_COND(!RendererRD::Fog::volumetric_fog.shader.version_is_valid(version));
+	ERR_FAIL_COND(!RendererRD::Fog::volumetric_fog_shader.version_is_valid(version));
 
 	ubo_size = gen_code.uniform_total_size;
 	ubo_offsets = gen_code.uniform_offsets;
@@ -174128,12 +174036,12 @@ bool Fog::FogShaderData::casts_shadows() const { return false; }
 
 RenderingServerTypes::ShaderNativeSourceCode Fog::FogShaderData::get_native_source_code() const
 {
-	return RendererRD::Fog::volumetric_fog.shader.version_get_native_source_code(version);
+	return RendererRD::Fog::volumetric_fog_shader.version_get_native_source_code(version);
 }
 
 Pair<ShaderRD*, RID> Fog::FogShaderData::get_native_shader_and_version() const
 {
-	return {&RendererRD::Fog::volumetric_fog.shader, version};
+	return {&RendererRD::Fog::volumetric_fog_shader, version};
 }
 
 Fog::FogShaderData::~FogShaderData()
@@ -174141,7 +174049,7 @@ Fog::FogShaderData::~FogShaderData()
 	pipeline.free();
 
 	if (version.is_valid()) {
-		RendererRD::Fog::volumetric_fog.shader.version_free(version);
+		RendererRD::Fog::volumetric_fog_shader.version_free(version);
 	}
 }
 
@@ -175925,7 +175833,7 @@ static FfxErrorCode create_resource_rd(FfxFsr2Interface* p_backend_interface,
 
 	// Add the resource to the storage and use the internal index to reference it.
 	p_out_resource->internalIndex =
-		scratch.resources.add(texture, false, p_create_resource_description->id, res_desc);
+		scratch.add_resource(texture, false, p_create_resource_description->id, res_desc);
 
 	return FFX_OK;
 }
@@ -175945,7 +175853,7 @@ static FfxErrorCode register_resource_rd(FfxFsr2Interface* p_backend_interface,
 	ERR_FAIL_COND_V(rid.is_null(), FFX_ERROR_INVALID_ARGUMENT);
 
 	// Add the resource to the storage and use the internal index to reference it.
-	p_out_resource->internalIndex = scratch.resources.add(
+	p_out_resource->internalIndex = scratch.add_resource(
 		rid, true, FSR2Context::RESOURCE_ID_DYNAMIC, p_in_resource->description);
 
 	return FFX_OK;
@@ -175955,9 +175863,9 @@ static FfxErrorCode unregister_resources_rd(FfxFsr2Interface* p_backend_interfac
 {
 	FSR2Context::Scratch& scratch =
 		*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
-	LocalVector<uint32_t> dynamic_list_copy(scratch.resources.dynamic_list);
+	LocalVector<uint32_t> dynamic_list_copy(scratch.dynamic_list);
 	for (uint32_t i : dynamic_list_copy) {
-		scratch.resources.remove(i);
+		scratch.remove_resource(i);
 	}
 
 	return FFX_OK;
@@ -175969,7 +175877,7 @@ static FfxResourceDescription get_resource_description_rd(
 	if (p_resource.internalIndex != -1) {
 		FSR2Context::Scratch& scratch =
 			*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
-		return scratch.resources.descriptions[p_resource.internalIndex];
+		return scratch.descriptions[p_resource.internalIndex];
 	}
 	else {
 		return {};
@@ -175982,9 +175890,9 @@ static FfxErrorCode destroy_resource_rd(
 	if (p_resource.internalIndex != -1) {
 		FSR2Context::Scratch& scratch =
 			*reinterpret_cast<FSR2Context::Scratch*>(p_backend_interface->scratchBuffer);
-		if (scratch.resources.rids[p_resource.internalIndex].is_valid()) {
-			RD::free_rid(scratch.resources.rids[p_resource.internalIndex]);
-			scratch.resources.remove(p_resource.internalIndex);
+		if (scratch.rids[p_resource.internalIndex].is_valid()) {
+			RD::free_rid(scratch.rids[p_resource.internalIndex]);
+			scratch.remove_resource(p_resource.internalIndex);
 		}
 	}
 
@@ -176016,8 +175924,8 @@ static FfxErrorCode schedule_gpu_job_rd(
 static FfxErrorCode execute_gpu_job_clear_float_rd(
 	FSR2Context::Scratch& p_scratch, const FfxClearFloatJobDescription& p_job)
 {
-	RID resource = p_scratch.resources.rids[p_job.target.internalIndex];
-	FfxResourceDescription& desc = p_scratch.resources.descriptions[p_job.target.internalIndex];
+	RID resource = p_scratch.rids[p_job.target.internalIndex];
+	FfxResourceDescription& desc = p_scratch.descriptions[p_job.target.internalIndex];
 
 	ERR_FAIL_COND_V(desc.type == FFX_RESOURCE_TYPE_BUFFER, FFX_ERROR_INVALID_ARGUMENT);
 
@@ -176030,10 +175938,10 @@ static FfxErrorCode execute_gpu_job_clear_float_rd(
 static FfxErrorCode execute_gpu_job_copy_rd(
 	FSR2Context::Scratch& p_scratch, const FfxCopyJobDescription& p_job)
 {
-	RID src = p_scratch.resources.rids[p_job.src.internalIndex];
-	RID dst = p_scratch.resources.rids[p_job.dst.internalIndex];
-	FfxResourceDescription& src_desc = p_scratch.resources.descriptions[p_job.src.internalIndex];
-	FfxResourceDescription& dst_desc = p_scratch.resources.descriptions[p_job.dst.internalIndex];
+	RID src = p_scratch.rids[p_job.src.internalIndex];
+	RID dst = p_scratch.rids[p_job.dst.internalIndex];
+	FfxResourceDescription& src_desc = p_scratch.descriptions[p_job.src.internalIndex];
+	FfxResourceDescription& dst_desc = p_scratch.descriptions[p_job.dst.internalIndex];
 
 	ERR_FAIL_COND_V(src_desc.type == FFX_RESOURCE_TYPE_BUFFER, FFX_ERROR_INVALID_ARGUMENT);
 	ERR_FAIL_COND_V(dst_desc.type == FFX_RESOURCE_TYPE_BUFFER, FFX_ERROR_INVALID_ARGUMENT);
@@ -180612,7 +180520,7 @@ RenderingServerTypes::ShaderNativeSourceCode
 RendererRD::MaterialStorage::ShaderData::get_native_source_code() const
 {
 	if (is_tex_blit) {
-		return TextureStorage::tex_blit_shader.shader.version_get_native_source_code(
+		return TextureStorage::tex_blit_shader.version_get_native_source_code(
 			tex_blit_version);
 	}
 	return RenderingServerTypes::ShaderNativeSourceCode();
@@ -180621,7 +180529,7 @@ RendererRD::MaterialStorage::ShaderData::get_native_source_code() const
 Pair<ShaderRD*, RID> RendererRD::MaterialStorage::ShaderData::get_native_shader_and_version() const
 {
 	if (is_tex_blit) {
-		return {&TextureStorage::tex_blit_shader.shader, tex_blit_version};
+		return {&TextureStorage::tex_blit_shader, tex_blit_version};
 	}
 	return {nullptr, RID()};
 }
@@ -180629,7 +180537,7 @@ Pair<ShaderRD*, RID> RendererRD::MaterialStorage::ShaderData::get_native_shader_
 RendererRD::MaterialStorage::ShaderData::~ShaderData()
 {
 	if (is_tex_blit && tex_blit_version.is_valid()) {
-		TextureStorage::tex_blit_shader.shader.version_free(tex_blit_version);
+		TextureStorage::tex_blit_shader.version_free(tex_blit_version);
 	}
 }
 
@@ -186418,7 +186326,7 @@ void RenderingDevice::raytracing_list_end()
 
 	data->draw_graph.add_raytracing_list_end();
 
-	data->raytracing_list = RaytracingList();
+	data->raytracing_list = CommandListState();
 }
 
 RenderingDevice::ComputeListID RenderingDevice::compute_list_begin()
@@ -186793,7 +186701,7 @@ void RenderingDevice::compute_list_end()
 
 	data->draw_graph.add_compute_list_end();
 
-	data->compute_list = ComputeList();
+	data->compute_list = CommandListState();
 }
 
 static uint32_t _get_alignment_offset(uint32_t p_offset, uint32_t p_required_align)
@@ -188739,9 +188647,9 @@ Error RenderingDevice::initialize(
 		ERR_FAIL_COND_V(err != OK, err);
 	}
 
-	data->draw_list = DrawList();
-	data->compute_list = ComputeList();
-	data->raytracing_list = RaytracingList();
+	data->draw_list = CommandListState();
+	data->compute_list = CommandListState();
+	data->raytracing_list = CommandListState();
 
 	_vrs_detect_method();
 
@@ -189017,7 +188925,7 @@ void RenderingDevice::_draw_list_end(Rect2i* r_last_viewport)
 		*r_last_viewport = data->draw_list.viewport;
 	}
 
-	data->draw_list = DrawList();
+	data->draw_list = CommandListState();
 }
 
 RenderingDevice::DrawListID RenderingDevice::draw_list_switch_to_next_pass()
@@ -195546,9 +195454,9 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 		return;
 	}
 
-	barrier_group.clear();
-	barrier_group.src_stages = RDD::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	barrier_group.dst_stages = RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	_clear_barrier_group();
+	barrier_group_src_stages = RDD::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	barrier_group_dst_stages = RDD::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
 	for (uint32_t i = 0; i < p_sorted_commands_count; i++) {
 		const uint32_t command_index = p_sorted_commands[i].index;
@@ -195561,33 +195469,33 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 #endif
 
 		// Merge command's stage bits with the barrier group.
-		barrier_group.src_stages = barrier_group.src_stages | command->previous_stages;
-		barrier_group.dst_stages = barrier_group.dst_stages | command->next_stages;
+		barrier_group_src_stages = barrier_group_src_stages | command->previous_stages;
+		barrier_group_dst_stages = barrier_group_dst_stages | command->next_stages;
 
 		// Merge command's memory barrier bits with the barrier group.
-		barrier_group.memory_barrier.src_access =
-			barrier_group.memory_barrier.src_access | command->memory_barrier.src_access;
-		barrier_group.memory_barrier.dst_access =
-			barrier_group.memory_barrier.dst_access | command->memory_barrier.dst_access;
+		barrier_group_memory_barrier.src_access =
+			barrier_group_memory_barrier.src_access | command->memory_barrier.src_access;
+		barrier_group_memory_barrier.dst_access =
+			barrier_group_memory_barrier.dst_access | command->memory_barrier.dst_access;
 
 		// Gather texture barriers.
 		for (int32_t j = 0; j < command->normalization_barrier_count; j++) {
 			const RDD::TextureBarrier& recorded_barrier =
 				command_normalization_barriers[command->normalization_barrier_index + j];
-			barrier_group.normalization_barriers.push_back(recorded_barrier);
+			barrier_group_normalization_barriers.push_back(recorded_barrier);
 #if PRINT_COMMAND_RECORDING
 			print_line(vformat(
-				"Normalization Barrier #%d", barrier_group.normalization_barriers.size() - 1));
+				"Normalization Barrier #%d", barrier_group_normalization_barriers.size() - 1));
 #endif
 		}
 
 		for (int32_t j = 0; j < command->transition_barrier_count; j++) {
 			const RDD::TextureBarrier& recorded_barrier =
 				command_transition_barriers[command->transition_barrier_index + j];
-			barrier_group.transition_barriers.push_back(recorded_barrier);
+			barrier_group_transition_barriers.push_back(recorded_barrier);
 #if PRINT_COMMAND_RECORDING
 			print_line(
-				vformat("Transition Barrier #%d", barrier_group.transition_barriers.size() - 1));
+				vformat("Transition Barrier #%d", barrier_group_transition_barriers.size() - 1));
 #endif
 		}
 
@@ -195596,7 +195504,7 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 		for (int32_t j = 0; j < command->buffer_barrier_count; j++) {
 			const RDD::BufferBarrier& recorded_barrier =
 				command_buffer_barriers[command->buffer_barrier_index + j];
-			barrier_group.buffer_barriers.push_back(recorded_barrier);
+			barrier_group_buffer_barriers.push_back(recorded_barrier);
 		}
 #endif
 
@@ -195605,30 +195513,30 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 			const RDD::AccelerationStructureBarrier& recorded_barrier =
 				command_acceleration_structure_barriers
 					[command->acceleration_structure_barrier_index + j];
-			barrier_group.acceleration_structure_barriers.push_back(recorded_barrier);
+			barrier_group_acceleration_structure_barriers.push_back(recorded_barrier);
 		}
 	}
 
 	if (p_full_memory_barrier) {
-		barrier_group.src_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
-		barrier_group.dst_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
-		barrier_group.memory_barrier.src_access =
+		barrier_group_src_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		barrier_group_dst_stages = RDD::PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		barrier_group_memory_barrier.src_access =
 			RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;
-		barrier_group.memory_barrier.dst_access =
+		barrier_group_memory_barrier.dst_access =
 			RDD::BARRIER_ACCESS_MEMORY_READ_BIT | RDD::BARRIER_ACCESS_MEMORY_WRITE_BIT;
 	}
 
-	const bool is_memory_barrier_empty = (barrier_group.memory_barrier.src_access == 0) &&
-										 (barrier_group.memory_barrier.dst_access == 0);
-	const bool are_texture_barriers_empty = barrier_group.normalization_barriers.is_empty() &&
-											barrier_group.transition_barriers.is_empty();
+	const bool is_memory_barrier_empty = (barrier_group_memory_barrier.src_access == 0) &&
+										 (barrier_group_memory_barrier.dst_access == 0);
+	const bool are_texture_barriers_empty = barrier_group_normalization_barriers.is_empty() &&
+											barrier_group_transition_barriers.is_empty();
 #if USE_BUFFER_BARRIERS
-	const bool are_buffer_barriers_empty = barrier_group.buffer_barriers.is_empty();
+	const bool are_buffer_barriers_empty = barrier_group_buffer_barriers.is_empty();
 #else
 	const bool are_buffer_barriers_empty = true;
 #endif
 	const bool are_acceleration_structure_barriers_empty =
-		barrier_group.acceleration_structure_barriers.is_empty();
+		barrier_group_acceleration_structure_barriers.is_empty();
 	if (is_memory_barrier_empty && are_texture_barriers_empty && are_buffer_barriers_empty &&
 		are_acceleration_structure_barriers_empty) {
 		// Commands don't require synchronization.
@@ -195636,33 +195544,33 @@ void RenderingDeviceGraph::_group_barriers_for_render_commands(
 	}
 
 	const VectorView<RDD::MemoryAccessBarrier> memory_barriers =
-		!is_memory_barrier_empty ? barrier_group.memory_barrier
+		!is_memory_barrier_empty ? barrier_group_memory_barrier
 								 : VectorView<RDD::MemoryAccessBarrier>();
 	const VectorView<RDD::TextureBarrier> texture_barriers =
-		barrier_group.normalization_barriers.is_empty() ? barrier_group.transition_barriers
-														: barrier_group.normalization_barriers;
+		barrier_group_normalization_barriers.is_empty() ? barrier_group_transition_barriers
+														: barrier_group_normalization_barriers;
 #if USE_BUFFER_BARRIERS
 	const VectorView<RDD::BufferBarrier> buffer_barriers = !are_buffer_barriers_empty
-															   ? barrier_group.buffer_barriers
+															   ? barrier_group_buffer_barriers
 															   : VectorView<RDD::BufferBarrier>();
 #else
 	const VectorView<RDD::BufferBarrier> buffer_barriers = VectorView<RDD::BufferBarrier>();
 #endif
 	const VectorView<RDD::AccelerationStructureBarrier> acceleration_structure_barriers =
 		!are_acceleration_structure_barriers_empty
-			? barrier_group.acceleration_structure_barriers
+			? barrier_group_acceleration_structure_barriers
 			: VectorView<RDD::AccelerationStructureBarrier>();
 
-	driver->command_pipeline_barrier(p_command_buffer, barrier_group.src_stages,
-		barrier_group.dst_stages, memory_barriers, buffer_barriers, texture_barriers,
+	driver->command_pipeline_barrier(p_command_buffer, barrier_group_src_stages,
+		barrier_group_dst_stages, memory_barriers, buffer_barriers, texture_barriers,
 		acceleration_structure_barriers);
 
-	bool separate_texture_barriers = !barrier_group.normalization_barriers.is_empty() &&
-									 !barrier_group.transition_barriers.is_empty();
+	bool separate_texture_barriers = !barrier_group_normalization_barriers.is_empty() &&
+									 !barrier_group_transition_barriers.is_empty();
 	if (separate_texture_barriers) {
-		driver->command_pipeline_barrier(p_command_buffer, barrier_group.src_stages,
-			barrier_group.dst_stages, VectorView<RDD::MemoryAccessBarrier>(),
-			VectorView<RDD::BufferBarrier>(), barrier_group.transition_barriers,
+		driver->command_pipeline_barrier(p_command_buffer, barrier_group_src_stages,
+			barrier_group_dst_stages, VectorView<RDD::MemoryAccessBarrier>(),
+			VectorView<RDD::BufferBarrier>(), barrier_group_transition_barriers,
 			VectorView<RDD::AccelerationStructureBarrier>());
 	}
 }
@@ -219464,9 +219372,12 @@ RID DisplayServer::_accessibility_create_sub_text_edit_elements_bind_compat_1134
 bool DisplayServer::window_early_clear_override_enabled = false;
 Color DisplayServer::window_early_clear_override_color = Color(0, 0, 0, 0);
 
-DisplayServer::DisplayServerCreate
-	DisplayServer::server_create_functions[DisplayServer::MAX_SERVERS] = {{"headless",
-		&DisplayServerHeadless::create_func, &DisplayServerHeadless::get_rendering_drivers_func}};
+const char* DisplayServer::server_create_names[DisplayServer::MAX_SERVERS] = {"headless"};
+DisplayServer::CreateFunction DisplayServer::server_create_functions[DisplayServer::MAX_SERVERS] = {
+	&DisplayServerHeadless::create_func};
+DisplayServer::GetRenderingDriversFunction
+	DisplayServer::server_get_drivers_functions[DisplayServer::MAX_SERVERS] = {
+		&DisplayServerHeadless::get_rendering_drivers_func};
 
 int DisplayServer::server_create_count = 1;
 
@@ -220549,10 +220460,12 @@ void DisplayServer::register_create_function(
 {
 	ERR_FAIL_COND(server_create_count == MAX_SERVERS);
 	// Headless display server is always last
+	server_create_names[server_create_count] = server_create_names[server_create_count - 1];
 	server_create_functions[server_create_count] = server_create_functions[server_create_count - 1];
-	server_create_functions[server_create_count - 1].name = p_name;
-	server_create_functions[server_create_count - 1].create_function = p_function;
-	server_create_functions[server_create_count - 1].get_rendering_drivers_function = p_get_drivers;
+	server_get_drivers_functions[server_create_count] = server_get_drivers_functions[server_create_count - 1];
+	server_create_names[server_create_count - 1] = p_name;
+	server_create_functions[server_create_count - 1] = p_function;
+	server_get_drivers_functions[server_create_count - 1] = p_get_drivers;
 	server_create_count++;
 }
 
@@ -220561,13 +220474,13 @@ int DisplayServer::get_create_function_count() { return server_create_count; }
 const char* DisplayServer::get_create_function_name(int p_index)
 {
 	ERR_FAIL_INDEX_V(p_index, server_create_count, nullptr);
-	return server_create_functions[p_index].name;
+	return server_create_names[p_index];
 }
 
 Vector<String> DisplayServer::get_create_function_rendering_drivers(int p_index)
 {
 	ERR_FAIL_INDEX_V(p_index, server_create_count, Vector<String>());
-	return server_create_functions[p_index].get_rendering_drivers_function();
+	return server_get_drivers_functions[p_index]();
 }
 
 DisplayServerDriver* DisplayServer::create(int p_index, const String& p_rendering_driver,
@@ -220580,7 +220493,7 @@ DisplayServerDriver* DisplayServer::create(int p_index, const String& p_renderin
 		memdelete(data->driver);
 		data->driver = nullptr;
 	}
-	DisplayServerDriver* driver = server_create_functions[p_index].create_function(
+	DisplayServerDriver* driver = server_create_functions[p_index](
 		p_rendering_driver, p_mode, p_vsync_mode, p_flags, p_position, p_resolution, p_screen,
 		p_context, p_parent_window, r_error);
 	if (r_error != OK) {
@@ -222202,7 +222115,7 @@ AccessibilityServerDriver* AccessibilityServer::create(int p_index, Error& r_err
 		memdelete(driver);
 		driver = nullptr;
 	}
-	AccessibilityServerDriver* drv = server_create_functions[p_index].create_function(r_error);
+	AccessibilityServerDriver* drv = server_create_functions[p_index].second(r_error);
 	if (r_error != OK) {
 		if (drv) {
 			memdelete(drv);
@@ -222228,8 +222141,8 @@ void AccessibilityServer::register_create_function(const char* p_name, CreateFun
 	ERR_FAIL_COND(server_create_count == MAX_SERVERS);
 	// Dummy server is always last
 	server_create_functions[server_create_count] = server_create_functions[server_create_count - 1];
-	server_create_functions[server_create_count - 1].name = p_name;
-	server_create_functions[server_create_count - 1].create_function = p_function;
+	server_create_functions[server_create_count - 1].first = p_name;
+	server_create_functions[server_create_count - 1].second = p_function;
 	server_create_count++;
 }
 
@@ -222238,7 +222151,7 @@ int AccessibilityServer::get_create_function_count() { return server_create_coun
 const char* AccessibilityServer::get_create_function_name(int p_index)
 {
 	ERR_FAIL_INDEX_V(p_index, server_create_count, nullptr);
-	return server_create_functions[p_index].name;
+	return server_create_functions[p_index].first;
 }
 
 bool AccessibilityServer::is_supported()
@@ -227651,7 +227564,7 @@ double XRServer::get_world_scale()
 	if (Renderer::data && Renderer::is_on_render_thread()) {
 		// Return the value with which we're currently rendering,
 		// if we're on the render thread
-		return data->render_state.world_scale;
+		return data->render_world_scale;
 	}
 	else {
 		// Return our current value
@@ -227679,7 +227592,7 @@ void XRServer::_set_render_world_scale(double p_world_scale)
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_NULL(data);
-	data->render_state.world_scale = p_world_scale;
+	data->render_world_scale = p_world_scale;
 }
 
 void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
@@ -227688,7 +227601,7 @@ void XRServer::_set_render_world_origin(const Transform3D& p_world_origin)
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_NULL(data);
-	data->render_state.world_origin = p_world_origin;
+	data->render_world_origin = p_world_origin;
 }
 
 void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
@@ -227697,7 +227610,7 @@ void XRServer::_set_render_reference_frame(const Transform3D& p_reference_frame)
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_NULL(data);
-	data->render_state.reference_frame = p_reference_frame;
+	data->render_reference_frame = p_reference_frame;
 }
 
 Transform3D XRServer::get_reference_frame() { return Transform3D(); }
@@ -228433,9 +228346,9 @@ void RendererRD::TextureStorage::Texture::cleanup()
 
 void RendererRD::TextureStorage::finalize()
 {
-	if (rt_sdf.shader_version.is_valid()) {
-		rt_sdf.shader.version_free(rt_sdf.shader_version);
-		rt_sdf.shader_version = RID();
+	if (rt_sdf_shader_version.is_valid()) {
+		rt_sdf_shader.version_free(rt_sdf_shader_version);
+		rt_sdf_shader_version = RID();
 	}
 
 	free_decal_data();
@@ -228480,7 +228393,7 @@ void RendererRD::TextureStorage::_tex_blit_shader_initialize()
 			"\n#define SAMPLERS_BINDING_FIRST_INDEX " + itos(SAMPLERS_BINDING_FIRST_INDEX) + "\n";
 		global_defines +=
 			"#define MAX_GLOBAL_SHADER_UNIFORMS 256\n"; // TODO: this is arbitrary for now
-		tex_blit_shader.shader.initialize(tex_blit_modes, global_defines);
+		tex_blit_shader.initialize(tex_blit_modes, global_defines);
 	}
 	MaterialStorage::shader_set_data_request_function(
 		MaterialStorage::SHADER_TYPE_TEXTURE_BLIT, MaterialStorage::_create_tex_blit_shader_funcs);
@@ -228510,14 +228423,14 @@ void RendererRD::TextureStorage::_tex_blit_shader_initialize()
 		actions.base_texture_binding_index = 1;
 		actions.texture_layout_set = 1;
 
-		tex_blit_shader.compiler.initialize(actions);
+		tex_blit_shader_compiler.initialize(actions);
 	}
 
 	{
 		// default material and shader for Texture Blit shader
-		tex_blit_shader.default_shader = MaterialStorage::shader_allocate();
-		MaterialStorage::shader_initialize(tex_blit_shader.default_shader);
-		MaterialStorage::shader_set_code(tex_blit_shader.default_shader, R"(
+		tex_blit_shader_default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(tex_blit_shader_default_shader);
+		MaterialStorage::shader_set_code(tex_blit_shader_default_shader, R"(
 // Default Texture Blit shader.
 
 shader_type texture_blit;
@@ -228536,21 +228449,21 @@ void blit() {
 	COLOR3 = texture(source_texture3, UV) * MODULATE;
 }
 )");
-		tex_blit_shader.default_material = MaterialStorage::material_allocate();
-		MaterialStorage::material_initialize(tex_blit_shader.default_material);
+		tex_blit_shader_default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(tex_blit_shader_default_material);
 		MaterialStorage::material_set_shader(
-			tex_blit_shader.default_material, tex_blit_shader.default_shader);
+			tex_blit_shader_default_material, tex_blit_shader_default_shader);
 	}
 
-	tex_blit_shader.initialized = true;
+	tex_blit_shader_initialized = true;
 }
 
 void RendererRD::TextureStorage::_tex_blit_shader_free()
 {
-	if (tex_blit_shader.initialized) {
+	if (tex_blit_shader_initialized) {
 		print_verbose("Freeing Default Tex_Blit Shader");
-		MaterialStorage::material_free(tex_blit_shader.default_material);
-		MaterialStorage::shader_free(tex_blit_shader.default_shader);
+		MaterialStorage::material_free(tex_blit_shader_default_material);
+		MaterialStorage::shader_free(tex_blit_shader_default_shader);
 	}
 }
 
@@ -229224,7 +229137,7 @@ Vector<Ref<Image>> RendererRD::TextureStorage::texture_3d_get(RID p_texture)
 RID RendererRD::TextureStorage::texture_drawable_get_default_material()
 {
 	// Return a material with a default Texture_Blit shader for DrawableTexture2D to use
-	return tex_blit_shader.default_material;
+	return tex_blit_shader_default_material;
 }
 
 void RendererRD::TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
@@ -230027,14 +229940,14 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 
 	if (area_light_atlas.textures.size()) {
 		// generate atlas
-		Vector<AreaLightAtlas::SortItem> itemsv;
+		Vector<TextureAtlasRD::SortItem> itemsv;
 		itemsv.resize(area_light_atlas.textures.size());
 		uint32_t base_size = 1;
 
 		int idx = 0;
 
-		for (const KeyValue<RID, AreaLightAtlas::Texture>& E : area_light_atlas.textures) {
-			AreaLightAtlas::SortItem& si = itemsv.write[idx];
+		for (const KeyValue<RID, TextureAtlasRD::Texture>& E : area_light_atlas.textures) {
+			TextureAtlasRD::SortItem& si = itemsv.write[idx];
 
 			Texture* src_tex = get_texture(E.key);
 			Vector2i b_size = Vector2i(Math::ceil(float(src_tex->width) / border),
@@ -230064,7 +229977,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 
 		// attempt to create atlas
 		int item_count = itemsv.size();
-		AreaLightAtlas::SortItem* items = itemsv.ptrw();
+		TextureAtlasRD::SortItem* items = itemsv.ptrw();
 
 		int atlas_height = 0;
 
@@ -230079,7 +229992,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 
 			for (int i = 0; i < item_count; i++) {
 				// best fit
-				AreaLightAtlas::SortItem& si = items[i];
+				TextureAtlasRD::SortItem& si = items[i];
 				int best_idx = -1;
 				int best_height = 0x7FFFFFFF;
 				for (uint32_t j = 0; j <= base_size - si.size.width; j++) {
@@ -230125,7 +230038,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 		area_light_atlas.size.height = Math::nearest_power_of_2_templated(atlas_height * border);
 
 		for (int i = 0; i < item_count; i++) {
-			AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(items[i].texture);
+			TextureAtlasRD::Texture* t = area_light_atlas.textures.getptr(items[i].texture);
 			t->uv_rect.position = items[i].pos * border;
 			t->uv_rect.position /= Size2(area_light_atlas.size);
 			t->uv_rect.size = items[i].pixel_size;
@@ -230160,7 +230073,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 		Size2i s = area_light_atlas.size;
 
 		for (int i = 0; i < area_light_atlas.mipmaps; i++) {
-			AreaLightAtlas::MipMap mm;
+			TextureAtlasRD::MipMap mm;
 			mm.texture = RD::texture_create_shared_from_slice(
 				RD::TextureView(), area_light_atlas.texture, 0, i);
 			Vector<RID> fb;
@@ -230176,7 +230089,7 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 	Color clear_color(0, 0, 0, 0);
 	if (area_light_atlas.textures.is_empty()) {
 		for (int i = 0; i < area_light_atlas.texture_mipmaps.size(); i++) {
-			const AreaLightAtlas::MipMap& mm = area_light_atlas.texture_mipmaps[i];
+			const TextureAtlasRD::MipMap& mm = area_light_atlas.texture_mipmaps[i];
 			RD::texture_clear(mm.texture, clear_color, 0, 1, 0, 1);
 		}
 	}
@@ -230185,20 +230098,20 @@ void RendererRD::TextureStorage::update_area_light_atlas()
 void RendererRD::TextureStorage::texture_add_to_area_light_atlas(RID p_texture)
 {
 	if (!area_light_atlas.textures.has(p_texture)) {
-		AreaLightAtlas::Texture t;
+		TextureAtlasRD::Texture t;
 		t.users = 1;
 		area_light_atlas.textures[p_texture] = t;
 		area_light_atlas.dirty = true;
 	}
 	else {
-		AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(p_texture);
+		TextureAtlasRD::Texture* t = area_light_atlas.textures.getptr(p_texture);
 		t->users++;
 	}
 }
 
 void RendererRD::TextureStorage::texture_remove_from_area_light_atlas(RID p_texture)
 {
-	AreaLightAtlas::Texture* t = area_light_atlas.textures.getptr(p_texture);
+	TextureAtlasRD::Texture* t = area_light_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
 	t->users--;
 	if (t->users == 0) {
@@ -230380,14 +230293,14 @@ void RendererRD::TextureStorage::update_decal_atlas()
 
 	if (decal_atlas.textures.size()) {
 		// generate atlas
-		Vector<DecalAtlas::SortItem> itemsv;
+		Vector<TextureAtlasRD::SortItem> itemsv;
 		itemsv.resize(decal_atlas.textures.size());
 		uint32_t base_size = 8;
 
 		int idx = 0;
 
-		for (const KeyValue<RID, DecalAtlas::Texture>& E : decal_atlas.textures) {
-			DecalAtlas::SortItem& si = itemsv.write[idx];
+		for (const KeyValue<RID, TextureAtlasRD::Texture>& E : decal_atlas.textures) {
+			TextureAtlasRD::SortItem& si = itemsv.write[idx];
 
 			Texture* src_tex = get_texture(E.key);
 
@@ -230408,7 +230321,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 
 		// attempt to create atlas
 		int item_count = itemsv.size();
-		DecalAtlas::SortItem* items = itemsv.ptrw();
+		TextureAtlasRD::SortItem* items = itemsv.ptrw();
 
 		int atlas_height = 0;
 
@@ -230424,7 +230337,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 
 			for (int i = 0; i < item_count; i++) {
 				// best fit
-				DecalAtlas::SortItem& si = items[i];
+				TextureAtlasRD::SortItem& si = items[i];
 				int best_idx = -1;			  // ideal x position
 				int best_height = 0x7FFFFFFF; // ideal y position
 				for (uint32_t j = 0; j <= base_size - si.size.width; j++) {
@@ -230470,7 +230383,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 		decal_atlas.size.height = Math::nearest_power_of_2_templated(atlas_height * border);
 
 		for (int i = 0; i < item_count; i++) {
-			DecalAtlas::Texture* t = decal_atlas.textures.getptr(items[i].texture);
+			TextureAtlasRD::Texture* t = decal_atlas.textures.getptr(items[i].texture);
 			t->uv_rect.position = items[i].pos * border + Vector2i(border / 2, border / 2);
 			t->uv_rect.size = items[i].pixel_size;
 
@@ -230506,7 +230419,7 @@ void RendererRD::TextureStorage::update_decal_atlas()
 		Size2i s = decal_atlas.size;
 
 		for (int i = 0; i < decal_atlas.mipmaps; i++) {
-			DecalAtlas::MipMap mm;
+			TextureAtlasRD::MipMap mm;
 			mm.texture =
 				RD::texture_create_shared_from_slice(RD::TextureView(), decal_atlas.texture, 0, i);
 			Vector<RID> fb;
@@ -230529,14 +230442,14 @@ void RendererRD::TextureStorage::update_decal_atlas()
 void RendererRD::TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool p_panorama_to_dp)
 {
 	if (!decal_atlas.textures.has(p_texture)) {
-		DecalAtlas::Texture t;
+		TextureAtlasRD::Texture t;
 		t.users = 1;
 		t.panorama_to_dp_users = p_panorama_to_dp ? 1 : 0;
 		decal_atlas.textures[p_texture] = t;
 		decal_atlas.dirty = true;
 	}
 	else {
-		DecalAtlas::Texture* t = decal_atlas.textures.getptr(p_texture);
+		TextureAtlasRD::Texture* t = decal_atlas.textures.getptr(p_texture);
 		t->users++;
 		if (p_panorama_to_dp) {
 			t->panorama_to_dp_users++;
@@ -230547,7 +230460,7 @@ void RendererRD::TextureStorage::texture_add_to_decal_atlas(RID p_texture, bool 
 void RendererRD::TextureStorage::texture_remove_from_decal_atlas(
 	RID p_texture, bool p_panorama_to_dp)
 {
-	DecalAtlas::Texture* t = decal_atlas.textures.getptr(p_texture);
+	TextureAtlasRD::Texture* t = decal_atlas.textures.getptr(p_texture);
 	ERR_FAIL_NULL(t);
 	t->users--;
 	if (p_panorama_to_dp) {
@@ -230614,7 +230527,7 @@ void RendererRD::TextureStorage::set_max_decals(const uint32_t p_max_decals)
 	max_decals = p_max_decals;
 	uint32_t decal_buffer_size = max_decals * sizeof(DecalData);
 	decals = memnew_arr(DecalData, max_decals);
-	decal_sort = memnew_arr(DecalInstanceSort, max_decals);
+	decal_sort = memnew_arr_template<InstanceSort<DecalInstance, Decal>>(max_decals);
 	decal_buffer = RD::storage_buffer_create(decal_buffer_size);
 }
 
@@ -230655,21 +230568,21 @@ void RendererRD::TextureStorage::update_decal_buffer(
 			}
 		}
 
-		decal_sort[decal_count].decal_instance = decal_instance;
-		decal_sort[decal_count].decal = decal;
+		decal_sort[decal_count].instance = decal_instance;
+		decal_sort[decal_count].base = decal;
 		decal_sort[decal_count].depth = distance - decal_instance->sorting_offset;
 		decal_count++;
 	}
 
 	if (decal_count > 0) {
-		SortArray<DecalInstanceSort> sort_array;
+		SortArray<InstanceSort<DecalInstance, Decal>> sort_array;
 		sort_array.sort(decal_sort, decal_count);
 	}
 
 	bool using_forward_ids = ForwardIDStorage::uses_forward_ids();
 	for (uint32_t i = 0; i < decal_count; i++) {
-		DecalInstance* decal_instance = decal_sort[i].decal_instance;
-		Decal* decal = decal_sort[i].decal;
+		DecalInstance* decal_instance = decal_sort[i].instance;
+		Decal* decal = decal_sort[i].base;
 
 		if (using_forward_ids) {
 			ForwardIDStorage::map_forward_id(FORWARD_ID_TYPE_DECAL, decal_instance->forward_id, i,
@@ -231621,7 +231534,7 @@ void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 	ERR_FAIL_NULL(rt);
 	ERR_FAIL_COND(rt->sdf_buffer_write_fb.is_null());
 
-	RenderTargetSDF::PushConstant push_constant;
+	RenderTargetSDFPushConstant push_constant;
 
 	Rect2i r = _render_target_get_sdf_rect(rt);
 
@@ -231656,7 +231569,7 @@ void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 	RD::compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[1], 0); // fill [0]
 	RD::compute_list_set_push_constant(
-		compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
+		compute_list, &push_constant, sizeof(RenderTargetSDFPushConstant));
 
 	RD::compute_list_dispatch_threads(
 		compute_list, push_constant.size[0], push_constant.size[1], 1);
@@ -231673,7 +231586,7 @@ void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 			compute_list, rt->sdf_buffer_process_uniform_sets[swap ? 1 : 0], 0);
 		push_constant.stride = stride;
 		RD::compute_list_set_push_constant(
-			compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
+			compute_list, &push_constant, sizeof(RenderTargetSDFPushConstant));
 		RD::compute_list_dispatch_threads(
 			compute_list, push_constant.size[0], push_constant.size[1], 1);
 		stride /= 2;
@@ -231684,7 +231597,7 @@ void RendererRD::TextureStorage::render_target_sdf_process(RID p_render_target)
 	RD::compute_list_bind_uniform_set(
 		compute_list, rt->sdf_buffer_process_uniform_sets[swap ? 1 : 0], 0);
 	RD::compute_list_set_push_constant(
-		compute_list, &push_constant, sizeof(RenderTargetSDF::PushConstant));
+		compute_list, &push_constant, sizeof(RenderTargetSDFPushConstant));
 	RD::compute_list_dispatch_threads(
 		compute_list, push_constant.size[0], push_constant.size[1], 1);
 
@@ -232676,8 +232589,8 @@ void RendererRD::TextureStorage::initialize()
 		sdf_modes.push_back("\n#define MODE_STORE\n");
 		sdf_modes.push_back("\n#define MODE_STORE_SHRINK\n");
 
-		rt_sdf.shader.initialize(sdf_modes);
-		rt_sdf.shader_version = rt_sdf.shader.version_create();
+		rt_sdf_shader.initialize(sdf_modes);
+		rt_sdf_shader_version = rt_sdf_shader.version_create();
 	}
 
 	constexpr int placeholder_size = 4;
@@ -233685,8 +233598,8 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 				}
 			}
 
-			omni_light_sort[omni_light_count].light_instance = light_instance;
-			omni_light_sort[omni_light_count].light = light;
+			omni_light_sort[omni_light_count].instance = light_instance;
+			omni_light_sort[omni_light_count].base = light;
 			omni_light_sort[omni_light_count].depth = distance;
 			omni_light_count++;
 		} break;
@@ -233710,8 +233623,8 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 				}
 			}
 
-			spot_light_sort[spot_light_count].light_instance = light_instance;
-			spot_light_sort[spot_light_count].light = light;
+			spot_light_sort[spot_light_count].instance = light_instance;
+			spot_light_sort[spot_light_count].base = light;
 			spot_light_sort[spot_light_count].depth = distance;
 			spot_light_count++;
 		} break;
@@ -233735,8 +233648,8 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 				}
 			}
 
-			area_light_sort[area_light_count].light_instance = light_instance;
-			area_light_sort[area_light_count].light = light;
+			area_light_sort[area_light_count].instance = light_instance;
+			area_light_sort[area_light_count].base = light;
 			area_light_sort[area_light_count].depth = distance;
 			area_light_count++;
 		}
@@ -233746,17 +233659,17 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 	}
 
 	if (omni_light_count) {
-		SortArray<LightInstanceDepthSort> sorter;
+		SortArray<InstanceSort<LightInstance, Light>> sorter;
 		sorter.sort(omni_light_sort, omni_light_count);
 	}
 
 	if (spot_light_count) {
-		SortArray<LightInstanceDepthSort> sorter;
+		SortArray<InstanceSort<LightInstance, Light>> sorter;
 		sorter.sort(spot_light_sort, spot_light_count);
 	}
 
 	if (area_light_count) {
-		SortArray<LightInstanceDepthSort> sorter;
+		SortArray<InstanceSort<LightInstance, Light>> sorter;
 		sorter.sort(area_light_sort, area_light_count);
 	}
 
@@ -233774,24 +233687,24 @@ void RendererRD::LightStorage::update_light_buffers(RenderDataRD* p_render_data,
 			index = i - (omni_light_count + spot_light_count);
 			light_data_ptr = &area_lights[index];
 			type = RSE::LIGHT_AREA;
-			light_instance = area_light_sort[index].light_instance;
-			light = area_light_sort[index].light;
+			light_instance = area_light_sort[index].instance;
+			light = area_light_sort[index].base;
 			distance = area_light_sort[index].depth;
 		}
 		else if (i >= omni_light_count) {
 			index = i - (omni_light_count);
 			light_data_ptr = &spot_lights[index];
 			type = RSE::LIGHT_SPOT;
-			light_instance = spot_light_sort[index].light_instance;
-			light = spot_light_sort[index].light;
+			light_instance = spot_light_sort[index].instance;
+			light = spot_light_sort[index].base;
 			distance = spot_light_sort[index].depth;
 		}
 		else {
 			index = i;
 			light_data_ptr = &omni_lights[index];
 			type = RSE::LIGHT_OMNI;
-			light_instance = omni_light_sort[index].light_instance;
-			light = omni_light_sort[index].light;
+			light_instance = omni_light_sort[index].instance;
+			light = omni_light_sort[index].base;
 			distance = omni_light_sort[index].depth;
 		}
 
@@ -234873,7 +234786,7 @@ void RendererRD::LightStorage::set_max_reflection_probes(const uint32_t p_max_re
 {
 	max_reflections = p_max_reflection_probes;
 	reflections = memnew_arr(ReflectionData, max_reflections);
-	reflection_sort = memnew_arr(ReflectionProbeInstanceSort, max_reflections);
+	reflection_sort = memnew_arr(InstanceSort<ReflectionProbeInstance>, max_reflections);
 	reflection_buffer = RD::storage_buffer_create(sizeof(ReflectionData) * max_reflections);
 }
 
@@ -234897,19 +234810,19 @@ void RendererRD::LightStorage::update_reflection_probe_buffer(RenderDataRD* p_re
 		Vector3 extents = probe->size / 2;
 		float probe_size = extents.length();
 
-		reflection_sort[reflection_count].probe_instance = rpi;
-		reflection_sort[reflection_count].size = -probe_size;
+		reflection_sort[reflection_count].instance = rpi;
+		reflection_sort[reflection_count].depth = -probe_size;
 		reflection_count++;
 	}
 
 	if (reflection_count > 0) {
-		SortArray<ReflectionProbeInstanceSort> sort_array;
+		SortArray<InstanceSort<ReflectionProbeInstance>> sort_array;
 		sort_array.sort(reflection_sort, reflection_count);
 	}
 
 	bool using_forward_ids = ForwardIDStorage::uses_forward_ids();
 	for (uint32_t i = 0; i < reflection_count; i++) {
-		ReflectionProbeInstance* rpi = reflection_sort[i].probe_instance;
+		ReflectionProbeInstance* rpi = reflection_sort[i].instance;
 
 		rpi->last_pass = RendererCompositor::get_frame_number();
 
@@ -236260,7 +236173,7 @@ void MeshStorage::mesh_add_surface(RID p_mesh, const RenderingServerTypes::Surfa
 		}
 
 		s->uniform_set = RD::uniform_set_create(
-			uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SURFACE);
+			uniforms, skeleton_shader_version_shader[0], SKELETON_UNIFORM_SET_SURFACE);
 	}
 
 	if (mesh->surface_count == 0) {
@@ -236890,7 +236803,7 @@ void MeshStorage::_mesh_instance_add_surface_buffer(MeshInstance* mi, Mesh* mesh
 		uniforms.push_back(u);
 	}
 	s->uniform_set[p_buffer_index] = RD::uniform_set_create(
-		uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_INSTANCE);
+		uniforms, skeleton_shader_version_shader[0], SKELETON_UNIFORM_SET_INSTANCE);
 }
 
 void MeshStorage::_mesh_instance_remove_surface(MeshInstance* mi, int p_surface)
@@ -238013,7 +237926,7 @@ void MeshStorage::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_
 				uniforms.push_back(u);
 			}
 			skeleton->uniform_set_mi = RD::uniform_set_create(
-				uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SKELETON);
+				uniforms, skeleton_shader_version_shader[0], SKELETON_UNIFORM_SET_SKELETON);
 		}
 	}
 
@@ -238305,19 +238218,18 @@ void RendererRD::MeshStorage::initialize()
 		}
 	}
 
-	skeleton_shader = memnew(SkeletonShader);
 	{
 		Vector<String> skeleton_modes;
 		skeleton_modes.push_back("\n#define MODE_2D\n");
 		skeleton_modes.push_back("");
 
-		skeleton_shader->shader.initialize(skeleton_modes);
-		skeleton_shader->version = skeleton_shader->shader.version_create();
-		for (int i = 0; i < SkeletonShader::SHADER_MODE_MAX; i++) {
-			skeleton_shader->version_shader[i] =
-				skeleton_shader->shader.version_get_shader(skeleton_shader->version, i);
-			skeleton_shader->pipeline[i] =
-				RD::compute_pipeline_create(skeleton_shader->version_shader[i]);
+		skeleton_shader.initialize(skeleton_modes);
+		skeleton_shader_version = skeleton_shader.version_create();
+		for (int i = 0; i < SKELETON_SHADER_MODE_MAX; i++) {
+			skeleton_shader_version_shader[i] =
+				skeleton_shader.version_get_shader(skeleton_shader_version, i);
+			skeleton_shader_pipeline[i] =
+				RD::compute_pipeline_create(skeleton_shader_version_shader[i]);
 		}
 
 		{
@@ -238329,8 +238241,8 @@ void RendererRD::MeshStorage::initialize()
 				u.append_id(default_rd_storage_buffer);
 				uniforms.push_back(u);
 			}
-			skeleton_shader->default_skeleton_uniform_set = RD::uniform_set_create(
-				uniforms, skeleton_shader->version_shader[0], SkeletonShader::UNIFORM_SET_SKELETON);
+			skeleton_shader_default_uniform_set = RD::uniform_set_create(
+				uniforms, skeleton_shader_version_shader[0], SKELETON_UNIFORM_SET_SKELETON);
 		}
 	}
 }
@@ -238344,13 +238256,11 @@ void RendererRD::MeshStorage::finalize()
 		}
 	}
 
-	if (skeleton_shader) {
-		if (skeleton_shader->version.is_valid()) {
-			skeleton_shader->shader.version_free(skeleton_shader->version);
-			skeleton_shader->version = RID();
+	if (true) {
+		if (skeleton_shader_version.is_valid()) {
+			skeleton_shader.version_free(skeleton_shader_version);
+			skeleton_shader_version = RID();
 		}
-		memdelete(skeleton_shader);
-		skeleton_shader = nullptr;
 	}
 
 	if (default_rd_storage_buffer.is_valid()) {
@@ -238365,24 +238275,24 @@ using namespace RendererRD;
 
 void ParticlesStorage::finalize()
 {
-	for (int i = 0; i <= ParticlesShader::MAX_USERDATAS; i++) {
-		for (int j = 0; j < ParticlesShader::COPY_MODE_MAX; j++) {
-			particles_shader.copy_pipelines[i][j].free();
+	for (int i = 0; i <= PARTICLES_MAX_USERDATAS; i++) {
+		for (int j = 0; j < PARTICLES_COPY_MODE_MAX; j++) {
+			particles_shader_copy_pipelines[i][j].free();
 		}
 	}
 
-	if (particles_shader.copy_shader_version.is_valid()) {
-		particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
-		particles_shader.copy_shader_version = RID();
+	if (particles_shader_copy_shader_version.is_valid()) {
+		particles_shader_copy_shader.version_free(particles_shader_copy_shader_version);
+		particles_shader_copy_shader_version = RID();
 	}
 
-	if (particles_shader.default_material.is_valid()) {
-		MaterialStorage::material_free(particles_shader.default_material);
-		particles_shader.default_material = RID();
+	if (particles_shader_default_material.is_valid()) {
+		MaterialStorage::material_free(particles_shader_default_material);
+		particles_shader_default_material = RID();
 	}
-	if (particles_shader.default_shader.is_valid()) {
-		MaterialStorage::shader_free(particles_shader.default_shader);
-		particles_shader.default_shader = RID();
+	if (particles_shader_default_shader.is_valid()) {
+		MaterialStorage::shader_free(particles_shader_default_shader);
+		particles_shader_default_shader = RID();
 	}
 
 }
@@ -239090,7 +239000,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		}
 
 		p_particles->particles_material_uniform_set =
-			RD::uniform_set_create(uniforms, particles_shader.default_shader_rd, 1);
+			RD::uniform_set_create(uniforms, particles_shader_default_shader_rd, 1);
 	}
 
 	double new_phase =
@@ -239407,12 +239317,12 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 				uniforms.push_back(u);
 			}
 			p_particles->collision_textures_uniform_set =
-				RD::uniform_set_create(uniforms, particles_shader.default_shader_rd, 2);
+				RD::uniform_set_create(uniforms, particles_shader_default_shader_rd, 2);
 			p_particles->collision_heightmap_texture = collision_heightmap_texture;
 		}
 	}
 
-	ParticlesShader::PushConstant push_constant;
+	ParticlesShaderPushConstant push_constant;
 
 	int process_amount = p_particles->amount;
 
@@ -239480,7 +239390,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 			p_particles->process_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	if (!m) {
 		m = static_cast<ParticleProcessMaterialData*>(MaterialStorage::material_get_data(
-			particles_shader.default_material, MaterialStorage::SHADER_TYPE_PARTICLES));
+			particles_shader_default_material, MaterialStorage::SHADER_TYPE_PARTICLES));
 	}
 
 	ERR_FAIL_NULL(m);
@@ -239490,7 +239400,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	// todo should maybe compute all particle systems together?
 	RD::ComputeListID compute_list = RD::compute_list_begin();
 	RD::compute_list_bind_uniform_set(
-		compute_list, particles_shader.base_uniform_set, BASE_UNIFORM_SET);
+		compute_list, particles_shader_base_uniform_set, BASE_UNIFORM_SET);
 	RD::compute_list_bind_uniform_set(
 		compute_list, p_particles->particles_material_uniform_set, MATERIAL_UNIFORM_SET);
 	RD::compute_list_bind_uniform_set(
@@ -239502,7 +239412,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 	}
 
 	RD::compute_list_set_push_constant(
-		compute_list, &push_constant, sizeof(ParticlesShader::PushConstant));
+		compute_list, &push_constant, sizeof(ParticlesShaderPushConstant));
 
 	if (p_particles->trails_enabled && p_particles->trail_bind_poses.size() > 1) {
 		// trails requires two passes in order to catch particle starts
@@ -239513,7 +239423,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 
 		push_constant.trail_pass = true;
 		RD::compute_list_set_push_constant(
-			compute_list, &push_constant, sizeof(ParticlesShader::PushConstant));
+			compute_list, &push_constant, sizeof(ParticlesShaderPushConstant));
 		RD::compute_list_dispatch_threads(compute_list, process_amount - p_particles->amount, 1, 1);
 	}
 	else {
@@ -239547,12 +239457,12 @@ bool ParticlesStorage::ParticlesShaderData::casts_shadows() const { return false
 RenderingServerTypes::ShaderNativeSourceCode
 ParticlesStorage::ParticlesShaderData::get_native_source_code() const
 {
-	return ParticlesStorage::particles_shader.shader.version_get_native_source_code(version);
+	return ParticlesStorage::particles_shader.version_get_native_source_code(version);
 }
 
 Pair<ShaderRD*, RID> ParticlesStorage::ParticlesShaderData::get_native_shader_and_version() const
 {
-	return {&ParticlesStorage::particles_shader.shader, version};
+	return {&ParticlesStorage::particles_shader, version};
 }
 
 ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
@@ -239560,7 +239470,7 @@ ParticlesStorage::ParticlesShaderData::~ParticlesShaderData()
 	pipeline.free();
 
 	if (version.is_valid()) {
-		ParticlesStorage::particles_shader.shader.version_free(version);
+		ParticlesStorage::particles_shader.version_free(version);
 	}
 }
 
@@ -242797,7 +242707,7 @@ void RenderForwardClustered::_update_volumetric_fog(Ref<RenderSceneBuffersRD> p_
 		fog.instantiate();
 		fog->init(Vector3i(target_width, target_height,
 					  RendererSceneRenderRD::get_volumetric_fog_depth()),
-			RendererSceneRenderRD::data->sky.sky_shader.default_shader_rd);
+			RendererSceneRenderRD::data->sky.sky_shader_default_shader_rd);
 
 		p_render_buffers->set_custom_data(RB_SCOPE_FOG, fog);
 	}
@@ -243562,23 +243472,23 @@ void RenderForwardClustered::_render_scene(
 
 	// Ensure this is allocated so we don't get a stutter the first time an object with SSS appears
 	// on screen.
-	if (data->global_surface_data.sss_used && !is_reflection_probe) {
+	if (data->global_surface_sss_used && !is_reflection_probe) {
 		rb_data->ensure_specular();
 	}
 
-	if (data->global_surface_data.normal_texture_used && !is_reflection_probe) {
+	if (data->global_surface_normal_texture_used && !is_reflection_probe) {
 		rb_data->ensure_normal_roughness_texture();
 	}
 
 	if (using_sss || using_separate_specular || data->scene_state.used_lightmap || using_voxelgi ||
-		data->global_surface_data.sss_used) {
+		data->global_surface_sss_used) {
 		SceneShaderForwardClustered::enable_advanced_shader_group(p_render_data->scene_data->view_count > 1);
 	}
 
 	// Update the global pipeline requirements with all the features found to be in use in this
 	// scene.
 	if (depth_pass_mode == PASS_MODE_DEPTH_NORMAL_ROUGHNESS ||
-		data->global_surface_data.normal_texture_used) {
+		data->global_surface_normal_texture_used) {
 		data->global_pipeline_data_required.use_normal_and_roughness = true;
 	}
 
@@ -243590,7 +243500,7 @@ void RenderForwardClustered::_render_scene(
 		data->global_pipeline_data_required.use_voxelgi = true;
 	}
 
-	if (using_separate_specular || data->global_surface_data.sss_used) {
+	if (using_separate_specular || data->global_surface_sss_used) {
 		data->global_pipeline_data_required.use_separate_specular = true;
 	}
 
@@ -244008,7 +243918,7 @@ void RenderForwardClustered::_render_scene(
 		rb->ensure_upscaled();
 	}
 
-	if (data->scene_state.used_screen_texture || data->global_surface_data.screen_texture_used) {
+	if (data->scene_state.used_screen_texture || data->global_surface_screen_texture_used) {
 		RENDER_TIMESTAMP("Copy Screen Texture");
 
 		RendererSceneRenderRD::_render_buffers_ensure_screen_texture(p_render_data);
@@ -244019,7 +243929,7 @@ void RenderForwardClustered::_render_scene(
 		}
 	}
 
-	if (data->scene_state.used_depth_texture || data->global_surface_data.depth_texture_used) {
+	if (data->scene_state.used_depth_texture || data->global_surface_depth_texture_used) {
 		RENDER_TIMESTAMP("Copy Depth Texture");
 
 		RendererSceneRenderRD::_render_buffers_ensure_depth_texture(p_render_data);
@@ -246081,22 +245991,22 @@ void RenderForwardClustered::_geometry_instance_add_surface_with_material(
 
 	if (p_material->shader_data->uses_sss) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SUBSURFACE_SCATTERING;
-		data->global_surface_data.sss_used = true;
+		data->global_surface_sss_used = true;
 	}
 
 	if (p_material->shader_data->uses_screen_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SCREEN_TEXTURE;
-		data->global_surface_data.screen_texture_used = true;
+		data->global_surface_screen_texture_used = true;
 	}
 
 	if (p_material->shader_data->uses_depth_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
-		data->global_surface_data.depth_texture_used = true;
+		data->global_surface_depth_texture_used = true;
 	}
 
 	if (p_material->shader_data->uses_normal_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_NORMAL_TEXTURE;
-		data->global_surface_data.normal_texture_used = true;
+		data->global_surface_normal_texture_used = true;
 	}
 
 	if (ginstance->data->cast_double_sided_shadows) {
@@ -250337,12 +250247,12 @@ void RenderForwardMobile::_geometry_instance_add_surface_with_material(
 
 	if (p_material->shader_data->uses_screen_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_SCREEN_TEXTURE;
-		data->global_surface_data.screen_texture_used = true;
+		data->global_surface_screen_texture_used = true;
 	}
 
 	if (p_material->shader_data->uses_depth_texture) {
 		flags |= GeometryInstanceSurfaceDataCache::FLAG_USES_DEPTH_TEXTURE;
-		data->global_surface_data.depth_texture_used = true;
+		data->global_surface_depth_texture_used = true;
 	}
 
 	if (p_material->shader_data->uses_normal_texture) {
@@ -259511,13 +259421,6 @@ class TextServerAdvanced final : public TextServer
 		return p_sty_name.contains("italic") || p_sty_name.contains("oblique");
 	}
 
-	// Shaped text cache data.
-	struct TrimData
-	{
-		int trim_pos = -1;
-		int ellipsis_pos = -1;
-		Vector<Glyph> ellipsis_glyph_buf;
-	};
 
 	struct TextRun
 	{
@@ -259585,7 +259488,9 @@ class TextServerAdvanced final : public TextServer
 		double uthk = 0.0;
 
 		char32_t el_char = 0x2026;
-		TrimData overrun_trim_data;
+		int overrun_trim_pos = -1;
+		int overrun_ellipsis_pos = -1;
+		Vector<Glyph> overrun_ellipsis_glyph_buf;
 		bool fit_width_minimum_reached = false;
 
 		LocalVector<Glyph> glyphs;
@@ -259686,6 +259591,33 @@ class TextServerAdvanced final : public TextServer
 			weight = p_weight;
 			stretch = p_stretch;
 		}
+
+		_FORCE_INLINE_ uint32_t hash() const
+		{
+			uint32_t h = font_name.hash();
+			h = hash_murmur3_one_32(weight, h);
+			h = hash_murmur3_one_32(stretch, h);
+			h = hash_murmur3_one_32(msdf_range, h);
+			h = hash_murmur3_one_32(msdf_source_size, h);
+			h = hash_murmur3_one_32(fixed_size, h);
+			h = hash_murmur3_one_double(embolden, h);
+			h = hash_murmur3_one_real(transform[0].x, h);
+			h = hash_murmur3_one_real(transform[0].y, h);
+			h = hash_murmur3_one_real(transform[1].x, h);
+			h = hash_murmur3_one_real(transform[1].y, h);
+			h = hash_murmur3_one_32(extra_spacing[SPACING_TOP], h);
+			h = hash_murmur3_one_32(extra_spacing[SPACING_BOTTOM], h);
+			h = hash_murmur3_one_32(extra_spacing[SPACING_SPACE], h);
+			h = hash_murmur3_one_32(extra_spacing[SPACING_GLYPH], h);
+			h = hash_murmur3_one_double(baseline_offset, h);
+			return hash_fmix32(hash_murmur3_one_32(
+				((int)mipmaps) | ((int)msdf << 1) | ((int)italic << 2) |
+					((int)force_autohinter << 3) | ((int)hinting << 4) |
+					((int)subpixel_positioning << 8) | ((int)antialiasing << 12) |
+					((int)disable_embedded_bitmaps << 14) |
+					((int)keep_rounding_remainders << 15),
+				h));
+		}
 	};
 
 	struct SystemFontCacheRec
@@ -259700,37 +259632,7 @@ class TextServerAdvanced final : public TextServer
 		int max_var = 0;
 	};
 
-	struct SystemFontKeyHasher
-	{
-		_FORCE_INLINE_ static uint32_t hash(const SystemFontKey& p_a)
-		{
-			uint32_t hash = p_a.font_name.hash();
-			hash = hash_murmur3_one_32(p_a.weight, hash);
-			hash = hash_murmur3_one_32(p_a.stretch, hash);
-			hash = hash_murmur3_one_32(p_a.msdf_range, hash);
-			hash = hash_murmur3_one_32(p_a.msdf_source_size, hash);
-			hash = hash_murmur3_one_32(p_a.fixed_size, hash);
-			hash = hash_murmur3_one_double(p_a.embolden, hash);
-			hash = hash_murmur3_one_real(p_a.transform[0].x, hash);
-			hash = hash_murmur3_one_real(p_a.transform[0].y, hash);
-			hash = hash_murmur3_one_real(p_a.transform[1].x, hash);
-			hash = hash_murmur3_one_real(p_a.transform[1].y, hash);
-			hash = hash_murmur3_one_32(p_a.extra_spacing[SPACING_TOP], hash);
-			hash = hash_murmur3_one_32(p_a.extra_spacing[SPACING_BOTTOM], hash);
-			hash = hash_murmur3_one_32(p_a.extra_spacing[SPACING_SPACE], hash);
-			hash = hash_murmur3_one_32(p_a.extra_spacing[SPACING_GLYPH], hash);
-			hash = hash_murmur3_one_double(p_a.baseline_offset, hash);
-			return hash_fmix32(hash_murmur3_one_32(
-				((int)p_a.mipmaps) | ((int)p_a.msdf << 1) | ((int)p_a.italic << 2) |
-					((int)p_a.force_autohinter << 3) | ((int)p_a.hinting << 4) |
-					((int)p_a.subpixel_positioning << 8) | ((int)p_a.antialiasing << 12) |
-					((int)p_a.disable_embedded_bitmaps << 14) |
-					((int)p_a.keep_rounding_remainders << 15),
-				hash));
-		}
-	};
-
-	mutable HashMap<SystemFontKey, SystemFontCache, SystemFontKeyHasher> system_fonts;
+	mutable HashMap<SystemFontKey, SystemFontCache> system_fonts;
 	mutable HashMap<String, PackedByteArray> system_font_data;
 
 	void _update_chars(ShapedTextDataAdvanced* p_sd) const;
@@ -264380,7 +264282,9 @@ void TextServerAdvanced::invalidate(
 	p_shaped->glyphs_logical.clear();
 	p_shaped->runs.clear();
 	p_shaped->runs_dirty = true;
-	p_shaped->overrun_trim_data = TrimData();
+	p_shaped->overrun_trim_pos = -1;
+	p_shaped->overrun_ellipsis_pos = -1;
+	p_shaped->overrun_ellipsis_glyph_buf.clear();
 	p_shaped->utf16 = Char16String();
 	for (int i = 0; i < p_shaped->bidi_iter.size(); i++) {
 		ubidi_close(p_shaped->bidi_iter[i]);
@@ -264926,7 +264830,7 @@ int64_t TextServerAdvanced::_shaped_text_get_trim_pos(const RID& p_shaped) const
 	ERR_FAIL_NULL_V_MSG(sd, -1, "ShapedTextDataAdvanced invalid.");
 
 	MutexLock lock(sd->mutex);
-	return sd->overrun_trim_data.trim_pos;
+	return sd->overrun_trim_pos;
 }
 
 int64_t TextServerAdvanced::_shaped_text_get_ellipsis_pos(const RID& p_shaped) const
@@ -264935,7 +264839,7 @@ int64_t TextServerAdvanced::_shaped_text_get_ellipsis_pos(const RID& p_shaped) c
 	ERR_FAIL_NULL_V_MSG(sd, -1, "ShapedTextDataAdvanced invalid.");
 
 	MutexLock lock(sd->mutex);
-	return sd->overrun_trim_data.ellipsis_pos;
+	return sd->overrun_ellipsis_pos;
 }
 
 const Glyph* TextServerAdvanced::_shaped_text_get_ellipsis_glyphs(const RID& p_shaped) const
@@ -264944,7 +264848,7 @@ const Glyph* TextServerAdvanced::_shaped_text_get_ellipsis_glyphs(const RID& p_s
 	ERR_FAIL_NULL_V_MSG(sd, nullptr, "ShapedTextDataAdvanced invalid.");
 
 	MutexLock lock(sd->mutex);
-	return sd->overrun_trim_data.ellipsis_glyph_buf.ptr();
+	return sd->overrun_ellipsis_glyph_buf.ptr();
 }
 
 int64_t TextServerAdvanced::_shaped_text_get_ellipsis_glyph_count(const RID& p_shaped) const
@@ -264953,7 +264857,7 @@ int64_t TextServerAdvanced::_shaped_text_get_ellipsis_glyph_count(const RID& p_s
 	ERR_FAIL_NULL_V_MSG(sd, 0, "ShapedTextDataAdvanced invalid.");
 
 	MutexLock lock(sd->mutex);
-	return sd->overrun_trim_data.ellipsis_glyph_buf.size();
+	return sd->overrun_ellipsis_glyph_buf.size();
 }
 
 void TextServerAdvanced::_update_chars(ShapedTextDataAdvanced* p_sd) const
@@ -271122,9 +271026,9 @@ Size2 OpenXRAPI::get_recommended_target_size()
 
 	if (Renderer::data && Renderer::is_on_render_thread()) {
 		target_size.width = data->view_configuration_views[0].recommendedImageRectWidth *
-							data->render_state.render_target_size_multiplier;
+							data->rs_render_target_size_multiplier;
 		target_size.height = data->view_configuration_views[0].recommendedImageRectHeight *
-							 data->render_state.render_target_size_multiplier;
+							 data->rs_render_target_size_multiplier;
 	}
 	else {
 		target_size.width =
@@ -271200,17 +271104,17 @@ bool OpenXRAPI::get_view_transform(uint32_t p_view, Transform3D& r_transform)
 {
 	ERR_NOT_ON_RENDER_THREAD_V(false);
 
-	if (!data->render_state.running) {
+	if (!data->rs_running) {
 		return false;
 	}
 
 	// we don't have valid view info
-	if (data->render_state.views.is_empty() || !data->render_state.view_pose_valid) {
+	if (data->rs_views.is_empty() || !data->rs_view_pose_valid) {
 		return false;
 	}
 
 	// Note, the timing of this is set right before rendering, which is what we need here.
-	r_transform = transform_from_pose(data->render_state.views[p_view].pose);
+	r_transform = transform_from_pose(data->rs_views[p_view].pose);
 
 	return true;
 }
@@ -271222,20 +271126,20 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
 
-	data->render_state.submit_depth_buffer = p_submit_depth_buffer;
+	data->rs_submit_depth_buffer = p_submit_depth_buffer;
 
 	// Allocate buffers we'll be populating with view information.
-	data->render_state.views.resize(p_view_count);
-	data->render_state.projection_views.resize(p_view_count);
+	data->rs_views.resize(p_view_count);
+	data->rs_projection_views.resize(p_view_count);
 
 	for (uint32_t i = 0; i < p_view_count; i++) {
-		data->render_state.views[i] = {
+		data->rs_views[i] = {
 			XR_TYPE_VIEW, // type
 			nullptr,	  // next
 			{},			  // pose
 			{},			  // fov
 		};
-		data->render_state.projection_views[i] = {
+		data->rs_projection_views[i] = {
 			XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW, // type
 			nullptr,								   // next
 			{},										   // pose
@@ -271247,10 +271151,10 @@ void OpenXRAPI::_allocate_view_buffers_rt(uint32_t p_view_count, bool p_submit_d
 	if (p_submit_depth_buffer &&
 		OpenXRInteractionProfileExtension::is_profile_available(
 			OpenXRInteractionProfileExtension::PROFILE_COMPOSITION_LAYER_DEPTH)) {
-		data->render_state.depth_views.resize(p_view_count);
+		data->rs_depth_views.resize(p_view_count);
 
 		for (uint32_t i = 0; i < p_view_count; i++) {
-			data->render_state.depth_views[i] = {
+			data->rs_depth_views[i] = {
 				XR_TYPE_COMPOSITION_LAYER_DEPTH_INFO_KHR, // type
 				nullptr,								  // next
 				{},										  // subImage
@@ -271269,7 +271173,7 @@ void OpenXRAPI::_set_render_session_running_rt(bool p_is_running)
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.running = p_is_running;
+	data->rs_running = p_is_running;
 }
 
 void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, bool p_should_render)
@@ -271278,8 +271182,8 @@ void OpenXRAPI::_set_render_display_info_rt(XrTime p_predicted_display_time, boo
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.predicted_display_time = p_predicted_display_time;
-	data->render_state.should_render = p_should_render;
+	data->rs_predicted_display_time = p_predicted_display_time;
+	data->rs_should_render = p_should_render;
 }
 
 void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blend_mode)
@@ -271288,7 +271192,7 @@ void OpenXRAPI::_set_render_environment_blend_mode_rt(int32_t p_environment_blen
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.environment_blend_mode =
+	data->rs_environment_blend_mode =
 		XrEnvironmentBlendMode(p_environment_blend_mode);
 }
 
@@ -271298,7 +271202,7 @@ void OpenXRAPI::_set_render_play_space_rt(uint64_t p_play_space)
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.play_space = XrSpace(p_play_space);
+	data->rs_play_space = XrSpace(p_play_space);
 }
 
 void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_multiplier)
@@ -271307,7 +271211,7 @@ void OpenXRAPI::_set_render_state_multiplier_rt(double p_render_target_size_mult
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.render_target_size_multiplier = p_render_target_size_multiplier;
+	data->rs_render_target_size_multiplier = p_render_target_size_multiplier;
 }
 
 void OpenXRAPI::_set_render_state_render_region_rt(const Rect2i& p_render_region)
@@ -271315,7 +271219,7 @@ void OpenXRAPI::_set_render_state_render_region_rt(const Rect2i& p_render_region
 	ERR_NOT_ON_RENDER_THREAD;
 
 	ERR_FAIL_COND(!OpenXRAPI::is_allocated());
-	data->render_state.render_region = p_render_region;
+	data->rs_render_region = p_render_region;
 }
 
 void OpenXRAPI::_update_main_swapchain_size_rt()
@@ -271346,7 +271250,7 @@ void OpenXRAPI::_update_main_swapchain_size_rt()
 void OpenXRAPI::free_main_swapchains()
 {
 	for (int i = 0; i < OPENXR_SWAPCHAIN_MAX; i++) {
-		data->render_state.main_swapchains[i].queue_free();
+		data->rs_main_swapchains[i].queue_free();
 	}
 }
 
@@ -271354,14 +271258,14 @@ XrSwapchain OpenXRAPI::get_color_swapchain()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(XR_NULL_HANDLE);
 
-	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
+	return data->rs_main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_swapchain();
 }
 
 RID OpenXRAPI::get_color_texture()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
-	return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
+	return data->rs_main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_image();
 }
 
 RID OpenXRAPI::get_depth_texture()
@@ -271369,9 +271273,9 @@ RID OpenXRAPI::get_depth_texture()
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
 	// Note, image will not be acquired if we didn't have a suitable swap chain format.
-	if (data->render_state.submit_depth_buffer &&
-		data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
-		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
+	if (data->rs_submit_depth_buffer &&
+		data->rs_main_swapchains[OPENXR_SWAPCHAIN_DEPTH].is_image_acquired()) {
+		return data->rs_main_swapchains[OPENXR_SWAPCHAIN_DEPTH].get_image();
 	}
 	else {
 		return RID();
@@ -271383,7 +271287,7 @@ RID OpenXRAPI::get_density_map_texture()
 	ERR_NOT_ON_RENDER_THREAD_V(RID());
 
 	if (OpenXRExtensions::is_foveation_enabled()) {
-		return data->render_state.main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
+		return data->rs_main_swapchains[OPENXR_SWAPCHAIN_COLOR].get_density_map();
 	}
 
 	return RID();
@@ -271411,7 +271315,7 @@ const XrCompositionLayerProjection* OpenXRAPI::get_projection_layer()
 {
 	ERR_NOT_ON_RENDER_THREAD_V(nullptr);
 
-	return &data->render_state.projection_layer;
+	return &data->rs_projection_layer;
 }
 
 float OpenXRAPI::get_display_refresh_rate()

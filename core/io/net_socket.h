@@ -2139,16 +2139,11 @@ public:
 	};
 
 private:
-	struct PListTrailer
-	{
-		uint8_t offset_size;
-		uint8_t ref_size;
-		uint64_t object_num;
-		uint64_t root_offset_idx;
-		uint64_t offset_table_start;
-	};
-
-	PListTrailer trailer;
+	uint8_t trailer_offset_size = 0;
+	uint8_t trailer_ref_size = 0;
+	uint64_t trailer_object_num = 0;
+	uint64_t trailer_root_offset_idx = 0;
+	uint64_t trailer_offset_table_start = 0;
 	Ref<PListNode> root;
 
 	uint64_t read_bplist_var_size_int(Ref<FileAccess> p_file, uint8_t p_size);

@@ -117,7 +117,7 @@ RDD::BufferID RenderingDeviceDriverMetal::buffer_create(uint64_t p_size, uint32_
 
 	BufferInfo *buf_info;
 	if (p_usage.has_flag(BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT)) {
-		MetalBufferDynamicInfo *dyn_buffer = memnew(MetalBufferDynamicInfo);
+		RenderingDeviceDriverMetal::BufferInfo *dyn_buffer = memnew(RenderingDeviceDriverMetal::BufferInfo);
 		buf_info = dyn_buffer;
 #ifdef DEBUG_ENABLED
 		dyn_buffer->last_frame_mapped = p_frames_drawn - 1ul;
@@ -145,7 +145,7 @@ void RenderingDeviceDriverMetal::buffer_free(BufferID p_buffer) {
 	_untrack_resource(buf_info->metal_buffer.get());
 
 	if (buf_info->is_dynamic()) {
-		memdelete((MetalBufferDynamicInfo *)buf_info);
+		memdelete((RenderingDeviceDriverMetal::BufferInfo *)buf_info);
 	} else {
 		memdelete(buf_info);
 	}
@@ -167,7 +167,7 @@ void RenderingDeviceDriverMetal::buffer_unmap(BufferID p_buffer) {
 }
 
 uint8_t *RenderingDeviceDriverMetal::buffer_persistent_map_advance(BufferID p_buffer, uint64_t p_frames_drawn) {
-	MetalBufferDynamicInfo *buf_info = (MetalBufferDynamicInfo *)p_buffer.id;
+	RenderingDeviceDriverMetal::BufferInfo *buf_info = (RenderingDeviceDriverMetal::BufferInfo *)p_buffer.id;
 	ERR_FAIL_COND_V_MSG(!buf_info->is_dynamic(), nullptr, "Buffer must have BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT. Use buffer_map() instead.");
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_V_MSG(buf_info->last_frame_mapped == p_frames_drawn, nullptr, "Buffers with BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT must only be mapped once per frame. Otherwise there could be race conditions with the GPU. Amalgamate all data uploading into one map(), use an extra buffer or remove the bit.");
@@ -1402,7 +1402,7 @@ RDD::UniformSetID RenderingDeviceDriverMetal::uniform_set_create(VectorView<Boun
 				case UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC:
 				case UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
 					// Encode the base GPU address (frame 0); it will be updated at bind time.
-					const MetalBufferDynamicInfo *buffer = (const MetalBufferDynamicInfo *)uniform.ids[0].id;
+					const RenderingDeviceDriverMetal::BufferInfo *buffer = (const RenderingDeviceDriverMetal::BufferInfo *)uniform.ids[0].id;
 					*(MTLGPUAddress *)(ptr + idx.buffer) = buffer->metal_buffer.get()->gpuAddress();
 
 					ADD_USAGE(buffer->metal_buffer.get(), ui.active_stages, ui.usage);
@@ -1486,7 +1486,7 @@ uint32_t RenderingDeviceDriverMetal::uniform_sets_get_dynamic_offsets(VectorView
 		for (uint32_t uniform_index : shader->sets[index].dynamic_uniforms) {
 			const RDD::BoundUniform &uniform = usi->uniforms[uniform_index];
 			DEV_ASSERT(uniform.is_dynamic());
-			const MetalBufferDynamicInfo *buf_info = (const MetalBufferDynamicInfo *)uniform.ids[0].id;
+			const RenderingDeviceDriverMetal::BufferInfo *buf_info = (const RenderingDeviceDriverMetal::BufferInfo *)uniform.ids[0].id;
 			mask |= buf_info->frame_index() << shift;
 			shift += 4u;
 		}
@@ -2821,11 +2821,9 @@ static MetalDeviceProfile device_profile_from_properties(MetalDeviceProperties *
 #else
 #error "Unsupported Apple platform"
 #endif
-	res.features = {
-		.msl_version = p_device_properties->features.msl_target_version,
-		.use_argument_buffers = p_device_properties->features.argument_buffers_enabled(),
-		.simdPermute = p_device_properties->features.simdPermute,
-	};
+	res.msl_version = p_device_properties->features.msl_target_version;
+	res.use_argument_buffers = p_device_properties->features.argument_buffers_enabled();
+	res.simdPermute = p_device_properties->features.simdPermute;
 
 	// highestFamily will only be set to an Apple GPU family
 	switch (p_device_properties->features.highestFamily) {
@@ -2949,35 +2947,35 @@ const MetalDeviceProfile *MetalDeviceProfile::get_profile(Platform p_platform, G
 	switch (p_platform) {
 		case Platform::macOS: {
 			if (p_min_os_version >= os_version::MACOS_26_0) {
-				res.features.msl_version = MSL_VERSION_40;
+				res.msl_version = MSL_VERSION_40;
 			} else if (p_min_os_version >= os_version::MACOS_15_0) {
-				res.features.msl_version = MSL_VERSION_32;
+				res.msl_version = MSL_VERSION_32;
 			} else if (p_min_os_version >= os_version::MACOS_14_0) {
-				res.features.msl_version = MSL_VERSION_31;
+				res.msl_version = MSL_VERSION_31;
 			} else if (p_min_os_version >= os_version::MACOS_13_0) {
-				res.features.msl_version = MSL_VERSION_30;
+				res.msl_version = MSL_VERSION_30;
 			} else if (p_min_os_version >= os_version::MACOS_12_0) {
-				res.features.msl_version = MSL_VERSION_24;
+				res.msl_version = MSL_VERSION_24;
 			} else {
-				res.features.msl_version = MSL_VERSION_23;
+				res.msl_version = MSL_VERSION_23;
 			}
-			res.features.use_argument_buffers = p_min_os_version >= os_version::MACOS_13_0;
-			res.features.simdPermute = true;
+			res.use_argument_buffers = p_min_os_version >= os_version::MACOS_13_0;
+			res.simdPermute = true;
 		} break;
 
 		case Platform::iOS: {
 			if (p_min_os_version >= os_version::IOS_26_0) {
-				res.features.msl_version = MSL_VERSION_40;
+				res.msl_version = MSL_VERSION_40;
 			} else if (p_min_os_version >= os_version::IOS_18_0) {
-				res.features.msl_version = MSL_VERSION_32;
+				res.msl_version = MSL_VERSION_32;
 			} else if (p_min_os_version >= os_version::IOS_17_0) {
-				res.features.msl_version = MSL_VERSION_31;
+				res.msl_version = MSL_VERSION_31;
 			} else if (p_min_os_version >= os_version::IOS_16_0) {
-				res.features.msl_version = MSL_VERSION_30;
+				res.msl_version = MSL_VERSION_30;
 			} else if (p_min_os_version >= os_version::IOS_15_0) {
-				res.features.msl_version = MSL_VERSION_24;
+				res.msl_version = MSL_VERSION_24;
 			} else {
-				res.features.msl_version = MSL_VERSION_23;
+				res.msl_version = MSL_VERSION_23;
 			}
 
 			switch (p_gpu) {
@@ -2986,24 +2984,24 @@ const MetalDeviceProfile *MetalDeviceProfile::get_profile(Platform p_platform, G
 				case GPU::Apple3:
 				case GPU::Apple4:
 				case GPU::Apple5: {
-					res.features.simdPermute = false;
-					res.features.use_argument_buffers = false;
+					res.simdPermute = false;
+					res.use_argument_buffers = false;
 				} break;
 				case GPU::Apple6:
 				case GPU::Apple7:
 				case GPU::Apple8:
 				case GPU::Apple9: {
-					res.features.use_argument_buffers = p_min_os_version >= os_version::IOS_16_0;
-					res.features.simdPermute = true;
+					res.use_argument_buffers = p_min_os_version >= os_version::IOS_16_0;
+					res.simdPermute = true;
 				} break;
 			}
 		} break;
 
 		case Platform::visionOS: {
 			if (p_min_os_version >= os_version::VISIONOS_26_0) {
-				res.features.msl_version = MSL_VERSION_40;
+				res.msl_version = MSL_VERSION_40;
 			} else if (p_min_os_version >= os_version::VISIONOS_02_4) {
-				res.features.msl_version = MSL_VERSION_32;
+				res.msl_version = MSL_VERSION_32;
 			} else {
 				ERR_FAIL_V_MSG(nullptr, "visionOS 2.4 is the minimum supported version for visionOS.");
 			}
@@ -3011,8 +3009,8 @@ const MetalDeviceProfile *MetalDeviceProfile::get_profile(Platform p_platform, G
 			switch (p_gpu) {
 				case GPU::Apple8:
 				case GPU::Apple9: {
-					res.features.use_argument_buffers = true;
-					res.features.simdPermute = true;
+					res.use_argument_buffers = true;
+					res.simdPermute = true;
 				} break;
 				default: {
 					CRASH_NOW_MSG("visionOS hardware has a minimum Apple8 GPU.");
@@ -5778,7 +5776,7 @@ Error RenderingShaderContainerMetal::compile_metal_source(const char *p_source, 
 	// Strip the source from the binary. AIR versions before 2.4 (MSL 2.4) don't support
 	// companion MetalLib, so metal-dsymutil copies verbatim and emits a warning:
 	//   "architecture air64_v23 does not support a companion MetalLib; copying verbatim"
-	if (device_profile->features.msl_version >= MSL_VERSION_24) {
+	if (device_profile->msl_version >= MSL_VERSION_24) {
 		List<String> args{ "-sdk", sdk, "metal-dsymutil", "--remove-source", result_file->get_path_absolute() };
 		String r_pipe;
 		int exit_code;
@@ -5946,7 +5944,7 @@ bool RenderingShaderContainerMetal::_set_code_from_spirv(const ReflectShader &p_
 			msl_version = compiler_props_metal_version;
 			mtl_reflection_data.os_min_version = compiler_props_os_version_min_required;
 		} else {
-			msl_version = device_profile->features.msl_version;
+			msl_version = device_profile->msl_version;
 			mtl_reflection_data.os_min_version = MinOsVersion();
 		}
 		uint32_t msl_ver_maj = 0;
@@ -5959,11 +5957,11 @@ bool RenderingShaderContainerMetal::_set_code_from_spirv(const ReflectShader &p_
 	msl_options.platform = device_profile->platform == MetalDeviceProfile::Platform::macOS ? CompilerMSL::Options::macOS : CompilerMSL::Options::iOS;
 
 	if (device_profile->platform == MetalDeviceProfile::Platform::iOS) {
-		msl_options.ios_use_simdgroup_functions = device_profile->features.simdPermute;
+		msl_options.ios_use_simdgroup_functions = device_profile->simdPermute;
 		msl_options.ios_support_base_vertex_instance = true;
 	}
 
-	if (device_profile->features.use_argument_buffers) {
+	if (device_profile->use_argument_buffers) {
 		msl_options.argument_buffers_tier = CompilerMSL::Options::ArgumentBuffersTier::Tier2;
 		msl_options.argument_buffers = true;
 		mtl_reflection_data.set_uses_argument_buffers(true);
@@ -7952,7 +7950,7 @@ void MDCommandBuffer::render_bind_vertex_buffers(uint32_t p_binding_count, const
 
 		NS::UInteger dynamic_offset = 0;
 		if (buf_info->is_dynamic()) {
-			const MetalBufferDynamicInfo *dyn_buf = (const MetalBufferDynamicInfo *)buf_info;
+			const RenderingDeviceDriverMetal::BufferInfo *dyn_buf = (const RenderingDeviceDriverMetal::BufferInfo *)buf_info;
 			uint64_t frame_idx = p_dynamic_offsets & 0x3;
 			p_dynamic_offsets >>= 2;
 			dynamic_offset = frame_idx * dyn_buf->size_bytes;
@@ -8376,7 +8374,7 @@ void MDCommandBuffer::_bind_uniforms_argument_buffers(MDUniformSet *p_set, MDSha
 			dynamic_index++;
 			uint32_t frame_idx = (p_dynamic_offsets >> shift) & 0xf;
 
-			const MetalBufferDynamicInfo *buf_info = (const MetalBufferDynamicInfo *)uniform.ids[0].id;
+			const RenderingDeviceDriverMetal::BufferInfo *buf_info = (const RenderingDeviceDriverMetal::BufferInfo *)uniform.ids[0].id;
 			uint64_t gpu_address = buf_info->metal_buffer.get()->gpuAddress() + frame_idx * buf_info->size_bytes;
 			*(uint64_t *)(ptr + idx.buffer) = gpu_address;
 		}
@@ -8481,7 +8479,7 @@ void MDCommandBuffer::_bind_uniforms_direct(MDUniformSet *p_set, MDShader *p_sha
 			} break;
 			case RDD::UNIFORM_TYPE_UNIFORM_BUFFER_DYNAMIC:
 			case RDD::UNIFORM_TYPE_STORAGE_BUFFER_DYNAMIC: {
-				const MetalBufferDynamicInfo *buf_info = (const MetalBufferDynamicInfo *)uniform.ids[0].id;
+				const RenderingDeviceDriverMetal::BufferInfo *buf_info = (const RenderingDeviceDriverMetal::BufferInfo *)uniform.ids[0].id;
 				p_enc.set(buf_info->metal_buffer.get(), frame_idx * buf_info->size_bytes, indexes.buffer);
 			} break;
 			case RDD::UNIFORM_TYPE_INPUT_ATTACHMENT: {
@@ -8532,7 +8530,7 @@ void MDCommandBuffer::_bind_uniforms_argument_buffers_compute(MDUniformSet *p_se
 			dynamic_index++;
 			uint32_t frame_idx = (p_dynamic_offsets >> shift) & 0xf;
 
-			const MetalBufferDynamicInfo *buf_info = (const MetalBufferDynamicInfo *)uniform.ids[0].id;
+			const RenderingDeviceDriverMetal::BufferInfo *buf_info = (const RenderingDeviceDriverMetal::BufferInfo *)uniform.ids[0].id;
 			uint64_t gpu_address = buf_info->metal_buffer.get()->gpuAddress() + frame_idx * buf_info->size_bytes;
 			*(uint64_t *)(ptr + idx.buffer) = gpu_address;
 		}

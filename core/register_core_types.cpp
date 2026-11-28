@@ -4549,18 +4549,18 @@ bool InputMap::event_get_action_status(const InputEvent& p_event, const String& 
 	ERR_FAIL_COND_V_MSG(!E, false, suggest_actions(p_action));
 
 	if (p_event.type == InputEventType::ACTION) {
-		if (p_event.action.action == p_action) {
+		if (p_event.action_name == p_action) {
 			if (r_pressed) {
 				*r_pressed = p_event.is_pressed();
 			}
 			if (r_strength) {
-				*r_strength = p_event.action.strength;
+				*r_strength = p_event.action_strength;
 			}
 			if (r_raw_strength) {
-				*r_raw_strength = p_event.action.strength;
+				*r_raw_strength = p_event.action_strength;
 			}
 			if (r_event_index) {
-				*r_event_index = p_event.action.event_index;
+				*r_event_index = p_event.action_event_index;
 			}
 			return true;
 		}
@@ -5964,9 +5964,9 @@ InputEvent InputEvent::make_action(const String& p_action, bool p_pressed, float
 	InputEvent ie;
 	ie.type = InputEventType::ACTION;
 	ie.pressed = p_pressed;
-	ie.action.action = p_action;
-	ie.action.strength = CLAMP(p_strength, 0.0f, 1.0f);
-	ie.action.event_index = -1;
+	ie.action_name = p_action;
+	ie.action_strength = CLAMP(p_strength, 0.0f, 1.0f);
+	ie.action_event_index = -1;
 	return ie;
 }
 
@@ -6405,7 +6405,7 @@ bool InputEvent::action_match(const InputEvent& p_event, bool p_exact_match, flo
 	}
 
 	case InputEventType::ACTION: {
-		bool match = (action.action == p_event.action.action);
+		bool match = (action_name == p_event.action_name);
 		if (match) {
 			bool act_pressed = p_event.is_pressed();
 			if (r_pressed) {
@@ -6430,7 +6430,7 @@ bool InputEvent::action_match(const InputEvent& p_event, bool p_exact_match, flo
 bool InputEvent::is_match(const InputEvent& p_event, bool p_exact_match) const
 {
 	if (type == InputEventType::ACTION) {
-		return p_event.is_valid() && p_event.is_action(action.action, p_exact_match);
+		return p_event.is_valid() && p_event.is_action(action_name, p_exact_match);
 	}
 	if (type != p_event.type) {
 		return false;
@@ -6630,7 +6630,7 @@ String InputEvent::as_text() const
 			itos(screen_drag.index), String(screen_drag.position), String(screen_drag.velocity));
 
 	case InputEventType::ACTION: {
-		const List<InputEvent>* events = InputMap::action_get_events(action.action);
+		const List<InputEvent>* events = InputMap::action_get_events(action_name);
 		if (!events) {
 			return String();
 		}
@@ -14346,35 +14346,6 @@ public:
 		}
 	};
 
-	class PointR128 {
-	public:
-		Int128 x;
-		Int128 y;
-		Int128 z;
-		Int128 denominator;
-
-		PointR128() {
-		}
-
-		PointR128(Int128 p_x, Int128 p_y, Int128 p_z, Int128 p_denominator) {
-			x = p_x;
-			y = p_y;
-			z = p_z;
-			denominator = p_denominator;
-		}
-
-		real_t xvalue() const {
-			return x.to_scalar() / denominator.to_scalar();
-		}
-
-		real_t yvalue() const {
-			return y.to_scalar() / denominator.to_scalar();
-		}
-
-		real_t zvalue() const {
-			return z.to_scalar() / denominator.to_scalar();
-		}
-	};
 
 	class Edge;
 	class Face;
@@ -14386,7 +14357,10 @@ public:
 		Edge *edges = nullptr;
 		Face *first_nearby_face = nullptr;
 		Face *last_nearby_face = nullptr;
-		PointR128 point128;
+		Int128 point128_x;
+		Int128 point128_y;
+		Int128 point128_z;
+		Int128 point128_denom;
 		Point32 point;
 		int32_t copy = -1;
 
@@ -14405,20 +14379,27 @@ public:
 			return point - p_other.point;
 		}
 
+		void set_point128(Int128 p_x, Int128 p_y, Int128 p_z, Int128 p_denom) {
+			point128_x = p_x;
+			point128_y = p_y;
+			point128_z = p_z;
+			point128_denom = p_denom;
+		}
+
 		Rational128 dot(const Point64 &p_other) const {
-			return (point.index >= 0) ? Rational128(point.dot(p_other)) : Rational128(point128.x * p_other.x + point128.y * p_other.y + point128.z * p_other.z, point128.denominator);
+			return (point.index >= 0) ? Rational128(point.dot(p_other)) : Rational128(point128_x * p_other.x + point128_y * p_other.y + point128_z * p_other.z, point128_denom);
 		}
 
 		real_t xvalue() const {
-			return (point.index >= 0) ? real_t(point.x) : point128.xvalue();
+			return (point.index >= 0) ? real_t(point.x) : (point128_x.to_scalar() / point128_denom.to_scalar());
 		}
 
 		real_t yvalue() const {
-			return (point.index >= 0) ? real_t(point.y) : point128.yvalue();
+			return (point.index >= 0) ? real_t(point.y) : (point128_y.to_scalar() / point128_denom.to_scalar());
 		}
 
 		real_t zvalue() const {
-			return (point.index >= 0) ? real_t(point.z) : point128.zvalue();
+			return (point.index >= 0) ? real_t(point.z) : (point128_z.to_scalar() / point128_denom.to_scalar());
 		}
 
 		void receive_nearby_faces(Vertex *p_src) {
@@ -15949,13 +15930,13 @@ bool ConvexHullInternal::shift_face(Face *p_face, real_t p_amount, LocalVector<V
 			Vertex *v = vertex_pool.alloc();
 			v->point.index = -1;
 			v->copy = -1;
-			v->point128 = PointR128(Int128::mul(p_face->dir0.x * r0, m11) - Int128::mul(p_face->dir0.x * r1, m01) + Int128::mul(p_face->dir1.x * r1, m00) - Int128::mul(p_face->dir1.x * r0, m10) + det * shifted_origin.x,
+			v->set_point128(Int128::mul(p_face->dir0.x * r0, m11) - Int128::mul(p_face->dir0.x * r1, m01) + Int128::mul(p_face->dir1.x * r1, m00) - Int128::mul(p_face->dir1.x * r0, m10) + det * shifted_origin.x,
 					Int128::mul(p_face->dir0.y * r0, m11) - Int128::mul(p_face->dir0.y * r1, m01) + Int128::mul(p_face->dir1.y * r1, m00) - Int128::mul(p_face->dir1.y * r0, m10) + det * shifted_origin.y,
 					Int128::mul(p_face->dir0.z * r0, m11) - Int128::mul(p_face->dir0.z * r1, m01) + Int128::mul(p_face->dir1.z * r1, m00) - Int128::mul(p_face->dir1.z * r0, m10) + det * shifted_origin.z,
 					det);
-			v->point.x = (int32_t)v->point128.xvalue();
-			v->point.y = (int32_t)v->point128.yvalue();
-			v->point.z = (int32_t)v->point128.zvalue();
+			v->point.x = (int32_t)(v->point128_x.to_scalar() / v->point128_denom.to_scalar());
+			v->point.y = (int32_t)(v->point128_y.to_scalar() / v->point128_denom.to_scalar());
+			v->point.z = (int32_t)(v->point128_z.to_scalar() / v->point128_denom.to_scalar());
 			intersection->target = v;
 			v->edges = e;
 
@@ -25451,9 +25432,9 @@ Ref<PListNode> PList::read_bplist_obj(Ref<FileAccess> p_file, uint64_t p_offset_
 	Ref<PListNode> node;
 	node.instantiate();
 
-	uint64_t ot_off = trailer.offset_table_start + p_offset_idx * trailer.offset_size;
+	uint64_t ot_off = trailer_offset_table_start + p_offset_idx * trailer_offset_size;
 	p_file->seek(ot_off);
-	uint64_t marker_off = read_bplist_var_size_int(p_file, trailer.offset_size);
+	uint64_t marker_off = read_bplist_var_size_int(p_file, trailer_offset_size);
 	ERR_FAIL_COND_V_MSG(marker_off == 0, Ref<PListNode>(), "Invalid marker size.");
 
 	p_file->seek(marker_off);
@@ -25541,8 +25522,8 @@ Ref<PListNode> PList::read_bplist_obj(Ref<FileAccess> p_file, uint64_t p_offset_
 
 		node->data_type = PL_NODE_TYPE_ARRAY;
 		for (uint64_t i = 0; i < marker_size; i++) {
-			p_file->seek(pos + trailer.ref_size * i);
-			uint64_t ref = read_bplist_var_size_int(p_file, trailer.ref_size);
+			p_file->seek(pos + trailer_ref_size * i);
+			uint64_t ref = read_bplist_var_size_int(p_file, trailer_ref_size);
 
 			Ref<PListNode> element = read_bplist_obj(p_file, ref);
 			ERR_FAIL_COND_V(element.is_null(), Ref<PListNode>());
@@ -25558,11 +25539,11 @@ Ref<PListNode> PList::read_bplist_obj(Ref<FileAccess> p_file, uint64_t p_offset_
 
 		node->data_type = PL_NODE_TYPE_DICT;
 		for (uint64_t i = 0; i < marker_size; i++) {
-			p_file->seek(pos + trailer.ref_size * i);
-			uint64_t key_ref = read_bplist_var_size_int(p_file, trailer.ref_size);
+			p_file->seek(pos + trailer_ref_size * i);
+			uint64_t key_ref = read_bplist_var_size_int(p_file, trailer_ref_size);
 
-			p_file->seek(pos + trailer.ref_size * (i + marker_size));
-			uint64_t obj_ref = read_bplist_var_size_int(p_file, trailer.ref_size);
+			p_file->seek(pos + trailer_ref_size * (i + marker_size));
+			uint64_t obj_ref = read_bplist_var_size_int(p_file, trailer_ref_size);
 
 			Ref<PListNode> element_key = read_bplist_obj(p_file, key_ref);
 			ERR_FAIL_COND_V(element_key.is_null() || element_key->data_type != PL_NODE_TYPE_STRING,
@@ -25594,12 +25575,12 @@ bool PList::load_file(const String& p_filename)
 
 	if (String::ascii(Span((const char*)magic, 8)) == "bplist00") {
 		fb->seek_end(-26);
-		trailer.offset_size = fb->get_8();
-		trailer.ref_size = fb->get_8();
-		trailer.object_num = BSWAP64(fb->get_64());
-		trailer.root_offset_idx = BSWAP64(fb->get_64());
-		trailer.offset_table_start = BSWAP64(fb->get_64());
-		root = read_bplist_obj(fb, trailer.root_offset_idx);
+		trailer_offset_size = fb->get_8();
+		trailer_ref_size = fb->get_8();
+		trailer_object_num = BSWAP64(fb->get_64());
+		trailer_root_offset_idx = BSWAP64(fb->get_64());
+		trailer_offset_table_start = BSWAP64(fb->get_64());
+		root = read_bplist_obj(fb, trailer_root_offset_idx);
 
 		return root.is_valid();
 	}
@@ -74013,6 +73994,19 @@ struct Lightmapper::RDState
 				   (uv[1] == p_vtx.uv[1]) && (normal_xy[0] == p_vtx.normal_xy[0]) &&
 				   (normal_xy[1] == p_vtx.normal_xy[1]) && (normal_z == p_vtx.normal_z);
 		}
+
+		_FORCE_INLINE_ uint32_t hash() const
+		{
+			uint32_t h = hash_murmur3_one_float(position[0]);
+			h = hash_murmur3_one_float(position[1], h);
+			h = hash_murmur3_one_float(position[2], h);
+			h = hash_murmur3_one_float(uv[0], h);
+			h = hash_murmur3_one_float(uv[1], h);
+			h = hash_murmur3_one_float(normal_xy[0], h);
+			h = hash_murmur3_one_float(normal_xy[1], h);
+			h = hash_murmur3_one_float(normal_z, h);
+			return hash_fmix32(h);
+		}
 	};
 
 	struct Edge
@@ -74036,6 +74030,17 @@ struct Lightmapper::RDState
 			na = p_na;
 			nb = p_nb;
 		}
+
+		_FORCE_INLINE_ uint32_t hash() const
+		{
+			uint32_t h = hash_murmur3_one_float(a.x);
+			h = hash_murmur3_one_float(a.y, h);
+			h = hash_murmur3_one_float(a.z, h);
+			h = hash_murmur3_one_float(b.x, h);
+			h = hash_murmur3_one_float(b.y, h);
+			h = hash_murmur3_one_float(b.z, h);
+			return h;
+		}
 	};
 
 	struct Probe
@@ -74045,19 +74050,6 @@ struct Lightmapper::RDState
 
 	Vector<Probe> probe_positions;
 
-	struct EdgeHash
-	{
-		_FORCE_INLINE_ static uint32_t hash(const Edge& p_edge)
-		{
-			uint32_t h = hash_murmur3_one_float(p_edge.a.x);
-			h = hash_murmur3_one_float(p_edge.a.y, h);
-			h = hash_murmur3_one_float(p_edge.a.z, h);
-			h = hash_murmur3_one_float(p_edge.b.x, h);
-			h = hash_murmur3_one_float(p_edge.b.y, h);
-			h = hash_murmur3_one_float(p_edge.b.z, h);
-			return h;
-		}
-	};
 
 	struct EdgeUV2
 	{
@@ -74088,21 +74080,6 @@ struct Lightmapper::RDState
 		bool operator<(const Seam& p_seam) const { return slice < p_seam.slice; }
 	};
 
-	struct VertexHash
-	{
-		_FORCE_INLINE_ static uint32_t hash(const Vertex& p_vtx)
-		{
-			uint32_t h = hash_murmur3_one_float(p_vtx.position[0]);
-			h = hash_murmur3_one_float(p_vtx.position[1], h);
-			h = hash_murmur3_one_float(p_vtx.position[2], h);
-			h = hash_murmur3_one_float(p_vtx.uv[0], h);
-			h = hash_murmur3_one_float(p_vtx.uv[1], h);
-			h = hash_murmur3_one_float(p_vtx.normal_xy[0], h);
-			h = hash_murmur3_one_float(p_vtx.normal_xy[1], h);
-			h = hash_murmur3_one_float(p_vtx.normal_z, h);
-			return hash_fmix32(h);
-		}
-	};
 
 	struct Triangle
 	{
@@ -74666,7 +74643,7 @@ void Lightmapper::RDState::_create_acceleration_structures(RenderingDevice* rd, 
 	RID& r_cluster_indices_buffer, RID& r_cluster_aabbs_buffer, RID& probe_positions_buffer,
 	RID& grid_texture, RID& seams_buffer, BakeStepFunc p_step_function, void* p_bake_userdata)
 {
-	HashMap<Vertex, uint32_t, VertexHash> vertex_map;
+	HashMap<Vertex, uint32_t> vertex_map;
 
 	// fill triangles array and vertex array
 	LocalVector<Triangle> triangles;
@@ -74692,7 +74669,7 @@ void Lightmapper::RDState::_create_acceleration_structures(RenderingDevice* rd, 
 				p_bake_userdata, false);
 		}
 
-		HashMap<Edge, EdgeUV2, EdgeHash> edges;
+		HashMap<Edge, EdgeUV2> edges;
 
 		MeshInstance& mi = mesh_instances.write[m_i];
 
@@ -91976,17 +91953,12 @@ public:
 		// If dynamic buffer, then its range is [0; RenderingDeviceDriverVulkan::frame_count)
 		// else it's UINT32_MAX.
 		uint32_t frame_idx = UINT32_MAX;
-
-		bool is_dynamic() const { return frame_idx != UINT32_MAX; }
-	};
-
-	struct BufferDynamicInfo : BufferInfo
-	{
 		uint8_t* persistent_ptr = nullptr;
 #ifdef DEBUG_ENABLED
-		// For tracking that a persistent buffer isn't mapped twice in the same frame.
 		uint64_t last_frame_mapped = 0;
 #endif
+
+		bool is_dynamic() const { return frame_idx != UINT32_MAX; }
 	};
 
 	virtual BufferID buffer_create(uint64_t p_size, uint32_t p_usage,
@@ -92336,16 +92308,11 @@ private:
 		uint8_t driver_abi = 0;
 	};
 
-	struct PipelineCache
-	{
-		String file_path;
-		size_t current_size = 0;
-		Vector<uint8_t> buffer; // Header then data.
-		VkPipelineCache vk_cache = VK_NULL_HANDLE;
-	};
-
 	static int caching_instance_count;
-	PipelineCache pipelines_cache;
+	String pipelines_cache_file_path;
+	size_t pipelines_cache_current_size = 0;
+	Vector<uint8_t> pipelines_cache_buffer;
+	VkPipelineCache pipelines_cache_vk_cache = VK_NULL_HANDLE;
 	String pipeline_cache_id;
 	HashMap<uint64_t, bool> has_comp_alpha;
 
@@ -94338,8 +94305,8 @@ Error RenderingDeviceDriverVulkan::_initialize_allocator()
 
 Error RenderingDeviceDriverVulkan::_initialize_pipeline_cache()
 {
-	pipelines_cache.buffer.resize(sizeof(PipelineCacheHeader));
-	PipelineCacheHeader* header = (PipelineCacheHeader*)(pipelines_cache.buffer.ptrw());
+	pipelines_cache_buffer.resize(sizeof(PipelineCacheHeader));
+	PipelineCacheHeader* header = (PipelineCacheHeader*)(pipelines_cache_buffer.ptrw());
 	*header = {};
 	header->magic = 868 + VK_PIPELINE_CACHE_HEADER_VERSION_ONE;
 	header->device_id = physical_device_properties.deviceID;
@@ -94886,8 +94853,8 @@ RDD::BufferID RenderingDeviceDriverVulkan::buffer_create(uint64_t p_size,
 		ERR_FAIL_COND_V_MSG(err, BufferID(),
 			vformat("Couldn't map Vulkan buffer memory (VkResult error %d).", err));
 
-		BufferDynamicInfo* dyn_buffer =
-			VersatileResource::allocate<BufferDynamicInfo>(resources_allocator);
+		BufferInfo* dyn_buffer =
+			VersatileResource::allocate<BufferInfo>(resources_allocator);
 		buf_info = dyn_buffer;
 #ifdef DEBUG_ENABLED
 		dyn_buffer->last_frame_mapped = p_frames_drawn - 1ul;
@@ -94948,7 +94915,7 @@ void RenderingDeviceDriverVulkan::buffer_free(BufferID p_buffer)
 	}
 
 	if (buf_info->is_dynamic()) {
-		VersatileResource::free(resources_allocator, (BufferDynamicInfo*)buf_info);
+		VersatileResource::free(resources_allocator, (BufferInfo*)buf_info);
 	}
 	else {
 		VersatileResource::free(resources_allocator, buf_info);
@@ -94983,7 +94950,7 @@ void RenderingDeviceDriverVulkan::buffer_unmap(BufferID p_buffer)
 uint8_t* RenderingDeviceDriverVulkan::buffer_persistent_map_advance(
 	BufferID p_buffer, uint64_t p_frames_drawn)
 {
-	BufferDynamicInfo* buf_info = (BufferDynamicInfo*)p_buffer.id;
+	BufferInfo* buf_info = (BufferInfo*)p_buffer.id;
 	ERR_FAIL_COND_V_MSG(!buf_info->is_dynamic(), nullptr,
 		"Buffer must have BUFFER_USAGE_DYNAMIC_PERSISTENT_BIT. Use buffer_map() instead.");
 #ifdef DEBUG_ENABLED
@@ -95017,7 +94984,7 @@ uint64_t RenderingDeviceDriverVulkan::buffer_get_dynamic_offsets(Span<BufferID> 
 
 void RenderingDeviceDriverVulkan::buffer_flush(BufferID p_buffer)
 {
-	BufferDynamicInfo* buf_info = (BufferDynamicInfo*)p_buffer.id;
+	BufferInfo* buf_info = (BufferInfo*)p_buffer.id;
 
 	VkMemoryPropertyFlags mem_props_flags;
 	vmaGetAllocationMemoryProperties(allocator, buf_info->alloc_handle, &mem_props_flags);
@@ -98676,8 +98643,8 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
 	}
 	caching_instance_count++;
 
-	pipelines_cache.current_size = 0;
-	pipelines_cache.buffer.resize(sizeof(PipelineCacheHeader));
+	pipelines_cache_current_size = 0;
+	pipelines_cache_buffer.resize(sizeof(PipelineCacheHeader));
 
 	// Parse.
 	{
@@ -98700,7 +98667,7 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
 				const uint8_t* loaded_buffer_start = p_data.ptr() + sizeof(PipelineCacheHeader);
 				uint32_t loaded_buffer_size = p_data.size() - sizeof(PipelineCacheHeader);
 				const PipelineCacheHeader* current_header =
-					(PipelineCacheHeader*)pipelines_cache.buffer.ptr();
+					(PipelineCacheHeader*)pipelines_cache_buffer.ptr();
 				if (loaded_header->data_hash !=
 						hash_murmur3_buffer(loaded_buffer_start, loaded_buffer_size) ||
 					loaded_header->data_size != loaded_buffer_size ||
@@ -98715,8 +98682,8 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
 								  "result in stuttering during gameplay.");
 				}
 				else {
-					pipelines_cache.current_size = loaded_buffer_size;
-					pipelines_cache.buffer = p_data;
+					pipelines_cache_current_size = loaded_buffer_size;
+					pipelines_cache_buffer = p_data;
 				}
 			}
 		}
@@ -98726,12 +98693,12 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
 	{
 		VkPipelineCacheCreateInfo cache_info = {};
 		cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-		cache_info.initialDataSize = pipelines_cache.buffer.size() - sizeof(PipelineCacheHeader);
-		cache_info.pInitialData = pipelines_cache.buffer.ptr() + sizeof(PipelineCacheHeader);
+		cache_info.initialDataSize = pipelines_cache_buffer.size() - sizeof(PipelineCacheHeader);
+		cache_info.pInitialData = pipelines_cache_buffer.ptr() + sizeof(PipelineCacheHeader);
 
 		VkResult err = vkCreatePipelineCache(vk_device, &cache_info,
 			VKC::get_allocation_callbacks(VK_OBJECT_TYPE_PIPELINE_CACHE),
-			&pipelines_cache.vk_cache);
+			&pipelines_cache_vk_cache);
 		if (err != VK_SUCCESS) {
 			WARN_PRINT("vkCreatePipelinecache failed with error " + itos(err) + ".");
 			return false;
@@ -98743,11 +98710,11 @@ bool RenderingDeviceDriverVulkan::pipeline_cache_create(const Vector<uint8_t>& p
 
 void RenderingDeviceDriverVulkan::pipeline_cache_free()
 {
-	DEV_ASSERT(pipelines_cache.vk_cache);
+	DEV_ASSERT(pipelines_cache_vk_cache);
 
-	vkDestroyPipelineCache(vk_device, pipelines_cache.vk_cache,
+	vkDestroyPipelineCache(vk_device, pipelines_cache_vk_cache,
 		VKC::get_allocation_callbacks(VK_OBJECT_TYPE_PIPELINE_CACHE));
-	pipelines_cache.vk_cache = VK_NULL_HANDLE;
+	pipelines_cache_vk_cache = VK_NULL_HANDLE;
 
 	DEV_ASSERT(caching_instance_count > 0);
 	caching_instance_count--;
@@ -98755,28 +98722,28 @@ void RenderingDeviceDriverVulkan::pipeline_cache_free()
 
 size_t RenderingDeviceDriverVulkan::pipeline_cache_query_size()
 {
-	DEV_ASSERT(pipelines_cache.vk_cache);
+	DEV_ASSERT(pipelines_cache_vk_cache);
 
 	// FIXME:
 	// We're letting the cache grow unboundedly. We may want to set at limit and see if
 	// implementations use LRU or the like. If we do, we won't be able to assume any longer that the
 	// cache is dirty if, and only if, it has grown.
 	VkResult err = vkGetPipelineCacheData(
-		vk_device, pipelines_cache.vk_cache, &pipelines_cache.current_size, nullptr);
+		vk_device, pipelines_cache_vk_cache, &pipelines_cache_current_size, nullptr);
 	ERR_FAIL_COND_V_MSG(
 		err, 0, vformat("Couldn't get Vulkan pipeline cache data (VkResult error %d).", err));
 
-	return pipelines_cache.current_size;
+	return pipelines_cache_current_size;
 }
 
 Vector<uint8_t> RenderingDeviceDriverVulkan::pipeline_cache_serialize()
 {
-	DEV_ASSERT(pipelines_cache.vk_cache);
+	DEV_ASSERT(pipelines_cache_vk_cache);
 
-	pipelines_cache.buffer.resize(pipelines_cache.current_size + sizeof(PipelineCacheHeader));
+	pipelines_cache_buffer.resize(pipelines_cache_current_size + sizeof(PipelineCacheHeader));
 
-	VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache.vk_cache,
-		&pipelines_cache.current_size, pipelines_cache.buffer.ptrw() + sizeof(PipelineCacheHeader));
+	VkResult err = vkGetPipelineCacheData(vk_device, pipelines_cache_vk_cache,
+		&pipelines_cache_current_size, pipelines_cache_buffer.ptrw() + sizeof(PipelineCacheHeader));
 	// Incomplete is OK because the cache may have grown since the size was queried (unless when
 	// exiting).
 	ERR_FAIL_COND_V_MSG(err != VK_SUCCESS && err != VK_INCOMPLETE, Vector<uint8_t>(),
@@ -98785,12 +98752,12 @@ Vector<uint8_t> RenderingDeviceDriverVulkan::pipeline_cache_serialize()
 	// The real buffer size may now be bigger than the updated current_size.
 	// We take into account the new size but keep the buffer resized in a worst-case fashion.
 
-	PipelineCacheHeader* header = (PipelineCacheHeader*)pipelines_cache.buffer.ptrw();
-	header->data_size = pipelines_cache.current_size;
+	PipelineCacheHeader* header = (PipelineCacheHeader*)pipelines_cache_buffer.ptrw();
+	header->data_size = pipelines_cache_current_size;
 	header->data_hash = hash_murmur3_buffer(
-		pipelines_cache.buffer.ptr() + sizeof(PipelineCacheHeader), pipelines_cache.current_size);
+		pipelines_cache_buffer.ptr() + sizeof(PipelineCacheHeader), pipelines_cache_current_size);
 
-	return pipelines_cache.buffer;
+	return pipelines_cache_buffer;
 }
 
 // RDD::AttachmentLoadOp == VkAttachmentLoadOp.
@@ -99845,7 +99812,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(ShaderID p_s
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
 	VkResult err =
-		vkCreateGraphicsPipelines(vk_device, pipelines_cache.vk_cache, 1, &pipeline_create_info,
+		vkCreateGraphicsPipelines(vk_device, pipelines_cache_vk_cache, 1, &pipeline_create_info,
 			VKC::get_allocation_callbacks(VK_OBJECT_TYPE_PIPELINE), &vk_pipeline);
 
 	// Don't print error for VK_ERROR_UNKNOWN on Adreno 660.
@@ -100340,7 +100307,7 @@ RDD::RaytracingPipelineID RenderingDeviceDriverVulkan::raytracing_pipeline_creat
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
 	VkResult err = device_functions_CreateRaytracingPipelinesKHR(vk_device, VK_NULL_HANDLE,
-		pipelines_cache.vk_cache, 1, &pipeline_create_info, nullptr, &vk_pipeline);
+		pipelines_cache_vk_cache, 1, &pipeline_create_info, nullptr, &vk_pipeline);
 	ERR_FAIL_COND_V_MSG(err, RaytracingPipelineID(),
 		vformat("Couldn't create Vulkan raytracing pipelines (VkResult error %d).", err));
 
@@ -100481,7 +100448,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::compute_pipeline_create(
 
 	VkPipeline vk_pipeline = VK_NULL_HANDLE;
 	VkResult err =
-		vkCreateComputePipelines(vk_device, pipelines_cache.vk_cache, 1, &pipeline_create_info,
+		vkCreateComputePipelines(vk_device, pipelines_cache_vk_cache, 1, &pipeline_create_info,
 			VKC::get_allocation_callbacks(VK_OBJECT_TYPE_PIPELINE), &vk_pipeline);
 	ERR_FAIL_COND_V_MSG(err, PipelineID(),
 		vformat("Couldn't create Vulkan compute pipelines (VkResult error %d).", err));
@@ -115714,16 +115681,16 @@ void MeshStorage::update_mesh_instances()
 					}
 				}
 
-				bool success = skeleton_shader->shader.version_bind_shader(
-					skeleton_shader->shader_version, variant, specialization);
+				bool success = skeleton_shader.version_bind_shader(
+					skeleton_shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-					base_weight, skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
-					float(mi->mesh->blend_shape_count), skeleton_shader->shader_version, variant,
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+					base_weight, skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
+					float(mi->mesh->blend_shape_count), skeleton_shader_version, variant,
 					specialization);
 
 				glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -115743,8 +115710,8 @@ void MeshStorage::update_mesh_instances()
 				glEndTransformFeedback();
 
 				variant = SkeletonShaderGLES3::MODE_BLEND_PASS;
-				success = skeleton_shader->shader.version_bind_shader(
-					skeleton_shader->shader_version, variant, specialization);
+				success = skeleton_shader.version_bind_shader(
+					skeleton_shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
@@ -115757,11 +115724,11 @@ void MeshStorage::update_mesh_instances()
 						// not bother with this one
 						continue;
 					}
-					skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-						weight, skeleton_shader->shader_version, variant, specialization);
-					skeleton_shader->shader.version_set_uniform(
+					skeleton_shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+						weight, skeleton_shader_version, variant, specialization);
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::BLEND_SHAPE_COUNT, float(mi->mesh->blend_shape_count),
-						skeleton_shader->shader_version, variant, specialization);
+						skeleton_shader_version, variant, specialization);
 
 					// Ensure the skeleton shader outputs to the correct (current) VBO.
 
@@ -115789,41 +115756,41 @@ void MeshStorage::update_mesh_instances()
 									  ? SkeletonShaderGLES3::USE_EIGHT_WEIGHTS
 									  : 0;
 				specialization |= SkeletonShaderGLES3::FINAL_PASS;
-				success = skeleton_shader->shader.version_bind_shader(
-					skeleton_shader->shader_version, variant, specialization);
+				success = skeleton_shader.version_bind_shader(
+					skeleton_shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
-					weight, skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
-					float(mi->mesh->blend_shape_count), skeleton_shader->shader_version, variant,
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::BLEND_WEIGHT,
+					weight, skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::BLEND_SHAPE_COUNT,
+					float(mi->mesh->blend_shape_count), skeleton_shader_version, variant,
 					specialization);
 
 				if (can_use_skeleton) {
 					Transform2D transform =
 						mi->canvas_item_transform_2d.affine_inverse() * sk->base_transform_2d;
-					skeleton_shader->shader.version_set_uniform(
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_X, transform[0],
-						skeleton_shader->shader_version, variant, specialization);
-					skeleton_shader->shader.version_set_uniform(
+						skeleton_shader_version, variant, specialization);
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_Y, transform[1],
-						skeleton_shader->shader_version, variant, specialization);
-					skeleton_shader->shader.version_set_uniform(
+						skeleton_shader_version, variant, specialization);
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::SKELETON_TRANSFORM_OFFSET, transform[2],
-						skeleton_shader->shader_version, variant, specialization);
+						skeleton_shader_version, variant, specialization);
 
 					Transform2D inverse_transform = transform.affine_inverse();
-					skeleton_shader->shader.version_set_uniform(
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_X, inverse_transform[0],
-						skeleton_shader->shader_version, variant, specialization);
-					skeleton_shader->shader.version_set_uniform(
+						skeleton_shader_version, variant, specialization);
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_Y, inverse_transform[1],
-						skeleton_shader->shader_version, variant, specialization);
-					skeleton_shader->shader.version_set_uniform(
+						skeleton_shader_version, variant, specialization);
+					skeleton_shader.version_set_uniform(
 						SkeletonShaderGLES3::INVERSE_TRANSFORM_OFFSET, inverse_transform[2],
-						skeleton_shader->shader_version, variant, specialization);
+						skeleton_shader_version, variant, specialization);
 
 					// Do last blendshape in the same pass as the Skeleton.
 					_compute_skeleton(mi, sk, i);
@@ -115860,32 +115827,32 @@ void MeshStorage::update_mesh_instances()
 					}
 				}
 
-				bool success = skeleton_shader->shader.version_bind_shader(
-					skeleton_shader->shader_version, variant, specialization);
+				bool success = skeleton_shader.version_bind_shader(
+					skeleton_shader_version, variant, specialization);
 				if (!success) {
 					continue;
 				}
 
 				Transform2D transform =
 					mi->canvas_item_transform_2d.affine_inverse() * sk->base_transform_2d;
-				skeleton_shader->shader.version_set_uniform(
+				skeleton_shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_X, transform[0],
-					skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(
+					skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_Y, transform[1],
-					skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(
+					skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(
 					SkeletonShaderGLES3::SKELETON_TRANSFORM_OFFSET, transform[2],
-					skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader_version, variant, specialization);
 
 				Transform2D inverse_transform = transform.affine_inverse();
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_X,
-					inverse_transform[0], skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_Y,
-					inverse_transform[1], skeleton_shader->shader_version, variant, specialization);
-				skeleton_shader->shader.version_set_uniform(
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_X,
+					inverse_transform[0], skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(SkeletonShaderGLES3::INVERSE_TRANSFORM_Y,
+					inverse_transform[1], skeleton_shader_version, variant, specialization);
+				skeleton_shader.version_set_uniform(
 					SkeletonShaderGLES3::INVERSE_TRANSFORM_OFFSET, inverse_transform[2],
-					skeleton_shader->shader_version, variant, specialization);
+					skeleton_shader_version, variant, specialization);
 
 				GLuint vertex_array_gl = 0;
 				uint64_t mask =
@@ -117052,9 +117019,9 @@ void ParticlesStorage::initialize()
 	}
 	{
 		// default material and shader for particles shader
-		particles_shader.default_shader = MaterialStorage::shader_allocate();
-		MaterialStorage::shader_initialize(particles_shader.default_shader);
-		MaterialStorage::shader_set_code(particles_shader.default_shader, R"(
+		particles_shader_default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(particles_shader_default_shader);
+		MaterialStorage::shader_set_code(particles_shader_default_shader, R"(
 // Default particles shader.
 
 shader_type particles;
@@ -117063,22 +117030,22 @@ void process() {
 	COLOR = vec4(1.0);
 }
 )");
-		particles_shader.default_material = MaterialStorage::material_allocate();
-		MaterialStorage::material_initialize(particles_shader.default_material);
+		particles_shader_default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(particles_shader_default_material);
 		MaterialStorage::material_set_shader(
-			particles_shader.default_material, particles_shader.default_shader);
+			particles_shader_default_material, particles_shader_default_shader);
 	}
 	{
-		particles_shader.copy_shader.initialize();
-		particles_shader.copy_shader_version = particles_shader.copy_shader.version_create();
+		particles_shader_copy_shader.initialize();
+		particles_shader_copy_shader_version = particles_shader_copy_shader.version_create();
 	}
 }
 
 void ParticlesStorage::finalize()
 {
-	MaterialStorage::material_free(particles_shader.default_material);
-	MaterialStorage::shader_free(particles_shader.default_shader);
-	particles_shader.copy_shader.version_free(particles_shader.copy_shader_version);
+	MaterialStorage::material_free(particles_shader_default_material);
+	MaterialStorage::shader_free(particles_shader_default_shader);
+	particles_shader_copy_shader.version_free(particles_shader_copy_shader_version);
 }
 
 /* PARTICLES */
@@ -117824,7 +117791,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		MaterialStorage::material_get_data(p_particles->process_material, RSE::SHADER_PARTICLES);
 	if (!m) {
 		m = MaterialStorage::material_get_data(
-			particles_shader.default_material, RSE::SHADER_PARTICLES);
+			particles_shader_default_material, RSE::SHADER_PARTICLES);
 	}
 
 	ERR_FAIL_NULL(m);
@@ -117842,7 +117809,7 @@ void ParticlesStorage::_particles_process(Particles* p_particles, double p_delta
 		specialization |= ParticlesShaderGLES3::MODE_3D;
 	}
 
-	RID version = particles_shader.default_shader_version;
+	RID version = particles_shader_default_shader_version;
 	if (m->shader_data->version.is_valid() && m->shader_data->valid) {
 		// Bind material uniform buffer and textures.
 		m->bind_uniforms();
@@ -118072,8 +118039,8 @@ void ParticlesStorage::_particles_update_instance_buffer(
 		specialization |= ParticlesCopyShaderGLES3::MODE_3D;
 	}
 
-	bool success = particles_shader.copy_shader.version_bind_shader(
-		particles_shader.copy_shader_version, variant, specialization);
+	bool success = particles_shader_copy_shader.version_bind_shader(
+		particles_shader_copy_shader_version, variant, specialization);
 	if (!success) {
 		return;
 	}
@@ -118083,35 +118050,35 @@ void ParticlesStorage::_particles_update_instance_buffer(
 		// In local mode, particle positions are calculated locally (relative to the node position)
 		// and they're also drawn locally.
 		// It works as expected, so we just pass an identity transform.
-		particles_shader.copy_shader.version_set_uniform(
+		particles_shader_copy_shader.version_set_uniform(
 			ParticlesCopyShaderGLES3::INV_EMISSION_TRANSFORM, Transform3D(),
-			particles_shader.copy_shader_version, variant, specialization);
+			particles_shader_copy_shader_version, variant, specialization);
 	}
 	else {
 		// In global mode, particle positions are calculated globally (relative to the canvas
 		// origin) but they're drawn locally. So, we need to pass the inverse of the emission
 		// transform to bring the particles to local coordinates before drawing.
 		Transform3D inv = particles->emission_transform.affine_inverse();
-		particles_shader.copy_shader.version_set_uniform(
+		particles_shader_copy_shader.version_set_uniform(
 			ParticlesCopyShaderGLES3::INV_EMISSION_TRANSFORM, inv,
-			particles_shader.copy_shader_version, variant, specialization);
+			particles_shader_copy_shader_version, variant, specialization);
 	}
 
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::FRAME_REMAINDER,
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::FRAME_REMAINDER,
 		particles->interpolate ? particles->frame_remainder : 0.0,
-		particles_shader.copy_shader_version, variant, specialization);
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_MODE,
-		uint32_t(particles->transform_align), particles_shader.copy_shader_version, variant,
+		particles_shader_copy_shader_version, variant, specialization);
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_MODE,
+		uint32_t(particles->transform_align), particles_shader_copy_shader_version, variant,
 		specialization);
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_UP, p_up_axis,
-		particles_shader.copy_shader_version, variant, specialization);
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::SORT_DIRECTION,
-		p_axis, particles_shader.copy_shader_version, variant, specialization);
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_AXIS,
-		uint32_t(particles->transform_align_axis), particles_shader.copy_shader_version, variant,
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_UP, p_up_axis,
+		particles_shader_copy_shader_version, variant, specialization);
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::SORT_DIRECTION,
+		p_axis, particles_shader_copy_shader_version, variant, specialization);
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_AXIS,
+		uint32_t(particles->transform_align_axis), particles_shader_copy_shader_version, variant,
 		specialization);
-	particles_shader.copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_CHANNEL_FILTER,
-		uint32_t(particles->transform_align_channel_filter), particles_shader.copy_shader_version,
+	particles_shader_copy_shader.version_set_uniform(ParticlesCopyShaderGLES3::ALIGN_CHANNEL_FILTER,
+		uint32_t(particles->transform_align_channel_filter), particles_shader_copy_shader_version,
 		variant, specialization);
 
 	glBindVertexArray(particles->back_vertex_array);
@@ -118800,9 +118767,9 @@ void GLES3::TextureStorage::_tex_blit_shader_initialize()
 
 	{
 		// default material and shader for Texture Blit shader
-		tex_blit_shader.default_shader = MaterialStorage::shader_allocate();
-		MaterialStorage::shader_initialize(tex_blit_shader.default_shader);
-		MaterialStorage::shader_set_code(tex_blit_shader.default_shader, R"(
+		tex_blit_default_shader = MaterialStorage::shader_allocate();
+		MaterialStorage::shader_initialize(tex_blit_default_shader);
+		MaterialStorage::shader_set_code(tex_blit_default_shader, R"(
 // Default Texture Blit shader.
 
 shader_type texture_blit;
@@ -118821,10 +118788,10 @@ void blit() {
 	COLOR3 = texture(source_texture3, UV) * MODULATE;
 }
 )");
-		tex_blit_shader.default_material = MaterialStorage::material_allocate();
-		MaterialStorage::material_initialize(tex_blit_shader.default_material);
+		tex_blit_default_material = MaterialStorage::material_allocate();
+		MaterialStorage::material_initialize(tex_blit_default_material);
 		MaterialStorage::material_set_shader(
-			tex_blit_shader.default_material, tex_blit_shader.default_shader);
+			tex_blit_default_material, tex_blit_default_shader);
 	}
 
 	{
@@ -118862,19 +118829,19 @@ void blit() {
 		glBindBuffer(GL_ARRAY_BUFFER, 0); // unbind
 	}
 
-	tex_blit_shader.initialized = true;
+	tex_blit_initialized = true;
 }
 
 // Has to be a separate call from GLES3::TextureStorage destruction due to interacting with Material
 // Storage
 void GLES3::TextureStorage::_tex_blit_shader_free()
 {
-	if (tex_blit_shader.initialized) {
+	if (tex_blit_initialized) {
 		glDeleteFramebuffers(1, &tex_blit_fbo);
 		glDeleteBuffers(1, &tex_blit_quad);
 		glDeleteVertexArrays(1, &tex_blit_quad_array);
-		MaterialStorage::material_free(tex_blit_shader.default_material);
-		MaterialStorage::shader_free(tex_blit_shader.default_shader);
+		MaterialStorage::material_free(tex_blit_default_material);
+		MaterialStorage::shader_free(tex_blit_default_shader);
 	}
 }
 
@@ -120305,7 +120272,7 @@ void GLES3::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture)
 RID GLES3::TextureStorage::texture_drawable_get_default_material()
 {
 	// This should never be called before DrawableTexture stuff is initialized.
-	return tex_blit_shader.default_material;
+	return tex_blit_default_material;
 }
 
 void GLES3::TextureStorage::texture_replace(RID p_texture, RID p_by_texture)
